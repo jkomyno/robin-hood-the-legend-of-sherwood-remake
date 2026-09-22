@@ -6,6 +6,7 @@ The manifest preserves each patch's independent mask and sight state changes.
 """
 import json
 import hashlib
+import re
 from pathlib import Path
 
 # Reviewed interior geometry in the Derby catalog. Overlap alone is deliberately
@@ -65,6 +66,15 @@ def projection_occluders(manifest, available_nodes):
     """
     receivers = projection_receivers(manifest)
     available = set(available_nodes)
+    if manifest['map'].casefold() != 'derby':
+        reviews = projection_reviews(manifest)
+        result = {patch: sorted(set(nodes) | set(reviews[patch]['retained_occluder_nodes']) |
+                               set(reviews[patch].get('occluder_additions', {}).get('interior-'+patch, [])))
+                  for patch, nodes in receivers.items()}
+        missing = {node for nodes in result.values() for node in nodes} - available
+        if missing:
+            raise ValueError(f'Missing authored projection nodes: {sorted(missing)}')
+        return result
     additions=projection_occluder_additions(manifest)
     return {patch: sorted((set(nodes) | set(additions.get('interior-'+patch,[])) | {
         f"building-{n:03d}" for n in DERBY_RETAINED_PROJECTION_OCCLUDERS[patch]
@@ -74,6 +84,14 @@ def projection_occluders(manifest, available_nodes):
 def projection_occluder_audit(manifest):
     """Report limitations separately from operational projection node lists."""
     projection_receivers(manifest)
+    if manifest['map'].casefold() != 'derby':
+        return {patch: {'status': 'reviewed', 'reviewer': review['reviewer'],
+                        'notes': review['evidence'],
+                        'retained_occluders': review['retained_occluder_nodes'],
+                        'partial_cover_nodes': review['partial_cover_nodes'],
+                        'exclude_occluder_components': review['exclude_occluder_components'],
+                        'scope': 'projection-only; not runtime geometry visibility'}
+                for patch, review in projection_reviews(manifest).items()}
     result={patch: {
         **audit,
         "retained_occluders": [f"building-{n:03d}" for n in DERBY_RETAINED_PROJECTION_OCCLUDERS[patch]],
@@ -90,7 +108,9 @@ def projection_occluder_audit(manifest):
 
 def projection_receivers(manifest):
     if manifest["map"].casefold() != "derby":
-        raise ValueError("Interior receiver roles need an authored map-specific review")
+        return {patch: list(review['receiver_nodes'])
+                for patch, review in projection_reviews(manifest).items()
+                if review.get('role', 'interior') == 'interior'}
     result={patch: [f"building-{n:03d}" for n in nodes]
             for patch, nodes in DERBY_INTERIORS.items()}
     for patch,review in projection_reviews(manifest).items():
@@ -102,6 +122,8 @@ def projection_reviews(manifest):
     """Opt-in reviewed partitions; absent reviews preserve existing manifests."""
     reviews=manifest.get('projection_reviews',{})
     if not isinstance(reviews,dict):raise ValueError('Projection reviews must be an object')
+    if manifest['map'].casefold() != 'derby':
+        return _authored_projection_reviews(manifest, reviews)
     for patch,review in reviews.items():
         if manifest['map'].casefold()!='derby' or patch!='patch-003':
             raise ValueError('No reviewed component projection for this map/patch')
@@ -124,9 +146,102 @@ def projection_reviews(manifest):
     return reviews
 
 
+def _authored_projection_reviews(manifest, reviews):
+    """Require reviewed ownership for every base reveal; never derive it from sight lists.
+
+    Each projection_reviews entry binds receiver_nodes, retained_occluder_nodes,
+    partial_cover_nodes, reviewer/evidence, source_sha256 and alpha_sha256 to its
+    patch_id. Component selectors use the same contract as the projection baker.
+    Empty component collections explicitly select whole source nodes.
+    A reviewed role='non-interior' classifies a trigger or integrated state patch
+    with empty node/component lists; it does not authorize an interior pass.
+    """
+    patches = manifest.get('patches')
+    if not isinstance(patches, list):
+        raise ValueError('Authored projection requires an explicit patch inventory')
+    ids = [p['id'] for p in patches]
+    if len(ids) != len(set(ids)) or set(reviews) != set(ids):
+        raise ValueError('Authored projection reviews must cover every base patch exactly once')
+
+    def nodes(value, label, nonempty=False):
+        if (not isinstance(value, list) or (nonempty and not value) or
+                any(not isinstance(n, str) or not re.fullmatch(r'building-\d{3,}', n) for n in value) or
+                len(value) != len(set(value))):
+            raise ValueError('Invalid authored node list: '+label)
+
+    for patch, review in reviews.items():
+        if (not isinstance(review, dict) or review.get('version') != 1 or
+                review.get('reviewed') is not True or review.get('patch_id') != patch):
+            raise ValueError('Invalid or unreviewed authored projection: '+patch)
+        for key in ('reviewer', 'evidence'):
+            if not isinstance(review.get(key), str) or not review[key].strip():
+                raise ValueError('Authored projection requires '+key)
+        role = review.get('role', 'interior')
+        if role not in ('interior', 'non-interior'):
+            raise ValueError('Invalid authored projection role')
+        if role == 'non-interior':
+            if any(review.get(key) != [] for key in ('receiver_nodes', 'retained_occluder_nodes',
+                                                     'partial_cover_nodes', 'exclude_occluder_components')):
+                raise ValueError('Non-interior classification cannot assign projection nodes')
+            if review.get('receiver_components') != {} or review.get('occluder_additions', {}) != {}:
+                raise ValueError('Non-interior classification cannot assign projection components')
+            continue
+        for key in ('source_sha256', 'alpha_sha256'):
+            if not isinstance(review.get(key), str) or not re.fullmatch('[0-9a-f]{64}', review[key]):
+                raise ValueError('Authored projection requires an exact '+key)
+        for key in ('receiver_nodes', 'retained_occluder_nodes', 'partial_cover_nodes'):
+            nodes(review.get(key), key, nonempty=key == 'receiver_nodes')
+        exclusions = review.get('exclude_occluder_components')
+        if not isinstance(exclusions, list):
+            raise ValueError('Authored projection requires explicit cover exclusions')
+        seen = set()
+        for selector in exclusions:
+            if (not isinstance(selector, dict) or
+                    set(selector) != {'source_node', 'projection_component', 'patch_id'} or
+                    selector['patch_id'] != patch or
+                    not isinstance(selector['projection_component'], str) or not selector['projection_component']):
+                raise ValueError('Invalid authored cover selector')
+            nodes([selector['source_node']], 'cover selector')
+            identity = (selector['source_node'], selector['projection_component'])
+            if identity in seen:
+                raise ValueError('Duplicate authored cover selector')
+            seen.add(identity)
+        components = review.get('receiver_components')
+        if not isinstance(components, dict):
+            raise ValueError('Authored projection requires explicit receiver components')
+        for label, selectors in components.items():
+            if label not in ('exterior', 'interior-'+patch) or not isinstance(selectors, list):
+                raise ValueError('Invalid authored receiver projection layer')
+            selected_nodes = set()
+            for selector in selectors:
+                if (not isinstance(selector, dict) or
+                        set(selector) != {'source_node', 'projection_components', 'patch_id'} or
+                        selector['patch_id'] != patch):
+                    raise ValueError('Invalid authored receiver selector')
+                node = selector['source_node']
+                nodes([node], 'receiver selector')
+                parts = selector['projection_components']
+                if (node in selected_nodes or not isinstance(parts, list) or not parts or
+                        any(not isinstance(p, str) or not p for p in parts) or len(parts) != len(set(parts))):
+                    raise ValueError('Invalid or duplicate authored receiver components')
+                if label == 'interior-'+patch and node not in review['receiver_nodes']:
+                    raise ValueError('Interior component is outside reviewed receivers')
+                selected_nodes.add(node)
+        additions = review.get('occluder_additions', {})
+        if not isinstance(additions, dict):
+            raise ValueError('Invalid authored occluder additions')
+        for label, values in additions.items():
+            if label not in ('exterior', 'interior-'+patch):
+                raise ValueError('Invalid authored occluder projection layer')
+            nodes(values, 'occluder additions')
+    return reviews
+
+
 def validate_projection_reviews(manifest, directory):
     """Bind changed ownership to the exact revealed artwork and patch alpha."""
     for patch,review in projection_reviews(manifest).items():
+        if review.get('role', 'interior') == 'non-interior':
+            continue
         record=next(p for p in manifest['patches'] if p['id']==patch)
         for key,path in [('source_sha256',manifest['sources']['interior']),
                          ('alpha_sha256',record['graphic']['alpha'])]:
@@ -169,6 +284,16 @@ def annotate_layers(manifest_path):
     missing = {n for nodes in receivers.values() for n in nodes} - available
     if missing:
         raise ValueError(f"Missing authored interior receivers: {sorted(missing)}")
+    if manifest['map'].casefold() != 'derby':
+        validate_projection_reviews(manifest, path.parent)
+        reviews = projection_reviews(manifest)
+        declared = {node for review in reviews.values()
+                    for key in ('receiver_nodes', 'retained_occluder_nodes', 'partial_cover_nodes')
+                    for node in review[key]}
+        declared.update(node for nodes in projection_occluder_additions(manifest).values() for node in nodes)
+        if declared - available:
+            raise ValueError(f'Missing authored projection nodes: {sorted(declared - available)}')
+    occluders = projection_occluders(manifest, available)
     working['reveal_manifest_path'] = str(path)
     annotated = []
     for obj in objects:
@@ -195,7 +320,7 @@ def annotate_layers(manifest_path):
             annotated.append({'name': obj.name, 'source_node': node, 'patches': interior})
     bpy.context.scene['projection_layer_manifest'] = str(path)
     report = {'map': manifest['map'], 'interior_receivers': receivers,
-              'projection_occluders': projection_occluders(manifest, available),
+              'projection_occluders': occluders,
               'projection_occluder_audit': projection_occluder_audit(manifest),
               'annotated_meshes': annotated,
               'notes': 'Sight activation and rendered cutaway geometry are independent. Candidate overlap does not authorize removal.'}
