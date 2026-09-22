@@ -2,6 +2,16 @@
 
 ## Current source-traced revision review — 2026-09-22
 
+Recovery after interruption: North Tower `pixel-trace-v4/modified-v3` is now
+candidate #4 in the gallery. The closed-body repair (commit `10f6ad68c`) survived;
+main wall, rear curtain, outlook and door report zero boundary/nonmanifold edges.
+Solid and textured sheets were visually inspected and the gallery refreshed to
+48 images. Hidden returns and adjoining, non-unified solids remain limitations.
+East Hall and Lower West workers were restarted. Lower West v4 had missing final
+render sheets and remaining alignment errors; East Hall had an unfinished seam
+repair. Neither is newly marked ready. The editor server was restarted on5180.
+Blender MCP was disconnected at recovery; workers use isolated background jobs.
+
 The pending gallery now contains three refreshed exterior geometry candidates:
 Central Turret and Gallery (`central/trace-v2`), West Tower (`west/zigzag-v6`),
 and Upper Bailey Gatehouse (`inspection/corner-fit-v3`). Each includes numbered
