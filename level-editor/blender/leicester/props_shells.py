@@ -14,7 +14,7 @@ import bpy
 import bmesh
 from mathutils import Vector
 
-VERSION='leicester-boundary-profiles-v3'
+VERSION='leicester-boundary-profiles-v4'
 WALLS={34,35,36,37,38,39,50,51,53,62,63,70,71,73,381}
 BANKS={378,379,380,382,383}
 TIMBER={53,73}
@@ -26,6 +26,14 @@ ANCHORS={34: [[2477.0, 385.92834, 0.0, 31.929], [2467.0, 379.882, 0.0, 31.882002
 # receiver's elevation gradient was reversed. Pixel crest samples at x960,
 # 968,975,982,989 have y1816,1811,1805,1802,1801 respectively.
 ANCHORS[381]=[[1000.4681, 1824.7965, 0.0, 24.0], [992.94446, 1831.1034, 0.0, 30.0], [960.74896, 1818.4679, 0.0, 2.5], [968.2726, 1812.161, 0.0, 1.2]]
+
+# Native223 cliff alpha supplies the exposed crest, sampled every16pixels.
+# The ground contact stays on the authored front edge; hidden plateau remains
+# a declared interpolation rather than a recovered terrain heightfield.
+CLIFF_382_CREST=[(0,1844),(16,1841),(32,1838),(48,1837),(64,1834),(80,1837),
+                 (96,1845),(112,1827),(128,1821),(144,1821),(160,1815),(176,1804),
+                 (192,1797),(208,1796),(224,1793),(240,1788),(256,1782),(272,1768)]
+ANCHORS[382]=[ANCHORS[382][0]]+[[x,1909.35-.3247*x,0,1909.35-.3247*x-y] for x,y in reversed(CLIFF_382_CREST)]+[ANCHORS[382][3]]
 
 
 def signature(obj):
@@ -69,6 +77,10 @@ def repair(obj):
                 previous=ring
             peak=bm.verts.new(inverse@(center+Vector((0,0,3/cos))))
             for i in range(count):bm.faces.new([previous[i],previous[(i+1)%count],peak])
+        elif node==382:
+            center=sum((v.co for v in vertices[count:]),Vector())/count
+            peak=bm.verts.new(center)
+            for i in range(count):bm.faces.new([vertices[count+i],vertices[count+(i+1)%count],peak])
         else:
             bm.faces.new(vertices[count:])
         bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=.75)
@@ -82,7 +94,7 @@ def repair(obj):
                and all((obj.matrix_world@v.co).z>bottom+(top-bottom)*.70 for v in e.verts)
                and any((rotation@f.normal).z>.7 for f in e.link_faces)
                and any(abs((rotation@f.normal).z)<.4 for f in e.link_faces)]
-        width=0 if node in TIMBER|HAY else min(6 if bank else 2,(top-bottom)*(.17 if bank else .07))
+        width=0 if node in TIMBER|HAY or node==382 else min(6 if bank else 2,(top-bottom)*(.17 if bank else .07))
         edge_count=len(edges)
         if edges and width:
             bmesh.ops.bevel(bm,geom=edges,offset=width,segments=1 if bank else 2,
