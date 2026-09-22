@@ -107,6 +107,23 @@ export interface BakeOptions {
   fill?: Fill;
   ambiance?: string;
 }
+
+/** Obstacle reconstruction cannot reproduce independently imported GLB meshes. */
+export function assertReconstructedBakeSources(document: unknown): void {
+  if (
+    document !== null &&
+    typeof document === "object" &&
+    "assetSources" in document &&
+    Array.isArray(document.assetSources) &&
+    document.assetSources.length > 0
+  ) {
+    throw new Error(
+      "Game baking does not yet support imported standalone assets. " +
+        "Save the editor document instead; baking requires their actual GLB geometry and materials.",
+    );
+  }
+}
+
 export async function bake(options: BakeOptions): Promise<void> {
   const map = pathComponent(options.map, "map");
   const ambiance = pathComponent(options.ambiance ?? "Day", "ambiance");
@@ -119,6 +136,7 @@ export async function bake(options: BakeOptions): Promise<void> {
   // Structural validation precedes expensive reconstruction; source-index
   // validation follows once the source level is available.
   const parsed = input === undefined ? undefined : parseLevel3D(input, { map });
+  assertReconstructedBakeSources(parsed);
   const r = await reconstruct(map, {
     textures: options.textures,
     fill: options.fill,
