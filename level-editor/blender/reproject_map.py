@@ -20,14 +20,16 @@ def project_uv(point, width, height, elevation_deg=35.0):
 def reproject_map(map_name, source_path, report_path, elevation_deg=35.0,
                   sample_spacing=12.0, max_subdivisions=24,
                   receiver_nodes=None, occluder_nodes=None, projection_label="source",
-                  exclude_occluder_components=None, receiver_components=None):
+                  exclude_occluder_components=None, receiver_components=None,
+                  receiver_asset_id=None):
     """Recompute map projection and visibility from the current working meshes.
 
     This intentionally leaves ground on its existing cleaned atlas. A separate
     ownership-mask/inpainting pass is needed when structures expose new ground.
     Existing UVs and material assignments are retained as fallback. Calling again
     updates UVs, image pixels and visibility without accumulating material slots.
-    Supply explicit stable source-node receiver/occluder lists for each reveal
+    receiver_asset_id restricts mutations to one asset_group; other assets
+    remain occluders. Supply explicit stable source-node receiver/occluder lists for each reveal
     layer, and a distinct projection_label for its texture. Closed exterior and
     revealed interior artwork must not share an indiscriminate visibility pass.
     No save or publication is implicit. Export only after this call completes.
@@ -56,6 +58,8 @@ def reproject_map(map_name, source_path, report_path, elevation_deg=35.0,
         obj for obj in sources if obj.get("source_node") in set(receiver_nodes)]
     from reveal_components import filter_receivers
     receivers=filter_receivers(receivers,receiver_components,available_objects=working.all_objects)
+    if receiver_asset_id is not None:
+        receivers = [obj for obj in receivers if obj.get("asset_group") == receiver_asset_id]
     occluders = sources if occluder_nodes is None else [
         obj for obj in sources if obj.get("source_node") in set(occluder_nodes)]
     from reveal_components import filter_occluders
@@ -96,6 +100,8 @@ def reproject_map(map_name, source_path, report_path, elevation_deg=35.0,
     uv_name = "Refreshed map projection" + (" / " + projection_label if projection_label != "source" else "")
     backup_name = "reprojection_fallback_material"
     material_name = map_name + " / refreshed " + projection_label + " projection"
+    if receiver_asset_id is not None:
+        material_name += " / asset " + receiver_asset_id
     material = bpy.data.materials.get(material_name)
     image = next((candidate for candidate in bpy.data.images
                   if candidate.get("reprojection_source_sha256") == source_hash
@@ -111,6 +117,10 @@ def reproject_map(map_name, source_path, report_path, elevation_deg=35.0,
     image.pack()
     if material is None:
         material = bpy.data.materials.new(material_name)
+    if receiver_asset_id is not None and material.users and any(
+            obj.type == "MESH" and obj.get("asset_group") != receiver_asset_id
+            and material in list(obj.data.materials) for obj in bpy.data.objects):
+        material = material.copy()
     material.use_nodes = True
     material.node_tree.nodes.clear()
     nodes, links = material.node_tree.nodes, material.node_tree.links
@@ -135,6 +145,9 @@ def reproject_map(map_name, source_path, report_path, elevation_deg=35.0,
               "limitations": ["Sampled face visibility; sub-sample occluders may remain.",
                               "Partially occluded faces retain the previous atlas.",
                               "Ground cleanup is preserved; newly exposed ground needs separate review."]}
+    if receiver_asset_id is not None:
+        report["receiver_asset_id"] = receiver_asset_id
+        report["projected_object_selectors"] = [_object_selector(obj) for obj in receivers]
     for obj in receivers:
         if obj.get("source_node") == "ground" or obj.get("source_obstacle") == "ground":
             report["objects"].append({"object": obj.name, "ground_preserved": True})
@@ -243,7 +256,13 @@ def reproject_map(map_name, source_path, report_path, elevation_deg=35.0,
     return report
 
 
-def restore_projection(map_name):
+def _object_selector(obj):
+    return {"object": obj.name, "source_node": obj.get("source_node"),
+            "asset_group": obj.get("asset_group"),
+            "projection_component": obj.get("projection_component")}
+
+
+def restore_projection(map_name, receiver_asset_id=None):
     """Restore saved atlas assignments before changing a map's layer partition.
 
     Geometry, UV layers and the saved fallback attribute remain intact. Unused
@@ -251,9 +270,14 @@ def restore_projection(map_name):
     """
     import bpy
     restored = 0
+    restored_objects = []
     for obj in bpy.data.collections[map_name + " Working"].all_objects:
         if obj.type != "MESH":
             continue
+        if receiver_asset_id is not None and obj.get("asset_group") != receiver_asset_id:
+            continue
+        if receiver_asset_id is not None and obj.data.users > 1:
+            obj.data = obj.data.copy()
         fallback = obj.data.attributes.get("reprojection_fallback_material")
         if fallback is None:
             continue
@@ -264,14 +288,18 @@ def restore_projection(map_name):
             face.material_index = index
             restored += 1
         obj.data.update()
-    return {"restored_faces": restored}
+        restored_objects.append(_object_selector(obj))
+    report = {"restored_faces": restored}
+    if receiver_asset_id is not None:
+        report.update(receiver_asset_id=receiver_asset_id, restored_object_selectors=restored_objects)
+    return report
 
 
 def reproject_layers(manifest_path, report_dir=None, sample_spacing=12.0,
                      max_subdivisions=24, ownership_nodes=None, texels_per_unit=1,
                      preserve_authored=True, exterior_source=None,
                      hidden_fill="neutral", source_mask_manifest=None,
-                     reproject_authored_nodes=None):
+                     reproject_authored_nodes=None, ownership_asset_id=None):
     """Refresh audited exterior/interior layers without changing geometry visibility.
 
     Receiver ownership comes from the map-specific reviewed recipe, never from
@@ -299,6 +327,9 @@ def reproject_layers(manifest_path, report_dir=None, sample_spacing=12.0,
     if any(not obj.get("source_node") for obj in sources):
         raise ValueError("Every visible working mesh must retain a stable source_node")
     available = {obj["source_node"] for obj in sources}
+    if ownership_asset_id is not None and not any(
+            obj.get("asset_group") == ownership_asset_id for obj in sources):
+        raise ValueError(f"No visible receivers for asset: {ownership_asset_id}")
     reproject_authored_nodes = set(reproject_authored_nodes or ())
     if reproject_authored_nodes - available:
         raise ValueError("Unknown authored texture reset nodes")
@@ -344,10 +375,11 @@ def reproject_layers(manifest_path, report_dir=None, sample_spacing=12.0,
             raise ValueError(f"Missing fallback UV/material: {obj.name}")
     report_dir = Path(report_dir) if report_dir else manifest_path.parent / "reprojection"
     report_dir.mkdir(parents=True, exist_ok=True)
-    # Restore every previous pass before applying the new disjoint partition.
+    # Restore previous passes in the requested scope before applying the partition.
     # This includes receivers omitted from a revised interior recipe.
-    restored = restore_projection(map_name)
-    annotation = roles.annotate_layers(manifest_path)
+    restored = restore_projection(map_name, receiver_asset_id=ownership_asset_id)
+    annotation = (roles.annotate_layers(manifest_path) if ownership_asset_id is None else
+                  roles.annotate_layers(manifest_path, asset_id=ownership_asset_id))
     manifest_hash = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
     recipe_hash = hashlib.sha256(json.dumps(interiors, sort_keys=True).encode()).hexdigest()
     retained = roles.projection_occluders(manifest, available)
@@ -368,6 +400,14 @@ def reproject_layers(manifest_path, report_dir=None, sample_spacing=12.0,
     for label, source, receivers, occluders in passes:
         exclusions=component_exclusions.get(label.removeprefix('interior-')) if label.startswith('interior-') else None
         receiver_selectors=receiver_components.get(label)
+        if ownership_asset_id is not None:
+            from reveal_components import filter_receivers
+            scoped = filter_receivers(
+                [obj for obj in sources if obj.get("source_node") in receivers],
+                receiver_selectors, available_objects=working.all_objects)
+            scoped = [obj for obj in scoped if obj.get("asset_group") == ownership_asset_id]
+            if not scoped:
+                continue
         from projection_regions import region_record
         region = (region_record(manifest,manifest_path.parent,label.removeprefix('interior-'),
                   source,paths['exterior'],set(exterior_occluders)|set(receivers),covered_components=exclusions) if label != 'exterior' else None)
@@ -377,9 +417,12 @@ def reproject_layers(manifest_path, report_dir=None, sample_spacing=12.0,
                                max_subdivisions=max_subdivisions,
                                receiver_nodes=receivers, occluder_nodes=occluders,
                                projection_label=label, exclude_occluder_components=exclusions,
-                               receiver_components=receiver_selectors)
+                               receiver_components=receiver_selectors,
+                               receiver_asset_id=ownership_asset_id)
         reports.append(report)
         bake_receivers = receivers if ownership_nodes is None else sorted(set(receivers) & set(ownership_nodes))
+        if ownership_asset_id is not None:
+            bake_receivers = sorted(set(bake_receivers) & {obj.get("source_node") for obj in scoped})
         if bake_receivers:
             ownership_reports.append(baking.bake(
                 map_name, source, report_dir / (label + '-ownership.json'),
@@ -390,6 +433,7 @@ def reproject_layers(manifest_path, report_dir=None, sample_spacing=12.0,
                 projection_region=region,
                 exclude_occluder_components=exclusions,
                 receiver_components=receiver_selectors,
+                receiver_asset_id=ownership_asset_id,
                 reproject_authored_nodes=sorted(reproject_authored_nodes & set(bake_receivers))))
         per_object = {entry["object"]: entry for entry in report["objects"]}
         for obj in sources:
@@ -422,5 +466,9 @@ def reproject_layers(manifest_path, report_dir=None, sample_spacing=12.0,
                   "Ground remains on its existing cleaned atlas; no ground synthesis performed.",
                   "Hidden texels use the requested fill; authored materials survive unless their nodes explicitly require fresh projection.",
                   "Face assignment counts describe the preliminary projection; ownership bake reports describe final texel visibility."]}
+    if ownership_asset_id is not None:
+        report["ownership_asset_id"] = ownership_asset_id
+        report["projected_object_selectors"] = [selector for item in reports
+                                                for selector in item["projected_object_selectors"]]
     (report_dir / "layers-report.json").write_text(json.dumps(report, indent=2) + "\n")
     return report

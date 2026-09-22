@@ -282,7 +282,7 @@ def projection_occluder_additions(manifest):
     return result
 
 
-def annotate_layers(manifest_path):
+def annotate_layers(manifest_path, asset_id=None):
     import bpy
     path = Path(manifest_path).resolve()
     manifest = json.loads(path.read_text())
@@ -306,9 +306,12 @@ def annotate_layers(manifest_path):
         if declared - available:
             raise ValueError(f'Missing authored projection nodes: {sorted(declared - available)}')
     occluders = projection_occluders(manifest, available)
-    working['reveal_manifest_path'] = str(path)
+    if asset_id is None:
+        working['reveal_manifest_path'] = str(path)
     annotated = []
     for obj in objects:
+        if asset_id is not None and obj.get('asset_group') != asset_id:
+            continue
         node = obj['source_node']
         interior=[]
         for patch,nodes in receivers.items():
@@ -330,12 +333,15 @@ def annotate_layers(manifest_path):
         obj['projection_layer_manifest'] = str(path)
         if interior:
             annotated.append({'name': obj.name, 'source_node': node, 'patches': interior})
-    bpy.context.scene['projection_layer_manifest'] = str(path)
+    if asset_id is None:
+        bpy.context.scene['projection_layer_manifest'] = str(path)
     report = {'map': manifest['map'], 'interior_receivers': receivers,
               'projection_occluders': occluders,
               'projection_occluder_audit': projection_occluder_audit(manifest),
               'annotated_meshes': annotated,
               'notes': 'Sight activation and rendered cutaway geometry are independent. Candidate overlap does not authorize removal.'}
+    if asset_id is not None:
+        report['asset_id'] = asset_id
     (path.parent / 'receiver-assignments.json').write_text(json.dumps(report, indent=2) + '\n')
     return report
 

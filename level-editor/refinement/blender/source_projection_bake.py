@@ -20,7 +20,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
          elevation_deg=35.0, preserve_authored=True, source_mask_manifest=None,
          hidden_fill="neutral", synthesis_cache=None, reproject_authored_nodes=None,
          hidden_sampler=None, projection_region=None, exclude_occluder_components=None,
-         receiver_components=None):
+         receiver_components=None, receiver_asset_id=None):
     import bpy
     import numpy as np
     from mathutils import Vector
@@ -45,6 +45,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
     from reveal_components import filter_receivers
     receivers=filter_receivers(receivers,receiver_components,
         available_objects=bpy.data.collections[map_name + ' Working'].all_objects)
+    if receiver_asset_id is not None:
+        receivers = [obj for obj in receivers if obj.get("asset_group") == receiver_asset_id]
     reproject_authored_nodes = set(reproject_authored_nodes or ())
     if reproject_authored_nodes - {o.get("source_node") for o in receivers}:
         raise ValueError("Authored texture reset must name receiver nodes")
@@ -117,6 +119,12 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
               "limitations": ["Geometry outside the artwork silhouette must still be corrected geometrically.",
                               "Reveal layers require explicit retained occluders matching their source artwork.",
                               "Ground cleanup and explicit projection_preserve materials are retained."]}
+    if receiver_asset_id is not None:
+        report["receiver_asset_id"] = receiver_asset_id
+        report["projected_object_selectors"] = [
+            {"object": obj.name, "source_node": obj.get("source_node"),
+             "asset_group": obj.get("asset_group"),
+             "projection_component": obj.get("projection_component")} for obj in receivers]
     light = Vector((-.35, -.45, .82)).normalized()
     for object_index, obj in enumerate(receivers):
         if object_index % 25 == 0:
