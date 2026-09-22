@@ -16,8 +16,9 @@ def main():
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
     for workspace in args.workspaces:
         cases=[('stored-materials',workspace/'modified/views.json')]
-        if workspace.name=='leicester-south-gatehouse':
-            cases += [('stored-materials-'+state,workspace/f'inspection/states/patch-004/{state}/views.json')
+        patch={'leicester-south-gatehouse':'patch-004','leicester-west-wing':'patch-000'}.get(workspace.name)
+        if patch:
+            cases += [('stored-materials-'+state,workspace/f'inspection/states/{patch}/{state}/views.json')
                       for state in ('covered','revealed')]
         for name,frame in cases:
             output=workspace/'inspection'/name

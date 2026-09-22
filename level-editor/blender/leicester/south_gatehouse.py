@@ -104,8 +104,10 @@ def refine_visibility(workspace):
         selector for selector in visibility['covered']['hidden_components']
         if not (selector['source_node'] in ('building-141', 'building-147')
                 and selector['projection_component'] == 'interior-wall')]
+    visibility['covered']['hidden_nodes'] = [
+        node for node in visibility['covered']['hidden_nodes'] if node != 'building-138']
     evidence = ('Reverse-view material inspection confirms that shared rear/side '
-                'wall pieces remain present in the covered state; their interior '
+                'wall pieces and physical floor remain present in the covered state; their interior '
                 'source faces are concealed by the cover.')
     if evidence not in visibility['evidence']:
         visibility['evidence'] += ' ' + evidence
