@@ -82,12 +82,32 @@ def refine_masks(workspace):
     return {'left_pier': [203, 204], 'floor': [267], 'floor_excludes': [269]}
 
 
+def refine_visibility(workspace):
+    from refinement_workspace import initialize_working_projection
+    path = Path(initialize_working_projection(workspace))
+    manifest = json.loads(path.read_text())
+    visibility = manifest['projection_reviews']['patch-004']['render_visibility']
+    # Rear and side masonry retains its physical exterior face in both states.
+    # Only the removable cover and dedicated chamber props change visibility.
+    visibility['covered']['hidden_components'] = [
+        selector for selector in visibility['covered']['hidden_components']
+        if not (selector['source_node'] in ('building-141', 'building-147')
+                and selector['projection_component'] == 'interior-wall')]
+    evidence = ('Reverse-view material inspection confirms that shared rear/side '
+                'wall pieces remain present in the covered state; their interior '
+                'source faces are concealed by the cover.')
+    if evidence not in visibility['evidence']:
+        visibility['evidence'] += ' ' + evidence
+    path.write_text(json.dumps(manifest, indent=2) + '\n')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('workspace', type=Path)
     parser.add_argument('--cutaway', action='store_true')
     parser.add_argument('--states', action='store_true')
     parser.add_argument('--apertures', action='store_true')
+    parser.add_argument('--states-only', action='store_true')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     workspace = args.workspace.resolve()
     if not (workspace / 'input' / 'views.json').is_file():
@@ -96,6 +116,18 @@ def main():
         raise RuntimeError('Open the worker model.blend, never the baseline')
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     sys.path.insert(0, str(Path(__file__).resolve().parent))
+    if args.states_only:
+        from asset_reference_views import render_states
+        from refinement_workspace import validate
+        refine_visibility(workspace)
+        target = workspace / 'inspection/states'
+        if target.exists():
+            history = workspace / 'inspection/state-history'
+            history.mkdir(exist_ok=True)
+            target.rename(history / uuid.uuid4().hex[:12])
+        render_states(workspace, target)
+        validate(workspace)
+        return
     report_path = workspace / 'geometry-report.json'
     report = json.loads(report_path.read_text()) if report_path.exists() else {}
     eave = refine()
@@ -112,6 +144,7 @@ def main():
         if not apertures.get('reused') or 'apertures' not in report:
             report['apertures'] = apertures
     report['native_masks'] = refine_masks(workspace)
+    refine_visibility(workspace)
     report['recipe_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
     bpy.ops.wm.save_as_mainfile(filepath=str(workspace / 'model.blend'))
     (workspace / 'geometry-report.json').write_text(json.dumps(report, indent=2) + '\n')
