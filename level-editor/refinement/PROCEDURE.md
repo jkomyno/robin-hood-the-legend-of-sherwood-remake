@@ -317,6 +317,13 @@ materials and UVs, including interior meshes in the same logical asset. Never
 apply a covered exterior generated sheet to revealed interior receivers merely
 because they share an asset group or source node.
 
+If an approved thin shell has inverted visible-face normals, diagnose actual
+camera visibility before changing geometry. `texture_two_sided_object_names`
+can explicitly permit absolute-facing view scores for those receiver meshes;
+it still requires first-hit visibility and the editable mask, and changes only
+unknown texture sampling. Record the affected meshes and normal/visibility
+evidence. Do not enable this globally to conceal topology problems.
+
 Create a publication plan using the existing `stage_reviewed_publication.py`
 schema, binding baseline, catalog, scene/collection, map/source paths, imports,
 review manifests and a new output directory. Do not copy Derby's node IDs into

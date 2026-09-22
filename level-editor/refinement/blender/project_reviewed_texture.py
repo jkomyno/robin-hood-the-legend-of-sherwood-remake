@@ -130,6 +130,9 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
     if not targets or (scope is not None and set(scope) != {obj.name for obj in targets}):
         raise ValueError('Texture receiver scope is empty or includes absent/foreign meshes')
     nodes = {obj.get('source_node') for obj in targets}
+    two_sided = set(manifest.get('texture_two_sided_object_names', []))
+    if two_sided - {obj.name for obj in targets}:
+        raise ValueError('Two-sided texture scoring must be inside explicit receiver scope')
     vertices, triangles = [], []
     for obj in objects:
         offset = len(vertices)
@@ -151,7 +154,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
         weights = np.zeros(len(positions))
         blended = np.zeros((len(positions),3))
         # Selection is per texel: occlusion can vary within a single polygon.
-        candidates = sorted(((normal.dot(direction), view, inverse, direction)
+        candidates = sorted((((abs(normal.dot(direction)) if obj.name in two_sided else normal.dot(direction)), view, inverse, direction)
                              for view,inverse,direction in cameras), key=lambda item:item[0], reverse=True)
         for score, view, inverse, direction in candidates:
             if score <= .12:
@@ -229,6 +232,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                 mat['generated_source_mask_evidence_sha256'] = hashlib.sha256(json.dumps(manifest['source_mask_evidence'],sort_keys=True).encode()).hexdigest()
     report = {'asset_id':manifest['asset_id'], 'input_sha256':input_hash,'generated_sha256':image_hash,
               'texture_receiver_object_names':[obj.name for obj in targets],
+              'texture_two_sided_object_names':sorted(two_sided),
               'generated_image':str(Path(image_path).resolve()),
               'source_mask_manifest':mask_manifest,
               'source_mask_evidence':manifest.get('source_mask_evidence'),
