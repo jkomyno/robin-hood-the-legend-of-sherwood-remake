@@ -11,6 +11,15 @@ source=Image.open(root/'reference/mission-patches/H03_Der_MK-initial.png').conve
 out=root/'inspection'/'complete-wall-candidate'/'corners'
 out.mkdir(parents=True,exist_ok=True)
 records=[
+ {'id':'south-023-visible-long-run','box':[320,1812,377,1978],
+  'points':[[329,1828],[329,1848],[333,1858],[333,1841],
+            [336,1850],[336,1870],[340,1879],[340,1862],
+            [343,1871],[343,1891],[347,1900],[347,1882],
+            [351,1904],[351,1926],[355,1933],[355,1920],
+            [359,1923],[359,1944],[361,1947],[361,1936],
+            [365,1940],[365,1960],[367,1963],[367,1955]],
+  'confidence':'RGB front-edge picks; last two gaps are grazing and have about3px uncertainty, roof truncates further evidence',
+  'accepted_for_final_fit':False},
  {'id':'north-025-return-four-gaps','box':[330,1648,397,1765],
   'points':[[337,1738],[337,1758],[343,1748],[343,1728],
             [349,1718],[349,1739],[356,1726],[356,1706],
@@ -73,6 +82,12 @@ wall runs are not yet traced; there is no full-wall residual claim.
 ![Raw source](south-042-six-gaps-raw.png)
 
 ![Numbered corner picks](south-042-six-gaps.png)
+
+## South023 long run approaching the roof
+
+![Raw source](south-023-visible-long-run-raw.png)
+
+![Numbered corner picks](south-023-visible-long-run.png)
 
 ## North, first two gaps
 

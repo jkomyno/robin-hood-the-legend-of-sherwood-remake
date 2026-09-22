@@ -17,7 +17,7 @@ def _project(point):
                    - point.z * math.cos(math.radians(35)), 1))
 
 
-def _wall(source, cuts):
+def _wall(source, cuts, *, notch_depth=26, allow_corner_cuts=False):
     points = [source.matrix_world @ v.co for v in source.data.vertices]
     top = max(p.z for p in points)
     bottom = min(p.z for p in points)
@@ -56,7 +56,7 @@ def _wall(source, cuts):
         for left, right in intervals:
             ta, tb = sorted(((left-qa[axis])/(qb[axis]-qa[axis]),
                              (right-qa[axis])/(qb[axis]-qa[axis])))
-            if not 0 < ta < tb < 1:
+            if not (0 < ta < tb < 1 or allow_corner_cuts and -.02 < ta < tb < 1.02):
                 raise ValueError('Crenel outside audited wall span')
             center = a.lerp(b, (ta+tb)/2)
             center.z = top + 20
@@ -64,7 +64,7 @@ def _wall(source, cuts):
             cutter = bpy.context.object
             cutter.name = 'Temporary audited crenel cutter'
             cutter.rotation_euler.z = math.atan2(direction.y, direction.x)
-            cutter.dimensions = ((b-a).length*(tb-ta), 42, 92)
+            cutter.dimensions = ((b-a).length*(tb-ta), 42, 2 * (20 + notch_depth))
             bpy.context.view_layer.update()
             bpy.context.view_layer.objects.active = obj
             modifier = obj.modifiers.new('Audited crenel', 'BOOLEAN')

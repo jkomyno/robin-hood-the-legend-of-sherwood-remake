@@ -10,13 +10,13 @@ from derby_asset_lower_west_curtain import _wall
 # map pixels. The other side of the opening is derived from the wall footprint.
 # Corner/turret cuts are retained from the original recipe.
 RECIPES={
- 'building-023':[(76,66,1,((1828,1838),(1849,1859),(1870,1880),(1891,1901))),
-                 (66,67,1,((1931,1941),(1952,1962),(1976,1986),(1997,2007),(2018,2028))),
+ 'building-023':[(76,66,1,((1828,1841),(1850,1862),(1871,1882),(1904,1918.7))),
+                 (66,67,1,((1918.3,1920),(1923,1936),(1940,1955),(1976,1986),(1997,2007),(2018,2028))),
                  (80,76,0,((295,310),)),(79,80,0,((265,274),)),
                  (75,74,0,((267,280),)),(74,73,0,((305,319),))],
- 'building-025':[(28,27,0,((337,344),(350,357),(363,370),(376,383))),
+ 'building-025':[(28,27,0,((337,343),(349,356),(362,369),(375,383))),
                  (27,26,0,((334,340),(348,354),(362,368),(376,382)))],
- 'building-042':[(35,36,0,((401,411),(421,431),(441,451),(461,471),(481,491),(501,510)))],
+ 'building-042':[(35,36,0,((401,411),(421,431),(441,451),(461,471),(481,491),(501,511)))],
 }
 working=bpy.data.collections['Derby Working']
 results=[]
@@ -43,10 +43,10 @@ for node,cuts in RECIPES.items():
         top=max(p.z for p in points)
         for v,p in zip(temp.data.vertices,points):
             if p.z>top-.1:p.z+=fit['height_delta'];v.co=inverse@p
-        result=_wall(temp,cuts)
+        result=_wall(temp,cuts,notch_depth=23.5)
         bpy.data.objects.remove(temp,do_unlink=True)
     else:
-        result=_wall(source,cuts)
+        result=_wall(source,cuts,notch_depth=23.5,allow_corner_cuts=node=='building-023')
     result['source_corner_height_fit']=fit
     new=bpy.data.objects[result['object']]
     new.name=old_name+' / source traced'
@@ -65,5 +65,7 @@ for node,cuts in RECIPES.items():
     bpy.data.objects.remove(old,do_unlink=True)
     new.name=old_name
     results.append(result)
-(workspace/'traced-crenel-revision.json').write_text(json.dumps({'status':'CANDIDATE_REQUIRES_VISUAL_REVIEW','source_coordinate_uncertainty_px':2,'recipes':RECIPES,'results':results,'note':'Counts are notch cuts, not merlons. Concealed roof-overlapped repeats extrapolate nearest visible rhythm.'},indent=2)+'\n')
-bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
+output=workspace/'inspection/complete-wall-candidate-v5'
+output.mkdir(parents=True,exist_ok=True)
+(output/'geometry.json').write_text(json.dumps({'status':'CANDIDATE_REQUIRES_VISUAL_REVIEW','source_coordinate_uncertainty_px':2,'notch_depth_world':23.5,'recipes':RECIPES,'results':results,'note':'Counts are cutter operations, not merlons. Two overlapping cuts form one bend opening. Concealed roof-overlapped repeats extrapolate nearest visible rhythm.'},indent=2)+'\n')
+bpy.ops.wm.save_as_mainfile(filepath=str(output/'model.blend'))
