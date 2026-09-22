@@ -63,6 +63,17 @@ def check():
         report = bake('AssetFixture', path/'source.png', path/'front.json', receiver_asset_id='B')
         assert report['known_texels'] == 0 and report['unknown_texels'] > 0
         assert snapshot(back) == untouched
+        # Hidden canonical originals are immutable even under the same asset.
+        original = bpy.data.objects.new("hidden original", back.data.copy())
+        col.objects.link(original)
+        original["source_node"] = "building-001"
+        original["asset_group"] = "A"
+        original.hide_render = True
+        original.data.polygons[0].material_index = 0
+        original.data.attributes["reprojection_fallback_material"].data[0].value = 1
+        hidden_snapshot = snapshot(original)
+        restore_projection("AssetFixture", receiver_asset_id="A")
+        assert snapshot(original) == hidden_snapshot, "Scoped restore mutated hidden canonical original"
         # Restoration also detaches shared mesh data before mutating face slots.
         front.data = back.data
         untouched = snapshot(front)
@@ -82,6 +93,7 @@ def check():
         untouched = snapshot(front)
         report = reproject_layers(path/'layers.json', ownership_asset_id='A')
         assert snapshot(front) == untouched, 'Layer pass changed foreign appearance or annotations'
+        assert snapshot(original) == hidden_snapshot
         assert report['ownership_asset_id'] == 'A'
         assert {s['asset_group'] for s in report['projected_object_selectors']} == {'A'}
         assert all(s['object'] == 'back' for s in report['projected_object_selectors'])

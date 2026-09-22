@@ -118,7 +118,7 @@ def reproject_map(map_name, source_path, report_path, elevation_deg=35.0,
     if material is None:
         material = bpy.data.materials.new(material_name)
     if receiver_asset_id is not None and material.users and any(
-            obj.type == "MESH" and obj.get("asset_group") != receiver_asset_id
+            obj.type == "MESH" and (obj.hide_render or obj.get("asset_group") != receiver_asset_id)
             and material in list(obj.data.materials) for obj in bpy.data.objects):
         material = material.copy()
     material.use_nodes = True
@@ -274,7 +274,7 @@ def restore_projection(map_name, receiver_asset_id=None):
     for obj in bpy.data.collections[map_name + " Working"].all_objects:
         if obj.type != "MESH":
             continue
-        if receiver_asset_id is not None and obj.get("asset_group") != receiver_asset_id:
+        if receiver_asset_id is not None and (obj.hide_render or obj.get("asset_group") != receiver_asset_id):
             continue
         if receiver_asset_id is not None and obj.data.users > 1:
             obj.data = obj.data.copy()

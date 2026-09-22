@@ -310,7 +310,7 @@ def annotate_layers(manifest_path, asset_id=None):
         working['reveal_manifest_path'] = str(path)
     annotated = []
     for obj in objects:
-        if asset_id is not None and obj.get('asset_group') != asset_id:
+        if asset_id is not None and (obj.hide_render or obj.get('asset_group') != asset_id):
             continue
         node = obj['source_node']
         interior=[]
