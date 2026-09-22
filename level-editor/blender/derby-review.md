@@ -2,6 +2,18 @@
 
 ## Current source-traced revision review — 2026-09-22
 
+Lower West north `inspection/north-corner-v6` and south
+`inspection/south-corner-fit-v7` are now refreshed pending-review candidates.
+Both retain closed full walls and have fresh 48-degree source projections.
+North changes only025; south changes only023/042. Merge those disjoint nodes,
+not either worker's whole scene. Source comparison/numbered traces and eight
+views are in the gallery; 19 image hashes and new image HTTP responses verified.
+East Hall remains under repair after a seam fix revealed a notch-floor offset.
+Two texture workers are preparing the five approved building fills; they are
+not yet generated or integrated. Supported custom API canvas sizes allow the
+approved input pixels and cameras to remain unchanged. Main Hall needs a fresh
+48-degree lighting input because its approved historical sheet used42.126°.
+
 User approved Great Keep Main Hall (`inspection/pointed-bays-final`) on
 2026-09-22. Model and review-sheet hashes are recorded in the manifest; removed
 from pending review. Two-image texture fill is authorized, with verification
