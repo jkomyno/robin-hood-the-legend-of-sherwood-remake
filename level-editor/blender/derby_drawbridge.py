@@ -30,6 +30,23 @@ def set_pose(obj, applied=False):
         chain['drawbridge_state']=obj['drawbridge_state']
 
 
+def _state_metadata(obj, patch):
+    """Attach explicit endpoint-state metadata to an existing bridge mesh."""
+    obj['drawbridge_pose_angles_degrees']=[0,90]
+    obj['drawbridge_export_mode']='single_hinged_mesh'
+    obj['drawbridge_state_variants']=json.dumps({
+        'initial': {'pose': 0.0, 'angle_degrees': 0.0,
+                    'artwork': patch['initial_graphic']['image'],
+                    'visibility_note': 'raised deck; passage sight blocked'},
+        'applied': {'pose': 1.0, 'angle_degrees': 90.0,
+                    'artwork': patch['applied_graphic']['image'],
+                    'visibility_note': 'lowered deck across the passage'},
+    }, sort_keys=True)
+    obj['drawbridge_animation_note']=(
+        'Runtime should animate this mesh about drawbridge_hinge_matrix from '
+        'initial (raised) to applied (lowered); do not duplicate the deck.')
+
+
 def refine(manifest_path, applied=False):
     manifest_path = Path(manifest_path)
     manifest = json.loads(manifest_path.read_text())
@@ -39,8 +56,12 @@ def refine(manifest_path, applied=False):
     previous = [o for o in collection.objects if o.type == 'MESH' and o.get('source_node') == 'building-267']
     existing = next((o for o in previous if o.get('drawbridge_revision')), None)
     if existing:
+        _state_metadata(existing, patch)
         set_pose(existing, applied)
-        return {'object': existing.name, 'already_applied': True, 'state': existing['drawbridge_state']}
+        return {'object': existing.name, 'already_applied': True,
+                'state': existing['drawbridge_state'],
+                'export_mode': existing['drawbridge_export_mode'],
+                'state_variants': json.loads(existing['drawbridge_state_variants'])}
     source = previous[0]
     sin, cos = math.sin(math.radians(35)), math.cos(math.radians(35))
     # Hinge endpoints and deck tip match both endpoint sprite silhouettes.
@@ -72,7 +93,10 @@ def refine(manifest_path, applied=False):
     obj['mission_patch_ids']=json.dumps([p['id'] for p in manifest['mission_patches']
                                       if p['name'] in ('Derby - Pont_levis01','Derby - Pont_levis01_mecanisme')])
     obj['mission_patch_state_json']=json.dumps(patch['state'])
-    obj['drawbridge_pose_angles_degrees']=[0,90]
+    # Keep the bridge as one hinged mesh.  The mission has two endpoint
+    # artworks (raised/initial and lowered/applied), but they are poses of the
+    # same deck and must not be exported as two overlapping static assets.
+    _state_metadata(obj, patch)
     obj['drawbridge_sight_note']='Raised state blocks sight; applied state retains the lowered deck mesh.'
     obj['projection_layer']='exterior'
     uv=mesh.uv_layers.new(name='Drawbridge state artwork')
@@ -127,5 +151,7 @@ def refine(manifest_path, applied=False):
         p=floor.data.vertices[loop.vertex_index].co;floor_uv.data[loop.index].uv=(p.x/image_width,1-(-p.y*sin-p.z*cos)/image_height)
     set_pose(obj,applied)
     return {'object':obj.name,'source_node':'building-267','planks':12,'state':obj['drawbridge_state'],
+            'export_mode':obj['drawbridge_export_mode'],
+            'state_variants':json.loads(obj['drawbridge_state_variants']),
             'hinge_endpoints':[list(left),list(right)],'deck_length':length,
             'limitation':'Suspension chains use continuous iron strands; individual links and winch hardware remain unmodeled.'}
