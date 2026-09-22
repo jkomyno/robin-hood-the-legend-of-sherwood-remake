@@ -14,6 +14,7 @@ from mathutils import Vector
 
 ASSET='derby-lower-west-curtain'
 TARGET_COUNTS={'building-023':15,'building-025':9,'building-042':8}
+ORIGINAL_COUNTS={'building-023':11,'building-025':6,'building-042':5}
 NORTH={'building-023','building-025'}
 SOUTH={'building-042'}
 
@@ -82,7 +83,9 @@ def _box_mesh(obj, centers, target):
     mesh.attributes.new('reprojection_fallback_material','INT','FACE')
     obj.data=mesh
     obj['lower_west_merlon_revision']='source-phase-v2'
-    return {'source_node':obj.get('source_node'),'before_count':len(old),'after_count':target,
+    node=obj.get('source_node')
+    return {'source_node':node,'before_count':ORIGINAL_COUNTS.get(node,len(old)),
+            'measured_previous_count':len(old),'after_count':target,
             'path_length':total,'spacing':spacing,'depth':depth,'width':width}
 
 def apply():

@@ -4,30 +4,33 @@
   "north": [
     {
       "source_node": "building-023",
-      "before_count": 15,
+      "before_count": 11,
+      "measured_previous_count": 15,
       "after_count": 15,
-      "path_length": 487.2021199322582,
-      "spacing": 32.48014132881721,
+      "path_length": 450.7817805756549,
+      "spacing": 30.05211870504366,
       "depth": 19.0,
-      "width": 13.641659358103228
+      "width": 12.621889856118337
     },
     {
       "source_node": "building-025",
-      "before_count": 9,
+      "before_count": 6,
+      "measured_previous_count": 9,
       "after_count": 9,
-      "path_length": 254.76091938558153,
-      "spacing": 28.30676882062017,
-      "depth": 19.0,
-      "width": 11.888842904660471
+      "path_length": 226.1280686453769,
+      "spacing": 25.125340960597434,
+      "depth": 18.998036702473957,
+      "width": 10.552643203450922
     }
   ],
   "south": [
     {
       "source_node": "building-042",
-      "before_count": 8,
+      "before_count": 5,
+      "measured_previous_count": 8,
       "after_count": 8,
-      "path_length": 124.67457357642955,
-      "spacing": 15.584321697053694,
+      "path_length": 109.08983748388556,
+      "spacing": 13.636229685485695,
       "depth": 19.0,
       "width": 10.0
     }
