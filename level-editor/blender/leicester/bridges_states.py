@@ -22,10 +22,13 @@ def main():
         raise SystemExit(0)
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('mode',choices=['prepare','refine']);parser.add_argument('asset',choices=BRIDGES)
-    parser.add_argument('state',choices=['initial','applied']);parser.add_argument('--geometry-only',action='store_true');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
+    parser.add_argument('state',choices=['initial','applied']);parser.add_argument('--geometry-only',action='store_true')
+    parser.add_argument('--workspace',type=Path);parser.add_argument('--framing-padding',type=float)
+    args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
     patch,initial,applied,oldmask,newmask=BRIDGES[args.asset]
     workspace=ROOT/'round-1/assets-v2'/args.asset
     if args.state=='applied':workspace=ROOT/'round-1/bridge-applied'/args.asset
+    if args.workspace:workspace=args.workspace.resolve()
     native=json.loads(Path('datadirs/fullgame_gog_hackable/Data/Levels/Leicester.rhp.json').read_text())
     statespath=ROOT/'bridge-evidence/native-states/states.json'
     states=json.loads(statespath.read_text());record=next(p for p in states['patches'] if p['id']==f'patch-{patch:03}')
@@ -49,7 +52,7 @@ def main():
                 visible=obj.get('source_node')==f'building-{initial if args.state=="initial" else applied:03}'
                 obj.hide_render=not visible;obj.hide_viewport=not visible
         bpy.context.view_layer.update()
-        prepare(workspace,**kw,framing_padding=1.65 if args.state=='initial' else 1.15)
+        prepare(workspace,**kw,framing_padding=args.framing_padding or (1.65 if args.state=='initial' else 1.15))
         return
     if Path(bpy.data.filepath).resolve()!=workspace/'model.blend':raise RuntimeError('Open the endpoint worker model')
     validate(workspace);config=json.loads((workspace/'workspace.json').read_text());collection=bpy.data.collections[config['collection_name']]
@@ -90,14 +93,22 @@ def main():
         changes.append({'source_node':obj['source_node'],'state':obj['drawbridge_state'],'visible':visible,'bottom_heights':bottom,'vertices':n*2,'faces':n+2})
     from bridges_east_hardware import refine_hardware
     hardware=refine_hardware(workspace,args.asset,args.state)
+    if args.asset=='leicester-south-drawbridge':
+        from bridges_hardware import refine_hardware as refine_south_hardware
+        hardware=refine_south_hardware(workspace,args.asset,args.state)
+        maskpath=Path(config['source_mask_manifest']);masks=json.loads(maskpath.read_text())
+        assignments=masks['projections']['exterior']['assignments']
+        assignments[:]=[entry for entry in assignments if not str(entry.get('projection_component','')).startswith('south ')]
+        assignments.extend(hardware['assignments'])
+        maskpath.write_text(json.dumps(masks,indent=2)+'\n')
     bpy.context.view_layer.update();validate(workspace)
     report={'asset_id':args.asset,'state':args.state,'recipe_sha256':sha(__file__),
        'endpoint_evidence_sha256':sha(statespath),'source_sha256':sha(source),'source_frame':record[args.state+'_graphic'],
        'changes':changes,'hardware':hardware,
-       'recipe_dependencies':{'bridges_east_hardware.py':sha(Path(__file__).with_name('bridges_east_hardware.py'))},
+       'recipe_dependencies':{name:sha(Path(__file__).with_name(name)) for name in ['bridges_east_hardware.py','bridges_hardware.py']},
        'hinge_height':hinge,'exclusive_visible_leaf_count':sum(not o.hide_render for o in target),
        'status':'refinement in progress','projection_status':'STALE','source_supported':'Native endpoint images separately confirm raised initial and lowered applied leaves; the endpoint collision components identify their footprints. Lower raised leaf is trimmed to adjacent deck hinge height.',
-       'limitations':['Chains, lifting beams and coupled mechanism geometry remain incomplete.','Endpoint composites apply this bridge independently; simultaneous coupled mechanism state not validated.','Native collision slab depth approximates timber thickness; all hidden faces remain neutral.', 'East village raised hinge width is reconciled with its lowered deck; upper extent uses the same physical leaf length and remains inferred behind the tower.','The two endpoint meshes are explicit states; no interpolated hinge animation has been approved.']}
+       'limitations':['Chains use slender closed envelopes; individual links and coupled mechanism geometry remain unmodeled.','Endpoint composites apply this bridge independently; simultaneous coupled mechanism state not validated.','Native collision slab depth approximates timber thickness; all hidden faces remain neutral.', 'East village raised hinge width is reconciled with its lowered deck; upper extent uses the same physical leaf length and remains inferred behind the tower.','The two endpoint meshes are explicit states; no interpolated hinge animation has been approved.']}
     if report['exclusive_visible_leaf_count']!=1:raise RuntimeError('Mixed bridge endpoints')
     (workspace/'inspection').mkdir(exist_ok=True);(workspace/'inspection/bridge-state.json').write_text(json.dumps(report,indent=2)+'\n')
     bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
