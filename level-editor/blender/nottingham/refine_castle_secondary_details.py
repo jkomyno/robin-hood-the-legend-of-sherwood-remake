@@ -401,7 +401,7 @@ def candidate(workspace, reviewed):
     ready=reviewed and short in ['churchyard-graves','castle-gate-west-tower','castle-watchtower','churchyard-wall','castle-courtyard-shelter']
     write(workspace/'candidate.json',{'version':1,'asset_id':config['asset_id'],
         'geometry_reviewed':reviewed,'geometry_refined':True,
-        'status':'ready-for-approval' if ready else 'fix-needed' if reviewed else 'refinement-in-progress',
+        'status':'ready-for-user' if ready else 'fix-needed' if reviewed else 'refinement-in-progress',
         'inspected_views':list(range(8)) if reviewed else [],'recipe':str(Path(__file__).resolve()),
         'model_sha256':sha(workspace/'model.blend'),'modified_views_sha256':sha(workspace/'modified/views.json'),
         'changes':[item['change'] for item in report['changes']], 'limitations':[LIMITS[short]],'user_approval':'pending'})
