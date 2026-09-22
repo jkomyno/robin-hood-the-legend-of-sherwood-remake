@@ -42,7 +42,12 @@ def select_tooling(directory=None):
 def freeze(source, destination):
     source, destination = Path(source).resolve(strict=True), Path(destination).resolve()
     # Capture once: another session may be editing the source tree concurrently.
-    captured = {path.name: path.read_bytes() for path in sorted(source.glob("*.py"))}
+    directories = [source]
+    shared = EDITOR / 'refinement/blender'
+    if source in ((EDITOR / 'blender').resolve(), shared.resolve()):
+        directories = [EDITOR / 'blender', shared]
+    paths = {path.name: path for directory in directories for path in sorted(directory.glob('*.py'))}
+    captured = {name: path.read_bytes() for name, path in paths.items()}
     if not captured:
         raise ValueError("No Python helper files found")
     files = {name: hashlib.sha256(data).hexdigest() for name, data in captured.items()}
@@ -52,7 +57,8 @@ def freeze(source, destination):
         snapshot.mkdir(parents=True)
         for name, data in captured.items():
             (snapshot / name).write_bytes(data)
-        (snapshot / "manifest.json").write_text(json.dumps({"version": 1, "files": files}, indent=2) + "\n")
+        (snapshot / "manifest.json").write_text(json.dumps({"version": 1, "files": files,
+            'sources': {name: str(path.resolve()) for name, path in paths.items()}}, indent=2) + "\n")
     evidence = select_tooling(snapshot)
     pointer = destination / "current.json"
     temporary = destination / ".current.json.tmp"
@@ -63,7 +69,7 @@ def freeze(source, destination):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", type=Path, default=EDITOR / "blender")
+    parser.add_argument("--source", type=Path, default=EDITOR / "refinement/blender")
     parser.add_argument("--output", type=Path, default=DEFAULT_ROOT)
     parser.add_argument("--verify", type=Path, help="Verify an existing snapshot instead of freezing current helpers")
     args = parser.parse_args()

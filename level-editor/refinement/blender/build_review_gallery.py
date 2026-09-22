@@ -42,15 +42,19 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             if (output / "reports").exists():
                 shutil.copytree(output / "reports", archive / "reports")
     records, cards = [], []
+    status_counts = data.get('status_counts', {})
+    status_summary = ('<p>' + html.escape(', '.join(
+        f'{count} {status}' for status, count in sorted(status_counts.items()))) +
+        '.</p>') if status_counts else ''
     missing = data.get('without_packets', [])
     missing_section = ''
     if missing:
         rows = ''.join('<tr><td>' + html.escape(item['name']) + '</td><td><code>' +
                        html.escape(item['id']) + '</code></td><td>' + html.escape(item['status']) +
-                       '</td></tr>' for item in missing)
+                       '</td><td>' + html.escape(item.get('reason', '')) + '</td></tr>' for item in missing)
         missing_section = ('<section><h2>Assets awaiting complete review packets</h2>'
                            '<p>These assets are still in progress and are not ready for approval.</p>'
-                           '<table><thead><tr><th>Asset</th><th>ID</th><th>Status</th></tr></thead>'
+                           '<table><thead><tr><th>Asset</th><th>ID</th><th>Status</th><th>Details</th></tr></thead>'
                            '<tbody>' + rows + '</tbody></table></section>')
     for number, item in enumerate(items, 1):
         asset_id = item["id"]
@@ -142,7 +146,8 @@ nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}a{color:#afd3ff}nav a{padd
 article{padding:20px 0 40px;border-top:1px solid #455064;scroll-margin-top:15px}.status{color:#ffd898;font-weight:600}
 .sheets{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}figcaption{padding:8px 0;color:#c2cddd}
 img{display:block;width:100%;background:black}select{font:inherit;padding:6px;border-radius:5px}
-table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px;border-bottom:1px solid #455064}
+table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px;border-bottom:1px solid #455064;overflow-wrap:anywhere}
+[hidden]{display:none!important}
 figure[data-kind$=context] img{width:auto;max-width:100%;max-height:400px}figure[data-kind$=context]{grid-column:1/-1}
 body[data-mode=solid] figure[data-kind$=textured],body[data-mode=textured] figure[data-kind$=solid]{display:none}
 body:not([data-mode=both]) .sheets{grid-template-columns:1fr}
@@ -154,12 +159,26 @@ Click any sheet for its full resolution. Review status does not imply user appro
       +(f' plus {data["supplemental_count"]} separate terrain packet' if data.get('supplemental_count') else '')+
       f'; {len(items)} pending review packets'
       f' and {len(missing)} assets awaiting packets.</strong></p>' if 'total_groups' in data else '')+'''
+'''+status_summary+'''
 '''+(f'<p><strong>Approved models are hidden. {len(items)} displayed packets; '
       f'{sum(item["status"] == "ready-for-user" for item in items)} ready for your decision.</strong> '
       'Items marked validation-pending or fix-needed are still being worked on.</p>' if pending_only else '')+'''
 <label>Show <select id="mode"><option value="both">Both sheets</option><option value="solid">Solid geometry</option>
-<option value="textured">Original textures + gray</option></select></label><nav>'''+nav+'''</nav></header><main>'''+"".join(cards)+missing_section+'''</main>
-<script>document.querySelector('#mode').addEventListener('change',e=>document.body.dataset.mode=e.target.value);</script></body></html>'''
+<option value="textured">Original textures + gray</option></select></label>
+<label>Assets <select id="readiness"><option value="all">All pending assets</option>
+<option value="ready">Ready for review</option></select></label><nav>'''+nav+'''</nav></header><main>'''+"".join(cards)+missing_section+'''</main>
+<script>
+document.querySelector('#mode').addEventListener('change',e=>document.body.dataset.mode=e.target.value);
+document.querySelector('#readiness').addEventListener('change',event=>{
+  const onlyReady=event.target.value==='ready';
+  for(const card of document.querySelectorAll('article')){
+    const hidden=onlyReady&&card.querySelector('.status').textContent!=='ready-for-user';
+    card.hidden=hidden;
+    const link=document.querySelector('nav a[href="#'+card.id+'"]');
+    if(link) link.hidden=hidden;
+  }
+});
+</script></body></html>'''
     (output / "index.html").write_text(document)
     (output / "evidence.json").write_text(json.dumps({"source_index": str(index_path), "items": records,
                                                     "without_packets": missing}, indent=2)+"\n")

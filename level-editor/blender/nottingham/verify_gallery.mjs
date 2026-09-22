@@ -43,7 +43,16 @@ try {
     mode.value='solid'; mode.dispatchEvent(new Event('change'));
     const solidToggle = document.body.dataset.mode === 'solid';
     mode.value='both'; mode.dispatchEvent(new Event('change'));
+    const readiness = document.querySelector('#readiness');
+    if (!readiness) throw new Error('Ready-for-review filter is missing');
+    readiness.value='ready'; readiness.dispatchEvent(new Event('change'));
+    const visibleReady = cards.filter(card => !card.hidden);
+    const readyFilter = visibleReady.every(card => card.querySelector('.status').textContent === 'ready-for-user');
+    const readyCards = visibleReady.length;
+    const readyNavigation = [...document.querySelectorAll('nav a')].filter(link => !link.hidden).length;
+    readiness.value='all'; readiness.dispatchEvent(new Event('change'));
     return {title:document.title, cards:cards.length,
+      readyFilter, readyCards, readyNavigation,
       namedCards:cards.every(card => !!card.querySelector('code')?.textContent),
       reportLinks:cards.every(card => card.querySelectorAll('a[href^="reports/"]').length >= 2),
       navigation:document.querySelectorAll('nav a').length,
@@ -52,8 +61,10 @@ try {
       solidToggle, horizontalOverflow:document.documentElement.scrollWidth > innerWidth};
   })()`);
   result.expectedCards = evidence.items.length;
+  result.expectedReadyCards = evidence.items.filter(item => item.status === 'ready-for-user').length;
   result.status = result.cards === result.expectedCards && result.cards > 0 && result.namedCards &&
     result.reportLinks && result.navigation === result.cards && result.solidToggle &&
+    result.readyFilter && result.readyCards === result.expectedReadyCards && result.readyNavigation === result.readyCards &&
     result.firstImages.every(image => image.loaded) && !result.horizontalOverflow ? 'PASS' : 'FAIL';
   await writeFile(join(output, 'gallery-browser.json'), JSON.stringify(result, null, 2) + '\n');
   const screenshot = await new Promise((resolve, reject) => {

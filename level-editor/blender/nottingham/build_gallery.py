@@ -14,7 +14,7 @@ Only decisions bound to the current model and packet can hide approved cards.
 import argparse
 from collections import Counter
 import hashlib
-import html
+import importlib.util
 import json
 from pathlib import Path
 import sys
@@ -311,6 +311,8 @@ def main(argv=None):
     parser.add_argument("--tooling-dir", type=Path,
                         help="Frozen helper snapshot; defaults to tooling/current.json")
     args = parser.parse_args(argv)
+    if args.approvals is None and (root / 'approvals.json').exists():
+        args.approvals = root / 'approvals.json'
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from freeze_tooling import select_tooling
     tooling = select_tooling(args.tooling_dir)
@@ -403,7 +405,29 @@ def main(argv=None):
         evidence["user_decision"] = approval
         evidence["user_decision_matches_revision"] = approval_current
         user_approval = "pending"
-        if approval_current:
+        if approval and approval.get('projection_review') == 'revision-requested':
+            user_approval = 'geometry-approved; projection-pending'
+            correction_path = evidence['worker_report'].get('projection_correction')
+            correction = None
+            if correction_path:
+                correction_path = Path(correction_path)
+                if not correction_path.is_absolute():
+                    correction_path = workspace / correction_path
+                correction = read(correction_path)
+                require(correction.get('status') == 'PASS'
+                        and correction['approved_model_sha256'] == approval['model_sha256']
+                        and correction['model_sha256'] == evidence['model_sha256']
+                        and correction['geometry_before_sha256'] == correction['geometry_after_sha256']
+                        and len(correction['geometry_before_sha256']) == 64
+                        and correction.get('inspected_views') == list(range(8)),
+                        'Projection correction lacks proof that approved geometry was preserved')
+                evidence['projection_correction'] = {**correction, 'report_sha256': sha(correction_path)}
+            if correction is None:
+                status = 'fix-needed'
+            limitations.append('Geometry explicitly approved. ' + (
+                'Projection corrected without geometry changes; projection review remains pending.' if correction else
+                'The reported projection clipping is being corrected.'))
+        elif approval_current:
             user_approval = approval["decision"]
             if user_approval == "approved":
                 status = "approved"
@@ -420,6 +444,7 @@ def main(argv=None):
                 "geometry_reviewed": evidence["geometry_reviewed"],
                 "review_outcome": evidence["review_outcome"], "user_decision": approval,
                 "notes": limitations,
+                "model": str(workspace / "model.blend"),
                 "solid": str(workspace / "modified/solid.png"),
                 "textured": str(workspace / "modified/textured.png"),
                 "context": str(workspace / "modified/context.png"),
@@ -442,6 +467,7 @@ def main(argv=None):
             state_item = {**item, 'id': asset['id'] + '--' + key,
                           'name': asset['name'] + ' — ' + key.removeprefix('animation-').replace('-', ' '),
                           'parent_asset_id': asset['id'],
+                          'notes': ['Additional state view for ' + asset['id'] + '.'] + list(item['notes']),
                           'solid': str(folder / 'solid.png'),
                           'textured': str(folder / 'textured.png'),
                           'context': str(folder / 'context.png')}
@@ -453,8 +479,13 @@ def main(argv=None):
                          "review_outcome": evidence["review_outcome"], "user_approval": user_approval})
     manifest = output.parent / (output.name + "-candidates.json")
     progress_path = output.parent / (output.name + "-progress.json")
-    write(manifest, {"version": 1, "map": "Nottingham", "items": items, "tooling": tooling})
     counts = dict(Counter(item["status"] for item in progress))
+    shared_gallery = Path(__file__).resolve().parents[2] / 'refinement/blender/build_review_gallery.py'
+    gallery_tooling = {'path': str(shared_gallery), 'sha256': sha(shared_gallery)}
+    write(manifest, {"version": 1, "map": "Nottingham", "items": items, "tooling": tooling,
+                     'gallery_tooling': gallery_tooling, 'total_groups': len(ids) - 1,
+                     'supplemental_count': 1, 'status_counts': counts,
+                     'without_packets': [row for row in progress if row['status'] in ('missing', 'validation-pending')]})
     write(progress_path, {"version": 1, "map": "Nottingham", "catalog": str(args.catalog.resolve()),
                          "catalog_sha256": sha(args.catalog), "total_assets": len(ids),
                          "gallery_assets": sum('parent_asset_id' not in item for item in items),
@@ -463,25 +494,10 @@ def main(argv=None):
                          "approval_records_sha256": sha(args.approvals) if args.approvals else None,
                          "tooling": tooling,
                          "complete": len(progress) > 0 and all(row["status"] == "approved" for row in progress)})
-    from build_review_gallery import build
-    build(manifest, output, pending_only=True, map_name="Nottingham")
-    # Missing packets must remain visible in the whole-map review handoff.
-    summary = '<section aria-label="Whole map progress"><h2>Whole map progress</h2><p>'
-    summary += html.escape(f'{len(ids)} assets including terrain. ' + ', '.join(
-        f'{count} {status}' for status, count in sorted(counts.items()))) + '.</p>'
-    pending = [row for row in progress if row['status'] in ('missing', 'validation-pending')]
-    if pending:
-        summary += '<details><summary>Packets still being completed or validated</summary><ul>'
-        summary += ''.join('<li><code>' + html.escape(row['id']) + '</code>: ' +
-                           html.escape(row.get('reason', row['status'])) + '</li>' for row in pending)
-        summary += '</ul></details>'
-    summary += '</section>'
-    index = output / 'index.html'
-    document = index.read_text()
-    body_start = document.find('<body')
-    require(body_start >= 0, 'Gallery template has no body insertion point')
-    body_end = document.index('>', body_start) + 1
-    index.write_text(document[:body_end] + summary + document[body_end:])
+    spec = importlib.util.spec_from_file_location('_shared_review_gallery', shared_gallery)
+    gallery_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gallery_module)
+    gallery_module.build(manifest, output, pending_only=True, map_name="Nottingham")
     print(json.dumps({"progress": str(progress_path), "counts": counts,
                       "gallery": str(output / "index.html")}))
 

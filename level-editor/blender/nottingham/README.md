@@ -16,7 +16,9 @@ V11 baseline contains only existing source nodes; component sidecars are applied
 to the owning workspace after its geometry recipe creates those components.
 Unknown ownership is represented by a rejection mask and neutral shading.
 
-`freeze_tooling.py` snapshots the shared Blender helpers. Recipes select the
+`freeze_tooling.py` snapshots implementations from `level-editor/refinement/blender`
+with supporting helpers from `level-editor/blender`; compatibility entry points
+are replaced by their implementations in each new snapshot. Recipes select the
 snapshot referenced by `tooling/current.json`; changing live shared helpers does
 not alter an existing worker's implementation. `render_slots.py` limits expensive
 Blender work to two concurrent processes. Use background Blender with
@@ -36,6 +38,12 @@ Rebuild and check the pending review gallery:
 python3 level-editor/blender/nottingham/build_gallery.py
 node level-editor/blender/nottingham/verify_gallery.mjs
 ```
+
+The collector calls the current shared HTML generator directly, preserving its
+asset-ID/content-hash filenames and stable anchors. The ready-for-review filter
+and missing-packet presentation live in that shared generator. Existing render
+packets retain their pinned helper versions; new revisions can select a freshly
+captured common-tooling snapshot explicitly with `--tooling-dir`.
 
 The builder checks catalog membership, immutable files, mask authority, fixed
 cameras, projection partitions, and worker reports bound to model and packet
@@ -60,6 +68,9 @@ reproducible commands.
 
 Geometry approval is a separate explicit user decision, bound to the model,
 modified views, and any state bundle hashes. Pass those records with
-`build_gallery.py --approvals <file>`. Source grouping preferences are not geometry
+`build_gallery.py --approvals <file>`; `approvals.json` is detected by default.
+An approved model with a requested projection correction stays visible. A
+correction must prove that its geometry hash matches the approved model before
+it can return to projection review. Source grouping preferences are not geometry
 approval. Texture synthesis and editor publication follow the procedure's
 approval gate; an unapproved review packet must not be published.
