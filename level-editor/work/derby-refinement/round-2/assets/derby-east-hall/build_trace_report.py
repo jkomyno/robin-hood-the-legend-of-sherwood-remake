@@ -8,10 +8,10 @@ for file in D.glob('*-source-corners.png'):shutil.copyfile(file,images/file.name
 for file in D.glob('*-residuals.png'):shutil.copyfile(file,images/file.name)
 for file in D.glob('*-actual-edges.png'):shutil.copyfile(file,images/file.name)
 shutil.copyfile(W/'asset-reference/source-context.png',images/'original-context.png')
-for name,folder in [('before',D/'before-48'),('after',D/'recovery-review/modified')]:
+for name,folder in [('before',D/'before-48'),('after',D/'band-review/modified')]:
     for mode in ['solid','textured']:shutil.copyfile(folder/(mode+'.png'),images/(name+'-'+mode+'.png'))
 lines=['# East Hall: source-traced parapet revision',
- '','Status: **source-alignment review; topology repair still required before approval or publication.**',
+ '','Status: **revised exterior geometry ready for visual review; not approved or published.**',
  '', 'The cumulative casement/facade checkpoint is the baseline. Only eight visible parapet meshes were edited. '
  'The rejected historical one-notch rebuild must not be used; it regressed lower facade work.',
  '', '![Unmodified source context](images/original-context.png)',
@@ -49,14 +49,17 @@ lines += ['', '## Eight views — identical framing and 48° sunlight',
  '', '## Validation and remaining limits',
  '', f"- {validation['protected_mesh_count']} protected meshes are unchanged, including hidden historical originals and interior receivers.",
  f"- Lower geometry below z=365 is preserved: maximum float serialization displacement {max(validation['lower_max_displacement'].values()):.7f} world units; no missing lower vertices.",
- '- Zero degenerate faces on the edited meshes. The new foreground seam correction restores the east corner to zero boundary edges and reduces the southwest wall from 61 to one boundary edge, but six nonmanifold edges remain there. Rear-wall boundaries increased from 37 to 127. These are explicit topology blockers, not a watertight-mesh certification.',
+ '- Zero degenerate faces on the edited meshes. East corner and southwest wall both have zero boundary and nonmanifold edges. The southwest internal separator was removed; the transition now uses the planar difference of the preserved lower footprint and source-fitted upper footprint.',
+ '- Rear transition and both cut ends are closed. Its 43 remaining boundary segments all lie on the 37 baseline open boundary segments (some were split at the join plane), with no new boundary outside 0.002 world-unit tolerance. See [boundary-inheritance.json](boundary-inheritance.json). This preserves inherited open geometry rather than claiming the complete building is watertight.',
+ '- The rear notch floor now has a supported band between z=365.01 and z=376. This preserves the observed floor silhouette while joining the altered upper footprint to the lower body. The previous floating floor plane and overlapping southwest separator are gone.',
+ '- Independent lower-facade surface samples are checked against the final mesh in [lower-surface-validation.json](lower-surface-validation.json), in addition to checking retained vertices. Maximum sampled difference is 0.057 world units, below 0.1 source pixel; nonplanar polygon triangulation is not asserted bit-identical.',
  '- Projection was rerun using the accepted casement source assignments plus the reviewed native Hall mask146 envelope on previously unconstrained receivers 192, 194 and 198. '
  'The immutable native-mask checkpoint was initialized from the accepted review hashes, not from modified masks.',
  '- Largest remaining silhouette error is 5.83px at the stair-turret/roof junction. The first stair cap transition has a 3.16px residual. '
  'The roof junction and concealed inner stair-floor edge are not declared solved.',
  '- Interior geometry was not altered. The existing revealed image is a receiver-only diagnostic, not a full gameplay reveal state; its large gray upper walls are unsupported source regions. '
  'No new interior geometry correction is claimed.',
- '', 'Reprojected candidate: [recovery-review/model.blend](recovery-review/model.blend). '
+ '', 'Reprojected candidate: [band-review/model.blend](band-review/model.blend). '
  'Coordinator must inspect the numbered overlays and the remaining limitations before this returns to the approval gallery.']
 (D/'review.md').write_text('\n'.join(lines)+'\n')
 for target in images.iterdir():assert target.stat().st_size>0,target
