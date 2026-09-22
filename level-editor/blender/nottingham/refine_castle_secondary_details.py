@@ -449,6 +449,10 @@ def apply(workspace):
         n=int(obj['source_node'].split('-')[-1])
         if short=='castle-west-courtyard-wall' and n==328:
             v,f,e=west_crown(native[n]['points'])
+        elif short=='castle-west-courtyard-wall' and n==379:
+            points=native[n]['points'];v=[(p['x'],p['y'],p['z_top']-4) for p in points]+[(p['x'],p['y'],p['z_top']) for p in points]
+            f=[[3,2,1,0],[4,5,6,7]]+[[i,(i+1)%4,(i+1)%4+4,i+4] for i in range(4)]
+            e={'change':'Transferred projection strip379 becomes a thin coping slab at its native top instead of an erroneous ground-to-crown wall; four-unit hidden underside inferred.'}
         elif short=='castle-gate-west-tower' and n in (329,331,332):
             v,f,e=gate_crown(native,n)
         elif short=='castle-upper-wall' and n in (360,365,367):
