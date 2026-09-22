@@ -201,6 +201,80 @@ def _platform(sources):
     return report
 
 
+def _forest_form(obj):
+    """Measured trunk taper/root flare and visible leaning firewood poles."""
+    node=obj['source_node'];tag='nottingham_forest_form_v1'
+    if obj.get(tag):return json.loads(obj[tag])
+    before=_hash(_geometry(obj));vertices=[];faces=[]
+    sine,cosine=math.sin(math.radians(35)),math.cos(math.radians(35))
+    def rings(coords):
+        start=len(vertices);count=len(coords[0])
+        for ring in coords:vertices.extend(ring)
+        faces.append(tuple(start+i for i in reversed(range(count))))
+        for row in range(len(coords)-1):
+            for i in range(count):
+                a=start+row*count+i;b=start+row*count+(i+1)%count
+                faces.append((a,b,b+count,a+count))
+        faces.append(tuple(start+(len(coords)-1)*count+i for i in range(count)))
+    if node in {'building-541','building-544'}:
+        points=[obj.matrix_world@v.co for v in obj.data.vertices]
+        cx=(min(p.x for p in points)+max(p.x for p in points))/2
+        cy=(min(p.y for p in points)+max(p.y for p in points))/2
+        height=max(p.z for p in points)
+        profile=([(0,21),(14,16),(30,12.5),(height*.58,12.2),(height,14)]
+                 if node=='building-541' else [(0,25),(10,20),(30,12),(height*.65,10.5),(height,10)])
+        count=20
+        coords=[]
+        for row,(z,radius) in enumerate(profile):
+            coords.append([Vector((cx+radius*math.cos(i*2*math.pi/count),
+                                   cy+radius*math.sin(i*2*math.pi/count),z)) for i in range(count)])
+        rings(coords)
+        changes=['Replaced rectangular trunk with twenty-sided tapered bark volume.',
+                 'Modeled flared root collar from the wider visible footprint and narrower bole.']
+        measurements={'world_center_xy':[cx,cy],'height_radius_profile':profile,
+                      'source_horizontal_extent':[cx-profile[0][1],cx+profile[0][1]],
+                      'source_evidence':'Visible taper and flared root collar in the top-edge forest artwork; trunk continues beyond source-image top.'}
+        inference=['Rear trunk radius continues the observed rounded form.','Root collar is a conservative continuous flare; individual concealed roots are unspecified.',
+                   'Existing top height is retained because the tree continues beyond the artwork; no canopy or complete tree height is inferred.']
+    elif node=='building-542':
+        cx,cy=1833,-140/sine
+        # Seven visible long poles span the front. Five rear and three inner
+        # poles form the documented hidden continuation of the compact pile.
+        for i in range(15):
+            angle=math.pi+i*2*math.pi/12 if i<12 else (i-12)*2*math.pi/3
+            base_radius,top_radius=(16,8.5) if i<12 else (7,3)
+            bottom=Vector((cx+base_radius*math.cos(angle),cy+base_radius*math.sin(angle),1.2))
+            top=Vector((cx+top_radius*math.cos(angle),cy+top_radius*math.sin(angle),(28.5+(i%3)*1.2)/cosine))
+            axis=(top-bottom).normalized();side=axis.cross(Vector((0,0,1))).normalized();up=axis.cross(side).normalized()
+            radius=2.1 if i<7 else 1.8
+            ring=[side*math.cos(j*math.pi/4)*radius+up*math.sin(j*math.pi/4)*radius for j in range(8)]
+            rings([[p+d for d in ring] for p in (bottom,top)])
+        changes=['Replaced the continuous wedge with fifteen separate leaning timber poles and visible cut ends.',
+                 'Seven front poles follow the source bundle; five rear and three inner poles complete the inferred compact pile.']
+        measurements={'source_bundle_center_x':1833,'source_ground_center_y':140,'base_radius_world':16,
+                      'source_cut_end_cluster_y':[107,113],'source_footprint_y':[130,150],
+                      'front_visible_long_poles':7,'hidden_rear_poles':5,'hidden_inner_poles':3,'pole_diameter_world':[3.6,4.2],
+                      'source_evidence':'Seven distinguishable long front timber strips and clustered pale cut ends in the enlarged native crop.'}
+        inference=['Five rear and three inner poles continue the compact pile behind the visible front fan.','Pole thickness, radial section and concealed contact are estimated from the source silhouette.']
+    else:raise ValueError('Unsupported forest form '+node)
+    mesh=bpy.data.meshes.new(obj.name+' / forest silhouette')
+    inverse=obj.matrix_world.inverted();mesh.from_pydata([inverse@v for v in vertices],[],faces);mesh.update()
+    bm=bmesh.new();bm.from_mesh(mesh);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(mesh);bm.free()
+    uv=mesh.uv_layers.new(name='Source projection')
+    for loop in mesh.loops:
+        p=obj.matrix_world@mesh.vertices[loop.vertex_index].co
+        uv.data[loop.index].uv=(p.x/2304,1-(-p.y*sine-p.z*cosine)/3520)
+    for material in obj.data.materials:mesh.materials.append(material)
+    obj.data=mesh;topology=_topology(mesh)
+    if topology['nonmanifold_edges'] or topology['degenerate_faces']:raise ValueError(topology)
+    report={'source_node':node,'recipe':'forest-visible-form','before_geometry_sha256':before,
+            'after_geometry_sha256':_hash(_geometry(obj)),'measurements':measurements,
+            'changes':changes,'inference':inference,'topology':topology,'approval':'pending',
+            'projection_status':'stale; requires modified source projection'}
+    obj[tag]=json.dumps(report,sort_keys=True)
+    return report
+
+
 def refine(asset_id):
     if asset_id not in ASSETS:
         raise ValueError(f'Unsupported environment asset: {asset_id}')
@@ -252,12 +326,21 @@ def refine(asset_id):
     changed = any(report['welded_exact_vertices'] for report in reports)
     stumps = [_round_stump(obj) for obj in sources if obj['source_node'] in {'building-543','building-545'}]
     platform=_platform(sources) if asset_id=='nottingham-southwest-prison-road-props' else None
-    return {'asset_id': asset_id, 'status': 'refined-platform-frame' if platform else ('refined-round-stumps' if stumps else ('refined-connectivity' if changed else 'audited-unchanged')), 'objects': reports,
+    forest=[_forest_form(obj) for obj in sources if obj['source_node'] in {'building-541','building-542','building-544'}]
+    extra=None
+    if asset_id in {'nottingham-castle-west-rocks','nottingham-forest-rock-outcrop'}:
+        from refine_environment_rocks import refine as refine_rocks
+        extra=refine_rocks(asset_id)
+    elif asset_id in {'nottingham-castle-yard-mission-props','nottingham-church-road-mission-props','nottingham-castle-courtyard-ground'}:
+        from refine_environment_props import refine as refine_props
+        extra=refine_props(asset_id)
+    return {'asset_id': asset_id, 'status': 'refined-source-form' if forest or extra else ('refined-platform-frame' if platform else ('refined-round-stumps' if stumps else ('refined-connectivity' if changed else 'audited-unchanged'))), 'objects': reports,
+            'forest_refinements':forest,'asset_refinement':extra,
             'platform_refinement':platform,
             'stump_refinements':stumps,
             'outside_objects_unchanged': True, 'projection_status': 'stale; rerun modified packet',
             'geometry_approval': 'pending', 'texture_generation': 'not started',
-            'limitations': ['Measured platform frame and stair details include conservative concealed supports.' if platform else ('Two cut stumps are rounded from visible contours; other receiver silhouettes are unchanged.' if stumps else 'Only exact coincident receiver vertices are joined; silhouette is unchanged.'),
+            'limitations': ['Source-visible forest, rock or prop form refined; concealed inferences and retained receivers are recorded in asset-specific reports.' if forest or extra else ('Measured platform frame and stair details include conservative concealed supports.' if platform else ('Two cut stumps are rounded from visible contours; other receiver silhouettes are unchanged.' if stumps else 'Only exact coincident receiver vertices are joined; silhouette is unchanged.')),
                             'Hidden structure inferences are recorded per recipe; unaffected receivers retain their open or clipped backs.',
                             'Foliage and architectural foreground pixels need native mask and receiver ownership validation.',
                             'Ground and courtyard remain source-supported surfaces; their unseen undersides are unspecified.']}

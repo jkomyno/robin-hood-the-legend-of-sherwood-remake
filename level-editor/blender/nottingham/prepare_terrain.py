@@ -85,7 +85,7 @@ def main():
     config['baseline_sha256']=sha(output/'baseline.blend')
     # The local edit's complete before/after bounds define all eight fixed cameras.
     points=[]
-    for x,y in refine_terrain.OUTER:
+    for x,y in [p for outer,inner in refine_terrain.BASINS for p in outer]:
         for z in (0,refine_terrain.DEPTH):
             points.append(Vector((x,(-y-z*refine_terrain.COSINE)/refine_terrain.SINE,z)))
     target=sum(points,Vector((0,0,0)))/len(points)
@@ -105,7 +105,7 @@ def main():
     layers=[{'source_path':str(image),'projection_label':'exterior','receiver_nodes':nodes,'occluder_nodes':nodes}]
     framing={'version':1,'asset_id':'nottingham-terrain-ground','tile_size':[args.width,args.height],
              'elevation_degrees':35,'source_sha256':sha(image),'views':views,'lighting':configuration(),
-             'context_crop':{'left':1350,'top':3000,'right':1620,'bottom':3420},
+             'context_crop':{'left':460,'top':2750,'right':1710,'bottom':3520},
              'projection_layers':[dict(layers[0],source_sha256=sha(image))],
              'framing':'Frozen local stream edit before/after bounds, all eight azimuths'}
     if args.frame_manifest:

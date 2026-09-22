@@ -15,16 +15,18 @@ from review_sunlight import render_solids,configuration
 from setup_map import fit_camera
 import refine_terrain
 import refine_village
+import refine_village_secondary
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--workspace',required=True,type=Path)
+    parser.add_argument('--bridge',choices=['main','west'],default='main')
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
     from render_slots import acquire
     acquire()
     workspace=args.workspace.resolve()
-    output=workspace/'inspection/bridge-clearance'
+    output=workspace/('inspection/bridge-clearance-'+args.bridge)
     output.mkdir(parents=True,exist_ok=False)
     frame_records=[]
     clearance=None
@@ -32,16 +34,17 @@ def main():
         bpy.ops.wm.open_mainfile(filepath=str(workspace/file))
         scene=bpy.data.scenes['nottingham Refinement'];bpy.context.window.scene=scene
         sources={obj.get('source_node'):obj for obj in bpy.data.collections['nottingham Working'].all_objects if obj.type=='MESH'}
-        result=refine_village._bridge(sources)
+        result=refine_village._bridge(sources) if args.bridge=='main' else refine_village_secondary.bridge(sources)
         bridge=bpy.data.objects[result['component']]
-        objects=[sources['ground'],sources['building-290'],sources['building-291'],bridge]
+        nodes=['building-290','building-291'] if args.bridge=='main' else ['building-278','building-279','building-280']
+        objects=[sources['ground'],bridge]+[sources[n] for n in nodes]
         if state=='modified':clearance=refine_terrain.validate_bridge_clearance(sources['ground'],bridge)
         cameras=[];records=[]
-        target=Vector((1485,-5465,-35))
+        target=Vector((1485,-5465,-35)) if args.bridge=='main' else Vector((610,-5130,-45))
         points=[Vector((x,(-y-z*refine_terrain.COSINE)/refine_terrain.SINE,z))
-                for x,y in refine_terrain.OUTER for z in (0,refine_terrain.DEPTH)]
+                for x,y in (refine_terrain.OUTER if args.bridge=='main' else refine_terrain.WEST_OUTER) for z in (0,refine_terrain.DEPTH)]
         scene.render.resolution_x=512;scene.render.resolution_y=384;scene.render.pixel_aspect_x=1;scene.render.pixel_aspect_y=1
-        for index,angle in enumerate([0,45,135]):
+        for index,angle in enumerate([0,45,135,180,225,315]):
             data=bpy.data.cameras.new('Bridge clearance view');camera=bpy.data.objects.new(data.name,data)
             scene.collection.objects.link(camera);data.type='ORTHO';data.clip_end=100000
             yaw=math.radians(angle)

@@ -1,8 +1,8 @@
 """Local stream-bed hypothesis below the village bridge, preserving source rays.
 
 No riverbed elevation is directly observed. The candidate uses the lowest
-visible bridge pier (-106 world units) and 14 units of clearance. Its local bank
-boundary is constrained by the source stream; no other terrain is displaced.
+visible bridge pier (-106 world units) and 14 units of clearance. Two inferred local bank transitions surround the complete physical arch
+footprints, including their reverse faces. No terrain outside them is displaced.
 """
 import hashlib
 import json
@@ -15,10 +15,13 @@ from mathutils.bvhtree import BVHTree
 
 SINE = math.sin(math.radians(35))
 COSINE = math.cos(math.radians(35))
-OUTER = [(1400,3050),(1565,3050),(1565,3230),(1495,3370),(1400,3370)]
-INNER = [(1406,3160),(1555,3160),(1564,3190),(1564,3220),(1495,3260),(1406,3260)]
+OUTER = [(1300,2960),(1680,2960),(1680,3500),(1300,3500)]
+INNER = [(1335,3150),(1640,3150),(1640,3310),(1335,3310)]
+WEST_OUTER = [(490,2790),(720,2790),(720,3310),(490,3310)]
+WEST_INNER = [(535,2980),(680,2980),(680,3120),(535,3120)]
+BASINS = [(OUTER, INNER), (WEST_OUTER, WEST_INNER)]
 DEPTH = -120.0
-TAG = 'nottingham_bridge_stream_bed_v1'
+TAG = 'nottingham_bridge_stream_bed_v2'
 
 
 def _hash(value):
@@ -40,36 +43,46 @@ def _inside(point, polygon):
 
 
 def validate_bridge_clearance(ground, bridge):
-    """Report core clearance separately from deliberately retained bank contacts."""
-    vertices=[ground.matrix_world@v.co for v in ground.data.vertices]
-    tree=BVHTree.FromPolygons(vertices,[tuple(p.vertices) for p in ground.data.polygons])
-    view=Vector((0,-COSINE,SINE))
+    """Dense full-depth surface and opening-corridor clearance, both faces."""
+    tree=BVHTree.FromPolygons([ground.matrix_world@v.co for v in ground.data.vertices],
+                             [tuple(p.vertices) for p in ground.data.polygons])
     bridge.data.calc_loop_triangles()
-    samples=[]
-    for triangle in bridge.data.loop_triangles:
-        corners=[bridge.matrix_world@bridge.data.vertices[i].co for i in triangle.vertices]
-        samples.extend(corners)
-        samples.append(sum(corners,Vector((0,0,0)))/3)
-    counts={region:{'samples':0,'camera_occluded':0,'ground_above_surface':0} for region in ['core','bank_transition','outside_local_stream']}
-    core_failures=[]
-    bank_contacts=[]
-    for point in samples:
-        pixel=(point.x,-point.y*SINE-point.z*COSINE)
-        region='core' if _inside(pixel,INNER) else ('bank_transition' if _inside(pixel,OUTER) else 'outside_local_stream')
-        counts[region]['samples']+=1
-        location,normal,index,distance=tree.ray_cast(point+view*10000,-view,10000-.01)
-        if location is not None:
-            counts[region]['camera_occluded']+=1
-            if region=='core':core_failures.append({'pixel':pixel,'world':list(point),'ground_hit':list(location)})
-            elif region=='bank_transition':bank_contacts.append({'pixel':list(pixel),'world':list(point),'ground_hit':list(location)})
-        location,normal,index,distance=tree.ray_cast(Vector((point.x,point.y,1000)),Vector((0,0,-1)),2000)
-        if location is not None and location.z>point.z+.01:
-            counts[region]['ground_above_surface']+=1
-    if core_failures:
-        raise ValueError(f'Core bridge source samples remain occluded: {core_failures}')
-    return {'status':'PASS-core-clearance','regions':counts,'bank_contacts':bank_contacts,
-            'limitations':['Bank-transition and outside abutment contacts are reported, not treated as clear.',
-                           'Sampling proves the checked source points only; combined map image review is still required.']}
+    failures=[];samples=0;minimum=1e9
+    for tri in bridge.data.loop_triangles:
+        a,b,c=[bridge.matrix_world@bridge.data.vertices[i].co for i in tri.vertices]
+        for i in range(13):
+            for j in range(13-i):
+                p=a+(b-a)*(i/12)+(c-a)*(j/12)
+                hit=tree.ray_cast(Vector((p.x,p.y,1000)),Vector((0,0,-1)),3000)[0]
+                if hit is None:raise ValueError('Ground missing under bridge')
+                gap=p.z-hit.z;minimum=min(minimum,gap);samples+=1
+                if gap<-.01:failures.append({'point':list(p),'ground':list(hit),'gap':gap})
+    if failures:raise ValueError(f'Physical bridge surface buried: {failures[:8]} ({len(failures)} samples)')
+    # Include the empty opening corridors, not just masonry vertices. The
+    # sampled quadrilaterals span front-to-reverse depth and approach margins.
+    west='Western' in bridge.name
+    if west:
+        ax,ay,bx,by=425.27533,-3046.347/SINE,682.6511,-2934.8538/SINE
+        openings=[(605,641)];depth=Vector((-31,85,0))
+    else:
+        ax,ay,bx,by=1347.75,-5432.77,1586.61,-5573.47
+        openings=[(1418,1480),(1500,1555)];depth=Vector((39,86,0))
+    corridor=[]
+    for lo,hi in openings:
+        highest=-1e9
+        for i in range(41):
+            x=lo+(hi-lo)*i/40;y=ay+(by-ay)*(x-ax)/(bx-ax)
+            for j in range(41):
+                p=Vector((x,y,0))+depth*(-.1+1.2*j/40)
+                hit=tree.ray_cast(Vector((p.x,p.y,1000)),Vector((0,0,-1)),3000)[0]
+                if hit is None:raise ValueError('Missing corridor ground')
+                highest=max(highest,hit.z)
+        corridor.append({'front_x_range':[lo,hi],'depth_fraction':[-.1,1.1],
+                         'samples':1681,'highest_bed':highest})
+        if highest>DEPTH+.01:raise ValueError(f'Raised ground blocks complete arch corridor: {corridor[-1]}')
+    return {'status':'PASS-full-depth-clearance','surface_samples':samples,
+            'minimum_surface_clearance':minimum,'corridors':corridor,
+            'method':'Dense barycentric surface samples and 41 by 41 vertical rays through each opening, including ten percent front and rear approach margins.'}
 
 
 def refine():
@@ -88,11 +101,17 @@ def refine():
     width=max(p.x for p in source)
     height=max(p.y for p in source)
     max_z=max(p.z for p in world)
-    coords=source+[Vector(p) for p in OUTER]+[Vector(p) for p in INNER]
-    loops=[list(range(4)),list(range(4,4+len(OUTER))),list(range(4+len(OUTER),len(coords)))]
+    coords=list(source)
+    loops=[list(range(4))]
+    depths=[p.z for p in world]
+    for outer,inner in BASINS:
+        for ring,bed in ((outer,False),(inner,True)):
+            start=len(coords)
+            coords.extend(Vector(p) for p in ring)
+            loops.append(list(range(start,len(coords))))
+            depths.extend(DEPTH if bed else p[1]/height*max_z for p in ring)
     edges=[(ring[i],ring[(i+1)%len(ring)]) for ring in loops for i in range(len(ring))]
     tri_coords,_,faces,original_ids,_,_=delaunay_2d_cdt(coords,edges,[],0,1e-6)
-    depths=[p.z for p in world]+[p[1]/height*max_z for p in OUTER]+[DEPTH]*len(INNER)
     inverse=ground.matrix_world.inverted()
     vertices=[]
     projected_error=0
@@ -130,7 +149,7 @@ def refine():
     outside_faces=0
     for polygon in mesh.polygons:
         center=sum((tri_coords[i] for i in polygon.vertices),Vector((0,0)))/len(polygon.vertices)
-        if not _inside(center,OUTER):
+        if not any(_inside(center,outer) for outer,inner in BASINS):
             outside_faces+=1
             for i in polygon.vertices:
                 expected=tri_coords[i].y/height*max_z
@@ -138,7 +157,7 @@ def refine():
                     raise ValueError('Terrain outside source-supported boundary moved')
     ground.data=mesh
     report={'status':'candidate-inferred-stream-bed','source_node':'ground',
-            'source_boundary':OUTER,'source_core':INNER,'world_bed_height':DEPTH,
+            'source_boundary':OUTER,'source_core':INNER,'basins':[{'outer':o,'core':i} for o,i in BASINS],'world_bed_height':DEPTH,
             'lowest_visible_pier_height':-106,'clearance_below_lowest_visible_pier':14,
             'before_geometry_sha256':_hash(before),'after_geometry_sha256':_hash(_geometry(ground)),
             'vertices':len(vertices),'faces':len(faces),'outside_faces_unchanged_plane':outside_faces,
@@ -146,7 +165,7 @@ def refine():
             'original_boundary_preserved':True,'material_preserved':True,
             'approval':'pending','limitations':[
                 'Bed depth and concealed bank profile are inferred from bridge clearance, not measured bathymetry.',
-                'Only the local stream beneath the bridge is represented; the rest of the map remains a flat proxy.',
+                'Two local bridge basins represent clearance beneath complete arch depth; remaining terrain stays a flat proxy.',
                 'Far abutments remain embedded in the banks outside the stream footprint.',
                 'Source-ground texture ownership must remain separate from geometry clearance validation.']}
     ground[TAG]=json.dumps(report,sort_keys=True)
