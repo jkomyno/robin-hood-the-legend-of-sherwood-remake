@@ -207,7 +207,9 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
             colors[:, :3] = .16 + .16*max(0, normal.dot(light))
             sx = np.floor(positions[:, 0]).astype(int)
             sy = np.floor(sh + positions[:, 1]*math.sin(angle) + positions[:, 2]*math.cos(angle)).astype(int)
-            front = normal.dot(toward) > float(obj.get("projection_min_cosine", .0001))
+            # Match the source-review visibility floor. Near-grazing surfaces
+            # magnify a source pixel into long bands across otherwise unknown roofs.
+            front = normal.dot(toward) > max(.05, float(obj.get("projection_min_cosine", .05)))
             accepted = np.zeros(len(qx), dtype=bool)
             in_source = (sx >= 0) & (sx < sw) & (sy >= 0) & (sy < sh)
             mask_allowed = constraints.allowed(masks, sx, sy) if masks is not None else np.ones(len(sx), dtype=bool)
