@@ -109,7 +109,22 @@ def frame(workspace,config,update_masks=True):
 
 
 def refine(workspace,config,by_node,update_masks=True):
-    return {'platform':platform(by_node['building-126']),
+    a=by_node['building-127'];b=by_node['building-128']
+    va=[a.matrix_world@v.co for v in a.data.vertices]
+    vb=[b.matrix_world@v.co for v in b.data.vertices]
+    matches=[(i,j) for i,x in enumerate(va) for j,y in enumerate(vb)
+             if (x-y).length<1.8]
+    if len(matches)!=4 or len({i for i,j in matches})!=4 or len({j for i,j in matches})!=4:
+        raise ValueError('Stilt halves require four unambiguous shared corners after shell repair')
+    maximum=0.
+    for i,j in matches:
+        midpoint=(va[i]+vb[j])/2
+        maximum=max(maximum,(midpoint-va[i]).length)
+        a.data.vertices[i].co=a.matrix_world.inverted()@midpoint
+        b.data.vertices[j].co=b.matrix_world.inverted()@midpoint
+    return {'shared_shell_seam':{'matched_corners':4,'maximum_world_movement':maximum,
+                                'correspondence_tolerance':1.8},
+            'platform':platform(by_node['building-126']),
             'frame':frame(workspace,config,update_masks),
             'ladder':stilt_ladder(workspace,by_node['building-129'])}
 
