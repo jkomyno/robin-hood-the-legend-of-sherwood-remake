@@ -271,6 +271,7 @@ def refine(workspace=None):
             'limitations':['Roof thickness3 and two rear roof facets are inferred.',
              'Cutaway lower wall heights80/65 and doorway lintel95 are conservative visual hypotheses.',
              'Curved stone wall is piecewise planar between native footprint anchors.',
+             'Fine arch relief and the thin roof finial are not fully modeled.',
              'Shared component joins have coincident internal faces by design; each receiver is closed.',
              'Unchanged imported meshes can retain pre-existing topology defects.',
              'Covered/revealed projection and door476/477 state exclusion require the reviewed layer manifest.']}
@@ -348,6 +349,7 @@ def refine_upper(workspace):
               'approval_state':'pending','texture_generation':'not-started',
               'limitations':['Roof thickness3 and two unseen roof facets inferred.',
                'Revealed partition height270 is a visual cutaway hypothesis above native floor250.',
+               'Fine arch relief and the thin roof finial are not fully modeled.',
                'Shared component joins retain coincident internal faces for state separation.',
                'Door453/455 state exclusion requires the reviewed state manifest.',
                'Unchanged imported meshes can retain pre-existing topology defects.']}
