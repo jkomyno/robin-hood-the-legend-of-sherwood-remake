@@ -1,5 +1,11 @@
 # Derby asset refinement review
 
+Lower West north v10 rejected on 2026-09-23 after the actual saved-mesh overlay
+exposed remaining cap and notch-floor mismatch. Construction residuals and
+side-by-side sheets were insufficient review gates. Gallery marks it fix-needed;
+the full projected profile must be corrected and independently inspected before
+another approval request. No texture generation is authorized for this revision.
+
 East Hall `next-zigzag-v3/band-review` approved by user on 2026-09-23.
 Approval is bound to model and sheet hashes in the review manifest, and the
 card is removed from pending review. Two-image texture filling is authorized;
