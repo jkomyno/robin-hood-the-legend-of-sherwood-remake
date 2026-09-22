@@ -9,7 +9,7 @@ import bmesh
 from mathutils import Vector
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from props import signature
-VERSION='leicester-east-gate-v2'
+VERSION='leicester-east-gate-v3'
 SINE,COSINE=math.sin(math.radians(35)),math.cos(math.radians(35))
 
 
@@ -39,18 +39,8 @@ def refine(obj):
         beam(point+Vector((0,0,bottom/COSINE)),point+Vector((0,0,top/COSINE)),3.0,2.3)
     for a,b in [(30.2,28.5),(21.1,10.5)]:beam(left+Vector((0,0,a/COSINE)),rear+Vector((0,0,b/COSINE)),3,3)
     beam(rear+Vector((0,0,10.5/COSINE)),rear+Vector((0,0,28.5/COSINE)),3,3)
-    # Six pale source clusters are represented by low closed polyhedra. The
-    # camera-ray depth is a hypothesis, not six proven disconnected stones.
-    stones=[(3107,1064,5,4),(3117,1058,5,4),(3125,1052,5,4),(3122,1068,5,5),(3113,1075,5,5),(3102,1075,4,4)]
-    for x,source_y,rx,rz in stones:
-        center=world(x,source_y+rz*COSINE,rz*COSINE);start=len(vertices);n=8
-        for z,scale in [(-rz,.58),(0,1),(rz,.52)]:
-            for i in range(n):
-                a=math.tau*i/n;vertices.append(center+Vector((rx*scale*math.cos(a),rx*scale*math.sin(a),z)))
-        faces.append(tuple(start+i for i in reversed(range(n))))
-        for layer in range(2):
-            for i in range(n):j=(i+1)%n;faces.append((start+layer*n+i,start+layer*n+j,start+(layer+1)*n+j,start+(layer+1)*n+i))
-        faces.append(tuple(start+2*n+i for i in range(n)))
+    from props_gate_rubble import append_to
+    rubble_report=append_to(vertices,faces)
     mesh=bpy.data.meshes.new(obj.name+' open timber enclosure');inverse=matrix.inverted()
     mesh.from_pydata([inverse@v for v in vertices],[],faces);mesh.uv_layers.new(name='UVMap')
     for material in obj.data.materials:mesh.materials.append(material)
@@ -61,7 +51,7 @@ def refine(obj):
     if old.users==0:bpy.data.meshes.remove(old)
     obj['leicester_geometry_recipe']=VERSION
     if obj.matrix_world!=matrix:raise ValueError('Transform drift')
-    return {'source_node':obj['source_node'],'before_geometry_sha256':before,'after_geometry_sha256':signature(obj),'topology':topology,'world_transform_drift':0}
+    return {'source_node':obj['source_node'],'before_geometry_sha256':before,'after_geometry_sha256':signature(obj),'topology':topology,'world_transform_drift':0,'rubble':rubble_report}
 
 
 def run(workspace):
