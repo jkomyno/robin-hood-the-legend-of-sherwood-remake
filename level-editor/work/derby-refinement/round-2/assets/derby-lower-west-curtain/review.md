@@ -1,5 +1,15 @@
 # Lower Bailey West Curtain second-pass review
 
+**WITHDRAWN MERLON REVISION:** The 2026-09-22 replacement below is invalid.
+The meshes named “modeled battlements” also contain the complete wall bodies;
+replacing them with disconnected boxes deleted those bodies. Ownership-only
+validation failed to catch this. The three complete meshes have been restored
+from baseline while preserving later approved support/roof changes. The repeat
+counts and phase alignment below were not established by source tracing and
+must not be used as evidence. Existing revision-v2 images are invalid historical
+artifacts. See `merlon-revision-retraction.json`. Corrected merlon refinement
+remains pending; do not integrate the rejected revision.
+
 ## Wall-walk merlon phase revision (2026-09-22)
 
 The previous long wall-walk projection had two visible defects: the rendered

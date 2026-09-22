@@ -1,0 +1,27 @@
+{
+  "status": "RESTORED_BASELINE_WALLS_REVISION_PENDING",
+  "reason": "Entire wall bodies were mistakenly replaced with detached merlon boxes. Previous count and phase claims are unverified and withdrawn.",
+  "restored": [
+    {
+      "node": "building-042",
+      "rejected_vertices": 64,
+      "rejected_faces": 48,
+      "restored_vertices": 72,
+      "restored_faces": 54
+    },
+    {
+      "node": "building-025",
+      "rejected_vertices": 72,
+      "rejected_faces": 54,
+      "restored_vertices": 90,
+      "restored_faces": 59
+    },
+    {
+      "node": "building-023",
+      "rejected_vertices": 120,
+      "rejected_faces": 90,
+      "restored_vertices": 142,
+      "restored_faces": 99
+    }
+  ]
+}

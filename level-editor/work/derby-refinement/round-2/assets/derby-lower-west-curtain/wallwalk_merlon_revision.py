@@ -89,6 +89,7 @@ def _box_mesh(obj, centers, target):
             'path_length':total,'spacing':spacing,'depth':depth,'width':width}
 
 def apply():
+    raise RuntimeError('WITHDRAWN: this recipe deletes complete wall bodies and uses unverified counts; use restored baseline pending source-traced replacement')
     coll=bpy.data.collections.get('Derby Working')
     if not coll: raise RuntimeError('Derby Working collection missing')
     reports=[]
