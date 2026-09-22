@@ -122,6 +122,10 @@ def main():
     join_report=close_mill_north_joins(bynode) if c['asset_id']=='leicester-mill-north-cottage' else None
     pole_report=access_pole(bynode['building-021'],w) if c['asset_id']=='leicester-mill-north-cottage' else None
     extra_detail=None
+    if c['asset_id']=='leicester-east-riverside-house':
+        if support.exists():from village_roofs import riverside_roofs
+        else:from leicester.village_roofs import riverside_roofs
+        extra_detail=riverside_roofs(w,c,bynode)
     if c['asset_id']=='leicester-northeast-gabled-house':
         obj=bynode['building-009'];bm=bmesh.new();bm.from_mesh(obj.data);edges=[e for e in bm.edges if e.is_boundary]
         if edges:
