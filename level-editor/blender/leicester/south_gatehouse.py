@@ -78,6 +78,17 @@ def refine_masks(workspace):
     floor['evidence'] = ('Native267 upper-tower silhouette, native268 revealed coping/roof rim, '
                          'and native269 winch were checked against both state sheets. '
                          'Actual mesh depth and retained shell determine visible floor ownership.')
+    for assignment in interior:
+        if assignment.get('source_node') not in ('building-141', 'building-147'):
+            continue
+        assignment['exclude_mask_indices'] = [269]
+        assignment['exclusions_reviewed'] = True
+        assignment['exclusion_reason'] = (
+            'The exposed masonry wall coping belongs to the physical chamber wall. '
+            'Native268 also contains this coping, so subtracting it removes known '
+            'revealed pixels. Separate retained shell geometry occludes roof and '
+            'front-wall pixels; native269 remains the independent winch receiver.')
+        assignment['evidence'] = 'Paired revealed source and actual-material sheets; native267/268/269.'
     path.write_text(json.dumps(masks, indent=2) + '\n')
     return {'left_pier': [203, 204], 'floor': [267], 'floor_excludes': [269]}
 
