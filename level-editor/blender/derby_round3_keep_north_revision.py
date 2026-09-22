@@ -102,4 +102,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise RuntimeError('WITHDRAWN: v3 mixed baseline and Working coordinate frames. Use derby_keep_north_pixel_trace.py instead.')
