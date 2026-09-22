@@ -243,8 +243,10 @@ the camera matrices, tile/crop layout, asset objects, source blend, reviewed
 packet hash and projection/ownership evidence required by the bake helper.
 Use the existing reviewed packet preparation code as the schema authority;
 merely placing an eight-view PNG beside an invented manifest is insufficient.
-The driver's generation size is currently fixed at 1536×1024; verify the packet
-and both input sheets have that size. Do not resize an approved packet without
+The driver requests the exact canvas dimensions from the approved manifest;
+verify both input sheets and the local mask match it. Sunburst custom dimensions
+must be multiples of 16, have neither edge above 3840, an aspect ratio between
+1:3 and 3:1, and 655,360–8,294,400 total pixels. Do not resize an approved packet without
 updating camera/crop metadata and reviewing its actual new input.
 
 ```bash
@@ -271,7 +273,7 @@ node level-editor/pipeline/src/refinement/generate-textures.ts <experiment-dir> 
 ```
 
 The current request is multipart POST `/v1/images/edits`, model
-`gpt-image-2.5-sunburst`, quality `high`, size `1536x1024`, one lossless PNG.
+`gpt-image-2.5-sunburst`, quality `high`, exact approved canvas size, one lossless PNG.
 It sends two `image[]` fields and no API `mask`. The short prompt requests
 consistent missing textures while preserving existing pixels, and explicitly
 says to follow gray-surface shading and use image two for lighting, shadows

@@ -64,6 +64,18 @@ async function main(): Promise<void> {
      approval.input_sha256!==inputHash||!approval.geometry_revision)
     throw new Error("Sunburst requires explicit user approval for this exact preview and geometry revision");
   const mask=await fs.readFile(path.join(directory,"mask.png"));
+  const {width:canvasWidth,height:canvasHeight}=manifest.layout;
+  if(!Number.isInteger(canvasWidth)||!Number.isInteger(canvasHeight)||
+     canvasWidth<=0||canvasHeight<=0||canvasWidth%16||canvasHeight%16||
+     Math.max(canvasWidth,canvasHeight)>3840||
+     Math.max(canvasWidth,canvasHeight)/Math.min(canvasWidth,canvasHeight)>3||
+     canvasWidth*canvasHeight<655360||canvasWidth*canvasHeight>8294400)
+    throw new Error("Approved canvas is outside Sunburst custom-size constraints; do not silently resize it");
+  for(const [name,bytes] of [["input",input],["mask",mask]] as const){
+    const info=await sharp(bytes).metadata();
+    if(info.width!==canvasWidth||info.height!==canvasHeight)
+      throw new Error(`${name} dimensions differ from the approved camera manifest`);
+  }
   const lightingIndex=process.argv.indexOf("--lighting-reference");
   const lightingPath=lightingIndex<0?null:process.argv[lightingIndex+1];
   if(lightingIndex>=0&&!lightingPath)throw new Error("Supply the pure-gray lighting reference path");
@@ -100,7 +112,7 @@ Replace every masked untextured surface with the appropriate texture. Return the
   const outputDirectory=path.join(directory,`generation-${variant}${omitMask?"-no-mask":""}${lighting?"-with-lighting":""}`);
   await fs.mkdir(outputDirectory,{recursive:true});
   const prompt=omitMask?"Create an image from the provided reference sheet of 8 views of the same asset. The untextured gray shaded areas mark missing textures. Fill in these regions logically and consistently across all views, preserving all existing textured pixels exactly. Keep the same asset design, textures, lighting, perspective, and black background.":prompts[variant];
-  const parameters={model,quality:"high",size:"1536x1024",n:"1",output_format:"png",
+  const parameters={model,quality:"high",size:`${canvasWidth}x${canvasHeight}`,n:"1",output_format:"png",
     prompt:prompt+" Follow the lighting and shading shown on the gray surfaces, preserving the same sun direction across all eight views."+
       (lighting?" The second image shows the same eight views entirely in gray; use it as the reference for lighting, shadows, and shape, and return only the completed first image.":"")+
       (promptSuffix?" "+promptSuffix:"")};
