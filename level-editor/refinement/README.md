@@ -5,6 +5,13 @@ Start with [PROCEDURE.md](PROCEDURE.md).
 - `blender/`: shared inventory, grouping, review, projection, texture baking,
   publication and HTML gallery implementations.
 - `record_approval.py`: records an actual user decision and hashes its evidence.
+
+Collectors that produce a gallery ownership report can call
+`record_gallery_decision(gallery_path, records_path, asset_id, decision, exact_text)`
+from `record_approval.py`. It keeps decisions separate from regenerated candidate
+manifests, binds the displayed model and render packet, archives approved files,
+and retains previous decisions when a user requests another revision. Approved
+items hidden from the pending page remain addressable through gallery history.
 - `../pipeline/src/refinement/generate-textures.ts`: shared two-image generation
   driver; kept inside the pipeline package for its Node dependencies.
 
