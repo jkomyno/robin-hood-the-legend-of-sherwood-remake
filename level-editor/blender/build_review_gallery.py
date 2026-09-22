@@ -8,11 +8,15 @@ from pathlib import Path
 import shutil
 
 
-def build(index_path, output, *, pending_only=False):
+def build(index_path, output, *, pending_only=False, map_name=None):
     index_path = Path(index_path).resolve(strict=True)
     output = Path(output).resolve()
     output.mkdir(parents=True, exist_ok=True)
     data = json.loads(index_path.read_text())
+    map_name = map_name if map_name is not None else data.get("map", "Derby")
+    if not isinstance(map_name, str) or not map_name.strip():
+        raise ValueError("Review gallery requires a nonempty map name")
+    title = html.escape(map_name.strip() + " model review")
     items = data["items"]
     if pending_only:
         items = [item for item in items if not str(item.get("user_approval", "")).lower().startswith("approved")]
@@ -65,7 +69,7 @@ def build(index_path, output, *, pending_only=False):
     nav = "".join(f'<a href="#asset-{n}">{n}. {html.escape(item["name"])}</a>' for n, item in enumerate(items, 1))
     document = '''<!doctype html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Derby model review</title><style>
+<title>'''+title+'''</title><style>
 *{box-sizing:border-box}body{margin:0;background:#171a20;color:#eee;font:16px/1.5 system-ui,sans-serif}
 header,main{max-width:1700px;margin:auto;padding:24px}h1{margin:0}h2{font-size:24px}
 nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}a{color:#afd3ff}nav a{padding:5px 10px;background:#28313f;border-radius:5px}
@@ -76,7 +80,7 @@ figure[data-kind$=context] img{width:auto;max-width:100%;max-height:400px}figure
 body[data-mode=solid] figure[data-kind$=textured],body[data-mode=textured] figure[data-kind$=solid]{display:none}
 body:not([data-mode=both]) .sheets{grid-template-columns:1fr}
 @media(max-width:1000px){.sheets{grid-template-columns:1fr}}
-</style><body data-mode="both"><header><h1>Derby model review</h1>
+</style><body data-mode="both"><header><h1>'''+title+'''</h1>
 <p>Geometry candidates, not generated textures. Gray means no accepted original texture.
 Click any sheet for its full resolution. Review status does not imply user approval.</p>
 '''+(f'<p><strong>Approved models are hidden. {len(items)} remaining; '
@@ -95,5 +99,6 @@ if __name__ == "__main__":
     parser.add_argument("index")
     parser.add_argument("output")
     parser.add_argument("--pending-only", action="store_true", help="Hide explicitly approved candidates")
+    parser.add_argument("--map-name", help="Map name; defaults to the manifest map or Derby for legacy manifests")
     args = parser.parse_args()
-    build(args.index, args.output, pending_only=args.pending_only)
+    build(args.index, args.output, pending_only=args.pending_only, map_name=args.map_name)
