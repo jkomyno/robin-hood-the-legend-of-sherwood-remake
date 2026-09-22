@@ -56,6 +56,19 @@ column is an unchanged nearest-neighbor enlargement. Cast shadows in the solid
 use the chosen 48-degree sunlight, not copied painted shadows. Source-only texture
 sampling retains the authoritative source masks; unknown surfaces remain gray.
 
+## Saved mesh projected on original artwork
+
+The thin red lines below are sharp edges read from the saved v10 mesh, not the
+selected landmark traces. They use the original 35-degree camera and are tested
+for visibility against the wall itself. Neighboring objects are not occluders
+in this wall-only audit. The underlying image is the original artwork enlarged
+without filtering; no geometry or source pixels were regenerated for this audit.
+`mesh-on-artwork.json` records the exact blend/source hashes and projected segments.
+
+![Front actual mesh on original artwork](front-mesh-on-artwork.png)
+
+![Return actual mesh on original artwork](return-mesh-on-artwork.png)
+
 ## Geometry in eight directions
 
 ![Solid](north-48/solid.png)
