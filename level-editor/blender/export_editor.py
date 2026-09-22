@@ -133,7 +133,17 @@ def compact_texture_coordinates(doc):
             primitive["attributes"] = replacement
 
 
-def export_editor(map_name, output_path, asset_id=None):
+def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None,
+                  include_hidden_objects=None):
+    """Export visible meshes plus explicitly named inactive reviewed components.
+
+    ``include_hidden_objects`` contains exact object names, never source-node
+    selectors. Retained hidden originals stay excluded unless named explicitly.
+    ``standalone_pivot`` is an optional finite scene-space XYZ anchor for an
+    asset export; callers can use one reviewed pivot for every state variant.
+    Hidden sources are exported as geometry with ``default_hidden`` metadata;
+    downstream document creation must apply that metadata to part visibility.
+    """
     working = bpy.data.collections[map_name + " Working"]
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -142,16 +152,61 @@ def export_editor(map_name, output_path, asset_id=None):
     previous_scene = bpy.context.window.scene
     bpy.context.view_layer.update()
     depsgraph = bpy.context.evaluated_depsgraph_get()
-    sources = [o for o in working.objects if o.type == "MESH" and not o.hide_render]
+    requested = [] if include_hidden_objects is None else include_hidden_objects
+    if not isinstance(requested, (list, tuple)) or any(not isinstance(name, str) or not name for name in requested):
+        raise ValueError("Inactive inclusion requires a list of exact object names")
+    if len(set(requested)) != len(requested):
+        raise ValueError("Duplicate inactive object name")
+    named = {obj.name: obj for obj in working.objects}
+    for name in requested:
+        obj = named.get(name)
+        if obj is None or obj.type != 'MESH':
+            raise ValueError(f"Requested inactive mesh is absent from working collection: {name}")
+        if asset_id and obj.get('asset_group') != asset_id:
+            raise ValueError(f"Requested inactive mesh belongs to another asset: {name}")
+    sources = [o for o in working.objects if o.type == "MESH" and
+               (not o.hide_render or o.name in requested)]
     if asset_id:
         sources = [o for o in sources if o.get("asset_group") == asset_id]
     if not sources or any(not o.get("source_node") for o in sources):
         raise ValueError("Every exported mesh must retain its editor source node")
+    visibility = {}
+    ownership = {}
+    for source in sources:
+        key = source['source_node']
+        if not isinstance(key, str):
+            raise ValueError('Source node must be a stable string')
+        if key != 'ground':
+            if not key.startswith('building-') or not key[9:].isdigit():
+                raise ValueError('Invalid canonical editor source node: '+key)
+            if any(not isinstance(source.get(field), str) or not source[field].strip()
+                   for field in ('asset_group', 'asset_name', 'part_name')):
+                raise ValueError('Exported component lacks explicit asset/source ownership: '+source.name)
+            if key in ownership and ownership[key] != source['asset_group']:
+                raise ValueError('Split asset ownership for '+key)
+            ownership[key] = source['asset_group']
+        hidden = bool(source.hide_render)
+        if key in visibility and visibility[key] != hidden:
+            raise ValueError('Mixed default visibility within canonical part '+key)
+        visibility[key] = hidden
+    explicit_pivot = None
+    if standalone_pivot is not None:
+        if not asset_id:
+            raise ValueError('An explicit standalone pivot requires asset_id')
+        try:
+            values = list(standalone_pivot)
+        except TypeError as error:
+            raise ValueError('Standalone pivot must contain three finite numbers') from error
+        if len(values) != 3 or any(isinstance(v, bool) or not isinstance(v, (int, float))
+                                   or not math.isfinite(v) for v in values):
+            raise ValueError('Standalone pivot must contain three finite numbers')
+        explicit_pivot = Vector(values)
     reveal = reveal_metadata(working, sources, include_all=asset_id is None)
     bounds = [o.matrix_world @ Vector(corner) for o in sources for corner in o.evaluated_get(depsgraph).bound_box]
     lo = Vector(tuple(min(p[i] for p in bounds) for i in range(3)))
     hi = Vector(tuple(max(p[i] for p in bounds) for i in range(3)))
-    pivot = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z)) if asset_id else Vector()
+    pivot = (explicit_pivot if explicit_pivot is not None else
+             Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z)) if asset_id else Vector())
     scene = bpy.data.scenes.new(map_name + " Editor Export")
     objects, meshes = [], []
 
@@ -167,6 +222,7 @@ def export_editor(map_name, output_path, asset_id=None):
         root = node("map")
         # The editor reads Z-up part meshes below a glTF Y-up map wrapper.
         root.rotation_euler.x = -math.pi / 2
+        root['default_hidden_source_nodes'] = sorted(key for key, hidden in visibility.items() if hidden)
         groups, parts = {}, {}
         for source in sources:
             key = source["source_node"]
@@ -176,7 +232,8 @@ def export_editor(map_name, output_path, asset_id=None):
             mesh.update()
             meshes.append(mesh)
             if key == "ground":
-                node("ground", root, mesh)
+                ground = node("ground", root, mesh)
+                ground['default_hidden'] = visibility[key]
                 continue
             group_id = source["asset_group"]
             if group_id not in groups:
@@ -187,11 +244,13 @@ def export_editor(map_name, output_path, asset_id=None):
                 part = node(key, groups[group_id])
                 part["source_obstacle"] = int(key.split("-")[1])
                 part["part_name"] = source["part_name"]
+                part['default_hidden'] = visibility[key]
                 parts[key] = part
             elif parts[key].parent != groups[group_id]:
                 raise ValueError(f"Split asset ownership for {key}")
             piece = node(source.name, parts[key], mesh)
             piece["source_node"] = key
+            piece['default_hidden'] = bool(source.hide_render)
             for metadata_key, value in projection_metadata(source).items():
                 piece[metadata_key] = value
         bpy.context.window.scene = scene
@@ -219,17 +278,20 @@ def export_editor(map_name, output_path, asset_id=None):
         binary = data[20 + length:]
         output.write_bytes(struct.pack("<4sII", b"glTF", 2, 20 + len(chunk) + len(binary)) + struct.pack("<II", len(chunk), kind) + chunk + binary)
         report = {"file": str(output), "assets": len(groups), "parts": len(parts),
-                  "meshes": len(meshes), "steps": sum(o.get("step_count", 0) for o in sources)}
+                  "meshes": len(meshes), "steps": sum(o.get("step_count", 0) for o in sources),
+                  "included_hidden_objects": [o.name for o in sources if o.hide_render],
+                  "default_hidden_source_nodes": sorted(key for key, hidden in visibility.items() if hidden)}
         if asset_id:
             descriptor = {"version": 1, "kind": "projection-mapped-asset", "id": asset_id,
                 "name": sources[0]["asset_name"], "source_map": map_name, "model": output.name,
                 "coordinates": "Z-up mesh children; Y-up glTF map wrapper; units are map pixels",
-                "anchor": "horizontal bounds center at lowest geometry point",
+                "anchor": "explicit common scene-space pivot" if explicit_pivot is not None else "horizontal bounds center at lowest geometry point",
                 "source_origin_scene": list(pivot),
                 "bounds_local_scene": {"min": list(lo - pivot), "max": list(hi - pivot)},
                 "components": [{"name": source.name, "source_node": source["source_node"],
-                                **projection_metadata(source)} for source in sources],
-                "parts": [{"node": key, "name": obj["part_name"], "source_obstacle": obj["source_obstacle"]} for key, obj in parts.items()]}
+                                "default_hidden": bool(source.hide_render), **projection_metadata(source)} for source in sources],
+                "parts": [{"node": key, "name": obj["part_name"], "source_obstacle": obj["source_obstacle"],
+                           "default_hidden": visibility[key]} for key, obj in parts.items()]}
             if reveal:
                 descriptor["reveal"] = reveal
             output.with_name("asset.json").write_text(json.dumps(descriptor, indent=2) + "\n")
@@ -244,16 +306,43 @@ def export_editor(map_name, output_path, asset_id=None):
         bpy.data.scenes.remove(scene)
 
 
-def export_asset_library(map_name, output_dir, level_path):
+def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=None,
+                         include_hidden_objects=None):
     """Export every named asset, local collision volumes, and merge the library index.
 
     Run into a fresh staging directory for each revision, then publish reviewed
     asset directories. Other maps in an existing index remain intact.
+    Optional ``standalone_pivots`` maps exported asset IDs to common scene-space
+    XYZ anchors. Exact inactive object names are validated before any export and
+    forwarded only to their owning asset, including groups with no visible mesh.
     """
     output_dir = Path(output_dir)
     level = json.loads(Path(level_path).read_text())
     working = bpy.data.collections[map_name + " Working"]
-    ids = sorted({o["asset_group"] for o in working.objects if o.type == "MESH" and not o.hide_render and o.get("asset_group")})
+    requested = [] if include_hidden_objects is None else include_hidden_objects
+    if not isinstance(requested, (list, tuple)) or any(not isinstance(name, str) or not name for name in requested):
+        raise ValueError('Inactive inclusion requires a list of exact object names')
+    if len(set(requested)) != len(requested):
+        raise ValueError('Duplicate inactive object name')
+    named = {obj.name: obj for obj in working.objects}
+    for name in requested:
+        obj = named.get(name)
+        if obj is None or obj.type != 'MESH' or not obj.get('asset_group'):
+            raise ValueError('Requested inactive mesh lacks working-map asset ownership: '+name)
+        key = obj.get('source_node')
+        if not isinstance(key, str) or not key.startswith('building-') or not key[9:].isdigit():
+            raise ValueError('Requested inactive mesh lacks canonical source ownership: '+name)
+        if int(key[9:]) >= len(level['sight_obstacles']):
+            raise ValueError('Requested inactive mesh source is absent from level catalog: '+name)
+    ids = sorted({o["asset_group"] for o in working.objects if o.type == "MESH" and
+                  (not o.hide_render or o.name in requested) and o.get("asset_group")})
+    pivots = {} if standalone_pivots is None else standalone_pivots
+    if not isinstance(pivots, dict) or set(pivots) - set(ids):
+        raise ValueError('Standalone pivots reference unexported asset groups')
+    for key, values in pivots.items():
+        if not isinstance(values, (list, tuple, Vector)) or len(values) != 3 or any(
+                isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+            raise ValueError('Standalone pivot must contain three finite numbers: '+key)
     if not ids:
         raise ValueError("No named assets to export")
     if any((output_dir / key / "model.glb").exists() for key in ids):
@@ -264,7 +353,9 @@ def export_asset_library(map_name, output_dir, level_path):
         raise ValueError("Unsupported asset index version")
     entries = {entry["id"]: entry for entry in index["assets"]}
     for key in ids:
-        report = export_editor(map_name, output_dir / key / "model.glb", asset_id=key)
+        report = export_editor(map_name, output_dir / key / "model.glb", asset_id=key,
+            standalone_pivot=pivots.get(key),
+            include_hidden_objects=[name for name in requested if named[name]['asset_group'] == key])
         descriptor = report["asset"]
         px, py, pz = descriptor["source_origin_scene"]
         sin, cos = math.sin(math.radians(35)), math.cos(math.radians(35))
