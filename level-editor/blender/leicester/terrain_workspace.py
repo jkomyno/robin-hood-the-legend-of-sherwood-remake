@@ -197,7 +197,7 @@ def main():
     parser.add_argument('--phase', choices=('prepare', 'refine'), required=True)
     args = parser.parse_args(sys.argv[sys.argv.index('--')+1:])
     root, workspace = args.root.resolve(), args.workspace.resolve()
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(root.parents[1] / 'blender'))
     import refinement_workspace as worker
     if args.phase == 'prepare':
         if args.kind == 'ground':
@@ -220,7 +220,12 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=str(workspace / 'model.blend'))
     dump(workspace / 'terrain-report.json', report)
     worker.modified(workspace)
+    shutil.copy2(__file__, workspace / 'recipe.py')
+    ownership = (workspace / 'projection/background/ownership.json' if args.kind == 'ground' else
+                 max((p for p in (workspace / 'projection').glob('*/ownership.json')
+                      if p.parent.name != 'input'), key=lambda p: p.stat().st_mtime_ns))
     dump(workspace / 'handoff.json', {'status': 'validation-pending', 'all_eight_views_inspected': False,
+                                    'recipe': 'recipe.py', 'ownership': str(ownership.relative_to(workspace)),
                                     'geometry_approval': 'pending', 'texture_generation': 'not-started',
                                     'role': args.kind, 'outside_validation': before,
                                     'notes': report.get('limitations', ['Planar background evidence only; no recovered terrain relief.'])})
