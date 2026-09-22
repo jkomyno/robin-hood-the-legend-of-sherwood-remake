@@ -5,6 +5,21 @@ were generated or published. Recipe commit: `6d7af6093`.
 
 ## Follow-up requested by review
 
+Executed correction is now in `trace-v2/model.blend`, with original source
+projection reapplied and eight-view renders at the explicitly selected 48° sun.
+See [the illustrated correction report](trace-v2/review.md). Nodes 153 and 158
+have corrected gap phase/width and front notch depth. Visible counts were
+already correct. All thirteen active meshes are closed with positive volume;
+817 outside objects are unchanged. The bridge is measured at 7.705° physical
+slope, with 24.382 world units rise. Source deck endpoints are parapet-occluded,
+so flattening remains unsupported and the bridge is unchanged.
+
+The old `central_alignment_audit.py` and `source-bridge-landmarks.png` are
+**withdrawn**: their unverified long cyan lines crossed the courtyard rather
+than following the bridge. The script now refuses execution. The new report
+uses actual projected deck vertices and explicitly separates them from manual
+source corner observations.
+
 The central turret/gallery parapet zigzag is still visibly out of phase with
 the source artwork in both the covered and revealed views.  The connecting
 gallery/bridge also appears slanted in the camera view.  A camera diagonal is

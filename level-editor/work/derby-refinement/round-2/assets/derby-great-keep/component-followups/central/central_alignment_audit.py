@@ -84,6 +84,7 @@ def _profile(node):
 
 
 def main():
+    raise RuntimeError('WITHDRAWN: initial bridge landmark lines crossed the courtyard and were invalid. Use trace-v2/review.md and trace-v2/trace-and-slope.json, generated from measured mesh vertices. This script must not be used for a geometry decision.')
     bridge = _world_vertices(_objects("building-160"))
     result = {
         "status": "AUDIT_ONLY",
