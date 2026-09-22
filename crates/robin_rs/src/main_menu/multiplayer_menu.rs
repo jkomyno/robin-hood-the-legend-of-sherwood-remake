@@ -8,7 +8,7 @@ use crate::gfx_types::{GameEvent, Keycode};
 use crate::host::ApplicationContext;
 use crate::ingame_menu::layout::{
     MENU_H, MENU_W, MenuRect, MenuTransform, TruncationMarker, draw_screen_background,
-    render_text_virt_font, truncate_to_pixel_width,
+    render_text_virt_font, truncate_to_pixel_width, wrap_text_font,
 };
 use crate::ingame_menu::resources::IngameMenuResources;
 use crate::ingame_menu::widget_bridge::{
@@ -43,6 +43,7 @@ const ID_SCALE: u32 = 6;
 const ID_KEYBOARD: u32 = 7;
 const ID_COPY_BASE: u32 = 10;
 const ID_ASSIGNMENTS: u32 = 8;
+const ID_HERO_SETUP: u32 = 9;
 
 const SCREEN: &str = "Multiplayer menu";
 
@@ -193,6 +194,7 @@ struct MultiplayerMenuState {
     coop: robin_engine::coop::CoopRules,
     local: bool,
     edit_assignments: bool,
+    hero_setup: bool,
     frame: FrameWnd,
     input_state: ModalInputState,
     scroll_view: ScrollView,
@@ -250,47 +252,12 @@ impl MultiplayerMenuState {
         );
         scroll_view.set_wheel_step(1);
         let input_state = ModalInputState::new();
-        let (btn_w, btn_h) = resources.button_dimensions();
-        let btn_x = MENU_W - btn_w - 10;
-        let btn_y_base = MENU_H - btn_h - 10;
-        let mut frame = FrameWnd::interactive();
-        for (id, y) in [
-            (ID_JOIN, btn_y_base - 3 * (btn_h + 2)),
-            (ID_CREATE, btn_y_base - 2 * (btn_h + 2)),
-            (ID_START, btn_y_base - (btn_h + 2)),
-            (ID_BACK, btn_y_base),
-        ] {
-            frame.add_widget_absolute(widget_bridge::make_button_enabled(
-                id, "", true, btn_x, y, btn_w, btn_h,
-            ));
-        }
-
-        for (id, y) in [
-            (ID_LOCAL, 20),
-            (ID_KEYBOARD, 50),
-            (ID_RULE, 80),
-            (ID_SCALE, 110),
-            (ID_ASSIGNMENTS, 140),
-        ] {
-            frame.add_widget_absolute(widget_bridge::make_button_enabled(
-                id, "", true, btn_x, y, btn_w, btn_h,
-            ));
-        }
-        for slot in 0..5 {
-            frame.add_widget_absolute(widget_bridge::make_button_enabled(
-                ID_COPY_BASE + slot,
-                "",
-                true,
-                btn_x,
-                175 + slot as i32 * 24,
-                btn_w,
-                22,
-            ));
-        }
+        let frame = FrameWnd::interactive();
         Self {
             coop: Default::default(),
             local: false,
             edit_assignments: false,
+            hero_setup: false,
             missions,
             prepared_host_content,
             matchmaking_client,
@@ -321,7 +288,7 @@ impl MultiplayerMenuState {
                 return tick;
             }
         }
-        self.update_buttons(io.window.local_players.keyboard);
+        self.update_buttons(io.window.local_players.keyboard, io.resources);
         let (screen, activated) = self.handle_input(&mut io.screen_io());
         if let Some(id) = activated
             && let Some(tick) = self
@@ -560,86 +527,184 @@ impl MultiplayerMenuState {
         mission.map_or(1, |m| m.roster_slots)
     }
 
-    fn update_buttons(&mut self, keyboard_player: bool) {
-        let matchmaking_connected = self.matchmaking_client.is_some();
-        let can_join = matches!(self.mode, MenuMode::Games)
-            && self
-                .games
-                .get(self.selected)
-                .is_some_and(|game| matchmaking_connected || game.state == "direct_invite");
-        let can_start = matchmaking_connected && matches!(self.mode, MenuMode::Hosted { .. });
-        self.frame.update_widget(ID_JOIN, Some("Join"), can_join);
-        self.frame.update_widget(
-            ID_CREATE,
-            Some(match self.mode {
-                MenuMode::Missions => "Create",
-                _ => "Create Game",
-            }),
-            matchmaking_connected && matches!(self.mode, MenuMode::Games | MenuMode::Missions),
-        );
-        self.frame.update_widget(ID_START, Some("Start"), can_start);
-        self.frame.update_widget(ID_BACK, Some("Back"), true);
-        self.frame
-            .update_widget(ID_LOCAL, Some("Local co-op"), true);
-        let editable =
-            self.local || matches!(self.mode, MenuMode::Missions | MenuMode::Hosted { .. });
-        self.frame.update_widget(
-            ID_RULE,
-            Some(&format!(
-                "Control: {}",
-                match self.coop.control {
-                    robin_engine::coop::CharacterControl::Shared => "shared",
-                    robin_engine::coop::CharacterControl::Exclusive => "exclusive",
-                    robin_engine::coop::CharacterControl::Assigned => "assigned",
+    fn update_buttons(&mut self, keyboard_player: bool, resources: &IngameMenuResources) {
+        use robin_engine::coop::CharacterControl;
+        let connected = self.matchmaking_client.is_some();
+        let editing = matches!(self.mode, MenuMode::Missions | MenuMode::Hosted { .. });
+        let roster = self.roster_slots();
+        let copies = self.coop.players as usize > roster;
+        let assigned = self.coop.control == CharacterControl::Assigned;
+        let (w, h) = resources.button_dimensions();
+        let x = MENU_W - w - 10;
+        let bottom = MENU_H - h - 10;
+        let mut buttons = Vec::new();
+        let mut add = |id, label: String, enabled, y| {
+            buttons.push((id, label, enabled, y));
+        };
+        match &self.mode {
+            MenuMode::Games => {
+                let can_join = self
+                    .games
+                    .get(self.selected)
+                    .is_some_and(|game| connected || game.state == "direct_invite");
+                add(ID_JOIN, "Join game".into(), can_join, 76);
+                add(ID_CREATE, "Host online".into(), connected, 76 + h + 12);
+                add(ID_LOCAL, "Local co-op".into(), true, 76 + 2 * (h + 12));
+            }
+            MenuMode::Missions => add(
+                ID_CREATE,
+                if self.local {
+                    "Play together"
+                } else {
+                    "Create lobby"
                 }
-            )),
-            editable,
-        );
-        self.frame.update_widget(
-            ID_SCALE,
-            Some(&format!(
-                "HP +{}% / copy",
-                self.coop.enemy_health_per_duplicate
-            )),
-            editable,
-        );
-        self.frame.update_widget(
-            ID_KEYBOARD,
-            Some(if keyboard_player {
-                "Keyboard on"
-            } else {
-                "Keyboard off"
-            }),
-            self.local,
-        );
-        self.frame.update_widget(
-            ID_ASSIGNMENTS,
-            Some(if self.edit_assignments {
-                "Assign heroes"
-            } else {
-                "Choose copies"
-            }),
-            editable,
-        );
-        for slot in 0..5 {
-            let label = if self.edit_assignments {
-                format!("P{}: hero {}", slot + 1, self.coop.assignments[slot] + 1)
-            } else {
-                format!(
-                    "Slot {}: hero {}",
-                    slot + 1,
-                    self.coop.duplicate_choices[slot] + 1
-                )
-            };
-            self.frame.update_widget(
-                ID_COPY_BASE + slot as u32,
-                Some(&label),
-                editable && slot < self.coop.players as usize,
-            );
+                .into(),
+                !self.missions.is_empty() && (self.local || connected),
+                bottom - h - 12,
+            ),
+            MenuMode::Hosted { .. } => {
+                add(ID_START, "Start mission".into(), connected, bottom - h - 12);
+            }
+            MenuMode::Joined { .. } => {}
         }
-        if self.local {
-            self.frame
-                .update_widget(ID_CREATE, Some("Start local game"), true);
+        if editing {
+            if self.hero_setup {
+                // Only the extra seats create copies; existing mission heroes
+                // keep their roster slots. Assignment controls refer to players.
+                if !copies {
+                    self.edit_assignments = true;
+                } else if !assigned {
+                    self.edit_assignments = false;
+                }
+                if copies && assigned {
+                    add(
+                        ID_ASSIGNMENTS,
+                        if self.edit_assignments {
+                            "Edit: players"
+                        } else {
+                            "Edit: copies"
+                        }
+                        .into(),
+                        true,
+                        76,
+                    );
+                }
+                let mut y = 76 + h + 12;
+                for slot in 0..self.coop.players as usize {
+                    if self.edit_assignments && assigned {
+                        add(
+                            ID_COPY_BASE + slot as u32,
+                            format!("P{}: hero {}", slot + 1, self.coop.assignments[slot] + 1),
+                            true,
+                            y,
+                        );
+                    } else if !self.edit_assignments && slot >= roster {
+                        add(
+                            ID_COPY_BASE + slot as u32,
+                            format!(
+                                "Copy {}: hero {}",
+                                slot + 1 - roster,
+                                self.coop.duplicate_choices[slot] + 1
+                            ),
+                            true,
+                            y,
+                        );
+                    } else {
+                        continue;
+                    }
+                    y += h + 8;
+                }
+            } else {
+                let mut y = 76;
+                if self.local {
+                    add(
+                        ID_KEYBOARD,
+                        if keyboard_player {
+                            "Keyboard: on"
+                        } else {
+                            "Keyboard: off"
+                        }
+                        .into(),
+                        true,
+                        y,
+                    );
+                    y += h + 12;
+                }
+                add(
+                    ID_RULE,
+                    match self.coop.control {
+                        CharacterControl::Shared => "Shared heroes",
+                        CharacterControl::Exclusive => "One at a time",
+                        CharacterControl::Assigned => "Assigned heroes",
+                    }
+                    .into(),
+                    true,
+                    y,
+                );
+                if copies {
+                    add(
+                        ID_SCALE,
+                        format!("Enemy HP: +{}%", self.coop.enemy_health_per_duplicate),
+                        true,
+                        y + h + 12,
+                    );
+                }
+            }
+            if self.hero_setup || copies || assigned {
+                add(
+                    ID_HERO_SETUP,
+                    if self.hero_setup {
+                        "Game rules"
+                    } else {
+                        "Hero setup"
+                    }
+                    .into(),
+                    true,
+                    bottom - 2 * (h + 12),
+                );
+            }
+        }
+        add(
+            ID_BACK,
+            if matches!(self.mode, MenuMode::Games) {
+                "Back"
+            } else {
+                "Back to games"
+            }
+            .into(),
+            true,
+            bottom,
+        );
+        // Keep unchanged widgets alive so mouse capture and hover survive frames.
+        let obsolete: Vec<_> = self
+            .frame
+            .widgets()
+            .iter()
+            .map(|widget| widget.id())
+            .filter(|id| !buttons.iter().any(|(next, ..)| next == id))
+            .collect();
+        for id in obsolete {
+            self.frame.remove_widget(id);
+        }
+        for (id, label, enabled, y) in buttons {
+            if self.frame.widget(id).is_none() {
+                self.frame
+                    .add_widget_absolute(widget_bridge::make_button_enabled(
+                        id, &label, enabled, x, y, w, h,
+                    ));
+            } else {
+                self.frame.update_widget(id, Some(&label), enabled);
+                self.frame
+                    .widget_mut(id)
+                    .expect("existing menu button")
+                    .base_mut()
+                    .set_position(robin_engine::coordinates::ScreenBBox::from_coords(
+                        x as f32,
+                        y as f32,
+                        (x + w) as f32,
+                        (y + h) as f32,
+                    ));
+            }
         }
     }
 
@@ -665,7 +730,7 @@ impl MultiplayerMenuState {
             }
             self.coop.players = count;
             self.status = format!(
-                "{} players (keyboard {}). {} joins controllers; use the buttons on the right to configure co-op.",
+                "{} player(s) joined. Keyboard {}. Press {} on a controller to join.",
                 io.window.local_players.count(),
                 if io.window.local_players.keyboard {
                     "on"
@@ -819,7 +884,13 @@ impl MultiplayerMenuState {
         io: &mut ModalScreenIo<'_, '_>,
     ) -> Option<MultiplayerMenuTick> {
         match id {
+            ID_HERO_SETUP => {
+                self.hero_setup = !self.hero_setup;
+                return None;
+            }
             ID_LOCAL => {
+                self.hero_setup = false;
+                self.scroll_view.reset();
                 self.local = true;
                 self.mode = MenuMode::Missions;
                 self.selected = 0;
@@ -896,6 +967,7 @@ impl MultiplayerMenuState {
                     {
                         tracing::warn!("matchmaking leave failed: {err}");
                     }
+                    self.hero_setup = false;
                     self.local = false;
                     io.window.local_players.enabled = false;
                     self.mode = MenuMode::Games;
@@ -1129,6 +1201,7 @@ impl MultiplayerMenuState {
             MenuMode::Missions => self.missions.len(),
             MenuMode::Hosted { .. } | MenuMode::Joined { .. } => 1,
         });
+        self.update_buttons(io.window.local_players.keyboard, resources);
         self.render_menu(renderer, resources, transform, application_context);
         widget_bridge::draw_frame_buttons(renderer, resources, transform, &self.frame);
         if let Some(cursor) = io.cursor_renderer() {
@@ -1554,7 +1627,8 @@ impl MultiplayerMenuState {
         if let Some(font) = resources.title_font_any() {
             let title = match mode {
                 MenuMode::Games => "Multiplayer",
-                MenuMode::Missions => "Create Multiplayer Game",
+                MenuMode::Missions if self.local => "Local Co-op",
+                MenuMode::Missions => "Host Online",
                 MenuMode::Hosted { .. } => "Game Lobby",
                 MenuMode::Joined { .. } => "Game Lobby",
             };
@@ -1593,7 +1667,7 @@ impl MultiplayerMenuState {
                     }),
                 MenuMode::Missions => {
                     let mission = &missions[index];
-                    format!("{} | {}", mission.label, mission.mission_id)
+                    mission.label.clone()
                 }
             },
         );
@@ -1650,30 +1724,61 @@ impl MultiplayerMenuState {
         scroll_view.draw_scrollbar(renderer, transform, resources);
 
         if let Some(font) = resources.menu_text_font_any() {
+            let heading = match mode {
+                MenuMode::Games => "Online games",
+                MenuMode::Missions => "Choose a mission",
+                _ => "Your lobby",
+            };
+            render_text_virt_font(renderer, font, transform, heading, LIST_RECT.x, 58);
+            let sidebar = if matches!(mode, MenuMode::Games) {
+                "Play together"
+            } else if matches!(mode, MenuMode::Joined { .. }) {
+                "Waiting for host"
+            } else if self.hero_setup {
+                "Hero setup"
+            } else {
+                "Game rules"
+            };
             render_text_virt_font(
                 renderer,
                 font,
                 transform,
-                status,
-                LIST_RECT.x,
-                LIST_RECT.y + LIST_RECT.h + 16,
+                sidebar,
+                MENU_W - resources.button_dimensions().0 - 10,
+                58,
             );
-            if self.local {
+            let help = if matches!(mode, MenuMode::Games) {
+                "Join an online game, host your own, or play locally on one screen."
+            } else {
+                match self.coop.control {
+                    robin_engine::coop::CharacterControl::Shared => {
+                        "Everyone can select and control any hero."
+                    }
+                    robin_engine::coop::CharacterControl::Exclusive => {
+                        "A hero can be controlled by one player at a time."
+                    }
+                    robin_engine::coop::CharacterControl::Assigned => {
+                        "Each player controls their assigned hero."
+                    }
+                }
+            };
+            let detail = if self.hero_setup {
+                "Click a hero button to cycle through the mission's roster."
+            } else if self.coop.players as usize > self.roster_slots() {
+                "Extra players get hero copies. Enemy HP increases for each copy."
+            } else {
+                help
+            };
+            let text = format!("{status}\n{detail}");
+            let wrapped = wrap_text_font(font, &text, LIST_RECT.w, 5);
+            for (line, text) in wrapped.lines.iter().enumerate() {
                 render_text_virt_font(
                     renderer,
                     font,
                     transform,
-                    "Control = who may use each hero. HP = duplicate enemy health.",
+                    &text.text,
                     LIST_RECT.x,
-                    LIST_RECT.y + LIST_RECT.h + 28,
-                );
-                render_text_virt_font(
-                    renderer,
-                    font,
-                    transform,
-                    "Assign heroes swaps the roster; Choose copies selects duplicates.",
-                    LIST_RECT.x,
-                    LIST_RECT.y + LIST_RECT.h + 40,
+                    LIST_RECT.y + LIST_RECT.h + 12 + line as i32 * 13,
                 );
             }
         }
@@ -1869,9 +1974,7 @@ fn format_game_row(game: &GameListing, application_context: &ApplicationContext)
 
 fn menu_column_layout(mode: &MenuMode) -> ColumnLayout {
     match mode {
-        MenuMode::Missions => {
-            ColumnLayout::new(&[(0.82, ColumnAlign::Left), (0.18, ColumnAlign::Right)])
-        }
+        MenuMode::Missions => ColumnLayout::new(&[(1.0, ColumnAlign::Left)]),
         _ => ColumnLayout::new(&[
             (0.46, ColumnAlign::Left),
             (0.24, ColumnAlign::Left),
