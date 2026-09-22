@@ -102,6 +102,11 @@ def main():
             if row.get('source_node') in {'building-093','building-094','building-096'}:
                 row.update(exclude_mask_indices=sorted(set(row.get('exclude_mask_indices',[]))|{6,7,8}),exclusions_reviewed=True,exclusion_reason='Foreground native tree6/7/8 crowns also cross the main roof eave, as confirmed in the prepared eight-view input and source details93; not only the attached shed.')
         mask_path.write_text(json.dumps(mask_contract,indent=2)+'\n')
+    if c['asset_id']=='leicester-northeast-longhouse':
+        mask_path=Path(c['source_mask_manifest']);mask_contract=json.loads(mask_path.read_text())
+        for row in mask_contract['projections']['exterior']['assignments']:
+            if row.get('source_node')=='building-004':row.update(exclude_mask_indices=[134],exclusions_reviewed=True,exclusion_reason='Native134 foreground hay overlaps front-fence native129; source crop confirms visible hay and the separate005 receiver. Reject these pixels on fence wood.')
+        mask_path.write_text(json.dumps(mask_contract,indent=2)+'\n')
     validate(w)
     targets=[o for o in bpy.data.collections[c['collection_name']].all_objects if o.type=='MESH' and o.get('asset_group')==c['asset_id'] and not o.get('projection_component')]
     if not targets:raise ValueError('Missing owned meshes')

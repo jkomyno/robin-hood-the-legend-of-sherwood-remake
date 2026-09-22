@@ -159,7 +159,7 @@ def longhouse_shed(workspace,obj):
     planes={'roof':roof_plane,'front':wall((2800.65,-1199.61),(-1218.70+1199.61)/(2886.39-2800.65)),'left':wall((2800.65,-1199.61),(60.07)/(13.19)),'right':wall((2886.39,-1218.70),60.14/13.24)}
     merged=bmesh.new();reports=[]
     for label,plane in planes.items():
-        mesh,report=silhouette_prism(workspace,131,plane,2.5 if label=='roof' else 2.,lambda x,y:component(x,y)==label);merged.from_mesh(mesh);reports.append({'surface':label,**report});bpy.data.meshes.remove(mesh)
+        mesh,report=silhouette_prism(workspace,131,plane,2.5 if label=='roof' else 2.,lambda x,y:component(x,y)==label and 0<=plane(x+.5,y+.5)[2]<=100);merged.from_mesh(mesh);reports.append({'surface':label,**report});bpy.data.meshes.remove(mesh)
     mesh=bpy.data.meshes.new('Leicester Longhouse Open Picket Shed');merged.to_mesh(mesh);merged.free();mesh.uv_layers.new(name='UVMap');mesh.materials.append(bpy.data.materials['Leicester Detail Unknown'])
     for vertex in mesh.vertices:vertex.co=obj.matrix_world.inverted()@vertex.co
     obj.data=mesh
@@ -168,12 +168,14 @@ def longhouse_shed(workspace,obj):
 
 def longhouse_fence(workspace,obj):
     sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35));merged=bmesh.new();reports=[]
+    config=json.loads((workspace/'workspace.json').read_text());manifest=Path(config['source_mask_manifest']);contract=json.loads(manifest.read_text());inventory=(manifest.parent/contract['mask_inventory']).resolve();native=next(m for m in json.loads(inventory.read_text())['masks'] if m['index']==134)
+    image=bpy.data.images.load(str((inventory.parent/native['png']).resolve()),check_existing=False);width,height=image.size;pixels=np.empty(width*height*4,dtype=np.float32);image.pixels.foreach_get(pixels);bpy.data.images.remove(image);hay={(int(x)+native['box_top_left'][0],int(y)+native['box_top_left'][1]) for y,x in np.argwhere(pixels.reshape(height,width,4)[::-1,:,0]>.5)}
     def plane(origin,slope):
         def point(px,py):
             y=origin[1]+(px-origin[0])*slope;return px,y,(-py-y*sine)/cosine
         return point
     front=plane((2580.,-1161.),-16/36);back=plane((2574.,-600/sine),6/72)
-    for index,label,receiver,pixel_filter in [(129,'front',front,lambda x,y:2580<=x<=2618 and 0<=front(x,y)[2]<=40),(130,'back',back,None)]:
+    for index,label,receiver,pixel_filter in [(129,'front',front,lambda x,y:2580<=x<=2618 and 0<=front(x,y)[2]<=40 and (x,y) not in hay),(130,'back',back,None)]:
         mesh,report=silhouette_prism(workspace,index,receiver,2.,pixel_filter);merged.from_mesh(mesh);reports.append({'panel':label,**report});bpy.data.meshes.remove(mesh)
     # The long return is almost edge-on in the source. Its depth is resolved
     # from the front/back fences; three rails follow their visible rail phase.
