@@ -167,12 +167,52 @@ def stairs(obj, definition):
             'rise':rise,'limitation':'Lower continuation concealed by adjacent roofs is inferred; verify visible phase in fixed cameras.'}
 
 
+def dormer_contact(obj, main_roof):
+    """Trim the imported ground-height dormer skirts to the measured roof plane."""
+    import bpy
+    import bmesh
+    from mathutils import Vector
+    roof_face = main_roof.data.polygons[-1]
+    a,b,c = [main_roof.matrix_world @ main_roof.data.vertices[i].co for i in roof_face.vertices]
+    normal = (b-a).cross(c-a)
+    if abs(normal.z)<1:
+        raise RuntimeError('Dormer support roof is not a usable height plane')
+    points = [obj.matrix_world @ v.co for v in obj.data.vertices]
+    x0,x1=min(p.x for p in points)-10,max(p.x for p in points)+10
+    y0,y1=min(p.y for p in points)-10,max(p.y for p in points)+10
+    xy=[(x0,y0),(x1,y0),(x1,y1),(x0,y1)]
+    vertices=[(x,y,-20) for x,y in xy]
+    vertices.extend((x,y,a.z-(normal.x*(x-a.x)+normal.y*(y-a.y))/normal.z) for x,y in xy)
+    mesh=bpy.data.meshes.new('Dormer measured roof half-space')
+    mesh.from_pydata(vertices,[],[(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)])
+    cutter=bpy.data.objects.new('Dormer roof contact cutter',mesh)
+    bpy.context.scene.collection.objects.link(cutter);cutter.hide_render=True
+    bm=bmesh.new();bm.from_mesh(obj.data)
+    # Each imported dormer half is a convex wedge with duplicated face islands.
+    bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=.5)
+    bmesh.ops.delete(bm,geom=list(bm.faces),context='FACES_ONLY')
+    bmesh.ops.convex_hull(bm,input=list(bm.verts),use_existing_faces=False)
+    loose=[e for e in bm.edges if not e.link_faces]
+    if loose:bmesh.ops.delete(bm,geom=loose,context='EDGES')
+    bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(obj.data);bm.free()
+    bpy.context.view_layer.objects.active=obj
+    modifier=obj.modifiers.new('Measured supporting roof','BOOLEAN')
+    modifier.operation='DIFFERENCE';modifier.solver='EXACT';modifier.object=cutter
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    result=topology(obj)
+    bpy.data.objects.remove(cutter,do_unlink=True)
+    return {**result,'support_source_node':'building-105',
+            'roof_plane_source_pixels':[[939.0,1314.4],[993.1,1103.7],[1209.2,1175.3]],
+            'limitation':'Concealed dormer underside closes at the measured main roof plane.'}
+
+
 def refine(asset_id):
     import bpy
     collection=bpy.data.collections['Leicester Working']
     targets=[o for o in collection.all_objects if o.type=='MESH' and o.get('asset_group')==asset_id and not o.hide_render]
     if not targets:raise RuntimeError('Missing owned asset')
     report=[]
+    main_roof=next((o for o in targets if o.get('source_node')=='building-105'),None)
     # Capture targets before Boolean helper removal invalidates collection caches.
     for obj in targets:
         node=int(obj['source_node'].split('-')[-1])
@@ -181,6 +221,7 @@ def refine(asset_id):
         if node in CUTS: result=crenels(obj,CUTS[node]);kind='crenels'
         elif node in STAIRS: result=stairs(obj,STAIRS[node]);kind='stairs'
         elif node in ROOFS: result=cap_prism(obj,thickness=3,face_count=ROOFS[node]);kind='roof-shell'
+        elif node in (106,107): result=dormer_contact(obj,main_roof);kind='dormer-roof-contact'
         else:continue
         if obj.matrix_world!=matrix:raise RuntimeError('Structure transform drift')
         obj['south_structure_refinement']=TAG
