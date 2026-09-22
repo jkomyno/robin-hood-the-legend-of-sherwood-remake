@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import html
 import json
+import re
 from pathlib import Path
 import shutil
 
@@ -46,6 +47,9 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                            '<table><thead><tr><th>Asset</th><th>ID</th><th>Status</th></tr></thead>'
                            '<tbody>' + rows + '</tbody></table></section>')
     for number, item in enumerate(items, 1):
+        asset_id = item["id"]
+        if not re.fullmatch(r"[a-zA-Z0-9_-]+", asset_id):
+            raise ValueError(f"Unsafe review identifier: {asset_id}")
         figures, evidence = [], {}
         sheets = [("solid", "Solid geometry"), ("textured", "Original textures + shaded unknown surfaces")]
         if item.get("context"):
@@ -65,7 +69,8 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             if not source.is_absolute():
                 source = index_path.parent / source
             source = source.resolve(strict=True)
-            relative = f"images/{number:02}-{key}.png"
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            relative = f"images/{asset_id}-{key}-{digest[:16]}.png"
             target = output / relative
             target.parent.mkdir(exist_ok=True)
             shutil.copyfile(source, target)
@@ -90,7 +95,8 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             if not source.is_absolute():
                 source = index_path.parent / source
             source = source.resolve(strict=True)
-            relative = f"reports/{number:02}-{key}{source.suffix}"
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            relative = f"reports/{asset_id}-{key}-{digest[:16]}{source.suffix}"
             target = output / relative
             target.parent.mkdir(exist_ok=True)
             shutil.copyfile(source, target)
@@ -99,13 +105,13 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                 raise RuntimeError(f"Review report copy differs: {source}")
             reports[key] = {"source": str(source), "file": relative, "sha256": digest}
             report_links.append(f'<a href="{relative}" target="_blank">{label}</a>')
-        cards.append(f'<article id="asset-{number}"><h2>{number}. {html.escape(item["name"])}</h2>'
+        cards.append(f'<article id="{asset_id}"><h2>{number}. {html.escape(item["name"])}</h2>'
                      f'<p><code>{html.escape(item["id"])}</code></p>'
                      f'<p class="status">{html.escape(item["status"])}</p>'
                      f'<p>{html.escape(notes)}</p><p>{" · ".join(report_links)}</p>'
                      f'<div class="sheets">{"".join(figures)}</div></article>')
         records.append({**item, "number": number, "images": evidence, "reports": reports})
-    nav = "".join(f'<a href="#asset-{n}">{n}. {html.escape(item["name"])}</a>' for n, item in enumerate(items, 1))
+    nav = "".join(f'<a href="#{item["id"]}">{n}. {html.escape(item["name"])}</a>' for n, item in enumerate(items, 1))
     document = '''<!doctype html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>'''+title+'''</title><style>
