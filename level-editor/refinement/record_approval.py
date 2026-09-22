@@ -5,9 +5,77 @@ revision manifests append a geometry decision to decisions.json and archive all
 reviewed evidence; the collector applies that decision on its next refresh.
 """
 import argparse
+import datetime
 import hashlib
 import json
 from pathlib import Path
+import shutil
+
+
+def record_gallery_decision(gallery_path, records_path, asset_id, decision, exact_text,
+                            *, scope='geometry-and-source-projection', projection_review=None):
+    """Archive a decision against the exact model/packet displayed by a guarded gallery.
+
+    The ownership report must contain model_sha256 and packet_hashes.modified.
+    This separate decision log survives rebuilding the candidate manifest.
+    """
+    if decision not in ('approved', 'rejected', 'revision-requested') or not exact_text.strip():
+        raise ValueError('An explicit user decision and its exact text are required')
+    gallery_path, records_path = Path(gallery_path).resolve(), Path(records_path).resolve()
+    item = None
+    candidates = [gallery_path] + sorted((gallery_path / 'history').glob('*'),
+                                         key=lambda path: path.stat().st_mtime, reverse=True)
+    for candidate in candidates:
+        if not (candidate / 'evidence.json').is_file():
+            continue
+        gallery = json.loads((candidate / 'evidence.json').read_text())
+        item = next((row for row in gallery['items'] if row['id'] == asset_id), None)
+        if item is not None:
+            gallery_path = candidate
+            break
+    if item is None:
+        raise ValueError('Asset is not in the displayed gallery: ' + asset_id)
+    if Path(asset_id).name != asset_id or asset_id in ('.', '..'):
+        raise ValueError('Unsafe asset ID')
+    evidence = json.loads((gallery_path / item['reports']['ownership']['file']).read_text())
+    record = dict(asset_id=asset_id, decision=decision, scope=scope, exact_text=exact_text,
+                  model_sha256=evidence['model_sha256'],
+                  modified_views_sha256=evidence['packet_hashes']['modified']['views.json'],
+                  state_bundle_sha256=evidence.get('state_bundle_sha256'),
+                  review_gallery=str(gallery_path),
+                  recorded_utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
+    if projection_review is not None:
+        record['projection_review'] = projection_review
+    if decision == 'approved':
+        workspace = Path(item['workspace'])
+        model = workspace / 'model.blend'
+        if hashlib.sha256(model.read_bytes()).hexdigest() != record['model_sha256']:
+            raise ValueError('Current model differs from the displayed approval revision: ' + asset_id)
+        for name, expected in evidence['packet_hashes']['modified'].items():
+            packet_file = workspace / 'modified' / name
+            if hashlib.sha256(packet_file.read_bytes()).hexdigest() != expected:
+                raise ValueError('Current packet differs from the displayed approval revision: ' + asset_id)
+        archive = records_path.parent / 'approval-evidence' / asset_id / record['model_sha256'][:12]
+        archive.mkdir(parents=True, exist_ok=True)
+        for name in ('model.blend', 'candidate.json', 'validation.json', 'review.md', 'projection-correction.json'):
+            source = workspace / name
+            if source.exists() and not (archive / name).exists():
+                shutil.copy2(source, archive / name)
+        if not (archive / 'modified').exists():
+            shutil.copytree(workspace / 'modified', archive / 'modified')
+        (archive / 'gallery-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
+        record['evidence_directory'] = str(archive)
+        (archive / 'decision.json').write_text(json.dumps(record, indent=2) + '\n')
+    data = json.loads(records_path.read_text()) if records_path.exists() else {'version': 1, 'approvals': []}
+    if data.get('version') != 1:
+        raise ValueError('Unsupported decision log version')
+    previous = [row for row in data['approvals'] if row['asset_id'] == asset_id]
+    data.setdefault('history', []).extend(previous)
+    data['approvals'] = [row for row in data['approvals'] if row['asset_id'] != asset_id] + [record]
+    temporary = records_path.with_suffix('.json.tmp')
+    temporary.write_text(json.dumps(data, indent=2) + '\n')
+    temporary.replace(records_path)
+    return record
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
