@@ -222,13 +222,38 @@ def refine(workspace):
     return report
 
 
+def extend_walkway(workspace):
+    collection=bpy.data.collections['Leicester Working']
+    if any(o.get('projection_component')=='corridor-walkway' for o in collection.all_objects):
+        raise RuntimeError('Walkway extension already exists')
+    source=next(o for o in collection.all_objects if o.get('projection_component')=='corridor-floor')
+    # Native navigable contour continues beyond the back chamber, sharing its
+    # exact front edge. Retained roof and wall geometry determines visibility.
+    pixels=[(593,1004),(672,1015),(794,1054),(796,1067),(806,1068),
+            (814,1061),(832,1066),(819,1079),(834,1082),(810,1098),
+            (601,1032),(537,1033),(522,1009),(572,1000),(577,1007)]
+    obj=source.copy();obj.data=source.data.copy();obj.name='West Wing / foreground corridor walkway';collection.objects.link(obj)
+    sine,cosine=math.sin(math.radians(35)),math.cos(math.radians(35));z=50/cosine;n=len(pixels);inverse=obj.matrix_world.inverted()
+    points=[inverse@Vector((x,(-y-h*cosine)/sine,h)) for h in (z-3,z) for x,y in pixels]
+    faces=[tuple(reversed(range(n))),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+    neutral_mesh(obj,points,faces,'Foreground corridor walkway');close(obj);selector=tag(obj,'corridor-walkway')
+    path=Path(initialize_working_projection(workspace));manifest=json.loads(path.read_text());review=manifest['projection_reviews'][PATCH]
+    receiver=next(r for r in review['receiver_components']['interior-'+PATCH] if r['source_node']=='building-228')
+    receiver['projection_components'].append('corridor-walkway');review['render_visibility']['covered']['hidden_components'].append(selector)
+    path.write_text(json.dumps(manifest,indent=2)+'\n')
+    return {'source_pixels':pixels,'world_z':z,'native_datum_game':50,'depth_hypothesis':True,**topology(obj)}
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('workspace',type=Path);parser.add_argument('--receivers',action='store_true')
+    parser.add_argument('--walkway',action='store_true')
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:]);workspace=args.workspace.resolve()
     if not json.loads((workspace/'inspection/input-review.json').read_text())['all_eight_views_inspected']:
         raise RuntimeError('Inspect frozen input before modifying')
     bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'),load_ui=False)
-    if args.receivers:
+    if args.walkway:
+        report=json.loads((workspace/'geometry-report.json').read_text());report['foreground_walkway']=extend_walkway(workspace)
+    elif args.receivers:
         report=json.loads((workspace/'geometry-report.json').read_text());report['chandelier']=receivers_and_chandelier(workspace)
     else:report=refine(workspace)
     (workspace/'geometry-report.json').write_text(json.dumps(report,indent=2)+'\n')
