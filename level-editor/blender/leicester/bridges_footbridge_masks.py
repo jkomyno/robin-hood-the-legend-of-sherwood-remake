@@ -8,9 +8,11 @@ NATIVE=Path('datadirs/fullgame_gog_hackable/Data/Levels/Leicester.rhp.d/masks/ma
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def main():
  workspace=ROOT/'round-1/assets-v2/leicester-east-village-footbridge'
+ archived=ROOT/'round-1/bridge-revision-archive/user-footbridge-projection/leicester-east-village-footbridge'
+ if archived.exists():workspace=archived
  old=json.loads((workspace/'source-masks.json').read_text())
  native=json.loads(NATIVE.read_text());source=workspace/'reference/source.png';size=Image.open(source).size
- out=ROOT/'bridge-evidence/east-footbridge-projection-revision';out.mkdir(exist_ok=True)
+ out=ROOT/'bridge-evidence/east-footbridge-projection-revision-v2';out.mkdir(exist_ok=True)
  level=Path('datadirs/fullgame_gog_hackable/Data/Levels/Leicester.rhp.json')
  points=json.loads(level.read_text())['sight_obstacles'][385]['points']
  top=[(p['x'],p['y']-p['z_top']) for p in points]
@@ -26,7 +28,8 @@ def main():
  for index in [98,176,177]:
   entry=native['masks'][index];im=Image.open(NATIVE.parent/entry['png']).convert('L');layer=Image.new('L',size);layer.paste(im,tuple(entry['box_top_left']));guards=ImageChops.lighter(guards,layer)
  deck=ImageChops.subtract(deck,guards);support=ImageChops.subtract(support,guards)
- records=[dict(entry,png=str(NATIVE.parent/entry['png'])) if entry.get('png') else entry for entry in native['masks']]
+ old_inventory=Path(old['mask_inventory']);existing=json.loads(old_inventory.read_text())
+ records=[dict(entry,png=str((old_inventory.parent/entry['png']).resolve())) if entry.get('png') else entry for entry in existing['masks']]
  evidence={'source_sha256':sha(source),'native_inventory_sha256':sha(NATIVE),'native_level_sha256':sha(level),
   'diagnosis':'The previous explicit include+exclude fallback removed every deck and trestle texel. Runtime native masks176/177 describe foreground railings, not the background-painted bridge deck. Mask98 is neighboring stone and must stay excluded.',
   'deck_polygon_source':top,'deck_fascia_depth_pixels':7,'support_polygons_source':supports,

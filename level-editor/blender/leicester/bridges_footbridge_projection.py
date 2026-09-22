@@ -21,7 +21,7 @@ def geometry():
 def main():
  workspace=ROOT/'round-1/assets-v2'/ASSET
  archive=ROOT/'round-1/bridge-revision-archive/user-footbridge-projection'/ASSET
- evidence=ROOT/'bridge-evidence/east-footbridge-projection-revision'
+ evidence=ROOT/'bridge-evidence/east-footbridge-projection-revision-v2'
  if not archive.exists():
   records={str(p.relative_to(workspace)):sha(p) for p in workspace.rglob('*') if p.is_file()}
   archive.parent.mkdir(parents=True,exist_ok=True);workspace.rename(archive)
