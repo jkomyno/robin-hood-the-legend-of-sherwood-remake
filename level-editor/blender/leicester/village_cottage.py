@@ -9,7 +9,6 @@ import bmesh
 import math
 import hashlib
 import numpy as np
-from mathutils.geometry import tessellate_polygon
 PAIRS=[('building-024','building-029'),('building-016','building-017'),('building-003','building-007'),('building-009','building-014'),('building-064','building-065'),('building-093','building-096'),('building-079','building-080')]
 
 def access_pole(obj,workspace):
@@ -24,22 +23,18 @@ def access_pole(obj,workspace):
             if neighbor not in occupied:
                 if edge[0] in edges:raise ValueError('Ambiguous native pole contour')
                 edges[edge[0]]=edge[1]
-    start=min(edges);contour=[start];cursor=edges[start]
-    while cursor!=start:
-        contour.append(cursor);cursor=edges[cursor]
-    if len(contour)!=len(edges):raise ValueError('Native pole contains unsupported extra contours')
-    contour=[p for i,p in enumerate(contour) if (p[0]-contour[i-1][0])*(contour[(i+1)%len(contour)][1]-p[1])!=(p[1]-contour[i-1][1])*(contour[(i+1)%len(contour)][0]-p[0])]
     sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35));top_y=-1206.113;top_z=76.946;bottom_y=-1230.717;top_pixel=-top_y*sine-top_z*cosine;bottom_pixel=-bottom_y*sine
     dy=(bottom_y-top_y)/(bottom_pixel-top_pixel);dz=(-1-dy*sine)/cosine;normal=Vector((0,-dz,dy)).normalized()
-    front=[]
-    for px,py in contour:
+    grid=sorted({p for x,y in occupied for p in [(x,y),(x+1,y),(x+1,y+1),(x,y+1)]});front=[]
+    for px,py in grid:
         x=px+native['box_top_left'][0];pixel_y=py+native['box_top_left'][1];y=top_y+(pixel_y-top_pixel)*dy;z=(-pixel_y-y*sine)/cosine;front.append(Vector((x,y,z)))
-    n=len(front);vertices=front+[p+normal*2.0 for p in front];indices={tuple(v):i for i,v in enumerate(front)};triangles=[tuple(indices[tuple(v)] for v in tri) for tri in tessellate_polygon([front])]
-    faces=triangles+[tuple(n+i for i in reversed(tri)) for tri in triangles]+[(i,(i+1)%n,n+(i+1)%n,n+i) for i in range(n)]
+    n=len(front);vertices=front+[p+normal*2.0 for p in front];indices={p:i for i,p in enumerate(grid)}
+    front_faces=[tuple(indices[p] for p in [(x,y),(x+1,y),(x+1,y+1),(x,y+1)]) for x,y in sorted(occupied)]
+    faces=front_faces+[tuple(n+i for i in reversed(face)) for face in front_faces]+[(indices[a],indices[b],n+indices[b],n+indices[a]) for a,b in edges.items()]
     mesh=bpy.data.meshes.new('Leicester Pegged Access Pole');mesh.from_pydata([obj.matrix_world.inverted()@v for v in vertices],[],faces)
     bm=bmesh.new();bm.from_mesh(mesh);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(mesh);bm.free();mesh.uv_layers.new(name='UVMap')
     mat=bpy.data.materials.get('Leicester Access Pole Unknown') or bpy.data.materials.new('Leicester Access Pole Unknown');mat.diffuse_color=(0.5,0.5,0.5,1);mesh.materials.append(mat);obj.data=mesh
-    return {'source_node':'building-021','native_mask':154,'native_mask_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'silhouette_pixels':len(occupied),'contour_vertices':n,'visible_crosspegs':9,'peg_pixel_y':[618,631,638,649,659,668,679,687,695],'inference':'A two-unit-deep extrusion along the existing tilted receiver plane; unseen roundness/depth cannot be established.','geometry_representation':'Exact native silhouette preserving the one upright, crosspegs and diagonal branch/brace; no invented second rail.'}
+    return {'source_node':'building-021','native_mask':154,'native_mask_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'silhouette_pixels':len(occupied),'grid_vertices_per_side':n,'boundary_edges':len(edges),'visible_crosspegs':9,'peg_pixel_y':[618,631,638,649,659,668,679,687,695],'inference':'A two-unit-deep extrusion along the existing tilted receiver plane; unseen roundness/depth cannot be established.','geometry_representation':'Exact native silhouette preserving the one upright, crosspegs and diagonal branch/brace; no invented second rail.'}
 
 def close_mill_north_joins(bynode):
     reports=[]
@@ -73,6 +68,15 @@ def close_mill_north_joins(bynode):
         bm.to_mesh(obj.data);bm.free();obj.data.update()
     return reports
 
+def weld_measured_splits(obj):
+    if obj.get('source_node') not in {'building-003','building-007','building-065','building-096'}:return None
+    bm=bmesh.new();bm.from_mesh(obj.data);before=len(bm.verts)
+    # The native diagnostic measures 0.77–0.85 world-unit duplicated corners
+    # along existing straight roof/wall seams, just beyond the default weld.
+    bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=0.9)
+    bm.to_mesh(obj.data);bm.free();obj.data.update()
+    return {'source_node':obj['source_node'],'merged_vertices':before-len(obj.data.vertices),'weld_distance':0.9,'evidence':'shell-diagnostic.json boundary_world_edges: existing duplicated roof/wall corners.'}
+
 def main():
     p=argparse.ArgumentParser();p.add_argument('workspace',type=Path);p.add_argument('--reproject',action='store_true');args=p.parse_args(sys.argv[sys.argv.index('--')+1:]);w=args.workspace.resolve();c=json.loads((w/'workspace.json').read_text())
     helpers=next(p/'level-editor/blender' for p in Path(__file__).resolve().parents if (p/'level-editor/blender/refinement_workspace.py').exists());sys.path.insert(0,str(helpers))
@@ -85,7 +89,7 @@ def main():
     validate(w)
     targets=[o for o in bpy.data.collections[c['collection_name']].all_objects if o.type=='MESH' and o.get('asset_group')==c['asset_id']]
     if not targets:raise ValueError('Missing owned meshes')
-    reports=[repair(o) for o in targets];seams=[]
+    measured_welds=[r for o in targets if (r:=weld_measured_splits(o)) is not None];reports=[repair(o) for o in targets];seams=[]
     bynode={o['source_node']:o for o in targets}
     for left,right in PAIRS:
         if left not in bynode or right not in bynode:continue
@@ -101,7 +105,7 @@ def main():
         a.data.update();b.data.update();seams.append({'source_nodes':[left,right],'matched_vertices':len(matches),'maximum_world_vertex_movement':maximum,'correspondence_tolerance':tolerance,'note':'The rear016/017 ridge junction is occluded by chimney and adjacent roof; midpoint is inferred hidden connectivity.' if tolerance>1 else 'Subpixel shared junction.'})
     join_report=close_mill_north_joins(bynode) if c['asset_id']=='leicester-mill-north-cottage' else None
     pole_report=access_pole(bynode['building-021'],w) if c['asset_id']=='leicester-mill-north-cottage' else None
-    report={'hidden_join_repairs':join_report,'access_pole':pole_report,'asset_id':c['asset_id'],'recipe':'village-cottage-v1','shell_repairs':reports,'shared_roof_seams':seams,'world_transform_drift':0,'inference':'Only planar underside closure; shared junctions reconciled at their average using reported per-pair tolerances. No source silhouette redesign.','limitations':['Doors/windows/timber detail remains source projection unless represented by an existing distinct component.','Hidden roof/back depth remains the inherited geometric hypothesis; component interiors may overlap.'],'projection_status':'STALE'}
+    report={'measured_seam_welds':measured_welds,'hidden_join_repairs':join_report,'access_pole':pole_report,'asset_id':c['asset_id'],'recipe':'village-cottage-v1','shell_repairs':reports,'shared_roof_seams':seams,'world_transform_drift':0,'inference':'Only planar underside closure; shared junctions reconciled at their average using reported per-pair tolerances. No source silhouette redesign.','limitations':['Doors/windows/timber detail remains source projection unless represented by an existing distinct component.','Hidden roof/back depth remains the inherited geometric hypothesis; component interiors may overlap.'],'projection_status':'STALE'}
     (w/'inspection').mkdir(exist_ok=True);(w/'inspection'/'cottage-recipe.json').write_text(json.dumps(report,indent=2)+'\n');validate(w);bpy.ops.wm.save_as_mainfile(filepath=str(w/'model.blend'));print(json.dumps({'asset_id':c['asset_id'],'seams':seams}))
     if args.reproject:
         from refinement_workspace import modified

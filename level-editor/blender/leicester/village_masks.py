@@ -34,6 +34,14 @@ def main():
     # Mill-south: older semantic labels misidentified043 as roof and045 as pile.
     for nodes,masks in [([40],[160]),([41,42,43],[159]),([44],[161]),([45,46,47,56,58],[162]),([55],[168]),([57],[166]),([59],[169]),([60],[163]),([61],[165])]:
         assign(nodes,masks,[163,164,165,168,169] if nodes==[45,46,47,56,58] else (), 'Separate chimney, barrel, pail, woodpile and bench have distinct receivers.', 'VILLAGE-MILL-SOUTH-04')
+    assign([77,78],[171],evidence_id='VILLAGE-MILL-STILT-05')
+    assign([79,80],[170],[172,173,175], 'Wheel, chimney and flume railing have distinct receivers.', 'VILLAGE-MILL-STILT-05')
+    assign([81],[174],[173],'Chimney has its own receiver.', 'VILLAGE-MILL-STILT-05')
+    assign([82],[98],evidence_id='VILLAGE-MILL-STILT-05');assign([83],[173],evidence_id='VILLAGE-MILL-STILT-05')
+    assign([84,85,86,87],[172],evidence_id='VILLAGE-MILL-STILT-05')
+    assign([126],[185],[178,179,180,181,182,186,187,189,190], 'Rocky base excludes building, ladder, support timbers and separate small base blocks.', 'VILLAGE-STILT-WIRES-06')
+    for node,mask in [(127,178),(128,178),(129,180),(130,187),(131,186),(132,190),(133,189),(134,182),(135,181),(136,185)]:
+        assign([node],[mask],evidence_id='VILLAGE-STILT-WIRES-06')
     rows=contract['projections']['exterior']['assignments']
     rows=[r for r in rows if r.get('source_node') not in corrections]+list(corrections.values())
     contract['projections']['exterior']['assignments']=sorted(rows,key=lambda r:r.get('source_node',''))
@@ -44,12 +52,12 @@ def main():
         if 'png' in record:record['png']=str((inventory.parent/record['png']).resolve(strict=True))
     (a.output/'inventory.json').write_text(json.dumps(inventory_data,indent=2)+'\n')
     manifest=a.output/'source-masks.json';manifest.write_text(json.dumps(contract,indent=2)+'\n')
-    evidence_files={'VILLAGE-NATIVE-01':'native-village-details.png','VILLAGE-POLE-02':'pole154-grid.png','VILLAGE-SOUTH-03':'native-south-cottage-details.png','VILLAGE-MILL-SOUTH-04':'mill-south-component-wires.png'}
+    evidence_files={'VILLAGE-NATIVE-01':'native-village-details.png','VILLAGE-POLE-02':'pole154-grid.png','VILLAGE-SOUTH-03':'native-south-cottage-details.png','VILLAGE-MILL-SOUTH-04':'mill-south-component-wires.png','VILLAGE-MILL-STILT-05':'native-mill-stilt-details.png','VILLAGE-STILT-WIRES-06':'stilt-components.png','VILLAGE-MILL-WIRES-07':'mill-components.png'}
     records=[]
     for key,name in evidence_files.items():
         path=evidence/name;shutil.copy2(path,a.output/name)
         records.append({'id':key,'path':name,'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
-    stamp={'version':1,'status':'technical-ownership-reviewed','manifest_sha256':hashlib.sha256(manifest.read_bytes()).hexdigest(),'reviewer':'refine_village','evidence':records,'corrections':sorted(corrections),'findings':['Native154 is one pegged pole with nine visible crosspegs; previous two-rail ladder candidate is rejected.','Native silhouette and projected mesh wire comparison identifies040 roof,043 body,045 annex wall,055 woodpile.','This stamp approves source-pixel ownership only; geometry, open canopy reconstruction and all eight projected views still require separate inspection.'],'unresolved':['Watermill platform/west wall masks and stilt-shed component splits remain unassigned.','Source silhouettes do not establish hidden depths or backside detail.']}
+    stamp={'version':1,'status':'technical-ownership-reviewed','manifest_sha256':hashlib.sha256(manifest.read_bytes()).hexdigest(),'reviewer':'refine_village','evidence':records,'corrections':sorted(corrections),'findings':['Native154 is one pegged pole with nine visible crosspegs; previous two-rail ladder candidate is rejected.','Native silhouette and projected mesh wire comparison identifies040 roof,043 body,045 annex wall,055 woodpile.','This stamp approves source-pixel ownership only; geometry, open canopy reconstruction and all eight projected views still require separate inspection.'],'unresolved':['Watermill platform076 has no matching native silhouette; requires an independently traced bitmap. Stilt base126 geometry is still a coarse solid mass and support-frame geometry is missing.','Source silhouettes do not establish hidden depths or backside detail.']}
     (a.output/'technical-review.json').write_text(json.dumps(stamp,indent=2)+'\n')
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
     from occlusion_constraints import SourceMaskConstraints

@@ -12,7 +12,7 @@ import sys
 import bpy
 import bmesh
 
-VERSION = 'village-shells-v2'
+VERSION = 'village-shells-v3'
 
 def shape(obj):
     return hashlib.sha256(json.dumps({'vertices':[list(v.co) for v in obj.data.vertices], 'faces':[list(p.vertices) for p in obj.data.polygons]},sort_keys=True).encode()).hexdigest()
@@ -36,11 +36,11 @@ def repair(obj):
                 remaining-=adjacent;component|=adjacent;front.extend(adjacent)
             vertices={v for e in component for v in e.verts}
             if not all(sum(e in component for e in v.link_edges)==2 for v in vertices):continue
-            points=[obj.matrix_world@v.co for v in vertices]
+            points=sorted((obj.matrix_world@v.co for v in vertices),key=lambda point:tuple(point))
             origin=points[0];normal=None
-            for i in range(1,len(points)-1):
-                candidate=(points[i]-origin).cross(points[i+1]-origin)
-                if candidate.length>0.001:normal=candidate.normalized();break
+            candidates=[(points[i]-origin).cross(points[j]-origin) for i in range(1,len(points)) for j in range(i+1,len(points))]
+            candidate=max(candidates,key=lambda value:value.length_squared,default=None)
+            if candidate is not None and candidate.length>0.001:normal=candidate.normalized()
             if normal is not None and abs(normal.z)>0.25 and max(abs((point-origin).dot(normal)) for point in points)<0.2:
                 bmesh.ops.holes_fill(bm, edges=list(component), sides=0)
         bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
