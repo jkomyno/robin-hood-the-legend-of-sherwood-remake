@@ -122,6 +122,35 @@ def _validated_projection(config):
                        if before.get(node) != after.get(node)} - set(config['part_ids'])
     if changed_foreign:
         raise ValueError('Working projection reassigned outside-asset nodes: '+str(sorted(changed_foreign)))
+    from workspace_components import validated_scope, owns_assignment
+    scope = validated_scope(config)
+    if scope:
+        def scoped_records(value, trail=(), result=None):
+            result = {} if result is None else result
+            if isinstance(value, dict):
+                if 'source_node' in value:
+                    selectors = value.get('projection_components', [value.get('projection_component')])
+                    for component in selectors:
+                        key = (value['source_node'], component)
+                        normalized = dict(value)
+                        if 'projection_components' in normalized:
+                            normalized['projection_components'] = [component]
+                        result.setdefault(key, []).append((trail, json.dumps(normalized, sort_keys=True)))
+                else:
+                    for key, item in value.items():
+                        scoped_records(item, trail+(key,), result)
+            elif isinstance(value, list):
+                for item in value:
+                    scoped_records(item, trail, result)
+            elif isinstance(value, str) and value in scope['split_sources']:
+                result.setdefault((value, None), []).append((trail, value))
+            return {key: sorted(records) for key, records in result.items()}
+        old_records = scoped_records(frozen.get('projection_reviews', {}))
+        new_records = scoped_records(absolute.get('projection_reviews', {}))
+        for key in old_records.keys() | new_records.keys():
+            if (old_records.get(key) != new_records.get(key) and
+                    not owns_assignment(config, 'source_node', key[0], key[1])):
+                raise ValueError('Working projection changed foreign or node-wide component assignment')
     return manifest
 
 
@@ -215,18 +244,23 @@ def _validated_masks(config, objects=None):
     for label, projection in working['projections'].items():
         before, after = assignments(frozen['projections'][label]), assignments(projection, validate_objects=True)
         for key in before.keys() | after.keys():
-            owned = key[1] in config['part_ids'] if key[0] == 'source_node' else key[1] == config['asset_id']
+            from workspace_components import owns_assignment
+            owned = owns_assignment(config, key[0], key[1], key[2])
             if not owned and before.get(key) != after.get(key):
                 raise ValueError('Working masks changed another asset assignment')
     return {'working_sha256': _sha(path), 'native_hashes_sha256': _sha(directory/'native-hashes.json'),
             'initial_assignments_sha256': _sha(directory/'assignments.json')}
 
 
-def _geometry(obj):
+def _geometry(obj, protect_appearance=False, appearance_cache=None):
     value = {"type": obj.type, "matrix": [list(row) for row in obj.matrix_world],
              "parent": obj.parent.name if obj.parent else None,
              "hide_render": obj.hide_render, "hide_viewport": obj.hide_viewport,
              "source_node": obj.get("source_node"), "asset_group": obj.get("asset_group")}
+    if protect_appearance:
+        from workspace_components import appearance_state
+        value["projection_component"] = obj.get("projection_component")
+        value["appearance"] = appearance_state(obj, appearance_cache)
     if obj.type == "MESH":
         value["vertices"] = [list(v.co) for v in obj.data.vertices]
         value["faces"] = [list(p.vertices) for p in obj.data.polygons]
@@ -254,12 +288,19 @@ def _objects(config):
 def _ownership(config):
     import bpy
     objects = _objects(config)
-    target = [o for o in objects if o.type == "MESH" and o.get("asset_group") == config["asset_id"]]
+    from workspace_components import validated_scope
+    scope = validated_scope(config, objects)
+    if scope is None and not config.get('source_path'):
+        scope = config.get('component_ownership')  # freshly parsed prepare() catalog
+    target = [o for o in objects if o.type == "MESH" and o.get("asset_group") == config["asset_id"]
+              and not (scope and o.get('source_node') in scope['split_sources']
+                       and not o.get('projection_component'))]
     if not target:
         raise ValueError("Asset has no meshes in the reviewed working collection")
     if any(not o.get("source_node") for o in target):
         raise ValueError("Every asset component must retain a stable source_node")
-    return target, {o.name: _geometry(o) for o in bpy.data.scenes[config["scene_name"]].objects
+    appearance_cache = {}
+    return target, {o.name: _geometry(o, protect_appearance=scope is not None, appearance_cache=appearance_cache) for o in bpy.data.scenes[config["scene_name"]].objects
                     if o not in target}
 
 
@@ -340,7 +381,8 @@ def _reproject(config, report_dir):
     from reproject_map import restore_projection, reproject_layers, reproject_map
     # Layered projection owns its full receiver partition. Keep context meshes
     # render-visible, even though only the worker asset is selectable.
-    restore_projection(config["map_name"])
+    ownership_scope = {"receiver_asset_id": config["asset_id"]} if config.get("component_ownership") else {}
+    restore_projection(config["map_name"], **ownership_scope)
     if config.get("projection_manifest"):
         # The projection annotator writes beside its manifest. Keep its changing
         # receiver report out of the immutable reference directory.
@@ -352,10 +394,11 @@ def _reproject(config, report_dir):
         return reproject_layers(report_dir / "layers.json", report_dir,
                                 ownership_nodes=active_nodes, preserve_authored=False,
                                 exterior_source=_mission_review_source(config),
-                                source_mask_manifest=config.get('source_mask_manifest'))
+                                source_mask_manifest=config.get('source_mask_manifest'),
+                                **({'ownership_asset_id': config['asset_id']} if config.get('component_ownership') else {}))
     report = reproject_map(config["map_name"], config["source_path"],
                            Path(report_dir) / "source.json",
-                           elevation_deg=config["elevation_degrees"])
+                           elevation_deg=config["elevation_degrees"], **ownership_scope)
     from source_projection_bake import bake
     report['ownership'] = bake(config['map_name'], config['source_path'],
                                Path(report_dir) / 'ownership.json',
@@ -363,7 +406,7 @@ def _reproject(config, report_dir):
                                receiver_nodes=active_nodes,
                                elevation_deg=config['elevation_degrees'],
                                preserve_authored=False,
-                               source_mask_manifest=config.get('source_mask_manifest'))
+                               source_mask_manifest=config.get('source_mask_manifest'), **ownership_scope)
     return report
 
 
@@ -381,6 +424,8 @@ def _render(config, output, baseline=None):
                          source_mask_manifest=config.get('source_mask_manifest'),
                          allow_projection_revision=bool(baseline and config.get('projection_manifest')),
                          allow_mask_revision=bool(baseline and mask_evidence))
+    if config.get('component_ownership'):
+        result['component_ownership'] = config['component_ownership']
     if mask_evidence:
         result['working_mask_evidence'] = mask_evidence
     if config.get('projection_manifest'):
@@ -427,6 +472,17 @@ def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path
                   grouping_manifest_sha256=_sha(grouping_path))
     bpy.context.window.scene = bpy.data.scenes[scene_name]
     bpy.context.view_layer.update()
+    if grouping.get("version") == 2:
+        from catalog_schema import parse_catalog
+        from workspace_components import scope_for
+        index = parse_catalog(grouping)
+        meshes = [o for o in _objects(config) if o.type == "MESH" and o.get("source_node") != "ground"]
+        index.validate_meshes([{"source_node": o.get("source_node"), "projection_component": o.get("projection_component"), "hide_render": o.hide_render} for o in meshes])
+        for obj in meshes:
+            owner, _ = index.owner_for(obj.get("source_node"), obj.get("projection_component"))
+            if obj.get("asset_group") != owner["id"]:
+                raise ValueError("Loaded component ownership differs from reviewed catalog")
+        config["component_ownership"] = scope_for(index, asset_id)
     targets, outside = _ownership(config)
     parts = sorted({o["source_node"] for o in targets})
     if sorted(f"building-{p['obstacle']:03d}" for p in entry["parts"]) != parts:
@@ -461,6 +517,8 @@ def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path
     bpy.ops.wm.save_as_mainfile(filepath=str(workspace / "baseline.blend"), copy=True)
     config["baseline_sha256"] = _sha(workspace / "baseline.blend")
     config["part_ids"] = parts
+    if config.get("component_ownership"):
+        targets, outside = _ownership(config)
     config["outside_geometry"] = outside
     _reproject(config, workspace / "projection" / "input")
     _render(config, workspace / "input")
@@ -566,6 +624,7 @@ def validate(workspace_dir):
     masks = _validated_masks(config, _objects(config))
     return {"status": "PASS", "asset_id": config["asset_id"],
             "part_ids": config["part_ids"], "meshes": len(targets),
+            **({"component_ownership": config["component_ownership"]} if config.get("component_ownership") else {}),
             "projection_manifest_sha256": _sha(config['projection_manifest']) if config.get('projection_manifest') else None,
             "working_mask_evidence": masks,
             "protected_objects": len(outside)}
