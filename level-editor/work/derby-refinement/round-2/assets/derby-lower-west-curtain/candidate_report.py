@@ -15,6 +15,7 @@ residuals=[]
 for record in observations:
  name=record['id'];box=record['box'];north=name.startswith('north')
  a,b=((318.9380798,1535.382262),(392.6815491,1644.803565)) if north else ((386.4078064,2118.757557),(511.4077759,2216.992439))
+ if 'return' in name:a,b=(326.912323,1749.419625),(392.681549,1644.803565)
  rows=[]
  im=source.crop(box).resize(((box[2]-box[0])*10,(box[3]-box[1])*10),Image.Resampling.NEAREST);draw=ImageDraw.Draw(im)
  for i,(x,y) in enumerate(record['points']):
@@ -27,7 +28,7 @@ for record in observations:
   draw.line((px-4,py,px+4,py),fill='cyan',width=2)
   draw.text((px+5,oy-10),str(i+1),fill='white')
  im.save(corners/(name+'-residual.png'))
- residuals.append({'run':name,'scope':'first two gaps only; remainder unmeasured','points':rows,'rms_pixels':math.sqrt(sum(r['error_pixels']**2 for r in rows)/len(rows))})
+ residuals.append({'run':name,'scope':'explicit points only; source-corner uncertainty applies','points':rows,'rms_pixels':math.sqrt(sum(r['error_pixels']**2 for r in rows)/len(rows))})
 (packet/'corner-residuals.json').write_text(json.dumps(residuals,indent=2)+'\n')
 (packet/'review.md').write_text('''# Lower West complete-wall candidate — partial trace, not approval-ready
 
@@ -63,6 +64,16 @@ unfinished. Concealed repeats near the roof are explicitly inferred.
 
 ![Observed yellow; predicted cyan; error red](corners/north-025-first-two-gaps-residual.png)
 
+### Extended north traces
+
+![Four front-run gaps](corners/north-025-four-gaps-front-run.png)
+
+![Four return-run gaps](corners/north-025-return-four-gaps.png)
+
+![Front-run residuals](corners/north-025-four-gaps-front-run-residual.png)
+
+![Return-run residuals](corners/north-025-return-four-gaps-residual.png)
+
 ## South
 
 ![Solid](south/solid.png)
@@ -74,6 +85,12 @@ unfinished. Concealed repeats near the roof are explicitly inferred.
 ![Numbered source corners](corners/south-042-first-two-gaps.png)
 
 ![Observed yellow; predicted cyan; error red](corners/south-042-first-two-gaps-residual.png)
+
+### Extended south042 trace
+
+![Six gaps, numbered](corners/south-042-six-gaps.png)
+
+![Six-gap residuals](corners/south-042-six-gaps-residual.png)
 
 Exact observations and local analytic crown/notch predictions are recorded in
 `corners/points.json` and `corner-residuals.json`. Predictions use the same outer
