@@ -87,7 +87,7 @@ def main():
     else:
         from leicester.village_shells import repair
     validate(w)
-    targets=[o for o in bpy.data.collections[c['collection_name']].all_objects if o.type=='MESH' and o.get('asset_group')==c['asset_id']]
+    targets=[o for o in bpy.data.collections[c['collection_name']].all_objects if o.type=='MESH' and o.get('asset_group')==c['asset_id'] and not o.get('projection_component')]
     if not targets:raise ValueError('Missing owned meshes')
     measured_welds=[r for o in targets if (r:=weld_measured_splits(o)) is not None];reports=[repair(o) for o in targets];seams=[]
     bynode={o['source_node']:o for o in targets}
@@ -95,7 +95,7 @@ def main():
         if left not in bynode or right not in bynode:continue
         a,b=bynode[left],bynode[right]
         va=[a.matrix_world@v.co for v in a.data.vertices];vb=[b.matrix_world@v.co for v in b.data.vertices]
-        tolerance=7.0 if (left,right)==('building-016','building-017') else (1.1 if (left,right)==('building-001','building-002') else 0.8)
+        tolerance=7.0 if (left,right)==('building-016','building-017') else (1.1 if (left,right) in [('building-001','building-002'),('building-003','building-007')] else 0.8)
         matches=[(i,j) for i,x in enumerate(va) for j,y in enumerate(vb) if (x-y).length<tolerance]
         if len({i for i,j in matches})!=len(matches) or len({j for i,j in matches})!=len(matches):raise ValueError('Ambiguous seam vertex correspondence')
         maximum=0
@@ -105,7 +105,12 @@ def main():
         a.data.update();b.data.update();seams.append({'source_nodes':[left,right],'matched_vertices':len(matches),'maximum_world_vertex_movement':maximum,'correspondence_tolerance':tolerance,'note':'The rear016/017 ridge junction is occluded by chimney and adjacent roof; midpoint is inferred hidden connectivity.' if (left,right)==('building-016','building-017') else 'Subpixel shared junction.'})
     join_report=close_mill_north_joins(bynode) if c['asset_id']=='leicester-mill-north-cottage' else None
     pole_report=access_pole(bynode['building-021'],w) if c['asset_id']=='leicester-mill-north-cottage' else None
-    report={'measured_seam_welds':measured_welds,'hidden_join_repairs':join_report,'access_pole':pole_report,'asset_id':c['asset_id'],'recipe':'village-cottage-v1','shell_repairs':reports,'shared_roof_seams':seams,'world_transform_drift':0,'inference':'Only planar underside closure; shared junctions reconciled at their average using reported per-pair tolerances. No source silhouette redesign.','limitations':['Doors/windows/timber detail remains source projection unless represented by an existing distinct component.','Hidden roof/back depth remains the inherited geometric hypothesis; component interiors may overlap.'],'projection_status':'STALE'}
+    wheel_report=None
+    if c['asset_id']=='leicester-northeast-longhouse':
+        if support.exists():from village_details import longhouse_wheel
+        else:from leicester.village_details import longhouse_wheel
+        wheel_report=longhouse_wheel(w,c)
+    report={'spare_wheel':wheel_report,'measured_seam_welds':measured_welds,'hidden_join_repairs':join_report,'access_pole':pole_report,'asset_id':c['asset_id'],'recipe':'village-cottage-v1','shell_repairs':reports,'shared_roof_seams':seams,'world_transform_drift':0,'inference':'Only planar underside closure; shared junctions reconciled at their average using reported per-pair tolerances. No source silhouette redesign.','limitations':['Doors/windows/timber detail remains source projection unless represented by an existing distinct component.','Hidden roof/back depth remains the inherited geometric hypothesis; component interiors may overlap.'],'projection_status':'STALE'}
     (w/'inspection').mkdir(exist_ok=True);(w/'inspection'/'cottage-recipe.json').write_text(json.dumps(report,indent=2)+'\n');validate(w);bpy.ops.wm.save_as_mainfile(filepath=str(w/'model.blend'));print(json.dumps({'asset_id':c['asset_id'],'seams':seams}))
     if args.reproject:
         from refinement_workspace import modified
