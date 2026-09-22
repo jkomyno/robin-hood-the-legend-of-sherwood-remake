@@ -1,5 +1,14 @@
 import type { SightObstacle } from "./level.ts";
 
+export type AssetState = "initial" | "applied";
+
+/** Explicit endpoint membership: canonical nodes in descriptors, object IDs in documents. */
+export interface AssetStates {
+  active: AssetState;
+  initial: string[];
+  applied: string[];
+}
+
 /** A standalone model exported from a reviewed map, with local obstacles. */
 export interface ProjectionAssetDescriptor {
   version: 1;
@@ -10,6 +19,7 @@ export interface ProjectionAssetDescriptor {
   model: string;
   source_origin_scene: [number, number, number];
   source_origin_game: [number, number, number];
+  states?: AssetStates;
   parts: { node: string; name: string; source_obstacle: number; default_hidden?: boolean; obstacle_local_game: SightObstacle }[];
 }
 

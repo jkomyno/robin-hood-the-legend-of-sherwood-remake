@@ -434,6 +434,10 @@ export function parseLevel3D(
     );
     transform(o.transform, o.id);
   }
+  for (const group of d.groups) if (group.states !== undefined) {
+    const members = d.objects.filter((part: any) => part.group === group.id);
+    validateAssetStates(group.states, new Map(members.map((part: any) => [part.id, !!part.hidden])), group.id);
+  }
   if (d.provenance !== undefined) {
     const p = object(d.provenance, "provenance");
     for (const [key, expected] of [
@@ -511,5 +515,25 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     obstacle(part.obstacle_local_game, part.node);
     check(part.obstacle_local_game.points.length >= 3, part.node, "editable obstacle needs three points");
   }
+  if (d.states !== undefined)
+    validateAssetStates(d.states, new Map(parts.map(part => [part.node, !!part.default_hidden])), "asset.states");
   return value as ProjectionAssetDescriptor;
+}
+
+/** Validate exclusive endpoints against their owning parts and relative visibility. */
+export function validateAssetStates(value: unknown, hidden: Map<string, boolean>, path: string): void {
+  const states = object(value, path);
+  check(states.active === "initial" || states.active === "applied", path, "invalid active state");
+  const seen = new Set<string>();
+  for (const endpoint of ["initial", "applied"]) {
+    const members = array(states[endpoint], `${path}.${endpoint}`);
+    check(members.length > 0, path, "state endpoint must be nonempty");
+    for (const id of members) {
+      text(id, path);
+      check(hidden.has(id), path, `state member ${id} is outside its group`);
+      check(!seen.has(id), path, `duplicate state member ${id}`);
+      seen.add(id);
+      check(hidden.get(id) === (states.active !== endpoint), path, `state visibility mismatch for ${id}`);
+    }
+  }
 }

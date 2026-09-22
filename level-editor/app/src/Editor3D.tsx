@@ -27,6 +27,8 @@ import {
 } from "./session-publication";
 import {
   duplicateSelection,
+  setGroupState,
+  stateOwner,
   deleteSelection,
   patchPart,
   patchGroup,
@@ -343,10 +345,14 @@ export default function Editor3D(props: EditorProps) {
   );
 
   // ── actions ──
+  const selectedStatePart = () => {
+    const d = doc(); const p = selectedPart();
+    return d && p ? stateOwner(d, p.id) : undefined;
+  };
   function duplicateSelected() {
     const document = doc();
     const selection = selected();
-    if (!document || !selection) return;
+    if (!document || !selection || selectedStatePart()) return;
     const result = duplicateSelection(document, selection);
     pushHistory(result.document);
     select(result.selection);
@@ -354,7 +360,7 @@ export default function Editor3D(props: EditorProps) {
   function deleteSelected() {
     const document = doc();
     const selection = selected();
-    if (!document || !selection) return;
+    if (!document || !selection || selectedStatePart()) return;
     const next = deleteSelection(document, selection);
     select(null);
     pushHistory(next);
@@ -373,7 +379,7 @@ export default function Editor3D(props: EditorProps) {
     const g = selectedGroup();
     const p = selectedPart();
     if (g) updateGroup(g.id, { hidden });
-    else if (p) updatePart(p.id, { hidden });
+    else if (p && !selectedStatePart()) updatePart(p.id, { hidden });
   }
   async function save() {
     if (!session.current || saving) return;
@@ -732,11 +738,20 @@ export default function Editor3D(props: EditorProps) {
                     lift
                   </label>
                 </div>
+                <Show when={selectedGroup()?.states}>
+                  <label>State <select value={selectedGroup()?.states?.active}
+                    onChange={event => pushHistory(setGroupState(doc()!, selectedGroup()!.id,
+                      event.currentTarget.value as "initial" | "applied"))}>
+                    <option value="initial">Initial</option>
+                    <option value="applied">Applied</option>
+                  </select></label>
+                </Show>
+                <Show when={selectedStatePart()}><p>Select the whole group to change its state, duplicate it, or delete it.</p></Show>
                 <div class="row">
-                  <button onClick={duplicateSelected} title="d">
+                  <button onClick={duplicateSelected} title="d" disabled={!!selectedStatePart()}>
                     Duplicate
                   </button>
-                  <button onClick={deleteSelected} title="del">
+                  <button onClick={deleteSelected} title="del" disabled={!!selectedStatePart()}>
                     Delete
                   </button>
                   <button
@@ -750,6 +765,7 @@ export default function Editor3D(props: EditorProps) {
                       checked={
                         !!(selectedGroup()?.hidden ?? selectedPart()?.hidden)
                       }
+                      disabled={!!selectedStatePart()}
                       onChange={(e) => setHidden(e.currentTarget.checked)}
                     />{" "}
                     hidden

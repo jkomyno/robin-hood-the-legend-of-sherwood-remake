@@ -12,7 +12,7 @@
 // and height contact, so the editor selects the whole building by default
 // while every part keeps its own transform relative to the group.
 import polygonClipping, { type Polygon } from "polygon-clipping";
-import type { ExternalAssetSource } from "./projection-assets.ts";
+import type { AssetStates, ExternalAssetSource } from "./projection-assets.ts";
 import type { MapCamera } from "./scene.ts";
 import type { ObstaclePoint, SightObstacle } from "./level.ts";
 import { signedPolygonArea } from "./geometry.ts";
@@ -53,6 +53,7 @@ export interface Level3DObject {
 
 /** a building: several parts moved together */
 export interface Level3DGroup {
+  states?: AssetStates;
   id: string;
   name?: string;
   transform: GameTransform;

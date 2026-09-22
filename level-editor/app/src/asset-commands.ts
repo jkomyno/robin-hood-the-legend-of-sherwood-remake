@@ -27,6 +27,9 @@ export function insertProjectionAsset(document: Level3D, descriptor: ProjectionA
   const next: Level3D = { ...document,
     assetSources: existing ? document.assetSources : [...(document.assetSources ?? []), { ...reference }],
     groups: [...document.groups, { id, name: descriptor.name,
+      ...(descriptor.states ? { states: { active: descriptor.states.active,
+        initial: descriptor.states.initial.map(node => `${id}:${node}`),
+        applied: descriptor.states.applied.map(node => `${id}:${node}`) } } : {}),
       transform: { dx: placement[0], dy: placement[1], dz: placement[2], rot_deg: 0 } }],
     objects: [...document.objects, ...parts],
   };

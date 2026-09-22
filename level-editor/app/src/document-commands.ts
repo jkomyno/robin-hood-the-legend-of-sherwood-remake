@@ -1,4 +1,4 @@
-import type { Level3D, Level3DGroup, Level3DObject } from "@rle/shared";
+import { parseLevel3D, type AssetState, type Level3D, type Level3DGroup, type Level3DObject } from "@rle/shared";
 
 export type Selection = { kind: "group" | "part"; id: string } | null;
 
@@ -10,6 +10,8 @@ export function patchPart(
 ): Level3D {
   if (!document.objects.some((part) => part.id === id))
     throw new Error(`Unknown part ${id}`);
+  if (patch.hidden !== undefined && stateOwner(document, id))
+    throw new Error("Use the group State selector to change endpoint visibility");
   return {
     ...document,
     objects: document.objects.map((part) =>
@@ -53,6 +55,7 @@ export function duplicateSelection(
       new Set(document.groups.map((item) => item.id)),
     );
     const occupied = new Set(document.objects.map((item) => item.id));
+    const remap = new Map<string, string>();
     const copies = document.objects
       .filter((part) => part.group === group.id)
       .map((part) => {
@@ -61,6 +64,7 @@ export function duplicateSelection(
           ? uniqueId(preferred, occupied)
           : preferred;
         occupied.add(copyId);
+        remap.set(part.id, copyId);
         return { ...part, id: copyId, group: id };
       });
     return {
@@ -70,6 +74,9 @@ export function duplicateSelection(
           ...document.groups,
           {
             ...group,
+            ...(group.states ? { states: { active: group.states.active,
+              initial: group.states.initial.map(member => remap.get(member)!),
+              applied: group.states.applied.map(member => remap.get(member)!) } } : {}),
             id,
             transform: {
               ...group.transform,
@@ -83,6 +90,7 @@ export function duplicateSelection(
       selection: { kind: "group", id },
     };
   }
+  if (stateOwner(document, selection.id)) throw new Error("Duplicate the complete state group");
   const part = document.objects.find((item) => item.id === selection.id);
   if (!part) throw new Error(`Unknown part ${selection.id}`);
   const id = uniqueId(
@@ -117,10 +125,32 @@ export function deleteSelection(
       objects: document.objects.filter((part) => part.group !== selection.id),
     };
   }
+  if (stateOwner(document, selection.id)) throw new Error("Delete the complete state group");
   if (!document.objects.some((part) => part.id === selection.id))
     throw new Error(`Unknown part ${selection.id}`);
   return {
     ...document,
     objects: document.objects.filter((part) => part.id !== selection.id),
   };
+}
+
+export function stateOwner(document: Level3D, objectId: string): Level3DGroup | undefined {
+  return document.groups.find(group => group.states &&
+    [...group.states.initial, ...group.states.applied].includes(objectId));
+}
+
+/** Both endpoint visibilities and the selected state form one undoable revision. */
+export function setGroupState(document: Level3D, id: string, active: AssetState): Level3D {
+  parseLevel3D(document);
+  const group = document.groups.find(group => group.id === id);
+  if (!group?.states) throw new Error(`Group ${id} has no authored states`);
+  if (active !== "initial" && active !== "applied") throw new Error("Invalid state");
+  const hidden = new Map<string, boolean>();
+  for (const endpoint of ["initial", "applied"] as const)
+    for (const member of group.states[endpoint]) hidden.set(member, endpoint !== active);
+  const next: Level3D = { ...document,
+    groups: document.groups.map(item => item.id === id ? { ...item, states: { ...group.states!, active } } : item),
+    objects: document.objects.map(part => hidden.has(part.id) ? { ...part, hidden: hidden.get(part.id)! } : part),
+  };
+  return parseLevel3D(next);
 }
