@@ -1,5 +1,10 @@
 # Derby asset refinement review
 
+East Hall `next-zigzag-v3/band-review` approved by user on 2026-09-23.
+Approval is bound to model and sheet hashes in the review manifest, and the
+card is removed from pending review. Two-image texture filling is authorized;
+retain existing interior receivers and the documented stair/roof limitation.
+
 ## Current source-traced revision review — 2026-09-22
 
 Lower West north `inspection/north-corner-v6` and south
