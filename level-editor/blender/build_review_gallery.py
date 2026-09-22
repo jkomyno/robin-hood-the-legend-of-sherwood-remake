@@ -35,6 +35,16 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             if (output / "reports").exists():
                 shutil.copytree(output / "reports", archive / "reports")
     records, cards = [], []
+    missing = data.get('without_packets', [])
+    missing_section = ''
+    if missing:
+        rows = ''.join('<tr><td>' + html.escape(item['name']) + '</td><td><code>' +
+                       html.escape(item['id']) + '</code></td><td>' + html.escape(item['status']) +
+                       '</td></tr>' for item in missing)
+        missing_section = ('<section><h2>Assets awaiting complete review packets</h2>'
+                           '<p>These assets are still in progress and are not ready for approval.</p>'
+                           '<table><thead><tr><th>Asset</th><th>ID</th><th>Status</th></tr></thead>'
+                           '<tbody>' + rows + '</tbody></table></section>')
     for number, item in enumerate(items, 1):
         figures, evidence = [], {}
         sheets = [("solid", "Solid geometry"), ("textured", "Original textures + shaded unknown surfaces")]
@@ -105,6 +115,7 @@ nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}a{color:#afd3ff}nav a{padd
 article{padding:20px 0 40px;border-top:1px solid #455064;scroll-margin-top:15px}.status{color:#ffd898;font-weight:600}
 .sheets{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}figcaption{padding:8px 0;color:#c2cddd}
 img{display:block;width:100%;background:black}select{font:inherit;padding:6px;border-radius:5px}
+table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px;border-bottom:1px solid #455064}
 figure[data-kind$=context] img{width:auto;max-width:100%;max-height:400px}figure[data-kind$=context]{grid-column:1/-1}
 body[data-mode=solid] figure[data-kind$=textured],body[data-mode=textured] figure[data-kind$=solid]{display:none}
 body:not([data-mode=both]) .sheets{grid-template-columns:1fr}
@@ -112,14 +123,17 @@ body:not([data-mode=both]) .sheets{grid-template-columns:1fr}
 </style><body data-mode="both"><header><h1>'''+title+'''</h1>
 <p>Geometry candidates, not generated textures. Gray means no accepted original texture.
 Click any sheet for its full resolution. Review status does not imply user approval.</p>
-'''+(f'<p><strong>Approved models are hidden. {len(items)} remaining; '
+'''+(f'<p><strong>{data.get("total_groups", len(items))} catalog assets; {len(items)} pending review packets'
+      f' and {len(missing)} assets awaiting packets.</strong></p>' if 'total_groups' in data else '')+'''
+'''+(f'<p><strong>Approved models are hidden. {len(items)} displayed packets; '
       f'{sum(item["status"] == "ready-for-user" for item in items)} ready for your decision.</strong> '
       'Items marked validation-pending or fix-needed are still being worked on.</p>' if pending_only else '')+'''
 <label>Show <select id="mode"><option value="both">Both sheets</option><option value="solid">Solid geometry</option>
-<option value="textured">Original textures + gray</option></select></label><nav>'''+nav+'''</nav></header><main>'''+"".join(cards)+'''</main>
+<option value="textured">Original textures + gray</option></select></label><nav>'''+nav+'''</nav></header><main>'''+"".join(cards)+missing_section+'''</main>
 <script>document.querySelector('#mode').addEventListener('change',e=>document.body.dataset.mode=e.target.value);</script></body></html>'''
     (output / "index.html").write_text(document)
-    (output / "evidence.json").write_text(json.dumps({"source_index": str(index_path), "items": records}, indent=2)+"\n")
+    (output / "evidence.json").write_text(json.dumps({"source_index": str(index_path), "items": records,
+                                                    "without_packets": missing}, indent=2)+"\n")
     print(json.dumps({"gallery": str(output / "index.html"), "candidates": len(items), "images": sum(len(r["images"]) for r in records)}))
 
 

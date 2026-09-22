@@ -62,7 +62,10 @@ def collect(catalog_path, assets, output):
         items.append(item)
         progress.append({**entry, 'status': status})
     manifest = output / 'review-candidates.json'
-    manifest.write_text(json.dumps({'map': 'Leicester', 'items': items}, indent=2) + '\n')
+    without_packets = [p for p in progress if p['status'] in ('refinement-in-progress', 'not-prepared')]
+    manifest.write_text(json.dumps({'map': 'Leicester', 'items': items,
+                                   'total_groups': len(progress),
+                                   'without_packets': without_packets}, indent=2) + '\n')
     (output / 'progress.json').write_text(json.dumps({'map': 'Leicester', 'groups': progress,
         'total': len(progress), 'packets': len(items), 'ready': sum(i['status'] == 'ready-for-user' for i in items),
         'geometry_approval': 'pending', 'texture_generation': 'not-started',
