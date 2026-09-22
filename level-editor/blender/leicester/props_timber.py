@@ -171,7 +171,8 @@ def run(workspace):
         raise ValueError('Timber recipe is not idempotent')
     report = dict(recipe=VERSION, asset_id=config['asset_id'], objects=records, idempotence='PASS',
                   projection_status='STALE; regenerate modified packet', approval_status='refinement-in-progress',
-                  texture_generation='not-started')
+                  texture_generation='not-started',
+                  limitations=list(dict.fromkeys(note for record in records for note in record['limitations'])))
     validate(workspace)
     (workspace/'inspection').mkdir(exist_ok=True)
     (workspace/'inspection/timber-recipe.json').write_text(json.dumps(report, indent=2)+'\n')
