@@ -27,8 +27,9 @@ def main():
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--projection-manifest', type=Path)
     parser.add_argument('--source-mask-manifest', type=Path)
+    parser.add_argument('--max-concurrency', type=int, default=2)
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
-    paths = {key: str(value.resolve()) for key, value in vars(args).items() if value is not None}
+    paths = {key: str(value.resolve()) for key, value in vars(args).items() if isinstance(value, Path)}
     review = json.loads(args.review.read_text())
     if (review.get('status') != 'reviewed' or not review.get('reviewer')
             or review.get('catalog_sha256') != sha(args.catalog)
@@ -54,7 +55,7 @@ def main():
     # Set the new save path before the grouping helper saves its hierarchy.
     bpy.ops.wm.save_as_mainfile(filepath=paths['output'])
     report = group_assets(paths['catalog'])
-    result = dispatch(paths['assets'], source_blend=paths['output'], max_concurrency=2,
+    result = dispatch(paths['assets'], source_blend=paths['output'], max_concurrency=args.max_concurrency,
                       scene_name='Leicester Refinement', collection_name='Leicester Working',
                       source_path=paths['source_image'], grouping_manifest=paths['catalog'],
                       inventory_path=paths['inventory'], review_path=paths['review'],
