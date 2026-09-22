@@ -30,6 +30,8 @@ def main():
                        render_object_names=names,frame_manifest=frame)
             if report['status']!='STRUCTURAL-PASS':
                 raise RuntimeError(report['problems'])
+        from refinement_workspace import validate
+        (workspace/'validation.json').write_text(json.dumps(validate(workspace),indent=2)+'\n')
 
 
 if __name__=='__main__':main()

@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 import sys
 import uuid
+import shutil
 
 import bpy
 import bmesh
@@ -263,15 +264,41 @@ def retained_returns(workspace):
     return {'source_nodes':changes,'geometry_changed':False}
 
 
+def state_variants(workspace):
+    """Represent native material-state changes with explicit exclusive components."""
+    collection=bpy.data.collections['Leicester Working']
+    path=Path(initialize_working_projection(workspace));manifest=json.loads(path.read_text());review=manifest['projection_reviews'][PATCH]
+    originals=[o for o in collection.all_objects if o.get('asset_group')=='leicester-west-wing' and o.get('projection_component')=='retained-interior' and not o.hide_render]
+    if any(o.get('projection_component')=='retained-exterior-state' for o in collection.all_objects):raise RuntimeError('State variants already authored')
+    records=[]
+    for obj in originals:
+        cover=obj.copy();cover.data=obj.data.copy();cover.name=obj.name+' / covered material state';collection.objects.link(cover)
+        cover_selector=tag(cover,'retained-exterior-state');cover['reveal_component_role']='removable-cover'
+        interior_selector={'source_node':obj['source_node'],'projection_component':'retained-interior','patch_id':PATCH}
+        review['receiver_components']['exterior'].append({'source_node':obj['source_node'],'projection_components':['retained-exterior-state'],'patch_id':PATCH})
+        review['exclude_occluder_components'].append(cover_selector)
+        review['render_visibility']['covered']['hidden_components'].append(interior_selector)
+        review['render_visibility']['revealed']['hidden_components'].append(cover_selector)
+        review['partial_cover_nodes'].append(obj['source_node'])
+        records.append({'source_node':obj['source_node'],'identical_geometry':True,'exclusive_states':['covered','revealed']})
+    review['partial_cover_nodes']=sorted(set(review['partial_cover_nodes']))
+    review['render_visibility']['evidence']+=' Native retained trim has different covered and revealed pixels. Identical physical mesh variants are mutually exclusive; covered variants use only exterior mapping, revealed variants use reviewed regional mapping.'
+    path.write_text(json.dumps(manifest,indent=2)+'\n')
+    return records
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('workspace',type=Path);parser.add_argument('--receivers',action='store_true')
     parser.add_argument('--walkway',action='store_true')
     parser.add_argument('--returns',action='store_true')
+    parser.add_argument('--state-variants',action='store_true')
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:]);workspace=args.workspace.resolve()
     if not json.loads((workspace/'inspection/input-review.json').read_text())['all_eight_views_inspected']:
         raise RuntimeError('Inspect frozen input before modifying')
     bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'),load_ui=False)
-    if args.returns:
+    if args.state_variants:
+        report=json.loads((workspace/'geometry-report.json').read_text());report['material_state_variants']=state_variants(workspace)
+    elif args.returns:
         report=json.loads((workspace/'geometry-report.json').read_text());report['retained_returns']=retained_returns(workspace)
     elif args.walkway:
         report=json.loads((workspace/'geometry-report.json').read_text());report['foreground_walkway']=extend_walkway(workspace)
@@ -281,12 +308,23 @@ def main():
     (workspace/'geometry-report.json').write_text(json.dumps(report,indent=2)+'\n')
     bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
     bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'),load_ui=False)
-    modified(workspace)
+    if args.state_variants:
+        from refinement_workspace import _reproject,validate
+        config=json.loads((workspace/'workspace.json').read_text())
+        _reproject(config,workspace/'projection'/uuid.uuid4().hex[:12])
+        bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
+        (workspace/'validation.json').write_text(json.dumps(validate(workspace),indent=2)+'\n')
+    else:modified(workspace)
     from asset_reference_views import render_states
     target=workspace/'inspection/states'
     if target.exists():
         history=workspace/'inspection/state-history';history.mkdir(exist_ok=True);target.rename(history/uuid.uuid4().hex[:12])
     render_states(workspace,target)
+    if args.state_variants:
+        # The primary packet depicts the explicit covered state. Both state
+        # variants remain available in the saved model for the paired packet.
+        current=workspace/'modified';history=workspace/'history';history.mkdir(exist_ok=True)
+        current.rename(history/uuid.uuid4().hex[:12]);shutil.copytree(target/PATCH/'covered',current)
 
 
 if __name__=='__main__':main()
