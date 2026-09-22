@@ -138,9 +138,9 @@ def main():
         else:from leicester.village_details import gabled_canopy,gabled_accessories,gabled_lean_to,gabled_barrel
         extra_detail={'canopy':gabled_canopy(w,c,bynode['building-010']),'accessories':gabled_accessories(w,c),'lean_to':gabled_lean_to(w,bynode['building-011'],bynode['building-012']),'barrel':gabled_barrel(bynode['building-013'])}
     if c['asset_id']=='leicester-south-stilt-shed':
-        if support.exists():from village_details import stilt_ladder
-        else:from leicester.village_details import stilt_ladder
-        extra_detail=stilt_ladder(w,bynode['building-129'])
+        if support.exists():from village_stilt import refine as refine_stilt
+        else:from leicester.village_stilt import refine as refine_stilt
+        extra_detail=refine_stilt(w,c,bynode)
     if c['asset_id']=='leicester-southeast-cottage':bynode['building-096']['projection_min_cosine']=0.12
     wheel_report=None
     if c['asset_id']=='leicester-northeast-longhouse':
