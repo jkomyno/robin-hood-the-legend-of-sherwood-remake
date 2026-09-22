@@ -8,10 +8,11 @@ import numpy as np
 from mathutils import Vector
 
 
-def silhouette_prism(workspace, index, pixel_to_world, thickness):
+def silhouette_prism(workspace, index, pixel_to_world, thickness, pixel_filter=None):
     c=json.loads((workspace/'workspace.json').read_text());manifest=Path(c['source_mask_manifest']);contract=json.loads(manifest.read_text());inventory=(manifest.parent/contract['mask_inventory']).resolve();m=next(m for m in json.loads(inventory.read_text())['masks'] if m['index']==index)
     image=bpy.data.images.load(str((inventory.parent/m['png']).resolve()),check_existing=False);width,height=image.size;pixels=np.empty(width*height*4,dtype=np.float32);image.pixels.foreach_get(pixels);bpy.data.images.remove(image);bitmap=pixels.reshape(height,width,4)[::-1,:,0]>0.5
-    occupied={(int(x),int(y)) for y,x in np.argwhere(bitmap)};boundary=[]
+    occupied={(int(x),int(y)) for y,x in np.argwhere(bitmap) if pixel_filter is None or pixel_filter(int(x)+m['box_top_left'][0],int(y)+m['box_top_left'][1])};boundary=[]
+    if not occupied:raise ValueError('Empty reviewed detail silhouette')
     for x,y in occupied:
         for neighbor,edge in [((x,y-1),((x,y),(x+1,y))),((x+1,y),((x+1,y),(x+1,y+1))),((x,y+1),((x+1,y+1),(x,y+1))),((x-1,y),((x,y+1),(x,y)))]:
             if neighbor not in occupied:boundary.append((edge,(x,y)))
@@ -63,3 +64,36 @@ def stilt_ladder(workspace,obj):
     obj.data=mesh
     report.update(rails=2,rungs=9,enclosed_source_apertures=8,inference='Original sloped receiver plane retained; two-unit-and-a-half hidden board depth inferred. Native180 defines the two rails and nine crossboards.')
     return report
+
+
+def gabled_canopy(workspace,config,roof_obj,update_masks=True):
+    sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35))
+    pixels=[(2983.,490.),(3033.,443.),(3078.,474.),(3023.,518.)]
+    heights=[86.68,86.66,64.70,75.0]
+    world=[Vector((x,(-y-z*cosine)/sine,z)) for (x,y),z in zip(pixels,heights)]
+    def bary(px,py,tri):
+        matrix=np.array([[pixels[i][0] for i in tri],[pixels[i][1] for i in tri],[1.,1.,1.]])
+        return np.linalg.solve(matrix,np.array([px,py,1.]))
+    def roof_plane(px,py):
+        tri=(0,1,2);weights=bary(px,py,tri)
+        if min(weights)<-1e-5:tri=(0,2,3);weights=bary(px,py,tri)
+        return sum((world[i]*float(weight) for i,weight in zip(tri,weights)),Vector())
+    def roof_pixel(px,py):return any(min(bary(px+.5,py+.5,tri))>=0 for tri in [(0,1,2),(0,2,3)])
+    mesh,roof_report=silhouette_prism(workspace,121,roof_plane,3.,roof_pixel)
+    for vertex in mesh.vertices:vertex.co=roof_obj.matrix_world.inverted()@vertex.co
+    roof_obj.data=mesh;reports=[{'component':'roof',**roof_report}]
+    assignments=[]
+    for label,x0,y0,z0,x1,y1,span in [('left',3023.,518.,75.,3020.,596.,(3015,3027)),('right',3072.,477.,64.7,3067.,557.,(3063,3075))]:
+        top_y=(-y0-z0*cosine)/sine;bottom_y=-y1/sine;dy=(bottom_y-top_y)/(y1-y0)
+        def plane(px,py):
+            y=top_y+(py-y0)*dy;return px,y,(-py-y*sine)/cosine
+        mesh,report=silhouette_prism(workspace,121,plane,3.,lambda x,y:span[0]<=x<=span[1] and y>=y0)
+        name=f'Leicester Northeast Canopy {label.title()} Post';obj=bpy.data.objects.get(name)
+        if obj is None:obj=bpy.data.objects.new(name,mesh);bpy.data.collections[config['collection_name']].objects.link(obj)
+        else:obj.data=mesh
+        component=f'canopy-{label}-post';obj['source_node']='building-010';obj['asset_group']=config['asset_id'];obj['projection_component']=component;obj['part_name']=f'Canopy {label} support post'
+        reports.append({'component':component,**report,'source_top':[x0,y0],'source_foot':[x1,y1],'inferred_top_height':z0,'inferred_depth_lean':bottom_y-top_y})
+        assignments.append({'source_node':'building-010','projection_component':component,'mask_indices':[121],'reviewed':True,'evidence':'canopy121-post-grid.png identifies two continuous post silhouettes. Geometry clips to the corresponding narrow pixel strip; depth lean follows inherited roof height and hypothesized ground0.'})
+    if update_masks:
+        path=Path(config['source_mask_manifest']);contract=json.loads(path.read_text());rows=contract['projections']['exterior']['assignments'];components={r['projection_component'] for r in assignments};rows[:]=[r for r in rows if not(r.get('source_node')=='building-010' and r.get('projection_component') in components)];rows.extend(assignments);path.write_text(json.dumps(contract,indent=2)+'\n')
+    return {'components':reports,'source_roof_corners':pixels,'inference':'Roof corner heights anchored to inherited back86.7/right64.7; left eave75 chosen to meet native silhouette. Post bases assume ground0, requiring substantial concealed depth lean; this is a reviewable hypothesis. Exact native plank apertures preserved by silhouette mesh.'}

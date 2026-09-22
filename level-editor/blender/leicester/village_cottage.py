@@ -121,12 +121,29 @@ def main():
         a.data.update();b.data.update();seams.append({'source_nodes':[left,right],'matched_vertices':len(matches),'maximum_world_vertex_movement':maximum,'correspondence_tolerance':tolerance,'note':'The rear016/017 ridge junction is occluded by chimney and adjacent roof; midpoint is inferred hidden connectivity.' if (left,right)==('building-016','building-017') else 'Subpixel shared junction.'})
     join_report=close_mill_north_joins(bynode) if c['asset_id']=='leicester-mill-north-cottage' else None
     pole_report=access_pole(bynode['building-021'],w) if c['asset_id']=='leicester-mill-north-cottage' else None
+    extra_detail=None
+    if c['asset_id']=='leicester-northeast-gabled-house':
+        obj=bynode['building-009'];bm=bmesh.new();bm.from_mesh(obj.data);edges=[e for e in bm.edges if e.is_boundary]
+        if edges:
+            zs=[(obj.matrix_world@v.co).z for e in edges for v in e.verts]
+            if min(zs)<79.0 or max(zs)>82.1:raise ValueError('Unexpected main-canopy join boundary')
+            bmesh.ops.holes_fill(bm,edges=edges,sides=0);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+        if any(not e.is_manifold for e in bm.edges):raise ValueError('Gabled-house join still open')
+        bm.to_mesh(obj.data);bm.free()
+        if support.exists():from village_details import gabled_canopy
+        else:from leicester.village_details import gabled_canopy
+        extra_detail=gabled_canopy(w,c,bynode['building-010'])
+    if c['asset_id']=='leicester-south-stilt-shed':
+        if support.exists():from village_details import stilt_ladder
+        else:from leicester.village_details import stilt_ladder
+        extra_detail=stilt_ladder(w,bynode['building-129'])
+    if c['asset_id']=='leicester-southeast-cottage':bynode['building-096']['projection_min_cosine']=0.12
     wheel_report=None
     if c['asset_id']=='leicester-northeast-longhouse':
         if support.exists():from village_details import longhouse_wheel
         else:from leicester.village_details import longhouse_wheel
         wheel_report=longhouse_wheel(w,c)
-    report={'spare_wheel':wheel_report,'measured_seam_welds':measured_welds,'hidden_join_repairs':join_report,'access_pole':pole_report,'asset_id':c['asset_id'],'recipe':'village-cottage-v1','shell_repairs':reports,'shared_roof_seams':seams,'world_transform_drift':0,'inference':'Only planar underside closure; shared junctions reconciled at their average using reported per-pair tolerances. No source silhouette redesign.','limitations':['Doors/windows/timber detail remains source projection unless represented by an existing distinct component.','Hidden roof/back depth remains the inherited geometric hypothesis; component interiors may overlap.'],'projection_status':'STALE'}
+    report={'source_joinery':extra_detail,'spare_wheel':wheel_report,'measured_seam_welds':measured_welds,'hidden_join_repairs':join_report,'access_pole':pole_report,'asset_id':c['asset_id'],'recipe':'village-cottage-v1','shell_repairs':reports,'shared_roof_seams':seams,'world_transform_drift':0,'inference':'Only planar underside closure; shared junctions reconciled at their average using reported per-pair tolerances. No source silhouette redesign.','limitations':['Doors/windows/timber detail remains source projection unless represented by an existing distinct component.','Hidden roof/back depth remains the inherited geometric hypothesis; component interiors may overlap.'],'projection_status':'STALE'}
     (w/'inspection').mkdir(exist_ok=True);(w/'inspection'/'cottage-recipe.json').write_text(json.dumps(report,indent=2)+'\n');validate(w);bpy.ops.wm.save_as_mainfile(filepath=str(w/'model.blend'));print(json.dumps({'asset_id':c['asset_id'],'seams':seams}))
     if args.reproject:
         from refinement_workspace import modified
