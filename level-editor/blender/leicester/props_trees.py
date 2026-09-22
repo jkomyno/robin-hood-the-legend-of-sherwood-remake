@@ -14,7 +14,7 @@ import bpy
 import bmesh
 from mathutils import Vector
 
-VERSION = 'leicester-volumetric-trees-v2'
+VERSION = 'leicester-volumetric-trees-v3'
 SUPPORTED = {88, 89, 90, 91, 92}
 SINE, COSINE = math.sin(math.radians(35)), math.cos(math.radians(35))
 # Source-pixel vertical slice extrema of native foliage, sampled every12pixels.
@@ -83,7 +83,7 @@ def geometry(node, component=None):
     # Crown sections have true elliptical depth along the camera ray. The
     # 0.70 depth/halfwidth ratio is a reviewable hidden-volume hypothesis.
     crown=[]
-    ray=Vector((0,COSINE,SINE))
+    ray=Vector((0,-COSINE,SINE))
     for y,left,right in CROWNS[node]:
         center=world((left+right)/2,y);radius=(right-left)/2
         crown.append([center+Vector((radius*math.cos(i*math.tau/24),0,0))+
@@ -117,11 +117,24 @@ def refine(obj):
     for loop in mesh.loops:
         x,y,z=vertices[loop.vertex_index]
         mesh.uv_layers.active.data[loop.index].uv=(x/3136,1-(-y*SINE-z*COSINE)/1984)
-    bm=bmesh.new();bm.from_mesh(mesh);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+    bm=bmesh.new();bm.from_mesh(mesh)
+    if component=='crown' and node in (88,89):
+        # Convex completion removes unsupported ring terraces while retaining
+        # all measured silhouette extrema; concealed volume is an inference.
+        bmesh.ops.delete(bm,geom=list(bm.faces),context='FACES_ONLY')
+        bmesh.ops.convex_hull(bm,input=list(bm.verts),use_existing_faces=False)
+        unused=[v for v in bm.verts if not v.link_faces]
+        if unused:bmesh.ops.delete(bm,geom=unused,context='VERTS')
+    bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
     topology=dict(vertices=len(bm.verts),faces=len(bm.faces),nonmanifold_edges=sum(not e.is_manifold for e in bm.edges),
                   degenerate_faces=sum(f.calc_area()<1e-7 for f in bm.faces))
     if topology['nonmanifold_edges'] or topology['degenerate_faces']:raise ValueError(str(topology))
-    bm.to_mesh(mesh);bm.free();mesh.update();old=obj.data;obj.data=mesh
+    bm.to_mesh(mesh);bm.free();mesh.update()
+    if component=='crown' and node in (88,89):
+        for loop in mesh.loops:
+            x,y,z=matrix@mesh.vertices[loop.vertex_index].co
+            mesh.uv_layers.active.data[loop.index].uv=(x/3136,1-(-y*SINE-z*COSINE)/1984)
+    old=obj.data;obj.data=mesh
     if old.users==0:bpy.data.meshes.remove(old)
     obj['leicester_geometry_recipe']=VERSION
     if obj.matrix_world != matrix:raise ValueError('Transform changed')
@@ -132,6 +145,7 @@ def refine(obj):
                 limitations=[
                     'Crown is a closed three-dimensional volume; hidden depth and back foliage are inferred and must remain neutral without source ownership.',
                     'Native leafy silhouettes anchor088/089; sparse individual leaf holes and fine twigs are not resolved by the volume envelope.',
+                    'Crowns088/089 use a convex envelope of measured silhouette ring vertices with depth along the source camera ray; concave gaps and hidden volume are inferred, not source-supported leaves.',
                     'Visible trunk and major forks are measured; unseen branching topology is not asserted.',
                     'Crown and wood are independent projection components with canonical shared source ownership; watertight branch volumes intersect at attachment regions.',
                     'Forest canopy ownership is unresolved across neighboring trees; native109/111/113 authorize wood only. Derived visible crown masks need independent review.' if node>=90 else
