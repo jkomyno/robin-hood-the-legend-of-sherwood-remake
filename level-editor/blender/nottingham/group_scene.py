@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--inventory', type=Path, required=True)
     parser.add_argument('--review', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--tooling-dir', type=Path)
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     if args.output.exists():
         raise FileExistsError(args.output)
@@ -26,7 +27,11 @@ def main():
             or review.get('catalog_sha256') != sha(args.catalog)
             or review.get('inventory_sha256') != sha(args.inventory)):
         raise ValueError('Catalog and inventory require matching reviewed evidence')
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from render_slots import acquire
+    acquire()
+    from freeze_tooling import select_tooling
+    tooling = select_tooling(args.tooling_dir)
     import bpy
     from refinement_inventory import validate_catalog
     from group_assets import group_assets
@@ -63,7 +68,7 @@ def main():
             raise RuntimeError('Grouping changed world transform: ' + obj.name)
     if sha(args.source) != source_hash:
         raise RuntimeError('Frozen source checkpoint changed')
-    record = dict(version=1, catalog_validation=validation, grouping=result,
+    record = dict(version=1, tooling=tooling, catalog_validation=validation, grouping=result,
                   source_sha256=source_hash, grouped_sha256=sha(args.output),
                   catalog_sha256=sha(args.catalog), inventory_sha256=sha(args.inventory),
                   recipe_sha256=sha(__file__), argv=sys.argv,
