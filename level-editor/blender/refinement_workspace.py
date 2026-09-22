@@ -316,8 +316,21 @@ def _mission_review_source(config):
     return next(iter(sources), None)
 
 
+def _active_owned_nodes(config, objects):
+    owned = [obj for obj in objects if obj.type == 'MESH' and obj.get('asset_group') == config['asset_id']]
+    canonical = {obj.get('source_node') for obj in owned}
+    if canonical != set(config['part_ids']):
+        raise ValueError('Canonical owned source parts changed before projection')
+    active = sorted({obj.get('source_node') for obj in owned if not obj.hide_render})
+    if not active:
+        raise ValueError('Projection state has no visible owned mesh')
+    return active
+
+
 def _reproject(config, report_dir):
-    _validated_masks(config, _objects(config))
+    objects = _objects(config)
+    active_nodes = _active_owned_nodes(config, objects)
+    _validated_masks(config, objects)
     from reproject_map import restore_projection, reproject_layers, reproject_map
     # Layered projection owns its full receiver partition. Keep context meshes
     # render-visible, even though only the worker asset is selectable.
@@ -331,7 +344,7 @@ def _reproject(config, report_dir):
         report_dir.mkdir(parents=True, exist_ok=True)
         _json(report_dir / "layers.json", manifest)
         return reproject_layers(report_dir / "layers.json", report_dir,
-                                ownership_nodes=config['part_ids'], preserve_authored=False,
+                                ownership_nodes=active_nodes, preserve_authored=False,
                                 exterior_source=_mission_review_source(config),
                                 source_mask_manifest=config.get('source_mask_manifest'))
     report = reproject_map(config["map_name"], config["source_path"],
@@ -341,7 +354,7 @@ def _reproject(config, report_dir):
     report['ownership'] = bake(config['map_name'], config['source_path'],
                                Path(report_dir) / 'ownership.json',
                                projection_label='exterior',
-                               receiver_nodes=config['part_ids'],
+                               receiver_nodes=active_nodes,
                                elevation_deg=config['elevation_degrees'],
                                preserve_authored=False,
                                source_mask_manifest=config.get('source_mask_manifest'))
