@@ -270,7 +270,7 @@ def hall_components():
     sources={int(o['source_node'][9:]):o for o in working.all_objects
              if o.type=='MESH' and o.get('asset_group')=='nottingham-castle-main-hall'
              and not o.get('castle_hall_generated')}
-    if not {504,505,506,507,530,531,532,533,534,535}<=set(sources):
+    if not {501,504,505,506,507,530,531,532,533,534,535}<=set(sources):
         raise ValueError('Main hall source ownership incomplete')
     generated=[o for o in working.all_objects if o.get('castle_hall_generated')]
     if generated:
@@ -387,10 +387,13 @@ def hall_components():
         primary.hide_render=True;primary.hide_set(True)
     primary=sources[530]
     component(primary,'castle-hall-ceiling-cover',native_volume(primary,588,590))
-    floor=component(primary,'castle-hall-floor',native_volume(primary,418,420))
+    primary.hide_render=True;primary.hide_set(True)
+    primary=sources[501]
+    component(primary,'castle-hall-floor-support',native_volume(primary,0,418))
+    floor=component(primary,'castle-hall-floor',native_volume(primary,418,420.001))
     floor['reveal_component_role']='interior-receiver'
     floor['reveal_state']='revealed'
-    floor['source_floor_anchor']='Adjacent balcony slabs501/512 are native height420; the revealed room meets that terrace.'
+    floor['source_floor_anchor']='Native501 is the measured room floor at420.001; ceiling530 is a separate cover near590.'
     primary.hide_render=True;primary.hide_set(True)
     for number in (502,531,532):
         primary=sources[number]
