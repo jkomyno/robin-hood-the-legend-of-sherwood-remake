@@ -60,7 +60,7 @@ def _tile(buffers, width, height, path):
 def render_review(output_dir, *, scene_name, collection_name, asset_id,
                   source_path, frame_manifest=None, width=384, height=512,
                   elevation_degrees=35.0, context_padding=24, projection_layers=None,
-                  lighting=None, source_mask_manifest=None):
+                  lighting=None, source_mask_manifest=None, render_object_names=None):
     """Render context.png, solid.png, textured.png, views.json and individual views.
 
     Coordinates use the map's orthographic projection: source x=X,
@@ -73,6 +73,8 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
     This function does not mutate materials or save the blend file.
     source_mask_manifest optionally restricts evidence per receiver/layer to
     reviewed silhouettes minus explicitly reviewed foreground masks.
+    render_object_names limits displayed asset geometry for an explicitly authored
+    state while retaining the complete context for projection ownership checks.
     """
     if width <= 0 or height <= 0 or context_padding < 0:
         raise ValueError("Positive render dimensions and nonnegative padding required")
@@ -97,6 +99,14 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
         all_objects = [o for o in bpy.data.collections[collection_name].all_objects
                        if o.type == "MESH" and not o.hide_render]
         objects = [o for o in all_objects if o.get("asset_group") == asset_id]
+        if render_object_names is not None:
+            names = set(render_object_names)
+            if names - {o.name for o in objects}:
+                raise ValueError('State render selection names absent or foreign asset objects')
+            objects = [o for o in objects if o.name in names]
+        if baseline and baseline.get('render_object_names') is not None:
+            if render_object_names is None or sorted(render_object_names) != baseline['render_object_names']:
+                raise ValueError('Frozen display-state geometry selection changed')
         if not objects:
             raise ValueError(f"No visible mesh objects for {asset_id}")
         asset_tree, owners, points = _tree(objects)
@@ -291,6 +301,7 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
                     "framing": baseline.get("framing", "legacy shared scale") if baseline else "Per-view evaluated geometry, 4 percent padding; frozen for modified comparison",
                     "context_crop": crop, "source_image": str(source_path), "source_sha256": source_hash,
                     "projection_layers": layer_records, "views": records,
+                    "render_object_names": sorted(render_object_names) if render_object_names is not None else None,
                     "source_mask_evidence": mask_record,
                     "source_mask_manifest": str(Path(source_mask_manifest).resolve()) if source_mask_manifest else None,
                     "source_constraint_status": [

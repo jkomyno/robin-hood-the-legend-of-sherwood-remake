@@ -85,7 +85,10 @@ def projection_occluder_audit(manifest):
     """Report limitations separately from operational projection node lists."""
     projection_receivers(manifest)
     if manifest['map'].casefold() != 'derby':
-        return {patch: {'status': 'reviewed', 'reviewer': review['reviewer'],
+        return {patch: {'status': 'deferred' if review.get('role') == 'deferred-interior' else 'reviewed',
+                        'role': review.get('role', 'interior'),
+                        'geometry_ready': review.get('geometry_ready'),
+                        'reason': review.get('reason'), 'reviewer': review['reviewer'],
                         'notes': review['evidence'],
                         'retained_occluders': review['retained_occluder_nodes'],
                         'partial_cover_nodes': review['partial_cover_nodes'],
@@ -177,9 +180,12 @@ def _authored_projection_reviews(manifest, reviews):
             if not isinstance(review.get(key), str) or not review[key].strip():
                 raise ValueError('Authored projection requires '+key)
         role = review.get('role', 'interior')
-        if role not in ('interior', 'non-interior'):
+        if role not in ('interior', 'non-interior', 'deferred-interior'):
             raise ValueError('Invalid authored projection role')
-        if role == 'non-interior':
+        if role == 'deferred-interior' and (review.get('geometry_ready') is not False or
+                not isinstance(review.get('reason'), str) or not review['reason'].strip()):
+            raise ValueError('Deferred interior requires incomplete geometry status and an explicit reason')
+        if role in ('non-interior', 'deferred-interior'):
             if any(review.get(key) != [] for key in ('receiver_nodes', 'retained_occluder_nodes',
                                                      'partial_cover_nodes', 'exclude_occluder_components')):
                 raise ValueError('Non-interior classification cannot assign projection nodes')
@@ -240,7 +246,7 @@ def _authored_projection_reviews(manifest, reviews):
 def validate_projection_reviews(manifest, directory):
     """Bind changed ownership to the exact revealed artwork and patch alpha."""
     for patch,review in projection_reviews(manifest).items():
-        if review.get('role', 'interior') == 'non-interior':
+        if review.get('role', 'interior') in ('non-interior', 'deferred-interior'):
             continue
         record=next(p for p in manifest['patches'] if p['id']==patch)
         for key,path in [('source_sha256',manifest['sources']['interior']),

@@ -93,6 +93,16 @@ class AuthoredProjectionTests(unittest.TestCase):
         self.assertEqual(projection_occluders({'map': 'Derby'}, ['building-252'])['patch-003'],
                          ['building-252'])
 
+    def test_deferred_interior_is_not_a_completed_projection(self):
+        self.review.update(role='deferred-interior', geometry_ready=False,
+                           reason='No independent interior floor geometry yet.', receiver_nodes=[],
+                           retained_occluder_nodes=[], partial_cover_nodes=[])
+        self.assertEqual(projection_receivers(self.manifest), {})
+        self.assertEqual(projection_occluder_audit(self.manifest)['patch-000']['status'], 'deferred')
+        self.review['geometry_ready'] = True
+        with self.assertRaises(ValueError):
+            projection_receivers(self.manifest)
+
 
 if __name__ == '__main__':
     unittest.main()
