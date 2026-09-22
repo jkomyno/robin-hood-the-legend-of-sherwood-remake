@@ -14,7 +14,7 @@ import bpy
 import bmesh
 from mathutils import Vector
 
-VERSION = 'leicester-volumetric-trees-v1'
+VERSION = 'leicester-volumetric-trees-v2'
 SUPPORTED = {88, 89, 90, 91, 92}
 SINE, COSINE = math.sin(math.radians(35)), math.cos(math.radians(35))
 # Source-pixel vertical slice extrema of native foliage, sampled every12pixels.
@@ -67,7 +67,7 @@ def signature(obj):
         'f':[list(f.vertices) for f in obj.data.polygons]},sort_keys=True).encode()).hexdigest()
 
 
-def geometry(node):
+def geometry(node, component=None):
     if node not in SUPPORTED: raise ValueError('Unsupported tree node')
     vertices,faces=[],[]
     ground=GROUND[node]
@@ -89,6 +89,10 @@ def geometry(node):
         crown.append([center+Vector((radius*math.cos(i*math.tau/24),0,0))+
                       ray*(radius*.70*math.sin(i*math.tau/24)) for i in range(24)])
     loft(crown)
+    if component == 'crown':
+        return vertices,faces
+    if component == 'wood':
+        vertices,faces=[],[]
     for path in BRANCHES[node]:
         rows=[]
         for i,(x,y,radius) in enumerate(path):
@@ -104,7 +108,9 @@ def geometry(node):
 
 def refine(obj):
     node=int(obj['source_node'].split('-')[-1]);matrix=obj.matrix_world.copy();before=signature(obj)
-    vertices,faces=geometry(node);mesh=bpy.data.meshes.new(obj.name+' volumetric canopy and forks')
+    component=obj.get('projection_component', 'wood')
+    if component not in ('wood', 'crown'):raise ValueError('Invalid tree projection component')
+    vertices,faces=geometry(node, component);mesh=bpy.data.meshes.new(obj.name+' volumetric canopy and forks')
     inverse=matrix.inverted();mesh.from_pydata([inverse@v for v in vertices],[],faces)
     for mat in obj.data.materials:mesh.materials.append(mat)
     mesh.uv_layers.new(name='Source fallback')
@@ -119,7 +125,7 @@ def refine(obj):
     if old.users==0:bpy.data.meshes.remove(old)
     obj['leicester_geometry_recipe']=VERSION
     if obj.matrix_world != matrix:raise ValueError('Transform changed')
-    return dict(source_node=obj['source_node'],before_geometry_sha256=before,after_geometry_sha256=signature(obj),
+    return dict(source_node=obj['source_node'],projection_component=component,before_geometry_sha256=before,after_geometry_sha256=signature(obj),
                 world_transform_drift=0,topology=topology,visible_major_branch_paths=len(BRANCHES[node]),
                 visible_major_forks=len(BRANCHES[node])-1,native_mask_index={88:10,89:9,90:109,91:111,92:113}[node],
                 crown_slice_count=len(CROWNS[node]),inferred_crown_depth_halfwidth_ratio=.70,
@@ -127,11 +133,36 @@ def refine(obj):
                     'Crown is a closed three-dimensional volume; hidden depth and back foliage are inferred and must remain neutral without source ownership.',
                     'Native leafy silhouettes anchor088/089; sparse individual leaf holes and fine twigs are not resolved by the volume envelope.',
                     'Visible trunk and major forks are measured; unseen branching topology is not asserted.',
-                    'Crown/branch volumes intersect at attachment regions; separate watertight components preserve editable structure.',
+                    'Crown and wood are independent projection components with canonical shared source ownership; watertight branch volumes intersect at attachment regions.',
                     'Forest canopy ownership is unresolved across neighboring trees; native109/111/113 authorize wood only. Derived visible crown masks need independent review.' if node>=90 else
                     'Native9 near the cottage requires explicit roof exclusion before accepting boundary pixels.',
                     'Top of forest crowns extends outside the source; off-map dome completion is inferred.' if node>=90 else
                     'Source envelope sampled at12-pixel vertical intervals; fine leaf-edge silhouette remains approximate.'])
+
+
+
+def components(wood):
+    """Keep the canonical object as wood and one stable sibling crown receiver."""
+    wood['projection_component'] = 'wood'
+    node=wood['source_node']; group=wood.get('asset_group')
+    crowns=[obj for obj in bpy.data.objects if obj.type=='MESH'
+            and obj.get('source_node')==node and obj.get('asset_group')==group
+            and obj.get('leicester_tree_crown_component')]
+    if len(crowns)>1:
+        raise ValueError('Duplicate generated crown components: '+node)
+    if crowns:
+        crown=crowns[0]
+        if crown.matrix_world != wood.matrix_world:
+            raise ValueError('Existing crown transform differs from canonical wood')
+    else:
+        crown=wood.copy();crown.data=wood.data.copy()
+        crown.name=wood.name+' crown'
+        for collection in wood.users_collection:collection.objects.link(crown)
+    crown['projection_component']='crown'
+    crown['leicester_tree_crown_component']=True
+    crown['source_node']=node
+    crown['leicester_crown_native_ownership']='none; wood-only native mask' if int(node.split('-')[-1])>=90 else 'native foliage first-hit ownership'
+    return [wood,crown]
 
 
 def run(workspace):
@@ -141,14 +172,17 @@ def run(workspace):
     from refinement_workspace import validate
     validate(workspace)
     targets=[o for o in bpy.data.collections[config['collection_name']].all_objects
-             if o.type=='MESH' and o.get('asset_group')==config['asset_id']]
+             if o.type=='MESH' and o.get('asset_group')==config['asset_id']
+             and not o.get('leicester_tree_crown_component')]
     if not targets or any(int(o['source_node'].split('-')[-1]) not in SUPPORTED for o in targets):raise ValueError('Unsupported tree workspace')
+    targets=[part for wood in targets for part in components(wood)]
     records=[refine(o) for o in targets];hashes=[signature(o) for o in targets]
     for obj in targets:refine(obj)
     if hashes!=[signature(o) for o in targets]:raise ValueError('Non-idempotent recipe')
     report=dict(recipe=VERSION,asset_id=config['asset_id'],objects=records,idempotence='PASS',
                 approval_status='refinement-in-progress',texture_generation='not-started',
-                projection_status='STALE; native wood-only trees require reviewed derived canopy ownership',
+                projection_status='STALE; forest crown requires explicitly empty ownership; native wood belongs only to wood component',
+                ownership_rule='For090–092 set crown mask_indices=[native] and exclude_mask_indices=[native]; wood uses native mask. For088/089 both components may use native foliage mask with first-hit ray ownership.',
                 limitations=list(dict.fromkeys(n for r in records for n in r['limitations'])))
     validate(workspace);(workspace/'inspection').mkdir(exist_ok=True)
     (workspace/'inspection/trees-recipe.json').write_text(json.dumps(report,indent=2)+'\n')
