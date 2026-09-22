@@ -19,7 +19,7 @@ WINDOWS = (
     ('front-west', 139, ((713, 1183), (727.5, 1188), (727.5, 1195.5), (713, 1200))),
     ('front-middle', 139, ((761.5, 1199), (776, 1203.5), (776, 1212.5), (761.5, 1216))),
     ('front-east', 139, ((809.5, 1215.5), (824, 1220), (824, 1228.5), (809.5, 1232))),
-    ('right-upper', 140, ((886, 1203), (893, 1197), (893, 1211), (886, 1218))),
+    ('right-upper', 140, ((886, 1203), (893, 1197), (893, 1212), (886, 1219))),
 )
 
 
@@ -52,6 +52,11 @@ def _clean(obj, allow_convex=False):
     try:
         bm.from_mesh(obj.data)
         before = (len(bm.verts), len(bm.faces))
+        if bm.faces and all(e.is_manifold for e in bm.edges) and all(f.calc_area() >= 1e-8 for f in bm.faces):
+            return {'vertices_before': before[0], 'faces_before': before[1],
+                    'vertices': before[0], 'faces': before[1],
+                    'convex_pier_closure': False, 'nonmanifold_edges': 0,
+                    'degenerate_faces': 0, 'clean_mesh_preserved': True}
         bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=0.5 if allow_convex else 1e-4)
         bmesh.ops.dissolve_degenerate(bm, edges=list(bm.edges), dist=1e-6)
         bm.verts.index_update()
