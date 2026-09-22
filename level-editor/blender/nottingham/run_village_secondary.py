@@ -34,6 +34,10 @@ def main(workspaces):
         workspace = Path(supplied).resolve()
         config = json.loads((workspace / 'workspace.json').read_text())
         name = config['asset_id']
+        if name == 'nottingham-village-stream-wall' and config.get('bridge_projection_policy'):
+            import refinement_workspace
+            from western_bridge_projection import install
+            install(refinement_workspace)
         initialize_working_masks(workspace)
         bpy.ops.wm.open_mainfile(filepath=str(workspace / 'model.blend'))
         before = snapshot(lambda obj: obj.get('asset_group') != name)
