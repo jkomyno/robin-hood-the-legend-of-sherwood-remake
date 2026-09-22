@@ -9,7 +9,7 @@ import bmesh
 from mathutils import Vector
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from props import signature
-VERSION='leicester-east-gate-v1'
+VERSION='leicester-east-gate-v2'
 SINE,COSINE=math.sin(math.radians(35)),math.cos(math.radians(35))
 
 
@@ -21,24 +21,29 @@ def refine(obj):
         side=axis.cross(reference).normalized()*width/2;up=axis.cross(side).normalized()*depth/2
         start=len(vertices);vertices.extend(p+s*side+t*up for p in (a,b) for s,t in [(-1,-1),(1,-1),(1,1),(-1,1)])
         faces.extend(tuple(start+i for i in f) for f in [(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)])
-    # Front rails follow the visible source diagonal. Their rear thickness is inferred.
-    left=world(3093.7,1096.8,0);right=world(3128.8,1107.6,0)
-    for point,height in [(left,31),(right,31)]:beam(point,point+Vector((0,0,height/COSINE)),3,3)
-    for height in [10,18,26]:beam(left+Vector((0,0,height/COSINE)),right+Vector((0,0,height/COSINE)),2.2,2.8)
-    beam(left+Vector((0,0,3/COSINE)),right+Vector((0,0,3/COSINE)),5,4)
-    # The rising side panel is visible behind the pale stones. Twelve narrow
-    # boards approximate the blurred upright rhythm; exact count is uncertain.
-    rear=world(3125.6,1062.7,0)
+    # Independent image measurements: crop origin3089,1032 at10x.
+    # Ground depths are inferred; projected rail/post endpoints are measured.
+    left=world(3093.3,1087,0);right=world(3119.7,1099,0)
+    beam(left,left+Vector((0,0,30.2/COSINE)),3,3)
+    beam(right,world(3122.3,1099,26.6),3,3)
+    rails=[((3093.6,1066.3),(3122.3,1076.4)),
+           ((3093.9,1072.5),(3121.2,1080.9)),
+           ((3094.0,1078.7),(3119.7,1086.6))]
+    for (lx,ly),(rx,ry) in rails:
+        beam(world(lx,1087,1087-ly),world(rx,1099,1099-ry),2.2,2.8)
+    beam(left+Vector((0,0,1.2/COSINE)),right+Vector((0,0,2.4/COSINE)),5,3)
+    rear=world(3124.5,1062.7,0)
     for i in range(12):
         t=(i+.5)/12;point=left.lerp(rear,t)
-        top=40*(1-t)+27*t;bottom=21*(1-t)+10*t
+        top=30.2*(1-t)+28.5*t;bottom=21.1*(1-t)+10.5*t
         beam(point+Vector((0,0,bottom/COSINE)),point+Vector((0,0,top/COSINE)),3.0,2.3)
-    for a,b in [(40,27),(21,10)]:beam(left+Vector((0,0,a/COSINE)),rear+Vector((0,0,b/COSINE)),3,3)
+    for a,b in [(30.2,28.5),(21.1,10.5)]:beam(left+Vector((0,0,a/COSINE)),rear+Vector((0,0,b/COSINE)),3,3)
+    beam(rear+Vector((0,0,10.5/COSINE)),rear+Vector((0,0,28.5/COSINE)),3,3)
     # Six pale source clusters are represented by low closed polyhedra. The
     # camera-ray depth is a hypothesis, not six proven disconnected stones.
     stones=[(3107,1064,5,4),(3117,1058,5,4),(3125,1052,5,4),(3122,1068,5,5),(3113,1075,5,5),(3102,1075,4,4)]
     for x,source_y,rx,rz in stones:
-        center=world(x,source_y+8,8);start=len(vertices);n=8
+        center=world(x,source_y+rz*COSINE,rz*COSINE);start=len(vertices);n=8
         for z,scale in [(-rz,.58),(0,1),(rz,.52)]:
             for i in range(n):
                 a=math.tau*i/n;vertices.append(center+Vector((rx*scale*math.cos(a),rx*scale*math.sin(a),z)))
@@ -74,7 +79,7 @@ def run(workspace):
         'The enclosure is clipped at the map edge. Right post and off-map closure remain inferred; no rear closure is invented.',
         'Native mask118 owns this composite enclosure; foreground hay belongs separately to070/071. Timber and stones require visual alignment review.'],
         'approval_status':'refinement-in-progress','texture_generation':'not-started'}
-    validate(workspace);(workspace/'inspection/gate-recipe.json').write_text(json.dumps(report,indent=2)+'\n')
+    validate(workspace);(workspace/'inspection').mkdir(exist_ok=True);(workspace/'inspection/gate-recipe.json').write_text(json.dumps(report,indent=2)+'\n')
     bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'));return report
 
 

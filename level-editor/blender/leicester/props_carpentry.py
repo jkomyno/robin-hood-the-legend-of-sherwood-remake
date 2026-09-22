@@ -15,7 +15,7 @@ from mathutils import Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from props import footprint, signature
-VERSION = 'leicester-carpentry-v1'
+VERSION = 'leicester-carpentry-v2'
 
 
 def build(obj, kind):
@@ -52,32 +52,29 @@ def build(obj, kind):
         box(center-axis*3,center+axis*3,4,4)
 
     if kind == 'panel':
-        if obj.get('leicester_prop_anchor'):
-            anchor=json.loads(obj['leicester_prop_anchor'])
-        elif obj.get('leicester_carpentry_anchor'):
-            anchor=json.loads(obj['leicester_carpentry_anchor'])
-        else:anchor=footprint(obj)
-        obj['leicester_carpentry_anchor']=json.dumps(anchor,sort_keys=True)
-        c,s=math.cos(anchor['angle']),math.sin(anchor['angle']);cx,cy=anchor['center']
-        rx,ry=anchor['radii'];long_x=rx>=ry
-        length,thickness=(2*rx,2*ry) if long_x else (2*ry,2*rx)
-        direction=Vector((c,s,0)) if long_x else Vector((-s,c,0))
-        center=Vector((cx*c-cy*s,cx*s+cy*c,0));bottom=anchor['bottom'];height=anchor['top']-bottom
-        for offset in [-length/2+2,length/2-2]:
-            p=center+direction*offset
-            box(p+Vector((0,0,bottom)),p+Vector((0,0,bottom+height)),thickness,4)
-        gap=length-8;board_width=gap/4*.84
+        sine,cosine=math.sin(math.radians(35)),math.cos(math.radians(35))
+        left=Vector((3032,-1246/sine,0));right=Vector((3058,-1250/sine,0))
+        direction=(right-left).normalized();normal=Vector((-direction.y,direction.x,0))
+        for center,height in [(left,26/cosine),(right,28/cosine)]:
+            start=len(vertices);n=12
+            for z in [0,height]:
+                for i in range(n):
+                    angle=math.tau*i/n;vertices.append(center+Vector((2.1*math.cos(angle),2.1*math.sin(angle),z)))
+            faces.append(tuple(start+i for i in reversed(range(n))))
+            for i in range(n):j=(i+1)%n;faces.append((start+i,start+j,start+n+j,start+n+i))
+            faces.append(tuple(start+n+i for i in range(n)))
+        gap=(right-left).length-4.2;board_width=gap/4*.92
         for i in range(4):
-            p=center+direction*(-gap/2+(i+.5)*gap/4)
-            # Panel boards use a shallow section matching the native thickness.
-            a=p+Vector((0,0,bottom));b=p+Vector((0,0,bottom+height*.92))
-            start=len(vertices);side=direction*board_width/2;across=Vector((-direction.y,direction.x,0))*thickness*.35
+            t=(i+.5)/4;p=left.lerp(right,t)
+            height=(24*(1-t)+25*t)/cosine
+            a=p;b=p+Vector((0,0,height));side=direction*board_width/2;across=normal*1.3
+            start=len(vertices)
             vertices.extend(q+u*side+v*across for q in (a,b) for u,v in [(-1,-1),(1,-1),(1,1),(-1,1)])
             faces.extend(tuple(start+k for k in face) for face in [(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)])
-        for fraction in [.2,.7]:
-            z=bottom+height*fraction
-            box(center-direction*length/2+Vector((0,0,z)),center+direction*length/2+Vector((0,0,z)),thickness*.4,3)
-        detail={'visible_end_posts':2,'interior_boards_inferred':4,'anchor':anchor}
+        for height in [4,22]:box(left+Vector((0,0,height/cosine)),right+Vector((0,0,(height+1)/cosine)),2,2)
+        detail={'visible_end_posts':2,'interior_boards_inferred':4,
+                'measured_post_source_pixels':[[3032,1220,1246],[3058,1222,1250]],
+                'source_pixel_uncertainty':2,'inferred_timber_depth':2.6}
     elif kind == 'cart':
         rear=Vector((2797.10,-864.22,0));tip=Vector((2878.45,-824.47,0))
         direction=(tip-rear).normalized();across=Vector((-direction.y,direction.x,0))
