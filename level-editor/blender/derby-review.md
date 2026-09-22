@@ -2,6 +2,11 @@
 
 ## Current source-traced revision review — 2026-09-22
 
+User approved Great Keep Main Hall (`inspection/pointed-bays-final`) on
+2026-09-22. Model and review-sheet hashes are recorded in the manifest; removed
+from pending review. Two-image texture fill is authorized, with verification
+of the selected 48-degree lighting still required before generation.
+
 User approved Upper Bailey Gatehouse after the gallery URL correction:
 `corner-fit-v3-reprojected.blend` with `inspection/corner-fit-v3` sheets.
 Approval and model/sheet hashes are recorded in the manifest. Removed from
