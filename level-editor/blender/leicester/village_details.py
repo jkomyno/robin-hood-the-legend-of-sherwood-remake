@@ -24,8 +24,8 @@ def silhouette_prism(workspace, index, pixel_to_world, thickness):
             seed=min(pending);pending.remove(seed);fan={seed};queue=[seed]
             while queue:
                 x,y=queue.pop();neighbors={(x-1,y),(x+1,y),(x,y-1),(x,y+1)}&pending;pending-=neighbors;fan|=neighbors;queue.extend(neighbors)
-            index=len(grid);grid.append((px,py));fans+=1
-            for cell in fan:indices[((px,py),cell)]=index
+            vertex_index=len(grid);grid.append((px,py));fans+=1
+            for cell in fan:indices[((px,py),cell)]=vertex_index
         split_corners+=fans-1
     front=[Vector(pixel_to_world(x+m['box_top_left'][0],y+m['box_top_left'][1])) for x,y in grid];n=len(front)
     normal=(Vector(pixel_to_world(1,0))-Vector(pixel_to_world(0,0))).cross(Vector(pixel_to_world(0,1))-Vector(pixel_to_world(0,0))).normalized();vertices=front+[v+normal*thickness for v in front]
@@ -49,4 +49,17 @@ def longhouse_wheel(workspace,config):
     obj['source_node']='building-003';obj['asset_group']=config['asset_id'];obj['projection_component']='spare-wheel';obj['part_name']='Eight-spoke spare wheel'
     manifest=Path(config['source_mask_manifest']);contract=json.loads(manifest.read_text());rows=contract['projections']['exterior']['assignments'];rows[:]=[r for r in rows if not(r.get('source_node')=='building-003' and r.get('projection_component')=='spare-wheel')];rows.append({'source_node':'building-003','projection_component':'spare-wheel','mask_indices':[132],'reviewed':True,'evidence':'Native132 silhouette and wheel132-mask.png: single rim, hub, eight radial spokes. Location2771.5,699 source pixels; hidden lean8world units and thickness2.5 inferred.'});manifest.write_text(json.dumps(contract,indent=2)+'\n')
     report.update(spokes=8,inference='Plane follows the front wall orientation and leans eight world units toward it; hidden thickness2.5. Exact native rim, hub and spoke apertures retained.')
+    return report
+
+
+def stilt_ladder(workspace,obj):
+    a=Vector((2019.43,-3240.61,72.03));b=Vector((2040.65,-3231.74,72.03));c=Vector((2038.85,-3287.07,0.02));normal=(b-a).cross(c-a);distance=normal.dot(a);sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35))
+    inverse=np.linalg.inv(np.array([[normal.y,normal.z],[-sine,-cosine]]))
+    def plane(px,py):
+        y,z=inverse@np.array([distance-normal.x*px,py]);return px,float(y),float(z)
+    mesh,report=silhouette_prism(workspace,180,plane,2.5)
+    transform=obj.matrix_world.inverted()
+    for vertex in mesh.vertices:vertex.co=transform@vertex.co
+    obj.data=mesh
+    report.update(rails=2,rungs=9,enclosed_source_apertures=8,inference='Original sloped receiver plane retained; two-unit-and-a-half hidden board depth inferred. Native180 defines the two rails and nine crossboards.')
     return report
