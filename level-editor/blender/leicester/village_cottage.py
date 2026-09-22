@@ -127,6 +127,14 @@ def main():
     join_report=close_mill_north_joins(bynode) if c['asset_id']=='leicester-mill-north-cottage' else None
     pole_report=access_pole(bynode['building-021'],w) if c['asset_id']=='leicester-mill-north-cottage' else None
     extra_detail=None
+    if c['asset_id']=='leicester-mill-south-cottage':
+        if support.exists():
+            from village_mill_south import refine as refine_mill_south
+            from village_mill_props import refine as refine_mill_props
+        else:
+            from leicester.village_mill_south import refine as refine_mill_south
+            from leicester.village_mill_props import refine as refine_mill_props
+        extra_detail={'architecture':refine_mill_south(w,c,bynode),'furniture':refine_mill_props(w,c,bynode)}
     if c['asset_id']=='leicester-east-riverside-house':
         if support.exists():from village_roofs import riverside_roofs
         else:from leicester.village_roofs import riverside_roofs

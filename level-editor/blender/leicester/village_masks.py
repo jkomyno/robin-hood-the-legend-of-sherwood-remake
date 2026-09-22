@@ -26,14 +26,14 @@ def main():
     assign([23],[155])
     assign([0,1,2],[106],evidence_id='VILLAGE-EAST-EDGE-08')
     assign([3,7],[128],[132,133,134],'Separate wheel, chimney and haypile must not project onto the main wall.')
-    assign([4],[129,130]);assign([5],[134]);assign([6],[131]);assign([8],[133])
+    assign([4],[129,130],[134],'Foreground hay overlaps the front fence silhouette.');assign([5],[134]);assign([6],[131]);assign([8],[133])
     assign([9,14],[119],[122,123,124,125],'Separate barrel, wheel, ladder and chimney artwork is excluded from main receivers.')
     assign([10],[121]);assign([11,12],[120]);assign([13],[122]);assign([15],[125])
     assign([64,65],[135],[137,138,139],'Woodpile, bucket and foreground cart/pile are independent source objects.')
     assign([66],[136]);assign([67],[137])
     # Mill-south: older semantic labels misidentified043 as roof and045 as pile.
-    for nodes,masks in [([40],[160]),([41,42,43],[159]),([44],[161]),([45,46,47,56,58],[162]),([55],[168]),([57],[166]),([59],[169]),([60],[163]),([61],[165])]:
-        assign(nodes,masks,[163,164,165,168,169] if nodes==[45,46,47,56,58] else (), 'Separate chimney, barrel, pail, woodpile and bench have distinct receivers.', 'VILLAGE-MILL-SOUTH-04')
+    for nodes,masks in [([40],[159,160]),([41,42,43],[159]),([44],[161]),([45,46,47,58],[162]),([55],[168]),([56],[167]),([57],[166]),([59],[169]),([60],[163]),([61],[165])]:
+        assign(nodes,masks,[163,164,165,168,169] if nodes in ([45,46,47,58],[56]) else (), 'Separate chimney, barrel, pail, woodpile and bench have distinct receivers.', 'VILLAGE-MILL-SOUTH-09')
     assign([77,78],[171],evidence_id='VILLAGE-MILL-STILT-05')
     assign([79,80],[170],[172,173,175], 'Wheel, chimney and flume railing have distinct receivers.', 'VILLAGE-MILL-STILT-05')
     assign([81],[174],[173],'Chimney has its own receiver.', 'VILLAGE-MILL-STILT-05')
@@ -52,7 +52,7 @@ def main():
         if 'png' in record:record['png']=str((inventory.parent/record['png']).resolve(strict=True))
     (a.output/'inventory.json').write_text(json.dumps(inventory_data,indent=2)+'\n')
     manifest=a.output/'source-masks.json';manifest.write_text(json.dumps(contract,indent=2)+'\n')
-    evidence_files={'VILLAGE-NATIVE-01':'native-village-details.png','VILLAGE-POLE-02':'pole154-grid.png','VILLAGE-SOUTH-03':'native-south-cottage-details.png','VILLAGE-MILL-SOUTH-04':'mill-south-component-wires.png','VILLAGE-MILL-STILT-05':'native-mill-stilt-details.png','VILLAGE-STILT-WIRES-06':'stilt-components.png','VILLAGE-MILL-WIRES-07':'mill-components.png','VILLAGE-EAST-EDGE-08':'east-edge-roof-ownership-diagnostic.png'}
+    evidence_files={'VILLAGE-NATIVE-01':'native-village-details.png','VILLAGE-POLE-02':'pole154-grid.png','VILLAGE-SOUTH-03':'native-south-cottage-details.png','VILLAGE-MILL-SOUTH-04':'mill-south-component-wires.png','VILLAGE-MILL-STILT-05':'native-mill-stilt-details.png','VILLAGE-STILT-WIRES-06':'stilt-components.png','VILLAGE-MILL-WIRES-07':'mill-components.png','VILLAGE-EAST-EDGE-08':'east-edge-roof-ownership-diagnostic.png','VILLAGE-MILL-SOUTH-09':'mill-south-masks-review.png'}
     records=[]
     for key,name in evidence_files.items():
         path=evidence/name;shutil.copy2(path,a.output/name)
