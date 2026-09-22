@@ -1,0 +1,590 @@
+{
+  "source": "reference/mission-patches/H03_Der_MK-initial.png",
+  "source_size": [
+    1920,
+    2752
+  ],
+  "coordinate_convention": "integer source pixel centers; x right, y down",
+  "state": "Observed source traces; inner stair-facing gap floor remains untraced; not a geometry approval",
+  "runs": [
+    {
+      "id": "stair-turret-silhouette",
+      "nodes": [
+        198
+      ],
+      "uncertainty_px": 1,
+      "evidence": "Native mask 146 top boundary, checked against artwork; contains occlusion by stair/cap depth",
+      "points": [
+        [
+          1233,
+          757
+        ],
+        [
+          1247,
+          750
+        ],
+        [
+          1252,
+          753
+        ],
+        [
+          1253,
+          760
+        ],
+        [
+          1254,
+          765
+        ],
+        [
+          1263,
+          761
+        ],
+        [
+          1264,
+          741
+        ],
+        [
+          1278,
+          735
+        ],
+        [
+          1292,
+          745
+        ],
+        [
+          1293,
+          765
+        ],
+        [
+          1302,
+          771
+        ],
+        [
+          1303,
+          760
+        ],
+        [
+          1310,
+          757
+        ],
+        [
+          1324,
+          766
+        ],
+        [
+          1325,
+          795
+        ],
+        [
+          1328,
+          796
+        ]
+      ],
+      "state": "Observed combined silhouette only; first gap floor may be stair occlusion, not wall top"
+    },
+    {
+      "id": "front-east-cap-depth",
+      "nodes": [
+        183
+      ],
+      "uncertainty_px": 2,
+      "evidence": "Visible east-facing merlon cap, four source corners clockwise; depth check",
+      "points": [
+        [
+          1442,
+          1020
+        ],
+        [
+          1456,
+          1013
+        ],
+        [
+          1452,
+          1010
+        ],
+        [
+          1438,
+          1017
+        ],
+        [
+          1442,
+          1020
+        ]
+      ],
+      "state": "Manual cap-depth observation for inspection"
+    },
+    {
+      "id": "front-west-cap-depth",
+      "nodes": [
+        184
+      ],
+      "uncertainty_px": 2,
+      "evidence": "Visible second-merlon top cap, four corners in clockwise order; separate from zigzag run",
+      "points": [
+        [
+          1217,
+          905
+        ],
+        [
+          1231,
+          915
+        ],
+        [
+          1238,
+          910
+        ],
+        [
+          1224,
+          900
+        ],
+        [
+          1217,
+          905
+        ]
+      ],
+      "state": "Manual cap-depth observation for inspection"
+    },
+    {
+      "id": "front-east",
+      "nodes": [
+        183,
+        189
+      ],
+      "uncertainty_px": 2,
+      "evidence": "Hand-traced outer cap edge and notch verticals on east-facing fa\u00e7ade",
+      "points": [
+        [
+          1415,
+          1035
+        ],
+        [
+          1430,
+          1028
+        ],
+        [
+          1430,
+          1046
+        ],
+        [
+          1442,
+          1040
+        ],
+        [
+          1442,
+          1020
+        ],
+        [
+          1456,
+          1013
+        ],
+        [
+          1456,
+          1034
+        ],
+        [
+          1468,
+          1028
+        ],
+        [
+          1468,
+          1007
+        ],
+        [
+          1483,
+          1000
+        ],
+        [
+          1483,
+          1020
+        ],
+        [
+          1495,
+          1014
+        ],
+        [
+          1495,
+          994
+        ],
+        [
+          1508,
+          987
+        ],
+        [
+          1508,
+          1007
+        ],
+        [
+          1520,
+          1001
+        ],
+        [
+          1520,
+          981
+        ],
+        [
+          1533,
+          975
+        ],
+        [
+          1533,
+          995
+        ],
+        [
+          1546,
+          989
+        ],
+        [
+          1546,
+          969
+        ],
+        [
+          1559,
+          963
+        ]
+      ],
+      "terminates": "Round turret occludes continuation"
+    },
+    {
+      "id": "front-west",
+      "nodes": [
+        184,
+        191,
+        192,
+        194
+      ],
+      "uncertainty_px": 2,
+      "evidence": "Hand-traced outer cap edge and notch verticals; internal artwork edges, not native silhouette",
+      "points": [
+        [
+          1194,
+          889
+        ],
+        [
+          1207,
+          897
+        ],
+        [
+          1207,
+          918
+        ],
+        [
+          1217,
+          925
+        ],
+        [
+          1217,
+          905
+        ],
+        [
+          1231,
+          915
+        ],
+        [
+          1231,
+          935
+        ],
+        [
+          1243,
+          943
+        ],
+        [
+          1243,
+          922
+        ],
+        [
+          1257,
+          932
+        ],
+        [
+          1257,
+          951
+        ],
+        [
+          1268,
+          958
+        ],
+        [
+          1268,
+          938
+        ],
+        [
+          1283,
+          948
+        ],
+        [
+          1283,
+          969
+        ],
+        [
+          1295,
+          976
+        ],
+        [
+          1295,
+          956
+        ],
+        [
+          1309,
+          965
+        ],
+        [
+          1309,
+          986
+        ],
+        [
+          1321,
+          994
+        ]
+      ],
+      "begins": "First cap partly overlaps corner turret",
+      "terminates": "Subsequent merlon continues in front-south run"
+    },
+    {
+      "id": "front-south",
+      "nodes": [
+        194,
+        183
+      ],
+      "uncertainty_px": 2,
+      "evidence": "Hand-traced foreground cap edges and notch verticals",
+      "points": [
+        [
+          1321,
+          972
+        ],
+        [
+          1337,
+          982
+        ],
+        [
+          1337,
+          1003
+        ],
+        [
+          1348,
+          1010
+        ],
+        [
+          1348,
+          990
+        ],
+        [
+          1363,
+          1000
+        ],
+        [
+          1363,
+          1020
+        ],
+        [
+          1375,
+          1028
+        ],
+        [
+          1375,
+          1008
+        ],
+        [
+          1390,
+          1018
+        ],
+        [
+          1390,
+          1037
+        ],
+        [
+          1401,
+          1045
+        ],
+        [
+          1401,
+          1026
+        ],
+        [
+          1415,
+          1035
+        ]
+      ],
+      "terminates": "South corner cap turns onto east-facing fa\u00e7ade"
+    },
+    {
+      "id": "rear-west",
+      "nodes": [
+        185
+      ],
+      "uncertainty_px": 1,
+      "evidence": "Native mask 146 top silhouette, inspected against source artwork",
+      "points": [
+        [
+          1368,
+          771
+        ],
+        [
+          1378,
+          778
+        ],
+        [
+          1379,
+          798
+        ],
+        [
+          1381,
+          799
+        ],
+        [
+          1382,
+          790
+        ],
+        [
+          1388,
+          785
+        ],
+        [
+          1401,
+          793
+        ],
+        [
+          1402,
+          803
+        ]
+      ],
+      "terminates": "Dormer occludes the following notch; do not infer its bottom"
+    },
+    {
+      "id": "rear-middle",
+      "nodes": [
+        185
+      ],
+      "uncertainty_px": 1,
+      "evidence": "Native mask 146 top silhouette, inspected against source artwork",
+      "points": [
+        [
+          1425,
+          828
+        ],
+        [
+          1426,
+          829
+        ],
+        [
+          1427,
+          820
+        ],
+        [
+          1434,
+          815
+        ],
+        [
+          1446,
+          823
+        ],
+        [
+          1447,
+          843
+        ],
+        [
+          1449,
+          844
+        ],
+        [
+          1450,
+          835
+        ],
+        [
+          1456,
+          831
+        ],
+        [
+          1469,
+          838
+        ],
+        [
+          1470,
+          858
+        ],
+        [
+          1474,
+          860
+        ],
+        [
+          1475,
+          851
+        ],
+        [
+          1482,
+          847
+        ],
+        [
+          1494,
+          855
+        ]
+      ],
+      "begins": "Left shoulder partly hidden by dormer",
+      "terminates": "Chimney silhouette replaces the parapet from x1495 through x1517"
+    },
+    {
+      "id": "rear-east",
+      "nodes": [
+        185
+      ],
+      "uncertainty_px": 1,
+      "evidence": "Native mask 146 top silhouette, inspected against source artwork",
+      "points": [
+        [
+          1518,
+          888
+        ],
+        [
+          1519,
+          889
+        ],
+        [
+          1520,
+          881
+        ],
+        [
+          1527,
+          877
+        ],
+        [
+          1539,
+          885
+        ],
+        [
+          1540,
+          905
+        ],
+        [
+          1542,
+          906
+        ],
+        [
+          1543,
+          897
+        ],
+        [
+          1550,
+          892
+        ],
+        [
+          1562,
+          900
+        ],
+        [
+          1563,
+          920
+        ],
+        [
+          1566,
+          922
+        ],
+        [
+          1567,
+          913
+        ]
+      ],
+      "begins": "Chimney covers preceding shoulder",
+      "terminates": "Round turret partially covers continuation"
+    }
+  ]
+}
