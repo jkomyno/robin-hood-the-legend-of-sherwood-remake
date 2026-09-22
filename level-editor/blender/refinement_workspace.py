@@ -467,6 +467,7 @@ def main(argv=None):
         for option in ("scene-name", "collection-name", "source-path", "grouping-manifest", "inventory-path", "review-path"):
             p.add_argument("--" + option, required=True)
         p.add_argument("--projection-manifest")
+        p.add_argument("--source-mask-manifest")
         p.add_argument("--width", type=int, default=384)
         p.add_argument("--height", type=int, default=512)
         p.add_argument("--elevation-degrees", type=float, default=35)
