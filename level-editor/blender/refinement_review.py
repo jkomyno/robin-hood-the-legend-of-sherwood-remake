@@ -61,7 +61,7 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
                   source_path, frame_manifest=None, width=384, height=512,
                   elevation_degrees=35.0, context_padding=24, projection_layers=None,
                   lighting=None, source_mask_manifest=None, render_object_names=None,
-                  allow_projection_revision=False):
+                  allow_projection_revision=False, allow_mask_revision=False):
     """Render context.png, solid.png, textured.png, views.json and individual views.
 
     Coordinates use the map's orthographic projection: source x=X,
@@ -138,7 +138,7 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
         if source_mask_manifest:
             from occlusion_constraints import SourceMaskConstraints, evidence_record
             mask_record = evidence_record(source_mask_manifest)
-            if baseline and baseline.get('source_mask_evidence') not in (None, mask_record):
+            if baseline and not allow_mask_revision and baseline.get('source_mask_evidence') not in (None, mask_record):
                 raise ValueError('Reviewed source-mask evidence changed since baseline')
         elif baseline and baseline.get('source_mask_evidence'):
             raise ValueError('Cannot drop source-mask evidence from a frozen review')

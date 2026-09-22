@@ -119,6 +119,103 @@ def _validated_projection(config):
     return manifest
 
 
+def _freeze_masks(workspace, config):
+    """Freeze assignment origin plus every native bitmap, including unused masks."""
+    path = Path(config['source_mask_manifest']).resolve()
+    manifest = json.loads(path.read_text())
+    inventory_path = (path.parent / manifest['mask_inventory']).resolve(strict=True)
+    inventory = json.loads(inventory_path.read_text())
+    native = {str(inventory_path): _sha(inventory_path)}
+    for record in inventory['masks']:
+        relative = record.get('png') if 'png' in record else record['folder']+'/mask.png'
+        if relative is not None:
+            bitmap = (inventory_path.parent / relative).resolve(strict=True)
+            native[str(bitmap)] = _sha(bitmap)
+    manifest['mask_inventory'] = str(inventory_path)
+    directory = Path(workspace)/'mask-reference'
+    directory.mkdir(exist_ok=False)
+    _json(directory/'assignments.json', manifest)
+    _json(directory/'native-hashes.json', native)
+    config['mask_reference_files'] = _files(directory)
+    config['mask_reference'] = str(directory)
+
+
+def initialize_working_masks(workspace_dir):
+    """Freeze legacy mask evidence only if the current assignments still match input."""
+    workspace = Path(workspace_dir).resolve()
+    config = json.loads((workspace/'workspace.json').read_text())
+    if config.get('mask_reference'):
+        _validated_masks(config)
+        return config['mask_reference']
+    path = Path(config['source_mask_manifest']).resolve()
+    views = json.loads((workspace/'input/views.json').read_text())
+    expected = views.get('source_mask_evidence', {})
+    from occlusion_constraints import evidence_record
+    if expected != evidence_record(path):
+        raise ValueError('Cannot freeze legacy masks after initial evidence changed')
+    _freeze_masks(workspace, config)
+    _json(workspace/'workspace.json', config)
+    return config['mask_reference']
+
+
+def _validated_masks(config, objects=None):
+    if not config.get('source_mask_manifest'):
+        return None
+    if not config.get('mask_reference'):
+        raise ValueError('Initialize immutable mask evidence before editing this legacy workspace')
+    directory = Path(config['mask_reference'])
+    if _files(directory) != config['mask_reference_files']:
+        raise ValueError('Immutable mask assignment origin changed')
+    native = json.loads((directory/'native-hashes.json').read_text())
+    if any(_sha(path) != digest for path, digest in native.items()):
+        raise ValueError('Native mask inventory or bitmap changed')
+    frozen = json.loads((directory/'assignments.json').read_text())
+    path = Path(config['source_mask_manifest'])
+    working = json.loads(path.read_text())
+    working['mask_inventory'] = str((path.parent/working['mask_inventory']).resolve(strict=True))
+    def authority(value):
+        return {**value, 'projections': {label: {k: v for k, v in projection.items() if k != 'assignments'}
+                                        for label, projection in value['projections'].items()}}
+    if authority(working) != authority(frozen):
+        raise ValueError('Working masks changed native inventory, projection source or state')
+    records = {record['index']: record for record in json.loads(Path(working['mask_inventory']).read_text())['masks']}
+    def assignments(projection, validate_objects=False):
+        result = {}
+        for entry in projection['assignments']:
+            targets = [key for key in ('source_node', 'asset_group') if key in entry]
+            if (entry.get('reviewed') is not True or len(targets) != 1 or
+                    not isinstance(entry[targets[0]], str) or not entry[targets[0]]):
+                raise ValueError('Mask assignments require one reviewed explicit target')
+            key = (targets[0], entry[targets[0]], entry.get('projection_component'))
+            if key[2] is not None and (targets[0] != 'source_node' or not isinstance(key[2], str) or not key[2].strip()):
+                raise ValueError('Invalid mask component selector')
+            if key in result:
+                raise ValueError('Duplicate mask target')
+            if validate_objects and objects is not None and key[2] is not None:
+                matches = [obj for obj in objects if obj.type == 'MESH' and
+                           obj.get('source_node') == key[1] and obj.get('projection_component') == key[2]]
+                if len(matches) != 1:
+                    raise ValueError('Mask component must identify exactly one scene mesh')
+            indices, exclusions = entry.get('mask_indices'), entry.get('exclude_mask_indices', [])
+            if not isinstance(indices, list) or not indices or not isinstance(exclusions, list):
+                raise ValueError('Mask assignment requires explicit indices')
+            if exclusions and (entry.get('exclusions_reviewed') is not True or not str(entry.get('exclusion_reason', '')).strip()):
+                raise ValueError('Mask exclusions require explicit review and reason')
+            for index in indices+exclusions:
+                if type(index) is not int or index not in records or records[index].get('png', 'legacy') is None:
+                    raise ValueError('Unknown or degenerate native mask index')
+            result[key] = entry
+        return result
+    for label, projection in working['projections'].items():
+        before, after = assignments(frozen['projections'][label]), assignments(projection, validate_objects=True)
+        for key in before.keys() | after.keys():
+            owned = key[1] in config['part_ids'] if key[0] == 'source_node' else key[1] == config['asset_id']
+            if not owned and before.get(key) != after.get(key):
+                raise ValueError('Working masks changed another asset assignment')
+    return {'working_sha256': _sha(path), 'native_hashes_sha256': _sha(directory/'native-hashes.json'),
+            'initial_assignments_sha256': _sha(directory/'assignments.json')}
+
+
 def _geometry(obj):
     value = {"type": obj.type, "matrix": [list(row) for row in obj.matrix_world],
              "parent": obj.parent.name if obj.parent else None,
@@ -220,6 +317,7 @@ def _mission_review_source(config):
 
 
 def _reproject(config, report_dir):
+    _validated_masks(config, _objects(config))
     from reproject_map import restore_projection, reproject_layers, reproject_map
     # Layered projection owns its full receiver partition. Keep context meshes
     # render-visible, even though only the worker asset is selectable.
@@ -252,6 +350,7 @@ def _reproject(config, report_dir):
 
 def _render(config, output, baseline=None):
     from refinement_review import render_review
+    mask_evidence = _validated_masks(config, _objects(config))
     result = render_review(output, scene_name=config["scene_name"],
                          collection_name=config["collection_name"], asset_id=config["asset_id"],
                          source_path=_mission_review_source(config) or config["source_path"], frame_manifest=baseline,
@@ -260,11 +359,14 @@ def _render(config, output, baseline=None):
                          context_padding=config["context_padding"],
                          projection_layers=_review_layers(config),
                          source_mask_manifest=config.get('source_mask_manifest'),
-                         allow_projection_revision=bool(baseline and config.get('projection_manifest')))
+                         allow_projection_revision=bool(baseline and config.get('projection_manifest')),
+                         allow_mask_revision=bool(baseline and mask_evidence))
+    if mask_evidence:
+        result['working_mask_evidence'] = mask_evidence
     if config.get('projection_manifest'):
         result['projection_manifest_sha256'] = _sha(config['projection_manifest'])
         result['projection_manifest'] = str(config['projection_manifest'])
-        _json(Path(output)/'views.json', result)
+    _json(Path(output)/'views.json', result)
     return result
 
 
@@ -323,6 +425,7 @@ def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path
         masks['mask_inventory'] = str((path.parent / masks['mask_inventory']).resolve(strict=True))
         _json(workspace / 'source-masks.json', masks)
         config['source_mask_manifest'] = str(workspace / 'source-masks.json')
+        _freeze_masks(workspace, config)
     if projection_manifest:
         path = Path(projection_manifest).resolve()
         layers = _copy_manifest_images(json.loads(path.read_text()), path.parent, reference)
@@ -438,9 +541,11 @@ def validate(workspace_dir):
         raise ValueError("\n".join(errors))
     if config.get('projection_manifest'):
         _validated_projection(config)
+    masks = _validated_masks(config, _objects(config))
     return {"status": "PASS", "asset_id": config["asset_id"],
             "part_ids": config["part_ids"], "meshes": len(targets),
             "projection_manifest_sha256": _sha(config['projection_manifest']) if config.get('projection_manifest') else None,
+            "working_mask_evidence": masks,
             "protected_objects": len(outside)}
 
 
