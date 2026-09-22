@@ -244,14 +244,36 @@ def extend_walkway(workspace):
     return {'source_pixels':pixels,'world_z':z,'native_datum_game':50,'depth_hypothesis':True,**topology(obj)}
 
 
+def retained_returns(workspace):
+    collection=bpy.data.collections['Leicester Working']
+    path=Path(initialize_working_projection(workspace));manifest=json.loads(path.read_text());review=manifest['projection_reviews'][PATCH]
+    masks_path=workspace/'source-masks.json';masks=json.loads(masks_path.read_text())
+    changes=[]
+    for node,indices in [(224,[329,330,335,344,345,346]),(247,[329,330,335,344,345,346]),(244,[334,341]),(245,[334,341])]:
+        source_node=f'building-{node:03}'
+        if source_node in review['receiver_nodes']:raise RuntimeError('Retained return already assigned')
+        obj=next(o for o in collection.all_objects if o.type=='MESH' and o.get('source_node')==source_node and not o.hide_render)
+        tag(obj,'retained-interior');review['receiver_nodes'].append(source_node)
+        review['receiver_components']['interior-'+PATCH].append({'source_node':source_node,'projection_components':['retained-interior'],'patch_id':PATCH})
+        masks['projections']['interior-patch-000']['assignments'].append({'source_node':source_node,'mask_indices':indices,'exclude_mask_indices':[337],
+            'reviewed':True,'exclusions_reviewed':True,'exclusion_reason':'Independent chandelier receiver337.',
+            'evidence':'Native revealed left trim/wall and right window-wall returns; measured source rays5001034,5151043,7911025,7911052 bind actual retained objects. Covered fallback uses independent exterior visibility.'})
+        changes.append(source_node)
+    path.write_text(json.dumps(manifest,indent=2)+'\n');masks_path.write_text(json.dumps(masks,indent=2)+'\n')
+    return {'source_nodes':changes,'geometry_changed':False}
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('workspace',type=Path);parser.add_argument('--receivers',action='store_true')
     parser.add_argument('--walkway',action='store_true')
+    parser.add_argument('--returns',action='store_true')
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:]);workspace=args.workspace.resolve()
     if not json.loads((workspace/'inspection/input-review.json').read_text())['all_eight_views_inspected']:
         raise RuntimeError('Inspect frozen input before modifying')
     bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'),load_ui=False)
-    if args.walkway:
+    if args.returns:
+        report=json.loads((workspace/'geometry-report.json').read_text());report['retained_returns']=retained_returns(workspace)
+    elif args.walkway:
         report=json.loads((workspace/'geometry-report.json').read_text());report['foreground_walkway']=extend_walkway(workspace)
     elif args.receivers:
         report=json.loads((workspace/'geometry-report.json').read_text());report['chandelier']=receivers_and_chandelier(workspace)
