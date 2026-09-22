@@ -78,6 +78,7 @@ def refine(obj):
     mesh = bpy.data.meshes.new(obj.name+' separated rails')
     inverse = matrix.inverted()
     mesh.from_pydata([inverse @ v for v in vertices], [], faces)
+    mesh.uv_layers.new(name='UVMap')
     mesh.update()
     for material in obj.data.materials:
         mesh.materials.append(material)

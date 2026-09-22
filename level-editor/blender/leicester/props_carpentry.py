@@ -102,6 +102,7 @@ def build(obj, kind):
     else:raise ValueError(kind)
     mesh=bpy.data.meshes.new(obj.name+' carpentry');inv=matrix.inverted()
     mesh.from_pydata([inv@v for v in vertices],[],faces);mesh.update()
+    mesh.uv_layers.new(name='UVMap')
     for mat in obj.data.materials:mesh.materials.append(mat)
     bm=bmesh.new();bm.from_mesh(mesh);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
     topology={'vertices':len(bm.verts),'faces':len(bm.faces),'boundary_edges':sum(e.is_boundary for e in bm.edges),
@@ -128,7 +129,7 @@ def run(workspace):
     report_object=build(obj,kind);first=signature(obj);build(obj,kind)
     if signature(obj)!=first:raise ValueError('Recipe is not idempotent')
     limitations=['Hidden timber thickness and rear-facing surfaces are inferred; rebuild protected projection before review.']
-    if kind=='panel':limitations+=['Two end posts are visible. Four internal boards are an uncertain interpretation of soft source pixels; exact plank count is not approved.','Machine ID retains the historical stump label; the modeled object is a small fence panel.']
+    if kind=='panel':limitations+=['Two end posts are visible. Four internal boards are an uncertain interpretation of soft source pixels; exact plank count is not approved.']
     else:limitations+=['The near wheel is partly hidden by the house; wheel center has approximately 6 source-pixel uncertainty.','Far wheel, eight-spoke pattern, wheel thickness and unseen tray floor are inferred rather than recovered from artwork.','Tray floor and shaft junction are approximations within the native receivers; handrail irregularities remain unmodeled.','Timber members intentionally contact/intersect at structural joints; receivers remain independently addressable.']
     report={'recipe':VERSION,'asset_id':config['asset_id'],'objects':[report_object],'idempotence':'PASS','limitations':limitations,
             'projection_status':'STALE; rebuild modified packet','approval_status':'refinement in progress','texture_generation':'not-started'}
