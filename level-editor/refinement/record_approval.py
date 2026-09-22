@@ -108,7 +108,8 @@ def record(manifest_path, asset_ids, decision, *, result='approved',
         if revision_sha256 is not None and len(selected) != 1:
             raise ValueError('An expected revision hash requires exactly one asset')
         target = Path(decisions_path).resolve() if decisions_path else path.parent / 'decisions.json'
-        records = load_decisions(target, set(items))
+        known_ids = set(items) | {item['id'] for item in data.get('without_packets', [])}
+        records = load_decisions(target, known_ids)
         pending = []
         for item in selected:
             revision = item['revision']

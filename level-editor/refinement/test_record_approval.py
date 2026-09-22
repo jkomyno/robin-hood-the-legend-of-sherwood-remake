@@ -84,6 +84,28 @@ class ApprovalTests(unittest.TestCase):
         self.assertEqual(self.item['decision_state'],'stale')
         self.assertFalse(self.item['generation_eligible'])
 
+    def test_incomplete_catalog_asset_keeps_existing_decision_without_blocking_others(self):
+        self.exact()
+        data=json.loads(self.path.read_text())
+        data['without_packets']=[{'id':'temporarily-rebuilding','status':'validation-pending'}]
+        self.path.write_text(json.dumps(data))
+        previous={'asset_id':'temporarily-rebuilding','scope':'geometry','decision':'approved',
+                  'revision_sha256':'a'*64,'exact_user_text':'Synthetic prior approval'}
+        decisions=self.root/'decisions.json'
+        decisions.write_text(json.dumps({'version':1,'decisions':[previous]}))
+        record(self.path,['fixture'],'Synthetic unrelated asset approval')
+        records=load_decisions(decisions,{'fixture','temporarily-rebuilding'})
+        self.assertEqual(records[0],previous)
+        self.assertEqual(records[1]['asset_id'],'fixture')
+        before=decisions.read_bytes()
+        with self.assertRaises(ValueError):
+            record(self.path,['temporarily-rebuilding'],'Synthetic incomplete approval')
+        self.assertEqual(decisions.read_bytes(),before)
+        data.pop('without_packets')
+        self.path.write_text(json.dumps(data))
+        with self.assertRaises(ValueError):
+            record(self.path,['fixture'],'Synthetic approval with truly unknown decision')
+
     def test_expected_revision_mismatch_and_rejection(self):
         self.exact()
         with self.assertRaises(ValueError):
