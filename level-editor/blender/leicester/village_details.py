@@ -137,6 +137,60 @@ def gabled_barrel(obj):
     return {'native_mask':122,'parts':['bulged barrel','smaller open bucket'],'radial_segments':segments,'source_center_x':2935.5,'ground_center_source_y':579.,'heights':[25.,42.],'maximum_radii':[11.,7.5],'inference':'gabled-barrel-close.png shows a large barrel supporting a smaller open bucket. Rotational symmetry, concealed radial depth and eight-unit bucket interior are inferred; source widths and overall silhouette constrain placement.'}
 
 
+def longhouse_shed(workspace,obj):
+    sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35))
+    anchors=[Vector((2800.65,-1199.61,65.92)),Vector((2813.84,-1139.54,90.34)),Vector((2886.39,-1218.70,65.92))]
+    normal=(anchors[1]-anchors[0]).cross(anchors[2]-anchors[0]);distance=normal.dot(anchors[0]);inverse=np.linalg.inv(np.array([[normal.y,normal.z],[-sine,-cosine]]))
+    def roof_plane(px,py):
+        y,z=inverse@np.array([distance-normal.x*px,py]);return px,float(y),float(z)
+    roof_pixels=[(2801.,637.),(2813.,579.),(2899.,588.),(2888.,648.)]
+    def inside(px,py):
+        signs=[(b[0]-a[0])*(py-a[1])-(b[1]-a[1])*(px-a[0]) for a,b in zip(roof_pixels,roof_pixels[1:]+roof_pixels[:1])]
+        return min(signs)>=0 or max(signs)<=0
+    def component(px,py):
+        if inside(px+.5,py+.5):return 'roof'
+        if py>=637+(px-2801)*11/87 and px<=2888:return 'front'
+        if px>=2888:return 'right'
+        return 'left'
+    def wall(origin,slope):
+        def point(px,py):
+            y=origin[1]+(px-origin[0])*slope;return px,y,(-py-y*sine)/cosine
+        return point
+    planes={'roof':roof_plane,'front':wall((2800.65,-1199.61),(-1218.70+1199.61)/(2886.39-2800.65)),'left':wall((2800.65,-1199.61),(60.07)/(13.19)),'right':wall((2886.39,-1218.70),60.14/13.24)}
+    merged=bmesh.new();reports=[]
+    for label,plane in planes.items():
+        mesh,report=silhouette_prism(workspace,131,plane,2.5 if label=='roof' else 2.,lambda x,y:component(x,y)==label);merged.from_mesh(mesh);reports.append({'surface':label,**report});bpy.data.meshes.remove(mesh)
+    mesh=bpy.data.meshes.new('Leicester Longhouse Open Picket Shed');merged.to_mesh(mesh);merged.free();mesh.uv_layers.new(name='UVMap');mesh.materials.append(bpy.data.materials['Leicester Detail Unknown'])
+    for vertex in mesh.vertices:vertex.co=obj.matrix_world.inverted()@vertex.co
+    obj.data=mesh
+    return {'components':reports,'roof_source_corners':roof_pixels,'front_lower_pickets':4,'picket_source_centers_x':[2855,2862,2869,2876],'inference':'Native131 front upper opening, four lower pickets, left braced gate and dark side boards replace the solid collision volume. Source roof outline clips four distinct receiver planes derived from inherited footprint; concealed depth2/2.5 and panel joints remain inferred. No invented opaque back wall fills native openings.'}
+
+
+def longhouse_fence(workspace,obj):
+    sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35));merged=bmesh.new();reports=[]
+    def plane(origin,slope):
+        def point(px,py):
+            y=origin[1]+(px-origin[0])*slope;return px,y,(-py-y*sine)/cosine
+        return point
+    front=plane((2580.,-1161.),-16/36);back=plane((2574.,-600/sine),6/72)
+    for index,label,receiver,pixel_filter in [(129,'front',front,lambda x,y:2580<=x<=2618 and 0<=front(x,y)[2]<=40),(130,'back',back,None)]:
+        mesh,report=silhouette_prism(workspace,index,receiver,2.,pixel_filter);merged.from_mesh(mesh);reports.append({'panel':label,**report});bpy.data.meshes.remove(mesh)
+    # The long return is almost edge-on in the source. Its depth is resolved
+    # from the front/back fences; three rails follow their visible rail phase.
+    vertices=[];faces=[]
+    def beam(a,b,width):
+        a=Vector(a);b=Vector(b);direction=(b-a).normalized();u=Vector((1,0,0))*width/2;v=direction.cross(u).normalized()*width/2;start=len(vertices)
+        vertices.extend([p+du*u+dv*v for p in (a,b) for du,dv in [(-1,-1),(1,-1),(1,1),(-1,1)]])
+        faces.extend(tuple(start+i for i in face) for face in [(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)])
+    far=(2578.,back(2578,580)[1]);near=(2580.,-1161.)
+    for high,low in [(10.,5.),(22.,13.),(34.,21.)]:beam((*far,high),(*near,low),2.5)
+    beam((*far,0.),(*far,42.),3.);beam((*near,0.),(*near,30.),3.)
+    timber=bpy.data.meshes.new('Leicester Longhouse Fence Return');timber.from_pydata(vertices,[],faces);merged.from_mesh(timber);bpy.data.meshes.remove(timber);bmesh.ops.recalc_face_normals(merged,faces=list(merged.faces));mesh=bpy.data.meshes.new('Leicester Longhouse Open Fence');merged.to_mesh(mesh);merged.free();mesh.uv_layers.new(name='UVMap');mesh.materials.append(bpy.data.materials['Leicester Detail Unknown'])
+    for vertex in mesh.vertices:vertex.co=obj.matrix_world.inverted()@vertex.co
+    obj.data=mesh
+    return {'source_panels':reports,'return_rails':3,'return_endpoint_posts':2,'inference':'Front native129 and back native130 openings are explicit. Almost edge-on long return uses three connecting rails and endpoint posts; concealed thickness2.5/3, changing rail heights and back-ground source ordinate600 are inferred from adjoining source silhouettes. Foreground hay pixels outside the front fence ground/height envelope are not geometry.'}
+
+
 def gabled_canopy(workspace,config,roof_obj,update_masks=True):
     sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35))
     pixels=[(2983.,490.),(3033.,443.),(3078.,474.),(3023.,518.)]

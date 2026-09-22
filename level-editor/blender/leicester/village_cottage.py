@@ -144,9 +144,10 @@ def main():
     if c['asset_id']=='leicester-southeast-cottage':bynode['building-096']['projection_min_cosine']=0.12
     wheel_report=None
     if c['asset_id']=='leicester-northeast-longhouse':
-        if support.exists():from village_details import longhouse_wheel
-        else:from leicester.village_details import longhouse_wheel
+        if support.exists():from village_details import longhouse_wheel,longhouse_shed,longhouse_fence
+        else:from leicester.village_details import longhouse_wheel,longhouse_shed,longhouse_fence
         wheel_report=longhouse_wheel(w,c)
+        extra_detail={'shed':longhouse_shed(w,bynode['building-006']),'fence':longhouse_fence(w,bynode['building-004'])}
     report={'source_joinery':extra_detail,'spare_wheel':wheel_report,'measured_seam_welds':measured_welds,'hidden_join_repairs':join_report,'access_pole':pole_report,'asset_id':c['asset_id'],'recipe':'village-cottage-v1','shell_repairs':reports,'shared_roof_seams':seams,'world_transform_drift':0,'inference':'Only planar underside closure; shared junctions reconciled at their average using reported per-pair tolerances. No source silhouette redesign.','limitations':['Doors/windows/timber detail remains source projection unless represented by an existing distinct component.','Hidden roof/back depth remains the inherited geometric hypothesis; component interiors may overlap.'],'projection_status':'STALE'}
     (w/'inspection').mkdir(exist_ok=True);(w/'inspection'/'cottage-recipe.json').write_text(json.dumps(report,indent=2)+'\n');validate(w);bpy.ops.wm.save_as_mainfile(filepath=str(w/'model.blend'));print(json.dumps({'asset_id':c['asset_id'],'seams':seams}))
     if args.reproject:
