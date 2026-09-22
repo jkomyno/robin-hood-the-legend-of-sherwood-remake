@@ -1,0 +1,46 @@
+{
+  "asset_id": "derby-lower-west-curtain",
+  "revision": "lower-west-wallwalk-merlon-source-phase-v2",
+  "north": [
+    {
+      "source_node": "building-023",
+      "before_count": 15,
+      "after_count": 15,
+      "path_length": 487.2021199322582,
+      "spacing": 32.48014132881721,
+      "depth": 19.0,
+      "width": 13.641659358103228
+    },
+    {
+      "source_node": "building-025",
+      "before_count": 9,
+      "after_count": 9,
+      "path_length": 254.76091938558153,
+      "spacing": 28.30676882062017,
+      "depth": 19.0,
+      "width": 11.888842904660471
+    }
+  ],
+  "south": [
+    {
+      "source_node": "building-042",
+      "before_count": 8,
+      "after_count": 8,
+      "path_length": 124.67457357642955,
+      "spacing": 15.584321697053694,
+      "depth": 19.0,
+      "width": 10.0
+    }
+  ],
+  "source_nodes_changed": [
+    "building-023",
+    "building-025",
+    "building-042"
+  ],
+  "preserved_support_nodes": [
+    "building-045",
+    "building-037",
+    "building-038"
+  ],
+  "status": "PASS"
+}
