@@ -9,7 +9,7 @@ import bmesh
 import math
 import hashlib
 import numpy as np
-PAIRS=[('building-024','building-029'),('building-016','building-017'),('building-003','building-007'),('building-009','building-014'),('building-064','building-065'),('building-093','building-096'),('building-079','building-080')]
+PAIRS=[('building-001','building-002'),('building-024','building-029'),('building-016','building-017'),('building-003','building-007'),('building-009','building-014'),('building-064','building-065'),('building-093','building-096'),('building-079','building-080')]
 
 def access_pole(obj,workspace):
     config=json.loads((workspace/'workspace.json').read_text())
@@ -95,14 +95,14 @@ def main():
         if left not in bynode or right not in bynode:continue
         a,b=bynode[left],bynode[right]
         va=[a.matrix_world@v.co for v in a.data.vertices];vb=[b.matrix_world@v.co for v in b.data.vertices]
-        tolerance=7.0 if (left,right)==('building-016','building-017') else 0.8
+        tolerance=7.0 if (left,right)==('building-016','building-017') else (1.1 if (left,right)==('building-001','building-002') else 0.8)
         matches=[(i,j) for i,x in enumerate(va) for j,y in enumerate(vb) if (x-y).length<tolerance]
         if len({i for i,j in matches})!=len(matches) or len({j for i,j in matches})!=len(matches):raise ValueError('Ambiguous seam vertex correspondence')
         maximum=0
         for i,j in matches:
             midpoint=(va[i]+vb[j])*0.5;maximum=max(maximum,(midpoint-va[i]).length)
             a.data.vertices[i].co=a.matrix_world.inverted()@midpoint;b.data.vertices[j].co=b.matrix_world.inverted()@midpoint
-        a.data.update();b.data.update();seams.append({'source_nodes':[left,right],'matched_vertices':len(matches),'maximum_world_vertex_movement':maximum,'correspondence_tolerance':tolerance,'note':'The rear016/017 ridge junction is occluded by chimney and adjacent roof; midpoint is inferred hidden connectivity.' if tolerance>1 else 'Subpixel shared junction.'})
+        a.data.update();b.data.update();seams.append({'source_nodes':[left,right],'matched_vertices':len(matches),'maximum_world_vertex_movement':maximum,'correspondence_tolerance':tolerance,'note':'The rear016/017 ridge junction is occluded by chimney and adjacent roof; midpoint is inferred hidden connectivity.' if (left,right)==('building-016','building-017') else 'Subpixel shared junction.'})
     join_report=close_mill_north_joins(bynode) if c['asset_id']=='leicester-mill-north-cottage' else None
     pole_report=access_pole(bynode['building-021'],w) if c['asset_id']=='leicester-mill-north-cottage' else None
     report={'measured_seam_welds':measured_welds,'hidden_join_repairs':join_report,'access_pole':pole_report,'asset_id':c['asset_id'],'recipe':'village-cottage-v1','shell_repairs':reports,'shared_roof_seams':seams,'world_transform_drift':0,'inference':'Only planar underside closure; shared junctions reconciled at their average using reported per-pair tolerances. No source silhouette redesign.','limitations':['Doors/windows/timber detail remains source projection unless represented by an existing distinct component.','Hidden roof/back depth remains the inherited geometric hypothesis; component interiors may overlap.'],'projection_status':'STALE'}
