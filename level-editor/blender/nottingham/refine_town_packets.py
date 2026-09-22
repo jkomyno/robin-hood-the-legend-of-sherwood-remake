@@ -12,7 +12,14 @@ from freeze_tooling import select_tooling
 select_tooling()
 from render_slots import acquire
 from refine_town import refine as base_refine
-from refine_town_contacts import refine
+from refine_town_contacts import refine as contact_refine
+from refine_southgate import refine as refine_southgate
+
+def refine(asset):
+ if asset == "nottingham-south-gate-house":
+  contact_refine(asset)
+  return refine_southgate()
+ return contact_refine(asset)
 from refinement_workspace import modified
 
 def mesh_hash(asset):

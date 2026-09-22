@@ -37,8 +37,8 @@ def terrace_supports(objs,src):
 def refine(asset):
  src=json.loads((ROOT/'level-editor/work/nottingham-refinement/baseline/nottingham.rhp.json').read_text())['sight_obstacles']
  objs={int(o['source_node'][-3:]):o for o in bpy.data.collections['nottingham Working'].all_objects if o.type=='MESH'and o.get('asset_group')==asset}
- first=objs[min(objs)]
- if first.get(TAG):return json.loads(first[TAG])
+ first=objs[min(objs)];tag=TAG+('_no_railing' if asset=='nottingham-south-stair-house' else '')
+ if first.get(tag):return json.loads(first[tag])
  p={n:copy.deepcopy(src[n]['points'])for n in objs};reports=[];changes=[];inference=[]
  if asset=='nottingham-south-gate-house':
   # Move the rear edge back along source rays to contact the rear block.
@@ -75,12 +75,10 @@ def refine(asset):
    for v in q:v.z=high[0].z*(i+1)/10
    box([v-Vector((0,0,2.5))for v in q]+q)
   for a,b in zip(low,high):
-   beam(a,b,3.5);beam(a+Vector((0,0,24/COS)),b+Vector((0,0,24/COS)),3)
-   for i in range(10):
-    pt=a.lerp(b,i/9);beam(pt,pt+Vector((0,0,24/COS)),2.7)
-  for v in [native_point(p[31][i],75.00101)for i in [1,2]]:beam(Vector((v.x,v.y,0)),v+Vector((0,0,24/COS)),4)
-  reports.append(install(objs[30],verts,faces));changes=['Replaced smooth stair ramp with ten timber treads, two stringers, handrails and upright supports; retained measured stair and landing endpoints.','Aligned both gable ridge ends and extended the lower masonry support to the upper timber wall footprint, closing reverse-view gaps.']
-  inference=['Ten tread intervals follow the visible railing rhythm; tread faces partly concealed by the railing are an inferred regular continuation.','Rail height is measured as24 source pixels; hidden far rail, timber widths and underside depth are inferred.']
+   beam(a,b,3.5)
+  for v in [native_point(p[31][i],75.00101)for i in [1,2]]:beam(Vector((v.x,v.y,0)),v,4)
+  reports.append(install(objs[30],verts,faces));changes=['Replaced smooth stair ramp with ten timber treads, two stringers and landing support legs; retained measured stair and landing endpoints. Removed all handrails and railing uprights following the explicit user correction.','Aligned both gable ridge ends and extended the lower masonry support to the upper timber wall footprint, closing reverse-view gaps.']
+  inference=['Ten tread intervals are an inferred regular continuation between the measured stair endpoints; tread count is not asserted as recovered architectural fact.','Timber widths and underside depth are inferred; no rail or railing upright is modeled.']
  elif asset=='nottingham-market-terrace':
   terrace_supports(objs,src)
   # Roof16/17 share a ridge; native wall15 only differs by subpixel height.
@@ -93,4 +91,4 @@ def refine(asset):
  else:raise ValueError(asset)
  for obj in objs.values():obj['projection_min_cosine']=.18
  inference.append('Faces below0.18 source-facing cosine remain neutral to prevent stretched edge-on source bands in reverse views.')
- report={'status':'refined','asset_id':asset,'objects':reports,'changes':changes,'inference':inference,'transform_drift':0};first[TAG]=json.dumps(report);return report
+ report={'status':'refined','asset_id':asset,'objects':reports,'changes':changes,'inference':inference,'transform_drift':0};first[tag]=json.dumps(report);return report
