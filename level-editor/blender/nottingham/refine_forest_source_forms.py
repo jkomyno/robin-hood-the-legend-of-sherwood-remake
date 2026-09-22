@@ -17,7 +17,19 @@ def refine(obj):
             for i in range(n):a=off+j*n+i;b=off+j*n+(i+1)%n;fs.append((a,b,b+n,a+n))
         fs.append(tuple(off+(len(rows)-1)*n+i for i in range(n)))
     def ellipse(cx,ground_y,h,rx,ry,angles):return [point(cx+rx*math.cos(a),ground_y+ry*math.sin(a)-h,h)for a in angles]
-    def stem(cx,ground_y,foot,profile):
+    def traced_cap(cx,cy,outline,h,angles):
+        result=[]
+        for angle in angles:
+            dx,dy=math.cos(angle),math.sin(angle);hits=[]
+            for (x1,y1),(x2,y2) in zip(outline,outline[1:]+outline[:1]):
+                ex,ey=x2-x1,y2-y1;den=dx*ey-dy*ex
+                if abs(den)<1e-8:continue
+                qx,qy=x1-cx,y1-cy;t=(qx*ey-qy*ex)/den;u=(qx*dy-qy*dx)/den
+                if t>0 and 0<=u<=1:hits.append(t)
+            if not hits:raise ValueError('Cut-end trace does not contain center')
+            radius=min(hits);result.append(point(cx+radius*dx,cy+radius*dy,h))
+        return result
+    def stem(cx,ground_y,foot,profile,cap=None):
         ordered=sorted((math.atan2(y-ground_y,x-cx),x,y)for x,y in foot)
         unique=[]
         for a,x,y in ordered:
@@ -26,6 +38,7 @@ def refine(obj):
             else:unique.append((a,x,y))
         angles=[p[0]for p in unique];foot=[(p[1],p[2])for p in unique];rows=[[point(x,y,0)for x,y in foot]]
         for h,center,rx,ry in profile:rows.append(ellipse(center,ground_y,h,rx,ry,angles))
+        if cap:rows[-1]=traced_cap(cx,ground_y-profile[-1][0],cap,profile[-1][0],angles)
         rings(rows)
     def pole(base,tip,height,radius):
         a=point(*base,0);b=point(*tip,height);axis=(b-a).normalized();side=axis.cross(Vector((0,0,1)))
@@ -34,12 +47,14 @@ def refine(obj):
     angles=[i*math.tau/24 for i in range(24)]
     if node=='building-545':
         foot=[(1645,129),(1647,126),(1669,124),(1675,132),(1682,140),(1682,143),(1672,144),(1669,141),(1667,149),(1658,149),(1652,141),(1647,139)]
-        stem(1656.5,136.4,foot,[(8,1656.5,10.5,6.5),(24.4,1656.5,12.5,7.0)])
-        measure={'cut_end_center_source':[1656.5,112],'cut_end_radii_source':[12.5,7],'ground_center_source':[1656.5,136.4],'root_outline_source':foot}
+        cut=[(1644,110),(1648,106),(1655,104),(1661,105),(1666,108),(1668,113),(1665,117),(1659,119),(1652,117),(1647,114)]
+        stem(1656.5,136.4,foot,[(8,1656.5,10.5,6.5),(24.4,1656.5,12.5,7.0)],cap=cut)
+        measure={'cut_end_outline_source':cut,'cut_end_center_source':[1656.5,112],'cut_end_radii_source':[12.5,7],'ground_center_source':[1656.5,136.4],'root_outline_source':foot}
         notes=['Shift cut end left to its painted center and recover visible asymmetric root flare.','Back root closure and cut-end depth inferred from the observed ellipse.']
     elif node=='building-543':
-        rings([ellipse(1867.5,153.3,h,rx,ry,angles)for h,rx,ry in [(0,9.6,5),(5,10,4.7),(13.8,10.5,4.8)]])
-        measure={'cut_end_center_source':[1867.5,139.5],'cut_end_radii_source':[10.5,4.8],'ground_center_source':[1867.5,153.3],'source_height':13.8}
+        cut=[(1858,139),(1860,136),(1866,135.5),(1872,136),(1876,139),(1876,142),(1872,144),(1865,144),(1860,143),(1857.8,141)]
+        rings([ellipse(1867.5,153.3,h,rx,ry,angles)for h,rx,ry in [(0,9.6,5),(5,10,4.7)]]+[traced_cap(1867,139.5,cut,13.8,angles)])
+        measure={'cut_end_outline_source':cut,'cut_end_center_source':[1867,139.5],'cut_end_radii_source':[10.5,4.8],'ground_center_source':[1867.5,153.3],'source_height':13.8}
         notes=['Match painted cut-end ellipse and shorten the source-facing base to native stump silhouette474.','Rear bark follows the observed rounded section.']
     elif node=='building-544':
         foot=[(1570,43),(1572,38),(1582,35),(1606,35),(1610,42),(1624,55),(1621,58),(1608,55),(1604,86),(1595,87),(1590,73),(1587,63),(1565,61),(1563,56)]
