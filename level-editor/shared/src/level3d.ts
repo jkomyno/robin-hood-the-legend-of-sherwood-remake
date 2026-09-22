@@ -12,6 +12,7 @@
 // and height contact, so the editor selects the whole building by default
 // while every part keeps its own transform relative to the group.
 import polygonClipping, { type Polygon } from "polygon-clipping";
+import type { ExternalAssetSource } from "./projection-assets.ts";
 import type { MapCamera } from "./scene.ts";
 import type { ObstaclePoint, SightObstacle } from "./level.ts";
 import { signedPolygonArea } from "./geometry.ts";
@@ -59,6 +60,8 @@ export interface Level3DGroup {
 }
 
 export interface Level3D {
+  /** Standalone models referenced by namespaced object nodes. */
+  assetSources?: ExternalAssetSource[];
   provenance?: { source_sha256?: string; glb_sha256?: string };
   version: 1;
   map: string;

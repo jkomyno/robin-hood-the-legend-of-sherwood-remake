@@ -460,3 +460,28 @@ test("both cameras retain separation of nearby surfaces while zooming out", () =
   }
   viewport.dispose();
 });
+
+test("standalone resources survive undo-style instance removal and retire exactly once", () => {
+  const { viewport, publish } = fixture();
+  viewport.replaceMap(new THREE.Group(), null, new Map());
+  const model = new THREE.Group();
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  model.add(mesh);
+  let disposed = 0; mesh.geometry.addEventListener("dispose", () => disposed++);
+  const reference = { id: "house", descriptor: "3d-assets/house/asset.json", model: "3d-assets/house/model.glb", descriptor_sha256: "a".repeat(64), model_sha256: "b".repeat(64) };
+  const sources = new Map([["asset:house:building-000", mesh]]);
+  assert.equal(viewport.adoptAsset(reference, model, sources), true);
+  assert.equal(viewport.adoptAsset(reference, new THREE.Group(), sources), false);
+  assert.throws(() => viewport.adoptAsset({ ...reference, model_sha256: "c".repeat(64) }, new THREE.Group(), sources), /changed during/);
+  const document = documentFixture();
+  document.assetSources = [reference];
+  document.objects[0]!.node = "asset:house:building-000";
+  publish(document);
+  publish({ ...document, objects: [], groups: [] });
+  assert.equal(disposed, 0);
+  publish(document);
+  viewport.replaceMap(new THREE.Group(), null, new Map());
+  assert.equal(disposed, 1);
+  viewport.dispose();
+  assert.equal(disposed, 1);
+});

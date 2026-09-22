@@ -1,3 +1,4 @@
+import type { ExternalAssetSource } from "@rle/shared";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
@@ -262,6 +263,7 @@ export class EditorViewport {
   }
 
   private sourceAsset: THREE.Object3D | null = null;
+  private readonly externalAssetHashes = new Map<string, string>();
   private ground: THREE.Object3D | null = null;
   get groundNode() {
     return this.ground;
@@ -275,6 +277,7 @@ export class EditorViewport {
     asset: THREE.Object3D,
     ground: THREE.Object3D | null,
     sources: ReadonlyMap<string, THREE.Object3D>,
+    references: ExternalAssetSource[] = [],
   ) {
     if (this.disposed) throw new Error("Disposed viewport cannot adopt a map");
     this.retireMap();
@@ -282,7 +285,27 @@ export class EditorViewport {
     this.ground = ground;
     if (ground) this.mapRoot.add(ground);
     for (const [key, value] of sources) this.sourceNodes.set(key, value);
+    for (const ref of references) this.externalAssetHashes.set(ref.id, ref.descriptor_sha256 + ref.model_sha256);
     this.refreshTextureDisplay();
+  }
+
+  /** Register immutable standalone geometry before document insertion.
+   * Returns false when the caller should dispose a redundant prepared asset.
+   */
+  adoptAsset(reference: ExternalAssetSource, asset: THREE.Object3D, sources: ReadonlyMap<string, THREE.Object3D>): boolean {
+    if (this.disposed || !this.sourceAsset) throw new Error("No active map for asset insertion");
+    const hash = reference.descriptor_sha256 + reference.model_sha256;
+    const existing = this.externalAssetHashes.get(reference.id);
+    if (existing !== undefined) {
+      if (existing !== hash) throw new Error("This asset changed during the editing session; reload the map before importing its new revision");
+      return false;
+    }
+    for (const key of sources.keys()) if (this.sourceNodes.has(key)) throw new Error(`Asset node collision: ${key}`);
+    this.sourceAsset.add(asset);
+    for (const [key, node] of sources) this.sourceNodes.set(key, node);
+    this.externalAssetHashes.set(reference.id, hash);
+    this.refreshTextureDisplay();
+    return true;
   }
 
   private ownControl<T extends { dispose(): void }>(control: T): T {
@@ -320,6 +343,7 @@ export class EditorViewport {
     this.partViews.clear();
     this.groupViews.clear();
     this.sourceNodes.clear();
+    this.externalAssetHashes.clear();
     this.framingPoints = [];
     this.framingBounds.makeEmpty();
     this.framingKey = "";

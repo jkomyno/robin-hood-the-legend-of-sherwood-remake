@@ -1,0 +1,41 @@
+import type { SightObstacle } from "./level.ts";
+
+/** A standalone model exported from a reviewed map, with local obstacles. */
+export interface ProjectionAssetDescriptor {
+  version: 1;
+  kind: "projection-mapped-asset";
+  id: string;
+  name: string;
+  source_map: string;
+  model: string;
+  source_origin_scene: [number, number, number];
+  source_origin_game: [number, number, number];
+  parts: { node: string; name: string; source_obstacle: number; default_hidden?: boolean; obstacle_local_game: SightObstacle }[];
+}
+
+export interface ProjectionAssetEntry {
+  id: string;
+  name: string;
+  source_map: string;
+  descriptor: string;
+  model: string;
+}
+
+/** Paths are relative to the granted library root; hashes pin saved instances. */
+export interface ExternalAssetSource {
+  id: string;
+  descriptor: string;
+  model: string;
+  descriptor_sha256: string;
+  model_sha256: string;
+}
+
+export function assetNodeKey(id: string, node: string): string {
+  return `asset:${id}:${node}`;
+}
+
+export function safeLibraryPath(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 &&
+    !/[\\\0:#?%]/.test(value) &&
+    value.split("/").every(part => part !== "" && part !== "." && part !== "..");
+}

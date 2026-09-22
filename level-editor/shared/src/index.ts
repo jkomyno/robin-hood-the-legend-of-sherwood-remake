@@ -8,3 +8,4 @@ export * from "./level3d.ts";
 export * from "./authored-assets.ts";
 export * from "./validation.ts";
 export * from "./geometry.ts";
+export * from "./projection-assets.ts";

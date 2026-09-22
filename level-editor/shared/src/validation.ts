@@ -1,3 +1,4 @@
+import { safeLibraryPath, type ExternalAssetSource, type ProjectionAssetDescriptor, type ProjectionAssetEntry } from "./projection-assets.ts";
 import type { Level3D } from "./level3d.ts";
 import type { ProtoLevel } from "./level.ts";
 import type { SceneDoc } from "./scene.ts";
@@ -376,6 +377,8 @@ export function parseLevel3D(
     );
   if (context.glb)
     check(d.glb === context.glb, "level3d.glb", `expected ${context.glb}`);
+  if (d.assetSources !== undefined) parseExternalAssetSources(d.assetSources);
+  const assetIds = new Set((d.assetSources ?? []).map((entry: ExternalAssetSource) => entry.id));
   const ids = new Set<string>();
   const groups = new Set<string>();
   for (const g of array(d.groups, "level3d.groups")) {
@@ -399,6 +402,11 @@ export function parseLevel3D(
       "unsupported kind",
     );
     text(o.node, `${o.id}.node`);
+    if (o.node.startsWith("asset:")) {
+      const match = /^asset:([^:]+):((?:building|terrace)-\d+)$/.exec(o.node);
+      check(!!match && assetIds.has(match[1]), o.id, "dangling external asset source");
+      check(Number(match![2]!.split("-")[1]) === o.source?.obstacle, o.id, "external asset canonical obstacle mismatch");
+    }
     if (context.nodes)
       check(context.nodes.has(o.node), o.id, `missing source node ${o.node}`);
     object(o.source, `${o.id}.source`);
@@ -448,4 +456,60 @@ export function parseLevel3D(
     }
   }
   return value as Level3D;
+}
+
+
+export function parseExternalAssetSources(value: unknown): ExternalAssetSource[] {
+  const ids = new Set<string>();
+  for (const entry of array(value, "assetSources")) {
+    object(entry, "assetSources[]");
+    text(entry.id, "asset source id");
+    check(!/[\\/:\0]/.test(entry.id) && !ids.has(entry.id), "asset source id", "invalid or duplicate identity");
+    ids.add(entry.id);
+    for (const key of ["descriptor", "model"]) check(safeLibraryPath(entry[key]), key, "expected safe library-relative path");
+    for (const key of ["descriptor_sha256", "model_sha256"])
+      check(typeof entry[key] === "string" && /^[a-f0-9]{64}$/.test(entry[key]), key, "expected SHA-256");
+  }
+  return value as ExternalAssetSource[];
+}
+
+export function parseProjectionAssetIndex(value: unknown): ProjectionAssetEntry[] {
+  const index = object(value, "projection asset index");
+  check(index.version === 1, "projection asset index", "unsupported version");
+  const ids = new Set<string>();
+  for (const entry of array(index.assets, "projection asset index.assets")) {
+    object(entry, "projection asset entry");
+    for (const key of ["id", "name", "source_map"]) text(entry[key], key);
+    check(!/[\\/:\0]/.test(entry.id) && !ids.has(entry.id), "asset id", "invalid or duplicate identity");
+    ids.add(entry.id);
+    for (const key of ["descriptor", "model"]) check(safeLibraryPath(entry[key]), key, "expected safe library-relative path");
+  }
+  return index.assets as ProjectionAssetEntry[];
+}
+
+export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetDescriptor {
+  const d = object(value, "projection asset");
+  check(d.version === 1 && d.kind === "projection-mapped-asset", "projection asset", "unsupported kind/version");
+  for (const key of ["id", "name", "source_map"]) text(d[key], key);
+  check(!/[\\/:\0]/.test(d.id), "asset id", "invalid identity");
+  check(safeLibraryPath(d.model), "asset.model", "expected safe relative path");
+  tuple(d.source_origin_scene, 3, "asset.source_origin_scene");
+  tuple(d.source_origin_game, 3, "asset.source_origin_game");
+  const nodes = new Set<string>();
+  const obstacles = new Set<number>();
+  const parts = array(d.parts, "asset.parts");
+  check(parts.length > 0, "asset.parts", "expected nonempty asset");
+  for (const part of parts) {
+    object(part, "asset part");
+    text(part.node, "asset part.node");
+    text(part.name, "asset part.name");
+    const match = /^(building|terrace)-(\d+)$/.exec(part.node);
+    check(!!match && Number(match[2]) === part.source_obstacle, part.node, "canonical obstacle mismatch");
+    check(!nodes.has(part.node) && !obstacles.has(part.source_obstacle), part.node, "duplicate asset part");
+    nodes.add(part.node); obstacles.add(part.source_obstacle);
+    if (part.default_hidden !== undefined) check(typeof part.default_hidden === "boolean", part.node, "invalid default_hidden");
+    obstacle(part.obstacle_local_game, part.node);
+    check(part.obstacle_local_game.points.length >= 3, part.node, "editable obstacle needs three points");
+  }
+  return value as ProjectionAssetDescriptor;
 }

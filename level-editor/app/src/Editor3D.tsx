@@ -11,6 +11,7 @@ import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
 import type * as THREE from "three";
 import {
   IDENTITY_TRANSFORM,
+  parseLevel3D,
   groupParts,
   isIdentity,
   type GameTransform,
@@ -18,6 +19,7 @@ import {
   type Level3DGroup,
   type Level3DObject,
   type ProtoLevel,
+  type ProjectionAssetEntry,
 } from "@rle/shared";
 import {
   SessionPublication,
@@ -30,6 +32,8 @@ import {
   patchGroup,
   type Selection,
 } from "./document-commands";
+import { insertProjectionAsset } from "./asset-commands";
+import { listProjectionAssets, prepareProjectionAsset } from "./projection-library";
 import { prepareMapCandidate } from "./map-candidate";
 import { EditorViewport } from "./editor-viewport";
 import { disposeObjectResources } from "./resources";
@@ -64,6 +68,10 @@ export default function Editor3D(props: EditorProps) {
   let loadedIndex: DatadirIndex | null = null;
   let loadedLibrary: LibraryRef | null = null;
   const [maps, setMaps] = createSignal<string[]>([]);
+  const [assetEntries, setAssetEntries] = createSignal<ProjectionAssetEntry[]>([]);
+  const [assetSearch, setAssetSearch] = createSignal("");
+  const [addingAsset, setAddingAsset] = createSignal(false);
+  let paletteAttempt = 0;
   const [revision, setRevision] = createSignal<SessionSnapshot<Level3D> | null>(
     null,
   );
@@ -132,6 +140,47 @@ export default function Editor3D(props: EditorProps) {
       });
     },
   );
+
+  createEffect(
+    () => ({ library: props.library(), map: mapName() }),
+    ({ library, map }) => {
+      const attempt = ++paletteAttempt;
+      setAssetEntries([]);
+      if (!library || !map) return;
+      void listProjectionAssets(library.handle, map).then(entries => {
+        if (!disposed && attempt === paletteAttempt && props.library() === library && mapName() === map) setAssetEntries(entries);
+      }).catch(error => {
+        if (!disposed && attempt === paletteAttempt) props.onError(String(error));
+      });
+    },
+  );
+
+  async function addAsset(entry: ProjectionAssetEntry) {
+    const document = doc();
+    const library = props.library();
+    const attempt = openAttempt;
+    if (!document || !library || addingAsset()) return;
+    setAddingAsset(true);
+    let prepared: Awaited<ReturnType<typeof prepareProjectionAsset>> | null = null;
+    try {
+      prepared = await prepareProjectionAsset(library.handle, entry, document.map);
+      if (disposed || attempt !== openAttempt || props.library() !== library || doc() !== document) return;
+      const result = insertProjectionAsset(document, prepared.descriptor, prepared.reference,
+        [document.size[0] / 2, document.size[1] / 2, 0]);
+      parseLevel3D(result.document, { level: level() ?? undefined });
+      const adopted = viewport.adoptAsset(prepared.reference, prepared.asset, prepared.sources);
+      if (!adopted) disposeObjectResources([prepared.asset]);
+      prepared = null;
+      pushHistory(result.document);
+      select(result.selection);
+      setInfo(`Added ${entry.name}`);
+    } catch (error) {
+      if (!disposed && attempt === openAttempt) props.onError(String(error));
+    } finally {
+      if (prepared) disposeObjectResources([prepared.asset]);
+      if (!disposed) setAddingAsset(false);
+    }
+  }
 
   // ── document ──
   function pushHistory(next: Level3D) {
@@ -237,7 +286,7 @@ export default function Editor3D(props: EditorProps) {
         return;
       }
       // All asynchronous reads and validation precede publication.
-      viewport.replaceMap(preparedAsset, nextGround, nextSources);
+      viewport.replaceMap(preparedAsset, nextGround, nextSources, d.assetSources);
       preparedAsset = null;
       viewport.replaceEntities(preparedEntities);
       viewport.setEntitiesVisible(showEntities());
@@ -708,6 +757,19 @@ export default function Editor3D(props: EditorProps) {
                 </div>
               </section>
             )}
+          </Show>
+          <Show when={doc()}>
+            <section class="asset-palette">
+              <h3>Assets</h3>
+              <input class="search" aria-label="Find assets" placeholder="Find assets" value={assetSearch()}
+                onInput={event => setAssetSearch(event.currentTarget.value)} />
+              <Show when={assetEntries().length === 0}><p class="hint">No standalone assets for this map.</p></Show>
+              <ul>
+                <For each={assetEntries().filter(entry => entry.name.toLowerCase().includes(assetSearch().toLowerCase()))}>
+                  {entry => <li><span>{entry.name}</span><button disabled={addingAsset()} onClick={() => void addAsset(entry)} aria-label={`Add ${entry.name}`}>Add</button></li>}
+                </For>
+              </ul>
+            </section>
           </Show>
           <section class="object-list">
             <div class="search-row">

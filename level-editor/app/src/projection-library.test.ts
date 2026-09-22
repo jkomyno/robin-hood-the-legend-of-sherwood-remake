@@ -1,0 +1,93 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import * as THREE from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { listProjectionAssets, prepareProjectionAsset } from "./projection-library.ts";
+import { disposeObjectResources } from "./resources.ts";
+import { insertProjectionAsset } from "./asset-commands.ts";
+import { prepareMapCandidate } from "./map-candidate.ts";
+import type { Level3D } from "@rle/shared";
+
+function fixture() {
+  const obstacle = { points: [{ x: 0, y: 0, z_bottom: 0, z_top: 10 }, { x: 10, y: 0, z_bottom: 0, z_top: 10 }, { x: 0, y: 10, z_bottom: 0, z_top: 10 }],
+    opaque: true, solid: true, mouse: true, show_shadow_polygon: true, default_material: 0, material_indices: [], projection_area: null };
+  const descriptor = { version: 1, kind: "projection-mapped-asset", id: "house", name: "House", source_map: "Leicester", model: "model.glb",
+    source_origin_scene: [20, -40, 0], source_origin_game: [20, 23, 0], parts: [{ node: "building-000", name: "Wall", source_obstacle: 0, obstacle_local_game: obstacle }] };
+  const entry = { id: "house", name: "House", source_map: "Leicester", descriptor: "3d-assets/house/asset.json", model: "3d-assets/house/model.glb" };
+  const files = new Map<string, File>();
+  const json = (path: string, value: unknown) => files.set(path, new File([JSON.stringify(value)], path));
+  json(entry.descriptor, descriptor);
+  files.set(entry.model, new File([new Uint8Array([3, 2, 1])], "model.glb"));
+  json("3d-assets/index.json", { version: 1, assets: [{ ...entry, descriptor: "house/asset.json", model: "house/model.glb" },
+    { id: "york-house", name: "York House", source_map: "York", descriptor: "york/asset.json", model: "york/model.glb" }] });
+  const handle = (prefix: string): FileSystemDirectoryHandle => ({
+    async getDirectoryHandle(name: string) {
+      const next = `${prefix}${name}/`;
+      if (![...files.keys()].some(key => key.startsWith(next))) throw new DOMException(next, "NotFoundError");
+      return handle(next);
+    },
+    async getFileHandle(name: string) {
+      const file = files.get(prefix + name);
+      if (!file) throw new DOMException(name, "NotFoundError");
+      return { getFile: async () => file };
+    },
+    async *entries() {
+      for (const path of files.keys()) if (path.startsWith(prefix) && !path.slice(prefix.length).includes("/")) yield [path.slice(prefix.length), { kind: "file" }];
+    },
+  }) as unknown as FileSystemDirectoryHandle;
+  const asset = new THREE.Group(), root = new THREE.Group(), group = new THREE.Group();
+  root.name = "map"; group.userData.asset_group = "house";
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  mesh.name = "building-000"; mesh.userData.source_obstacle = 0;
+  asset.add(root); root.add(group); group.add(mesh);
+  let disposed = 0; mesh.geometry.addEventListener("dispose", () => disposed++);
+  return { files, json, entry, descriptor, directory: handle(""), asset, group, mesh, disposed: () => disposed };
+}
+
+test("standalone index filters the current map and actual model parts receive namespaced keys", async (t) => {
+  const f = fixture();
+  assert.deepEqual(await listProjectionAssets(f.directory, "leicester"), [f.entry]);
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
+  assert.equal(prepared.sources.get("asset:house:building-000"), f.mesh);
+  assert.match(prepared.reference.model_sha256, /^[a-f0-9]{64}$/);
+  assert.equal(f.disposed(), 0);
+  disposeObjectResources([prepared.asset]);
+  assert.equal(f.disposed(), 1);
+});
+
+test("changed files and foreign maps reject before model publication; bad model cleanup is owned", async (t) => {
+  const f = fixture();
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
+  await assert.rejects(prepareProjectionAsset(f.directory, f.entry, "York"), /source map mismatch/);
+  await assert.rejects(prepareProjectionAsset(f.directory, f.entry, "Leicester", { ...prepared.reference, model_sha256: "c".repeat(64) }), /model changed/);
+  f.json(f.entry.descriptor, { ...f.descriptor, name: "Edited" });
+  await assert.rejects(prepareProjectionAsset(f.directory, f.entry, "Leicester", prepared.reference), /descriptor changed/);
+  disposeObjectResources([prepared.asset]);
+  const bad = fixture(); bad.mesh.userData.source_obstacle = 12;
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: bad.asset }));
+  await assert.rejects(prepareProjectionAsset(bad.directory, bad.entry, "Leicester"), /Unexpected/);
+  assert.equal(bad.disposed(), 1);
+});
+
+test("saved external models reload before document validation and retire with their map", async (t) => {
+  const f = fixture();
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
+  const base: Level3D = { version: 1, map: "Leicester", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+    glb: "Leicester-volumes.scene.glb", groups: [], objects: [] };
+  const inserted = insertProjectionAsset(base, prepared.descriptor, prepared.reference, [50, 50, 0]);
+  f.json("scenes/Leicester.level3d.json", inserted.document);
+  f.json("scenes/Leicester-volumes.scene.json", { version: 1, map: "Leicester", size: [100, 100], camera: base.camera, placements: [] });
+  f.files.set("scenes/Leicester-volumes.scene.glb", new File([new Uint8Array([7])], "map.glb"));
+  const map = new THREE.Group(); let calls = 0;
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: calls++ === 0 ? map : f.asset }));
+  const candidate = await prepareMapCandidate("Leicester", f.directory, null);
+  assert.equal(calls, 2);
+  assert.equal(candidate.sources.get("asset:house:building-000"), f.mesh);
+  assert.equal(candidate.document.groups[0]!.transform.dx, 50);
+  assert.deepEqual(candidate.document.assetSources, [prepared.reference]);
+  disposeObjectResources([candidate.asset]);
+  assert.equal(f.disposed(), 1);
+});

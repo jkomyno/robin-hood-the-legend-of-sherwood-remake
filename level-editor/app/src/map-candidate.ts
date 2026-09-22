@@ -16,6 +16,7 @@ import {
 } from "@rle/shared";
 import { listFiles, readJson, subdir } from "./fs.ts";
 import { loadProtoLevel, type DatadirIndex } from "./datadir.ts";
+import { prepareProjectionAsset } from "./projection-library.ts";
 import { disposeObjectResources } from "./resources.ts";
 
 const groupId = (root: number) => `group-${String(root).padStart(3, "0")}`;
@@ -88,7 +89,18 @@ export async function prepareMapCandidate(
     const docName = `${name}.level3d.json`;
     const files = await listFiles(dir);
     if (files.includes(docName)) {
-      d = parseLevel3D(await readJson<unknown>(dir, docName), {
+      const saved = parseLevel3D(await readJson<unknown>(dir, docName), {
+        map: sceneDoc.map, glb: glbName, level: lvl ?? undefined,
+      });
+      for (const reference of saved.assetSources ?? []) {
+        const prepared = await prepareProjectionAsset(library, reference, sceneDoc.map, reference);
+        asset.add(prepared.asset);
+        for (const [key, node] of prepared.sources) {
+          if (nextSources.has(key)) throw new Error(`Duplicate standalone source node ${key}`);
+          nextSources.set(key, node);
+        }
+      }
+      d = parseLevel3D(saved, {
         map: sceneDoc.map,
         glb: glbName,
         level: lvl ?? undefined,
