@@ -10,6 +10,7 @@ import math
 from pathlib import Path
 
 import bpy
+import bmesh
 from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -73,6 +74,9 @@ def _battens(obj, obstacle):
     mesh = bpy.data.meshes.new(obj.data.name+' / cross battens')
     mesh.from_pydata(vertices, [], faces)
     mesh.update()
+    bm=bmesh.new();bm.from_mesh(mesh)
+    bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+    bm.to_mesh(mesh);bm.free()
     for material in obj.data.materials:
         mesh.materials.append(material)
     for face, index in zip(mesh.polygons, material_indices):
@@ -153,6 +157,9 @@ def _lower_props(obj):
     mesh=bpy.data.meshes.new(obj.data.name+' / measured containers')
     mesh.from_pydata([inverse@v for v in verts],[],faces)
     mesh.update()
+    bm=bmesh.new();bm.from_mesh(mesh)
+    bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+    bm.to_mesh(mesh);bm.free()
     for material in obj.data.materials:mesh.materials.append(material)
     uv=mesh.uv_layers.new(name='Source projection')
     for loop in mesh.loops:
