@@ -56,5 +56,19 @@ report += ['## Geometry and projection','','Before (historical lighting):','','!
 report += ['','## Remaining topology limitations','',audit['topology_limit'],'',
            '| Node | Faces | Boundary edges | Nonmanifold edges | Zero-area faces |','|---|---:|---:|---:|---:|']
 report += [f'| {node} | {r["faces"]} | {r["boundary_edges"]} | {r["nonmanifold_edges"]} | {r["zero_area_faces"]} |' for node,r in audit['topology'].items()]
-report += ['','This packet is a geometry revision candidate, not an assertion that every seam or hidden attachment is resolved. Do not publish it as a completed watertight model.']
-(OUT/'review.md').write_text('\n'.join(report)+'\n')
+report += ['','## Retained-body closure audit','',
+           'The original main wall already had 88 attachment/base boundary edges. The first traced draft introduced additional clipping boundaries (189 boundary / 192 nonmanifold in total). These are now capped at the z=835 clipping plane and the inherited z=461.86 base. The cap areas are 5605 and 5595 square units: the wall-body cross-sections, not a slab across the courtyard.', '',
+           'The original outlook had 3631 boundary edges before welding duplicated vertices, or 97 after welding. The first rounded draft had 76 boundaries: its new circular underside plus three narrow 0.011-unit clipping slivers. The underside is capped at z=835, and only those slivers are collapsed. Existing corbels remain. The repaired main wall and outlook both have zero boundary and zero nonmanifold edges.', '',
+           'Closeups below compare the pre-closure and closed body from the identical camera. Caps face into the body/below attachments, so visible silhouettes should remain unchanged.','']
+for i in [0,2,4,6]:
+    old=Image.open(OUT/f'modified-v2/views/view-{i}-solid.png').convert('RGB')
+    new=Image.open(OUT/f'modified-v3/views/view-{i}-solid.png').convert('RGB')
+    # Upper half includes the retained-body seam, outlook and crenellations.
+    box=(0,0,old.width,int(old.height*.65))
+    old=old.crop(box);new=new.crop(box)
+    pair=Image.new('RGB',(old.width*2,old.height+24));pair.paste(old,(0,24));pair.paste(new,(old.width,24))
+    d=ImageDraw.Draw(pair);d.text((10,5),'Before closure',fill='white');d.text((old.width+10,5),'Closed retained bodies',fill='white')
+    pair.save(OUT/f'closure-view-{i}.png')
+    report += [f'![Closure comparison, view {i}](closure-view-{i}.png)','']
+report += ['This remains an isolated geometry review candidate. Adjacent closed solids are not Boolean-unioned; hidden wall returns remain inferred.']
+(OUT/'review.md').write_text('\n'.join(report).replace('modified-v2/solid.png','modified-v3/solid.png').replace('modified-v2/textured.png','modified-v3/textured.png')+'\n')

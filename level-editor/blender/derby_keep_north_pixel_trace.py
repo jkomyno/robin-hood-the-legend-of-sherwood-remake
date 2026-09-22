@@ -127,6 +127,7 @@ def revise():
             'outlook_segments':segments,'pixel_uncertainty':2,'sun_elevation':48,
             'limitations':['Hand-selected cap arrises have approximately 2 source-pixel uncertainty.','Hidden adjoining wall returns remain inferred.','Projection residual tests construction against selected pixels, not independent truth.']}
     (OUT/'trace.json').write_text(json.dumps(result,indent=2))
+    close_retained_bodies()
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'model.blend'))
     return result
 
@@ -139,8 +140,44 @@ def review():
         if o.get('source_node') in NODES:o['asset_group']='derby-keep-north-tower'
     manifest=N/'source-masks.json'
     bake('Derby',frame['source_image'],OUT/'bake.json',receiver_nodes=sorted(NODES),projection_label='exterior',preserve_authored=False,source_mask_manifest=manifest)
-    render_review(OUT/'modified-v2',scene_name='Derby Refinement',collection_name='Derby Working',asset_id='derby-keep-north-tower',source_path=frame['source_image'],frame_manifest=frame,projection_layers=frame['projection_layers'],source_mask_manifest=manifest,lighting=configuration())
+    render_review(OUT/'modified-v3',scene_name='Derby Refinement',collection_name='Derby Working',asset_id='derby-keep-north-tower',source_path=frame['source_image'],frame_manifest=frame,projection_layers=frame['projection_layers'],source_mask_manifest=manifest,lighting=configuration())
     bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'model.blend'))
+
+def close_retained_bodies():
+    """Cap clipping planes and inherited lower ends without changing the trace."""
+    rows={}
+    for node in ['building-164','building-175']:
+        o=visible(node);bm=bmesh.new();bm.from_mesh(o.data)
+        def counts():
+            return {'boundary':sum(e.is_boundary for e in bm.edges),
+                    'nonmanifold':sum(not e.is_manifold for e in bm.edges),
+                    'faces':len(bm.faces)}
+        before=counts()
+        # Outlook clipping left three 0.011-unit slivers. Welding those does
+        # not move traced parapet corners (which belong to a different mesh).
+        bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=.02 if node=='building-175' else .001)
+        wire=[e for e in bm.edges if not e.link_faces]
+        if wire:bmesh.ops.delete(bm,geom=wire,context='EDGES')
+        junctions=[e for e in bm.edges if not e.is_manifold and not e.is_boundary]
+        if junctions:bmesh.ops.split_edges(bm,edges=junctions)
+        caps=bmesh.ops.holes_fill(bm,edges=[e for e in bm.edges if e.is_boundary],sides=0)['faces']
+        cap_info=[{'area':f.calc_area(),'world_bounds':[[min((o.matrix_world@v.co)[i] for v in f.verts),max((o.matrix_world@v.co)[i] for v in f.verts)] for i in range(3)]} for f in caps]
+        bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+        after=counts();assert after['boundary']==after['nonmanifold']==0,(node,after)
+        assert all(f.calc_area()>1e-6 for f in bm.faces),node
+        bm.to_mesh(o.data);bm.free();o.data.update()
+        rows[node]={'before':before,'after':after,'closure_faces':cap_info}
+    (OUT/'closure-audit.json').write_text(json.dumps(rows,indent=2))
+    # Undo the withdrawn draft's edit to the hidden baseline copy as well.
+    # Working terrace geometry is distinct and is deliberately untouched.
+    target=bpy.data.objects['building-163']
+    assert target not in list(bpy.data.collections['Derby Working'].objects)
+    with bpy.data.libraries.load(str(W/'component-followup-source.blend'),link=False) as (src,dst):
+        dst.objects=['building-163']
+    restored=dst.objects[0];target.data=restored.data
+    bpy.data.objects.remove(restored,do_unlink=True)
+    bpy.ops.wm.save_as_mainfile(filepath=str(OUT/'model.blend'))
+    return rows
 
 def audit():
     from mathutils.bvhtree import BVHTree
@@ -162,7 +199,7 @@ def audit():
     result={'samples':rows,'max_saved_mesh_corner_error':max(r['error'] for r in rows),'mean_saved_mesh_corner_error':sum(r['error'] for r in rows)/len(rows),
             'meaning':'Saved mesh vertices reprojected independently. This checks fitting, not the manual identification of artwork corners.',
             'working_meshes':meshes,'topology':topology,
-            'topology_limit':'The short rear curtain is closed/manifold. Main wall and outlook retain open lower/attachment boundaries and are not a watertight standalone asset.'}
+            'topology_limit':'Revised main wall, rear curtain and outlook each have no boundary or nonmanifold edges. They contain separately closed adjoining solids; this is not a Boolean-unified building.'}
     (OUT/'mesh-audit.json').write_text(json.dumps(result,indent=2))
 
 if __name__=='__main__':
