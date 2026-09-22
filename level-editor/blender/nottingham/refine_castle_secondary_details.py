@@ -14,8 +14,11 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from refine_castle_secondary import WORK, sha, write, replace_mesh
 TAG = 'nottingham-secondary-details-v1'
-ASSETS = ['castle-west-courtyard-wall', 'churchyard-graves', 'castle-gate-west-tower', 'castle-upper-wall', 'castle-east-courtyard-wall']
+ASSETS = ['castle-west-courtyard-wall', 'churchyard-graves', 'castle-gate-west-tower', 'castle-upper-wall', 'castle-east-courtyard-wall', 'castle-watchtower', 'churchyard-wall', 'castle-courtyard-shelter']
 LIMITS = {
+    'castle-courtyard-shelter': 'Three closed arched door bays now have shallow recessed panels. Main roof retains its source-facing fascia thickness while the concealed rear underside follows the roof slope. Supports meet the source-measured courtyard datum100. Door recess depth and closed-bay backing are inferred; the separately owned lower lean-to371 and chimney372 retain native geometry.',
+    'churchyard-wall': 'The visible boundary now has a projecting coping course and beveled top lip following the native wall bends. Individual stone joints remain painted. The matching profile on the roof/foliage-obscured northern run is an explicit continuity inference; its source pixels remain unassigned and gray.',
+    'castle-watchtower': 'Ten major crown capstones are individually anchored to visible artwork. Upper doorway turret has lowered central parapet openings; corner cap continuity on the foliage-obscured rear is inferred. Narrow arrow loops and small coping bevels remain painted. Lower body and hidden tower contacts retain native depths.',
     'castle-east-courtyard-wall': 'Twenty measured crenels replace the continuous crown across the five visible runs. Source-hidden northern section of the eastern return remains continuous rather than inventing a repeat behind the roofed tower. Coping bevels and arrow loops remain painted; narrow return crenel phase needs further close-up review.',
     'castle-upper-wall': 'Upper parapets now have four measured rear-wall crenels, three front-wall crenels, three turret crenels and two lower-landing crenels. Native footprints and floor datum remain unchanged. Curved turret facets, coping bevels and arrow-loop depth remain coarse; this packet requires further silhouette review before approval.',
     'castle-gate-west-tower': 'Eight capstones are counted in the original crown. The drum and crown use smooth interpolated ring contours through source anchors; intermediate hidden curvature is inferred. Arrow loops and coping bevels remain painted. Adjacent gate supports retain their source footprints.',
@@ -203,6 +206,151 @@ def east_curtain(native):
         'inference':'The native wall depth and corner positions are retained; roof-hidden return crown is deliberately unresolved'}
 
 
+def watchtower_crown(native,node):
+    from ribbon_crown import arc_ribbon_geometry
+    if node in (539,540):
+        pts=copy.deepcopy(native[node]['points'])
+        h=pts[0]['z_top']-(14 if node==539 else 0)
+        v=[(p['x'],p['y'],z) for z in (820.00104,h) for p in pts];n=len(pts)
+        f=[list(reversed(range(n))),list(range(n,2*n))]
+        f.extend([i,(i+1)%n,(i+1)%n+n,i+n] for i in range(n))
+        return v,f,{'change':'Seat the upper doorway turret on the main roof platform and lower its side parapet opening' if node==539 else 'Seat the upper doorway turret body on the main roof platform instead of extending it through the entire tower',
+            'native_notch_depth':14 if node==539 else 0,'native_bottom':820.00104,'inference':'Side opening follows the visible front parapet depth'}
+    if node==538:
+        pts=copy.deepcopy(native[node]['points']);pairs=[(0,7),(1,6),(2,5),(3,4)]
+        mids=[((pts[a]['x']+pts[b]['x'])/2,(pts[a]['y']+pts[b]['y'])/2) for a,b in pairs]
+        lengths=[0.]
+        for a,b in zip(mids,mids[1:]):lengths.append(lengths[-1]+math.dist(a,b))
+        total=lengths[-1]
+        intervals=[((a+(b-a)*.24)/total,(a+(b-a)*.76)/total) for a,b in zip(lengths,lengths[1:])]
+        v,f=arc_ribbon_geometry(pts,pairs,intervals,base=820.00104,notch_depth=14)
+        return v,f,{'change':'Replace continuous upper doorway-turret parapet with three central openings and retained corner caps',
+            'crenels':3,'native_notch_depth':14,'inference':'Rear corner continuation is partly obscured by foliage'}
+    pts=copy.deepcopy(native[536]['points']);a,b=pts[5],pts[6]
+    for index in [13,12]:
+        o=pts[index]
+        t=((o['x']-a['x'])*(b['x']-a['x'])+(o['y']-a['y'])*(b['y']-a['y']))/((b['x']-a['x'])**2+(b['y']-a['y'])**2)
+        pts.append({'x':a['x']+t*(b['x']-a['x']),'y':a['y']+t*(b['y']-a['y']),'z_top':857.273})
+    pairs=[(2,3),(1,4),(0,5),(13,14),(12,15),(11,6),(10,7),(9,8)]
+    mids=[((pts[a]['x']+pts[b]['x'])/2,(pts[a]['y']+pts[b]['y'])/2) for a,b in pairs]
+    lengths=[0.]
+    for a,b in zip(mids,mids[1:]):lengths.append(lengths[-1]+math.dist(a,b))
+    total=lengths[-1]
+    anchors=[(654,210,15),(619,222,14),(585,242,12),(611,270,16),(641,297,16),
+             (671,323,15),(713,311,15),(752,297,17),(774,263,14),(749,223,12)]
+    caps=[];evidence=[]
+    for x,y,halfwidth in anchors:
+        closest=None
+        for i,(a,b) in enumerate(zip(mids,mids[1:])):
+            t=max(0.,min(1.,((x-a[0])*(b[0]-a[0])+(y+857.273-a[1])*(b[1]-a[1]))/math.dist(a,b)**2))
+            q=(a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1]))
+            distance=math.dist(q,(x,y+857.273));d=lengths[i]+t*(lengths[i+1]-lengths[i])
+            value=(distance,d)
+            if closest is None or value<closest:closest=value
+        distance,d=closest
+        caps.append((max(0.,(d-halfwidth)/total),min(1.,(d+halfwidth)/total)))
+        evidence.append({'source_cap_center':[x,y],'native_halfwidth':halfwidth,
+                         'centerline_offset_pixels':distance,'normalized_center':d/total})
+    intervals=[];start=0.
+    for lo,hi in sorted(caps):
+        if lo>start:intervals.append((start,lo))
+        start=max(start,hi)
+    if start<1:intervals.append((start,1.))
+    v,f=arc_ribbon_geometry(pts,pairs,intervals,base=0,notch_depth=14)
+    return v,f,{'change':'Replace continuous watchtower crown with ten individually source-anchored capstones',
+        'source_counted_capstones':10,'source_cap_anchors':evidence,'native_notch_depth':14,
+        'inference':'Native wall thickness retained; intermediate cap cuts follow paired ring interpolation'}
+
+
+def coping_wall(points):
+    ring=[(p['x'],p['y']) for p in points]
+    sign=1 if sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(ring,ring[1:]+ring[:1]))>0 else -1
+    def inset(distance):
+        lines=[]
+        for a,b in zip(ring,ring[1:]+ring[:1]):
+            dx,dy=b[0]-a[0],b[1]-a[1];length=math.hypot(dx,dy)
+            n=(-dy/length*distance*sign,dx/length*distance*sign)
+            lines.append(((a[0]+n[0],a[1]+n[1]),(dx,dy)))
+        result=[]
+        for i,(b,v) in enumerate(lines):
+            a,u=lines[i-1];cross=u[0]*v[1]-u[1]*v[0]
+            if abs(cross)<1e-9:raise ValueError('Collinear coping corner requires explicit treatment')
+            t=((b[0]-a[0])*v[1]-(b[1]-a[1])*v[0])/cross
+            result.append((a[0]+u[0]*t,a[1]+u[1]*t))
+        return result
+    h=points[0]['z_top'];n=len(points)
+    levels=[(0,inset(1.5)),(h-6,inset(1.5)),(h-6,ring),(h-2,ring),(h,inset(1))]
+    v=[(x,y,z) for z,outline in levels for x,y in outline]
+    f=[list(reversed(range(n))),list(range(n*(len(levels)-1),n*len(levels)))]
+    for j in range(len(levels)-1):
+        f.extend([j*n+i,j*n+(i+1)%n,(j+1)*n+(i+1)%n,(j+1)*n+i] for i in range(n))
+    return v,f,{'change':'Add projecting six-unit coping course and two-unit beveled top lip to the churchyard boundary',
+        'coping_height_native':6,'body_inset_native':1.5,'bevel_height_native':2,
+        'inference':'Hidden run repeats the visible front boundary coping profile; individual stone joints remain texture-only'}
+
+
+def shelter_part(native,node):
+    pts=copy.deepcopy(native[node]['points'])
+    if node==369:
+        # The original narrow pier omits the source-visible first closed bay.
+        # Extend it to the adjoining second-bay divider, preserving that contact.
+        pts[0]=copy.deepcopy(native[370]['points'][3])
+        pts[1]=copy.deepcopy(native[370]['points'][2])
+    n=len(pts)
+    top=[(p['x'],p['y'],p['z_top'] if node==368 else p['z_top']-16) for p in pts]
+    bottom=[(p['x'],p['y'],p['z_top']-16 if node==368 else 100) for p in pts]
+    v=top+bottom;f=[list(range(n)),list(reversed(range(n,2*n)))]
+    f.extend([i,(i+1)%n,(i+1)%n+n,i+n] for i in range(n))
+    return v,f,{'change':'Keep sixteen-unit visible roof fascia with a parallel hidden underside' if node==368 else 'Build closed source-visible door bays on courtyard datum100 and below the roof fascia',
+        'native_floor':100,'native_fascia_thickness':16,'front_points':pts,
+        'inference':'Closed bay backing and the hidden parallel roof underside are inferred from visible wall and eave contacts'}
+
+
+def shelter_recesses(obj,points,node):
+    import bpy
+    import bmesh
+    from mathutils import Vector
+    # Arched profiles are measured in the repeated door-bay elevation; the
+    # shallow backing depth is intentionally recorded as an inference.
+    a,b=points[2],points[1]
+    rear=points[3]
+    dx,dy=rear['x']-a['x'],rear['y']-a['y']
+    spans=[(.42,.94)] if node==369 else [(.16,.43),(.68,.95)]
+    sine,cosine=math.sin(math.radians(35)),math.cos(math.radians(35))
+    inv=obj.matrix_world.inverted()
+    for index,(left,right) in enumerate(spans):
+        profile=[(left,95),(left,150)]
+        for i in range(1,9):
+            theta=math.pi*(1-i/8)
+            profile.append(((left+right)/2+(right-left)/2*math.cos(theta),150+16*math.sin(theta)))
+        profile.append((right,95))
+        native_vertices=[(a['x']+t*(b['x']-a['x'])+depth*dx,
+                          a['y']+t*(b['y']-a['y'])+depth*dy,z)
+                         for depth in (-.015,.045) for t,z in profile]
+        vertices=[inv@Vector((x,-y/sine,z/cosine)) for x,y,z in native_vertices]
+        n=len(profile);faces=[list(range(n)),list(reversed(range(n,2*n)))]
+        faces.extend([i,(i+1)%n,(i+1)%n+n,i+n] for i in range(n))
+        mesh=bpy.data.meshes.new('temporary closed door recess cutter')
+        mesh.from_pydata(vertices,[],faces)
+        bm=bmesh.new();bm.from_mesh(mesh);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(mesh);bm.free()
+        cutter=bpy.data.objects.new('temporary closed door recess cutter',mesh)
+        bpy.context.scene.collection.objects.link(cutter);cutter.matrix_world=obj.matrix_world.copy()
+        modifier=obj.modifiers.new('Measured arched closed door recess','BOOLEAN');modifier.operation='DIFFERENCE';modifier.solver='EXACT';modifier.object=cutter
+        bpy.context.view_layer.objects.active=obj
+        bpy.ops.object.modifier_apply(modifier=modifier.name)
+        bpy.data.objects.remove(cutter,do_unlink=True)
+        bpy.data.meshes.remove(mesh)
+    bm=bmesh.new();bm.from_mesh(obj.data)
+    bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=.00001)
+    bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+    bad=sum(not e.is_manifold for e in bm.edges);flat=sum(f.calc_area()<1e-8 for f in bm.faces)
+    bm.to_mesh(obj.data);bm.free()
+    if bad or flat:raise ValueError(f'Door recess topology invalid: {bad}/{flat}')
+    return {'closed_recessed_doors':len(spans),'door_native_spring_height':150,'door_native_arch_height':166,
+            'door_depth_fraction_of_bay':.045,'nonmanifold_edges':bad,'degenerate_faces':flat,
+            'vertices':len(obj.data.vertices),'faces':len(obj.data.polygons)}
+
+
 def headstone(points, node):
     # Long front/back edges are native edges1-2 and0-3. Crown remains at the
     # original height; the outline removes unsupported square top corners.
@@ -250,7 +398,7 @@ def candidate(workspace, reviewed):
     config=json.loads((workspace/'workspace.json').read_text())
     short=config['asset_id'].removeprefix('nottingham-')
     report=json.loads((workspace/'geometry-report.json').read_text())
-    ready=reviewed and short in ['churchyard-graves','castle-gate-west-tower']
+    ready=reviewed and short in ['churchyard-graves','castle-gate-west-tower','castle-watchtower','churchyard-wall','castle-courtyard-shelter']
     write(workspace/'candidate.json',{'version':1,'asset_id':config['asset_id'],
         'geometry_reviewed':reviewed,'geometry_refined':True,
         'status':'ready-for-approval' if ready else 'fix-needed' if reviewed else 'refinement-in-progress',
@@ -271,7 +419,7 @@ def apply(workspace):
     short=config['asset_id'].removeprefix('nottingham-')
     mask_path=Path(config['source_mask_manifest'])
     masks=json.loads(mask_path.read_text())
-    reviewed=({328:[279,282]} if short=='castle-west-courtyard-wall' else {329:[286],331:[286],332:[286]} if short=='castle-gate-west-tower' else {360:[301,303],365:[305]} if short=='castle-upper-wall' else {326:[291,300]} if short=='castle-east-courtyard-wall' else {432:[349],433:[348],434:[355]})
+    reviewed=({328:[279,282]} if short=='castle-west-courtyard-wall' else {329:[286],331:[286],332:[286]} if short=='castle-gate-west-tower' else {360:[301,303],365:[305]} if short=='castle-upper-wall' else {326:[291,300]} if short=='castle-east-courtyard-wall' else {536:[468],538:[470],539:[470]} if short=='castle-watchtower' else {430:[347]} if short=='churchyard-wall' else {368:[313],369:[313],370:[313]} if short=='castle-courtyard-shelter' else {432:[349],433:[348],434:[355]})
     for row in masks['projections']['exterior']['assignments']:
         node=int(row['source_node'].split('-')[-1])
         if node not in reviewed:
@@ -285,6 +433,9 @@ def apply(workspace):
                 'castle-gate-west-tower':'RGB/mask286 overlay inspected: upper front crown and drum only. Broad284/285 rejected because they include the foreground cottage roof. Unverified rear and lower surfaces remain unknown.',
                 'churchyard-graves':'RGB/mask overlays inspected. Grave348 also includes its fence; source texel ownership restricts acceptance to the modeled headstone. Masks349 and355 follow the monument and rear headstone silhouettes.',
                 'castle-upper-wall':'RGB/mask301 and303 overlays independently reviewed for front curtain and turret. Rear curtain uses305 with source-ray receiver ownership; other stair and landing geometry remains separately owned.',
+                'castle-courtyard-shelter':'Native313 source silhouette reviewed against the main lean-to roof and three door bays. Per-surface source rays separate roof and facade recipients. Lower lean-to371/chimney372 retain their existing source authority.',
+                'churchyard-wall':'Native347 RGB/mask overlay reviewed for the front churchyard wall and coping. The northern roof/foliage-obscured run431 remains unknown; no union mask is used to assign hidden pixels.',
+                'castle-watchtower':'RGB/mask468 reviewed for main upper crown and470 for the doorway turret. Broad467/469 withheld to avoid foreground roof and foliage pixels; unsupported lower/back surfaces stay unknown.',
                 'castle-east-courtyard-wall':'RGB/mask291 and300 overlays reviewed for the front curtain and upper return. Broad296/298 withheld because they include walkway and shelter roof pixels. Remaining surfaces stay unknown.'
             }[short]})
     write(mask_path,masks)
@@ -304,11 +455,19 @@ def apply(workspace):
             v,f,e=upper_wall(native,n)
         elif short=='castle-east-courtyard-wall' and n==326:
             v,f,e=east_curtain(native)
+        elif short=='castle-watchtower' and n in (536,538,539,540):
+            v,f,e=watchtower_crown(native,n)
+        elif short=='churchyard-wall':
+            v,f,e=coping_wall(native[n]['points'])
+        elif short=='castle-courtyard-shelter' and n in (368,369,370):
+            v,f,e=shelter_part(native,n)
         elif short=='churchyard-graves':
             v,f,e=monument(native[n]['points']) if n==432 else headstone(native[n]['points'],n)
         else:
             continue
         topology=native_mesh(obj,v,f)
+        if short=='castle-courtyard-shelter' and n in (369,370):
+            topology.update(shelter_recesses(obj,e['front_points'],n))
         obj['secondary_details_recipe']=TAG
         changes.append({'source_node':obj['source_node'],'object':obj.name,**e,**topology,
             'before_sha256':before[obj.name],'after_sha256':_geometry(obj)})
