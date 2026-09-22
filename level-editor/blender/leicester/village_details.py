@@ -116,6 +116,27 @@ def gabled_lean_to(workspace,roof_obj,fence_obj):
     return {'roof':roof_report,'fence_panels':reports,'horizontal_rails_per_run':3,'inference':'Native120 retains plank eave, upright supports, three fence rails and gate boards/apertures. Roof receiver follows inherited sloped plane; front/return fence planes follow inherited ground edges extended to source silhouette. Concealed depths2/2.5 are inferred; panel junction and roof contact require rendered review.'}
 
 
+def gabled_barrel(obj):
+    sine=math.sin(math.radians(35));center=Vector((2935.5,-579.0/sine,0));segments=24;vertices=[];faces=[]
+    def rings(profile,cap_start,cap_end):
+        start=len(vertices)
+        for z,radius in profile:
+            for i in range(segments):
+                angle=2*math.pi*i/segments;vertices.append(center+Vector((radius*math.cos(angle),radius*math.sin(angle),z)))
+        for j in range(len(profile)-1):
+            for i in range(segments):a=start+j*segments+i;b=start+j*segments+(i+1)%segments;faces.append((a,b,b+segments,a+segments))
+        if cap_start:faces.append(tuple(reversed(range(start,start+segments))))
+        if cap_end:faces.append(tuple(range(start+(len(profile)-1)*segments,start+len(profile)*segments)))
+    rings([(0.,9.),(2.,9.8),(12.,11.),(23.,10.),(25.,9.5)],True,True)
+    # The smaller vessel is visibly open. Its inner wall and floor close the
+    # mesh without substituting a disk across the source-visible opening.
+    rings([(25.,6.),(28.,6.4),(38.,7.),(42.,7.5),(42.,6.),(34.,5.5)],True,True)
+    mesh=bpy.data.meshes.new('Leicester Northeast Barrel and Bucket');mesh.from_pydata([obj.matrix_world.inverted()@v for v in vertices],[],faces);mesh.uv_layers.new(name='UVMap');bm=bmesh.new();bm.from_mesh(mesh);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bad=sum(not edge.is_manifold for edge in bm.edges);deg=sum(face.calc_area()<1e-8 for face in bm.faces);bm.to_mesh(mesh);bm.free()
+    if bad or deg:raise ValueError(f'Barrel/bucket topology invalid: {bad}/{deg}')
+    material=bpy.data.materials.get('Leicester Detail Unknown') or bpy.data.materials.new('Leicester Detail Unknown');material.diffuse_color=(.5,.5,.5,1);mesh.materials.append(material);obj.data=mesh
+    return {'native_mask':122,'parts':['bulged barrel','smaller open bucket'],'radial_segments':segments,'source_center_x':2935.5,'ground_center_source_y':579.,'heights':[25.,42.],'maximum_radii':[11.,7.5],'inference':'gabled-barrel-close.png shows a large barrel supporting a smaller open bucket. Rotational symmetry, concealed radial depth and eight-unit bucket interior are inferred; source widths and overall silhouette constrain placement.'}
+
+
 def gabled_canopy(workspace,config,roof_obj,update_masks=True):
     sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35))
     pixels=[(2983.,490.),(3033.,443.),(3078.,474.),(3023.,518.)]

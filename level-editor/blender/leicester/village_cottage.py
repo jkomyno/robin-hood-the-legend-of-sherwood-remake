@@ -134,9 +134,9 @@ def main():
             bmesh.ops.holes_fill(bm,edges=edges,sides=0);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
         if any(not e.is_manifold for e in bm.edges):raise ValueError('Gabled-house join still open')
         bm.to_mesh(obj.data);bm.free()
-        if support.exists():from village_details import gabled_canopy,gabled_accessories,gabled_lean_to
-        else:from leicester.village_details import gabled_canopy,gabled_accessories,gabled_lean_to
-        extra_detail={'canopy':gabled_canopy(w,c,bynode['building-010']),'accessories':gabled_accessories(w,c),'lean_to':gabled_lean_to(w,bynode['building-011'],bynode['building-012'])}
+        if support.exists():from village_details import gabled_canopy,gabled_accessories,gabled_lean_to,gabled_barrel
+        else:from leicester.village_details import gabled_canopy,gabled_accessories,gabled_lean_to,gabled_barrel
+        extra_detail={'canopy':gabled_canopy(w,c,bynode['building-010']),'accessories':gabled_accessories(w,c),'lean_to':gabled_lean_to(w,bynode['building-011'],bynode['building-012']),'barrel':gabled_barrel(bynode['building-013'])}
     if c['asset_id']=='leicester-south-stilt-shed':
         if support.exists():from village_details import stilt_ladder
         else:from leicester.village_details import stilt_ladder
