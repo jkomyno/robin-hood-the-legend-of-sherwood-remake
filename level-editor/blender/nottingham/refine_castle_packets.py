@@ -114,8 +114,10 @@ def hall(workspace, mask_override=None):
         selector = {'source_node':node,'projection_component':'castle-hall-removable-cover','patch_id':'patch-008'}
         if selector not in review['exclude_occluder_components']:
             review['exclude_occluder_components'].append(selector)
+    if 'building-499' not in review['retained_occluder_nodes']:
+        review['retained_occluder_nodes'].append('building-499')
     review['evidence'] = 'Native501 is the room floor at420.001;530 is a separate ceiling cover near590. Source-camera first-hit diagnosis rejected the duplicate530 floor. Native461 after foreground, fixture and roof exclusions supports retained interior wall504; native466 owns the independently modeled hanging fixture.'
-    review['receiver_nodes'] = ['building-501', 'building-504', 'building-505', 'building-506', 'building-533', 'building-534', 'building-535']
+    review['receiver_nodes'] = ['building-500', 'building-501', 'building-504', 'building-505', 'building-506', 'building-533', 'building-534', 'building-535']
     review['receiver_components'] = {
         'exterior': [{'source_node': 'building-530', 'projection_components': ['castle-hall-ceiling-cover'], 'patch_id': 'patch-008'}],
         'interior-patch-008': [{'source_node': 'building-501', 'projection_components': ['castle-hall-floor'], 'patch_id': 'patch-008'}]}

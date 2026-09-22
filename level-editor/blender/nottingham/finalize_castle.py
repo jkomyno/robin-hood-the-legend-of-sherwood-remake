@@ -27,6 +27,9 @@ def finalize(name, workspace=None):
     asset = 'nottingham-' + name
     workspace = workspace or WORK / 'round-1/assets' / asset
     status, changes, limitations = AUDIT[name]
+    changes, limitations = list(changes), list(limitations)
+    if (workspace / 'closed-envelope-report.json').exists():
+        changes.append('Rebuilt inherited per-face mesh seams as closed native-coordinate envelopes; all eight final views reviewed.')
     validation = json.loads((workspace / 'validation.json').read_text())
     if validation['status'] != 'PASS':
         raise ValueError('Cannot record completed audit over a failed validation')
