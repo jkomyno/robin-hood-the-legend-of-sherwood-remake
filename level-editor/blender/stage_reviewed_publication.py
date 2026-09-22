@@ -11,11 +11,14 @@ from integrate_refinement import import_asset_textures
 from group_assets import reconcile_asset_groups
 from export_editor import export_editor, export_asset_library
 from render_views import render_views
+from publication_contract import canonical_parts, scene_filename, validate_coverage
 
 
 def stage(plan_path):
     plan_path=Path(plan_path).resolve(strict=True)
     plan=json.loads(plan_path.read_text())
+    expected=canonical_parts(json.loads(Path(plan['catalog']).read_text()),plan['map_name'])
+    scene_file=scene_filename(plan)
     output=Path(plan['output']).resolve()
     output.mkdir(parents=True,exist_ok=False)
     for item in plan['imports']:
@@ -28,10 +31,11 @@ def stage(plan_path):
     collection=bpy.data.collections[plan['collection_name']]
     canonical_before={o.get('source_node') for o in collection.all_objects
                       if o.type=='MESH' and o.get('source_node')!='ground'}
+    validate_coverage(canonical_before,expected)
     imports=[]
     for item in plan['imports']:
         packet=json.loads(Path(item['review_manifest']).read_text())
-        names=item.get('object_names',packet['object_names'])
+        names=item['object_names'] if 'object_names' in item else packet['object_names']
         blend=item['blend_path']
         blend_hash=hashlib.sha256(Path(blend).read_bytes()).hexdigest()
         if item.get('blend_sha256') and item['blend_sha256']!=blend_hash:
@@ -48,8 +52,7 @@ def stage(plan_path):
         print('INTEGRATED '+item['asset_id'],flush=True)
     canonical_after={o.get('source_node') for o in collection.all_objects
                      if o.type=='MESH' and o.get('source_node')!='ground'}
-    if canonical_before!=canonical_after or len(canonical_after)!=270:
-        raise ValueError('Publication changed canonical part coverage')
+    validate_coverage(canonical_after,expected)
     grouping=reconcile_asset_groups(plan['catalog'])
     ground_handoff=None
     if plan.get('ground_texture_handoff'):
@@ -88,7 +91,7 @@ def stage(plan_path):
     report={'plan':str(plan_path),'imports':imports,'grouping':grouping,'ground_texture_handoff':ground_handoff,
             'canonical_parts':len(canonical_after),
             'generated_materials':{sha:sorted(names) for sha,names in generated.items()},
-            'map':export_editor(plan['map_name'],output/'derby.scene.glb'),
+            'map':export_editor(plan['map_name'],output/scene_file),
             'assets':export_asset_library(plan['map_name'],output/'assets',plan['hackable_map'])}
     (output/'stage.json').write_text(json.dumps(report,indent=2)+'\n')
     render_views(plan['scene_name'],{'reference':plan['reference_camera']},output/'full-map',width=1920)
