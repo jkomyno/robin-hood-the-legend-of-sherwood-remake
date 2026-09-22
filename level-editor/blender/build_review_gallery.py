@@ -32,6 +32,8 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             for name in ("index.html", "evidence.json"):
                 shutil.copyfile(output / name, archive / name)
             shutil.copytree(output / "images", archive / "images")
+            if (output / "reports").exists():
+                shutil.copytree(output / "reports", archive / "reports")
     records, cards = [], []
     for number, item in enumerate(items, 1):
         figures, evidence = [], {}
@@ -62,10 +64,32 @@ def build(index_path, output, *, pending_only=False, map_name=None):
         notes = item.get("notes", "")
         if isinstance(notes, list):
             notes = " ".join(notes)
+        reports = {}
+        report_links = []
+        for key, label in (("validation", "Validation report"),
+                           ("ownership", "Source ownership evidence"),
+                           ("review", "Worker review and limitations")):
+            if not item.get(key):
+                continue
+            source = Path(item[key])
+            if not source.is_absolute():
+                source = index_path.parent / source
+            source = source.resolve(strict=True)
+            relative = f"reports/{number:02}-{key}{source.suffix}"
+            target = output / relative
+            target.parent.mkdir(exist_ok=True)
+            shutil.copyfile(source, target)
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            if hashlib.sha256(target.read_bytes()).hexdigest() != digest:
+                raise RuntimeError(f"Review report copy differs: {source}")
+            reports[key] = {"source": str(source), "file": relative, "sha256": digest}
+            report_links.append(f'<a href="{relative}" target="_blank">{label}</a>')
         cards.append(f'<article id="asset-{number}"><h2>{number}. {html.escape(item["name"])}</h2>'
+                     f'<p><code>{html.escape(item["id"])}</code></p>'
                      f'<p class="status">{html.escape(item["status"])}</p>'
-                     f'<p>{html.escape(notes)}</p><div class="sheets">{"".join(figures)}</div></article>')
-        records.append({**item, "number": number, "images": evidence})
+                     f'<p>{html.escape(notes)}</p><p>{" · ".join(report_links)}</p>'
+                     f'<div class="sheets">{"".join(figures)}</div></article>')
+        records.append({**item, "number": number, "images": evidence, "reports": reports})
     nav = "".join(f'<a href="#asset-{n}">{n}. {html.escape(item["name"])}</a>' for n, item in enumerate(items, 1))
     document = '''<!doctype html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
