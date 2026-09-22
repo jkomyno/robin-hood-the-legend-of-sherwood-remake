@@ -48,6 +48,9 @@ and `revealed_input` using workspace-relative paths. Animated endpoints use
 `animation_states: [{"id": "portcullis-initial", "directory": "..."}]`.
 These are complete fixed-camera packets, checked and included in the state
 bundle hash. Endpoint cards refer to their parent asset's decision.
+Optional `covered_solid`, `covered_textured`, and `covered_context` display the
+validated covered state as the primary card while retaining the complete
+`modified/` geometry comparison in the evidence.
 
 `gallery-progress.json` lists every group, including missing or invalid packets.
 `gallery-packet-evidence/` holds current validation and ownership records; the

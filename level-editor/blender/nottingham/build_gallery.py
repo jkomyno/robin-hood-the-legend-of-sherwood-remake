@@ -140,7 +140,11 @@ def inspect(workspace, asset):
         before_layers = packets["input"]["projection_layers"]
         after_layers = packets["modified"]["projection_layers"]
         available = {node for row in before_layers for key in ("receiver_nodes", "occluder_nodes") for node in row[key]}
-        require(after_layers == projection_records(config, reviewed_projection, available),
+        expected_layers = projection_records(config, reviewed_projection, available)
+        if asset['id'] in ('nottingham-upper-prison', 'nottingham-southwest-prison') and any(
+                '-prison-door-' in row.get('projection_label', '') for row in after_layers):
+            expected_layers = prison_endpoint_records(workspace, config, expected_layers)
+        require(after_layers == expected_layers,
                 "Modified projection layers do not match validated own-asset projection reviews")
     else:
         require(packets["input"]["projection_layers"] == packets["modified"]["projection_layers"],
@@ -240,6 +244,33 @@ def inspect(workspace, asset):
     return status, limitations, evidence, review
 
 
+def prison_endpoint_records(workspace, config, layers):
+    """Validate the explicit closed/open door partition against frozen source authority."""
+    upper = config['asset_id'] == 'nottingham-upper-prison'
+    patch = 'patch-002' if upper else 'patch-007'
+    prefix = 'upper-prison-door' if upper else 'southwest-prison-door'
+    doors = ['building-453', 'building-455'] if upper else ['building-476', 'building-477']
+    require(set(doors) <= set(config['part_ids']), 'Door endpoints are not owned by this prison')
+    masks = read(config['source_mask_manifest'])
+    references = read(workspace / 'door-reference/manifest.json')
+    interior = next(row for row in layers if row['projection_label'] == 'interior-' + patch)
+    for row in layers:
+        row['receiver_nodes'] = [node for node in row['receiver_nodes'] if node not in doors]
+        row['occluder_nodes'] = [node for node in row['occluder_nodes'] if node not in doors]
+    for endpoint, node in zip(('initial', 'applied'), doors):
+        label = prefix + '-' + endpoint
+        source = Path(references[label]['source'])
+        digest = sha(source)
+        require(digest == references[label]['sha256'] == masks['projections'][label]['source_sha256'],
+                'Prison endpoint artwork differs from immutable mask authority')
+        layers.append({'source_path': str(source), 'source_sha256': digest,
+                       'receiver_nodes': [node],
+                       'occluder_nodes': sorted(set(interior['occluder_nodes']) | {node}),
+                       'exclude_occluder_components': interior.get('exclude_occluder_components', []),
+                       'projection_label': label})
+    return layers
+
+
 def supplemental_packet(directory, asset_id, framing, *, mask_origin=None):
     """Check state sheets against the same fixed cameras and their source bytes."""
     directory = Path(directory).resolve(strict=True)
@@ -330,6 +361,12 @@ def main(argv=None):
                 path = Path(path)
                 return path if path.is_absolute() else workspace / path
             framing = read(workspace / 'input/views.json')
+            if worker.get('covered_solid'):
+                folder = local(worker['covered_solid']).parent
+                state_records['covered'] = supplemental_packet(folder, asset['id'], framing)
+                require(local(worker['covered_textured']).resolve() == folder.resolve() / 'textured.png'
+                        and local(worker['covered_context']).resolve() == folder.resolve() / 'context.png',
+                        'Covered sheets must come from one validated packet')
             for state in worker.get('animation_states', []):
                 identifier = state['id']
                 require(isinstance(identifier, str) and identifier and
@@ -389,6 +426,10 @@ def main(argv=None):
                 "validation": str(workspace / "validation.json"), "ownership": str(evidence_path)}
         if review.is_file():
             item["review"] = str(review)
+        if evidence['state_packets'].get('covered'):
+            folder = Path(evidence['state_packets']['covered']['directory'])
+            item.update(solid=str(folder/'solid.png'), textured=str(folder/'textured.png'),
+                        context=str(folder/'context.png'))
         if evidence['state_packets'].get('revealed'):
             folder = Path(evidence['state_packets']['revealed']['directory'])
             item.update(revealed_solid=str(folder/'solid.png'), revealed_textured=str(folder/'textured.png'),
