@@ -122,3 +122,43 @@ test("duplicate reconstruction node identity rejects and deduplicates resource d
   );
   assert.equal(f.disposals(), 1);
 });
+
+function authoredFixture(customName?: string) {
+  const part = {
+    id: "building-000", node: "building-000", kind: "building", source: { map: "York", obstacle: 0 },
+    obstacle: { points: [{ x: 0, y: 0, z_bottom: 0, z_top: 10 }, { x: 10, y: 0, z_bottom: 0, z_top: 10 }, { x: 0, y: 10, z_bottom: 0, z_top: 10 }],
+      opaque: true, solid: true, mouse: true, show_shadow_polygon: true, default_material: 0, material_indices: [], projection_area: null },
+    transform: { dx: 0, dy: 0, dz: 0, rot_deg: 0 }, group: "group-000", ...(customName ? { name: customName } : {}),
+  };
+  const f = fixture({ objects: [part], groups: [{ id: "group-000", transform: { dx: 0, dy: 0, dz: 0, rot_deg: 0 } }] });
+  f.buildings.name = "North_Hall";
+  f.buildings.userData = { asset_group: "york-north-hall", name: "North Hall" };
+  f.mesh.userData = { source_obstacle: 0, part_name: "Hall walls" };
+  return f;
+}
+
+test("GLB authored groups restore human names for pristine saved documents on any map", async (t) => {
+  const f = authoredFixture();
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  const candidate = await prepareMapCandidate("York", f.directory, null);
+  assert.equal(candidate.document.groups[0]!.id, "york-north-hall");
+  assert.equal(candidate.document.groups[0]!.name, "North Hall");
+  assert.equal(candidate.document.objects[0]!.name, "Hall walls");
+  assert.equal(candidate.document.objects[0]!.group, "york-north-hall");
+  assert.equal(candidate.saved, false);
+  disposeObjectResources([candidate.asset]);
+});
+
+test("authored exports preserve saved user names and reject mismatched canonical metadata", async (t) => {
+  const f = authoredFixture("Custom wall");
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  const candidate = await prepareMapCandidate("York", f.directory, null);
+  assert.equal(candidate.document.objects[0]!.name, "Custom wall");
+  assert.equal(candidate.document.objects[0]!.group, "group-000");
+  disposeObjectResources([candidate.asset]);
+  const bad = authoredFixture();
+  bad.mesh.userData.source_obstacle = 99;
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: bad.asset }));
+  await assert.rejects(prepareMapCandidate("York", bad.directory, null), /Invalid authored GLB part metadata/);
+  assert.equal(bad.disposals(), 1);
+});

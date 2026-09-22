@@ -73,3 +73,36 @@ test("untouched saved groups upgrade once, but saved transforms and custom owner
   assert.equal(document.groups.length, 39);
   assert.equal(upgradeGeneratedAssetGroups(document), false);
 });
+
+test("explicit catalogs support another map and reject ambiguous ownership atomically", () => {
+  const parts = objects().slice(0, 2).map(part => ({ ...part, source: { ...part.source, map: "Leicester" } }));
+  const catalog = { map: "Leicester", groups: [{ id: "leicester-house", name: "Leicester House",
+    parts: [{ obstacle: 0, name: "Walls" }, { obstacle: 1, name: "Roof" }] }] };
+  const before = structuredClone(parts);
+  assert.throws(() => authoredAssetGroups("Leicester", parts, { ...catalog, groups: [catalog.groups[0]!, catalog.groups[0]!] }), /duplicate group/);
+  assert.deepEqual(parts, before);
+  const duplicatePart = structuredClone(catalog);
+  duplicatePart.groups[0]!.parts.push({ obstacle: 0, name: "Second owner" });
+  assert.throws(() => authoredAssetGroups("Leicester", parts, duplicatePart), /duplicate obstacle/);
+  assert.deepEqual(parts, before);
+  assert.throws(() => authoredAssetGroups("York", parts, catalog), /different map/);
+  const groups = authoredAssetGroups("leicester", parts, catalog)!;
+  assert.equal(groups[0]!.name, "Leicester House");
+  assert.deepEqual(parts.map(part => [part.group, part.name]), [["leicester-house", "Walls"], ["leicester-house", "Roof"]]);
+});
+
+test("exported catalogs upgrade pristine non-Derby documents without replacing edits", () => {
+  const parts = objects().slice(0, 2).map(part => ({ ...part, group: "group-000", source: { ...part.source, map: "Leicester" } }));
+  const catalog = { map: "Leicester", groups: [{ id: "house", name: "House", parts: [{ obstacle: 0, name: "Body" }, { obstacle: 1, name: "Roof" }] }] };
+  const document: Level3D = { version: 1, map: "Leicester", glb: "map.glb", size: [100, 100],
+    camera: { kind: "oblique-orthographic", elevation_deg: 35 }, objects: parts,
+    groups: [{ id: "group-000", transform: { ...IDENTITY_TRANSFORM } }] };
+  const edited = structuredClone(document);
+  edited.objects[0]!.name = "My edited wall";
+  const before = structuredClone(edited);
+  assert.equal(upgradeGeneratedAssetGroups(edited, catalog), false);
+  assert.deepEqual(edited, before);
+  assert.equal(upgradeGeneratedAssetGroups(document, catalog), true);
+  assert.equal(document.groups[0]!.id, "house");
+  assert.equal(upgradeGeneratedAssetGroups(document, catalog), false);
+});

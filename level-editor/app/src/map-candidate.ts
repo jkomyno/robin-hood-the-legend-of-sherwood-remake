@@ -9,6 +9,7 @@ import {
   snapFloatingParts,
   authoredAssetGroups,
   upgradeGeneratedAssetGroups,
+  type AuthoredAssetCatalog,
   type Level3D,
   type Level3DGroup,
   type Level3DObject,
@@ -60,6 +61,27 @@ export async function prepareMapCandidate(
           nextSources.set(node.name, node);
         }
     }
+    const exportedGroups = root.children.filter(child => child.name !== "ground");
+    let exportedCatalog: AuthoredAssetCatalog | undefined;
+    if (exportedGroups.some(group => group.userData.asset_group !== undefined)) {
+      exportedCatalog = {
+        map: sceneDoc.map,
+        groups: exportedGroups.map(group => {
+          const id: unknown = group.userData.asset_group;
+          const label: unknown = group.userData.asset_name ?? group.userData.name ?? group.name;
+          if (typeof id !== "string" || !id.trim() || typeof label !== "string" || !label.trim())
+            throw new Error("Incomplete authored GLB group metadata");
+          return { id, name: label, parts: group.children.map(node => {
+            const match = /^(building|terrace)-(\d+)$/.exec(node.name);
+            const obstacle: unknown = node.userData.source_obstacle;
+            const partName: unknown = node.userData.part_name;
+            if (!match || obstacle !== Number(match[2]) || typeof partName !== "string" || !partName.trim())
+              throw new Error(`Invalid authored GLB part metadata: ${node.name}`);
+            return { obstacle: Number(match[2]), name: partName };
+          }) };
+        }),
+      };
+    }
     const nextSuspects = new Map<number, { delta: number; support: number }>();
     let d: Level3D | null = null;
     let upgradedGroups = false;
@@ -72,7 +94,7 @@ export async function prepareMapCandidate(
         level: lvl ?? undefined,
         nodes: new Set(nextSources.keys()),
       });
-      upgradedGroups = upgradeGeneratedAssetGroups(d);
+      upgradedGroups = upgradeGeneratedAssetGroups(d, exportedCatalog);
       if (lvl) {
         const terraces = new Set(
           d.objects
@@ -135,7 +157,7 @@ export async function prepareMapCandidate(
         camera: sceneDoc.camera,
         glb: glbName,
         objects,
-        groups: authoredAssetGroups(sceneDoc.map, objects) ?? groups,
+        groups: authoredAssetGroups(sceneDoc.map, objects, exportedCatalog) ?? groups,
       };
     }
     parseLevel3D(d, {
