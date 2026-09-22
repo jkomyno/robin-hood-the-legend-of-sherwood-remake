@@ -2,6 +2,11 @@
 
 ## Current source-traced revision review — 2026-09-22
 
+User accepted North Tower on 2026-09-22: `pixel-trace-v4/model.blend` with
+`modified-v3` review sheets. Approval and model/sheet SHA256 hashes are recorded
+in the review manifest. Removed from pending gallery; two-image texture fill
+is authorized and pending. No generated texture or publication is claimed.
+
 Recovery after interruption: North Tower `pixel-trace-v4/modified-v3` is now
 candidate #4 in the gallery. The closed-body repair (commit `10f6ad68c`) survived;
 main wall, rear curtain, outlook and door report zero boundary/nonmanifold edges.
