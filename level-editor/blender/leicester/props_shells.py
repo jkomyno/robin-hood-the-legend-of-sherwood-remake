@@ -27,6 +27,13 @@ ANCHORS={34: [[2477.0, 385.92834, 0.0, 31.929], [2467.0, 379.882, 0.0, 31.882002
 # 968,975,982,989 have y1816,1811,1805,1802,1801 respectively.
 ANCHORS[381]=[[1000.4681, 1824.7965, 0.0, 24.0], [992.94446, 1831.1034, 0.0, 30.0], [960.74896, 1818.4679, 0.0, 2.5], [968.2726, 1812.161, 0.0, 1.2]]
 
+# Two halves share one observed hay ridge. Reconcile subpixel imported plan
+# offsets and one-pixel height disagreement before rounding the slopes.
+for a,b in [(0,0),(5,1)]:
+    left,right=ANCHORS[70][a],ANCHORS[71][b]
+    shared=[(left[i]+right[i])/2 for i in range(4)]
+    ANCHORS[70][a]=list(shared);ANCHORS[71][b]=list(shared)
+
 # Native223 cliff alpha supplies the exposed crest, sampled every16pixels.
 # The ground contact stays on the authored front edge; hidden plateau remains
 # a declared interpolation rather than a recovered terrain heightfield.
