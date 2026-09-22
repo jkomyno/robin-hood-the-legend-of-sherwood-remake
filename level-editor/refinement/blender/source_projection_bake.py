@@ -20,7 +20,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
          elevation_deg=35.0, preserve_authored=True, source_mask_manifest=None,
          hidden_fill="neutral", synthesis_cache=None, reproject_authored_nodes=None,
          hidden_sampler=None, projection_region=None, exclude_occluder_components=None,
-         receiver_components=None, receiver_asset_id=None):
+         receiver_components=None, receiver_asset_id=None, receiver_object_names=None):
     import bpy
     import numpy as np
     from mathutils import Vector
@@ -47,6 +47,11 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         available_objects=bpy.data.collections[map_name + ' Working'].all_objects)
     if receiver_asset_id is not None:
         receivers = [obj for obj in receivers if obj.get("asset_group") == receiver_asset_id]
+    if receiver_object_names is not None:
+        names = set(receiver_object_names)
+        if names - {obj.name for obj in receivers}:
+            raise ValueError('Explicit texture receivers are absent from projection layer')
+        receivers = [obj for obj in receivers if obj.name in names]
     reproject_authored_nodes = set(reproject_authored_nodes or ())
     if reproject_authored_nodes - {o.get("source_node") for o in receivers}:
         raise ValueError("Authored texture reset must name receiver nodes")

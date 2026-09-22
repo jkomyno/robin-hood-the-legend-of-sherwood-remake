@@ -125,7 +125,11 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                if obj.type == 'MESH' and not obj.hide_render and obj.get('asset_group') == manifest['asset_id']]
     if not objects:
         raise ValueError('Approved asset is absent')
-    nodes = {obj.get('source_node') for obj in objects}
+    scope = manifest.get('texture_receiver_object_names')
+    targets = objects if scope is None else [obj for obj in objects if obj.name in set(scope)]
+    if not targets or (scope is not None and set(scope) != {obj.name for obj in targets}):
+        raise ValueError('Texture receiver scope is empty or includes absent/foreign meshes')
+    nodes = {obj.get('source_node') for obj in targets}
     vertices, triangles = [], []
     for obj in objects:
         offset = len(vertices)
@@ -206,11 +210,13 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                             projection_region=layer.get('projection_region'),
                             receiver_components=[selector for selector in layer.get('receiver_components', [])
                                                  if selector['source_node'] in receivers],
+                            receiver_object_names=([obj.name for obj in targets if obj.get('source_node') in receivers]
+                                                   if scope is not None else None),
                             exclude_occluder_components=layer.get('exclude_occluder_components')))
     assigned = {node for report in reports for node in report['receiver_nodes']}
     if assigned != nodes:
         raise ValueError('Not all approved asset nodes received a source projection layer')
-    for obj in objects:
+    for obj in targets:
         for face in obj.data.polygons:
             mat = obj.data.materials[face.material_index]
             if not mat or not mat.get('source_ownership_bake'):
@@ -222,6 +228,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                 mat['generated_source_mask_manifest'] = mask_manifest
                 mat['generated_source_mask_evidence_sha256'] = hashlib.sha256(json.dumps(manifest['source_mask_evidence'],sort_keys=True).encode()).hexdigest()
     report = {'asset_id':manifest['asset_id'], 'input_sha256':input_hash,'generated_sha256':image_hash,
+              'texture_receiver_object_names':[obj.name for obj in targets],
               'generated_image':str(Path(image_path).resolve()),
               'source_mask_manifest':mask_manifest,
               'source_mask_evidence':manifest.get('source_mask_evidence'),

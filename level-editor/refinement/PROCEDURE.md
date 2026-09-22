@@ -309,6 +309,14 @@ receiver ownership separate. The optional batch wrapper `bake_approved_packets.p
 takes a positional jobs JSON with `manifest`, `generated_image`, `output` and
 optional `source_blend`; it does not publish anything.
 
+For an exterior-only fill, declare `texture_receiver_object_names` in the bake
+manifest as the exact eligible mesh names. Keep the complete reviewed object
+set in the visibility scene and keep the original projection layers unchanged.
+The bake restricts receiver writes to that scope and guards every other mesh's
+materials and UVs, including interior meshes in the same logical asset. Never
+apply a covered exterior generated sheet to revealed interior receivers merely
+because they share an asset group or source node.
+
 Create a publication plan using the existing `stage_reviewed_publication.py`
 schema, binding baseline, catalog, scene/collection, map/source paths, imports,
 review manifests and a new output directory. Do not copy Derby's node IDs into

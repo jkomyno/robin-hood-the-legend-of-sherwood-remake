@@ -44,9 +44,11 @@ def stage(manifest_path, image_path, output_dir, *, texels_per_unit=2):
     bpy.context.window.scene = scene
     bpy.context.view_layer.update()
     asset_id = manifest['asset_id']
+    scope = manifest.get('texture_receiver_object_names')
     geometry = {obj.name:_geometry(obj) for obj in scene.objects}
     outside = {obj.name:_materials(obj) for obj in scene.objects
-               if obj.type=='MESH' and obj.get('asset_group') != asset_id}
+               if obj.type=='MESH' and (obj.get('asset_group') != asset_id
+                   or (scope is not None and obj.name not in scope))}
     evidence = [manifest_path, image_path, manifest_path.parent/'input.png',manifest_path.parent/'mask.png']
     hashes = {str(path):hashlib.sha256(path.read_bytes()).hexdigest() for path in evidence}
     report = apply(manifest_path,image_path,output,texels_per_unit=texels_per_unit)
