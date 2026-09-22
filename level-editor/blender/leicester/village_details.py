@@ -66,6 +66,33 @@ def stilt_ladder(workspace,obj):
     return report
 
 
+def gabled_accessories(workspace,config,update_masks=True):
+    sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35));wall_slope=-34.67/52.38
+    # Both receivers follow the existing gable wall direction. Native artwork
+    # fixes their screen silhouette; the ladder's top height and lean remain
+    # explicit depth hypotheses anchored to that wall.
+    top=(2925.,487.,94.);bottom=(2907.,583.,0.)
+    top_y=(-top[1]-top[2]*cosine)/sine;bottom_y=-bottom[1]/sine
+    ladder_dy=(bottom_y-top_y-wall_slope*(bottom[0]-top[0]))/(bottom[1]-top[1])
+    def ladder_plane(px,py):
+        y=top_y+wall_slope*(px-top[0])+ladder_dy*(py-top[1]);return px,y,(-py-y*sine)/cosine
+    def wheel_plane(px,py):
+        y=-580/sine+wall_slope*(px-2952.)-(py-580.)*5/28
+        return px,y,(-py-y*sine)/cosine
+    reports=[];assignments=[]
+    for index,component,plane,details in [(123,'spare-wheel',wheel_plane,{'spokes':8,'inferred_lean':5.}),(124,'access-ladder',ladder_plane,{'rails':2,'rungs':7,'enclosed_source_apertures':6,'source_top':list(top),'source_foot':list(bottom),'inferred_depth_lean':bottom_y-top_y})]:
+        mesh,report=silhouette_prism(workspace,index,plane,2.5)
+        name=f'Leicester Northeast Gabled {component.title()}';obj=bpy.data.objects.get(name)
+        if obj is None:obj=bpy.data.objects.new(name,mesh);bpy.data.collections[config['collection_name']].objects.link(obj)
+        else:obj.data=mesh
+        obj['source_node']='building-009';obj['asset_group']=config['asset_id'];obj['projection_component']=component;obj['part_name']=component.replace('-',' ').title()
+        reports.append({'component':component,**report,**details})
+        assignments.append({'source_node':'building-009','projection_component':component,'mask_indices':[index],'reviewed':True,'evidence':'gabled-ladder-wheel-close.png: native123 separate wheel and native124 two rails, seven rungs, six enclosed apertures. Exact mask silhouette; concealed thickness2.5 and gable-aligned receiver lean are inferred.'})
+    if update_masks:
+        path=Path(config['source_mask_manifest']);contract=json.loads(path.read_text());rows=contract['projections']['exterior']['assignments'];components={r['projection_component'] for r in assignments};rows[:]=[r for r in rows if not(r.get('source_node')=='building-009' and r.get('projection_component') in components)];rows.extend(assignments);path.write_text(json.dumps(contract,indent=2)+'\n')
+    return {'components':reports,'inference':'Native masks determine visible apertures and silhouette. Wheel follows gable plane with five-unit lean; ladder top94 follows gable contact, footground0, and depth2.5 are hypotheses requiring eight-view review.'}
+
+
 def gabled_canopy(workspace,config,roof_obj,update_masks=True):
     sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35))
     pixels=[(2983.,490.),(3033.,443.),(3078.,474.),(3023.,518.)]
