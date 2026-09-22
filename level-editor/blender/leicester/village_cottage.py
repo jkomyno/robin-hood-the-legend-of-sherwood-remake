@@ -6,26 +6,40 @@ import sys
 import bpy
 from mathutils import Vector
 import bmesh
+import math
+import hashlib
+import numpy as np
+from mathutils.geometry import tessellate_polygon
 PAIRS=[('building-024','building-029'),('building-016','building-017'),('building-003','building-007'),('building-009','building-014'),('building-064','building-065'),('building-093','building-096'),('building-079','building-080')]
 
-def ladder(obj):
-    # Eight rungs are visible between y=633 and y=697 in the native crop.
-    lows=[Vector((2422.819,-1230.717,0)),Vector((2435.569,-1221.603,0))]
-    highs=[Vector((2416.394,-1206.113,76.946)),Vector((2428,-1197.823,76.946))]
-    vertices=[];faces=[]
-    def beam(a,b,width):
-        axis=(b-a).normalized();side=axis.cross(Vector((0,0,1)))
-        if side.length<0.001:side=axis.cross(Vector((0,1,0)))
-        side.normalize();other=axis.cross(side).normalized();base=len(vertices)
-        vertices.extend(p+side*x*width/2+other*y*width/2 for p in [a,b] for x,y in [(-1,-1),(1,-1),(1,1),(-1,1)])
-        faces.extend(tuple(base+i for i in f) for f in [(0,3,2,1),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)])
-    for low,high in zip(lows,highs):beam(low,high,1.8)
-    for i in range(8):
-        t=0.1+i*0.8/7;beam(lows[0].lerp(highs[0],t),lows[1].lerp(highs[1],t),1.5)
-    mesh=bpy.data.meshes.new('Leicester Cottage Ladder');mesh.from_pydata([obj.matrix_world.inverted()@v for v in vertices],[],faces)
+def access_pole(obj,workspace):
+    config=json.loads((workspace/'workspace.json').read_text())
+    assignment=Path(config['source_mask_manifest']);contract=json.loads(assignment.read_text());inventory_path=(assignment.parent/contract['mask_inventory']).resolve()
+    native=next(m for m in json.loads(inventory_path.read_text())['masks'] if m['index']==154)
+    path=(inventory_path.parent/native['png']).resolve(strict=True);image=bpy.data.images.load(str(path),check_existing=False);width,height=image.size
+    pixels=np.empty(width*height*4,dtype=np.float32);image.pixels.foreach_get(pixels);bpy.data.images.remove(image);bitmap=pixels.reshape(height,width,4)[::-1,:,0]>0.5
+    occupied={(int(x),int(y)) for y,x in np.argwhere(bitmap)};edges={}
+    for x,y in occupied:
+        for neighbor,edge in [((x,y-1),((x,y),(x+1,y))),((x+1,y),((x+1,y),(x+1,y+1))),((x,y+1),((x+1,y+1),(x,y+1))),((x-1,y),((x,y+1),(x,y)))]:
+            if neighbor not in occupied:
+                if edge[0] in edges:raise ValueError('Ambiguous native pole contour')
+                edges[edge[0]]=edge[1]
+    start=min(edges);contour=[start];cursor=edges[start]
+    while cursor!=start:
+        contour.append(cursor);cursor=edges[cursor]
+    if len(contour)!=len(edges):raise ValueError('Native pole contains unsupported extra contours')
+    contour=[p for i,p in enumerate(contour) if (p[0]-contour[i-1][0])*(contour[(i+1)%len(contour)][1]-p[1])!=(p[1]-contour[i-1][1])*(contour[(i+1)%len(contour)][0]-p[0])]
+    sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35));top_y=-1206.113;top_z=76.946;bottom_y=-1230.717;top_pixel=-top_y*sine-top_z*cosine;bottom_pixel=-bottom_y*sine
+    dy=(bottom_y-top_y)/(bottom_pixel-top_pixel);dz=(-1-dy*sine)/cosine;normal=Vector((0,-dz,dy)).normalized()
+    front=[]
+    for px,py in contour:
+        x=px+native['box_top_left'][0];pixel_y=py+native['box_top_left'][1];y=top_y+(pixel_y-top_pixel)*dy;z=(-pixel_y-y*sine)/cosine;front.append(Vector((x,y,z)))
+    n=len(front);vertices=front+[p+normal*2.0 for p in front];indices={tuple(v):i for i,v in enumerate(front)};triangles=[tuple(indices[tuple(v)] for v in tri) for tri in tessellate_polygon([front])]
+    faces=triangles+[tuple(n+i for i in reversed(tri)) for tri in triangles]+[(i,(i+1)%n,n+(i+1)%n,n+i) for i in range(n)]
+    mesh=bpy.data.meshes.new('Leicester Pegged Access Pole');mesh.from_pydata([obj.matrix_world.inverted()@v for v in vertices],[],faces)
     bm=bmesh.new();bm.from_mesh(mesh);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(mesh);bm.free();mesh.uv_layers.new(name='UVMap')
-    mat=bpy.data.materials.get('Leicester Ladder Unknown') or bpy.data.materials.new('Leicester Ladder Unknown');mat.diffuse_color=(0.5,0.5,0.5,1);mesh.materials.append(mat);obj.data=mesh
-    return {'source_node':'building-021','rails':2,'rungs':8,'visible_rung_pixel_y':[633,642,651,660,669,678,687,697],'inference':'Square rail width1.8 and rung width1.5 scene units; source positions define rung phase and spacing.','geometry_representation':'Ten closed timber beam components in the canonical ladder mesh; source slab removed.'}
+    mat=bpy.data.materials.get('Leicester Access Pole Unknown') or bpy.data.materials.new('Leicester Access Pole Unknown');mat.diffuse_color=(0.5,0.5,0.5,1);mesh.materials.append(mat);obj.data=mesh
+    return {'source_node':'building-021','native_mask':154,'native_mask_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'silhouette_pixels':len(occupied),'contour_vertices':n,'visible_crosspegs':9,'peg_pixel_y':[618,631,638,649,659,668,679,687,695],'inference':'A two-unit-deep extrusion along the existing tilted receiver plane; unseen roundness/depth cannot be established.','geometry_representation':'Exact native silhouette preserving the one upright, crosspegs and diagonal branch/brace; no invented second rail.'}
 
 def close_mill_north_joins(bynode):
     reports=[]
@@ -86,8 +100,8 @@ def main():
             a.data.vertices[i].co=a.matrix_world.inverted()@midpoint;b.data.vertices[j].co=b.matrix_world.inverted()@midpoint
         a.data.update();b.data.update();seams.append({'source_nodes':[left,right],'matched_vertices':len(matches),'maximum_world_vertex_movement':maximum,'correspondence_tolerance':tolerance,'note':'The rear016/017 ridge junction is occluded by chimney and adjacent roof; midpoint is inferred hidden connectivity.' if tolerance>1 else 'Subpixel shared junction.'})
     join_report=close_mill_north_joins(bynode) if c['asset_id']=='leicester-mill-north-cottage' else None
-    ladder_report=ladder(bynode['building-021']) if c['asset_id']=='leicester-mill-north-cottage' else None
-    report={'hidden_join_repairs':join_report,'ladder':ladder_report,'asset_id':c['asset_id'],'recipe':'village-cottage-v1','shell_repairs':reports,'shared_roof_seams':seams,'world_transform_drift':0,'inference':'Only planar underside closure; shared junctions reconciled at their average using reported per-pair tolerances. No source silhouette redesign.','limitations':['Doors/windows/timber detail remains source projection unless represented by an existing distinct component.','Hidden roof/back depth remains the inherited geometric hypothesis; component interiors may overlap.'],'projection_status':'STALE'}
+    pole_report=access_pole(bynode['building-021'],w) if c['asset_id']=='leicester-mill-north-cottage' else None
+    report={'hidden_join_repairs':join_report,'access_pole':pole_report,'asset_id':c['asset_id'],'recipe':'village-cottage-v1','shell_repairs':reports,'shared_roof_seams':seams,'world_transform_drift':0,'inference':'Only planar underside closure; shared junctions reconciled at their average using reported per-pair tolerances. No source silhouette redesign.','limitations':['Doors/windows/timber detail remains source projection unless represented by an existing distinct component.','Hidden roof/back depth remains the inherited geometric hypothesis; component interiors may overlap.'],'projection_status':'STALE'}
     (w/'inspection').mkdir(exist_ok=True);(w/'inspection'/'cottage-recipe.json').write_text(json.dumps(report,indent=2)+'\n');validate(w);bpy.ops.wm.save_as_mainfile(filepath=str(w/'model.blend'));print(json.dumps({'asset_id':c['asset_id'],'seams':seams}))
     if args.reproject:
         from refinement_workspace import modified
