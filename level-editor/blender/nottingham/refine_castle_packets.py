@@ -25,6 +25,10 @@ def apply_masks(workspace, mask_override):
     path = Path(config['source_mask_manifest'])
     masks = json.loads(path.read_text())
     owned = set(config['part_ids'])
+    if workspace.name == 'nottingham-castle-main-hall':
+        for projection in masks['projections'].values():
+            projection['assignments'][:] = [v for v in projection['assignments']
+                if not (v.get('source_node') == 'building-530' and v.get('projection_component') == 'castle-hall-floor')]
     assignments = side.get('projections', {side.get('projection', 'exterior'): side.get('assignments', [])})
     for label, rows in assignments.items():
         for row in rows:
@@ -97,6 +101,8 @@ def hall(workspace, mask_override=None):
         write(workspace / 'geometry-report.json', report)
     from refine_castle_interior import refine as interior_details
     interior_details(workspace)
+    from refine_castle_hall_details import refine as fine_details
+    fine_details(workspace)
     config = json.loads((workspace / 'workspace.json').read_text())
     path = Path(config['projection_manifest'])
     layers = json.loads(path.read_text())

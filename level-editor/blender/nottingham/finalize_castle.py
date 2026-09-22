@@ -11,11 +11,11 @@ AUDIT = {
  'castle-southeast-spire': ('ready-for-user', ['Closed single-apex roof; fresh immutable camera margin includes the tip in all eight views.'], ['Concealed roof and wall depth are inferred.']),
  'castle-upper-stair': ('ready-for-user', ['Ten upper risers and five lower risers replace continuous ramps.'], ['Hidden stair supports preserve the source-volume depth hypothesis.']),
  'castle-west-stair-tower': ('ready-for-user', ['Sixteen measured stair treads and supported roof body replace coarse ramps and roof columns.'], ['Concealed tower shell remains polygonal; unresolved source ownership stays neutral.']),
- 'castle-west-annex': ('fix-needed', ['Added a closed roof support/body ending at courtyard elevation100.'], ['Door recesses and timber roof-eave contact remain coarse; source ownership is unresolved.']),
+ 'castle-west-annex': ('ready-for-user', ['Thin roof shell with overhang, inset masonry body, recessed closed door and narrow slit.', 'Reviewed native430 minus foreground283/282 constrains roof/body source ownership.'], ['Concealed wall inset, eave thickness and recess depth are inferred; hidden rear remains neutral.']),
  'castle-west-conical-tower': ('ready-for-user', ['Replaced stretched ridge with a closed single-apex cone; retained the measured lower roof skirt.', 'Reviewed isolated native mask436 projects the tower and skirt without foreground stairs.'], ['Rear roof depth is inferred; the lower shaft below the native mask cutoff remains neutral.']),
  'castle-west-stair': ('ready-for-user', ['Corrected lower stair contact from native100 to195 and authored seven measured risers.'], ['Concealed underside remains inherited; no approved source pixels for this stair, so projection remains neutral.']),
  'castle-entry-steps': ('ready-for-user', ['Two risers surround landing115; underside meets courtyard100; adjacent corner endpoints are normalized to remove overlapping spikes.'], ['Step depth interpolation is inferred between measured outer/inner edges; source ownership remains unknown.']),
- 'castle-east-round-tower': ('fix-needed', ['Five roof columns replaced with two-unit shells; two missing rear sectors closed continuously.'], ['Rear roof closure is inferred; masonry remains polygonal and fine finial profile unresolved.']),
+ 'castle-east-round-tower': ('ready-for-user', ['Closed curved drum, two molded courses, two upper openings and lower arrow slit.', 'Five curved conical roof sectors share the measured cap, teardrop, sphere, rod and spike; fresh camera margin includes the full finial.'], ['Rear ellipse, concealed continuations and shallow recess depth are inferred; unsupported rear remains neutral.']),
 }
 
 
