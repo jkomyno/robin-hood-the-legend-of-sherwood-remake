@@ -73,13 +73,17 @@ def refine(workspace, native_path):
         rails=[(2,3,[0,.19,.38,.59,.79,1],False),(1,0,[0,.18,.40,.61,.80],False)]
     else:
         # Only the unobscured tower landing balusters have reliable counts.
-        rails=[(6,7,[0,.20,.40,.60,.80,1],False),(3,2,[0,.33,.66,1],False)]
+        rails=[(6,7,[0,.20,.40,.60,.80,1],False),(3,2,[0,.33,.66,1],False),(5,4,[0,.33,.66,1],False)]
     for side,(first,last,times,taper) in enumerate(rails):
         a,b=world(points[first]),world(points[last]); offset=Vector((0,0,27/COSINE))
         for i,t in enumerate(times):
             base=a.lerp(b,t);add_beam(f'rail {side+1} post {i+1}',base,base+offset)
         add_beam(f'rail {side+1} cap',a.lerp(b,times[0])+offset,a.lerp(b,times[-1])+offset,3)
         if taper:add_beam(f'rail {side+1} ground return',a,a.lerp(b,times[0])+offset,3)
+    if index==226:
+        start,end=world(points[4]),world(points[3])
+        add_beam('rail 4 middle cap',start+Vector((0,0,27/COSINE)),end+Vector((0,0,27/COSINE)),3)
+        add_beam('rail 4 middle sill',start,end,3)
     if index==385:
         # Two legs and paired braces below the near trestle are visible in the source.
         a,b=world(points[1]),world(points[0]); other_a,other_b=world(points[2]),world(points[3])
@@ -113,7 +117,7 @@ def refine(workspace, native_path):
             'added_components':[o.name for o in additions], 'projection_status':'STALE',
             'source_supported':'Native deck upper corners retained. Rail post counts inspected on source crop; ramp ground returns and open space below deck are visible.',
             'inference':'Timber sections 2.5-4 scene units, deck thickness 7 game-height units, rail height 27 game pixels; depth and hidden reverse faces inferred.',
-            'limitations':(['The winding west bridge middle handrail and deep tower supports remain incomplete; only two unobscured landing rails modeled.'] if index==226 else [])+['Post spacing approximates measured source spacing; fixed-camera projection requires visual approval.','Underwater support footings are inferred and remain unknown gray.'],
+            'limitations':(['The west middle cap and sill are modeled, but the foreshortened middle balusters and deep tower supports remain incomplete; three unobscured landing rails have source-counted posts.'] if index==226 else [])+['Post spacing approximates measured source spacing; fixed-camera projection requires visual approval.','Underwater support footings are inferred and remain unknown gray.'],
             'status':'refinement in progress'}
     (workspace/'inspection').mkdir(exist_ok=True)
     (workspace/'inspection/bridge-recipe.json').write_text(json.dumps(report,indent=2)+'\n')

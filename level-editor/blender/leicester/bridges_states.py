@@ -77,6 +77,12 @@ def main():
         obj['drawbridge_state']= 'initial' if index==initial else 'applied'
         obj['endpoint_source_sha256']=sha(source)
         obj['native_patch']=f'patch-{patch:03}'
+        obj['drawbridge_patch_id']=f'patch-{patch:03}'
+        obj['drawbridge_endpoint_source_sha256']=sha(source)
+        obj['drawbridge_endpoint_evidence_sha256']=sha(statespath)
+        obj['drawbridge_initial_source_node']=f'building-{initial:03}'
+        obj['drawbridge_applied_source_node']=f'building-{applied:03}'
+        obj['drawbridge_default_state']='initial'
         changes.append({'source_node':obj['source_node'],'state':obj['drawbridge_state'],'visible':visible,'bottom_heights':bottom,'vertices':n*2,'faces':n+2})
     bpy.context.view_layer.update();validate(workspace)
     report={'asset_id':args.asset,'state':args.state,'recipe_sha256':sha(__file__),
