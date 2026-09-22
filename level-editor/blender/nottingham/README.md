@@ -19,7 +19,7 @@ Unknown ownership is represented by a rejection mask and neutral shading.
 `freeze_tooling.py` snapshots the shared Blender helpers. Recipes select the
 snapshot referenced by `tooling/current.json`; changing live shared helpers does
 not alter an existing worker's implementation. `render_slots.py` limits expensive
-Blender work to three concurrent processes. Use background Blender with
+Blender work to two concurrent processes. Use background Blender with
 `--threads 2 --python-exit-code 1` and acquire a render slot before loading and
 rendering large scenes.
 
