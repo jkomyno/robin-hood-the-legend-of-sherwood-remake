@@ -22,6 +22,7 @@ from mathutils.bvhtree import BVHTree
 
 from experiment_multiview_texture import _solid_views
 from setup_map import fit_camera
+from source_visibility import first_source_hit
 
 
 def _tree(objects):
@@ -273,10 +274,10 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
                             pixels,tree,layer_owners,constraints = region.pixels.reshape(-1),region.tree,region.owners,region.constraints
                         verified = (normal.dot(toward_source) > max(.05, float(owner.get("projection_min_cosine", .05)))
                                     and 0 <= sx < source_width and 0 <= sy < source_height
-                                    and tree.ray_cast(hit + toward_source * .02, toward_source)[0] is None)
+                                    and first_source_hit(tree, layer_owners, hit + toward_source * .02, toward_source, constraints=constraints, receiver=owner, source_pixel=(int(sx), int(sy)))[0] is None)
                         if verified:
                             sample = hit + Vector((math.floor(sx) + .5 - sx, 0, 0)) + source_down * (math.floor(sy) + .5 - sy)
-                            _, _, sampled, _ = tree.ray_cast(sample + toward_source * 100000, -toward_source)
+                            _, _, sampled, _ = first_source_hit(tree, layer_owners, sample + toward_source * 100000, -toward_source, constraints=constraints, receiver=owner, source_pixel=(int(sx), int(sy)))
                             verified = sampled is not None and layer_owners[sampled] == owner
                         if verified and constraints and not constraints.allowed_pixel(owner, int(sx), int(sy)):
                             verified = False

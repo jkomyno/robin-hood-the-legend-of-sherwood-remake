@@ -40,6 +40,11 @@ to the inventory directory). Degenerate entries with png=null cannot constrain a
 surface. Review-export inventories using folder/mask.png are also supported.
 White pixels are owned; black pixels are outside the reviewed silhouette.
 These masks constrain texture evidence only; they never modify geometry.
+An optional projection.occluder_constraints list separately scopes foreign depth
+hits to reviewed native silhouettes. Every entry requires reviewed=true,
+source_node, nonempty receiver_nodes, native mask_indices and a reason. Receiver
+ownership remains unchanged; own geometry and unlisted occluders always block.
+The entire list is immutable projection authority in a prepared workspace.
 """
 import json
 import hashlib
@@ -53,7 +58,7 @@ def evidence_record(manifest_path):
     inventory_path = (path.parent / manifest['mask_inventory']).resolve(strict=True)
     inventory = json.loads(inventory_path.read_text())
     selected = {index for projection in manifest['projections'].values()
-                for assignment in projection['assignments']
+                for assignment in projection['assignments'] + projection.get('occluder_constraints', [])
                 for index in assignment.get('mask_indices', []) + assignment.get('exclude_mask_indices', [])}
     paths = [path, inventory_path]
     for record in inventory['masks']:
@@ -85,6 +90,7 @@ class SourceMaskConstraints:
         self.assignment_by_node = {}
         self.assignment_by_group = {}
         self.assignment_by_component = {}
+        self.occluder_by_node = {}
         self.source_size = source_size
         manifest = json.loads(self.path.read_text())
         if manifest.get("version") != 1:
@@ -109,6 +115,30 @@ class SourceMaskConstraints:
             records[index] = record
         cache = {}
         loader = image_loader or _load_bitmap
+        def load_masks(indices):
+            masks = []
+            for index in indices:
+                if type(index) is not int or index not in records:
+                    raise ValueError(f"Unknown occlusion-mask index {index!r}")
+                if index not in cache:
+                    record = records[index]
+                    left, top = record["box_top_left"]
+                    width, height = record["box_size"]
+                    if any(type(v) is not int for v in (left, top, width, height)) or min(width, height) <= 0:
+                        raise ValueError(f"Invalid mask bounding box {index}")
+                    if "png" in record:
+                        if not isinstance(record["png"], str) or not record["png"]:
+                            raise ValueError(f"Mask {index} has no bitmap")
+                        bitmap_path = inventory_path.parent / record["png"]
+                    else:
+                        bitmap_path = inventory_path.parent / record["folder"] / "mask.png"
+                    bitmap = loader(bitmap_path)
+                    if bitmap.shape != (height, width):
+                        raise ValueError(f"Mask {index} dimensions differ from its inventory box")
+                    cache[index] = (left, top, bitmap)
+                masks.append(cache[index])
+            return masks
+
         for assignment in projection["assignments"]:
             if assignment.get("reviewed") is not True:
                 raise ValueError("Unreviewed source-mask assignment cannot constrain projection")
@@ -129,27 +159,7 @@ class SourceMaskConstraints:
             if exclusions and (assignment.get("exclusions_reviewed") is not True or
                                not str(assignment.get("exclusion_reason", "")).strip()):
                 raise ValueError("Foreground mask exclusions require explicit semantic review and reason")
-            masks = []
-            for index in indices + exclusions:
-                if type(index) is not int or index not in records:
-                    raise ValueError(f"Unknown occlusion-mask index {index!r}")
-                if index not in cache:
-                    record = records[index]
-                    left, top = record["box_top_left"]
-                    width, height = record["box_size"]
-                    if any(type(v) is not int for v in (left, top, width, height)) or min(width, height) <= 0:
-                        raise ValueError(f"Invalid mask bounding box {index}")
-                    if "png" in record:
-                        if not isinstance(record["png"], str) or not record["png"]:
-                            raise ValueError(f"Mask {index} has no bitmap")
-                        bitmap_path = inventory_path.parent / record["png"]
-                    else:
-                        bitmap_path = inventory_path.parent / record["folder"] / "mask.png"
-                    bitmap = loader(bitmap_path)
-                    if bitmap.shape != (height, width):
-                        raise ValueError(f"Mask {index} dimensions differ from its inventory box")
-                    cache[index] = (left, top, bitmap)
-                masks.append(cache[index])
+            masks = load_masks(indices + exclusions)
             target = assignment[kinds[0]]
             mapping = self.assignment_by_node if kinds[0] == "source_node" else self.assignment_by_group
             if 'projection_component' in assignment:
@@ -158,6 +168,38 @@ class SourceMaskConstraints:
             if target in mapping:
                 raise ValueError(f"Duplicate source-mask assignment {target}")
             mapping[target] = (masks[:len(indices)], masks[len(indices):])
+
+        entries = projection.get('occluder_constraints', [])
+        if not isinstance(entries, list):
+            raise ValueError('Occluder constraints must be a list')
+        for entry in entries:
+            node, receivers = entry.get('source_node'), entry.get('receiver_nodes')
+            if (entry.get('reviewed') is not True or not isinstance(node, str) or not node
+                    or not isinstance(receivers, list) or not receivers
+                    or any(not isinstance(v, str) or not v for v in receivers)
+                    or len(set(receivers)) != len(receivers) or node in receivers
+                    or not isinstance(entry.get('reason'), str) or not entry['reason'].strip()):
+                raise ValueError('Occluder constraints require reviewed source node, foreign receivers and reason')
+            if set(entry) - {'reviewed', 'source_node', 'receiver_nodes', 'mask_indices', 'reason', 'review_evidence'}:
+                raise ValueError('Unsupported occluder constraint field')
+            indices = entry.get('mask_indices')
+            if not isinstance(indices, list) or not indices:
+                raise ValueError('Occluder constraint requires native mask indices')
+            if node in self.occluder_by_node:
+                raise ValueError('Duplicate occluder constraint')
+            self.occluder_by_node[node] = (frozenset(receivers), load_masks(indices))
+
+    def occluder_supported(self, occluder, receiver, sx, top_y):
+        """Unreviewed and own geometry always occludes; only scoped foreign hits can skip."""
+        node = occluder.get('source_node')
+        if node == receiver.get('source_node'):
+            return True
+        rule = self.occluder_by_node.get(node)
+        if rule is None or receiver.get('source_node') not in rule[0]:
+            return True
+        return any(0 <= sx-left < bitmap.shape[1] and
+                   0 <= top_y-top < bitmap.shape[0] and bitmap[top_y-top, sx-left]
+                   for left, top, bitmap in rule[1])
 
     def for_object(self, obj):
         return self.assignment_by_component.get(

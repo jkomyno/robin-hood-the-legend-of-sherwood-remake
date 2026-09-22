@@ -60,13 +60,14 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
     if any(m.show_render or m.show_viewport for o in set(receivers + occluders) for m in o.modifiers):
         raise ValueError("Apply geometry modifiers before ownership projection")
     bpy.context.view_layer.update()
-    vertices, triangles = [], []
+    vertices, triangles, triangle_owners = [], [], []
     for obj in occluders:
         obj.data.calc_loop_triangles()
         offset = len(vertices)
         vertices.extend(obj.matrix_world @ v.co for v in obj.data.vertices)
         for triangle in obj.data.loop_triangles:
             triangles.append(tuple(offset + i for i in triangle.vertices))
+            triangle_owners.append(obj)
     tree = BVHTree.FromPolygons(vertices, triangles, all_triangles=True)
     if tree is None:
         raise ValueError("No occluder triangles")
@@ -93,12 +94,16 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
             available_objects=bpy.data.collections[map_name+' Working'].all_objects)
         camera_depth = max((o.matrix_world @ v.co).dot(toward) for o in objects for v in o.data.vertices) + 10
 
-    def visible_at(position, visibility_tree=None):
+    def visible_at(position, receiver, source_pixel, fallback=False):
         nonlocal ray_count
         ray_count += 1
         point = Vector(position)
         origin = point + toward * (camera_depth - point.dot(toward))
-        hit, normal, index, distance = (visibility_tree or tree).ray_cast(origin, -toward)
+        from source_visibility import first_source_hit
+        hit, normal, index, distance = first_source_hit(
+            region.tree if fallback else tree, region.owners if fallback else triangle_owners,
+            origin, -toward, constraints=region.constraints if fallback else constraints,
+            receiver=receiver, source_pixel=source_pixel)
         # Compare depth at the continuous projected sample, not polygon identity
         # at a rounded pixel center: finely subdivided coplanar faces share pixels.
         return hit is not None and (hit - point).length <= .01
@@ -112,6 +117,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
               "synthesis_method": "Example-based synthesis of fully observed donor patches, same asset and projection layer" if hidden_fill == "synthesized" else None,
               "source_mask_manifest": str(Path(source_mask_manifest).resolve()) if source_mask_manifest else None,
               "source_mask_state": constraints.state if constraints else None,
+              "source_mask_evidence": __import__("occlusion_constraints").evidence_record(source_mask_manifest) if source_mask_manifest else None,
               "projection_region": projection_region,
               "exclude_occluder_components": exclude_occluder_components or [],
               "receiver_components": receiver_components or [],
@@ -236,7 +242,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                 mask_rejected += int(np.count_nonzero(in_source & ~mask_allowed & (best >= 0)))
             if front:
                 for i in np.flatnonzero(in_source & mask_allowed):
-                    accepted[i] = visible_at(positions[i], region.tree if region and not primary[i] else None)
+                    accepted[i] = visible_at(positions[i], obj, (int(sx[i]), int(sh-1-sy[i])), bool(region and not primary[i]))
             colors[accepted] = pixels[sy[accepted], sx[accepted]]
             if region:
                 fallback_samples=accepted & ~primary
