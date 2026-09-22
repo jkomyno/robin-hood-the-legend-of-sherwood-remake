@@ -32,6 +32,8 @@ A list of which additional features we have added, which ones we might still wan
 
 - **Named level-editor assets and Blender refinement exports.** Derby's generated
   parts belong to named building and wall groups, with second-click part selection.
+  Imported maps can also supply group and part names through their GLB metadata,
+  preserving authored ownership without replacing user-edited groups.
   Reusable Blender scripts preserve source IDs while exporting refined maps and
   standalone asset models. Separate covered and revealed projection sources retain
   interior artwork and patch-state metadata.
