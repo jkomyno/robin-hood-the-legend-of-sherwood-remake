@@ -55,6 +55,19 @@ def volume(points, bottom=None, top=None):
     return verts, faces
 
 
+def roof_triangle(points, footprint, apex):
+    """Share measured eave and apex anchors across separate roof owners."""
+    result=[]
+    highest=max(range(len(points)),key=lambda i:points[i]['z_top'])
+    for index,point in enumerate(points):
+        if index==highest:
+            result.append(dict(apex))
+        else:
+            anchor=min(footprint,key=lambda p:(p['x']-point['x'])**2+(p['y']-point['y'])**2)
+            result.append(dict(anchor,z_bottom=anchor['z_top']-3))
+    return result
+
+
 def mesh_for(obj, geometries, label):
     verts, faces = [], []
     for vs, fs in geometries:
@@ -192,15 +205,13 @@ def refine(workspace=None):
         return obj
     # Correct five visible roof wedges: the imported vertical prisms are
     # replaced by three-unit thick roof planes, preserving the measured eaves.
+    apex={'x':475.37,'y':1997.84,'z_bottom':457.65,'z_top':460.65}
     for i in range(461,466):
-        pts=native[i]
-        bottom=[dict(p,z_bottom=p['z_top']-3) for p in pts]
-        main(i,[volume(bottom)],'prison-roof')
+        main(i,[volume(roof_triangle(native[i],native[459],apex))],'prison-roof')
     # A roof pavilion stands on the terrace, not on the ground-floor cell.
     main(459,[volume(native[459],bottom=335.001)],'prison-pavilion')
     # Seven-sided pavilion has two unseen roof facets. Their depth is inferred
     # from the existing eaves and apex, and they are neutral in known views.
-    apex={'x':475.37,'y':1997.84,'z_bottom':457.65,'z_top':460.65}
     back=[native[459][4],native[459][5],native[459][6]]
     for j in range(2):
         pts=[dict(back[j],z_bottom=back[j]['z_top']-3),
@@ -208,18 +219,20 @@ def refine(workspace=None):
         component(by_node['building-461'],f'prison-inferred-roof-back-{j+1}',[volume(pts)])
     # Removable shell is below the shared rooftop, preserving its parapet in
     # both states. Low retained sections reproduce the visible cutaway walls.
-    main(456,[volume(native[456],top=80),volume(native[456],bottom=320.626)])
-    component(by_node['building-456'],'prison-removable-cover',[volume(native[456],bottom=80,top=320.626)])
+    main(456,[volume(native[456],top=45),volume(native[456],bottom=320.626)])
+    component(by_node['building-456'],'prison-removable-cover',[volume(native[456],bottom=45,top=320.626)])
     p=native[457]
     front=[p[i] for i in [0,1,2,9,10,11]]
     rear=[p[i] for i in [2,3,4,5,6,7,8,9]]
-    main(457,[volume(front,top=80),volume(front,bottom=320.626)])
+    main(457,[volume(front,top=40),volume(front,bottom=320.626)])
     component(by_node['building-457'],'prison-retained-rear-wall',[volume(rear)])
-    component(by_node['building-457'],'prison-removable-cover',[volume(front,bottom=80,top=320.626)])
+    component(by_node['building-457'],'prison-removable-cover',[volume(front,bottom=40,top=320.626)])
     main(470,[volume(native[470],bottom=320.626)])
     component(by_node['building-470'],'prison-removable-cover',[volume(native[470],top=320.626)])
     # Interior masking volumes do not describe the rendered low cell wall.
-    main(472,[volume(native[472],top=65)],'prison-interior-wall')
+    partition_heights=[55,35,30,25,25,40,65,65,40,25,25,30,35,55]
+    main(472,[volume([dict(p,z_top=h) for p,h in zip(native[472],partition_heights)])],
+         'prison-interior-wall')
     main(473,[volume(native[473],top=95)],'prison-interior-post')
     main(474,[volume(native[474],top=95)],'prison-interior-lintel')
     floor=[native[472][i] for i in [7,8,9,10,11,12,13]]
@@ -269,7 +282,8 @@ def refine(workspace=None):
             'transform_drift':drift,'outside_objects_changed':outside_changed,
             'approval_state':'pending','texture_generation':'not-started',
             'limitations':['Roof thickness3 and two rear roof facets are inferred.',
-             'Cutaway lower wall heights80/65 and doorway lintel95 are conservative visual hypotheses.',
+             'Cutaway lower shell heights45/40 and partition heights25..65 are measured visual hypotheses.',
+             'Doorway lintel95 is conservative; fine arch curvature remains approximate.',
              'Curved stone wall is piecewise planar between native footprint anchors.',
              'Fine arch relief and the thin roof finial are not fully modeled.',
              'Shared component joins have coincident internal faces by design; each receiver is closed.',
@@ -305,25 +319,27 @@ def refine_upper(workspace):
         obj['projection_component'] = part
         mesh_for(obj, geometries, part)
         return obj
-    for i in range(445,451):
-        main(i,[volume([dict(p,z_bottom=p['z_top']-3) for p in native[i]])], 'prison-roof')
     apex = {'x':980.27,'y':979.05,'z_bottom':586.1,'z_top':589.1}
+    for i in range(445,451):
+        main(i,[volume(roof_triangle(native[i],native[444],apex))], 'prison-roof')
     back = [native[444][6],native[444][7],native[444][0]]
     for j in range(2):
         points = [dict(back[j],z_bottom=back[j]['z_top']-3),
                   dict(back[j+1],z_bottom=back[j+1]['z_top']-3),apex]
         component(by_node['building-445'],f'prison-inferred-roof-back-{j+1}',[volume(points)])
     for i in (441,442):
-        main(i,[volume(native[i],top=250),volume(native[i],bottom=361.687)])
+        main(i,[volume(native[i],top=270),volume(native[i],bottom=361.687)])
         component(by_node[f'building-{i}'],'prison-removable-cover',
-                  [volume(native[i],bottom=250,top=361.687)])
+                  [volume(native[i],bottom=270,top=361.687)])
     main(443,[volume(native[443],bottom=361.687)])
     component(by_node['building-443'],'prison-removable-cover',
               [volume(native[443],top=361.687)])
     main(454,[volume(native[454],top=250)])
     component(by_node['building-454'],'prison-removable-cover',
               [volume(native[454],bottom=250)])
-    main(438,[volume(native[438],top=270)],'prison-interior-partition')
+    partition_heights=[250,310,308,301,300,255]
+    main(438,[volume([dict(p,z_top=h) for p,h in zip(native[438],partition_heights)])],
+         'prison-interior-partition')
     for i in (453,455):
         main(i,[volume(native[i],bottom=250)],'prison-door')
     report = []
@@ -348,7 +364,8 @@ def refine_upper(workspace):
               'transform_drift':drift,'outside_objects_changed':outside_changed,
               'approval_state':'pending','texture_generation':'not-started',
               'limitations':['Roof thickness3 and two unseen roof facets inferred.',
-               'Revealed partition height270 is a visual cutaway hypothesis above native floor250.',
+               'Retained front masonry rim rises20 above the native cell floor250.',
+               'Partition crown slopes250..310 above floor250; source control estimates have about5 units uncertainty.',
                'Fine arch relief and the thin roof finial are not fully modeled.',
                'Shared component joins retain coincident internal faces for state separation.',
                'Door453/455 state exclusion requires the reviewed state manifest.',
