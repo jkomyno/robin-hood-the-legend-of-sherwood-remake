@@ -68,6 +68,24 @@ def roof_triangle(points, footprint, apex):
     return result
 
 
+def stair_volume(points, steps=6):
+    """Extrude a continuous six-riser side profile across the authored stair."""
+    profile=[(0,0),(0,35/steps)]
+    for step in range(1,steps+1):
+        profile.append((step/steps,35*step/steps))
+        if step<steps:profile.append((step/steps,35*(step+1)/steps))
+    profile.append((1,0))
+    verts=[]
+    for start,end in [(points[3],points[0]),(points[2],points[1])]:
+        for t,z in profile:
+            verts.append(world({'x':start['x']+(end['x']-start['x'])*t,
+                                'y':start['y']+(end['y']-start['y'])*t,'z':z}))
+    n=len(profile)
+    faces=[tuple(range(n)),tuple(range(n,2*n))]
+    faces.extend((i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n))
+    return verts,faces
+
+
 def mesh_for(obj, geometries, label):
     verts, faces = [], []
     for vs, fs in geometries:
@@ -116,6 +134,9 @@ def component(primary, name, geometries):
     obj['projection_component'] = name
     obj['canonical_source_node'] = primary['source_node']
     obj['prison_generated_component'] = True
+    obj['reveal_component_role'] = 'removable-cover' if name == 'prison-removable-cover' else 'retained'
+    obj['reveal_component_patch_id'] = ('patch-007' if primary.get('asset_group') == ASSET
+                                        else 'patch-002')
     mesh_for(obj, geometries, name)
     return obj
 
@@ -201,6 +222,7 @@ def refine(workspace=None):
     def main(i,geometries,part='prison-retained'):
         obj=by_node[f'building-{i:03}']
         obj['projection_component']=part
+        obj['reveal_component_patch_id']='patch-007'
         mesh_for(obj,geometries,part)
         return obj
     # Correct five visible roof wedges: the imported vertical prisms are
@@ -210,6 +232,17 @@ def refine(workspace=None):
         main(i,[volume(roof_triangle(native[i],native[459],apex))],'prison-roof')
     # A roof pavilion stands on the terrace, not on the ground-floor cell.
     main(459,[volume(native[459],bottom=335.001)],'prison-pavilion')
+    # The rear support continues below the pavilion. Replacing its old solid
+    # prism with a thin rear arc keeps the cell open without floating masonry.
+    outline=[native[457][5]]+[native[459][i] for i in [3,4,5,6,0]]+[native[458][4]]
+    center=Vector((480,2000))
+    inner=[]
+    for point in reversed(outline):
+        xy=Vector((point['x'],point['y']))
+        inset=xy+(center-xy).normalized()*12
+        inner.append(dict(point,x=inset.x,y=inset.y))
+    component(by_node['building-459'],'prison-inferred-rear-support',
+              [volume(outline+inner,bottom=0,top=335.001)])
     # Seven-sided pavilion has two unseen roof facets. Their depth is inferred
     # from the existing eaves and apex, and they are neutral in known views.
     back=[native[459][4],native[459][5],native[459][6]]
@@ -227,6 +260,15 @@ def refine(workspace=None):
     main(457,[volume(front,top=40),volume(front,bottom=320.626)])
     component(by_node['building-457'],'prison-retained-rear-wall',[volume(rear)])
     component(by_node['building-457'],'prison-removable-cover',[volume(front,bottom=40,top=320.626)])
+    # The thin front railing belongs to the reveal cutaway, while the right
+    # buttress remains full height. Keeping the middle band masks the cell door.
+    p = native[466]
+    front = [p[i] for i in [3,4,5,6]]
+    rear = [p[i] for i in [0,1,2,3,6,7]]
+    main(466,[volume(front,top=25),volume(front,bottom=320.626)])
+    component(by_node['building-466'],'prison-retained-right-buttress',[volume(rear)])
+    component(by_node['building-466'],'prison-removable-cover',
+              [volume(front,bottom=25,top=320.626)])
     main(470,[volume(native[470],bottom=320.626)])
     component(by_node['building-470'],'prison-removable-cover',[volume(native[470],top=320.626)])
     # Interior masking volumes do not describe the rendered low cell wall.
@@ -237,6 +279,7 @@ def refine(workspace=None):
     main(474,[volume(native[474],top=95)],'prison-interior-lintel')
     floor=[native[472][i] for i in [7,8,9,10,11,12,13]]
     component(by_node['building-472'],'prison-interior-floor',[volume(floor,bottom=-2,top=0)])
+    main(468,[stair_volume(native[468])],'prison-interior-stair')
     # Rebuild the remaining parapet before subtraction so reruns are identical.
     main(458,[volume(native[458])])
     main(467,[volume(native[467])])
@@ -279,6 +322,7 @@ def refine(workspace=None):
             'parts':report,'source_nodes':sorted(expected),'cap_measurements':caps,
             'cross_node_embrasures':seams,
             'visible_cap_count':26,'cap_count_evidence':'prison-audit/cap-count.png',
+            'interior_stair_risers':6,
             'transform_drift':drift,'outside_objects_changed':outside_changed,
             'approval_state':'pending','texture_generation':'not-started',
             'limitations':['Roof thickness3 and two rear roof facets are inferred.',
@@ -286,6 +330,7 @@ def refine(workspace=None):
              'Doorway lintel95 is conservative; fine arch curvature remains approximate.',
              'Curved stone wall is piecewise planar between native footprint anchors.',
              'Fine arch relief and the thin roof finial are not fully modeled.',
+             'The rear support wall has inferred12-unit thickness and remains neutral.',
              'Shared component joins have coincident internal faces by design; each receiver is closed.',
              'Unchanged imported meshes can retain pre-existing topology defects.',
              'Covered/revealed projection and door476/477 state exclusion require the reviewed layer manifest.']}
@@ -317,6 +362,7 @@ def refine_upper(workspace):
     def main(i, geometries, part='prison-retained'):
         obj = by_node[f'building-{i:03}']
         obj['projection_component'] = part
+        obj['reveal_component_patch_id'] = 'patch-002'
         mesh_for(obj, geometries, part)
         return obj
     apex = {'x':980.27,'y':979.05,'z_bottom':586.1,'z_top':589.1}
