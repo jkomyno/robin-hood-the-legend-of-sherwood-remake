@@ -5,6 +5,7 @@ native silhouette constrains visible joinery; hidden depth remains a hypothesis.
 """
 import json
 import math
+import sys
 from pathlib import Path
 
 import bpy
@@ -12,6 +13,8 @@ import bmesh
 import numpy as np
 from mathutils import Vector
 
+SUPPORT=Path(__file__).resolve().parent/'recipe_support'
+if SUPPORT.exists():sys.path.insert(0,str(SUPPORT))
 try:
     from .village_details import silhouette_prism, stilt_ladder
 except ImportError:
@@ -126,7 +129,10 @@ def main():
                  if (p/'level-editor/blender/refinement_workspace.py').exists())
     sys.path.insert(0,str(helpers))
     from refinement_workspace import validate,modified
-    from leicester.village_shells import repair
+    if SUPPORT.exists():
+        from village_shells import repair
+    else:
+        from leicester.village_shells import repair
     validate(workspace)
     objects=[o for o in bpy.data.collections[config['collection_name']].all_objects
              if o.type=='MESH' and o.get('asset_group')==config['asset_id']
