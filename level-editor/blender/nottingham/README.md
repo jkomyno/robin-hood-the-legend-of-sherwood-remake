@@ -4,7 +4,7 @@ These recipes implement the review workflow in
 `../../work/derby-refinement/REFINEMENT_PROCEDURE.md`. Run commands from the
 repository root. Generated evidence lives in `level-editor/work/nottingham-refinement/`.
 
-The reviewed grouping is `grouping/catalog-v5.json`: 118 selectable groups own
+The reviewed grouping is `grouping/catalog-v7.json`: 117 selectable groups own
 555 canonical source parts exactly once. Terrain has its own additional review
 workspace. The market houses form one market terrace with selectable children.
 
