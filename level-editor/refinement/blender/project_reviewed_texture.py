@@ -203,7 +203,10 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                             projection_label=layer['projection_label'] if mask_manifest else f'approved-generated-{index}',
                             texels_per_unit=texels_per_unit, preserve_authored=False,
                             hidden_sampler=sample, source_mask_manifest=mask_manifest,
-                            projection_region=layer.get('projection_region')))
+                            projection_region=layer.get('projection_region'),
+                            receiver_components=[selector for selector in layer.get('receiver_components', [])
+                                                 if selector['source_node'] in receivers],
+                            exclude_occluder_components=layer.get('exclude_occluder_components')))
     assigned = {node for report in reports for node in report['receiver_nodes']}
     if assigned != nodes:
         raise ValueError('Not all approved asset nodes received a source projection layer')
