@@ -107,6 +107,57 @@ def archive_reviewed_revision(output, item, evidence):
     (archive / 'revision.json').write_text(json.dumps(item['revision'], indent=2)+'\n')
 
 
+def material_evidence(workspace, audit_path, frame_path, model_hash, prefix):
+    """Validate actual bytes; retain available evidence even when validation fails."""
+    evidence, errors = {}, []
+    if not audit_path.is_file():
+        return evidence, ['missing material audit'], None
+    evidence[prefix + '_audit'] = audit_path
+    try:
+        audit = json.loads(audit_path.read_text())
+    except (ValueError, OSError):
+        return evidence, ['invalid material audit JSON'], None
+    if not isinstance(audit, dict):
+        return evidence, ['invalid material audit object'], None
+    if audit.get('problems'):
+        errors.append('material audit lists structural problems')
+    visual = audit.get('visual_review')
+    visual_status = visual.get('status') if isinstance(visual, dict) else visual
+    if audit.get('status') not in ('PASS', 'STRUCTURAL-PASS') or visual_status != 'PASS':
+        errors.append('material structural or visual review is pending/failed')
+    if audit.get('model_sha256') != model_hash:
+        errors.append('material model hash is stale')
+    if not frame_path.is_file() or audit.get('frame_manifest_sha256') != sha(frame_path):
+        errors.append('material frame hash is stale or missing')
+    if frame_path.is_file():
+        evidence[prefix + '_frames'] = frame_path
+        frames = json.loads(frame_path.read_text())
+        expected_names = frames.get('render_object_names')
+        if expected_names is not None and sorted(audit.get('render_object_names', [])) != sorted(expected_names):
+            errors.append('material display-state selection differs from frozen frame')
+    required = {f'view-{i}.png' for i in range(8)} | {'materials.png', 'asset.glb'}
+    hashes = audit.get('artifact_sha256', {})
+    if not isinstance(hashes, dict):
+        hashes = {}
+    if required - hashes.keys():
+        errors.append('material artifact manifest is incomplete')
+    for name in sorted(required | hashes.keys()):
+        if not isinstance(name, str) or Path(name).name != name or name in ('.', '..', 'audit.json'):
+            errors.append('unsafe material artifact path')
+            continue
+        path = audit_path.parent / name
+        if not path.resolve().is_relative_to(audit_path.parent.resolve()):
+            errors.append('material artifact escapes audit directory')
+            continue
+        if not path.is_file():
+            errors.append('missing material artifact: ' + name)
+            continue
+        evidence[prefix + '_' + name.replace('.', '_')] = path
+        if hashes.get(name) != sha(path):
+            errors.append('modified material artifact: ' + name)
+    return evidence, errors, audit
+
+
 def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=None):
     catalog = json.loads(catalog_path.read_text())
     if catalog['map'] != 'Leicester':
@@ -159,11 +210,38 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
         material_path = workspace / 'inspection/stored-materials/audit.json'
         model_sha256 = sha(workspace / 'model.blend')
         item['worker_status'] = status
-        material = json.loads(material_path.read_text()) if material_path.exists() else None
-        visual = material.get('visual_review') if material else None
-        visual_status = visual.get('status') if isinstance(visual, dict) else visual
-        material_pass = bool(material and material.get('status') in ('PASS', 'STRUCTURAL-PASS')
-                             and visual_status == 'PASS' and material.get('model_sha256') == model_sha256)
+        material_files, material_errors, material = material_evidence(
+            workspace, material_path, workspace / 'modified/views.json', model_sha256, 'stored_material')
+        states = handoff.get('stored_material_states', [])
+        if handoff.get('has_revealed_state') and not states:
+            material_errors.append('missing actual-material display-state audits')
+        seen_states = set()
+        item['stored_material_states'] = []
+        for state in states:
+            state_id = state['id']
+            if not re.fullmatch(r'[a-zA-Z0-9_-]+', state_id) or state_id in seen_states:
+                raise ValueError('Invalid or duplicate material state ID')
+            seen_states.add(state_id)
+            state_audit = (workspace / state['audit']).resolve()
+            state_frame = (workspace / state['frame_manifest']).resolve()
+            if not state_audit.is_relative_to(workspace.resolve()) or not state_frame.is_relative_to(workspace.resolve()):
+                raise ValueError('State material evidence must stay inside workspace')
+            files, errors, report = material_evidence(workspace, state_audit, state_frame,
+                                                     model_sha256, 'stored_material_' + state_id)
+            material_files.update(files)
+            material_errors.extend(state_id + ': ' + error for error in errors)
+            item['stored_material_states'].append({'id': state_id, 'audit': str(state_audit),
+                'sheet': str(state_audit.parent / 'materials.png') if (state_audit.parent / 'materials.png').is_file() else None})
+        if handoff.get('has_revealed_state') and not all(any(name.endswith(suffix) for name in seen_states) for suffix in ('-covered', '-revealed')):
+            material_errors.append('both covered and revealed actual-material states are required')
+        material_pass = not material_errors
+        item['stored_material_errors'] = material_errors
+        if material_path.is_file():
+            item['stored_material_audit'] = str(material_path)
+        if (material_path.parent / 'materials.png').is_file():
+            item['stored_material_textured'] = str(material_path.parent / 'materials.png')
+        if (material_path.parent / 'asset.glb').is_file():
+            item['stored_material_glb'] = str(material_path.parent / 'asset.glb')
         item['stored_material_validation'] = 'PASS' if material_pass else 'pending-or-failed'
         if status == 'ready-for-user' and not material_pass:
             item['status'] = 'validation-pending'
@@ -174,8 +252,7 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
             'solid', 'textured', 'context', 'validation', 'review', 'ownership',
             'revealed_solid', 'revealed_textured', 'revealed_context') if key in item}
         evidence.update(recipe=recipe, handoff=handoff_path)
-        if material_path.exists():
-            evidence['stored_material_audit'] = material_path
+        evidence.update(material_files)
         item['revision'] = {'model_sha256': model_sha256,
                             'recipe': str(recipe), 'recipe_sha256': sha(recipe),
                             'handoff_sha256': sha(handoff_path),

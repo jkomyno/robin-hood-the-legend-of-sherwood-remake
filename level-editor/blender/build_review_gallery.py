@@ -64,6 +64,13 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                            ("revealed_context", "Original revealed artwork with surrounding context")):
             if item.get(key):
                 sheets.append((key, label))
+        if item.get('stored_material_textured'):
+            sheets.append(('stored_material_textured', 'Actual saved UVs and atlas materials'))
+        for state in item.get('stored_material_states', []):
+            if state.get('sheet'):
+                key = 'stored_material_' + state['id'] + '_textured'
+                item[key] = state['sheet']
+                sheets.append((key, 'Actual saved materials: ' + html.escape(state['id'])))
         for key, label in sheets:
             source = Path(item[key])
             if not source.is_absolute():
@@ -86,9 +93,17 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             notes = " ".join(notes)
         reports = {}
         report_links = []
-        for key, label in (("validation", "Validation report"),
+        report_specs = [("validation", "Validation report"),
                            ("ownership", "Source ownership evidence"),
-                           ("review", "Worker review and limitations")):
+                           ("review", "Worker review and limitations"),
+                           ("stored_material_audit", "Stored UV/material audit"),
+                           ("stored_material_glb", "Actual exported GLB")]
+        for state in item.get('stored_material_states', []):
+            key = 'stored_material_' + state['id'] + '_audit'
+            if Path(state['audit']).is_file():
+                item[key] = state['audit']
+                report_specs.append((key, 'Stored material audit: ' + html.escape(state['id'])))
+        for key, label in report_specs:
             if not item.get(key):
                 continue
             source = Path(item[key])

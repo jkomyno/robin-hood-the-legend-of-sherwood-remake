@@ -28,7 +28,15 @@ class ReviewDecisions(unittest.TestCase):
         (self.workspace / 'validation.json').write_text('{"status":"PASS"}')
         audit = self.workspace / 'inspection/stored-materials/audit.json'
         audit.parent.mkdir(parents=True)
-        audit.write_text(json.dumps({'status': 'STRUCTURAL-PASS',
+        (self.workspace / 'modified/views.json').write_text('{}')
+        hashes = {}
+        for name in [f'view-{i}.png' for i in range(8)] + ['materials.png', 'asset.glb']:
+            path = audit.parent / name
+            path.write_text('synthetic material '+name)
+            hashes[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        audit.write_text(json.dumps({'artifact_sha256': hashes,
+            'frame_manifest_sha256': hashlib.sha256((self.workspace/'modified/views.json').read_bytes()).hexdigest(),
+            'status': 'STRUCTURAL-PASS',
             'visual_review': {'status': 'PASS'},
             'model_sha256': hashlib.sha256((self.workspace / 'model.blend').read_bytes()).hexdigest()}))
         (self.workspace / 'handoff.json').write_text(json.dumps({'status': 'ready-for-user',
@@ -80,7 +88,7 @@ class ReviewDecisions(unittest.TestCase):
         self.assertEqual(gallery['items'], [])
         archive = self.output / 'reviewed-revisions/sample' / item['revision']['sha256']
         self.assertEqual((archive / 'solid.png').read_bytes(), (self.workspace / 'modified/solid.png').read_bytes())
-        self.assertTrue(list((self.output / 'gallery/history').glob('*/images/*solid.png')))
+        self.assertTrue(list((self.output / 'gallery/history').glob('*/images/*solid*.png')))
         self.assertEqual(len(list((self.output / 'decision-history').glob('*.json'))), 1)
 
     def test_sheet_and_report_changes_invalidate_approval(self):
@@ -113,6 +121,55 @@ class ReviewDecisions(unittest.TestCase):
         self.assertEqual(json.loads((self.workspace / 'handoff.json').read_text())['status'], 'ready-for-user')
         with self.assertRaises(ValueError):
             self.collect(self.decision(item))
+
+    def test_material_artifact_tamper_or_missing_stales_approval(self):
+        item = self.collect()
+        self.collect(self.decision(item))
+        path = self.workspace / 'inspection/stored-materials/view-3.png'
+        original = path.read_bytes()
+        path.write_bytes(b'tampered')
+        changed = self.collect()
+        self.assertEqual(changed['status'], 'validation-pending')
+        self.assertEqual(changed['decision_state'], 'stale')
+        path.write_bytes(original)
+        path.unlink()
+        missing = self.collect()
+        self.assertEqual(missing['status'], 'validation-pending')
+        self.assertEqual(missing['decision_state'], 'stale')
+
+    def test_material_frames_bound_and_artifacts_archived(self):
+        item = self.collect()
+        self.collect(self.decision(item))
+        archive = self.output / 'reviewed-revisions/sample' / item['revision']['sha256']
+        self.assertTrue((archive / 'stored_material_asset_glb.glb').is_file())
+        self.assertTrue((archive / 'stored_material_view-7_png.png').is_file())
+        (self.workspace / 'modified/views.json').write_text('{"changed":true}')
+        changed = self.collect()
+        self.assertEqual(changed['status'], 'validation-pending')
+        self.assertEqual(changed['decision_state'], 'stale')
+
+    def test_revealed_material_states_are_required_and_hashed(self):
+        handoff_path = self.workspace / 'handoff.json'
+        handoff = json.loads(handoff_path.read_text())
+        handoff.update(has_revealed_state=True, revealed_solid='modified/solid.png',
+                       revealed_textured='modified/textured.png', revealed_context='input/context.png')
+        handoff_path.write_text(json.dumps(handoff))
+        self.assertEqual(self.collect()['status'], 'validation-pending')
+        states = []
+        for state in ('covered', 'revealed'):
+            folder = self.workspace / ('inspection/material-' + state)
+            shutil.copytree(self.workspace / 'inspection/stored-materials', folder)
+            states.append({'id': 'combined-' + state, 'audit': str(folder.relative_to(self.workspace)/'audit.json'),
+                           'frame_manifest': 'modified/views.json'})
+        handoff['stored_material_states'] = states
+        handoff_path.write_text(json.dumps(handoff))
+        item = self.collect()
+        self.assertEqual(item['status'], 'ready-for-user')
+        self.collect(self.decision(item))
+        (self.workspace / 'inspection/material-revealed/materials.png').write_text('changed state')
+        changed = self.collect()
+        self.assertEqual(changed['status'], 'validation-pending')
+        self.assertEqual(changed['decision_state'], 'stale')
 
     def test_implicit_or_wrong_revision_decision_rejected(self):
         item = self.collect()
