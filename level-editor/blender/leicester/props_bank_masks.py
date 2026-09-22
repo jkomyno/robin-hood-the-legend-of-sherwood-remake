@@ -10,13 +10,14 @@ from pathlib import Path
 import sys
 from PIL import Image, ImageChops
 
-root=Path(sys.argv[1]).resolve();workspace=root/'round-1/assets-v2/leicester-southwest-woodland-bank';output=root/'mask-audit/woodland-bank-v9'
+root=Path(sys.argv[1]).resolve();workspace=root/'round-1/assets-v2/leicester-southwest-woodland-bank';output=root/'mask-audit/woodland-bank-v10'
+if not (workspace/'inspection/texture-coverage-diagnosis').exists():workspace=root/'round-1/props-revision-archive/leicester-southwest-woodland-bank-before-ground-mask-correction'
 output.mkdir(parents=True,exist_ok=False)
 manifest=json.loads((workspace/'source-masks.json').read_text());parent=Path(manifest['mask_inventory']);inventory=json.loads(parent.read_text());records={m['index']:m for m in inventory['masks']}
 for m in inventory['masks']:m['png']=str((parent.parent/m['png']).resolve())
 mask=Image.open(workspace/'inspection/texture-coverage-diagnosis/source-facing-footprint.png').convert('L')
 for index in [14,32,33,69]:
-    m=records[index];foreground=Image.new('L',mask.size);foreground.paste(Image.open(m['png']).convert('L'),m['box_top_left']);mask=ImageChops.subtract(mask,foreground)
+    m=records[index];foreground=Image.new('L',mask.size);foreground.paste(Image.open(m['png']).convert('L'),tuple(m['box_top_left']));mask=ImageChops.subtract(mask,foreground)
 box=mask.getbbox();cropped=mask.crop(box);cropped.save(output/'300383.png')
 inventory['masks'].append({'index':300383,'box_top_left':list(box[:2]),'box_size':[box[2]-box[0],box[3]-box[1]],'png':str(output/'300383.png'),'reason':'Visually reviewed exposed grass, earth and rock inside the source-facing woodland-bank footprint, excluding native14/32/33/69 foreground foliage.','source_sha256':hashlib.sha256((workspace/'reference/source.png').read_bytes()).hexdigest(),'evidence':'Archived inspection/texture-coverage-diagnosis/source-context.png and ownership-gap-overlay.png; exact projected triangles in coverage.json.','limitations':['Footprint depth remains the inherited terrain hypothesis.','No background outside the measured bank surface is authorized.','Foreground vegetation remains unknown on the bank; reverse faces receive no source pixels.']})
 (output/'inventory.json').write_text(json.dumps(inventory,indent=2)+'\n');manifest['mask_inventory']=str(output/'inventory.json')
