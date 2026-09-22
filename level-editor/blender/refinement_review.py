@@ -61,7 +61,8 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
                   source_path, frame_manifest=None, width=384, height=512,
                   elevation_degrees=35.0, context_padding=24, projection_layers=None,
                   lighting=None, source_mask_manifest=None, render_object_names=None,
-                  allow_projection_revision=False, allow_mask_revision=False):
+                  allow_projection_revision=False, allow_mask_revision=False,
+                  framing_padding=1.04):
     """Render context.png, solid.png, textured.png, views.json and individual views.
 
     Coordinates use the map's orthographic projection: source x=X,
@@ -79,6 +80,8 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
     """
     if width <= 0 or height <= 0 or context_padding < 0:
         raise ValueError("Positive render dimensions and nonnegative padding required")
+    if not math.isfinite(framing_padding) or framing_padding < 1:
+        raise ValueError('Camera framing padding must be finite and at least one')
     output = Path(output_dir).resolve()
     if output.exists():
         raise FileExistsError(f"Review directory already exists: {output}")
@@ -212,7 +215,7 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
                 camera.rotation_euler = (target - camera.location).to_track_quat("-Z", "Y").to_euler()
                 # Fit actual evaluated vertices separately at each angle. Box
                 # corners and a worst-angle shared scale waste much of the tile.
-                fit_camera(camera, objects, width / height, points=points, padding=1.04)
+                fit_camera(camera, objects, width / height, points=points, padding=framing_padding)
         bpy.context.view_layer.update()
         crop = baseline["context_crop"] if baseline else {
             "left": max(0, math.floor(min(p.x for p in points)) - context_padding),
@@ -299,7 +302,8 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
         manifest = {"version": 1, "asset_id": asset_id, "scene_name": scene_name,
                     "collection_name": collection_name, "tile_size": [width, height],
                     "layout": {"columns": 4, "rows": 2}, "elevation_degrees": elevation_degrees,
-                    "framing": baseline.get("framing", "legacy shared scale") if baseline else "Per-view evaluated geometry, 4 percent padding; frozen for modified comparison",
+                    "framing": baseline.get("framing", "legacy shared scale") if baseline else f"Per-view evaluated geometry, {(framing_padding-1)*100:g} percent padding; frozen for modified comparison",
+                    "framing_padding": baseline.get('framing_padding', 1.04) if baseline else framing_padding,
                     "context_crop": crop, "source_image": str(source_path), "source_sha256": source_hash,
                     "projection_layers": layer_records, "views": records,
                     "render_object_names": sorted(render_object_names) if render_object_names is not None else None,

@@ -357,6 +357,7 @@ def _render(config, output, baseline=None):
                          width=config["width"], height=config["height"],
                          elevation_degrees=config["elevation_degrees"],
                          context_padding=config["context_padding"],
+                         framing_padding=config.get('framing_padding', 1.04),
                          projection_layers=_review_layers(config),
                          source_mask_manifest=config.get('source_mask_manifest'),
                          allow_projection_revision=bool(baseline and config.get('projection_manifest')),
@@ -372,7 +373,8 @@ def _render(config, output, baseline=None):
 
 def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path,
             grouping_manifest, inventory_path, review_path, projection_manifest=None, width=384, height=512,
-            elevation_degrees=35.0, context_padding=24, source_mask_manifest=None):
+            elevation_degrees=35.0, context_padding=24, source_mask_manifest=None,
+            framing_padding=1.04):
     """Create a new workspace from the loaded scene; refuse an existing directory.
 
     Call from a disposable Blender process opened on the accepted full scene.
@@ -400,7 +402,8 @@ def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path
     config = dict(version=1, asset_id=asset_id, scene_name=scene_name,
                   collection_name=collection_name, map_name=collection_name[:-8],
                   width=width, height=height, elevation_degrees=elevation_degrees,
-                  context_padding=context_padding, source_blend=str(Path(bpy.data.filepath).resolve()),
+                  context_padding=context_padding, framing_padding=framing_padding,
+                  source_blend=str(Path(bpy.data.filepath).resolve()),
                   source_blend_sha256=_sha(bpy.data.filepath),
                   grouping_manifest_sha256=_sha(grouping_path))
     bpy.context.window.scene = bpy.data.scenes[scene_name]
@@ -649,6 +652,8 @@ def main(argv=None):
         p.add_argument("--height", type=int, default=512)
         p.add_argument("--elevation-degrees", type=float, default=35)
         p.add_argument("--context-padding", type=int, default=24)
+        p.add_argument("--framing-padding", type=float, default=1.04,
+                       help="Initial camera fit multiplier; modified packets retain frozen input cameras")
     for command in ("modified", "validate"):
         sub.add_parser(command).add_argument("workspace")
     args = vars(parser.parse_args(argv))

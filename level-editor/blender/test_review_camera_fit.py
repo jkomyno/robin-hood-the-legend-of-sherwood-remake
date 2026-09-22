@@ -36,3 +36,44 @@ occupancy = max(max(abs(x) for x in xs)/(half_height*aspect),
                 max(abs(y) for y in ys)/half_height)
 assert math.isclose(occupancy, 1/1.04, rel_tol=1e-5)
 print(f"PASS: all vertices fit; limiting-axis occupancy {occupancy:.1%}; scale {old_scale:.2f} -> {camera.data.ortho_scale:.2f}")
+
+# An undersized proxy may reserve room for later source-supported additions.
+# Changing the setting after the input is frozen must never refit its cameras.
+import tempfile
+from array import array
+from refinement_review import render_review, _save
+
+with tempfile.TemporaryDirectory(prefix='review-framing-') as directory:
+    output = Path(directory)
+    source = output/'source.png'
+    _save(source, 64, 64, array('f', [1., .5, .25, 1.])*4096)
+    collection = bpy.data.collections.new('Framing fixture')
+    bpy.context.scene.collection.children.link(collection)
+    bpy.ops.mesh.primitive_cube_add(size=4, location=(20, -20, 3))
+    proxy = bpy.context.object
+    collection.objects.link(proxy)
+    proxy['asset_group'] = 'proxy'
+    proxy['source_node'] = 'building-001'
+    options = dict(scene_name=bpy.context.scene.name, collection_name=collection.name,
+                   asset_id='proxy', source_path=source, width=8, height=8, context_padding=10)
+    normal = render_review(output/'normal', **options)
+    roomy = render_review(output/'roomy', **options, framing_padding=2.2)
+    assert normal['context_crop'] == roomy['context_crop']
+    for first, second in zip(normal['views'], roomy['views']):
+        assert math.isclose(second['ortho_scale']/first['ortho_scale'], 2.2/1.04, rel_tol=1e-5)
+    proxy.scale.z = 1.5
+    bpy.context.view_layer.update()
+    modified = render_review(output/'modified', **options, frame_manifest=roomy, framing_padding=5)
+    assert modified['framing_padding'] == 2.2
+    assert modified['context_crop'] == roomy['context_crop']
+    for first, second in zip(roomy['views'], modified['views']):
+        for key in ('camera_location', 'camera_rotation_euler', 'ortho_scale'):
+            assert first[key] == second[key], key
+    for invalid in (0.9, float('inf'), float('nan')):
+        try:
+            render_review(output/'invalid', **options, framing_padding=invalid)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('Invalid framing multiplier accepted')
+print('PASS: configurable initial camera padding preserves fixed modified cameras and independent context crop')
