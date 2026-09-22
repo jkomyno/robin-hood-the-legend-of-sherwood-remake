@@ -86,6 +86,22 @@ def main():
         sys.path.insert(0,str(support));from village_shells import repair
     else:
         from leicester.village_shells import repair
+    if c['asset_id']=='leicester-east-edge-thatched-house':
+        mask_path=Path(c['source_mask_manifest']);mask_contract=json.loads(mask_path.read_text())
+        for row in mask_contract['projections']['exterior']['assignments']:
+            if row.get('source_node') in {'building-000','building-001','building-002'}:
+                exclusions=[i for i in row.get('exclude_mask_indices',[]) if i!=16]
+                if exclusions:row['exclude_mask_indices']=exclusions
+                else:
+                    for key in ['exclude_mask_indices','exclusions_reviewed','exclusion_reason']:row.pop(key,None)
+                row['evidence']='User roof review: native106 is visible foreground house; native16 tree silhouette overlaps behind its continuous yellow thatch. Positive mask106 unchanged; remove erroneous background-tree16 exclusion. See inspection/roof-ownership-user-review/native-comparison.png.'
+        mask_path.write_text(json.dumps(mask_contract,indent=2)+'\n')
+    if c['asset_id']=='leicester-southeast-cottage':
+        mask_path=Path(c['source_mask_manifest']);mask_contract=json.loads(mask_path.read_text())
+        for row in mask_contract['projections']['exterior']['assignments']:
+            if row.get('source_node') in {'building-093','building-094','building-096'}:
+                row.update(exclude_mask_indices=sorted(set(row.get('exclude_mask_indices',[]))|{6,7,8}),exclusions_reviewed=True,exclusion_reason='Foreground native tree6/7/8 crowns also cross the main roof eave, as confirmed in the prepared eight-view input and source details93; not only the attached shed.')
+        mask_path.write_text(json.dumps(mask_contract,indent=2)+'\n')
     validate(w)
     targets=[o for o in bpy.data.collections[c['collection_name']].all_objects if o.type=='MESH' and o.get('asset_group')==c['asset_id'] and not o.get('projection_component')]
     if not targets:raise ValueError('Missing owned meshes')
