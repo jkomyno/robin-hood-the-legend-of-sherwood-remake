@@ -14,7 +14,7 @@ import numpy as np
 from mathutils import Vector
 
 SUPPORT=Path(__file__).resolve().parent/'recipe_support'
-if SUPPORT.exists():sys.path.insert(0,str(SUPPORT))
+sys.path.insert(0,str(SUPPORT if SUPPORT.exists() else Path(__file__).resolve().parent))
 try:
     from .village_details import silhouette_prism, stilt_ladder
 except ImportError:
