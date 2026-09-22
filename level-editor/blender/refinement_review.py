@@ -60,7 +60,8 @@ def _tile(buffers, width, height, path):
 def render_review(output_dir, *, scene_name, collection_name, asset_id,
                   source_path, frame_manifest=None, width=384, height=512,
                   elevation_degrees=35.0, context_padding=24, projection_layers=None,
-                  lighting=None, source_mask_manifest=None, render_object_names=None):
+                  lighting=None, source_mask_manifest=None, render_object_names=None,
+                  allow_projection_revision=False):
     """Render context.png, solid.png, textured.png, views.json and individual views.
 
     Coordinates use the map's orthographic projection: source x=X,
@@ -182,9 +183,9 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
             raise ValueError("Every review object needs an explicit projection receiver layer")
         def without_labels(records):
             return [{k: v for k, v in row.items() if k not in ('projection_label','projection_region')} for row in records]
-        if baseline and without_labels(baseline["projection_layers"]) != without_labels(layer_records):
+        if baseline and not allow_projection_revision and without_labels(baseline["projection_layers"]) != without_labels(layer_records):
             raise ValueError("Projection layer sources or membership changed since baseline")
-        if baseline and (baseline.get('source_mask_evidence') or any(r.get('projection_region') for r in baseline['projection_layers'])) and baseline['projection_layers'] != layer_records:
+        if baseline and not allow_projection_revision and (baseline.get('source_mask_evidence') or any(r.get('projection_region') for r in baseline['projection_layers'])) and baseline['projection_layers'] != layer_records:
             raise ValueError('Source-mask projection labels changed since baseline')
         scene.render.resolution_x, scene.render.resolution_y = width, height
         scene.render.pixel_aspect_x = scene.render.pixel_aspect_y = 1

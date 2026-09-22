@@ -58,7 +58,7 @@ def render_states(workspace, output, *, frame_manifest=None):
     """
     import bpy
     import copy
-    from refinement_workspace import _review_layers
+    from refinement_workspace import _review_layers, _validated_projection
     from refinement_review import render_review
     from interior_layers import projection_reviews, validate_projection_reviews
 
@@ -67,7 +67,7 @@ def render_states(workspace, output, *, frame_manifest=None):
         raise FileExistsError(output)
     config = json.loads((workspace / 'workspace.json').read_text())
     path = Path(config['projection_manifest'])
-    manifest = json.loads(path.read_text())
+    manifest = _validated_projection(config)
     validate_projection_reviews(manifest, path.parent)
     owned = set(config['part_ids'])
     patches = [patch for patch, nodes in projection_receivers(manifest).items() if owned.intersection(nodes)]
@@ -97,12 +97,14 @@ def render_states(workspace, output, *, frame_manifest=None):
                                    source_path=source, frame_manifest=frame,
                                    projection_layers=definitions,
                                    source_mask_manifest=config.get('source_mask_manifest'),
-                                   render_object_names=[o.name for o in selections[patch, state]])
+                                   render_object_names=[o.name for o in selections[patch, state]],
+                                   allow_projection_revision=True)
             records.append(dict(patch_id=patch, state=state, path=str(target),
                                 visibility_review=reviews[patch]['render_visibility'],
                                 view_sha256=hashlib.sha256((target/'views.json').read_bytes()).hexdigest(),
                                 object_names=result['object_names']))
     report = dict(version=1, asset_id=config['asset_id'], states=records,
+                  projection_manifest_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                   framing_manifest=str(framing_path),
                   framing_sha256=hashlib.sha256(framing_path.read_bytes()).hexdigest(),
                   limitations=['Display visibility is authored separately from texture ownership.',

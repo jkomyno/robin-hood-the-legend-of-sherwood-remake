@@ -61,6 +61,64 @@ def _absolute_manifest_images(value, directory):
     return value
 
 
+def initialize_working_projection(workspace_dir):
+    """Migrate an existing worker to editable reviews while retaining frozen references."""
+    workspace = Path(workspace_dir).resolve()
+    config_path = workspace / 'workspace.json'
+    config = json.loads(config_path.read_text())
+    if not config.get('projection_manifest'):
+        raise ValueError('Workspace has no projection manifest')
+    frozen = workspace / 'reference/layers.json'
+    destination = workspace / 'projection-layers.json'
+    if Path(config['projection_manifest']).resolve() == destination:
+        return str(destination)
+    if Path(config['projection_manifest']).resolve() != frozen:
+        raise ValueError('Cannot migrate an unexpected projection manifest')
+    if config.get('reference_files') and _files(workspace/'reference') != config['reference_files']:
+        raise ValueError('Immutable reference files changed before migration')
+    if destination.exists():
+        raise FileExistsError(destination)
+    _json(destination, _absolute_manifest_images(json.loads(frozen.read_text()), frozen.parent))
+    config['projection_manifest'] = str(destination)
+    _json(config_path, config)
+    return str(destination)
+
+
+def _validated_projection(config):
+    """Allow authored review edits only; source/state inventory remains frozen."""
+    path = Path(config['projection_manifest']).resolve()
+    manifest = json.loads(path.read_text())
+    absolute = _absolute_manifest_images(manifest, path.parent)
+    frozen_path = Path(config['source_path']).parent / 'layers.json'
+    frozen = _absolute_manifest_images(json.loads(frozen_path.read_text()), frozen_path.parent)
+    if ({k: v for k, v in absolute.items() if k != 'projection_reviews'} !=
+            {k: v for k, v in frozen.items() if k != 'projection_reviews'}):
+        raise ValueError('Working projection changed frozen source or state inventory')
+    from interior_layers import validate_projection_reviews
+    validate_projection_reviews(manifest, path.parent)
+    def assignments(value, trail=(), result=None):
+        result = {} if result is None else result
+        if isinstance(value, dict):
+            if 'source_node' in value:
+                result.setdefault(value['source_node'], []).append((trail, json.dumps(value, sort_keys=True)))
+            else:
+                for key, item in value.items():
+                    assignments(item, trail+(key,), result)
+        elif isinstance(value, list):
+            for item in value:
+                assignments(item, trail, result)
+        elif isinstance(value, str) and value.startswith('building-') and value[9:].isdigit():
+            result.setdefault(value, []).append((trail, value))
+        return {node: sorted(records) for node, records in result.items()}
+    before = assignments(frozen.get('projection_reviews', {}))
+    after = assignments(absolute.get('projection_reviews', {}))
+    changed_foreign = {node for node in before.keys() | after.keys()
+                       if before.get(node) != after.get(node)} - set(config['part_ids'])
+    if changed_foreign:
+        raise ValueError('Working projection reassigned outside-asset nodes: '+str(sorted(changed_foreign)))
+    return manifest
+
+
 def _geometry(obj):
     value = {"type": obj.type, "matrix": [list(row) for row in obj.matrix_world],
              "parent": obj.parent.name if obj.parent else None,
@@ -109,7 +167,7 @@ def _review_layers(config):
                                  validate_projection_reviews, projection_component_exclusions,
                                  projection_receiver_components, projection_occluder_additions)
     path = Path(config["projection_manifest"])
-    manifest = json.loads(path.read_text())
+    manifest = _validated_projection(config)
     validate_projection_reviews(manifest,path.parent)
     exclusions=projection_component_exclusions(manifest)
     receiver_components=projection_receiver_components(manifest)
@@ -142,7 +200,7 @@ def _mission_review_source(config):
     if not config.get('projection_manifest'):
         return None
     path = Path(config['projection_manifest'])
-    manifest = json.loads(path.read_text())
+    manifest = _validated_projection(config)
     sources = set()
     for obj in _objects(config):
         if obj.type != 'MESH' or obj.hide_render or not obj.get('mission_patch_profile'):
@@ -170,7 +228,7 @@ def _reproject(config, report_dir):
         # The projection annotator writes beside its manifest. Keep its changing
         # receiver report out of the immutable reference directory.
         source = Path(config["projection_manifest"])
-        manifest = _absolute_manifest_images(json.loads(source.read_text()), source.parent)
+        manifest = _absolute_manifest_images(_validated_projection(config), source.parent)
         report_dir = Path(report_dir)
         report_dir.mkdir(parents=True, exist_ok=True)
         _json(report_dir / "layers.json", manifest)
@@ -194,14 +252,20 @@ def _reproject(config, report_dir):
 
 def _render(config, output, baseline=None):
     from refinement_review import render_review
-    return render_review(output, scene_name=config["scene_name"],
+    result = render_review(output, scene_name=config["scene_name"],
                          collection_name=config["collection_name"], asset_id=config["asset_id"],
                          source_path=_mission_review_source(config) or config["source_path"], frame_manifest=baseline,
                          width=config["width"], height=config["height"],
                          elevation_degrees=config["elevation_degrees"],
                          context_padding=config["context_padding"],
                          projection_layers=_review_layers(config),
-                         source_mask_manifest=config.get('source_mask_manifest'))
+                         source_mask_manifest=config.get('source_mask_manifest'),
+                         allow_projection_revision=bool(baseline and config.get('projection_manifest')))
+    if config.get('projection_manifest'):
+        result['projection_manifest_sha256'] = _sha(config['projection_manifest'])
+        result['projection_manifest'] = str(config['projection_manifest'])
+        _json(Path(output)/'views.json', result)
+    return result
 
 
 def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path,
@@ -263,7 +327,8 @@ def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path
         path = Path(projection_manifest).resolve()
         layers = _copy_manifest_images(json.loads(path.read_text()), path.parent, reference)
         _json(reference / "layers.json", layers)
-        config["projection_manifest"] = str(reference / "layers.json")
+        _json(workspace / 'projection-layers.json', _absolute_manifest_images(layers, reference))
+        config["projection_manifest"] = str(workspace / 'projection-layers.json')
     for obj in _objects(config):
         obj.hide_select = obj not in targets
         obj.select_set(obj in targets)
@@ -325,6 +390,10 @@ Start with asset-reference/ for focused original source crops and reviewed
 asset-specific patches. The full reference/ directory is projection backing data;
 its unrelated images are not assigned worker evidence.
 For assets with interiors or changing outer patches, inspect reference/layers.json,
+but edit reviewed receivers/components and display states only in projection-layers.json.
+The reference manifest and images remain immutable; changing source/state inventory
+or assignments of another asset fails validation. Modified packets record the
+working manifest hash while retaining the original eight cameras and crop.
 reference/covered.png, reference/revealed.png, each relevant patch PNG and alpha,
 and the relevant reference/mission-patches/ state frames before refining. These
 are original reference views, not synthesized textures. Record which states and
@@ -367,8 +436,11 @@ def validate(workspace_dir):
         errors.append("Immutable baseline.blend changed")
     if errors:
         raise ValueError("\n".join(errors))
+    if config.get('projection_manifest'):
+        _validated_projection(config)
     return {"status": "PASS", "asset_id": config["asset_id"],
             "part_ids": config["part_ids"], "meshes": len(targets),
+            "projection_manifest_sha256": _sha(config['projection_manifest']) if config.get('projection_manifest') else None,
             "protected_objects": len(outside)}
 
 
