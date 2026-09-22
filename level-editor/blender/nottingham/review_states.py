@@ -14,6 +14,7 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT/'work/nottingham-refinement/source-states'
+REVEALED = ROOT/'work/nottingham-refinement/state-review/owned-masks/revealed-with-open-doors-and-initial-mechanisms.png'
 
 
 def sha(path):
@@ -28,7 +29,7 @@ def authored(patch, receivers, retained, partial, exclusions, selectors, evidenc
     return {'version': 1, 'patch_id': patch, 'reviewed': True, 'role': 'interior',
             'reviewer': 'Codex source-state visual and native geometry review',
             'evidence': evidence,
-            'source_sha256': sha(SOURCE/'revealed.png'),
+            'source_sha256': sha(REVEALED),
             'alpha_sha256': sha(SOURCE/f'{patch}-alpha.png'),
             'receiver_nodes': nodes(receivers), 'retained_occluder_nodes': nodes(retained),
             'partial_cover_nodes': nodes(partial),
@@ -70,6 +71,14 @@ def build_reviews():
         {'source_node': f'building-{number:03}', 'projection_components': parts, 'patch_id': 'patch-000'}
         for number,parts in {
             **{n:['church-removable-cover'] for n in [383,384,385,387,394,395,396]}}.items()]
+    reviews['patch-000']['render_visibility'] = {
+        'version':1,'reviewed':True,'reviewer':'Codex source-state visual review',
+        'evidence':'Source comparison and church-audit/source-camera paired solids support named cover removal, retained roof strips and two room floors.',
+        'covered': {'hidden_nodes':nodes(range(418,430)), 'hidden_components':[
+            {'source_node':'building-385','projection_component':'church-nave-floor','patch_id':'patch-000'},
+            {'source_node':'building-414','projection_component':'church-side-room-floor','patch_id':'patch-000'}]},
+        'revealed': {'hidden_nodes':nodes([416,417]),
+                     'hidden_components':copy.deepcopy(reviews['patch-000']['exclude_occluder_components'])}}
     reviews['patch-001'] = noninterior('patch-001',
         'Initial and transition sprites show the upper prison door moving within an existing doorway (patch-001-compare.png). This is an independent door state, not a new room reveal. Old453 and new455 door geometry must be displayed separately and projected from their respective state graphic; do not use the room source for both.')
     reviews['patch-002'] = authored('patch-002', [435,436,438,439,440,451,452],
@@ -103,6 +112,15 @@ def build_reviews():
     reviews['patch-005']['receiver_components']['exterior'] = [
         {'source_node': 'building-337', 'projection_components': ['mechanism-upper',
            'mechanism-removable-cover','mechanism-initial','mechanism-applied'], 'patch_id': 'patch-005'}]
+    reviews['patch-005']['render_visibility'] = {
+        'version':1,'reviewed':True,'reviewer':'Codex source-state visual review',
+        'evidence':'Source comparison exposes the front room opening and wooden floor; the upper turret and rear annulus remain.',
+        'covered': {'hidden_nodes':[], 'hidden_components':[
+            {'source_node':'building-337','projection_component':component,'patch_id':'patch-005'}
+            for component in ['mechanism-room-floor','mechanism-initial','mechanism-applied']]},
+        'revealed': {'hidden_nodes':[], 'hidden_components':[
+            {'source_node':'building-337','projection_component':component,'patch_id':'patch-005'}
+            for component in ['mechanism-removable-cover','mechanism-applied']]}}
     reviews['patch-006'] = noninterior('patch-006',
         'Initial/transition source sprites depict the southwest prison door opening in its existing arch. The room shell reveal is separate patch007; geometry476/477 must retain independent closed/open state. No new interior receiver is assigned to this door-only patch.')
     reviews['patch-007'] = authored('patch-007', [456,457,468,469,470,471,472,473,474],
@@ -167,6 +185,11 @@ def main():
                 graphic[key] = str(SOURCE/graphic[key])
     for name,path in layers['sources'].items():
         layers['sources'][name] = str(SOURCE/path)
+    layers['sources']['interior'] = str(REVEALED)
+    layers['interior_state_selection'] = {
+        'room_covers':'all absent', 'patch-001':'applied', 'patch-003':'initial',
+        'patch-004':'initial', 'patch-006':'applied',
+        'scope':'Independent inspection combination; no mission reachability assertion.'}
     def resolve_evidence(value):
         if isinstance(value, dict):
             return {key: resolve_evidence(item) for key,item in value.items()}
@@ -197,6 +220,7 @@ def main():
             review[key] = []
         review['receiver_components'] = {}
         review['occluder_additions'] = {}
+        review.pop('render_visibility', None)
     validate_projection_reviews(baseline, output)
     (output/'baseline-layers.json').write_text(json.dumps(baseline,indent=2)+'\n')
     for asset, patch in [('nottingham-church','patch-000'),('nottingham-upper-prison','patch-002'),

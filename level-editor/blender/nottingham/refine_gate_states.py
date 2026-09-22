@@ -12,11 +12,61 @@ import sys
 
 import bpy
 import bmesh
+from mathutils import Vector
+from mathutils.geometry import tessellate_polygon
 
 sys.path.insert(0, str(Path(__file__).parent))
 from refine_church import ROOT, SIN, COS, fingerprint, copy_component, prism, split_plane, replace_native, neutral
 
 TAG = 'nottingham-gate-states-v1'
+
+
+def cross_section(obj, outline, start, end, depth):
+    front=[(start[0]+(end[0]-start[0])*t,start[1]+(end[1]-start[1])*t,z) for t,z in outline]
+    vertices=front+[(x+depth[0],y+depth[1],z) for x,y,z in front]
+    n=len(front);faces=[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+    for offset in [0,n]:
+        # Triangulate the planar profile directly to avoid large-coordinate
+        # precision errors in a nearly axis-aligned world-space wall plane.
+        vectors=[Vector((t*100,z,0)) for t,z in outline]
+        for tri in tessellate_polygon([vectors]):
+            indices=[offset+(v if isinstance(v,int) else min(range(n),key=lambda i:(vectors[i]-v).length_squared)) for v in tri]
+            faces.append(tuple(indices if offset else reversed(indices)))
+    replace_native(obj,vertices,faces)
+
+
+def gate_masonry(objects):
+    """Measured five/four-merlon parapets and pointed gateway opening.
+
+    The two masonry rails follow their recorded plan axes. The lower pointed
+    opening is measured from the source silhouette; its concealed vault depth
+    is an explicit inference between the two rails.
+    """
+    native = json.loads((ROOT/'work/nottingham-refinement/source-states/level.json').read_text())['sight_obstacles']
+    for number, count, phase in [(335,5,.03),(336,4,.02)]:
+        points = native[number]['points']
+        a,b = points[3],points[0]
+        dx,dy = points[1]['x']-b['x'],points[1]['y']-b['y']
+        bottom,top = points[0]['z_bottom'],points[0]['z_top']
+        breaks = [(0,top-18)]
+        for i in range(count):
+            lo=phase+i/count;hi=min(1,lo+.62/count)
+            breaks += [(lo,top-18),(lo,top),(hi,top),(hi,top-18)]
+        breaks.append((1,top-18))
+        cross_section(objects[number],[(0,bottom),(1,bottom)]+list(reversed(breaks)),
+                      (a['x'],a['y']),(b['x'],b['y']),(dx,dy))
+        objects[number]['measured_merlon_count']=count
+    a,b=(882.2,1632.9),(1025.4,1583.1)
+    samples=[(0,108),(.12,108),(.12,175),(.24,201),(.38,225),(.49,239),(.60,228),(.73,207),(.84,179),(.84,108),(1,108)]
+    cross_section(objects[333],samples+[(1,275),(0,275)],a,b,(-12,-31))
+    for obj in objects.values():
+        bm=bmesh.new();bm.from_mesh(obj.data)
+        bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=1e-5)
+        bmesh.ops.dissolve_degenerate(bm,edges=list(bm.edges),dist=1e-4)
+        bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(obj.data);bm.free()
+        obj['gate_state_recipe']=TAG
+    return {'front_merlons':5,'back_merlons':4,'opening':'pointed source-silhouette hypothesis',
+            'inferred':'concealed vault depth and threshold datum108'}
 
 
 def sprite_mesh(template, record, state, native_y, label):
@@ -107,6 +157,22 @@ def refine(asset_id):
     if asset_id == 'nottingham-castle-gate-east-tower':
         if set(objects) != {334,337,338,339}:
             raise ValueError('Unexpected gate tower source ownership')
+        native=json.loads((ROOT/'work/nottingham-refinement/source-states/level.json').read_text())['sight_obstacles']
+        for number,obj in objects.items():
+            points=native[number]['points']
+            prism(obj,[(p['x'],p['y']) for p in points],
+                  [110 if number==338 else min(p['z_bottom'],p['z_top']-.2) for p in points],
+                  [p['z_top'] for p in points])
+            if number==338:
+                obj['inferred_surface_note']='Rear room wall extends to the source-aligned floor datum110; measured upper wall retained.'
+        from ribbon_crown import arc_ribbon_geometry
+        pairs=[(5,6),(4,7),(3,8),(2,9),(1,10),(0,11),(17,12),(16,13),(15,14)]
+        # Eight raised capstones are counted on the focused crown source crop.
+        # C-ring seam aligns with the low rear entrance component338.
+        notches=[(0,.025)]+[(i/8-.025,i/8+.025) for i in range(1,8)]+[(.975,1)]
+        vertices,faces=arc_ribbon_geometry(native[337]['points'],pairs,notches,base=0,notch_depth=14)
+        replace_native(objects[337],vertices,faces)
+        objects[337]['measured_merlon_count']=8
         shell = objects[337]
         # Opening landmarks approximately x1002..1083, y1357..1484; split the
         # front annular wall, retaining the rear shell, upper tower and plinth.
@@ -135,14 +201,31 @@ def refine(asset_id):
     elif asset_id == 'nottingham-castle-gate-arch':
         if set(objects) != {333,335,336}:
             raise ValueError('Unexpected gate arch source ownership')
+        masonry = gate_masonry(objects)
         for state in ['initial','applied']:
             reports.append(sprite_mesh(objects[333],layers['patches'][3],state,1611,'portcullis-'+state))
     else:
         raise ValueError('Unsupported gate asset')
+    topology={}
+    for obj in collection.all_objects:
+        if obj.type!='MESH' or obj.get('asset_group')!=asset_id:continue
+        bm=bmesh.new();bm.from_mesh(obj.data)
+        bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=1e-5)
+        bmesh.ops.dissolve_degenerate(bm,edges=list(bm.edges),dist=1e-4)
+        bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
+        topology[obj.name]={'nonmanifold_edges':sum(not e.is_manifold for e in bm.edges),
+                            'degenerate_faces':sum(f.calc_area()<1e-8 for f in bm.faces)}
+        bm.to_mesh(obj.data);bm.free()
     drift = [n for n,digest in outside.items() if fingerprint(bpy.data.objects[n]) != digest]
     if drift:
         raise ValueError(f'Outside geometry changed: {drift}')
+    invalid={name:counts for name,counts in topology.items() if any(counts.values())}
+    if invalid:
+        raise ValueError(f'Gate topology validation failed: {invalid}')
     return {'recipe': TAG, 'asset_id': asset_id, 'mechanical_states': reports,
+            'masonry': masonry if asset_id == 'nottingham-castle-gate-arch' else None,
+            'crown_merlons':8 if asset_id == 'nottingham-castle-gate-east-tower' else None,
+            'topology':topology,
             'outside_object_changes': drift, 'geometry_approval': 'pending',
             'texture_generation': 'not-started',
             'animation_representation': 'Separate exact initial/applied visible state components; select one component at a time.',
