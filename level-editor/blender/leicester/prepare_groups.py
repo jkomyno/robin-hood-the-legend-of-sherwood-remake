@@ -12,7 +12,7 @@ import sys
 import bpy
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from group_assets import group_assets
+from group_assets import group_assets, reconcile_asset_groups
 from refinement_inventory import validate_catalog
 from refinement_workspace import dispatch
 
@@ -28,6 +28,7 @@ def main():
     parser.add_argument('--projection-manifest', type=Path)
     parser.add_argument('--source-mask-manifest', type=Path)
     parser.add_argument('--max-concurrency', type=int, default=2)
+    parser.add_argument('--reconcile', action='store_true')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     paths = {key: str(value.resolve()) for key, value in vars(args).items() if isinstance(value, Path)}
     review = json.loads(args.review.read_text())
@@ -54,7 +55,9 @@ def main():
         initialized_uvs.append(obj['source_node'])
     # Set the new save path before the grouping helper saves its hierarchy.
     bpy.ops.wm.save_as_mainfile(filepath=paths['output'])
-    report = group_assets(paths['catalog'])
+    report = (reconcile_asset_groups(paths['catalog']) if args.reconcile else group_assets(paths['catalog']))
+    if args.reconcile:
+        bpy.ops.wm.save_as_mainfile(filepath=paths['output'])
     result = dispatch(paths['assets'], source_blend=paths['output'], max_concurrency=args.max_concurrency,
                       scene_name='Leicester Refinement', collection_name='Leicester Working',
                       source_path=paths['source_image'], grouping_manifest=paths['catalog'],
@@ -66,6 +69,7 @@ def main():
     evidence = {'map': 'Leicester', 'source_sha256': before, 'grouped_sha256': sha(args.output),
                 'catalog_validation': validation, 'grouping': report, 'dispatch': result,
                 'neutral_uv_initialization': initialized_uvs,
+                'reconcile': args.reconcile, 'max_concurrency': args.max_concurrency,
                 'arguments': paths, 'script_sha256': sha(__file__)}
     args.output.with_suffix('.grouping.json').write_text(json.dumps(evidence, indent=2) + '\n')
     print(json.dumps(evidence, indent=2))
