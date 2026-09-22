@@ -93,6 +93,29 @@ def gabled_accessories(workspace,config,update_masks=True):
     return {'components':reports,'inference':'Native masks determine visible apertures and silhouette. Wheel follows gable plane with five-unit lean; ladder top94 follows gable contact, footground0, and depth2.5 are hypotheses requiring eight-view review.'}
 
 
+def gabled_lean_to(workspace,roof_obj,fence_obj):
+    sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35))
+    anchors=[Vector((2889.99,-1013.09,59.91)),Vector((2917.20,-978.29,84.34)),Vector((2853.03,-928.11,78.23))]
+    normal=(anchors[1]-anchors[0]).cross(anchors[2]-anchors[0]);distance=normal.dot(anchors[0]);inverse=np.linalg.inv(np.array([[normal.y,normal.z],[-sine,-cosine]]))
+    def roof_plane(px,py):
+        y,z=inverse@np.array([distance-normal.x*px,py]);return px,float(y),float(z)
+    def eave(px):return 508.3+(px-2825.8)*(532.0-508.3)/(2889.99-2825.8) if px<=2889.99 else 532.0+(px-2889.99)*(492.0-532.0)/(2917.2-2889.99)
+    roof,roof_report=silhouette_prism(workspace,120,roof_plane,2.5,lambda x,y:y<=eave(x)+1.)
+    for vertex in roof.vertices:vertex.co=roof_obj.matrix_world.inverted()@vertex.co
+    roof_obj.data=roof
+    reports=[];merged=bmesh.new()
+    for label,origin,slope,pixel_filter in [
+        ('front',(2825.8,-962.9),(-1013.1+962.9)/(2889.99-2825.8),lambda x,y:x<=2890 and y>eave(x)+1.),
+        ('return',(2890.,-1013.1),(-972.7+1013.1)/(2915.2-2890.),lambda x,y:x>2890 and y>eave(x)+1.)]:
+        def plane(px,py):
+            y=origin[1]+(px-origin[0])*slope;return px,y,(-py-y*sine)/cosine
+        mesh,report=silhouette_prism(workspace,120,plane,2.,pixel_filter);merged.from_mesh(mesh);reports.append({'panel':label,**report});bpy.data.meshes.remove(mesh)
+    mesh=bpy.data.meshes.new('Leicester Northeast Lean-to Open Fence');merged.to_mesh(mesh);merged.free();mesh.uv_layers.new(name='UVMap');mesh.materials.append(bpy.data.materials['Leicester Detail Unknown'])
+    for vertex in mesh.vertices:vertex.co=fence_obj.matrix_world.inverted()@vertex.co
+    fence_obj.data=mesh
+    return {'roof':roof_report,'fence_panels':reports,'horizontal_rails_per_run':3,'inference':'Native120 retains plank eave, upright supports, three fence rails and gate boards/apertures. Roof receiver follows inherited sloped plane; front/return fence planes follow inherited ground edges extended to source silhouette. Concealed depths2/2.5 are inferred; panel junction and roof contact require rendered review.'}
+
+
 def gabled_canopy(workspace,config,roof_obj,update_masks=True):
     sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35))
     pixels=[(2983.,490.),(3033.,443.),(3078.,474.),(3023.,518.)]
