@@ -66,10 +66,11 @@ def build(index_path, output, *, pending_only=False, map_name=None):
         if item.get("context"):
             sheets.append(("context", "Original artwork with surrounding context"))
         for key, label in (("source_comparison", "Original artwork / before / corrected"),
+                           ("source_comparison_secondary", "Additional source-camera comparison"),
                            ("source_trace", "Numbered source artwork corners"),
                            ("projection_errors", "Corrected mesh projected onto original artwork")):
             if item.get(key):
-                sheets.append((key, label))
+                sheets.append((key, item.get(key + "_label", label)))
         for key, label in (("revealed_solid", "Revealed interior geometry"),
                            ("revealed_textured", "Revealed interior original textures + shaded unknown surfaces"),
                            ("revealed_context", "Original revealed artwork with surrounding context")):
