@@ -40,7 +40,7 @@ def main():
     assign([82],[98],evidence_id='VILLAGE-MILL-STILT-05');assign([83],[173],evidence_id='VILLAGE-MILL-STILT-05')
     assign([84,85,86,87],[172],evidence_id='VILLAGE-MILL-STILT-05')
     assign([126],[185],[178,179,180,181,182,186,187,189,190], 'Rocky base excludes building, ladder, support timbers and separate small base blocks.', 'VILLAGE-STILT-WIRES-06')
-    for node,mask in [(127,178),(128,178),(129,180),(130,187),(131,186),(132,190),(133,189),(134,182),(135,181),(136,185)]:
+    for node,mask in [(127,178),(128,178),(129,180),(130,186),(131,187),(132,190),(133,189),(134,182),(135,181),(136,185)]:
         assign([node],[mask],evidence_id='VILLAGE-STILT-WIRES-06')
     rows=contract['projections']['exterior']['assignments']
     rows=[r for r in rows if r.get('source_node') not in corrections]+list(corrections.values())
