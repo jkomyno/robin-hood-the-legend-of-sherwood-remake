@@ -1,0 +1,252 @@
+{
+  "status": "CANDIDATE_REQUIRES_VISUAL_REVIEW",
+  "source_coordinate_uncertainty_px": 2,
+  "recipes": {
+    "building-023": [
+      [
+        76,
+        66,
+        1,
+        [
+          [
+            1828,
+            1838
+          ],
+          [
+            1849,
+            1859
+          ],
+          [
+            1870,
+            1880
+          ],
+          [
+            1891,
+            1901
+          ]
+        ]
+      ],
+      [
+        66,
+        67,
+        1,
+        [
+          [
+            1931,
+            1941
+          ],
+          [
+            1952,
+            1962
+          ],
+          [
+            1976,
+            1986
+          ],
+          [
+            1997,
+            2007
+          ],
+          [
+            2018,
+            2028
+          ]
+        ]
+      ],
+      [
+        80,
+        76,
+        0,
+        [
+          [
+            295,
+            310
+          ]
+        ]
+      ],
+      [
+        79,
+        80,
+        0,
+        [
+          [
+            265,
+            274
+          ]
+        ]
+      ],
+      [
+        75,
+        74,
+        0,
+        [
+          [
+            267,
+            280
+          ]
+        ]
+      ],
+      [
+        74,
+        73,
+        0,
+        [
+          [
+            305,
+            319
+          ]
+        ]
+      ]
+    ],
+    "building-025": [
+      [
+        28,
+        27,
+        0,
+        [
+          [
+            337,
+            344
+          ],
+          [
+            350,
+            357
+          ],
+          [
+            363,
+            370
+          ],
+          [
+            376,
+            383
+          ]
+        ]
+      ],
+      [
+        27,
+        26,
+        0,
+        [
+          [
+            334,
+            340
+          ],
+          [
+            348,
+            354
+          ],
+          [
+            362,
+            368
+          ],
+          [
+            376,
+            382
+          ]
+        ]
+      ]
+    ],
+    "building-042": [
+      [
+        35,
+        36,
+        0,
+        [
+          [
+            401,
+            411
+          ],
+          [
+            421,
+            431
+          ],
+          [
+            441,
+            451
+          ],
+          [
+            461,
+            471
+          ],
+          [
+            481,
+            491
+          ],
+          [
+            501,
+            510
+          ]
+        ]
+      ]
+    ]
+  },
+  "results": [
+    {
+      "source_node": "building-023",
+      "object": "Lower Bailey West Curtain / Curtain wall and battlements / segment 01 / modeled battlements.001",
+      "notches": 13,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "source_corner_height_fit": null,
+      "old_z_min": -0.0001312426757067442,
+      "new_z_min": -0.0001312426757067442,
+      "volume": 1318989.5749429404
+    },
+    {
+      "source_node": "building-025",
+      "object": "Lower Bailey West Curtain / Curtain wall and battlements / segment 02.001 / modeled battlements",
+      "notches": 8,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "source_corner_height_fit": {
+        "observed_crown_corners": [
+          [
+            334,
+            1563
+          ],
+          [
+            340,
+            1573
+          ],
+          [
+            348,
+            1584
+          ],
+          [
+            354,
+            1595
+          ]
+        ],
+        "baseline_predicted_y": [
+          1557.7312909397058,
+          1566.6341514205353,
+          1578.5046320616414,
+          1587.407492542471
+        ],
+        "source_y_shift": 6.180608258911661,
+        "height_delta": -7.545129505568542,
+        "residual_y": [
+          0.9118991986174478,
+          -0.18524032055302087,
+          0.6852403205530209,
+          -1.4118991986174478
+        ]
+      },
+      "old_z_min": -0.00010883001959882677,
+      "new_z_min": -0.00010883001959882677,
+      "volume": 804791.7163652346
+    },
+    {
+      "source_node": "building-042",
+      "object": "Lower Bailey West Curtain / Curtain wall and battlements / segment 05 / modeled battlements.001",
+      "notches": 6,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "source_corner_height_fit": null,
+      "old_z_min": -9.127898374572396e-05,
+      "new_z_min": -9.127898374572396e-05,
+      "volume": 926622.6424696445
+    }
+  ],
+  "note": "Counts are notch cuts, not merlons. Concealed roof-overlapped repeats extrapolate nearest visible rhythm."
+}

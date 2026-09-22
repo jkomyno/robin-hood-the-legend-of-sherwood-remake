@@ -1,5 +1,19 @@
 # Lower Bailey West Curtain second-pass review
 
+## Current partial candidate (after regression repair)
+
+`inspection/complete-wall-candidate-v3/review.md` contains both complete closed
+wall sections, reprojection,48° review sheets, and numbered source corner
+closeups with local predicted-versus-observed errors. The northern crown is
+lowered7.545 world units from a fit to four visually inspected source corners.
+Notch counts are025:8,023:13,042:6. These are **not** merlon counts.
+Each rebuilt wall passes manifold/degenerate/positive-volume checks. Approved
+stairs/turret/supports are preserved. The first two visible gaps per section
+have16 source-picked corners; their local analytic RMS errors are2.14px north
+and1.64px south. Full ordered source traces and independent rendered-contour
+verification remain unfinished, so this candidate is **not approval-ready**.
+The earlier revision-v2 remains withdrawn, as explained below.
+
 **WITHDRAWN MERLON REVISION:** The 2026-09-22 replacement below is invalid.
 The meshes named “modeled battlements” also contain the complete wall bodies;
 replacing them with disconnected boxes deleted those bodies. Ownership-only
