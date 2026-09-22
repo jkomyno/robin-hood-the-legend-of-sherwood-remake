@@ -1,5 +1,26 @@
 # Derby asset refinement review
 
+## Current source-traced revision review — 2026-09-22
+
+The pending gallery now contains three refreshed exterior geometry candidates:
+Central Turret and Gallery (`central/trace-v2`), West Tower (`west/zigzag-v6`),
+and Upper Bailey Gatehouse (`inspection/corner-fit-v3`). Each includes numbered
+source-corner evidence, projected mesh comparisons and fresh 48-degree sheets.
+All 46 gallery images were verified against their source hashes and the gallery
+returned HTTP 200. These candidates have not been approved or published.
+
+Central bridge slope remains 7.705 degrees because reliable source endpoint
+heights are obscured. West Tower retains existing revealed-room coverage gaps;
+Upper Gatehouse retains interior projection stretches. Exterior review does not
+declare those limitations resolved. North Tower remains withheld for boundary
+and nonmanifold-edge checks. East Hall and both Lower West sections remain in
+revision; their older gallery images are explicitly marked as needing fixes.
+
+Gallery: `level-editor/work/derby-refinement/round-2/review-gallery-14/index.html`.
+Manifest: `level-editor/work/derby-refinement/round-2/review-candidates-14.json`.
+Use `publish_traced_reviews.py` in that round directory for this revision's
+manifest refresh; the older `refresh_revision_gallery.py` restores stale paths.
+
 Every logical asset receives an independent geometry and projection review.
 Reviewed does not mean finished: record remaining defects and uncertain geometry.
 Workers use separate Blender copies; the primary session integrates reviewed
