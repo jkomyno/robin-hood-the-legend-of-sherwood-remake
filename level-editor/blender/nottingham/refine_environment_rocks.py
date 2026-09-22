@@ -149,7 +149,8 @@ def refine(asset_id):
         obj = bpy.data.objects[name]
         if (_hash(obj), tuple(tuple(r) for r in obj.matrix_world)) != snapshot:
             raise ValueError(f'Outside object changed: {name}')
-    return {'asset_id':asset_id, 'recipe':'measured-rock-cap-and-faceted-shoulders-v1',
+    return {'asset_id':asset_id, 'status':'refined-rock-caps-and-shoulders',
+            'recipe':'measured-rock-cap-and-faceted-shoulders-v1',
             'objects':reports, 'outside_objects_unchanged':True,
             'geometry_approval':'pending', 'projection_status':'stale; regenerate packet',
             'inference':['Concealed cap depth and shoulder bevel are conservative geometric estimates.',
