@@ -22,7 +22,7 @@ def main():
         raise SystemExit(0)
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('mode',choices=['prepare','refine']);parser.add_argument('asset',choices=BRIDGES)
-    parser.add_argument('state',choices=['initial','applied']);args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
+    parser.add_argument('state',choices=['initial','applied']);parser.add_argument('--geometry-only',action='store_true');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
     patch,initial,applied,oldmask,newmask=BRIDGES[args.asset]
     workspace=ROOT/'round-1/assets-v2'/args.asset
     if args.state=='applied':workspace=ROOT/'round-1/bridge-applied'/args.asset
@@ -38,10 +38,13 @@ def main():
         maskpath=ROOT/'bridge-evidence/endpoint-ownership'/f'{args.asset}-{args.state}-masks.json'
         if not maskpath.is_file():raise RuntimeError('Run bridges_ownership.py to freeze reviewed endpoint masks first')
         kw['source_mask_manifest']=str(maskpath)
-        bpy.ops.wm.open_mainfile(filepath=argv[2]);bpy.context.scene.render.threads_mode='FIXED';bpy.context.scene.render.threads=2
+        bpy.ops.wm.open_mainfile(filepath=argv[2])
+        bpy.context.window.scene=bpy.data.scenes['Leicester Refinement']
+        bpy.context.view_layer.update()
+        bpy.context.scene.render.threads_mode='FIXED';bpy.context.scene.render.threads=2
         # Freeze an explicit endpoint before rendering input; canonical ownership
         # retains both alternatives, while projection membership is state-specific.
-        for obj in bpy.data.collections['Leicester Working'].all_objects:
+        for obj in list(bpy.data.collections['Leicester Working'].objects):
             if obj.type=='MESH' and obj.get('asset_group')==args.asset:
                 visible=obj.get('source_node')==f'building-{initial if args.state=="initial" else applied:03}'
                 obj.hide_render=not visible;obj.hide_viewport=not visible
@@ -50,7 +53,7 @@ def main():
         return
     if Path(bpy.data.filepath).resolve()!=workspace/'model.blend':raise RuntimeError('Open the endpoint worker model')
     validate(workspace);config=json.loads((workspace/'workspace.json').read_text());collection=bpy.data.collections[config['collection_name']]
-    target=[o for o in collection.all_objects if o.type=='MESH' and o.get('asset_group')==args.asset]
+    target=[o for o in collection.all_objects if o.type=='MESH' and o.get('asset_group')==args.asset and not o.get('bridge_east_hardware') and not o.get('bridge_hardware_generated')]
     if {o['source_node'] for o in target}!={f'building-{initial:03}',f'building-{applied:03}'}:raise RuntimeError('Unexpected endpoint ownership')
     changes=[]
     hinge=min(p['z_top'] for p in native['sight_obstacles'][applied]['points'])
@@ -75,24 +78,33 @@ def main():
         visible=index==(initial if args.state=='initial' else applied)
         obj.hide_render=not visible;obj.hide_viewport=not visible
         obj['drawbridge_state']= 'initial' if index==initial else 'applied'
-        obj['endpoint_source_sha256']=sha(source)
+        endpoint_source=statespath.parent/f'patch-{patch:03}'/f'{obj["drawbridge_state"]}-map.png'
+        obj['endpoint_source_sha256']=sha(endpoint_source)
         obj['native_patch']=f'patch-{patch:03}'
         obj['drawbridge_patch_id']=f'patch-{patch:03}'
-        obj['drawbridge_endpoint_source_sha256']=sha(source)
+        obj['drawbridge_endpoint_source_sha256']=sha(endpoint_source)
         obj['drawbridge_endpoint_evidence_sha256']=sha(statespath)
         obj['drawbridge_initial_source_node']=f'building-{initial:03}'
         obj['drawbridge_applied_source_node']=f'building-{applied:03}'
         obj['drawbridge_default_state']='initial'
         changes.append({'source_node':obj['source_node'],'state':obj['drawbridge_state'],'visible':visible,'bottom_heights':bottom,'vertices':n*2,'faces':n+2})
+    from bridges_east_hardware import refine_hardware
+    hardware=refine_hardware(workspace,args.asset,args.state)
     bpy.context.view_layer.update();validate(workspace)
     report={'asset_id':args.asset,'state':args.state,'recipe_sha256':sha(__file__),
        'endpoint_evidence_sha256':sha(statespath),'source_sha256':sha(source),'source_frame':record[args.state+'_graphic'],
-       'changes':changes,'hinge_height':hinge,'exclusive_visible_leaf_count':sum(not o.hide_render for o in target),
-       'status':'refinement in progress','source_supported':'Native endpoint images separately confirm raised initial and lowered applied leaves; the endpoint collision components identify their footprints. Lower raised leaf is trimmed to adjacent deck hinge height.',
+       'changes':changes,'hardware':hardware,
+       'recipe_dependencies':{'bridges_east_hardware.py':sha(Path(__file__).with_name('bridges_east_hardware.py'))},
+       'hinge_height':hinge,'exclusive_visible_leaf_count':sum(not o.hide_render for o in target),
+       'status':'refinement in progress','projection_status':'STALE','source_supported':'Native endpoint images separately confirm raised initial and lowered applied leaves; the endpoint collision components identify their footprints. Lower raised leaf is trimmed to adjacent deck hinge height.',
        'limitations':['Chains, lifting beams and coupled mechanism geometry remain incomplete.','Endpoint composites apply this bridge independently; simultaneous coupled mechanism state not validated.','Native collision slab depth approximates timber thickness; all hidden faces remain neutral.', 'East village raised hinge width is reconciled with its lowered deck; upper extent uses the same physical leaf length and remains inferred behind the tower.','The two endpoint meshes are explicit states; no interpolated hinge animation has been approved.']}
     if report['exclusive_visible_leaf_count']!=1:raise RuntimeError('Mixed bridge endpoints')
     (workspace/'inspection').mkdir(exist_ok=True);(workspace/'inspection/bridge-state.json').write_text(json.dumps(report,indent=2)+'\n')
-    bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'));modified(workspace)
+    bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
+    if not args.geometry_only:
+        modified(workspace)
+        report['projection_status']='CURRENT'
+        (workspace/'inspection/bridge-state.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report))
 
 if __name__=='__main__':main()

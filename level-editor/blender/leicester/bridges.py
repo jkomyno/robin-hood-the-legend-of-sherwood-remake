@@ -57,7 +57,7 @@ def refine(workspace, native_path):
     for obj in targets:
         if obj.get('bridge_added_component') == TAG: bpy.data.objects.remove(obj, do_unlink=True)
     additions=[]; n=len(points)
-    if index in (385,386):
+    if index in (226,385,386):
         vertices = [world(p,p['z_top']-7) for p in points]+[world(p) for p in points]
         faces=[tuple(reversed(range(n))),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
         replacement=object_mesh(original.name+' deck replacement',vertices,faces,original,collection)
@@ -99,6 +99,11 @@ def refine(workspace, native_path):
         entries.append({'source_node':f'building-{index:03}', 'mask_indices':[195], 'reviewed':True,
                         'review_reason':'Native mask195 visually matches the complete south bridge silhouette.'})
     else:
+        rail_masks=[333] if index==226 else [176,177]
+        entries.append({'source_node':f'building-{index:03}', 'mask_indices':rail_masks,
+                        'exclude_mask_indices':rail_masks, 'reviewed':True, 'exclusions_reviewed':True,
+                        'exclusion_reason':'Native masks own railings only. Block the unclassified deck and supports; explicit beam components override this empty allowed region.',
+                        'review_reason':'No native ownership is established for the deck and trestle; keep their source projection unknown.'})
         for obj in additions:
             component=obj['projection_component']
             if not component.startswith('rail '):continue
@@ -109,7 +114,7 @@ def refine(workspace, native_path):
     masks_path.write_text(json.dumps(masks,indent=2)+'\n')
     original['bridge_recipe']=TAG
     bpy.context.view_layer.update()
-    counts={'visible_rail_posts':sum(len(r[2]) for r in rails),'rail_caps':len(rails),'ground_returns':sum(r[3] for r in rails)}
+    counts={'visible_rail_posts':sum(len(r[2]) for r in rails),'rail_caps':len(rails)+(index==226),'ground_returns':sum(r[3] for r in rails)}
     report={'recipe':TAG,'asset_id':config['asset_id'],'source_node':f'building-{index:03}',
             'native_level_sha256':hashlib.sha256(native_path.read_bytes()).hexdigest(),
             'recipe_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
@@ -133,7 +138,10 @@ def main():
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]));from refinement_workspace import validate,modified
     validate(workspace);report=refine(workspace,args.native_level);validate(workspace)
     bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
-    if args.render:modified(workspace)
+    if args.render:
+        modified(workspace)
+        report['projection_status']='CURRENT'
+        (workspace/'inspection/bridge-recipe.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report))
 
 if __name__=='__main__':main()
