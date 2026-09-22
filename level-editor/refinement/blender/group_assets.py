@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 import bpy
-from mathutils import Vector
+from catalog_schema import parse_catalog
 
 
 def _renamed_part(obj, group, part):
@@ -38,21 +38,12 @@ def reconcile_asset_groups(catalog_path):
     working = bpy.data.collections[catalog["map"] + " Working"]
     scene = bpy.data.scenes[catalog["map"] + " Refinement"]
     previous_scene = bpy.context.window.scene
-    groups, expected = {}, {}
-    for group in catalog["groups"]:
-        if not group["id"] or not group["name"] or group["id"] in groups or not group["parts"]:
-            raise ValueError("Catalog groups must be named, unique and nonempty")
-        groups[group["id"]] = group
-        for part in group["parts"]:
-            key = f'building-{part["obstacle"]:03}'
-            if key in expected or not part["name"]:
-                raise ValueError(f"Duplicate or unnamed asset part: {key}")
-            expected[key] = (group, part)
+    index = parse_catalog(catalog)
+    groups = index.groups
     objects = list(working.all_objects)
     meshes = [obj for obj in objects if obj.type == "MESH" and obj.get("source_node") != "ground"]
-    actual = {obj.get("source_node") for obj in meshes}
-    if actual != set(expected):
-        raise ValueError(f"Catalog coverage mismatch: {sorted(actual ^ set(expected), key=str)}")
+    index.validate_meshes([dict(source_node=obj.get("source_node"),
+        projection_component=obj.get("projection_component"), hide_render=obj.hide_render) for obj in meshes])
     roots = [obj for obj in objects if obj.type == "EMPTY" and obj.get("source_obstacle") == "map"]
     if len(roots) != 1:
         raise ValueError("Expected one map asset root")
@@ -87,7 +78,7 @@ def reconcile_asset_groups(catalog_path):
             parent["asset_group"], parent["asset_name"] = identifier, group["name"]
         bpy.context.view_layer.update()
         for obj in meshes:
-            group, part = expected[obj["source_node"]]
+            group, part = index.owner_for(obj["source_node"], obj.get("projection_component"))
             target = parents[group["id"]]
             if obj.parent != target or obj.get("asset_group") != group["id"]:
                 moves.append({"source_node": obj["source_node"], "object": obj.name,
@@ -112,7 +103,7 @@ def reconcile_asset_groups(catalog_path):
                 raise RuntimeError(f"Obsolete group retains children: {obj.name}")
             removed.append(obj["asset_group"])
             bpy.data.objects.remove(obj, do_unlink=True)
-        return {"map": catalog["map"], "assets": len(groups), "canonical_parts": len(expected),
+        return {"map": catalog["map"], "assets": len(groups), "canonical_parts": len(index.sources),
                 "working_meshes": len(meshes), "created_groups": created, "removed_groups": removed,
                 "renamed_meshes": renamed, "moved_components": moves, "max_transform_drift": drift}
     finally:
@@ -123,18 +114,17 @@ def sync_asset_names(catalog_path):
     """Refresh catalog labels on an existing hierarchy without moving any parts."""
     catalog = json.loads(Path(catalog_path).read_text())
     working = bpy.data.collections[catalog["map"] + " Working"]
-    expected = {f'building-{part["obstacle"]:03}': (group, part)
-                for group in catalog["groups"] for part in group["parts"]}
+    index = parse_catalog(catalog)
     meshes = [o for o in working.all_objects if o.type == "MESH" and o.get("source_node") != "ground"]
-    if {o.get("source_node") for o in meshes} != set(expected):
-        raise ValueError("Catalog does not match existing source parts")
+    index.validate_meshes([dict(source_node=obj.get("source_node"),
+        projection_component=obj.get("projection_component"), hide_render=obj.hide_render) for obj in meshes])
     for obj in meshes:
-        group, _ = expected[obj["source_node"]]
+        group, _ = index.owner_for(obj["source_node"], obj.get("projection_component"))
         if obj.get("asset_group") != group["id"] or obj.parent is None or obj.parent.get("asset_group") != group["id"]:
             raise ValueError(f"Ownership differs from catalog: {obj.name}")
     changed = 0
     for obj in meshes:
-        group, part = expected[obj["source_node"]]
+        group, part = index.owner_for(obj["source_node"], obj.get("projection_component"))
         old_prefix = obj["asset_name"] + " / " + obj["part_name"]
         new_prefix = group["name"] + " / " + part["name"]
         if old_prefix != new_prefix:
@@ -151,20 +141,14 @@ def group_assets(catalog_path):
     map_name = catalog["map"]
     working = bpy.data.collections[map_name + " Working"]
     scene = bpy.data.scenes[map_name + " Refinement"]
-    expected = {}
-    for group in catalog["groups"]:
-        for part in group["parts"]:
-            key = f'building-{part["obstacle"]:03}'
-            if key in expected:
-                raise ValueError(f"Duplicate asset ownership: {key}")
-            expected[key] = (group, part)
+    index = parse_catalog(catalog)
     meshes = [o for o in working.objects if o.type == "MESH"]
-    actual = {o.get("source_obstacle") for o in meshes} - {"ground"}
-    if actual != set(expected):
-        raise ValueError(f"Catalog coverage mismatch: {actual ^ set(expected)}")
+    index.validate_meshes([dict(source_node=o.get("source_node", o.get("source_obstacle")),
+        projection_component=o.get("projection_component"), hide_render=o.hide_render) for o in meshes])
     if any(o.get("asset_group") for o in working.objects):
         raise RuntimeError("Asset hierarchy already exists; inspect before revising")
     matrices = {o: o.matrix_world.copy() for o in meshes}
+    visibility = {o: (o.hide_render, o.hide_viewport) for o in meshes}
     roots = [o for o in working.objects if o.type == "EMPTY"]
     root = next(o for o in roots if o.get("source_obstacle") == "map")
     root.name = map_name + " Assets"
@@ -183,13 +167,13 @@ def group_assets(catalog_path):
     bpy.context.view_layer.update()
     names = []
     for obj in meshes:
-        source = obj["source_obstacle"]
+        source = obj.get("source_node", obj.get("source_obstacle"))
         obj["source_node"] = source
         if source == "ground":
             obj.parent = root
             obj.name = map_name + " Terrain"
         else:
-            group, part = expected[source]
+            group, part = index.owner_for(source, obj.get("projection_component"))
             obj.parent = groups[group["id"]]
             obj["asset_group"] = group["id"]
             obj["asset_name"] = group["name"]
@@ -210,7 +194,9 @@ def group_assets(catalog_path):
     drift = max(abs(obj.matrix_world[r][c] - matrix[r][c]) for obj, matrix in matrices.items() for r in range(4) for c in range(4))
     if drift > 1e-5:
         raise RuntimeError(f"Reparenting moved geometry: {drift}")
-    report = {"map": map_name, "assets": len(groups), "obstacles": len(expected),
+    if any((obj.hide_render, obj.hide_viewport) != visibility[obj] for obj in meshes):
+        raise RuntimeError("Reparenting altered component visibility")
+    report = {"map": map_name, "assets": len(groups), "obstacles": len(index.sources),
               "working_meshes": len(meshes), "max_transform_drift": drift, "parts": names}
     out = Path(bpy.data.filepath).parent
     (out / "asset-hierarchy.json").write_text(json.dumps(report, indent=2) + "\n")

@@ -15,6 +15,7 @@ import math
 from pathlib import Path
 
 import bpy
+from catalog_schema import parse_catalog
 
 
 def inventory(output_dir, *, collection_name, map_name, source_path, elevation_degrees=35,
@@ -44,6 +45,7 @@ def inventory(output_dir, *, collection_name, map_name, source_path, elevation_d
             'bounds_source_pixels': [min(p[0] for p in screen), min(p[1] for p in screen),
                                      max(p[0] for p in screen), max(p[1] for p in screen)],
             'projection_layer': obj.get('projection_layer'),
+            'projection_component': obj.get('projection_component'),
         })
     source = Path(source_path).resolve(strict=True)
     result = {'version': 1, 'map': map_name, 'collection': collection_name,
@@ -78,6 +80,11 @@ exactly once, even when several mesh components share that source ID. Names must
 describe objects. Do not infer missing ownership from nearest bounding boxes.
 Write grouping-review.md explaining decisions and remaining ambiguities. Run
 refinement_inventory.validate_catalog before preparing per-asset workspaces.
+For reviewed spatial partitions, version 2 adds canonical_owners mapping every
+source ID to its canonical asset ID. Each shared source part lists disjoint,
+nonempty components of projection_component strings; its canonical owner must
+also list that source. Hidden componentless originals retain canonical ownership.
+Every declared component must exist when grouping is applied to the refined scene.
 Geometry refinement starts only after all ownership ambiguities are resolved.
 Review patch_assets as well: mission-owned drawbridges, mechanisms, animated
 props and revealed interiors may be absent from static obstacle geometry. Record
@@ -91,29 +98,12 @@ static-part coverage alone does not establish complete scene coverage.
 def validate_catalog(inventory_path, catalog_path):
     scene = json.loads(Path(inventory_path).read_text())
     catalog = json.loads(Path(catalog_path).read_text())
-    if catalog.get('version') != 1 or catalog.get('map') != scene['map']:
-        raise ValueError('Catalog version/map differs from scene inventory')
+    if catalog.get('map') != scene['map']:
+        raise ValueError('Catalog map differs from scene inventory')
     expected = {r['source_node'] for r in scene['objects']} - {'ground'}
-    owners = {}; ids = set(); names = set()
-    for group in catalog['groups']:
-        if not group['id'] or group['id'] in ids:
-            raise ValueError('Missing/duplicate asset ID')
-        ids.add(group['id'])
-        name = group['name'].strip()
-        if not name or name.casefold() in names or name.lower().startswith('group '):
-            raise ValueError(f'Missing, duplicate or placeholder asset name: {name}')
-        names.add(name.casefold())
-        if not group['parts']:
-            raise ValueError(f'Empty asset: {name}')
-        for part in group['parts']:
-            number = part['obstacle']
-            if type(number) is not int or number < 0 or not part['name'].strip():
-                raise ValueError(f'Invalid named source part: {part}')
-            node = f'building-{number:03}'
-            if node in owners:
-                raise ValueError(f'Duplicate ownership: {node}')
-            owners[node] = group['id']
-    if set(owners) != expected:
-        raise ValueError(f'Coverage mismatch: missing={sorted(expected-set(owners))}, extra={sorted(set(owners)-expected)}')
-    return {'status': 'PASS', 'groups': len(ids), 'source_parts': len(owners),
+    index = parse_catalog(catalog, expected)
+    # Baseline inventories intentionally precede spatial partitioning. Validate
+    # their complete source union here; group application validates actual meshes.
+    return {'status': 'PASS', 'groups': len(index.groups), 'source_parts': len(index.sources),
+            'component_selectors': len(index.component_owners),
             'terrain_review_required': any(r['source_node']=='ground' for r in scene['objects'])}
