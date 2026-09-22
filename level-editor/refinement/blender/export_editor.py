@@ -313,7 +313,7 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
 
 
 def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=None,
-                         include_hidden_objects=None):
+                         include_hidden_objects=None, asset_ids=None):
     """Export every named asset, local collision volumes, and merge the library index.
 
     Run into a fresh staging directory for each revision, then publish reviewed
@@ -342,6 +342,16 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
             raise ValueError('Requested inactive mesh source is absent from level catalog: '+name)
     ids = sorted({o["asset_group"] for o in working.objects if o.type == "MESH" and
                   (not o.hide_render or o.name in requested) and o.get("asset_group")})
+    if asset_ids is not None:
+        if (not isinstance(asset_ids, (list, tuple)) or not asset_ids
+                or any(not isinstance(key, str) or not key for key in asset_ids)
+                or len(set(asset_ids)) != len(asset_ids)):
+            raise ValueError('Asset subset requires unique nonempty asset IDs')
+        if set(asset_ids) - set(ids):
+            raise ValueError('Asset subset references unknown or inactive asset groups')
+        if any(named[name]['asset_group'] not in asset_ids for name in requested):
+            raise ValueError('Inactive mesh request belongs to an unselected asset')
+        ids = sorted(asset_ids)
     pivots = {} if standalone_pivots is None else standalone_pivots
     if not isinstance(pivots, dict) or set(pivots) - set(ids):
         raise ValueError('Standalone pivots reference unexported asset groups')

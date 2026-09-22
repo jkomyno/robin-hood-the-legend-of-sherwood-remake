@@ -92,6 +92,15 @@ def check():
             include_hidden_objects=[unrelated.name])
         assert hidden_library['assets']==2
         assert json.loads((root/'hidden-library/other/asset.json').read_text())['parts'][0]['default_hidden'] is True
+        subset=export_asset_library('EndpointFixture',root/'subset',level,
+            asset_ids=['bridge'],standalone_pivots={'bridge':pivot})
+        assert subset['assets']==1
+        assert [e['id'] for e in json.loads((root/'subset/index.json').read_text())['assets']]==['bridge']
+        for selected in (['missing'],['bridge','bridge'],[]):
+            try:export_asset_library('EndpointFixture',root/'invalid-subset',level,asset_ids=selected)
+            except ValueError:pass
+            else:raise AssertionError('Invalid library subset accepted')
+        assert not (root/'invalid-subset').exists()
         cases=[({'include_hidden_objects':['missing']},'missing-name'),
                ({'include_hidden_objects':['building-002']},'source-selector'),
                ({'include_hidden_objects':[unrelated.name]},'wrong-asset'),
