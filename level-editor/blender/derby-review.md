@@ -2,6 +2,12 @@
 
 ## Current source-traced revision review — 2026-09-22
 
+User approved Upper Bailey Gatehouse after the gallery URL correction:
+`corner-fit-v3-reprojected.blend` with `inspection/corner-fit-v3` sheets.
+Approval and model/sheet hashes are recorded in the manifest. Removed from
+pending review; two-image Sunburst texture fill at 48 degrees is authorized
+and pending. Existing disclosed interior stretching is not claimed resolved.
+
 User also approved Central Turret and Gallery (`central/trace-v2`) and West
 Tower (`west/zigzag-v6`) on 2026-09-22. Model and sheet hashes are recorded in
 the manifest; both are removed from pending review. Two-image texture filling
