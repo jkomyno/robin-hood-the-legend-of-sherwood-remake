@@ -123,7 +123,9 @@ body:not([data-mode=both]) .sheets{grid-template-columns:1fr}
 </style><body data-mode="both"><header><h1>'''+title+'''</h1>
 <p>Geometry candidates, not generated textures. Gray means no accepted original texture.
 Click any sheet for its full resolution. Review status does not imply user approval.</p>
-'''+(f'<p><strong>{data.get("total_groups", len(items))} catalog assets; {len(items)} pending review packets'
+'''+(f'<p><strong>{data.get("total_groups", len(items))} catalog assets'
+      +(f' plus {data["supplemental_count"]} separate terrain packet' if data.get('supplemental_count') else '')+
+      f'; {len(items)} pending review packets'
       f' and {len(missing)} assets awaiting packets.</strong></p>' if 'total_groups' in data else '')+'''
 '''+(f'<p><strong>Approved models are hidden. {len(items)} displayed packets; '
       f'{sum(item["status"] == "ready-for-user" for item in items)} ready for your decision.</strong> '

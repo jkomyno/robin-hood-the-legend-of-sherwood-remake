@@ -107,18 +107,29 @@ def archive_reviewed_revision(output, item, evidence):
     (archive / 'revision.json').write_text(json.dumps(item['revision'], indent=2)+'\n')
 
 
-def collect(catalog_path, assets, output, decisions_path=None):
+def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=None):
     catalog = json.loads(catalog_path.read_text())
     if catalog['map'] != 'Leicester':
         raise ValueError('Expected Leicester catalog')
     output.mkdir(parents=True, exist_ok=True)
+    groups = [{**g, 'workspace': assets / g['id']} for g in catalog['groups']]
+    if ground_workspace is not None:
+        ground_workspace = Path(ground_workspace).resolve(strict=True)
+        ground = json.loads((ground_workspace / 'workspace.json').read_text())
+        if ground.get('map_name') != 'Leicester' or ground.get('part_ids') != ['ground']:
+            raise ValueError('Supplemental ground workspace must own only Leicester ground')
+        if ground['asset_id'] in {g['id'] for g in groups}:
+            raise ValueError('Ground workspace duplicates a catalog asset')
+        groups.append({'id': ground['asset_id'], 'name': 'Ground Background (Planar Receiver)',
+                       'workspace': ground_workspace, 'supplemental': True})
     decision_path = decisions_path if decisions_path is not None else output / 'decisions.json'
-    records = load_decisions(decision_path, {g['id'] for g in catalog['groups']})
+    records = load_decisions(decision_path, {g['id'] for g in groups})
     items, progress = [], []
-    for group in catalog['groups']:
-        workspace = assets / group['id']
+    for group in groups:
+        workspace = group['workspace']
         handoff_path = workspace / 'handoff.json'
-        entry = {'id': group['id'], 'name': group['name'], 'workspace': str(workspace)}
+        entry = {'id': group['id'], 'name': group['name'], 'workspace': str(workspace),
+                 'supplemental': group.get('supplemental', False)}
         if not handoff_path.exists():
             progress.append({**entry, 'status': 'refinement-in-progress' if workspace.exists() else 'not-prepared'})
             continue
@@ -184,10 +195,13 @@ def collect(catalog_path, assets, output, decisions_path=None):
     manifest = output / 'review-candidates.json'
     without_packets = [p for p in progress if p['status'] in ('refinement-in-progress', 'not-prepared')]
     manifest.write_text(json.dumps({'map': 'Leicester', 'items': items,
-                                   'total_groups': len(progress),
+                                   'total_groups': len(catalog['groups']),
+                                   'supplemental_count': int(ground_workspace is not None),
                                    'without_packets': without_packets}, indent=2) + '\n')
     (output / 'progress.json').write_text(json.dumps({'map': 'Leicester', 'groups': progress,
-        'total': len(progress), 'packets': len(items), 'ready': sum(i['status'] == 'ready-for-user' for i in items),
+        'total': len(progress), 'catalog_groups': len(catalog['groups']),
+        'supplemental_count': int(ground_workspace is not None),
+        'packets': len(items), 'ready': sum(i['status'] == 'ready-for-user' for i in items),
         'geometry_approval': 'approved' if len(items) == len(progress) and items and all(i['user_approval'] == 'approved' for i in items) else 'pending',
         'approved': sum(i['user_approval'] == 'approved' for i in items),
         'rejected': sum(i['user_approval'] == 'rejected' for i in items), 'texture_generation': 'not-started',
@@ -203,6 +217,8 @@ if __name__ == '__main__':
     parser.add_argument('assets', type=Path)
     parser.add_argument('output', type=Path)
     parser.add_argument('--decisions', type=Path, help='Explicit geometry decision JSON; defaults to OUTPUT/decisions.json')
+    parser.add_argument('--ground-workspace', type=Path, help='Separate planar ground packet, outside the obstacle catalog')
     args = parser.parse_args()
     print(json.dumps(collect(args.catalog.resolve(), args.assets.resolve(), args.output.resolve(),
-                             args.decisions.resolve(strict=True) if args.decisions else None)))
+                             args.decisions.resolve(strict=True) if args.decisions else None,
+                             args.ground_workspace)))

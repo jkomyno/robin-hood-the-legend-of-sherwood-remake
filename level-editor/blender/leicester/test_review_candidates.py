@@ -3,6 +3,7 @@ import contextlib
 import io
 import hashlib
 import json
+import shutil
 from pathlib import Path
 import tempfile
 import unittest
@@ -51,6 +52,23 @@ class ReviewDecisions(unittest.TestCase):
         item = self.collect()
         self.assertEqual(item['user_approval'], 'pending')
         self.assertEqual(item['decision_state'], 'missing')
+
+    def test_ground_remains_separate_from_catalog(self):
+        ground = self.root / 'ground'
+        shutil.copytree(self.workspace, ground)
+        config = {'map_name': 'Leicester', 'asset_id': 'ground-background', 'part_ids': ['ground']}
+        (ground / 'workspace.json').write_text(json.dumps(config))
+        with contextlib.redirect_stdout(io.StringIO()):
+            collect(self.catalog, self.assets, self.output, ground_workspace=ground)
+        manifest = json.loads((self.output / 'review-candidates.json').read_text())
+        self.assertEqual(manifest['total_groups'], 1)
+        self.assertEqual(manifest['supplemental_count'], 1)
+        self.assertEqual(len(manifest['items']), 2)
+        self.assertTrue(manifest['items'][1]['supplemental'])
+        config['part_ids'] = ['building-123']
+        (ground / 'workspace.json').write_text(json.dumps(config))
+        with self.assertRaises(ValueError):
+            collect(self.catalog, self.assets, self.output, ground_workspace=ground)
 
     def test_approval_persists_hides_and_archives_actual_evidence(self):
         item = self.collect()
