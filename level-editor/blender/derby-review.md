@@ -2,6 +2,12 @@
 
 ## Current source-traced revision review — 2026-09-22
 
+User also approved Central Turret and Gallery (`central/trace-v2`) and West
+Tower (`west/zigzag-v6`) on 2026-09-22. Model and sheet hashes are recorded in
+the manifest; both are removed from pending review. Two-image texture filling
+is authorized and pending. Central bridge slope and West interior coverage
+limitations remain documented; approval does not mean those were corrected.
+
 User accepted North Tower on 2026-09-22: `pixel-trace-v4/model.blend` with
 `modified-v3` review sheets. Approval and model/sheet SHA256 hashes are recorded
 in the review manifest. Removed from pending gallery; two-image texture fill
