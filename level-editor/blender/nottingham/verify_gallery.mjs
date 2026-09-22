@@ -1,0 +1,81 @@
+// Exercise the actual review page and retain a screenshot and browser report.
+import {spawn} from 'node:child_process';
+import {readFile, writeFile, mkdir} from 'node:fs/promises';
+import {resolve, join} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {chromeEndpoint, socketOpen, evaluate} from '../../app/tests/cdp.mjs';
+
+const gallery = resolve(process.argv[2] || 'level-editor/work/nottingham-refinement/gallery');
+const output = resolve(process.argv[3] || 'level-editor/work/nottingham-refinement/verification');
+await mkdir(output, {recursive:true});
+const evidence = JSON.parse(await readFile(join(gallery, 'evidence.json'), 'utf8'));
+const profile = join(output, 'browser-profile-' + Date.now());
+const chrome = spawn('/usr/lib/chromium/chromium', [
+  '--headless', '--no-sandbox', '--disable-dev-shm-usage', '--disable-background-networking',
+  '--window-size=1440,1600', '--remote-debugging-port=0', '--user-data-dir=' + profile,
+  pathToFileURL(join(gallery, 'index.html')).href,
+], {stdio:['ignore','ignore','pipe'], env:{...process.env, TMPDIR:'/tmp'}});
+let browserErrors = '';
+chrome.stderr.on('data', data => { browserErrors += data.toString(); });
+const closed = new Promise(resolve => chrome.on('close', resolve));
+let ws;
+try {
+  const endpoint = new URL(await chromeEndpoint(chrome));
+  const pages = await (await fetch('http://' + endpoint.host + '/json/list')).json();
+  const page = pages.find(p => p.type === 'page');
+  if (!page) throw new Error('Review page not found in browser');
+  ws = new WebSocket(page.webSocketDebuggerUrl);
+  await socketOpen(ws);
+  let id = 0;
+  for (let attempt = 0; attempt < 100; attempt++) {
+    if (await evaluate(ws, ++id, "document.readyState === 'complete' && !!document.querySelector('article')")) break;
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  await evaluate(ws, ++id, "document.querySelector('article')?.scrollIntoView()");
+  for (let attempt = 0; attempt < 100; attempt++) {
+    if (await evaluate(ws, ++id, "[...document.querySelectorAll('article:first-of-type img')].every(image => image.complete && image.naturalWidth > 0)")) break;
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  const result = await evaluate(ws, ++id, `(() => {
+    const cards = [...document.querySelectorAll('article')];
+    const firstImages = [...(cards[0]?.querySelectorAll('img') || [])];
+    const mode = document.querySelector('#mode');
+    mode.value='solid'; mode.dispatchEvent(new Event('change'));
+    const solidToggle = document.body.dataset.mode === 'solid';
+    mode.value='both'; mode.dispatchEvent(new Event('change'));
+    return {title:document.title, cards:cards.length,
+      namedCards:cards.every(card => !!card.querySelector('code')?.textContent),
+      reportLinks:cards.every(card => card.querySelectorAll('a[href^="reports/"]').length >= 2),
+      navigation:document.querySelectorAll('nav a').length,
+      firstImages:firstImages.map(image => ({src:image.getAttribute('src'),
+        loaded:image.complete && image.naturalWidth > 0, width:image.naturalWidth,height:image.naturalHeight})),
+      solidToggle, horizontalOverflow:document.documentElement.scrollWidth > innerWidth};
+  })()`);
+  result.expectedCards = evidence.items.length;
+  result.status = result.cards === result.expectedCards && result.cards > 0 && result.namedCards &&
+    result.reportLinks && result.navigation === result.cards && result.solidToggle &&
+    result.firstImages.every(image => image.loaded) && !result.horizontalOverflow ? 'PASS' : 'FAIL';
+  await writeFile(join(output, 'gallery-browser.json'), JSON.stringify(result, null, 2) + '\n');
+  const screenshot = await new Promise((resolve, reject) => {
+    const request = ++id;
+    const listener = event => {
+      const data = JSON.parse(event.data);
+      if (data.id !== request) return;
+      ws.removeEventListener('message', listener);
+      if (data.error) reject(new Error(JSON.stringify(data.error))); else resolve(data.result.data);
+    };
+    ws.addEventListener('message', listener);
+    ws.send(JSON.stringify({id:request,method:'Page.captureScreenshot',params:{format:'png'}}));
+  });
+  await writeFile(join(output, 'gallery-browser.png'), Buffer.from(screenshot, 'base64'));
+  console.log(JSON.stringify(result));
+  if (result.status !== 'PASS') throw new Error('Review gallery browser check failed');
+} catch (error) {
+  await writeFile(join(output, 'gallery-browser-errors.txt'), browserErrors);
+  console.error(browserErrors);
+  throw error;
+} finally {
+  ws?.close();
+  chrome.kill('SIGTERM');
+  await closed;
+}
