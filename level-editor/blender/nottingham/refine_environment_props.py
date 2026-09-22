@@ -49,10 +49,12 @@ def _battens(obj, obstacle):
     normal = (b-a).cross(d-a).normalized()
     if normal.z < 0:
         normal.negate()
-    vertices = [v.co.copy() for v in obj.data.vertices]
-    faces = [tuple(p.vertices) for p in obj.data.polygons]
-    material_indices = [p.material_index for p in obj.data.polygons]
     inverse = obj.matrix_world.inverted()
+    native_points = obstacle['points']
+    vertices = [inverse @ Vector((p['x'], -p['y']/sine, p[z]/cosine))
+                for z in ('z_bottom', 'z_top') for p in native_points]
+    faces = [(0,3,2,1),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)]
+    material_indices = [0]*6
     details = []
     for fraction in (.20, .70):
         half = .018
@@ -87,7 +89,8 @@ def _battens(obj, obstacle):
               'batten_count': 2, 'measurements': details,
               'preserved': ['Object identity', 'Parent', 'World transform', 'Native slab contour'],
               'inference': ['Batten depth 0.8 world units is conservative; source establishes narrow raised strips.',
-                            'Two batten centers estimated at 20% and 70% of slab length from source crop.'],
+                            'Two batten centers estimated at 20% and 70% of slab length from source crop.',
+                            'Native slab corner envelope reconstructed as closed solid; concealed underside is inferred.'],
               'limitations': ['Slab board seams remain painted detail; no unsupported plank count is asserted.',
                               'Fish and unassigned adjacent vessels remain source artwork; container/support inferences are recorded separately.']}
     obj[TAG] = json.dumps(record, sort_keys=True)
