@@ -90,10 +90,22 @@ def inspect(workspace, asset):
                       sorted(f"building-{p['obstacle']:03d}" for p in asset["parts"]))
     require(config["part_ids"] == expected_parts,
             "Workspace parts differ from current catalog")
+    selectors = sorted((f"building-{part['obstacle']:03d}", component)
+                       for part in asset.get("parts", []) for component in part.get("components", []))
+    if selectors:
+        from workspace_components import validated_scope
+        scope = validated_scope(config)
+        require(scope is not None, "Component catalog requires a component-aware workspace")
+        actual = sorted((row["source_node"], row["projection_component"])
+                        for row in scope["owned_components"])
+        require(actual == selectors, "Workspace component selectors differ from current catalog")
     validation = read(workspace / "validation.json")
     require(validation.get("status") == "PASS" and validation.get("asset_id") == asset["id"],
             "Missing successful asset validation")
     require(validation.get("part_ids") == config["part_ids"], "Validation source parts differ")
+    if selectors:
+        require(validation.get("component_ownership") == config["component_ownership"],
+                "Validation component ownership differs")
     require(sha(workspace / "baseline.blend") == config["baseline_sha256"], "Frozen baseline changed")
     for folder, key in (("input", "input_files"), ("reference", "reference_files")):
         require(file_hashes(workspace / folder) == config[key], f"Immutable {folder} evidence changed")
@@ -111,6 +123,9 @@ def inspect(workspace, asset):
         hashes[name] = file_hashes(folder)
         require(required <= hashes[name].keys(), f"Incomplete {name} eight-view packet")
         packet = read(folder / "views.json")
+        if selectors:
+            require(packet.get("component_ownership") == config["component_ownership"],
+                    f"{name} packet component ownership differs")
         require(packet.get("asset_id") == asset["id"] and packet.get("version") == 1,
                 f"Invalid {name} framing manifest")
         require(packet.get("layout") == {"columns": 4, "rows": 2}, "Expected fixed 4x2 layout")
@@ -189,8 +204,12 @@ def inspect(workspace, asset):
         blockers.append("Worker has not described the geometry changes.")
     if not refined and not reviewed_unchanged:
         blockers.append("No completed geometry refinement or explicit unchanged-geometry audit is established.")
+    source_pixels = sum(view['counts']['source'] for view in packets['modified']['views'])
+    unknown_pixels = sum(view['counts']['unknown'] for view in packets['modified']['views'])
+    if source_pixels == 0:
+        blockers.append("No source texture is present in any reviewed view. Source ownership or state evidence must be resolved before this asset is ready.")
     status = "refinement-in-progress"
-    if worker.get("status") == "fix-needed":
+    if worker.get("status") == "fix-needed" or source_pixels == 0:
         status = "fix-needed"
     elif worker.get("status") == "ready-for-user" and not blockers:
         status = "ready-for-user"
@@ -226,6 +245,8 @@ def inspect(workspace, asset):
                 "geometry_refined": refined, "geometry_reviewed": refined or reviewed_unchanged,
                 "review_outcome": "refined" if refined else "reviewed-no-change" if reviewed_unchanged else "baseline-only",
                 "solid_views_changed": changed,
+                "source_coverage": {"source_pixels": source_pixels, "unknown_pixels": unknown_pixels,
+                                    "fraction": source_pixels / max(1, source_pixels + unknown_pixels)},
                 "model_sha256": model_hash, "baseline_sha256": config["baseline_sha256"],
                 "packet_hashes": hashes, "source_sha256": packets["modified"]["source_sha256"],
                 "source_mask_evidence": packets["modified"].get("source_mask_evidence"),
@@ -324,19 +345,31 @@ def main(argv=None):
     }]}
     ids = [asset["id"] for asset in catalog["groups"]]
     require(len(ids) == len(set(ids)), "Duplicate catalog asset IDs")
+    historical_ids = set()
+    for prior_path in args.catalog.parent.glob('catalog-v*.json'):
+        prior = read(prior_path)
+        if (prior.get('map') == catalog['map'] and
+                prior.get('revision', 0) < catalog.get('revision', 0)):
+            historical_ids.update(group['id'] for group in prior['groups'])
+    retired_ids = historical_ids - set(ids)
     overrides = {}
     if args.workspace_map.exists():
         override_record = read(args.workspace_map)
         require(override_record.get('version') == 1, 'Unknown workspace map version')
         overrides = override_record['assets']
-        require(set(overrides) <= set(ids), 'Workspace overrides contain unknown assets')
+        require(set(overrides) <= set(ids) | retired_ids, 'Workspace overrides contain unknown assets')
     approvals = {}
     if args.approvals:
         records = read(args.approvals)
         require(records.get("version") == 1, "Unsupported approval record version")
+        seen_decisions = set()
         for record in records["approvals"]:
             identifier = record["asset_id"]
-            require(identifier in ids and identifier not in approvals, "Unknown or duplicate approval asset ID")
+            require(identifier in set(ids) | retired_ids and identifier not in seen_decisions,
+                    "Unknown or duplicate approval asset ID")
+            seen_decisions.add(identifier)
+            if identifier in retired_ids:
+                continue  # The persistent log retains the retired revision; never transfer its approval.
             require(record.get("decision") in ("approved", "rejected", "revision-requested"), "Invalid user decision")
             require(isinstance(record.get("exact_text"), str) and record["exact_text"].strip(), "Exact user decision text missing")
             for key in ("model_sha256", "modified_views_sha256"):
