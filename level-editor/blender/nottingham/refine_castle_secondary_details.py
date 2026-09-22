@@ -19,10 +19,10 @@ LIMITS = {
     'castle-courtyard-shelter': 'Three closed arched door bays now have shallow recessed panels. Main roof retains its source-facing fascia thickness while the concealed rear underside follows the roof slope. Supports meet the source-measured courtyard datum100. Door recess depth and closed-bay backing are inferred; the separately owned lower lean-to371 and chimney372 retain native geometry.',
     'churchyard-wall': 'The visible boundary now has a projecting coping course and beveled top lip following the native wall bends. Individual stone joints remain painted. The matching profile on the roof/foliage-obscured northern run is an explicit continuity inference; its source pixels remain unassigned and gray.',
     'castle-watchtower': 'Ten major crown capstones are individually anchored to visible artwork. Upper doorway turret has lowered central parapet openings; corner cap continuity on the foliage-obscured rear is inferred. Narrow arrow loops and small coping bevels remain painted. Lower body and hidden tower contacts retain native depths.',
-    'castle-east-courtyard-wall': 'Twenty measured crenels replace the continuous crown across the five visible runs. Source-hidden northern section of the eastern return remains continuous rather than inventing a repeat behind the roofed tower. Coping bevels and arrow loops remain painted; narrow return crenel phase needs further close-up review.',
+    'castle-east-courtyard-wall': 'Twenty measured crenels replace the continuous crown across the five visible runs. Source-hidden northern section of the eastern return remains continuous rather than inventing a repeat behind the roofed tower. Six narrow-return openings checked against the source close-up and wire overlay. Coping bevels and arrow loops remain painted; concealed depth retains native inference.',
     'castle-upper-wall': 'Upper parapets now have four measured rear-wall crenels, three front-wall crenels, three turret crenels and two lower-landing crenels. Native footprints and floor datum remain unchanged. Curved turret facets, coping bevels and arrow-loop depth remain coarse; this packet requires further silhouette review before approval.',
     'castle-gate-west-tower': 'Eight capstones are counted in the original crown. The drum and crown use smooth interpolated ring contours through source anchors; intermediate hidden curvature is inferred. Arrow loops and coping bevels remain painted. Adjacent gate supports retain their source footprints.',
-    'castle-west-courtyard-wall': 'Nine complete central-run crenels plus the western clipped crenel are source measured. Seven western return crenels are fitted to native mask282. The curved turret and eastern bend still lack individually measured battlements; arrow loops remain painted. Hidden curtain depth remains inherited. This is a partial structural refinement, not approval-ready.',
+    'castle-west-courtyard-wall': 'Nine complete central-run crenels plus the western clipped crenel are source measured. Seven western return crenels are fitted to native mask282. Two turret openings are traced individually. The eastern bend has continuous coping in the source; visible diagonal steps belong behind it. Transferred non-solid strip379 is a thin coping slab at its native top, with four-unit underside inferred. Arrow loops remain painted, native curved-corner facets and hidden curtain depth retained.',
     'churchyard-graves': 'Two headstones now have curved shoulders/crowns and the monument has a tapered plinth, cornice and pitched cap. Tiny cap ornament and surface carving remain painted. Rear profiles and monument tier depths are inferred from the visible silhouette; native footprints and principal cap heights are retained. Tiny high finials are omitted rather than expanding the whole cap to their elevation.',
 }
 
@@ -64,7 +64,7 @@ def west_crown(points):
     total=cumulative[-1]
     intervals=[]
     for segment,((ai,bi),(ci,di)) in enumerate(zip(pairs,pairs[1:])):
-        accepted=return_notches if segment==0 else notches if segment in [5,6] else []
+        accepted=return_notches if segment==0 else notches if segment in [5,6] else [(250,263)] if segment==3 else [(294,310)] if segment==4 else []
         a,c=points[ai],points[ci]
         for x0,x1 in accepted:
             lo=max(0.,(x0-a['x'])/(c['x']-a['x']))
@@ -75,7 +75,7 @@ def west_crown(points):
                 intervals.append((left,right))
     vertices,faces=arc_ribbon_geometry(points,pairs,intervals,base=0,notch_depth=12.34659)
     return vertices, faces, {'complete_central_notches':9,'clipped_central_notches':1,
-        'measured_return_notches':7,'return_notch_source_x_intervals':return_notches,
+        'measured_return_notches':7,'turret_notches':2,'turret_notch_source_x_intervals':[[250,263],[294,310]],'east_bend_review':'Source close-up shows continuous coping; the white diagonal steps are behind this parapet and must not be cut into its front wall.','return_notch_source_x_intervals':return_notches,
         'return_edge_fit_mean_error_pixels':2.37682,
         'notch_source_x_intervals':notches,'notch_depth_native':12.34659,
         'source_mask_indices':[278,282],'source_plateau_anchors':[[350,1356],[700,1383]],
@@ -398,7 +398,7 @@ def candidate(workspace, reviewed):
     config=json.loads((workspace/'workspace.json').read_text())
     short=config['asset_id'].removeprefix('nottingham-')
     report=json.loads((workspace/'geometry-report.json').read_text())
-    ready=reviewed and short in ['churchyard-graves','castle-gate-west-tower','castle-watchtower','churchyard-wall','castle-courtyard-shelter']
+    ready=reviewed and short in ['churchyard-graves','castle-gate-west-tower','castle-watchtower','churchyard-wall','castle-courtyard-shelter','castle-west-courtyard-wall','castle-east-courtyard-wall']
     write(workspace/'candidate.json',{'version':1,'asset_id':config['asset_id'],
         'geometry_reviewed':reviewed,'geometry_refined':True,
         'status':'ready-for-user' if ready else 'fix-needed' if reviewed else 'refinement-in-progress',
