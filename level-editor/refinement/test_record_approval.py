@@ -63,6 +63,27 @@ class ApprovalTests(unittest.TestCase):
         with self.assertRaises(ValueError):record(self.path,['fixture'],'Synthetic approval')
         self.assertFalse((self.root/'decisions.json').exists())
 
+    def test_geometry_only_pending_survives_audit_but_not_source_change(self):
+        self.item.update(status='validation-pending', worker_status='ready-for-user',
+                         stored_material_validation='pending-or-failed')
+        self.exact()
+        record(self.path,['fixture'],'Synthetic explicit geometry approval',geometry_only=True)
+        records=load_decisions(self.root/'decisions.json',{'fixture'})
+        bind_decision(self.item,records)
+        self.assertEqual(self.item['user_approval'],'approved')
+        self.assertFalse(self.item['generation_eligible'])
+        self.assertFalse(self.item['publication_eligible'])
+        self.item['revision']['sha256']='1'*64
+        self.item['status']='ready-for-user'
+        self.item['stored_material_validation']='PASS'
+        bind_decision(self.item,records)
+        self.assertEqual(self.item['decision_state'],'current')
+        self.assertTrue(self.item['generation_eligible'])
+        (self.root/'solid.png').write_text('new geometry view')
+        bind_decision(self.item,records)
+        self.assertEqual(self.item['decision_state'],'stale')
+        self.assertFalse(self.item['generation_eligible'])
+
     def test_expected_revision_mismatch_and_rejection(self):
         self.exact()
         with self.assertRaises(ValueError):

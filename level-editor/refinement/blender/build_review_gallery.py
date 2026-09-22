@@ -26,7 +26,8 @@ def build(index_path, output, *, pending_only=False, map_name=None):
     title = html.escape(map_name.strip() + " model review")
     items = data["items"]
     if pending_only:
-        items = [item for item in items if not str(item.get("user_approval", "")).lower().startswith("approved")]
+        items = [item for item in items if not (str(item.get("user_approval", "")).lower().startswith("approved")
+                 and item.get("technical_eligible", True))]
     ids = [item["id"] for item in items]
     if len(set(ids)) != len(ids):
         raise ValueError("Duplicate review identifiers")

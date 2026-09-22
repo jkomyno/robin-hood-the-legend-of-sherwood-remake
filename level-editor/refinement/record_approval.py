@@ -12,7 +12,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from review_evidence import (sha, load_decisions, bind_decision,
-                             archive_decisions, archive_reviewed_revision)
+                             archive_decisions, archive_reviewed_revision, geometry_basis, archive_geometry_basis)
 
 
 def _source(path, value):
@@ -21,7 +21,7 @@ def _source(path, value):
 
 
 def record(manifest_path, asset_ids, decision, *, result='approved',
-           revision_sha256=None, decisions_path=None):
+           revision_sha256=None, decisions_path=None, geometry_only=False):
     path = Path(manifest_path).resolve(strict=True)
     if not isinstance(decision, str) or not decision.strip():
         raise ValueError('The exact explicit user decision is required')
@@ -60,10 +60,16 @@ def record(manifest_path, asset_ids, decision, *, result='approved',
                     raise ValueError('Review evidence changed: ' + key)
             record = {'asset_id': item['id'], 'scope': 'geometry', 'decision': result,
                       'revision_sha256': revision['sha256'], 'exact_user_text': decision}
+            if geometry_only:
+                if result != 'approved' or item.get('worker_status', item['status']) != 'ready-for-user':
+                    raise ValueError('Geometry-only approval requires a completed geometry review')
+                record['geometry_basis'] = geometry_basis(item)
+                record['technical_validation_at_approval'] = item['status']
             bind_decision(item, records + [record])
             pending.append((item, evidence, record))
         for item, evidence, record in pending:
             archive_reviewed_revision(path.parent, item, evidence)
+            archive_geometry_basis(path.parent, item, record)
         records.extend(record for _, _, record in pending)
         archive_decisions(path.parent, records)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -85,9 +91,10 @@ if __name__ == '__main__':
     parser.add_argument('manifest')
     parser.add_argument('asset_ids', nargs='+')
     parser.add_argument('--decision', required=True, help='Exact actual user decision and scope; never invent approval')
+    parser.add_argument('--geometry-only', action='store_true', help='Record explicit geometry approval while separate material validation is pending')
     parser.add_argument('--result', choices=('approved', 'rejected'), default='approved')
     parser.add_argument('--revision-sha256', help='Expected exact revision for one asset')
     parser.add_argument('--decisions', type=Path, help='Exact-revision decision log; default beside manifest')
     args = parser.parse_args()
     record(args.manifest, args.asset_ids, args.decision, result=args.result,
-           revision_sha256=args.revision_sha256, decisions_path=args.decisions)
+           revision_sha256=args.revision_sha256, decisions_path=args.decisions, geometry_only=args.geometry_only)

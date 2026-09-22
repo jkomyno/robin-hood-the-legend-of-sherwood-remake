@@ -25,6 +25,8 @@ def validate(manifest, asset_id, decisions=None, expected_revision=None):
     records = load_decisions(Path(decisions) if decisions else manifest.parent/'decisions.json',
                              {entry['id'] for entry in data['items']})
     bind_decision(item, records)
+    if not item.get('technical_eligible'):
+        raise ValueError('Private staging requires completed technical validation')
     if item['decision_state']!='current' or item['user_approval']!='approved':
         raise ValueError('Private staging requires current explicit geometry approval')
     revision=item['revision']

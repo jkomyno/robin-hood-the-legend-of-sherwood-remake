@@ -30,6 +30,56 @@ def load_decisions(path, known_ids):
     return data['decisions']
 
 
+def geometry_basis(item):
+    """Freeze reviewed geometry/source evidence independently of later audit reports."""
+    workspace = Path(item['workspace'])
+    files = {}
+    for key in ('solid', 'textured', 'context', 'ownership', 'recipe',
+                'revealed_solid', 'revealed_textured', 'revealed_context'):
+        entry = item['revision']['evidence'].get(key)
+        if entry:
+            files['review/' + key] = {'path': entry['path'], 'sha256': sha(Path(entry['path']))}
+    for folder in ('input', 'reference', 'modified'):
+        for path in sorted((workspace / folder).rglob('*')):
+            if path.is_file():
+                files[str(path.relative_to(workspace))] = {'path': str(path), 'sha256': sha(path)}
+    for name in ('workspace.json', 'source-masks.json', 'projection-layers.json'):
+        path = workspace / name
+        if path.is_file():
+            files[name] = {'path': str(path), 'sha256': sha(path)}
+    model_hash = sha(workspace / 'model.blend')
+    identity = {'asset_id': item['id'], 'model_sha256': model_hash,
+                'files': {key: entry['sha256'] for key, entry in files.items()}}
+    digest = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    return {'version': 1, 'sha256': digest, 'model_sha256': model_hash, 'files': files}
+
+
+def archive_geometry_basis(output, item, record):
+    basis = record.get('geometry_basis')
+    if not basis:
+        return
+    archive = output / 'reviewed-revisions' / item['id'] / record['revision_sha256'] / 'geometry-basis'
+    for index, (key, entry) in enumerate(sorted(basis['files'].items())):
+        source = Path(entry['path'])
+        target = archive / (str(index) + source.suffix)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if sha(source) != entry['sha256']:
+            raise ValueError('Geometry approval evidence changed during archive: ' + key)
+        if target.exists() and sha(target) != entry['sha256']:
+            raise ValueError('Archived geometry basis was modified')
+        if not target.exists():
+            shutil.copyfile(source, target)
+    model = Path(item['workspace']) / 'model.blend'
+    target = archive / 'model.blend'
+    if sha(model) != basis['model_sha256']:
+        raise ValueError('Approved model changed during archive')
+    if target.exists() and sha(target) != basis['model_sha256']:
+        raise ValueError('Archived approved model was modified')
+    if not target.exists():
+        shutil.copyfile(model, target)
+    (archive / 'basis.json').write_text(json.dumps(basis, indent=2) + '\n')
+
+
 def bind_decision(item, records):
     decisions = [r for r in records if r['asset_id'] == item['id']]
     # The last explicit decision for this asset is authoritative. A decision on
@@ -38,10 +88,13 @@ def bind_decision(item, records):
     item['user_approval'] = 'pending'
     if record is None:
         item['decision_state'] = 'missing'
-    elif record['revision_sha256'] != item['revision']['sha256']:
+    elif record.get('geometry_basis') and record['geometry_basis']['sha256'] != geometry_basis(item)['sha256']:
         item['decision_state'] = 'stale'
         item['stale_decision'] = record
-    elif record['decision'] == 'approved' and item['status'] != 'ready-for-user':
+    elif not record.get('geometry_basis') and record['revision_sha256'] != item['revision']['sha256']:
+        item['decision_state'] = 'stale'
+        item['stale_decision'] = record
+    elif record['decision'] == 'approved' and item['status'] != 'ready-for-user' and not record.get('geometry_basis'):
         raise ValueError('Cannot approve an incomplete candidate: '+item['id'])
     else:
         item['decision_state'] = 'current'
@@ -49,6 +102,9 @@ def bind_decision(item, records):
         item['user_decision'] = record
         if record['decision'] == 'rejected':
             item['status'] = 'rejected'
+    item['technical_eligible'] = item['status'] == 'ready-for-user' and item.get('stored_material_validation', 'PASS') == 'PASS'
+    item['generation_eligible'] = item['user_approval'] == 'approved' and item['technical_eligible']
+    item['publication_eligible'] = item['generation_eligible']
     return item
 
 

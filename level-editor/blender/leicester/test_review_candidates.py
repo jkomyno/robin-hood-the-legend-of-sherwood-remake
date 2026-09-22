@@ -171,6 +171,33 @@ class ReviewDecisions(unittest.TestCase):
         self.assertEqual(changed['status'], 'validation-pending')
         self.assertEqual(changed['decision_state'], 'stale')
 
+    def test_incomplete_handoff_does_not_abort_gallery(self):
+        (self.workspace/'review.md').unlink()
+        with contextlib.redirect_stdout(io.StringIO()):
+            collect(self.catalog,self.assets,self.output)
+        manifest=json.loads((self.output/'review-candidates.json').read_text())
+        self.assertEqual(manifest['items'],[])
+        self.assertEqual(manifest['without_packets'][0]['status'],'validation-pending')
+        self.assertIn('review.md',manifest['without_packets'][0]['missing_evidence'])
+
+    def test_explicit_geometry_approval_survives_added_audit(self):
+        from record_approval import record
+        audit=self.workspace/'inspection/stored-materials/audit.json'
+        content=audit.read_text()
+        audit.unlink()
+        item=self.collect()
+        record(self.output/'review-candidates.json',['sample'],'Synthetic geometry approval',geometry_only=True)
+        pending=self.collect()
+        self.assertEqual(pending['user_approval'],'approved')
+        self.assertEqual(pending['status'],'validation-pending')
+        self.assertFalse(pending['generation_eligible'])
+        self.assertEqual(len(json.loads((self.output/'gallery/evidence.json').read_text())['items']),1)
+        audit.write_text(content)
+        ready=self.collect()
+        self.assertEqual(ready['user_approval'],'approved')
+        self.assertEqual(ready['status'],'ready-for-user')
+        self.assertTrue(ready['generation_eligible'])
+
     def test_implicit_or_wrong_revision_decision_rejected(self):
         item = self.collect()
         path = self.decision(item)

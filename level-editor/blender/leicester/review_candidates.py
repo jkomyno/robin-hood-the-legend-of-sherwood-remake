@@ -60,11 +60,25 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
         if not handoff_path.exists():
             progress.append({**entry, 'status': 'refinement-in-progress' if workspace.exists() else 'not-prepared'})
             continue
-        handoff = json.loads(handoff_path.read_text())
-        status = handoff['status']
+        try:
+            handoff = json.loads(handoff_path.read_text())
+        except (ValueError, OSError):
+            progress.append({**entry, 'status': 'validation-pending', 'incomplete_packet': True,
+                             'missing_evidence': ['valid handoff.json']})
+            continue
+        required = ['model.blend', 'modified/solid.png', 'modified/textured.png',
+                    'input/context.png', 'validation.json', 'review.md']
+        required += [handoff.get(key) or '<missing '+key+' declaration>' for key in ('ownership', 'recipe')]
+        required += [handoff[key] for key in ('revealed_solid', 'revealed_textured', 'revealed_context') if handoff.get(key)]
+        missing = [name for name in required if not (workspace / name).is_file()]
+        if missing:
+            progress.append({**entry, 'status': 'validation-pending', 'incomplete_packet': True,
+                             'missing_evidence': missing})
+            continue
+        status = handoff.get('status', 'validation-pending')
         if status not in ('ready-for-user', 'fix-needed', 'validation-pending'):
             raise ValueError(f'Unsupported handoff status for {group["id"]}: {status}')
-        item = {**entry, 'status': status, 'notes': handoff['notes'], 'user_approval': 'pending'}
+        item = {**entry, 'status': status, 'notes': handoff.get('notes', []), 'user_approval': 'pending'}
         for key, relative in {
             'solid': 'modified/solid.png', 'textured': 'modified/textured.png',
             'context': 'input/context.png', 'validation': 'validation.json', 'review': 'review.md',
@@ -146,7 +160,7 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
     if decisions_path is not None:
         (output / 'decisions.json').write_text(json.dumps({'version': 1, 'decisions': records}, indent=2)+'\n')
     manifest = output / 'review-candidates.json'
-    without_packets = [p for p in progress if p['status'] in ('refinement-in-progress', 'not-prepared')]
+    without_packets = [p for p in progress if p.get('incomplete_packet') or p['status'] in ('refinement-in-progress', 'not-prepared')]
     manifest.write_text(json.dumps({'map': 'Leicester', 'items': items,
                                    'total_groups': len(catalog['groups']),
                                    'supplemental_count': int(ground_workspace is not None),
@@ -159,8 +173,7 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
         'approved': sum(i['user_approval'] == 'approved' for i in items),
         'rejected': sum(i['user_approval'] == 'rejected' for i in items), 'texture_generation': 'not-started',
         'publication': 'not-started'}, indent=2) + '\n')
-    if items:
-        build(manifest, output / 'gallery', pending_only=True)
+    build(manifest, output / 'gallery', pending_only=True)
     return {'manifest': str(manifest), 'groups': len(progress), 'packets': len(items)}
 
 
