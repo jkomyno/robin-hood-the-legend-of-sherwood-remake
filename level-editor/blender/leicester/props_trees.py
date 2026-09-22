@@ -176,6 +176,27 @@ def run(workspace):
              and not o.get('leicester_tree_crown_component')]
     if not targets or any(int(o['source_node'].split('-')[-1]) not in SUPPORTED for o in targets):raise ValueError('Unsupported tree workspace')
     targets=[part for wood in targets for part in components(wood)]
+    # Component assignments are introduced only after their objects exist.
+    # Preserve the immutable inventory and every other asset's assignments.
+    mask_path=Path(config['source_mask_manifest'])
+    masks=json.loads(mask_path.read_text())
+    owned={obj['source_node'] for obj in targets}
+    for projection in masks['projections'].values():
+        assignments=projection['assignments']
+        for node in sorted(owned):
+            matches=[a for a in assignments if a.get('source_node')==node]
+            if not matches:continue
+            template=next((a for a in matches if a.get('projection_component')=='wood'),matches[0])
+            if not template.get('mask_indices'):raise ValueError('Tree has no native ownership mask')
+            assignments[:]=[a for a in assignments if a.get('source_node')!=node]
+            for component in ('wood','crown'):
+                entry={**template,'projection_component':component,'reviewed':True}
+                if component=='crown' and int(node.split('-')[-1])>=90:
+                    entry.update(exclude_mask_indices=list(entry['mask_indices']),
+                        exclusions_reviewed=True,
+                        exclusion_reason='Native mask supports wood only; unresolved forest canopy ownership remains explicitly neutral.')
+                assignments.append(entry)
+    mask_path.write_text(json.dumps(masks,indent=2)+'\n')
     records=[refine(o) for o in targets];hashes=[signature(o) for o in targets]
     for obj in targets:refine(obj)
     if hashes!=[signature(o) for o in targets]:raise ValueError('Non-idempotent recipe')
