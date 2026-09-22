@@ -14,8 +14,10 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from refine_castle_secondary import WORK, sha, write, replace_mesh
 TAG = 'nottingham-secondary-details-v1'
-ASSETS = ['castle-west-courtyard-wall', 'churchyard-graves', 'castle-gate-west-tower']
+ASSETS = ['castle-west-courtyard-wall', 'churchyard-graves', 'castle-gate-west-tower', 'castle-upper-wall', 'castle-east-courtyard-wall']
 LIMITS = {
+    'castle-east-courtyard-wall': 'Twenty measured crenels replace the continuous crown across the five visible runs. Source-hidden northern section of the eastern return remains continuous rather than inventing a repeat behind the roofed tower. Coping bevels and arrow loops remain painted; narrow return crenel phase needs further close-up review.',
+    'castle-upper-wall': 'Upper parapets now have four measured rear-wall crenels, three front-wall crenels, three turret crenels and two lower-landing crenels. Native footprints and floor datum remain unchanged. Curved turret facets, coping bevels and arrow-loop depth remain coarse; this packet requires further silhouette review before approval.',
     'castle-gate-west-tower': 'Eight capstones are counted in the original crown. The drum and crown use smooth interpolated ring contours through source anchors; intermediate hidden curvature is inferred. Arrow loops and coping bevels remain painted. Adjacent gate supports retain their source footprints.',
     'castle-west-courtyard-wall': 'Nine complete central-run crenels plus the western clipped crenel are source measured. Seven western return crenels are fitted to native mask282. The curved turret and eastern bend still lack individually measured battlements; arrow loops remain painted. Hidden curtain depth remains inherited. This is a partial structural refinement, not approval-ready.',
     'churchyard-graves': 'Two headstones now have curved shoulders/crowns and the monument has a tapered plinth, cornice and pitched cap. Tiny cap ornament and surface carving remain painted. Rear profiles and monument tier depths are inferred from the visible silhouette; native footprints and principal cap heights are retained. Tiny high finials are omitted rather than expanding the whole cap to their elevation.',
@@ -132,6 +134,75 @@ def gate_crown(native, node):
         'inference':'Smooth hidden/intermediate ring depth is interpolated through the source contour anchors'}
 
 
+def upper_wall(native,node):
+    from ribbon_crown import arc_ribbon_geometry
+    pts=copy.deepcopy(native[node]['points'])
+    if node==365:
+        pairs=[(3,2),(0,1)]
+        measured={0:[(763,775),(797,809),(830,842),(863,875)]}
+        partial={}
+    elif node==360:
+        pairs=[(0,15),(1,14),(2,13),(3,12),(4,11),(5,10),(6,9),(7,8)]
+        measured={0:[(987,1001),(1028,1040),(1068,1081)],3:[(930,946)]}
+        partial={1:[(.25,.72)],5:[(.15,.7)]}
+    elif node==367:
+        pairs=[(1,2),(0,3),(5,4)]
+        measured={0:[(687,700),(729,741)]}
+        partial={}
+    else:
+        raise ValueError('Unsupported upper-wall source node')
+    mids=[((pts[a]['x']+pts[b]['x'])/2,(pts[a]['y']+pts[b]['y'])/2) for a,b in pairs]
+    lengths=[0.]
+    for a,b in zip(mids,mids[1:]):lengths.append(lengths[-1]+math.dist(a,b))
+    total=lengths[-1]
+    intervals=[]
+    for segment,((ai,bi),(ci,di)) in enumerate(zip(pairs,pairs[1:])):
+        positions=list(partial.get(segment,[]))
+        for x0,x1 in measured.get(segment,[]):
+            a,c=pts[ai],pts[ci]
+            lo,hi=sorted([(x0-a['x'])/(c['x']-a['x']),(x1-a['x'])/(c['x']-a['x'])])
+            positions.append((max(0.,lo),min(1.,hi)))
+        for lo,hi in positions:
+            if lo<hi:intervals.append(((lengths[segment]+lo*(lengths[segment+1]-lengths[segment]))/total,
+                                      (lengths[segment]+hi*(lengths[segment+1]-lengths[segment]))/total))
+    v,f=arc_ribbon_geometry(pts,pairs,intervals,base=0,notch_depth=13)
+    return v,f,{'change':'Replace continuous upper-courtyard parapet with source-counted crenels',
+        'crenels':len(intervals),'source_x_intervals_by_segment':measured,'short_turn_intervals':partial,
+        'native_notch_depth':13,'source_evidence':'castle-secondary-audit/upper-back-grid.png and upper-front-grid.png',
+        'inference':'Concealed cross-wall depth is retained; short turret-turn openings interpolate the measured contour anchors'}
+
+
+def east_curtain(native):
+    from ribbon_crown import arc_ribbon_geometry
+    pts=copy.deepcopy(native[326]['points'])
+    pairs=[(6,7),(5,8),(4,9),(3,10),(2,11),(1,0)]
+    # Each run is counted independently in the source; roof-hidden intervals
+    # on the east return have no fabricated repeat.
+    specs={0:('x',[(1139,1149),(1162,1171)]),
+           1:('y',[(1046,1052),(1069,1075),(1092,1098),(1115,1121)]),
+           2:('x',[(1167,1179),(1205,1217),(1244,1256),(1282,1294)]),
+           3:('y',[(1348,1354),(1371,1377),(1394,1400),(1418,1424),(1441,1447),(1465,1471)]),
+           4:('x',[(1123,1137),(1163,1177),(1203,1217),(1243,1257)])}
+    mids=[((pts[a]['x']+pts[b]['x'])/2,(pts[a]['y']+pts[b]['y'])/2) for a,b in pairs]
+    lengths=[0.]
+    for a,b in zip(mids,mids[1:]):lengths.append(lengths[-1]+math.dist(a,b))
+    total=lengths[-1];intervals=[];counts={}
+    for segment,((ai,bi),(ci,di)) in enumerate(zip(pairs,pairs[1:])):
+        axis,bands=specs[segment];a,c=pts[ai],pts[ci];count=0
+        for low,high in bands:
+            lo,hi=sorted([(low-a[axis])/(c[axis]-a[axis]),(high-a[axis])/(c[axis]-a[axis])])
+            lo,hi=max(0.,lo),min(1.,hi)
+            if lo<hi:
+                intervals.append(((lengths[segment]+lo*(lengths[segment+1]-lengths[segment]))/total,
+                                  (lengths[segment]+hi*(lengths[segment+1]-lengths[segment]))/total));count+=1
+        counts[segment]=count
+    v,f=arc_ribbon_geometry(pts,pairs,intervals,base=0,notch_depth=13)
+    return v,f,{'change':'Cut individually source-counted crenels across five eastern courtyard wall runs',
+        'crenels_by_run':counts,'measured_native_axis_intervals':specs,'native_notch_depth':13,
+        'source_evidence':'castle-secondary-audit/east-north-grid.png, east-wall-grid.png, east-return-grid.png and east-front-grid.png',
+        'inference':'The native wall depth and corner positions are retained; roof-hidden return crown is deliberately unresolved'}
+
+
 def headstone(points, node):
     # Long front/back edges are native edges1-2 and0-3. Crown remains at the
     # original height; the outline removes unsupported square top corners.
@@ -200,7 +271,7 @@ def apply(workspace):
     short=config['asset_id'].removeprefix('nottingham-')
     mask_path=Path(config['source_mask_manifest'])
     masks=json.loads(mask_path.read_text())
-    reviewed=({328:[279,282]} if short=='castle-west-courtyard-wall' else {329:[286],331:[286],332:[286]} if short=='castle-gate-west-tower' else {432:[349],433:[348],434:[355]})
+    reviewed=({328:[279,282]} if short=='castle-west-courtyard-wall' else {329:[286],331:[286],332:[286]} if short=='castle-gate-west-tower' else {360:[301,303],365:[305]} if short=='castle-upper-wall' else {326:[291,300]} if short=='castle-east-courtyard-wall' else {432:[349],433:[348],434:[355]})
     for row in masks['projections']['exterior']['assignments']:
         node=int(row['source_node'].split('-')[-1])
         if node not in reviewed:
@@ -209,7 +280,13 @@ def apply(workspace):
         row.update({'source_node':f'building-{node:03d}', 'reviewed':True,
             'mask_indices':reviewed[node],'constraint_kind':'reviewed-native-silhouette',
             'native_ownership_reviewed':True,'review_evidence':'castle-secondary-audit/mask overlays',
-            'review_note':'Native RGB/mask overlay inspected. Curtain uses upper-wall279 plus west return282; broad278 excluded because it contains foreground foliage, tower roof and stairs. Grave348 includes its fence, but first-hit receiver geometry restricts source pixels to the headstone; 349 and355 tightly follow monument and rear headstone.'})
+            'review_note': {
+                'castle-west-courtyard-wall':'RGB/mask overlays inspected. Upper-wall279 and west return282 accepted. Broad278 rejected because it includes foreground foliage, roof and stairs.',
+                'castle-gate-west-tower':'RGB/mask286 overlay inspected: upper front crown and drum only. Broad284/285 rejected because they include the foreground cottage roof. Unverified rear and lower surfaces remain unknown.',
+                'churchyard-graves':'RGB/mask overlays inspected. Grave348 also includes its fence; source texel ownership restricts acceptance to the modeled headstone. Masks349 and355 follow the monument and rear headstone silhouettes.',
+                'castle-upper-wall':'RGB/mask301 and303 overlays independently reviewed for front curtain and turret. Rear curtain uses305 with source-ray receiver ownership; other stair and landing geometry remains separately owned.',
+                'castle-east-courtyard-wall':'RGB/mask291 and300 overlays reviewed for the front curtain and upper return. Broad296/298 withheld because they include walkway and shelter roof pixels. Remaining surfaces stay unknown.'
+            }[short]})
     write(mask_path,masks)
     objects=list(bpy.data.collections[config['collection_name']].all_objects)
     before={o.name:_geometry(o) for o in objects}
@@ -223,6 +300,10 @@ def apply(workspace):
             v,f,e=west_crown(native[n]['points'])
         elif short=='castle-gate-west-tower' and n in (329,331,332):
             v,f,e=gate_crown(native,n)
+        elif short=='castle-upper-wall' and n in (360,365,367):
+            v,f,e=upper_wall(native,n)
+        elif short=='castle-east-courtyard-wall' and n==326:
+            v,f,e=east_curtain(native)
         elif short=='churchyard-graves':
             v,f,e=monument(native[n]['points']) if n==432 else headstone(native[n]['points'],n)
         else:
