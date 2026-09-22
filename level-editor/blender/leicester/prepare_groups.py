@@ -41,6 +41,16 @@ def main():
     before = sha(args.source)
     bpy.ops.wm.open_mainfile(filepath=paths['source'], load_ui=False)
     bpy.context.window.scene = bpy.data.scenes['Leicester Refinement']
+    initialized_uvs = []
+    for obj in bpy.data.collections['Leicester Working'].all_objects:
+        if obj.type != 'MESH' or obj.data.uv_layers:
+            continue
+        if not obj.get('restoration_reason') or not obj.data.materials:
+            raise ValueError(f'Missing authored UV/material provenance: {obj.name}')
+        # Restored surfaces begin with a neutral material. A placeholder UV
+        # channel lets the projection baker replace it with reviewed evidence.
+        obj.data.uv_layers.new(name='Unprojected neutral surface')
+        initialized_uvs.append(obj['source_node'])
     # Set the new save path before the grouping helper saves its hierarchy.
     bpy.ops.wm.save_as_mainfile(filepath=paths['output'])
     report = group_assets(paths['catalog'])
@@ -54,6 +64,7 @@ def main():
         raise RuntimeError('Frozen source changed during grouping')
     evidence = {'map': 'Leicester', 'source_sha256': before, 'grouped_sha256': sha(args.output),
                 'catalog_validation': validation, 'grouping': report, 'dispatch': result,
+                'neutral_uv_initialization': initialized_uvs,
                 'arguments': paths, 'script_sha256': sha(__file__)}
     args.output.with_suffix('.grouping.json').write_text(json.dumps(evidence, indent=2) + '\n')
     print(json.dumps(evidence, indent=2))
