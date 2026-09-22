@@ -246,8 +246,18 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         name = obj.name + " / owned " + projection_label
         existing = next(((i, m) for i, m in enumerate(mesh.materials)
                          if m and m.get("source_ownership_label") == projection_label), None)
+        # Split meshes can inherit one atlas material. Each receiver has its own
+        # island layout, so detach shared material and image data before writing.
+        if existing and existing[1].users > 1:
+            material = existing[1].copy()
+            material.name = name
+            mesh.materials[existing[0]] = material
+            existing = (existing[0], material)
         old_image = next((n.image for n in existing[1].node_tree.nodes
                           if n.type == "TEX_IMAGE" and n.image), None) if existing else None
+        if old_image and old_image.users > 1:
+            old_image = old_image.copy()
+            old_image.name = name
         image = old_image or bpy.data.images.new(name, width=width, height=height, alpha=True)
         image.alpha_mode = "CHANNEL_PACKED" if hidden_fill == "synthesized" else "STRAIGHT"
         if tuple(image.size) != (width, height):
