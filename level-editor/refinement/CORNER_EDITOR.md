@@ -19,7 +19,23 @@ python3 level-editor/refinement/corner_editor.py \
 Open http://localhost:5182. Select the wall, zoom with the wheel, and pan with
 right-drag or Space-drag. Existing editable estimates are green/orange;
 optional red edges are the previous saved mesh and remain read-only.
-Use **New zigzag** and click each corner in order, or drag existing points.
+Use **New constrained zigzag**: click two endpoints for the upper boundary,
+then click once below it to set the parallel lower boundary. Each further click
+adds a vertical transition at that X position. Transitions are automatically
+ordered along the run and alternate between upper and lower boundaries.
+**Swap high / low** changes which boundary starts the zigzag. Drag endpoint
+squares to change the slope, the lower diamond to change the separation, and
+transition circles sideways. Both boundaries remain parallel and transitions
+remain vertical. Use separate constrained runs when the wall turns.
+
+Constraints are saved in each path's `rails` field: `upper` contains two
+source-pixel endpoints, `depth` is the positive vertical separation,
+`transitions` contains source X coordinates, and `startsUpper` sets the phase.
+`points` is also regenerated as the ordered zigzag for existing downstream
+consumers. Unfinished setup is saved too. These constraints preserve fractional
+derived Y coordinates rather than rounding away parallelism.
+
+**Freehand line** retains the original arbitrary-corner workflow and old saves.
 Shift-click a segment inserts a corner. Arrow keys nudge one source pixel;
 Shift-arrow nudges ten. Name separate runs, and specify front or rear edge.
 Use separate lines for discontinuous or concealed runs rather than drawing

@@ -40,7 +40,21 @@ try{
  await evaluate(ws,++id,'location.reload()');await new Promise(r=>setTimeout(r,1200));
  await evaluate(ws,++id,`(()=>{const $=id=>document.getElementById(id);if(!$('paths').lastChild.textContent.includes('3 corners'))throw Error('Reload persistence');$('asset').value=1;$('asset').dispatchEvent(new Event('change'));$('mesh').click()})()`);
  await new Promise(r=>setTimeout(r,500));
+ await evaluate(ws,++id,"document.getElementById('newRails').click()");
+ await click(x,y);await click(x+150,y+60);await click(x+70,y+100);
+ await click(x+40,y+40);await click(x+105,y+65);
+ await command('Input.dispatchMouseEvent',{type:'mousePressed',x,y,button:'left',clickCount:1});
+ await command('Input.dispatchMouseEvent',{type:'mouseMoved',x,y:y-12,buttons:1});
+ await command('Input.dispatchMouseEvent',{type:'mouseReleased',x,y:y-12,button:'left',clickCount:1});
+ await evaluate(ws,++id,"document.getElementById('save').click()");
+ for(let i=0;i<100;i++){if(await evaluate(ws,++id,"document.getElementById('status').textContent.startsWith('Saved to')"))break;await new Promise(r=>setTimeout(r,100))}
+ const constrained=JSON.parse(await readFile(join(dir,'edited-corners.json'),'utf8')).assets[1].paths.at(-1);
+ if(constrained.rails.transitions.length!==2||constrained.points.length!==6)throw Error('Rail click workflow failed');
+ for(let i=1;i<5;i+=2){if(constrained.points[i][0]!==constrained.points[i+1][0])throw Error('Transition not vertical')}
+ await evaluate(ws,++id,'location.reload()');await new Promise(r=>setTimeout(r,1000));
+ await evaluate(ws,++id,"document.getElementById('asset').value=1;document.getElementById('asset').dispatchEvent(new Event('change'));document.getElementById('paths').lastChild.click()");
+ await new Promise(r=>setTimeout(r,500));
  const screenshot=await command('Page.captureScreenshot',{format:'png'});
  await writeFile(join(resolve('level-editor/work'),'battlement-editor-test.png'),Buffer.from(screenshot.data,'base64'));
- console.log('PASS: both assets; draw; drag; insert; undo/redo; exact coordinate save; reload persistence; mesh overlay.');
+ console.log('PASS: freehand editing and persistence; constrained upper/lower setup; one-click transitions; boundary drag; vertical derived corners; rail save/reload; mesh overlay.');
 }finally{ws?.close();chrome.kill('SIGTERM');server.kill('SIGTERM');await closed;await rm(dir,{recursive:true,force:true})}

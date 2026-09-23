@@ -35,6 +35,17 @@ def validate_paths(assets, originals):
                 raise ValueError('Invalid name')
             if path.get('edge') not in ('front', 'rear', 'unspecified'):
                 raise ValueError('Invalid edge role')
+            if 'rails' in path:
+                rails = path['rails']
+                upper = rails['upper']
+                if len(upper) > 2 or any(len(p) != 2 or any(type(v) not in (int, float) or not math.isfinite(v) for v in p) for p in upper):
+                    raise ValueError('Invalid upper boundary')
+                if len(upper) == 2 and abs(upper[1][0] - upper[0][0]) < 1:
+                    raise ValueError('Boundary requires distinct X endpoints')
+                if type(rails['depth']) not in (int, float) or not math.isfinite(rails['depth']) or rails['depth'] < 0:
+                    raise ValueError('Invalid boundary separation')
+                if type(rails['startsUpper']) is not bool or len(rails['transitions']) > 10000 or any(type(x) not in (int, float) or not math.isfinite(x) for x in rails['transitions']):
+                    raise ValueError('Invalid transition positions')
             if len(path['points']) > 10000:
                 raise ValueError('Too many points')
             for point in path['points']:
@@ -73,6 +84,8 @@ def serve(project_path, port):
                                 a['paths'] = by_id[a['id']]['paths']
                     result.update(revision=revision, save_path=str(output))
                     self.respond(200, result)
+            elif route == '/battlement-rails.mjs':
+                self.respond(200, Path(__file__).with_name('battlement-rails.mjs').read_bytes(), 'text/javascript')
             elif route == '/':
                 self.respond(200, Path(__file__).with_name('corner-editor.html').read_bytes(), 'text/html; charset=utf-8')
             elif route.startswith('/images/') or route.startswith('/overlays/'):
