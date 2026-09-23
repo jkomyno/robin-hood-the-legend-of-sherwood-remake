@@ -189,13 +189,16 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
                                    'total_groups': len(catalog['groups']),
                                    'supplemental_count': int(ground_workspace is not None),
                                    'without_packets': without_packets}, indent=2) + '\n')
+    texture_reports = list((assets.parent / 'textures').glob('*/generation-*/generation.json'))
     (output / 'progress.json').write_text(json.dumps({'map': 'Leicester', 'groups': progress,
         'total': len(progress), 'catalog_groups': len(catalog['groups']),
         'supplemental_count': int(ground_workspace is not None),
         'packets': len(items), 'ready': sum(i['status'] == 'ready-for-user' for i in items),
         'geometry_approval': 'approved' if len(items) == len(progress) and items and all(i['user_approval'] == 'approved' for i in items) else 'pending',
         'approved': sum(i['user_approval'] == 'approved' for i in items),
-        'rejected': sum(i['user_approval'] == 'rejected' for i in items), 'texture_generation': 'not-started',
+        'rejected': sum(i['user_approval'] == 'rejected' for i in items),
+        'texture_generation': 'candidates-generated' if texture_reports else 'not-started',
+        'texture_generation_reports': len(texture_reports),
         'publication': 'not-started'}, indent=2) + '\n')
     build(manifest, output / 'gallery', pending_only=True)
     return {'manifest': str(manifest), 'groups': len(progress), 'packets': len(items)}
