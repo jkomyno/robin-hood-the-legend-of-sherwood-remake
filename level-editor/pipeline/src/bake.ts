@@ -20,6 +20,7 @@ import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import crypto from "node:crypto";
 import { readDocument, pathComponent } from "./inputs.ts";
+import { preserveNativePatchPreviews } from "./native-patch-bake.ts";
 import path from "node:path";
 import sharp from "sharp";
 import {
@@ -140,7 +141,16 @@ export async function bake(options: BakeOptions): Promise<void> {
   const input = await readDocument(docPath, options.document !== undefined);
   // Structural validation precedes expensive reconstruction; source-index
   // validation follows once the source level is available.
-  const parsed = input === undefined ? undefined : parseLevel3D(input, { map });
+  let parsed = input === undefined ? undefined : parseLevel3D(input, { map });
+  let sourceGlb: Buffer | undefined;
+  if (parsed && (parsed.provenance?.glb_sha256 || parsed.objects.some(part => part.kind === "mission"))) {
+    sourceGlb = await fs.readFile(path.resolve(path.dirname(docPath), parsed.glb));
+    const before = parsed.objects.length;
+    parsed = await preserveNativePatchPreviews(parsed, sourceGlb,
+      mission => fs.readFile(path.join(datadirPath(), "Data", "Levels", `${mission}.rhm.json`)));
+    if (parsed.objects.length !== before)
+      console.log(`Preserving ${before - parsed.objects.length} unchanged native initial patch preview(s); mission files remain unchanged. Static bake uses reconstructed volumes, not refined GLB meshes.`);
+  }
   assertReconstructedBakeSources(parsed);
   const r = await reconstruct(map, {
     textures: options.textures,
@@ -160,7 +170,7 @@ export async function bake(options: BakeOptions): Promise<void> {
       const glbFile = path.resolve(path.dirname(docPath), parsed.glb);
       glbSha256 = crypto
         .createHash("sha256")
-        .update(await fs.readFile(glbFile))
+        .update(sourceGlb ?? await fs.readFile(glbFile))
         .digest("hex");
     }
     doc = parseLevel3D(parsed, {

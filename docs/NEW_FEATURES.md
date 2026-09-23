@@ -1418,7 +1418,10 @@ only the selected GLB is loaded. Variant-qualified resource IDs allow both endpo
 in one document, with model and descriptor hashes checked on reload. This does not
 provide animation. Supplemental `mission-*` parts identify their source through
 `mission_profile` instead of claiming a sight-obstacle index; their local footprint
-supports editor placement only, and game baking rejects supplemental mission models.
+supports editor placement only. Game baking rejects supplemental mission models
+except unchanged native initial previews verified against a pinned GLB and native
+mission-file binding; those retain their existing game patch data. The legacy
+baker still reconstructs original volumes rather than rendering refined GLBs.
 
 The level editor’s Assets panel inserts exported projection assets from the current map as independent named groups. Saved documents pin descriptor/model hashes and reload the referenced GLBs; instances share rendering resources while retaining independent transforms. Explicit Initial/Applied group states switch endpoint visibility atomically, survive save/reload and undo/redo, and remap member IDs when duplicating a complete group. These are discrete states, not animation playback. Game baking rejects external asset references until their conversion is supported.
 

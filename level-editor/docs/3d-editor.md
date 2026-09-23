@@ -99,6 +99,20 @@ carrying the affine matrix.
 
 ## Bake
 
+This CLI reconstructs the original obstacle volumes and textures; it does not
+render Blender-refined GLB geometry or generated texture atlases. Editor/asset
+publication and game-file baking are separate workflows.
+
+An unchanged native mission-patch preview may remain in the editor document:
+the baker verifies its pinned source GLB, explicit `native_patch_preview`
+binding, original mission-file hash, profile, initial state, membership,
+footprint, visibility, and identity transforms. It omits that preview from
+static reconstruction while preserving the existing native mission data.
+Moved, hidden, duplicated, deleted, or otherwise changed previews are rejected,
+as are imported standalone models. The CLI cannot export edited mission models
+or new animation. The narrow exception preserves the older static-map bake
+workflow without turning the preview into a fake sight obstacle.
+
 ```
 pnpm bake --map york [--doc library/scenes/york.level3d.json] [--out work/york-bake] [--fill proc|synth]
 ```
