@@ -104,6 +104,13 @@ def source_packet(workspace,node,output):
 def inferred_packet(workspace,node,output):
     """Neutral, explicitly inferred forest crown coverage; never native alpha."""
     from props_trees import CROWNS, GROUND
+    config=json.loads((workspace/'workspace.json').read_text())
+    manifest_path=Path(config['source_mask_manifest']);manifest=json.loads(manifest_path.read_text())
+    inventory=json.loads((manifest_path.parent/manifest['mask_inventory']).resolve().read_text())
+    wood_index={90:109,91:111,92:113}[node]
+    wood=next(record for record in inventory['masks'] if record['index']==wood_index)
+    wood_alpha=np.asarray(Image.open(wood['png']).convert('L'))
+    wood_x,wood_y=wood['box_top_left'];wood_h,wood_w=wood_alpha.shape
     rows=np.asarray(CROWNS[node],dtype=float)
     left,right=rows[:,1].min(),rows[:,2].max()
     top,bottom=rows[:,0].min(),rows[:,0].max()
@@ -126,13 +133,18 @@ def inferred_packet(workspace,node,output):
         # Sparse repeatable gaps are design hypotheses, not recovered leaves.
         holes=((np.sin(xx*.63+number)*np.cos(yy*.49-number))>.94)&(radius>.28)
         coverage &= ~holes
+        # Uncertain foliage cannot conceal native-supported visible wood.
+        lx,ty=max(x0,wood_x),max(y0,wood_y);rx2,by=min(x1,wood_x+wood_w),min(y1,wood_y+wood_h)
+        if rx2>lx and by>ty:
+            coverage[ty-y0:by-y0,lx-x0:rx2-x0] &= wood_alpha[ty-wood_y:by-wood_y,lx-wood_x:rx2-wood_x]==0
         rgba=np.full((y1-y0,x1-x0,4),105,dtype=np.uint8);rgba[:,:,3]=coverage*255
         path=output/f'lobe-{number:02}-inferred.png';Image.fromarray(rgba).save(path)
         records.append(dict(index=number,bbox_source=[x0,y0,x1,y1],source=str(path),unknown=str(path),
                             source_sha256=sha(path),unknown_sha256=sha(path),native_pixels=0,observed=False))
     evidence=dict(source_rgb_sha256='',native_alpha_sha256='',native_mask=None,
                   source_node=f'building-{node:03d}',canopy_pixels=0,duplicate_pixels=0,
-                  ownership='No source ownership. All forest foliage coverage, gaps and depth are inferred.',
+                  ownership='No source ownership. Forest foliage coverage, gaps and depth are inferred; native visible wood is protected from crown occlusion.',
+                  protected_visible_wood_mask=wood_index,protected_visible_wood_sha256=sha(wood['png']),
                   lobes=records)
     (output/'source-partition.json').write_text(json.dumps(evidence,indent=2)+'\n')
     return evidence
