@@ -1,5 +1,21 @@
 # Derby asset refinement review
 
+2026-09-23 latest: Publication8 is LIVE. The eleven earlier approved bakes
+and coupled courtyard-well/ground correction are integrated atop Publication7.
+All 82 live target hashes independently match the promotion manifest; rollback
+backups remain available. Main Hall patch-specific covered/revealed material
+switching is still being implemented and staged separately.
+
+The pending gallery now contains exactly two replacement geometry candidates:
+Upper West `pixel-crenels-v6` and Lower West south `south-vertical-v13`.
+Both have fresh projection, 48-degree lighting and actual saved-mesh edges on
+the original artwork. Upper West restores five upper and thirteen lower
+openings; South restores continuous runs with seventeen and nine openings.
+Coordinator inspected the eight-view sheets and source overlays. Fine corner
+alignment remains approximate; South's roof-concealed repeats are inferred.
+Both await new user approval before synthesis or integration. Earlier rejected
+versions and publication status entries below are historical.
+
 Latest curtain decisions: Upper West rejected (805d45a8405b04a0): missing upper
 split and wrong lower battlements. Lower West south rejected (809f762b33a2ea3c):
 large uncrenellated gaps contradict continuous source battlements. Both workers
