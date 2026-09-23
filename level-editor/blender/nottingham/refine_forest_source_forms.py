@@ -71,11 +71,11 @@ def refine(obj):
         measure={'trunk_ground_center_source':[1844,128],'trunk_bole_radii_source':[11.5,7],'leaning_poles':poles,'branch_source_centers':[[1844,8],[1800,-13]]}
         notes=['Shift main bole seven source pixels left to native473 bark; model separate right-hand leaning poles.','Upper-left branch crosses the image boundary; concealed branch depth and pole rear sections are inferred.']
     elif node=='building-542':
-        poles=[((1817,144),(1824,120),24,1.3),((1821,148),(1828,117),25,1.6),((1825,147),(1831,121),24,2),((1830,145),(1833,125),21,1.7),((1835,145),(1835,120),24,1.8),((1840,144),(1839,120),23,1.8),((1848,141),(1843,123),20,2.1)]
+        poles=[((1817,144),(1824,120),15.3,1.7),((1821,148),(1828,117),16.9,1.6),((1825,147),(1831,121),13.5,2),((1830,145),(1833,125),10.3,1.7),((1835,145),(1835,120),14.3,1.8),((1840,144),(1839,120),13.0,1.8),((1848,141),(1843,123),10.5,2.1)]
         rear=[((1827,137),(1831,111),22,1.8),((1835,138),(1836,109),23,1.8),((1842,136),(1840,115),17,1.7)]
         for a,b,h,r in rear+poles:pole(a,b,h,r)
         measure={'seven_front_poles':poles,'three_visible_upper_cluster_poles':rear}
-        notes=['Replace generic15-pole circle with seven measured foreground timbers and three visible upper-cluster pieces.','Separate heights follow source end clusters; concealed pole thickness and rear contacts are inferred.']
+        notes=['Replace generic15-pole circle with seven measured foreground timbers and three visible upper-cluster pieces.','Projected pole endpoints follow source end clusters. Foreground tip depths meet rear/neighbor poles; concealed radial sections are inferred.']
     else:raise ValueError(node)
     inverse=obj.matrix_world.inverted();mesh=bpy.data.meshes.new(node+' / measured native source form');mesh.from_pydata([inverse@v for v in vs],[],fs);mesh.update();bm=bmesh.new();bm.from_mesh(mesh);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bmesh.ops.triangulate(bm,faces=list(bm.faces));bmesh.ops.dissolve_degenerate(bm,dist=1e-6,edges=list(bm.edges));bad={'nonmanifold_edges':sum(not e.is_manifold for e in bm.edges),'degenerate_faces':sum(f.calc_area()<1e-7 for f in bm.faces)}
     if any(bad.values()):raise ValueError(bad)
