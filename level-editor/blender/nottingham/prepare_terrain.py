@@ -2,8 +2,8 @@
 
 Ground is a canonical terrain receiver outside the building catalog. This
 adapter frames only the local stream edit while preserving the entire map in
-baseline/model files and ownership-ray context. No ground texture is certified
-without a reviewed assignment; a conservative unknown mask is mandatory.
+baseline/model files and ownership-ray context. Ground source pixels require
+an explicit reviewed receiver assignment, or remain unknown.
 """
 import argparse
 import hashlib
@@ -31,12 +31,62 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def install_ground_source_material(ground, source_path, masks, output):
+    """Store the explicit terrain ownership image without draping scenery."""
+    from PIL import Image, ImageChops
+    inventory_path=Path(masks['mask_inventory'])
+    inventory=json.loads(inventory_path.read_text())
+    entries={row['index']:row for row in inventory['masks']}
+    assignment,=[row for row in masks['projections']['exterior']['assignments'] if row['source_node']=='ground']
+    source=Image.open(source_path).convert('RGB')
+    known=Image.new('L',source.size)
+    for index in assignment['mask_indices']:
+        row=entries[index]
+        image=Image.open(inventory_path.parent/row['png']).convert('L')
+        layer=Image.new('L',source.size)
+        layer.paste(image,tuple(row['box_top_left']))
+        known=ImageChops.lighter(known,layer)
+    atlas=Image.new('RGB',source.size,(128,128,128))
+    atlas.paste(source,mask=known)
+    atlas.putalpha(known)
+    folder=output/'projection';folder.mkdir(exist_ok=True)
+    path=folder/'ground-source-owned.png';atlas.save(path)
+    image=bpy.data.images.load(str(path),check_existing=False)
+    # Ownership alpha is data, not transparency. Straight-alpha loading can
+    # discard neutral RGB in alpha-zero texels during actual material rendering.
+    image.alpha_mode='CHANNEL_PACKED';image.reload();image.pack()
+    material=bpy.data.materials.new('Terrain / reviewed earth and grass source ownership')
+    material.use_nodes=True
+    material['source_ownership_bake']=True
+    material['source_ownership_label']='exterior'
+    material['source_ownership_fill']='neutral'
+    material['source_ownership_alpha']='one=observed,zero=inferred;material remains opaque'
+    material['projection_preserve']=True
+    material['reprojection_source_sha256']=sha(source_path)
+    nodes,links=material.node_tree.nodes,material.node_tree.links;nodes.clear()
+    uv=nodes.new('ShaderNodeUVMap');uv.uv_map=ground.data.uv_layers.active.name
+    texture=nodes.new('ShaderNodeTexImage');texture.image=image;texture.interpolation='Closest'
+    surface=nodes.new('ShaderNodeOutputMaterial')
+    links.new(uv.outputs['UV'],texture.inputs['Vector'])
+    links.new(texture.outputs['Color'],surface.inputs['Surface'])
+    ground.data.materials.append(material)
+    for face in ground.data.polygons:face.material_index=len(ground.data.materials)-1
+    report={'status':'PASS','source_sha256':sha(source_path),'stored_atlas_sha256':sha(path),
+            'receiver':ground.name,'uv_layer':uv.uv_map,
+            'ownership_alpha':'observed source only; opacity remains opaque',
+            'known_source_pixels':sum(1 for p in known.getdata() if p>127)}
+    (folder/'ground-material.json').write_text(json.dumps(report,indent=2)+'\n')
+    return report
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-blend',required=True,type=Path)
     parser.add_argument('--source-image',required=True,type=Path)
     parser.add_argument('--source-masks',required=True,type=Path)
-    parser.add_argument('--unknown-mask-index',required=True,type=int)
+    authority=parser.add_mutually_exclusive_group(required=True)
+    authority.add_argument('--unknown-mask-index',type=int)
+    authority.add_argument('--reviewed-ground-assignment',action='store_true')
     parser.add_argument('--output',required=True,type=Path)
     parser.add_argument('--frame-manifest',type=Path)
     parser.add_argument('--width',default=384,type=int)
@@ -53,13 +103,20 @@ def main():
     masks=json.loads(args.source_masks.read_text())
     masks['mask_inventory']=str((args.source_masks.resolve().parent/masks['mask_inventory']).resolve(strict=True))
     old_assignments=masks['projections']['exterior']['assignments']
-    if any(a.get('source_node')=='ground' for a in old_assignments):
-        raise ValueError('Ground already has an assignment; review it explicitly instead of replacing it')
+    ground_assignments=[a for a in old_assignments if a.get('source_node')=='ground']
+    if args.reviewed_ground_assignment:
+        if len(ground_assignments)!=1 or not ground_assignments[0].get('reviewed') or not ground_assignments[0].get('mask_indices'):
+            raise ValueError('Expected one explicit reviewed ground assignment')
+    elif ground_assignments:
+        raise ValueError('Ground already has an assignment; use --reviewed-ground-assignment')
     # Only ground is rendered. Other meshes participate exclusively as occluders.
     assignments=[]
     masks['projections']['exterior']['assignments']=assignments
-    assignments.append({'source_node':'ground','mask_indices':[args.unknown_mask_index],
-                        'reviewed':True,'review_note':'No reviewed receiver-specific terrain source ownership; unknown remains neutral.'})
+    if args.reviewed_ground_assignment:
+        assignments.extend(ground_assignments)
+    else:
+        assignments.append({'source_node':'ground','mask_indices':[args.unknown_mask_index],
+                            'reviewed':True,'review_note':'No reviewed receiver-specific terrain source ownership; unknown remains neutral.'})
     mask_path=output/'source-masks.json';mask_path.write_text(json.dumps(masks,indent=2,sort_keys=True)+'\n')
     source_hash=sha(source)
     bpy.ops.wm.open_mainfile(filepath=str(source))
@@ -122,6 +179,7 @@ def main():
     config['reference_files']=_files(output/'reference')
     (output/'workspace.json').write_text(json.dumps(config,indent=2)+'\n')
     report=refine_terrain.refine()
+    stored_material=install_ground_source_material(ground,image,masks,output) if args.reviewed_ground_assignment else None
     bpy.ops.wm.save_as_mainfile(filepath=str(output/'model.blend'))
     modified=render_review(output/'modified',frame_manifest=output/'input/views.json',**options)
     after={obj.name:(refine_terrain._hash(refine_terrain._geometry(obj)),[list(r) for r in obj.matrix_world])
@@ -135,9 +193,10 @@ def main():
                 'source_blend_sha256':source_hash,'baseline_sha256':sha(output/'baseline.blend'),
                 'model_sha256':sha(output/'model.blend'),'source_image_sha256':sha(image),
                 'fixed_cameras_preserved':True,'geometry':report,'tooling':TOOLING,
-                'ownership':'No approved terrain source pixels; known masks must remain empty',
+                'stored_ground_material':stored_material,
+                'ownership':('Explicit reviewed terrain source assignment; native exclusions and scene visibility retained' if args.reviewed_ground_assignment else 'No approved terrain source pixels; known masks must remain empty'),
                 'approval':'pending','texture_generation':'not started'}
-    if any(v['counts']['source'] for v in modified['views']+baseline['views']):
+    if not args.reviewed_ground_assignment and any(v['counts']['source'] for v in modified['views']+baseline['views']):
         raise ValueError('Unknown terrain mask permitted unreviewed source pixels')
     (output/'geometry-recipe.json').write_text(json.dumps(report,indent=2)+'\n')
     (output/'validation.json').write_text(json.dumps(validation,indent=2)+'\n')
@@ -145,7 +204,7 @@ def main():
              'reference_files':_files(output/'reference'),'modified_files':_files(output/'modified'),
              'workspace_sha256':sha(output/'workspace.json'),
              'recipe_sha256':sha(refine_terrain.__file__),'packet_script_sha256':sha(__file__),
-             'argv':sys.argv,'accepted_known_pixels':0}
+             'argv':sys.argv,'accepted_known_pixels':sum(v['counts']['source'] for v in modified['views'])}
     (output/'terrain-packet.json').write_text(json.dumps(binding,indent=2)+'\n')
     print(json.dumps(validation))
 

@@ -24,6 +24,10 @@ def geometry(obj):
 for suffix in ['bundled-tree', 'tall-trunk', 'east-stump', 'west-stump', 'wood-stack']:
     workspace = root / ('nottingham-forest-' + suffix)
     config = json.loads((workspace / 'workspace.json').read_text())
+    bpy.ops.wm.open_mainfile(filepath=str(workspace / 'baseline.blend'))
+    baseline_target, = [o for o in bpy.data.collections[config['collection_name']].all_objects
+                        if o.type == 'MESH' and o.get('asset_group') == config['asset_id']]
+    baseline_geometry = geometry(baseline_target)
     bpy.ops.wm.open_mainfile(filepath=str(workspace / 'model.blend'))
     objects = list(bpy.data.collections[config['collection_name']].all_objects)
     target, = [o for o in objects if o.type == 'MESH' and o.get('asset_group') == config['asset_id']]
@@ -48,6 +52,8 @@ for suffix in ['bundled-tree', 'tall-trunk', 'east-stump', 'west-stump', 'wood-s
         assert extent < 1, 'View clips geometry'
         frames.append({'view': view['index'], 'maximum_normalized_extent': extent})
     result = {'status': 'PASS', 'idempotence': 'PASS', 'saved_geometry_matches_recipe': True,
+              'geometry_matches_frozen_baseline': prior == baseline_geometry,
+              'geometry_comparison': 'Exact local vertex coordinates, polygon indices, and world matrices',
               'all_eight_cameras_unchanged': True, 'unclipped_views': frames,
               'model_sha256': hashlib.sha256((workspace / 'model.blend').read_bytes()).hexdigest()}
     (workspace / 'forest-geometry-validation.json').write_text(json.dumps(result, indent=2) + '\n')
