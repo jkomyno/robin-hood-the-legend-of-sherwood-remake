@@ -64,6 +64,26 @@ FEEDBACK_SCRIPT = r"""
     decision.addEventListener('change', save);
     note.addEventListener('input', save);
   }
+  document.querySelector('#clear-reviews').addEventListener('click', () => {
+    let clearedStorage = true;
+    try {
+      const keys = Array.from({length: localStorage.length}, (_, index) => localStorage.key(index));
+      for (const savedKey of keys) {
+        if (savedKey && savedKey.startsWith(namespace)) localStorage.removeItem(savedKey);
+      }
+    } catch {
+      clearedStorage = false;
+    }
+    for (const card of cards) {
+      card.querySelector('.decision').value = '';
+      card.querySelector('.review-note').value = '';
+      card.querySelector('.draft-status').textContent = '';
+    }
+    refresh();
+    message.textContent = clearedStorage
+      ? 'Reviews cleared for this gallery.'
+      : 'Reviews cleared on this page, but browser storage could not be cleared.';
+  });
   document.querySelector('#copy-reviews').addEventListener('click', async () => {
     refresh();
     try {
@@ -295,6 +315,7 @@ Click any sheet for its full resolution. Review status does not imply user appro
 <label>Assets <select id="readiness"><option value="all">All pending assets</option>
 <option value="ready">Ready for review</option></select></label><nav>'''+nav+'''</nav></header><main>'''+"".join(cards)+missing_section+'''</main>
 <footer class="review-export"><button id="copy-reviews" type="button">Copy review results</button>
+<button id="clear-reviews" type="button" title="Clear saved decisions and notes for this gallery">Clear reviews</button>
 <span id="review-count"></span> <span id="copy-status" role="status"></span>
 <details id="export-details"><summary>Preview / copy manually</summary>
 <textarea id="review-export" readonly rows="5" aria-label="Review results to paste into chat"></textarea></details>
