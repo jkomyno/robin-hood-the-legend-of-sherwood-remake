@@ -68,8 +68,9 @@ try {
   result.expectedCards = evidence.items.length;
   result.expectedReadyCards = evidence.items.filter(item => item.status === 'ready-for-user').length;
   await evaluate(ws, ++id, `void (async () => {
-    const cards = [...document.querySelectorAll('article[data-review-revision]')];
-    if (cards.length < 2) throw new Error('Missing per-asset feedback controls');
+    const cards = [...document.querySelectorAll('article[data-review-revision]')]
+      .filter(card => card.querySelector('.status').textContent === 'ready-for-user');
+    if (cards.length < 3) throw new Error('Missing per-asset feedback controls');
     const first = cards[0], second = cards[1];
     const select = first.querySelector('.decision');
     const note = second.querySelector('.review-note');
@@ -79,6 +80,14 @@ try {
       ']\\n' + second.id + ': feedback — Fix roof <corner> please [review ' + second.dataset.reviewRevision + ']';
     const exported = document.querySelector('#review-export').value === expected;
     const saved = JSON.parse(localStorage.getItem('model-review-v1:' + document.title + ':' + first.id + ':' + first.dataset.reviewRevision));
+    // Simulate positional native form restoration after cards are removed.
+    note.value = 'Feedback restored onto the wrong asset';
+    cards[2].querySelector('.decision').value = 'approved';
+    cards[2].querySelector('.review-note').value = 'Wrong card';
+    window.dispatchEvent(new Event('pageshow'));
+    const restoration = note.value === 'Fix roof <corner>\\nplease' &&
+      select.value === 'approved' && cards[2].querySelector('.decision').value === '' &&
+      cards[2].querySelector('.review-note').value === '' && document.querySelector('#review-export').value === expected;
     let copied = '';
     Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText:async text => { copied = text; }}});
     document.querySelector('#copy-reviews').click();
@@ -91,7 +100,7 @@ try {
     select.value = ''; select.dispatchEvent(new Event('change'));
     note.value = ''; note.dispatchEvent(new Event('input'));
     document.querySelector('#export-details').open = false;
-    return {exported, saved:saved.decision === 'approved', clipboard, fallback,
+    return {exported, saved:saved.decision === 'approved', restoration, clipboard, fallback,
       emptyDisabled:document.querySelector('#copy-reviews').disabled};
   })().then(value => window.feedbackCheck = value).catch(error => window.feedbackCheck = {error:String(error)})`);
   for (let attempt = 0; attempt < 100; attempt++) {
@@ -103,7 +112,7 @@ try {
     result.reportLinks && result.navigation === result.cards && result.solidToggle &&
     result.readyFilter && result.readyCards === result.expectedReadyCards && result.readyNavigation === result.readyCards &&
     result.firstImages.every(image => image.loaded) && result.failedImages.length === 0 &&
-    !result.horizontalOverflow && ['exported', 'saved', 'clipboard', 'fallback', 'emptyDisabled']
+    !result.horizontalOverflow && ['exported', 'saved', 'restoration', 'clipboard', 'fallback', 'emptyDisabled']
       .every(key => result.feedback[key] === true) ? 'PASS' : 'FAIL';
   await writeFile(join(output, 'gallery-browser.json'), JSON.stringify(result, null, 2) + '\n');
   const screenshot = await new Promise((resolve, reject) => {

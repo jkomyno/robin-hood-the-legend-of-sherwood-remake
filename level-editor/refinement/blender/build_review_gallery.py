@@ -34,10 +34,15 @@ FEEDBACK_SCRIPT = r"""
     document.querySelector('#review-count').textContent = `${lines.length} reviewed`;
     document.querySelector('#copy-reviews').disabled = !lines.length;
   }
-  for (const card of cards) {
+  function restore(card) {
     const decision = card.querySelector('.decision');
     const note = card.querySelector('.review-note');
     const status = card.querySelector('.draft-status');
+    // Native form restoration can follow card positions after a gallery rebuild.
+    // Only our asset-and-revision keyed draft may populate these controls.
+    decision.value = '';
+    note.value = '';
+    status.textContent = '';
     try {
       const saved = JSON.parse(localStorage.getItem(key(card)) || 'null');
       if (saved) {
@@ -50,6 +55,12 @@ FEEDBACK_SCRIPT = r"""
     } catch {
       status.textContent = 'Browser storage unavailable; copy your results before closing.';
     }
+  }
+  for (const card of cards) {
+    restore(card);
+    const decision = card.querySelector('.decision');
+    const note = card.querySelector('.review-note');
+    const status = card.querySelector('.draft-status');
     const save = () => {
       try {
         if (!decision.value && !note.value) localStorage.removeItem(key(card));
@@ -64,6 +75,10 @@ FEEDBACK_SCRIPT = r"""
     decision.addEventListener('change', save);
     note.addEventListener('input', save);
   }
+  window.addEventListener('pageshow', () => {
+    cards.forEach(restore);
+    refresh();
+  });
   document.querySelector('#clear-reviews').addEventListener('click', () => {
     let clearedStorage = true;
     try {
@@ -263,11 +278,13 @@ def build(index_path, output, *, pending_only=False, map_name=None):
         revision = hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest()
         approval_disabled = '' if item['status'] == 'ready-for-user' and item.get('technical_eligible', True) else ' disabled'
         controls = (f'<fieldset class="feedback"><legend>Your review</legend>'
-                    f'<label>Decision <select class="decision" aria-label="Decision for {asset_id}">'
+                    f'<label>Decision <select class="decision" autocomplete="off" '
+                    f'name="decision-{asset_id}-{revision[:16]}" aria-label="Decision for {asset_id}">'
                     '<option value="">Not decided</option>'
                     f'<option value="approved"{approval_disabled}>Approve</option>'
                     '<option value="needs refinement">Needs refinement</option></select></label>'
-                    f'<label>Feedback <textarea class="review-note" rows="2" '
+                    f'<label>Feedback <textarea class="review-note" rows="2" autocomplete="off" '
+                    f'name="feedback-{asset_id}-{revision[:16]}" '
                     f'aria-label="Feedback for {asset_id}" placeholder="What should change, or any notes?"></textarea></label>'
                     '<span class="draft-status" aria-live="polite"></span></fieldset>')
         cards.append(f'<article id="{asset_id}" data-review-revision="{revision[:16]}"><h2>{number}. {html.escape(item["name"])}</h2>'
