@@ -98,4 +98,6 @@ if __name__=='__main__':
     if args.apply:apply(stage/'promotion.json')
     else:
         if args.main_blend is None:parser.error('--main-blend is required to prepare')
-        prepare(stage,args.library.resolve(strict=True),args.main_blend.resolve(strict=True),args.map)
+        # A first publication may create its main working blend. The promotion
+        # manifest records a missing target and guards that absence before apply.
+        prepare(stage,args.library.resolve(strict=True),args.main_blend.resolve(),args.map)
