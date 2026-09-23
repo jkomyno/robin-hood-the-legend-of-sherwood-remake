@@ -1,7 +1,7 @@
 """Collect verified Nottingham worker packets without granting approval.
 
 Run with Python, after workers produce packets. Defaults target
-work/nottingham-refinement/{grouping/catalog-v12.json,round-1/assets,gallery}.
+work/nottingham-refinement/{grouping/catalog-v13.json,round-1/assets,gallery}.
 Workers provide candidate.json with version, asset_id, geometry_refined, status,
 inspected_views, recipe, model_sha256, modified_views_sha256, changes, limitations.
 Ready candidates also require review.md and all eight visually inspected views.
@@ -44,6 +44,17 @@ def file_hashes(directory):
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def projection_available_nodes(before_layers, after_layers, owned_nodes):
+    """Allow owned meshes to enter/leave visibility while protecting neighbors."""
+    def nodes(layers):
+        return {node for row in layers for key in ("receiver_nodes", "occluder_nodes")
+                for node in row[key]}
+    before, after = nodes(before_layers), nodes(after_layers)
+    require((before ^ after) <= set(owned_nodes),
+            "Projection visibility changed outside the reviewed asset")
+    return after
 
 
 def projection_records(config, manifest, available):
@@ -179,7 +190,7 @@ def inspect(workspace, asset):
     if reviewed_projection is not None:
         before_layers = packets["input"]["projection_layers"]
         after_layers = packets["modified"]["projection_layers"]
-        available = {node for row in before_layers for key in ("receiver_nodes", "occluder_nodes") for node in row[key]}
+        available = projection_available_nodes(before_layers, after_layers, config["part_ids"])
         expected_layers = projection_records(config, reviewed_projection, available)
         if asset['id'] in ('nottingham-upper-prison', 'nottingham-southwest-prison') and any(
                 '-prison-door-' in row.get('projection_label', '') for row in after_layers):
@@ -348,7 +359,7 @@ def supplemental_packet(directory, asset_id, framing, *, mask_origin=None):
 def main(argv=None):
     root = Path(__file__).resolve().parents[2] / "work/nottingham-refinement"
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--catalog", type=Path, default=root / "grouping/catalog-v12.json")
+    parser.add_argument("--catalog", type=Path, default=root / "grouping/catalog-v13.json")
     parser.add_argument("--assets", type=Path, default=root / "round-1/assets")
     parser.add_argument("--output", type=Path, default=root / "gallery")
     parser.add_argument('--workspace-map', type=Path, default=root / 'workspace-overrides.json',
