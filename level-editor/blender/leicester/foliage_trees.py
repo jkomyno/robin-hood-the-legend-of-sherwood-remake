@@ -200,6 +200,7 @@ def refine_crown(obj,node,evidence):
                     dome=math.sqrt(max(0.,1.-2*((u-.5)**2+(v-.5)**2)))
                     radius=.55*max(x1-x0,y1-y0)
                     depth=DEPTHS[number]+(1 if front else -1)*(radius*dome+.175)
+                    if front and not known and lobe.get('front_unknown'):depth-=.02  # Separate alpha-disjoint occlusion overlay from source front.
                     world=Vector((x,-ground/SINE,(ground-y)/COSINE))+RAY*depth
                     vertices.append(matrix.inverted()@world);uvs.append((u,1-v))
             for j in range(steps):
