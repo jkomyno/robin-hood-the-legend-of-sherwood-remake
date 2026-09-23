@@ -17,7 +17,8 @@ for asset in ['derby-east-wall-landing','derby-lower-northwest-cottage-barrel','
  generated=Path(v['generated_image']); original=np.asarray(Image.open(exp/'input.png').convert('RGBA'));result=np.asarray(Image.open(generated).convert('RGBA'));protected=np.asarray(Image.open(exp/'mask.png').convert('RGBA'))[:,:,3]>0
  changed=int(np.any(original[protected]!=result[protected],axis=1).sum());assert changed==0
  nodes={'derby-east-wall-landing':['building-069'],'derby-lower-northwest-cottage-barrel':['building-062'],'derby-east-courtyard-south-shelter':['building-067','building-068']}[asset]
- assert v['evidence_sha256'][str(exp/'views.json')]==sha(exp/'views.json')
+ evidence={str(Path(p).resolve()):h for p,h in v['evidence_sha256'].items()}
+ assert evidence[str((exp/'views.json').resolve())]==sha(exp/'views.json')
  imports.append({'asset_id':asset,'blend_path':str(bake/'worker.blend'),'blend_sha256':sha(bake/'worker.blend'),'object_names':m['texture_receiver_object_names'],'source_nodes':nodes,'review_manifest':str(exp/'views.json'),'approval_evidence':str(exp/'approval.json'),'geometry_baseline':str(w/'model.blend'),'validation':str(bake/'validation.json')})
  reports[asset]={'protected_pixels_changed':changed,'protected_pixels':int(protected.sum()),'outside_objects_unchanged':v['outside_objects_unchanged'],'geometry_verified':True,'actual_eight_views':str(bake/'actual/textured.png'),'actual_sha256':sha(bake/'actual/textured.png'),'counts':v['counts'],'raw_retained':str(generated.parent/'generated-raw.png'),'source_mask_evidence':v['source_mask_evidence']}
 (root/'imports.json').write_text(json.dumps(imports,indent=2))
