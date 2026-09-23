@@ -188,6 +188,30 @@ def build(index_path, output, *, pending_only=False, map_name=None):
         if not re.fullmatch(r"[a-zA-Z0-9_-]+", asset_id):
             raise ValueError(f"Unsafe review identifier: {asset_id}")
         figures, evidence = [], {}
+        # Context references supplement an already reviewed texture packet. Keep
+        # their archive hashes separate from the decision/revision fingerprint.
+        reference_evidence, reference_figures = {}, []
+        for reference in item.get('artwork_references', []):
+            identifier = reference['id']
+            if not re.fullmatch(r'[a-zA-Z0-9_-]+', identifier) or identifier in reference_evidence:
+                raise ValueError('Unsafe or duplicate artwork reference identifier')
+            source = Path(reference['path'])
+            if not source.is_absolute():
+                source = index_path.parent / source
+            source = source.resolve(strict=True)
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            if digest != reference['sha256']:
+                raise ValueError('Original artwork reference changed before gallery copy')
+            relative = f'images/{asset_id}-artwork-{identifier}-{digest[:16]}.png'
+            target = output / relative
+            target.parent.mkdir(exist_ok=True)
+            shutil.copyfile(source, target)
+            if hashlib.sha256(target.read_bytes()).hexdigest() != digest:
+                raise RuntimeError('Artwork reference copy differs')
+            reference_evidence[identifier] = {**reference, 'file': relative}
+            label = html.escape(reference['label'])
+            reference_figures.append(f'<figure data-kind="artwork-reference-context"><figcaption>{label}</figcaption>'
+                f'<a href="{relative}" target="_blank"><img src="{relative}" loading="lazy" alt="{label}"></a></figure>')
         animation_figures, animation_keys = {}, {}
         sheets = [("solid", item.get("solid_label", "Solid geometry")),
                   ("textured", item.get("textured_label", "Original textures + shaded unknown surfaces"))]
@@ -354,9 +378,9 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                      f'<p><code>{html.escape(item["id"])}</code></p>'
                      f'<p class="status">{html.escape(item["status"])}</p>'
                      f'<p>{html.escape(notes)}</p>{paired_note}<p>{" · ".join(report_links)}</p>'
-                     f'{controls}<div class="sheets">{"".join(figures)}</div>{animation_sections}</article>')
+                     f'{controls}<div class="sheets">{"".join(reference_figures)}{"".join(figures)}</div>{animation_sections}</article>')
         records.append({**item, "number": number, "images": evidence, "reports": reports,
-                        "review_revision": revision})
+                        "review_revision": revision, **({"reference_images": reference_evidence} if reference_evidence else {})})
     nav = "".join(f'<a href="#{item["id"]}">{n}. {html.escape(item["name"])}</a>' for n, item in enumerate(items, 1))
     document = '''<!doctype html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -42,6 +42,46 @@ def validate_planar_bake(experiment, validation):
         raise ValueError('Planar original eight-view cameras changed')
 
 
+
+def artwork_reference(experiment):
+    """Use the same raw context crop as the frozen model review packet.
+
+    This supplementary reference is archived separately from texture-decision
+    evidence, so adding it does not invalidate existing texture approvals.
+    """
+    from PIL import Image
+    manifest_path = experiment / 'views.json'
+    if not manifest_path.is_file():
+        return []  # Legacy packets without frozen camera metadata.
+    manifest = json.loads(manifest_path.read_text())
+    if not manifest.get('reviewed_packet'):
+        return []
+    packet = Path(manifest['reviewed_packet'])
+    frames_path = packet / 'views.json'
+    if sha(frames_path) != manifest.get('reviewed_manifest_sha256'):
+        raise ValueError('Original artwork reference camera evidence changed')
+    frames = json.loads(frames_path.read_text())
+    context = packet / 'context.png'
+    if not context.is_file() or not frames.get('source_image') or not frames.get('context_crop'):
+        return []
+    source = Path(frames['source_image'])
+    if sha(source) != frames['source_sha256']:
+        raise ValueError('Original artwork reference source changed')
+    crop = frames['context_crop']
+    box = tuple(crop[key] for key in ('left', 'top', 'right', 'bottom'))
+    with Image.open(source) as original, Image.open(context) as reference:
+        if (not all(type(v) is int for v in box) or
+                not 0 <= box[0] < box[2] <= original.width or
+                not 0 <= box[1] < box[3] <= original.height):
+            raise ValueError('Original artwork reference crop is invalid')
+        expected = original.convert('RGBA').crop(box)
+        if reference.size != expected.size or reference.convert('RGBA').tobytes() != expected.tobytes():
+            raise ValueError('Original artwork reference differs from the raw source crop')
+    return [{'id': 'original', 'label': 'Original artwork with surrounding context',
+             'path': str(context), 'sha256': sha(context),
+             'source': str(source), 'source_sha256': frames['source_sha256'], 'crop': crop}]
+
+
 def candidate(experiment, map_name, *, supplemental=False):
     experiment = Path(experiment).resolve()
     review_path = experiment / 'texture-review.json'
@@ -82,6 +122,9 @@ def candidate(experiment, map_name, *, supplemental=False):
         'source_trace_label': ('Raw Sunburst output — inferred-color calibration only' if validation.get('reconciliation_reference') else 'Raw Sunburst output — reference only, not used for this bake'),
         'validation': str(bake / 'validation.json'), 'review': str(review_path),
     }
+    references = artwork_reference(experiment)
+    if references:
+        item['artwork_references'] = references
     return item, review, approval
 
 
@@ -101,6 +144,10 @@ def attach_states(item, review, approval, experiment, map_name):
         for key in (*spec['image_fields'], *spec['report_fields']):
             item[prefix + key] = child[key]
         states.append(spec)
+        for reference in child.get('artwork_references', []):
+            item.setdefault('artwork_references', []).append({**reference,
+                'id': state['id'] + '-' + reference['id'],
+                'label': state.get('name', state['id']) + ': original artwork with surrounding context'})
     for state in review.get('material_states', []):
         sheet, validation = (experiment / state['textured']).resolve(), (experiment / state['validation']).resolve()
         if sha(sheet) != state['actual_sheet_sha256'] or sha(validation) != state['validation_sha256']:
