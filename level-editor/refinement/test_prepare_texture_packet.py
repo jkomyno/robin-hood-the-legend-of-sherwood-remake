@@ -12,26 +12,28 @@ from review_evidence import sha
 
 
 class PreparationTests(unittest.TestCase):
+    tile_size=(384,512)
     def setUp(self):
         temp=tempfile.TemporaryDirectory();self.addCleanup(temp.cleanup)
         self.root=Path(temp.name);self.packet=self.root/'modified';(self.packet/'views').mkdir(parents=True)
         (self.root/'model.blend').write_bytes(b'synthetic approved model')
         (self.root/'handoff.json').write_text('{}')
         self.manifest=self.root/'review.json'
-        source_sheet=Image.new('RGBA',(1536,1024));solid_sheet=Image.new('RGBA',(1536,1024))
+        w,h=self.tile_size
+        source_sheet=Image.new('RGBA',(w*4,h*2));solid_sheet=Image.new('RGBA',(w*4,h*2))
         views=[]
         for i in range(8):
-            source=Image.new('RGBA',(384,512),(i*20,40,80,255))
-            solid=Image.new('RGBA',(384,512),(128,128,128,0))
+            source=Image.new('RGBA',(w,h),(i*20,40,80,255))
+            solid=Image.new('RGBA',(w,h),(128,128,128,0))
             solid.putpixel((1,1),(128,128,128,255));solid.putpixel((2,1),(128,128,128,255))
-            known=Image.new('RGBA',(384,512),(0,0,0,255));known.putpixel((1,1),(255,255,255,255))
+            known=Image.new('RGBA',(w,h),(0,0,0,255));known.putpixel((1,1),(255,255,255,255))
             for kind,image in [('textured',source),('solid',solid),('known',known)]:
                 image.save(self.packet/'views'/f'view-{i}-{kind}.png')
-            left,top=i%4*384,i//4*512
+            left,top=i%4*w,i//4*h
             source_sheet.paste(source,(left,top));solid_sheet.paste(solid,(left,top))
             views.append({'index':i,'ownership_sha256':sha(self.packet/'views'/f'view-{i}-known.png')})
         source_sheet.save(self.packet/'textured.png');solid_sheet.save(self.packet/'solid.png')
-        (self.packet/'views.json').write_text(json.dumps({'asset_id':'fixture','tile_size':[384,512],
+        (self.packet/'views.json').write_text(json.dumps({'asset_id':'fixture','tile_size':[w,h],
             'layout':{'columns':4,'rows':2},'views':views}))
         self.item={'id':'fixture','status':'ready-for-user','worker_status':'ready-for-user',
             'stored_material_validation':'PASS','workspace':str(self.root),
@@ -90,6 +92,21 @@ class PreparationTests(unittest.TestCase):
     def test_changed_ownership_fails_before_creating_output(self):
         (self.packet/'views/view-0-known.png').write_bytes(b'changed')
         with self.assertRaises(ValueError):prepare(self.manifest,'fixture',self.root/'blocked')
+        self.assertFalse((self.root/'blocked').exists())
+
+
+class SmallApprovedCanvas(PreparationTests):
+    tile_size=(256,320)
+
+
+class InvalidCanvas(unittest.TestCase):
+    tile_size=(128,128)
+    setUp=PreparationTests.setUp
+    save=PreparationTests.save
+
+    def test_reject_before_output(self):
+        with self.assertRaisesRegex(ValueError,'custom-size'):
+            prepare(self.manifest,'fixture',self.root/'blocked')
         self.assertFalse((self.root/'blocked').exists())
 
 

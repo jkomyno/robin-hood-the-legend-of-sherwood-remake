@@ -62,18 +62,23 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     if frames['asset_id'] != asset_id or [v['index'] for v in frames['views']] != list(range(8)):
         raise ValueError('Expected eight ordered views for the approved asset')
     width, height = frames['tile_size']
-    if (width * 4, height * 2) != (1536, 1024):
-        raise ValueError('Shared generation requires an already-reviewed 1536x1024 sheet; never rescale')
+    if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in (width, height)):
+        raise ValueError('Frozen camera tile dimensions must be positive integers')
+    canvas = (width * 4, height * 2)
+    cw, ch = canvas
+    if (cw % 16 or ch % 16 or max(canvas) > 3840 or max(canvas) / min(canvas) > 3
+            or not 655360 <= cw * ch <= 8294400):
+        raise ValueError('Approved canvas is outside Sunburst custom-size constraints; never rescale')
     for path in (Path(item['textured']), Path(item['solid'])):
         with Image.open(path) as image:
-            if image.size != (1536, 1024):
+            if image.size != canvas:
                 raise ValueError('Approved sheet dimensions differ from fixed camera tiles')
     output = Path(output).resolve()
     if output.exists():
         raise FileExistsError(output)
-    mask_sheet = Image.new('RGBA', (1536, 1024), (255, 255, 255, 255))
-    input_sheet = Image.new('RGBA', (1536, 1024))
-    solid_sheet = Image.new('RGBA', (1536, 1024))
+    mask_sheet = Image.new('RGBA', canvas, (255, 255, 255, 255))
+    input_sheet = Image.new('RGBA', canvas)
+    solid_sheet = Image.new('RGBA', canvas)
     prepared_views = []
     editable = 0
     for view in frames['views']:
@@ -118,7 +123,7 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
         mask.save(output / mask_name)
     mask_sheet.save(output / 'mask.png')
     revision = item['revision']['sha256']
-    frames['layout'].update(width=1536, height=1024)
+    frames['layout'].update(width=cw, height=ch)
     frames.update(reviewed_packet=str(packet), reviewed_manifest_sha256=sha(frames_path),
                   source_blend=str(output / 'approved-model.blend'), geometry_revision=revision,
                   input_sha256=sha(output / 'input.png'))
