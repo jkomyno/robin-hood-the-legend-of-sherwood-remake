@@ -1,7 +1,7 @@
 """Collect verified Nottingham worker packets without granting approval.
 
 Run with Python, after workers produce packets. Defaults target
-work/nottingham-refinement/{grouping/catalog-v11.json,round-1/assets,gallery}.
+work/nottingham-refinement/{grouping/catalog-v12.json,round-1/assets,gallery}.
 Workers provide candidate.json with version, asset_id, geometry_refined, status,
 inspected_views, recipe, model_sha256, modified_views_sha256, changes, limitations.
 Ready candidates also require review.md and all eight visually inspected views.
@@ -323,7 +323,7 @@ def supplemental_packet(directory, asset_id, framing, *, mask_origin=None):
 def main(argv=None):
     root = Path(__file__).resolve().parents[2] / "work/nottingham-refinement"
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--catalog", type=Path, default=root / "grouping/catalog-v11.json")
+    parser.add_argument("--catalog", type=Path, default=root / "grouping/catalog-v12.json")
     parser.add_argument("--assets", type=Path, default=root / "round-1/assets")
     parser.add_argument("--output", type=Path, default=root / "gallery")
     parser.add_argument('--workspace-map', type=Path, default=root / 'workspace-overrides.json',
@@ -484,6 +484,15 @@ def main(argv=None):
                 "validation": str(workspace / "validation.json"), "ownership": str(evidence_path)}
         if review.is_file():
             item["review"] = str(review)
+        for key in ('source_comparison', 'source_comparison_secondary', 'source_trace', 'projection_errors'):
+            value = evidence['worker_report'].get(key)
+            if value:
+                image = Path(value)
+                if not image.is_absolute():
+                    image = workspace / image
+                image = image.resolve(strict=True)
+                require(image.is_relative_to(workspace.resolve()), 'Review image must belong to its workspace')
+                item[key] = str(image)
         if evidence['state_packets'].get('covered'):
             folder = Path(evidence['state_packets']['covered']['directory'])
             item.update(solid=str(folder/'solid.png'), textured=str(folder/'textured.png'),
