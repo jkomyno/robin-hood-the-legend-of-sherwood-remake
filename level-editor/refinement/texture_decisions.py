@@ -15,13 +15,39 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def fields(item):
+    """All displayed evidence, including independently baked or preserved states."""
+    images, reports = list(IMAGE_FIELDS), ['validation', 'review']
+    seen = set()
+    for state in item.get('texture_states', []):
+        identifier = state['id']
+        if not re.fullmatch(r'[a-zA-Z0-9_-]+', identifier) or identifier in seen:
+            raise ValueError('Unsafe or duplicate texture state identifier')
+        seen.add(identifier)
+        prefix = 'texture_state_' + identifier + '_'
+        images.extend(prefix + field for field in state['image_fields'])
+        reports.extend(prefix + field for field in state['report_fields'])
+    return images, reports
+
+
 def evidence(item):
-    paths = {key: Path(item[key]) for key in (*IMAGE_FIELDS, 'validation', 'review')}
+    images, reports = fields(item)
+    paths = {key: Path(item[key]) for key in (*images, *reports)}
     paths['model'] = paths['validation'].parent / 'worker.blend'
+    for state in item.get('texture_states', []):
+        if state.get('model'):
+            paths['texture_state_' + state['id'] + '_model'] = Path(state['model'])
     hashes = {key: sha(path) for key, path in paths.items()}
     review = json.loads(paths['review'].read_text())
     if hashes['model'] != review['baked_model_sha256'] or hashes['textured'] != review['actual_sheet_sha256']:
         raise ValueError('Baked texture evidence changed: ' + item['id'])
+    for state in item.get('texture_states', []):
+        prefix = 'texture_state_' + state['id'] + '_'
+        if state.get('model'):
+            state_review = json.loads(paths[prefix + 'review'].read_text())
+            if (hashes[prefix + 'model'] != state_review['baked_model_sha256'] or
+                    hashes[prefix + 'textured'] != state_review['actual_sheet_sha256']):
+                raise ValueError('Baked texture state evidence changed: ' + state['id'])
     return paths, hashes
 
 
@@ -54,8 +80,9 @@ def record(gallery, decisions, text):
         if item['review_revision'][:16] != revision:
             raise ValueError('Displayed texture revision differs: ' + asset_id)
         paths, hashes = evidence(item)
-        for key in (*IMAGE_FIELDS, 'validation', 'review'):
-            entry = item['images' if key in IMAGE_FIELDS else 'reports'][key]
+        images, reports = fields(item)
+        for key in (*images, *reports):
+            entry = item['images' if key in images else 'reports'][key]
             if hashes[key] != entry['sha256'] or sha(gallery / entry['file']) != entry['sha256']:
                 raise ValueError('Displayed texture evidence changed: ' + asset_id + '/' + key)
         pending.append((paths, {
@@ -64,6 +91,7 @@ def record(gallery, decisions, text):
             'review_revision': item['review_revision'], 'exact_user_text': line,
             'evidence_sha256': hashes,
             'evidence_paths': {key: str(path) for key, path in paths.items()},
+            **({'texture_states': item['texture_states']} if item.get('texture_states') else {}),
         }))
     if not pending:
         raise ValueError('No texture decisions supplied')

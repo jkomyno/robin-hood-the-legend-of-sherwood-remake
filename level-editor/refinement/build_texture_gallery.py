@@ -42,6 +42,83 @@ def validate_planar_bake(experiment, validation):
         raise ValueError('Planar original eight-view cameras changed')
 
 
+def candidate(experiment, map_name, *, supplemental=False):
+    experiment = Path(experiment).resolve()
+    review_path = experiment / 'texture-review.json'
+    review = json.loads(review_path.read_text())
+    expected_status = 'supplemental' if supplemental else 'ready-for-user'
+    if review.get('status') != expected_status:
+        raise ValueError('Texture candidate has unexpected status: ' + str(experiment))
+    approval = json.loads((experiment / 'approval.json').read_text())
+    bake = (experiment / review['bake']).resolve()
+    generation = (experiment / review['generation']).resolve()
+    validation = json.loads((bake / 'validation.json').read_text())
+    report = json.loads((generation / 'generation.json').read_text())
+    validate_reconciliation_reference(validation)
+    validate_planar_bake(experiment, validation)
+    if (review.get('all_eight_actual_views_inspected') is not True
+            or review.get('status') != expected_status
+            or validation.get('geometry_verified') is not True
+            or report.get('changedProtected') != 0):
+        raise ValueError(f'Incomplete texture review: {experiment.name}')
+    actual = bake / 'actual/textured.png'
+    if (sha(actual) != review['actual_sheet_sha256']
+            or sha(bake / 'worker.blend') != review['baked_model_sha256']
+            or sha(generation / 'generated-preserved.png') != validation['generated_sha256']
+            or sha(experiment / 'input.png') != approval['input_sha256']):
+        raise ValueError(f'Texture review evidence changed: {experiment.name}')
+    asset_id = approval['asset_id']
+    item = {
+        'id': asset_id, 'name': asset_id.removeprefix(map_name.lower() + '-').replace('-', ' ').title(),
+        'status': 'ready-for-user', 'user_approval': 'pending',
+        'notes': ['Texture approval pending; geometry was previously approved.', *review.get('notes', [])],
+        'solid': str(experiment / 'solid.png'),
+        'textured': str(actual), 'textured_label': 'Generated texture baked onto the actual mesh — approval candidate',
+        'source_comparison': str(experiment / 'input.png'),
+        'source_comparison_label': 'Approved source textures before generation',
+        'source_comparison_secondary': str(generation / 'generated-preserved.png'),
+        'source_comparison_secondary_label': 'Generated sheet with original pixels restored',
+        'source_trace': str(generation / 'generated-raw.png'),
+        'source_trace_label': ('Raw Sunburst output — inferred-color calibration only' if validation.get('reconciliation_reference') else 'Raw Sunburst output — reference only, not used for this bake'),
+        'validation': str(bake / 'validation.json'), 'review': str(review_path),
+    }
+    return item, review, approval
+
+
+def attach_states(item, review, approval, experiment, map_name):
+    from texture_decisions import IMAGE_FIELDS
+    states = []
+    for state in review.get('texture_states', []):
+        child_path = (experiment / state['experiment']).resolve()
+        child, child_review, child_approval = candidate(child_path, map_name, supplemental=True)
+        if (child['id'] != item['id'] or child_approval['geometry_revision'] != approval['geometry_revision'] or
+                child_review.get('texture_states') or child_review.get('material_states')):
+            raise ValueError('Texture state identity/revision differs or states are nested')
+        spec = {'id': state['id'], 'name': state.get('name', state['id']),
+                'image_fields': list(IMAGE_FIELDS), 'report_fields': ['validation', 'review'],
+                'model': str(Path(child['validation']).parent / 'worker.blend')}
+        prefix = 'texture_state_' + spec['id'] + '_'
+        for key in (*spec['image_fields'], *spec['report_fields']):
+            item[prefix + key] = child[key]
+        states.append(spec)
+    for state in review.get('material_states', []):
+        sheet, validation = (experiment / state['textured']).resolve(), (experiment / state['validation']).resolve()
+        if sha(sheet) != state['actual_sheet_sha256'] or sha(validation) != state['validation_sha256']:
+            raise ValueError('Preserved material-state evidence changed: ' + state['id'])
+        qa = json.loads(validation.read_text())
+        if qa.get('baked_model_sha256') != review['baked_model_sha256'] or qa.get('materials_preserved') is not True:
+            raise ValueError('Material-state QA must bind baked model and preserved materials')
+        spec = {'id': state['id'], 'name': state.get('name', state['id']),
+                'image_fields': ['textured'], 'report_fields': ['validation']}
+        prefix = 'texture_state_' + spec['id'] + '_'
+        item[prefix + 'textured'], item[prefix + 'validation'] = str(sheet), str(validation)
+        states.append(spec)
+    if states:
+        item['texture_states'] = states
+        from texture_decisions import fields
+        fields(item)  # Reject unsafe or duplicate identifiers before building files.
+
+
 def collect(experiments, output, map_name, additional_experiments=()):
     experiments, output = Path(experiments).resolve(), Path(output).resolve()
     items = []
@@ -53,41 +130,13 @@ def collect(experiments, output, map_name, additional_experiments=()):
         if not review_path.is_file():
             continue
         review = json.loads(review_path.read_text())
-        if review.get('status') in {'held', 'fix-needed', 'rejected'}:
+        if review.get('status') in {'held', 'fix-needed', 'rejected', 'supplemental'}:
             continue
-        approval = json.loads((experiment / 'approval.json').read_text())
-        bake = (experiment / review['bake']).resolve()
-        generation = (experiment / review['generation']).resolve()
-        validation = json.loads((bake / 'validation.json').read_text())
-        report = json.loads((generation / 'generation.json').read_text())
-        validate_reconciliation_reference(validation)
-        validate_planar_bake(experiment, validation)
-        if (review.get('all_eight_actual_views_inspected') is not True
-                or review.get('status') != 'ready-for-user'
-                or validation.get('geometry_verified') is not True
-                or report.get('changedProtected') != 0):
-            raise ValueError(f'Incomplete texture review: {experiment.name}')
-        actual = bake / 'actual/textured.png'
-        if (sha(actual) != review['actual_sheet_sha256']
-                or sha(bake / 'worker.blend') != review['baked_model_sha256']
-                or sha(generation / 'generated-preserved.png') != validation['generated_sha256']
-                or sha(experiment / 'input.png') != approval['input_sha256']):
-            raise ValueError(f'Texture review evidence changed: {experiment.name}')
-        asset_id = approval['asset_id']
-        items.append({
-            'id': asset_id, 'name': asset_id.removeprefix(map_name.lower() + '-').replace('-', ' ').title(),
-            'status': 'ready-for-user', 'user_approval': 'pending',
-            'notes': ['Texture approval pending; geometry was previously approved.', *review.get('notes', [])],
-            'solid': str(experiment / 'solid.png'),
-            'textured': str(actual), 'textured_label': 'Generated texture baked onto the actual mesh — approval candidate',
-            'source_comparison': str(experiment / 'input.png'),
-            'source_comparison_label': 'Approved source textures before generation',
-            'source_comparison_secondary': str(generation / 'generated-preserved.png'),
-            'source_comparison_secondary_label': 'Generated sheet with original pixels restored',
-            'source_trace': str(generation / 'generated-raw.png'),
-            'source_trace_label': ('Raw Sunburst output — inferred-color calibration only' if validation.get('reconciliation_reference') else 'Raw Sunburst output — reference only, not used for this bake'),
-            'validation': str(bake / 'validation.json'), 'review': str(review_path),
-        })
+        item, review, approval = candidate(experiment, map_name)
+        attach_states(item, review, approval, experiment, map_name)
+        if any(existing['id'] == item['id'] for existing in items):
+            raise ValueError('Multiple ready texture candidates for asset: ' + item['id'])
+        items.append(item)
     output.mkdir(parents=True, exist_ok=True)
     for item in items:
         bind_texture_decision(item, decisions)

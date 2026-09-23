@@ -236,6 +236,19 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                 item[key] = state[field]
                 animation_keys[key] = identifier
                 sheets.append((key, state['name'] + ': ' + label))
+        texture_state_ids = set()
+        texture_labels = {'solid': 'solid geometry', 'textured': 'actual saved materials',
+                          'source_comparison': 'approved source textures',
+                          'source_comparison_secondary': 'source-preserved generated sheet',
+                          'source_trace': 'raw generated reference'}
+        for state in item.get('texture_states', []):
+            identifier = state['id']
+            if not re.fullmatch(r'[a-zA-Z0-9_-]+', identifier) or identifier in texture_state_ids:
+                raise ValueError('Unsafe or duplicate texture state identifier')
+            texture_state_ids.add(identifier)
+            for field in state['image_fields']:
+                sheets.append(('texture_state_' + identifier + '_' + field,
+                               state['name'] + ': ' + texture_labels[field]))
         for key, label in sheets:
             source = Path(item[key])
             if not source.is_absolute():
@@ -280,6 +293,10 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                         key = 'endpoint_' + endpoint['id'] + '_' + field
                         item[key] = endpoint[field]
                         report_specs.append((key, endpoint['id'].capitalize() + ': ' + label))
+        for state in item.get('texture_states', []):
+            for field in state['report_fields']:
+                report_specs.append(('texture_state_' + state['id'] + '_' + field,
+                                     state['name'] + ': ' + field))
         for key, label in report_specs:
             if not item.get(key):
                 continue
@@ -298,6 +315,8 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             reports[key] = {"source": str(source), "file": relative, "sha256": digest}
             report_links.append(f'<a href="{relative}" target="_blank">{label}</a>')
         paired_note = ''
+        if item.get('texture_states'):
+            paired_note = '<p><strong>Texture approval covers the main views and every additional state shown below.</strong></p>'
         if item.get('endpoint_reviews'):
             paired_note = '<p><strong>Paired endpoint review: approval covers both initial and applied models.</strong></p>'
             paired_note += '<ul>' + ''.join('<li>' + html.escape(endpoint['id'].capitalize() + ': ' + endpoint['status']) +

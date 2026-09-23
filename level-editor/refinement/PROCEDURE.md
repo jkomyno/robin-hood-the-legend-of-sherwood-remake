@@ -229,6 +229,20 @@ Geometry approval and texture approval are separate decisions. Raw generated
    textures remain archived even when a protected/source-preserved alternative
    is selected.
 
+For paired texture endpoints, keep one primary `texture-review.json` marked
+`ready-for-user`. Its `texture_states` list names each additional endpoint with
+`id`, `name`, and `experiment`; that experiment has a complete independent
+review marked `supplemental`. Both experiments must bind the same approved
+geometry revision. The shared texture gallery displays both sets of images on
+one card, and a texture decision archives and binds both baked models.
+
+For unchanged revealed materials, the primary review may additionally include
+`material_states`: entries with `id`, `name`, `textured`, `validation`,
+`actual_sheet_sha256`, and `validation_sha256`. The state validation binds
+`baked_model_sha256` and records `materials_preserved: true` only after comparing
+the original materials/UVs and inspecting the actual state render. These images
+and reports are displayed and included in the same texture decision.
+
 ## 8. Texture generation
 
 After geometry approval, prepare two fixed-camera inputs for texture synthesis:

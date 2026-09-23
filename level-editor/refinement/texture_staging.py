@@ -8,7 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 from review_evidence import sha
-from texture_decisions import IMAGE_FIELDS, evidence
+from texture_decisions import evidence, fields
 
 
 def _json(path):
@@ -39,12 +39,14 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
     if not decision.get('exact_user_text', '').strip():
         raise ValueError('Texture decision requires exact user text')
     paths = {key: Path(value).resolve(strict=True) for key, value in decision['evidence_paths'].items()}
-    record = {'id': asset_id, **{key: str(paths[key]) for key in (*IMAGE_FIELDS, 'validation', 'review')}}
+    record = {'id': asset_id, 'texture_states': decision.get('texture_states', [])}
+    image_fields, report_fields = fields(record)
+    record.update({key: str(paths[key]) for key in (*image_fields, *report_fields)})
     current_paths, hashes = evidence(record)
     if hashes != decision.get('evidence_sha256') or any(current_paths[k].resolve() != paths[k] for k in current_paths):
         raise ValueError('Texture decision differs from current baked evidence')
-    binding = {'images': {key: hashes[key] for key in IMAGE_FIELDS},
-               'reports': {key: hashes[key] for key in ('validation', 'review')}}
+    binding = {'images': {key: hashes[key] for key in image_fields},
+               'reports': {key: hashes[key] for key in report_fields}}
     if hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest() != decision['review_revision']:
         raise ValueError('Texture gallery revision does not match displayed evidence')
     experiment = paths['solid'].parent
