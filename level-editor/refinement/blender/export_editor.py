@@ -420,6 +420,8 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
                                 "default_hidden": bool(source.hide_render), **projection_metadata(source)} for source in sources],
                 "parts": [{"node": key, "name": obj["part_name"], "source_obstacle": obj["source_obstacle"],
                            "default_hidden": visibility[key]} for key, obj in parts.items()]}
+            if {source['source_node'] for source in sources} == {'ground'}:
+                descriptor['editor_usage'] = 'map-background'
             if reveal:
                 descriptor["reveal"] = reveal
             output.with_name("asset.json").write_text(json.dumps(descriptor, indent=2) + "\n")
@@ -511,6 +513,8 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
         (output_dir / key / "asset.json").write_text(json.dumps(descriptor, indent=2) + "\n")
         entries[key] = {"id": key, "name": descriptor["name"], "source_map": map_name,
                         "descriptor": key + "/asset.json", "model": key + "/model.glb"}
+        if descriptor.get('editor_usage'):
+            entries[key]['editor_usage'] = descriptor['editor_usage']
     index["assets"] = sorted(entries.values(), key=lambda entry: entry["id"])
     index_path.write_text(json.dumps(index, indent=2) + "\n")
     return {"assets": len(ids), "index": str(index_path)}

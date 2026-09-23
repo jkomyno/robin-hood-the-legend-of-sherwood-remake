@@ -28,13 +28,19 @@ def verify(directory,catalog_path):
     stage=json.loads((directory/'stage.json').read_text())
     index=json.loads((directory/'assets/index.json').read_text())
     expected={g['id']:g for g in catalog['groups']}
-    if {a['id'] for a in index['assets']}!=set(expected):
+    plan=json.loads(Path(stage['plan']).read_text()) if stage.get('plan') else {}
+    selected=set(plan.get('export_asset_ids',expected))
+    ground_ids={item['asset_id'] for item in plan.get('imports',[]) if item.get('source_nodes')==['ground']}
+    if selected-set(expected)-ground_ids:raise ValueError('Export subset contains unknown assets')
+    if {a['id'] for a in index['assets']}!=selected:
         raise ValueError('Standalone group catalog differs from authored ownership')
     nodes=set();components=0;component_metadata=0;masked_generated=0
     for asset in index['assets']:
         descriptor=json.loads((directory/'assets'/asset['descriptor']).read_text())
-        owned={f"building-{part['obstacle']:03d}" for part in expected[asset['id']]['parts']}
+        owned={'ground'} if asset['id'] in ground_ids else {f"building-{part['obstacle']:03d}" for part in expected[asset['id']]['parts']}
         actual={c['source_node'] for c in descriptor['components']}
+        if asset['id'] in ground_ids and (descriptor.get('parts')!=[] or descriptor.get('editor_usage')!='map-background' or asset.get('editor_usage')!='map-background'):
+            raise ValueError('Ground must declare map-background capability without obstacle parts')
         if owned!=actual or nodes & actual:
             raise ValueError('Standalone canonical ownership differs: '+asset['id'])
         nodes |= actual
@@ -46,7 +52,10 @@ def verify(directory,catalog_path):
                 if not any(e.get('projection_component')==component['projection_component'] for e in exported):
                     raise ValueError('Standalone lost component ownership metadata')
         components+=len(descriptor['components'])
-    model=gltf(directory/'derby.scene.glb')
+    model=gltf(Path(stage['map']['file']))
+    expected_map={f"building-{p['obstacle']:03d}" for g in expected.values() for p in g['parts']}
+    actual_map={n['name'] for n in model['nodes'] if n.get('name','').startswith('building-')}
+    if actual_map!=expected_map:raise ValueError('Full map canonical coverage differs from publication catalog')
     generated={}
     for material in model.get('materials',[]):
         extra=material.get('extras',{})
@@ -56,11 +65,9 @@ def verify(directory,catalog_path):
     for sha,names in stage['generated_materials'].items():
         if generated.get(sha)!=len(names):
             raise ValueError('Map lost selected generated materials: '+sha)
-    if len(nodes)!=270:
-        raise ValueError('Wrong canonical part count')
     if component_metadata and not any(n.get('extras',{}).get('projection_component') for n in model['nodes']):
         raise ValueError('Map lost component selectors')
-    report={'status':'PASS','groups':len(expected),'parts':len(nodes),'components':components,
+    report={'status':'PASS','groups':len(selected),'parts':len(nodes-{'ground'}),'full_map_parts':len(actual_map),'components':components,
             'component_metadata':component_metadata,'generated_materials':generated,
             'masked_generated_materials':masked_generated}
     (directory/'asset-verification.json').write_text(json.dumps(report,indent=2)+'\n')

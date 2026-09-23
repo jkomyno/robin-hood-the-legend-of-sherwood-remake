@@ -27,6 +27,27 @@ def stage(plan_path):
     scene_file=scene_filename(plan)
     output=Path(plan['output']).resolve()
     output.mkdir(parents=True,exist_ok=False)
+    if plan.get('baseline_sha256') and hashlib.sha256(Path(plan['baseline']).read_bytes()).hexdigest()!=plan['baseline_sha256']:
+        raise ValueError('Publication baseline changed')
+    for path,digest in plan.get('protected_live_files',{}).items():
+        if hashlib.sha256(Path(path).read_bytes()).hexdigest()!=digest:raise ValueError('Live publication input changed: '+path)
+    texture_checks=[]
+    if plan.get('approved_texture_imports'):
+        if sorted(plan.get('export_asset_ids',[]))!=sorted(item['asset_id'] for item in plan['imports']):
+            raise ValueError('Texture publication must export exactly its approved imports')
+        if any(item.get('texture_handoff') for item in plan['imports']) or plan.get('ground_texture_handoff'):
+            raise ValueError('Approval-validated bakes cannot be overridden by another texture handoff')
+        sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+        from texture_staging import validate_texture_handoff, verify_baked_geometry
+        for item in plan['imports']:
+            validated=validate_texture_handoff(item['geometry_manifest'],item['asset_id'],
+                item['texture_decisions'],item['geometry_decisions'])
+            for key in ('blend_path','blend_sha256','object_names','source_nodes','geometry_revision_sha256'):
+                if item.get(key)!=validated[key]:raise ValueError('Approved texture plan changed: '+item['asset_id']+' '+key)
+            texture_checks.append(verify_baked_geometry(validated))
+    ground_imports=[item for item in plan['imports'] if item.get('source_nodes')==['ground']]
+    if ground_imports and (not plan.get('approved_texture_imports') or len(ground_imports)!=1):
+        raise ValueError('Planar ground requires one approval-validated texture handoff')
     for item in plan['imports']:
         if item.get('discover_asset_members'):
             bpy.ops.wm.open_mainfile(filepath=str(Path(item['blend_path']).resolve(strict=True)))
@@ -39,8 +60,16 @@ def stage(plan_path):
     canonical_before={o.get('source_node') for o in collection.all_objects
                       if o.type=='MESH' and o.get('source_node')!='ground'}
     validate_coverage(canonical_before,expected)
+    from refinement_workspace import _geometry
+    from bake_reviewed_asset import _materials
+    selected_nodes={node for item in plan['imports'] for node in item.get('source_nodes',[])}
+    def outside_state():
+        return {o.name:(_geometry(o),_materials(o)) for o in collection.all_objects
+            if o.type=='MESH' and o.get('source_node') not in selected_nodes}
+    outside_before=outside_state()
     imports=[]
     for item in plan['imports']:
+        if item in ground_imports:continue
         packet=json.loads(Path(item['review_manifest']).read_text())
         names=item['object_names'] if 'object_names' in item else packet['object_names']
         blend=item['blend_path']
@@ -62,6 +91,22 @@ def stage(plan_path):
     validate_coverage(canonical_after,expected)
     grouping=reconcile_asset_groups(plan['catalog'])
     ground_handoff=None
+    if ground_imports:
+        item=ground_imports[0]
+        grounds=[o for o in collection.all_objects if o.type=='MESH' and o.get('source_node')=='ground' and not o.hide_render]
+        if len(grounds)!=1:raise ValueError('Expected one live ground receiver')
+        ground=grounds[0]
+        root=bpy.data.objects.new(item['asset_id'],None);collection.objects.link(root)
+        root['asset_group']=item['asset_id'];root['asset_name']='Ground Background'
+        root.parent=ground.parent
+        matrix=ground.matrix_world.copy();ground.parent=root;ground.matrix_world=matrix
+        ground['asset_group']=item['asset_id'];ground['asset_name']='Ground Background'
+        bpy.context.view_layer.update()
+        ground_handoff=import_asset_geometry(item['blend_path'],asset_id=item['asset_id'],
+            object_names=item['object_names'],collection_name=collection.name,source_nodes=['ground'])
+        ground_handoff['projection_kind']='planar-atlas'
+        ground_handoff['source_blend_sha256']=item['blend_sha256']
+        imports.append(ground_handoff)
     if plan.get('ground_texture_handoff'):
         item=plan['ground_texture_handoff']
         proof=json.loads(Path(item['proof']).read_text())
@@ -86,6 +131,14 @@ def stage(plan_path):
         if hashlib.sha256(image.packed_file.data).hexdigest()!=proof['output_atlas_sha256']:
             raise ValueError('Ground cleanup handoff differs from reviewed atlas')
         ground['ground_cleanup_report']=item['proof']
+    if plan.get('approved_texture_imports'):
+        for item in plan['imports']:
+            for path,digest in item['protected_files'].items():
+                if hashlib.sha256(Path(path).read_bytes()).hexdigest()!=digest:
+                    raise ValueError('Approved evidence changed during stage: '+path)
+    outside_after=outside_state()
+    if plan.get('approved_texture_imports') and outside_before!=outside_after:
+        raise ValueError('Staging changed unselected live mesh state')
     generated={}
     for obj in collection.all_objects:
         if obj.type!='MESH' or obj.hide_render:
@@ -99,10 +152,11 @@ def stage(plan_path):
                 generated.setdefault(mat['generated_source_sha256'],set()).add(mat.name)
     bpy.ops.wm.save_as_mainfile(filepath=str(output/'worker.blend'))
     report={'plan':str(plan_path),'imports':imports,'grouping':grouping,'ground_texture_handoff':ground_handoff,
-            'canonical_parts':len(canonical_after),
+            'canonical_parts':len(canonical_after),'approved_texture_checks':texture_checks,
+            'unselected_meshes_preserved':len(outside_before),'unselected_mesh_state_identical':outside_before==outside_after,
             'generated_materials':{sha:sorted(names) for sha,names in generated.items()},
             'map':export_editor(plan['map_name'],output/scene_file),
-            'assets':export_asset_library(plan['map_name'],output/'assets',plan['hackable_map'])}
+            'assets':export_asset_library(plan['map_name'],output/'assets',plan['hackable_map'],asset_ids=plan.get('export_asset_ids'))}
     (output/'stage.json').write_text(json.dumps(report,indent=2)+'\n')
     render_views(plan['scene_name'],{'reference':plan['reference_camera']},output/'full-map',width=1920)
     return report

@@ -30,7 +30,11 @@ def run(config_path):
         item['blend_sha256'] = hashlib.sha256(Path(item['blend_path']).read_bytes()).hexdigest()
         # Discover only visible meshes owned by this exact catalog group. A
         # worker can contain the whole map, including stale sibling buildings.
-        item['discover_asset_members'] = True
+        item['discover_asset_members'] = not config.get('approved_texture_imports')
+        if item.get('source_nodes') == ['ground']:
+            if not config.get('approved_texture_imports') or item.get('projection_kind')!='planar-atlas':
+                raise ValueError('Ground requires a validated planar texture handoff')
+            continue
         owned = {f"building-{part['obstacle']:03d}" for part in groups[item['asset_id']]['parts']}
         selected = item.get('source_nodes', sorted(owned))
         if not selected or set(selected) - owned:

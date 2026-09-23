@@ -122,9 +122,10 @@ def verify(plan_path):
         if len(expected_ground) != 1:
             raise ValueError('Ground handoff must have exactly one visible receiver')
     scopes = {item['asset_id']: set(item['source_nodes']) for item in plan['imports']}
+    imported_ground = any(nodes == {'ground'} for nodes in scopes.values())
     def selected(record):
         return not record['hidden'] and (record['source'] in scopes.get(record['group'], set())
-                                        or (expected_ground is not None and record['source'] == 'ground'))
+                                        or ((expected_ground is not None or imported_ground) and record['source'] == 'ground'))
     bpy.ops.wm.open_mainfile(filepath=plan['baseline'])
     before = [r for r in snapshot(plan['collection_name']) if not selected(r)]
     bpy.ops.wm.open_mainfile(filepath=str(Path(plan['output']) / 'worker.blend'))
