@@ -8,6 +8,11 @@ import sys
 import bpy
 
 
+@bpy.app.handlers.persistent
+def _cutout_ray_depth(scene):
+    scene.cycles.transparent_max_bounces=128
+
+
 def run(workspace):
     workspace=Path(workspace).resolve()
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
@@ -29,7 +34,14 @@ def run(workspace):
         if archive.exists():
             raise FileExistsError('Audit revision already archived: '+str(archive))
         audit_output.rename(archive)
-    material_report=audit(workspace,audit_output,render=True,export=True)
+    bpy.app.handlers.render_pre.append(_cutout_ray_depth)
+    try:
+        material_report=audit(workspace,audit_output,render=True,export=True)
+    finally:
+        bpy.app.handlers.render_pre.remove(_cutout_ray_depth)
+    material_report['render']['transparent_max_bounces']=128
+    material_report['render']['transparent_depth_reason']='Layered foliage coverage must survive all transparent surface traversals.'
+    (audit_output/'audit.json').write_text(json.dumps(material_report,indent=2)+'\n')
     handoff=json.loads((workspace/'handoff.json').read_text())
     handoff.update(status='fix-needed',recipe='foliage_trees.py',all_eight_views_inspected=False,
                    geometry_approval='not-approved',texture_generation='not-started',
