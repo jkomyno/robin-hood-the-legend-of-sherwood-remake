@@ -58,6 +58,20 @@ For the next Blender pass, read the ordered points directly from
 stations. Solve depth against the appropriate wall plane, retaining the source
 camera from the packet (not the sunlight angle). If constraints cannot fit one
 plane, show that discrepancy rather than silently moving user landmarks.
+Freeze the edit first with the independent audit helper:
+
+```sh
+python3 level-editor/refinement/audit_corner_constraints.py \
+  level-editor/work/map-corners/edited-corners.json \
+  level-editor/work/map-corners/rebuild-01
+```
+
+The output includes a byte-exact `user-corners.json`, source-image hash checks,
+independently derived corner/transition records, untouched art and numbered
+user-constraint overlays. Odd transition counts intentionally finish on the
+opposite boundary; do not add a closing transition. Use this frozen input in
+the worker so subsequent interactive edits cannot silently change its target.
+
 Reapply ownership-aware source projection, render actual saved-mesh edges on
 the same art and return the result to the review gallery for geometry approval.
 Texture synthesis still waits for geometry approval.
