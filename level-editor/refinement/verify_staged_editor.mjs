@@ -6,14 +6,17 @@ import {createHash} from 'node:crypto';
 import {chromeEndpoint, socketOpen, evaluate} from '../app/tests/cdp.mjs';
 
 const stage = resolve(process.argv[2]);
-const base = process.argv[3] || 'http://localhost:5180';
+const live = process.argv.includes('--live');
+const base = process.argv.slice(3).find(arg=>!arg.startsWith('--')) || 'http://localhost:5180';
 const expected = JSON.parse(await readFile(join(stage, 'asset-verification.json'), 'utf8'));
-const stageUrl = '/@fs/' + stage + '/derby.scene.glb';
+const stageUrl = live ? '/library/scenes/derby-volumes.scene.glb' : '/@fs/' + stage + '/derby.scene.glb';
 const levelDocument = JSON.parse(await readFile(resolve('level-editor/library/scenes/derby.level3d.json'),'utf8'));
 if(levelDocument.groups.length!==expected.groups || levelDocument.objects.length!==expected.parts)
   throw new Error('Document migration requires unchanged group/part counts');
-levelDocument.provenance.glb_sha256=createHash('sha256').update(await readFile(join(stage,'derby.scene.glb'))).digest('hex');
-await writeFile(join(stage,'derby.level3d.json'),JSON.stringify(levelDocument,null,2)+'\n');
+if(!live){
+  levelDocument.provenance.glb_sha256=createHash('sha256').update(await readFile(join(stage,'derby.scene.glb'))).digest('hex');
+  await writeFile(join(stage,'derby.level3d.json'),JSON.stringify(levelDocument,null,2)+'\n');
+}
 const profile = await mkdtemp(join(stage, 'browser-profile-'));
 const chrome = spawn('/usr/lib/chromium/chromium', ['--headless', '--window-size=1000,1150', '--no-sandbox',
   '--disable-dev-shm-usage', '--disable-background-networking', '--enable-unsafe-swiftshader', '--use-angle=swiftshader',
@@ -31,7 +34,7 @@ try {
     if (await evaluate(ws, ++id, `location.origin===${JSON.stringify(new URL(base).origin)} && document.readyState === "complete"`)) break;
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-  await evaluate(ws, ++id, `window.__stageConfig=${JSON.stringify({stageUrl,documentUrl:'/@fs/'+stage+'/derby.level3d.json',expected})}`);
+  await evaluate(ws, ++id, `window.__stageConfig=${JSON.stringify({stageUrl,documentUrl:live?'/library/scenes/derby.level3d.json':'/@fs/'+stage+'/derby.level3d.json',expected})}`);
   const script = await readFile(new URL('./verify_staged_editor_browser.js', import.meta.url), 'utf8');
   await evaluate(ws, ++id, script, {timeoutMs:180000});
   let result;
@@ -40,7 +43,7 @@ try {
     if (result) break;
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
-  await writeFile(join(stage, 'browser-result.json'), JSON.stringify(result || {status:'TIMEOUT'},null,2));
+  await writeFile(join(stage, live?'live-browser-result.json':'browser-result.json'), JSON.stringify(result || {status:'TIMEOUT'},null,2));
   if (result?.status !== 'PASS') throw new Error(JSON.stringify(result));
   const screenshot = await new Promise((resolve,reject) => {
     const request=++id;
@@ -48,7 +51,7 @@ try {
     ws.addEventListener('message',listener);
     ws.send(JSON.stringify({id:request,method:'Page.captureScreenshot',params:{format:'png'}}));
   });
-  await writeFile(join(stage,'editor.png'),Buffer.from(screenshot,'base64'));
+  await writeFile(join(stage,live?'live-editor.png':'editor.png'),Buffer.from(screenshot,'base64'));
   console.log(JSON.stringify(result));
 } finally {
   ws?.close(); chrome.kill('SIGTERM'); await closed;

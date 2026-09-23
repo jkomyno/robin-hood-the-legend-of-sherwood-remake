@@ -19,6 +19,9 @@ def run(config_path):
     root = Path(config.pop('repository_root', '.')).resolve(strict=True)
     for key in ('baseline', 'output', 'catalog', 'hackable_map'):
         config[key] = str((root / config[key]).resolve())
+    if config.get('ground_texture_handoff'):
+        for key in ('blend_path', 'proof'):
+            config['ground_texture_handoff'][key] = str((root / config['ground_texture_handoff'][key]).resolve(strict=True))
     catalog = json.loads(Path(config['catalog']).read_text())
     groups = {group['id']: group for group in catalog['groups']}
     for item in config['imports']:

@@ -114,10 +114,17 @@ def verify(plan_path):
         if not selected:
             raise ValueError('Empty handoff: ' + item['asset_id'])
         expected[item['asset_id']] = selected
-    ids = set(expected)
+    expected_ground = None
+    if plan.get('ground_texture_handoff'):
+        bpy.ops.wm.open_mainfile(filepath=plan['ground_texture_handoff']['blend_path'])
+        expected_ground = [r for r in snapshot(plan['collection_name'], True)
+                           if r['source'] == 'ground' and not r['hidden']]
+        if len(expected_ground) != 1:
+            raise ValueError('Ground handoff must have exactly one visible receiver')
     scopes = {item['asset_id']: set(item['source_nodes']) for item in plan['imports']}
     def selected(record):
-        return not record['hidden'] and record['source'] in scopes.get(record['group'], set())
+        return not record['hidden'] and (record['source'] in scopes.get(record['group'], set())
+                                        or (expected_ground is not None and record['source'] == 'ground'))
     bpy.ops.wm.open_mainfile(filepath=plan['baseline'])
     before = [r for r in snapshot(plan['collection_name']) if not selected(r)]
     bpy.ops.wm.open_mainfile(filepath=str(Path(plan['output']) / 'worker.blend'))
@@ -130,6 +137,11 @@ def verify(plan_path):
         actual = [r for r in records if selected(r) and r['group'] == asset_id]
         drift = compare_handoff(wanted, actual)
         reports.append({'asset_id': asset_id, 'meshes': len(actual), 'content_matches_handoff': True,
+                        'maximum_world_coordinate_drift': drift})
+    if expected_ground is not None:
+        actual_ground = [r for r in records if r['source'] == 'ground' and not r['hidden']]
+        drift = compare_handoff(expected_ground, actual_ground)
+        reports.append({'asset_id': 'ground-cleanup', 'meshes': 1, 'content_matches_handoff': True,
                         'maximum_world_coordinate_drift': drift})
     report = {'status': 'PASS', 'outside_meshes_preserved': len(before), 'imports': reports,
               'comparison': 'World geometry within 0.001 units; exact topology, UVs, assigned material graphs, packed image bytes, visibility. Untouched mesh content exact.'}
