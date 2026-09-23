@@ -47,6 +47,18 @@ def check():
     for value in front.data.color_attributes[0].data:value.color=(0,0,0,1)
     tree,owners,_=_tree([front,rear,trunk])
     assert owners[tree.ray_cast(Vector((.5,0,10)),Vector((0,0,-1)))[2]]==front
+    for distance in (float('nan'),-1,float('-inf')):
+        try: solid_tree.ray_cast(Vector((0,0,10)),Vector((0,0,-1)),distance)
+        except ValueError: pass
+        else: raise AssertionError('Invalid distance accepted')
+    # Oblique miss rays must remain misses through the opacity wrapper; an
+    # explicit infinite BVH distance can instead produce non-finite UV hits.
+    direction=Vector((0,.819152,-.573576)).normalized()
+    for x in range(-10,11):
+        origin=Vector((x, -20, 15))
+        default=solid_tree.ray_cast(origin,direction)
+        bounded=solid_tree.ray_cast(origin,direction,1000)
+        assert (default[0] is None)==(bounded[0] is None),(x,default,bounded)
     print('PASS: front/back physical cutout holes reveal trunk or background; solid/shadow/source rays agree; ownership remains independent')
 
 if __name__=='__main__':check()

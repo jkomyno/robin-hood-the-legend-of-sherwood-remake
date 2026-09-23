@@ -20,6 +20,7 @@ if _legacy not in sys.path:
 
 import bpy
 from mathutils import Matrix
+from export_editor import foliage_export_meshes, finalize_foliage_glb
 
 
 def digest(path):
@@ -165,8 +166,9 @@ def run(workspace, output, *, render=False, export=False, render_object_names=No
         bpy.ops.object.select_all(action='DESELECT')
         for obj in copies:
             obj.select_set(True)
-        with bpy.context.temp_override(scene=scene, view_layer=scene.view_layers[0]):
-            bpy.ops.export_scene.gltf(filepath=str(output/'asset.glb'), export_format='GLB', use_selection=False, use_active_scene=True)
+        with foliage_export_meshes(copies), bpy.context.temp_override(scene=scene, view_layer=scene.view_layers[0]):
+            bpy.ops.export_scene.gltf(filepath=str(output/'asset.glb'), export_format='GLB', use_selection=False, use_active_scene=True, export_extras=True)
+        finalize_foliage_glb(output/'asset.glb')
         report['glb'] = glb_report(output/'asset.glb')
         if not report['glb']['primitives']:
             problems.append('Export contains no mesh primitives')

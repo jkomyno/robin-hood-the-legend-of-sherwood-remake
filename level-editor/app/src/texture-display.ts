@@ -7,13 +7,32 @@ export class TextureDisplay {
   private readonly configured = new WeakSet<THREE.Material>();
 
   material(material: THREE.Material) {
-    if (material.userData.source_ownership_fill !== "synthesized" || this.configured.has(material)) return;
+    if (this.configured.has(material)) return;
+    const foliage = material.userData.foliage_physical_opacity === true;
+    if (foliage) {
+      if (material.userData.opacity_semantics !== "physical-coverage" ||
+          material.userData.source_ownership_semantics !== "separate-mask" ||
+          material.userData.source_ownership_channel !== "vertex-color-r")
+        throw new Error("Foliage requires explicit physical opacity and separate vertex ownership metadata");
+      const colored = material as THREE.MeshBasicMaterial;
+      if (!colored.vertexColors || !colored.map || material.alphaTest !== 0.5 || material.transparent || material.side !== (material.userData.foliage_card_sides === "paired-one-sided" ? THREE.FrontSide : THREE.DoubleSide))
+        throw new Error("Foliage requires COLOR_0 ownership, a base color map, MASK cutoff 0.5 and its declared card-sidedness");
+    } else if (material.userData.source_ownership_fill !== "synthesized") return;
     this.configured.add(material);
     const previous = material.onBeforeCompile;
     material.onBeforeCompile = (shader, renderer) => {
       previous.call(material, shader, renderer);
       shader.uniforms.showSynthesized = this.synthesized;
       shader.fragmentShader = "uniform bool showSynthesized;\n" + shader.fragmentShader;
+      if (foliage) {
+        // COLOR_0 carries provenance only. Its alpha must not multiply coverage,
+        // and its RGB must not tint the physical base-color texture.
+        shader.fragmentShader = shader.fragmentShader.replace("#include <color_fragment>",
+          `float sourceOwnership = ${material.userData.source_ownership_backface === "inferred" ? "(gl_FrontFacing ? clamp(vColor.r, 0.0, 1.0) : 0.0)" : "clamp(vColor.r, 0.0, 1.0)"};
+           if (!showSynthesized) diffuseColor.rgb = mix(vec3(0.24), diffuseColor.rgb, sourceOwnership);
+           ${material.userData.foliage_backface_fill === "neutral" ? "if (!gl_FrontFacing) diffuseColor.rgb = vec3(0.24);" : ""}`);
+        return;
+      }
       shader.fragmentShader = shader.fragmentShader.replace(
         "#include <map_fragment>",
         THREE.ShaderChunk.map_fragment.replace(
@@ -25,7 +44,11 @@ export class TextureDisplay {
         ),
       );
     };
-    material.customProgramCacheKey = () => "source-ownership-display-v1";
+    const previousKey = material.customProgramCacheKey();
+    const contractKey = foliage
+      ? `foliage-ownership-color-r-v1:${material.userData.source_ownership_backface}:${material.userData.foliage_backface_fill}`
+      : "source-ownership-display-v1";
+    material.customProgramCacheKey = () => `${previousKey}:${contractKey}`;
     material.needsUpdate = true;
   }
 
@@ -34,6 +57,8 @@ export class TextureDisplay {
     root.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
       for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+        if (material.userData.foliage_physical_opacity === true && !object.geometry.getAttribute("color"))
+          throw new Error(`Foliage mesh ${object.name} is missing its separate ownership COLOR_0 attribute`);
         this.material(material);
         for (const value of Object.values(material)) {
           if (value instanceof THREE.Texture) textures.add(value);

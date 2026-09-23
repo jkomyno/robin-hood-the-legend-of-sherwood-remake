@@ -59,7 +59,7 @@ def _alpha(record, hit):
     v = (aa*ap.dot(ac)-bb*ap.dot(ab))/determinant
     uv = [uvs[0][i]*(1-u-v)+uvs[1][i]*u+uvs[2][i]*v for i in range(2)]
     if not all(math.isfinite(value) for value in uv) or width <= 0 or height <= 0:
-        raise ValueError('Invalid physical opacity UV/image')
+        raise ValueError(f'Invalid physical opacity UV/image: uv={uv}, size={width}x{height}, hit={tuple(hit)}, triangle={tuple(tuple(p) for p in points)}')
     def sample(x, y):
         if extension == 'REPEAT':
             x, y = x % width, y % height
@@ -82,13 +82,19 @@ class PhysicalOpacityTree:
         self.tree, self.records = tree, records
 
     def ray_cast(self, origin, direction, distance=float('inf')):
+        if math.isnan(distance) or distance < 0:
+            raise ValueError('Physical opacity ray distance must be nonnegative or positive infinity')
         direction = direction.normalized()
         start = origin.copy()
         for _ in range(len(self.records)+1):
             remaining = distance-(start-origin).length
             if remaining <= 0:
                 return None, None, None, None
-            hit, normal, index, _ = self.tree.ray_cast(start, direction, remaining)
+            # mathutils uses a finite FLT_MAX default. Passing Python infinity
+            # explicitly can produce phantom far-away hits on oblique misses.
+            hit, normal, index, _ = (self.tree.ray_cast(start, direction)
+                                     if math.isinf(remaining) else
+                                     self.tree.ray_cast(start, direction, remaining))
             if hit is None:
                 return None, None, None, None
             record = self.records[index]

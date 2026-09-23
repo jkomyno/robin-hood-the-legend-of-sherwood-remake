@@ -5,6 +5,7 @@ _refinement_legacy = str(_RefinementPath(__file__).resolve().parents[2] / 'blend
 if _refinement_legacy not in _refinement_sys.path:
     _refinement_sys.path.append(_refinement_legacy)
 
+from contextlib import contextmanager
 import base64
 import hashlib
 import json
@@ -14,6 +15,7 @@ from pathlib import Path
 
 import bpy
 from mathutils import Matrix, Vector
+from patch_material_export import export_states
 
 
 def projection_metadata(source):
@@ -139,6 +141,115 @@ def compact_texture_coordinates(doc):
             primitive["attributes"] = replacement
 
 
+def enforce_foliage_contract(doc):
+    """Physical coverage and source evidence use distinct, explicit channels."""
+    foliage = set()
+    for index, material in enumerate(doc.get("materials", [])):
+        extras = material.get("extras", {})
+        if extras.get("foliage_physical_opacity") is not True:
+            continue
+        required = {"opacity_semantics": "physical-coverage",
+                    "source_ownership_semantics": "separate-mask",
+                    "source_ownership_channel": "vertex-color-r"}
+        if any(extras.get(key) != value for key, value in required.items()):
+            raise ValueError("Foliage material lacks explicit independent opacity/ownership channels")
+        if "baseColorTexture" not in material.get("pbrMetallicRoughness", {}):
+            raise ValueError("Foliage material requires its physical RGBA texture")
+        material.update(alphaMode="MASK", alphaCutoff=0.5,
+                        doubleSided=extras.get("foliage_card_sides") != "paired-one-sided")
+        if extras.get("foliage_unlit") is True:
+            material.setdefault("extensions", {})["KHR_materials_unlit"] = {}
+            used = doc.setdefault("extensionsUsed", [])
+            if "KHR_materials_unlit" not in used:
+                used.append("KHR_materials_unlit")
+        foliage.add(index)
+    for mesh in doc.get("meshes", []):
+        for primitive in mesh.get("primitives", []):
+            if primitive.get("material") in foliage and "COLOR_0" not in primitive["attributes"]:
+                raise ValueError("Foliage primitive lacks separate COLOR_0 source ownership")
+
+
+def export_foliage_material(material, mesh):
+    """A temporary graph requests COLOR_0 without changing the authored material.
+
+    The editor consumes the exported vertex color as evidence, never RGB tint.
+    Ownership boundaries must be split vertices; a triangle cannot represent an
+    independent per-pixel evidence boundary with this vertex channel.
+    """
+    attribute = mesh.color_attributes.active_color
+    if attribute is None:
+        raise ValueError("Foliage mesh requires an active source ownership color attribute")
+    temporary = material.copy()
+    temporary.use_nodes = True
+    nodes = temporary.node_tree.nodes
+    principled = next((node for node in nodes if node.type == "BSDF_PRINCIPLED"), None)
+    if principled is None or not principled.inputs['Base Color'].is_linked:
+        bpy.data.materials.remove(temporary)
+        raise ValueError("Foliage export requires a linked Principled base-color texture")
+    # The authored Cycles graph may explicitly discard reverse faces. glTF
+    # expresses that behavior with doubleSided=false, so export the physical
+    # Principled surface directly instead of an unsupported Backfacing mix.
+    output = next((node for node in nodes if node.type == 'OUTPUT_MATERIAL' and node.is_active_output), None)
+    if output is None:
+        bpy.data.materials.remove(temporary)
+        raise ValueError("Foliage material lacks an active output")
+    temporary.node_tree.links.new(principled.outputs['BSDF'], output.inputs['Surface'])
+    source = principled.inputs['Base Color'].links[0].from_socket
+    color = nodes.new('ShaderNodeVertexColor')
+    color.layer_name = attribute.name
+    multiply = nodes.new('ShaderNodeMix')
+    multiply.data_type = 'RGBA'
+    multiply.blend_type = 'MULTIPLY'
+    multiply.inputs[0].default_value = 1.0
+    temporary.node_tree.links.new(source, multiply.inputs[6])
+    temporary.node_tree.links.new(color.outputs['Color'], multiply.inputs[7])
+    temporary.node_tree.links.new(multiply.outputs[2], principled.inputs['Base Color'])
+    return temporary
+
+
+@contextmanager
+def foliage_export_meshes(objects):
+    """Normalize foliage on disposable copies for any glTF export entry point."""
+    originals, meshes, materials = [], [], []
+    try:
+        for obj in objects:
+            if not any(mat and mat.get("foliage_physical_opacity") is True for mat in obj.data.materials):
+                continue
+            originals.append((obj, obj.data))
+            mesh = obj.data.copy()
+            meshes.append(mesh)
+            obj.data = mesh
+            for slot, material in enumerate(mesh.materials):
+                if material and material.get("foliage_physical_opacity") is True:
+                    temporary = export_foliage_material(material, mesh)
+                    materials.append(temporary)
+                    mesh.materials[slot] = temporary
+        yield
+    finally:
+        for obj, mesh in originals:
+            obj.data = mesh
+        for mesh in meshes:
+            bpy.data.meshes.remove(mesh)
+        for material in materials:
+            bpy.data.materials.remove(material)
+
+
+def finalize_foliage_glb(path):
+    """Apply the same explicit physical-material contract to an audit export."""
+    path = Path(path)
+    data = path.read_bytes()
+    length, kind = struct.unpack_from("<II", data, 12)
+    if kind != 0x4E4F534A:
+        raise ValueError("Expected a GLB JSON chunk")
+    doc = json.loads(data[20:20 + length])
+    enforce_foliage_contract(doc)
+    chunk = json.dumps(doc, separators=(",", ":")).encode()
+    chunk += b" " * (-len(chunk) % 4)
+    binary = data[20 + length:]
+    path.write_bytes(struct.pack("<4sII", b"glTF", 2, 20 + len(chunk) + len(binary)) +
+                     struct.pack("<II", len(chunk), kind) + chunk + binary)
+
+
 def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None,
                   include_hidden_objects=None):
     """Export visible meshes plus explicitly named inactive reviewed components.
@@ -214,7 +325,7 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
     pivot = (explicit_pivot if explicit_pivot is not None else
              Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z)) if asset_id else Vector())
     scene = bpy.data.scenes.new(map_name + " Editor Export")
-    objects, meshes = [], []
+    objects, meshes, foliage_materials = [], [], []
 
     def node(name, parent=None, mesh=None):
         obj = bpy.data.objects.new("Export / " + name, mesh)
@@ -237,6 +348,11 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
             mesh.transform(Matrix.Translation(-pivot) @ source.matrix_world)
             mesh.update()
             meshes.append(mesh)
+            for slot, material in enumerate(mesh.materials):
+                if material and material.get("foliage_physical_opacity") is True:
+                    temporary = export_foliage_material(material, mesh)
+                    foliage_materials.append(temporary)
+                    mesh.materials[slot] = temporary
             if key == "ground":
                 ground = node("ground", root, mesh)
                 ground['default_hidden'] = visibility[key]
@@ -254,11 +370,16 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
                 parts[key] = part
             elif parts[key].parent != groups[group_id]:
                 raise ValueError(f"Split asset ownership for {key}")
-            piece = node(source.name, parts[key], mesh)
-            piece["source_node"] = key
-            piece['default_hidden'] = bool(source.hide_render)
-            for metadata_key, value in projection_metadata(source).items():
-                piece[metadata_key] = value
+            for state, variant_mesh, state_metadata in export_states(source, mesh):
+                if variant_mesh != mesh:
+                    meshes.append(variant_mesh)
+                piece = node(source.name if state == 'default' else source.name + ' / ' + state, parts[key], variant_mesh)
+                piece["source_node"] = key
+                piece['default_hidden'] = bool(source.hide_render)
+                for metadata_key, value in projection_metadata(source).items():
+                    piece[metadata_key] = value
+                for metadata_key, value in state_metadata.items():
+                    piece[metadata_key] = value
         bpy.context.window.scene = scene
         bpy.context.view_layer.update()
         bpy.ops.export_scene.gltf(filepath=str(output), export_format="GLB",
@@ -278,6 +399,7 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
                 item["name"] = extras.pop("editor_node_name")
             if item.get("name") == "map" and reveal:
                 item.setdefault("extras", {})["reveal"] = reveal
+        enforce_foliage_contract(doc)
         compact_texture_coordinates(doc)
         chunk = json.dumps(doc, separators=(",", ":")).encode()
         chunk += b" " * (-len(chunk) % 4)
@@ -309,6 +431,8 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
             bpy.data.objects.remove(obj, do_unlink=True)
         for mesh in meshes:
             bpy.data.meshes.remove(mesh)
+        for material in foliage_materials:
+            bpy.data.materials.remove(material)
         bpy.data.scenes.remove(scene)
 
 
