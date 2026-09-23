@@ -130,4 +130,49 @@ class InvalidCanvas(unittest.TestCase):
         self.assertFalse((self.root/'blocked').exists())
 
 
+
+class EndpointPreparationTests(unittest.TestCase):
+    tile_size=(256,320)
+    setUp=PreparationTests.setUp
+    save=PreparationTests.save
+
+    def pair(self):
+        import shutil
+        applied=self.root/'applied';applied.mkdir();shutil.copytree(self.packet,applied/'modified')
+        (applied/'model.blend').write_bytes(b'independently baked applied model')
+        states=[]
+        for state,workspace in [('initial',self.root),('applied',applied)]:
+            record={'id':state,'workspace':str(workspace),'status':'ready-for-user','model_sha256':sha(workspace/'model.blend')}
+            for field,relative in [('model','model.blend'),('solid','modified/solid.png'),('textured','modified/textured.png'),('frames','modified/views.json')]:
+                path=workspace/relative;record[field]=str(path)
+                self.item['revision']['evidence']['endpoint_'+state+'_'+field]={'path':str(path),'sha256':sha(path)}
+            states.append(record)
+        self.item['endpoint_reviews']=states
+        identity={'asset_id':'fixture','model_sha256':self.item['revision']['model_sha256'],
+                  'evidence':{k:v['sha256'] for k,v in self.item['revision']['evidence'].items()}}
+        self.item['revision']['sha256']=hashlib.sha256(json.dumps(identity,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        self.save()
+        # Keep the pair's explicit revision approval; never approve a derived endpoint item.
+        from record_approval import record as approve
+        approve(self.manifest,['fixture'],'Approve both endpoint fixtures')
+        return applied
+
+    def test_applied_model_and_frames_keep_pair_approval(self):
+        applied=self.pair();prepare(self.manifest,'fixture',self.root/'output',endpoint='applied')
+        approval=json.loads((self.root/'output/approval.json').read_text())
+        self.assertEqual(approval['geometry_revision'],self.item['revision']['sha256'])
+        self.assertEqual(approval['saved_model_sha256'],sha(applied/'model.blend'))
+        self.assertEqual(approval['endpoint_id'],'applied')
+        self.assertEqual(set(approval['paired_model_sha256']),{'initial','applied'})
+
+    def test_pair_requires_explicit_state_and_rejects_changed_sibling(self):
+        applied=self.pair()
+        with self.assertRaisesRegex(ValueError,'explicit endpoint'):prepare(self.manifest,'fixture',self.root/'missing')
+        (applied/'model.blend').write_bytes(b'changed after pair approval')
+        with self.assertRaises(ValueError):prepare(self.manifest,'fixture',self.root/'stale',endpoint='initial')
+        self.assertFalse((self.root/'stale').exists())
+
+    def test_nonpaired_state_is_rejected(self):
+        with self.assertRaisesRegex(ValueError,'paired review'):prepare(self.manifest,'fixture',self.root/'invalid',endpoint='applied')
+
 if __name__=='__main__':unittest.main()

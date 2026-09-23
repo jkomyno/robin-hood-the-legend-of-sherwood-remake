@@ -20,7 +20,7 @@ from review_evidence import bind_decision, load_decisions, sha
 from source_review_resolution import apply_generation_gate
 
 
-def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=False):
+def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=False, endpoint=None):
     manifest_path = Path(manifest_path).resolve(strict=True)
     data = json.loads(manifest_path.read_text())
     matches = [i for i in data['items'] if i['id'] == asset_id]
@@ -53,6 +53,25 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
             raise ValueError('Approved evidence changed: ' + key)
     if not apply_generation_gate(item, handoff, workspace / 'handoff.json', manifest_path.parent / 'source-review-resolutions.json'):
         raise ValueError('Texture preparation blocked by recorded generation or texture issue: ' + '; '.join(item['generation_blockers']))
+    selected_endpoint = None
+    if item.get('endpoint_reviews'):
+        if endpoint not in ('initial','applied'):
+            raise ValueError('Paired texture preparation requires an explicit endpoint')
+        candidates=[state for state in item['endpoint_reviews'] if state['id']==endpoint]
+        if len(candidates)!=1 or candidates[0]['status']!='ready-for-user':
+            raise ValueError('Requested endpoint lacks a complete approved review')
+        selected_endpoint=candidates[0]
+        model=Path(selected_endpoint['model']).resolve(strict=True)
+        if sha(model)!=selected_endpoint['model_sha256']:
+            raise ValueError('Selected endpoint model changed')
+        for field in ('model','solid','textured','frames'):
+            target=Path(selected_endpoint[field]).resolve(strict=True)
+            if not any(Path(entry['path']).resolve()==target and entry['sha256']==sha(target)
+                       for entry in item['revision']['evidence'].values()):
+                raise ValueError('Selected endpoint is absent from approved evidence: '+field)
+        item['solid']=selected_endpoint['solid'];item['textured']=selected_endpoint['textured']
+    elif endpoint is not None:
+        raise ValueError('Endpoint selection requires a paired review packet')
     packet = Path(item['textured']).parent.resolve(strict=True)
     frames_path = packet / 'views.json'
     bound_frames = list(item['revision']['evidence'].values()) + list(item['user_decision'].get('geometry_basis', {}).get('files', {}).values())
@@ -127,6 +146,9 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     frames.update(reviewed_packet=str(packet), reviewed_manifest_sha256=sha(frames_path),
                   source_blend=str(output / 'approved-model.blend'), geometry_revision=revision,
                   input_sha256=sha(output / 'input.png'))
+    if selected_endpoint:
+        frames['endpoint_id']=endpoint
+        frames['paired_model_sha256']={state['id']:state['model_sha256'] for state in item['endpoint_reviews']}
     (output / 'views.json').write_text(json.dumps(frames, indent=2) + '\n')
     approval = {'status': 'approved', 'approved_by': 'user', 'asset_id': asset_id,
                 'scope': 'geometry; texture candidate generation only',
@@ -135,6 +157,9 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
                 'solid_sha256': sha(output / 'solid.png'), 'lighting_sha256': sha(output / 'solid.png'),
                 'saved_model_sha256': sha(output / 'approved-model.blend'),
                 'source_decision': item['user_decision'], 'texture_approval': 'pending'}
+    if selected_endpoint:
+        approval['endpoint_id']=endpoint
+        approval['paired_model_sha256']=frames['paired_model_sha256']
     if item.get('source_review_resolution'):
         approval['source_review_resolution'] = item['source_review_resolution']
         shutil.copyfile(item['source_review_resolution']['path'], output / 'source-review-resolutions.json')
@@ -155,5 +180,6 @@ if __name__ == '__main__':
     parser.add_argument('output', type=Path)
     parser.add_argument('--decisions', type=Path)
     parser.add_argument('--check-only', action='store_true', help='Validate complete approved packet without writing output')
+    parser.add_argument('--endpoint', choices=['initial','applied'], help='Select an independently approved worker within a paired revision')
     args = parser.parse_args()
-    print(json.dumps(prepare(args.manifest, args.asset_id, args.output, args.decisions, check_only=args.check_only)))
+    print(json.dumps(prepare(args.manifest, args.asset_id, args.output, args.decisions, check_only=args.check_only, endpoint=args.endpoint)))
