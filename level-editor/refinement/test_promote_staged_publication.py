@@ -111,6 +111,50 @@ class PromotionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Invalid static'):
             self.prepare()
 
+    def test_catalog_is_hash_guarded_and_rolled_back_with_models(self):
+        self.variants()
+        self.write_json(self.stage / 'assets/bridge/asset.json', self.descriptor)
+        source, target = self.stage / 'catalog.json', self.library / 'catalog.json'
+        self.write_json(source, {'map': 'Derby', 'groups': [{'id': 'bridge'}]})
+        target.write_bytes(b'old catalog')
+        promotion.prepare(self.stage, self.library, self.main, 'derby', source, target)
+        manifest = json.loads((self.stage / 'promotion.json').read_text())
+        self.assertEqual(len(manifest['files']), 8)
+        copy = promotion.shutil.copy2
+
+        def fail_variant(source_file, target_file):
+            if Path(source_file) == self.stage / 'assets/bridge/lowered.glb':
+                raise OSError('simulated variant failure')
+            return copy(source_file, target_file)
+
+        with patch.object(promotion.shutil, 'copy2', side_effect=fail_variant):
+            with self.assertRaisesRegex(OSError, 'simulated'):
+                promotion.apply(self.stage / 'promotion.json')
+        self.assertEqual(target.read_bytes(), b'old catalog')
+        self.assertTrue(any(Path(item['backup']).read_bytes() == b'old catalog'
+                            for item in manifest['files'] if item['target'] == str(target)))
+
+    def test_catalog_pair_and_map_must_match(self):
+        source = self.stage / 'catalog.json'
+        self.write_json(source, {'map': 'York', 'groups': []})
+        with self.assertRaisesRegex(ValueError, 'together'):
+            promotion.prepare(self.stage, self.library, self.main, 'derby', source)
+        with self.assertRaisesRegex(ValueError, 'published map'):
+            promotion.prepare(self.stage, self.library, self.main, 'derby', source, self.library / 'catalog.json')
+
+    def test_catalog_promotes_with_matching_hash_and_backup(self):
+        self.write_json(self.stage / 'assets/bridge/asset.json', self.descriptor)
+        source, target = self.stage / 'catalog.json', self.library / 'catalog.json'
+        self.write_json(source, {'map': 'Derby', 'groups': []})
+        target.write_bytes(b'previous catalog')
+        promotion.prepare(self.stage, self.library, self.main, 'derby', source, target)
+        promotion.apply(self.stage / 'promotion.json')
+        self.assertEqual(target.read_bytes(), source.read_bytes())
+        manifest = json.loads((self.stage / 'promotion.json').read_text())
+        record = next(item for item in manifest['files'] if item['target'] == str(target))
+        self.assertEqual(record['source_sha256'], promotion.sha(target))
+        self.assertEqual(Path(record['backup']).read_bytes(), b'previous catalog')
+
 
 class FirstPublicationTests(unittest.TestCase):
     def setUp(self):

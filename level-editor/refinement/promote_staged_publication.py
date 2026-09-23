@@ -53,7 +53,9 @@ def asset_file_pairs(stage_assets, library_assets, asset):
              contained_path(library_assets, relative)) for relative in dict.fromkeys(paths)]
 
 
-def prepare(stage, library, main_blend, map_name):
+def prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_target=None):
+    if (catalog_source is None) != (catalog_target is None):
+        raise ValueError('Catalog source and target must be supplied together')
     for name in ('asset-verification.json', 'handoff-verification.json', 'browser-result.json'):
         if json.loads((stage/name).read_text())['status'] != 'PASS':
             raise ValueError('Missing successful verification: ' + name)
@@ -68,6 +70,11 @@ def prepare(stage, library, main_blend, map_name):
     pairs=[(stage/'worker.blend',main_blend),(stage/f'{map_name}.scene.glb',library/f'scenes/{map_name}-volumes.scene.glb'),
            (stage/f'{map_name}.level3d.json',library/f'scenes/{map_name}.level3d.json'),
            (merged,index_path)]
+    if catalog_source is not None:
+        catalog = json.loads(catalog_source.read_text())
+        if catalog.get('map', '').lower() != map_name.lower() or not isinstance(catalog.get('groups'), list):
+            raise ValueError('Catalog source does not match the published map')
+        pairs.append((catalog_source, catalog_target))
     for asset in staged['assets']:
         pairs.extend(asset_file_pairs(stage/'assets', library/'3d-assets', asset))
     records=[]
@@ -134,6 +141,8 @@ if __name__=='__main__':
     parser.add_argument('--library',type=Path,default=Path('level-editor/library'))
     parser.add_argument('--main-blend',type=Path)
     parser.add_argument('--map',default='derby')
+    parser.add_argument('--catalog-source',type=Path,help='Optional staged authored catalog to promote atomically')
+    parser.add_argument('--catalog-target',type=Path,help='Live authored catalog target; requires --catalog-source')
     parser.add_argument('--apply',action='store_true')
     args=parser.parse_args();stage=args.stage.resolve(strict=True)
     if args.apply:apply(stage/'promotion.json')
@@ -141,4 +150,6 @@ if __name__=='__main__':
         if args.main_blend is None:parser.error('--main-blend is required to prepare')
         # A first publication may create its main working blend. The promotion
         # manifest records a missing target and guards that absence before apply.
-        prepare(stage,args.library.resolve(strict=True),args.main_blend.resolve(),args.map)
+        prepare(stage,args.library.resolve(strict=True),args.main_blend.resolve(),args.map,
+                args.catalog_source.resolve(strict=True) if args.catalog_source else None,
+                args.catalog_target.resolve() if args.catalog_target else None)
