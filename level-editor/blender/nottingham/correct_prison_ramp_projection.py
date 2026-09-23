@@ -24,6 +24,8 @@ def clone_workspace(old, new):
             continue
         if isinstance(value,str) and value.startswith(str(old)+'/'):
             config[key]=str(new)+value[len(str(old)):]
+    config['cloned_mask_origin']=dict(workspace=str(old),workspace_sha256=sha(old/'workspace.json'),
+                                    manifest=json.loads((old/'workspace.json').read_text())['source_mask_manifest'])
     write(new/'workspace.json',config)
     layers=new/'projection-layers.json'
     if layers.exists():layers.write_text(layers.read_text().replace(str(old)+'/',str(new)+'/'))
@@ -103,6 +105,10 @@ def main():
     write(w/'projection-correction.json',report)
     candidate=json.loads((w/'candidate.json').read_text());candidate.update(status='refinement-in-progress',model_sha256=sha(w/'model.blend'),modified_views_sha256=sha(w/'modified/views.json'),recipe=str(Path(__file__).resolve()),geometry_refined=False,no_change_reason='Projection ownership correction only; actual vertices, polygon indices and world transforms match the reviewed model exactly.',changes=[entry['review_note']]);write(w/'candidate.json',candidate)
     candidate.update(projection_correction='projection-correction.json',source_comparison='added-source-pixels.png')
+    # The frozen input predates the already-reviewed geometry recipe. Keep its
+    # refinement declaration while explicitly recording zero edits this revision.
+    candidate['geometry_refined']=json.loads((old/'candidate.json').read_text())['geometry_refined']
+    candidate['geometry_changed_in_this_revision']=False
     write(w/'candidate.json',candidate)
     print('GEOMETRY IDENTICAL',asset,flush=True)
 if __name__=='__main__':main()

@@ -83,6 +83,31 @@ def projection_records(config, manifest, available):
     return result
 
 
+def frozen_mask_origins(workspace, config):
+    """Resolve historical input assignment paths only through proven clone evidence."""
+    if not config.get('mask_reference'):
+        return {}
+    frozen = Path(config['mask_reference']) / 'assignments.json'
+    origins = {Path(config['source_mask_manifest']).resolve(): frozen}
+    clone = config.get('cloned_mask_origin')
+    if clone:
+        original = Path(clone['workspace']).resolve(strict=True)
+        require(sha(original / 'workspace.json') == clone['workspace_sha256'],
+                'Cloned mask origin workspace configuration changed')
+        old = read(original / 'workspace.json')
+        require(old['asset_id'] == config['asset_id'], 'Cloned mask origin asset differs')
+        require(old['baseline_sha256'] == config['baseline_sha256'] ==
+                sha(original / 'baseline.blend'), 'Cloned mask origin baseline differs')
+        require(file_hashes(original / 'input') == config['input_files'] ==
+                file_hashes(Path(workspace) / 'input'), 'Cloned immutable input differs')
+        require(Path(old['source_mask_manifest']).resolve() == Path(clone['manifest']).resolve(),
+                'Cloned mask origin path differs from original workspace')
+        require(sha(Path(old['mask_reference']) / 'assignments.json') == sha(frozen),
+                'Cloned frozen mask assignments differ')
+        origins[Path(clone['manifest']).resolve()] = frozen
+    return origins
+
+
 def inspect(workspace, asset):
     config = read(workspace / "workspace.json")
     require(config["asset_id"] == asset["id"], "Workspace asset ID mismatch")
@@ -113,6 +138,7 @@ def inspect(workspace, asset):
     mask_revision = None
     if config.get("mask_reference"):
         mask_revision = _validated_masks(config)
+    mask_origins = frozen_mask_origins(workspace, config)
     reviewed_projection = _validated_projection(config) if config.get("projection_manifest") else None
     required = {"solid.png", "textured.png", "context.png", "views.json"}
     required.update(f"views/view-{i}-{kind}.png" for i in range(8)
@@ -135,9 +161,8 @@ def inspect(workspace, asset):
                     f"{name} ownership bitmap hash mismatch")
         for path, digest in (packet.get("source_mask_evidence") or {}).items():
             check_path = Path(path)
-            if (name == "input" and mask_revision and
-                    check_path.resolve() == Path(config["source_mask_manifest"]).resolve()):
-                check_path = Path(config["mask_reference"]) / "assignments.json"
+            if name == "input" and mask_revision:
+                check_path = mask_origins.get(check_path.resolve(), check_path)
             require(sha(check_path) == digest, f"Mask evidence changed: {path}")
         if name == "modified" and config.get("source_mask_manifest"):
             from occlusion_constraints import evidence_record
@@ -314,8 +339,8 @@ def supplemental_packet(directory, asset_id, framing, *, mask_origin=None):
     require(sha(packet['source_image']) == packet['source_sha256'], 'Supplemental source changed')
     for path, digest in (packet.get('source_mask_evidence') or {}).items():
         actual = Path(path)
-        if mask_origin and actual.resolve() == mask_origin[0]:
-            actual = mask_origin[1]
+        if mask_origin:
+            actual = mask_origin.get(actual.resolve(), actual)
         require(sha(actual) == digest, 'Supplemental mask evidence changed: ' + path)
     return {'directory': str(directory), 'hashes': hashes, 'source_sha256': packet['source_sha256']}
 
@@ -418,9 +443,7 @@ def main(argv=None):
                         'Revealed sheets must come from one validated packet')
                 baseline_dir = local(worker.get('revealed_input', 'revealed/input'))
                 config = read(workspace / 'workspace.json')
-                origin = ((Path(config['source_mask_manifest']).resolve(),
-                           Path(config['mask_reference']) / 'assignments.json')
-                          if config.get('mask_reference') else None)
+                origin = frozen_mask_origins(workspace, config)
                 state_records['revealed_input'] = supplemental_packet(
                     baseline_dir, asset['id'], framing, mask_origin=origin)
             evidence['state_packets'] = state_records
