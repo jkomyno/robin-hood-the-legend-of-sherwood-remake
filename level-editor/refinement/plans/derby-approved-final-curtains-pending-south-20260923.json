@@ -1,0 +1,20 @@
+{
+  "baseline": "level-editor/work/derby-refinement/round-2/publication-10-final-curtains/worker.blend",
+  "output": "level-editor/work/derby-refinement/round-2/publication-11-south-curtain",
+  "map_name": "Derby",
+  "scene_name": "Derby Refinement",
+  "collection_name": "Derby Working",
+  "reference_camera": "Derby reference",
+  "catalog": "level-editor/shared/assets/derby.json",
+  "hackable_map": "datadirs/fullgame_gog_hackable/Data/Levels/Derby.rhp.json",
+  "status_note": "BLOCKED: API credit_balance_exhausted. Retry bake does not exist; do not substitute incomplete initial bake.",
+  "imports": [
+    {
+      "asset_id": "derby-lower-west-curtain",
+      "source_asset_id": "derby-lower-west-curtain-south",
+      "source_nodes": ["building-023", "building-042"],
+      "blend_path": "level-editor/work/derby-refinement/round-2/sunburst-lower-west-south-v13-approved-20260923-retry/baked/worker.blend",
+      "review_manifest": "level-editor/work/derby-refinement/round-2/sunburst-lower-west-south-v13-approved-20260923-retry/views.json"
+    }
+  ]
+}
