@@ -97,6 +97,19 @@ def check():
         assert report['ownership_asset_id'] == 'A'
         assert {s['asset_group'] for s in report['projected_object_selectors']} == {'A'}
         assert all(s['object'] == 'back' for s in report['projected_object_selectors'])
+        # Geometry-only split components can occlude without fallback appearance.
+        front.data = front.data.copy()
+        front.data.materials.clear()
+        for layer in list(front.data.uv_layers):
+            front.data.uv_layers.remove(layer)
+        front.location = toward * 6
+        back.data.attributes['reprojection_fallback_material'].data[0].value = 0
+        bpy.context.view_layer.update()
+        untouched = snapshot(front)
+        report = reproject_map('AssetFixture', path/'source.png', path/'bare-occluder.json', receiver_asset_id='A')
+        assert snapshot(front) == untouched
+        assert report['projected_faces'] == 0
+        assert report['objects'][0]['blocking_objects']['front'] > 0
     print('PASS: component-scoped reprojection/bake/restoration preserve foreign data and mutual occlusion')
 
 

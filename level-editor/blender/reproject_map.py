@@ -52,8 +52,6 @@ def reproject_map(map_name, source_path, report_path, elevation_deg=35.0,
             continue
         if any(mod.show_render or mod.show_viewport for mod in obj.modifiers):
             raise ValueError(f"Bake active modifiers before reprojection: {obj.name}")
-        if not obj.data.uv_layers or not obj.data.materials:
-            raise ValueError(f"Missing fallback UV/material: {obj.name}")
     receivers = sources if receiver_nodes is None else [
         obj for obj in sources if obj.get("source_node") in set(receiver_nodes)]
     from reveal_components import filter_receivers
