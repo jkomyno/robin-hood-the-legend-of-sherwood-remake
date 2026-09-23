@@ -20,7 +20,7 @@ from review_evidence import bind_decision, load_decisions, sha
 from source_review_resolution import apply_generation_gate
 
 
-def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=False, endpoint=None):
+def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=False, endpoint=None, revealed=False):
     manifest_path = Path(manifest_path).resolve(strict=True)
     data = json.loads(manifest_path.read_text())
     matches = [i for i in data['items'] if i['id'] == asset_id]
@@ -53,6 +53,15 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
             raise ValueError('Approved evidence changed: ' + key)
     if not apply_generation_gate(item, handoff, workspace / 'handoff.json', manifest_path.parent / 'source-review-resolutions.json'):
         raise ValueError('Texture preparation blocked by recorded generation or texture issue: ' + '; '.join(item['generation_blockers']))
+    if revealed and endpoint is not None:raise ValueError('Choose either revealed state or paired endpoint')
+    if revealed:
+        for field in ('solid','textured'):
+            key='revealed_'+field
+            if not item.get(key):raise ValueError('Approved revealed sheets are missing')
+            target=Path(item[key]).resolve(strict=True)
+            if not any(Path(entry['path']).resolve()==target and entry['sha256']==sha(target) for entry in item['revision']['evidence'].values()):
+                raise ValueError('Revealed sheet is absent from approved evidence')
+            item[field]=str(target)
     selected_endpoint = None
     if item.get('endpoint_reviews'):
         if endpoint not in ('initial','applied'):
@@ -146,6 +155,9 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     frames.update(reviewed_packet=str(packet), reviewed_manifest_sha256=sha(frames_path),
                   source_blend=str(output / 'approved-model.blend'), geometry_revision=revision,
                   input_sha256=sha(output / 'input.png'))
+    if revealed:
+        frames['review_state']='revealed'
+        frames['texture_receiver_object_names']=frames['object_names']
     if selected_endpoint:
         frames['endpoint_id']=endpoint
         frames['paired_model_sha256']={state['id']:state['model_sha256'] for state in item['endpoint_reviews']}
@@ -157,6 +169,7 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
                 'solid_sha256': sha(output / 'solid.png'), 'lighting_sha256': sha(output / 'solid.png'),
                 'saved_model_sha256': sha(output / 'approved-model.blend'),
                 'source_decision': item['user_decision'], 'texture_approval': 'pending'}
+    if revealed:approval['review_state']='revealed'
     if selected_endpoint:
         approval['endpoint_id']=endpoint
         approval['paired_model_sha256']=frames['paired_model_sha256']
@@ -181,5 +194,6 @@ if __name__ == '__main__':
     parser.add_argument('--decisions', type=Path)
     parser.add_argument('--check-only', action='store_true', help='Validate complete approved packet without writing output')
     parser.add_argument('--endpoint', choices=['initial','applied'], help='Select an independently approved worker within a paired revision')
+    parser.add_argument('--revealed', action='store_true', help='Use revealed sheets and state cameras already bound in the geometry approval')
     args = parser.parse_args()
-    print(json.dumps(prepare(args.manifest, args.asset_id, args.output, args.decisions, check_only=args.check_only, endpoint=args.endpoint)))
+    print(json.dumps(prepare(args.manifest, args.asset_id, args.output, args.decisions, check_only=args.check_only, endpoint=args.endpoint, revealed=args.revealed)))

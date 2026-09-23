@@ -16,11 +16,13 @@ def render(manifest_path, output_dir, modes=("textured",), width=384):
     manifest=json.loads(Path(manifest_path).read_text())
     scene=bpy.data.scenes[manifest.get('scene_name','Derby Refinement')]
     hidden=[(o,o.hide_render) for o in scene.objects if o.type=='MESH']
+    from reviewed_texture_scope import displayed_objects
+    selected=set(displayed_objects(manifest,[o for o,value in hidden if not value and o.get('asset_group')==manifest['asset_id']]))
     previous_size=(scene.render.resolution_x,scene.render.resolution_y)
     cameras=[];views={}
     try:
         for obj,value in hidden:
-            obj.hide_render=value or obj.get('asset_group')!=manifest['asset_id']
+            obj.hide_render=value or obj not in selected
         crop=manifest['views'][0]['crop']
         scene.render.resolution_x=crop['width'];scene.render.resolution_y=crop['height']
         for view in manifest['views']:

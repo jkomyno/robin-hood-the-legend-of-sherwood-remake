@@ -112,6 +112,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                if obj.type == 'MESH' and not obj.hide_render and obj.get('asset_group') == manifest['asset_id']]
     if not objects:
         raise ValueError('Approved asset is absent')
+    from reviewed_texture_scope import displayed_objects, selected_layers, layer_objects
+    objects = displayed_objects(manifest, objects)
     scope = manifest.get('texture_receiver_object_names')
     targets = objects if scope is None else [obj for obj in objects if obj.name in set(scope)]
     if not targets or (scope is not None and set(scope) != {obj.name for obj in targets}):
@@ -189,11 +191,13 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
         stats['generated_texels_including_padding'] += int((~accepted & ~remaining).sum())
         stats['unfilled_texels_including_padding'] += int(remaining.sum())
 
-    reports = []
-    for index, layer in enumerate(manifest['projection_layers']):
-        receivers = sorted(nodes & set(layer['receiver_nodes']))
-        if not receivers:
+    reports = []; assigned_objects=set()
+    for index, layer in enumerate(selected_layers(manifest)):
+        layer_targets=layer_objects(layer,targets)
+        receivers=sorted({obj.get('source_node') for obj in layer_targets})
+        if not layer_targets:
             continue
+        assigned_objects.update(obj.name for obj in layer_targets)
         reports.append(bake(map_name,layer['source_path'], output/f'layer-{index}.json',
                             receiver_nodes=receivers, occluder_nodes=layer['occluder_nodes'],
                             projection_label=layer['projection_label'] if mask_manifest else f'approved-generated-{index}',
@@ -202,14 +206,13 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                             projection_region=layer.get('projection_region'),
                             receiver_components=[selector for selector in layer.get('receiver_components', [])
                                                  if selector['source_node'] in receivers],
-                            receiver_object_names=([obj.name for obj in targets if obj.get('source_node') in receivers]
-                                                   if scope is not None else None),
+                            receiver_object_names=[obj.name for obj in layer_targets],
                             receiver_face_indices=manifest.get('texture_receiver_face_indices'),
                             material_suffix=manifest.get('texture_material_suffix'),
                             exclude_occluder_components=layer.get('exclude_occluder_components')))
     assigned = {node for report in reports for node in report['receiver_nodes']}
-    if assigned != nodes:
-        raise ValueError('Not all approved asset nodes received a source projection layer')
+    if assigned != nodes or assigned_objects != {obj.name for obj in targets}:
+        raise ValueError('Not all approved asset receiver objects received a selected source projection layer')
     for obj in targets:
         for face in obj.data.polygons:
             face_scope = manifest.get('texture_receiver_face_indices')

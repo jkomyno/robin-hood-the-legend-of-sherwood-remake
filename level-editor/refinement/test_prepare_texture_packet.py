@@ -175,4 +175,43 @@ class EndpointPreparationTests(unittest.TestCase):
     def test_nonpaired_state_is_rejected(self):
         with self.assertRaisesRegex(ValueError,'paired review'):prepare(self.manifest,'fixture',self.root/'invalid',endpoint='applied')
 
+class RevealedPreparationTests(unittest.TestCase):
+    tile_size=(256,320)
+    setUp=PreparationTests.setUp
+    save=PreparationTests.save
+
+    def reveal(self, bind=True):
+        import shutil
+        packet=self.root/'revealed';shutil.copytree(self.packet,packet)
+        frames=json.loads((packet/'views.json').read_text())
+        frames['object_names']=['room'];frames['render_object_names']=['room']
+        (packet/'views.json').write_text(json.dumps(frames))
+        for field in ('solid','textured'):
+            path=packet/(field+'.png');self.item['revealed_'+field]=str(path)
+            self.item['revision']['evidence']['revealed_'+field]={'path':str(path),'sha256':sha(path)}
+        if bind:
+            path=packet/'views.json'
+            self.item['revision']['evidence']['revealed_frames']={'path':str(path),'sha256':sha(path)}
+        identity={'asset_id':'fixture','model_sha256':self.item['revision']['model_sha256'],
+                  'evidence':{k:v['sha256'] for k,v in self.item['revision']['evidence'].items()}}
+        self.item['revision']['sha256']=hashlib.sha256(json.dumps(identity,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        self.save();record(self.manifest,['fixture'],'Approve covered and revealed fixture')
+        return packet
+
+    def test_revealed_requires_bound_source_cameras(self):
+        self.reveal(False)
+        with self.assertRaisesRegex(ValueError,'manifest is absent'):
+            prepare(self.manifest,'fixture',self.root/'blocked',revealed=True)
+        self.assertFalse((self.root/'blocked').exists())
+
+    def test_revealed_keeps_revision_and_exact_visibility(self):
+        packet=self.reveal();prepare(self.manifest,'fixture',self.root/'output',revealed=True)
+        frames=json.loads((self.root/'output/views.json').read_text())
+        self.assertEqual(frames['render_object_names'],['room'])
+        self.assertEqual(frames['texture_receiver_object_names'],['room'])
+        self.assertEqual(frames['reviewed_manifest_sha256'],sha(packet/'views.json'))
+        approval=json.loads((self.root/'output/approval.json').read_text())
+        self.assertEqual(approval['geometry_revision'],self.item['revision']['sha256'])
+        self.assertEqual(approval['review_state'],'revealed')
+
 if __name__=='__main__':unittest.main()
