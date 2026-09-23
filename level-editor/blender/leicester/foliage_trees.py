@@ -150,13 +150,13 @@ def inferred_packet(workspace,node,output):
     return evidence
 
 
-def material(name,path,known,evidence):
-    mat=bpy.data.materials.new(name);mat.use_nodes=True;mat.use_backface_culling=True
+def material(name,path,known,evidence,two_sided=False):
+    mat=bpy.data.materials.new(name);mat.use_nodes=True;mat.use_backface_culling=not two_sided
     if hasattr(mat,'surface_render_method'):mat.surface_render_method='DITHERED'
     if hasattr(mat,'alpha_threshold'):mat.alpha_threshold=.5
     for key,value in dict(foliage_physical_opacity=True,opacity_semantics='physical-coverage',
           source_ownership_semantics='separate-mask',source_ownership_channel='vertex-color-r',
-          foliage_card_sides='paired-one-sided',foliage_alpha_cutoff=.5,foliage_unlit=True,projection_preserve=True,
+          foliage_card_sides='double-sided' if two_sided else 'paired-one-sided',foliage_alpha_cutoff=.5,foliage_unlit=True,projection_preserve=True,
           foliage_recipe=VERSION,foliage_source_rgb_sha256=evidence['source_rgb_sha256'],
           foliage_native_alpha_sha256=evidence['native_alpha_sha256'],foliage_observed=known).items():mat[key]=value
     nodes=mat.node_tree.nodes;nodes.clear();links=mat.node_tree.links
@@ -169,6 +169,9 @@ def material(name,path,known,evidence):
     links.new(tex.outputs['Alpha'],shader.inputs['Alpha'])
     if 'Emission Color' in shader.inputs:
         links.new(tex.outputs['Color'],shader.inputs['Emission Color']);shader.inputs['Emission Strength'].default_value=1
+    if two_sided:
+        links.new(shader.outputs['BSDF'],output.inputs['Surface'])
+        return mat
     # Cycles does not use the raster backface-culling flag. Make the same
     # one-sided surface explicit in the authored shader for audit parity.
     geometry=nodes.new('ShaderNodeNewGeometry')
@@ -188,7 +191,7 @@ def refine_crown(obj,node,evidence):
         if lobe.get('front_unknown'):surfaces.append((True,False,lobe['front_unknown']))
         for front,known,image_path in surfaces:
             slot=len(materials);materials.append(material(f'{obj.name} lobe{number:02} '+('source' if known else 'unknown'),
-                image_path,known,evidence))
+                image_path,known,evidence,two_sided=bool(not front and lobe.get('backing_visible_from_front'))))
             start=len(vertices)
             for j in range(steps+1):
                 v=j/steps;y=y0+(y1-y0)*v

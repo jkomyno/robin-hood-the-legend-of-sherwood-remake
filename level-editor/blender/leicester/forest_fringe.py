@@ -16,7 +16,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 import foliage_trees as foliage
 from props_trees import GROUND
 
-VERSION='leicester-neutral-regional-fringe-v3'
+VERSION='leicester-neutral-regional-fringe-v5'
 SPECS={
  90:dict(mask=25,box=(230,-45,450,270),center=338,seeds=[(282,35),(354,35),(414,65),(268,123),(332,121),(413,144),(363,181),(410,205)],wood=[107,108,109,110,111],roof=[420,429]),
  91:dict(mask=25,box=(435,-115,668,313),center=559,seeds=[(481,27),(566,35),(636,52),(476,143),(549,144),(636,166),(580,223),(639,257)],wood=[107,108,109,110,111],roof=[420,429]),
@@ -76,7 +76,8 @@ def evidence(workspace,node,output):
         front=rgba.copy();front[:,:,3]&=(~wood[y0:y1,x0:x1]).astype(np.uint8)*255
         front_path=output/f'lobe-{i:02}-front.png';Image.fromarray(front).save(front_path)
         lobes.append(dict(index=i,bbox_source=[left+x0,top+y0,left+x1,top+y1],source=str(front_path),unknown=str(path),observed=False,native_pixels=0,
-                          depth_radius=min((right-left)*.28,max(x1-x0,y1-y0)*.25)))
+                          backing_visible_from_front=True,
+                          depth_radius=min((right-left)*.4,max(x1-x0,y1-y0)*.4)))
         union|=owned
     if not np.array_equal(union,coverage):raise ValueError('Lobe union lost measured fringe coverage')
     if np.any(coverage&(yy>=0)&~native):raise ValueError('Visible coverage exceeds regional native alpha')
@@ -129,8 +130,8 @@ def run(workspace):
     report.update(recipe=VERSION,idempotence='PASS',source_ownership_unchanged=True,wood_geometry_unchanged=True,texture_generation='not-started',
         limitations=['Regional native alpha constrains visible lower fringe only; it does not identify a complete individual tree.',
         'All crown RGB and ownership remain neutral/zero. Adjacent-tree allocation and off-map completion are explicit inferences; upper extension is 45, 115 or 95 source pixels for trees 090, 091 or 092 respectively.',
-        'Roof exclusions remain exact native masks. Wood cutouts apply only to the source-facing surface; neutral rear and transverse coverage behind separate wood meshes is inferred from continuous regional canopy alpha.',
-        'Rounded and transverse hidden surfaces remain inferred; their depth radius is bounded to 28 percent of allocated crown width, independently of source fringe height.'])
+        'Roof exclusions remain exact native masks. Wood cutouts apply only to the front surface; a two-sided neutral rear surface and transverse coverage complete foliage behind separate wood meshes, inferred from continuous regional canopy alpha.',
+        'Rounded and transverse hidden surfaces remain inferred; their depth radius is bounded to 40 percent of allocated crown width, independently of source fringe height.'])
     (workspace/'inspection/foliage-recipe.json').write_text(json.dumps(report,indent=2)+'\n');bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
     return report
 
