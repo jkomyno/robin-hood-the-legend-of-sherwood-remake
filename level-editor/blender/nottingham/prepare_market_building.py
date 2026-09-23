@@ -17,7 +17,7 @@ def geometry(obj):
 
 def main():
     import bpy
-    parser=argparse.ArgumentParser();parser.add_argument('--asset',required=True)
+    parser=argparse.ArgumentParser();parser.add_argument('--asset',required=True);parser.add_argument('--tooling-dir',type=Path,required=True)
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
     proposal=json.loads((WORK/'town-audit/market-seven-building-grouping-proposal.json').read_text())
     building=next(g for g in proposal['buildings']if g['proposed_id']==args.asset)
@@ -25,7 +25,7 @@ def main():
     from render_slots import acquire
     acquire()
     from freeze_tooling import select_tooling
-    tooling=select_tooling(WORK/'tooling/94116d984f92dbae')
+    tooling=select_tooling(args.tooling_dir)
     from refinement_workspace import prepare,modified
     evidence=WORK/'grouped/nottingham-grouped-v9.evidence'
     workspace=WORK/'round-10/assets'/args.asset
