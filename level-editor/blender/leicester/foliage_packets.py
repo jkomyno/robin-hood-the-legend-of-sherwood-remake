@@ -1,5 +1,6 @@
 """Refresh rejected tree candidates without erasing their exact user feedback."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -21,7 +22,14 @@ def run(workspace):
     latest=max((workspace/'projection').glob('*/ownership.json'),key=lambda p:p.stat().st_mtime_ns)
     shutil.copy2(latest,workspace/'inspection/ownership.json')
     shutil.copy2(Path(__file__).with_name('foliage_trees.py'),workspace/'foliage_trees.py')
-    material_report=audit(workspace,workspace/'inspection/stored-materials',render=True,export=True)
+    audit_output=workspace/'inspection/stored-materials'
+    if audit_output.exists():
+        identity=hashlib.sha256((audit_output/'audit.json').read_bytes()).hexdigest()[:16]
+        archive=workspace/'history'/('stored-materials-'+identity)
+        if archive.exists():
+            raise FileExistsError('Audit revision already archived: '+str(archive))
+        audit_output.rename(archive)
+    material_report=audit(workspace,audit_output,render=True,export=True)
     handoff=json.loads((workspace/'handoff.json').read_text())
     handoff.update(status='fix-needed',recipe='foliage_trees.py',all_eight_views_inspected=False,
                    geometry_approval='not-approved',texture_generation='not-started',
