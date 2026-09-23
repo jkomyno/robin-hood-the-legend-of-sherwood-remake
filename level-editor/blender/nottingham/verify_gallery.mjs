@@ -32,8 +32,9 @@ try {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   await evaluate(ws, ++id, "document.querySelector('article')?.scrollIntoView()");
-  for (let attempt = 0; attempt < 100; attempt++) {
-    if (await evaluate(ws, ++id, "[...document.querySelectorAll('article:first-of-type img')].every(image => image.complete && image.naturalWidth > 0)")) break;
+  await evaluate(ws, ++id, "document.querySelectorAll('article img').forEach(image => { image.loading = 'eager'; })");
+  for (let attempt = 0; attempt < 300; attempt++) {
+    if (await evaluate(ws, ++id, "[...document.querySelectorAll('article img')].every(image => image.complete && image.naturalWidth > 0)")) break;
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   const result = await evaluate(ws, ++id, `(() => {
@@ -52,6 +53,10 @@ try {
     const readyNavigation = [...document.querySelectorAll('nav a')].filter(link => !link.hidden).length;
     readiness.value='all'; readiness.dispatchEvent(new Event('change'));
     return {title:document.title, cards:cards.length,
+      images:document.querySelectorAll('article img').length,
+      failedImages:[...document.querySelectorAll('article img')]
+        .filter(image => !image.complete || image.naturalWidth === 0)
+        .map(image => image.getAttribute('src')),
       readyFilter, readyCards, readyNavigation,
       namedCards:cards.every(card => !!card.querySelector('code')?.textContent),
       reportLinks:cards.every(card => card.querySelectorAll('a[href^="reports/"]').length >= 2),
@@ -65,7 +70,8 @@ try {
   result.status = result.cards === result.expectedCards && result.cards > 0 && result.namedCards &&
     result.reportLinks && result.navigation === result.cards && result.solidToggle &&
     result.readyFilter && result.readyCards === result.expectedReadyCards && result.readyNavigation === result.readyCards &&
-    result.firstImages.every(image => image.loaded) && !result.horizontalOverflow ? 'PASS' : 'FAIL';
+    result.firstImages.every(image => image.loaded) && result.failedImages.length === 0 &&
+    !result.horizontalOverflow ? 'PASS' : 'FAIL';
   await writeFile(join(output, 'gallery-browser.json'), JSON.stringify(result, null, 2) + '\n');
   const screenshot = await new Promise((resolve, reject) => {
     const request = ++id;
