@@ -1,5 +1,13 @@
 # Derby asset refinement review
 
+Publication9 is now LIVE: Main Hall covered/revealed material alternatives and
+28 reviewed cover meshes switch through the editor's interior preview. All 82
+promoted targets independently match staged hashes. Genuine reference renders
+replaced the invalid black-image proof: 128 differing pixels total, maximum
+channel delta 2/255; revealed mesh/material/UV/atlas content is exact. Existing
+gray revealed exterior backs remain a disclosed limitation. This publication
+does not include the pending manual battlement rebuild.
+
 User supplied two constrained front-edge zigzags for Upper West. Frozen input:
 `round-2/battlement-editor/rebuild-01/user-corners.json`, SHA-256
 `aef631c399b228d5c5d5fa7d62308459a472b673093042be1b734e7023e86719`.
