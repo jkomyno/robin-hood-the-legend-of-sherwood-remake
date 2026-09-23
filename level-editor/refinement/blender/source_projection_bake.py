@@ -35,7 +35,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
          hidden_fill="neutral", synthesis_cache=None, reproject_authored_nodes=None,
          hidden_sampler=None, projection_region=None, exclude_occluder_components=None,
          receiver_components=None, receiver_asset_id=None, receiver_object_names=None,
-         receiver_face_indices=None, material_suffix=None, hidden_sampler_receives_face=False):
+         receiver_face_indices=None, material_suffix=None, hidden_sampler_receives_face=False,
+         collection_name=None):
     import bpy
     import numpy as np
     from mathutils import Vector
@@ -52,7 +53,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
     from source_texture_fill import donor_patch, fill_island, choose_donor, synthesize_tiles, prune_donors
     donors_by_asset = {}
     pending_fill = []
-    objects = [o for o in bpy.data.collections[map_name + " Working"].all_objects
+    collection = bpy.data.collections[collection_name or map_name + " Working"]
+    objects = [o for o in collection.all_objects
                if o.type == "MESH" and not o.hide_render]
     present = {o.get("source_node") for o in objects}
     for requested in (receiver_nodes, occluder_nodes):
@@ -61,7 +63,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
     receivers = [o for o in objects if receiver_nodes is None or o.get("source_node") in receiver_nodes]
     from reveal_components import filter_receivers
     receivers=filter_receivers(receivers,receiver_components,
-        available_objects=bpy.data.collections[map_name + ' Working'].all_objects)
+        available_objects=collection.all_objects)
     if receiver_asset_id is not None:
         receivers = [obj for obj in receivers if obj.get("asset_group") == receiver_asset_id]
     if receiver_object_names is not None:
@@ -76,7 +78,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
     from reveal_components import filter_occluders
     occluders = filter_occluders(occluders, exclude_occluder_components,
         projection_label=projection_label,
-        available_objects=bpy.data.collections[map_name + ' Working'].all_objects)
+        available_objects=collection.all_objects)
     if not receivers or not occluders:
         raise ValueError("Projection requires receivers and occluders")
     if any(m.show_render or m.show_viewport for o in set(receivers + occluders) for m in o.modifiers):
@@ -116,7 +118,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
     if projection_region:
         from projection_regions import ProjectionRegion
         region = ProjectionRegion(projection_region, source_hash, (sw,sh), objects, source_mask_manifest,
-            available_objects=bpy.data.collections[map_name+' Working'].all_objects)
+            available_objects=collection.all_objects)
         camera_depth = max((o.matrix_world @ v.co).dot(toward) for o in objects for v in o.data.vertices) + 10
 
     def visible_at(position, receiver, source_pixel, fallback=False):

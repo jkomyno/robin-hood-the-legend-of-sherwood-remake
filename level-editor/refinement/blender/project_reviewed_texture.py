@@ -58,8 +58,6 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
     manifest_path = Path(manifest_path).resolve()
     manifest = json.loads(manifest_path.read_text())
     if map_name is None:
-        if not manifest['collection_name'].endswith(' Working'):
-            raise ValueError('Supply map_name for a nonstandard working collection')
         map_name = manifest['collection_name'].removesuffix(' Working')
     approval = json.loads((manifest_path.parent/'approval.json').read_text())
     input_hash = hashlib.sha256((manifest_path.parent/'input.png').read_bytes()).hexdigest()
@@ -202,6 +200,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
             continue
         assigned_objects.update(obj.name for obj in layer_targets)
         reports.append(bake(map_name,layer['source_path'], output/f'layer-{index}.json',
+                            collection_name=manifest['collection_name'],
                             receiver_nodes=receivers, occluder_nodes=layer['occluder_nodes'],
                             projection_label=layer['projection_label'] if mask_manifest else f'approved-generated-{index}',
                             texels_per_unit=texels_per_unit, preserve_authored=False,
