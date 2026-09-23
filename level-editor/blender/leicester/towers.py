@@ -80,6 +80,17 @@ def horizontal_shell(obj,thickness=None):
  bm.verts.ensure_lookup_table();bm.verts.index_update();verts=[list(v.co) for v in bm.verts];faces=[tuple(v.index for v in f.verts) for f in bm.faces];edges=[tuple(v.index for v in e.verts) for e in bm.edges if e.is_boundary];bm.free()
  n=len(verts);return verts+[(x,y,low) for x,y,z in verts],faces+[tuple(i+n for i in reversed(f)) for f in faces]+[(a,b,b+n,a+n) for a,b in edges]
 
+def native_shell(obj):
+ n=int(obj['source_node'][9:]);path=Path(__file__).resolve().parents[3]/'datadirs/fullgame_gog_hackable/Data/Levels/Leicester.rhp.json'
+ points=json.loads(path.read_text())['sight_obstacles'][n]['points'];sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35));count=len(points)
+ verts=[(p['x'],-p['y']/sine,p[key]/cosine) for key in ['z_top','z_bottom'] for p in points]
+ faces=[tuple(range(count)),tuple(reversed(range(count,2*count)))]+[(i,(i+1)%count,(i+1)%count+count,i+count) for i in range(count)]
+ bm=bmesh.new();vs=[bm.verts.new(v) for v in verts]
+ for face in faces:bm.faces.new([vs[i] for i in face])
+ bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=.001);bmesh.ops.dissolve_degenerate(bm,edges=list(bm.edges),dist=.001)
+ bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bmesh.ops.triangulate(bm,faces=list(bm.faces));bm.verts.ensure_lookup_table();bm.verts.index_update()
+ out=([list(v.co) for v in bm.verts],[tuple(v.index for v in f.verts) for f in bm.faces]);bm.free();return out
+
 def diagnostics(obj):
  bm=bmesh.new();bm.from_mesh(obj.data);result=dict(vertices=len(bm.verts),faces=len(bm.faces),nonmanifold_edges=sum(not e.is_manifold for e in bm.edges),degenerate_faces=sum(f.calc_area()<1e-7 for f in bm.faces));bm.free();return result
 
@@ -89,13 +100,17 @@ def refine(workspace):
  if any(o.get('tower_recipe')==TAG for o in targets):raise ValueError('Recipe already applied; reopen baseline to revise')
  from refinement_workspace import _absolute_manifest_images
  frozen=workspace/'reference/layers.json';fresh=_absolute_manifest_images(json.loads(frozen.read_text()),frozen.parent);Path(config['projection_manifest']).write_text(json.dumps(fresh,indent=2)+'\n')
- selected=set(spec['roofs']+spec['walls']+spec['floors']);report=[];covers=[];retained=[]
+ selected=set(spec['roofs']+spec['walls']+spec['floors']);report=[];covers=[];retained=[];cover_only=[];retained_only=[]
  for obj in targets:
   n=int(obj['source_node'][9:])
   if config['asset_id']=='leicester-west-moat-tower' and n in [249,277]:continue
-  if n in [181,185,211]:
+  if n in [181,185,211,252,254]:
    from towers_interior import refine_ladder
    report.append(refine_ladder(obj));obj['tower_recipe']=TAG
+   continue
+  if n in [274,275]:
+   from towers_interior import refine_hatch_frame
+   report.append(refine_hatch_frame(obj));obj['tower_recipe']=TAG
    continue
   if n not in selected:continue
   before=diagnostics(obj);matrix=obj.matrix_world.copy();world=[list(matrix@v.co) for v in obj.data.vertices];faces=[tuple(f.vertices) for f in obj.data.polygons]
@@ -104,7 +119,7 @@ def refine(workspace):
    world,faces=horizontal_shell(obj,8);write_mesh(obj,world,faces,obj.name+' hatch floor slab');obj['tower_recipe']=TAG
    report.append(dict(source_node=obj['source_node'],before=before,after=diagnostics(obj),floor_rebuilt=True,world_transform_drift=0));continue
   if isroof:world,faces=roof_geometry(obj)
-  elif n in [331,350,162,163,168,190,199,220,258,276]:world,faces=horizontal_shell(obj)
+  else:world,faces=native_shell(obj)
   if n in [162,163]:
    from towers_doorway import cut_east_doorway
    write_mesh(obj,world,faces,obj.name+' closed wall before doorway')
@@ -115,7 +130,13 @@ def refine(workspace):
    cap=split_mesh(*front,2,spec['cut_z'],True);cover=split_mesh(*front,2,spec['cut_z'],False);keep=combine(back,cap)
   else:keep,cover=back,front
   if not keep[1] or not cover[1]:
-   write_mesh(obj,world,faces,obj.name+' refined');obj['tower_recipe']=TAG
+   piece=keep if keep[1] else cover
+   write_mesh(obj,*piece,obj.name+' refined');obj['tower_recipe']=TAG
+   component='tower-retained' if keep[1] else 'tower-cover'
+   obj['projection_component']=component;obj['reveal_component_patch_id']=patch;obj['reveal_component_role']='retained-shell' if keep[1] else 'removable-cover'
+   if keep[1]:retained_only.append(obj['source_node'])
+   else:
+    cover_only.append(obj['source_node']);covers.append({'source_node':obj['source_node'],'projection_component':component,'patch_id':patch})
    report.append(dict(source_node=obj['source_node'],before=before,after=diagnostics(obj),split=False));continue
   duplicate=obj.copy();duplicate.data=obj.data.copy();collection.objects.link(duplicate);duplicate.name=obj.name+' removable front';duplicate.matrix_world=matrix
   for ob,piece,component in [(obj,keep,'tower-retained'),(duplicate,cover,'tower-cover')]:
@@ -129,6 +150,10 @@ def refine(workspace):
   review['receiver_components'].setdefault('exterior',[]).append({'source_node':node,'projection_components':['tower-cover'],'patch_id':patch})
   review['receiver_components'].setdefault('interior-'+patch,[]).append({'source_node':node,'projection_components':['tower-retained'],'patch_id':patch})
  review['render_visibility']['revealed']['hidden_components']+=covers
+ for node in cover_only:review['receiver_components'].setdefault('exterior',[]).append({'source_node':node,'projection_components':['tower-cover'],'patch_id':patch})
+ for node in retained_only:
+  if node not in review['receiver_nodes']:review['receiver_nodes'].append(node)
+  review['receiver_components'].setdefault('interior-'+patch,[]).append({'source_node':node,'projection_components':['tower-retained'],'patch_id':patch})
  review['render_visibility']['limitations']=['Authored roof front and front wall cuts expose existing measured floors. Hidden thickness and roof curvature require owner review.']
  review['geometry_ready']=True;review['state_visibility_review']['cutaway_complete']=True
  review['evidence']+='; Tower recipe splits front shells at measured ring center; roof tip cap retained; per-component geometry report records hypotheses.'

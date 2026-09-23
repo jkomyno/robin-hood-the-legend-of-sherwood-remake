@@ -8,14 +8,15 @@ import bmesh
 from mathutils import Vector
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from towers import diagnostics
+from towers import diagnostics,SPECS
 
 
 def refine(workspace):
     config = json.loads((workspace/'workspace.json').read_text())
-    if config['asset_id'] != 'leicester-northwest-tower':
+    if config['asset_id'] not in SPECS:
         raise ValueError(config['asset_id'])
-    evidence = Path(__file__).resolve().parents[2]/'work/leicester-refinement/round-1/north-inspection/nw-front-windows.json'
+    filename='nw-front-windows.json' if config['asset_id']=='leicester-northwest-tower' else config['asset_id']+'-windows.json'
+    evidence = Path(__file__).resolve().parents[2]/'work/leicester-refinement/round-1/north-inspection'/filename
     record = json.loads(evidence.read_text())
     objects = [o for o in bpy.data.collections[config['collection_name']].all_objects
                if o.get('asset_group') == config['asset_id'] and o.get('source_node') in record['source_nodes']
@@ -27,7 +28,8 @@ def refine(workspace):
     applied={(r['object'],tuple(r['seed'])) for r in reports}
     changed=0
     for hole in record['holes']:
-        ring = [Vector((x, -815, (815*sine-y)/cosine)) for x,y in hole['outline']]
+        plane_y=SPECS[config['asset_id']]['center_y']
+        ring = [Vector((x, plane_y, (-plane_y*sine-y)/cosine)) for x,y in hole['outline']]
         n = len(ring)
         verts = [v+ray*d for d in [-400,400] for v in ring]
         faces = [tuple(reversed(range(n))), tuple(range(n,2*n))]
@@ -41,6 +43,7 @@ def refine(workspace):
         bpy.context.scene.collection.objects.link(cutter)
         for obj in objects:
             if obj.get('projection_component') != hole['projection_component']:continue
+            if hole.get('source_nodes') and obj.get('source_node') not in hole['source_nodes']:continue
             if (obj.name,tuple(hole['seed'])) in applied:continue
             before = diagnostics(obj)
             modifier = obj.modifiers.new('Reviewed timber window opening', 'BOOLEAN')

@@ -35,9 +35,10 @@ def refine_shells(collection, asset_id, manifest):
     for n,patch in [(277,'patch-013'),(278,'patch-014')]:
         node=f'building-{n:03}';r=manifest['projection_reviews'][patch]
         r['render_visibility']['revealed']['hidden_nodes'].append(node)
-        r.setdefault('exclude_occluder_nodes',[]).append(node)
+        r['exclude_occluder_components'].append({'source_node':node,'projection_component':'native-state-cover','patch_id':patch})
         r['evidence']+=f'; Native old_sight_obstacles removes{n} when {patch} applies; its entire old proxy is hidden in that revealed state.'
         objects[node]['reveal_component_patch_id']=patch
+        objects[node]['projection_component']='native-state-cover'
         objects[node]['reveal_component_role']='removable-cover'
     lower=manifest['projection_reviews']['patch-014']
     lower['geometry_ready']=True;lower['state_visibility_review']['cutaway_complete']=True

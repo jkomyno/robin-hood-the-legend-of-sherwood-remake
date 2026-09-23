@@ -28,7 +28,9 @@ def run(asset):
  prepare(workspace,**kwargs)
  config=json.loads((workspace/'workspace.json').read_text());path=Path(config['source_mask_manifest']);m=json.loads(path.read_text());nodes,index=MASKS[asset]
  m['projections']['exterior']['assignments'] += [{'source_node':f'building-{n:03}','mask_indices':[index],'reviewed':True,'evidence':f'Native old-state mask{index} identifies this tower upper body/cone; paired covered/revealed source and native mask contact atlas reviewed. No adjacent bridge or lower-floor union is accepted.'} for n in nodes]
- path.write_text(json.dumps(m,indent=2)+'\n');refine(workspace);modified(workspace);render_states(workspace,workspace/'inspection/states-v1')
+ path.write_text(json.dumps(m,indent=2)+'\n');refine(workspace)
+ from towers_review import run as review
+ review(workspace)
  print('TOWER_PACKET_COMPLETE',asset,flush=True)
 if __name__=='__main__':
  requested=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else JOBS
