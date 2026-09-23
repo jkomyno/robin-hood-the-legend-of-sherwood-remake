@@ -25,7 +25,7 @@ source=work/'source-states/revealed.png'
 im=Image.open(source).convert('RGB');draw=ImageDraw.Draw(im)
 sine=math.sin(math.radians(35));cosine=math.cos(math.radians(35))
 for obj in owned:
- if obj.get('source_node') not in ['building-393','building-394','building-395','building-396','building-414'] or obj.get('projection_component')!='church-retained':continue
+ if obj.get('source_node') not in ['building-386','building-393','building-394','building-395','building-396','building-414'] or obj.get('projection_component')!='church-retained':continue
  for edge in obj.data.edges:
   a,b=[obj.matrix_world@obj.data.vertices[i].co for i in edge.vertices]
   draw.line([(a.x,-a.y*sine-a.z*cosine),(b.x,-b.y*sine-b.z*cosine)],fill=(255,70,50),width=1)

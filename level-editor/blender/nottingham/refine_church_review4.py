@@ -44,24 +44,29 @@ def revise():
   covers=[o for o in owned() if o.get('source_node')==f'building-{n}' and o.get('projection_component')=='church-removable-cover']
   for obsolete in covers:bpy.data.objects.remove(obsolete,do_unlink=True)
   points=native[n]['points'];prism(target,[(p['x'],p['y']) for p in points],[p['z_bottom'] for p in points],[p['z_top'] for p in points]);split_plane(target,(0,0,1),28/COS)
+ # Native331 upper cap runs from(1940,976) to(2011,936). The
+ # unchanged full-height collision wall extends well above that cutaway.
+ # Clip its retained geometry below this measured source-camera edge.
+ slope=(936-976)/(2011-1940);intercept=976-slope*1940
+ split_plane(component(386,'church-retained'),(slope,SIN,COS),-intercept)
  label(component(415),'church-retained')
 
  for o in owned():o['projection_min_cosine']=.05
  drift=[n for n,h in others.items() if fingerprint(bpy.data.objects[n])!=h];assert not drift,drift
- report={'status':'refined','asset_id':ASSET,'changes':['Restore omitted native roof mask323 on annex403/404/405.','Lower only the near leg of wall414 to the painted28-unit cut rim; retain its full-height rear return.','Remove source391 door lintel together with the vanished front wall in revealed state.','Lower apse front walls393–396 from the incorrect100-unit band to the source28-unit rim; retain the full-height rear wall400.','Restore native331 interior partition and327 front-rim ownership on reviewed retained receivers.'], 'outside_object_changes':drift,'outside_objects_preserved':len(others),'source_mask':323,'retained_front_rim_native_height':28,'limitations':['Native footprints and concealed depths preserved; low rim and tall return form one closed stepped wall mesh.','Rear-facing source-unseen roof and wall surfaces remain neutral.'], 'geometry_approval':'pending','texture_generation':'not-started'}
+ report={'status':'refined','asset_id':ASSET,'changes':['Restore omitted native roof mask323 on annex403/404/405.','Lower only the near leg of wall414 to the painted28-unit cut rim; retain its full-height rear return.','Remove source391 door lintel together with the vanished front wall in revealed state.','Lower apse front walls393–396 from the incorrect100-unit band to the source28-unit rim; retain the full-height rear wall400.','Restore native331 interior partition and327 front-rim ownership on reviewed retained receivers.','Clip the unsupported tall386 return to the native331 top-cap trace(1940,976)–(2011,936); retain its upper band only in covered state.'], 'outside_object_changes':drift,'outside_objects_preserved':len(others),'source_mask':323,'retained_front_rim_native_height':28,'wall386_source_trace':[[1940,976],[2011,936]],'wall386_trace_uncertainty_pixels':4,'limitations':['Native footprints and concealed depths preserved; low rim and tall return form one closed stepped wall mesh.','Rear-facing source-unseen roof and wall surfaces remain neutral.'], 'geometry_approval':'pending','texture_generation':'not-started'}
  obj['church_review4']=json.dumps(report);return report
 
 def configure():
  from refinement_workspace import _absolute_manifest_images
  cfg=json.loads((NEW/'workspace.json').read_text());p=Path(cfg['projection_manifest'])
  a=_absolute_manifest_images(json.loads((NEW/'reference/layers.json').read_text()),NEW/'reference');r=a['projection_reviews']['patch-000']
- for n in [391,393,394,395,396,414]:
+ for n in [386,391,393,394,395,396,414]:
   node=f'building-{n:03}';s={'source_node':node,'projection_component':'church-removable-cover','patch_id':'patch-000'}
   if node not in r['partial_cover_nodes']:r['partial_cover_nodes'].append(node)
   for key in ['exclude_occluder_components']:
    if s not in r[key]:r[key].append(s)
   if s not in r['render_visibility']['revealed']['hidden_components']:r['render_visibility']['revealed']['hidden_components'].append(s)
- for n in [393,414]:
+ for n in [386,393,414]:
   selector={'source_node':f'building-{n}','projection_components':['church-removable-cover'],'patch_id':'patch-000'}
   if selector not in r['receiver_components']['exterior']:r['receiver_components']['exterior'].append(selector)
  if 'building-415' not in r['receiver_nodes']:r['receiver_nodes'].append('building-415')
