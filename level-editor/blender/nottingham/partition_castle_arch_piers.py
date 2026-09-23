@@ -17,7 +17,8 @@ def main():
  bpy.ops.wm.open_mainfile(filepath=str(src/'model.blend'));bpy.context.view_layer.update();records=[]
  for o in bpy.data.collections['nottingham Working'].all_objects:
   if o.type!='MESH' or o.get('asset_group')!=ASSET:continue
-  records.append({'node':o['source_node'],'component':o.get('projection_component',''),'vertices':[list(o.matrix_world@v.co) for v in o.data.vertices],'faces':[list(p.vertices) for p in o.data.polygons],'uv':{u.name:[list(v.uv) for v in u.data] for u in o.data.uv_layers},'properties':{k:(o[k].to_list() if hasattr(o[k],'to_list') else o[k]) for k in o.keys()},'hide_render':o.hide_render})
+  o.data.calc_loop_triangles()
+  records.append({'triangles':[list(t.vertices) for t in o.data.loop_triangles],'node':o['source_node'],'component':o.get('projection_component',''),'vertices':[list(o.matrix_world@v.co) for v in o.data.vertices],'faces':[list(p.vertices) for p in o.data.polygons],'uv':{u.name:[list(v.uv) for v in u.data] for u in o.data.uv_layers},'properties':{k:(o[k].to_list() if hasattr(o[k],'to_list') else o[k]) for k in o.keys()},'hide_render':o.hide_render})
  bpy.ops.wm.open_mainfile(filepath=str(WORK/'grouped/nottingham-grouped-v13.blend'));bpy.context.view_layer.update()
  coll=bpy.data.collections['nottingham Working'];targets=[o for o in coll.all_objects if o.type=='MESH' and o.get('asset_group')==ASSET]
  def identity(o):return(o.get('source_node'),o.get('projection_component',''))
@@ -53,9 +54,13 @@ def main():
  prepare(out,asset_id=ASSET,scene_name='nottingham Refinement',collection_name='nottingham Working',source_path=src/'reference/source.png',grouping_manifest=evidence/'catalog.json',inventory_path=evidence/'inventory.json',review_path=evidence/'grouping-review.json',projection_manifest=src/'projection-layers.json',source_mask_manifest=src/'source-masks.json',width=320,height=400,context_padding=35,framing_padding=1.18)
  outside={o.name:fingerprint(o) for o in coll.all_objects if o.type=='MESH' and o not in targets}
  body=next(o for o in targets if o['source_node']=='building-333' and not o.get('animation_state'))
- body.data.calc_loop_triangles()
- original=bpy.data.meshes.new('Evaluated gateway triangle surface')
- original.from_pydata([list(v.co) for v in body.data.vertices],[],[list(t.vertices) for t in body.data.loop_triangles])
+ from refine_castle_arch_profiles import PROFILES
+ structural_vertex_count=2*(len(PROFILES[0])+4)
+ source_body=next(rec for rec in records if rec['node']=='building-333' and not rec['properties'].get('animation_state'))
+ source_triangles=source_body['triangles']
+ inverse=body.matrix_world.inverted()
+ original=bpy.data.meshes.new('Evaluated structural gateway triangle surface')
+ original.from_pydata([inverse@Vector(v) for v in source_body['vertices'][:structural_vertex_count]],[],[f for f in source_triangles if max(f)<structural_vertex_count])
  original.update()
  def cut(target,positive_z,side=None):
   bm=bmesh.new();bm.from_mesh(original)
@@ -76,6 +81,14 @@ def main():
   target['castle_arch_partition']='native-z205.834; left/right at x945';target.hide_render=False;target.hide_set(False)
  right=next(o for o in targets if o['source_node']=='building-349');left=next(o for o in targets if o['source_node']=='building-350')
  cut(body,True);cut(right,False,'right');cut(left,False,'left')
+ # Ornamental moulding remains one intact333 shell, including jamb trim.
+ # Capture source triangles before scene transfer so nonplanar quads cannot
+ # choose a different diagonal when re-evaluated in another object frame.
+ body.data.calc_loop_triangles()
+ upper_vertices=[list(v.co) for v in body.data.vertices];upper_faces=[list(t.vertices) for t in body.data.loop_triangles];offset=len(upper_vertices)
+ mesh=bpy.data.meshes.new('Upper gateway and intact moulding shell')
+ mesh.from_pydata(upper_vertices+[inverse@Vector(v) for v in source_body['vertices'][structural_vertex_count:]],[],upper_faces+[[offset+i-structural_vertex_count for i in f] for f in source_triangles if min(f)>=structural_vertex_count])
+ mesh.materials.append(neutral());mesh.uv_layers.new(name='UnprojectedSurfaceUV');mesh.update();body.data=mesh
  # Cut faces have no independent source evidence; native masks plus source
  # orientation/first-hit tests prevent newly concealed caps from borrowing RGB.
  mask_path=out/'source-masks.json';m=json.loads(mask_path.read_text());rows=m['projections']['exterior']['assignments'];arch=next(a for a in rows if a['source_node']=='building-333' and not a.get('projection_component'))
@@ -92,6 +105,6 @@ def main():
  drift=[name for name,h in outside.items() if fingerprint(bpy.data.objects[name])!=h]
  if drift:raise ValueError(('Outside geometry changed',drift))
  bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(out/'model.blend'));validation=modified(out)
- (out/'pier-partition-report.json').write_text(json.dumps({'status':'PASS','source_model_sha256':sha(src/'model.blend'),'model_sha256':sha(out/'model.blend'),'partition':'333 upper gateway;349 right jamb;350 left jamb. Closed at nativez205.834.','topology':topology,'outside_preserved':len(outside),'tooling':tooling,'validation':validation},indent=2)+'\n')
+ (out/'pier-partition-report.json').write_text(json.dumps({'status':'PASS','source_model_sha256':sha(src/'model.blend'),'model_sha256':sha(out/'model.blend'),'partition':'333 upper structural gateway and intact decorative moulding;349 right structural jamb;350 left structural jamb. Structural cuts closed at nativez205.834.','topology':topology,'outside_preserved':len(outside),'tooling':tooling,'validation':validation},indent=2)+'\n')
  print('GATE_PARTITION_COMPLETE',flush=True)
 if __name__=='__main__':main()
