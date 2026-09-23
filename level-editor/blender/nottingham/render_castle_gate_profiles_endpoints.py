@@ -10,7 +10,7 @@ acquire()
 from refinement_workspace import _review_layers,validate
 from refinement_review import render_review
 from source_projection_bake import bake
-asset=sys.argv[sys.argv.index('--')+1];w=root/'round-23/assets'/asset
+asset=sys.argv[sys.argv.index('--')+1];w=root/(sys.argv[sys.argv.index('--')+2] if len(sys.argv)>sys.argv.index('--')+2 else 'round-23/assets')/asset
 bpy.ops.wm.open_mainfile(filepath=str(w/'model.blend'))
 config=json.loads((w/'workspace.json').read_text());tower=asset.endswith('east-tower');node='building-337' if tower else 'building-333';patch='patch-005' if tower else 'patch-003';stem='mechanism' if tower else 'portcullis'
 objects=list(bpy.data.collections[config['collection_name']].all_objects);owned=[o for o in objects if o.type=='MESH' and o.get('asset_group')==asset]
