@@ -1,5 +1,12 @@
 # Derby asset refinement review
 
+Current completion blocker: Lower West south's first Sunburst result leaves
+the inward parapet/walkway strip gray across visible views. The targeted retry
+was rejected with HTTP429 `credit_balance_exhausted`; no retry image exists.
+Do not publish the incomplete south bake or mark it finished. Geometry approval
+remains valid. Upper West is fully baked and is being staged independently so
+the south texture blocker does not hold its completed update back.
+
 Lower West south `south-vertical-v13` explicitly approved: the user accepted its
 existing zigzag without new annotations. Pending geometry gallery now has zero
 items. Upper West approved stairs-v4 texture generation/bake is complete and
