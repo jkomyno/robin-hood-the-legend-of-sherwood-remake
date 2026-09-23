@@ -1,5 +1,14 @@
 # Derby asset refinement review
 
+User supplied two constrained front-edge zigzags for Upper West. Frozen input:
+`round-2/battlement-editor/rebuild-01/user-corners.json`, SHA-256
+`aef631c399b228d5c5d5fa7d62308459a472b673093042be1b734e7023e86719`.
+Independent audit verified the artwork hash and exact agreement between rails
+and saved corner coordinates. Long run has 31 transitions and ends on its lower
+boundary; short run has eight. Rebuild must preserve these endpoints and phase.
+The previous short-run fitting used the rear edge; user annotations specify
+the front face. Upper West rebuild is in progress; South has no new annotations.
+
 Latest user feedback: both replacement curtains still have incorrect battlement
 alignment. Geometry approval is withheld. A manual corner editor is available
 at http://localhost:5182 with both walls, original artwork, optional actual-mesh
