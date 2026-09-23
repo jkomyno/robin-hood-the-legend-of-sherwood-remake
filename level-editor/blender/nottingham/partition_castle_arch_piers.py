@@ -58,6 +58,8 @@ def main():
  structural_vertex_count=2*(len(PROFILES[0])+4)
  source_body=next(rec for rec in records if rec['node']=='building-333' and not rec['properties'].get('animation_state'))
  source_triangles=source_body['triangles']
+ if len(source_body['vertices'])!=structural_vertex_count+6*len(PROFILES[0]):raise ValueError('Unexpected profile receiver topology')
+ if any(min(f)<structural_vertex_count<=max(f) for f in source_triangles):raise ValueError('Structural and ornamental shells unexpectedly share a face')
  inverse=body.matrix_world.inverted()
  original=bpy.data.meshes.new('Evaluated structural gateway triangle surface')
  original.from_pydata([inverse@Vector(v) for v in source_body['vertices'][:structural_vertex_count]],[],[f for f in source_triangles if max(f)<structural_vertex_count])
