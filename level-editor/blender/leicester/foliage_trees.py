@@ -1,7 +1,8 @@
-"""Native-alpha foliage lobes with separate opaque trunks and unknown backs.
+"""Physical foliage cutouts with separate opaque trunks and unknown backs.
 
 Each lobe is a fixed curved surface at an inferred depth, never camera-following.
-Source RGB and physical opacity are packed separately from ownership COLOR_0.r.
+Native foliage uses exact source RGB/alpha; forest foliage is wholly inferred.
+Physical opacity is packed separately from ownership COLOR_0.r.
 Paired one-sided reverse surfaces use neutral RGB rather than borrowed artwork.
 """
 import argparse
@@ -16,7 +17,7 @@ import numpy as np
 from PIL import Image
 from mathutils import Vector
 
-VERSION='leicester-native-foliage-lobes-v1'
+VERSION='leicester-foliage-lobes-v2'
 SINE,COSINE=math.sin(math.radians(35)),math.cos(math.radians(35))
 RAY=Vector((0,-COSINE,SINE))
 CONFIG={
@@ -69,6 +70,43 @@ def source_packet(workspace,node,output):
     return evidence
 
 
+def inferred_packet(workspace,node,output):
+    """Neutral, explicitly inferred forest crown coverage; never native alpha."""
+    from props_trees import CROWNS, GROUND
+    rows=np.asarray(CROWNS[node],dtype=float)
+    left,right=rows[:,1].min(),rows[:,2].max()
+    top,bottom=rows[:,0].min(),rows[:,0].max()
+    CONFIG[node]=dict(ground=GROUND[node])
+    output.mkdir(parents=True,exist_ok=True)
+    records=[]
+    # Staggered fixed lobes replace the opaque envelope without borrowing
+    # neighboring canopy artwork. Every perimeter and gap below is inferred.
+    layout=[(.42,.13,.26,.22),(.67,.25,.28,.26),(.25,.32,.28,.25),
+            (.47,.46,.31,.29),(.74,.52,.24,.25),(.22,.59,.24,.24),
+            (.42,.77,.26,.22),(.63,.76,.23,.22)]
+    for number,(u,v,rx,ry) in enumerate(layout):
+        cx=left+u*(right-left);cy=top+v*(bottom-top)
+        rx*=right-left;ry*=bottom-top
+        x0,y0,x1,y1=math.floor(cx-rx),math.floor(cy-ry),math.ceil(cx+rx),math.ceil(cy+ry)
+        yy,xx=np.mgrid[y0:y1,x0:x1];dx=(xx-cx)/rx;dy=(yy-cy)/ry
+        angle=np.arctan2(dy,dx);radius=np.sqrt(dx*dx+dy*dy)
+        edge=.89+.055*np.sin(angle*13+number)+.045*np.cos(angle*21-number)
+        coverage=radius<edge
+        # Sparse repeatable gaps are design hypotheses, not recovered leaves.
+        holes=((np.sin(xx*.63+number)*np.cos(yy*.49-number))>.94)&(radius>.28)
+        coverage &= ~holes
+        rgba=np.full((y1-y0,x1-x0,4),105,dtype=np.uint8);rgba[:,:,3]=coverage*255
+        path=output/f'lobe-{number:02}-inferred.png';Image.fromarray(rgba).save(path)
+        records.append(dict(index=number,bbox_source=[x0,y0,x1,y1],source=str(path),unknown=str(path),
+                            source_sha256=sha(path),unknown_sha256=sha(path),native_pixels=0,observed=False))
+    evidence=dict(source_rgb_sha256='',native_alpha_sha256='',native_mask=None,
+                  source_node=f'building-{node:03d}',canopy_pixels=0,duplicate_pixels=0,
+                  ownership='No source ownership. All forest foliage coverage, gaps and depth are inferred.',
+                  lobes=records)
+    (output/'source-partition.json').write_text(json.dumps(evidence,indent=2)+'\n')
+    return evidence
+
+
 def material(name,path,known,evidence):
     mat=bpy.data.materials.new(name);mat.use_nodes=True;mat.use_backface_culling=True
     if hasattr(mat,'surface_render_method'):mat.surface_render_method='DITHERED'
@@ -97,7 +135,8 @@ def refine_crown(obj,node,evidence):
     materials=[];ground=CONFIG[node]['ground'];steps=4
     for lobe in evidence['lobes']:
         number=lobe['index'];x0,y0,x1,y1=lobe['bbox_source'];cx,cy=(x0+x1)/2,(y0+y1)/2
-        for known in (True,False):
+        for front in (True,False):
+            known=front and lobe.get('observed',True)
             slot=len(materials);materials.append(material(f'{obj.name} lobe{number:02} '+('source' if known else 'unknown'),
                 lobe['source' if known else 'unknown'],known,evidence))
             start=len(vertices)
@@ -107,13 +146,13 @@ def refine_crown(obj,node,evidence):
                     u=i/steps;x=x0+(x1-x0)*u
                     depth=DEPTHS[number]+(x-cx)*SLOPES[number][0]+(y-cy)*SLOPES[number][1]
                     depth+=12*math.sin(math.pi*u)*math.sin(math.pi*v)
-                    depth-=0 if known else .35
+                    depth-=0 if front else .35
                     world=Vector((x,-ground/SINE,(ground-y)/COSINE))+RAY*depth
                     vertices.append(matrix.inverted()@world);uvs.append((u,1-v))
             for j in range(steps):
                 for i in range(steps):
                     a=start+j*(steps+1)+i;b=a+1;c=b+steps+1;d=a+steps+1
-                    faces.append((a,d,c,b) if known else (a,b,c,d));face_mats.append(slot);face_known.append(known)
+                    faces.append((a,d,c,b) if front else (a,b,c,d));face_mats.append(slot);face_known.append(known)
     mesh=bpy.data.meshes.new(obj.name+' native cutout lobes');mesh.from_pydata(vertices,[],faces);mesh.update()
     for mat in materials:mesh.materials.append(mat)
     uv=mesh.uv_layers.new(name='Foliage UV');ownership=mesh.color_attributes.new(name='Source ownership',type='FLOAT_COLOR',domain='CORNER')
@@ -148,9 +187,9 @@ def run(workspace):
     crowns=[o for o in objects if o.get('projection_component')=='crown']
     if len(crowns)!=1:raise ValueError('Expected one canonical crown component')
     crown=crowns[0];node=int(crown['source_node'][9:])
-    if node not in CONFIG:raise ValueError('Native foliage opacity exists only for088/089')
+    if node not in (88,89,90,91,92):raise ValueError('Unsupported tree')
     untouched={o.name:geometry_hash(o) for o in objects if o!=crown}
-    evidence=source_packet(workspace,node,workspace/'inspection/native-foliage')
+    evidence=(source_packet if node in (88,89) else inferred_packet)(workspace,node,workspace/'inspection/native-foliage')
     report=refine_crown(crown,node,evidence);first=geometry_hash(crown)
     refine_crown(crown,node,evidence)
     if first!=geometry_hash(crown):raise ValueError('Foliage geometry is not idempotent')
@@ -158,7 +197,8 @@ def run(workspace):
     validate(workspace)
     report.update(recipe=VERSION,idempotence='PASS',approval_status='fix-needed; new candidate awaiting full review',
         texture_generation='not-started',projection_status='STALE; needs alpha-aware source review and actual material8views',
-        limitations=['Lobe partition seeds, curved surface depth and fixed orientations are inferred; native alpha and source RGB remain exact.',
+        limitations=['Forest090–092 foliage alpha and contours are entirely inferred neutral placeholders, not recovered native foliage.',
+                     'Lobe partition seeds, curved surface depth and fixed orientations are inferred; native alpha and source RGB remain exact.',
                      'Canopy mask includes fine twig artwork; large measured branches remain separate opaque geometry.',
                      'Back surfaces retain the same inferred cutout silhouette but use neutral RGB and zero ownership.',
                      'Foliage cards intentionally have open boundaries; they are thin render surfaces, not solid collision volumes.'])
