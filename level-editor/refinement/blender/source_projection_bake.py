@@ -15,6 +15,20 @@ import math
 from pathlib import Path
 
 
+def bind_uv_layer(mesh, node, requested_name):
+    """Bind the shader to a stable Blender-sized layer name, including Unicode."""
+    encoded = requested_name.encode('utf-8')
+    name = requested_name
+    if len(encoded) > 63:
+        prefix = encoded[:48].decode('utf-8', errors='ignore')
+        name = prefix + '-' + hashlib.sha256(encoded).hexdigest()[:14]
+    layer = mesh.uv_layers.get(name) or mesh.uv_layers.new(name=name)
+    node.uv_map = layer.name
+    if mesh.uv_layers.get(node.uv_map) != layer:
+        raise RuntimeError('Generated material UV map does not resolve to its atlas layer')
+    return layer
+
+
 def bake(map_name, source_path, report_path, receiver_nodes=None,
          occluder_nodes=None, projection_label="source", texels_per_unit=1,
          elevation_deg=35.0, preserve_authored=True, source_mask_manifest=None,
@@ -355,7 +369,6 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         nodes, links = mat.node_tree.nodes, mat.node_tree.links
         nodes.clear()
         uv = nodes.new("ShaderNodeUVMap")
-        uv.uv_map = uv_name
         texture = nodes.new("ShaderNodeTexImage")
         texture.image = image
         texture.interpolation = "Linear"
@@ -367,7 +380,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         slot = existing[0] if existing else len(mesh.materials)
         if not existing:
             mesh.materials.append(mat)
-        layer = mesh.uv_layers.get(uv_name) or mesh.uv_layers.new(name=uv_name)
+        layer = bind_uv_layer(mesh, uv, uv_name)
         fallback = mesh.attributes.get("reprojection_fallback_material")
         for fid, origin, axis, vertical, normal, low, size, w, h, left, bottom in islands:
             face = mesh.polygons[fid]
