@@ -1,9 +1,5 @@
-"""Archived rear-roof experiment; never promoted over the user-approved house.
-
-The user approved the displayed earlier revision while this separate round-19
-variant was being prepared. Retain the recipe for provenance, not publication.
-"""
-import json,math,hashlib,sys
+"""Trace the north dormer rear roof pitch and flared eave from source pixels."""
+import json,math,sys
 from pathlib import Path
 import bpy,bmesh
 from mathutils import Vector
