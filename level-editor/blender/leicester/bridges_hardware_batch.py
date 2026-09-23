@@ -30,12 +30,12 @@ def main():
                     'reason':'Hardware extends beyond frozen leaf-only cameras; create a fresh unapproved workspace with wider fixed input/modified framing.',
                     'path_note':'Archived configuration retains original absolute paths; file bytes are preserved. Resolve original workspace prefix to archived prefix when replaying this historical packet.'},indent=2)+'\n')
             if not (workspace/'workspace.json').exists():
-                if static:run('bridges_prepare.py',[asset,'--framing-padding','2.0','--source-masks',ROOT/'bridge-evidence/west-footbridge-ownership/initial-masks.json'])
+                if static:run('bridges_prepare.py',[asset,'--framing-padding','2.0','--source-masks',ROOT/'bridge-evidence/west-footbridge-ownership-supports-v2/initial-masks.json'])
                 else:
                     extra=[]
-                    if asset=='leicester-east-village-drawbridge':
-                        from bridges_context import prepare_context
-                        extra=['--source-blend',prepare_context()]
+                    if asset in ('leicester-east-village-drawbridge','leicester-east-moat-drawbridge'):
+                        from bridges_context import prepare_canopy_context
+                        extra=['--source-blend',prepare_canopy_context()]
                     run('bridges_states.py',['prepare',asset,state,'--framing-padding','3.6' if state=='initial' else '4.2']+extra)
             bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'))
             bpy.context.scene.render.threads_mode='FIXED';bpy.context.scene.render.threads=2

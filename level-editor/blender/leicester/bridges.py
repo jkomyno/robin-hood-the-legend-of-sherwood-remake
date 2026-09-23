@@ -87,10 +87,10 @@ def refine(workspace, native_path):
         for number,t in enumerate((.2,.4,.6,.8),1):
             base=start.lerp(end,t)
             add_beam(f'rail 4 middle post {number}',base,base+Vector((0,0,27/COSINE)),2.5)
-        for number,corner in enumerate((4,3),1):
-            top=world(points[corner],points[corner]['z_top']-7)
-            foot=top.copy();foot.z=0
-            add_beam(f'tower landing support {number}',foot,top,5)
+        from bridges_west_supports import add_supports
+        for obj in add_supports(original,collection,points,object_mesh):
+            obj['bridge_added_component']=TAG
+            additions.append(obj)
     if index==385:
         # Two legs and paired braces below the near trestle are visible in the source.
         a,b=world(points[1]),world(points[0]); other_a,other_b=world(points[2]),world(points[3])
@@ -124,20 +124,27 @@ def refine(workspace, native_path):
                 entry=next(entry for entry in entries if entry.get('source_node')=='building-226' and not entry.get('projection_component'))
                 entry.clear();entry.update(source_node='building-226',mask_indices=[213226],reviewed=True,
                     review_reason='Source-reviewed native deck footprint excludes foreground castle, tower and railing pixels. The background-painted deck needs its own ownership region beyond native rail333.')
+            if any(record['index']==213227 for record in inventory['masks']):
+                for obj in additions:
+                    if obj.get('bridge_support_profile'):
+                        entries.append({'source_node':'building-226','projection_component':obj['projection_component'],
+                                        'mask_indices':[213227],'reviewed':True,
+                                        'review_reason':'Measured source-visible brace and support profiles, guarded against foreground building masks.'})
     masks_path.write_text(json.dumps(masks,indent=2)+'\n')
     original['bridge_recipe']=TAG
     bpy.context.view_layer.update()
     counts={'visible_rail_posts':sum(len(r[2]) for r in rails),
             'inferred_middle_rail_posts':4 if index==226 else 0,
-            'rail_caps':len(rails)+(index==226),'ground_returns':sum(r[3] for r in rails)}
+            'visible_diagonal_braces':3 if index==226 else 0,'rail_caps':len(rails)+(index==226),'ground_returns':sum(r[3] for r in rails)}
     report={'recipe':TAG,'asset_id':config['asset_id'],'source_node':f'building-{index:03}',
             'native_level_sha256':hashlib.sha256(native_path.read_bytes()).hexdigest(),
             'recipe_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            'recipe_dependencies':({'bridges_west_supports.py':hashlib.sha256(Path(__file__).with_name('bridges_west_supports.py').read_bytes()).hexdigest()} if index==226 else {}),
             'native_obstacle':level['sight_obstacles'][index], 'repeated_elements':counts,
             'added_components':[o.name for o in additions], 'projection_status':'STALE',
             'source_supported':'Native deck upper corners retained. Rail post counts inspected on source crop; ramp ground returns and open space below deck are visible.',
             'inference':'Timber sections 2.5-4 scene units, deck thickness 7 game-height units, rail height 27 game pixels; depth and hidden reverse faces inferred.',
-            'limitations':(['Four middle balusters approximate the partly occluded foreground rhythm; only the three unobscured landing rails have reliable source counts. Two deep supports continue to inferred ground level; hidden footings are not source measured.'] if index==226 else [])+['Post spacing approximates measured source spacing; fixed-camera projection requires visual approval.','Underwater support footings are inferred and remain unknown gray.'],
+            'limitations':(['Four middle balusters approximate the partly occluded foreground rhythm; only the three unobscured landing rails have reliable source counts. Three visible diagonal braces and the deep timber post follow measured image profiles; landing-plane depth and concealed cross-sections remain inferred.'] if index==226 else [])+['Post spacing approximates measured source spacing; fixed-camera projection requires visual approval.','Underwater support footings are inferred and remain unknown gray.'],
             'status':'refinement in progress'}
     (workspace/'inspection').mkdir(exist_ok=True)
     (workspace/'inspection/bridge-recipe.json').write_text(json.dumps(report,indent=2)+'\n')

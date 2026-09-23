@@ -46,4 +46,34 @@ def prepare_context():
   'doorway_source_rays':{'accepted':1904,'total':1904},'status':'Immutable projection context; full tower refinement and owner geometry approval remain separate'}
  (output/'provenance.json').write_text(json.dumps(record,indent=2)+'\n');target.chmod(0o444)
  return target
-if __name__=='__main__':print(prepare_context())
+def prepare_canopy_context():
+ source=prepare_context();output=ROOT/'round-1/bridge-context-canopy-v2';target=output/'canopy.blend'
+ if target.exists():
+  record=json.loads((output/'provenance.json').read_text())
+  if sha(target)!=record['output_sha256']:raise ValueError('Frozen canopy context changed')
+  if any(sha(path)!=digest for path,digest in record['dependencies'].items()):raise ValueError('Frozen canopy dependency changed')
+  return target
+ import towers_canopy
+ diagnostic=ROOT/'bridge-evidence/east-hardware-canopy-ray-audit.json'
+ evidence=ROOT/'round-1/north-inspection/node221-source-overlay.png'
+ if not diagnostic.is_file() or not evidence.is_file():raise ValueError('Canopy source and ray evidence required')
+ output.mkdir(exist_ok=False);(output/'inspection').mkdir()
+ bpy.ops.wm.open_mainfile(filepath=str(source));bpy.context.window.scene=bpy.data.scenes['Leicester Refinement']
+ collection=bpy.data.collections['Leicester Working'];obj=next(o for o in collection.all_objects if o.get('source_node')=='building-221')
+ protected={o.name:_geometry(o) for o in bpy.context.scene.objects if o!=obj};matrix=[list(row) for row in obj.matrix_world]
+ report=towers_canopy.refine(obj);bpy.context.view_layer.update()
+ if protected!={o.name:_geometry(o) for o in bpy.context.scene.objects if o!=obj}:raise ValueError('Canopy context changed another object')
+ if matrix!=[list(row) for row in obj.matrix_world]:raise ValueError('Canopy transform drift')
+ (output/'inspection/canopy221.json').write_text(json.dumps(report,indent=2)+'\n')
+ bpy.ops.wm.save_as_mainfile(filepath=str(target))
+ originals=[Path(towers_canopy.__file__),Path(__file__),diagnostic,evidence];snapshots=output/'provenance-sources';snapshots.mkdir()
+ for path in originals:shutil.copy2(path,snapshots/path.name)
+ deps=[source,*snapshots.iterdir()]
+ record={'source':str(source),'output':str(target),'output_sha256':sha(target),'dependencies':{str(p):sha(p) for p in deps},
+         'original_dependency_paths':{str(p):sha(p) for p in originals},'modified_source_nodes':['building-221'],
+         'inherited_context_nodes':['building-162','building-163'],'outside_geometry_unchanged':True,'protected_object_count':len(protected),
+         'status':'Immutable source-supported projection context; three-unit underside thickness remains an explicit hypothesis.'}
+ (output/'provenance.json').write_text(json.dumps(record,indent=2)+'\n');target.chmod(0o444)
+ return target
+
+if __name__=='__main__':print(prepare_canopy_context() if '--canopy' in sys.argv else prepare_context())
