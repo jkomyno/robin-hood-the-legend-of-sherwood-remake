@@ -498,6 +498,16 @@ the last verified publication. Verify:
 Run browser/editor smoke tests and retain the publication manifest, hashes,
 screenshots, and rollback path.
 
+Before reporting completion, reconcile every review item and every catalog
+source node against the applied publication chain. Record geometry approval,
+texture generation (or an evidenced reason it is unnecessary), validated bake,
+and live integration separately. A pending-only gallery with zero cards proves
+only that no geometry decisions remain. It does not prove texture completion.
+Check supporting meshes shown only as context in split review packets: each
+still needs an explicit owner for any required texture fill. Replace obsolete
+lighting holds and generation-pending labels with verified current status; do
+not mark an item integrated merely because its output exists on disk.
+
 ## 12. Required worker handoff
 
 Every worker must return:

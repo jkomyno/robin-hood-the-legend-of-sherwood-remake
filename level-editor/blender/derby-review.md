@@ -1,5 +1,37 @@
 # Derby asset refinement review
 
+Publication11 is LIVE. Lower West south's approved nodes023/042 now have the
+successful OpenRouter Sunburst bake in both the map and standalone asset
+library. All82 promoted files independently match staged hashes;526 outside
+meshes are unchanged. Browser checks pass39groups/270parts, group/part picking
+and Main Hall covered/revealed states. Rollback backups are retained.
+
+Full-catalog audit corrects the earlier completion estimate:26/39 groups have
+AI-fill provenance;13/39 do not. Nine have older procedural fill and retained
+Sunburst experiments needing compatibility checks/recovery; four remain
+source-only (East Bailey west curtain, Lower West access stair, Lower West
+wall turret, Lower Bailey well). Continuous wall-walk node045 is an additional
+unfilled component. Parallel recovery is active. Existing interior source-only
+materials are classified separately. See the local work report at
+`level-editor/work/derby-refinement/round-2/completion-audit-20260923/report.md`.
+No pending geometry decisions remain, but Derby is not100% complete.
+
+Completion audit correction: Derby is not yet fully complete. East Bailey west
+curtain, Lower West access stair and Lower West wall turret remain source-only
+in publication11. Their earlier geometry/fill approvals are valid; the old
+lighting hold is superseded by the user's 48-degree selection. Two-image
+OpenRouter fills are being prepared. Lower West walkway node045 also retains
+gray unknown surfaces and is being checked for its separate fill scope. Zero
+pending geometry decisions does not mean zero pending texture work.
+
+OpenRouter retry succeeded for Lower West south using
+`openai/gpt-image-2.5-sunburst`, high quality, two image references and no API
+mask. The returned PNG is exactly 2048×1024; independent comparison confirms
+all 1,772,464 protected pixels are unchanged in the local composite. Raw output
+is retained. The previously missing inward masonry is filled. Scoped baking
+and publication11 validation are in progress; publication10 remains live until
+those checks pass. The earlier API-credit blocker below is superseded.
+
 Publication10 is LIVE: Upper West's approved manual battlements, corrected
 stairs/landing and completed two-image texture bake are integrated into the
 Derby scene and asset library. All82 promoted targets independently match their
