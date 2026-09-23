@@ -15,6 +15,73 @@ from pathlib import Path
 import shutil
 
 
+FEEDBACK_SCRIPT = r"""
+(() => {
+  const cards = [...document.querySelectorAll('article[data-review-revision]')];
+  const preview = document.querySelector('#review-export');
+  const message = document.querySelector('#copy-status');
+  const namespace = 'model-review-v1:' + document.title + ':';
+  const key = card => namespace + card.id + ':' + card.dataset.reviewRevision;
+  const clean = value => value.replace(/\s+/g, ' ').trim();
+  function refresh() {
+    const lines = cards.flatMap(card => {
+      const decision = card.querySelector('.decision').value;
+      const note = clean(card.querySelector('.review-note').value);
+      if (!decision && !note) return [];
+      return [`${card.id}: ${decision || 'feedback'}${note ? ' — ' + note : ''} [review ${card.dataset.reviewRevision}]`];
+    });
+    preview.value = lines.length ? document.title + '\n' + lines.join('\n') : '';
+    document.querySelector('#review-count').textContent = `${lines.length} reviewed`;
+    document.querySelector('#copy-reviews').disabled = !lines.length;
+  }
+  for (const card of cards) {
+    const decision = card.querySelector('.decision');
+    const note = card.querySelector('.review-note');
+    const status = card.querySelector('.draft-status');
+    try {
+      const saved = JSON.parse(localStorage.getItem(key(card)) || 'null');
+      if (saved) {
+        if ([...decision.options].some(option => option.value === saved.decision && !option.disabled)) {
+          decision.value = saved.decision;
+        }
+        note.value = typeof saved.note === 'string' ? saved.note : '';
+        status.textContent = 'Restored saved review';
+      }
+    } catch {
+      status.textContent = 'Browser storage unavailable; copy your results before closing.';
+    }
+    const save = () => {
+      try {
+        if (!decision.value && !note.value) localStorage.removeItem(key(card));
+        else localStorage.setItem(key(card), JSON.stringify({decision: decision.value, note: note.value}));
+        status.textContent = 'Saved in this browser';
+      } catch {
+        status.textContent = 'Could not save in this browser; copy your results before closing.';
+      }
+      message.textContent = '';
+      refresh();
+    };
+    decision.addEventListener('change', save);
+    note.addEventListener('input', save);
+  }
+  document.querySelector('#copy-reviews').addEventListener('click', async () => {
+    refresh();
+    try {
+      await navigator.clipboard.writeText(preview.value);
+      message.textContent = 'Copied. Paste into chat.';
+    } catch {
+      document.querySelector('#export-details').open = true;
+      preview.focus();
+      preview.select();
+      let copied = false;
+      try { copied = document.execCommand('copy'); } catch { /* Manual selection remains available. */ }
+      message.textContent = copied ? 'Copied. Paste into chat.' : 'Press Ctrl+C / Cmd+C to copy the selected results.';
+    }
+  });
+  refresh();
+})();
+"""
+
 def build(index_path, output, *, pending_only=False, map_name=None):
     index_path = Path(index_path).resolve(strict=True)
     output = Path(output).resolve()
@@ -133,12 +200,30 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                 raise RuntimeError(f"Review report copy differs: {source}")
             reports[key] = {"source": str(source), "file": relative, "sha256": digest}
             report_links.append(f'<a href="{relative}" target="_blank">{label}</a>')
-        cards.append(f'<article id="{asset_id}"><h2>{number}. {html.escape(item["name"])}</h2>'
+        binding = {'images': {key: value['sha256'] for key, value in evidence.items()},
+                   'reports': {key: value['sha256'] for key, value in reports.items()}}
+        if item.get('model'):
+            model = Path(item['model'])
+            if not model.is_absolute():
+                model = index_path.parent / model
+            binding['model'] = hashlib.sha256(model.read_bytes()).hexdigest()
+        revision = hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest()
+        approval_disabled = '' if item['status'] == 'ready-for-user' and item.get('technical_eligible', True) else ' disabled'
+        controls = (f'<fieldset class="feedback"><legend>Your review</legend>'
+                    f'<label>Decision <select class="decision" aria-label="Decision for {asset_id}">'
+                    '<option value="">Not decided</option>'
+                    f'<option value="approved"{approval_disabled}>Approve</option>'
+                    '<option value="needs refinement">Needs refinement</option></select></label>'
+                    f'<label>Feedback <textarea class="review-note" rows="2" '
+                    f'aria-label="Feedback for {asset_id}" placeholder="What should change, or any notes?"></textarea></label>'
+                    '<span class="draft-status" aria-live="polite"></span></fieldset>')
+        cards.append(f'<article id="{asset_id}" data-review-revision="{revision[:16]}"><h2>{number}. {html.escape(item["name"])}</h2>'
                      f'<p><code>{html.escape(item["id"])}</code></p>'
                      f'<p class="status">{html.escape(item["status"])}</p>'
                      f'<p>{html.escape(notes)}</p><p>{" · ".join(report_links)}</p>'
-                     f'<div class="sheets">{"".join(figures)}</div></article>')
-        records.append({**item, "number": number, "images": evidence, "reports": reports})
+                     f'{controls}<div class="sheets">{"".join(figures)}</div></article>')
+        records.append({**item, "number": number, "images": evidence, "reports": reports,
+                        "review_revision": revision})
     nav = "".join(f'<a href="#{item["id"]}">{n}. {html.escape(item["name"])}</a>' for n, item in enumerate(items, 1))
     document = '''<!doctype html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -149,6 +234,12 @@ nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}a{color:#afd3ff}nav a{padd
 article{padding:20px 0 40px;border-top:1px solid #455064;scroll-margin-top:15px}.status{color:#ffd898;font-weight:600}
 .sheets{display:grid;grid-template-columns:1fr 1fr;gap:16px}figure{margin:0}figcaption{padding:8px 0;color:#c2cddd}
 img{display:block;width:100%;background:black}select{font:inherit;padding:6px;border-radius:5px}
+.feedback{margin:16px 0;padding:12px;border:1px solid #455064;border-radius:6px;display:grid;gap:8px}
+.feedback label{display:grid;gap:4px}.feedback select{width:fit-content}
+textarea{font:inherit;width:100%;padding:8px;background:#202731;color:#eee;border:1px solid #65758c;border-radius:5px;resize:vertical}
+button{font:inherit;padding:8px 14px;cursor:pointer;border-radius:5px}.draft-status,#copy-status{color:#b9d4b8;font-size:14px}
+.review-export{position:sticky;bottom:0;background:#202731;border-top:1px solid #65758c;padding:12px 24px;z-index:2}
+.review-export details{max-width:1000px}.review-export textarea{max-height:220px}
 table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px;border-bottom:1px solid #455064;overflow-wrap:anywhere}
 [hidden]{display:none!important}
 figure[data-kind$=context] img{width:auto;max-width:100%;max-height:400px}figure[data-kind$=context]{grid-column:1/-1}
@@ -170,6 +261,11 @@ Click any sheet for its full resolution. Review status does not imply user appro
 <option value="textured">Original textures + gray</option></select></label>
 <label>Assets <select id="readiness"><option value="all">All pending assets</option>
 <option value="ready">Ready for review</option></select></label><nav>'''+nav+'''</nav></header><main>'''+"".join(cards)+missing_section+'''</main>
+<footer class="review-export"><button id="copy-reviews" type="button">Copy review results</button>
+<span id="review-count"></span> <span id="copy-status" role="status"></span>
+<details id="export-details"><summary>Preview / copy manually</summary>
+<textarea id="review-export" readonly rows="5" aria-label="Review results to paste into chat"></textarea></details>
+<small> Choices are saved in this browser for this revision. Paste the results into chat to submit them.</small></footer>
 <script>
 document.querySelector('#mode').addEventListener('change',e=>document.body.dataset.mode=e.target.value);
 document.querySelector('#readiness').addEventListener('change',event=>{
@@ -181,7 +277,7 @@ document.querySelector('#readiness').addEventListener('change',event=>{
     if(link) link.hidden=hidden;
   }
 });
-</script></body></html>'''
+</script><script>'''+FEEDBACK_SCRIPT+'''</script></body></html>'''
     (output / "index.html").write_text(document)
     (output / "evidence.json").write_text(json.dumps({"source_index": str(index_path), "items": records,
                                                     "without_packets": missing}, indent=2)+"\n")

@@ -67,11 +67,44 @@ try {
   })()`);
   result.expectedCards = evidence.items.length;
   result.expectedReadyCards = evidence.items.filter(item => item.status === 'ready-for-user').length;
+  await evaluate(ws, ++id, `void (async () => {
+    const cards = [...document.querySelectorAll('article[data-review-revision]')];
+    if (cards.length < 2) throw new Error('Missing per-asset feedback controls');
+    const first = cards[0], second = cards[1];
+    const select = first.querySelector('.decision');
+    const note = second.querySelector('.review-note');
+    select.value = 'approved'; select.dispatchEvent(new Event('change'));
+    note.value = 'Fix roof <corner>\\nplease'; note.dispatchEvent(new Event('input'));
+    const expected = document.title + '\\n' + first.id + ': approved [review ' + first.dataset.reviewRevision +
+      ']\\n' + second.id + ': feedback — Fix roof <corner> please [review ' + second.dataset.reviewRevision + ']';
+    const exported = document.querySelector('#review-export').value === expected;
+    const saved = JSON.parse(localStorage.getItem('model-review-v1:' + document.title + ':' + first.id + ':' + first.dataset.reviewRevision));
+    let copied = '';
+    Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText:async text => { copied = text; }}});
+    document.querySelector('#copy-reviews').click();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const clipboard = copied === expected;
+    Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText:async () => { throw new Error('Denied'); }}});
+    document.querySelector('#copy-reviews').click();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const fallback = document.querySelector('#export-details').open && document.querySelector('#review-export').value === expected;
+    select.value = ''; select.dispatchEvent(new Event('change'));
+    note.value = ''; note.dispatchEvent(new Event('input'));
+    document.querySelector('#export-details').open = false;
+    return {exported, saved:saved.decision === 'approved', clipboard, fallback,
+      emptyDisabled:document.querySelector('#copy-reviews').disabled};
+  })().then(value => window.feedbackCheck = value).catch(error => window.feedbackCheck = {error:String(error)})`);
+  for (let attempt = 0; attempt < 100; attempt++) {
+    if (await evaluate(ws, ++id, '!!window.feedbackCheck')) break;
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  result.feedback = await evaluate(ws, ++id, 'window.feedbackCheck || {}');
   result.status = result.cards === result.expectedCards && result.cards > 0 && result.namedCards &&
     result.reportLinks && result.navigation === result.cards && result.solidToggle &&
     result.readyFilter && result.readyCards === result.expectedReadyCards && result.readyNavigation === result.readyCards &&
     result.firstImages.every(image => image.loaded) && result.failedImages.length === 0 &&
-    !result.horizontalOverflow ? 'PASS' : 'FAIL';
+    !result.horizontalOverflow && ['exported', 'saved', 'clipboard', 'fallback', 'emptyDisabled']
+      .every(key => result.feedback[key] === true) ? 'PASS' : 'FAIL';
   await writeFile(join(output, 'gallery-browser.json'), JSON.stringify(result, null, 2) + '\n');
   const screenshot = await new Promise((resolve, reject) => {
     const request = ++id;

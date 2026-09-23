@@ -31,16 +31,38 @@ class StableGalleryLinks(unittest.TestCase):
             retained = first_records[1]['images']['solid']
             items.pop(0)
             remaining = build()[0]
+            self.assertEqual(remaining['review_revision'], first_records[1]['review_revision'])
             self.assertEqual(remaining['images']['solid']['file'], retained['file'])
             self.assertIn('id="second"', (output / 'index.html').read_text())
             self.assertIn('href="#second"', (output / 'index.html').read_text())
             source.write_bytes(b'revised image fixture')
-            revised = build()[0]['images']['solid']
+            revised_record = build()[0]
+            self.assertNotEqual(revised_record['review_revision'], remaining['review_revision'])
+            revised = revised_record['images']['solid']
             self.assertNotEqual(revised['file'], retained['file'])
             for record in (retained, revised):
                 self.assertEqual(hashlib.sha256((output / record['file']).read_bytes()).hexdigest(),
                                  record['sha256'])
             self.assertTrue(list((output / 'history').glob('*/index.html')))
+
+    def test_model_revision_and_blocked_approval(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'source.png'
+            source.write_bytes(b'image')
+            model = root / 'model.blend'
+            model.write_bytes(b'geometry one')
+            manifest = root / 'manifest.json'
+            manifest.write_text(json.dumps({'items': [{'id': 'asset', 'name': 'Asset',
+                'status': 'fix-needed', 'model': str(model), 'solid': str(source), 'textured': str(source)}]}))
+            output = root / 'gallery'
+            gallery.build(manifest, output)
+            first = json.loads((output / 'evidence.json').read_text())['items'][0]['review_revision']
+            self.assertIn('<option value="approved" disabled>', (output / 'index.html').read_text())
+            model.write_bytes(b'geometry two')
+            gallery.build(manifest, output)
+            second = json.loads((output / 'evidence.json').read_text())['items'][0]['review_revision']
+            self.assertNotEqual(first, second)
 
 
 if __name__ == '__main__':
