@@ -36,11 +36,25 @@ def make_evidence(w,old):
   im=Image.open(folder/'modified/textured.png').crop((0,0,256,320)).resize((384,480));sheet.paste(im,(i*384,30));d.text((i*384+6,7),label,fill='black')
  sheet.save(w/'inspection/source-comparison.png')
 
+def verify():
+ acquire();select_tooling(WORK/'tooling/58744eeaf71a21e9')
+ import bpy
+ asset='nottingham-castle-west-stair-tower';old=WORK/'round-1/assets'/asset;w=WORK/'round-26/assets'/asset
+ def outside():
+  return {o.name:dict(uv={u.name:[tuple(v.uv) for v in u.data] for u in o.data.uv_layers},materials=[m.name if m else None for m in o.data.materials],slots=[p.material_index for p in o.data.polygons]) for o in bpy.data.objects if o.type=='MESH' and o.get('asset_group')!=asset}
+ bpy.ops.wm.open_mainfile(filepath=str(old/'model.blend'));g=geometry();uv=outside()
+ bpy.ops.wm.open_mainfile(filepath=str(w/'model.blend'));assert g==geometry(),'Full scene geometry changed'
+ after=outside();assert set(uv)==set(after),'Outside mesh inventory changed'
+ changed=[n for n in uv if after[n]!=uv[n]]
+ report=dict(status='PASS' if not changed else 'FAIL',changed_objects=changed,checked_meshes=len(uv),model_sha256=sha(w/'model.blend'),previous_model_sha256=sha(old/'model.blend'),geometry_identical=True)
+ write(w/'outside-projection-validation.json',report);assert not changed,changed;print(report,flush=True)
+
 def audit():
  acquire();select_tooling(WORK/'tooling/58744eeaf71a21e9')
  from audit_stored_materials import run
  w=WORK/'round-26/assets/nottingham-castle-west-stair-tower'
  print(run(w,w/'inspection/stored-materials-final',render=True,export=True))
 if __name__=='__main__':
- if '--audit' in sys.argv:audit()
+ if '--verify' in sys.argv:verify()
+ elif '--audit' in sys.argv:audit()
  else:main()
