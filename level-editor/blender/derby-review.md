@@ -1,5 +1,20 @@
 # Derby asset refinement review
 
+Publication12 is LIVE. All39 existing catalog groups now have their approved
+geometry and texture-fill handoffs integrated in the map and standalone
+library. The browser viewport passes39groups/270parts, group/part picking and
+Main Hall covered/revealed switching. All82 published targets independently
+match staged hashes; backups retained. Generated provenance is present for
+39/39 groups; this is not a claim of perfect texture coverage on hidden
+undersides or absence of preserved source-art seams.
+
+Only the newly approved second drawbridge remains in the current publication
+queue. Its two endpoint bakes are complete. Publication13 will add its mission
+source and Raised/Lowered asset variants, plus a scoped landing268 correction:
+140 source samples were assigned bridge pixels, and clean original masonry
+replaces them. The actual render changes134 pixels, all inside that support;
+geometry, UVs and other atlas texels are unchanged.
+
 Publication12 is staged:14 recovered groups/components,66 imported meshes and
 54 disjoint source nodes. All39 catalog groups now have generated-material
 provenance in this staged export. Imported geometry/materials match their
