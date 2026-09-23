@@ -161,12 +161,24 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
             by_face.setdefault(triangle.polygon_index, []).append(triangle)
         islands = []
         preserved = 0
+        physical_opacity_preserved = 0
         degenerate = 0
         for face in mesh.polygons:
             if receiver_face_indices is not None and face.index not in receiver_face_indices.get(obj.name, []):
                 preserved += 1
                 continue
             mat = mesh.materials[face.material_index] if mesh.materials else None
+            if mat and mat.get('foliage_physical_opacity'):
+                contract = {'opacity_semantics': 'physical-coverage',
+                            'source_ownership_semantics': 'separate-mask',
+                            'source_ownership_channel': 'vertex-color-r'}
+                if any(mat.get(key) != value for key, value in contract.items()):
+                    raise ValueError('Physical foliage opacity requires separate ownership metadata: ' + mat.name)
+                # Source-only rebaking cannot reconstruct authored leaf coverage;
+                # alpha here is physical opacity, never an ownership channel.
+                preserved += 1
+                physical_opacity_preserved += 1
+                continue
             if (preserve_authored and obj.get("source_node") not in reproject_authored_nodes
                     and mat and mat.get("projection_preserve")
                     and (not mat.get("source_ownership_bake") or mat.get("generated_source_sha256"))):
@@ -187,6 +199,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
             islands.append((face.index, origin, axis, vertical, normal, low, size, w, h))
         if not islands:
             report["objects"].append({"object": obj.name, "authored_faces_preserved": preserved,
+                                      "physical_opacity_faces_preserved": physical_opacity_preserved,
                                       "degenerate_faces_unchanged": degenerate})
             continue
         area = sum((island[7]+4)*(island[8]+4) for island in islands)
@@ -347,7 +360,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                                   "known_texels": known, "unknown_texels": unknown,
                                   "exterior_fallback_known_texels": fallback_known,
                                   "mask_rejected_texels": mask_rejected, "source_mask_constrained": masks is not None,
-                                  "atlas_size": [width, height], "authored_faces_preserved": preserved})
+                                  "atlas_size": [width, height], "authored_faces_preserved": preserved,
+                                  "physical_opacity_faces_preserved": physical_opacity_preserved})
         obj['reprojection_ownership_label'] = projection_label
         obj['reprojection_ownership_source_sha256'] = source_hash
         obj['reprojection_known_texels'] = known
