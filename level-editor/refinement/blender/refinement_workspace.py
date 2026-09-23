@@ -306,6 +306,15 @@ def _ownership(config):
 
 def _review_layers(config):
     if not config.get("projection_manifest"):
+        from projection_context import ground_exclusion
+        objects = _objects(config)
+        exclusion = ground_exclusion(config, objects)
+        if exclusion:
+            nodes = {o.get('source_node') for o in objects if o.type == 'MESH' and not o.hide_render}
+            return [{'source_path':config['source_path'], 'projection_label':'exterior',
+                     'receiver_nodes':_active_owned_nodes(config, objects),
+                     'occluder_nodes':sorted(nodes - {exclusion['excluded_source_node']}),
+                     'ground_context_exclusion':exclusion}]
         return None
     from interior_layers import (projection_receivers, projection_occluders,
                                  validate_projection_reviews, projection_component_exclusions,
@@ -396,6 +405,12 @@ def _reproject(config, report_dir):
                                 exterior_source=_mission_review_source(config),
                                 source_mask_manifest=config.get('source_mask_manifest'),
                                 **({'ownership_asset_id': config['asset_id']} if config.get('component_ownership') else {}))
+    from projection_context import ground_exclusion
+    exclusion = ground_exclusion(config, objects)
+    occluder_scope = {}
+    if exclusion:
+        occluder_scope['occluder_nodes'] = sorted({o.get('source_node') for o in objects
+            if o.type == 'MESH' and not o.hide_render and o.name != exclusion['object_name']})
     report = reproject_map(config["map_name"], config["source_path"],
                            Path(report_dir) / "source.json",
                            elevation_deg=config["elevation_degrees"], **ownership_scope)
@@ -406,7 +421,10 @@ def _reproject(config, report_dir):
                                receiver_nodes=active_nodes,
                                elevation_deg=config['elevation_degrees'],
                                preserve_authored=False,
-                               source_mask_manifest=config.get('source_mask_manifest'), **ownership_scope)
+                               source_mask_manifest=config.get('source_mask_manifest'), **ownership_scope, **occluder_scope)
+    if exclusion:
+        report['ownership']['ground_context_exclusion'] = exclusion
+        _json(Path(report_dir) / 'ownership.json', report['ownership'])
     return report
 
 
@@ -422,7 +440,7 @@ def _render(config, output, baseline=None):
                          framing_padding=config.get('framing_padding', 1.04),
                          projection_layers=_review_layers(config),
                          source_mask_manifest=config.get('source_mask_manifest'),
-                         allow_projection_revision=bool(baseline and config.get('projection_manifest')),
+                         allow_projection_revision=bool(baseline and (config.get('projection_manifest') or config.get('source_projection_ground_exclusion'))),
                          allow_mask_revision=bool(baseline and mask_evidence))
     if config.get('component_ownership'):
         result['component_ownership'] = config['component_ownership']

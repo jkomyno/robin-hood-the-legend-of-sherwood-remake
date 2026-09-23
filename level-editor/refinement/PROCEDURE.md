@@ -179,6 +179,19 @@ projection/export script to generate the complete `modified/` packet:
 Inspect every modified view. A clean solid silhouette does not prove that the
 projected texture is aligned.
 
+For an exterior-only workspace, an inaccurate generic ground plane may be
+excluded from source-ray occlusion with an explicit
+`source_projection_ground_exclusion` in `workspace.json`. It must contain
+`version: 1`, the exact `asset_id` and `object_name`, a nonempty `rationale`,
+`source_sha256`, and an absolute `evidence` path with `evidence_sha256`.
+The helper accepts only one existing, visible, nonreceiver mesh whose unique
+source node is `ground`. It rejects absent/shared names, changed evidence,
+receiver exclusions, and layered workspaces. This changes neither the ground
+model nor display geometry. Native masks, self-occlusion and all other source
+occluders remain active. The full declaration is saved in ownership and camera
+review records. Use this only when source artwork demonstrates a terrain-depth
+mismatch, and record the terrain requirement for later integration.
+
 ## 7. Review and approval gate
 
 Build a review gallery from the candidate manifest. It must show:
