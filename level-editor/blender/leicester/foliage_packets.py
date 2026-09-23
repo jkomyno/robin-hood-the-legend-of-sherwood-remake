@@ -34,7 +34,8 @@ def run(workspace):
     handoff.update(status='fix-needed',recipe='foliage_trees.py',all_eight_views_inspected=False,
                    geometry_approval='not-approved',texture_generation='not-started',
                    notes=report['limitations']+['New physical foliage cutout candidate awaits all-eight-view review.'],
-                   exact_user_feedback=feedback)
+                   exact_user_feedback=feedback,
+                   current_revision_blockers=['Refreshed eight-view packet requires independent visual inspection and user geometry review.'])
     (workspace/'handoff.json').write_text(json.dumps(handoff,indent=2)+'\n')
     if json.loads((workspace/'user-feedback.json').read_text())!=feedback:
         raise ValueError('Feedback changed')
