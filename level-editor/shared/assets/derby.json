@@ -5,22 +5,42 @@
     {
       "id": "derby-lower-east-cottage-barrel",
       "name": "Lower Bailey East Cottage Barrel",
-      "parts": [{ "obstacle": 51, "name": "Upright yard barrel" }]
+      "parts": [
+        {
+          "obstacle": 51,
+          "name": "Upright yard barrel"
+        }
+      ]
     },
     {
       "id": "derby-lower-northwest-cottage-barrel",
       "name": "Lower Bailey Northwest Cottage Barrel",
-      "parts": [{ "obstacle": 62, "name": "Upright yard barrel" }]
+      "parts": [
+        {
+          "obstacle": 62,
+          "name": "Upright yard barrel"
+        }
+      ]
     },
     {
       "id": "derby-lower-northwest-yard-fence",
       "name": "Lower Bailey Northwest Yard Fence",
-      "parts": [{ "obstacle": 63, "name": "Timber yard fence" }]
+      "parts": [
+        {
+          "obstacle": 63,
+          "name": "Timber yard fence"
+        }
+      ]
     },
     {
       "id": "derby-lower-northwest-wash-tub",
       "name": "Lower Bailey Northwest Wash Tub",
-      "parts": [{ "obstacle": 64, "name": "Wooden wash tub" }]
+      "parts": [
+        {
+          "obstacle": 64,
+          "name": "Wooden wash tub"
+        }
+      ]
     },
     {
       "id": "derby-south-gatehouse",
@@ -1293,6 +1313,24 @@
         {
           "obstacle": 222,
           "name": "Roof turret conical cap / segment 03"
+        }
+      ]
+    },
+    {
+      "id": "derby-second-drawbridge",
+      "name": "Second Courtyard Drawbridge",
+      "parts": [
+        {
+          "node": "mission-second-drawbridge",
+          "name": "Drawbridge endpoint",
+          "mission_profile": "Derby - Pont_levis02",
+          "native_patch_preview": {
+            "mission": "H03_Der_MK",
+            "mission_sha256": "2bc6d1227af04267e754fcdfef2b6dbb2466b25756b5207479b4c569f9268d2f",
+            "patch_index": 1,
+            "profile": "Derby - Pont_levis02",
+            "state": "initial"
+          }
         }
       ]
     }

@@ -1,36 +1,40 @@
 # Derby asset refinement review
 
-Publication12 is LIVE. All39 existing catalog groups now have their approved
-geometry and texture-fill handoffs integrated in the map and standalone
-library. The browser viewport passes39groups/270parts, group/part picking and
-Main Hall covered/revealed switching. All82 published targets independently
-match staged hashes; backups retained. Generated provenance is present for
-39/39 groups; this is not a claim of perfect texture coverage on hidden
-undersides or absence of preserved source-art seams.
+Publication 13 is LIVE. All 40 catalog groups have their approved geometry and
+texture-fill handoffs integrated in the map and standalone asset library.
+The browser viewport passes 40 groups / 271 parts, group/part picking and Main
+Hall covered/revealed switching. Promotion includes the authored catalog,
+scene, editor document and both second-drawbridge endpoint assets; rollback
+backups are retained. All 86 published files independently match the staged
+hashes. All 25 review decisions are preserved and marked integrated; the
+pending-only gallery has zero candidates. No approved geometry or texture-fill
+handoffs remain queued for integration.
 
-Only the newly approved second drawbridge remains in the current publication
-queue. Its two endpoint bakes are complete. Publication13 will add its mission
-source and Raised/Lowered asset variants, plus a scoped landing268 correction:
-140 source samples were assigned bridge pixels, and clean original masonry
-replaces them. The actual render changes134 pixels, all inside that support;
-geometry, UVs and other atlas texels are unchanged.
+The second courtyard drawbridge is raised in the map. The asset picker offers
+Raised and Lowered static alternatives. Both use high-quality, two-reference
+OpenRouter Sunburst generation, with no API mask; raw outputs are retained and
+the local composites preserve every protected source pixel. Landing 268 now
+uses clean original masonry beneath 140 source samples previously contaminated
+by the bridge; the actual render changes 134 pixels within that support only.
+Geometry and UVs are unchanged. All 529 meshes outside this handoff are exact.
 
-Publication12 is staged:14 recovered groups/components,66 imported meshes and
-54 disjoint source nodes. All39 catalog groups now have generated-material
-provenance in this staged export. Imported geometry/materials match their
-validated handoffs;464 outside meshes are exact. Root inspected all14 actual
-eight-view bakes and the combined Lower West wall. The latter retains visible
-dark source-painted corner patches; they are not fully occluded. Browser
-verification remains pending, so publication11 is still live.
+This completes the approved static asset publication, not every possible scene
+feature. Rigid drawbridge animation remains unvalidated; full winch geometry is
+unresolved. Some hidden undersides are unobserved, and original painted shadows,
+small source textures and projection seams remain. Generated provenance for
+40/40 groups does not imply perfect coverage of every hidden texel.
 
-The second courtyard drawbridge's raised and lowered static endpoint geometry
-was explicitly approved for texture fill. Both high-quality, two-reference
-OpenRouter Sunburst generations and bakes are complete, with zero protected
-pixel changes and unchanged geometry. Publication13 will add its named mission
-asset with separate Raised/Lowered choices. Static variant support is tested
-and committed; no rigid lowering animation is claimed. Hidden undersides remain
-unobserved by the eight elevated views. Full winch geometry remains unresolved
-because the initial mechanism sprite is empty and the final fragment is small.
+Unchanged native mission previews preserve existing game-bake compatibility;
+edited previews are rejected explicitly. The legacy game baker reconstructs
+volume data and does not export the refined GLB geometry into game artwork.
+Older 270-part scenes remain compatible with the expanded catalog.
+
+Current evidence and full-map images are in
+`level-editor/work/derby-refinement/round-2/publication-13-second-drawbridge/`.
+The pending-only review gallery remains at
+`level-editor/work/derby-refinement/round-2/review-gallery-14/index.html`.
+
+## Earlier progress log (superseded by the current status above)
 
 Publication11 is LIVE. Lower West south's approved nodes023/042 now have the
 successful OpenRouter Sunburst bake in both the map and standalone asset
