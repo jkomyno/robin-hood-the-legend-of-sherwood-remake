@@ -9,10 +9,11 @@ from build_review_gallery import build
 from review_evidence import sha
 
 
-def collect(experiments, output, map_name):
+def collect(experiments, output, map_name, additional_experiments=()):
     experiments, output = Path(experiments).resolve(), Path(output).resolve()
     items = []
-    for experiment in sorted(experiments.iterdir()):
+    roots = {experiments, *(Path(path).resolve() for path in additional_experiments)}
+    for experiment in sorted({path.resolve() for root in roots for path in root.iterdir() if path.is_dir()}):
         review_path = experiment / 'texture-review.json'
         if not review_path.is_file():
             continue
@@ -60,5 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('experiments', type=Path)
     parser.add_argument('output', type=Path)
     parser.add_argument('--map-name', required=True)
+    parser.add_argument('--additional-experiments', type=Path, action='append', default=[],
+                        help='Include another immutable experiment root without relocating its evidence')
     args = parser.parse_args()
-    print(json.dumps(collect(args.experiments, args.output, args.map_name)))
+    print(json.dumps(collect(args.experiments, args.output, args.map_name, args.additional_experiments)))
