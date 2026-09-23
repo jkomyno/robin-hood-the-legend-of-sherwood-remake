@@ -7,6 +7,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'blender'))
 from build_review_gallery import build
 from review_evidence import sha
+from texture_decisions import bind as bind_texture_decision
 
 
 def validate_reconciliation_reference(validation):
@@ -44,6 +45,8 @@ def validate_planar_bake(experiment, validation):
 def collect(experiments, output, map_name, additional_experiments=()):
     experiments, output = Path(experiments).resolve(), Path(output).resolve()
     items = []
+    decisions_path = output / 'decisions.json'
+    decisions = json.loads(decisions_path.read_text())['decisions'] if decisions_path.exists() else []
     roots = {experiments, *(Path(path).resolve() for path in additional_experiments)}
     for experiment in sorted({path.resolve() for root in roots for path in root.iterdir() if path.is_dir()}):
         review_path = experiment / 'texture-review.json'
@@ -86,10 +89,16 @@ def collect(experiments, output, map_name, additional_experiments=()):
             'validation': str(bake / 'validation.json'), 'review': str(review_path),
         })
     output.mkdir(parents=True, exist_ok=True)
+    for item in items:
+        bind_texture_decision(item, decisions)
+        if item['user_approval'] == 'approved':
+            item['notes'][0] = 'Texture explicitly approved for this baked revision.'
     manifest = output / 'texture-candidates.json'
     manifest.write_text(json.dumps({'map': map_name + ' texture', 'items': items}, indent=2) + '\n')
-    build(manifest, output / 'gallery', map_name=map_name + ' texture')
-    return {'gallery': str(output / 'gallery/index.html'), 'candidates': len(items)}
+    build(manifest, output / 'gallery', map_name=map_name + ' texture', pending_only=True)
+    return {'gallery': str(output / 'gallery/index.html'),
+            'candidates': sum(item['user_approval'] != 'approved' for item in items),
+            'approved': sum(item['user_approval'] == 'approved' for item in items)}
 
 
 if __name__ == '__main__':

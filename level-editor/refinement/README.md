@@ -66,3 +66,15 @@ For a single approved planar atlas, `prepare_planar_texture_packet.py` derives
 coverage from audited UV triangles without resizing the atlas. The paired
 `blender/bake_planar_texture.py` preserves UVs and geometry and retains all eight
 actual review views. See the planar exception in the procedure.
+
+Record explicit texture feedback separately from geometry approval:
+
+```sh
+python3 level-editor/refinement/texture_decisions.py <texture-gallery> <texture-review>/decisions.json <feedback.txt>
+```
+
+The recorder verifies every displayed revision and its current baked model,
+images and reports before recording the batch, then archives the selected
+evidence. Rebuilding with `build_texture_gallery.py` hides matching approved
+textures and retains the full candidate manifest. Changed evidence needs a new
+decision; recording approval does not publish the asset.
