@@ -114,6 +114,15 @@ def refine_hardware(workspace, asset_id, state):
         top_x=(first[1]+first[2]+1)/2;bottom_x=(last[1]+last[2]+1)/2
         top_depth=timber_depth(top_x)
         bottom_depth=line(deck,2,1,bottom_x) if state=='initial' else line(deck,1,0,bottom_x)
+        if state=='initial' and template.get('south_initial_slanted_leaf'):
+            from mathutils.bvhtree import BVHTree
+            leaf=BVHTree.FromPolygons([template.matrix_world@v.co for v in template.data.vertices],
+                                     [tuple(f.vertices) for f in template.data.polygons])
+            down=Vector((0,-SINE,-COSINE))
+            source_y=last[0]+.5
+            hit,_,_,_=leaf.ray_cast(Vector((bottom_x,0,0))+down*source_y+toward*10000,-toward)
+            if hit is None:raise ValueError('Measured initial chain misses corrected leaf contact')
+            bottom_depth=-hit.y*SINE
         bottom_depth+=3.
         for kind,rows,thickness in [('lifting beam',beam_rows,8.),('chain',chain_rows,2.6)]:
             contour=profile(rows);front=[]

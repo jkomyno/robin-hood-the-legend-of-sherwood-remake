@@ -79,6 +79,9 @@ def main():
         faces=[tuple(reversed(range(n))),tuple(range(n,2*n))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
         replacement=object_mesh(obj.name+' restored leaf',vertices,faces,obj,collection)
         old=obj.data;obj.data=replacement.data;replacement.data=old;bpy.data.objects.remove(replacement,do_unlink=True)
+        if index==391 and args.state=='initial':
+            from bridges_south_initial import rebuild
+            slanted_leaf=rebuild(obj,native,json.loads(Path(config['source_mask_manifest']).read_text())['mask_inventory'])
         visible=index==(initial if args.state=='initial' else applied)
         obj.hide_render=not visible;obj.hide_viewport=not visible
         obj['drawbridge_state']= 'initial' if index==initial else 'applied'
@@ -106,7 +109,8 @@ def main():
     report={'asset_id':args.asset,'state':args.state,'recipe_sha256':sha(__file__),
        'endpoint_evidence_sha256':sha(statespath),'source_sha256':sha(source),'source_frame':record[args.state+'_graphic'],
        'changes':changes,'hardware':hardware,
-       'recipe_dependencies':{name:sha(Path(__file__).with_name(name)) for name in ['bridges_east_hardware.py','bridges_hardware.py']},
+       'recipe_dependencies':{name:sha(Path(__file__).with_name(name)) for name in ['bridges_east_hardware.py','bridges_hardware.py','bridges_south_initial.py']},
+       'south_initial_slant':slanted_leaf if args.asset=='leicester-south-drawbridge' and args.state=='initial' else None,
        'hinge_height':hinge,'exclusive_visible_leaf_count':sum(not o.hide_render for o in target),
        'status':'refinement in progress','projection_status':'STALE','source_supported':'Native endpoint images separately confirm raised initial and lowered applied leaves; the endpoint collision components identify their footprints. Lower raised leaf is trimmed to adjacent deck hinge height.',
        'limitations':['Chains use slender closed envelopes; individual links and coupled mechanism geometry remain unmodeled.','Endpoint composites apply this bridge independently; simultaneous coupled mechanism state not validated.','Native collision slab depth approximates timber thickness; all hidden faces remain neutral.', 'East village raised hinge width is reconciled with its lowered deck; upper extent uses the same physical leaf length and remains inferred behind the tower.','The two endpoint meshes are explicit states; no interpolated hinge animation has been approved.']}
