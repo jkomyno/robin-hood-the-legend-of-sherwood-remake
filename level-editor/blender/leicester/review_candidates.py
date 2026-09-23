@@ -208,6 +208,8 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
                                    'without_packets': without_packets}, indent=2) + '\n')
     texture_reports = sorted({p.resolve() for root in (assets.parent / 'textures', assets.parent.parent / 'textures')
                               for p in root.glob('*/generation-*/generation.json')})
+    publication_path = assets.parent.parent / 'publication.json'
+    publication = json.loads(publication_path.read_text()) if publication_path.exists() else {}
     (output / 'progress.json').write_text(json.dumps({'map': 'Leicester', 'groups': progress,
         'total': len(progress), 'catalog_groups': len(catalog['groups']),
         'supplemental_count': int(ground_workspace is not None),
@@ -218,7 +220,8 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
         'texture_generation': 'attempts-recorded' if texture_reports else 'not-started',
         'texture_generation_attempts': len(texture_reports),
         'texture_generation_reports': len(texture_reports),
-        'publication': 'not-started'}, indent=2) + '\n')
+        'publication': publication.get('status', 'not-started'),
+        'published_texture_assets': len(publication.get('published_asset_ids', []))}, indent=2) + '\n')
     build(manifest, output / 'gallery', pending_only=True)
     return {'manifest': str(manifest), 'groups': len(progress), 'packets': len(items)}
 
