@@ -130,7 +130,8 @@ def collect(experiments, output, map_name, additional_experiments=()):
         if not review_path.is_file():
             continue
         review = json.loads(review_path.read_text())
-        if review.get('status') in {'held', 'fix-needed', 'rejected', 'supplemental'}:
+        if review.get('status') in {'held', 'fix-needed', 'rejected', 'supplemental',
+                                  'in-progress', 'prepared', 'generation-pending', 'bake-pending'}:
             continue
         item, review, approval = candidate(experiment, map_name)
         attach_states(item, review, approval, experiment, map_name)

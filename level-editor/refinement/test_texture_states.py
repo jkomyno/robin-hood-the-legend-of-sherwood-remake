@@ -84,6 +84,13 @@ class TextureStateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Multiple ready texture candidates'):
             self.build()
 
+    def test_pending_bake_does_not_block_completed_candidates(self):
+        pending = self.experiments / 'pending'
+        pending.mkdir()
+        (pending / 'texture-review.json').write_text(json.dumps({'status': 'bake-pending'}))
+        result, items = self.build()
+        self.assertEqual(result['candidates'], 1)
+
     def test_changed_displayed_secondary_image_rejected(self):
         _, items = self.build()
         item = items[0]
