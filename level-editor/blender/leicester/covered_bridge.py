@@ -174,7 +174,7 @@ def update_evidence(workspace,config,parts):
     for key,values in [('receiver_nodes',{o['source_node'] for o in inside}),('partial_cover_nodes',{'building-212','building-214'})]:
         review[key]=sorted((set(review[key])-owned)|values)
     review['exclude_occluder_components']=[s for s in review['exclude_occluder_components'] if s['source_node'] not in owned]+[selector(o) for o in covers]
-    for label,objects in [('exterior',[o for o in parts if o['projection_component']!='front-rail' and o['source_node']!='building-183']),('interior-'+PATCH,inside)]:
+    for label,objects in [('exterior',[o for o in parts if o['projection_component'] in ('front-cover','front-roof')]),('interior-'+PATCH,inside)]:
         old=review['receiver_components'].get(label,[])
         review['receiver_components'][label]=[s for s in old if s['source_node'] not in owned]+[receiver(o) for o in objects]
     for state,hidden in [('covered',[o for o in inside if o['projection_component'] in ('front-rail','walkway')]),('revealed',covers)]:
@@ -190,11 +190,11 @@ def update_evidence(workspace,config,parts):
         rows=masks['projections'][label]['assignments'];rows[:]=[r for r in rows if r.get('source_node') not in owned]
         for obj in parts:
             component=obj['projection_component'];node=int(obj['source_node'][9:])
-            accepted=[278,279] if label=='exterior' else [309] if component=='front-rail' else [318] if node in (213,215) else [278,279]
-            rejected=[309,318] if label!='exterior' and node==183 else []
+            accepted=[278,279] if label=='exterior' else [309] if component=='front-rail' else [318] if node in (183,213,215) else [278,279]
+            rejected=[309] if label!='exterior' and node==183 else []
             rows.append(dict(source_node=obj['source_node'],projection_component=component,mask_indices=accepted,
                 exclude_mask_indices=rejected,reviewed=True,exclusions_reviewed=True,
-                exclusion_reason='Revealed floor excludes native foreground rail and retained back-wall/roof ownership.',
+                exclusion_reason='Revealed floor shares native318 composite with rear wall/roof; first-hit geometry separates those surfaces and native309 foreground rail is excluded.',
                 evidence='Paired covered/revealed crop1680,550..1950,830; native278/279 cover,309 five-post rail,318 rear wall/two holes and retained roof.'))
     mask_path.write_text(json.dumps(masks,indent=2)+'\n')
 
