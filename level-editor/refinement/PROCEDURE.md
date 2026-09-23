@@ -379,6 +379,15 @@ receiver ownership separate. The optional batch wrapper `bake_approved_packets.p
 takes a positional jobs JSON with `manifest`, `generated_image`, `output` and
 optional `source_blend`; it does not publish anything.
 
+When near-tie camera blending visibly averages incompatible generated details,
+a fresh experiment may explicitly set `texture_view_selection` to
+`best-facing-single` in its guarded `views.json`. Each unknown texel uses its
+highest-facing visible editable view; ties choose projected pixel density,
+then stable view index. The default remains `near-tie-blend`. Masks, source
+protection and first-hit checks are unchanged. Reuse cached generation only
+when approved inputs and model hashes match exactly, and inspect all eight
+actual views for newly introduced seams before accepting the result.
+
 For an exterior-only fill, declare `texture_receiver_object_names` in the bake
 manifest as the exact eligible mesh names. Keep the complete reviewed object
 set in the visibility scene and keep the original projection layers unchanged.
