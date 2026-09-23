@@ -62,7 +62,8 @@ def build(index_path, output, *, pending_only=False, map_name=None):
         if not re.fullmatch(r"[a-zA-Z0-9_-]+", asset_id):
             raise ValueError(f"Unsafe review identifier: {asset_id}")
         figures, evidence = [], {}
-        sheets = [("solid", "Solid geometry"), ("textured", "Original textures + shaded unknown surfaces")]
+        sheets = [("solid", item.get("solid_label", "Solid geometry")),
+                  ("textured", item.get("textured_label", "Original textures + shaded unknown surfaces"))]
         if item.get("context"):
             sheets.append(("context", "Original artwork with surrounding context"))
         for key, label in (("source_comparison", "Original artwork / before / corrected"),
@@ -97,7 +98,7 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             if hashlib.sha256(target.read_bytes()).hexdigest() != digest:
                 raise RuntimeError(f"Review image copy differs: {source}")
             evidence[key] = {"source": str(source), "file": relative, "sha256": digest}
-            figures.append(f'<figure data-kind="{key}"><figcaption>{label}</figcaption>'
+            figures.append(f'<figure data-kind="{key}"><figcaption>{html.escape(label)}</figcaption>'
                            f'<a href="{relative}" target="_blank"><img src="{relative}" '
                            f'loading="lazy" alt="{html.escape(item["name"])} — {label}"></a></figure>')
         notes = item.get("notes", "")
