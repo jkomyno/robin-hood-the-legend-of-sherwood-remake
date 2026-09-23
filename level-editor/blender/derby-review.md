@@ -1,5 +1,16 @@
 # Derby asset refinement review
 
+Manual Upper West rebuild is ready in the review gallery:
+`assets/derby-upper-west-curtain/candidates/user-corners-v1-contact/`.
+All 82 user corners independently reproject within 0.000393 source pixels;
+all 80 consecutive user segments are direct saved-mesh edges. Seven owned
+meshes are closed; 537 other objects unchanged. Keep-side hidden contact is
+retained beyond the short trace without adding transitions. Fresh projection
+and 48-degree views inspected. The packet's source-masks.json repartitions
+1518 existing pixels between 116/117 with unchanged authority union. Gallery
+includes actual mesh edges, user traces, original artwork and eight views.
+Awaiting user geometry approval; no new AI fill or live curtain publication.
+
 Publication9 is now LIVE: Main Hall covered/revealed material alternatives and
 28 reviewed cover meshes switch through the editor's interior preview. All 82
 promoted targets independently match staged hashes. Genuine reference renders
