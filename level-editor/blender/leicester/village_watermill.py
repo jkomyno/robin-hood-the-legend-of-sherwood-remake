@@ -123,3 +123,36 @@ def rails(workspace, config, update_masks=True):
         rows[:] = [row for row in rows if not (row.get('source_node') == 'building-076' and row.get('projection_component') in components)]
         rows.extend(assignments); path.write_text(json.dumps(contract,indent=2)+'\n')
     return {'components':reports,'horizontal_rails_per_run':2,'visible_posts':4,'inference':'Walkway corner at source2430,973 uses native platform elevation12.001game. Two-unit concealed timber thickness and planar depths require eight-view contact review.'}
+
+
+def stone_lip(workspace, config):
+    """Raised front channel coping, traced independently of the wheel mask."""
+    # Front cap edge; the eight-unit rearward thickness reaches the observed
+    # brighter back cap edge. Footing follows the native platform inner edge.
+    profile = [(2483.,963.),(2529.,952.),(2539.,941.),(2559.,937.),
+               (2564.,944.),(2613.,937.)]
+    def point(x, py):
+        game_y = 984. - (x-2483.)*29./130.
+        return Vector((x,-game_y/SINE,(game_y-py)/COSINE))
+    front=[point(x,y) for x,y in profile]
+    front += [Vector((front[-1].x,front[-1].y,12.001/COSINE)),
+              Vector((front[0].x,front[0].y,12.001/COSINE))]
+    depth=Vector((-29./130./SINE,1.,0.)).normalized()*8.
+    vertices=front+[v+depth for v in front];n=len(front)
+    faces=[tuple(reversed(range(n))),tuple(range(n,n*2))]
+    faces += [(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+    name='Leicester Mill Raised Stone Channel Lip'
+    obj=bpy.data.objects.get(name)
+    if obj is None:
+        obj=bpy.data.objects.new(name,bpy.data.meshes.new(name))
+        bpy.data.collections[config['collection_name']].objects.link(obj)
+    report=finish(obj,vertices,faces,name)
+    obj['source_node']='building-076';obj['asset_group']=config['asset_id']
+    obj['projection_component']='raised-stone-lip';obj['part_name']='Raised channel coping and central high stone'
+    path=Path(config['source_mask_manifest']);contract=json.loads(path.read_text())
+    rows=contract['projections']['exterior']['assignments']
+    rows[:]=[r for r in rows if r.get('projection_component')!='raised-stone-lip']
+    rows.append(dict(source_node='building-076',projection_component='raised-stone-lip',mask_indices=[19003],reviewed=True,evidence='watermill-inspection/lip-grid.png and lip-close.png: source-visible stepped stone coping; independently derived1850-pixel ownership, not wheel or flat walkway.'))
+    path.write_text(json.dumps(contract,indent=2)+'\n')
+    return dict(**report,front_cap_source_pixels=profile,hidden_thickness=8.,
+                inference='Depth follows native platform inner edge; hidden eight-unit coping depth inferred from visible bright cap width. Central high stone and sloped shoulder are source measured, within two pixels.')

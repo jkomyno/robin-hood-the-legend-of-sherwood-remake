@@ -19,7 +19,7 @@ def run(workspace, render=False):
     sys.path.insert(0,str(helpers))
     from refinement_workspace import validate, modified, _geometry
     from village_shells import repair
-    from village_watermill import wheel, rails, finish, SINE, COSINE
+    from village_watermill import wheel, rails, stone_lip, finish, SINE, COSINE
     validate(workspace)
     collection = bpy.data.collections[config['collection_name']]
     targets = [o for o in collection.all_objects if o.type=='MESH' and o.get('asset_group')==config['asset_id'] and not o.get('projection_component')]
@@ -61,14 +61,15 @@ def run(workspace, render=False):
     wheel_objects=[bynode[f'building-{n:03}'] for n in range(84,88)]
     wheel_report=wheel(wheel_objects)
     rail_report=rails(workspace,config)
+    lip_report=stone_lip(workspace,config)
     # Verify deterministic replacement rather than accumulating components.
     first={o.name:_geometry(o) for o in collection.all_objects if o.type=='MESH' and o.get('asset_group')==config['asset_id']}
-    wheel(wheel_objects);rails(workspace,config)
+    wheel(wheel_objects);rails(workspace,config);stone_lip(workspace,config)
     second={o.name:_geometry(o) for o in collection.all_objects if o.type=='MESH' and o.get('asset_group')==config['asset_id']}
     if first!=second:raise ValueError('Watermill detail recipe is not idempotent')
     outside=validate(workspace)
     report=dict(asset_id=config['asset_id'],shell_repairs=reports,native_shell_restoration=restored,shared_roof_seams=seams,
-                wheel=wheel_report,railings=rail_report,idempotence='PASS',outside_validation=outside,
+                wheel=wheel_report,railings=rail_report,stone_lip=lip_report,idempotence='PASS',outside_validation=outside,
                 limitations=['Wheel lower semicircle, spoke/paddle continuation and axial depth are inferred.',
                              'Attached hut closed plank door and wall joinery remain source artwork; window depth is not reconstructed.',
                              'Stone flume/channel lip geometry remains the imported channel hypothesis, not a hydraulic reconstruction.',

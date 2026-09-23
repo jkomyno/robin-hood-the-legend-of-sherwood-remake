@@ -34,10 +34,16 @@ def generate(root, output):
     # Native172 deliberately covers the spoke apertures and foreground stones.
     # Geometry supplies the aperture; this source-traced boundary removes the
     # stone lip that must never appear on the wooden wheel.
-    front_lip = [(2468,961),(2497,952),(2517,945),(2527,932),(2549,927),
-                 (2566,927),(2566,935),(2607,930),(2625,938),(2660,930),(2660,1040),(2468,1040)]
-    wheel = native(172) & ~polygon(front_lip) & ~native(175)
-    derived = [(19001,'platform',platform),(19002,'wheel',wheel)]
+    front_lip = [(2468,961),(2481,960),(2529,949),(2536,935),(2558,930),
+                 (2561,936),(2564,940),(2611,932),(2614,937),(2660,930),
+                 (2660,1040),(2468,1040)]
+    lip_outline = [(2481,960),(2529,949),(2536,935),(2558,930),
+                   (2561,936),(2564,940),(2611,932),(2614,937),
+                   (2617,941),(2560,954),(2482,969)]
+    lip = polygon(lip_outline) & ~native(175)
+    platform &= ~lip
+    wheel = native(172) & ~polygon(front_lip) & ~native(175) & ~lip
+    derived = [(19001,'platform',platform),(19002,'wheel',wheel),(19003,'stone-lip',lip)]
     counts = {}
     for index, label, bitmap in derived:
         path = output / f'{label}.png'
