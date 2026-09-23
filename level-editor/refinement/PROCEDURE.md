@@ -341,6 +341,14 @@ If the same polygon represents both room and exterior sides, a single UV/materia
 cannot independently texture those sides; a separate surface representation is
 required before treating that region as filled.
 
+If both states see the same side of a polygon, use explicit covered/revealed
+material variants; opposite-facing faces alone cannot separate those pixels.
+`blender/material_states.py` applies a complete reviewed polygon-to-material
+mapping and validates all slots before mutation. Keep both atlases and UV layers,
+export both state variants, and compare actual revealed renders byte-for-byte.
+The editor/patch integration must switch these materials with visibility; a
+covered-state export alone is not a completed revealed-state integration.
+
 Create a publication plan using the existing `stage_reviewed_publication.py`
 schema, binding baseline, catalog, scene/collection, map/source paths, imports,
 review manifests and a new output directory. Do not copy Derby's node IDs into
