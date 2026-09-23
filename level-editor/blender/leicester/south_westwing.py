@@ -274,6 +274,10 @@ def state_variants(workspace):
     for obj in originals:
         cover=obj.copy();cover.data=obj.data.copy();cover.name=obj.name+' / covered material state';collection.objects.link(cover)
         cover_selector=tag(cover,'retained-exterior-state');cover['reveal_component_role']='removable-cover'
+        cover['projection_state_variant_peer']=obj.name
+        cover['projection_state_variant_state']='covered'
+        obj['projection_state_variant_peer']=cover.name
+        obj['projection_state_variant_state']='revealed'
         interior_selector={'source_node':obj['source_node'],'projection_component':'retained-interior','patch_id':PATCH}
         review['receiver_components']['exterior'].append({'source_node':obj['source_node'],'projection_components':['retained-exterior-state'],'patch_id':PATCH})
         review['exclude_occluder_components'].append(cover_selector)
@@ -287,15 +291,66 @@ def state_variants(workspace):
     return records
 
 
+def authorize_state_pairs(workspace):
+    """Annotate existing reviewed exclusive twins without changing their meshes."""
+    from asset_reference_views import state_objects
+    collection=bpy.data.collections['Leicester Working']
+    manifest=json.loads(Path(initialize_working_projection(workspace)).read_text())
+    visibility=manifest['projection_reviews'][PATCH]['render_visibility']
+    objects=list(collection.all_objects)
+    selections={state:set(state_objects(objects,'leicester-west-wing',PATCH,visibility,state))
+                for state in ('covered','revealed')}
+    records=[]
+    for obj in objects:
+        if obj.get('asset_group')!='leicester-west-wing' or obj.get('projection_component')!='retained-interior':
+            continue
+        peers=[o for o in objects if o.get('source_node')==obj.get('source_node')
+               and o.get('projection_component')=='retained-exterior-state']
+        if len(peers)!=1:raise RuntimeError('Expected one reviewed material-state peer')
+        cover=peers[0]
+        def geometry(o):
+            return ([tuple(o.matrix_world@v.co) for v in o.data.vertices],
+                    [tuple(p.vertices) for p in o.data.polygons])
+        if geometry(obj)!=geometry(cover):raise RuntimeError('State pair geometry differs')
+        if not (obj in selections['revealed'] and obj not in selections['covered']
+                and cover in selections['covered'] and cover not in selections['revealed']):
+            raise RuntimeError('State pair lacks reviewed exclusive visibility')
+        for item,peer,state in ((obj,cover,'revealed'),(cover,obj,'covered')):
+            item['projection_state_variant_peer']=peer.name
+            item['projection_state_variant_state']=state
+        records.append({'source_node':obj['source_node'],'covered':cover.name,'revealed':obj.name,
+                        'identical_geometry':True,'reviewed_exclusive_visibility':True})
+    if len(records)!=9:raise RuntimeError('Expected nine reviewed retained material pairs')
+    (workspace/'inspection/state-pair-review.json').write_text(json.dumps(records,indent=2)+'\n')
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('workspace',type=Path);parser.add_argument('--receivers',action='store_true')
     parser.add_argument('--walkway',action='store_true')
     parser.add_argument('--returns',action='store_true')
     parser.add_argument('--state-variants',action='store_true')
+    parser.add_argument('--states-only',action='store_true',
+                        help='Refresh diagnostic state sheets without changing saved geometry or materials')
+    parser.add_argument('--state-pair-review',action='store_true')
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:]);workspace=args.workspace.resolve()
     if not json.loads((workspace/'inspection/input-review.json').read_text())['all_eight_views_inspected']:
         raise RuntimeError('Inspect frozen input before modifying')
     bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'),load_ui=False)
+    if args.state_pair_review:
+        if not args.states_only:raise RuntimeError('State-pair annotation requires --states-only')
+        authorize_state_pairs(workspace)
+        bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
+    if args.states_only:
+        from asset_reference_views import render_states
+        target=workspace/'inspection/states'
+        if target.exists():
+            history=workspace/'inspection/state-history';history.mkdir(exist_ok=True)
+            target.rename(history/uuid.uuid4().hex[:12])
+        render_states(workspace,target)
+        current=workspace/'modified';history=workspace/'history';history.mkdir(exist_ok=True)
+        current.rename(history/uuid.uuid4().hex[:12])
+        shutil.copytree(target/PATCH/'covered',current)
+        return
     if args.state_variants:
         report=json.loads((workspace/'geometry-report.json').read_text());report['material_state_variants']=state_variants(workspace)
     elif args.returns:
