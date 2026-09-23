@@ -90,9 +90,24 @@ try {
       cards[2].querySelector('.review-note').value === '' && document.querySelector('#review-export').value === expected;
     let copied = '';
     Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText:async text => { copied = text; }}});
+    // Late restoration after pageshow must not contaminate the export either.
+    select.value = 'needs refinement';
+    note.value = 'Late wrong-card feedback';
     document.querySelector('#copy-reviews').click();
     await new Promise(resolve => setTimeout(resolve, 0));
-    const clipboard = copied === expected;
+    const clipboard = copied === expected && select.value === 'approved' && note.value === 'Fix roof <corner>\\nplease';
+    const thirdDecision = cards[2].querySelector('.decision');
+    const thirdNote = cards[2].querySelector('.review-note');
+    thirdDecision.value = 'approved';
+    thirdNote.value = 'Deliberate feedback'; thirdNote.dispatchEvent(new Event('input'));
+    const noteOnly = document.querySelector('#review-export').value === expected + '\\n' + cards[2].id +
+      ': feedback — Deliberate feedback [review ' + cards[2].dataset.reviewRevision + ']';
+    thirdNote.value = ''; thirdNote.dispatchEvent(new Event('input'));
+    thirdNote.value = 'Restored onto wrong card';
+    thirdDecision.value = 'needs refinement'; thirdDecision.dispatchEvent(new Event('change'));
+    const decisionOnly = document.querySelector('#review-export').value === expected + '\\n' + cards[2].id +
+      ': needs refinement [review ' + cards[2].dataset.reviewRevision + ']';
+    thirdDecision.value = ''; thirdDecision.dispatchEvent(new Event('change'));
     Object.defineProperty(navigator, 'clipboard', {configurable:true, value:{writeText:async () => { throw new Error('Denied'); }}});
     document.querySelector('#copy-reviews').click();
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -100,7 +115,7 @@ try {
     select.value = ''; select.dispatchEvent(new Event('change'));
     note.value = ''; note.dispatchEvent(new Event('input'));
     document.querySelector('#export-details').open = false;
-    return {exported, saved:saved.decision === 'approved', restoration, clipboard, fallback,
+    return {exported, saved:saved.decision === 'approved', restoration, clipboard, noteOnly, decisionOnly, fallback,
       emptyDisabled:document.querySelector('#copy-reviews').disabled};
   })().then(value => window.feedbackCheck = value).catch(error => window.feedbackCheck = {error:String(error)})`);
   for (let attempt = 0; attempt < 100; attempt++) {
@@ -112,7 +127,7 @@ try {
     result.reportLinks && result.navigation === result.cards && result.solidToggle &&
     result.readyFilter && result.readyCards === result.expectedReadyCards && result.readyNavigation === result.readyCards &&
     result.firstImages.every(image => image.loaded) && result.failedImages.length === 0 &&
-    !result.horizontalOverflow && ['exported', 'saved', 'restoration', 'clipboard', 'fallback', 'emptyDisabled']
+    !result.horizontalOverflow && ['exported', 'saved', 'restoration', 'clipboard', 'noteOnly', 'decisionOnly', 'fallback', 'emptyDisabled']
       .every(key => result.feedback[key] === true) ? 'PASS' : 'FAIL';
   await writeFile(join(output, 'gallery-browser.json'), JSON.stringify(result, null, 2) + '\n');
   const screenshot = await new Promise((resolve, reject) => {

@@ -22,11 +22,21 @@ FEEDBACK_SCRIPT = r"""
   const message = document.querySelector('#copy-status');
   const namespace = 'model-review-v1:' + document.title + ':';
   const key = card => namespace + card.id + ':' + card.dataset.reviewRevision;
+  const drafts = new Map();
   const clean = value => value.replace(/\s+/g, ' ').trim();
+  function render(card) {
+    const draft = drafts.get(key(card));
+    const decision = card.querySelector('.decision');
+    const note = card.querySelector('.review-note');
+    if (decision.value !== draft.decision) decision.value = draft.decision;
+    if (note.value !== draft.note) note.value = draft.note;
+  }
   function refresh() {
+    cards.forEach(render);
     const lines = cards.flatMap(card => {
-      const decision = card.querySelector('.decision').value;
-      const note = clean(card.querySelector('.review-note').value);
+      const draft = drafts.get(key(card));
+      const decision = draft.decision;
+      const note = clean(draft.note);
       if (!decision && !note) return [];
       return [`${card.id}: ${decision || 'feedback'}${note ? ' — ' + note : ''} [review ${card.dataset.reviewRevision}]`];
     });
@@ -40,31 +50,43 @@ FEEDBACK_SCRIPT = r"""
     const status = card.querySelector('.draft-status');
     // Native form restoration can follow card positions after a gallery rebuild.
     // Only our asset-and-revision keyed draft may populate these controls.
-    decision.value = '';
-    note.value = '';
+    const draft = {decision: '', note: '', asset_id: card.id, revision: card.dataset.reviewRevision};
+    drafts.set(key(card), draft);
     status.textContent = '';
     try {
       const saved = JSON.parse(localStorage.getItem(key(card)) || 'null');
-      if (saved) {
+      if (saved && (!saved.asset_id || saved.asset_id === card.id) &&
+          (!saved.revision || saved.revision === card.dataset.reviewRevision)) {
         if ([...decision.options].some(option => option.value === saved.decision && !option.disabled)) {
-          decision.value = saved.decision;
+          draft.decision = saved.decision;
         }
-        note.value = typeof saved.note === 'string' ? saved.note : '';
+        draft.note = typeof saved.note === 'string' ? saved.note : '';
         status.textContent = 'Restored saved review';
       }
     } catch {
       status.textContent = 'Browser storage unavailable; copy your results before closing.';
     }
+    render(card);
   }
   for (const card of cards) {
     restore(card);
     const decision = card.querySelector('.decision');
     const note = card.querySelector('.review-note');
     const status = card.querySelector('.draft-status');
-    const save = () => {
+    const save = field => {
+      const draft = drafts.get(key(card));
+      // Read only the field being edited. Another control may contain a value
+      // restored by the browser; it must never enter our saved/exported record.
+      if (field === 'decision') {
+        if (![...decision.options].some(option => option.value === decision.value && !option.disabled)) {
+          refresh();
+          return;
+        }
+        draft.decision = decision.value;
+      } else draft.note = note.value;
       try {
-        if (!decision.value && !note.value) localStorage.removeItem(key(card));
-        else localStorage.setItem(key(card), JSON.stringify({decision: decision.value, note: note.value}));
+        if (!draft.decision && !draft.note) localStorage.removeItem(key(card));
+        else localStorage.setItem(key(card), JSON.stringify(draft));
         status.textContent = 'Saved in this browser';
       } catch {
         status.textContent = 'Could not save in this browser; copy your results before closing.';
@@ -72,12 +94,15 @@ FEEDBACK_SCRIPT = r"""
       message.textContent = '';
       refresh();
     };
-    decision.addEventListener('change', save);
-    note.addEventListener('input', save);
+    decision.addEventListener('change', () => save('decision'));
+    note.addEventListener('input', () => save('note'));
+    card.querySelector('.feedback').addEventListener('focusin', () => render(card));
   }
   window.addEventListener('pageshow', () => {
-    cards.forEach(restore);
     refresh();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refresh();
   });
   document.querySelector('#clear-reviews').addEventListener('click', () => {
     let clearedStorage = true;
@@ -90,8 +115,7 @@ FEEDBACK_SCRIPT = r"""
       clearedStorage = false;
     }
     for (const card of cards) {
-      card.querySelector('.decision').value = '';
-      card.querySelector('.review-note').value = '';
+      Object.assign(drafts.get(key(card)), {decision: '', note: ''});
       card.querySelector('.draft-status').textContent = '';
     }
     refresh();
