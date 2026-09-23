@@ -30,16 +30,22 @@ try {
   ws = new WebSocket(pages.find(page => page.type === 'page').webSocketDebuggerUrl);
   await socketOpen(ws);
   let id = 0;
+  console.log('Waiting for editor page');
   for (let i=0; i<100; i++) {
-    if (await evaluate(ws, ++id, `location.origin===${JSON.stringify(new URL(base).origin)} && document.readyState === "complete"`)) break;
+    try {
+      if (await evaluate(ws, ++id, `location.origin===${JSON.stringify(new URL(base).origin)} && document.readyState === "complete"`, {timeoutMs:30000})) break;
+    } catch(error) {
+      if(!String(error).includes('Cannot find default execution context'))throw error;
+    }
     await new Promise(resolve => setTimeout(resolve, 100));
   }
-  await evaluate(ws, ++id, `window.__stageConfig=${JSON.stringify({stageUrl,documentUrl:live?'/library/scenes/derby.level3d.json':'/@fs/'+stage+'/derby.level3d.json',expected})}`);
+  console.log('Loading staged map and validating runtime');
+  await evaluate(ws, ++id, `window.__stageConfig=${JSON.stringify({stageUrl,documentUrl:live?'/library/scenes/derby.level3d.json':'/@fs/'+stage+'/derby.level3d.json',expected})}`, {timeoutMs:30000});
   const script = await readFile(new URL('./verify_staged_editor_browser.js', import.meta.url), 'utf8');
   await evaluate(ws, ++id, script, {timeoutMs:180000});
   let result;
   for (let i=0; i<180; i++) {
-    result = await evaluate(ws, ++id, 'window.__stageCheck', {timeoutMs:10000});
+    result = await evaluate(ws, ++id, 'window.__stageCheck', {timeoutMs:30000});
     if (result) break;
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
