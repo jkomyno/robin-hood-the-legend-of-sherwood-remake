@@ -19,14 +19,19 @@ def apply(asset):
    rows.append(dict(source_node=o['source_node'],raised_base_vertices=count,contact_datum=100.00101))
   changes=['Raised buried wall and landing bottoms to the adjacent native courtyard elevation100; all crowns, visible upper edges and horizontal placement are unchanged.']
  elif asset.endswith('west-stair'):
-  o=targets[351];lo=[(292,1318),(328,1313)];hi=[(268,1207),(304,1201)];count=7;profile=[(0,100),(0,173)]
-  for i in range(count):profile.extend([(i/count,173+77*(i+1)/count),((i+1)/count,173+77*(i+1)/count)])
-  profile.append((1,100));v=[]
-  for a,b in zip(lo,hi):
-   for t,z in profile:
-    x=a[0]+t*(b[0]-a[0]);y=(a[1]+173)+t*((b[1]+250)-(a[1]+173));v.append(Vector((x,-y/S,z/C)))
+  o=targets[351]
+  # Individually observed right-hand pale tread bands, top to bottom.
+  back_pixels=[(303,1210),(306,1224),(310,1240),(314,1255),(318,1271),(321,1286),(324,1301)]
+  front_pixels=[(306,1215),(310,1229),(314,1245),(318,1260),(321,1276),(324,1291),(326,1306)]
+  levels=[250,241,230,220,209,199,189]
+  positions=[(x,y+z) for (x,y),z in zip(back_pixels,levels)]+[(326,1495)]
+  profile=[(*positions[-1],100),(*positions[-1],179)]
+  for i in reversed(range(7)):profile.extend([(*positions[i+1],levels[i]),(*positions[i],levels[i])])
+  profile.extend([(303,1451.3,250),(303,1451.3,100)]);v=[]
+  for dx,dy in [(-36,5),(0,0)]:
+   for x,y,z in profile:v.append(Vector((x+dx,-(y+dy)/S,z/C)))
   n=len(profile);f=[tuple(range(n)),tuple(reversed(range(n,2*n)))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
-  rows.append(dict(source_node='building-351',**replace_mesh(o,[o.matrix_world.inverted()@p for p in v],f),lower_corners=lo,upper_corners=hi,risers=7,lower_contact=173,upper_contact=250,riser_height=11))
+  rows.append(dict(source_node='building-351',**replace_mesh(o,[o.matrix_world.inverted()@p for p in v],f),tread_back_pixels=back_pixels,tread_front_pixels=front_pixels,risers=7,lower_contact=179,upper_contact=250,tread_levels=levels,trace_uncertainty_pixels=2))
   for other in objects:
    if other==o:continue
    inv=other.matrix_world.inverted()
@@ -75,6 +80,10 @@ def main():
  assert before=={o.name:digest(o) for o in bpy.context.scene.objects if o.type=='MESH' and o.get('asset_group')!=asset}
  after={o.name:digest(o) for o in bpy.context.scene.objects if o.type=='MESH'};apply(asset);assert after=={o.name:digest(o) for o in bpy.context.scene.objects if o.type=='MESH'}
  report.update(asset_id=asset,previous_workspace=str(old),tooling=tooling,idempotence='PASS',outside_objects_preserved=len(before),recipe_sha256=sha(__file__))
- write(new/'geometry-report.json',report);bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(new/'model.blend'));rw.modified(new)
+ write(new/'geometry-report.json',report);bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(new/'model.blend'))
+ if '--preview' in sys.argv:return
+ rw.modified(new)
+ from restore_foreign_uv_schema import restore_foreign_uv_schema
+ restore_foreign_uv_schema(new,apply=True)
  write(new/'candidate.json',dict(version=1,asset_id=asset,status='refinement-in-progress',model_sha256=sha(new/'model.blend'),modified_views_sha256=sha(new/'modified/views.json'),recipe=str(Path(__file__).resolve())))
 if __name__=='__main__':main()
