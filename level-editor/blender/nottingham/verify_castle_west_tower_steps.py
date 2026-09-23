@@ -29,3 +29,8 @@ for target in report['source_trace']:
 (w/'inspection').mkdir(exist_ok=True)
 (w/'inspection/steps-structure-validation.json').write_text(json.dumps(dict(status='PASS',model_sha256=hashlib.sha256((w/'model.blend').read_bytes()).hexdigest(),validation=validation,outside_geometry_uv_materials_preserved=True,unchanged_non330_geometry=True,changed_objects=changes,measured_corner_construction_checks=rows,actual_source_vertices=pixels,actual_mesh_edges=[list(e.vertices) for e in o.data.edges],nonmanifold_edges=0,degenerate_faces=0,signed_volume=volume),indent=2)+'\n')
 code=(Path(__file__).parent/'verify_workspace_known_rgb.py').read_text().replace("select_tooling(root/'tooling/94116d984f92dbae')","select_tooling(root/'tooling/58744eeaf71a21e9')");sys.argv=['verify_workspace_known_rgb.py','--',str(w)];exec(compile(code,str(Path(__file__).parent/'verify_workspace_known_rgb.py'),'exec'))
+
+from audit_stored_materials import run
+run(w,w/'inspection/stored-materials',render=True)
+sys.argv=['audit_castle_final_source_coverage.py','--',str(w)]
+exec(compile((Path(__file__).parent/'audit_castle_final_source_coverage.py').read_text(),str(Path(__file__).parent/'audit_castle_final_source_coverage.py'),'exec'))
