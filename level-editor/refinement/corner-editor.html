@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Battlement corner editor</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#14191f;color:#e8edf3;font:14px system-ui;display:grid;grid-template-columns:300px 1fr;height:100vh}aside{padding:20px;overflow:auto;background:#202731;border-right:1px solid #45505d}h1{font-size:20px;margin:0 0 8px}p{line-height:1.5;color:#b7c5d4}button,select,input{font:inherit;background:#303b49;color:#fff;border:1px solid #647284;border-radius:5px;padding:8px;max-width:100%}button{cursor:pointer}button:hover{background:#465568}button.active{background:#126455;border-color:#5ce8c2}button:disabled{opacity:.4;cursor:default}select{width:100%}label{display:block;margin:14px 0 6px}.row{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}.row input{width:85px}#paths{max-height:210px;overflow:auto;margin:8px 0}#paths button{display:block;width:100%;text-align:left;margin:4px 0;font-size:12px}.muted{font-size:12px;color:#aab8c8}main{position:relative;min-width:0;overflow:hidden}canvas{width:100%;height:100%;display:block;touch-action:none}#hud{position:absolute;bottom:14px;left:14px;background:#131b24e8;padding:9px 14px;border-radius:6px;pointer-events:none}#status{overflow-wrap:anywhere;line-height:1.4;color:#79dfb9}#name{width:100%}kbd{background:#394655;border-radius:3px;padding:0 4px}.error{color:#ff8a85!important}
+</style>
+<aside><h1>Battlement corners</h1><p>Trace the zigzag on the original artwork. Every dot is a source-image pixel coordinate.</p>
+<label for="asset">Model</label><select id="asset"></select>
+<div class="row"><button id="fit">Fit wall</button><button id="zoomIn">＋</button><button id="zoomOut">−</button></div>
+<div class="row"><button id="edit" class="active">Move corners</button><button id="draw">Draw zigzag</button></div>
+<button id="new">＋ New zigzag</button><div id="paths"></div>
+<input id="name" aria-label="Zigzag name"><label for="edge">Edge being traced</label><select id="edge"><option value="front">Front edge</option><option value="rear">Rear edge</option><option value="unspecified">Not specified</option></select>
+<div class="row"><button id="reverse">Reverse order</button><button id="removePath">Delete zigzag</button></div>
+<label>Selected corner (full image X / Y)</label><div class="row"><input id="x" type="number" step="1" aria-label="X coordinate"><input id="y" type="number" step="1" aria-label="Y coordinate"><button id="remove">Delete</button></div>
+<div class="row"><button id="undo">Undo</button><button id="redo">Redo</button></div>
+<label><input id="snap" type="checkbox" checked> Snap to whole pixels</label><label><input id="show" type="checkbox" checked> Show editable lines and corner numbers</label><label><input id="mesh" type="checkbox"> Show current mesh edges (red, read-only)</label>
+<div class="row"><button id="save">Save to disk</button><button id="download">Download JSON</button></div><div id="status">Loading…</div>
+<p class="muted">Drag dots to move them. Draw mode adds corners in order. <kbd>Shift</kbd> + click a line inserts a corner. Wheel zooms at the pointer. Right-drag or <kbd>Space</kbd> + drag pans. Arrow keys nudge a corner; Shift nudges 10 pixels. <kbd>Delete</kbd> removes it. <kbd>H</kbd> hides lines to inspect the art.</p>
+<p class="muted">Starting lines are the previous agent’s estimates, not approved landmarks. You can delete them and draw from scratch. Saving records constraints for the next Blender rebuild; it does not publish geometry.</p></aside>
+<main><canvas id="canvas"></canvas><div id="hud">Loading source artwork…</div></main>
+<script type="module">
+const $=id=>document.getElementById(id), canvas=$('canvas'),ctx=canvas.getContext('2d');
+let project, ai=0, pi=0, selected=-1, image, overlay, scale=1, ox=0, oy=0, mode='edit', space=false, drag=null, dirty=false, undo=[],redo=[];
+const asset=()=>project.assets[ai], path=()=>asset().paths[pi], clone=x=>structuredClone(x);
+const status=(s,error=false)=>{$('status').textContent=s;$('status').classList.toggle('error',error)};
+function snapshot(){undo.push({assets:clone(project.assets),ai,pi,selected});if(undo.length>150)undo.shift();redo=[];}
+function changed(){dirty=true;status('Unsaved changes');renderUI();draw();}
+function history(from,to){if(!from.length)return;to.push({assets:clone(project.assets),ai,pi,selected});const s=from.pop(),prior=ai;project.assets=s.assets;ai=s.ai;pi=s.pi;selected=s.selected;if(ai!==prior)loadImage();changed();}
+function renderUI(){
+ $('asset').value=ai;$('paths').replaceChildren();asset().paths.forEach((p,i)=>{const b=document.createElement('button');b.textContent=`${p.name} · ${p.points.length} corners`;b.classList.toggle('active',i===pi);b.onclick=()=>{pi=i;selected=-1;renderUI();draw()};$('paths').append(b)});
+ const p=path(),v=p?.points[selected];$('name').value=p?.name||'';$('edge').value=p?.edge||'unspecified';$('x').value=v?.[0]??'';$('y').value=v?.[1]??'';
+ for(const id of ['name','edge','reverse','removePath'])$(id).disabled=!p;
+ for(const id of ['x','y','remove'])$(id).disabled=!v;
+ $('undo').disabled=!undo.length;$('redo').disabled=!redo.length;
+}
+function fit(){const [l,t,r,b]=asset().crop;scale=Math.min((canvas.clientWidth-90)/(r-l),(canvas.clientHeight-90)/(b-t));ox=(canvas.clientWidth-(r-l)*scale)/2-l*scale;oy=(canvas.clientHeight-(b-t)*scale)/2-t*scale;draw();}
+function loadImage(){const index=ai;image=null;overlay=null;const next=new Image();next.onload=()=>{if(ai!==index)return;image=next;fit()};next.onerror=()=>status('Cannot load original artwork',true);next.src='/images/'+index;if(asset().overlay_path){const o=new Image();o.onload=()=>{if(ai===index){overlay=o;draw()}};o.src='/overlays/'+index}renderUI();}
+function draw(){
+ const dpr=devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr)}
+ ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#11161c';ctx.fillRect(0,0,w,h);if(!image)return;
+ ctx.save();ctx.translate(ox,oy);ctx.scale(scale,scale);ctx.imageSmoothingEnabled=false;ctx.drawImage(image,0,0);if($('mesh').checked&&overlay){const [l,t,r,b]=asset().overlay_crop;ctx.drawImage(overlay,l,t,r-l,b-t)}ctx.restore();
+ if($('mesh').checked&&asset().mesh_segments){ctx.strokeStyle='#ff5555';ctx.lineWidth=1;ctx.beginPath();for(const [a,b] of asset().mesh_segments){ctx.moveTo(a[0]*scale+ox,a[1]*scale+oy);ctx.lineTo(b[0]*scale+ox,b[1]*scale+oy)}ctx.stroke()}
+ if($('show').checked)asset().paths.forEach((p,j)=>{const active=j===pi,color=active?'#6bffd3':'#f9b95f';ctx.strokeStyle=color;ctx.lineWidth=active?2:1;ctx.beginPath();p.points.forEach(([x,y],i)=>{x=x*scale+ox;y=y*scale+oy;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();p.points.forEach(([x,y],i)=>{x=x*scale+ox;y=y*scale+oy;if(x< -30||x>w+30||y< -30||y>h+30)return;ctx.beginPath();ctx.arc(x,y,active&&i===selected?6:3.5,0,Math.PI*2);ctx.fillStyle=active&&i===selected?'#fff':color;ctx.fill();ctx.strokeStyle='#10202a';ctx.stroke();if(active){ctx.font='12px monospace';ctx.lineWidth=3;ctx.strokeText(i+1,x+8,y-7);ctx.fillStyle=color;ctx.fillText(i+1,x+8,y-7)}})});
+ $('hud').textContent=`${Math.round(scale*100)}% · ${asset().name} · ${mode==='draw'?'Click to append corners':'Drag corners / Shift-click to insert'}`;
+}
+function pos(e){const r=canvas.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]}
+function source(p){return p.map((v,i)=>Math.max(0,Math.min((i?image.height:image.width)-1,$('snap').checked?Math.round((v-(i?oy:ox))/scale):(v-(i?oy:ox))/scale)))}
+function nearest(p){let best=null,dist=12;asset().paths.forEach((line,j)=>line.points.forEach(([x,y],i)=>{const d=Math.hypot(p[0]-x*scale-ox,p[1]-y*scale-oy);if(d<dist){dist=d;best=[j,i]}}));return best;}
+function segment(p){let best=-1,distance=14;const pts=path()?.points||[];for(let i=1;i<pts.length;i++){const a=pts[i-1].map((v,j)=>v*scale+(j?oy:ox)),b=pts[i].map((v,j)=>v*scale+(j?oy:ox)),dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy||1))),d=Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);if(d<distance){distance=d;best=i}}return best;}
+canvas.oncontextmenu=e=>e.preventDefault();canvas.onpointerdown=e=>{if(!image)return;const p=pos(e);canvas.setPointerCapture(e.pointerId);if(e.button===2||e.button===1||space){drag={pan:true,p,ox,oy};return}if(e.button!==0)return;if(!$('show').checked){$('show').checked=true;draw();return}if(e.shiftKey){const i=segment(p);if(i>=0){snapshot();path().points.splice(i,0,source(p));selected=i;changed()}return}const n=nearest(p);if(n){[pi,selected]=n;snapshot();drag={point:true};renderUI();draw();return}if(mode==='draw'){snapshot();if(!path())asset().paths.push({id:crypto.randomUUID(),name:'New zigzag',edge:'front',points:[]}),pi=asset().paths.length-1;path().points.push(source(p));selected=path().points.length-1;changed()}else{selected=-1;renderUI();draw()}};
+canvas.onpointermove=e=>{if(!drag)return;const p=pos(e);if(drag.pan){ox=drag.ox+p[0]-drag.p[0];oy=drag.oy+p[1]-drag.p[1];draw()}else if(drag.point){path().points[selected]=source(p);changed()}};
+canvas.onpointerup=canvas.onpointercancel=()=>drag=null;
+function zoom(f,p=[canvas.clientWidth/2,canvas.clientHeight/2]){const old=scale;scale=Math.max(.1,Math.min(80,scale*f));ox=p[0]-(p[0]-ox)*scale/old;oy=p[1]-(p[1]-oy)*scale/old;draw()}
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(Math.exp(-e.deltaY*.0015),pos(e))},{passive:false});
+$('fit').onclick=fit;$('zoomIn').onclick=()=>zoom(1.5);$('zoomOut').onclick=()=>zoom(1/1.5);$('show').onchange=$('mesh').onchange=draw;
+function setMode(m){mode=m;$('draw').classList.toggle('active',m==='draw');$('edit').classList.toggle('active',m==='edit');draw()}
+$('edit').onclick=()=>setMode('edit');$('draw').onclick=()=>setMode('draw');
+$('new').onclick=()=>{snapshot();asset().paths.push({id:crypto.randomUUID(),name:`Zigzag ${asset().paths.length+1}`,edge:'front',points:[]});pi=asset().paths.length-1;selected=-1;setMode('draw');changed()};
+$('removePath').onclick=()=>{if(!path())return;snapshot();asset().paths.splice(pi,1);pi=Math.max(0,pi-1);selected=-1;changed()};
+$('reverse').onclick=()=>{snapshot();path().points.reverse();selected=-1;changed()};
+$('remove').onclick=()=>{if(selected<0||!path())return;snapshot();path().points.splice(selected,1);selected=-1;changed()};
+for(const id of ['name','edge'])$(id).onchange=()=>{snapshot();path()[id==='name'?'name':'edge']=$(id).value;changed()};
+for(const [id,i]of [['x',0],['y',1]])$(id).onchange=()=>{const v=Number($(id).value);if(!Number.isFinite(v))return;snapshot();path().points[selected][i]=Math.max(0,Math.min((i?image.height:image.width)-1,v));changed()};
+$('undo').onclick=()=>history(undo,redo);$('redo').onclick=()=>history(redo,undo);
+$('asset').onchange=()=>{ai=Number($('asset').value);pi=0;selected=-1;loadImage()};
+function payload(){return {version:1,coordinate_system:'full-source-image-pixels',revision:project.revision,assets:project.assets}}
+$('save').onclick=async()=>{const saved=JSON.stringify(payload());$('save').disabled=true;try{const r=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:saved}),result=await r.json();if(!r.ok)throw Error(result.error);const unchanged=JSON.stringify(payload())===saved;project.revision=result.revision;dirty=!unchanged;status(unchanged?'Saved to '+result.path:'Saved earlier edits; newer edits remain unsaved')}catch(e){status(e.message,true)}finally{$('save').disabled=false}};
+$('download').onclick=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(payload(),null,2)],{type:'application/json'}));a.href=url;a.download='battlement-corners.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;if(e.code==='Space'){space=true;e.preventDefault()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?history(redo,undo):history(undo,redo)}else if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();$('save').click()}else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();$('remove').click()}else if(e.key.toLowerCase()==='h'){$('show').checked=!$('show').checked;draw()}else if(e.key==='Escape')setMode('edit');else if(e.key.startsWith('Arrow')&&selected>=0){e.preventDefault();snapshot();const i=['ArrowLeft','ArrowRight'].includes(e.key)?0:1,d=['ArrowLeft','ArrowUp'].includes(e.key)?-1:1;path().points[selected][i]=Math.max(0,Math.min((i?image.height:image.width)-1,path().points[selected][i]+d*(e.shiftKey?10:1)));changed()}});
+window.addEventListener('keyup',e=>{if(e.code==='Space')space=false});window.addEventListener('blur',()=>{space=false;drag=null});new ResizeObserver(draw).observe(canvas);
+try{project=await(await fetch('/api/project')).json();project.assets.forEach((a,i)=>$('asset').add(new Option(a.name,i)));loadImage();status('Ready. Save writes '+project.save_path)}catch(e){status(e.message,true)}
+</script></html>

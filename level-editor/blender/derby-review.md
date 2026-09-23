@@ -1,5 +1,13 @@
 # Derby asset refinement review
 
+Latest user feedback: both replacement curtains still have incorrect battlement
+alignment. Geometry approval is withheld. A manual corner editor is available
+at http://localhost:5182 with both walls, original artwork, optional actual-mesh
+edges, ordered editable pixel corners and persistent saves. Project directory:
+`level-editor/work/derby-refinement/round-2/battlement-editor/`.
+Use `edited-corners.json` for the next geometry pass once the user saves it.
+Reusable workflow: `level-editor/refinement/CORNER_EDITOR.md`.
+
 2026-09-23 latest: Publication8 is LIVE. The eleven earlier approved bakes
 and coupled courtyard-well/ground correction are integrated atop Publication7.
 All 82 live target hashes independently match the promotion manifest; rollback
