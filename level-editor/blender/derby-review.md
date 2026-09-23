@@ -1,5 +1,16 @@
 # Derby asset refinement review
 
+Upper West stair revision is ready for user review:
+`assets/derby-upper-west-curtain/candidates/stairs-v1-contact-v4/`.
+Thirteen steps retain their elevations; tread stations/upper width now follow
+the artwork. Landing128 was trimmed to clear the upper two steps. Independent
+Blender MCP comparison of all503 working meshes confirms only114 and128 change;
+the user-constrained battlements remain exact. Final top-step ray audit reports
+1078 rays with114 first, zero128 occlusion, minimum0.0488world-unit separation.
+Ownership transfers653 existing pixels without expanding the mask union.
+Fresh gray/textured closeups inspected, including actual step-edge diagnostic;
+texture speckling resolved. Gallery now displays this packet for approval.
+
 Latest review e07e8b285c953cdf: "good! just stairs are a bit wrong" for Upper
 West. Preserve the manually constrained battlements exactly; isolate the next
 pass to keep-access stair114 and only necessary owned landing contacts.
