@@ -28,7 +28,7 @@ def clone_workspace(old, new):
 def prison_review(review):
     review=copy.deepcopy(review)
     review['receiver_nodes'].remove('building-452')
-    review['evidence']+=' Review correction: full-height turret support452 also carries the source-visible exterior left turret wall. It is an exterior receiver, retained in both states; native silhouette371 gates its eligible pixels.'
+    review['evidence']+=' Review correction: full-height turret support452 also carries the source-visible exterior left turret wall. It is an exterior receiver, retained in both states; native silhouette373 gates its eligible pixels.'
     return review
 
 def pixel_witnesses(w, old, config, node):
@@ -75,7 +75,7 @@ def main():
     assert asset in ['nottingham-upper-prison','nottingham-castle-approach-ramp']
     tooling=select_tooling(WORK/'tooling/58744eeaf71a21e9');acquire()
     import bpy,refinement_workspace as rw
-    w=WORK/'round-23/assets'/asset
+    w=WORK/('round-24/assets' if asset.endswith('prison') else 'round-23/assets')/asset
     old=WORK/('round-1/prison-final-assets' if asset.endswith('prison') else 'round-1/assets')/asset
     clone_workspace(old,w)
     c=json.loads((w/'workspace.json').read_text());source_hash=sha(old/'model.blend')
@@ -84,7 +84,7 @@ def main():
     masks=json.loads((w/'source-masks.json').read_text());entries=masks['projections']['exterior']['assignments'];node='building-452' if asset.endswith('prison') else 'building-343';entry=next(e for e in entries if e.get('source_node')==node)
     original=next(e for e in json.loads((old/'source-masks.json').read_text())['projections']['exterior']['assignments'] if e.get('source_node')==node)
     if asset.endswith('prison'):
-        entry.clear();entry.update(source_node=node,mask_indices=[371],reviewed=True,constraint_kind='reviewed-native-silhouette',review_note='The retained full-height turret envelope shares the source-visible left masonry with444. Native371 covers that exterior turret; source-scene visibility still excludes other architecture and the hidden foundation.',review_evidence=str(WORK/'review4-prison-ramp/prison-diagnostic.png'))
+        entry.clear();entry.update(source_node=node,mask_indices=[373],reviewed=True,constraint_kind='reviewed-native-silhouette',review_note='The retained full-height turret envelope shares the source-visible left masonry with444. Native373 isolates the exterior roof and turret from the lower prison body; source-scene visibility still excludes other architecture and the hidden foundation.',review_evidence=str(WORK/'review4-prison-ramp/prison-diagnostic.png'))
     else:
         entry.clear();entry.update(copy.deepcopy(original))
         entry['mask_indices']=sorted(set(entry['mask_indices']+[277]));entry['review_note']+=' Native277 includes the source-visible upper western ramp parapet absent from275. Foreign houses and gate remain scene occluders.';entry['review_evidence']=str(WORK/'review4-prison-ramp/ramp-diagnostic.png')
