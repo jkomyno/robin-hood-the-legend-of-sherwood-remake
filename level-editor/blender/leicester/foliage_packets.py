@@ -21,12 +21,16 @@ def run(workspace):
     bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'),load_ui=False)
     feedback=json.loads((workspace/'user-feedback.json').read_text())
     report=json.loads((workspace/'inspection/foliage-recipe.json').read_text())
-    if not report['recipe'].startswith('leicester-foliage-lobes-'):
+    if not report['recipe'].startswith(('leicester-foliage-lobes-','leicester-neutral-regional-fringe-')):
         raise ValueError('Apply current foliage recipe before building the packet')
     modified(workspace)
     latest=max((workspace/'projection').glob('*/ownership.json'),key=lambda p:p.stat().st_mtime_ns)
     shutil.copy2(latest,workspace/'inspection/ownership.json')
     shutil.copy2(Path(__file__).with_name('foliage_trees.py'),workspace/'foliage_trees.py')
+    recipe='foliage_trees.py'
+    if report['recipe'].startswith('leicester-neutral-regional-fringe-'):
+        recipe='forest_fringe.py'
+        shutil.copy2(Path(__file__).with_name(recipe),workspace/recipe)
     audit_output=workspace/'inspection/stored-materials'
     if audit_output.exists():
         identity=hashlib.sha256((audit_output/'audit.json').read_bytes()).hexdigest()[:16]
@@ -43,7 +47,7 @@ def run(workspace):
     material_report['render']['transparent_depth_reason']='Layered foliage coverage must survive all transparent surface traversals.'
     (audit_output/'audit.json').write_text(json.dumps(material_report,indent=2)+'\n')
     handoff=json.loads((workspace/'handoff.json').read_text())
-    handoff.update(status='fix-needed',recipe='foliage_trees.py',all_eight_views_inspected=False,
+    handoff.update(status='fix-needed',recipe=recipe,all_eight_views_inspected=False,
                    geometry_approval='not-approved',texture_generation='not-started',
                    notes=report['limitations']+['New physical foliage cutout candidate awaits all-eight-view review.'],
                    exact_user_feedback=feedback,
