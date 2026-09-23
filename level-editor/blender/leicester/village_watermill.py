@@ -129,10 +129,10 @@ def stone_lip(workspace, config):
     """Raised front channel coping, traced independently of the wheel mask."""
     # Front cap edge; the eight-unit rearward thickness reaches the observed
     # brighter back cap edge. Footing follows the native platform inner edge.
-    profile = [(2483.,963.),(2529.,952.),(2539.,941.),(2559.,937.),
-               (2564.,944.),(2613.,937.)]
+    profile = [(2483.,963.),(2529.,952.),(2539.,939.),(2561.,935.),
+               (2566.,942.),(2616.,935.)]
     def point(x, py):
-        game_y = 984. - (x-2483.)*29./130.
+        game_y = 990. - (x-2483.)*29./130.
         return Vector((x,-game_y/SINE,(game_y-py)/COSINE))
     front=[point(x,y) for x,y in profile]
     front += [Vector((front[-1].x,front[-1].y,12.001/COSINE)),
