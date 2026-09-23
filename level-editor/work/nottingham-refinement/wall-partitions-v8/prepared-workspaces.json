@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "preparation_script_commit": "be5f746fb",
+  "source_grouping_revision": 8,
+  "tooling": "94116d984f92dbae",
+  "workspaces": [
+    {
+      "asset_id": "nottingham-south-curtain-wall-1",
+      "workspace": "level-editor/work/nottingham-refinement/round-13/assets/nottingham-south-curtain-wall-1",
+      "model_sha256": "3aca51e8fc1d93adeed241958f6664c0e26939ea8c31a8715deeeee418187287",
+      "status": "fix-needed",
+      "validation": "PASS"
+    },
+    {
+      "asset_id": "nottingham-south-curtain-wall-2",
+      "workspace": "level-editor/work/nottingham-refinement/round-13/assets/nottingham-south-curtain-wall-2",
+      "model_sha256": "bcaf27ce053703ff3fa0c387ac5063b20b3ff92ae1e2dc2d6f3e0a8e771a48f1",
+      "status": "fix-needed",
+      "validation": "PASS"
+    },
+    {
+      "asset_id": "nottingham-south-curtain-wall-3",
+      "workspace": "level-editor/work/nottingham-refinement/round-13/assets/nottingham-south-curtain-wall-3",
+      "model_sha256": "9237c24323ab26c19ccaafba496a341578ed62b5fb2657cc598d550a4fbecb19",
+      "status": "fix-needed",
+      "validation": "PASS"
+    },
+    {
+      "asset_id": "nottingham-south-curtain-wall-4",
+      "workspace": "level-editor/work/nottingham-refinement/round-13/assets/nottingham-south-curtain-wall-4",
+      "model_sha256": "9d4d625ed412734756b07b61926c575c1aa11695ff99cfeaf8fe2b303b8cae4d",
+      "status": "fix-needed",
+      "validation": "PASS"
+    },
+    {
+      "asset_id": "nottingham-southwest-curtain-wall-north",
+      "workspace": "level-editor/work/nottingham-refinement/round-13/assets/nottingham-southwest-curtain-wall-north",
+      "model_sha256": "2213b9c65df935c2bb70b718ed132d87443c3ff40ed0da3450bd9d3027c416ea",
+      "status": "fix-needed",
+      "validation": "PASS"
+    },
+    {
+      "asset_id": "nottingham-southwest-curtain-wall-south",
+      "workspace": "level-editor/work/nottingham-refinement/round-13/assets/nottingham-southwest-curtain-wall-south",
+      "model_sha256": "e5cf9490a017b66a6499eac4165e7a88820ee68df5d3811ecaa95e02443b42cd",
+      "status": "fix-needed",
+      "validation": "PASS"
+    },
+    {
+      "asset_id": "nottingham-south-gate-east-tower",
+      "workspace": "level-editor/work/nottingham-refinement/round-13/assets/nottingham-south-gate-east-tower",
+      "model_sha256": "427b5529ed29a8db0ccf9cebbb31216cfca3bfd566920e637f7ee5717ecce9e2",
+      "status": "fix-needed",
+      "validation": "PASS"
+    }
+  ],
+  "pending_geometry_corrections": {
+    "nottingham-south-curtain-wall-1": "Curved crown pixel trace: resume_outcrop",
+    "nottingham-southwest-curtain-wall-south": "Three source crenels on short return: resume_castle_steps",
+    "nottingham-south-gate-east-tower": "Source212 belongs gatearch; catalog and fresh affected packets required"
+  },
+  "approval": "pending; no source corrections are user-approved"
+}
