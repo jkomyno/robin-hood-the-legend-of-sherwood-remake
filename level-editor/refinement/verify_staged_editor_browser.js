@@ -41,8 +41,26 @@
   const part=candidate.document.objects.find(object=>object.id===selection.id);
   if(part.group!==first.id)throw Error('Second click escaped selected group');
   viewport.select(null);
+  const patchChecks=[];
+  for(const patch of viewport.patchPreviews()){
+    const variants=[],covers=[];
+    viewport.objectsRoot.traverse(object=>{
+      if(object.userData.reveal_material_patch===patch.id)variants.push(object);
+      if(object.userData.reveal_hide_when_applied?.includes(patch.id))covers.push(object);
+    });
+    if(variants.length!==2||!covers.length)throw Error('Incomplete patch material/cover export');
+    const state=()=>variants.map(object=>[object.userData.reveal_material_state,object.visible]);
+    viewport.setPatchRevealed(patch.id,true);
+    if(variants.some(object=>object.visible!==(object.userData.reveal_material_state==='revealed'))||covers.some(object=>object.visible))
+      throw Error('Revealed material and cover transition failed');
+    const revealed=state();
+    viewport.setPatchRevealed(patch.id,false);
+    if(variants.some(object=>object.visible!==(object.userData.reveal_material_state==='covered'))||covers.some(object=>!object.visible))
+      throw Error('Covered material and cover restoration failed');
+    patchChecks.push({patch:patch.id,covers:covers.length,covered:state(),revealed});
+  }
   window.__stageViewport=viewport;
   window.__stageCheck={status:'PASS',groups:candidate.document.groups.length,parts:candidate.sources.size,meshCount,
     generatedMaterials:Object.fromEntries(Object.entries(generated).map(([sha,materials])=>[sha,materials.size])),
-    firstClick:first,secondClick:part.id,stagedGlb:stageUrl,liveFilesModified:false};
+    firstClick:first,secondClick:part.id,stagedGlb:stageUrl,patchChecks,liveFilesModified:false};
 })().catch(error=>window.__stageCheck={status:'FAIL',error:String(error),stack:error.stack});

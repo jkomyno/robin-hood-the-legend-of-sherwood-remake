@@ -48,6 +48,15 @@ each imported handoff's world geometry, UVs, material graphs and packed image
 bytes. World-coordinate drift below 0.001 units is allowed for float32 parenting
 roundoff and is reported per asset; topology and appearance must match exactly.
 
+When one surface needs different materials in covered and revealed states,
+`blender/bind_patch_material_states.py` binds complete reviewed face assignments
+and exact cover visibility from two workers. The exporter retains both alternatives
+inside one canonical part; the editor's patch preview displays only the selected
+alternative. `blender/verify_staged_patch_state.py` verifies the revealed state
+against its source worker, and `blender/render_staged_patch_state.py` reproduces
+its exact saved cameras. Inspect these images and check that they contain the
+asset before claiming zero-pixel preservation: two empty renders can also match.
+
 Texture bakes can optionally pass a raw generated reference after the texel-density
 argument to `blender/bake_reviewed_asset.py`. The preserved image remains selected;
 raw RGB only calibrates inferred-color gains. See the bake section in

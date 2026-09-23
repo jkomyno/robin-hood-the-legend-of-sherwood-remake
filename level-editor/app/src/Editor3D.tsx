@@ -66,6 +66,7 @@ export default function Editor3D(props: EditorProps) {
   const [showEntities, setShowEntities] = createSignal(true);
   const [smoothTextures, setSmoothTextures] = createSignal(localStorage.getItem("rle.smoothTextures") !== "false");
   const [synthesizedTextures, setSynthesizedTextures] = createSignal(localStorage.getItem("rle.synthesizedTextures") !== "false");
+  const [patchPreviewRevision, setPatchPreviewRevision] = createSignal(0);
   let openAttempt = 0;
   let loadedIndex: DatadirIndex | null = null;
   let loadedLibrary: LibraryRef | null = null;
@@ -613,6 +614,12 @@ export default function Editor3D(props: EditorProps) {
             <label class="check"><input type="checkbox" checked={showEntities()} onChange={(e) => setShowEntities(e.currentTarget.checked)} /> Mission entities</label>
             <label class="check"><input type="checkbox" checked={smoothTextures()} onChange={(e) => setSmoothTextures(e.currentTarget.checked)} /> Smooth textures</label>
             <label class="check"><input type="checkbox" checked={synthesizedTextures()} onChange={(e) => setSynthesizedTextures(e.currentTarget.checked)} /> Synthesized hidden surfaces</label>
+            <For each={(() => { doc(); patchPreviewRevision(); return viewport.patchPreviews(); })()}>{patch =>
+              <label class="check"><input type="checkbox" checked={patch.revealed} onChange={event => {
+                viewport.setPatchRevealed(patch.id, event.currentTarget.checked);
+                setPatchPreviewRevision(value => value + 1);
+              }} /> Reveal interior: {patch.name}</label>
+            }</For>
             <Show when={missionName()}><p class="mission-summary">{missionName()} — {missionInfo()}</p>
               <p class="hint">Initial placements; mission scripts are not run. Green markers show spawn points. Magenta markers indicate missing sprite assets. Standing characters, prone bodies, pickups, and scenery use different depth profiles.</p>
             </Show>

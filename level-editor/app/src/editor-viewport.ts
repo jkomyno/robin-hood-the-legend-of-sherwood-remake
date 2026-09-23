@@ -20,6 +20,7 @@ import type { MissionEntities } from "./mission.ts";
 import type { Selection } from "./document-commands.ts";
 import { disposeObjectResources } from "./resources.ts";
 import { TextureDisplay } from "./texture-display.ts";
+import { PatchDisplay, isEffectivelyVisible } from "./patch-display.ts";
 
 interface View {
   wrapper: THREE.Group;
@@ -47,6 +48,22 @@ export interface ViewportBindings {
  * selection are borrowed from the session/UI, never copied into another model.
  * Editable clones share source resources; only source roots own their disposal. */
 export class EditorViewport {
+  private readonly patchDisplay = new PatchDisplay();
+  setPatchRevealed(patch: string, revealed: boolean) {
+    this.patchDisplay.set(patch, revealed);
+    this.patchDisplay.apply(this.objectsRoot);
+  }
+  patchPreviews() {
+    const patches = new Set<string>();
+    const labels = new Map<string, string>();
+    this.sourceAsset?.traverse(object => {
+      const id = object.userData.reveal_material_patch;
+      if (typeof id === "string") patches.add(id);
+      for (const patch of object.userData.reveal?.patches ?? [])
+        labels.set(patch.id, patch.name);
+    });
+    return [...patches].map(id => ({id, name: labels.get(id) ?? id, revealed: this.patchDisplay.isRevealed(id)}));
+  }
   private readonly textureDisplay = new TextureDisplay();
   setTextureDisplay(smooth: boolean, synthesized: boolean) {
     this.textureDisplay.smooth = smooth;
@@ -281,6 +298,7 @@ export class EditorViewport {
   ) {
     if (this.disposed) throw new Error("Disposed viewport cannot adopt a map");
     this.retireMap();
+    this.patchDisplay.clear();
     this.sourceAsset = asset;
     this.ground = ground;
     if (ground) this.mapRoot.add(ground);
@@ -573,7 +591,7 @@ export class EditorViewport {
         const hits = this.raycaster.intersectObjects(
           [this.objectsRoot, ...(this.groundNode ? [this.groundNode] : [])],
           true,
-        );
+        ).filter(hit => isEffectivelyVisible(hit.object));
         if (e.button === 0) {
           // a left drag that starts on the selection moves it along the ground plane
           const s = this.bindings.selection();
@@ -838,6 +856,7 @@ export class EditorViewport {
       v.wrapper.parent?.remove(v.wrapper);
       this.partViews.delete(id);
     }
+    this.patchDisplay.apply(this.objectsRoot);
     const s = this.bindings.selection();
     if (s && !(s.kind === "group" ? aliveGroups : aliveParts).has(s.id))
       this.select(null);
@@ -903,7 +922,7 @@ export class EditorViewport {
       -((e.clientY - rect.top) / rect.height) * 2 + 1,
     );
     this.raycaster.setFromCamera(ndc, this.activeCamera());
-    const hits = this.raycaster.intersectObject(this.objectsRoot, true);
+    const hits = this.raycaster.intersectObject(this.objectsRoot, true).filter(hit => isEffectivelyVisible(hit.object));
     for (const h of hits) {
       const part = this.partOfHit(h);
       if (!part) continue;

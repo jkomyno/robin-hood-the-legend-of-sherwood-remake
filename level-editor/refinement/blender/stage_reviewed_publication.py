@@ -90,8 +90,11 @@ def stage(plan_path):
     for obj in collection.all_objects:
         if obj.type!='MESH' or obj.hide_render:
             continue
-        for face in obj.data.polygons:
-            mat=obj.data.materials[face.material_index]
+        from patch_material_export import state_record
+        states=state_record(obj)
+        slots=set(states['covered']+states['revealed']) if states else {face.material_index for face in obj.data.polygons}
+        for slot in slots:
+            mat=obj.data.materials[slot]
             if mat and mat.get('generated_source_sha256'):
                 generated.setdefault(mat['generated_source_sha256'],set()).add(mat.name)
     bpy.ops.wm.save_as_mainfile(filepath=str(output/'worker.blend'))

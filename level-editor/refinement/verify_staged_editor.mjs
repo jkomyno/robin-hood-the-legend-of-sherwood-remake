@@ -52,6 +52,16 @@ try {
     ws.send(JSON.stringify({id:request,method:'Page.captureScreenshot',params:{format:'png'}}));
   });
   await writeFile(join(stage,live?'live-editor.png':'editor.png'),Buffer.from(screenshot,'base64'));
+  for(const patch of result.patchChecks ?? []){
+    await evaluate(ws,++id,`window.__stageViewport.setPatchRevealed(${JSON.stringify(patch.patch)},true)`);
+    await new Promise(resolve=>setTimeout(resolve,700));
+    const shot=await new Promise((resolve,reject)=>{
+      const request=++id;const listener=event=>{const data=JSON.parse(event.data);if(data.id===request){ws.removeEventListener('message',listener);data.error?reject(data.error):resolve(data.result.data);}};
+      ws.addEventListener('message',listener);ws.send(JSON.stringify({id:request,method:'Page.captureScreenshot',params:{format:'png'}}));
+    });
+    await writeFile(join(stage,(live?'live-':'')+'editor-'+patch.patch+'-revealed.png'),Buffer.from(shot,'base64'));
+    await evaluate(ws,++id,`window.__stageViewport.setPatchRevealed(${JSON.stringify(patch.patch)},false)`);
+  }
   console.log(JSON.stringify(result));
 } finally {
   ws?.close(); chrome.kill('SIGTERM'); await closed;
