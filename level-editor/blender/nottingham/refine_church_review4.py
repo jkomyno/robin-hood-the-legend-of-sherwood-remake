@@ -86,6 +86,18 @@ def configure():
   entries.append({'reviewed':True,'source_node':f'building-{n}','projection_component':'church-retained','mask_indices':indices,'constraint_kind':'reviewed-state-receiver','review_evidence':'church-audit/review4-interior-masks.png','review_note':'Native revealed wall silhouette, constrained to the named receiver and first scene-depth hit.'})
  write(p,a)
 
+def attach_review_baseline_metadata():
+ # The frozen input packet displays the covered baseline, not an independently
+ # rendered old reveal state. Keep that distinction explicit in the gallery.
+ limitation='Revealed comparison reuses the unchanged covered input packet; no separate revealed baseline was rendered, so this is not a same-state before/after comparison.'
+ for name in ['geometry-report.json','candidate.json']:
+  path=NEW/name
+  if not path.exists():continue
+  value=json.loads(path.read_text());value['revealed_input']='input'
+  limitations=value.setdefault('limitations',[])
+  if limitation not in limitations:limitations.append(limitation)
+  write(path,value)
+
 def main():
  acquire();tooling=select_tooling(WORK/'tooling/58744eeaf71a21e9')
  from refinement_workspace import prepare,modified
@@ -104,4 +116,5 @@ def main():
    import time
    target.rename(target.with_name('states-history-'+str(time.time_ns())))
   render_states(NEW,target)
+ attach_review_baseline_metadata()
 if __name__=='__main__':main()
