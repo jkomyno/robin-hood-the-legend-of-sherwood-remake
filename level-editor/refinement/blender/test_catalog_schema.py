@@ -22,6 +22,19 @@ def meshes():
 
 
 class CatalogTests(unittest.TestCase):
+    def test_explicit_mission_part_has_no_obstacle_alias(self):
+        value=catalog(1)
+        value['groups'].append({'id':'bridge','name':'Drawbridge','parts':[
+            {'node':'mission-second-drawbridge','name':'Moving bridge','mission_profile':'Map - Bridge'}]})
+        index=parse_catalog(value)
+        self.assertEqual(index.sources,{'building-200','mission-second-drawbridge'})
+        self.assertEqual(index.owner_for('mission-second-drawbridge')[0]['id'],'bridge')
+        part=value['groups'][-1]['parts'][0]
+        for bad in ({'obstacle':268},{'node':'building-268'},{'mission_profile':''},{'source_obstacle':268}):
+            changed=copy.deepcopy(value);changed['groups'][-1]['parts'][0].update(bad)
+            with self.assertRaisesRegex(ValueError,'supplemental mission'):
+                parse_catalog(changed)
+
     def test_partition_routes_components_and_retained_original(self):
         index = parse_catalog(catalog(), {'ground', 'building-200'})
         self.assertEqual(index.owner_for('building-200', 'east')[0]['id'], 'annex')

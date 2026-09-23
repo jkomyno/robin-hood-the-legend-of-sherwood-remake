@@ -3,14 +3,31 @@ import {spawn} from 'node:child_process';
 import {readFile, writeFile, mkdtemp, rm} from 'node:fs/promises';
 import {resolve, join} from 'node:path';
 import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
 import {chromeEndpoint, socketOpen, evaluate} from '../app/tests/cdp.mjs';
+import {appendSupplementalMissionParts} from '../shared/src/authored-assets.ts';
 
 const stage = resolve(process.argv[2]);
 const live = process.argv.includes('--live');
 const base = process.argv.slice(3).find(arg=>!arg.startsWith('--')) || 'http://localhost:5180';
 const expected = JSON.parse(await readFile(join(stage, 'asset-verification.json'), 'utf8'));
 const stageUrl = live ? '/library/scenes/derby-volumes.scene.glb' : '/@fs/' + stage + '/derby.scene.glb';
-const levelDocument = JSON.parse(await readFile(resolve('level-editor/library/scenes/derby.level3d.json'),'utf8'));
+let levelDocument = JSON.parse(await readFile(resolve('level-editor/library/scenes/derby.level3d.json'),'utf8'));
+if(!live && (levelDocument.groups.length!==expected.groups || levelDocument.objects.length!==expected.parts)){
+  const publication=JSON.parse(await readFile(join(stage,'stage.json'),'utf8'));
+  const plan=JSON.parse(await readFile(publication.plan,'utf8'));
+  if(!plan.allow_supplemental_nodes?.length)throw new Error('Changed publication counts require explicit supplemental allowlist');
+  const catalog=JSON.parse(await readFile(plan.catalog,'utf8'));
+  const glb=await readFile(join(stage,'derby.scene.glb'));
+  const model=JSON.parse(glb.subarray(20,20+glb.readUInt32LE(12)).toString());
+  for(const group of catalog.groups)for(const part of group.parts){
+    if(!plan.allow_supplemental_nodes.includes(part.node))continue;
+    const node=model.nodes.find(node=>node.name===part.node);
+    if(!node || node.extras?.mission_patch_profile!==part.mission_profile)throw new Error('Supplemental GLB mission ownership differs from catalog');
+    part.obstacle_local_game=node.extras.obstacle_local_game;
+  }
+  levelDocument=appendSupplementalMissionParts(levelDocument,catalog,plan.allow_supplemental_nodes);
+}
 if(levelDocument.groups.length!==expected.groups || levelDocument.objects.length!==expected.parts)
   throw new Error('Document migration requires unchanged group/part counts');
 if(!live){
@@ -18,9 +35,12 @@ if(!live){
   await writeFile(join(stage,'derby.level3d.json'),JSON.stringify(levelDocument,null,2)+'\n');
 }
 const profile = await mkdtemp(join(stage, 'browser-profile-'));
+// Avoid booting the normal app's viewport as well as the test viewport. Two
+// copies of a large map can exhaust the software WebGL renderer during startup.
+const harness = new URL('/@fs/' + fileURLToPath(new URL('./verify-staged.html', import.meta.url)), base).href;
 const chrome = spawn('/usr/lib/chromium/chromium', ['--headless', '--window-size=1000,1150', '--no-sandbox',
   '--disable-dev-shm-usage', '--disable-background-networking', '--enable-unsafe-swiftshader', '--use-angle=swiftshader',
-  '--remote-debugging-port=0', '--user-data-dir=' + profile, base], {stdio:['ignore','ignore','pipe'],env:{...process.env,TMPDIR:'/tmp'}});
+  '--remote-debugging-port=0', '--user-data-dir=' + profile, harness], {stdio:['ignore','ignore','pipe'],env:{...process.env,TMPDIR:'/tmp'}});
 chrome.stderr.on('data', data=>process.stderr.write(data));
 const closed = new Promise(resolve => chrome.on('close', resolve));
 let ws;

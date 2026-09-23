@@ -59,7 +59,9 @@ def stage(plan_path):
     collection=bpy.data.collections[plan['collection_name']]
     canonical_before={o.get('source_node') for o in collection.all_objects
                       if o.type=='MESH' and o.get('source_node')!='ground'}
-    validate_coverage(canonical_before,expected)
+    added_nodes={node for item in plan['imports'] if item.get('new_mission_part') for node in item['source_nodes']}
+    if added_nodes & canonical_before:raise ValueError('New mission node overlaps existing canonical part')
+    validate_coverage(canonical_before,expected-added_nodes)
     from refinement_workspace import _geometry
     from bake_reviewed_asset import _materials
     selected_nodes={node for item in plan['imports'] for node in item.get('source_nodes',[])}
@@ -76,8 +78,12 @@ def stage(plan_path):
         blend_hash=hashlib.sha256(Path(blend).read_bytes()).hexdigest()
         if item.get('blend_sha256') and item['blend_sha256']!=blend_hash:
             raise ValueError('Reviewed model changed before staging: '+item['asset_id'])
-        result=import_asset_geometry(blend,asset_id=item['asset_id'],object_names=names,
-            collection_name=collection.name,source_nodes=item.get('source_nodes'),source_asset_id=item.get('source_asset_id'))
+        if item.get('new_mission_part'):
+            from supplemental_parts import import_mission_part
+            result=import_mission_part(item,collection.name)
+        else:
+            result=import_asset_geometry(blend,asset_id=item['asset_id'],object_names=names,
+                collection_name=collection.name,source_nodes=item.get('source_nodes'),source_asset_id=item.get('source_asset_id'))
         if item.get('texture_handoff'):
             result['texture_handoff']=import_asset_textures(item['texture_handoff'],asset_id=item['asset_id'],
                 collection_name=collection.name,source_nodes=item.get('source_nodes'))
@@ -137,7 +143,7 @@ def stage(plan_path):
                 if hashlib.sha256(Path(path).read_bytes()).hexdigest()!=digest:
                     raise ValueError('Approved evidence changed during stage: '+path)
     outside_after=outside_state()
-    if plan.get('approved_texture_imports') and outside_before!=outside_after:
+    if outside_before!=outside_after:
         raise ValueError('Staging changed unselected live mesh state')
     generated={}
     for obj in collection.all_objects:
@@ -157,6 +163,9 @@ def stage(plan_path):
             'generated_materials':{sha:sorted(names) for sha,names in generated.items()},
             'map':export_editor(plan['map_name'],output/scene_file),
             'assets':export_asset_library(plan['map_name'],output/'assets',plan['hackable_map'],asset_ids=plan.get('export_asset_ids'))}
+    if plan.get('static_variants'):
+        from export_static_variants import export_variants
+        report['static_variants']=export_variants(plan,output)
     (output/'stage.json').write_text(json.dumps(report,indent=2)+'\n')
     render_views(plan['scene_name'],{'reference':plan['reference_camera']},output/'full-map',width=1920)
     return report

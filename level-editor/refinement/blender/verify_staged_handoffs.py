@@ -16,7 +16,7 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
 
 
-def snapshot(collection_name, include_values=False):
+def snapshot(collection_name, include_values=False, select=None):
     images, materials = {}, {}
     def material(mat):
         if mat is None:
@@ -56,6 +56,8 @@ def snapshot(collection_name, include_values=False):
     records = []
     for obj in bpy.data.collections[collection_name].all_objects:
         if obj.type != 'MESH':
+            continue
+        if select is not None and not select(obj):
             continue
         slots = [material(mat) for mat in obj.data.materials]
         value = {'vertices': [[round(c, 5) for c in obj.matrix_world @ v.co] for v in obj.data.vertices],
@@ -114,9 +116,14 @@ def verify(plan_path):
     expected = {}
     for item in plan['imports']:
         bpy.ops.wm.open_mainfile(filepath=item['blend_path'])
-        records = snapshot(plan['collection_name'], True)
-        selected = [r for r in records if not r['hidden'] and r['source'] in item['source_nodes']
-                    and r['group'] == item.get('source_asset_id', item['asset_id'])]
+        # A worker can contain the entire map for occlusion context. Only its
+        # imported meshes are handoff evidence; baseline/staged outside content
+        # is independently checked below without rehashing 14 context copies.
+        manifest = json.loads(Path(item['review_manifest']).read_text())
+        source_collection = item.get('source_collection_name', manifest.get('collection_name', plan['collection_name']))
+        selected = snapshot(source_collection, True, select=lambda obj:
+            not obj.hide_render and obj.get('source_node') in item['source_nodes']
+            and obj.get('asset_group') == item.get('source_asset_id', item['asset_id']))
         if not selected:
             raise ValueError('Empty handoff: ' + item['asset_id'])
         expected[item['asset_id']] = selected

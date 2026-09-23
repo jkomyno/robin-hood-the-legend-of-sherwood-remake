@@ -6,12 +6,13 @@ if _refinement_legacy not in _refinement_sys.path:
     _refinement_sys.path.append(_refinement_legacy)
 
 from pathlib import Path
+from catalog_schema import source_for_part
 
 
 def canonical_parts(catalog, map_name):
     if catalog['map'] != map_name:
         raise ValueError('Publication map and catalog differ')
-    parts = [f"building-{part['obstacle']:03}" for group in catalog['groups']
+    parts = [source_for_part(part) for group in catalog['groups']
              for part in group['parts']]
     if not parts or len(parts) != len(set(parts)):
         raise ValueError('Publication catalog has empty or duplicate part ownership')

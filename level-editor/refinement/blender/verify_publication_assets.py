@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import struct
 import sys
+from catalog_schema import source_for_part
 
 
 def gltf(path):
@@ -35,9 +36,10 @@ def verify(directory,catalog_path):
     if {a['id'] for a in index['assets']}!=selected:
         raise ValueError('Standalone group catalog differs from authored ownership')
     nodes=set();components=0;component_metadata=0;masked_generated=0
+    asset_material_coverage=[]
     for asset in index['assets']:
         descriptor=json.loads((directory/'assets'/asset['descriptor']).read_text())
-        owned={'ground'} if asset['id'] in ground_ids else {f"building-{part['obstacle']:03d}" for part in expected[asset['id']]['parts']}
+        owned={'ground'} if asset['id'] in ground_ids else {source_for_part(part) for part in expected[asset['id']]['parts']}
         actual={c['source_node'] for c in descriptor['components']}
         if asset['id'] in ground_ids and (descriptor.get('parts')!=[] or descriptor.get('editor_usage')!='map-background' or asset.get('editor_usage')!='map-background'):
             raise ValueError('Ground must declare map-background capability without obstacle parts')
@@ -45,6 +47,23 @@ def verify(directory,catalog_path):
             raise ValueError('Standalone canonical ownership differs: '+asset['id'])
         nodes |= actual
         model=gltf(directory/'assets'/asset['model'])
+        for state, variant in descriptor.get('state_variants', {}).items():
+            variant_model=gltf(directory/'assets'/Path(asset['descriptor']).parent/variant['model'])
+            mission_nodes=[n for n in variant_model['nodes'] if n.get('name','').startswith('mission-')]
+            if {n['name'] for n in mission_nodes} != owned:
+                raise ValueError('Static variant canonical ownership differs: '+asset['id'])
+            for node in variant_model['nodes']:
+                extras=node.get('extras',{})
+                if any(k in extras for k in ('drawbridge_hinge_matrix','drawbridge_pose_angles_degrees','drawbridge_pose','native_patch_preview')):
+                    raise ValueError('Standalone static endpoint carries animation/native-map binding')
+            if len([n for n in variant_model['nodes'] if 'mesh' in n]) != len(descriptor['components']):
+                raise ValueError('Static endpoint component count differs')
+        materials=model.get('materials',[])
+        generated_materials=[m for m in materials if m.get('extras',{}).get('generated_source_sha256')]
+        asset_material_coverage.append({'asset_id':asset['id'],'material_count':len(materials),
+            'generated_material_count':len(generated_materials),
+            'generated_source_sha256':sorted({m['extras']['generated_source_sha256'] for m in generated_materials}),
+            'interpretation':'Generated provenance is present; this does not certify that every surface texel is filled.'})
         exported=[n.get('extras',{}) for n in model['nodes']]
         for component in descriptor['components']:
             if component.get('projection_component'):
@@ -53,8 +72,8 @@ def verify(directory,catalog_path):
                     raise ValueError('Standalone lost component ownership metadata')
         components+=len(descriptor['components'])
     model=gltf(Path(stage['map']['file']))
-    expected_map={f"building-{p['obstacle']:03d}" for g in expected.values() for p in g['parts']}
-    actual_map={n['name'] for n in model['nodes'] if n.get('name','').startswith('building-')}
+    expected_map={source_for_part(p) for g in expected.values() for p in g['parts']}
+    actual_map={n['name'] for n in model['nodes'] if n.get('name','').startswith(('building-','mission-'))}
     if actual_map!=expected_map:raise ValueError('Full map canonical coverage differs from publication catalog')
     generated={}
     for material in model.get('materials',[]):
@@ -69,7 +88,9 @@ def verify(directory,catalog_path):
         raise ValueError('Map lost component selectors')
     report={'status':'PASS','groups':len(selected),'parts':len(nodes-{'ground'}),'full_map_parts':len(actual_map),'components':components,
             'component_metadata':component_metadata,'generated_materials':generated,
-            'masked_generated_materials':masked_generated}
+            'masked_generated_materials':masked_generated,
+            'groups_with_generated_materials':sum(bool(a['generated_material_count']) for a in asset_material_coverage),
+            'asset_material_coverage':asset_material_coverage}
     (directory/'asset-verification.json').write_text(json.dumps(report,indent=2)+'\n')
     return report
 

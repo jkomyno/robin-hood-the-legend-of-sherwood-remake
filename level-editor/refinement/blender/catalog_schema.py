@@ -5,6 +5,23 @@ projection components between assets; canonical_owners retains provenance and
 assigns hidden, componentless originals. Parsing never infers spatial ownership.
 """
 from dataclasses import dataclass
+import re
+
+
+def source_for_part(part):
+    """Resolve ordinary obstacle ownership or an explicit mission-only part."""
+    if 'node' in part:
+        if ('obstacle' in part or 'source_obstacle' in part
+                or not isinstance(part['node'], str)
+                or not re.fullmatch(r'mission-[a-z0-9]+(?:-[a-z0-9]+)*', part['node'])
+                or not isinstance(part.get('mission_profile'), str)
+                or not part['mission_profile'].strip()):
+            raise ValueError(f'Invalid supplemental mission part: {part}')
+        return part['node']
+    number = part.get('obstacle')
+    if type(number) is not int or number < 0:
+        raise ValueError(f'Invalid obstacle source part: {part}')
+    return f'building-{number:03}'
 
 
 @dataclass
@@ -85,10 +102,9 @@ def parse_catalog(catalog, expected_sources=None):
         names.add(name.casefold())
         own_sources = set()
         for part in group['parts']:
-            number = part['obstacle']
-            if type(number) is not int or number < 0 or not part['name'].strip():
+            if not part['name'].strip():
                 raise ValueError(f'Invalid named source part: {part}')
-            source = f'building-{number:03}'
+            source = source_for_part(part)
             if source in own_sources:
                 raise ValueError(f'Duplicate source entry within asset: {identifier}/{source}')
             own_sources.add(source)
