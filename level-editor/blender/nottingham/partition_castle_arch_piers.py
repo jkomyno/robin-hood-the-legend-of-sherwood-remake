@@ -53,7 +53,10 @@ def main():
  prepare(out,asset_id=ASSET,scene_name='nottingham Refinement',collection_name='nottingham Working',source_path=src/'reference/source.png',grouping_manifest=evidence/'catalog.json',inventory_path=evidence/'inventory.json',review_path=evidence/'grouping-review.json',projection_manifest=src/'projection-layers.json',source_mask_manifest=src/'source-masks.json',width=320,height=400,context_padding=35,framing_padding=1.18)
  outside={o.name:fingerprint(o) for o in coll.all_objects if o.type=='MESH' and o not in targets}
  body=next(o for o in targets if o['source_node']=='building-333' and not o.get('animation_state'))
- original=body.data.copy()
+ body.data.calc_loop_triangles()
+ original=bpy.data.meshes.new('Evaluated gateway triangle surface')
+ original.from_pydata([list(v.co) for v in body.data.vertices],[],[list(t.vertices) for t in body.data.loop_triangles])
+ original.update()
  def cut(target,positive_z,side=None):
   bm=bmesh.new();bm.from_mesh(original)
   # Work directly in world coordinates and transform back only after capping.
