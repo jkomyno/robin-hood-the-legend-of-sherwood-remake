@@ -5,6 +5,10 @@ Start with [PROCEDURE.md](PROCEDURE.md).
 - `blender/`: shared inventory, grouping, review, projection, texture baking,
   publication and HTML gallery implementations.
 - `record_approval.py`: records an actual user decision and hashes its evidence.
+- `prepare_texture_packet.py`: copies an eligible, explicitly approved packet
+  without resizing its cameras or images; builds local source-protection masks.
+- `build_texture_gallery.py`: collects separately baked texture candidates whose
+  eight actual views have been inspected, using the shared gallery generator.
 
 Collectors that produce a gallery ownership report can call
 `record_gallery_decision(gallery_path, records_path, asset_id, decision, exact_text)`
