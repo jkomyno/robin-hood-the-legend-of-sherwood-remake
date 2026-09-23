@@ -61,6 +61,37 @@ class ReviewDecisions(unittest.TestCase):
         self.assertEqual(item['user_approval'], 'pending')
         self.assertEqual(item['decision_state'], 'missing')
 
+    def test_workspace_override_exposes_fresh_revision_without_transferring_approval(self):
+        original = self.collect()
+        decisions = self.decision(original)
+        self.collect(decisions)
+        revision = self.root / 'source-revision'
+        shutil.copytree(self.workspace, revision)
+        (revision / 'workspace.json').write_text(json.dumps({'map_name': 'Leicester', 'asset_id': 'sample'}))
+        handoff = json.loads((revision / 'handoff.json').read_text())
+        handoff.update(source_review='pending', texture_generation='blocked', texture_issue='Corrected source needs review')
+        (revision / 'handoff.json').write_text(json.dumps(handoff))
+        overrides = self.root / 'overrides.json'
+        overrides.write_text(json.dumps({'version': 1, 'workspaces': {'sample': 'source-revision'}}))
+        with contextlib.redirect_stdout(io.StringIO()):
+            collect(self.catalog, self.assets, self.output, workspace_overrides=overrides)
+        item = json.loads((self.output / 'review-candidates.json').read_text())['items'][0]
+        self.assertEqual(item['workspace'], str(revision))
+        self.assertEqual(item['status'], 'ready-for-user')
+        self.assertEqual(item['decision_state'], 'stale')
+        self.assertEqual(item['user_approval'], 'pending')
+        self.assertTrue(item['generation_blocked'])
+        self.assertFalse(item['generation_eligible'])
+        self.assertTrue((self.output / 'reviewed-revisions/sample' / original['revision']['sha256'] / 'solid.png').exists())
+
+    def test_workspace_override_rejects_wrong_identity_and_unknown_asset(self):
+        overrides = self.root / 'overrides.json'
+        for asset_id, config_id in [('sample', 'other'), ('unknown', 'sample')]:
+            (self.workspace / 'workspace.json').write_text(json.dumps({'map_name': 'Leicester', 'asset_id': config_id}))
+            overrides.write_text(json.dumps({'version': 1, 'workspaces': {asset_id: str(self.workspace)}}))
+            with self.assertRaises(ValueError):
+                collect(self.catalog, self.assets, self.output, workspace_overrides=overrides)
+
     def test_ground_remains_separate_from_catalog(self):
         ground = self.root / 'ground'
         shutil.copytree(self.workspace, ground)

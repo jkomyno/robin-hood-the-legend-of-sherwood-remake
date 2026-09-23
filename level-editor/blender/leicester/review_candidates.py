@@ -34,12 +34,29 @@ from review_evidence import (sha, load_decisions, bind_decision, archive_decisio
                              archive_reviewed_revision, material_evidence)
 
 
-def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=None):
+def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=None,
+            workspace_overrides=None):
     catalog = json.loads(catalog_path.read_text())
     if catalog['map'] != 'Leicester':
         raise ValueError('Expected Leicester catalog')
     output.mkdir(parents=True, exist_ok=True)
     groups = [{**g, 'workspace': assets / g['id']} for g in catalog['groups']]
+    if workspace_overrides is not None:
+        override_path = Path(workspace_overrides).resolve(strict=True)
+        overrides = json.loads(override_path.read_text())
+        if overrides.get('version') != 1 or not isinstance(overrides.get('workspaces'), dict):
+            raise ValueError('Expected workspace overrides version 1 and workspaces mapping')
+        by_id = {g['id']: g for g in groups}
+        if set(overrides['workspaces']) - set(by_id):
+            raise ValueError('Workspace override references unknown catalog asset')
+        for asset_id, location in overrides['workspaces'].items():
+            if not isinstance(location, str) or not location.strip():
+                raise ValueError('Workspace override requires a nonempty path')
+            workspace = (override_path.parent / location).resolve(strict=True)
+            config = json.loads((workspace / 'workspace.json').read_text())
+            if config.get('map_name') != 'Leicester' or config.get('asset_id') != asset_id:
+                raise ValueError('Workspace override identity does not match catalog asset')
+            by_id[asset_id]['workspace'] = workspace
     if ground_workspace is not None:
         ground_workspace = Path(ground_workspace).resolve(strict=True)
         ground = json.loads((ground_workspace / 'workspace.json').read_text())
@@ -79,6 +96,11 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
         if status not in ('ready-for-user', 'fix-needed', 'validation-pending'):
             raise ValueError(f'Unsupported handoff status for {group["id"]}: {status}')
         item = {**entry, 'status': status, 'notes': handoff.get('notes', []), 'user_approval': 'pending'}
+        for key in ('source_review', 'texture_issue', 'texture_generation', 'generation_blocked'):
+            if key in handoff:
+                item[key] = handoff[key]
+        if handoff.get('texture_generation') == 'blocked':
+            item['generation_blocked'] = True
         for key, relative in {
             'solid': 'modified/solid.png', 'textured': 'modified/textured.png',
             'context': 'input/context.png', 'validation': 'validation.json', 'review': 'review.md',
@@ -153,6 +175,8 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
         item['revision']['sha256'] = hashlib.sha256(
             json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
         bind_decision(item, records)
+        if item.get('generation_blocked') or item.get('texture_issue'):
+            item['generation_eligible'] = item['publication_eligible'] = False
         archive_reviewed_revision(output, item, evidence)
         items.append(item)
         progress.append({**entry, 'status': item['status'], 'user_approval': item['user_approval']})
@@ -184,7 +208,9 @@ if __name__ == '__main__':
     parser.add_argument('output', type=Path)
     parser.add_argument('--decisions', type=Path, help='Explicit geometry decision JSON; defaults to OUTPUT/decisions.json')
     parser.add_argument('--ground-workspace', type=Path, help='Separate planar ground packet, outside the obstacle catalog')
+    parser.add_argument('--workspace-overrides', type=Path,
+                        help='Version 1 JSON workspaces mapping; relative paths resolve beside this JSON')
     args = parser.parse_args()
     print(json.dumps(collect(args.catalog.resolve(), args.assets.resolve(), args.output.resolve(),
                              args.decisions.resolve(strict=True) if args.decisions else None,
-                             args.ground_workspace)))
+                             args.ground_workspace, args.workspace_overrides)))
