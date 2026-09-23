@@ -1,5 +1,15 @@
 # Derby asset refinement review
 
+Publication10 is LIVE: Upper West's approved manual battlements, corrected
+stairs/landing and completed two-image texture bake are integrated into the
+Derby scene and asset library. All82 promoted targets independently match their
+staged hashes; rollback backups retained. Browser checks passed39groups,
+270parts and Main Hall covered/revealed switching. Seven imported meshes match
+exactly;521 outside meshes preserved. Editor server restarted on5180.
+Lower West south remains geometry-approved but unfinished: its texture retry
+needs API credits (`credit_balance_exhausted`). No incomplete south bake was
+published. There are zero pending geometry decisions in the current gallery.
+
 Current completion blocker: Lower West south's first Sunburst result leaves
 the inward parapet/walkway strip gray across visible views. The targeted retry
 was rejected with HTTP429 `credit_balance_exhausted`; no retry image exists.
