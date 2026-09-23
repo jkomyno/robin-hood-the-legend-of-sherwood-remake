@@ -19,16 +19,18 @@ def main():
  for item in review['evidence']:
   if sha(WORK/item['path'])!=item['sha256']:raise ValueError('Partition evidence changed')
  if sha(proof['approved_parent'])!=proof['approved_parent_sha256']:raise ValueError('Approved parent changed')
+ bpy.ops.wm.open_mainfile(filepath=str(parts));bpy.context.view_layer.update()
+ source_matrices={o.name:o.matrix_world.copy() for o in bpy.data.collections['nottingham Working'].all_objects if o.type=='MESH'}
  bpy.ops.wm.open_mainfile(filepath=str(source));working=bpy.data.collections['nottingham Working'];existing=[o for o in working.all_objects if o.type=='MESH']; market=[o for o in existing if o.get('asset_group')=='nottingham-market-terrace'];outside=[o for o in existing if o not in market];before={o.as_pointer():geometry(o) for o in outside}
  if len(market)!=23:raise ValueError('Expected exactly 23 canonical market meshes')
  names=[p['object']for p in proof['unchanged_meshes']]+[p['object']for p in proof['components']]+[proof['canonical_object']]
  for o in market:bpy.data.objects.remove(o,do_unlink=True)
  with bpy.data.libraries.load(str(parts),link=False)as(available,loaded):
   if set(names)-set(available.objects):raise ValueError('Missing market partitions')
-  loaded.objects=names
+  loaded.objects=list(names)
  imported=list(loaded.objects)
- for o in imported:
-  matrix=o.matrix_world.copy();o.parent=None;o.matrix_world=matrix;working.objects.link(o)
+ for original_name,o in zip(names,imported):
+  matrix=source_matrices[original_name];o.parent=None;working.objects.link(o);o.matrix_world=matrix
  bpy.context.view_layer.update();import_before={o.as_pointer():geometry(o)for o in imported}
  result=reconcile_asset_groups(catalog_path);bpy.context.view_layer.update()
  for o in outside+imported:
