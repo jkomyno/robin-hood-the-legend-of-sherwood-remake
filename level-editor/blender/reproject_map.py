@@ -340,23 +340,27 @@ def reproject_layers(manifest_path, report_dir=None, sample_spacing=12.0,
     patches = {patch["id"] for patch in manifest["patches"]}
     if len(patches) != len(manifest["patches"]):
         raise ValueError("Duplicate patch identifiers")
-    ownership = {}
+    ownership = set()
     for patch, nodes in interiors.items():
         if patch not in patches:
             raise ValueError(f"Authored interior patch is absent: {patch}")
         if not nodes or len(nodes) != len(set(nodes)):
             raise ValueError(f"Empty or duplicate receiver list for {patch}")
         for node in nodes:
-            if node == "ground" or node in ownership:
-                raise ValueError(f"Mixed or duplicate receiver classification: {node}")
+            if node == "ground":
+                raise ValueError(f"Ground cannot be an interior receiver: {node}")
             if node not in available:
                 raise ValueError(f"Authored interior receiver is absent or hidden: {node}")
-            ownership[node] = patch
+            ownership.add(node)
     receiver_components=roles.projection_receiver_components(manifest)
-    exterior = sorted((available - ownership.keys()) | {
+    exterior = sorted((available - ownership) | {
         selector['source_node'] for selector in receiver_components.get('exterior',[])})
     if not exterior:
         raise ValueError("No exterior receiver nodes")
+    from reveal_components import validate_receiver_partition
+    validate_receiver_partition(sources, {'exterior': exterior,
+        **{'interior-'+patch: nodes for patch,nodes in interiors.items()}},
+        receiver_components, available_objects=working.all_objects)
     paths = {layer: (manifest_path.parent / manifest["sources"][layer]).resolve()
              for layer in ("exterior", "interior")}
     if exterior_source:

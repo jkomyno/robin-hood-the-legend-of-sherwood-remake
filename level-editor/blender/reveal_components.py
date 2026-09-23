@@ -11,17 +11,42 @@ def filter_receivers(objects, selectors=None, *, available_objects=None):
         if set(selector)!={'source_node','projection_components','patch_id'}:
             raise ValueError('Receiver selector requires source_node, projection_components and patch_id')
         node=selector['source_node'];components=selector['projection_components']
-        if not isinstance(node,str) or not node or node in permitted or not isinstance(components,list) or not components:
+        if (not isinstance(node,str) or not node or not isinstance(components,list) or not components
+                or not isinstance(selector['patch_id'],str) or not selector['patch_id']):
             raise ValueError('Invalid or duplicate receiver selector')
         selected=set()
         for component in components:
             if not isinstance(component,str) or not component:raise ValueError('Empty receiver component')
-            matches=[o for o in catalog if o.get('source_node')==node and o.get('projection_component')==component]
-            if len(matches)!=1 or matches[0].get('reveal_component_patch_id')!=selector['patch_id']:
+            matches=[o for o in catalog if o.get('source_node')==node and o.get('projection_component')==component
+                     and o.get('reveal_component_patch_id')==selector['patch_id']]
+            if len(matches)!=1:
                 raise ValueError('Receiver selector does not identify one reviewed patch component')
+            if matches[0] in selected or matches[0] in permitted.get(node,set()):
+                raise ValueError('Duplicate receiver component selection')
             selected.add(matches[0])
-        permitted[node]=selected
+        permitted.setdefault(node,set()).update(selected)
     return [o for o in objects if o.get('source_node') not in permitted or o in permitted[o.get('source_node')]]
+
+
+def validate_receiver_partition(objects, layers, selectors, *, available_objects=None):
+    """Resolve complete layers before mutation; every mesh has at most one owner.
+
+    A canonical node may span patches only through disjoint resolved components.
+    Broad selectors still include every mesh of their node and therefore cannot
+    silently overlap a narrower selector in another layer.
+    """
+    objects=list(objects)
+    catalog=list(available_objects) if available_objects is not None else objects
+    owned={};resolved={}
+    for label,nodes in layers.items():
+        selected=filter_receivers([o for o in objects if o.get('source_node') in nodes],
+                                  selectors.get(label),available_objects=catalog)
+        for obj in selected:
+            if obj in owned:
+                raise ValueError(f'Overlapping receiver mesh {obj.name}: {owned[obj]} and {label}')
+            owned[obj]=label
+        resolved[label]=selected
+    return resolved
 
 
 def filter_occluders(objects, selectors=None, *, projection_label, available_objects=None):
