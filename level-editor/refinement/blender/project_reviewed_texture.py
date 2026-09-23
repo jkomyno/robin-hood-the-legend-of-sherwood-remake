@@ -131,6 +131,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
     for view in manifest['views']:
         matrix = Matrix(view['camera_matrix_world'])
         cameras.append((view, matrix.inverted(), matrix.to_3x3() @ Vector((0,0,1))))
+    from texture_view_selection import policy, ordered, eligible, SINGLE
+    selection = policy(manifest)
     stats = {'generated_texels_including_padding':0, 'unfilled_texels_including_padding':0,
              'protected_texels_including_padding':0, 'views': {str(v['index']):0 for v,_,_ in cameras}}
 
@@ -141,12 +143,12 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
         weights = np.zeros(len(positions))
         blended = np.zeros((len(positions),3))
         # Selection is per texel: occlusion can vary within a single polygon.
-        candidates = sorted((((abs(normal.dot(direction)) if obj.name in two_sided else normal.dot(direction)), view, inverse, direction)
-                             for view,inverse,direction in cameras), key=lambda item:item[0], reverse=True)
+        candidates = ordered((((abs(normal.dot(direction)) if obj.name in two_sided else normal.dot(direction)), view, inverse, direction)
+                             for view,inverse,direction in cameras), selection)
         for score, view, inverse, direction in candidates:
             if score <= .12:
                 continue
-            indices = np.flatnonzero(~accepted & (score >= best_scores-.12))
+            indices = np.flatnonzero(eligible(accepted, remaining, score, best_scores, selection))
             if not len(indices):
                 continue
             local = positions[indices] @ np.asarray(inverse.to_3x3()).T + np.asarray(inverse.translation)
@@ -177,7 +179,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                 sample_index = indices[k]
                 if not np.isfinite(best_scores[sample_index]):
                     best_scores[sample_index] = score
-                weight = max(0,score-best_scores[sample_index]+.12)**2
+                weight = 1.0 if selection == SINGLE else max(0,score-best_scores[sample_index]+.12)**2
                 blended[sample_index] += color*weight
                 weights[sample_index] += weight
                 remaining[indices[k]] = False
@@ -230,7 +232,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
               'source_mask_evidence':manifest.get('source_mask_evidence'),
               'source_constraint_status':reviewed_manifest.get('source_constraint_status'),
               'geometry_changed':False,'source_preservation':'Every protected source atlas texel checked byte-identical before and after hidden sampling',
-              'selection':'Highest facing visible views; near ties blend across a 0.12 cosine band with explicit approved unknown mask',
+              'texture_view_selection':selection,
+              'selection':('Highest facing visible single view per unknown texel; ties use projected pixel density then stable view index' if selection == SINGLE else 'Highest facing visible views; near ties blend across a 0.12 cosine band with explicit approved unknown mask'),
               'reconciliation_reference': str(Path(reconciliation_reference).resolve()) if reconciliation_reference else None,
               'reconciliation_reference_sha256': hashlib.sha256(Path(reconciliation_reference).read_bytes()).hexdigest() if reconciliation_reference else None,
               'seam_reconciliation':'Unknown colors only: low frequency RGB gain from explicit observed regions, fades over 24 image pixels; source atlas texels remain exact',
