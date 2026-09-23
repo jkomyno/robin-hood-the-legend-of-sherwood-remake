@@ -14,6 +14,45 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
 
 
+def safe_relative(value):
+    if (not isinstance(value, str) or not value or
+            any(character in value for character in '\\\0:#?%') or
+            any(part in ('', '.', '..') for part in value.split('/'))):
+        raise ValueError('Unsafe asset-relative path: ' + repr(value))
+    return Path(value)
+
+
+def contained_path(root, relative, *, required=False):
+    path = (root / relative).resolve(strict=required)
+    if not path.is_relative_to(root.resolve()):
+        raise ValueError('Asset path escapes library root: ' + str(relative))
+    return path
+
+
+def asset_file_pairs(stage_assets, library_assets, asset):
+    """Include every selectable static endpoint in the same guarded promotion."""
+    descriptor_path = safe_relative(asset['descriptor'])
+    model_path = safe_relative(asset['model'])
+    descriptor = json.loads(contained_path(stage_assets, descriptor_path, required=True).read_text())
+    if descriptor.get('id') != asset['id']:
+        raise ValueError('Asset descriptor identity mismatch: ' + asset['id'])
+    if descriptor_path.parent / safe_relative(descriptor['model']) != model_path:
+        raise ValueError('Asset descriptor model path mismatch: ' + asset['id'])
+    paths = [descriptor_path, model_path]
+    variants = descriptor.get('state_variants')
+    if variants is not None:
+        if not isinstance(variants, dict) or not variants:
+            raise ValueError('Expected nonempty state_variants')
+        for state, variant in variants.items():
+            if state not in ('initial', 'applied') or not isinstance(variant, dict):
+                raise ValueError('Invalid static asset variant')
+            if not isinstance(variant.get('name'), str) or not variant['name'].strip():
+                raise ValueError('Static asset variant requires a name')
+            paths.append(descriptor_path.parent / safe_relative(variant.get('model')))
+    return [(contained_path(stage_assets, relative, required=True),
+             contained_path(library_assets, relative)) for relative in dict.fromkeys(paths)]
+
+
 def prepare(stage, library, main_blend, map_name):
     for name in ('asset-verification.json', 'handoff-verification.json', 'browser-result.json'):
         if json.loads((stage/name).read_text())['status'] != 'PASS':
@@ -30,14 +69,16 @@ def prepare(stage, library, main_blend, map_name):
            (stage/f'{map_name}.level3d.json',library/f'scenes/{map_name}.level3d.json'),
            (merged,index_path)]
     for asset in staged['assets']:
-        for key in ('descriptor','model'):
-            relative=Path(asset[key])
-            if relative.is_absolute() or '..' in relative.parts:
-                raise ValueError('Unsafe asset-relative path')
-            pairs.append((stage/'assets'/relative,library/'3d-assets'/relative))
+        pairs.extend(asset_file_pairs(stage/'assets', library/'3d-assets', asset))
     records=[]
+    targets={}
     for index,(source,target) in enumerate(pairs):
         source=source.resolve(strict=True);target=target.resolve()
+        if target in targets:
+            if targets[target] != source:
+                raise ValueError('Conflicting promotion target: ' + str(target))
+            continue
+        targets[target]=source
         records.append({'source':str(source),'target':str(target),'source_sha256':sha(source),
                         'previous_sha256':sha(target),'backup':str(stage/'promotion-backup'/f'{index:03d}-{target.name}')})
     protected=[]
