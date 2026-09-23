@@ -47,3 +47,8 @@ Run `blender/verify_staged_handoffs.py` in Blender against the resulting resolve
 each imported handoff's world geometry, UVs, material graphs and packed image
 bytes. World-coordinate drift below 0.001 units is allowed for float32 parenting
 roundoff and is reported per asset; topology and appearance must match exactly.
+
+Texture bakes can optionally pass a raw generated reference after the texel-density
+argument to `blender/bake_reviewed_asset.py`. The preserved image remains selected;
+raw RGB only calibrates inferred-color gains. See the bake section in
+[PROCEDURE.md](PROCEDURE.md) for evidence and review requirements.

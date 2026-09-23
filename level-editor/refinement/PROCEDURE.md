@@ -299,6 +299,14 @@ geometry using all eight camera transforms and visibility/ownership checks:
   <experiment-dir>/views.json <selected-generated-preserved.png> <new-bake-dir> 2
 ```
 
+For optional tone reconciliation, append `<generated-raw.png>` after the final
+`2` argument. Keep `generated-preserved.png` as the selected image. The raw
+reference estimates local color differences on observed pixels; the correction
+changes only inferred pixels and never overwrites protected source atlas texels.
+Its path and SHA-256 are recorded and checked as bake evidence. Use a fresh bake
+directory and inspect all eight actual views again. This correction cannot align
+inconsistent generated hoop, plank, or masonry positions across viewpoints.
+
 `project_reviewed_texture.py` reconciles the generated views with the reviewed
 packet and projects onto visible eligible surfaces; it is not a single front
 decal or a UV unwrap of the contact sheet. `bake_reviewed_asset.py` guards geometry,

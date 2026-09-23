@@ -9,6 +9,20 @@ from build_review_gallery import build
 from review_evidence import sha
 
 
+def validate_reconciliation_reference(validation):
+    reference = validation.get('reconciliation_reference')
+    digest = validation.get('reconciliation_reference_sha256')
+    if bool(reference) != bool(digest):
+        raise ValueError('Incomplete reconciliation reference evidence')
+    if reference:
+        path = Path(reference)
+        if not path.is_file() or sha(path) != digest:
+            raise ValueError('Reconciliation reference changed or is missing')
+        guarded = {str(Path(key).resolve()): value for key, value in validation.get('evidence_sha256', {}).items()}
+        if guarded.get(str(path.resolve())) != digest:
+            raise ValueError('Reconciliation reference absent from guarded bake evidence')
+
+
 def collect(experiments, output, map_name, additional_experiments=()):
     experiments, output = Path(experiments).resolve(), Path(output).resolve()
     items = []
@@ -23,6 +37,7 @@ def collect(experiments, output, map_name, additional_experiments=()):
         generation = (experiment / review['generation']).resolve()
         validation = json.loads((bake / 'validation.json').read_text())
         report = json.loads((generation / 'generation.json').read_text())
+        validate_reconciliation_reference(validation)
         if (review.get('all_eight_actual_views_inspected') is not True
                 or review.get('status') != 'ready-for-user'
                 or validation.get('geometry_verified') is not True
@@ -46,7 +61,7 @@ def collect(experiments, output, map_name, additional_experiments=()):
             'source_comparison_secondary': str(generation / 'generated-preserved.png'),
             'source_comparison_secondary_label': 'Generated sheet with original pixels restored',
             'source_trace': str(generation / 'generated-raw.png'),
-            'source_trace_label': 'Raw Sunburst output — reference only, not used for this bake',
+            'source_trace_label': ('Raw Sunburst output — inferred-color calibration only' if validation.get('reconciliation_reference') else 'Raw Sunburst output — reference only, not used for this bake'),
             'validation': str(bake / 'validation.json'), 'review': str(review_path),
         })
     output.mkdir(parents=True, exist_ok=True)
