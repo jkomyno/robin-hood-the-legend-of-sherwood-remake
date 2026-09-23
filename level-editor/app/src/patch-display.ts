@@ -17,16 +17,28 @@ export class PatchDisplay {
   isRevealed(patch: string) { return this.revealed.has(patch); }
   apply(root: THREE.Object3D) {
     root.traverse(object => {
-      const {reveal_material_patch: patch, reveal_material_state: state, reveal_hide_when_applied: hide} = object.userData;
+      const {reveal_material_patch: patch, reveal_material_state: state, reveal_hide_when_applied: hide, reveal_show_when_applied: show} = object.userData;
+      let visible = true;
+      let controlled = false;
       if (patch !== undefined || state !== undefined) {
         if (typeof patch !== "string" || !patch || (state !== "covered" && state !== "revealed"))
           throw new Error("Invalid exported patch material state");
-        object.visible = (state === "revealed") === this.revealed.has(patch);
-      } else if (hide !== undefined) {
+        visible = (state === "revealed") === this.revealed.has(patch);
+        controlled = true;
+      }
+      if (hide !== undefined) {
         if (!Array.isArray(hide) || hide.some(id => typeof id !== "string" || !id))
           throw new Error("Invalid reviewed patch cover IDs");
-        object.visible = !hide.some(id => this.revealed.has(id));
+        visible &&= !hide.some(id => this.revealed.has(id));
+        controlled = true;
       }
+      if (show !== undefined) {
+        if (!Array.isArray(show) || !show.length || show.some(id => typeof id !== "string" || !id))
+          throw new Error("Invalid reviewed patch receiver IDs");
+        visible &&= show.some(id => this.revealed.has(id));
+        controlled = true;
+      }
+      if (controlled) object.visible = visible;
     });
   }
 }

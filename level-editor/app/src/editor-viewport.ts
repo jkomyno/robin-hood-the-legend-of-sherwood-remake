@@ -59,6 +59,9 @@ export class EditorViewport {
     this.sourceAsset?.traverse(object => {
       const id = object.userData.reveal_material_patch;
       if (typeof id === "string") patches.add(id);
+      for (const key of ["reveal_hide_when_applied", "reveal_show_when_applied"])
+        for (const trigger of object.userData[key] ?? [])
+          if (typeof trigger === "string") patches.add(trigger);
       for (const patch of object.userData.reveal?.patches ?? [])
         labels.set(patch.id, patch.name);
     });
