@@ -27,6 +27,8 @@ from source_visibility import first_source_hit
 
 def _tree(objects):
     vertices, triangles, owners = [], [], []
+    from physical_opacity import OpacityRegistry
+    opacity = OpacityRegistry()
     depsgraph = bpy.context.evaluated_depsgraph_get()
     for obj in objects:
         evaluated = obj.evaluated_get(depsgraph)
@@ -37,11 +39,13 @@ def _tree(objects):
             vertices.extend(obj.matrix_world @ vertex.co for vertex in mesh.vertices)
             triangles.extend(tuple(start + v for v in tri.vertices) for tri in mesh.loop_triangles)
             owners.extend(obj for _ in mesh.loop_triangles)
+            for triangle in mesh.loop_triangles:
+                opacity.add(evaluated, mesh, triangle)
         finally:
             evaluated.to_mesh_clear()
     if not triangles:
         raise ValueError("Review geometry contains no triangles")
-    return BVHTree.FromPolygons(vertices, triangles, all_triangles=True), owners, vertices
+    return opacity.wrap(BVHTree.FromPolygons(vertices, triangles, all_triangles=True)), owners, vertices
 
 
 def _state_variant_pairs(catalog, displayed, explicit_state):

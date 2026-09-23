@@ -69,14 +69,17 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         raise ValueError("Apply geometry modifiers before ownership projection")
     bpy.context.view_layer.update()
     vertices, triangles, triangle_owners = [], [], []
+    from physical_opacity import OpacityRegistry
+    opacity = OpacityRegistry()
     for obj in occluders:
         obj.data.calc_loop_triangles()
         offset = len(vertices)
         vertices.extend(obj.matrix_world @ v.co for v in obj.data.vertices)
         for triangle in obj.data.loop_triangles:
+            opacity.add(obj, obj.data, triangle)
             triangles.append(tuple(offset + i for i in triangle.vertices))
             triangle_owners.append(obj)
-    tree = BVHTree.FromPolygons(vertices, triangles, all_triangles=True)
+    tree = opacity.wrap(BVHTree.FromPolygons(vertices, triangles, all_triangles=True))
     if tree is None:
         raise ValueError("No occluder triangles")
     angle = math.radians(elevation_deg)

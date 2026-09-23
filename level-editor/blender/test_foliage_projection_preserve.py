@@ -16,7 +16,8 @@ def check():
     material['source_ownership_channel']='vertex-color-r'
     image=bpy.data.images.new('cutout',width=2,height=2)
     image.pixels[:]=[1,0,0,1, 0,1,0,0, 0,0,1,.5, 1,1,1,1]
-    material.node_tree.nodes.new('ShaderNodeTexImage').image=image
+    texture=material.node_tree.nodes.new('ShaderNodeTexImage');texture.image=image
+    material.node_tree.links.new(texture.outputs['Alpha'],material.node_tree.nodes.get('Principled BSDF').inputs['Alpha'])
     opaque=material.copy();del opaque['foliage_physical_opacity']
     meshes=[]
     for i,mat in enumerate((material,opaque)):

@@ -59,6 +59,8 @@ class ProjectionRegion:
         if selected - {o.get('source_node') for o in fallback_objects}:
             raise ValueError('Absent regional fallback occluders')
         vertices, triangles, self.owners = [], [], []
+        from physical_opacity import OpacityRegistry
+        opacity = OpacityRegistry()
         depsgraph=bpy.context.evaluated_depsgraph_get()
         for obj in fallback_objects:
             if obj.get('source_node') not in selected:
@@ -71,11 +73,13 @@ class ProjectionRegion:
                 vertices.extend(obj.matrix_world @ v.co for v in mesh.vertices)
                 triangles.extend(tuple(offset+i for i in t.vertices) for t in mesh.loop_triangles)
                 self.owners.extend(obj for _ in mesh.loop_triangles)
+                for triangle in mesh.loop_triangles:
+                    opacity.add(evaluated, mesh, triangle)
             finally:
                 evaluated.to_mesh_clear()
         if not triangles:
             raise ValueError('Empty regional fallback occlusion geometry')
-        self.tree=BVHTree.FromPolygons(vertices,triangles,all_triangles=True)
+        self.tree=opacity.wrap(BVHTree.FromPolygons(vertices,triangles,all_triangles=True))
 
     def contains(self, x, top_y):
         left,top,width,height=self.record['bbox']

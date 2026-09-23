@@ -72,6 +72,8 @@ def reproject_map(map_name, source_path, report_path, elevation_deg=35.0,
     bpy.context.view_layer.update()
     depsgraph = bpy.context.evaluated_depsgraph_get()
     vertices, triangles, triangle_owners = [], [], []
+    from physical_opacity import OpacityRegistry
+    opacity = OpacityRegistry()
     geometry_hash = hashlib.sha256()
     for obj in sorted(sources, key=lambda o: o.name):
         evaluated = obj.evaluated_get(depsgraph)
@@ -84,12 +86,14 @@ def reproject_map(map_name, source_path, report_path, elevation_deg=35.0,
                 vertices.extend(world)
                 triangles.extend(tuple(offset + i for i in face.vertices) for face in mesh.loop_triangles)
                 triangle_owners.extend([obj.name] * len(mesh.loop_triangles))
+                for triangle in mesh.loop_triangles:
+                    opacity.add(evaluated, mesh, triangle)
             geometry_hash.update(json.dumps([obj.name, [list(p) for p in world],
                                             [list(f.vertices) for f in mesh.polygons]],
                                            separators=(",", ":")).encode())
         finally:
             evaluated.to_mesh_clear()
-    tree = BVHTree.FromPolygons(vertices, triangles, all_triangles=True)
+    tree = opacity.wrap(BVHTree.FromPolygons(vertices, triangles, all_triangles=True))
     if tree is None:
         raise ValueError("Working meshes contain no triangles")
     angle = math.radians(elevation_deg)

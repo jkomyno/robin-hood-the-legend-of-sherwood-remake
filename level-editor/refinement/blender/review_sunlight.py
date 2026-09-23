@@ -46,6 +46,8 @@ def irradiance(normal, toward_sun, ambient, diffuse, blocked=False):
 
 def _surface(objects):
     vertices, triangles, normals = [], [], []
+    from physical_opacity import OpacityRegistry
+    opacity = OpacityRegistry()
     depsgraph = bpy.context.evaluated_depsgraph_get()
     for obj in objects:
         evaluated = obj.evaluated_get(depsgraph)
@@ -56,6 +58,7 @@ def _surface(objects):
             vertices.extend(obj.matrix_world @ vertex.co for vertex in mesh.vertices)
             transform = obj.matrix_world.to_3x3().inverted().transposed()
             for triangle in mesh.loop_triangles:
+                opacity.add(evaluated, mesh, triangle)
                 triangles.append(tuple(offset + index for index in triangle.vertices))
                 normals.append(tuple((transform @ mesh.corner_normals[index].vector).normalized()
                                      for index in triangle.loops))
@@ -63,7 +66,7 @@ def _surface(objects):
             evaluated.to_mesh_clear()
     if not triangles:
         raise ValueError("No review geometry")
-    return BVHTree.FromPolygons(vertices, triangles, all_triangles=True), vertices, triangles, normals
+    return opacity.wrap(BVHTree.FromPolygons(vertices, triangles, all_triangles=True)), vertices, triangles, normals
 
 
 def _interpolated_normal(point, triangle, vertices, normals):
