@@ -234,8 +234,15 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
             qy = low.y + (yy.ravel()+.5)*size.y/h
             positions = np.zeros((len(qx), 3))
             best = np.full(len(qx), -np.inf)
+            sample_triangles = np.full(len(qx), -1, dtype=int)
+            triangle_normals = {}
             for triangle in by_face[fid]:
                 ps = [world[i] for i in triangle.vertices]
+                triangle_normal = (ps[1]-ps[0]).cross(ps[2]-ps[0]).normalized()
+                # Keep planar faces byte-stable. A warped polygon can contain
+                # front- and back-facing triangles despite one averaged normal.
+                triangle_normals[triangle.index] = (normal if triangle_normal.dot(normal) > 1-1e-5
+                                                    else triangle_normal)
                 a, b, c = [Vector(((p-origin).dot(axis), (p-origin).dot(vertical))) for p in ps]
                 det = (b.y-c.y)*(a.x-c.x)+(c.x-b.x)*(a.y-c.y)
                 if abs(det) < 1e-12:
@@ -255,14 +262,22 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                 selected[outside] = np.maximum(selected[outside], 0)
                 selected[outside] /= selected[outside].sum(axis=1, keepdims=True)
                 positions[take] = selected @ np.asarray(ps)
+                sample_triangles[take] = triangle.index
                 best[take] = margin[take]
             colors = np.ones((len(qx), 4), dtype=np.float32)
+            normal_groups = [(triangle_normals[index], sample_triangles == index)
+                             for index in np.unique(sample_triangles) if index >= 0]
             colors[:, :3] = .16 + .16*max(0, normal.dot(light))
+            for sample_normal, selected in normal_groups:
+                colors[selected, :3] = .16 + .16*max(0, sample_normal.dot(light))
             sx = np.floor(positions[:, 0]).astype(int)
             sy = np.floor(sh + positions[:, 1]*math.sin(angle) + positions[:, 2]*math.cos(angle)).astype(int)
             # Match the source-review visibility floor. Near-grazing surfaces
             # magnify a source pixel into long bands across otherwise unknown roofs.
-            front = normal.dot(toward) > max(.05, float(obj.get("projection_min_cosine", .05)))
+            front = np.zeros(len(qx), dtype=bool)
+            for sample_normal, selected in normal_groups:
+                if sample_normal.dot(toward) > max(.05, float(obj.get("projection_min_cosine", .05))):
+                    front[selected] = True
             accepted = np.zeros(len(qx), dtype=bool)
             in_source = (sx >= 0) & (sx < sw) & (sy >= 0) & (sy < sh)
             mask_allowed = constraints.allowed(masks, sx, sy) if masks is not None else np.ones(len(sx), dtype=bool)
@@ -271,11 +286,9 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                 fallback_masks = region.constraints.for_object(obj) if region.constraints else None
                 fallback_allowed = region.constraints.allowed(fallback_masks,sx,sy) if region.constraints else np.ones(len(sx),dtype=bool)
                 mask_allowed = np.where(primary,mask_allowed,fallback_allowed)
-            if front:
-                mask_rejected += int(np.count_nonzero(in_source & ~mask_allowed & (best >= 0)))
-            if front:
-                for i in np.flatnonzero(in_source & mask_allowed):
-                    accepted[i] = visible_at(positions[i], obj, (int(sx[i]), int(sh-1-sy[i])), bool(region and not primary[i]))
+            mask_rejected += int(np.count_nonzero(front & in_source & ~mask_allowed & (best >= 0)))
+            for i in np.flatnonzero(front & in_source & mask_allowed):
+                accepted[i] = visible_at(positions[i], obj, (int(sx[i]), int(sh-1-sy[i])), bool(region and not primary[i]))
             colors[accepted] = pixels[sy[accepted], sx[accepted]]
             if region:
                 fallback_samples=accepted & ~primary
@@ -283,10 +296,13 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                 fallback_known += int(np.count_nonzero(fallback_samples & (best>=0)))
             if hidden_sampler is not None:
                 protected_colors = colors[accepted].copy()
-                if hidden_sampler_receives_face:
-                    hidden_sampler(obj, normal, positions, accepted, colors, face_index=fid)
-                else:
-                    hidden_sampler(obj, normal, positions, accepted, colors)
+                for sample_normal, selected in normal_groups:
+                    sampled_colors = colors[selected].copy()
+                    if hidden_sampler_receives_face:
+                        hidden_sampler(obj, sample_normal, positions[selected], accepted[selected], sampled_colors, face_index=fid)
+                    else:
+                        hidden_sampler(obj, sample_normal, positions[selected], accepted[selected], sampled_colors)
+                    colors[selected] = sampled_colors
                 if not np.array_equal(colors[accepted], protected_colors):
                     raise ValueError("Hidden sampler modified protected source pixels")
             if hidden_fill == "synthesized":
