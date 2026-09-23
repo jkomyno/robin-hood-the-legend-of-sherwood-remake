@@ -61,3 +61,8 @@ Texture bakes can optionally pass a raw generated reference after the texel-dens
 argument to `blender/bake_reviewed_asset.py`. The preserved image remains selected;
 raw RGB only calibrates inferred-color gains. See the bake section in
 [PROCEDURE.md](PROCEDURE.md) for evidence and review requirements.
+
+For a single approved planar atlas, `prepare_planar_texture_packet.py` derives
+coverage from audited UV triangles without resizing the atlas. The paired
+`blender/bake_planar_texture.py` preserves UVs and geometry and retains all eight
+actual review views. See the planar exception in the procedure.

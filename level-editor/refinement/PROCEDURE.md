@@ -288,6 +288,41 @@ response, input, mask and lighting files. Check dimensions, silhouette, texture
 scale, all eight viewpoints and tile-to-tile consistency. Never silently rescale
 generated output. The raw alternative is retained for an explicit later choice.
 
+### Single planar atlas exception
+
+A reviewed planar background can use one exact existing atlas instead of eight
+redundant projected views. First check its approved ownership report: a fully
+known atlas needs no generation. `prepare_planar_texture_packet.py` validates the
+current recorded approval, source/texture/mask hashes, and audited opaque GLB.
+It derives physical coverage from the existing UV triangles and protects holes
+and outside pixels. The current implementation requires a single planar mesh,
+one atlas, and the same uniform pure-gray lighting in every approved solid view.
+It copies original atlas dimensions and pixels without resizing or reframing.
+
+```bash
+python3 level-editor/refinement/prepare_planar_texture_packet.py \
+  <review-manifest.json> <asset-id> <new-experiment> \
+  <approved-source.png> <approved-known-mask.png> <approved-protected-atlas.png>
+```
+
+The normal generation driver recognizes `projection_kind: planar-atlas` and uses
+a single-image prompt with the exact aligned `solid.png` as image two. Inspect
+the prepared input before calling the API. For a ground atlas, missing object
+cutouts represent unseen ground; request continuation of surrounding terrain
+materials rather than replacement scenery. Preserve the local protected-pixel
+composite and both raw and preserved outputs.
+
+```bash
+/usr/bin/blender --background <experiment>/approved-model.blend --threads 2 \
+  --python level-editor/refinement/blender/bake_planar_texture.py -- \
+  <experiment> <generated-preserved.png> <new-bake-dir>
+```
+
+This replaces only the separate worker's atlas image, checks packed source pixels,
+geometry, UVs and outside materials, then renders the original eight review
+cameras. All eight actual material views still require inspection. It never
+publishes the result or changes the approved worker.
+
 ### Bake, validate and publish (generation alone is not completion)
 
 After reviewing the fill, bake the selected image back onto the exact approved
