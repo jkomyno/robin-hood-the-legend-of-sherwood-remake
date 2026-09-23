@@ -17,6 +17,7 @@ import numpy as np
 from PIL import Image
 
 from review_evidence import bind_decision, load_decisions, sha
+from source_review_resolution import apply_generation_gate
 
 
 def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=False):
@@ -40,9 +41,6 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
         workspace = manifest_path.parent / workspace
     workspace = workspace.resolve(strict=True)
     handoff = json.loads((workspace / 'handoff.json').read_text()) if (workspace / 'handoff.json').exists() else {}
-    for record in (item, item.get('user_decision', {}), handoff):
-        if record.get('generation_blocked') or record.get('texture_issue'):
-            raise ValueError('Texture preparation blocked by recorded generation or texture issue')
     identity = {'asset_id': asset_id, 'model_sha256': item['revision']['model_sha256'],
                 'evidence': {key: value['sha256'] for key, value in item['revision']['evidence'].items()}}
     if hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest() != item['revision']['sha256']:
@@ -53,6 +51,8 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     for key, evidence in item['revision']['evidence'].items():
         if sha(Path(evidence['path'])) != evidence['sha256']:
             raise ValueError('Approved evidence changed: ' + key)
+    if not apply_generation_gate(item, handoff, workspace / 'handoff.json', manifest_path.parent / 'source-review-resolutions.json'):
+        raise ValueError('Texture preparation blocked by recorded generation or texture issue: ' + '; '.join(item['generation_blockers']))
     packet = Path(item['textured']).parent.resolve(strict=True)
     frames_path = packet / 'views.json'
     bound_frames = list(item['revision']['evidence'].values()) + list(item['user_decision'].get('geometry_basis', {}).get('files', {}).values())
@@ -135,6 +135,9 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
                 'solid_sha256': sha(output / 'solid.png'), 'lighting_sha256': sha(output / 'solid.png'),
                 'saved_model_sha256': sha(output / 'approved-model.blend'),
                 'source_decision': item['user_decision'], 'texture_approval': 'pending'}
+    if item.get('source_review_resolution'):
+        approval['source_review_resolution'] = item['source_review_resolution']
+        shutil.copyfile(item['source_review_resolution']['path'], output / 'source-review-resolutions.json')
     (output / 'approval.json').write_text(json.dumps(approval, indent=2) + '\n')
     report = {'asset_id': asset_id, 'approved_revision': revision, 'editable_pixels': editable,
               'source_review_manifest': str(manifest_path), 'review_manifest_sha256': sha(manifest_path),

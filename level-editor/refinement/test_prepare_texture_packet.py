@@ -89,6 +89,26 @@ class PreparationTests(unittest.TestCase):
         decisions.write_text(json.dumps(data))
         self.assertEqual(prepare(self.manifest,'fixture',self.root/'output')['editable_pixels'],8)
 
+    def test_exact_source_review_resolution_is_copied_to_preparation(self):
+        handoff={'texture_issue':{'status':'correction-awaiting-user-review','generation_blocked':True}}
+        handoff_path=self.root/'handoff.json';handoff_path.write_text(json.dumps(handoff))
+        self.item['revision']['evidence']['handoff']={'path':str(handoff_path),'sha256':sha(handoff_path)}
+        identity={'asset_id':'fixture','model_sha256':self.item['revision']['model_sha256'],
+                  'evidence':{k:v['sha256'] for k,v in self.item['revision']['evidence'].items()}}
+        self.item['revision']['sha256']=hashlib.sha256(json.dumps(identity,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        self.save();record(self.manifest,['fixture'],'Synthetic corrected source packet approval')
+        decision=json.loads((self.root/'decisions.json').read_text())['decisions'][-1]
+        resolution={'asset_id':'fixture','revision_sha256':self.item['revision']['sha256'],
+                    'approval_decision':decision,'handoff_sha256':sha(handoff_path),
+                    'cleared_blockers':{'handoff.texture_issue':handoff['texture_issue']}}
+        path=self.root/'source-review-resolutions.json'
+        path.write_text(json.dumps({'version':1,'resolutions':[resolution]}))
+        before=handoff_path.read_bytes();prepare(self.manifest,'fixture',self.root/'resolved')
+        approval=json.loads((self.root/'resolved/approval.json').read_text())
+        self.assertEqual(approval['source_review_resolution']['record'],resolution)
+        self.assertEqual(sha(path),sha(self.root/'resolved/source-review-resolutions.json'))
+        self.assertEqual(before,handoff_path.read_bytes())
+
     def test_changed_ownership_fails_before_creating_output(self):
         (self.packet/'views/view-0-known.png').write_bytes(b'changed')
         with self.assertRaises(ValueError):prepare(self.manifest,'fixture',self.root/'blocked')

@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'refinement'))
 from review_evidence import (sha, load_decisions, bind_decision, archive_decisions,
                              archive_reviewed_revision, material_evidence)
 from endpoint_review import load_endpoint_mapping, endpoint_evidence
+from source_review_resolution import apply_generation_gate
 
 
 def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=None,
@@ -192,8 +193,7 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
         item['revision']['sha256'] = hashlib.sha256(
             json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
         bind_decision(item, records)
-        if item.get('generation_blocked') or item.get('texture_issue'):
-            item['generation_eligible'] = item['publication_eligible'] = False
+        apply_generation_gate(item, handoff, handoff_path, output / 'source-review-resolutions.json')
         archive_reviewed_revision(output, item, evidence)
         items.append(item)
         progress.append({**entry, 'status': item['status'], 'user_approval': item['user_approval']})
