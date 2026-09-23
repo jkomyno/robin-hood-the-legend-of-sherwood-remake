@@ -16,7 +16,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 import foliage_trees as foliage
 from props_trees import GROUND
 
-VERSION='leicester-neutral-regional-fringe-v2'
+VERSION='leicester-neutral-regional-fringe-v3'
 SPECS={
  90:dict(mask=25,box=(230,-45,450,270),center=338,seeds=[(282,35),(354,35),(414,65),(268,123),(332,121),(413,144),(363,181),(410,205)],wood=[107,108,109,110,111],roof=[420,429]),
  91:dict(mask=25,box=(435,-115,668,313),center=559,seeds=[(481,27),(566,35),(636,52),(476,143),(549,144),(636,166),(580,223),(639,257)],wood=[107,108,109,110,111],roof=[420,429]),
@@ -40,7 +40,9 @@ def evidence(workspace,node,output):
     box=spec['box'];left,top,right,bottom=box;yy,xx=np.mgrid[top:bottom,left:right]
     native=paste_mask(record,box);coverage=native.copy()
     excluded=np.zeros_like(native)
-    for index in spec['wood']+spec['roof']:excluded|=paste_mask(masks[index],box)
+    wood=np.zeros_like(native)
+    for index in spec['roof']:excluded|=paste_mask(masks[index],box)
+    for index in spec['wood']:wood|=paste_mask(masks[index],box)
     coverage&=~excluded
     # Allocation between touching trees is inferred. A wavy side boundary
     # avoids presenting a rectangular crop edge as a measured leaf contour.
@@ -68,12 +70,17 @@ def evidence(workspace,node,output):
         owned=coverage&support;ys,xs=np.nonzero(owned);x0,x1=max(0,int(xs.min())-2),min(right-left,int(xs.max())+3);y0,y1=max(0,int(ys.min())-2),min(bottom-top,int(ys.max())+3)
         rgba=np.full((y1-y0,x1-x0,4),105,dtype=np.uint8);rgba[:,:,3]=owned[y0:y1,x0:x1]*255
         path=output/f'lobe-{i:02}-neutral.png';Image.fromarray(rgba).save(path)
-        lobes.append(dict(index=i,bbox_source=[left+x0,top+y0,left+x1,top+y1],source=str(path),unknown=str(path),observed=False,native_pixels=0,
+        # Wood is a separate foreground mesh, not a hole through the entire
+        # crown. Only the front surface retains its source-camera cutout;
+        # the neutral back and transverse surfaces complete foliage behind it.
+        front=rgba.copy();front[:,:,3]&=(~wood[y0:y1,x0:x1]).astype(np.uint8)*255
+        front_path=output/f'lobe-{i:02}-front.png';Image.fromarray(front).save(front_path)
+        lobes.append(dict(index=i,bbox_source=[left+x0,top+y0,left+x1,top+y1],source=str(front_path),unknown=str(path),observed=False,native_pixels=0,
                           depth_radius=min((right-left)*.28,max(x1-x0,y1-y0)*.25)))
         union|=owned
     if not np.array_equal(union,coverage):raise ValueError('Lobe union lost measured fringe coverage')
     if np.any(coverage&(yy>=0)&~native):raise ValueError('Visible coverage exceeds regional native alpha')
-    if np.any(coverage&excluded):raise ValueError('Coverage includes excluded roof or wood')
+    if np.any(coverage&excluded):raise ValueError('Coverage includes excluded roof')
     points=[]
     for x in range(left+10,right-10,8):
         col=x-left;rows=np.flatnonzero(coverage[:,col]&(yy[:,col]>=0))
@@ -93,7 +100,8 @@ def evidence(workspace,node,output):
     report=dict(source_node=f'building-{node:03d}',source_rgb_sha256=foliage.sha(config['source_path']),native_alpha_sha256=foliage.sha(record['png']),
         regional_mask_index=spec['mask'],native_mask=None,lobes=lobes,source_box=list(box),source_rgb_projected=False,
         physical_opacity_authority='Derived neutral coverage; regional native fringe plus explicit tree allocation and off-map inference, not authoritative individual-tree alpha.',
-        source_mask_manifest_sha256=foliage.sha(manifest_path),exclusions=spec['wood']+spec['roof'],
+        source_mask_manifest_sha256=foliage.sha(manifest_path),exclusions=spec['roof'],front_surface_wood_exclusions=spec['wood'],
+        inferred_backing_behind_wood_pixels=int((coverage&wood).sum()),
         measured_visible_pixels=int((coverage&(yy>=0)).sum()),inferred_offmap_pixels=int((coverage&(yy<0)).sum()),
         points=points,segments={'lower_fringe':'Measured only where the regional native alpha transitions to zero; labels identify other edges.',
         'lateral':'Inferred allocation between overlapping neighboring crowns; no source RGB ownership.',
@@ -121,7 +129,7 @@ def run(workspace):
     report.update(recipe=VERSION,idempotence='PASS',source_ownership_unchanged=True,wood_geometry_unchanged=True,texture_generation='not-started',
         limitations=['Regional native alpha constrains visible lower fringe only; it does not identify a complete individual tree.',
         'All crown RGB and ownership remain neutral/zero. Adjacent-tree allocation and off-map completion are explicit inferences; upper extension is 45, 115 or 95 source pixels for trees 090, 091 or 092 respectively.',
-        'Wood and roof exclusions are exact native-mask exclusions; no architecture is treated as foliage.',
+        'Roof exclusions remain exact native masks. Wood cutouts apply only to the source-facing surface; neutral rear and transverse coverage behind separate wood meshes is inferred from continuous regional canopy alpha.',
         'Rounded and transverse hidden surfaces remain inferred; their depth radius is bounded to 28 percent of allocated crown width, independently of source fringe height.'])
     (workspace/'inspection/foliage-recipe.json').write_text(json.dumps(report,indent=2)+'\n');bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
     return report
