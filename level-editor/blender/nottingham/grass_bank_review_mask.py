@@ -1,4 +1,4 @@
-"""Freeze a conservative source-visible stone domain for the source-visible grass bank168."""
+"""Freeze a conservative source-visible grass domain for bank168."""
 from pathlib import Path
 import copy, hashlib, json, shutil
 from PIL import Image, ImageDraw
