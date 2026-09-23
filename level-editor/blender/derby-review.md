@@ -1,5 +1,10 @@
 # Derby asset refinement review
 
+User approved Lower West north v14 on 2026-09-23, including its corrected
+footprint/thickness. Approval hashes are recorded in the review manifest;
+removed from pending gallery. Two-image texture fill is authorized. Integrate
+only node025 from this candidate, preserving the independently revised south.
+
 Current follow-up: North wall walk v14 independently inspected and placed in
 pending gallery with actual saved-mesh overlays and source-camera comparisons.
 It changes the footprint/thickness to remove artificial transition wedges and
