@@ -4,10 +4,14 @@ import path from "node:path";
 import crypto from "node:crypto";
 import sharp from "sharp";
 import { requireEnv } from "../env.ts";
+import { imageProvider, providerIdentity, openRouterBody, validateOpenRouterCapabilities } from "./image-provider.ts";
 
-const model = "gpt-image-2.5-sunburst";
 async function main(): Promise<void> {
   if (!process.argv[2]) throw new Error("Supply experiment directory and --prepare or --generate");
+  const providerIndex=process.argv.indexOf("--provider");
+  if(providerIndex>=0&&!process.argv[providerIndex+1])throw new Error("Supply --provider openai or openrouter");
+  const provider=imageProvider(providerIndex<0?undefined:process.argv[providerIndex+1]);
+  const identity=providerIdentity(provider);
   const directory = path.resolve(process.argv[2]);
   const manifest = JSON.parse(await fs.readFile(path.join(directory,"views.json"),"utf8")) as {
     source_image:string; projection_kind?:string;
@@ -111,29 +115,44 @@ Replace every masked untextured surface with the appropriate texture. Return the
   if(planar&&(manifest.views.length!==1||variant!=="short"))throw new Error("Planar atlas requires exactly one view and short prompt");
   const omitMask=process.argv.includes("--no-mask");
   if(omitMask&&variant!=="short")throw new Error("The no-mask control currently requires --prompt-variant short");
-  const outputDirectory=path.join(directory,`generation-${variant}${omitMask?"-no-mask":""}${lighting?"-with-lighting":""}`);
+  const outputDirectory=path.join(directory,`generation-${variant}${omitMask?"-no-mask":""}${lighting?"-with-lighting":""}${provider==="openrouter"?"-openrouter":""}`);
   await fs.mkdir(outputDirectory,{recursive:true});
   const prompt=planar?"Complete the missing neutral-gray areas of this single planar texture atlas. It is one image, not a contact sheet. Continue the surrounding ground textures at the same pixel scale and exact coordinates. Gray cutouts mark unknown ground underneath removed scenery, not object silhouettes to preserve. Preserve every existing textured pixel exactly. Do not resize, crop, reframe, rotate, or add objects.":omitMask?"Create an image from the provided reference sheet of 8 views of the same asset. The untextured gray shaded areas mark missing textures. Fill in these regions logically and consistently across all views, preserving all existing textured pixels exactly. Keep the same asset design, textures, lighting, perspective, and black background.":prompts[variant];
-  const parameters={model,quality:"high",size:`${canvasWidth}x${canvasHeight}`,n:"1",output_format:"png",
+  const parameters={model:identity.model,quality:"high",size:`${canvasWidth}x${canvasHeight}`,n:"1",output_format:"png",
     prompt:prompt+(planar?" Preserve the existing planar lighting without inventing terrain relief.":" Follow the lighting and shading shown on the gray surfaces, preserving the same sun direction across all eight views.")+
       (lighting?(planar?" The second image is the exact aligned planar surface in pure gray; use it as the lighting and coverage reference. Return only the completed first image.":" The second image shows the same eight views entirely in gray; use it as the reference for lighting, shadows, and shape, and return only the completed first image."):"")+
       (promptSuffix?" "+promptSuffix:"")};
-  const hash=crypto.createHash("sha256").update(input).update(lighting??Buffer.alloc(0)).update(omitMask?Buffer.alloc(0):mask).update(JSON.stringify(parameters)).digest("hex");
+  const hash=crypto.createHash("sha256").update(input).update(lighting??Buffer.alloc(0)).update(omitMask?Buffer.alloc(0):mask).update(JSON.stringify(parameters)).update(JSON.stringify({provider,endpoint:identity.endpoint})).digest("hex");
   const cache=path.join(directory,"api-cache",hash);await fs.mkdir(cache,{recursive:true});
-  await fs.writeFile(path.join(cache,"request.json"),JSON.stringify({endpoint:"https://api.openai.com/v1/images/edits",parameters,input_sha256:crypto.createHash("sha256").update(input).digest("hex"),lighting_sha256:lighting?crypto.createHash("sha256").update(lighting).digest("hex"):null,mask_sha256:omitMask?null:crypto.createHash("sha256").update(mask).digest("hex")},null,2));
+  await fs.writeFile(path.join(cache,"request.json"),JSON.stringify({provider,endpoint:identity.endpoint,parameters,input_sha256:crypto.createHash("sha256").update(input).digest("hex"),lighting_sha256:lighting?crypto.createHash("sha256").update(lighting).digest("hex"):null,mask_sha256:omitMask?null:crypto.createHash("sha256").update(mask).digest("hex")},null,2));
   await fs.writeFile(path.join(cache,"input.png"),input);await fs.writeFile(path.join(cache,"mask.png"),mask);
   if(lighting)await fs.writeFile(path.join(cache,"lighting.png"),lighting);
   let response:{status:number;body:unknown};
   try { response=JSON.parse(await fs.readFile(path.join(cache,"response.json"),"utf8")); }
   catch(error) {
     if((error as NodeJS.ErrnoException).code!=="ENOENT")throw error;
+    let body: FormData | string;
+    const headers: Record<string,string>={Authorization:`Bearer ${requireEnv(identity.credential)}`};
+    if(provider==="openrouter"){
+      const request=openRouterBody(parameters,input,lighting,omitMask);
+      const capabilities=await fetch(`${identity.endpoint}/models/${identity.model}/endpoints`,{headers});
+      if(!capabilities.ok)throw new Error(`OpenRouter capability discovery failed: ${capabilities.status}`);
+      const metadata:unknown=await capabilities.json();
+      await fs.writeFile(path.join(cache,"capabilities.json"),JSON.stringify(metadata,null,2));
+      validateOpenRouterCapabilities(metadata,lighting?2:1);
+      headers["Content-Type"]="application/json";
+      body=JSON.stringify(request);
+    }else{
     const form=new FormData();for(const [key,value]of Object.entries(parameters))form.append(key,value);
     form.append(lighting?"image[]":"image",new Blob([new Uint8Array(input)],{type:"image/png"}),"input.png");
     if(lighting)form.append("image[]",new Blob([new Uint8Array(lighting)],{type:"image/png"}),"lighting.png");
     if(!omitMask)form.append("mask",new Blob([new Uint8Array(mask)],{type:"image/png"}),"mask.png");
-    const raw=await fetch("https://api.openai.com/v1/images/edits",{method:"POST",headers:{Authorization:`Bearer ${requireEnv("OPENAI_API_KEY")}`},body:form});
-    const text=await raw.text();let body:unknown;try{body=JSON.parse(text);}catch{body={text};}
-    response={status:raw.status,body};await fs.writeFile(path.join(cache,"response.json"),JSON.stringify(response,null,2));
+    body=form;
+    }
+    console.log(JSON.stringify({status:"requesting",provider,endpoint:identity.endpoint,model:identity.model,quality:parameters.quality,size:parameters.size,cache}));
+    const raw=await fetch(identity.endpoint,{method:"POST",headers,body});
+    const text=await raw.text();let responseBody:unknown;try{responseBody=JSON.parse(text);}catch{responseBody={text};}
+    response={status:raw.status,body:responseBody};await fs.writeFile(path.join(cache,"response.json"),JSON.stringify(response,null,2));
   }
   if(response.status<200||response.status>=300)throw new Error(JSON.stringify(response));
   const encoded=(response.body as {data?:{b64_json?:string}[]}).data?.[0]?.b64_json;
@@ -142,6 +161,7 @@ Replace every masked untextured surface with the appropriate texture. Return the
   const original=await sharp(input).ensureAlpha().raw().toBuffer();
   const editMask=await sharp(mask).ensureAlpha().raw().toBuffer();
   const generatedInfo=await sharp(generated).metadata();
+  if(generatedInfo.format!=="png")throw new Error("Generated output is not the requested lossless PNG");
   if(generatedInfo.width!==manifest.layout.width||generatedInfo.height!==manifest.layout.height)
     throw new Error(`Generated dimensions ${generatedInfo.width}x${generatedInfo.height} differ from input; refusing to rescale texture coordinates`);
   const pixels=await sharp(generated).ensureAlpha().raw().toBuffer();
@@ -161,7 +181,7 @@ Replace every masked untextured surface with the appropriate texture. Return the
     }
   }
   await sharp(result,{raw:{width:manifest.layout.width,height:manifest.layout.height,channels:4}}).png().toFile(path.join(outputDirectory,"generated-preserved.png"));
-  const report={model,quality:parameters.quality,variant,maskSent:!omitMask,lightingReferenceSent:!!lighting,prompt:parameters.prompt,status:response.status,filled,changedProtected,rawChangedProtected,
+  const report={model:identity.model,provider,endpoint:identity.endpoint,quality:parameters.quality,variant,maskSent:!omitMask,lightingReferenceSent:!!lighting,prompt:parameters.prompt,status:response.status,filled,changedProtected,rawChangedProtected,
     protectedTexturePixels,rawChangedTexturePixels,rawChangedBackgroundPixels,
     rawProtectedTextureMeanAbsoluteError:protectedTexturePixels?rawTextureAbsoluteError/(3*protectedTexturePixels):0,cache,outputDirectory};
   await fs.writeFile(path.join(outputDirectory,"generation.json"),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));

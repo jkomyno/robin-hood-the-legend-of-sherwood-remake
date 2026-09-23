@@ -315,6 +315,19 @@ response, input, mask and lighting files. Check dimensions, silhouette, texture
 scale, all eight viewpoints and tile-to-tile consistency. Never silently rescale
 generated output. The raw alternative is retained for an explicit later choice.
 
+When explicitly authorized to route the same model through OpenRouter, append
+`--provider openrouter` to the generation command. The default remains OpenAI.
+This transport reads `OPENROUTER_API_KEY` from the same private environment file,
+discovers and archives current image-endpoint capabilities, then sends JSON to
+`https://openrouter.ai/api/v1/images` using `openai/gpt-image-2.5-sunburst`.
+The input and pure-gray sheet become ordered `input_references`; quality remains
+high, `size` remains the exact approved canvas, and output is requested as PNG.
+It requires `--no-mask`, while local protection still uses the approved mask.
+Provider and endpoint are part of cache identity and provenance; OpenRouter
+outputs use the suffix `-openrouter` so previous raw results stay intact.
+Returned dimensions and PNG format are checked before composing or baking;
+unsupported sizing must fail rather than resize an approved projection packet.
+
 ### Single planar atlas exception
 
 A reviewed planar background can use one exact existing atlas instead of eight
