@@ -1,5 +1,12 @@
 # Derby asset refinement review
 
+Latest curtain decisions: Upper West rejected (805d45a8405b04a0): missing upper
+split and wrong lower battlements. Lower West south rejected (809f762b33a2ea3c):
+large uncrenellated gaps contradict continuous source battlements. Both workers
+restarted for complete-run source audits and geometry corrections. Gallery marks
+both fix-needed; no texture generation or publication authorized for these
+rejected candidates. Earlier ready-for-review entries below are historical.
+
 Publication7 is LIVE: five approved buildings (North Tower, Central Gallery,
 West Tower, Upper Gatehouse, East Hall) plus approved north wallwalk025.
 82 promoted files read back with matching hashes; rollback backups retained.
