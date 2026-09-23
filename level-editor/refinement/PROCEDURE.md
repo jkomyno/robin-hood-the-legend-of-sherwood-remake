@@ -179,6 +179,28 @@ projection/export script to generate the complete `modified/` packet:
 Inspect every modified view. A clean solid silhouette does not prove that the
 projected texture is aligned.
 
+### Check source coverage, not just sampled colors
+
+Exact RGB checks prove that accepted texture pixels retain their colors; they
+do not prove that all visible artwork was accepted. Before marking an asset
+ready, compare its complete source-visible domain against the native masks,
+receiver geometry, and foreground occlusion. Inspect rejected pixels as well as
+accepted pixels. Explain each substantial neutral area using the original
+artwork: hidden surface, outside the image, foreign ownership, or a defect to
+correct. A nonzero texture count is not a completeness check.
+
+Reopen the saved model and inspect its actual materials in all eight views and
+every applicable state. Diagnostic source sheets alone cannot establish that
+the material was saved correctly. Check adjacent assets together where a mask
+delegates artwork to another asset; that neighbor must actually cover it,
+without a gap or overlapping coplanar surfaces. Broad proxy geometry must not
+hide source-visible pixels merely because it intersects a projection ray.
+
+Bind the coverage review to the model and modified packet hashes. Missing,
+failed, or stale coverage evidence must block readiness. For terrain, review
+the proposed ground domain against the artwork explicitly; the complement of
+scenery masks can still contain omitted structures and props.
+
 For an exterior-only workspace, an inaccurate generic ground plane may be
 excluded from source-ray occlusion with an explicit
 `source_projection_ground_exclusion` in `workspace.json`. It must contain
