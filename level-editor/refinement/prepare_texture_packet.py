@@ -19,7 +19,7 @@ from PIL import Image
 from review_evidence import bind_decision, load_decisions, sha
 
 
-def prepare(manifest_path, asset_id, output, decisions_path=None):
+def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=False):
     manifest_path = Path(manifest_path).resolve(strict=True)
     data = json.loads(manifest_path.read_text())
     matches = [i for i in data['items'] if i['id'] == asset_id]
@@ -105,6 +105,9 @@ def prepare(manifest_path, asset_id, output, decisions_path=None):
         raise ValueError('Per-view assembly differs from the actual approved source sheet')
     if not np.array_equal(np.asarray(solid_sheet), np.asarray(Image.open(item['solid']).convert('RGBA'))):
         raise ValueError('Per-view solid assembly differs from actual approved geometry sheet')
+    if check_only:
+        return {'asset_id': asset_id, 'status': 'eligible', 'editable_pixels': editable,
+                'revision_sha256': item['revision']['sha256']}
     output.mkdir(parents=True)
     (output / 'views').mkdir()
     shutil.copyfile(model, output / 'approved-model.blend')
@@ -143,5 +146,6 @@ if __name__ == '__main__':
     parser.add_argument('asset_id')
     parser.add_argument('output', type=Path)
     parser.add_argument('--decisions', type=Path)
+    parser.add_argument('--check-only', action='store_true', help='Validate complete approved packet without writing output')
     args = parser.parse_args()
-    print(json.dumps(prepare(args.manifest, args.asset_id, args.output, args.decisions)))
+    print(json.dumps(prepare(args.manifest, args.asset_id, args.output, args.decisions, check_only=args.check_only)))

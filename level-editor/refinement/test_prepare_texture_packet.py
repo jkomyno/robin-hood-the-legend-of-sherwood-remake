@@ -57,6 +57,12 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(mask[1,1,3],255)
         self.assertEqual(mask[0,0,3],255)
 
+    def test_check_only_validates_without_output(self):
+        result=prepare(self.manifest,'fixture',self.root/'dry-run',check_only=True)
+        self.assertEqual(result['status'],'eligible')
+        self.assertEqual(result['editable_pixels'],8)
+        self.assertFalse((self.root/'dry-run').exists())
+
     def test_material_pending_or_issue_blocks_without_output(self):
         for field,value in [('stored_material_validation','pending-or-failed'),('generation_blocked',True),
                             ('texture_issue','incorrect atlas')]:
