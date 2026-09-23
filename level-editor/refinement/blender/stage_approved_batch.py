@@ -28,7 +28,11 @@ def run(config_path):
         # Discover only visible meshes owned by this exact catalog group. A
         # worker can contain the whole map, including stale sibling buildings.
         item['discover_asset_members'] = True
-        item['source_nodes'] = [f"building-{part['obstacle']:03d}" for part in groups[item['asset_id']]['parts']]
+        owned = {f"building-{part['obstacle']:03d}" for part in groups[item['asset_id']]['parts']}
+        selected = item.get('source_nodes', sorted(owned))
+        if not selected or set(selected) - owned:
+            raise ValueError('Selected source nodes escape catalog ownership: ' + item['asset_id'])
+        item['source_nodes'] = selected
     plan_path = Path(config['output']).with_suffix('.plan.json')
     if plan_path.exists():
         raise FileExistsError(plan_path)

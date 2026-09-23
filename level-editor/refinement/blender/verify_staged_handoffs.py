@@ -115,16 +115,19 @@ def verify(plan_path):
             raise ValueError('Empty handoff: ' + item['asset_id'])
         expected[item['asset_id']] = selected
     ids = set(expected)
+    scopes = {item['asset_id']: set(item['source_nodes']) for item in plan['imports']}
+    def selected(record):
+        return not record['hidden'] and record['source'] in scopes.get(record['group'], set())
     bpy.ops.wm.open_mainfile(filepath=plan['baseline'])
-    before = [r for r in snapshot(plan['collection_name']) if r['hidden'] or r['group'] not in ids]
+    before = [r for r in snapshot(plan['collection_name']) if not selected(r)]
     bpy.ops.wm.open_mainfile(filepath=str(Path(plan['output']) / 'worker.blend'))
     records = snapshot(plan['collection_name'], True)
-    after = [r for r in records if r['hidden'] or r['group'] not in ids]
+    after = [r for r in records if not selected(r)]
     if signatures(before) != signatures(after):
         raise ValueError('Unimported baseline mesh geometry or appearance changed')
     reports = []
     for asset_id, wanted in expected.items():
-        actual = [r for r in records if not r['hidden'] and r['group'] == asset_id]
+        actual = [r for r in records if selected(r) and r['group'] == asset_id]
         drift = compare_handoff(wanted, actual)
         reports.append({'asset_id': asset_id, 'meshes': len(actual), 'content_matches_handoff': True,
                         'maximum_world_coordinate_drift': drift})
