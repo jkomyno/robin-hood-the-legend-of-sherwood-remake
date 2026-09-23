@@ -21,7 +21,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
          hidden_fill="neutral", synthesis_cache=None, reproject_authored_nodes=None,
          hidden_sampler=None, projection_region=None, exclude_occluder_components=None,
          receiver_components=None, receiver_asset_id=None, receiver_object_names=None,
-         receiver_face_indices=None, material_suffix=None):
+         receiver_face_indices=None, material_suffix=None, hidden_sampler_receives_face=False):
     import bpy
     import numpy as np
     from mathutils import Vector
@@ -283,7 +283,10 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                 fallback_known += int(np.count_nonzero(fallback_samples & (best>=0)))
             if hidden_sampler is not None:
                 protected_colors = colors[accepted].copy()
-                hidden_sampler(obj, normal, positions, accepted, colors)
+                if hidden_sampler_receives_face:
+                    hidden_sampler(obj, normal, positions, accepted, colors, face_index=fid)
+                else:
+                    hidden_sampler(obj, normal, positions, accepted, colors)
                 if not np.array_equal(colors[accepted], protected_colors):
                     raise ValueError("Hidden sampler modified protected source pixels")
             if hidden_fill == "synthesized":

@@ -37,6 +37,15 @@ with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
     bake('Fixture', image.filepath_raw, directory/'report.json', receiver_nodes=['receiver'],
          preserve_authored=False, hidden_sampler=safe, texels_per_unit=2)
     assert counts['known'] > 0 and counts['unknown'] > 0, counts
+    seen_faces=[]
+    def face_safe(obj, normal, positions, accepted, colors, *, face_index):
+        assert face_index in range(len(obj.data.polygons))
+        seen_faces.append((obj.name,face_index))
+        safe(obj,normal,positions,accepted,colors)
+    bake('Fixture', image.filepath_raw, directory/'face-report.json', receiver_nodes=['receiver'],
+         preserve_authored=False, hidden_sampler=face_safe, hidden_sampler_receives_face=True,
+         texels_per_unit=2)
+    assert seen_faces == [('receiver',0)], seen_faces
 
     def corrupt(obj, normal, positions, accepted, colors):
         colors[accepted,:3] = (1,0,0)
