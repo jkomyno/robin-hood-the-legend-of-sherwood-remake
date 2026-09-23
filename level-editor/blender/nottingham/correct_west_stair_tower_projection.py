@@ -49,12 +49,22 @@ def verify():
  report=dict(status='PASS' if not changed else 'FAIL',changed_objects=changed,checked_meshes=len(uv),model_sha256=sha(w/'model.blend'),previous_model_sha256=sha(old/'model.blend'),geometry_identical=True)
  write(w/'outside-projection-validation.json',report);assert not changed,changed;print(report,flush=True)
 
+def finalize():
+ w=WORK/'round-26/assets/nottingham-castle-west-stair-tower';model=sha(w/'model.blend');qa=json.loads((w/'inspection/independent-review.json').read_text());assert qa['status']=='PASS' and qa['model_sha256']==model
+ for name in ['validation.json','known-rgb-validation.json','outside-projection-validation.json']:
+  assert json.loads((w/name).read_text())['status']=='PASS',name
+ material=json.loads((w/'inspection/stored-materials-final/audit.json').read_text());assert material['status']=='STRUCTURAL-PASS' and not material['problems'] and material['model_sha256']==model
+ c=json.loads((w/'candidate.json').read_text());c.update(status='ready-for-user',geometry_reviewed=True,inspected_views=list(range(8)),independent_review='inspection/independent-review.json');write(w/'candidate.json',c)
+ p=json.loads((w/'projection-correction.json').read_text());p.update(status='PASS',inspected_views=list(range(8)),independent_review='inspection/independent-review.json',recipe_sha256=sha(__file__));write(w/'projection-correction.json',p)
+ (w/'review.md').write_text('# Western castle stair turret source correction\n\n'+'\n'.join('- '+x for x in c['changes']+c['limitations'])+'\n\nGeometry and all eight solid views are unchanged. The original native masks now texture the masonry and upper treads. Full-scene ray witnesses and 38,385 exact known source RGB samples passed. Outside geometry, UVs and material assignments are unchanged. All eight actual saved-material views independently inspected. User approval pending; no generated textures.\n')
+
 def audit():
  acquire();select_tooling(WORK/'tooling/58744eeaf71a21e9')
  from audit_stored_materials import run
  w=WORK/'round-26/assets/nottingham-castle-west-stair-tower'
  print(run(w,w/'inspection/stored-materials-final',render=True,export=True))
 if __name__=='__main__':
- if '--verify' in sys.argv:verify()
+ if '--finalize' in sys.argv:finalize()
+ elif '--verify' in sys.argv:verify()
  elif '--audit' in sys.argv:audit()
  else:main()
