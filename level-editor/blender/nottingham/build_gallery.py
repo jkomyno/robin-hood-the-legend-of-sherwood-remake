@@ -46,6 +46,14 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def source_coverage_audit_matches(audit, evidence):
+    """A completeness review is valid only for the inspected model and views."""
+    return (audit.get('status') == 'PASS'
+        and audit.get('model_sha256') == evidence['model_sha256']
+        and audit.get('modified_views_sha256') == evidence['packet_hashes']['modified']['views.json']
+        and audit.get('inspected_views') == list(range(8)))
+
+
 def projection_available_nodes(before_layers, after_layers, owned_nodes):
     """Allow owned meshes to enter/leave visibility while protecting neighbors."""
     def nodes(layers):
@@ -415,6 +423,8 @@ def main(argv=None):
     output = args.output.resolve()
     evidence_dir = output.parent / (output.name + "-packet-evidence")
     evidence_dir.mkdir(parents=True, exist_ok=True)
+    audit_gate_path = root / "source-coverage-audit-gate.json"
+    audit_gate = read(audit_gate_path)["assets"] if audit_gate_path.exists() else {}
     items, progress = [], []
     for asset in catalog["groups"]:
         require(Path(asset["id"]).name == asset["id"] and asset["id"] not in (".", ".."), "Unsafe asset ID")
@@ -504,6 +514,15 @@ def main(argv=None):
                 status = "fix-needed"
         elif approval:
             limitations.append("Previous user decision applies to a different model/packet revision; current review is pending.")
+        if asset['id'] in audit_gate and status != 'approved':
+            audit_path = workspace / 'source-coverage-audit.json'
+            audit = read(audit_path) if audit_path.exists() else {}
+            audit_current = source_coverage_audit_matches(audit, evidence)
+            if not audit_current:
+                status = 'audit-pending'
+                limitations.append('Source-visible texture completeness audit pending; not ready for user review.')
+            else:
+                evidence['source_coverage_audit'] = {'path': str(audit_path), 'sha256': sha(audit_path)}
         evidence["status"] = status
         write(evidence_path, evidence)
         item = {**row, "status": status, "user_approval": user_approval,
