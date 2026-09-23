@@ -27,7 +27,10 @@ def run(config_path):
     for item in config['imports']:
         for key in ('blend_path', 'review_manifest'):
             item[key] = str((root / item[key]).resolve(strict=True))
-        item['blend_sha256'] = hashlib.sha256(Path(item['blend_path']).read_bytes()).hexdigest()
+        actual_sha = hashlib.sha256(Path(item['blend_path']).read_bytes()).hexdigest()
+        if item.get('blend_sha256') and item['blend_sha256'] != actual_sha:
+            raise ValueError('Approved handoff hash changed: ' + item['asset_id'])
+        item['blend_sha256'] = actual_sha
         # Discover only visible meshes owned by this exact catalog group. A
         # worker can contain the whole map, including stale sibling buildings.
         item['discover_asset_members'] = not config.get('approved_texture_imports')

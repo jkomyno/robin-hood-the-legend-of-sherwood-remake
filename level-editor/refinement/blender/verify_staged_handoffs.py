@@ -64,6 +64,12 @@ def snapshot(collection_name, include_values=False):
                  'uv': {layer.name: [list(entry.uv) for entry in layer.data] for layer in obj.data.uv_layers},
                  'visibility': [obj.hide_render, obj.hide_viewport],
                  'modifiers': [(m.name, m.type, m.show_render, m.show_viewport) for m in obj.modifiers]}
+        value['patch_state'] = {}
+        for key in ('projection_component', 'reveal_material_states', 'reveal_hide_when_applied'):
+            metadata = obj.get(key)
+            if hasattr(metadata, 'to_list'):
+                metadata = metadata.to_list()
+            value['patch_state'][key] = metadata
         record = {'name': obj.name, 'source': obj.get('source_node'),
                   'group': obj.get('asset_group'), 'hidden': obj.hide_render, 'sha256': digest(value)}
         if include_values:
