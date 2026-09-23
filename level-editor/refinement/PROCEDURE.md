@@ -324,6 +324,15 @@ it still requires first-hit visibility and the editable mask, and changes only
 unknown texture sampling. Record the affected meshes and normal/visibility
 evidence. Do not enable this globally to conceal topology problems.
 
+For mixed room/exterior meshes, `texture_receiver_face_indices` can restrict the
+write to explicit polygon indices within each named receiver. Pair it with a
+new `texture_material_suffix` so the bake appends a separate atlas/material/UV
+layer rather than replacing the room atlas. Guard original atlas bytes, existing
+UV layers and unselected face assignments, and compare actual revealed renders.
+If the same polygon represents both room and exterior sides, a single UV/material
+cannot independently texture those sides; a separate surface representation is
+required before treating that region as filled.
+
 Create a publication plan using the existing `stage_reviewed_publication.py`
 schema, binding baseline, catalog, scene/collection, map/source paths, imports,
 review manifests and a new output directory. Do not copy Derby's node IDs into

@@ -20,7 +20,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
          elevation_deg=35.0, preserve_authored=True, source_mask_manifest=None,
          hidden_fill="neutral", synthesis_cache=None, reproject_authored_nodes=None,
          hidden_sampler=None, projection_region=None, exclude_occluder_components=None,
-         receiver_components=None, receiver_asset_id=None, receiver_object_names=None):
+         receiver_components=None, receiver_asset_id=None, receiver_object_names=None,
+         receiver_face_indices=None, material_suffix=None):
     import bpy
     import numpy as np
     from mathutils import Vector
@@ -28,6 +29,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
 
     if texels_per_unit <= 0:
         raise ValueError("Texture density must be positive")
+    if receiver_face_indices is not None and not material_suffix:
+        raise ValueError('Face-scoped baking requires a separate material and UV suffix')
     if hidden_fill not in ("neutral", "synthesized"):
         raise ValueError("hidden_fill must be neutral or synthesized")
     if hidden_sampler is not None and hidden_fill != "neutral":
@@ -113,7 +116,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         # at a rounded pixel center: finely subdivided coplanar faces share pixels.
         return hit is not None and (hit - point).length <= .01
 
-    uv_name = "Owned source / " + projection_label
+    storage_label = projection_label + (' / ' + material_suffix if material_suffix else '')
+    uv_name = "Owned source / " + storage_label
     report = {"source": str(source_path), "source_sha256": source_hash,
               "projection_label": projection_label, "receiver_nodes": receiver_nodes,
               "occluder_nodes": occluder_nodes, "objects": [], "geometry_changed": False,
@@ -145,6 +149,11 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         if obj.data.users > 1:
             obj.data = obj.data.copy()
         mesh = obj.data
+        if receiver_face_indices is not None:
+            selected_faces = receiver_face_indices.get(obj.name)
+            if not selected_faces or any(type(i) is not int or i < 0 or i >= len(mesh.polygons)
+                                         for i in selected_faces):
+                raise ValueError('Face scope must identify existing receiver polygons: ' + obj.name)
         mesh.calc_loop_triangles()
         world = [obj.matrix_world @ v.co for v in mesh.vertices]
         by_face = {}
@@ -154,6 +163,9 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         preserved = 0
         degenerate = 0
         for face in mesh.polygons:
+            if receiver_face_indices is not None and face.index not in receiver_face_indices.get(obj.name, []):
+                preserved += 1
+                continue
             mat = mesh.materials[face.material_index] if mesh.materials else None
             if (preserve_authored and obj.get("source_node") not in reproject_authored_nodes
                     and mat and mat.get("projection_preserve")
@@ -270,9 +282,9 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                 if donor is not None:
                     asset = obj.get("asset_group") or obj.name
                     donors_by_asset.setdefault(asset, []).append((donor, abs(normal.z), obj.name))
-        name = obj.name + " / owned " + projection_label
+        name = obj.name + " / owned " + storage_label
         existing = next(((i, m) for i, m in enumerate(mesh.materials)
-                         if m and m.get("source_ownership_label") == projection_label), None)
+                         if m and m.get("source_ownership_label") == storage_label), None)
         # Split meshes can inherit one atlas material. Each receiver has its own
         # island layout, so detach shared material and image data before writing.
         if existing and existing[1].users > 1:
@@ -300,7 +312,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                 del mat[key]
         mat.use_nodes = True
         mat["source_ownership_bake"] = True
-        mat["source_ownership_label"] = projection_label
+        mat["source_ownership_label"] = storage_label
         mat["source_ownership_fill"] = hidden_fill
         mat["source_ownership_alpha"] = "one=observed,zero=inferred;material remains opaque"
         mat["projection_preserve"] = True

@@ -215,12 +215,17 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                                                  if selector['source_node'] in receivers],
                             receiver_object_names=([obj.name for obj in targets if obj.get('source_node') in receivers]
                                                    if scope is not None else None),
+                            receiver_face_indices=manifest.get('texture_receiver_face_indices'),
+                            material_suffix=manifest.get('texture_material_suffix'),
                             exclude_occluder_components=layer.get('exclude_occluder_components')))
     assigned = {node for report in reports for node in report['receiver_nodes']}
     if assigned != nodes:
         raise ValueError('Not all approved asset nodes received a source projection layer')
     for obj in targets:
         for face in obj.data.polygons:
+            face_scope = manifest.get('texture_receiver_face_indices')
+            if face_scope is not None and face.index not in face_scope.get(obj.name, []):
+                continue
             mat = obj.data.materials[face.material_index]
             if not mat or not mat.get('source_ownership_bake'):
                 continue
