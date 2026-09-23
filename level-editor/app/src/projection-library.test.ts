@@ -145,3 +145,41 @@ test("supplemental mission models retain profile provenance without inventing an
   f.mesh.userData.source_obstacle = 267;
   await assert.rejects(prepareProjectionAsset(f.directory, f.entry, "Leicester"), /Unexpected/);
 });
+
+test("full-map mission metadata creates one source and saved deletions remain deleted", async (t) => {
+  const f = fixture();
+  f.group.userData.asset_name = "House";
+  f.mesh.userData.part_name = "Wall";
+  const bridgeGroup = new THREE.Group();
+  bridgeGroup.userData = { asset_group: "second-drawbridge", asset_name: "Second drawbridge" };
+  const bridge = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  bridge.name = "mission-second-drawbridge";
+  bridge.userData = { part_name: "Raised endpoint", mission_patch_profile: "Derby - Pont_levis02",
+    obstacle_local_game: f.descriptor.parts[0]!.obstacle_local_game };
+  bridgeGroup.add(bridge); f.asset.children[0]!.add(bridgeGroup);
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  f.json("scenes/Leicester-volumes.scene.json", { version: 1, map: "Leicester", size: [100, 100],
+    camera: { kind: "oblique-orthographic", elevation_deg: 35 }, placements: [] });
+  f.files.set("scenes/Leicester-volumes.scene.glb", new File([new Uint8Array([7])], "map.glb"));
+  f.json("Leicester.rhp.json", { format: "Fullgame", misc: {}, sight_obstacles: [f.descriptor.parts[0]!.obstacle_local_game],
+    patches: [], animations: [], material_sectors: [], light_sectors: [], elevation_lines: [], masks: [], sound_sources: [],
+    jump_zones: [], jump_line_pairs: [], lifts: [], buildings: [], motion_data: { layers: [], graph_bytes: [] } });
+  const candidate = await prepareMapCandidate("Leicester", f.directory, { maps: new Set(["Leicester"]), levelsDir: f.directory });
+  assert.equal(candidate.document.objects.length, 2);
+  assert.equal(candidate.document.groups.length, 2);
+  assert.equal(candidate.sources.get(bridge.name), bridge);
+  const part = candidate.document.objects.find(object => object.kind === "mission")!;
+  assert.deepEqual(part.source, { map: "Leicester", mission_profile: "Derby - Pont_levis02" });
+  assert.equal(part.group, "second-drawbridge");
+  f.json("scenes/Leicester.level3d.json", candidate.document);
+  const saved = await prepareMapCandidate("Leicester", f.directory, null);
+  assert.equal(saved.document.objects.length, 2);
+  f.json("scenes/Leicester.level3d.json", { ...candidate.document, objects: candidate.document.objects.map(object =>
+    object.kind === "mission" ? { ...object, source: { map: "Leicester", mission_profile: "Wrong profile" } } : object) });
+  await assert.rejects(prepareMapCandidate("Leicester", f.directory, null), /Mission source profile mismatch/);
+  f.json("scenes/Leicester.level3d.json", { ...candidate.document,
+    objects: candidate.document.objects.filter(object => object.kind !== "mission") });
+  assert.equal((await prepareMapCandidate("Leicester", f.directory, null)).document.objects.length, 1);
+  bridge.userData.source_obstacle = 267;
+  await assert.rejects(prepareMapCandidate("Leicester", f.directory, null), /Invalid authored mission/);
+});

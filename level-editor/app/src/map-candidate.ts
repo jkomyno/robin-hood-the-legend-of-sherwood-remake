@@ -10,6 +10,7 @@ import {
   authoredAssetGroups,
   upgradeGeneratedAssetGroups,
   type AuthoredAssetCatalog,
+  type AuthoredAssetPart,
   type Level3D,
   type Level3DGroup,
   type Level3DObject,
@@ -72,10 +73,18 @@ export async function prepareMapCandidate(
           const label: unknown = group.userData.asset_name ?? group.userData.name ?? group.name;
           if (typeof id !== "string" || !id.trim() || typeof label !== "string" || !label.trim())
             throw new Error("Incomplete authored GLB group metadata");
-          return { id, name: label, parts: group.children.map(node => {
+          return { id, name: label, parts: group.children.map((node): AuthoredAssetPart => {
             const match = /^(building|terrace)-(\d+)$/.exec(node.name);
             const obstacle: unknown = node.userData.source_obstacle;
             const partName: unknown = node.userData.part_name;
+            if (/^mission-[a-zA-Z0-9_-]+$/.test(node.name)) {
+              const profile: unknown = node.userData.mission_patch_profile;
+              if (obstacle !== undefined || typeof profile !== "string" || !profile.trim() ||
+                  typeof partName !== "string" || !partName.trim() || !node.userData.obstacle_local_game)
+                throw new Error(`Invalid authored mission part metadata: ${node.name}`);
+              return { node: node.name, name: partName, mission_profile: profile,
+                obstacle_local_game: node.userData.obstacle_local_game };
+            }
             if (!match || obstacle !== Number(match[2]) || typeof partName !== "string" || !partName.trim())
               throw new Error(`Invalid authored GLB part metadata: ${node.name}`);
             return { obstacle: Number(match[2]), name: partName };
@@ -142,6 +151,12 @@ export async function prepareMapCandidate(
           transform: { ...IDENTITY_TRANSFORM },
         });
       }
+      for (const group of exportedCatalog?.groups ?? []) for (const part of group.parts) {
+        if (part.mission_profile === undefined) continue;
+        objects.push({ id: part.node, node: part.node, kind: "mission", name: part.name,
+          source: { map: sceneDoc.map, mission_profile: part.mission_profile },
+          obstacle: structuredClone(part.obstacle_local_game), transform: { ...IDENTITY_TRANSFORM } });
+      }
       // buildings: parts stacked on the same footprint
       const groupOf = groupObstacles(lvl.sight_obstacles, terraces);
       // parts that may be stored displaced along the view ray: offered as a per-part snap, never applied automatically
@@ -172,6 +187,12 @@ export async function prepareMapCandidate(
         objects,
         groups: authoredAssetGroups(sceneDoc.map, objects, exportedCatalog) ?? groups,
       };
+    }
+    for (const part of d.objects) {
+      if (part.kind !== "mission" || part.node.startsWith("asset:")) continue;
+      const node = nextSources.get(part.node);
+      if (!node || node.userData.mission_patch_profile !== part.source.mission_profile)
+        throw new Error(`Mission source profile mismatch: ${part.node}`);
     }
     parseLevel3D(d, {
       scene: sceneDoc,

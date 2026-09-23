@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import derby from "../assets/derby.json" with { type: "json" };
-import { authoredAssetGroups, upgradeGeneratedAssetGroups } from "./authored-assets.ts";
+import { appendSupplementalMissionParts, authoredAssetGroups, upgradeGeneratedAssetGroups, type AuthoredAssetCatalog } from "./authored-assets.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "./level3d.ts";
 
 function objects(): Level3DObject[] {
@@ -105,4 +105,32 @@ test("exported catalogs upgrade pristine non-Derby documents without replacing e
   assert.equal(upgradeGeneratedAssetGroups(document, catalog), true);
   assert.equal(document.groups[0]!.id, "house");
   assert.equal(upgradeGeneratedAssetGroups(document, catalog), false);
+});
+
+test("explicit mission publication adds one group/part while preserving all 270 existing parts", () => {
+  const parts = objects();
+  for (const part of parts) part.obstacle.points = [
+    { x: 0, y: 0, z_bottom: 0, z_top: 5 }, { x: 10, y: 0, z_bottom: 0, z_top: 5 }, { x: 0, y: 10, z_bottom: 0, z_top: 5 },
+  ];
+  const document: Level3D = { version: 1, map: "Derby", glb: "derby-volumes.scene.glb", size: [1920, 2752],
+    camera: { kind: "oblique-orthographic", elevation_deg: 35 }, objects: parts, groups: authoredAssetGroups("Derby", parts)! };
+  document.objects[0]!.transform.dx = 17;
+  document.objects[1]!.hidden = true;
+  const before = structuredClone(document);
+  const supplemental = { node: "mission-second-drawbridge", name: "Raised bridge", mission_profile: "Derby - Pont_levis02",
+    obstacle_local_game: structuredClone(parts[0]!.obstacle) };
+  const group = { id: "derby-second-drawbridge", name: "Second courtyard drawbridge", parts: [supplemental] };
+  const catalog: AuthoredAssetCatalog = { map: "Derby", groups: [...derby.groups, group] };
+  const next = appendSupplementalMissionParts(document, catalog, [supplemental.node]);
+  assert.equal(next.objects.length, 271);
+  assert.equal(next.groups.length, 40);
+  assert.deepEqual(next.objects.slice(0, 270), before.objects);
+  assert.deepEqual(next.groups.slice(0, 39), before.groups);
+  assert.deepEqual(document, before);
+  assert.deepEqual(next.objects[270]!.source, { map: "Derby", mission_profile: supplemental.mission_profile });
+  assert.equal(authoredAssetGroups("Derby", structuredClone(next.objects), catalog)!.length, 40);
+  assert.throws(() => appendSupplementalMissionParts(next, catalog, [supplemental.node]), /already exists/);
+  assert.throws(() => appendSupplementalMissionParts(document, catalog, ["mission-absent"]), /does not match/);
+  assert.throws(() => appendSupplementalMissionParts(document, catalog, ["building-267"]), /allowlist/);
+  assert.throws(() => appendSupplementalMissionParts(document, { ...catalog, groups: [...catalog.groups, group] }, [supplemental.node]), /duplicate/);
 });
