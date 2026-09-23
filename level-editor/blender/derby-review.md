@@ -1,5 +1,17 @@
 # Derby asset refinement review
 
+Publication7 is LIVE: five approved buildings (North Tower, Central Gallery,
+West Tower, Upper Gatehouse, East Hall) plus approved north wallwalk025.
+82 promoted files read back with matching hashes; rollback backups retained.
+Staged actual-editor browser checks passed before promotion. Main Hall and
+the earlier11-bake/well queue remain separate pending integration work.
+
+Two pending geometry cards refreshed: South wall walk `south-vertical-v12`
+and Upper West `closed-receivers-v2`. Both include actual saved-mesh overlays
+on original artwork, fresh source projection and48degree sheets. South changes
+footprints and terminal curvature; Upper West retains approximate cap corners.
+User approval is still required for both; gallery HTTP and imagehashes verified.
+
 User approved Lower West north v14 on 2026-09-23, including its corrected
 footprint/thickness. Approval hashes are recorded in the review manifest;
 removed from pending gallery. Two-image texture fill is authorized. Integrate
