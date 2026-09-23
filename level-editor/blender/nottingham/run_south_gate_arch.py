@@ -43,7 +43,7 @@ def main():
     if args.operation=='prepare':
         if workspace.exists():raise FileExistsError(workspace)
         bpy.ops.wm.open_mainfile(filepath=str(args.source))
-        prepare(workspace,asset_id='nottingham-south-gate-arch',scene_name='nottingham Refinement',collection_name='nottingham Working',source_path=WORK/'source-states/covered.png',grouping_manifest=args.catalog,inventory_path=args.inventory,review_path=args.review,source_mask_manifest=WORK/'mask-review/source-masks-v11-baseline.json',width=384,height=384,elevation_degrees=35,context_padding=32)
+        prepare(workspace,asset_id='nottingham-south-gate-arch',scene_name='nottingham Refinement',collection_name='nottingham Working',source_path=WORK/'source-states/covered.png',grouping_manifest=args.catalog,inventory_path=args.inventory,review_path=args.review,source_mask_manifest=WORK/'mask-review/source-masks-v11-baseline.json',width=384,height=384,elevation_degrees=35,context_padding=32,framing_padding=1.16)
         (workspace/'tooling.json').write_text(json.dumps(tooling,indent=2)+'\n');validate(workspace);return
     bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'));bpy.context.view_layer.update()
     def shapes():
