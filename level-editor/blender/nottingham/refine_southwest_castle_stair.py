@@ -52,7 +52,7 @@ def main():
         'outside_objects_preserved':len(outside),'world_transform_drift':0})
     bpy.ops.wm.save_as_mainfile(filepath=str(WS/'model.blend'))
     modified(WS)
-    write(WS/'candidate.json',{'asset_id':ASSET,'status':'refinement-in-progress','geometry_refined':True,'geometry_reviewed':False,
+    write(WS/'candidate.json',{'version':1,'asset_id':ASSET,'status':'refinement-in-progress','geometry_refined':True,'geometry_reviewed':False,
          'inspected_views':[],'model_sha256':sha(WS/'model.blend'),'modified_views_sha256':sha(WS/'modified/views.json'),
          'changes':['Eight source-counted risers with measured tapered endpoints and upper landing.'],
          'limitations':['Lower datum and concealed depth inferred. Source ownership review pending.'],'user_approval':'pending'})
@@ -60,7 +60,7 @@ def main():
 def finalize():
     report=json.loads((WS/'candidate.json').read_text())
     assert report['model_sha256']==sha(WS/'model.blend') and report['modified_views_sha256']==sha(WS/'modified/views.json')
-    report.update(status='ready-for-user',geometry_reviewed=True,inspected_views=list(range(8)),recipe=str(Path(__file__).resolve()),recipe_sha256=sha(__file__),limitations=['Lower datum100 and concealed structural depth inferred; visible endpoints/count measured.'],review='All eight solid/source-textured views inspected; distinct risers, no clipping or foreign roof/foliage source.')
+    report.update(version=1,status='ready-for-user',geometry_reviewed=True,inspected_views=list(range(8)),recipe=str(Path(__file__).resolve()),recipe_sha256=sha(__file__),limitations=['Lower datum100 and concealed structural depth inferred; visible endpoints/count measured.'],review='All eight solid/source-textured views inspected; distinct risers, no clipping or foreign roof/foliage source.')
     write(WS/'candidate.json',report)
     (WS/'review.md').write_text('# Southwest castle stair\n\nEight source-counted risers and tapered flight replace the misplaced slab. The separate coping379 now belongs to the west courtyard. All eight fixed solid/textured views inspected; validation passes. Upper height165.455 retained, lower courtyard datum100 and concealed depth inferred. No user approval recorded.\n')
 
