@@ -15,6 +15,9 @@ def clone_workspace(old, new):
     """Retain immutable inputs, baseline and source hashes in a separate worker."""
     if new.exists():return
     shutil.copytree(old,new,ignore=shutil.ignore_patterns('history','projection-correction-reference','*.blend1'))
+    candidate=json.loads((new/'candidate.json').read_text())
+    candidate['status']='refinement-in-progress'
+    write(new/'candidate.json',candidate)
     config=json.loads((new/'workspace.json').read_text())
     for key,value in config.items():
         if key=='source_path' and not config.get('projection_manifest'):
@@ -99,5 +102,7 @@ def main():
     report=dict(version=1,asset_id=asset,status='awaiting-independent-review',previous_workspace=str(old),previous_model_sha256=source_hash,model_sha256=sha(w/'model.blend'),geometry_before_sha256=geometry_sha(before),geometry_after_sha256=geometry_sha(after),geometry_identical=True,mesh_count=len(before),changes=[dict(before=original,after=entry)],tooling=tooling,recipe_sha256=sha(__file__))
     write(w/'projection-correction.json',report)
     candidate=json.loads((w/'candidate.json').read_text());candidate.update(status='refinement-in-progress',model_sha256=sha(w/'model.blend'),modified_views_sha256=sha(w/'modified/views.json'),recipe=str(Path(__file__).resolve()),geometry_refined=False,no_change_reason='Projection ownership correction only; actual vertices, polygon indices and world transforms match the reviewed model exactly.',changes=[entry['review_note']]);write(w/'candidate.json',candidate)
+    candidate.update(projection_correction='projection-correction.json',source_comparison='added-source-pixels.png')
+    write(w/'candidate.json',candidate)
     print('GEOMETRY IDENTICAL',asset,flush=True)
 if __name__=='__main__':main()
