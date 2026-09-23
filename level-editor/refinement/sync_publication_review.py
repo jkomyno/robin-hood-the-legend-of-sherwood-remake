@@ -27,6 +27,10 @@ def reconcile(stage_directory, manifest_path, evidence_path):
             raise ValueError('Cyclic publication baseline chain')
         visited.add(stage_path)
         stage = read(stage_path)
+        # Legacy baseline snapshots precede the hash-bound import-plan format.
+        # They are inherited content, not evidence of a reviewed handoff.
+        if not stage.get('plan'):
+            break
         plan = read(stage['plan'])
         for imported, source in zip(stage['imports'], plan['imports'], strict=True):
             if imported['asset_id'] != source['asset_id']:
