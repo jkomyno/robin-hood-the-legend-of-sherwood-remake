@@ -155,9 +155,11 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
             if not len(indices):
                 continue
             local = positions[indices] @ np.asarray(inverse.to_3x3()).T + np.asarray(inverse.translation)
-            crop, scale = view['crop'], view['ortho_scale']
-            px = crop['left']+(.5+local[:,0]/(scale*crop['width']/crop['height']))*crop['width']
-            py = height-crop['top']-(.5-local[:,1]/scale)*crop['height']
+            from texture_camera import orthographic_extents
+            crop = view['crop']
+            horizontal, vertical = orthographic_extents(view)
+            px = crop['left']+(.5+local[:,0]/horizontal)*crop['width']
+            py = height-crop['top']-(.5-local[:,1]/vertical)*crop['height']
             ix, iy = np.floor(px).astype(int), np.floor(py).astype(int)
             in_tile = ((ix>=crop['left']) & (ix<crop['left']+crop['width']) &
                        (iy>=height-crop['top']-crop['height']) & (iy<height-crop['top']))
