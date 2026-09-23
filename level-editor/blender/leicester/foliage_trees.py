@@ -17,15 +17,15 @@ import numpy as np
 from PIL import Image
 from mathutils import Vector
 
-VERSION='leicester-foliage-lobes-v3'
+VERSION='leicester-foliage-lobes-v5'
 SINE,COSINE=math.sin(math.radians(35)),math.cos(math.radians(35))
 RAY=Vector((0,-COSINE,SINE))
 CONFIG={
  88:dict(mask=10,ground=1285.,canopy_bottom=1220,seeds=[(2105,1019),(2152,1039),(2227,1070),(2048,1095),(2140,1110),(2265,1140),(2097,1175),(2193,1191)]),
  89:dict(mask=9,ground=1620.,canopy_bottom=1574,seeds=[(2704,1358),(2620,1400),(2768,1411),(2572,1460),(2671,1464),(2726,1488),(2660,1522),(2695,1551)]),
 }
-DEPTHS=[18.,38.,4.,-12.,24.,6.,-8.,12.]
-SLOPES=[(.38,.12),(-.28,.32),(.22,-.30),(-.30,-.12),(.12,.24),(-.2,.3),(.3,-.18),(-.22,-.15)]
+DEPTHS=[18.,-20.,20.,-16.,12.,-10.,16.,-12.]
+SLOPES=[(1.20,.30),(-1.10,.40),(1.05,-.40),(-1.25,-.30),(.95,.35),(-1.15,.40),(1.20,-.35),(-1.05,-.30)]
 
 
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -181,7 +181,7 @@ def material(name,path,known,evidence):
 
 def refine_crown(obj,node,evidence):
     matrix=obj.matrix_world.copy();before=geometry_hash(obj);vertices=[];faces=[];face_mats=[];face_known=[];uvs=[]
-    materials=[];ground=CONFIG[node]['ground'];steps=4
+    materials=[];ground=CONFIG[node]['ground'];steps=8
     for lobe in evidence['lobes']:
         number=lobe['index'];x0,y0,x1,y1=lobe['bbox_source'];cx,cy=(x0+x1)/2,(y0+y1)/2
         surfaces=[(True,lobe.get('observed',True),lobe['source']),(False,False,lobe['unknown'])]
@@ -194,9 +194,12 @@ def refine_crown(obj,node,evidence):
                 v=j/steps;y=y0+(y1-y0)*v
                 for i in range(steps+1):
                     u=i/steps;x=x0+(x1-x0)*u
-                    depth=DEPTHS[number]+(x-cx)*SLOPES[number][0]+(y-cy)*SLOPES[number][1]
-                    depth+=12*math.sin(math.pi*u)*math.sin(math.pi*v)
-                    depth-=0 if front else .35
+                    # Opposing rounded hemispheres provide actual lobe depth rather
+                    # than elongated tilted sheets. Source projection is exact
+                    # because all inferred displacement follows the source ray.
+                    dome=math.sqrt(max(0.,1.-2*((u-.5)**2+(v-.5)**2)))
+                    radius=.55*max(x1-x0,y1-y0)
+                    depth=DEPTHS[number]+(1 if front else -1)*(radius*dome+.175)
                     world=Vector((x,-ground/SINE,(ground-y)/COSINE))+RAY*depth
                     vertices.append(matrix.inverted()@world);uvs.append((u,1-v))
             for j in range(steps):
@@ -206,6 +209,22 @@ def refine_crown(obj,node,evidence):
                     # quads can tessellate differently and intersect the pair.
                     faces.extend(((a,d,c),(a,c,b)) if front else ((a,b,c),(a,c,d)))
                     face_mats.extend((slot,slot));face_known.extend((known,known))
+        # Fixed transverse neutral cutouts fill the unobserved lobe depth.
+        # Their plane is edge-on to the source camera, preserving its exact
+        # artwork. Rotated coverage is an explicit hidden-surface inference.
+        for side in (-1,1):
+            slot=len(materials);materials.append(material(f'{obj.name} lobe{number:02} transverse{side}',
+                lobe['unknown'],False,evidence))
+            start=len(vertices)
+            radius=.55*max(x1-x0,y1-y0)
+            for v in (0.,1.):
+                for u in (0.,1.):
+                    world=Vector((cx+side*.1,-ground/SINE,(ground-(y0+(y1-y0)*v))/COSINE))
+                    world+=RAY*(DEPTHS[number]+(u*2-1)*radius)
+                    vertices.append(matrix.inverted()@world);uvs.append((u,1-v))
+            a,b,c,d=start,start+1,start+3,start+2
+            faces.extend(((a,b,c),(a,c,d)) if side>0 else ((a,c,b),(a,d,c)))
+            face_mats.extend((slot,slot));face_known.extend((False,False))
     mesh=bpy.data.meshes.new(obj.name+' native cutout lobes');mesh.from_pydata(vertices,[],faces);mesh.update()
     for mat in materials:mesh.materials.append(mat)
     uv=mesh.uv_layers.new(name='Foliage UV');ownership=mesh.color_attributes.new(name='Source ownership',type='FLOAT_COLOR',domain='CORNER')
@@ -226,7 +245,7 @@ def refine_crown(obj,node,evidence):
     if matrix!=obj.matrix_world:raise ValueError('Crown transform changed')
     return dict(source_node=obj['source_node'],projection_component=obj['projection_component'],
                 before_geometry_sha256=before,after_geometry_sha256=geometry_hash(obj),world_transform_drift=0,
-                lobes=len(evidence['lobes']),paired_card_surfaces=len(evidence['lobes'])*2,occluded_front_surfaces=len(materials)-len(evidence['lobes'])*2,
+                lobes=len(evidence['lobes']),paired_card_surfaces=len(evidence['lobes'])*2,transverse_unknown_surfaces=len(evidence['lobes'])*2,occluded_front_surfaces=len(materials)-len(evidence['lobes'])*4,
                 vertices=len(mesh.vertices),faces=len(mesh.polygons),intentional_card_boundary_edges=boundary,
                 degenerate_faces=degenerate,source_partition=evidence)
 
@@ -253,7 +272,8 @@ def run(workspace):
         limitations=['Forest090–092 foliage alpha and contours are entirely inferred neutral placeholders, not recovered native foliage.',
                      'Overlapping rounded supports, curved surface depth and fixed orientations are inferred; their source-view union retains exact native alpha and RGB.',
                      'Canopy mask includes fine twig artwork; large measured branches remain separate opaque geometry.',
-                     'Back surfaces retain the same inferred cutout silhouette but use neutral RGB and zero ownership.',
+                     'Back hemispheres retain the same projected cutout silhouette with inferred rounded depth, neutral RGB and zero ownership.',
+                     'Transverse neutral cutouts use rotated native coverage as inferred hidden foliage; they are edge-on in the source view and carry zero source ownership.',
                      'Foliage cards intentionally have open boundaries; they are thin render surfaces, not solid collision volumes.'])
     (workspace/'inspection/foliage-recipe.json').write_text(json.dumps(report,indent=2)+'\n')
     bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
