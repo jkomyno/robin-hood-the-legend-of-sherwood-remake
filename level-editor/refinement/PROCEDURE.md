@@ -530,6 +530,14 @@ still needs an explicit owner for any required texture fill. Replace obsolete
 lighting holds and generation-pending labels with verified current status; do
 not mark an item integrated merely because its output exists on disk.
 
+Compare approved geometry with the exported scene as well as with the texture
+worker. An old export can contain the correct object names but obsolete meshes.
+Conversely, a split worker can contain only part of a source node that the live
+scene has since combined. Before replacing that node, compare its full topology
+and world-space surface coverage. Preserve any additional accepted faces by
+using the complete current receiver or a validated scoped material transfer;
+never replace a complete live mesh with a matching-name subset.
+
 ## 12. Required worker handoff
 
 Every worker must return:

@@ -1,5 +1,22 @@
 # Derby asset refinement review
 
+Publication12 is staged:14 recovered groups/components,66 imported meshes and
+54 disjoint source nodes. All39 catalog groups now have generated-material
+provenance in this staged export. Imported geometry/materials match their
+validated handoffs;464 outside meshes are exact. Root inspected all14 actual
+eight-view bakes and the combined Lower West wall. The latter retains visible
+dark source-painted corner patches; they are not fully occluded. Browser
+verification remains pending, so publication11 is still live.
+
+The second courtyard drawbridge's raised and lowered static endpoint geometry
+was explicitly approved for texture fill. Both high-quality, two-reference
+OpenRouter Sunburst generations and bakes are complete, with zero protected
+pixel changes and unchanged geometry. Publication13 will add its named mission
+asset with separate Raised/Lowered choices. Static variant support is tested
+and committed; no rigid lowering animation is claimed. Hidden undersides remain
+unobserved by the eight elevated views. Full winch geometry remains unresolved
+because the initial mechanism sprite is empty and the final fragment is small.
+
 Publication11 is LIVE. Lower West south's approved nodes023/042 now have the
 successful OpenRouter Sunburst bake in both the map and standalone asset
 library. All82 promoted files independently match staged hashes;526 outside
