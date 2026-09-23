@@ -34,6 +34,9 @@ def dovecote():
  from refine_village import _mesh
  objs={o.get('source_node'):o for o in bpy.context.scene.objects if o.type=='MESH' and not o.hide_render and o.get('asset_group')=='nottingham-village-dovecote'}
  anchors=[point(p,112.91701) for p in native(293)];ring=[]
+ # Painted front-center thatch underside is y3029, twelve source pixels
+ # above the old flat-height ring. Raise the wall/roof contact together.
+ anchors[2].z+=12/C
  # Periodic Catmull-Rom follows every observed native contour anchor. The
  # interpolation rounds the old chords without replacing the irregular source
  # silhouette by a guessed perfect circle.
@@ -67,7 +70,7 @@ def dovecote():
   for vertex in copy.vertices:vertex.co=inverse@vertex.co
   for mat in obj.data.materials:copy.materials.append(mat)
   obj.data=copy
- report.update(radial_segments=n,source_anchor_count=7,roof_aggregate_validation=valid,changes=['Replaced seven straight wall/roof chords with a 56-segment smooth perimeter through the measured anchors.','Kept the roof apex, eave height, shallow thatch curvature, door landing and all stair geometry.'],limitations=['Curvature between observed anchors and the concealed rear contour are interpolated; no new source pixels or details are invented.','Six canonical roof receivers meet along shared aggregate-shell seams.'])
+ report.update(radial_segments=n,source_anchor_count=7,front_eave_correction={'source_x':2125.8535,'old_source_y':3041.5167,'new_source_y':3029.5167,'observed_source_y_range':[3028,3030],'rise_source_pixels':12},roof_aggregate_validation=valid,changes=['Replaced seven straight wall/roof chords with a 56-segment smooth perimeter through the measured anchors.','Raised the front-center roof/wall contact twelve source pixels to the observed thatch underside, blending to its adjacent anchors.','Kept the ground footprint, roof apex, shallow thatch curvature, door landing and all stair geometry.'],limitations=['Curvature between observed anchors and the concealed rear contour are interpolated; no new source pixels or details are invented.','Six canonical roof receivers meet along shared aggregate-shell seams.'])
  return report
 
 def evidence(workspace,asset):
@@ -100,7 +103,7 @@ def main():
  tooling=select_tooling(WORK/'tooling/58744eeaf71a21e9')
  import bpy,refinement_workspace as rw
  from refine_village_secondary import digest
- asset=sys.argv[sys.argv.index('--')+1];hut=asset.endswith('small-hut');old=WORK/f'round-{21 if hut else 1}/assets'/asset;new=WORK/'round-23/assets'/asset
+ asset=sys.argv[sys.argv.index('--')+1];hut=asset.endswith('small-hut');old=WORK/f'round-{21 if hut else 1}/assets'/asset;new=WORK/f'round-{23 if hut else 24}/assets'/asset
  cfg=json.loads((old/'workspace.json').read_text())
  if not new.exists():
   bpy.ops.wm.open_mainfile(filepath=str(old/'model.blend'))
