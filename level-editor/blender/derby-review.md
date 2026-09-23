@@ -1,5 +1,11 @@
 # Derby asset refinement review
 
+Latest review e07e8b285c953cdf: "good! just stairs are a bit wrong" for Upper
+West. Preserve the manually constrained battlements exactly; isolate the next
+pass to keep-access stair114 and only necessary owned landing contacts.
+Stair source-corner and tread/riser alignment review is in progress. The whole
+asset remains fix-needed; no texture-fill approval inferred from this feedback.
+
 Manual Upper West rebuild is ready in the review gallery:
 `assets/derby-upper-west-curtain/candidates/user-corners-v1-contact/`.
 All 82 user corners independently reproject within 0.000393 source pixels;
