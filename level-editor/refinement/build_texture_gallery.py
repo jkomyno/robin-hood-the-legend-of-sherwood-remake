@@ -23,6 +23,24 @@ def validate_reconciliation_reference(validation):
             raise ValueError('Reconciliation reference absent from guarded bake evidence')
 
 
+def validate_planar_bake(experiment, validation):
+    if validation.get('projection_kind') != 'planar-atlas':
+        return
+    if validation.get('uv_verified') is not True or validation.get('protected_changes') != 0:
+        raise ValueError('Incomplete planar UV/source preservation checks')
+    preparation_path = experiment / 'preparation.json'
+    if sha(preparation_path) != validation.get('preparation_sha256'):
+        raise ValueError('Planar preparation evidence changed')
+    preparation = json.loads(preparation_path.read_text())
+    for name, digest in preparation['files'].items():
+        if sha(experiment / name) != digest:
+            raise ValueError('Planar input evidence changed: ' + name)
+    manifest = json.loads((experiment / 'views.json').read_text())
+    frames = Path(manifest['reviewed_packet']) / 'views.json'
+    if sha(frames) != validation.get('frame_manifest_sha256'):
+        raise ValueError('Planar original eight-view cameras changed')
+
+
 def collect(experiments, output, map_name, additional_experiments=()):
     experiments, output = Path(experiments).resolve(), Path(output).resolve()
     items = []
@@ -40,6 +58,7 @@ def collect(experiments, output, map_name, additional_experiments=()):
         validation = json.loads((bake / 'validation.json').read_text())
         report = json.loads((generation / 'generation.json').read_text())
         validate_reconciliation_reference(validation)
+        validate_planar_bake(experiment, validation)
         if (review.get('all_eight_actual_views_inspected') is not True
                 or review.get('status') != 'ready-for-user'
                 or validation.get('geometry_verified') is not True
