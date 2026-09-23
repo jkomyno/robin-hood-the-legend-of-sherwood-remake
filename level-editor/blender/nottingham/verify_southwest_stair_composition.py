@@ -11,7 +11,7 @@ import bpy,bmesh
 from mathutils import Vector,Matrix
 from mathutils.bvhtree import BVHTree
 from audit_stored_materials import run
-wall=WORK/'round-31/assets/nottingham-southwest-curtain-wall-north';stair=WORK/'round-33/assets/nottingham-southwest-wall-stair';out=wall/'inspection/composite-final33';out.mkdir(parents=True,exist_ok=True)
+wall=WORK/'round-35/assets/nottingham-southwest-curtain-wall-north';stair=WORK/'round-33/assets/nottingham-southwest-wall-stair';out=wall/'inspection/composite-final';out.mkdir(parents=True,exist_ok=True)
 sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
 bpy.ops.wm.open_mainfile(filepath=str(stair/'model.blend'));obj=next(o for o in bpy.context.scene.objects if o.type=='MESH' and o.get('asset_group')==stair.name and not o.hide_render);name=obj.name;matrix=obj.matrix_world.copy()
 bpy.ops.wm.open_mainfile(filepath=str(wall/'model.blend'));target=bpy.data.objects[name]
