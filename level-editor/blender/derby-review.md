@@ -1,5 +1,14 @@
 # Derby asset refinement review
 
+Current follow-up: North wall walk v14 independently inspected and placed in
+pending gallery with actual saved-mesh overlays and source-camera comparisons.
+It changes the footprint/thickness to remove artificial transition wedges and
+restores the fifth front opening; dark floor boundaries remain uncertain.
+South v9 is still withheld because its ledge/end wedge needs correction.
+Five approved building bakes are being staged for integration; Main Hall rear
+exterior/interior face coverage is being repaired separately. Upper West state
+and receiver-boundary validation has resumed. No new live publication yet.
+
 Lower West north v10 rejected on 2026-09-23 after the actual saved-mesh overlay
 exposed remaining cap and notch-floor mismatch. Construction residuals and
 side-by-side sheets were insufficient review gates. Gallery marks it fix-needed;
