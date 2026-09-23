@@ -1,7 +1,8 @@
 """Export one current approved revision into a fresh private editor library.
 
 Blender --background --python this_file -- MANIFEST ASSET_ID OUTPUT --map-name
-MAP --level SOURCE_LEVEL [--decisions PATH] [--revision-sha256 HASH].
+MAP --level SOURCE_LEVEL [--decisions PATH] [--revision-sha256 HASH]
+[--endpoint-mapping PATH]. Paired assets require the reviewed endpoint mapping.
 OUTPUT/3d-assets/index.json is a standalone palette root, never a live library.
 No candidate blend, review evidence, decision or source artwork is rewritten.
 """
@@ -49,7 +50,7 @@ def validate(manifest, asset_id, decisions=None, expected_revision=None):
     return item,workspace,protected
 
 
-def stage(manifest, asset_id, output, *, map_name, level, decisions=None, expected_revision=None):
+def stage(manifest, asset_id, output, *, map_name, level, decisions=None, expected_revision=None, endpoint_mapping=None):
     import bpy
     from export_editor import export_asset_library
     item,workspace,protected=validate(manifest,asset_id,decisions,expected_revision)
@@ -62,7 +63,17 @@ def stage(manifest, asset_id, output, *, map_name, level, decisions=None, expect
     if source_hash != config['reference_files']['source.png']:
         raise ValueError('Source artwork differs from frozen worker input')
     protected[source]=source_hash;protected[level]=sha(level)
-    bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'))
+    endpoint_plan=None
+    paired=item.get('endpoint_reviews') or any(key.startswith('endpoint_') for key in item['revision']['evidence'])
+    if paired and endpoint_mapping is None:
+        raise ValueError('Paired endpoint asset requires explicit endpoint mapping')
+    if endpoint_mapping is not None:
+        from endpoint_staging import validate_endpoint_plan, import_endpoint_objects
+        endpoint_plan=validate_endpoint_plan(endpoint_mapping,item,map_name,evidence_base=Path(manifest).resolve().parent)
+        protected.update({Path(p):h for p,h in endpoint_plan['protected_files'].items()})
+        endpoint_import=import_endpoint_objects(endpoint_plan,map_name)
+    else:
+        bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'))
     if config['collection_name']!=map_name+' Working':raise ValueError('Map/working collection mismatch')
     objects=[o for o in bpy.data.collections[config['collection_name']].objects
              if o.type=='MESH' and not o.hide_render and o.get('asset_group')==asset_id]
@@ -72,16 +83,21 @@ def stage(manifest, asset_id, output, *, map_name, level, decisions=None, expect
     points=[o.matrix_world @ v.co for o in objects for v in o.data.vertices]
     low=[min(p[i] for p in points) for i in range(3)]
     high=[max(p[i] for p in points) for i in range(3)]
-    pivot=[(low[0]+high[0])/2,(low[1]+high[1])/2,low[2]]
+    pivot=endpoint_plan['standalone_pivot'] if endpoint_plan else [(low[0]+high[0])/2,(low[1]+high[1])/2,low[2]]
     output.mkdir(parents=True)
     result=export_asset_library(map_name,output/'3d-assets',level,
-                               asset_ids=[asset_id],standalone_pivots={asset_id:pivot})
+                               asset_ids=[asset_id],standalone_pivots={asset_id:pivot},
+                               include_hidden_objects=endpoint_plan['include_hidden_objects'] if endpoint_plan else None)
     index=json.loads((output/'3d-assets/index.json').read_text())
     if [entry['id'] for entry in index['assets']]!=[asset_id]:
         raise ValueError('Private library included unapproved asset')
     descriptor=json.loads((output/'3d-assets'/asset_id/'asset.json').read_text())
-    if sorted(part['node'] for part in descriptor['parts'])!=sorted(config['part_ids']):
+    expected_parts=sorted(node for state in endpoint_plan['states'].values() for node in state['source_nodes']) if endpoint_plan else sorted(config['part_ids'])
+    if sorted(part['node'] for part in descriptor['parts'])!=expected_parts:
         raise ValueError('Export omitted approved canonical part')
+    if endpoint_plan:
+        descriptor['states']=endpoint_plan['descriptor_states']
+        (output/'3d-assets'/asset_id/'asset.json').write_text(json.dumps(descriptor,indent=2)+'\n')
     for path,digest in protected.items():
         if sha(path)!=digest:raise RuntimeError('Protected candidate or source changed: '+str(path))
     report={'status':'PASS','scope':'private editor staging only','asset_id':asset_id,
@@ -92,6 +108,10 @@ def stage(manifest, asset_id, output, *, map_name, level, decisions=None, expect
         'artifacts':{str(p.relative_to(output)):sha(p) for p in output.rglob('*') if p.is_file()},
         'limitations':['Geometry and existing approved source atlases only; no texture generation.',
                         'Collision descriptors retain source obstacle volumes; refined visual mesh does not invent collision.']}
+    if endpoint_plan:
+        report['endpoint_plan']=endpoint_plan
+        report['endpoint_import']=endpoint_import
+        report['default_state']='initial; independently reviewed applied components hidden'
     (output/'stage-report.json').write_text(json.dumps(report,indent=2)+'\n')
     return report
 
@@ -100,8 +120,9 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('manifest');parser.add_argument('asset_id');parser.add_argument('output')
     parser.add_argument('--map-name',required=True);parser.add_argument('--level',required=True)
+    parser.add_argument('--endpoint-mapping',help='Reviewed independently baked initial/applied endpoint mapping')
     parser.add_argument('--decisions');parser.add_argument('--revision-sha256')
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
     report=stage(args.manifest,args.asset_id,args.output,map_name=args.map_name,level=args.level,
-                 decisions=args.decisions,expected_revision=args.revision_sha256)
+                 decisions=args.decisions,expected_revision=args.revision_sha256,endpoint_mapping=args.endpoint_mapping)
     print(json.dumps({key:report[key] for key in ('status','asset_id','revision_sha256')}))
