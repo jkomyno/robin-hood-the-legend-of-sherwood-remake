@@ -27,16 +27,13 @@ def _read(path):
         bpy.data.images.remove(image)
 
 
-def _reconcile(generated, manifest):
-    """Match low-frequency tone near source boundaries, only in inferred color.
-
-    Explicit known masks provide evidence; colors are never used to classify
-    ownership. Corrections fade out away from observed artwork so distant unseen
-    walls do not inherit the brightness of an unrelated piece of source roof.
-    """
-    from scipy.ndimage import gaussian_filter, distance_transform_edt
+def _reconcile(generated, manifest, predicted=None):
+    from texture_reconciliation import reconcile_tile
     reviewed = Path(manifest['reviewed_packet'])
     source = _read(reviewed/'textured.png')
+    predicted = generated if predicted is None else predicted
+    if predicted.shape != generated.shape:
+        raise ValueError('Raw reconciliation prediction dimensions differ')
     corrected = generated.copy()
     height = len(generated)
     for view in manifest['views']:
@@ -45,22 +42,12 @@ def _reconcile(generated, manifest):
         rows = slice(bottom,bottom+crop['height'])
         cols = slice(left,left+crop['width'])
         known = _read(reviewed/'views'/f"view-{view['index']}-known.png")[:,:,0] > .5
-        if not known.any():
-            continue
-        support = gaussian_filter(known.astype(float), 6)
-        ratios = np.ones((*known.shape,3))
-        for channel in range(3):
-            observed = gaussian_filter(source[rows,cols,channel]*known, 6)
-            predicted = gaussian_filter(generated[rows,cols,channel]*known, 6)
-            ratios[:,:,channel] = np.clip(observed/np.maximum(predicted,.015*support+1e-8),.4,1.8)
-        distance, nearest = distance_transform_edt(~known, return_indices=True)
-        nearby = ratios[nearest[0],nearest[1]]
-        strength = np.exp(-distance/24)[:,:,None]
-        corrected[rows,cols,:3] *= 1+(nearby-1)*strength
-    return np.clip(corrected,0,1)
+        corrected[rows,cols] = reconcile_tile(generated[rows,cols], source[rows,cols],
+                                               predicted[rows,cols], known)
+    return corrected
 
 
-def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=None):
+def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=None, reconciliation_reference=None):
     """Recompute layer-aware source ownership, then fill only unowned texels.
 
     Geometry is unchanged. Existing generated slots do not block a fresh bake:
@@ -118,7 +105,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
         cols = slice(crop['left'],crop['left']+crop['width'])
         if not np.array_equal(mask[rows,cols,3]<.5, solid & ~known):
             raise ValueError('Generated fill mask differs from reviewed source ownership')
-    generated = _reconcile(generated, manifest)
+    generated = _reconcile(generated, manifest, _read(reconciliation_reference) if reconciliation_reference else None)
     output = Path(output_dir).resolve()
     output.mkdir(parents=True, exist_ok=False)
     objects = [obj for obj in bpy.data.collections[manifest['collection_name']].all_objects
@@ -244,6 +231,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
               'source_constraint_status':reviewed_manifest.get('source_constraint_status'),
               'geometry_changed':False,'source_preservation':'Every protected source atlas texel checked byte-identical before and after hidden sampling',
               'selection':'Highest facing visible views; near ties blend across a 0.12 cosine band with explicit approved unknown mask',
+              'reconciliation_reference': str(Path(reconciliation_reference).resolve()) if reconciliation_reference else None,
+              'reconciliation_reference_sha256': hashlib.sha256(Path(reconciliation_reference).read_bytes()).hexdigest() if reconciliation_reference else None,
               'seam_reconciliation':'Unknown colors only: low frequency RGB gain from explicit observed regions, fades over 24 image pixels; source atlas texels remain exact',
               'counts':stats,'layers':reports}
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n')

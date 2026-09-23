@@ -1,0 +1,28 @@
+"""Estimate local inferred-color gains from explicit observed pixel support."""
+import numpy as np
+from scipy.ndimage import gaussian_filter, distance_transform_edt
+
+
+def reconcile_tile(generated, source, predicted, known):
+    """Leave observed pixels exact; derive gains from the uncomposited prediction.
+
+    Dark or unsupported samples carry no reliable multiplicative color evidence.
+    In particular identical inputs must produce an identity transformation even
+    when their observed channels are black.
+    """
+    if generated.shape != source.shape or predicted.shape != source.shape or known.shape != source.shape[:2]:
+        raise ValueError('Reconciliation source, prediction, and ownership dimensions differ')
+    corrected = generated.copy()
+    if not known.any():
+        return corrected
+    support = gaussian_filter(known.astype(float), 6)
+    ratios = np.ones((*known.shape, 3))
+    for channel in range(3):
+        observed = gaussian_filter(source[:, :, channel] * known, 6)
+        estimate = gaussian_filter(predicted[:, :, channel] * known, 6)
+        valid = (support > 1e-8) & (estimate > .015 * support)
+        ratios[:, :, channel][valid] = np.clip(observed[valid] / estimate[valid], .4, 1.8)
+    distance, nearest = distance_transform_edt(~known, return_indices=True)
+    gains = 1 + (ratios[nearest[0], nearest[1]] - 1) * np.exp(-distance / 24)[:, :, None]
+    corrected[~known, :3] = np.clip(corrected[~known, :3] * gains[~known], 0, 1)
+    return corrected

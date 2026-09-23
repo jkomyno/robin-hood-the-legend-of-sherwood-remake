@@ -37,7 +37,7 @@ def _materials(obj):
     return hashlib.sha256(json.dumps(record,sort_keys=True).encode()).hexdigest()
 
 
-def stage(manifest_path, image_path, output_dir, *, texels_per_unit=2):
+def stage(manifest_path, image_path, output_dir, *, texels_per_unit=2, reconciliation_reference=None):
     manifest_path, image_path, output = Path(manifest_path), Path(image_path), Path(output_dir)
     manifest = json.loads(manifest_path.read_text())
     scene = bpy.data.scenes[manifest['scene_name']]
@@ -50,8 +50,10 @@ def stage(manifest_path, image_path, output_dir, *, texels_per_unit=2):
                if obj.type=='MESH' and (obj.get('asset_group') != asset_id
                    or (scope is not None and obj.name not in scope))}
     evidence = [manifest_path, image_path, manifest_path.parent/'input.png',manifest_path.parent/'mask.png']
+    if reconciliation_reference:
+        evidence.append(Path(reconciliation_reference))
     hashes = {str(path):hashlib.sha256(path.read_bytes()).hexdigest() for path in evidence}
-    report = apply(manifest_path,image_path,output,texels_per_unit=texels_per_unit)
+    report = apply(manifest_path,image_path,output,texels_per_unit=texels_per_unit, reconciliation_reference=reconciliation_reference)
     if geometry != {obj.name:_geometry(obj) for obj in scene.objects}:
         raise RuntimeError('Texture stage changed geometry or scene membership')
     if outside != {obj.name:_materials(obj) for obj in scene.objects if obj.name in outside}:
@@ -79,9 +81,9 @@ def stage(manifest_path, image_path, output_dir, *, texels_per_unit=2):
 if __name__=='__main__':
     import sys
     args=sys.argv[sys.argv.index('--')+1:]
-    if len(args) not in (3,4):
-        raise ValueError('Expected -- manifest.json generated.png new_output_dir [texels_per_unit]')
-    result=stage(*args[:3],texels_per_unit=float(args[3]) if len(args)==4 else 2)
+    if len(args) not in (3,4,5):
+        raise ValueError('Expected -- manifest.json generated.png new_output_dir [texels_per_unit [raw_prediction.png]]')
+    result=stage(*args[:3],texels_per_unit=float(args[3]) if len(args)>=4 else 2, reconciliation_reference=args[4] if len(args)==5 else None)
     print(json.dumps({'asset':result['asset_id'],'counts':result['counts'],
                       'geometry_verified':result['geometry_verified'],
                       'outside_objects_unchanged':result['outside_objects_unchanged']}),flush=True)
