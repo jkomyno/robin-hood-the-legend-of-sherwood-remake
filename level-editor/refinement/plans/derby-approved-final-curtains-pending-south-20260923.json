@@ -7,13 +7,18 @@
   "reference_camera": "Derby reference",
   "catalog": "level-editor/shared/assets/derby.json",
   "hackable_map": "datadirs/fullgame_gog_hackable/Data/Levels/Derby.rhp.json",
-  "status_note": "BLOCKED: API credit_balance_exhausted. Retry bake does not exist; do not substitute incomplete initial bake.",
+  "status_note": "Approved South geometry; OpenRouter same-model texture retry. Scoped bake imports only nodes 023 and 042; preserve north wall and continuous walk.",
   "imports": [
     {
       "asset_id": "derby-lower-west-curtain",
       "source_asset_id": "derby-lower-west-curtain-south",
       "source_nodes": ["building-023", "building-042"],
-      "blend_path": "level-editor/work/derby-refinement/round-2/sunburst-lower-west-south-v13-approved-20260923-retry/baked/worker.blend",
+      "object_names": [
+        "Lower Bailey West Curtain South Wall Walk / West battlement wall.001",
+        "Lower Bailey West Curtain South Wall Walk / South battlement wall.001"
+      ],
+      "blend_path": "level-editor/work/derby-refinement/round-2/sunburst-lower-west-south-v13-approved-20260923-retry/baked-scoped/worker.blend",
+      "blend_sha256": "029c51d2f68253dc523d4538ead8bd50a7c1fef100f42a76b5b2f4a2680e7671",
       "review_manifest": "level-editor/work/derby-refinement/round-2/sunburst-lower-west-south-v13-approved-20260923-retry/views.json"
     }
   ]
