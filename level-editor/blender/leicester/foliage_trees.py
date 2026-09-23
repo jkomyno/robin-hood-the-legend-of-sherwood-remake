@@ -17,7 +17,7 @@ import numpy as np
 from PIL import Image
 from mathutils import Vector
 
-VERSION='leicester-foliage-lobes-v2'
+VERSION='leicester-foliage-lobes-v3'
 SINE,COSINE=math.sin(math.radians(35)),math.cos(math.radians(35))
 RAY=Vector((0,-COSINE,SINE))
 CONFIG={
@@ -48,9 +48,22 @@ def source_packet(workspace,node,output):
     canopy=(alpha>0)&(sy<=settings['canopy_bottom'])
     seeds=np.asarray(settings['seeds']);distance=(sx[:,:,None]-seeds[:,0])**2+(sy[:,:,None]-seeds[:,1])**2
     labels=np.argmin(distance,axis=2);records=[];assigned=np.zeros_like(alpha,dtype=np.uint8)
+    # Rounded overlapping supports avoid exposing straight partition edges.
+    # Hidden lobe borders are inferred; source texels retain native positions.
+    radii=[]
+    for number in range(len(seeds)):
+        nearest=canopy&(labels==number)
+        radii.append(math.sqrt(float(distance[:,:,number][nearest].max()))*1.25)
+    supports=[]
+    for number,(cx,cy) in enumerate(seeds):
+        theta=np.arctan2(sy-cy,sx-cx)
+        scallop=.94+.035*np.sin(theta*11+number)+.025*np.cos(theta*17-number)
+        supports.append(np.sqrt(distance[:,:,number]) < radii[number]*scallop)
+    if not np.all(np.any(supports,axis=0)[canopy]):
+        raise ValueError('Rounded lobe supports do not cover native canopy')
     output.mkdir(parents=True,exist_ok=True)
     for number in range(len(seeds)):
-        owned=canopy&(labels==number)
+        owned=canopy&supports[number]
         ys,xs=np.nonzero(owned)
         if not len(xs):raise ValueError('Empty measured foliage lobe')
         x0,x1=max(0,int(xs.min())-2),min(width,int(xs.max())+3)
@@ -62,10 +75,11 @@ def source_packet(workspace,node,output):
         assigned+=owned.astype(np.uint8)
         records.append(dict(index=number,bbox_source=[x+x0,y+y0,x+x1,y+y1],source=str(front),unknown=str(back),
                             source_sha256=sha(front),unknown_sha256=sha(back),native_pixels=int(owned.sum())))
-    if np.any(assigned>1) or not np.array_equal(assigned.astype(bool),canopy):raise ValueError('Foliage source partition is incomplete or duplicated')
+    if not np.array_equal(assigned.astype(bool),canopy):raise ValueError('Foliage support union differs from native canopy')
     evidence=dict(source_rgb_sha256=sha(source_path),native_alpha_sha256=sha(alpha_path),native_mask=settings['mask'],
-                  source_node=f'building-{node:03d}',canopy_pixels=int(canopy.sum()),duplicate_pixels=0,
-                  protected_source_rgb='Direct source crop bytes; alpha partition only.',lobes=records)
+                  source_node=f'building-{node:03d}',canopy_pixels=int(canopy.sum()),overlap_pixels=int((assigned>1).sum()),
+                  overlap_rule='Identical source-coordinate RGB overlaps; first hit owns projection. Internal rounded borders are inferred.',
+                  protected_source_rgb='Direct source crop bytes; native alpha intersected with inferred rounded supports.',lobes=records)
     (output/'source-partition.json').write_text(json.dumps(evidence,indent=2)+'\n')
     return evidence
 
@@ -126,7 +140,13 @@ def material(name,path,known,evidence):
     links.new(tex.outputs['Alpha'],shader.inputs['Alpha'])
     if 'Emission Color' in shader.inputs:
         links.new(tex.outputs['Color'],shader.inputs['Emission Color']);shader.inputs['Emission Strength'].default_value=1
-    links.new(shader.outputs['BSDF'],output.inputs['Surface'])
+    # Cycles does not use the raster backface-culling flag. Make the same
+    # one-sided surface explicit in the authored shader for audit parity.
+    geometry=nodes.new('ShaderNodeNewGeometry')
+    transparent=nodes.new('ShaderNodeBsdfTransparent');mix=nodes.new('ShaderNodeMixShader')
+    links.new(geometry.outputs['Backfacing'],mix.inputs[0])
+    links.new(shader.outputs['BSDF'],mix.inputs[1]);links.new(transparent.outputs[0],mix.inputs[2])
+    links.new(mix.outputs[0],output.inputs['Surface'])
     return mat
 
 
@@ -152,7 +172,10 @@ def refine_crown(obj,node,evidence):
             for j in range(steps):
                 for i in range(steps):
                     a=start+j*(steps+1)+i;b=a+1;c=b+steps+1;d=a+steps+1
-                    faces.append((a,d,c,b) if front else (a,b,c,d));face_mats.append(slot);face_known.append(known)
+                    # Both sides must use the same diagonal: reversed nonplanar
+                    # quads can tessellate differently and intersect the pair.
+                    faces.extend(((a,d,c),(a,c,b)) if front else ((a,b,c),(a,c,d)))
+                    face_mats.extend((slot,slot));face_known.extend((known,known))
     mesh=bpy.data.meshes.new(obj.name+' native cutout lobes');mesh.from_pydata(vertices,[],faces);mesh.update()
     for mat in materials:mesh.materials.append(mat)
     uv=mesh.uv_layers.new(name='Foliage UV');ownership=mesh.color_attributes.new(name='Source ownership',type='FLOAT_COLOR',domain='CORNER')
@@ -198,7 +221,7 @@ def run(workspace):
     report.update(recipe=VERSION,idempotence='PASS',approval_status='fix-needed; new candidate awaiting full review',
         texture_generation='not-started',projection_status='STALE; needs alpha-aware source review and actual material8views',
         limitations=['Forest090–092 foliage alpha and contours are entirely inferred neutral placeholders, not recovered native foliage.',
-                     'Lobe partition seeds, curved surface depth and fixed orientations are inferred; native alpha and source RGB remain exact.',
+                     'Overlapping rounded supports, curved surface depth and fixed orientations are inferred; their source-view union retains exact native alpha and RGB.',
                      'Canopy mask includes fine twig artwork; large measured branches remain separate opaque geometry.',
                      'Back surfaces retain the same inferred cutout silhouette but use neutral RGB and zero ownership.',
                      'Foliage cards intentionally have open boundaries; they are thin render surfaces, not solid collision volumes.'])
