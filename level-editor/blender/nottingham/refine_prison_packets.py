@@ -17,16 +17,19 @@ from render_animation_states import render_endpoints
 def write(path,value):path.write_text(json.dumps(value,indent=2)+'\n')
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
-def execute(workspace):
+def execute(workspace, *, refine_geometry=True, projection_review_transform=None):
     workspace=workspace.resolve(); config=json.loads((workspace/'workspace.json').read_text())
     bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'))
     upper=config['asset_id']=='nottingham-upper-prison'; patch='patch-002' if upper else 'patch-007'
     prefix='upper-prison-door' if upper else 'southwest-prison-door'
     doors=['building-453','building-455'] if upper else ['building-476','building-477']
     bpy.context.window.scene=bpy.data.scenes[config['scene_name']]
-    (refine_prison.refine_upper if upper else refine_prison.refine)(workspace)
+    if refine_geometry:
+        (refine_prison.refine_upper if upper else refine_prison.refine)(workspace)
     path=Path(config['projection_manifest']); manifest=json.loads(path.read_text())
     review=json.loads((BASE/'prison-audit'/f"{config['asset_id']}-layers-final.json").read_text())['projection_reviews'][patch]
+    if projection_review_transform is not None:
+        review=projection_review_transform(review)
     manifest['projection_reviews'][patch]=review;write(path,manifest)
     maskpath=Path(config['source_mask_manifest']); masks=json.loads(maskpath.read_text())
     overrides=json.loads((BASE/'mask-review/component-state-overrides-v11.json').read_text())
