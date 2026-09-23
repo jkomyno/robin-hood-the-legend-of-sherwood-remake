@@ -2,7 +2,7 @@
 from pathlib import Path
 import json,sys,math
 ROOT=Path(__file__).resolve().parents[3];RUN=ROOT/'level-editor/work/nottingham-refinement'
-TAG='nottingham_village_faceted_rocks_v1'
+TAG='nottingham_village_source_contour_rocks_v2'
 
 def hull(points):
  points=sorted(set(points))
@@ -16,21 +16,27 @@ def hull(points):
   upper.append(p)
  return lower[:-1]+upper[:-1]
 
-def rock(points,apex):
+def contour(mask_index):
+ from PIL import Image
+ inventory=RUN/'mask-review/inventory-v6';rows=json.loads((inventory/'manifest.json').read_text())['masks'];row=next(p for p in rows if p['index']==mask_index);im=Image.open(inventory/row['png']).convert('L');x,y=row['box_top_left']
+ return hull([(x+u,y+v)for v in range(im.height)for u in range(im.width)if im.getpixel((u,v))>0])
+
+
+def rock(outline):
  from mathutils import Vector
  from refine_village_secondary import SIN,COS
- ring=hull([(p['x'],p['y'])for p in points]);n=len(ring);cx=sum(p[0]for p in ring)/n;cy=sum(p[1]for p in ring)/n;vertices=[]
- # Ground perimeter retains native anchors; an intermediate shoulder removes
- # the straight roof-like slope. The upper point is a source-measured crest.
- for scale,height in [(1,0),(.82,.52),(.32,.87)]:
-  for x,y in ring:
-   px=cx+(x-cx)*scale+(apex[0]-cx)*(1-scale);py=cy+(y-cy)*scale+(apex[1]-cy)*(1-scale)
-   vertices.append(Vector((px,-py/SIN,apex[2]*height/COS)))
- vertices.append(Vector((apex[0],-apex[1]/SIN,apex[2]/COS)));faces=[tuple(reversed(range(n)))]
- for row in range(2):
-  for j in range(n):a=row*n+j;b=row*n+(j+1)%n;faces.append((a,b,b+n,a+n))
- for j in range(n):faces.append((2*n+j,2*n+(j+1)%n,3*n))
+ n=len(outline);cx=sum(p[0]for p in outline)/n;cy=sum(p[1]for p in outline)/n;vmax=max(p[1]for p in outline);spanx=max(p[0]for p in outline)-min(p[0]for p in outline);spany=vmax-min(p[1]for p in outline)
+ depth=min(.28*min(spanx,spany),(vmax-cy)*COS*.45/(.84*SIN)*.9);d0=-vmax*COS/SIN
+ def world(u,v,d):return Vector((u,-v*SIN+d*COS,-v*COS-d*SIN))
+ vertices=[world(u,v,d0)for u,v in outline];faces=[]
+ for sign in [-1,1]:
+  base=len(vertices)
+  for u,v in outline:vertices.append(world(cx+(u-cx)*.55,cy+(v-cy)*.55,d0+sign*.84*depth))
+  center=len(vertices);vertices.append(world(cx,cy,d0+sign*depth))
+  for j in range(n):
+   k=(j+1)%n;faces.extend([(j,k,base+k,base+j),(base+j,base+k,center)])
  return vertices,faces
+
 
 def split(vertices,faces,a,b,keep_point):
  import bpy,bmesh
@@ -49,24 +55,17 @@ def refine(asset):
  if all(o.get(TAG)for o in owned.values()):return {'status':'existing'}
  changes=[]
  if asset.endswith('east-boulders'):
-  p=native(310);peak=max(p,key=lambda x:x['z_top']-x['y']);v,f=rock(p,(peak['x'],peak['y'],peak['z_top']));changes.append(replace(owned[310],v,f,'Large eastern faceted boulder'))
-  p=native(311);v=[];f=[]
-  for sign,apex in [(-1,(1506.56,2390.59,36.44)),(1,(1550,2418.79,59.34))]:
-   poly=[]
-   for a,b in zip(p,p[1:]+p[:1]):
-    da=sign*(a['x']-1524);db=sign*(b['x']-1524)
-    if da>=0:poly.append(a)
-    if da*db<0:
-     t=da/(da-db);poly.append({'x':1524,'y':a['y']+(b['y']-a['y'])*t})
-   rv,rf=rock(poly,apex);base=len(v);v.extend(rv);f.extend(tuple(base+i for i in face)for face in rf)
-  changes.append(replace(owned[311],v,f,'Two western faceted boulders'))
+  outlines=[[(1595,2342),(1602,2344),(1609,2354),(1614,2371),(1622,2384),(1632,2404),(1623,2415),(1608,2420),(1591,2418),(1570,2410),(1562,2397),(1564,2379),(1575,2360),(1586,2350)],[(1498,2360),(1507,2357),(1519,2357),(1527,2361),(1529,2365),(1524,2371),(1518,2377),(1509,2381),(1497,2375),(1495,2368)],[(1540,2359),(1553,2357),(1561,2361),(1568,2369),(1564,2385),(1556,2400),(1541,2409),(1526,2404),(1516,2389),(1519,2372),(1529,2364)]]
+  v,f=rock(outlines[0]);changes.append(replace(owned[310],v,f,'Large eastern source-contour boulder'));v=[];f=[]
+  for outline in outlines[1:]:
+   rv,rf=rock(outline);base=len(v);v.extend(rv);f.extend(tuple(base+i for i in face)for face in rf)
+  changes.append(replace(owned[311],v,f,'Two rounded source-contour boulders'))
  else:
-  left,right=(321,322)if asset.endswith('southeast-yard-supplies')else(323,324);p=native(left);q=native(right);crest=max(p+q,key=lambda x:x['z_top']-x['y']);v,f=rock(p+q,(crest['x'],crest['y'],crest['z_top']))
-  # Keep the existing two native receivers on their original crest division.
-  a,b=p[0],p[1];keep=p[2]
-  lv,lf=split(v,f,a,b,keep);rv,rf=split(v,f,a,b,q[0]);changes.append(replace(owned[left],lv,lf,'Faceted rock left surface'));changes.append(replace(owned[right],rv,rf,'Faceted rock right surface'))
+  left,right,mask=(321,322,264)if asset.endswith('southeast-yard-supplies')else(323,324,266);p=native(left);q=native(right);outlines=[contour(mask)];v,f=rock(outlines[0]);a,b=p[0],p[1]
+  lv,lf=split(v,f,a,b,p[2]);rv,rf=split(v,f,a,b,q[0]);assert lv and rv and lf and rf
+  changes.append(replace(owned[left],lv,lf,'Measured source-contour rock left'));changes.append(replace(owned[right],rv,rf,'Measured source-contour rock right'))
  for obj in owned.values():obj[TAG]=True
- return {'status':'refined','asset_id':asset,'changes':changes,'inference':['Native ground perimeter and crest heights anchor the rock; intermediate shoulders and concealed backs are conservative faceted interpolation.','Small paired native surfaces remain independently selectable on their existing crest division.','No new texture is generated; native visible rock silhouettes constrain source projection.']}
+ return {'status':'refined','asset_id':asset,'changes':changes,'source_contours':outlines,'inference':['The visible source contour replaces inaccurate native obstacle proxy silhouettes. Native264/266 outlines and individually measured271 boulder landmarks constrain the front projection.','Closed front/back shoulders use compact inferred depth, limited to keep all geometry above the observed ground contact. Hidden depth is not established by the single source image.','Paired native receivers retain their dividing plane; no new texture or foreign source pixels are generated.']}
 
 def main():
  sys.path.insert(0,str(Path(__file__).resolve().parent));from render_slots import acquire
