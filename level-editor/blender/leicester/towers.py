@@ -43,10 +43,12 @@ def combine(*pieces):
 
 def roof_geometry(obj):
  world=[obj.matrix_world@v.co for v in obj.data.vertices];low=min(v.z for v in world);high=max(v.z for v in world)
- eaves=[v for v in world if v.z<low+2.0];a,b=max(((a,b) for a in eaves for b in eaves),key=lambda pair:(pair[0]-pair[1]).length)
+ # Native eave corners can differ in height; a narrow minimum-height band
+ # would collapse such a wedge onto one corner.
+ eaves=[v for v in world if v.z<(low+high)/2];a,b=max(((a,b) for a in eaves for b in eaves),key=lambda pair:(pair[0]-pair[1]).length)
  apex=sum((v for v in world if v.z>high-1.5),Vector())/sum(v.z>high-1.5 for v in world)
  theta1=math.atan2(a.y-apex.y,a.x-apex.x);theta2=math.atan2(b.y-apex.y,b.x-apex.x);delta=(theta2-theta1+math.pi)%(2*math.pi)-math.pi
- if abs(delta)>math.pi*.65:raise ValueError('Ambiguous roof sector '+obj.name)
+ if abs(delta)<.001 or abs(delta)>math.pi*.65:raise ValueError('Ambiguous roof sector '+obj.name)
  r1=(Vector((a.x,a.y))-Vector((apex.x,apex.y))).length;r2=(Vector((b.x,b.y))-Vector((apex.x,apex.y))).length
  # Six radial samples describe the visible slightly flared roof profile.
  ts=[0,.24,.45,.65,.82,1];verts=[];faces=[];angular=4
