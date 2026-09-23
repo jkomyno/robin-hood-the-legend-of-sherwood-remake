@@ -198,7 +198,7 @@ def refine_crown(obj,node,evidence):
                     # than elongated tilted sheets. Source projection is exact
                     # because all inferred displacement follows the source ray.
                     dome=math.sqrt(max(0.,1.-2*((u-.5)**2+(v-.5)**2)))
-                    radius=.55*max(x1-x0,y1-y0)
+                    radius=lobe.get('depth_radius',.55*max(x1-x0,y1-y0))
                     depth=DEPTHS[number]+(1 if front else -1)*(radius*dome+.175)
                     if front and not known and lobe.get('front_unknown'):depth-=.02  # Separate alpha-disjoint occlusion overlay from source front.
                     world=Vector((x,-ground/SINE,(ground-y)/COSINE))+RAY*depth
@@ -217,7 +217,7 @@ def refine_crown(obj,node,evidence):
             slot=len(materials);materials.append(material(f'{obj.name} lobe{number:02} transverse{side}',
                 lobe['unknown'],False,evidence))
             start=len(vertices)
-            radius=.55*max(x1-x0,y1-y0)
+            radius=lobe.get('depth_radius',.55*max(x1-x0,y1-y0))
             for v in (0.,1.):
                 for u in (0.,1.):
                     world=Vector((cx+side*.1,-ground/SINE,(ground-(y0+(y1-y0)*v))/COSINE))

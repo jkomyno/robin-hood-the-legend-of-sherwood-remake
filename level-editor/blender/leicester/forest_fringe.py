@@ -16,9 +16,9 @@ sys.path.insert(0,str(Path(__file__).resolve().parent))
 import foliage_trees as foliage
 from props_trees import GROUND
 
-VERSION='leicester-neutral-regional-fringe-v1'
+VERSION='leicester-neutral-regional-fringe-v2'
 SPECS={
- 90:dict(mask=25,box=(230,-95,450,270),center=338,seeds=[(282,35),(354,35),(414,65),(268,123),(332,121),(413,144),(363,181),(410,205)],wood=[107,108,109,110,111],roof=[420,429]),
+ 90:dict(mask=25,box=(230,-45,450,270),center=338,seeds=[(282,35),(354,35),(414,65),(268,123),(332,121),(413,144),(363,181),(410,205)],wood=[107,108,109,110,111],roof=[420,429]),
  91:dict(mask=25,box=(435,-115,668,313),center=559,seeds=[(481,27),(566,35),(636,52),(476,143),(549,144),(636,166),(580,223),(639,257)],wood=[107,108,109,110,111],roof=[420,429]),
  92:dict(mask=28,box=(1148,-95,1342,200),center=1241,seeds=[(1180,22),(1240,15),(1310,30),(1172,85),(1230,85),(1294,78),(1226,145),(1290,133)],wood=[112,113],roof=[246,249]),
 }
@@ -68,7 +68,8 @@ def evidence(workspace,node,output):
         owned=coverage&support;ys,xs=np.nonzero(owned);x0,x1=max(0,int(xs.min())-2),min(right-left,int(xs.max())+3);y0,y1=max(0,int(ys.min())-2),min(bottom-top,int(ys.max())+3)
         rgba=np.full((y1-y0,x1-x0,4),105,dtype=np.uint8);rgba[:,:,3]=owned[y0:y1,x0:x1]*255
         path=output/f'lobe-{i:02}-neutral.png';Image.fromarray(rgba).save(path)
-        lobes.append(dict(index=i,bbox_source=[left+x0,top+y0,left+x1,top+y1],source=str(path),unknown=str(path),observed=False,native_pixels=0))
+        lobes.append(dict(index=i,bbox_source=[left+x0,top+y0,left+x1,top+y1],source=str(path),unknown=str(path),observed=False,native_pixels=0,
+                          depth_radius=min((right-left)*.28,max(x1-x0,y1-y0)*.25)))
         union|=owned
     if not np.array_equal(union,coverage):raise ValueError('Lobe union lost measured fringe coverage')
     if np.any(coverage&(yy>=0)&~native):raise ValueError('Visible coverage exceeds regional native alpha')
@@ -119,9 +120,9 @@ def run(workspace):
     validate(workspace);crown['leicester_geometry_recipe']=VERSION
     report.update(recipe=VERSION,idempotence='PASS',source_ownership_unchanged=True,wood_geometry_unchanged=True,texture_generation='not-started',
         limitations=['Regional native alpha constrains visible lower fringe only; it does not identify a complete individual tree.',
-        'All crown RGB and ownership remain neutral/zero. Adjacent-tree allocation and off-map completion are explicit inferences.',
+        'All crown RGB and ownership remain neutral/zero. Adjacent-tree allocation and off-map completion are explicit inferences; upper extension is 45, 115 or 95 source pixels for trees 090, 091 or 092 respectively.',
         'Wood and roof exclusions are exact native-mask exclusions; no architecture is treated as foliage.',
-        'Rounded and transverse hidden surfaces remain an inferred volumetric completion requiring user review.'])
+        'Rounded and transverse hidden surfaces remain inferred; their depth radius is bounded to 28 percent of allocated crown width, independently of source fringe height.'])
     (workspace/'inspection/foliage-recipe.json').write_text(json.dumps(report,indent=2)+'\n');bpy.ops.wm.save_as_mainfile(filepath=str(workspace/'model.blend'))
     return report
 
