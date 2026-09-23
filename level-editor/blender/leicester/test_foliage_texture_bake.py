@@ -24,6 +24,13 @@ def state(path,asset):
 
 def run(experiment,bake):
     experiment=Path(experiment).resolve();bake=Path(bake).resolve()
+    validation=json.loads((bake/'validation.json').read_text())
+    evidence=validation['evidence_sha256']
+    for path,digest in evidence.items():assert sha(path)==digest,path
+    raw=validation.get('reconciliation_reference')
+    if raw:assert evidence[str(Path(raw).resolve())]==validation['reconciliation_reference_sha256']
+    for name in ('views.json','input.png','mask.png','approval.json'):
+        assert str(experiment/name) in evidence,name
     approval=json.loads((experiment/'approval.json').read_text());asset=approval['asset_id']
     assert sha(experiment/'approved-model.blend')==approval['saved_model_sha256']
     original=state(experiment/'approved-model.blend',asset);candidate=state(bake/'worker.blend',asset)
@@ -37,7 +44,7 @@ def run(experiment,bake):
         rows.append({'object':key[0],'material':key[1],'known':known,'alpha_identical':True,
                      'alpha_sha256':hashlib.sha256(before[:,:,3].tobytes()).hexdigest(),
                      'known_rgba_identical':True if known else None})
-    report={'status':'PASS','approved_model_sha256':sha(experiment/'approved-model.blend'),
+    report={'status':'PASS','guarded_evidence_verified':True,'approved_model_sha256':sha(experiment/'approved-model.blend'),
             'baked_model_sha256':sha(bake/'worker.blend'),'geometry_unchanged':True,'foliage_uv_unchanged':True,
             'outside_materials_unchanged':True,'physical_alpha_unchanged':True,'known_rgba_unchanged':True,'materials':rows}
     (bake/'reopened-preservation.json').write_text(json.dumps(report,indent=2)+'\n')

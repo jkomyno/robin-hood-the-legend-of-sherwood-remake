@@ -109,6 +109,10 @@ def cutout_depth(scene):scene.cycles.transparent_max_bounces=128
 def run(experiment,selected,output,raw=None):
     experiment=Path(experiment).resolve();selected=Path(selected).resolve();output=Path(output).resolve()
     manifest_path=experiment/'views.json';manifest=json.loads(manifest_path.read_text())
+    evidence=[manifest_path,selected,experiment/'input.png',experiment/'mask.png',experiment/'approval.json']
+    if raw:
+        raw=Path(raw).resolve();evidence.append(raw)
+    evidence_hashes={str(path):sha(path) for path in evidence}
     approval=json.loads((experiment/'approval.json').read_text())
     if sha(bpy.data.filepath)!=approval['saved_model_sha256']:raise ValueError('Open exact approved model copy')
     scene=bpy.data.scenes[manifest['scene_name']];bpy.context.window.scene=scene
@@ -131,7 +135,9 @@ def run(experiment,selected,output,raw=None):
     if geometry!={o.name:_geometry(o) for o in scene.objects}:raise ValueError('Geometry changed')
     if outside!={o.name:_materials(o) for o in scene.objects if o.name in outside}:raise ValueError('Outside material/UV changed')
     if uv!={o.name:{l.name:[tuple(d.uv) for d in l.data] for l in o.data.uv_layers} for o in objects if o.name in uv}:raise ValueError('Foliage UV changed')
-    report.update(geometry_verified=True,outside_objects_unchanged=len(outside),physical_alpha_unchanged=True,observed_foliage_rgba_unchanged=True,
+    if evidence_hashes!={str(path):sha(path) for path in evidence}:
+        raise ValueError('Approved or generated evidence changed during foliage texture stage')
+    report.update(evidence_sha256=evidence_hashes,geometry_verified=True,outside_objects_unchanged=len(outside),physical_alpha_unchanged=True,observed_foliage_rgba_unchanged=True,
                   foliage_uv_unchanged=True,foliage_materials=foliage,texture_approval='pending',generated_shape_authority=False)
     (output/'validation.json').write_text(json.dumps(report,indent=2)+'\n')
     bpy.ops.wm.save_as_mainfile(filepath=str(output/'worker.blend'))
