@@ -1,5 +1,11 @@
 # Derby asset refinement review
 
+User explicitly approved Upper West `stairs-v1-contact-v4`. Approval hashes
+recorded; removed from pending gallery. High-quality two-image Sunburst fill,
+protected-source bake and eventual publication are authorized and in progress.
+Only Lower West south remains fix-needed in the current review manifest; its
+battlements still require correction and approval. Upper West is not yet live.
+
 Upper West stair revision is ready for user review:
 `assets/derby-upper-west-curtain/candidates/stairs-v1-contact-v4/`.
 Thirteen steps retain their elevations; tread stations/upper width now follow
