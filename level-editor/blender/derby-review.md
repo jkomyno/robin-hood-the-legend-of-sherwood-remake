@@ -1,5 +1,12 @@
 # Derby asset refinement review
 
+Lower West south `south-vertical-v13` explicitly approved: the user accepted its
+existing zigzag without new annotations. Pending geometry gallery now has zero
+items. Upper West approved stairs-v4 texture generation/bake is complete and
+its actual eight-view render inspected; raw/protected images retained. South
+texture fill/bake and combined publication10 are in progress. Neither final
+curtain revision is live until publication10 passes and is promoted.
+
 User explicitly approved Upper West `stairs-v1-contact-v4`. Approval hashes
 recorded; removed from pending gallery. High-quality two-image Sunburst fill,
 protected-source bake and eventual publication are authorized and in progress.
