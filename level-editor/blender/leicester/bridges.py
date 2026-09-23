@@ -118,6 +118,12 @@ def refine(workspace, native_path):
             entries.append({'source_node':f'building-{index:03}', 'projection_component':component,
                             'mask_indices':[mask], 'reviewed':True,
                             'review_reason':'Native railing silhouette is restricted to its explicit timber component; it must never project onto deck or trestle receivers.'})
+        if index==226:
+            inventory=json.loads(Path(masks['mask_inventory']).read_text())
+            if any(record['index']==213226 for record in inventory['masks']):
+                entry=next(entry for entry in entries if entry.get('source_node')=='building-226' and not entry.get('projection_component'))
+                entry.clear();entry.update(source_node='building-226',mask_indices=[213226],reviewed=True,
+                    review_reason='Source-reviewed native deck footprint excludes foreground castle, tower and railing pixels. The background-painted deck needs its own ownership region beyond native rail333.')
     masks_path.write_text(json.dumps(masks,indent=2)+'\n')
     original['bridge_recipe']=TAG
     bpy.context.view_layer.update()

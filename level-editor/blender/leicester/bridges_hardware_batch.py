@@ -30,7 +30,7 @@ def main():
                     'reason':'Hardware extends beyond frozen leaf-only cameras; create a fresh unapproved workspace with wider fixed input/modified framing.',
                     'path_note':'Archived configuration retains original absolute paths; file bytes are preserved. Resolve original workspace prefix to archived prefix when replaying this historical packet.'},indent=2)+'\n')
             if not (workspace/'workspace.json').exists():
-                if static:run('bridges_prepare.py',[asset,'--framing-padding','2.0'])
+                if static:run('bridges_prepare.py',[asset,'--framing-padding','2.0','--source-masks',ROOT/'bridge-evidence/west-footbridge-ownership/initial-masks.json'])
                 else:
                     extra=[]
                     if asset=='leicester-east-village-drawbridge':

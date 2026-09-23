@@ -8,7 +8,7 @@ from mathutils import Vector
 from bridges import COSINE, SINE, FACES, object_mesh
 
 ROOT = Path('level-editor/work/leicester-refinement').resolve()
-TAG = 'leicester-east-chain-v1'
+TAG = 'leicester-east-chain-v2'
 
 def pixels(path):
     image = bpy.data.images.load(str(path), check_existing=False)
@@ -25,7 +25,7 @@ def refine_hardware(workspace, asset_id, state):
     config=json.loads((workspace/'workspace.json').read_text())
     collection=bpy.data.collections[config['collection_name']]
     for obj in list(collection.all_objects):
-        if obj.get('bridge_east_hardware')==TAG and obj.get('asset_group')==asset_id:
+        if obj.get('bridge_east_hardware') and obj.get('asset_group')==asset_id:
             bpy.data.objects.remove(obj,do_unlink=True)
     active=initial if state=='initial' else applied
     template=next(o for o in collection.all_objects if o.type=='MESH' and o.get('source_node')==f'building-{active:03}' and o.get('asset_group')==asset_id)
@@ -43,34 +43,45 @@ def refine_hardware(workspace, asset_id, state):
     report=[]
     for side,index in enumerate(indices):
         mask=masks[index];w,h,bitmap=pixels(mask['png']);mx,my=mask['box_top_left']
-        samples=[]
-        for x in range(1,w-1,4):
-            ys=[]
+        # Retain the measured chain envelope, including visible link gaps.
+        # A subpixel centerline loses most of the painted chain's source area.
+        cells = set()
+        for x in range(w):
             for y in range(h):
-                ax,ay=mx+x-graphic['bbox'][0],my+y-graphic['bbox'][1]
-                if bitmap[((h-1-y)*w+x)*4]>.5 and 0<=ax<aw and 0<=ay<ah and alpha[((ah-1-ay)*aw+ax)*4]>.5:
-                    ys.append(y)
-            if ys:samples.append((mx+x,my+sum(ys)/len(ys)))
-        if len(samples)<2:raise ValueError('Missing chain silhouette')
+                ax, ay = mx+x-graphic['bbox'][0], my+y-graphic['bbox'][1]
+                if (bitmap[((h-1-y)*w+x)*4] > .5 and 0 <= ax < aw
+                        and 0 <= ay < ah and alpha[((ah-1-ay)*aw+ax)*4] > .5):
+                    cells.add((mx+x, my+y))
+        if not cells:
+            raise ValueError('Missing chain silhouette')
         ends = [(2,3),(1,0)] if patch==1 else [(3,0),(2,1)]
-        a,b=(native[i] for i in ends[side]);points=[]
-        for x,image_y in samples:
-            native_y=a['y']+(x-a['x'])*(b['y']-a['y'])/(b['x']-a['x'])
-            points.append(Vector((x,-native_y/SINE,(native_y-image_y)/COSINE)))
-        vertices=[];faces=[]
+        a,b=(native[i] for i in ends[side])
         toward=Vector((0,-COSINE,SINE))
-        for start,end in zip(points,points[1:]):
-            direction=(end-start).normalized();across=direction.cross(toward).normalized()*.30
-            depth=toward*.7;offset=len(vertices)
-            vertices.extend(p+r*across+s*depth for p in (start,end) for r,s in [(-1,-1),(1,-1),(1,1),(-1,1)])
-            faces.extend(tuple(offset+i for i in face) for face in FACES)
+        vertices=[]; faces=[]; lookup={}
+        def vertex(x, y, layer):
+            key=(x,y,layer)
+            if key not in lookup:
+                native_y=a['y']+(x-a['x'])*(b['y']-a['y'])/(b['x']-a['x'])
+                point=Vector((x,-native_y/SINE,(native_y-y)/COSINE))
+                lookup[key]=len(vertices)
+                vertices.append(point+toward*(.7 if layer else -.7))
+            return lookup[key]
+        for x,y in sorted(cells):
+            corners=[(x,y),(x+1,y),(x+1,y+1),(x,y+1)]
+            faces.append(tuple(vertex(u,v,0) for u,v in reversed(corners)))
+            faces.append(tuple(vertex(u,v,1) for u,v in corners))
+            neighbors=[(x,y-1),(x+1,y),(x,y+1),(x-1,y)]
+            for i,neighbor in enumerate(neighbors):
+                if neighbor not in cells:
+                    u,v=corners[i]; q,r=corners[(i+1)%4]
+                    faces.append((vertex(u,v,0),vertex(q,r,0),vertex(q,r,1),vertex(u,v,1)))
         label=f'east chain {side+1} {state}'
         obj=object_mesh(template.get('asset_name',asset_id)+' / '+label,vertices,faces,template,collection)
         obj['bridge_east_hardware']=TAG;obj.hide_render=False;obj.hide_viewport=False
         entries.append({'source_node':template['source_node'],'projection_component':label,'mask_indices':[index],'reviewed':True,
-                        'review_reason':'Exact native chain silhouette for this endpoint; thin centerline geometry follows only native-mask pixels inside endpoint alpha. Duplicate runtime masks omitted.'})
-        report.append({'component':obj.name,'native_mask':index,'source_samples':samples,'vertices':len(vertices),'segments':len(points)-1})
+                        'review_reason':'Exact native chain silhouette for this endpoint; closed measured silhouette envelope follows native-mask pixels inside endpoint alpha. Duplicate runtime masks omitted.'})
+        report.append({'component':obj.name,'native_mask':index,'owned_source_pixels':len(cells),'vertices':len(vertices),'faces':len(faces),'source_envelope':'exact native pixel cells intersected with exact endpoint alpha'})
     maskpath.write_text(json.dumps(manifest,indent=2)+'\n')
     return {'recipe_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'endpoint_alpha_sha256':hashlib.sha256(alpha_path.read_bytes()).hexdigest(),
             'components':report,'source_supported':'Two chain silhouettes per visible endpoint; initial village chains are not visible in native artwork.',
-            'inference':'Depth follows the corresponding native lowered deck edge extended to the winch; source vertical coordinates constrain height. Narrow closed rods represent chain centerlines; individual link thickness and hidden attachment depths are inferred.'}
+            'inference':'Depth follows the corresponding native lowered deck edge extended to the winch; source vertical coordinates constrain height. The exact pixel-cell envelope retains painted link gaps; its 1.4-unit camera-ray depth, concealed link cross-sections and attachment depths remain inferred.'}
