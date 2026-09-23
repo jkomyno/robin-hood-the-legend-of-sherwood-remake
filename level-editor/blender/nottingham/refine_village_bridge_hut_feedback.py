@@ -15,7 +15,7 @@ def authority(old):
  mask=Image.new('L',(2304,3520));ImageDraw.Draw(mask).polygon(polygon,fill=255);mask.save(target/f'{index:06}.png')
  data['masks'].append(dict(index=index,layer=-1,layer_index=-1,png=f'{index:06}.png',mask_type='authored-source-floor',box_top_left=[0,0],box_size=[2304,3520],obstacle_indices=[],source_sha256=sha(old/'reference/source.png'),source_polygons=[polygon],limitation='Conservative paving between parapets. Source-camera visibility additionally excludes the parapets and foreground.'))
  write(target/'manifest.json',data);original['mask_inventory']=str(target/'manifest.json')
- original['projections']['exterior']['assignments'].append(dict(source_node='building-280',projection_component='Western stream bridge / arch masonry and deck',mask_indices=[212,213,index],exclude_mask_indices=[216],exclusions_reviewed=True,reviewed=True,constraint_kind='reviewed-native-and-authored-deck',review_note='Native bridge masonry plus separately traced paving between parapets; only the arch/deck component receives the extra paving domain.'))
+ original['projections']['exterior']['assignments'].append(dict(source_node='building-280',projection_component='Western stream bridge / arch masonry and deck',mask_indices=[212,213,index],exclude_mask_indices=[216],exclusions_reviewed=True,exclusion_reason='Foreground tree216 occludes bridge masonry and paving.',reviewed=True,constraint_kind='reviewed-native-and-authored-deck',review_note='Native bridge masonry plus separately traced paving between parapets; only the arch/deck component receives the extra paving domain.'))
  out=WORK/'mask-review/source-masks-west-bridge-feedback-v1.json';write(out,original);return out
 
 def chimney():
@@ -28,15 +28,17 @@ def chimney():
  top_pixels=[(417.5,2759),(411.5,2765),(398,2761),(404,2755)]
  top_z=102.381004/C
  top=[Vector((x,(-y-top_z*C)/S,top_z)) for x,y in top_pixels]
- mid=[v-Vector((0,0,25/C)) for v in top]
- pts=native(284);bottom=[point(p,66.189) for p in pts]
+ mid_pixels=[(420,2783),(411,2793),(390,2788),(399,2779)]
+ mid_z=top_z-25/C
+ mid=[Vector((x,(-y-mid_z*C)/S,mid_z)) for x,y in mid_pixels]
+ pts=native(284);bottom=[point(p,36.0) for p in pts]
  center=sum(top,Vector())/4;inner=[center+(v-center)*.66 for v in top];lower=[v-Vector((0,0,5)) for v in inner]
  vertices=bottom+mid+top+inner+lower;faces=[(3,2,1,0),(16,17,18,19)]
  for i in range(4):
   j=(i+1)%4
   faces.extend([(i,j,4+j,4+i),(4+i,4+j,8+j,8+i),(8+i,8+j,12+j,12+i),(12+i,12+j,16+j,16+i)])
  report=replace(obj,vertices,faces,'Forge chimney / vertical shaft and flared hood');obj['projection_min_cosine']=.05
- report.update(source_top_corners=top_pixels,upper_shaft_drop_pixels=25,changes=['Replaced continuously slanted chimney with a near-vertical upper shaft and lower flared hood.','Narrowed the mouth to the observed source silhouette; retained the native roof intersection.'],limitations=['Hidden shaft returns, rim thickness and five-unit shallow cavity are inferred.','Manual source trace uncertainty is approximately two pixels.'])
+ report.update(source_top_corners=top_pixels,source_shoulder_corners=mid_pixels,upper_shaft_drop_pixels=25,changes=['Replaced continuously slanted chimney with a slightly tapered upper shaft and lower flared hood continuing below the thatch.','Narrowed the mouth to the observed source silhouette; lowered the closure below all roof eaves to remove exposed horizontal ledges.'],limitations=['Hidden shaft returns, rim thickness and five-unit shallow cavity are inferred.','Manual source trace uncertainty is approximately two pixels.'])
  return report
 
 def main():
@@ -46,7 +48,7 @@ def main():
  tooling=select_tooling(WORK/'tooling/58744eeaf71a21e9')
  import bpy,refinement_workspace as rw
  from refine_village_secondary import digest
- asset=sys.argv[sys.argv.index('--')+1];old=WORK/f'round-{5 if asset.endswith("stream-wall") else 1}/assets'/asset;new=WORK/'round-21/assets'/asset
+ asset=sys.argv[sys.argv.index('--')+1];old=WORK/f'round-{5 if asset.endswith("stream-wall") else 1}/assets'/asset;new=WORK/f'round-{22 if asset.endswith("stream-wall") else 21}/assets'/asset
  config=json.loads((old/'workspace.json').read_text());bridge=asset.endswith('stream-wall')
  if bridge:
   from western_bridge_projection import install
