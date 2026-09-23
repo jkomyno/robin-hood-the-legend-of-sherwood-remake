@@ -5,7 +5,7 @@ import { parseLevel3D } from "./validation.ts";
 
 export type AuthoredAssetPart = { name: string } & (
   { obstacle: number; node?: never; mission_profile?: never; obstacle_local_game?: never } |
-  { obstacle?: never; node: string; mission_profile: string; obstacle_local_game: SightObstacle }
+  { obstacle?: never; node: string; mission_profile: string; obstacle_local_game?: SightObstacle }
 );
 
 export interface AuthoredAssetCatalog {
@@ -30,7 +30,7 @@ export function appendSupplementalMissionParts(document: Level3D, catalog: Autho
     if (part.mission_profile === undefined || !allowed.has(part.node)) continue;
     if (found.has(part.node) || document.objects.some(object => object.node === part.node || object.id === part.node))
       throw new Error(`Supplemental node already exists or has duplicate ownership: ${part.node}`);
-    if (part.obstacle !== undefined || !part.name.trim() || !group.name.trim() || !group.id.trim())
+    if (part.obstacle !== undefined || !part.obstacle_local_game || !part.name.trim() || !group.name.trim() || !group.id.trim())
       throw new Error(`Invalid supplemental part metadata: ${part.node}`);
     found.add(part.node);
     if (!document.groups.some(existing => existing.id === group.id) && !groups.some(existing => existing.id === group.id))
@@ -43,6 +43,22 @@ export function appendSupplementalMissionParts(document: Level3D, catalog: Autho
   const next = { ...document, groups: [...document.groups, ...groups], objects: [...document.objects, ...additions] };
   parseLevel3D(next);
   return next;
+}
+
+/** An older reconstruction can predate explicit supplemental mission previews.
+ * Only the embedded fallback catalog may omit those absent supplemental nodes;
+ * an explicit exported catalog must still match every part exactly.
+ */
+export function catalogForLegacyReconstruction(catalog: AuthoredAssetCatalog, objects: Level3DObject[]): AuthoredAssetCatalog {
+  const nodes = new Set(objects.map(object => object.node));
+  return { ...catalog, groups: catalog.groups.flatMap(group => {
+    if (!group.parts.length || !group.id.trim() || !group.name.trim()) return [group];
+    const parts = group.parts.filter(part => !(part.obstacle === undefined &&
+      !!part.name.trim() &&
+      typeof part.mission_profile === "string" && part.mission_profile.trim() &&
+      typeof part.node === "string" && /^mission-[a-zA-Z0-9_-]+$/.test(part.node) && !nodes.has(part.node)));
+    return parts.length ? [{ ...group, parts }] : [];
+  }) };
 }
 
 /** Upgrade only untouched generated groups; saved user edits keep their ownership. */
@@ -60,7 +76,7 @@ export function upgradeGeneratedAssetGroups(document: Level3D, catalog?: Authore
  * embedded catalog. Validate the complete assignment before changing any part.
  */
 export function authoredAssetGroups(map: string, objects: Level3DObject[], supplied?: AuthoredAssetCatalog): Level3DGroup[] | null {
-  const catalog: AuthoredAssetCatalog | null = supplied ?? (map.toLowerCase() === derby.map.toLowerCase() ? derby : null);
+  const catalog: AuthoredAssetCatalog | null = supplied ?? (map.toLowerCase() === derby.map.toLowerCase() ? catalogForLegacyReconstruction(derby, objects) : null);
   if (!catalog) return null;
   if (catalog.map.toLowerCase() !== map.toLowerCase()) throw new Error("Asset catalog belongs to a different map");
   const parts = new Map<string, { group: AuthoredAssetCatalog["groups"][number]; part: AuthoredAssetPart }>();
@@ -74,7 +90,7 @@ export function authoredAssetGroups(map: string, objects: Level3DObject[], suppl
     for (const part of group.parts) {
       const key = part.mission_profile !== undefined ? part.node : `obstacle:${part.obstacle}`;
       const valid = part.mission_profile !== undefined ?
-        part.obstacle === undefined && /^mission-[a-zA-Z0-9_-]+$/.test(part.node) && !!part.mission_profile.trim() && !!part.obstacle_local_game :
+        part.obstacle === undefined && /^mission-[a-zA-Z0-9_-]+$/.test(part.node) && !!part.mission_profile.trim() :
         Number.isInteger(part.obstacle) && part.obstacle >= 0;
       if (!valid || !part.name.trim() || parts.has(key))
         throw new Error(`${map} asset catalog has invalid or duplicate obstacle ownership`);

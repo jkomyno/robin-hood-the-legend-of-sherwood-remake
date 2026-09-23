@@ -155,7 +155,7 @@ export async function prepareMapCandidate(
         if (part.mission_profile === undefined) continue;
         objects.push({ id: part.node, node: part.node, kind: "mission", name: part.name,
           source: { map: sceneDoc.map, mission_profile: part.mission_profile },
-          obstacle: structuredClone(part.obstacle_local_game), transform: { ...IDENTITY_TRANSFORM } });
+          obstacle: structuredClone(part.obstacle_local_game!), transform: { ...IDENTITY_TRANSFORM } });
       }
       // buildings: parts stacked on the same footprint
       const groupOf = groupObstacles(lvl.sight_obstacles, terraces);

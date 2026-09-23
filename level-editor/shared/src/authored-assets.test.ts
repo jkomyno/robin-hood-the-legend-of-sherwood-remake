@@ -1,8 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import derby from "../assets/derby.json" with { type: "json" };
-import { appendSupplementalMissionParts, authoredAssetGroups, upgradeGeneratedAssetGroups, type AuthoredAssetCatalog } from "./authored-assets.ts";
+import { appendSupplementalMissionParts, authoredAssetGroups, catalogForLegacyReconstruction, upgradeGeneratedAssetGroups, type AuthoredAssetCatalog } from "./authored-assets.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "./level3d.ts";
+
+// Keep the legacy canonical fixture explicit when the shipped catalog adds
+// supplemental mission previews that older generated GLBs do not contain.
+const embeddedCatalog: AuthoredAssetCatalog = derby;
+const legacyCatalog: AuthoredAssetCatalog = { ...embeddedCatalog, groups: embeddedCatalog.groups.flatMap(group => {
+  const parts = group.parts.filter(part => part.obstacle !== undefined);
+  return parts.length ? [{ ...group, parts }] : [];
+}) };
 
 function objects(): Level3DObject[] {
   return Array.from({ length: 271 }, (_, obstacle) => obstacle)
@@ -21,7 +29,7 @@ test("Derby assigns every exported obstacle to exactly one named logical asset",
   const parts = objects();
   const before = structuredClone(parts);
   const groups = authoredAssetGroups("Derby", parts)!;
-  const members = derby.groups.flatMap(group => group.parts.map(part => part.obstacle));
+  const members = legacyCatalog.groups.flatMap(group => group.parts.map(part => part.obstacle));
   assert.equal(members.length, 270);
   assert.equal(new Set(members).size, 270);
   assert.equal(groups.length, 39);
@@ -120,7 +128,7 @@ test("explicit mission publication adds one group/part while preserving all 270 
   const supplemental = { node: "mission-second-drawbridge", name: "Raised bridge", mission_profile: "Derby - Pont_levis02",
     obstacle_local_game: structuredClone(parts[0]!.obstacle) };
   const group = { id: "derby-second-drawbridge", name: "Second courtyard drawbridge", parts: [supplemental] };
-  const catalog: AuthoredAssetCatalog = { map: "Derby", groups: [...derby.groups, group] };
+  const catalog: AuthoredAssetCatalog = { map: "Derby", groups: [...legacyCatalog.groups, group] };
   const next = appendSupplementalMissionParts(document, catalog, [supplemental.node]);
   assert.equal(next.objects.length, 271);
   assert.equal(next.groups.length, 40);
@@ -133,4 +141,22 @@ test("explicit mission publication adds one group/part while preserving all 270 
   assert.throws(() => appendSupplementalMissionParts(document, catalog, ["mission-absent"]), /does not match/);
   assert.throws(() => appendSupplementalMissionParts(document, catalog, ["building-267"]), /allowlist/);
   assert.throws(() => appendSupplementalMissionParts(document, { ...catalog, groups: [...catalog.groups, group] }, [supplemental.node]), /duplicate/);
+});
+
+test("legacy fallback skips absent explicit mission previews but never missing canonical parts", () => {
+  const supplemental = { node: "mission-second-drawbridge", name: "Drawbridge endpoint", mission_profile: "Derby - Pont_levis02" };
+  const catalog: AuthoredAssetCatalog = { ...legacyCatalog, groups: [...legacyCatalog.groups,
+    { id: "derby-second-drawbridge", name: "Second Courtyard Drawbridge", parts: [supplemental] }] };
+  const old = objects();
+  const fallback = catalogForLegacyReconstruction(catalog, old);
+  assert.equal(fallback.groups.length, 39);
+  assert.equal(authoredAssetGroups("Derby", old, fallback)!.length, 39);
+  assert.throws(() => authoredAssetGroups("Derby", objects(), catalog), /obstacle set/);
+  const missing = objects().slice(1);
+  assert.throws(() => authoredAssetGroups("Derby", missing, catalogForLegacyReconstruction(catalog, missing)), /obstacle set/);
+  const mission: Level3DObject = { ...objects()[0]!, id: supplemental.node, node: supplemental.node, kind: "mission",
+    source: { map: "Derby", mission_profile: supplemental.mission_profile } };
+  const current = [...objects(), mission];
+  assert.equal(catalogForLegacyReconstruction(catalog, current).groups.length, 40);
+  assert.equal(authoredAssetGroups("Derby", current, catalog)!.length, 40);
 });
