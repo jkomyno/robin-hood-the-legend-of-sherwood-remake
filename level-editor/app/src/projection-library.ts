@@ -53,6 +53,7 @@ export async function prepareProjectionAsset(
   const descriptor = parseProjectionAssetDescriptor(JSON.parse(new TextDecoder().decode(descriptorBytes)));
   if (descriptor.id !== entry.id || descriptor.source_map.toLowerCase() !== map.toLowerCase())
     throw new Error(`Asset identity or source map mismatch: ${entry.id}`);
+  if (descriptor.editor_usage === "map-background") throw new Error("Map backgrounds are part of the map and cannot be inserted as objects");
   const parent = entry.descriptor.split("/").slice(0, -1).join("/");
   const modelPath = parent ? `${parent}/${descriptor.model}` : descriptor.model;
   if (modelPath !== entry.model) throw new Error(`Asset model path mismatch: ${entry.id}`);

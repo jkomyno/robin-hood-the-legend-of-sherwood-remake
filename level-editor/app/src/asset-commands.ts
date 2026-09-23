@@ -6,6 +6,7 @@ import { assetNodeKey, IDENTITY_TRANSFORM, parseExternalAssetSources, parseLevel
 export function insertProjectionAsset(document: Level3D, descriptor: ProjectionAssetDescriptor,
   reference: ExternalAssetSource, placement: [number, number, number]) {
   parseProjectionAssetDescriptor(descriptor);
+  if (descriptor.editor_usage === "map-background") throw new Error("Map backgrounds are part of the map and cannot be inserted as objects");
   parseExternalAssetSources([reference]);
   if (descriptor.source_map.toLowerCase() !== document.map.toLowerCase() || descriptor.id !== reference.id)
     throw new Error("Only assets from the current map can be inserted");

@@ -44,3 +44,10 @@ test("foreign-map, changed revisions and invalid placements fail without edits",
   assert.throws(() => insertProjectionAsset(document, descriptor, reference, [NaN, 0, 0]), /placement/);
   assert.equal(document.groups.length, 0);
 });
+
+test("map backgrounds cannot be inserted as editable instances", () => {
+  const { descriptor, reference, document } = assetFixture();
+  const ground = { ...descriptor, editor_usage: "map-background" as const, parts: [], components: [{ source_node: "ground" }] };
+  assert.throws(() => insertProjectionAsset(document, ground, reference, [0, 0, 0]), /cannot be inserted/);
+  assert.equal(document.groups.length, 0);
+});

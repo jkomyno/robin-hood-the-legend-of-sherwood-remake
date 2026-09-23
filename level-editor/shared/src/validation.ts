@@ -483,6 +483,7 @@ export function parseProjectionAssetIndex(value: unknown): ProjectionAssetEntry[
   const ids = new Set<string>();
   for (const entry of array(index.assets, "projection asset index.assets")) {
     object(entry, "projection asset entry");
+    if (entry.editor_usage !== undefined) check(entry.editor_usage === "map-background", "editor_usage", "unsupported asset capability");
     for (const key of ["id", "name", "source_map"]) text(entry[key], key);
     check(!/[\\/:\0]/.test(entry.id) && !ids.has(entry.id), "asset id", "invalid or duplicate identity");
     ids.add(entry.id);
@@ -502,7 +503,12 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
   const nodes = new Set<string>();
   const obstacles = new Set<number>();
   const parts = array(d.parts, "asset.parts");
-  check(parts.length > 0, "asset.parts", "expected nonempty asset");
+  if (d.editor_usage !== undefined) check(d.editor_usage === "map-background", "editor_usage", "unsupported asset capability");
+  if (d.editor_usage === "map-background") {
+    check(parts.length === 0 && d.states === undefined, "asset.parts", "map background cannot contain editable parts or states");
+    const components = array(d.components, "asset.components");
+    check(components.length > 0 && components.every(component => component?.source_node === "ground"), "asset.components", "map background requires ground-only components");
+  } else check(parts.length > 0, "asset.parts", "expected nonempty asset");
   for (const part of parts) {
     object(part, "asset part");
     text(part.node, "asset part.node");

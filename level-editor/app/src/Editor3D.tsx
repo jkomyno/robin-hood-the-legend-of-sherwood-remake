@@ -789,7 +789,7 @@ export default function Editor3D(props: EditorProps) {
               <Show when={assetEntries().length === 0}><p class="hint">No standalone assets for this map.</p></Show>
               <ul>
                 <For each={assetEntries().filter(entry => entry.name.toLowerCase().includes(assetSearch().toLowerCase()))}>
-                  {entry => <li><span>{entry.name}</span><button disabled={addingAsset()} onClick={() => void addAsset(entry)} aria-label={`Add ${entry.name}`}>Add</button></li>}
+                  {entry => <li><span>{entry.name}</span><button disabled={addingAsset() || entry.editor_usage === "map-background"} onClick={() => void addAsset(entry)} aria-label={`Add ${entry.name}`}>{entry.editor_usage === "map-background" ? "Map background" : "Add"}</button></li>}
                 </For>
               </ul>
             </section>

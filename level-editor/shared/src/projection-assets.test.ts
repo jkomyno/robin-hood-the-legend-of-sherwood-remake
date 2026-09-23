@@ -36,3 +36,11 @@ test("documents preserve pinned external sources and reject dangling namespaces"
   assert.throws(() => parseLevel3D({ ...document, assetSources: [] }), /dangling external/);
   assert.equal(parseLevel3D({ ...document, assetSources: undefined, objects: [] }).assetSources, undefined);
 });
+
+test("only explicit ground-only map backgrounds may have no editable parts", () => {
+  const ground = { ...descriptor, editor_usage: "map-background", parts: [], components: [{ source_node: "ground" }] };
+  assert.equal(parseProjectionAssetDescriptor(ground), ground);
+  assert.throws(() => parseProjectionAssetDescriptor({ ...descriptor, parts: [] }), /nonempty/);
+  assert.throws(() => parseProjectionAssetDescriptor({ ...ground, components: [{ source_node: "building-001" }] }), /ground-only/);
+  assert.throws(() => parseProjectionAssetDescriptor({ ...ground, parts: descriptor.parts }), /cannot contain/);
+});
