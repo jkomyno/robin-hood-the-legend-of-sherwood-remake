@@ -204,6 +204,32 @@ class RevealedPreparationTests(unittest.TestCase):
             prepare(self.manifest,'fixture',self.root/'blocked',revealed=True)
         self.assertFalse((self.root/'blocked').exists())
 
+    def test_reconstructed_ownership_links_only_exact_approved_pixels(self):
+        import shutil
+        packet=self.reveal(False)
+        audit=self.root/'state-audit.json';audit.write_text(json.dumps({'render_object_names':['room']}))
+        self.item['revision']['evidence']['state_audit']={'path':str(audit),'sha256':sha(audit)}
+        identity={'asset_id':'fixture','model_sha256':self.item['revision']['model_sha256'],
+                  'evidence':{k:v['sha256'] for k,v in self.item['revision']['evidence'].items()}}
+        self.item['revision']['sha256']=hashlib.sha256(json.dumps(identity,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        self.save();record(self.manifest,['fixture'],'Approve exact state audit')
+        reproduced=self.root/'reproduced';shutil.copytree(packet,reproduced)
+        files=['solid.png','textured.png']+[f'views/view-{i}-known.png' for i in range(8)]
+        report={'status':'PASS','asset_id':'fixture','geometry_revision':self.item['revision']['sha256'],
+                'model_sha256':self.item['revision']['model_sha256'],
+                'source_rgb_preserved':True,'solid_pixels_preserved':True,'ownership_buffers_reproduced':True,
+                'reviewed_state_manifest':str(packet/'views.json'),'reviewed_state_manifest_sha256':sha(packet/'views.json'),
+                'primary_manifest':str(self.packet/'views.json'),'primary_manifest_sha256':sha(self.packet/'views.json'),
+                'visibility_audit':str(audit),'visibility_audit_sha256':sha(audit),
+                'reconstructed_directory':str(reproduced),'artifact_sha256':{name:sha(reproduced/name) for name in files}}
+        path=self.root/'reconstruction.json';path.write_text(json.dumps(report))
+        prepare(self.manifest,'fixture',self.root/'linked',revealed=True,reconstruction_report=path)
+        self.assertTrue((self.root/'linked/state-reconstruction.json').is_file())
+        (reproduced/'views/view-0-known.png').write_bytes(b'changed ownership')
+        with self.assertRaisesRegex(ValueError,'pixels changed'):
+            prepare(self.manifest,'fixture',self.root/'stale',revealed=True,reconstruction_report=path)
+        self.assertFalse((self.root/'stale').exists())
+
     def test_revealed_keeps_revision_and_exact_visibility(self):
         packet=self.reveal();prepare(self.manifest,'fixture',self.root/'output',revealed=True)
         frames=json.loads((self.root/'output/views.json').read_text())

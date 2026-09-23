@@ -20,7 +20,7 @@ from review_evidence import bind_decision, load_decisions, sha
 from source_review_resolution import apply_generation_gate
 
 
-def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=False, endpoint=None, revealed=False):
+def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=False, endpoint=None, revealed=False, reconstruction_report=None):
     manifest_path = Path(manifest_path).resolve(strict=True)
     data = json.loads(manifest_path.read_text())
     matches = [i for i in data['items'] if i['id'] == asset_id]
@@ -84,7 +84,12 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     packet = Path(item['textured']).parent.resolve(strict=True)
     frames_path = packet / 'views.json'
     bound_frames = list(item['revision']['evidence'].values()) + list(item['user_decision'].get('geometry_basis', {}).get('files', {}).values())
-    if not any(Path(entry['path']).resolve() == frames_path and entry['sha256'] == sha(frames_path) for entry in bound_frames):
+    reconstruction = None
+    if reconstruction_report is not None:
+        if not revealed:raise ValueError('Reconstruction reports require revealed state selection')
+        from reconstructed_texture_state import validate_reconstruction
+        reconstruction=validate_reconstruction(reconstruction_report,item,frames_path)
+    if reconstruction is None and not any(Path(entry['path']).resolve() == frames_path and entry['sha256'] == sha(frames_path) for entry in bound_frames):
         raise ValueError('Camera and ownership manifest is absent from approved evidence')
     frames = json.loads(frames_path.read_text())
     if frames['asset_id'] != asset_id or [v['index'] for v in frames['views']] != list(range(8)):
@@ -170,6 +175,9 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
                 'saved_model_sha256': sha(output / 'approved-model.blend'),
                 'source_decision': item['user_decision'], 'texture_approval': 'pending'}
     if revealed:approval['review_state']='revealed'
+    if reconstruction:
+        approval['state_reconstruction']=reconstruction
+        shutil.copy2(reconstruction['path'],output/'state-reconstruction.json')
     if selected_endpoint:
         approval['endpoint_id']=endpoint
         approval['paired_model_sha256']=frames['paired_model_sha256']
@@ -195,5 +203,6 @@ if __name__ == '__main__':
     parser.add_argument('--check-only', action='store_true', help='Validate complete approved packet without writing output')
     parser.add_argument('--endpoint', choices=['initial','applied'], help='Select an independently approved worker within a paired revision')
     parser.add_argument('--revealed', action='store_true', help='Use revealed sheets and state cameras already bound in the geometry approval')
+    parser.add_argument('--reconstruction-report',type=Path,help='Exact reproduced state pixels linked to directly approved camera and visibility evidence')
     args = parser.parse_args()
-    print(json.dumps(prepare(args.manifest, args.asset_id, args.output, args.decisions, check_only=args.check_only, endpoint=args.endpoint, revealed=args.revealed)))
+    print(json.dumps(prepare(args.manifest, args.asset_id, args.output, args.decisions, check_only=args.check_only, endpoint=args.endpoint, revealed=args.revealed,reconstruction_report=args.reconstruction_report)))
