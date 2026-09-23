@@ -32,6 +32,8 @@ def collect(experiments, output, map_name, additional_experiments=()):
         if not review_path.is_file():
             continue
         review = json.loads(review_path.read_text())
+        if review.get('status') in {'held', 'fix-needed', 'rejected'}:
+            continue
         approval = json.loads((experiment / 'approval.json').read_text())
         bake = (experiment / review['bake']).resolve()
         generation = (experiment / review['generation']).resolve()
