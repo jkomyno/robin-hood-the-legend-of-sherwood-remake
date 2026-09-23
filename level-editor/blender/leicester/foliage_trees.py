@@ -43,6 +43,17 @@ def source_packet(workspace,node,output):
     record=next(m for m in json.loads(inventory.read_text())['masks'] if m['index']==settings['mask'])
     alpha_path=Path(record['png']);source_path=Path(config['source_path'])
     alpha=np.asarray(Image.open(alpha_path).convert('L'));x,y=record['box_top_left'];height,width=alpha.shape
+    exclusions=set()
+    for projection in manifest['projections'].values():
+        for assignment in projection['assignments']:
+            if assignment.get('source_node')==f'building-{node:03d}' and assignment.get('projection_component')=='crown':
+                exclusions.update(assignment.get('exclude_mask_indices',[]))
+    excluded=np.zeros_like(alpha,dtype=bool)
+    for foreign in json.loads(inventory.read_text())['masks']:
+        if foreign['index'] not in exclusions:continue
+        image=np.asarray(Image.open(foreign['png']).convert('L'));fx,fy=foreign['box_top_left'];fh,fw=image.shape
+        lx,ty=max(x,fx),max(y,fy);rx,by=min(x+width,fx+fw),min(y+height,fy+fh)
+        if rx>lx and by>ty:excluded[ty-y:by-y,lx-x:rx-x] |= image[ty-fy:by-fy,lx-fx:rx-fx]>0
     rgb=np.asarray(Image.open(source_path).convert('RGB').crop((x,y,x+width,y+height)))
     yy,xx=np.mgrid[:height,:width];sx,sy=xx+x,yy+y
     canopy=(alpha>0)&(sy<=settings['canopy_bottom'])
@@ -69,15 +80,21 @@ def source_packet(workspace,node,output):
         x0,x1=max(0,int(xs.min())-2),min(width,int(xs.max())+3)
         y0,y1=max(0,int(ys.min())-2),min(height,int(ys.max())+3)
         rgba=np.zeros((y1-y0,x1-x0,4),dtype=np.uint8)
-        rgba[:,:,:3]=rgb[y0:y1,x0:x1];rgba[:,:,3]=owned[y0:y1,x0:x1]*255
+        rgba[:,:,:3]=rgb[y0:y1,x0:x1];rgba[:,:,3]=(owned&~excluded)[y0:y1,x0:x1]*255
         front=output/f'lobe-{number:02}-source.png';Image.fromarray(rgba).save(front)
-        rgba[:,:,:3]=105;back=output/f'lobe-{number:02}-unknown.png';Image.fromarray(rgba).save(back)
+        rgba[:,:,:3]=105;rgba[:,:,3]=owned[y0:y1,x0:x1]*255
+        back=output/f'lobe-{number:02}-unknown.png';Image.fromarray(rgba).save(back)
+        unknown_front=None
+        if np.any(owned&excluded):
+            rgba[:,:,3]=(owned&excluded)[y0:y1,x0:x1]*255
+            unknown_front=output/f'lobe-{number:02}-occluded.png';Image.fromarray(rgba).save(unknown_front)
         assigned+=owned.astype(np.uint8)
         records.append(dict(index=number,bbox_source=[x+x0,y+y0,x+x1,y+y1],source=str(front),unknown=str(back),
-                            source_sha256=sha(front),unknown_sha256=sha(back),native_pixels=int(owned.sum())))
+                            source_sha256=sha(front),unknown_sha256=sha(back),native_pixels=int(owned.sum()),
+                            front_unknown=str(unknown_front) if unknown_front else None))
     if not np.array_equal(assigned.astype(bool),canopy):raise ValueError('Foliage support union differs from native canopy')
     evidence=dict(source_rgb_sha256=sha(source_path),native_alpha_sha256=sha(alpha_path),native_mask=settings['mask'],
-                  source_node=f'building-{node:03d}',canopy_pixels=int(canopy.sum()),overlap_pixels=int((assigned>1).sum()),
+                  source_node=f'building-{node:03d}',excluded_native_masks=sorted(exclusions),occluded_pixels=int((canopy&excluded).sum()),canopy_pixels=int(canopy.sum()),overlap_pixels=int((assigned>1).sum()),
                   overlap_rule='Identical source-coordinate RGB overlaps; first hit owns projection. Internal rounded borders are inferred.',
                   protected_source_rgb='Direct source crop bytes; native alpha intersected with inferred rounded supports.',lobes=records)
     (output/'source-partition.json').write_text(json.dumps(evidence,indent=2)+'\n')
@@ -155,10 +172,11 @@ def refine_crown(obj,node,evidence):
     materials=[];ground=CONFIG[node]['ground'];steps=4
     for lobe in evidence['lobes']:
         number=lobe['index'];x0,y0,x1,y1=lobe['bbox_source'];cx,cy=(x0+x1)/2,(y0+y1)/2
-        for front in (True,False):
-            known=front and lobe.get('observed',True)
+        surfaces=[(True,lobe.get('observed',True),lobe['source']),(False,False,lobe['unknown'])]
+        if lobe.get('front_unknown'):surfaces.append((True,False,lobe['front_unknown']))
+        for front,known,image_path in surfaces:
             slot=len(materials);materials.append(material(f'{obj.name} lobe{number:02} '+('source' if known else 'unknown'),
-                lobe['source' if known else 'unknown'],known,evidence))
+                image_path,known,evidence))
             start=len(vertices)
             for j in range(steps+1):
                 v=j/steps;y=y0+(y1-y0)*v
@@ -196,7 +214,7 @@ def refine_crown(obj,node,evidence):
     if matrix!=obj.matrix_world:raise ValueError('Crown transform changed')
     return dict(source_node=obj['source_node'],projection_component=obj['projection_component'],
                 before_geometry_sha256=before,after_geometry_sha256=geometry_hash(obj),world_transform_drift=0,
-                lobes=len(evidence['lobes']),paired_card_surfaces=len(evidence['lobes'])*2,
+                lobes=len(evidence['lobes']),paired_card_surfaces=len(evidence['lobes'])*2,occluded_front_surfaces=len(materials)-len(evidence['lobes'])*2,
                 vertices=len(mesh.vertices),faces=len(mesh.polygons),intentional_card_boundary_edges=boundary,
                 degenerate_faces=degenerate,source_partition=evidence)
 
