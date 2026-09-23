@@ -24,6 +24,7 @@ def main():
     parser.add_argument('mode',choices=['prepare','refine']);parser.add_argument('asset',choices=BRIDGES)
     parser.add_argument('state',choices=['initial','applied']);parser.add_argument('--geometry-only',action='store_true')
     parser.add_argument('--workspace',type=Path);parser.add_argument('--framing-padding',type=float)
+    parser.add_argument('--source-blend',type=Path)
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
     patch,initial,applied,oldmask,newmask=BRIDGES[args.asset]
     workspace=ROOT/'round-1/assets-v2'/args.asset
@@ -41,7 +42,7 @@ def main():
         maskpath=ROOT/'bridge-evidence/endpoint-ownership'/f'{args.asset}-{args.state}-masks.json'
         if not maskpath.is_file():raise RuntimeError('Run bridges_ownership.py to freeze reviewed endpoint masks first')
         kw['source_mask_manifest']=str(maskpath)
-        bpy.ops.wm.open_mainfile(filepath=argv[2])
+        bpy.ops.wm.open_mainfile(filepath=str(args.source_blend.resolve()) if args.source_blend else argv[2])
         bpy.context.window.scene=bpy.data.scenes['Leicester Refinement']
         bpy.context.view_layer.update()
         bpy.context.scene.render.threads_mode='FIXED';bpy.context.scene.render.threads=2

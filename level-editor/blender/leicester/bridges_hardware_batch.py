@@ -31,7 +31,12 @@ def main():
                     'path_note':'Archived configuration retains original absolute paths; file bytes are preserved. Resolve original workspace prefix to archived prefix when replaying this historical packet.'},indent=2)+'\n')
             if not (workspace/'workspace.json').exists():
                 if static:run('bridges_prepare.py',[asset,'--framing-padding','2.0'])
-                else:run('bridges_states.py',['prepare',asset,state,'--framing-padding','3.6' if state=='initial' else '4.2'])
+                else:
+                    extra=[]
+                    if asset=='leicester-east-village-drawbridge':
+                        from bridges_context import prepare_context
+                        extra=['--source-blend',prepare_context()]
+                    run('bridges_states.py',['prepare',asset,state,'--framing-padding','3.6' if state=='initial' else '4.2']+extra)
             bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'))
             bpy.context.scene.render.threads_mode='FIXED';bpy.context.scene.render.threads=2
             if static:run('bridges.py',[workspace,'--render'])
