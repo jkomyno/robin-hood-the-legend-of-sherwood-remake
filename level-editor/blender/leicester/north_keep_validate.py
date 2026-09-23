@@ -7,7 +7,7 @@ w=Path(bpy.data.filepath).parent
 rows=[]
 for obj in bpy.data.collections['Leicester Working'].all_objects:
     if obj.type!='MESH' or obj.get('asset_group')!='leicester-great-keep' or obj.hide_render:continue
-    if not (obj.get('north_keep_recipe') or obj.get('refinement_recipe')):continue
+    if not (obj.get('north_keep_recipe') or obj.get('refinement_recipe') or obj.get('north_dormer')):continue
     bm=bmesh.new();bm.from_mesh(obj.data)
     areas=[f.calc_area() for f in bm.faces]
     row=dict(object=obj.name,source_node=obj['source_node'],component=obj.get('projection_component'),
