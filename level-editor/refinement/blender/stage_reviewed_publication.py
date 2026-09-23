@@ -31,7 +31,8 @@ def stage(plan_path):
         if item.get('discover_asset_members'):
             bpy.ops.wm.open_mainfile(filepath=str(Path(item['blend_path']).resolve(strict=True)))
             item['object_names']=sorted(o.name for o in bpy.data.collections[plan['collection_name']].all_objects
-                if o.type=='MESH' and not o.hide_render and o.get('asset_group')==item['asset_id'])
+                if o.type=='MESH' and not o.hide_render and o.get('asset_group')==item.get('source_asset_id',item['asset_id'])
+                and (not item.get('source_nodes') or o.get('source_node') in item['source_nodes']))
     bpy.ops.wm.open_mainfile(filepath=str(Path(plan['baseline']).resolve(strict=True)))
     bpy.context.window.scene=bpy.data.scenes[plan['scene_name']]
     collection=bpy.data.collections[plan['collection_name']]
@@ -47,7 +48,7 @@ def stage(plan_path):
         if item.get('blend_sha256') and item['blend_sha256']!=blend_hash:
             raise ValueError('Reviewed model changed before staging: '+item['asset_id'])
         result=import_asset_geometry(blend,asset_id=item['asset_id'],object_names=names,
-            collection_name=collection.name,source_nodes=item.get('source_nodes'))
+            collection_name=collection.name,source_nodes=item.get('source_nodes'),source_asset_id=item.get('source_asset_id'))
         if item.get('texture_handoff'):
             result['texture_handoff']=import_asset_textures(item['texture_handoff'],asset_id=item['asset_id'],
                 collection_name=collection.name,source_nodes=item.get('source_nodes'))

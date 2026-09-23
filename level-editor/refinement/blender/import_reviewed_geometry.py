@@ -10,10 +10,12 @@ import json
 from pathlib import Path
 
 
-def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name, source_nodes=None):
+def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name, source_nodes=None, source_asset_id=None):
     import bpy
     from refinement_workspace import _geometry
     from bake_reviewed_asset import _materials
+    if source_asset_id and source_asset_id != asset_id and not source_nodes:
+        raise ValueError('Ownership remapping requires explicit canonical source nodes')
     collection=bpy.data.collections[collection_name]
     targets=[o for o in collection.all_objects if o.type=='MESH' and
              o.get('asset_group')==asset_id and not o.hide_render and
@@ -44,7 +46,7 @@ def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name
         for obj in set(bpy.data.objects)-existing:
             temporary.objects.link(obj)
         bpy.context.view_layer.update()
-        if any(o is None or o.type!='MESH' or o.hide_render or o.get('asset_group')!=asset_id for o in loaded.values()):
+        if any(o is None or o.type!='MESH' or o.hide_render or o.get('asset_group')!=(source_asset_id or asset_id) for o in loaded.values()):
             raise ValueError('Handoff escaped visible asset ownership')
         if {o.get('source_node') for o in loaded.values()}!=expected:
             raise ValueError('Handoff changed canonical part coverage')
@@ -60,6 +62,7 @@ def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name
             bpy.data.objects.remove(obj,do_unlink=True)
         for name,obj in loaded.items():
             obj.name=name
+            obj['asset_group']=asset_id
             collection.objects.link(obj)
             old_parent=parents[name]
             obj.parent=root
