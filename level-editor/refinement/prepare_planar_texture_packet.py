@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 
 from prepare_texture_packet import prepare
-from review_evidence import sha
+from review_evidence import sha, bind_decision, load_decisions
 
 
 def atlas_triangles(path):
@@ -71,8 +71,16 @@ def prepare_planar(manifest_path,asset_id,output,source,known_mask,atlas,decisio
     manifest_path=Path(manifest_path).resolve();output=Path(output).resolve()
     source,known_mask,atlas=map(Path,(source,known_mask,atlas))
     eligible=prepare(manifest_path,asset_id,output,decisions,check_only=True)
-    data=json.loads(manifest_path.read_text());item=next(i for i in data['items'] if i['id']==asset_id)
-    ownership_path=Path(item['ownership']);ownership=json.loads(ownership_path.read_text())
+    data=json.loads(manifest_path.read_text());item=copy.deepcopy(next(i for i in data['items'] if i['id']==asset_id))
+    records=load_decisions(Path(decisions) if decisions else manifest_path.parent/'decisions.json',
+                           {i['id'] for i in data['items']}|{i['id'] for i in data.get('without_packets',[])})
+    bind_decision(item,records)
+    def require_bound(path):
+        if not any(Path(e['path']).resolve()==path.resolve() and e['sha256']==sha(path)
+                   for e in item['revision']['evidence'].values()):
+            raise ValueError('Planar evidence is not bound to approved revision: '+str(path))
+    ownership_path=Path(item['ownership']);require_bound(ownership_path)
+    ownership=json.loads(ownership_path.read_text())
     for path,key in [(source,'source_sha256'),(known_mask,'mask_sha256'),(atlas,'texture_sha256')]:
         if sha(path)!=ownership[key]: raise ValueError('Approved planar evidence changed: '+key)
     source_image=Image.open(source).convert('RGB'); image=Image.open(atlas).convert('RGB')
@@ -84,7 +92,8 @@ def prepare_planar(manifest_path,asset_id,output,source,known_mask,atlas,decisio
     if int(known.sum())!=ownership['accepted_pixels'] or int((~known).sum())!=ownership['unknown_pixels']:
         raise ValueError('Ownership counts differ')
     if np.any(np.array(image)[known]!=np.array(source_image)[known]): raise ValueError('Protected source RGB differs')
-    glb=Path(item['stored_material_glb']);surface=coverage(atlas_triangles(glb),width,height)
+    glb=Path(item['stored_material_glb']);require_bound(glb)
+    surface=coverage(atlas_triangles(glb),width,height)
     editable=surface&~known
     packet=Path(item['textured']).parent
     gray=None
