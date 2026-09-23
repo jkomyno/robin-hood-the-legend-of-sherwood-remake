@@ -32,10 +32,11 @@ from build_review_gallery import build
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'refinement'))
 from review_evidence import (sha, load_decisions, bind_decision, archive_decisions,
                              archive_reviewed_revision, material_evidence)
+from endpoint_review import load_endpoint_mapping, endpoint_evidence
 
 
 def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=None,
-            workspace_overrides=None):
+            workspace_overrides=None, endpoint_mapping=None):
     catalog = json.loads(catalog_path.read_text())
     if catalog['map'] != 'Leicester':
         raise ValueError('Expected Leicester catalog')
@@ -66,6 +67,7 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
             raise ValueError('Ground workspace duplicates a catalog asset')
         groups.append({'id': ground['asset_id'], 'name': 'Ground Background (Planar Receiver)',
                        'workspace': ground_workspace, 'supplemental': True})
+    endpoint_specs = load_endpoint_mapping(endpoint_mapping, {g['id'] for g in groups})
     decision_path = decisions_path if decisions_path is not None else output / 'decisions.json'
     records = load_decisions(decision_path, {g['id'] for g in groups})
     items, progress = [], []
@@ -159,12 +161,27 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
             item['status'] = 'validation-pending'
             notes = item['notes'] if isinstance(item['notes'], list) else [item['notes']]
             item['notes'] = notes + ['Stored material atlas validation and actual material view review are pending or stale; source-projected sheets do not validate saved UVs.']
+        endpoint_files = {}
+        if group['id'] in endpoint_specs:
+            records_for_group = endpoint_specs[group['id']]
+            if records_for_group[0]['workspace'] != workspace.resolve():
+                raise ValueError('Initial endpoint worker must match the catalog workspace')
+            paired, endpoint_files, endpoint_errors = endpoint_evidence(records_for_group, group['id'], 'Leicester')
+            item['endpoint_reviews'] = paired
+            item['endpoint_review_errors'] = endpoint_errors
+            if endpoint_errors:
+                item['status'] = 'validation-pending'
+                item['stored_material_validation'] = 'pending-or-failed'
+        elif handoff.get('has_discrete_endpoint_state'):
+            item['status'] = 'validation-pending'
+            item['endpoint_review_errors'] = ['missing explicit paired endpoint mapping']
         recipe = (workspace / handoff['recipe']).resolve(strict=True)
         evidence = {key: Path(item[key]) for key in (
             'solid', 'textured', 'context', 'validation', 'review', 'ownership',
             'revealed_solid', 'revealed_textured', 'revealed_context') if key in item}
         evidence.update(recipe=recipe, handoff=handoff_path)
         evidence.update(material_files)
+        evidence.update(endpoint_files)
         item['revision'] = {'model_sha256': model_sha256,
                             'recipe': str(recipe), 'recipe_sha256': sha(recipe),
                             'handoff_sha256': sha(handoff_path),
@@ -189,7 +206,8 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
                                    'total_groups': len(catalog['groups']),
                                    'supplemental_count': int(ground_workspace is not None),
                                    'without_packets': without_packets}, indent=2) + '\n')
-    texture_reports = list((assets.parent / 'textures').glob('*/generation-*/generation.json'))
+    texture_reports = sorted({p.resolve() for root in (assets.parent / 'textures', assets.parent.parent / 'textures')
+                              for p in root.glob('*/generation-*/generation.json')})
     (output / 'progress.json').write_text(json.dumps({'map': 'Leicester', 'groups': progress,
         'total': len(progress), 'catalog_groups': len(catalog['groups']),
         'supplemental_count': int(ground_workspace is not None),
@@ -197,7 +215,8 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
         'geometry_approval': 'approved' if len(items) == len(progress) and items and all(i['user_approval'] == 'approved' for i in items) else 'pending',
         'approved': sum(i['user_approval'] == 'approved' for i in items),
         'rejected': sum(i['user_approval'] == 'rejected' for i in items),
-        'texture_generation': 'candidates-generated' if texture_reports else 'not-started',
+        'texture_generation': 'attempts-recorded' if texture_reports else 'not-started',
+        'texture_generation_attempts': len(texture_reports),
         'texture_generation_reports': len(texture_reports),
         'publication': 'not-started'}, indent=2) + '\n')
     build(manifest, output / 'gallery', pending_only=True)
@@ -213,7 +232,8 @@ if __name__ == '__main__':
     parser.add_argument('--ground-workspace', type=Path, help='Separate planar ground packet, outside the obstacle catalog')
     parser.add_argument('--workspace-overrides', type=Path,
                         help='Version 1 JSON workspaces mapping; relative paths resolve beside this JSON')
+    parser.add_argument('--endpoint-mapping', type=Path, help='Version 1 paired initial/applied worker groups; each endpoint is validated independently')
     args = parser.parse_args()
     print(json.dumps(collect(args.catalog.resolve(), args.assets.resolve(), args.output.resolve(),
                              args.decisions.resolve(strict=True) if args.decisions else None,
-                             args.ground_workspace, args.workspace_overrides)))
+                             args.ground_workspace, args.workspace_overrides, args.endpoint_mapping)))

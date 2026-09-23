@@ -151,6 +151,20 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                 key = 'stored_material_' + state['id'] + '_textured'
                 item[key] = state['sheet']
                 sheets.append((key, 'Actual saved materials: ' + html.escape(state['id'])))
+        if item.get('endpoint_reviews'):
+            sheets = []
+            for endpoint in item['endpoint_reviews']:
+                state = endpoint['id']
+                if not re.fullmatch(r'[a-zA-Z0-9_-]+', state):
+                    raise ValueError('Unsafe endpoint review identifier')
+                for field, label in (('solid', 'solid geometry — all eight views'),
+                                     ('textured', 'source projection — all eight views'),
+                                     ('stored_material_textured', 'actual saved materials — all eight views'),
+                                     ('context', 'original endpoint artwork')):
+                    if endpoint.get(field):
+                        key = 'endpoint_' + state + '_' + field
+                        item[key] = endpoint[field]
+                        sheets.append((key, state.capitalize() + ': ' + label))
         for key, label in sheets:
             source = Path(item[key])
             if not source.is_absolute():
@@ -183,6 +197,17 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             if Path(state['audit']).is_file():
                 item[key] = state['audit']
                 report_specs.append((key, 'Stored material audit: ' + html.escape(state['id'])))
+        if item.get('endpoint_reviews'):
+            report_specs = []
+            for endpoint in item['endpoint_reviews']:
+                for field, label in (('validation', 'validation'), ('ownership', 'source ownership'),
+                                     ('review', 'worker review'), ('frames', 'frozen cameras'),
+                                     ('stored_material_audit', 'stored material audit'),
+                                     ('stored_material_glb', 'actual exported GLB')):
+                    if endpoint.get(field):
+                        key = 'endpoint_' + endpoint['id'] + '_' + field
+                        item[key] = endpoint[field]
+                        report_specs.append((key, endpoint['id'].capitalize() + ': ' + label))
         for key, label in report_specs:
             if not item.get(key):
                 continue
@@ -200,6 +225,14 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                 raise RuntimeError(f"Review report copy differs: {source}")
             reports[key] = {"source": str(source), "file": relative, "sha256": digest}
             report_links.append(f'<a href="{relative}" target="_blank">{label}</a>')
+        paired_note = ''
+        if item.get('endpoint_reviews'):
+            paired_note = '<p><strong>Paired endpoint review: approval covers both initial and applied models.</strong></p>'
+            paired_note += '<ul>' + ''.join('<li>' + html.escape(endpoint['id'].capitalize() + ': ' + endpoint['status']) +
+                ' · model <code>' + html.escape(endpoint.get('model_sha256') or 'missing') + '</code></li>'
+                for endpoint in item['endpoint_reviews']) + '</ul>'
+            if item.get('endpoint_review_errors'):
+                paired_note += '<p>' + html.escape('; '.join(item['endpoint_review_errors'])) + '</p>'
         binding = {'images': {key: value['sha256'] for key, value in evidence.items()},
                    'reports': {key: value['sha256'] for key, value in reports.items()}}
         if item.get('model'):
@@ -220,7 +253,7 @@ def build(index_path, output, *, pending_only=False, map_name=None):
         cards.append(f'<article id="{asset_id}" data-review-revision="{revision[:16]}"><h2>{number}. {html.escape(item["name"])}</h2>'
                      f'<p><code>{html.escape(item["id"])}</code></p>'
                      f'<p class="status">{html.escape(item["status"])}</p>'
-                     f'<p>{html.escape(notes)}</p><p>{" · ".join(report_links)}</p>'
+                     f'<p>{html.escape(notes)}</p>{paired_note}<p>{" · ".join(report_links)}</p>'
                      f'{controls}<div class="sheets">{"".join(figures)}</div></article>')
         records.append({**item, "number": number, "images": evidence, "reports": reports,
                         "review_revision": revision})

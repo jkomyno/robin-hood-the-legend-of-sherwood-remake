@@ -47,6 +47,13 @@ def geometry_basis(item):
         path = workspace / name
         if path.is_file():
             files[name] = {'path': str(path), 'sha256': sha(path)}
+    # Separate endpoint workers have independent models and frozen frames.
+    # Include their reviewed source evidence in geometry-only decisions too.
+    # Nonpaired assets retain their existing approval identity byte-for-byte.
+    if item.get('endpoint_reviews'):
+        for key, entry in item['revision']['evidence'].items():
+            if key.startswith('endpoint_') and '_stored_material' not in key:
+                files['review/' + key] = {'path': entry['path'], 'sha256': sha(Path(entry['path']))}
     model_hash = sha(workspace / 'model.blend')
     identity = {'asset_id': item['id'], 'model_sha256': model_hash,
                 'files': {key: entry['sha256'] for key, entry in files.items()}}
