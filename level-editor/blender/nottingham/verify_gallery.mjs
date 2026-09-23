@@ -53,6 +53,8 @@ try {
     const readyNavigation = [...document.querySelectorAll('nav a')].filter(link => !link.hidden).length;
     readiness.value='all'; readiness.dispatchEvent(new Event('change'));
     return {title:document.title, cards:cards.length,
+      animationStates:document.querySelectorAll('details.animation-state').length,
+      separateAnimationCards:cards.filter(card => card.id.includes('--animation-')).length,
       images:document.querySelectorAll('article img').length,
       failedImages:[...document.querySelectorAll('article img')]
         .filter(image => !image.complete || image.naturalWidth === 0)
@@ -67,6 +69,7 @@ try {
   })()`);
   result.expectedCards = evidence.items.length;
   result.expectedReadyCards = evidence.items.filter(item => item.status === 'ready-for-user').length;
+  result.expectedAnimationStates = evidence.items.reduce((sum, item) => sum + (item.animation_reviews?.length || 0), 0);
   await evaluate(ws, ++id, `void (async () => {
     const cards = [...document.querySelectorAll('article[data-review-revision]')]
       .filter(card => card.querySelector('.status').textContent === 'ready-for-user');
@@ -124,6 +127,7 @@ try {
   }
   result.feedback = await evaluate(ws, ++id, 'window.feedbackCheck || {}');
   result.status = result.cards === result.expectedCards && result.cards > 0 && result.namedCards &&
+    result.animationStates === result.expectedAnimationStates && result.separateAnimationCards === 0 &&
     result.reportLinks && result.navigation === result.cards && result.solidToggle &&
     result.readyFilter && result.readyCards === result.expectedReadyCards && result.readyNavigation === result.readyCards &&
     result.firstImages.every(image => image.loaded) && result.failedImages.length === 0 &&

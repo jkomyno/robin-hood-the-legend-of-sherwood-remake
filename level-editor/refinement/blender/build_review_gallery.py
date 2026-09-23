@@ -188,6 +188,7 @@ def build(index_path, output, *, pending_only=False, map_name=None):
         if not re.fullmatch(r"[a-zA-Z0-9_-]+", asset_id):
             raise ValueError(f"Unsafe review identifier: {asset_id}")
         figures, evidence = [], {}
+        animation_figures, animation_keys = {}, {}
         sheets = [("solid", item.get("solid_label", "Solid geometry")),
                   ("textured", item.get("textured_label", "Original textures + shaded unknown surfaces"))]
         if item.get("context"):
@@ -224,6 +225,17 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                         key = 'endpoint_' + state + '_' + field
                         item[key] = endpoint[field]
                         sheets.append((key, state.capitalize() + ': ' + label))
+        for state in item.get('animation_reviews', []):
+            identifier = state['id']
+            if not re.fullmatch(r'[a-zA-Z0-9_-]+', identifier) or identifier in animation_figures:
+                raise ValueError('Unsafe or duplicate animation state identifier')
+            animation_figures[identifier] = []
+            for field, label in (('solid', 'Solid geometry'), ('textured', 'Source textures'),
+                                 ('context', 'Original state artwork')):
+                key = 'animation_' + identifier + '_' + field
+                item[key] = state[field]
+                animation_keys[key] = identifier
+                sheets.append((key, state['name'] + ': ' + label))
         for key, label in sheets:
             source = Path(item[key])
             if not source.is_absolute():
@@ -238,7 +250,8 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             if hashlib.sha256(target.read_bytes()).hexdigest() != digest:
                 raise RuntimeError(f"Review image copy differs: {source}")
             evidence[key] = {"source": str(source), "file": relative, "sha256": digest}
-            figures.append(f'<figure data-kind="{key}"><figcaption>{html.escape(label)}</figcaption>'
+            destination = animation_figures[animation_keys[key]] if key in animation_keys else figures
+            destination.append(f'<figure data-kind="{key}"><figcaption>{html.escape(label)}</figcaption>'
                            f'<a href="{relative}" target="_blank"><img src="{relative}" '
                            f'loading="lazy" alt="{html.escape(item["name"])} — {label}"></a></figure>')
         notes = item.get("notes", "")
@@ -311,11 +324,18 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                     f'name="feedback-{asset_id}-{revision[:16]}" '
                     f'aria-label="Feedback for {asset_id}" placeholder="What should change, or any notes?"></textarea></label>'
                     '<span class="draft-status" aria-live="polite"></span></fieldset>')
+        animation_sections = ''
+        if animation_figures:
+            animation_sections = '<p>Your decision covers the main views and these states of the same asset.</p>'
+            for state in item['animation_reviews']:
+                animation_sections += ('<details class="animation-state"><summary>' + html.escape(state['name']) +
+                    '</summary><p>' + html.escape(state.get('description', '')) + '</p><div class="sheets">' +
+                    ''.join(animation_figures[state['id']]) + '</div></details>')
         cards.append(f'<article id="{asset_id}" data-review-revision="{revision[:16]}"><h2>{number}. {html.escape(item["name"])}</h2>'
                      f'<p><code>{html.escape(item["id"])}</code></p>'
                      f'<p class="status">{html.escape(item["status"])}</p>'
                      f'<p>{html.escape(notes)}</p>{paired_note}<p>{" · ".join(report_links)}</p>'
-                     f'{controls}<div class="sheets">{"".join(figures)}</div></article>')
+                     f'{controls}<div class="sheets">{"".join(figures)}</div>{animation_sections}</article>')
         records.append({**item, "number": number, "images": evidence, "reports": reports,
                         "review_revision": revision})
     nav = "".join(f'<a href="#{item["id"]}">{n}. {html.escape(item["name"])}</a>' for n, item in enumerate(items, 1))
@@ -336,6 +356,7 @@ button{font:inherit;padding:8px 14px;cursor:pointer;border-radius:5px}.draft-sta
 .review-export details{max-width:1000px}.review-export textarea{max-height:220px}
 table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:8px;border-bottom:1px solid #455064;overflow-wrap:anywhere}
 [hidden]{display:none!important}
+.animation-state{border:1px solid #455064;border-radius:6px;padding:12px;margin-top:16px}.animation-state summary{cursor:pointer;font-weight:600}
 figure[data-kind$=context] img{width:auto;max-width:100%;max-height:400px}figure[data-kind$=context]{grid-column:1/-1}
 body[data-mode=solid] figure[data-kind$=textured],body[data-mode=textured] figure[data-kind$=solid]{display:none}
 body:not([data-mode=both]) .sheets{grid-template-columns:1fr}

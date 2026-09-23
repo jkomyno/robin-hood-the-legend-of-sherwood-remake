@@ -506,16 +506,15 @@ def main(argv=None):
             if not key.startswith('animation-'):
                 continue
             folder = Path(packet['directory'])
-            state_item = {**item, 'id': asset['id'] + '--' + key,
-                          'name': asset['name'] + ' — ' + key.removeprefix('animation-').replace('-', ' '),
-                          'parent_asset_id': asset['id'],
-                          'notes': ['Additional state view for ' + asset['id'] + '.'] + list(item['notes']),
+            state_item = {'id': key,
+                          'name': key.removeprefix('animation-').replace('-', ' ').capitalize(),
+                          'description': ('The winch/lever sprite changes between these states; tower masonry is unchanged.'
+                              if key.startswith('animation-mechanism-') else
+                              'An animated state of this same asset. Compare the moving part with the other state.'),
                           'solid': str(folder / 'solid.png'),
                           'textured': str(folder / 'textured.png'),
                           'context': str(folder / 'context.png')}
-            for field in ('revealed_solid', 'revealed_textured', 'revealed_context'):
-                state_item.pop(field, None)
-            items.append(state_item)
+            item.setdefault('animation_reviews', []).append(state_item)
         progress.append({**row, "status": status, "geometry_refined": evidence["geometry_refined"],
                          "geometry_reviewed": evidence["geometry_reviewed"],
                          "review_outcome": evidence["review_outcome"], "user_approval": user_approval})

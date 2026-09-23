@@ -64,6 +64,30 @@ class StableGalleryLinks(unittest.TestCase):
             second = json.loads((output / 'evidence.json').read_text())['items'][0]['review_revision']
             self.assertNotEqual(first, second)
 
+    def test_animation_views_share_one_decision_and_bind_revision(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, state = root / 'source.png', root / 'state.png'
+            source.write_bytes(b'base image')
+            state.write_bytes(b'initial state')
+            manifest = root / 'manifest.json'
+            manifest.write_text(json.dumps({'items': [{'id': 'gate', 'name': 'Gate',
+                'status': 'ready-for-user', 'solid': str(source), 'textured': str(source),
+                'animation_reviews': [{'id': 'initial', 'name': 'Initial', 'solid': str(state),
+                    'textured': str(state), 'context': str(source)}]}]}))
+            output = root / 'gallery'
+            gallery.build(manifest, output)
+            page = (output / 'index.html').read_text()
+            self.assertEqual(page.count('<article '), 1)
+            self.assertEqual(page.count('class="decision"'), 1)
+            self.assertIn('<details class="animation-state">', page)
+            first = json.loads((output / 'evidence.json').read_text())['items'][0]
+            self.assertIn('animation_initial_textured', first['images'])
+            state.write_bytes(b'changed state')
+            gallery.build(manifest, output)
+            second = json.loads((output / 'evidence.json').read_text())['items'][0]
+            self.assertNotEqual(first['review_revision'], second['review_revision'])
+
 
 if __name__ == '__main__':
     unittest.main()
