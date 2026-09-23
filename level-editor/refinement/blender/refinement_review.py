@@ -44,6 +44,48 @@ def _tree(objects):
     return BVHTree.FromPolygons(vertices, triangles, all_triangles=True), owners, vertices
 
 
+def _state_variant_pairs(catalog, displayed, explicit_state):
+    """Authorize only reciprocal, identical meshes in an explicit exclusive state."""
+    if not explicit_state:
+        return {}
+    named = {obj.name: obj for obj in catalog}
+    displayed = set(displayed)
+    pairs, signatures = {}, {}
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+
+    def signature(obj):
+        if obj not in signatures:
+            evaluated = obj.evaluated_get(depsgraph)
+            mesh = evaluated.to_mesh()
+            try:
+                mesh.calc_loop_triangles()
+                signatures[obj] = (
+                    tuple(tuple(evaluated.matrix_world @ vertex.co) for vertex in mesh.vertices),
+                    tuple(tuple(triangle.vertices) for triangle in mesh.loop_triangles))
+            finally:
+                evaluated.to_mesh_clear()
+        return signatures[obj]
+
+    for obj in displayed:
+        peer_name = obj.get('projection_state_variant_peer')
+        if not peer_name:
+            continue
+        peer = named.get(peer_name)
+        if peer is None or peer == obj or peer.get('projection_state_variant_peer') != obj.name:
+            raise ValueError('State variant must identify a reciprocal exact mesh peer')
+        if peer in displayed:
+            raise ValueError('Explicit display state must select exactly one variant peer')
+        if {obj.get('projection_state_variant_state'), peer.get('projection_state_variant_state')} != {'covered', 'revealed'}:
+            raise ValueError('State variants require opposite covered/revealed labels')
+        for key in ('asset_group', 'source_node', 'reveal_component_patch_id'):
+            if not obj.get(key) or obj.get(key) != peer.get(key):
+                raise ValueError('State variant ownership or patch differs: ' + key)
+        if signature(obj) != signature(peer):
+            raise ValueError('State variant evaluated geometry differs')
+        pairs[obj] = peer
+    return pairs
+
+
 def _save(path, width, height, pixels):
     image = bpy.data.images.new("Refinement review output", width=width, height=height, alpha=True)
     try:
@@ -120,6 +162,7 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
                 raise ValueError('Frozen display-state geometry selection changed')
         if not objects:
             raise ValueError(f"No visible mesh objects for {asset_id}")
+        state_variant_pairs = _state_variant_pairs(all_objects, objects, render_object_names is not None)
         asset_tree, owners, points = _tree(objects)
         source_path = Path(source_path).resolve()
         source_hash = hashlib.sha256(source_path.read_bytes()).hexdigest()
@@ -278,7 +321,8 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
                         if verified:
                             sample = hit + Vector((math.floor(sx) + .5 - sx, 0, 0)) + source_down * (math.floor(sy) + .5 - sy)
                             _, _, sampled, _ = first_source_hit(tree, layer_owners, sample + toward_source * 100000, -toward_source, constraints=constraints, receiver=owner, source_pixel=(int(sx), int(sy)))
-                            verified = sampled is not None and layer_owners[sampled] == owner
+                            verified = sampled is not None and (layer_owners[sampled] == owner
+                                or state_variant_pairs.get(owner) == layer_owners[sampled])
                         if verified and constraints and not constraints.allowed_pixel(owner, int(sx), int(sy)):
                             verified = False
                             counts['mask_rejected'] += 1
@@ -314,6 +358,7 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
                     "context_crop": crop, "source_image": str(source_path), "source_sha256": source_hash,
                     "projection_layers": layer_records, "views": records,
                     "render_object_names": sorted(render_object_names) if render_object_names is not None else None,
+                    "state_variant_peers": {obj.name: peer.name for obj, peer in state_variant_pairs.items()},
                     "source_mask_evidence": mask_record,
                     "source_mask_manifest": str(Path(source_mask_manifest).resolve()) if source_mask_manifest else None,
                     "source_constraint_status": [
