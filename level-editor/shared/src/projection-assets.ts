@@ -21,10 +21,16 @@ export interface ProjectionAssetDescriptor {
   source_origin_scene: [number, number, number];
   source_origin_game: [number, number, number];
   states?: AssetStates;
-  parts: { node: string; name: string; source_obstacle: number; default_hidden?: boolean; obstacle_local_game: SightObstacle }[];
+  /** Independent static models sharing an origin; these do not imply animation. */
+  state_variants?: Partial<Record<AssetState, { name: string; model: string; parts?: ProjectionAssetDescriptor["parts"] }>>;
+  parts: ({ node: string; name: string; default_hidden?: boolean; obstacle_local_game: SightObstacle } & (
+    { source_obstacle: number; mission_profile?: never } |
+    { source_obstacle?: never; mission_profile: string }
+  ))[];
 }
 
 export interface ProjectionAssetEntry {
+  state_variant?: AssetState;
   editor_usage?: "map-background";
   id: string;
   name: string;
@@ -35,11 +41,16 @@ export interface ProjectionAssetEntry {
 
 /** Paths are relative to the granted library root; hashes pin saved instances. */
 export interface ExternalAssetSource {
+  state_variant?: AssetState;
   id: string;
   descriptor: string;
   model: string;
   descriptor_sha256: string;
   model_sha256: string;
+}
+
+export function assetVariantId(id: string, variant: AssetState): string {
+  return `${id}--state-${variant}`;
 }
 
 export function assetNodeKey(id: string, node: string): string {

@@ -91,3 +91,57 @@ test("saved external models reload before document validation and retire with th
   disposeObjectResources([candidate.asset]);
   assert.equal(f.disposed(), 1);
 });
+
+test("static model variants load one endpoint, retain endpoint obstacles, and coexist on save/reload", async (t) => {
+  const f = fixture();
+  const appliedParts = [{ ...f.descriptor.parts[0]!, name: "Lowered deck", obstacle_local_game: {
+    ...f.descriptor.parts[0]!.obstacle_local_game, solid: false,
+  } }];
+  f.json(f.entry.descriptor, { ...f.descriptor, state_variants: {
+    initial: { name: "Raised", model: "model.glb" },
+    applied: { name: "Lowered", model: "lowered.glb", parts: appliedParts },
+  } });
+  f.files.set("3d-assets/house/lowered.glb", new File([new Uint8Array([8, 9])], "lowered.glb"));
+  const entries = await listProjectionAssets(f.directory, "Leicester");
+  assert.deepEqual(entries.map(entry => entry.name), ["House — Raised (static)", "House — Lowered (static)"]);
+  const loaded: number[][] = [];
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async (bytes: ArrayBuffer) => {
+    loaded.push([...new Uint8Array(bytes)]);
+    return { scene: f.asset };
+  });
+  const raised = await prepareProjectionAsset(f.directory, entries[0]!, "Leicester");
+  const lowered = await prepareProjectionAsset(f.directory, entries[1]!, "Leicester");
+  assert.deepEqual(loaded, [[3, 2, 1], [8, 9]]);
+  assert.equal(lowered.reference.state_variant, "applied");
+  assert.equal(lowered.descriptor.parts[0]!.obstacle_local_game.solid, false);
+  assert.ok(lowered.sources.has("asset:house--state-applied:building-000"));
+  let document: Level3D = { version: 1, map: "Leicester", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+    glb: "Leicester-volumes.scene.glb", groups: [], objects: [] };
+  for (const prepared of [raised, lowered]) document = insertProjectionAsset(document, prepared.descriptor, prepared.reference, [50, 50, 0]).document;
+  assert.equal(document.assetSources!.length, 2);
+  assert.notEqual(document.objects[0]!.node, document.objects[1]!.node);
+  const reloaded = await prepareProjectionAsset(f.directory, lowered.reference, "Leicester", lowered.reference);
+  assert.deepEqual(reloaded.reference, lowered.reference);
+  await assert.rejects(prepareProjectionAsset(f.directory, { ...entries[1]!, model: f.entry.model }, "Leicester"), /path mismatch/);
+  f.files.set(lowered.reference.model, new File([new Uint8Array([7])], "lowered.glb"));
+  await assert.rejects(prepareProjectionAsset(f.directory, lowered.reference, "Leicester", lowered.reference), /model changed/);
+});
+
+test("supplemental mission models retain profile provenance without inventing an obstacle index", async (t) => {
+  const f = fixture();
+  const { source_obstacle, ...part } = f.descriptor.parts[0]!;
+  const mission = { ...part, node: "mission-second-drawbridge", mission_profile: "Derby - Pont_levis02" };
+  f.json(f.entry.descriptor, { ...f.descriptor, parts: [mission] });
+  f.mesh.name = mission.node;
+  delete f.mesh.userData.source_obstacle;
+  f.mesh.userData.mission_patch_profile = mission.mission_profile;
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
+  const base: Level3D = { version: 1, map: "Leicester", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+    glb: "map.glb", groups: [], objects: [] };
+  const result = insertProjectionAsset(base, prepared.descriptor, prepared.reference, [0, 0, 0]);
+  assert.equal(result.document.objects[0]!.kind, "mission");
+  assert.deepEqual(result.document.objects[0]!.source, { map: "Leicester", mission_profile: mission.mission_profile });
+  f.mesh.userData.source_obstacle = 267;
+  await assert.rejects(prepareProjectionAsset(f.directory, f.entry, "Leicester"), /Unexpected/);
+});

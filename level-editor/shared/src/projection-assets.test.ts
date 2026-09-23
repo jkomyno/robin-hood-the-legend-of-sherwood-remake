@@ -44,3 +44,23 @@ test("only explicit ground-only map backgrounds may have no editable parts", () 
   assert.throws(() => parseProjectionAssetDescriptor({ ...ground, components: [{ source_node: "building-001" }] }), /ground-only/);
   assert.throws(() => parseProjectionAssetDescriptor({ ...ground, parts: descriptor.parts }), /cannot contain/);
 });
+
+test("static variants require safe model paths and validated endpoint parts", () => {
+  const variants = { initial: { name: "Raised", model: "raised.glb" }, applied: { name: "Lowered", model: "lowered.glb" } };
+  assert.doesNotThrow(() => parseProjectionAssetDescriptor({ ...descriptor, state_variants: variants }));
+  for (const state_variants of [{}, { unknown: variants.initial }, { initial: { ...variants.initial, model: "../escape.glb" } },
+    { initial: { ...variants.initial, parts: [] } }]) {
+    assert.throws(() => parseProjectionAssetDescriptor({ ...descriptor, state_variants }));
+  }
+  assert.throws(() => parseExternalAssetSources([{ ...reference, state_variant: "moving" }]));
+});
+
+test("mission descriptor parts require explicit profile provenance and prohibit obstacle ownership", () => {
+  const { source_obstacle, ...base } = descriptor.parts[0]!;
+  const mission = { ...base, node: "mission-second-drawbridge", mission_profile: "Derby - Pont_levis02" };
+  assert.doesNotThrow(() => parseProjectionAssetDescriptor({ ...descriptor, parts: [mission] }));
+  for (const part of [{ ...mission, source_obstacle: 267 }, { ...mission, mission_profile: "" },
+    { ...mission, mission_profile: undefined }, { ...mission, node: "building-267" }]) {
+    assert.throws(() => parseProjectionAssetDescriptor({ ...descriptor, parts: [part] }));
+  }
+});

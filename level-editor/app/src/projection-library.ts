@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
-  assetNodeKey, parseExternalAssetSources, parseProjectionAssetDescriptor,
+  assetNodeKey, assetVariantId, parseExternalAssetSources, parseProjectionAssetDescriptor,
   parseProjectionAssetIndex, safeLibraryPath,
   type ExternalAssetSource, type ProjectionAssetDescriptor, type ProjectionAssetEntry,
 } from "@rle/shared";
@@ -28,8 +28,22 @@ export async function listProjectionAssets(root: FileSystemDirectoryHandle, map:
   let index: unknown;
   try { index = await readJson(dir, "index.json"); }
   catch (error) { if (isNotFound(error)) return []; throw error; }
-  return parseProjectionAssetIndex(index).filter(entry => entry.source_map.toLowerCase() === map.toLowerCase())
+  const entries = parseProjectionAssetIndex(index).filter(entry => entry.source_map.toLowerCase() === map.toLowerCase())
     .map(entry => ({ ...entry, descriptor: `3d-assets/${entry.descriptor}`, model: `3d-assets/${entry.model}` }));
+  const expanded = await Promise.all(entries.map(async entry => {
+    const descriptor = parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text()));
+    if (descriptor.id !== entry.id) throw new Error(`Asset identity mismatch: ${entry.id}`);
+    if (!descriptor.state_variants) return [entry];
+    const parent = entry.descriptor.split("/").slice(0, -1).join("/");
+    return (["initial", "applied"] as const).flatMap(state => {
+      const variant = descriptor.state_variants?.[state];
+      return variant ? [{ ...entry, id: assetVariantId(entry.id, state), name: `${entry.name} — ${variant.name} (static)`,
+        state_variant: state, model: `${parent}/${variant.model}` }] : [];
+    });
+  }));
+  const flattened = expanded.flat();
+  if (new Set(flattened.map(entry => entry.id)).size !== flattened.length) throw new Error("Duplicate static asset variant identity");
+  return flattened;
 }
 
 export interface PreparedProjectionAsset {
@@ -42,7 +56,7 @@ export interface PreparedProjectionAsset {
 /** Owns resources until the caller adopts the result. Failed loads clean up. */
 export async function prepareProjectionAsset(
   root: FileSystemDirectoryHandle,
-  entry: Pick<ProjectionAssetEntry, "id" | "descriptor" | "model">,
+  entry: Pick<ProjectionAssetEntry, "id" | "descriptor" | "model" | "state_variant">,
   map: string,
   expected?: ExternalAssetSource,
 ): Promise<PreparedProjectionAsset> {
@@ -50,7 +64,11 @@ export async function prepareProjectionAsset(
   const descriptorBytes = await (await libraryFile(root, entry.descriptor)).arrayBuffer();
   const descriptorHash = await hash(descriptorBytes);
   if (expected && expected.descriptor_sha256 !== descriptorHash) throw new Error(`Asset descriptor changed: ${entry.id}`);
-  const descriptor = parseProjectionAssetDescriptor(JSON.parse(new TextDecoder().decode(descriptorBytes)));
+  const original = parseProjectionAssetDescriptor(JSON.parse(new TextDecoder().decode(descriptorBytes)));
+  const variant = entry.state_variant ? original.state_variants?.[entry.state_variant] : undefined;
+  if (entry.state_variant && !variant) throw new Error(`Unknown static asset variant: ${entry.state_variant}`);
+  const descriptor = variant ? { ...original, id: assetVariantId(original.id, entry.state_variant!),
+    name: `${original.name} — ${variant.name}`, model: variant.model, parts: variant.parts ?? original.parts, state_variants: undefined } : original;
   if (descriptor.id !== entry.id || descriptor.source_map.toLowerCase() !== map.toLowerCase())
     throw new Error(`Asset identity or source map mismatch: ${entry.id}`);
   if (descriptor.editor_usage === "map-background") throw new Error("Map backgrounds are part of the map and cannot be inserted as objects");
@@ -61,7 +79,8 @@ export async function prepareProjectionAsset(
   const modelHash = await hash(modelBytes);
   if (expected && expected.model_sha256 !== modelHash) throw new Error(`Asset model changed: ${entry.id}`);
   const reference = { id: entry.id, descriptor: entry.descriptor, model: entry.model,
-    descriptor_sha256: descriptorHash, model_sha256: modelHash };
+    descriptor_sha256: descriptorHash, model_sha256: modelHash,
+    ...(entry.state_variant ? { state_variant: entry.state_variant } : {}) };
   parseExternalAssetSources([reference]);
   let asset: THREE.Object3D | null = null;
   try {
@@ -70,7 +89,7 @@ export async function prepareProjectionAsset(
     const mapRoot = asset.children.find(child => child.name === "map");
     if (!mapRoot || mapRoot.children.length !== 1) throw new Error(`Standalone asset requires exactly one group: ${entry.id}`);
     const group = mapRoot.children[0]!;
-    if (group.userData.asset_group !== entry.id) throw new Error(`Standalone group mismatch: ${entry.id}`);
+    if (group.userData.asset_group !== original.id) throw new Error(`Standalone group mismatch: ${entry.id}`);
     // Children below the map wrapper are Z-up. Their transforms must match the
     // local collision frame; the exporter bakes all parent transforms in meshes.
     const identity = new THREE.Matrix4();
@@ -81,7 +100,8 @@ export async function prepareProjectionAsset(
     for (const node of group.children) {
       const part = parts.get(node.name);
       const key = assetNodeKey(entry.id, node.name);
-      if (!part || sources.has(key) || node.userData.source_obstacle !== part.source_obstacle)
+      if (!part || sources.has(key) || node.userData.source_obstacle !== part.source_obstacle ||
+          (part.mission_profile !== undefined && node.userData.mission_patch_profile !== part.mission_profile))
         throw new Error(`Unexpected or duplicate standalone part: ${node.name}`);
       let meshes = 0;
       node.traverse(child => { if ((child as THREE.Mesh).isMesh) meshes++; });

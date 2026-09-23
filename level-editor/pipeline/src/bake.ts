@@ -64,6 +64,7 @@ function placeObjects(
   );
   for (const o of doc.objects) {
     if (o.hidden || (o.group && hiddenGroups.has(o.group))) continue;
+    if (o.source.obstacle === undefined) throw new Error("Mission assets cannot be baked into static obstacle geometry");
     const faces = facesOf.get(o.source.obstacle);
     if (!faces)
       throw new Error(
@@ -110,6 +111,10 @@ export interface BakeOptions {
 
 /** Obstacle reconstruction cannot reproduce independently imported GLB meshes. */
 export function assertReconstructedBakeSources(document: unknown): void {
+  if (document !== null && typeof document === "object" && "objects" in document &&
+      Array.isArray(document.objects) && document.objects.some(part => part?.kind === "mission")) {
+    throw new Error("Game baking does not yet support supplemental mission models; save the editor document instead.");
+  }
   if (
     document !== null &&
     typeof document === "object" &&
@@ -294,6 +299,7 @@ export async function bake(options: BakeOptions): Promise<void> {
   const extra: SightObstacle[] = [];
   for (const o of doc.objects) {
     if (o.hidden || (o.group && hiddenGroups.has(o.group))) continue;
+    if (o.source.obstacle === undefined) throw new Error("Mission assets cannot be baked into static obstacles");
     const t = transformedObstacle(doc, o);
     if (!seen.has(o.source.obstacle)) {
       seen.add(o.source.obstacle);

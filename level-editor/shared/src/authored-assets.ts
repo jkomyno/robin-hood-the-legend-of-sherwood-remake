@@ -39,11 +39,12 @@ export function authoredAssetGroups(map: string, objects: Level3DObject[], suppl
     }
   }
   const ids = new Set(objects.map(object => object.source.obstacle));
-  if (parts.size !== ids.size || objects.length !== ids.size || [...ids].some(id => !parts.has(id)) ||
+  if (parts.size !== ids.size || objects.length !== ids.size || [...ids].some(id => id === undefined || !parts.has(id)) ||
       objects.some(object => object.source.map.toLowerCase() !== map.toLowerCase())) {
     throw new Error(`${map} asset catalog does not match this reconstruction's obstacle set`);
   }
   for (const object of objects) {
+    if (object.source.obstacle === undefined) throw new Error("Mission parts cannot be assigned obstacle catalog ownership");
     const { group, part } = parts.get(object.source.obstacle)!;
     object.group = group.id;
     object.name = part.name;

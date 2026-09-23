@@ -467,7 +467,7 @@ export default function Editor3D(props: EditorProps) {
         hidden: !!g.hidden,
         moved: !isIdentity(g.transform),
         parts: parts.length,
-        suspect: parts.some((p) => suspects().has(p.source.obstacle)),
+        suspect: parts.some((p) => p.source.obstacle !== undefined && suspects().has(p.source.obstacle)),
       });
       if (exp.has(g.id) || (q && partMatch.length > 0)) {
         for (const p of parts)
@@ -479,7 +479,7 @@ export default function Editor3D(props: EditorProps) {
               depth: 1,
               hidden: !!p.hidden,
               moved: !isIdentity(p.transform),
-              suspect: suspects().has(p.source.obstacle),
+              suspect: p.source.obstacle !== undefined && suspects().has(p.source.obstacle),
             });
       }
     }
@@ -492,7 +492,7 @@ export default function Editor3D(props: EditorProps) {
         depth: 0,
         hidden: !!o.hidden,
         moved: !isIdentity(o.transform),
-        suspect: suspects().has(o.source.obstacle),
+        suspect: o.source.obstacle !== undefined && suspects().has(o.source.obstacle),
       });
     }
     return out;
@@ -644,7 +644,7 @@ export default function Editor3D(props: EditorProps) {
                       <div class="meta-row">
                         <span class="meta-key">source</span>
                         <span>
-                          {p().source.map} #{p().source.obstacle}
+                          {p().source.map} {p().source.mission_profile ?? `#${p().source.obstacle}`}
                         </span>
                       </div>
                       <div class="meta-row">
@@ -682,7 +682,7 @@ export default function Editor3D(props: EditorProps) {
                           </button>
                         )}
                       </Show>
-                      <Show when={suspects().get(p().source.obstacle)}>
+                      <Show when={(() => { const index = p().source.obstacle; return index === undefined ? undefined : suspects().get(index); })()}>
                         {(sus) => (
                           <div class="row suspect">
                             <span class="hint">

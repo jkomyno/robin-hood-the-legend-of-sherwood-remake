@@ -111,7 +111,7 @@ export async function prepareMapCandidate(
         const terraces = new Set(
           d.objects
             .filter((o) => o.kind === "terrace")
-            .map((o) => o.source.obstacle),
+            .flatMap((o) => o.source.obstacle === undefined ? [] : [o.source.obstacle]),
         );
         const sus = new Map<number, { delta: number; support: number }>();
         for (const x of snapFloatingParts(lvl.sight_obstacles, terraces, {
@@ -154,6 +154,7 @@ export async function prepareMapCandidate(
       const groups: Level3DGroup[] = [];
       const seen = new Set<string>();
       for (const o of objects) {
+        if (o.source.obstacle === undefined) continue;
         const root = groupOf.get(o.source.obstacle);
         if (root === undefined) continue;
         o.group = groupId(root);

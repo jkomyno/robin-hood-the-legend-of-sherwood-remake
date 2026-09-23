@@ -1411,6 +1411,15 @@ The leaderboard home page puts recent submissions before mission rankings, offer
 
 ### Standalone projection assets and discrete editor states
 
+Descriptors may define independent static GLBs in `state_variants.initial` and
+`state_variants.applied`, each with a `name`, descriptor-relative `model`, and
+optional endpoint-specific `parts`. The Assets panel lists each endpoint separately;
+only the selected GLB is loaded. Variant-qualified resource IDs allow both endpoints
+in one document, with model and descriptor hashes checked on reload. This does not
+provide animation. Supplemental `mission-*` parts identify their source through
+`mission_profile` instead of claiming a sight-obstacle index; their local footprint
+supports editor placement only, and game baking rejects supplemental mission models.
+
 The level editor’s Assets panel inserts exported projection assets from the current map as independent named groups. Saved documents pin descriptor/model hashes and reload the referenced GLBs; instances share rendering resources while retaining independent transforms. Explicit Initial/Applied group states switch endpoint visibility atomically, survive save/reload and undo/redo, and remap member IDs when duplicating a complete group. These are discrete states, not animation playback. Game baking rejects external asset references until their conversion is supported.
 
 Explicit foliage materials keep physical leaf coverage separate from source ownership. Their RGBA texture supplies glTF MASK coverage at cutoff 0.5; COLOR_0 red stores the observed-source weight. The editor preserves alpha gaps in normal and source-only views and interprets the color attribute as evidence rather than a surface tint. The export contract supports double-sided cards or explicitly paired one-sided source/neutral cards, with optional unlit rendering. Vertex ownership requires geometry split at evidence boundaries; it cannot encode an arbitrary per-pixel ownership mask inside a triangle. Existing opaque projection materials retain their alpha-as-ownership behavior.

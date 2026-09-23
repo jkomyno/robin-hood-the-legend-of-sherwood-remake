@@ -36,11 +36,11 @@ export function isIdentity(t: GameTransform): boolean {
 export interface Level3DObject {
   /** unique in the document; the reconstruction node name for original parts ("building-042") */
   id: string;
-  kind: "building" | "terrace";
+  kind: "building" | "terrace" | "mission";
   /** the reconstruction node this part draws with (its own for originals, the original's for duplicates) */
   node: string;
   /** map + obstacle index the geometry and the game data came from */
-  source: { map: string; obstacle: number };
+  source: { map: string } & ({ obstacle: number; mission_profile?: never } | { obstacle?: never; mission_profile: string });
   /** the obstacle as the game sees it, before any transform */
   obstacle: SightObstacle;
   /** transform relative to the group (or the world for ungrouped parts) */

@@ -397,31 +397,37 @@ export function parseLevel3D(
     check(!ids.has(o.id), o.id, "duplicate ID");
     ids.add(o.id);
     check(
-      o.kind === "building" || o.kind === "terrace",
+      o.kind === "building" || o.kind === "terrace" || o.kind === "mission",
       o.id,
       "unsupported kind",
     );
     text(o.node, `${o.id}.node`);
     if (o.node.startsWith("asset:")) {
-      const match = /^asset:([^:]+):((?:building|terrace)-\d+)$/.exec(o.node);
+      const match = /^asset:([^:]+):((?:building|terrace)-\d+|mission-[a-zA-Z0-9_-]+)$/.exec(o.node);
       check(!!match && assetIds.has(match[1]), o.id, "dangling external asset source");
-      check(Number(match![2]!.split("-")[1]) === o.source?.obstacle, o.id, "external asset canonical obstacle mismatch");
+      if (!match![2]!.startsWith("mission-")) check(Number(match![2]!.split("-")[1]) === o.source?.obstacle, o.id, "external asset canonical obstacle mismatch");
+      else check(o.kind === "mission", o.id, "mission source requires mission kind");
     }
     if (context.nodes)
       check(context.nodes.has(o.node), o.id, `missing source node ${o.node}`);
     object(o.source, `${o.id}.source`);
     check(o.source.map === d.map, o.id, "mismatched source map");
-    check(
-      Number.isInteger(o.source.obstacle) && o.source.obstacle >= 0,
-      o.id,
-      "invalid obstacle index",
-    );
-    if (context.level)
+    if (o.kind === "mission") {
+      check(o.source.obstacle === undefined && /^(?:asset:[^:]+:)?mission-[a-zA-Z0-9_-]+$/.test(o.node), o.id, "mission parts cannot claim an obstacle index");
+      text(o.source.mission_profile, `${o.id}.source.mission_profile`);
+    } else {
       check(
-        o.source.obstacle < context.level.sight_obstacles.length,
+        Number.isInteger(o.source.obstacle) && o.source.obstacle >= 0 && o.source.mission_profile === undefined,
         o.id,
-        "dangling obstacle index",
+        "invalid obstacle index or mission profile",
       );
+      if (context.level)
+        check(
+          o.source.obstacle < context.level.sight_obstacles.length,
+          o.id,
+          "dangling obstacle index",
+        );
+    }
     if (o.group !== undefined)
       check(groups.has(o.group), o.id, `dangling group ${o.group}`);
     if (o.hidden !== undefined)
@@ -467,6 +473,7 @@ export function parseExternalAssetSources(value: unknown): ExternalAssetSource[]
   const ids = new Set<string>();
   for (const entry of array(value, "assetSources")) {
     object(entry, "assetSources[]");
+    if (entry.state_variant !== undefined) check(entry.state_variant === "initial" || entry.state_variant === "applied", "asset source state_variant", "invalid static variant");
     text(entry.id, "asset source id");
     check(!/[\\/:\0]/.test(entry.id) && !ids.has(entry.id), "asset source id", "invalid or duplicate identity");
     ids.add(entry.id);
@@ -514,15 +521,34 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     text(part.node, "asset part.node");
     text(part.name, "asset part.name");
     const match = /^(building|terrace)-(\d+)$/.exec(part.node);
-    check(!!match && Number(match[2]) === part.source_obstacle, part.node, "canonical obstacle mismatch");
-    check(!nodes.has(part.node) && !obstacles.has(part.source_obstacle), part.node, "duplicate asset part");
-    nodes.add(part.node); obstacles.add(part.source_obstacle);
+    if (part.mission_profile !== undefined) {
+      text(part.mission_profile, "asset part.mission_profile");
+      check(/^mission-[a-zA-Z0-9_-]+$/.test(part.node) && part.source_obstacle === undefined, part.node, "mission parts cannot claim an obstacle index");
+    } else {
+      check(!!match && Number(match[2]) === part.source_obstacle, part.node, "canonical obstacle mismatch");
+      check(!obstacles.has(part.source_obstacle), part.node, "duplicate asset part");
+      obstacles.add(part.source_obstacle);
+    }
+    check(!nodes.has(part.node), part.node, "duplicate asset part");
+    nodes.add(part.node);
     if (part.default_hidden !== undefined) check(typeof part.default_hidden === "boolean", part.node, "invalid default_hidden");
     obstacle(part.obstacle_local_game, part.node);
     check(part.obstacle_local_game.points.length >= 3, part.node, "editable obstacle needs three points");
   }
   if (d.states !== undefined)
     validateAssetStates(d.states, new Map(parts.map(part => [part.node, !!part.default_hidden])), "asset.states");
+  if (d.state_variants !== undefined) {
+    check(d.states === undefined && d.editor_usage !== "map-background", "asset.state_variants", "static models cannot also define part states or map backgrounds");
+    const variants = object(d.state_variants, "asset.state_variants");
+    check(Object.keys(variants).length > 0, "asset.state_variants", "expected nonempty variants");
+    for (const [key, value] of Object.entries(variants)) {
+      check(key === "initial" || key === "applied", "asset.state_variants", "invalid static variant");
+      const variant = object(value, `asset.state_variants.${key}`);
+      text(variant.name, "variant.name");
+      check(safeLibraryPath(variant.model), "variant.model", "expected safe relative path");
+      if (variant.parts !== undefined) parseProjectionAssetDescriptor({ ...d, state_variants: undefined, model: variant.model, parts: variant.parts });
+    }
+  }
   return value as ProjectionAssetDescriptor;
 }
 

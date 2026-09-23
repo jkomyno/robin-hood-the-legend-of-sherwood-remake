@@ -20,8 +20,8 @@ export function insertProjectionAsset(document: Level3D, descriptor: ProjectionA
   while (occupied.has(id) || descriptor.parts.some(part => occupied.has(`${id}:${part.node}`)));
   const parts: Level3DObject[] = descriptor.parts.map(part => ({
     id: `${id}:${part.node}`, node: assetNodeKey(descriptor.id, part.node),
-    kind: part.node.startsWith("terrace-") ? "terrace" : "building",
-    source: { map: document.map, obstacle: part.source_obstacle },
+    kind: part.mission_profile !== undefined ? "mission" : part.node.startsWith("terrace-") ? "terrace" : "building",
+    source: part.mission_profile !== undefined ? { map: document.map, mission_profile: part.mission_profile } : { map: document.map, obstacle: part.source_obstacle },
     obstacle: structuredClone(part.obstacle_local_game), transform: { ...IDENTITY_TRANSFORM },
     group: id, name: part.name, ...(part.default_hidden ? { hidden: true } : {}),
   }));
