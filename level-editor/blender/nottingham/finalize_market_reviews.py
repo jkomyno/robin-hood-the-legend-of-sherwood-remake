@@ -52,7 +52,8 @@ def main():
                   'known_rgb_evidence': 'known-rgb-validation.json', 'grouped_world_geometry_evidence': str(grouped.with_suffix('.market-validation.json')),
                   'known_pixels': rgb['packets'][0]['known_pixels'], 'geometry_approval': 'pending-new-membership-review'}
         (workspace / 'market-review.json').write_text(json.dumps(report, indent=2) + '\n')
-        candidate.update(status='ready-for-user', geometry_reviewed=True, inspected_views=list(range(8)),
+        candidate.update(status='ready-for-user', geometry_reviewed=True, geometry_refined=False, inspected_views=list(range(8)),
+                         no_change_reason='The fresh V9 baseline already contains the exact approved exterior geometry and disjoint base partition. All eight views validate its new standalone membership; no additional mesh edit is warranted.',
                          review_scope='Grouping-only revision: approved exterior geometry, new disjoint source ownership, eight fixed views and exact source RGB.',
                          independent_source_review='market-review.json')
         (workspace / 'candidate.json').write_text(json.dumps(candidate, indent=2) + '\n')
