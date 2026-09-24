@@ -196,6 +196,15 @@ delegates artwork to another asset; that neighbor must actually cover it,
 without a gap or overlapping coplanar surfaces. Broad proxy geometry must not
 hide source-visible pixels merely because it intersects a projection ray.
 
+Also render the actual saved materials from the original source camera beside
+the matching artwork for each state. Derive the audit domain independently of
+the acceptance masks: otherwise an erroneous exclusion disappears from both
+the texture and its audit. When a patch removes a foreground structure, include
+the newly exposed area in the revealed-state audit instead of subtracting the
+covered-state silhouette. Exact preservation of a previously approved donor
+proves preservation, not source completeness; regrouped assets still need this
+comparison.
+
 Bind the coverage review to the model and modified packet hashes. Missing,
 failed, or stale coverage evidence must block readiness. For terrain, review
 the proposed ground domain against the artwork explicitly; the complement of
