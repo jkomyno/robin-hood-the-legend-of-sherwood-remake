@@ -191,10 +191,21 @@ export async function checkSharedLibrary() {
       (document.querySelector('input[aria-label="Path name"]') as HTMLInputElement)?.value === "Battlement wall");
     await drawPoint(0.3, 0.7);
     await drawPoint(0.55, 0.75);
+    const flip = document.querySelector('input[aria-label="Flip battlement side"]') as HTMLInputElement;
+    flip.checked = true;
+    flip.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     click("Finish path");
     await until(() => document.querySelectorAll(".spline-list button").length === 2);
+    const sun = document.querySelector('input[aria-label="Cast sun shadows"]') as HTMLInputElement;
+    sun.checked=true;sun.dispatchEvent(new Event("change",{bubbles:true}));
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     click("Save *");
     await until(() => ![...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Save *"));
+    assert(JSON.parse(await files.get("scenes/York.level3d.json")!.text()).splines?.find((path: {kind:string}) => path.kind === "wall")?.flipCrossSection === true,
+      "Battlement-side choice was not saved");
+    assert(JSON.parse(await files.get("scenes/York.level3d.json")!.text()).lighting?.enabled === true,
+      "Sun settings were not saved");
     click("Lincoln");
     await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "Lincoln");
     click("York");

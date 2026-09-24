@@ -446,6 +446,16 @@ export function parseLevel3D(
     const members = d.objects.filter((part: any) => part.group === group.id);
     validateAssetStates(group.states, new Map(members.map((part: any) => [part.id, !!part.hidden])), group.id);
   }
+  if (d.lighting !== undefined) {
+    const light=object(d.lighting,"lighting");
+    check(typeof light.enabled === "boolean","lighting.enabled","expected boolean");
+    finite(light.sunAzimuth,"lighting.sunAzimuth");
+    finite(light.sunElevation,"lighting.sunElevation");
+    finite(light.shadowOpacity,"lighting.shadowOpacity");
+    check(light.sunAzimuth >= 0 && light.sunAzimuth <= 360,"lighting.sunAzimuth","expected 0–360 degrees");
+    check(light.sunElevation >= 10 && light.sunElevation <= 85,"lighting.sunElevation","expected 10–85 degrees");
+    check(light.shadowOpacity >= 0 && light.shadowOpacity <= 1,"lighting.shadowOpacity","expected 0–1");
+  }
   const splineIds = new Set<string>();
   if (d.splines !== undefined) for (const spline of array(d.splines, "splines")) {
     object(spline, "spline");
@@ -470,6 +480,7 @@ export function parseLevel3D(
     if (spline.kind === "wall") {
       check(assetIds.has(spline.asset), spline.id, "missing wall asset source");
       check(spline.axis === "x" || spline.axis === "y", spline.id, "invalid source axis");
+      if (spline.flipCrossSection !== undefined) check(typeof spline.flipCrossSection === "boolean", spline.id, "flipCrossSection must be boolean");
       if (spline.sourceAngle !== undefined) finite(spline.sourceAngle, "spline.sourceAngle");
       const start = spline.sourceStart ?? 0, end = spline.sourceEnd ?? 1;
       finite(start, "spline.sourceStart"); finite(end, "spline.sourceEnd");

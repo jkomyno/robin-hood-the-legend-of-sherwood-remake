@@ -65,6 +65,7 @@ export function riverMesh(path: LevelSpline, camera: MapCamera) {
     transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const mesh = new THREE.Mesh(riverGeometry(path, camera), material);
   mesh.renderOrder = 1;
+  mesh.userData.noSunShadow = true;
   return mesh;
 }
 
@@ -179,7 +180,7 @@ export function wallGeometry(source: THREE.BufferGeometry, matrix: THREE.Matrix4
       sectionCenter = a.center + (b.center - a.center) * fraction;
       sectionWidth = a.width + (b.width - a.width) * fraction;
     }
-    const lateral = (p[cross]! - sectionCenter) * path.width / sectionWidth * (axis === 1 ? -1 : 1);
+    const lateral = (p[cross]! - sectionCenter) * path.width / sectionWidth * (axis === 1 ? -1 : 1) * (path.flipCrossSection ? -1 : 1);
     const normal = new THREE.Vector3(-tangent.y, tangent.x, 0).normalize();
     output.position!.push(point.x + normal.x * lateral, point.y + normal.y * lateral, point.z + p[2]! - bounds.min.z);
     for (const [key] of attributes) if (key !== "position") output[key]!.push(...vertex[key]!);
@@ -197,7 +198,9 @@ export function wallGeometry(source: THREE.BufferGeometry, matrix: THREE.Matrix4
       if (b <= a || low > b || high < a) continue;
       const polygon = clip(clip(triangle, axis, a, true), axis, b, false);
       for (let j = 1; j + 1 < polygon.length; j++) {
-        push(polygon[0]!); push(polygon[j]!); push(polygon[j + 1]!);
+        push(polygon[0]!);
+        push(polygon[path.flipCrossSection ? j + 1 : j]!);
+        push(polygon[path.flipCrossSection ? j : j + 1]!);
       }
     }
   }

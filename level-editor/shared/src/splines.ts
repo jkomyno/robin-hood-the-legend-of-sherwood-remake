@@ -13,6 +13,8 @@ export interface LevelSpline {
   asset?: string;
   axis?: "x" | "y";
   sourceAngle?: number;
+  /** Reflect the cross-section so the parapet can face the exterior. */
+  flipCrossSection?: boolean;
   /** Retained interval along the source model, useful for trimming fixed end caps. */
   sourceStart?: number;
   sourceEnd?: number;

@@ -1,3 +1,4 @@
+import { SunLighting } from "./sun-lighting.ts";
 import { SplineLayer, type SplineEditMode } from "./spline-layer.ts";
 import type { ExternalAssetSource } from "@rle/shared";
 import * as THREE from "three";
@@ -237,6 +238,7 @@ export class EditorViewport {
   private readonly objectsRoot = new THREE.Group();
   private readonly overlayRoot = new THREE.Group();
   private readonly splines = new SplineLayer();
+  private readonly sunlight = new SunLighting();
   private splineMode: SplineEditMode | null = null;
   private readonly partViews = new Map<string, View>();
   private readonly groupViews = new Map<string, View>();
@@ -265,7 +267,7 @@ export class EditorViewport {
     this.scene.background = new THREE.Color(0x1c1c1c);
     this.mapRoot.quaternion.set(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
     this.scene.add(this.mapRoot);
-    this.mapRoot.add(this.objectsRoot, this.overlayRoot, this.splines.root);
+    this.mapRoot.add(this.objectsRoot, this.overlayRoot, this.splines.root, this.sunlight.root);
     this.selectionBox.visible = false;
     this.scene.add(this.selectionBox);
   }
@@ -308,6 +310,7 @@ export class EditorViewport {
     this.sourceAsset = asset;
     this.ground = ground;
     if (ground) this.mapRoot.add(ground);
+    this.sunlight.setGround(ground);
     for (const [key, value] of sources) this.sourceNodes.set(key, value);
     for (const ref of references) this.externalAssetHashes.set(ref.id, ref.descriptor_sha256 + ref.model_sha256);
     this.refreshTextureDisplay();
@@ -351,6 +354,8 @@ export class EditorViewport {
   }
   private retireMap() {
     this.splineMode = null;
+    this.sunlight.setGround(null);
+    this.sunlight.root.visible = false;
     this.splines.clear();
     this.cancelPointerGesture?.();
     this.replaceEntities(null);
@@ -384,6 +389,7 @@ export class EditorViewport {
     for (const control of this.controls.reverse()) control.dispose();
     this.controls = [];
     disposeObjectResources([this.selectionBox]);
+    this.sunlight.dispose();
     this.renderer?.dispose();
     this.renderer?.forceContextLoss();
     this.renderer?.domElement.remove();
@@ -401,6 +407,8 @@ export class EditorViewport {
     this.container = el;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, reversedDepthBuffer: true });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.autoUpdate = false;
     this.refreshTextureDisplay();
     el.appendChild(this.renderer.domElement);
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -100000, 100000);
@@ -431,9 +439,10 @@ export class EditorViewport {
       if (this.orbit) this.orbit.enabled = !this.dragging;
       if (!this.dragging) this.commitGizmo();
     });
-    this.gizmo.addEventListener("objectChange", () =>
-      this.refreshSelectionBox(),
-    );
+    this.gizmo.addEventListener("objectChange", () => {
+      this.refreshSelectionBox();
+      if (this.renderer) this.renderer.shadowMap.needsUpdate = true;
+    });
     const resize = () => {
       const w = el.clientWidth;
       const h = el.clientHeight;
@@ -873,6 +882,7 @@ export class EditorViewport {
       this.select(null);
     else this.refreshSelectionBox();
     const bounds = this.contentBox();
+    this.refreshSunLighting(bounds);
     this.framingBounds.copy(bounds);
     this.framingPoints = [];
     this.framingKey = "";
@@ -925,10 +935,20 @@ export class EditorViewport {
     this.bindings.commitTransform({ ...t, dx, dy, dz });
   }
 
+  private refreshSunLighting(bounds = this.contentBox()) {
+    const settings=this.bindings.document()?.lighting;
+    this.sunlight.sync(settings,[this.objectsRoot,this.splines.root],bounds);
+    if (this.renderer) {
+      this.renderer.shadowMap.enabled = !!settings?.enabled;
+      this.renderer.shadowMap.needsUpdate = true;
+    }
+  }
+
   setSplineEdit(mode: SplineEditMode | null) {
     if (mode && !this.splineMode) this.select(null);
     this.splineMode = mode;
     this.splines.setMode(mode);
+    this.refreshSunLighting();
   }
 
   private setupSplineInteraction(canvas: HTMLCanvasElement) {
@@ -956,6 +976,7 @@ export class EditorViewport {
       if (gesture.index !== null) {
         const points = gesture.mode.path.points.map((p, i) => i === gesture!.index ? point : p);
         this.splines.showPreview({ ...gesture.mode.path, points });
+        this.refreshSunLighting();
       }
     }, { capture: true, signal: this.listeners.signal });
     const finish = (event: PointerEvent) => {

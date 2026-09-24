@@ -169,6 +169,8 @@ export default function SplinePanel(props: {
       <label class="check"><input type="checkbox" checked={current().closed} disabled={current().points.length < 3}
         onChange={event => patch({ closed: event.currentTarget.checked })} /> Closed loop</label>
       <Show when={current().kind === "wall"}>
+        <label class="check"><input type="checkbox" aria-label="Flip battlement side" checked={current().flipCrossSection ?? false}
+          onChange={event => patch({ flipCrossSection: event.currentTarget.checked })} /> Flip battlement side</label>
         <label>Source direction<select aria-label="Wall source direction" value={current().axis}
           onChange={event => patch({ axis: event.currentTarget.value as "x" | "y" })}><option value="x">Along X</option><option value="y">Along Y</option></select></label>
         <label>Source alignment angle<input type="number" step="1" value={current().sourceAngle ?? 0}

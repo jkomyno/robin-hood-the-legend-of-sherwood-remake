@@ -20,8 +20,13 @@ overlooks a market and working yards, while the opposite bank remains rural.
 The River Wych and the bailey battlements are editable 3D splines. Select them
 in the Paths panel to reshape the river or fortifications. Wall width is measured
 across each local section, so a bent source segment retains a substantial walkway.
+Five straight curtain sections join corner defenses and the gate. Their cross-sections
+are flipped to face the parapets outside the bailey; the Paths panel exposes this
+as **Flip battlement side**. The ground mesh has a raised bailey and sloping banks
+around the winding river. Gardens, wooded ridges, fences and working yards make
+the space between buildings part of the layout.
 
-The recipe uses 35 distinct shared assets, including five tree models and a
+The recipe uses 50 distinct shared assets, including five tree models and a
 watermill. `terrain.png` is an image-generated ground background that follows the
 placement recipe's roads and courtyards, using the library's terrain and a game
 scene as references. It is painted in ground-plane proportions (approximately
@@ -29,6 +34,11 @@ scene as references. It is painted in ground-plane proportions (approximately
 35° camera's foreshortening rather than displaying overhead texture details. `river.png` is a separate image-generated repeating water tile based
 on the library's moat palette; it stays attached to the editable river spline.
 The main crossing uses the open East Village Footbridge asset.
+
+**Sun & shadows** controls the light direction, elevation and shadow strength.
+The scene starts with a northwest sun. Buildings, battlements and foliage cast
+shadows onto the terrain while their baked texture colors remain unchanged.
+Lighting settings save with the map and participate in undo/redo.
 
 
 ## Proposed mission

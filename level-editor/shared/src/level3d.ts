@@ -61,6 +61,8 @@ export interface Level3DGroup {
 }
 
 export interface Level3D {
+  /** Sun azimuth is clockwise from north; elevation is above the ground. */
+  lighting?: { enabled: boolean; sunAzimuth: number; sunElevation: number; shadowOpacity: number };
   splines?: import("./splines.ts").LevelSpline[];
   /** Standalone models referenced by namespaced object nodes. */
   assetSources?: ExternalAssetSource[];

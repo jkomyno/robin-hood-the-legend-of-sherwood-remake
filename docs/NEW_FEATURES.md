@@ -9,6 +9,12 @@ A list of which additional features we have added, which ones we might still wan
 
 ## Done
 
+- **Editor sun and terrain shadows.** Authored maps can save a sun direction,
+  elevation and shadow strength. Editable meshes cast filtered shadows onto
+  terrain without relighting baked source textures. River surfaces and editing
+  handles do not cast shadows. The wall spline editor can flip its cross-section
+  to place a one-sided parapet on the exterior of a fortification.
+
 - **3D spline authoring and Wychford.** Draw and reshape river ribbons and
   battlement walls with viewport control points. River tiles repeat by arc
   length; wall meshes are subdivided and bent in 3D with interpolated UVs.

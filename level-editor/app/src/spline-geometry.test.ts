@@ -45,6 +45,28 @@ test("a skewed source wall keeps its requested thickness instead of its bounding
   wall.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
   source.geometry.dispose(); source.material.dispose();
 });
+test("flipping the wall puts its parapet on the opposite side and preserves outward face winding", () => {
+  const source = new THREE.Group();
+  const base=new THREE.Mesh(new THREE.BoxGeometry(100,20,30),new THREE.MeshBasicMaterial());
+  const parapet=new THREE.Mesh(new THREE.BoxGeometry(100,4,12),new THREE.MeshBasicMaterial());
+  parapet.position.set(0,8,21);
+  source.add(base,parapet);
+  const path: LevelSpline = {...river,kind:"wall",asset:"wall",axis:"x",width:20,repeatLength:100,points:[[0,0,0],[100,0,0]]};
+  const sources=new Map([["asset:wall:building-000",source]]);
+  const normal=wallMesh(path,camera,sources),flipped=wallMesh({...path,flipCrossSection:true},camera,sources);
+  const before=new THREE.Box3().setFromObject(normal.children[1]!);
+  const after=new THREE.Box3().setFromObject(flipped.children[1]!);
+  assert.ok(before.min.y>0 && after.max.y<0,"parapet must swap sides");
+  for(const group of [normal,flipped]) group.traverse(node=>{
+    if(!(node instanceof THREE.Mesh)) return;
+    const p=node.geometry.getAttribute("position"),n=node.geometry.getAttribute("normal");
+    let top=false;
+    for(let i=0;i<p.count;i++) if(n.getZ(i)>.99) top=true;
+    assert.ok(top,"top-facing triangles must retain positive normals after reflection");
+    node.geometry.dispose();
+  });
+  base.geometry.dispose();parapet.geometry.dispose();base.material.dispose();parapet.material.dispose();
+});
 test("spline geometry retirement does not dispose borrowed wall materials or source meshes", () => {
   const source = new THREE.Mesh(new THREE.BoxGeometry(100, 12, 40), new THREE.MeshBasicMaterial());
   let sourceDisposals = 0;

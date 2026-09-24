@@ -80,6 +80,7 @@ export class SplineLayer {
     path.points.forEach((point, index) => {
       const handle = new THREE.Mesh(new THREE.SphereGeometry(9, 10, 8),
         new THREE.MeshBasicMaterial({ color: index === this.mode?.point ? 0xffcd59 : 0x77e4e8, depthTest: false }));
+      handle.userData.noSunShadow = true;
       handle.position.set(...gameToScene(this.camera, ...point));
       handle.position.z += 4;
       handle.userData.splinePoint = index;
