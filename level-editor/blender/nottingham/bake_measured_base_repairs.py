@@ -4,7 +4,7 @@ from pathlib import Path
 HERE=Path(__file__).resolve().parent
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(HERE.parents[1]/'refinement/blender'))
 import bpy
-from texture_experiment_paths import selected_experiment
+from texture_experiment_paths import selected_experiment,reconciliation_reference
 from render_slots import acquire,release
 from bake_ready_textures import claim,sha
 from bake_reviewed_asset import stage
@@ -23,7 +23,7 @@ for asset in args.assets:
   if out.exists():raise ValueError('Fresh output required: '+str(out))
   diagnosis=json.loads((scoped/'diagnosis.json').read_text());g=Path(diagnosis['generation_directory'])
   bpy.ops.wm.open_mainfile(filepath=str(scoped/'approved-model.blend'))
-  stage(scoped/'views.json',g/'generated-preserved.png',out,texels_per_unit=2,reconciliation_reference=g/'generated-raw.png')
+  stage(scoped/'views.json',g/'generated-preserved.png',out,texels_per_unit=2,reconciliation_reference=reconciliation_reference(g))
   audit(old,out)
   inspect(scoped/'views.json',out,out/'coverage')
   print('MEASURED BASE BAKED '+asset,flush=True)

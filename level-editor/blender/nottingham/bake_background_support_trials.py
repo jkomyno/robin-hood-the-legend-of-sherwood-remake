@@ -3,7 +3,7 @@ import sys,json,time,argparse
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(Path(__file__).parent))
-from texture_experiment_paths import selected_experiment
+from texture_experiment_paths import selected_experiment,reconciliation_reference
 sys.path.insert(0,str(ROOT/'level-editor/refinement/blender'))
 from render_slots import acquire,release
 from bake_ready_textures import claim
@@ -26,7 +26,7 @@ for asset in args.assets:
  try:
   if output.exists():raise RuntimeError('Output appeared while waiting for render lease: '+str(output))
   bpy.ops.wm.open_mainfile(filepath=str(scoped/'approved-model.blend'))
-  result=stage(scoped/'views.json',g/'generated-preserved.png',output,texels_per_unit=2,reconciliation_reference=g/'generated-raw.png')
+  result=stage(scoped/'views.json',g/'generated-preserved.png',output,texels_per_unit=2,reconciliation_reference=reconciliation_reference(g))
   inspect(scoped/'views.json',output,output/'coverage')
   print('BACKGROUND SUPPORT BAKED '+asset+' '+str(output),flush=True)
  finally:
