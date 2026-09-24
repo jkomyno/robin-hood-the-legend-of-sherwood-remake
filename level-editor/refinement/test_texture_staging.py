@@ -29,6 +29,21 @@ class TextureStagingTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'canonical source ownership'):
             _object_ownership([obj], dict(handoff, endpoint_id=None))
 
+    def test_endpoint_static_source_is_explicit_and_complete(self):
+        class Object(dict):
+            pass
+        deck = Object(source_node='building-1', drawbridge_state='initial',
+                      drawbridge_initial_source_node='building-1', drawbridge_applied_source_node='building-2')
+        deck.name = 'deck'
+        canopy = Object(source_node='building-3'); canopy.name = 'canopy'
+        h = {'endpoint_id': 'initial', 'source_nodes': ['building-1', 'building-2', 'building-3'],
+             'static_source_nodes': ['building-3']}
+        self.assertTrue(_object_ownership([deck, canopy], h)['canopy']['static_endpoint_source'])
+        with self.assertRaisesRegex(ValueError, 'static and active'):
+            _object_ownership([deck], h)
+        with self.assertRaisesRegex(ValueError, 'exact reviewed native pair'):
+            _object_ownership([deck, canopy], dict(h, static_source_nodes=[]))
+
     def setUp(self):
         temp=tempfile.TemporaryDirectory();self.addCleanup(temp.cleanup);self.root=Path(temp.name)
         self.exp=self.root/'experiment';self.exp.mkdir();self.bake=self.exp/'bake';self.bake.mkdir()

@@ -226,8 +226,12 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
             'texture_decision': decision, 'geometry_manifest': str(geometry_manifest),
             'geometry_decisions': str(geometry_decisions), 'texture_decisions': str(texture_decisions_path),
             'protected_files': {str(p.resolve()): h for p, h in protected.items()},
+            'static_source_nodes': config.get('static_source_nodes', []),
             'endpoint_id': endpoint_id, 'review_state': frames.get('review_state', endpoint_id or 'covered'),
             'render_object_names': frames.get('render_object_names') or names}
+    static_nodes = _unique(result['static_source_nodes'], 'static endpoint source nodes') if result['static_source_nodes'] else []
+    if static_nodes and (endpoint_id is None or not set(static_nodes) < set(result['source_nodes'])):
+        raise ValueError('Static endpoint source nodes require bound paired ownership')
     if not set(_unique(result['render_object_names'], 'reviewed displayed object names')) <= set(names):
         raise ValueError('Texture display state contains a foreign object')
     if _state is None:
@@ -283,14 +287,23 @@ def _object_ownership(objects, handoff):
     if endpoint is not None:
         if endpoint not in {'initial', 'applied'}:
             raise ValueError('Invalid reviewed texture endpoint')
+        static_nodes = set(handoff.get('static_source_nodes', []))
+        if not static_nodes <= set(handoff['source_nodes']):
+            raise ValueError('Static source nodes escape canonical ownership')
         for o in objects:
+            if o.get('source_node') in static_nodes:
+                records[o.name]['static_endpoint_source'] = True
+                continue
             pair = {state: o.get('drawbridge_' + state + '_source_node')
                     for state in ('initial', 'applied')}
             if (None in pair.values() or len(set(pair.values())) != 2 or
-                    set(pair.values()) != set(handoff['source_nodes']) or
+                    set(pair.values()) != set(handoff['source_nodes']) - static_nodes or
                     o.get('drawbridge_state') != endpoint or o.get('source_node') != pair[endpoint]):
                 raise ValueError('Endpoint source ownership differs from exact reviewed native pair')
             records[o.name].update(endpoint=endpoint, native_pair=pair)
+        dynamic = {record['native_pair'][endpoint] for record in records.values() if 'native_pair' in record}
+        if not dynamic or {o.get('source_node') for o in objects} != static_nodes | dynamic:
+            raise ValueError('Endpoint lacks exact static and active native ownership')
     elif {o.get('source_node') for o in objects} != set(handoff['source_nodes']):
         raise ValueError('Baked worker differs from canonical source ownership')
     return records
