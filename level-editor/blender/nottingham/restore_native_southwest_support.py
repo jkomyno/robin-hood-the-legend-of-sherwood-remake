@@ -25,10 +25,14 @@ def restore_support(source_blend, target_collection, destination_asset, destinat
         destination.objects=names
     archived=destination.objects[0]
     assert archived.get('source_node')=='building-352'
-    expected=[list(archived.matrix_world@v.co) for v in archived.data.vertices]
+    def archived_world(obj):
+        return archived_world(obj.parent) @ obj.matrix_parent_inverse @ obj.matrix_basis if obj.parent else obj.matrix_basis.copy()
+    original_world=archived_world(archived)
+    expected=[list(original_world@v.co) for v in archived.data.vertices]
     faces=[list(p.vertices) for p in archived.data.polygons]
     target.data=archived.data.copy()
-    target.matrix_world=archived.matrix_world.copy()
+    target.matrix_parent_inverse=archived.matrix_parent_inverse.copy()
+    target.matrix_basis=archived.matrix_basis.copy()
     target['asset_group']=destination_asset
     target['asset_name']=destination_name
     target['part_name']='Hidden courtyard support volume'
@@ -38,6 +42,6 @@ def restore_support(source_blend, target_collection, destination_asset, destinat
     bpy.data.objects.remove(archived,do_unlink=True)
     bpy.context.view_layer.update()
     actual=[list(target.matrix_world@v.co) for v in target.data.vertices]
-    assert expected==actual
+    assert expected==actual, (expected[0],actual[0],list(target.matrix_world))
     assert faces==[list(p.vertices) for p in target.data.polygons]
     return dict(status='PASS',source_blend=str(source_blend),source_blend_sha256=digest(source_blend),source_node='building-352',target_object=target.name,vertices=len(actual),faces=len(faces),world_vertices_sha256=hashlib.sha256(json.dumps(actual).encode()).hexdigest(),original_world_vertices_exact=True,original_faces_exact=True,display_enabled=not target.hide_render,asset_group=destination_asset,reason='Restore original constant-height support; approved221 already supplies the complete stair to the ground.')
