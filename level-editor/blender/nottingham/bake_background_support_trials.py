@@ -10,7 +10,7 @@ from bake_reviewed_asset import stage
 for asset in sys.argv[sys.argv.index('--')+1:]:
  p=ROOT/'level-editor/work/nottingham-refinement/texture-generation/experiments'/asset
  scoped=p/'repair-background-support';g=p/'generation-short-no-mask-with-lighting-openrouter'
- diagnosis=json.loads((scoped/'diagnosis.json').read_text());m=json.loads((scoped/'views.json').read_text())
+ diagnosis=json.loads((scoped/'diagnosis.json').read_text());g=Path(diagnosis.get('generation_directory',g));m=json.loads((scoped/'views.json').read_text())
  if diagnosis['asset_id']!=asset or m.get('texture_generated_background_max_rgb')!=.015:raise ValueError('Missing scoped diagnosis/policy')
  index=1
  while (p/f'bake-background-support-{index:03d}').exists():index+=1
