@@ -26,7 +26,7 @@ def export_variants(plan, output):
             if plan.get('approved_texture_imports'):
                 bpy.ops.wm.open_mainfile(filepath=str(source))
                 displayed = set(item.get('render_object_names') or item['object_names'])
-                for obj in bpy.data.collections[plan['collection_name']].all_objects:
+                for obj in list(bpy.data.collections[plan['collection_name']].all_objects):
                     if obj.type == 'MESH' and obj.get('asset_group') == asset_id:
                         obj.hide_render = obj.name not in displayed
             else:
@@ -49,8 +49,8 @@ def export_variants(plan, output):
                 'worker_sha256':hashlib.sha256((variant_output/'worker.blend').read_bytes()).hexdigest(),'model':str(destination/'model-applied.glb'),
                 'model_sha256':hashlib.sha256((destination/'model-applied.glb').read_bytes()).hexdigest()})
         descriptor['state_variants']=variants
-        descriptor['state_usage']='Separate static endpoints; initial is the only map instance. No rigid animation is validated.'
+        descriptor['state_usage']=('Both reviewed endpoints are present in the map under their canonical parts; patch state selects the visible endpoint. The applied endpoint is also available as a separate static model. No rigid animation is validated.' if plan.get('approved_texture_imports') else 'Separate static endpoints; initial is the only map instance. No rigid animation is validated.')
         descriptor_path.write_text(json.dumps(descriptor,indent=2)+'\n')
-        # The saved map stays initial-only, and later diagnostics must use it.
+        # Restore the staged map after exporting the independent endpoint worker.
         bpy.ops.wm.open_mainfile(filepath=str(output/'worker.blend'))
     return reports

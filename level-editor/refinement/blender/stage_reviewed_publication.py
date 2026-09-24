@@ -194,7 +194,7 @@ def stage(plan_path):
     collection = bpy.data.collections[plan['collection_name']]
     visibility = {obj: obj.hide_render for obj in collection.all_objects}
     try:
-        for obj in collection.all_objects:
+        for obj in list(collection.all_objects):
             if obj.get('reveal_show_when_applied'):
                 obj.hide_render = True
         render_views(plan['scene_name'],{'reference':plan['reference_camera']},output/'full-map',width=1920)
