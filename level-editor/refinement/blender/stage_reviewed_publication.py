@@ -85,6 +85,7 @@ def stage(plan_path):
             if o.type=='MESH' and o.get('source_node') not in selected_nodes}
     outside_before=outside_state()
     imports=[]
+    binding_objects=[]
     for item in plan['imports']:
         if item in ground_imports:continue
         packet=json.loads(Path(item['review_manifest']).read_text())
@@ -109,6 +110,7 @@ def stage(plan_path):
                 collection_name=collection.name,source_nodes=item.get('source_nodes'))
         if state_compilation:
             result.update(state_compilation)
+            binding_objects.append((result, {name: bpy.data.objects[name] for name in names}))
         result['review_manifest']=item['review_manifest']
         result['source_blend_sha256']=blend_hash
         result['review_manifest_sha256']=hashlib.sha256(Path(item['review_manifest']).read_bytes()).hexdigest()
@@ -118,6 +120,11 @@ def stage(plan_path):
                      if o.type=='MESH' and o.get('source_node')!='ground'}
     validate_coverage(canonical_after,expected)
     grouping=reconcile_asset_groups(plan['catalog'])
+    for result, objects in binding_objects:
+        for state in result['state_bindings']:
+            for row in state['objects']:
+                row['staged_name'] = objects[row['staged_name']].name
+        result['object_names'] = sorted(obj.name for obj in objects.values())
     ground_handoff=None
     if ground_imports:
         item=ground_imports[0]
