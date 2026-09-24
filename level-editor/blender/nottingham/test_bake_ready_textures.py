@@ -2,7 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from bake_ready_textures import reviewed_inputs, sha
+from bake_ready_textures import reviewed_inputs, sha, claim
 
 
 class ReviewBindings(unittest.TestCase):
@@ -17,6 +17,13 @@ class ReviewBindings(unittest.TestCase):
             generated_preserved_path=str(self.p/'preserved.png'),generated_preserved_sha256=sha(self.p/'preserved.png'))
         self.save()
     def save(self):(self.p/'generation-review.json').write_text(json.dumps(self.review))
+    def test_exclusive_job_claim_releases(self):
+        first=claim(self.p)
+        self.assertIsNotNone(first)
+        try:self.assertIsNone(claim(self.p))
+        finally:first.close()
+        second=claim(self.p)
+        self.assertIsNotNone(second);second.close()
     def test_ready(self):self.assertIsNotNone(reviewed_inputs(self.p,'asset'))
     def test_held_review_not_consumed(self):
         self.review['status']='needs-fix';self.save();self.assertIsNone(reviewed_inputs(self.p,'asset'))

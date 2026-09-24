@@ -33,6 +33,16 @@ def update_ledger(path, asset, record):
         write(path,current)
 
 
+def claim(experiment):
+    handle=(experiment/'.texture-bake.lock').open('a+')
+    try:
+        fcntl.flock(handle,fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        handle.close()
+        return None
+    return handle
+
+
 def reviewed_inputs(experiment, asset_id):
     review_path = experiment/'generation-review.json'
     if not review_path.exists():
@@ -69,12 +79,18 @@ def main():
         if job.get('status') == 'separate-lane' or not job.get('experiment'):
             continue
         asset=job['asset_id']; experiment=Path(job['experiment'])
+        job_lock=claim(experiment)
+        if job_lock is None:
+            continue
         try:
             bound=reviewed_inputs(experiment,asset)
             if bound is None:
                 continue
             review, review_hash=bound
-            old=ledger['assets'].get(asset,{})
+            current=json.loads(ledger_path.read_text()) if ledger_path.exists() else dict(assets={})
+            old=current['assets'].get(asset,{})
+            if old.get('status') == 'baking':
+                continue
             if old.get('generation_review_sha256') == review_hash and old.get('status') in ('baked-awaiting-visual-review','ready-for-user-texture-review','needs-refinement','failed'):
                 continue
             index=1
@@ -94,7 +110,10 @@ def main():
             traceback.print_exc()
             record=ledger['assets'].setdefault(asset,dict(asset_id=asset))
             record.update(status='failed',error=str(error))
-        persist(asset,record)
+        finally:
+            if 'record' in locals() and record.get('asset_id') == asset:
+                persist(asset,record)
+            job_lock.close()
         count+=1
         if args.limit and count>=args.limit:
             break
