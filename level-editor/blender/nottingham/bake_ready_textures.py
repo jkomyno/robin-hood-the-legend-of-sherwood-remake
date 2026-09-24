@@ -61,7 +61,40 @@ def reviewed_inputs(experiment, asset_id):
     for key, path in bindings.items():
         if review.get(key) != sha(path):
             raise ValueError('Generation review binding changed: '+key)
+    bake_manifest(experiment, review)
     return review, sha(review_path)
+
+
+def bake_manifest(experiment, review):
+    """Allow bound scoring policies without changing the approved packet."""
+    original = experiment/'views.json'
+    if 'bake_manifest_path' not in review:
+        if 'bake_manifest_sha256' in review:
+            raise ValueError('Bake manifest hash has no path')
+        return original
+    path = Path(review['bake_manifest_path'])
+    if not path.is_absolute():
+        path = experiment/path
+    path = path.resolve()
+    if path.parent != experiment.resolve():
+        raise ValueError('Bake manifest must be adjacent to original views.json')
+    if review.get('bake_manifest_sha256') != sha(path):
+        raise ValueError('Bake manifest binding changed')
+    base = json.loads(original.read_text())
+    candidate = json.loads(path.read_text())
+    policies = {'texture_generated_background_max_rgb',
+                'texture_two_sided_object_names', 'texture_two_sided_reason'}
+    if {k:v for k,v in base.items() if k not in policies} != {k:v for k,v in candidate.items() if k not in policies}:
+        raise ValueError('Bake manifest changes approved geometry, source, camera or input contract')
+    threshold = candidate.get('texture_generated_background_max_rgb')
+    if threshold is not None and (type(threshold) not in (int, float) or threshold != .015):
+        raise ValueError('Unsupported generated background threshold')
+    names = candidate.get('texture_two_sided_object_names', [])
+    if not isinstance(names, list) or any(not isinstance(n,str) or not n for n in names) or len(names) != len(set(names)):
+        raise ValueError('Invalid two-sided receiver names')
+    if names and not candidate.get('texture_two_sided_reason'):
+        raise ValueError('Two-sided scoring requires an explicit reason')
+    return path
 
 
 def main():
@@ -80,6 +113,9 @@ def main():
         if job.get('status') == 'separate-lane' or not job.get('experiment'):
             continue
         asset=job['asset_id']; experiment=Path(job['experiment'])
+        # A dedicated correction lane owns these packets and its output naming.
+        if (experiment/'repair-background-support/diagnosis.json').exists():
+            continue
         job_lock=claim(experiment)
         if job_lock is None:
             continue
@@ -107,7 +143,10 @@ def main():
             record['status']='baking'
             persist(asset,record)
             bpy.ops.wm.open_mainfile(filepath=str(experiment/'approved-model.blend'))
-            report=stage(experiment/'views.json',review['generated_preserved_path'],output,texels_per_unit=2,reconciliation_reference=review['generated_raw_path'])
+            manifest=bake_manifest(experiment,review)
+            record['bake_manifest']=str(manifest)
+            record['bake_manifest_sha256']=sha(manifest)
+            report=stage(manifest,review['generated_preserved_path'],output,texels_per_unit=2,reconciliation_reference=review['generated_raw_path'])
             # Re-check the external generation review after a long-running bake.
             current_review=reviewed_inputs(experiment,asset)
             if current_review is None or current_review[1] != review_hash:

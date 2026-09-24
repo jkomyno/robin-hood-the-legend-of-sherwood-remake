@@ -34,5 +34,32 @@ class ReviewBindings(unittest.TestCase):
         with self.assertRaises(ValueError):reviewed_inputs(self.p,'other')
         self.review['all_eight_views_inspected']=False;self.save()
         with self.assertRaises(ValueError):reviewed_inputs(self.p,'asset')
+    def bound_manifest(self):
+        base=dict(asset_id='asset',views=[dict(camera=[1,2,3],crop=dict(left=0))],source_sha256='source',model_sha256='model')
+        (self.p/'views.json').write_text(json.dumps(base))
+        self.review['views_sha256']=sha(self.p/'views.json')
+        return base
+    def save_manifest(self,value):
+        path=self.p/'views-support.json';path.write_text(json.dumps(value))
+        self.review.update(bake_manifest_path=path.name,bake_manifest_sha256=sha(path));self.save()
+    def test_bound_support_policy_allowed(self):
+        value=self.bound_manifest();value['texture_generated_background_max_rgb']=.015
+        self.save_manifest(value);self.assertIsNotNone(reviewed_inputs(self.p,'asset'))
+    def test_bound_camera_or_source_change_rejected(self):
+        value=self.bound_manifest();value['views'][0]['camera'][0]=9
+        self.save_manifest(value)
+        with self.assertRaisesRegex(ValueError,'contract'):reviewed_inputs(self.p,'asset')
+        value=self.bound_manifest();value['source_sha256']='other';self.save_manifest(value)
+        with self.assertRaisesRegex(ValueError,'contract'):reviewed_inputs(self.p,'asset')
+    def test_unknown_policy_and_hash_mutation_rejected(self):
+        value=self.bound_manifest();value['texture_ignore_source']=True;self.save_manifest(value)
+        with self.assertRaisesRegex(ValueError,'contract'):reviewed_inputs(self.p,'asset')
+        value=self.bound_manifest();self.save_manifest(value)
+        (self.p/'views-support.json').write_text('{}')
+        with self.assertRaisesRegex(ValueError,'binding'):reviewed_inputs(self.p,'asset')
+    def test_nonadjacent_manifest_rejected(self):
+        value=self.bound_manifest();self.save_manifest(value)
+        self.review['bake_manifest_path']='subdir/views.json';self.save()
+        with self.assertRaisesRegex(ValueError,'adjacent'):reviewed_inputs(self.p,'asset')
 
 if __name__=='__main__':unittest.main()
