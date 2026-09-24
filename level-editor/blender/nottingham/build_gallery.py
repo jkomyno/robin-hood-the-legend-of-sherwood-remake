@@ -470,6 +470,11 @@ def main(argv=None):
             evidence['state_packets'] = state_records
             evidence['state_bundle_sha256'] = (hashlib.sha256(json.dumps(
                 state_records, sort_keys=True).encode()).hexdigest() if state_records else None)
+            from lighting_review import load_lighting_review
+            lighting_review, lighting_solids = load_lighting_review(
+                workspace, evidence, root / 'lighting-calibration/map-lighting.json')
+            evidence['lighting_review'] = lighting_review
+            evidence['lighting_review_sha256'] = lighting_review['sha256'] if lighting_review else None
         except (OSError, ValueError, KeyError, TypeError) as error:
             progress.append({**row, "status": "validation-pending", "reason": str(error)})
             continue
@@ -478,7 +483,8 @@ def main(argv=None):
         approval_current = bool(approval and approval["model_sha256"] == evidence["model_sha256"]
                                 and approval["modified_views_sha256"] == evidence["packet_hashes"]["modified"]["views.json"]
                                 and (not evidence['state_bundle_sha256'] or
-                                     approval.get('state_bundle_sha256') == evidence['state_bundle_sha256']))
+                                     approval.get('state_bundle_sha256') == evidence['state_bundle_sha256'])
+                                and approval.get('lighting_review_sha256') == evidence['lighting_review_sha256'])
         evidence["user_decision"] = approval
         evidence["user_decision_matches_revision"] = approval_current
         user_approval = "pending"
@@ -524,6 +530,8 @@ def main(argv=None):
             else:
                 evidence['source_coverage_audit'] = {'path': str(audit_path), 'sha256': sha(audit_path)}
         evidence["status"] = status
+        if lighting_review:
+            limitations.append('Solid views use Nottingham artwork-calibrated sunlight (azimuth -69.8°, elevation 43.5°; approximate). Frozen source-textured evidence is preserved.')
         write(evidence_path, evidence)
         item = {**row, "status": status, "user_approval": user_approval,
                 "geometry_refined": evidence["geometry_refined"],
@@ -568,6 +576,12 @@ def main(argv=None):
                           'textured': str(folder / 'textured.png'),
                           'context': str(folder / 'context.png')}
             item.setdefault('animation_reviews', []).append(state_item)
+        if lighting_review:
+            for key in ('solid', 'revealed_solid'):
+                if key in item:
+                    item[key] = lighting_solids[str(Path(item[key]).resolve())]
+            for state in item.get('animation_reviews', []):
+                state['solid'] = lighting_solids[str(Path(state['solid']).resolve())]
         progress.append({**row, "status": status, "geometry_refined": evidence["geometry_refined"],
                          "geometry_reviewed": evidence["geometry_reviewed"],
                          "review_outcome": evidence["review_outcome"], "user_approval": user_approval})

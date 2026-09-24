@@ -47,6 +47,13 @@ class ReviewSunlightTests(unittest.TestCase):
             for buffer in buffers:
                 self.assertAlmostEqual(buffer[(8*17+8)*4], expected, places=6)
                 self.assertEqual(buffer[(8*17+8)*4+3], 1)
+            # A map-specific sun on the horizon cannot illuminate this upward
+            # face directly. It must override the historical default in every view.
+            custom = configuration({'toward_sun': [1, 0, 0]})
+            with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
+                custom_buffers = render_solids(scene, cameras, [obj], directory, lighting=custom)
+            for buffer in custom_buffers:
+                self.assertAlmostEqual(buffer[(8*17+8)*4], custom['ambient'], places=6)
         finally:
             bpy.context.window.scene = old_scene
             for camera in cameras:

@@ -373,7 +373,7 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
                          "regional_source_selection": bool(receiver_layers[obj][4])}
                         for obj in objects],
                     "lighting": lighting_record,
-                    "lighting_basis": "World-space direction inferred from upper-left reference illumination; not recovered metadata" if lighting_record else "Historical camera-relative Workbench studio",
+                    "lighting_basis": "World-space review lighting recorded in lighting; calibration evidence belongs to the map review" if lighting_record else "Historical camera-relative Workbench studio",
                     "source_blend": bpy.data.filepath, "object_names": sorted(o.name for o in objects),
                     "known_rule": "Fresh source pixels, facing source, unoccluded in declared layer, sampled texel ray belongs to the same mesh, inside any reviewed receiver mask and outside its reviewed foreground exclusions. Regional receivers use revealed pixels only inside positive native patch alpha; outside uses covered artwork and exterior visibility. Identical rule in all eight views.",
                     "limitations": ["Artwork ownership is constrained only where explicit reviewed masks exist. Unassigned oversized models can still project background onto themselves; compare context and solid silhouettes.",

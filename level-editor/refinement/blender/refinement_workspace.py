@@ -438,6 +438,7 @@ def _render(config, output, baseline=None):
                          elevation_degrees=config["elevation_degrees"],
                          context_padding=config["context_padding"],
                          framing_padding=config.get('framing_padding', 1.04),
+                         lighting=config.get('lighting'),
                          projection_layers=_review_layers(config),
                          source_mask_manifest=config.get('source_mask_manifest'),
                          allow_projection_revision=bool(baseline and (config.get('projection_manifest') or config.get('source_projection_ground_exclusion'))),
@@ -456,7 +457,7 @@ def _render(config, output, baseline=None):
 def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path,
             grouping_manifest, inventory_path, review_path, projection_manifest=None, width=384, height=512,
             elevation_degrees=35.0, context_padding=24, source_mask_manifest=None,
-            framing_padding=1.04):
+            framing_padding=1.04, lighting=None):
     """Create a new workspace from the loaded scene; refuse an existing directory.
 
     Call from a disposable Blender process opened on the accepted full scene.
@@ -488,6 +489,9 @@ def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path
                   source_blend=str(Path(bpy.data.filepath).resolve()),
                   source_blend_sha256=_sha(bpy.data.filepath),
                   grouping_manifest_sha256=_sha(grouping_path))
+    if lighting is not None:
+        from review_sunlight import configuration
+        config['lighting'] = configuration(lighting)
     bpy.context.window.scene = bpy.data.scenes[scene_name]
     bpy.context.view_layer.update()
     if grouping.get("version") == 2:

@@ -1,8 +1,8 @@
 """Deterministic world-space diffuse lighting for source-only review packets.
 
-The reference artwork lights the gate from upper left. Direction is toward the
-sun in map world coordinates, not camera coordinates. Heights and light strength
-are artistic estimates: the original artwork does not encode a recoverable sun.
+Direction is toward the sun in map world coordinates, not camera coordinates.
+The historical default is Derby's reviewed setting. Other maps must supply their
+own artwork-calibrated settings; this default is not evidence for their lighting.
 """
 import sys as _refinement_sys
 from pathlib import Path as _RefinementPath

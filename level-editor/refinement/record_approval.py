@@ -42,6 +42,7 @@ def record_gallery_decision(gallery_path, records_path, asset_id, decision, exac
                   model_sha256=evidence['model_sha256'],
                   modified_views_sha256=evidence['packet_hashes']['modified']['views.json'],
                   state_bundle_sha256=evidence.get('state_bundle_sha256'),
+                  lighting_review_sha256=evidence.get('lighting_review_sha256'),
                   review_gallery=str(gallery_path),
                   recorded_utc=datetime.datetime.now(datetime.timezone.utc).isoformat())
     if projection_review is not None:
@@ -63,6 +64,11 @@ def record_gallery_decision(gallery_path, records_path, asset_id, decision, exac
                 shutil.copy2(source, archive / name)
         if not (archive / 'modified').exists():
             shutil.copytree(workspace / 'modified', archive / 'modified')
+        if evidence.get('lighting_review_sha256') and not (archive / 'lighting-review').exists():
+            lighting_review = workspace / 'lighting-review'
+            if hashlib.sha256((lighting_review / 'review.json').read_bytes()).hexdigest() != evidence['lighting_review_sha256']:
+                raise ValueError('Lighting review differs from the displayed approval revision: ' + asset_id)
+            shutil.copytree(lighting_review, archive / 'lighting-review')
         (archive / 'gallery-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
         record['evidence_directory'] = str(archive)
         (archive / 'decision.json').write_text(json.dumps(record, indent=2) + '\n')
