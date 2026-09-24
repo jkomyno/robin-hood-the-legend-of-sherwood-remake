@@ -51,3 +51,38 @@ class UVAtlasTests(unittest.TestCase):
         self.assertEqual(solid[2,22,0],204)
 
 if __name__=='__main__':unittest.main()
+
+class BakeGuardTests(unittest.TestCase):
+    def packet(self,root):
+        from pathlib import Path
+        from PIL import Image
+        from uv_atlas import sha
+        root=Path(root);experiment=root/'experiment';bake=root/'bake';frames=root/'reviewed';experiment.mkdir();bake.mkdir();frames.mkdir();(frames/'views.json').write_text('{}')
+        (experiment/'approved-model.blend').write_bytes(b'approved-fixture');(bake/'worker.blend').write_bytes(b'baked-fixture')
+        image=np.full((4,4,4),255,np.uint8);image[1,1,:3]=128;mask=np.full_like(image,255);mask[1,1,3]=0;generated=image.copy();generated[1,1,:3]=[25,60,30]
+        for path,values in ((experiment/'input.png',image),(experiment/'source-atlas.png',image),(experiment/'mask.png',mask),(bake/'atlas.png',generated)):Image.fromarray(values).save(path)
+        Image.fromarray(np.full((4,4),255,np.uint8)).save(experiment/'surface.png')
+        evidence=fixture();evidence.update(model_sha256=sha(experiment/'approved-model.blend'),atlas_sha256=sha(experiment/'source-atlas.png'))
+        (experiment/'uv-evidence.json').write_text(json.dumps(evidence));actual=copy.deepcopy(evidence);actual.update(model_sha256=sha(bake/'worker.blend'),atlas_sha256=sha(bake/'atlas.png'));(bake/'uv-evidence.json').write_text(json.dumps(actual))
+        (experiment/'views.json').write_text(json.dumps(dict(projection_kind='uv-atlas',reviewed_packet=str(frames))))
+        (experiment/'preparation.json').write_text(json.dumps(dict(files={p.name:sha(p) for p in experiment.iterdir()})))
+        record=dict(projection_kind='uv-atlas',preparation_sha256=sha(experiment/'preparation.json'),frame_manifest_sha256=sha(frames/'views.json'),baked_model_sha256=sha(bake/'worker.blend'),approved_model_sha256=sha(experiment/'approved-model.blend'),baked_uv_evidence_sha256=sha(bake/'uv-evidence.json'),generated_sha256=sha(bake/'atlas.png'))
+        return record,experiment,bake
+
+    def test_valid_nonplanar_bake_and_protected_pixel_rejection(self):
+        import tempfile
+        from PIL import Image
+        from uv_atlas import validate_uv_atlas_bake
+        with tempfile.TemporaryDirectory() as root:
+            record,experiment,bake=self.packet(root)
+            self.assertEqual(validate_uv_atlas_bake(record,experiment,bake)['editable_pixels'],1)
+            a=np.array(Image.open(bake/'atlas.png'));a[0,0,0]=0;Image.fromarray(a).save(bake/'atlas.png')
+            with self.assertRaisesRegex(ValueError,'Protected'):validate_uv_atlas_bake(record,experiment,bake)
+
+    def test_baked_geometry_change_rejected_even_with_updated_evidence_hash(self):
+        import tempfile
+        from uv_atlas import validate_uv_atlas_bake,sha
+        with tempfile.TemporaryDirectory() as root:
+            record,experiment,bake=self.packet(root);p=bake/'uv-evidence.json';actual=json.loads(p.read_text());actual['geometry']['actual_fixture'][0][0][0]=.5
+            actual['geometry_uv_matrix_sha256']=hashlib.sha256(json.dumps(actual['geometry'],sort_keys=True,separators=(',',':')).encode()).hexdigest();p.write_text(json.dumps(actual));record['baked_uv_evidence_sha256']=sha(p)
+            with self.assertRaisesRegex(ValueError,'changed actual geometry'):validate_uv_atlas_bake(record,experiment,bake)

@@ -50,6 +50,9 @@ def export(workspace,output):
         if normal.length<1e-10:raise ValueError('Degenerate world triangle')
         normal.normalize()
         if mesh.polygons[tri.polygon_index].use_smooth:raise ValueError('Flat face normals required for exact triangle atlas lighting')
+        normal_matrix=matrix.to_3x3().inverted().transposed()
+        if any(((normal_matrix@mesh.corner_normals[i].vector).normalized()-normal).length>1e-5 for i in tri.loops):
+            raise ValueError('Custom corner normals differ from flat triangle lighting')
         triangles.append(dict(polygon=tri.polygon_index,vertices=list(tri.vertices),world=[list(p) for p in world],uv_top_left=[[uv.data[i].uv.x,1-uv.data[i].uv.y] for i in tri.loops],normal=list(normal)))
     geometry=dict(vertices=[list(v.co) for v in mesh.vertices],faces=[list(p.vertices) for p in mesh.polygons],matrix=[list(row) for row in matrix],uv={layer.name:[list(v.uv) for v in layer.data] for layer in mesh.uv_layers})
     report=dict(version=1,asset_id=config['asset_id'],workspace=str(workspace),model_sha256=sha(model),modified_views_sha256=sha(workspace/'modified/views.json'),receiver=obj.name,source_node=obj.get('source_node'),material=material.name,material_slot=next(iter(used)),physical_opacity='OPAQUE',direct_image_color=True,atlas_path=str(path),atlas_sha256=sha(path),packed_pixel_sha256=hashlib.sha256(pixels.tobytes()).hexdigest(),atlas_dimensions=list(image.size),alpha_mode=image.alpha_mode,interpolation=texture.interpolation,uv_layer=uv_name,geometry=geometry,geometry_uv_matrix_sha256=hashlib.sha256(json.dumps(geometry,sort_keys=True,separators=(',',':')).encode()).hexdigest(),triangles=triangles)
