@@ -47,6 +47,16 @@ def visibility(objects):
     return opacity.wrap(BVHTree.FromPolygons(vertices,triangles,all_triangles=True))
 
 
+def authored_volume_seam(material, uv):
+    """Only the approved continuous crown rim has collapsed atlas coverage."""
+    return (str(material.get('foliage_recipe', '')).startswith('leicester-continuous-forest-volume-')
+            and len(np.unique(uv, axis=0)) == 2)
+
+
+def facing_score(material, cosine):
+    return abs(cosine) if material.get('foliage_card_sides') == 'double-sided' else cosine
+
+
 def fill_rgb(records,objects,manifest,generated,mask):
     tree=visibility(objects);height=len(generated);cameras=[]
     for view in manifest['views']:
@@ -57,14 +67,21 @@ def fill_rgb(records,objects,manifest,generated,mask):
         if mat.get('foliage_observed'):
             reports.append(dict(material=mat.name,observed=True,rgba_unchanged=True,rgba_sha256=hashlib.sha256(before.tobytes()).hexdigest()));continue
         image=texture.image;h,w=before.shape[:2];after=before.copy();filled=np.zeros((h,w),dtype=bool)
+        examined=np.zeros((h,w),dtype=bool);facing_seen=examined.copy();frame_seen=examined.copy();visible_seen=examined.copy();editable_seen=examined.copy()
         uv_name=texture.inputs['Vector'].links[0].from_node.uv_map
-        layer=obj.data.uv_layers[uv_name];view_counts={str(v['index']):0 for v,_,_ in cameras}
+        layer=obj.data.uv_layers[uv_name];authored_seam_triangles=0;view_counts={str(v['index']):0 for v,_,_ in cameras}
         for triangle in obj.data.loop_triangles:
             if triangle.material_index!=index:continue
             uv=np.array([layer.data[i].uv for i in triangle.loops],dtype=float)
             uv[:,0]*=w;uv[:,1]*=h
             a,b,c=uv;ab=b-a;ac=c-a;det=ab[0]*ac[1]-ab[1]*ac[0]
-            if abs(det)<1e-10:raise ValueError('Degenerate physical UV triangle')
+            if abs(det)<1e-10:
+                if not authored_volume_seam(mat, uv):
+                    raise ValueError('Unexpected degenerate physical UV triangle')
+                # The stitched 0.05-unit rim reads the same image edge as its
+                # adjacent crown surface and has no independent atlas texels.
+                authored_seam_triangles+=1
+                continue
             x0=max(0,int(np.floor(uv[:,0].min())));x1=min(w,int(np.ceil(uv[:,0].max())))
             y0=max(0,int(np.floor(uv[:,1].min())));y1=min(h,int(np.ceil(uv[:,1].max())))
             yy,xx=np.mgrid[y0:y1,x0:x1];ap=np.stack((xx+.5-a[0],yy+.5-a[1]),axis=-1)
@@ -73,12 +90,14 @@ def fill_rgb(records,objects,manifest,generated,mask):
             inside=(u>=-1e-7)&(v>=-1e-7)&(u+v<=1+1e-7)&(before[y0:y1,x0:x1,3]>=.5)&~filled[y0:y1,x0:x1]
             row,col=np.nonzero(inside)
             if not len(row):continue
+            examined[y0+row,x0+col]=True
             world=np.array([obj.matrix_world@obj.data.vertices[i].co for i in triangle.vertices])
             positions=world[0]+u[row,col,None]*(world[1]-world[0])+v[row,col,None]*(world[2]-world[0])
             normal=(Vector(world[1]-world[0]).cross(Vector(world[2]-world[0]))).normalized()
             remaining=np.ones(len(row),dtype=bool)
-            for score,view,inverse,direction in sorted(((normal.dot(d),v,m,d) for v,m,d in cameras),key=lambda r:r[0],reverse=True):
+            for score,view,inverse,direction in sorted(((facing_score(mat,normal.dot(d)),v,m,d) for v,m,d in cameras),key=lambda r:r[0],reverse=True):
                 if score<=.12:continue
+                facing_seen[y0+row,x0+col]=True
                 indices=np.flatnonzero(remaining)
                 local=positions[indices]@np.asarray(inverse.to_3x3()).T+np.asarray(inverse.translation)
                 crop=view['crop'];scale=view['ortho_scale']
@@ -87,18 +106,33 @@ def fill_rgb(records,objects,manifest,generated,mask):
                 for k,j in enumerate(indices):
                     x,y=int(np.floor(px[k])),int(np.floor(py[k]))
                     if not(crop['left']<=x<crop['left']+crop['width'] and height-crop['top']-crop['height']<=y<height-crop['top']):continue
-                    if mask[y,x,3]>=.5:continue
+                    frame_seen[y0+row[j],x0+col[j]]=True
                     point=Vector(positions[j]);hit,_,_,_=tree.ray_cast(point+direction*100000,-direction)
                     if hit is None or (hit-point).length>.03:continue
+                    visible_seen[y0+row[j],x0+col[j]]=True
+                    if mask[y,x,3]>=.5:continue
+                    editable_seen[y0+row[j],x0+col[j]]=True
                     iy,ix=y0+row[j],x0+col[j]
                     after[iy,ix,:3]=generated[y,x,:3];filled[iy,ix]=True;remaining[j]=False;view_counts[str(view['index'])]+=1
+        unfilled=(before[:,:,3]>=.5)&~filled
+        coverage={
+            'unmapped_physical_texels':int((unfilled&~examined).sum()),
+            'no_eligible_facing_view':int((unfilled&examined&~facing_seen).sum()),
+            'outside_review_frames':int((unfilled&facing_seen&~frame_seen).sum()),
+            'occluded_in_all_eligible_views':int((unfilled&frame_seen&~visible_seen).sum()),
+            'protected_in_visible_views':int((unfilled&visible_seen&~editable_seen).sum()),
+            'visible_editable_unfilled':int((unfilled&editable_seen).sum()),
+        }
+        if sum(coverage.values())!=int(unfilled.sum()):raise ValueError('Incomplete physical coverage accounting')
         if not np.array_equal(before[:,:,3],after[:,:,3]):raise ValueError('Physical opacity changed')
         image.pixels.foreach_set(after.ravel());image.pack()
         mat['generated_foliage_rgb']=True;mat['source_ownership_fill']='synthesized'
         mat['generated_foliage_geometry_authority']=False
         reports.append(dict(material=mat.name,observed=False,physical_alpha_sha256=hashlib.sha256(before[:,:,3].tobytes()).hexdigest(),
                             alpha_unchanged=True,physical_texels=int((before[:,:,3]>=.5).sum()),filled_texels=int(filled.sum()),
-                            unfilled_texels=int(((before[:,:,3]>=.5)&~filled).sum()),views=view_counts))
+                            unfilled_texels=int(((before[:,:,3]>=.5)&~filled).sum()),views=view_counts,
+                            unfilled_reasons=coverage,authored_zero_area_uv_seam_triangles=authored_seam_triangles,
+                            two_sided_sampling=mat.get('foliage_card_sides')=='double-sided'))
     return reports
 
 
