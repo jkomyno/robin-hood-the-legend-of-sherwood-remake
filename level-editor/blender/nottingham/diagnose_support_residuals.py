@@ -19,7 +19,16 @@ for asset in sys.argv[sys.argv.index('--')+1:]:
    ownership=np.load(proof['path'])['ownership'];height,width=ownership.shape
    positions=np.array([tuple(obj.matrix_world@v.co) for v in obj.data.vertices])
    minimum=float(positions[:,2].min());mesh=obj.data;mesh.calc_loop_triangles()
-   uv=mesh.uv_layers.active.data;faces={}
+   materials={poly.material_index for poly in mesh.polygons}
+   if len(materials)!=1:raise ValueError('Ambiguous receiver material')
+   material=obj.data.materials[next(iter(materials))]
+   images=[n for n in material.node_tree.nodes if n.type=='TEX_IMAGE' and n.image]
+   if len(images)!=1:raise ValueError('Ambiguous receiver image')
+   node=images[0]
+   if hashlib.sha256(node.image.packed_file.data).hexdigest()!=proof['packed_image_sha256']:raise ValueError('Packed image drift')
+   links=node.inputs['Vector'].links
+   if len(links)!=1 or links[0].from_node.type!='UVMAP':raise ValueError('Unsupported material UV binding')
+   uv=mesh.uv_layers[links[0].from_node.uv_map].data;faces={}
    for tri in mesh.loop_triangles:
     coords=np.array([tuple(uv[i].uv) for i in tri.loops])*[width,height]
     lo=np.maximum(np.floor(coords.min(axis=0)).astype(int),0);hi=np.minimum(np.ceil(coords.max(axis=0)).astype(int),[width,height])
