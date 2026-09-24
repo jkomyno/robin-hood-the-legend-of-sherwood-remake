@@ -16,6 +16,10 @@ diagnosis=p/'repair-background-support/diagnosis.json';d=json.loads(diagnosis.re
 for path in [p/'texture-review.json',b/'texture-review.json']:
  r=json.loads(path.read_text());r['background_support_diagnosis']=dict(path=str(diagnosis),sha256=sha(diagnosis));r['correction_manifest']=dict(path=str(p/'repair-background-support/views.json'),sha256=sha(p/'repair-background-support/views.json'))
  if path==p/'texture-review.json':r['generation']=os.path.relpath(g,p)
+ if (b/'coverage/coverage.json').exists():
+  coverage=b/'coverage/coverage.json'
+  if json.loads(coverage.read_text())['model_sha256']!=sha(b/'worker.blend'):raise ValueError('Coverage diagnostic model drift')
+  r['coverage_diagnostic']=dict(path=str(coverage),sha256=sha(coverage))
  path.write_text(json.dumps(r,indent=2)+'\n')
 job=json.loads(ledger_path.read_text())['assets'][asset];job['texture_review_sha256']=sha(b/'texture-review.json');job['correction_manifest']=str(p/'repair-background-support/views.json');job['correction_manifest_sha256']=sha(p/'repair-background-support/views.json');update_ledger(ledger_path,asset,job)
 sys.path.insert(0,str(ROOT/'level-editor/refinement'));from build_texture_gallery import candidate
