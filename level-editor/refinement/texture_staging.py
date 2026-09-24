@@ -309,10 +309,14 @@ def verify_baked_geometry(handoff):
         bpy.ops.wm.open_mainfile(filepath=str(path))
         bpy.context.window.scene = bpy.data.scenes[handoff['scene_name']]
         bpy.context.view_layer.update()
-        objects = [o for o in bpy.data.collections[handoff['collection_name']].all_objects
-                   if o.type == 'MESH' and not o.hide_render and o.get('asset_group') == handoff['asset_id']]
+        owned = [o for o in bpy.data.collections[handoff['collection_name']].all_objects
+                 if o.type == 'MESH' and o.get('asset_group') == handoff['asset_id']]
+        objects = [o for o in owned if o.name in handoff['object_names']]
         if {o.name for o in objects} != set(handoff['object_names']):
             raise ValueError('Baked worker differs from exact reviewed component names')
+        # Neutral workers retain other review states; preserve their geometry too.
+        if handoff.get('endpoint_id') is None:
+            objects = owned
         ownership = _object_ownership(objects, handoff)
         result = {o.name: {'geometry': _geometry(o), 'ownership': ownership[o.name]} for o in objects}
         if handoff['projection_kind'] == 'planar-atlas':
