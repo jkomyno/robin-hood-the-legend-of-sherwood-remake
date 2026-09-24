@@ -44,8 +44,12 @@ def snapshot(collection_name, include_values=False, select=None):
                             except TypeError:
                                 continue
                         values.append((socket.name, value))
-                nodes.append((node.name, node.type, sha, getattr(node, 'uv_map', None),
-                              getattr(node, 'interpolation', None), values))
+                settings = {key: getattr(node, key) for key in (
+                    'uv_map', 'interpolation', 'extension', 'projection', 'operation',
+                    'blend_type', 'data_type', 'attribute_name', 'vector_type', 'use_clamp')
+                    if hasattr(node, key)}
+                image_settings = ([image.colorspace_settings.name, image.alpha_mode] if image else None)
+                nodes.append((node.name, node.type, sha, settings, image_settings, values))
             links = sorted((l.from_node.name, l.from_socket.name, l.to_node.name, l.to_socket.name)
                            for l in mat.node_tree.links)
         else:
@@ -62,12 +66,14 @@ def snapshot(collection_name, include_values=False, select=None):
         slots = [material(mat) for mat in obj.data.materials]
         value = {'vertices': [[round(c, 5) for c in obj.matrix_world @ v.co] for v in obj.data.vertices],
                  'faces': [list(p.vertices) for p in obj.data.polygons],
+                 'smooth_faces': [p.use_smooth for p in obj.data.polygons],
                  'materials': [slots[p.material_index] if slots else None for p in obj.data.polygons],
                  'uv': {layer.name: [list(entry.uv) for entry in layer.data] for layer in obj.data.uv_layers},
                  'visibility': [obj.hide_render, obj.hide_viewport],
                  'modifiers': [(m.name, m.type, m.show_render, m.show_viewport) for m in obj.modifiers]}
         value['patch_state'] = {}
-        for key in ('projection_component', 'reveal_material_states', 'reveal_hide_when_applied'):
+        for key in ('projection_component', 'reveal_material_states', 'reveal_hide_when_applied',
+                    'reveal_show_when_applied'):
             metadata = obj.get(key)
             if hasattr(metadata, 'to_list'):
                 metadata = metadata.to_list()
@@ -84,7 +90,7 @@ def signatures(records):
     return Counter((r['source'], r['sha256']) for r in records)
 
 
-def compare_handoff(expected, actual, tolerance=0.001):
+def compare_handoff(expected, actual, tolerance=0.001, *, reviewed_state=False):
     """Reparenting can round float32 matrices by a fraction of a source pixel."""
     if len(expected) != len(actual):
         raise ValueError('Handoff mesh count changed')
@@ -92,10 +98,16 @@ def compare_handoff(expected, actual, tolerance=0.001):
     maximum = 0.0
     for before in expected:
         left = dict(before['value'])
+        if reviewed_state:
+            left.pop('patch_state', None)
+            left.pop('visibility', None)
         vertices = left.pop('vertices')
         matches = []
         for after in remaining:
             right = dict(after['value'])
+            if reviewed_state:
+                right.pop('patch_state', None)
+                right.pop('visibility', None)
             candidate = right.pop('vertices')
             if before['source'] != after['source'] or left != right or len(vertices) != len(candidate):
                 continue
@@ -113,8 +125,17 @@ def compare_handoff(expected, actual, tolerance=0.001):
 
 def verify(plan_path):
     plan = json.loads(Path(plan_path).read_text())
+    stage = json.loads((Path(plan['output']) / 'stage.json').read_text())
+    staged_imports = {item['asset_id']: item for item in stage['imports']}
+    if len(staged_imports) != len(stage['imports']) or set(staged_imports) != {i['asset_id'] for i in plan['imports']}:
+        raise ValueError('Staged import inventory differs from publication plan')
+    for item in plan['imports']:
+        if item.get('blend_sha256') and hashlib.sha256(Path(item['blend_path']).read_bytes()).hexdigest() != item['blend_sha256']:
+            raise ValueError('Reviewed handoff model changed: ' + item['asset_id'])
     expected = {}
     for item in plan['imports']:
+        if staged_imports[item['asset_id']].get('state_bindings'):
+            continue
         bpy.ops.wm.open_mainfile(filepath=item['blend_path'])
         # A worker can contain the entire map for occlusion context. Only its
         # imported meshes are handoff evidence; baseline/staged outside content
@@ -137,7 +158,7 @@ def verify(plan_path):
     scopes = {item['asset_id']: set(item['source_nodes']) for item in plan['imports']}
     imported_ground = any(nodes == {'ground'} for nodes in scopes.values())
     def selected(record):
-        return not record['hidden'] and (record['source'] in scopes.get(record['group'], set())
+        return (record['source'] in scopes.get(record['group'], set())
                                         or ((expected_ground is not None or imported_ground) and record['source'] == 'ground'))
     bpy.ops.wm.open_mainfile(filepath=plan['baseline'])
     before = [r for r in snapshot(plan['collection_name']) if not selected(r)]
@@ -148,16 +169,30 @@ def verify(plan_path):
         raise ValueError('Unimported baseline mesh geometry or appearance changed')
     reports = []
     for asset_id, wanted in expected.items():
-        actual = [r for r in records if selected(r) and r['group'] == asset_id]
+        actual = [r for r in records if selected(r) and not r['hidden'] and r['group'] == asset_id]
         drift = compare_handoff(wanted, actual)
         reports.append({'asset_id': asset_id, 'meshes': len(actual), 'content_matches_handoff': True,
                         'maximum_world_coordinate_drift': drift})
+    from verify_staged_patch_state import verify_reviewed_states, verify_static_variants
+    state_reports = []
+    for item in plan['imports']:
+        bindings = staged_imports[item['asset_id']].get('state_bindings', [])
+        children = item.get('texture_states', [])
+        if children and not bindings:
+            raise ValueError('Reviewed appearance states were not compiled: ' + item['asset_id'])
+        if bindings:
+            states = verify_reviewed_states(plan['output'], item, bindings, plan['collection_name'])
+            state_reports.extend(states)
+            reports.append({'asset_id': item['asset_id'], 'content_matches_handoff': True,
+                            'reviewed_states': [s['id'] for s in states]})
+    variant_reports = verify_static_variants(plan, stage)
     if expected_ground is not None:
         actual_ground = [r for r in records if r['source'] == 'ground' and not r['hidden']]
         drift = compare_handoff(expected_ground, actual_ground)
         reports.append({'asset_id': 'ground-cleanup', 'meshes': 1, 'content_matches_handoff': True,
                         'maximum_world_coordinate_drift': drift})
     report = {'status': 'PASS', 'outside_meshes_preserved': len(before), 'imports': reports,
+              'reviewed_states': state_reports, 'static_variants': variant_reports,
               'comparison': 'World geometry within 0.001 units; exact topology, UVs, assigned material graphs, packed image bytes, visibility. Untouched mesh content exact.'}
     output = Path(plan['output']) / 'handoff-verification.json'
     output.write_text(json.dumps(report, indent=2) + '\n')
