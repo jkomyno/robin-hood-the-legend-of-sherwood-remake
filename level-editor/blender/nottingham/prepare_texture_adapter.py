@@ -45,7 +45,8 @@ def validate_approval(item, evidence, approval, fresh):
 
 
 def normalize(asset_id, output, *, state='covered', material_audit=None,
-              manifest=WORK/'gallery-candidates.json', approvals=WORK/'approvals.json'):
+              manifest=WORK/'gallery-candidates.json', approvals=WORK/'approvals.json',
+              generation_lighting=None, state_binding=None):
     # Use the same frozen validation modules as the Nottingham collector.
     from freeze_tooling import select_tooling
     select_tooling(WORK/'tooling/58744eeaf71a21e9')
@@ -92,21 +93,60 @@ def normalize(asset_id, output, *, state='covered', material_audit=None,
                     selected_binding = binding
                     model = Path(binding['model'])
                     require(sha(model) == binding['model_sha256'], 'Saved state model changed')
+    reconstruction = None
+    if state_binding:
+        reconstruction_path = Path(state_binding).resolve(strict=True)
+        reconstruction = read(reconstruction_path)
+        require(reconstruction.get('version') == 1 and reconstruction.get('status') == 'PASS'
+                and reconstruction.get('asset_id') == asset_id, 'Invalid state reconstruction proof')
+        rows = [r for r in reconstruction['states'] if Path(r.get('frame_manifest', Path(r.get('packet', ''))/'views.json')).resolve() == frame_path.resolve()]
+        require(len(rows) == 1, 'Reconstruction does not identify selected exact frame')
+        selected_binding = rows[0]
+        require(selected_binding['frames_sha256'] == sha(frame_path), 'Reconstructed state frame changed')
+        model = Path(selected_binding['source_blend']).resolve(strict=True)
+        require(sha(model) == selected_binding['source_blend_sha256'], 'Reconstructed state model changed')
+        require(set(selected_binding['render_object_names']) == set(frames['object_names']), 'Reconstructed state visibility differs')
+        require(all(selected_binding.get(k) is True for k in ('source_rgb_preserved', 'solid_pixels_preserved', 'ownership_buffers_reproduced')),
+                'State reconstruction lacks exact source/solid/ownership proof')
+        for path, digest in selected_binding.get('artifact_sha256', {}).items():
+            artifact = Path(path)
+            if not artifact.is_absolute(): artifact = reconstruction_path.parent/artifact
+            require(sha(artifact) == digest, 'State reconstruction artifact changed')
     profile = WORK/'lighting-calibration/map-lighting.json'
     from lighting_review import load_lighting_review
-    lighting, replacements = load_lighting_review(workspace, evidence, profile)
-    require(lighting is not None, 'Generation requires map-calibrated lighting evidence')
-    require(lighting['sha256'] == evidence.get('lighting_review_sha256'), 'Approved lighting differs')
     original_solid = str((packet/'solid.png').resolve())
-    require(original_solid in replacements, 'Selected state has no approved lighting')
-    solid = Path(replacements[original_solid])
-    lighting_report = read(lighting['path'])
-    record = next(p for p in lighting_report['packets'] if p['original_solid'] == original_solid)
-    if state != 'covered' or selected_binding:
-        model = Path(record['source_blend'])
+    if generation_lighting:
+        lighting_path = Path(generation_lighting).resolve(strict=True)
+        lighting_report = read(lighting_path)
+        require(lighting_report.get('version') == 1 and lighting_report.get('status') == 'PASS'
+                and lighting_report.get('asset_id') == asset_id, 'Invalid generation lighting report')
+        require(lighting_report.get('model_sha256') == fresh['model_sha256'], 'Generation lighting primary model changed')
+        require(lighting_report.get('lighting_config_sha256') == sha(profile)
+                and lighting_report.get('lighting') == read(profile)['lighting'], 'Generation lighting configuration differs')
+        require(lighting_report.get('authorization_scope'), 'Generation lighting authorization provenance missing')
+        records = [r for r in lighting_report['packets'] if Path(r['original_solid']).resolve() == Path(original_solid)]
+        require(len(records) == 1, 'Generation lighting lacks selected state')
+        record = records[0]
+        require(record.get('inspected_views') == list(range(8)), 'Generation lighting not inspected in all views')
+        for field in ('original_solid', 'frame_manifest', 'source_blend', 'solid'):
+            require(sha(record[field]) == record[field+'_sha256'], 'Generation lighting artifact changed: '+field)
+        require(Path(record['frame_manifest']).resolve() == frame_path.resolve(), 'Generation lighting frame path differs')
+        lighting = {'path':str(lighting_path), 'sha256':sha(lighting_path)}
+        solid = Path(record['solid']).resolve(strict=True)
+    else:
+        lighting, replacements = load_lighting_review(workspace, evidence, profile)
+        require(lighting is not None, 'Generation requires map-calibrated lighting evidence')
+        require(lighting['sha256'] == evidence.get('lighting_review_sha256'), 'Approved lighting differs')
+        require(original_solid in replacements, 'Selected state has no approved lighting')
+        solid = Path(replacements[original_solid])
+        lighting_report = read(lighting['path'])
+        record = next(p for p in lighting_report['packets'] if p['original_solid'] == original_solid)
+    if state != 'covered':
+        require(selected_binding is not None, 'Selected state requires a saved-state binding or exact reconstruction proof')
+    require(Path(record['source_blend']).resolve() == model.resolve(), 'Lighting selected a different state model')
     require(sha(model) == record['source_blend_sha256'], 'Lighting and preparation model differ')
     require(record['frame_manifest_sha256'] == sha(frame_path), 'Lighting cameras differ')
-    solid_views = [solid.parent/f'view-{i}-solid.png' for i in range(8)]
+    solid_views = [Path(p) for p in record['solid_view_paths']] if record.get('solid_view_paths') else [solid.parent/f'view-{i}-solid.png' for i in range(8)]
     # Per-view hashes are bound into the derived revision. Their assembly is
     # checked against the explicitly approved supplemental sheet by preparation.
     audit_paths = [Path(material_audit)] if material_audit else list(workspace.glob('inspection/**/audit.json'))
@@ -132,6 +172,8 @@ def normalize(asset_id, output, *, state='covered', material_audit=None,
              'solid': solid, 'textured': packet/'textured.png', 'frames': frame_path,
              'preparation_model': model, 'material_audit': audit_path,
              'lighting_review': Path(lighting['path']), 'lighting_config': profile}
+    if state_binding:
+        paths['state_reconstruction'] = Path(state_binding).resolve()
     paths.update({f'solid_view_{i}': p for i, p in enumerate(solid_views)})
     paths.update({f'packet_{i}': p for i,p in enumerate(sorted(packet.rglob('*'))) if p.is_file()})
     paths.update({f'material_artifact_{i}': audit_path.parent/n for i,n in enumerate(audit.get('artifact_sha256', {}))})
@@ -169,5 +211,8 @@ if __name__ == '__main__':
     parser.add_argument('asset_id');parser.add_argument('output',type=Path)
     parser.add_argument('--state',default='covered')
     parser.add_argument('--material-audit',type=Path)
+    parser.add_argument('--generation-lighting',type=Path)
+    parser.add_argument('--state-binding',type=Path)
     args=parser.parse_args()
-    print(json.dumps(normalize(args.asset_id,args.output,state=args.state,material_audit=args.material_audit)))
+    print(json.dumps(normalize(args.asset_id,args.output,state=args.state,material_audit=args.material_audit,
+                               generation_lighting=args.generation_lighting,state_binding=args.state_binding)))

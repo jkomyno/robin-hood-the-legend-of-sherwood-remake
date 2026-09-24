@@ -152,6 +152,10 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
         known_image = Image.open(known_path).convert('RGBA')
         solid_image = Image.open(solid_views[index] if solid_views is not None else packet / 'views' / f'view-{index}-solid.png').convert('RGBA')
         input_image = Image.open(packet / 'views' / f'view-{index}-textured.png').convert('RGBA')
+        if solid_views is not None:
+            original_solid = np.asarray(Image.open(packet / 'views' / f'view-{index}-solid.png').convert('RGBA'))
+            if not np.array_equal(original_solid[:, :, 3], np.asarray(solid_image)[:, :, 3]):
+                raise ValueError('Supplemental lighting changed the frozen geometry silhouette')
         if any(image.size != (width, height) for image in (known_image, solid_image, input_image)):
             raise ValueError('Per-view image dimensions differ from frozen cameras')
         known = np.asarray(known_image)[:, :, 0] > 127
