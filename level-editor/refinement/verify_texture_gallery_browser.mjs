@@ -81,7 +81,7 @@ try{
      if(document.querySelector('#review-export').value!==expected)throw Error('View mode changed review ownership');
    }
    for(const detail of document.querySelectorAll('.animation-state')){detail.open=true;detail.open=false;}
-   b.before(a);document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new PageTransitionEvent('pageshow'));
+   b.after(a);if(b.nextElementSibling!==a)throw Error('Card reorder failed');document.dispatchEvent(new Event('visibilitychange'));window.dispatchEvent(new PageTransitionEvent('pageshow'));
    if(document.querySelector('#review-export').value!==expected)throw Error('Card reorder/restoration changed exported IDs');
    Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__capturedReviewClipboard=text;}}});
    document.querySelector('#copy-reviews').click();
