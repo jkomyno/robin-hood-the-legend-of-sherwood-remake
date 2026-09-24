@@ -46,6 +46,50 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def neutral_source_constraint_notes(assignments, layers, part_ids, asset_id):
+    """Describe effective layer rules without treating node fallbacks as mesh facts.
+
+    Component rules override node rules, which override group rules. A packet
+    without component inventory cannot establish whether an unselected default
+    has an actual receiver; retain that uncertainty explicitly in its note.
+    """
+    definite, conditional = set(), set()
+    for layer in layers:
+        label = layer.get("projection_label", "exterior")
+        rows = [row for row in assignments if row["projection"] == label]
+        selectors = {}
+        for selector in layer.get("receiver_components", []):
+            selectors.setdefault(selector["source_node"], set()).update(selector["projection_components"])
+        for node in set(layer.get("receiver_nodes", [])) & set(part_ids):
+            node_rows = [row for row in rows if row.get("source_node") == node]
+            components = {row["projection_component"]: row for row in node_rows
+                          if row.get("projection_component")}
+            default = next((row for row in node_rows if not row.get("projection_component")), None)
+            if default is None:
+                default = next((row for row in rows if row.get("asset_group") == asset_id
+                                and not row.get("source_node")), None)
+            selected = selectors.get(node)
+            effective = [(component, components.get(component, default)) for component in selected] if selected else list(components.items()) + [(None, default)]
+            for component, row in effective:
+                if not row or row.get("constraint_kind") != "unknown-no-approved-source":
+                    continue
+                name = f"{node}/{component}" if component else node
+                description = f"{name} [{label}]"
+                if component is None and components:
+                    conditional.add(description)
+                else:
+                    definite.add(description)
+    notes = []
+    if definite:
+        notes.append("Neutral-only source rules for active receivers: " + ", ".join(sorted(definite))
+                     + ". These rules accept no native source pixels; source-coverage audits must explain any gray geometry.")
+    if conditional:
+        notes.append("Neutral node defaults for components without a more-specific assignment: "
+                     + ", ".join(sorted(conditional))
+                     + ". Component-specific rules take precedence; these defaults alone do not show missing textures on the reviewed meshes.")
+    return notes
+
+
 def source_coverage_audit_matches(audit, evidence):
     """A completeness review is valid only for the inspected model and views."""
     return (audit.get('status') == 'PASS'
@@ -275,13 +319,9 @@ def inspect(workspace, asset):
                 if (assignment.get("source_node") in config["part_ids"]
                         or assignment.get("asset_group") == asset["id"]):
                     mask_assignments.append({"projection": projection, **assignment})
-        active_labels = {row.get('projection_label') for row in packets['modified'].get('projection_layers', [])}
-        unknown_nodes = sorted({row.get("source_node", asset["id"]) for row in mask_assignments
-                                if row.get("constraint_kind") == "unknown-no-approved-source"
-                                and row['projection'] in active_labels})
-        if unknown_nodes:
-            limitations.append("Explicit neutral-only source constraints, with no accepted native ownership: "
-                               + ", ".join(unknown_nodes) + ". Black rejection masks are not native silhouette evidence.")
+        limitations.extend(neutral_source_constraint_notes(
+            mask_assignments, packets['modified'].get('projection_layers', []),
+            config['part_ids'], asset['id']))
     preparation = workspace / "preparation.json"
     if preparation.exists() and read(preparation).get("scope"):
         limitations.append(read(preparation)["scope"])
