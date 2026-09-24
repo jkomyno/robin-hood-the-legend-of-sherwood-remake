@@ -3,6 +3,7 @@ import argparse
 import fcntl
 import hashlib
 import json
+import os
 import sys
 import traceback
 from datetime import datetime, timezone
@@ -97,7 +98,7 @@ def main():
             while (experiment/f'bake-batch-{index:03d}').exists():
                 index+=1
             output=experiment/f'bake-batch-{index:03d}'
-            record=dict(asset_id=asset,experiment=str(experiment),output=str(output),generation_review_sha256=review_hash,status='baking',started_utc=datetime.now(timezone.utc).isoformat())
+            record=dict(asset_id=asset,experiment=str(experiment),output=str(output),generation_review_sha256=review_hash,status='baking',worker_pid=os.getpid(),started_utc=datetime.now(timezone.utc).isoformat())
             ledger['assets'][asset]=record;persist(asset,record)
             bpy.ops.wm.open_mainfile(filepath=str(experiment/'approved-model.blend'))
             report=stage(experiment/'views.json',review['generated_preserved_path'],output,texels_per_unit=2,reconciliation_reference=review['generated_raw_path'])
