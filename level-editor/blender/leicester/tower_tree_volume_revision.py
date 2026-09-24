@@ -25,7 +25,8 @@ def run(workspace):
         raise ValueError('Continuous depth revision changed the frozen allocated source fringe')
     proof = workspace / 'inspection/tower-crown-evidence/constraints.json'
     constraints = json.loads(proof.read_text())
-    constraints.update(front_coverage_pixel_identical=True,
+    constraints.pop('front_coverage_pixel_identical', None)
+    constraints.update(allocated_coverage_alpha_file_identical=True,
                        preserved_coverage_pixels=int(np.count_nonzero(before)))
     proof.write_text(json.dumps(constraints, indent=2) + '\n')
     foliage_packets.run(workspace)
