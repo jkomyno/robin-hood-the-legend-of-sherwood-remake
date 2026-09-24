@@ -11,7 +11,7 @@ def main():
  from occlusion_constraints import SourceMaskConstraints
  from source_visibility import first_source_hit
  from PIL import Image
- old=WORK/'round-1/assets/nottingham-village-mill';new=WORK/('round-34/assets/nottingham-village-mill' if '--final' in sys.argv else 'texture-generation/projection-corrections/nottingham-village-mill');box=(1525,2455,1760,2790);s,c=math.sin(math.radians(35)),math.cos(math.radians(35));toward=Vector((0,-c,s));states=[]
+ old=WORK/'round-1/assets/nottingham-village-mill';new=WORK/('coordinator-audit/props/mill-planar' if '--planar' in sys.argv else 'round-35/assets/nottingham-village-mill' if '--planar-roof' in sys.argv else 'round-34/assets/nottingham-village-mill' if '--final' in sys.argv else 'texture-generation/projection-corrections/nottingham-village-mill');box=(1525,2455,1760,2790);s,c=math.sin(math.radians(35)),math.cos(math.radians(35));toward=Vector((0,-c,s));states=[]
  for w in [old,new]:
   bpy.ops.wm.open_mainfile(filepath=str(w/'model.blend'));config=json.loads((w/'workspace.json').read_text());bpy.context.window.scene=bpy.data.scenes[config['scene_name']];bpy.context.view_layer.update();objs=[o for o in bpy.data.collections[config['collection_name']].all_objects if o.type=='MESH'and not o.hide_render];targets=[o for o in objs if o.get('asset_group')=='nottingham-village-mill'];tree,owners,_=_tree(objs);own,ownowners,_=_tree(targets);constraints=SourceMaskConstraints(w/'source-masks.json','exterior',sha(w/'reference/source.png'),(2304,3520));pixels={}
   for y in range(box[1],box[3]):

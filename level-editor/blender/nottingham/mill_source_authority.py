@@ -45,7 +45,7 @@ def prepare_authority(work, destination):
             assignment.update(mask_indices=[529], review_evidence=str(proposal / 'stone-boundary-proposal.png'),
                               review_note='Authored source trace separates chimney masonry from native155 hay overreach.')
         elif assignment['source_node'] == 'building-240':
-            assignment.update(mask_indices=[144], exclude_mask_indices=[529], exclusions_reviewed=True,
+            assignment.update(mask_indices=[144, 155], exclude_mask_indices=[529], exclusions_reviewed=True,
                               exclusion_reason='Only source-traced chimney masonry is excluded; original native155 hay remains owned by mound240.',
                               review_evidence=str(proposal / 'stone-boundary-proposal.png'))
     (destination / 'assignments.json').write_text(json.dumps(assignments, indent=2) + '\n')

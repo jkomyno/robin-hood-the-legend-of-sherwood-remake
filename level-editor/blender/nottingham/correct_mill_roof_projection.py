@@ -12,25 +12,34 @@ import refinement_workspace as rw
 from mathutils import Vector
 from refine_village_secondary import digest
 
+def audit_saved_materials(workspace):
+ from audit_stored_materials import run
+ import time
+ output=workspace/'inspection/stored-materials'
+ if output.exists():
+  history=workspace/'history';history.mkdir(exist_ok=True)
+  output.rename(history/f'stored-materials-{time.time_ns()}')
+ return run(workspace,output,render=True,export=False)
+
 def main():
  asset='nottingham-village-mill'
  old=WORK/'round-1/assets'/asset
  final='--final' in sys.argv
- new=WORK/'round-34/assets'/asset if final else WORK/'texture-generation/projection-corrections'/asset
+ planar='--planar-roof' in sys.argv
+ new=WORK/('round-35/assets' if planar else 'round-34/assets')/asset if final else WORK/'texture-generation/projection-corrections'/asset
  c=json.loads((old/'workspace.json').read_text())
  if '--audit-only' in sys.argv:
   (new/'inspection').mkdir(exist_ok=True)
   from restore_foreign_uv_schema import restore_foreign_uv_schema
   restore_foreign_uv_schema(new,apply=True)
-  from audit_stored_materials import run
-  run(new,new/'inspection/stored-materials',render=True,export=False)
+  audit_saved_materials(new)
   return
  if not new.exists():
   if '--geometry-only' in sys.argv:raise ValueError('Prepare the workspace under a render lease before using geometry-only mode')
   mask_source=old/'source-masks.json'
   if final:
    from mill_source_authority import prepare_authority
-   authority=WORK/'mask-review/mill-authored-stone-authority'
+   authority=WORK/('mask-review/mill-authored-stone-authority-v2' if planar else 'mask-review/mill-authored-stone-authority')
    mask_source=authority/'assignments.json' if authority.exists() else prepare_authority(WORK,authority)
   bpy.ops.wm.open_mainfile(filepath=str(old/'model.blend'))
   rw.prepare(new,asset_id=asset,scene_name=c['scene_name'],collection_name=c['collection_name'],source_path=old/'reference/source.png',grouping_manifest=old/'reference/grouping.json',inventory_path=old/'reference/inventory.json',review_path=old/'reference/grouping-review.json',source_mask_manifest=mask_source,width=320,height=384,context_padding=30,framing_padding=1.12,lighting=json.loads((WORK/'lighting-calibration/map-lighting.json').read_text())['lighting'])
@@ -62,15 +71,22 @@ def main():
  bottom=[Vector((q['x'],-q['y']/s,0)) for q in native]
  top=[Vector((1617.0413,-2625.9927/s,150.009/co)),Vector((1665.112,-2746.1895/s,120/co)),Vector((1600.6309,-2754.6733/s,56.6733/co)),Vector((1591.8282,-2732.6487/s,95.268005/co)),Vector((1580.0377,-2703.1677/s,95.268005/co)),Vector((1540,-2634.4766/s,60.4766/co)),Vector((1552.56,-2614.4766/s,75.215004/co))]
  shoulder=replace(o,bottom+top,[(3,2,1,0),(4,5,6),(4,6,7),(4,7,8),(4,8,9),(4,9,10),(0,1,5,4),(1,2,6,5),(2,3,9),(2,9,8),(2,8,7),(2,7,6),(3,0,4),(3,4,10),(3,10,9)],'Mill left roof / drooping eave and upper shoulder')
+ plane=None
+ if planar:
+  from fit_mill_planar_roof import apply as fit_plane
+  plane=fit_plane()
  from fit_mill_chimney_base import apply as fit_base
  chimney=fit_base()
  contact=None
  if final:
   from cut_mill_mound_chimney_contact import apply as cut_contact
-  contact=cut_contact(WORK/'mask-review/mill-authored-stone-authority/000529-authored-stone.png')
+  contact=cut_contact(WORK/('mask-review/mill-authored-stone-authority-v2/000529-authored-stone.png' if planar else 'mask-review/mill-authored-stone-authority/000529-authored-stone.png'))
  changed=[k for k,v in before.items() if digest(bpy.data.objects[k])!=v]
- assert len(changed)==(4 if final else 3)
- report=dict(asset_id=asset,status='prototype-awaiting-source-review',source_node='building-237',changed_vertices=changes,changed_objects=changed,outside_objects_preserved=len(before)-len(changed),shoulder_mesh=shoulder,chimney_base=chimney,mound_contact=contact,source_eave_targets=[[1540,2574],[1600.6309,2698],[1552.56,2539.2616]],manual_uncertainty_pixels=3,changes=['Lowered the left main-roof eave anchors to the painted thatch outline so roof pixels reach a roof slope rather than the tall side wall.','Lowered the front ridge of both roof halves to native120; main left eave now meets the unchanged adjoining lean-to ridge at native95.268 using two intermediate contact vertices.','Retained the curved back shoulder source contour while moving its inferred depth twenty native units toward the source camera to keep the roof convex.','Restored a flared chimney base on receiver241 and assigned hay receiver240 to native144 with the separate masonry155 excluded.'],limitations=['This is a new geometry revision requiring user review. Source eave tracing and concealed wall support are inferred. Front ridge and curved eave contact are fitted to the drooping thatch. Back-shoulder depth and concealed chimney-foot depth are inferred; the adjoining lean-to remains unchanged.'])
+ assert len(changed)==(5 if planar else 4 if final else 3)
+ report=dict(asset_id=asset,status='prototype-awaiting-source-review',source_node='building-237',changed_vertices=changes,changed_objects=changed,outside_objects_preserved=len(before)-len(changed),shoulder_mesh=shoulder,chimney_base=chimney,mound_contact=contact,planar_roof=plane,source_eave_targets=[[1540,2574],[1600.6309,2698],[1552.56,2539.2616]],manual_uncertainty_pixels=3,changes=['Lowered the left main-roof eave anchors to the painted thatch outline so roof pixels reach a roof slope rather than the tall side wall.','Lowered the front ridge of both roof halves to native120; main left eave now meets the unchanged adjoining lean-to ridge at native95.268 using two intermediate contact vertices.','Retained the curved back shoulder source contour while moving its inferred depth twenty native units toward the source camera to keep the roof convex.','Restored a flared chimney base on receiver241 and assigned hay receiver240 to native144 with the separate masonry155 excluded.'],limitations=['This is a new geometry revision requiring user review. Source eave tracing and concealed wall support are inferred. Front ridge and curved eave contact are fitted to the drooping thatch. Back-shoulder depth and concealed chimney-foot depth are inferred; the adjoining lean-to remains unchanged.'])
+ if planar:
+  report['changes']=['Fitted the main left thatch roof to a single plane while preserving the source-traced ridge, curved back outline and drooping front eave.','Moved the lean-to front ridge about five native height units along its source ray to join the main roof continuously.','Restored the chimney masonry flare and trimmed the hay contact behind its source-traced boundary; valid hay remains assigned to the mound.']
+  report['limitations']=['New geometry and source-domain revision requires user review.','Roof depth along the fixed source outline and concealed hay/stone contact are inferred.','The authored chimney boundary has approximately one source-pixel tracing uncertainty; unseen surfaces remain neutral.']
  (new/'geometry-report.json').write_text(json.dumps(report,indent=2)+'\n')
  maskpath=new/'source-masks.json';masks=json.loads(maskpath.read_text())
  if not final:
@@ -84,8 +100,7 @@ def main():
  (new/'inspection').mkdir(exist_ok=True)
  from restore_foreign_uv_schema import restore_foreign_uv_schema
  restore_foreign_uv_schema(new,apply=True)
- from audit_stored_materials import run
- run(new,new/'inspection/stored-materials',render=True,export=False)
+ audit_saved_materials(new)
  report['model_sha256']=hashlib.sha256((new/'model.blend').read_bytes()).hexdigest()
  report['modified_views_sha256']=hashlib.sha256((new/'modified/views.json').read_bytes()).hexdigest()
  (new/'geometry-report.json').write_text(json.dumps(report,indent=2)+'\n')
