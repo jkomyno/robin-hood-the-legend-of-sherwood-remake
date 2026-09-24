@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from review_evidence import sha
-from source_review_resolution import apply_generation_gate
+from source_review_resolution import apply_generation_gate, GEOMETRY_REVIEW_ONLY
 
 
 class ResolutionTests(unittest.TestCase):
@@ -64,6 +64,41 @@ class ResolutionTests(unittest.TestCase):
 
     def test_missing_resolution_blocks(self):
         self.assertFalse(apply_generation_gate(self.item, self.handoff, self.file, self.path))
+
+    def geometry_review_fixture(self):
+        self.handoff = {'texture_generation': 'blocked', 'source_review': GEOMETRY_REVIEW_ONLY}
+        self.file.write_text(json.dumps(self.handoff))
+        self.item['revision']['evidence']['handoff']['sha256'] = sha(self.file)
+        self.item['generation_blocked'] = True
+        self.resolution.update(handoff_sha256=sha(self.file),
+            cleared_blockers={'handoff.'+key:value for key,value in self.handoff.items()})
+
+    def test_exact_geometry_review_clears_collector_derived_flag(self):
+        self.geometry_review_fixture()
+        before = self.file.read_bytes()
+        self.assertTrue(self.run_gate())
+        self.assertEqual(before, self.file.read_bytes())
+        self.resolution['approval_decision'] = {}
+        self.assertFalse(self.run_gate())
+
+    def test_geometry_review_cannot_clear_new_technical_hold(self):
+        for key,value in [('texture_issue', 'bad mapping'), ('generation_blocked', 'failed ownership')]:
+            with self.subTest(key=key):
+                self.geometry_review_fixture()
+                self.handoff[key] = value
+                self.file.write_text(json.dumps(self.handoff))
+                self.item['revision']['evidence']['handoff']['sha256'] = sha(self.file)
+                self.resolution.update(handoff_sha256=sha(self.file),
+                    cleared_blockers={'handoff.'+k:v for k,v in self.handoff.items()})
+                self.assertFalse(self.run_gate())
+
+    def test_geometry_review_does_not_clear_unbound_manifest_reason(self):
+        self.geometry_review_fixture()
+        self.item['generation_blocked'] = 'failed material audit'
+        self.assertFalse(self.run_gate())
+        self.item['generation_blocked'] = True
+        self.resolution['cleared_blockers'].pop('handoff.source_review')
+        self.assertFalse(self.run_gate())
 
 
 if __name__ == '__main__': unittest.main()

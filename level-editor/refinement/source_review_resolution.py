@@ -8,19 +8,28 @@ from pathlib import Path
 from review_evidence import sha
 
 
+GEOMETRY_REVIEW_ONLY = 'Fresh wall-to-roof contact revision awaits user geometry approval.'
+
+
 def apply_generation_gate(item, handoff, handoff_path, resolutions_path):
     item.pop('source_review_resolution', None)
     item.pop('generation_blockers', None)
     technical = (item.get('technical_eligible') and item.get('stored_material_validation') == 'PASS')
     approved = item.get('decision_state') == 'current' and item.get('user_approval') == 'approved'
+    geometry_review_only = (handoff.get('source_review') == GEOMETRY_REVIEW_ONLY
+                            and handoff.get('texture_generation') == 'blocked'
+                            and not handoff.get('texture_issue')
+                            and not handoff.get('generation_blocked'))
     blockers = {key: handoff[key] for key in ('generation_blocked', 'texture_issue', 'source_review', 'texture_generation')
-                if handoff.get(key) and (key != 'source_review' or handoff[key] == 'pending')
+                if handoff.get(key) and (key != 'source_review' or handoff[key] == 'pending' or geometry_review_only)
                 and (key != 'texture_generation' or handoff[key] == 'blocked')}
     errors = []
     # Manifest-level holds must match the frozen handoff; decisions cannot carry
     # an unresolved texture issue and also clear it via a sidecar.
     for key in ('generation_blocked', 'texture_issue'):
-        if item.get(key) and item[key] != handoff.get(key):
+        derived_geometry_hold = (key == 'generation_blocked' and geometry_review_only
+                                 and item.get(key) is True)
+        if item.get(key) and item[key] != handoff.get(key) and not derived_geometry_hold:
             errors.append('additional manifest ' + key)
         if item.get('user_decision', {}).get(key):
             errors.append('decision ' + key)
@@ -38,7 +47,7 @@ def apply_generation_gate(item, handoff, handoff_path, resolutions_path):
             resolution = entries[0]
             decision = item.get('user_decision', {})
             issue = handoff.get('texture_issue')
-            review_only = (isinstance(issue, dict) and issue.get('status') == 'correction-awaiting-user-review') or (
+            review_only = geometry_review_only or (isinstance(issue, dict) and issue.get('status') == 'correction-awaiting-user-review') or (
                 handoff.get('source_review') == 'pending' and
                 issue == 'Source mapping correction pending review; approved geometry unchanged.')
             if not review_only:
