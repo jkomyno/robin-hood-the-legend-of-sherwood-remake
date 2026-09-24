@@ -13,7 +13,7 @@ def validate_policy(policy, receiver_names=None):
         raise ValueError('Repair requires explicit unique receiver names')
     if receiver_names is not None and not set(names)<=set(receiver_names):
         raise ValueError('Gap repair names a foreign or excluded receiver')
-    limits={'max_distance_texels':8,'max_distance_world':4,'bottom_band_world':4,
+    limits={'max_distance_texels':16,'max_distance_world':8,'bottom_band_world':4,
             'max_face_fraction':.05,'max_total_texels':10000,'max_abs_normal_z':.05}
     for key,limit in limits.items():
         value=policy[key]
