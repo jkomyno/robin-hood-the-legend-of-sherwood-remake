@@ -146,6 +146,81 @@ def projection_records(config, manifest, available):
     return result
 
 
+def complete_state_records(workspace, config, manifest, available, framing):
+    """Validate complete appearances against frozen source and visibility authority.
+
+    This opt-in contract supplements, rather than relaxes, the static partition.
+    It currently describes the hall's single reviewed reveal patch.
+    """
+    require(config["asset_id"] == "nottingham-castle-main-hall",
+            "Complete state layers require a supported asset contract")
+    patch = "patch-008"
+    visibility = manifest["projection_reviews"][patch]["render_visibility"]
+    require(visibility.get("reviewed") is True, "State visibility is not reviewed")
+    layers = read(workspace / "projection-state-layers.json")
+    require(set(layers) == {"covered", "revealed"}, "Expected exactly two projection states")
+    materials = read(workspace / "material-states.json")
+    bindings = read(workspace / "inspection/state-models/manifest.json")
+    model_hash = sha(workspace / "model.blend")
+    require(materials.get("version") == bindings.get("version") == 1,
+            "Unsupported complete-state contract version")
+    require(materials.get("model_sha256") == bindings.get("primary_model_sha256") == model_hash,
+            "State materials do not bind the primary model")
+    require(bindings.get("material_states_sha256") == sha(workspace / "material-states.json"),
+            "Saved states do not bind material assignments")
+    records = materials["records"]
+    names = {row["object"] for row in records}
+    require(records and len(names) == len(records), "Duplicate or absent material receivers")
+    require(all(row["source_node"] in config["part_ids"] for row in records),
+            "State material receiver outside owned asset")
+    for row in records:
+        covered, revealed = (row[state + "_face_materials"] for state in ("covered", "revealed"))
+        require(set(covered) == set(revealed), "State face inventories differ")
+        for faces in (covered, revealed):
+            require(set(faces) == {str(i) for i in range(len(faces))}, "Incomplete state face inventory")
+            require(all(isinstance(v.get("slot"), int) and v["slot"] >= 0
+                        and isinstance(v.get("material"), str) and v["material"] for v in faces.values()),
+                    "Invalid state material assignment")
+    states = bindings["states"]
+    require(len(states) == 2 and {s["state"] for s in states} == set(layers),
+            "Saved state bindings must cover both states exactly")
+    from occlusion_constraints import evidence_record
+    mask_evidence = evidence_record(config["source_mask_manifest"])
+    directory = Path(config["projection_manifest"]).parent
+    expected = {}
+    for state in ("covered", "revealed"):
+        source = (directory / manifest["sources"]["exterior" if state == "covered" else "interior"]).resolve()
+        hidden = visibility[state]
+        row = {"source_path": str(source), "projection_label": "exterior" if state == "covered" else "interior-" + patch,
+               "receiver_nodes": config["part_ids"],
+               "occluder_nodes": sorted(available - set(hidden.get("hidden_nodes", [])))}
+        if state == "revealed":
+            row["exclude_occluder_components"] = hidden.get("hidden_components", [])
+        require(layers[state] == [row], "Complete state projection differs from source/ownership/visibility authority")
+        expected[state] = [dict(row, source_sha256=sha(source))]
+        binding = next(s for s in states if s["state"] == state)
+        require(binding.get("hidden_context_nodes") == sorted(set(hidden.get("hidden_nodes", [])) - set(config["part_ids"])),
+                "Saved state foreign visibility differs from reviewed context")
+        model, frame = Path(binding["model"]), Path(binding["frame_manifest"])
+        require(model.resolve().is_relative_to(workspace.resolve()) and frame.resolve().is_relative_to(workspace.resolve()),
+                "Saved state paths escape workspace")
+        require(sha(model) == binding["model_sha256"] and sha(frame) == binding["frame_manifest_sha256"],
+                "Saved state model or packet changed")
+        hidden_components = {(r["source_node"], r["projection_component"]) for r in hidden.get("hidden_components", [])}
+        visible_names = {r["object"] for r in records if r["source_node"] not in hidden.get("hidden_nodes", [])
+                         and (r["source_node"], r.get("projection_component")) not in hidden_components}
+        packet = read(frame)
+        require(all(set(value) == visible_names and len(value) == len(visible_names)
+                    for value in (binding["object_names"], packet["object_names"], packet["render_object_names"])),
+                "Saved state visibility differs from reviewed components")
+        require(packet["projection_layers"] == expected[state], "Saved state projection layers differ")
+        require(packet["source_sha256"] == sha(source) and Path(packet["source_image"]).resolve() == source,
+                "Saved state source differs")
+        require(packet.get("source_mask_evidence") == mask_evidence, "Saved state mask evidence differs")
+        supplemental_packet(frame.parent, config["asset_id"], framing)
+    return expected["covered"]
+
+
 def frozen_mask_origins(workspace, config):
     """Resolve historical input assignment paths only through proven clone evidence."""
     if not config.get('mask_reference'):
@@ -243,7 +318,11 @@ def inspect(workspace, asset):
         before_layers = packets["input"]["projection_layers"]
         after_layers = packets["modified"]["projection_layers"]
         available = projection_available_nodes(before_layers, after_layers, config["part_ids"])
-        expected_layers = projection_records(config, reviewed_projection, available)
+        if (workspace / "projection-state-layers.json").exists():
+            expected_layers = complete_state_records(workspace, config, reviewed_projection, available,
+                                                     packets["input"])
+        else:
+            expected_layers = projection_records(config, reviewed_projection, available)
         if asset['id'] in ('nottingham-upper-prison', 'nottingham-southwest-prison') and any(
                 '-prison-door-' in row.get('projection_label', '') for row in after_layers):
             expected_layers = prison_endpoint_records(workspace, config, expected_layers)
@@ -346,6 +425,11 @@ def inspect(workspace, asset):
                 "candidate_sha256": sha(candidate_path) if worker else None,
                 "validation": validation, "validation_sha256": sha(workspace / "validation.json"),
                 "limitations": limitations}
+    if (workspace / "projection-state-layers.json").exists():
+        evidence["complete_state_contracts"] = {
+            name: sha(workspace / name) for name in (
+                "projection-state-layers.json", "material-states.json",
+                "inspection/state-models/manifest.json")}
     return status, limitations, evidence, review
 
 
