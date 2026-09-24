@@ -289,7 +289,8 @@ def render_review(output_dir, *, scene_name, collection_name, asset_id,
         _save(output / "context.png", cw, ch, context)
         # A frozen input keeps its lighting as well as its camera framing.
         from review_sunlight import configuration
-        lighting = configuration(lighting or (baseline or {}).get("lighting"))
+        lighting = configuration(lighting or (baseline or {}).get("lighting"),
+                                 map_name=collection_name.removesuffix(" Working"))
         if baseline and not baseline.get("lighting"):
             from experiment_multiview_texture import _legacy_studio_views
             solids = _legacy_studio_views(scene, cameras, objects, views_dir)

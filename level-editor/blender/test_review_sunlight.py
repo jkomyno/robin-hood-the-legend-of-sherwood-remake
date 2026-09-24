@@ -12,6 +12,15 @@ from review_sunlight import configuration, irradiance, render_solids
 
 
 class ReviewSunlightTests(unittest.TestCase):
+    def test_map_default_and_frozen_override(self):
+        historic = configuration()
+        nottingham = configuration(map_name='Nottingham')
+        self.assertLess(historic['toward_sun'][0], 0)
+        self.assertGreater(nottingham['toward_sun'][0], 0)
+        frozen = configuration(historic, map_name='nottingham')
+        for before, after in zip(historic['toward_sun'], frozen['toward_sun']):
+            self.assertAlmostEqual(before, after, places=6)
+
     def test_world_surface_brightness_and_scene_restoration(self):
         scene = bpy.data.scenes.new("Sunlight invariant fixture")
         scene.render.resolution_x = scene.render.resolution_y = 17

@@ -489,9 +489,8 @@ def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path
                   source_blend=str(Path(bpy.data.filepath).resolve()),
                   source_blend_sha256=_sha(bpy.data.filepath),
                   grouping_manifest_sha256=_sha(grouping_path))
-    if lighting is not None:
-        from review_sunlight import configuration
-        config['lighting'] = configuration(lighting)
+    from review_sunlight import configuration
+    config['lighting'] = configuration(lighting, map_name=config['map_name'])
     bpy.context.window.scene = bpy.data.scenes[scene_name]
     bpy.context.view_layer.update()
     if grouping.get("version") == 2:

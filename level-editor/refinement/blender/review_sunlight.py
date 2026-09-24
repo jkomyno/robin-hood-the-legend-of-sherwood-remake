@@ -27,9 +27,17 @@ DEFAULT_LIGHTING = {
     "shadow_epsilon": 0.03,
 }
 
+MAP_LIGHTING = {
+    # Three west-gate crown/shadow correspondences on the courtyard plane.
+    # Artwork estimate: azimuth -69.8 degrees, elevation 43.5 degrees;
+    # endpoint uncertainty alone spans approximately 41.8–45.2 degrees elevation.
+    "nottingham": {"toward_sun": [0.25014249132092153, -0.6812345885959967, 0.6880030300341748]},
+}
 
-def configuration(settings=None):
-    result = {**DEFAULT_LIGHTING, **(settings or {})}
+
+def configuration(settings=None, *, map_name=None):
+    defaults = MAP_LIGHTING.get(str(map_name).casefold(), {})
+    result = {**DEFAULT_LIGHTING, **defaults, **(settings or {})}
     if set(result) != set(DEFAULT_LIGHTING):
         raise ValueError("Unknown review lighting option")
     direction = Vector(result["toward_sun"])
