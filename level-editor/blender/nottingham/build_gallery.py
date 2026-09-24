@@ -1,7 +1,7 @@
 """Collect verified Nottingham worker packets without granting approval.
 
 Run with Python, after workers produce packets. Defaults target
-work/nottingham-refinement/{grouping/catalog-v13.json,round-1/assets,gallery}.
+work/nottingham-refinement/{grouping/catalog-v15.json,round-1/assets,gallery}.
 Workers provide candidate.json with version, asset_id, geometry_refined, status,
 inspected_views, recipe, model_sha256, modified_views_sha256, changes, limitations.
 Ready candidates also require review.md and all eight visually inspected views.
