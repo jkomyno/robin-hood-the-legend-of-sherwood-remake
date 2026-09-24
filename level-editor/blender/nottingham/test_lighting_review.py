@@ -15,6 +15,10 @@ class LightingReviewTests(unittest.TestCase):
             frame.write_text('{}')
             solid = w / 'lighting-review/solid.png'
             solid.write_bytes(b'reviewed image')
+            original = w / 'modified/solid.png'
+            original.write_bytes(b'original image')
+            model = w / 'model.blend'
+            model.write_bytes(b'geometry')
             profile = w / 'map-lighting.json'
             profile.write_text(json.dumps({'lighting': {'toward_sun': [1, 0, 1]}}))
             evidence = {'asset_id': 'asset', 'model_sha256': 'model',
@@ -26,6 +30,8 @@ class LightingReviewTests(unittest.TestCase):
                           'original_solid': str(w / 'modified/solid.png'), 'frame_manifest': str(frame),
                           'frame_manifest_sha256': sha(frame), 'solid': str(solid),
                           'solid_sha256': sha(solid), 'inspected_views': list(range(8))}]}
+            report['packets'][0].update(source_blend=str(model), source_blend_sha256=sha(model),
+                                       original_solid_sha256=sha(original))
             path = w / 'lighting-review/review.json'
             def check(data):
                 path.write_text(json.dumps(data))
