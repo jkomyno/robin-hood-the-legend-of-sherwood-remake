@@ -52,7 +52,7 @@ def main():
     import refine_south_curve_corners as oldrecipe
     from refine_fortifications import north_wall_geometry
     old=WORK/'round-13/assets/nottingham-south-curtain-wall-1'
-    new=WORK/'round-36/assets/nottingham-south-curtain-wall-1'
+    new=WORK/'round-37/assets/nottingham-south-curtain-wall-1'
     assert not new.exists(),new
     new.mkdir(parents=True);(new/'inspection').mkdir()
     for name in ('reference','mask-reference'):shutil.copytree(old/name,new/name)
@@ -72,8 +72,16 @@ def main():
     topology=apply(target,fit);first=geom(target);apply(target,fit);assert first==geom(target)
     assert outside=={o.name:geom(o) for o in bpy.data.objects if o.type=='MESH' and o!=target}
     bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(new/'model.blend'))
-    validation=modified(new)
-    report=dict(status='PASS',model_sha256=sha(new/'model.blend'),modified_views_sha256=sha(new/'modified/views.json'),baseline_sha256=sha(new/'baseline.blend'),topology=topology,outside_geometry_preserved=len(outside),source_crown_projection_preserved=True,split_x=1519,native_mask_unchanged=126,maximum_native_depth_shift=delta,sampled_cross_sections=len(rounded['pairs']),idempotence=True,validation=validation)
+    # Narrow curved triangles need denser sampling to avoid visible phase seams.
+    import source_projection_bake
+    default_bake=source_projection_bake.bake
+    def dense_bake(*args,**kwargs):
+        kwargs['texels_per_unit']=4
+        return default_bake(*args,**kwargs)
+    source_projection_bake.bake=dense_bake
+    try:validation=modified(new)
+    finally:source_projection_bake.bake=default_bake
+    report=dict(status='PASS',model_sha256=sha(new/'model.blend'),modified_views_sha256=sha(new/'modified/views.json'),baseline_sha256=sha(new/'baseline.blend'),topology=topology,outside_geometry_preserved=len(outside),source_crown_projection_preserved=True,split_x=1519,native_mask_unchanged=126,maximum_native_depth_shift=delta,sampled_cross_sections=len(rounded['pairs']),stored_atlas_texels_per_unit=4,idempotence=True,validation=validation)
     (new/'inspection/roundness-correction.json').write_text(json.dumps(report,indent=2)+'\n')
     shutil.copy2(__file__,new/'roundness-recipe.py');print(json.dumps(report),flush=True)
 if __name__=='__main__':main()
