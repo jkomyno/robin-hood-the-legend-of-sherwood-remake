@@ -10,15 +10,17 @@ import json
 from pathlib import Path
 
 
-def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name, source_nodes=None, source_asset_id=None):
+def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name, source_nodes=None, source_asset_id=None, replace_hidden_source_nodes=False):
     import bpy
     from refinement_workspace import _geometry
     from bake_reviewed_asset import _materials
     if source_asset_id and source_asset_id != asset_id and not source_nodes:
         raise ValueError('Ownership remapping requires explicit canonical source nodes')
+    if replace_hidden_source_nodes and not source_nodes:
+        raise ValueError('Replacing hidden endpoints requires exact source-node scope')
     collection=bpy.data.collections[collection_name]
     targets=[o for o in collection.all_objects if o.type=='MESH' and
-             o.get('asset_group')==asset_id and not o.hide_render and
+             o.get('asset_group')==asset_id and (not o.hide_render or replace_hidden_source_nodes) and
              (source_nodes is None or o.get('source_node') in source_nodes)]
     roots=[o for o in collection.all_objects if o.type=='EMPTY' and o.get('asset_group')==asset_id]
     if not targets or len(roots)!=1 or not object_names or len(object_names)!=len(set(object_names)):
@@ -31,7 +33,7 @@ def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name
     outside={o.name:(_geometry(o),_materials(o) if o.type=='MESH' else None)
              for o in scene.objects if o not in targets}
     hidden={o.name:_geometry(o) for o in collection.all_objects if o.type=='MESH' and
-            o.get('asset_group')==asset_id and o.hide_render}
+            o.get('asset_group')==asset_id and o.hide_render and o not in targets}
     existing=set(bpy.data.objects)
     temporary=None
     keep=set()

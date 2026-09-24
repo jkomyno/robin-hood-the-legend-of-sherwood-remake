@@ -42,9 +42,11 @@ def stage(plan_path):
         for item in plan['imports']:
             validated=validate_texture_handoff(item['geometry_manifest'],item['asset_id'],
                 item['texture_decisions'],item['geometry_decisions'])
-            for key in ('blend_path','blend_sha256','object_names','source_nodes','geometry_revision_sha256'):
+            for key in ('blend_path','blend_sha256','object_names','source_nodes','geometry_revision_sha256','texture_states','render_object_names'):
                 if item.get(key)!=validated[key]:raise ValueError('Approved texture plan changed: '+item['asset_id']+' '+key)
             texture_checks.append(verify_baked_geometry(validated))
+            for child in validated.get('texture_states', []):
+                texture_checks.append(verify_baked_geometry(child))
     ground_imports=[item for item in plan['imports'] if item.get('source_nodes')==['ground']]
     if ground_imports and (not plan.get('approved_texture_imports') or len(ground_imports)!=1):
         raise ValueError('Planar ground requires one approval-validated texture handoff')
@@ -54,6 +56,19 @@ def stage(plan_path):
             item['object_names']=sorted(o.name for o in bpy.data.collections[plan['collection_name']].all_objects
                 if o.type=='MESH' and not o.hide_render and o.get('asset_group')==item.get('source_asset_id',item['asset_id'])
                 and (not item.get('source_nodes') or o.get('source_node') in item['source_nodes']))
+    compiled = {}
+    if plan.get('approved_texture_imports'):
+        from compile_texture_states import compile_states
+        for item in plan['imports']:
+            result = compile_states(item, output/'state-workers'/(item['asset_id']+'.blend'))
+            if result:
+                compiled[item['asset_id']] = result
+        # Applied drawbridge endpoints are exported independently at the same pivot.
+        plan['static_variants'] = [
+            {'asset_id': item['asset_id'], 'initial_name': 'Initial',
+             'states': {'applied': dict(child)}}
+            for item in plan['imports'] for child in item.get('texture_states', [])
+            if child.get('endpoint_id') == 'applied']
     bpy.ops.wm.open_mainfile(filepath=str(Path(plan['baseline']).resolve(strict=True)))
     bpy.context.window.scene=bpy.data.scenes[plan['scene_name']]
     collection=bpy.data.collections[plan['collection_name']]
@@ -74,19 +89,26 @@ def stage(plan_path):
         if item in ground_imports:continue
         packet=json.loads(Path(item['review_manifest']).read_text())
         names=item['object_names'] if 'object_names' in item else packet['object_names']
-        blend=item['blend_path']
+        state_compilation=compiled.get(item['asset_id'])
+        if state_compilation:
+            names=state_compilation['object_names']
+        blend=state_compilation['blend_path'] if state_compilation else item['blend_path']
         blend_hash=hashlib.sha256(Path(blend).read_bytes()).hexdigest()
-        if item.get('blend_sha256') and item['blend_sha256']!=blend_hash:
+        expected_blend_hash=state_compilation['blend_sha256'] if state_compilation else item.get('blend_sha256')
+        if expected_blend_hash and expected_blend_hash!=blend_hash:
             raise ValueError('Reviewed model changed before staging: '+item['asset_id'])
         if item.get('new_mission_part'):
             from supplemental_parts import import_mission_part
             result=import_mission_part(item,collection.name)
         else:
             result=import_asset_geometry(blend,asset_id=item['asset_id'],object_names=names,
-                collection_name=collection.name,source_nodes=item.get('source_nodes'),source_asset_id=item.get('source_asset_id'))
+                collection_name=collection.name,source_nodes=item.get('source_nodes'),source_asset_id=item.get('source_asset_id'),
+                replace_hidden_source_nodes=item.get('endpoint_id') == 'initial')
         if item.get('texture_handoff'):
             result['texture_handoff']=import_asset_textures(item['texture_handoff'],asset_id=item['asset_id'],
                 collection_name=collection.name,source_nodes=item.get('source_nodes'))
+        if state_compilation:
+            result.update(state_compilation)
         result['review_manifest']=item['review_manifest']
         result['source_blend_sha256']=blend_hash
         result['review_manifest_sha256']=hashlib.sha256(Path(item['review_manifest']).read_bytes()).hexdigest()
@@ -157,7 +179,9 @@ def stage(plan_path):
             if mat and mat.get('generated_source_sha256'):
                 generated.setdefault(mat['generated_source_sha256'],set()).add(mat.name)
     bpy.ops.wm.save_as_mainfile(filepath=str(output/'worker.blend'))
-    report={'plan':str(plan_path),'imports':imports,'grouping':grouping,'ground_texture_handoff':ground_handoff,
+    effective_plan=output/'effective-plan.json'
+    effective_plan.write_text(json.dumps(plan,indent=2)+'\n')
+    report={'plan':str(effective_plan),'imports':imports,'grouping':grouping,'ground_texture_handoff':ground_handoff,
             'canonical_parts':len(canonical_after),'approved_texture_checks':texture_checks,
             'unselected_meshes_preserved':len(outside_before),'unselected_mesh_state_identical':outside_before==outside_after,
             'generated_materials':{sha:sorted(names) for sha,names in generated.items()},
@@ -167,7 +191,16 @@ def stage(plan_path):
         from export_static_variants import export_variants
         report['static_variants']=export_variants(plan,output)
     (output/'stage.json').write_text(json.dumps(report,indent=2)+'\n')
-    render_views(plan['scene_name'],{'reference':plan['reference_camera']},output/'full-map',width=1920)
+    collection = bpy.data.collections[plan['collection_name']]
+    visibility = {obj: obj.hide_render for obj in collection.all_objects}
+    try:
+        for obj in collection.all_objects:
+            if obj.get('reveal_show_when_applied'):
+                obj.hide_render = True
+        render_views(plan['scene_name'],{'reference':plan['reference_camera']},output/'full-map',width=1920)
+    finally:
+        for obj, hidden in visibility.items():
+            obj.hide_render = hidden
     return report
 
 

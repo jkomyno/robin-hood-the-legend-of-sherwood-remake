@@ -49,14 +49,16 @@ def verify(directory,catalog_path):
         model=gltf(directory/'assets'/asset['model'])
         for state, variant in descriptor.get('state_variants', {}).items():
             variant_model=gltf(directory/'assets'/Path(asset['descriptor']).parent/variant['model'])
-            mission_nodes=[n for n in variant_model['nodes'] if n.get('name','').startswith('mission-')]
-            if {n['name'] for n in mission_nodes} != owned:
+            mission_nodes=[n for n in variant_model['nodes'] if n.get('name','').startswith(('mission-','building-'))]
+            variant_components=variant.get('components',descriptor['components'])
+            variant_owned={c['source_node'] for c in variant_components}
+            if {n['name'] for n in mission_nodes} != variant_owned or not variant_owned <= owned:
                 raise ValueError('Static variant canonical ownership differs: '+asset['id'])
             for node in variant_model['nodes']:
                 extras=node.get('extras',{})
                 if any(k in extras for k in ('drawbridge_hinge_matrix','drawbridge_pose_angles_degrees','drawbridge_pose','native_patch_preview')):
                     raise ValueError('Standalone static endpoint carries animation/native-map binding')
-            if len([n for n in variant_model['nodes'] if 'mesh' in n]) != len(descriptor['components']):
+            if len([n for n in variant_model['nodes'] if 'mesh' in n]) != len(variant_components):
                 raise ValueError('Static endpoint component count differs')
         materials=model.get('materials',[])
         generated_materials=[m for m in materials if m.get('extras',{}).get('generated_source_sha256')]
