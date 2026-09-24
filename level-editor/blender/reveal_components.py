@@ -89,3 +89,21 @@ def filter_occluders(objects, selectors=None, *, projection_label, available_obj
             raise ValueError('Selected component is not an authored cover for this patch')
         excluded.add(obj)
     return [o for o in objects if o not in excluded]
+
+
+def validate_occluder_nodes(requested, visible_objects, available_objects,
+                            selectors=None, *, projection_label):
+    """Allow a hidden node only when its every mesh is an excluded room cover."""
+    if requested is None:
+        return
+    missing = set(requested) - {obj.get('source_node') for obj in visible_objects}
+    if not missing:
+        return
+    catalog = list(available_objects)
+    hidden = [obj for obj in catalog if obj.type == 'MESH'
+              and obj.get('source_node') in missing]
+    if (missing - {obj.get('source_node') for obj in hidden}
+            or any(not obj.hide_render for obj in hidden)
+            or filter_occluders(hidden, selectors, projection_label=projection_label,
+                                available_objects=catalog)):
+        raise ValueError('Unknown projection nodes: ' + str(missing))

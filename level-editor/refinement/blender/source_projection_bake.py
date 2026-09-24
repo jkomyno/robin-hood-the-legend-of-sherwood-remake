@@ -57,9 +57,11 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
     objects = [o for o in collection.all_objects
                if o.type == "MESH" and not o.hide_render]
     present = {o.get("source_node") for o in objects}
-    for requested in (receiver_nodes, occluder_nodes):
-        if requested is not None and set(requested) - present:
-            raise ValueError("Unknown projection nodes: " + str(set(requested) - present))
+    if receiver_nodes is not None and set(receiver_nodes) - present:
+        raise ValueError("Unknown projection nodes: " + str(set(receiver_nodes) - present))
+    from reveal_components import validate_occluder_nodes
+    validate_occluder_nodes(occluder_nodes, objects, collection.all_objects,
+                            exclude_occluder_components, projection_label=projection_label)
     receivers = [o for o in objects if receiver_nodes is None or o.get("source_node") in receiver_nodes]
     from reveal_components import filter_receivers
     receivers=filter_receivers(receivers,receiver_components,
