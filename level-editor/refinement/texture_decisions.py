@@ -69,7 +69,7 @@ def record(gallery, decisions, text):
     for line in text.splitlines():
         if not line.strip() or ' model review - http' in line:
             continue
-        match = re.fullmatch(r'(\S+): (approved|needs refinement)(.*?) \[review ([0-9a-f]{16})\]', line)
+        match = re.fullmatch(r'(\S+): (approved|needs refinement|feedback)(.*?) \[review ([0-9a-f]{16})\]', line)
         if not match:
             raise ValueError('Unrecognized texture decision: ' + line)
         asset_id, decision, _, revision = match.groups()
@@ -87,7 +87,7 @@ def record(gallery, decisions, text):
                 raise ValueError('Displayed texture evidence changed: ' + asset_id + '/' + key)
         pending.append((paths, {
             'asset_id': asset_id, 'scope': 'texture',
-            'decision': 'approved' if decision == 'approved' else 'rejected',
+            'decision': {'approved': 'approved', 'needs refinement': 'rejected', 'feedback': 'feedback'}[decision],
             'review_revision': item['review_revision'], 'exact_user_text': line,
             'evidence_sha256': hashes,
             'evidence_paths': {key: str(path) for key, path in paths.items()},

@@ -49,6 +49,16 @@ class TextureDecisionTests(unittest.TestCase):
             record(self.gallery, self.decisions, self.text)
         self.assertFalse(self.decisions.exists())
 
+    def test_feedback_is_archived_without_inventing_approval_or_rejection(self):
+        text = self.text.replace('approved', 'feedback — why is the bake blurry?')
+        record(self.gallery, self.decisions, text)
+        decisions = json.loads(self.decisions.read_text())['decisions']
+        self.assertEqual(decisions[0]['exact_user_text'], text)
+        self.assertEqual(decisions[0]['decision'], 'feedback')
+        bind(self.item, decisions)
+        self.assertEqual(self.item['user_approval'], 'feedback')
+        self.assertTrue((Path(decisions[0]['archive']) / 'model.blend').exists())
+
     def test_wrong_display_revision_rejected(self):
         with self.assertRaisesRegex(ValueError, 'Displayed texture revision differs'):
             record(self.gallery, self.decisions, self.text.replace('a' * 16, 'b' * 16))
