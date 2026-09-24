@@ -485,3 +485,29 @@ test("standalone resources survive undo-style instance removal and retire exactl
   viewport.dispose();
   assert.equal(disposed, 1);
 });
+
+test("asset drops convert the cursor's world ground hit to game coordinates", () => {
+  const { viewport, publish } = fixture();
+  const document = documentFixture();
+  publish({ ...document, objects: [], groups: [] });
+  const target = new THREE.Vector3(30, 0, 40);
+  const camera = new THREE.OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
+  camera.position.copy(target).add(new THREE.Vector3(100, 200, 300));
+  camera.lookAt(target);
+  camera.updateMatrixWorld();
+  Object.assign(viewport, {
+    camera, frustum: 100,
+    container: { clientWidth: 400, clientHeight: 400 },
+    orbit: { target, update() {} },
+    renderer: { domElement: { getBoundingClientRect: () => ({ left: 20, top: 40, width: 400, height: 400 }) } },
+  });
+  for (const angle of [0, 45]) {
+    viewport.setPerspective(angle);
+    const position = viewport.assetDropPosition(220, 240)!;
+    assert.ok(Math.abs(position[0] - 30) < 1e-6);
+    assert.ok(Math.abs(position[1] - 40 * Math.sin(document.camera.elevation_deg * Math.PI / 180)) < 1e-6);
+    assert.ok(Math.abs(position[2]) < 1e-6);
+  }
+  Object.assign(viewport, { renderer: null, orbit: null });
+  viewport.dispose();
+});

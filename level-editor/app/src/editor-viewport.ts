@@ -917,6 +917,24 @@ export class EditorViewport {
     this.bindings.commitTransform({ ...t, dx, dy, dz });
   }
 
+  /** Locate the drop on visible terrain, falling back to the map ground plane. */
+  assetDropPosition(clientX: number, clientY: number): Vec3 | null {
+    const document = this.bindings.document();
+    if (!document || !this.camera || !this.renderer) return null;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      (clientX - rect.left) / rect.width * 2 - 1,
+      -(clientY - rect.top) / rect.height * 2 + 1,
+    );
+    this.raycaster.setFromCamera(ndc, this.activeCamera());
+    const hit = this.groundNode
+      ? this.raycaster.intersectObject(this.groundNode, true).find(hit => isEffectivelyVisible(hit.object))
+      : undefined;
+    const point = hit?.point ?? this.raycaster.ray.intersectPlane(
+      new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3());
+    return point ? sceneToGame(document.camera, [point.x, -point.z, point.y]) : null;
+  }
+
   private pick(e: PointerEvent, partOnly: boolean) {
     if (!this.camera || !this.renderer) return;
     const rect = this.renderer.domElement.getBoundingClientRect();

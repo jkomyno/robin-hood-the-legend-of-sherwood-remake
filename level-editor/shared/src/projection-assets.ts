@@ -30,6 +30,8 @@ export interface ProjectionAssetDescriptor {
 }
 
 export interface ProjectionAssetEntry {
+  asset_type?: string;
+  tags?: string[];
   state_variant?: AssetState;
   editor_usage?: "map-background";
   id: string;

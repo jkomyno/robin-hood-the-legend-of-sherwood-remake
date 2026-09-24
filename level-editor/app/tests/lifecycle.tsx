@@ -2,6 +2,7 @@ import { render } from "@solidjs/web";
 import { createSignal } from "solid-js";
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
+import { checkSharedLibrary } from "./library";
 import Editor3D from "../src/Editor3D";
 import { checkConnectionPersistence } from "./connections";
 import "../src/styles.css";
@@ -309,6 +310,8 @@ function button(label: string) {
 
 async function main() {
   await checkConnectionPersistence();
+  await checkSharedLibrary();
+  const initialContextLosses = contextLosses;
   const library = await fixtures();
   const replacement = await fixtures(["c", "d"]);
   const [activeLibrary, setActiveLibrary] = createSignal(library);
@@ -501,7 +504,7 @@ async function main() {
       `GPU resources retained: ${JSON.stringify(gpuCounts())}`,
     );
     assert(
-      contextLosses === mount + 1,
+      contextLosses === initialContextLosses + mount + 1,
       `viewport context not released: ${contextLosses}`,
     );
   }

@@ -9,6 +9,15 @@ A list of which additional features we have added, which ones we might still wan
 
 ## Done
 
+- **Shared 3D editor asset library.** Browse published assets from every source
+  level in one panel, with 3D previews that rotate on hover, tags, text search,
+  and combined asset-type/source-level filters. Drag objects onto the scene's
+  terrain or use Add to scene. Cross-level instances preserve their source
+  provenance through save/reload and undo/redo. Catalog entries can supply
+  `asset_type` and `tags`; older entries use name-based type classification.
+  Background artwork is previewable but remains non-insertable. Imported assets
+  can be saved in editor documents; game baking remains unsupported.
+
 - **Local directional gamepad movement.** Left-stick and optional WASD movement
   drive each selected hero on their current layer, stopping at blocking geometry
   instead of pathfinding toward a projected cursor target. Walk/run input remains

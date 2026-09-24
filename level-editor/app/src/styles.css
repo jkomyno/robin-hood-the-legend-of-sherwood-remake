@@ -713,8 +713,30 @@ input.num {
 .perspective-control input { width: 100%; margin: 12px 0 4px; accent-color: #8de0c0; }
 .mission-summary { font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
 
-.asset-palette { padding: 0.5rem; border-bottom: 1px solid #445; }
-.asset-palette h3 { margin: 0 0 0.5rem; }
-.asset-palette ul { list-style: none; padding: 0; max-height: 12rem; overflow: auto; }
-.asset-palette li { display: flex; align-items: center; gap: 0.5rem; margin: 0.25rem 0; }
-.asset-palette li span { flex: 1; }
+
+.shared-library { width: 340px; min-width: 260px; flex-shrink: 0; display: flex; flex-direction: column; background: #171b22; border-right: 1px solid #353e4c; font-size: 12px; }
+.shared-library header { padding: 16px 14px 12px; }
+.shared-library h2 { font-size: 17px; margin: 0 0 4px; }
+.shared-library header > span, .library-summary { color: #9aaabc; }
+.library-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 14px; }
+.library-filters > input { grid-column: 1 / -1; min-width: 0; }
+.library-filters label { display: flex; flex-direction: column; gap: 5px; color: #b4c0cf; }
+.library-filters select { width: 100%; min-width: 0; padding: 7px; }
+.library-summary { padding: 0 14px; }
+.shared-library > .hint, .library-error { padding: 0 14px; }
+.library-error { color: #ffac9c; overflow-wrap: anywhere; }
+.asset-grid { overflow-y: auto; flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 12px 12px; align-content: start; }
+.asset-card { border: 1px solid #354050; border-radius: 8px; overflow: hidden; background: #222a35; min-width: 0; }
+.asset-card[draggable="true"] { cursor: grab; }
+.asset-card:hover { border-color: #80b4c8; }
+.asset-preview { position: relative; aspect-ratio: 320 / 220; background: radial-gradient(ellipse at center, #3b485b, #202833); }
+.asset-preview canvas { display: block; width: 100%; height: 100%; }
+.preview-status { position: absolute; inset: 0; display: grid; place-content: center; padding: 8px; text-align: center; font-size: 11px; color: #bdc9d9; overflow: auto; overflow-wrap: anywhere; }
+.asset-card-info { padding: 9px; }
+.asset-card-info strong { display: block; font-size: 12px; overflow-wrap: anywhere; }
+.asset-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.asset-tags span { font-size: 10px; border: 1px solid #455569; border-radius: 4px; padding: 2px 5px; color: #bacfe1; }
+.asset-card-info button { width: 100%; font-size: 11px; }
+.shared-library footer { padding: 12px; border-top: 1px solid #353e4c; color: #aebdce; }
+.asset-drop-active { outline: 3px solid #86d1d7; outline-offset: -3px; }
+@media (max-width: 1100px) { .shared-library { width: 270px; } .editor-panel { width: 240px; } }

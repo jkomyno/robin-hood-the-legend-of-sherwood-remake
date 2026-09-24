@@ -56,11 +56,11 @@ test("standalone index filters the current map and actual model parts receive na
   assert.equal(f.disposed(), 1);
 });
 
-test("changed files and foreign maps reject before model publication; bad model cleanup is owned", async (t) => {
+test("changed files reject before model publication; bad model cleanup is owned", async (t) => {
   const f = fixture();
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
   const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
-  await assert.rejects(prepareProjectionAsset(f.directory, f.entry, "York"), /source map mismatch/);
+  assert.equal((await prepareProjectionAsset(f.directory, f.entry, "York")).descriptor.source_map, "Leicester");
   await assert.rejects(prepareProjectionAsset(f.directory, f.entry, "Leicester", { ...prepared.reference, model_sha256: "c".repeat(64) }), /model changed/);
   f.json(f.entry.descriptor, { ...f.descriptor, name: "Edited" });
   await assert.rejects(prepareProjectionAsset(f.directory, f.entry, "Leicester", prepared.reference), /descriptor changed/);
@@ -75,15 +75,15 @@ test("saved external models reload before document validation and retire with th
   const f = fixture();
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
   const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
-  const base: Level3D = { version: 1, map: "Leicester", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
-    glb: "Leicester-volumes.scene.glb", groups: [], objects: [] };
+  const base: Level3D = { version: 1, map: "York", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+    glb: "York-volumes.scene.glb", groups: [], objects: [] };
   const inserted = insertProjectionAsset(base, prepared.descriptor, prepared.reference, [50, 50, 0]);
-  f.json("scenes/Leicester.level3d.json", inserted.document);
-  f.json("scenes/Leicester-volumes.scene.json", { version: 1, map: "Leicester", size: [100, 100], camera: base.camera, placements: [] });
-  f.files.set("scenes/Leicester-volumes.scene.glb", new File([new Uint8Array([7])], "map.glb"));
+  f.json("scenes/York.level3d.json", inserted.document);
+  f.json("scenes/York-volumes.scene.json", { version: 1, map: "York", size: [100, 100], camera: base.camera, placements: [] });
+  f.files.set("scenes/York-volumes.scene.glb", new File([new Uint8Array([7])], "map.glb"));
   const map = new THREE.Group(); let calls = 0;
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: calls++ === 0 ? map : f.asset }));
-  const candidate = await prepareMapCandidate("Leicester", f.directory, null);
+  const candidate = await prepareMapCandidate("York", f.directory, null);
   assert.equal(calls, 2);
   assert.equal(candidate.sources.get("asset:house:building-000"), f.mesh);
   assert.equal(candidate.document.groups[0]!.transform.dx, 50);
@@ -182,4 +182,11 @@ test("full-map mission metadata creates one source and saved deletions remain de
   assert.equal((await prepareMapCandidate("Leicester", f.directory, null)).document.objects.length, 1);
   bridge.userData.source_obstacle = 267;
   await assert.rejects(prepareMapCandidate("Leicester", f.directory, null), /Invalid authored mission/);
+});
+
+test("shared catalog lists assets from every source level", async () => {
+  const f = fixture();
+  f.json("3d-assets/york/asset.json", { ...f.descriptor, id: "york-house", name: "York House", source_map: "York" });
+  const entries = await listProjectionAssets(f.directory);
+  assert.deepEqual(entries.map(entry => entry.source_map), ["Leicester", "York"]);
 });

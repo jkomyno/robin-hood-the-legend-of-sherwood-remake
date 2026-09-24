@@ -36,9 +36,9 @@ test("standalone insertion creates a complete independent group and preserves de
   assert.equal(deleteSelection(duplicate.document, duplicate.selection).objects.length, 2);
 });
 
-test("foreign-map, changed revisions and invalid placements fail without edits", () => {
+test("changed revisions and invalid placements fail without edits", () => {
   const { descriptor, reference, document } = assetFixture();
-  assert.throws(() => insertProjectionAsset(document, { ...descriptor, source_map: "York" }, reference, [0, 0, 0]), /current map/);
+
   const inserted = insertProjectionAsset(document, descriptor, reference, [0, 0, 0]);
   assert.throws(() => insertProjectionAsset(inserted.document, descriptor, { ...reference, model_sha256: "c".repeat(64) }, [0, 0, 0]), /different revision/);
   assert.throws(() => insertProjectionAsset(document, descriptor, reference, [NaN, 0, 0]), /placement/);
@@ -50,4 +50,12 @@ test("map backgrounds cannot be inserted as editable instances", () => {
   const ground = { ...descriptor, editor_usage: "map-background" as const, parts: [], components: [{ source_node: "ground" }] };
   assert.throws(() => insertProjectionAsset(document, ground, reference, [0, 0, 0]), /cannot be inserted/);
   assert.equal(document.groups.length, 0);
+});
+
+test("shared assets keep source provenance when placed in a different level", () => {
+  const { descriptor, reference, document } = assetFixture();
+  const result = insertProjectionAsset({ ...document, map: "York" }, descriptor, reference, [12, 34, 5]);
+  assert.equal(result.document.map, "York");
+  assert.equal(result.document.objects[0]!.source.map, "Leicester");
+  assert.equal(result.document.groups[0]!.transform.dx, 12);
 });

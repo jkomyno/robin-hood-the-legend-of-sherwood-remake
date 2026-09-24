@@ -34,6 +34,8 @@ import {
   patchGroup,
   type Selection,
 } from "./document-commands";
+import AssetLibrary from "./AssetLibrary";
+import { ASSET_DRAG_TYPE } from "./asset-library";
 import { insertProjectionAsset } from "./asset-commands";
 import { listProjectionAssets, prepareProjectionAsset } from "./projection-library";
 import { prepareMapCandidate } from "./map-candidate";
@@ -72,7 +74,9 @@ export default function Editor3D(props: EditorProps) {
   let loadedLibrary: LibraryRef | null = null;
   const [maps, setMaps] = createSignal<string[]>([]);
   const [assetEntries, setAssetEntries] = createSignal<ProjectionAssetEntry[]>([]);
-  const [assetSearch, setAssetSearch] = createSignal("");
+  const [libraryLoading, setLibraryLoading] = createSignal(false);
+  const [libraryError, setLibraryError] = createSignal("");
+  const [dropActive, setDropActive] = createSignal(false);
   const [addingAsset, setAddingAsset] = createSignal(false);
   let paletteAttempt = 0;
   const [revision, setRevision] = createSignal<SessionSnapshot<Level3D> | null>(
@@ -145,20 +149,24 @@ export default function Editor3D(props: EditorProps) {
   );
 
   createEffect(
-    () => ({ library: props.library(), map: mapName() }),
-    ({ library, map }) => {
+    () => props.library(),
+    (library) => {
       const attempt = ++paletteAttempt;
       setAssetEntries([]);
-      if (!library || !map) return;
-      void listProjectionAssets(library.handle, map).then(entries => {
-        if (!disposed && attempt === paletteAttempt && props.library() === library && mapName() === map) setAssetEntries(entries);
+      setLibraryError("");
+      setLibraryLoading(!!library);
+      if (!library) return;
+      void listProjectionAssets(library.handle).then(entries => {
+        if (!disposed && attempt === paletteAttempt && props.library() === library) setAssetEntries(entries);
       }).catch(error => {
-        if (!disposed && attempt === paletteAttempt) props.onError(String(error));
+        if (!disposed && attempt === paletteAttempt) setLibraryError(String(error));
+      }).finally(() => {
+        if (!disposed && attempt === paletteAttempt) setLibraryLoading(false);
       });
     },
   );
 
-  async function addAsset(entry: ProjectionAssetEntry) {
+  async function addAsset(entry: ProjectionAssetEntry, placement?: [number, number, number]) {
     const document = doc();
     const library = props.library();
     const attempt = openAttempt;
@@ -169,7 +177,7 @@ export default function Editor3D(props: EditorProps) {
       prepared = await prepareProjectionAsset(library.handle, entry, document.map);
       if (disposed || attempt !== openAttempt || props.library() !== library || doc() !== document) return;
       const result = insertProjectionAsset(document, prepared.descriptor, prepared.reference,
-        [document.size[0] / 2, document.size[1] / 2, 0]);
+        placement ?? [document.size[0] / 2, document.size[1] / 2, 0]);
       parseLevel3D(result.document, { level: level() ?? undefined });
       const adopted = viewport.adoptAsset(prepared.reference, prepared.asset, prepared.sources);
       if (!adopted) disposeObjectResources([prepared.asset]);
@@ -598,7 +606,28 @@ export default function Editor3D(props: EditorProps) {
         </Show>
       </div>
       <div class="editor-body">
-        <div class="editor-canvas" ref={(element) => viewport.setup(element)} />
+        <AssetLibrary root={props.library()?.handle ?? null} entries={assetEntries()}
+          loading={libraryLoading()} error={libraryError()} canInsert={!!doc() && !addingAsset()}
+          onAdd={entry => void addAsset(entry)} onDragEnd={() => setDropActive(false)} />
+        <div class={`editor-canvas ${dropActive() ? "asset-drop-active" : ""}`} ref={(element) => viewport.setup(element)}
+          onDragOver={event => {
+            if (!doc() || addingAsset() || !event.dataTransfer?.types.includes(ASSET_DRAG_TYPE)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "copy";
+            setDropActive(true);
+          }}
+          onDragLeave={event => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropActive(false);
+          }}
+          onDrop={event => {
+            setDropActive(false);
+            const id = event.dataTransfer?.getData(ASSET_DRAG_TYPE);
+            if (!id) return;
+            event.preventDefault();
+            const entry = assetEntries().find(entry => entry.id === id);
+            const placement = viewport.assetDropPosition(event.clientX, event.clientY);
+            if (entry && placement) void addAsset(entry, placement);
+          }} />
         <aside class="editor-panel">
           <section class="view-settings">
             <h2>View</h2>
@@ -780,19 +809,6 @@ export default function Editor3D(props: EditorProps) {
                 </div>
               </section>
             )}
-          </Show>
-          <Show when={doc()}>
-            <section class="asset-palette">
-              <h3>Assets</h3>
-              <input class="search" aria-label="Find assets" placeholder="Find assets" value={assetSearch()}
-                onInput={event => setAssetSearch(event.currentTarget.value)} />
-              <Show when={assetEntries().length === 0}><p class="hint">No standalone assets for this map.</p></Show>
-              <ul>
-                <For each={assetEntries().filter(entry => entry.name.toLowerCase().includes(assetSearch().toLowerCase()))}>
-                  {entry => <li><span>{entry.name}</span><button disabled={addingAsset() || entry.editor_usage === "map-background"} onClick={() => void addAsset(entry)} aria-label={`Add ${entry.name}`}>{entry.editor_usage === "map-background" ? "Map background" : "Add"}</button></li>}
-                </For>
-              </ul>
-            </section>
           </Show>
           <section class="object-list">
             <div class="search-row">

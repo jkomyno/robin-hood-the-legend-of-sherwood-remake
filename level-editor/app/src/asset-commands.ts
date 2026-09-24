@@ -8,8 +8,8 @@ export function insertProjectionAsset(document: Level3D, descriptor: ProjectionA
   parseProjectionAssetDescriptor(descriptor);
   if (descriptor.editor_usage === "map-background") throw new Error("Map backgrounds are part of the map and cannot be inserted as objects");
   parseExternalAssetSources([reference]);
-  if (descriptor.source_map.toLowerCase() !== document.map.toLowerCase() || descriptor.id !== reference.id)
-    throw new Error("Only assets from the current map can be inserted");
+  if (descriptor.id !== reference.id)
+    throw new Error("Asset identity mismatch");
   if (placement.length !== 3 || placement.some(value => !Number.isFinite(value))) throw new Error("Invalid asset placement");
   const existing = document.assetSources?.find(source => source.id === reference.id);
   if (existing && (["descriptor", "model", "descriptor_sha256", "model_sha256"] as const).some(key => existing[key] !== reference[key])) throw new Error("A different revision of this asset is already in the document");
@@ -21,7 +21,7 @@ export function insertProjectionAsset(document: Level3D, descriptor: ProjectionA
   const parts: Level3DObject[] = descriptor.parts.map(part => ({
     id: `${id}:${part.node}`, node: assetNodeKey(descriptor.id, part.node),
     kind: part.mission_profile !== undefined ? "mission" : part.node.startsWith("terrace-") ? "terrace" : "building",
-    source: part.mission_profile !== undefined ? { map: document.map, mission_profile: part.mission_profile } : { map: document.map, obstacle: part.source_obstacle },
+    source: part.mission_profile !== undefined ? { map: descriptor.source_map, mission_profile: part.mission_profile } : { map: descriptor.source_map, obstacle: part.source_obstacle },
     obstacle: structuredClone(part.obstacle_local_game), transform: { ...IDENTITY_TRANSFORM },
     group: id, name: part.name, ...(part.default_hidden ? { hidden: true } : {}),
   }));

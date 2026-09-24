@@ -411,7 +411,8 @@ export function parseLevel3D(
     if (context.nodes)
       check(context.nodes.has(o.node), o.id, `missing source node ${o.node}`);
     object(o.source, `${o.id}.source`);
-    check(o.source.map === d.map, o.id, "mismatched source map");
+    text(o.source.map, `${o.id}.source.map`);
+    if (!o.node.startsWith("asset:")) check(o.source.map === d.map, o.id, "mismatched source map");
     if (o.kind === "mission") {
       check(o.source.obstacle === undefined && /^(?:asset:[^:]+:)?mission-[a-zA-Z0-9_-]+$/.test(o.node), o.id, "mission parts cannot claim an obstacle index");
       text(o.source.mission_profile, `${o.id}.source.mission_profile`);
@@ -421,7 +422,7 @@ export function parseLevel3D(
         o.id,
         "invalid obstacle index or mission profile",
       );
-      if (context.level)
+      if (context.level && !o.node.startsWith("asset:"))
         check(
           o.source.obstacle < context.level.sight_obstacles.length,
           o.id,
@@ -492,6 +493,8 @@ export function parseProjectionAssetIndex(value: unknown): ProjectionAssetEntry[
     object(entry, "projection asset entry");
     if (entry.editor_usage !== undefined) check(entry.editor_usage === "map-background", "editor_usage", "unsupported asset capability");
     for (const key of ["id", "name", "source_map"]) text(entry[key], key);
+    if (entry.asset_type !== undefined) text(entry.asset_type, "asset_type");
+    if (entry.tags !== undefined) for (const tag of array(entry.tags, "tags")) text(tag, "tag");
     check(!/[\\/:\0]/.test(entry.id) && !ids.has(entry.id), "asset id", "invalid or duplicate identity");
     ids.add(entry.id);
     for (const key of ["descriptor", "model"]) check(safeLibraryPath(entry[key]), key, "expected safe library-relative path");
