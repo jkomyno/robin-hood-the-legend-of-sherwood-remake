@@ -1,16 +1,19 @@
 """Record a human/agent visual inspection after inspecting the actual eight views."""
 import argparse
+import sys
 import os
 import json
 from pathlib import Path
 from bake_ready_textures import ROOT, sha, write, update_ledger
+sys.path.insert(0, str(ROOT / 'level-editor/refinement'))
+from texture_actual_evidence import actual_sheet
 
 
 def record(asset, status, observations):
     ledger_path=ROOT/'level-editor/work/nottingham-refinement/texture-generation/static-bake-jobs.json'
     job=json.loads(ledger_path.read_text())['assets'][asset]
     output=Path(job['output']);validation=json.loads((output/'validation.json').read_text())
-    for name,path in [('model_sha256',output/'worker.blend'),('actual_sheet_sha256',output/'actual/textured.png'),('validation_sha256',output/'validation.json')]:
+    for name,path in [('model_sha256',output/'worker.blend'),('actual_sheet_sha256',actual_sheet(output, job)),('validation_sha256',output/'validation.json')]:
         if job[name]!=sha(path):raise ValueError('Baked artifact changed: '+name)
     report=dict(asset_id=asset,status=status,approval='pending-user-texture-review',publication='not-published',
         all_eight_actual_material_views_inspected=True,inspected_views=list(range(8)),observations=observations,
@@ -21,10 +24,12 @@ def record(asset, status, observations):
         limitations=['Generated hidden surface details are inferred, not recovered original artwork.',
             'Unfilled atlas counts include padding and surfaces unseen in the eight cameras; the eight-view inspection does not prove underside completeness.',
             'Texture approval is separate from the earlier geometry approval.'])
+    if 'actual_sheet_path' in job: report['actual_sheet_path']=job['actual_sheet_path']
     write(output/'texture-review.json',report)
     experiment=Path(job['experiment'])
     generation=json.loads((experiment/'generation-review.json').read_text())
     gallery=dict(status='ready-for-user' if status=='ready-for-user-texture-review' else 'fix-needed',bake=str(output.relative_to(experiment)),generation=os.path.relpath(Path(generation['generated_preserved_path']).parent,experiment),all_eight_actual_views_inspected=True,actual_sheet_sha256=job['actual_sheet_sha256'],baked_model_sha256=job['model_sha256'],notes=observations)
+    if 'actual_sheet_path' in job: gallery['actual_sheet_path']=job['actual_sheet_path']
     write(experiment/'texture-review.json',gallery)
     job.update(status=status,texture_review=str(output/'texture-review.json'),texture_review_sha256=sha(output/'texture-review.json'))
     update_ledger(ledger_path,asset,job)

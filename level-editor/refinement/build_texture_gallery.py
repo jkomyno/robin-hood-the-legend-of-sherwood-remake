@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / 'blender'))
 from build_review_gallery import build
 from review_evidence import sha
 from texture_decisions import bind as bind_texture_decision
+from texture_actual_evidence import actual_sheet
 
 
 def validate_reconciliation_reference(validation):
@@ -108,7 +109,7 @@ def candidate(experiment, map_name, *, supplemental=False):
             or validation.get('geometry_verified') is not True
             or report.get('changedProtected') != 0):
         raise ValueError(f'Incomplete texture review: {experiment.name}')
-    actual = bake / 'actual/textured.png'
+    actual = actual_sheet(bake, review)
     if (sha(actual) != review['actual_sheet_sha256']
             or sha(bake / 'worker.blend') != review['baked_model_sha256']
             or sha(generation / 'generated-preserved.png') != validation['generated_sha256']
