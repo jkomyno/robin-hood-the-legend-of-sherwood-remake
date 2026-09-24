@@ -128,6 +128,9 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
     if repair_policy is not None:
         from inferred_gap_repair import validate_policy
         validate_policy(repair_policy, [obj.name for obj in targets])
+        for obj in targets:
+            for face in repair_policy.get('face_bottom_bands',{}).get(obj.name,{}):
+                if int(face)>=len(obj.data.polygons):raise ValueError('Basal override names a nonexistent face')
     nodes = {obj.get('source_node') for obj in targets}
     two_sided = set(manifest.get('texture_two_sided_object_names', []))
     if two_sided - {obj.name for obj in targets}:
@@ -222,6 +225,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
         assigned_objects.update(obj.name for obj in layer_targets)
         repair_names = [obj.name for obj in layer_targets if repair_policy and obj.name in repair_policy['receiver_objects']]
         layer_repair = {**repair_policy, 'receiver_objects':repair_names} if repair_names else None
+        if layer_repair is not None and 'face_bottom_bands' in layer_repair:
+            layer_repair['face_bottom_bands']={name:faces for name,faces in layer_repair['face_bottom_bands'].items() if name in repair_names}
         reports.append(bake(map_name,layer['source_path'], output/f'layer-{index}.json',
                             collection_name=manifest['collection_name'],
                             receiver_nodes=receivers, occluder_nodes=layer['occluder_nodes'],

@@ -36,6 +36,19 @@ class GapRepair(unittest.TestCase):
         c,p,g,x=self.fixture();limited=policy();limited['max_total_texels']=2
         with self.assertRaises(ValueError):repair_face(c,p,g,x,limited,0)
 
+    def test_measured_band_only_extends_connected_basal_component(self):
+        c,p,g,x=self.fixture();g[:]=True;p[:]=False
+        g[0:3,0]=False;g[2,3]=False
+        settings=policy();settings['max_distance_world']=4
+        out,filled,stats=repair_face(c,p,g,x,settings,0,bottom_band_override=3)
+        self.assertTrue(filled[2,0]);self.assertFalse(filled[2,3])
+        self.assertTrue(stats['connected_basal_component'])
+        np.testing.assert_array_equal(out[~filled],c[~filled])
+        settings['face_bottom_bands']={'foreign':{'2':3}}
+        with self.assertRaises(ValueError):validate_policy(settings)
+        settings['face_bottom_bands']={'own':{'2':13}}
+        with self.assertRaises(ValueError):validate_policy(settings)
+
     def test_foreign_receiver_and_unbounded_policy_rejected(self):
         with self.assertRaises(ValueError):validate_policy(policy(),['other'])
         bad=policy();bad['max_distance_texels']=50
