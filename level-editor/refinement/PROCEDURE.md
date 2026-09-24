@@ -475,6 +475,9 @@ texture baked, publication staged, and live editor integration verified.
 ## 9. Lighting review
 
 Keep the shared azimuth/elevation configurable and record it in every packet.
+Calibrate each map independently. The historical helper default is Derby's
+setting and must not silently establish another map's sun direction. Pass an
+explicit `lighting` configuration to `prepare()` for new map workspaces.
 Review solid lighting before texture synthesis. If artwork shadows are used to
 calibrate lighting, select exact caster-edge and receiver-shadow pixel pairs;
 broad regions and arbitrary points are invalid. Annotate each pair directly on
