@@ -454,6 +454,13 @@ mapping and validates all slots before mutation. Keep both atlases and UV layers
 export both state variants, and compare actual revealed renders byte-for-byte.
 The editor/patch integration must switch these materials with visibility; a
 covered-state export alone is not a completed revealed-state integration.
+When cached covered and revealed generations disagree on shared surface colors
+or patterns, bake each endpoint independently and retain its own reviewed worker.
+Do not stack the second fill onto the first worker and then present that merged
+material set against both generated sheets. Compare each state's actual eight
+views against its matching preserved generation; gray coverage alone cannot
+detect this cross-state contamination. The publication compiler can preserve
+these separate reviewed workers as explicit texture states.
 
 Create a publication plan using the existing `stage_reviewed_publication.py`
 schema, binding baseline, catalog, scene/collection, map/source paths, imports,
