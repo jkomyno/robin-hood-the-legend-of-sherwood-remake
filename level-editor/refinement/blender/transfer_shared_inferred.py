@@ -76,6 +76,7 @@ def run(canonical, target, output):
             for m in obj.data.materials if m and m.use_nodes for n in m.node_tree.nodes if n.type=='TEX_IMAGE' and n.image]
         return (_geometry(obj), hashlib.sha256(json.dumps(appearance,sort_keys=True).encode()).hexdigest())
     def provenance(experiment, manifest):
+        performed_replay=False
         validation=json.loads((experiment/'bake-v1/validation.json').read_text())
         entries=[entry for layer in validation['layers'] for entry in layer['objects']]
         if not all(entry.get('texel_provenance',{}).get('packed_image_sha256') for entry in entries):
@@ -93,6 +94,7 @@ def run(canonical, target, output):
                     load(experiment/'approved-model.blend',manifest)
                     apply(experiment/'views.json', validation['generated_image'], replay,
                           texels_per_unit=2,reconciliation_reference=validation.get('reconciliation_reference'))
+                    performed_replay=True
             replay_report=json.loads((replay/'report.json').read_text())
             if replay_report['generated_sha256']!=validation['generated_sha256'] or replay_report['input_sha256']!=validation['input_sha256']:
                 raise ValueError('Provenance replay input mismatch')
@@ -104,11 +106,14 @@ def run(canonical, target, output):
             if sha(path)!=proof['sha256']:raise ValueError('Provenance file changed')
             hashes[str(path)]=sha(path)
             result[entry['object']]=(proof,np.load(path)['ownership'])
-        return result
+        return result,performed_replay
     provenance_maps=[]
     for experiment,manifest in zip((canonical,target),manifests):
         print('Transfer: verifying provenance for '+str(experiment),flush=True)
-        provenance_maps.append(provenance(experiment,manifest))
+        provenance_map,performed_replay=provenance(experiment,manifest)
+        provenance_maps.append(provenance_map)
+        if not performed_replay:
+            continue
         # No Blender operation remains in flight here. Let queued assets run
         # between expensive state replays, then recheck all immutable inputs.
         release()
