@@ -170,6 +170,7 @@ Replace every masked untextured surface with the appropriate texture. Return the
   if(generatedInfo.width!==canvasWidth||generatedInfo.height!==canvasHeight)
     throw new Error(`Generated dimensions ${generatedInfo.width}x${generatedInfo.height} differ from input; refusing to rescale texture coordinates`);
   const cropped=await cropTransport(generated,padding);
+  if(padding)await fs.writeFile(path.join(outputDirectory,"generated-content.png"),cropped);
   const pixels=await sharp(cropped).ensureAlpha().raw().toBuffer();
   const result=Buffer.from(original);let filled=0;
   for(let i=0;i<result.length;i+=4)if(editMask[i+3]===0){pixels.copy(result,i,i,i+3);result[i+3]=255;filled++;}

@@ -201,6 +201,39 @@ class InvalidCanvas(unittest.TestCase):
             prepare(self.manifest,'fixture',self.root/'bad2',check_only=True,check_only_atlas_size=(128,128))
 
 
+class PaddedTransportPreparation(unittest.TestCase):
+    tile_size=(256,256)
+    setUp=PreparationTests.setUp
+    save=PreparationTests.save
+
+    def bind_padding(self):
+        padding={'version':1,'kind':'bottom-padding','width':1024,'height':640,
+                 'content_box':{'left':0,'top':0,'width':1024,'height':512}}
+        selection=self.root/'selection.json';selection.write_text(json.dumps({'transport_padding':padding}))
+        self.item.update(transport_padding=padding,preparation_selection=str(selection))
+        self.item['revision']['evidence']['selection']={'path':str(selection),'sha256':sha(selection)}
+        identity={'asset_id':'fixture','model_sha256':sha(self.root/'model.blend'),
+                  'evidence':{k:v['sha256'] for k,v in self.item['revision']['evidence'].items()}}
+        self.item['revision']['sha256']=hashlib.sha256(json.dumps(identity,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        self.save();record(self.manifest,['fixture'],'Synthetic exact geometry and transport padding authorization')
+        return padding
+
+    def test_small_sheet_prepares_without_resizing_geometry_or_images(self):
+        padding=self.bind_padding();prepare(self.manifest,'fixture',self.root/'padded')
+        self.assertEqual(sha(self.root/'padded/input.png'),sha(self.packet/'textured.png'))
+        frames=json.loads((self.root/'padded/views.json').read_text())
+        approval=json.loads((self.root/'padded/approval.json').read_text())
+        self.assertEqual(frames['layout'],{'columns':4,'rows':2,'width':1024,'height':512})
+        self.assertEqual(frames['transport_padding'],padding)
+        self.assertEqual(approval['transport_padding'],padding)
+        with Image.open(self.root/'padded/input.png') as image:self.assertEqual(image.size,(1024,512))
+
+    def test_changed_transport_box_is_rejected_before_output(self):
+        self.bind_padding();self.item['transport_padding']['content_box']['top']=1;self.save()
+        with self.assertRaises(ValueError):prepare(self.manifest,'fixture',self.root/'bad')
+        self.assertFalse((self.root/'bad').exists())
+
+
 class EndpointPreparationTests(unittest.TestCase):
     tile_size=(256,320)
     setUp=PreparationTests.setUp

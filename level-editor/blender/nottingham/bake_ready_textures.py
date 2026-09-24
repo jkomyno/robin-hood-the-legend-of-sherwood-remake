@@ -1,5 +1,6 @@
 """Resume reviewed static texture bakes, preserving each attempt and its evidence."""
 import argparse
+import fcntl
 import hashlib
 import json
 import sys
@@ -21,6 +22,15 @@ def write(path, value):
     temporary = path.with_suffix('.tmp')
     temporary.write_text(json.dumps(value, indent=2)+'\n')
     temporary.replace(path)
+
+
+def update_ledger(path, asset, record):
+    with path.with_suffix('.lock').open('a+') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        current=json.loads(path.read_text()) if path.exists() else dict(version=1,assets={})
+        current['assets'][asset]=record
+        current['updated_utc']=datetime.now(timezone.utc).isoformat()
+        write(path,current)
 
 
 def reviewed_inputs(experiment, asset_id):
@@ -50,10 +60,7 @@ def main():
     ledger_path=args.jobs.parent/'static-bake-jobs.json'
     ledger=json.loads(ledger_path.read_text()) if ledger_path.exists() else dict(version=1,assets={})
     def persist(asset, record):
-        current=json.loads(ledger_path.read_text()) if ledger_path.exists() else dict(version=1,assets={})
-        current['assets'][asset]=record
-        current['updated_utc']=datetime.now(timezone.utc).isoformat()
-        write(ledger_path,current)
+        update_ledger(ledger_path,asset,record)
     acquire()
     import bpy
     from bake_reviewed_asset import stage
