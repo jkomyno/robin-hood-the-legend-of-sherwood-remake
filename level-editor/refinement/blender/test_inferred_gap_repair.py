@@ -58,6 +58,19 @@ class GapRepair(unittest.TestCase):
         settings['face_bottom_bands']={'own':{'2':13}}
         with self.assertRaises(ValueError):validate_policy(settings)
 
+    def test_physical_domain_limits_off_polygon_fill_and_preserves_rgba(self):
+        c,p,g,x=self.fixture();domain=np.zeros((20,20),bool);domain[:,5:10]=True
+        settings=policy();settings['physical_gutter_texels']=2
+        out,filled,stats=repair_face(c,p,g,x,settings,0,physical_domain=domain)
+        self.assertEqual(np.flatnonzero(filled[0]).tolist(),list(range(3,12)))
+        np.testing.assert_array_equal(out[~filled],c[~filled]);np.testing.assert_array_equal(out[:,:,3],c[:,:,3])
+        self.assertEqual(stats['eligible_samples'],180)
+        with self.assertRaises(ValueError):repair_face(c,p,g,x,settings,0)
+        with self.assertRaises(ValueError):repair_face(c,p,g,x,policy(),0,physical_domain=domain)
+        for gutter in (-1,3,True,1.5):
+            settings['physical_gutter_texels']=gutter
+            with self.assertRaises(ValueError):validate_policy(settings)
+
     def test_foreign_receiver_and_unbounded_policy_rejected(self):
         with self.assertRaises(ValueError):validate_policy(policy(),['other'])
         bad=policy();bad['max_distance_texels']=50

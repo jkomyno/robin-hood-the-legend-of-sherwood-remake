@@ -345,7 +345,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                     colors.reshape(h+4,w+4,4), accepted.reshape(h+4,w+4),
                     generated_samples.reshape(h+4,w+4), positions.reshape(h+4,w+4,3),
                     inferred_gap_repair, min(p.z for p in world),
-                    bottom_band_override=inferred_gap_repair.get('face_bottom_bands',{}).get(obj.name,{}).get(str(fid)))
+                    bottom_band_override=inferred_gap_repair.get('face_bottom_bands',{}).get(obj.name,{}).get(str(fid)),
+                    physical_domain=((best>=0).reshape(h+4,w+4) if 'physical_gutter_texels' in inferred_gap_repair else None))
                 colors = repaired.reshape(-1,4)
                 repaired_samples = repair_mask.ravel()
                 repaired_total += repair_stats['repaired_texels']
