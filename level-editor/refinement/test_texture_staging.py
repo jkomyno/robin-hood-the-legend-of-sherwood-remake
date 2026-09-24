@@ -8,11 +8,27 @@ import shutil
 import unittest
 from unittest.mock import patch
 from review_evidence import sha
-from texture_staging import validate_texture_handoff, _derived_packet
+from texture_staging import validate_texture_handoff, _derived_packet, _object_ownership
 from texture_decisions import IMAGE_FIELDS, fields
 
 
 class TextureStagingTests(unittest.TestCase):
+    def test_exact_endpoint_native_ownership(self):
+        class Object(dict):
+            name = 'deck'
+        obj = Object(source_node='building-1', drawbridge_state='initial',
+                     drawbridge_initial_source_node='building-1', drawbridge_applied_source_node='building-2')
+        handoff = {'endpoint_id': 'initial', 'source_nodes': ['building-1', 'building-2']}
+        self.assertEqual(_object_ownership([obj], handoff)['deck']['native_pair']['applied'], 'building-2')
+        for field, bad in [('source_node', 'building-2'), ('drawbridge_state', 'applied'),
+                           ('drawbridge_applied_source_node', 'building-3'),
+                           ('drawbridge_initial_source_node', None)]:
+            changed = Object(obj); changed[field] = bad
+            with self.assertRaisesRegex(ValueError, 'exact reviewed native pair'):
+                _object_ownership([changed], handoff)
+        with self.assertRaisesRegex(ValueError, 'canonical source ownership'):
+            _object_ownership([obj], dict(handoff, endpoint_id=None))
+
     def setUp(self):
         temp=tempfile.TemporaryDirectory();self.addCleanup(temp.cleanup);self.root=Path(temp.name)
         self.exp=self.root/'experiment';self.exp.mkdir();self.bake=self.exp/'bake';self.bake.mkdir()

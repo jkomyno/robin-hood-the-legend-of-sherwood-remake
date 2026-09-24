@@ -276,6 +276,26 @@ def validated_imports(geometry_manifest, texture_decisions_path, asset_ids, geom
             for asset in asset_ids]
 
 
+def _object_ownership(objects, handoff):
+    """Bind a reviewed endpoint to its exact native pair, never a subset guess."""
+    records = {o.name: {'source_node': o.get('source_node')} for o in objects}
+    endpoint = handoff.get('endpoint_id')
+    if endpoint is not None:
+        if endpoint not in {'initial', 'applied'}:
+            raise ValueError('Invalid reviewed texture endpoint')
+        for o in objects:
+            pair = {state: o.get('drawbridge_' + state + '_source_node')
+                    for state in ('initial', 'applied')}
+            if (None in pair.values() or len(set(pair.values())) != 2 or
+                    set(pair.values()) != set(handoff['source_nodes']) or
+                    o.get('drawbridge_state') != endpoint or o.get('source_node') != pair[endpoint]):
+                raise ValueError('Endpoint source ownership differs from exact reviewed native pair')
+            records[o.name].update(endpoint=endpoint, native_pair=pair)
+    elif {o.get('source_node') for o in objects} != set(handoff['source_nodes']):
+        raise ValueError('Baked worker differs from canonical source ownership')
+    return records
+
+
 def verify_baked_geometry(handoff):
     """Open the approved source then bake, compare owned meshes, leave bake open."""
     import bpy
@@ -293,9 +313,8 @@ def verify_baked_geometry(handoff):
                    if o.type == 'MESH' and not o.hide_render and o.get('asset_group') == handoff['asset_id']]
         if {o.name for o in objects} != set(handoff['object_names']):
             raise ValueError('Baked worker differs from exact reviewed component names')
-        if {o.get('source_node') for o in objects} != set(handoff['source_nodes']):
-            raise ValueError('Baked worker differs from canonical source ownership')
-        result = {o.name: {'geometry': _geometry(o)} for o in objects}
+        ownership = _object_ownership(objects, handoff)
+        result = {o.name: {'geometry': _geometry(o), 'ownership': ownership[o.name]} for o in objects}
         if handoff['projection_kind'] == 'planar-atlas':
             for o in objects:
                 result[o.name]['uv'] = {l.name: [list(v.uv) for v in l.data] for l in o.data.uv_layers}
