@@ -101,12 +101,16 @@ def main():
             record=dict(asset_id=asset,experiment=str(experiment),output=str(output),generation_review_sha256=review_hash,status='waiting-for-render-lease',worker_pid=os.getpid(),started_utc=datetime.now(timezone.utc).isoformat())
             ledger['assets'][asset]=record;persist(asset,record)
             acquire()
+            current_review=reviewed_inputs(experiment,asset)
+            if current_review is None or current_review[1] != review_hash:
+                raise ValueError('Generation review changed while waiting for a render lease')
             record['status']='baking'
             persist(asset,record)
             bpy.ops.wm.open_mainfile(filepath=str(experiment/'approved-model.blend'))
             report=stage(experiment/'views.json',review['generated_preserved_path'],output,texels_per_unit=2,reconciliation_reference=review['generated_raw_path'])
             # Re-check the external generation review after a long-running bake.
-            if reviewed_inputs(experiment,asset)[1] != review_hash:
+            current_review=reviewed_inputs(experiment,asset)
+            if current_review is None or current_review[1] != review_hash:
                 raise ValueError('Generation review changed during bake')
             record.update(status='baked-awaiting-visual-review',model_sha256=sha(output/'worker.blend'),actual_sheet_sha256=sha(output/'actual/textured.png'),validation_sha256=sha(output/'validation.json'),geometry_verified=report['geometry_verified'],outside_objects_unchanged=report['outside_objects_unchanged'],counts=report['counts'])
             print('BAKED '+asset+' '+str(output),flush=True)
