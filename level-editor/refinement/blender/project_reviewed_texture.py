@@ -43,7 +43,8 @@ def _reconcile(generated, manifest, predicted=None):
         cols = slice(left,left+crop['width'])
         known = _read(reviewed/'views'/f"view-{view['index']}-known.png")[:,:,0] > .5
         corrected[rows,cols] = reconcile_tile(generated[rows,cols], source[rows,cols],
-                                               predicted[rows,cols], known)
+                                               predicted[rows,cols], known,
+                                               fade_pixels=manifest.get("texture_reconciliation_fade_pixels", 24))
     return corrected
 
 
@@ -257,7 +258,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
               'selection':('Highest facing visible single view per unknown texel; ties use projected pixel density then stable view index' if selection == SINGLE else 'Highest facing visible views; near ties blend across a 0.12 cosine band with explicit approved unknown mask'),
               'reconciliation_reference': str(Path(reconciliation_reference).resolve()) if reconciliation_reference else None,
               'reconciliation_reference_sha256': hashlib.sha256(Path(reconciliation_reference).read_bytes()).hexdigest() if reconciliation_reference else None,
-              'seam_reconciliation':'Unknown colors only: low frequency RGB gain from explicit observed regions, fades over 24 image pixels; source atlas texels remain exact',
+              'seam_reconciliation':'Unknown colors only: low frequency RGB gain from explicit observed regions; source atlas texels remain exact',
+              'reconciliation_fade_pixels':manifest.get('texture_reconciliation_fade_pixels',24),
               'counts':stats,'layers':reports}
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     return report

@@ -3,7 +3,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter, distance_transform_edt
 
 
-def reconcile_tile(generated, source, predicted, known):
+def reconcile_tile(generated, source, predicted, known, *, fade_pixels=24):
     """Leave observed pixels exact; derive gains from the uncomposited prediction.
 
     Dark or unsupported samples carry no reliable multiplicative color evidence.
@@ -12,6 +12,8 @@ def reconcile_tile(generated, source, predicted, known):
     """
     if generated.shape != source.shape or predicted.shape != source.shape or known.shape != source.shape[:2]:
         raise ValueError('Reconciliation source, prediction, and ownership dimensions differ')
+    if isinstance(fade_pixels, bool) or not isinstance(fade_pixels, (int, float)) or not np.isfinite(fade_pixels) or not 1 <= fade_pixels <= 1024:
+        raise ValueError("Reconciliation fade must be finite and between 1 and 1024 pixels")
     corrected = generated.copy()
     if not known.any():
         return corrected
@@ -23,6 +25,6 @@ def reconcile_tile(generated, source, predicted, known):
         valid = (support > 1e-8) & (estimate > .015 * support)
         ratios[:, :, channel][valid] = np.clip(observed[valid] / estimate[valid], .4, 1.8)
     distance, nearest = distance_transform_edt(~known, return_indices=True)
-    gains = 1 + (ratios[nearest[0], nearest[1]] - 1) * np.exp(-distance / 24)[:, :, None]
+    gains = 1 + (ratios[nearest[0], nearest[1]] - 1) * np.exp(-distance / fade_pixels)[:, :, None]
     corrected[~known, :3] = np.clip(corrected[~known, :3] * gains[~known], 0, 1)
     return corrected

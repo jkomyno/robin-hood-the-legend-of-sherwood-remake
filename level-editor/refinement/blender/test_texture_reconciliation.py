@@ -30,6 +30,22 @@ class ReconciliationTests(unittest.TestCase):
         result = reconcile_tile(self.source, self.source, self.source * .5, self.known & False)
         np.testing.assert_array_equal(result, self.source)
 
+    def test_scoped_wider_fade_preserves_known_and_extends_correction(self):
+        raw = self.source.copy()
+        raw[:, :, :3] *= 2
+        preserved = raw.copy()
+        preserved[self.known] = self.source[self.known]
+        default = reconcile_tile(preserved, self.source, raw, self.known)
+        wider = reconcile_tile(preserved, self.source, raw, self.known, fade_pixels=96)
+        np.testing.assert_array_equal(wider[self.known], preserved[self.known])
+        np.testing.assert_array_equal(wider[:, :, 3], preserved[:, :, 3])
+        self.assertLess(wider[16, 60, 0], default[16, 60, 0])
+
+    def test_invalid_fade_fails(self):
+        for value in [0, -1, 1025, float("nan"), float("inf"), True, "96"]:
+            with self.assertRaises(ValueError):
+                reconcile_tile(self.source, self.source, self.source, self.known, fade_pixels=value)
+
     def test_wrong_dimensions_fail(self):
         with self.assertRaises(ValueError):
             reconcile_tile(self.source, self.source, self.source[:, :10], self.known)
