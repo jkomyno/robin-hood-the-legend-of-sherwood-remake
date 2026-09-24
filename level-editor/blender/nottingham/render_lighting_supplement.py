@@ -40,6 +40,7 @@ def main():
   assert blend.is_file() and blend.is_relative_to(w),'Explicit saved state model within workspace required'
   assert str(frame)not in {p['frame_manifest']for p in packets},'Duplicate packet'
   label='--'.join(directory.relative_to(w).parts)
+  frame_hash,blend_hash,original_hash=sha(frame),sha(blend),sha(directory/'solid.png')
   bpy.ops.wm.open_mainfile(filepath=str(blend));scene=bpy.data.scenes[f['scene_name']];bpy.context.window.scene=scene
   all_objects=list(bpy.data.collections[f['collection_name']].all_objects)
   names=set(f['object_names']);objects=[o for o in all_objects if o.type=='MESH'and o.name in names]
@@ -54,6 +55,7 @@ def main():
    else:camera.matrix_world=Matrix(v['camera_matrix_world'])
    cameras.append(camera)
   bpy.context.view_layer.update();target=out/label;target.mkdir();buffers=render_solids(scene,cameras,objects,target,lighting=lighting);solid=target/'solid.png';_tile(buffers,width,height,solid)
+  assert (sha(frame),sha(blend),sha(directory/'solid.png'))==(frame_hash,blend_hash,original_hash),'Packet changed during rendering'
   packets.append(dict(original_solid=str(directory/'solid.png'),original_solid_sha256=sha(directory/'solid.png'),frame_manifest=str(frame),frame_manifest_sha256=sha(frame),solid=str(solid),solid_sha256=sha(solid),source_blend=str(blend),source_blend_sha256=sha(blend),inspected_views=[],object_names=sorted(names),camera_contract='Exact stored frame location, rotation, scale, tile size and ordered eight views'))
  assert sha(model)==bindings['model_sha256'];assert sha(frames)==bindings['modified_views_sha256'];assert sha(config)==bindings['lighting_config_sha256']
  write(report,{**bindings,'status':'awaiting-independent-visual-inspection','packets':packets,'scope':'Main input/modified use baseline/model respectively. Every additional packet uses its explicitly supplied saved-state model, exact named objects and frozen cameras; state identity requires independent visual inspection.'})
