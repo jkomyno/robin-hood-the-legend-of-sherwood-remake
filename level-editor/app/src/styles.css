@@ -725,7 +725,7 @@ input.num {
 .library-summary { padding: 0 14px; }
 .shared-library > .hint, .library-error { padding: 0 14px; }
 .library-error { color: #ffac9c; overflow-wrap: anywhere; }
-.asset-grid { overflow-y: auto; flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 12px 12px; align-content: start; }
+.asset-grid { overflow-y: auto; flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 12px 12px; align-content: start; grid-auto-rows: max-content; }
 .asset-card { border: 1px solid #354050; border-radius: 8px; overflow: hidden; background: #222a35; min-width: 0; }
 .asset-card[draggable="true"] { cursor: grab; }
 .asset-card:hover { border-color: #80b4c8; }

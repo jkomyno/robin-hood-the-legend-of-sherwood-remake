@@ -50,6 +50,9 @@ export async function checkSharedLibrary() {
   const entries = [
     { id: "house", name: "Stone House", source_map: "Leicester", asset_type: "Building", tags: ["stone"] },
     { id: "tree", name: "Oak Tree", source_map: "Derby", asset_type: "Vegetation", tags: ["oak"] },
+    ...Array.from({ length: 38 }, (_, index) => ({
+      id: `prop-${index}`, name: `Courtyard prop ${index}`, source_map: "York", asset_type: "Prop", tags: ["courtyard"],
+    })),
   ].map(entry => ({ ...entry, descriptor: `${entry.id}/asset.json`, model: `${entry.id}/model.glb` }));
   json("3d-assets/index.json", { version: 1, assets: entries });
   for (const entry of entries) {
@@ -83,6 +86,11 @@ export async function checkSharedLibrary() {
     },
   }) as unknown as FileSystemDirectoryHandle;
   const library = { handle: handle("") };
+  const host = document.querySelector("#root") as HTMLElement;
+  const previousDisplay = host.style.display;
+  const previousDirection = host.style.flexDirection;
+  host.style.display = "flex";
+  host.style.flexDirection = "column";
   const errors: string[] = [];
   const dispose = render(() => <Editor3D index={() => null} library={() => library}
     onError={error => errors.push(error)} onStatus={() => {}} />, document.querySelector("#root")!);
@@ -97,8 +105,23 @@ export async function checkSharedLibrary() {
     element.dispatchEvent(new Event("change", { bubbles: true }));
   };
   try {
-    await until(() => document.querySelectorAll(".asset-card").length === 2);
-    await until(() => document.querySelectorAll(".preview-status").length === 0);
+    await until(() => document.querySelectorAll(".asset-card").length === 40);
+    await until(() => !document.querySelector(".asset-card:first-child .preview-status"));
+    const grid = document.querySelector(".asset-grid") as HTMLElement;
+    const firstCard = grid.querySelector(".asset-card") as HTMLElement;
+    const preview = firstCard.querySelector(".asset-preview") as HTMLElement;
+    const info = firstCard.querySelector(".asset-card-info") as HTMLElement;
+    const bounds = firstCard.getBoundingClientRect();
+    assert(bounds.height >= preview.getBoundingClientRect().height + info.getBoundingClientRect().height,
+      "Catalog rows clipped the preview or asset details");
+    assert(preview.getBoundingClientRect().height > 70, "Preview collapsed in a full catalog");
+    assert(grid.scrollHeight > grid.clientHeight, "Full catalog must scroll rather than compress its rows");
+    const lastCard = grid.lastElementChild as HTMLElement;
+    grid.scrollTop = grid.scrollHeight;
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    assert(lastCard.getBoundingClientRect().bottom <= grid.getBoundingClientRect().bottom + 1,
+      "Last asset cannot be reached by scrolling");
+    grid.scrollTop = 0;
     const canvas = document.querySelector(".asset-preview canvas") as HTMLCanvasElement;
     const pixels = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
     assert(pixels.some((value, index) => index % 4 === 3 && value > 0), "3D preview did not render any geometry");
@@ -138,6 +161,8 @@ export async function checkSharedLibrary() {
     throw new Error(`${error}; errors: ${errors.join("; ")}; UI: ${document.querySelector("#root")?.textContent}`);
   } finally {
     dispose();
+    host.style.display = previousDisplay;
+    host.style.flexDirection = previousDirection;
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 }
