@@ -15,7 +15,7 @@ def main():
  from mathutils.geometry import barycentric_transform
  from PIL import Image,ImageDraw
  from audit_stored_materials import run
- gate=WORK/'round-39/assets/nottingham-castle-gate-arch';tower=WORK/'round-42/assets/nottingham-castle-gate-east-tower';out=gate/'inspection/paired-v42';out.mkdir(exist_ok=True);asset='nottingham-castle-gateway-pair'
+ gate=WORK/'round-39/assets/nottingham-castle-gate-arch';tower=WORK/'round-43/assets/nottingham-castle-gate-east-tower';out=gate/'inspection/paired-v43';out.mkdir(exist_ok=True);asset='nottingham-castle-gateway-pair'
  bpy.ops.wm.open_mainfile(filepath=str(tower/'model.blend'));bpy.context.view_layer.update();recs={o.name:dict(vertices=[list(o.matrix_world@v.co)for v in o.data.vertices],visible=not o.hide_render)for o in bpy.data.collections['nottingham Working'].all_objects if o.type=='MESH' and o.get('asset_group')==tower.name}
  bpy.ops.wm.open_mainfile(filepath=str(gate/'model.blend'));bpy.context.view_layer.update();coll=bpy.data.collections['nottingham Working']
  for o in list(coll.all_objects):
@@ -55,5 +55,14 @@ def main():
    if not row['native375']:key='native-mask-fringe:'+key
    row['classification']=key;rows.append(row);counts[key]+=1
    if not key.startswith('source-colored:'):draw.rectangle(((x-crop[0])*10,(y-crop[1])*10,(x-crop[0])*10+5,(y-crop[1])*10+5),fill='red')
- im.save(out/'brown-source-atlas.png');report=dict(gate_model_sha256=sha(gate/'model.blend'),tower_model_sha256=sha(tower/'model.blend'),composite_model_sha256=sha(out/'model.blend'),actual_material_sheet_sha256=sha(out/'stored-materials/materials.png')if(out/'stored-materials/materials.png').exists()else None,domain_polygon=poly,counts=dict(counts),rows=rows);(out/'source-atlas.json').write_text(json.dumps(report,indent=2)+'\n');print(dict(counts),flush=True)
+ im.save(out/'brown-source-atlas.png');report=dict(gate_model_sha256=sha(gate/'model.blend'),tower_model_sha256=sha(tower/'model.blend'),composite_model_sha256=sha(out/'model.blend'),actual_material_sheet_sha256=sha(out/'stored-materials/materials.png')if(out/'stored-materials/materials.png').exists()else None,domain_polygon=poly,counts=dict(counts),rows=rows);(out/'source-atlas.json').write_text(json.dumps(report,indent=2)+'\n')
+ def boundary_distance(point,a,b):
+  d=[b[i]-a[i]for i in range(2)];t=max(0,min(1,sum((point[i]-a[i])*d[i]for i in range(2))/sum(x*x for x in d)));return math.dist(point,[a[i]+t*d[i]for i in range(2)])
+ fringe=[]
+ for row in rows:
+  if row['classification'].startswith('source-colored:'):continue
+  distance=min(boundary_distance([q+.5 for q in row['pixel']],poly[i],poly[(i+1)%4])for i in range(4));fringe.append(dict(pixel=row['pixel'],classification=row['classification'],trace_boundary_distance=distance,reason='native mask excludes sample'if not row['native375']else 'sloping bottom contact or traced outer boundary'))
+ assert max(r['trace_boundary_distance']for r in fringe if r['classification']=='neutral:building-333')<1
+ assert max(r['trace_boundary_distance']for r in fringe if r['classification']=='neutral:building-337')<2
+ (out/'source-atlas-classification.json').write_text(json.dumps(dict(status='PASS',atlas_sha256=sha(out/'source-atlas.json'),colored_core_samples=counts['source-colored:building-337'],uncolored_samples=fringe,interpretation='All native-positive uncolored samples remain within measured trace/contact uncertainty: arch less than one pixel; tower less than two pixels.'),indent=2)+'\n');print(dict(counts),flush=True)
 if __name__=='__main__':main()

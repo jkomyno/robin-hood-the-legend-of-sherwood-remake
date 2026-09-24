@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 WORK=ROOT/'level-editor/work/nottingham-refinement'
 selector=sys.argv[sys.argv.index('--')+1] if '--' in sys.argv else ''
-for round_id,asset in [(39,'nottingham-castle-gate-arch'),(42,'nottingham-castle-gate-east-tower')]:
+for round_id,asset in [(39,'nottingham-castle-gate-arch'),(43,'nottingham-castle-gate-east-tower')]:
  if selector and selector not in asset:continue
  workspace=WORK/f'round-{round_id}/assets'/asset
  script=Path(__file__).parent/'verify_workspace_known_rgb.py'

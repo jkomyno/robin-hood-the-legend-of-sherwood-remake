@@ -16,7 +16,7 @@ def main():
  from audit_stored_materials import run
  for asset in ['nottingham-castle-gate-arch','nottingham-castle-gate-east-tower']:
   if '--' in sys.argv and sys.argv[sys.argv.index('--')+1] not in asset:continue
-  tower=asset.endswith('east-tower');w=WORK/('round-42/assets' if tower else 'round-39/assets')/asset;config=json.loads((w/'workspace.json').read_text());node='building-337' if tower else 'building-333';patch='patch-005' if tower else 'patch-003';stem='mechanism' if tower else 'portcullis';records=[]
+  tower=asset.endswith('east-tower');w=WORK/('round-43/assets' if tower else 'round-39/assets')/asset;config=json.loads((w/'workspace.json').read_text());node='building-337' if tower else 'building-333';patch='patch-005' if tower else 'patch-003';stem='mechanism' if tower else 'portcullis';records=[]
   for state in ['initial','applied']:
    bpy.ops.wm.open_mainfile(filepath=str(w/'model.blend'));bpy.context.view_layer.update();owned=[o for o in bpy.data.collections[config['collection_name']].all_objects if o.type=='MESH' and o.get('asset_group')==asset]
    for o in owned:

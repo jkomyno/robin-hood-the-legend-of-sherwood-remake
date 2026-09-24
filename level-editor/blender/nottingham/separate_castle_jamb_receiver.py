@@ -15,6 +15,8 @@ def main():
  from restore_foreign_uv_schema import restore_foreign_uv_schema
  from audit_stored_materials import run
  baseline=WORK/'round-23/assets/nottingham-castle-gate-east-tower';prev=WORK/'round-40/assets/nottingham-castle-gate-east-tower';out=WORK/'round-42/assets/nottingham-castle-gate-east-tower';gate=WORK/'round-39/assets/nottingham-castle-gate-arch'
+ if '--audit' in sys.argv:
+  workspace=Path(sys.argv[sys.argv.index('--audit')+1]).resolve();run(workspace,workspace/'inspection/stored-materials',render=True,export=False);return
  if '--finish' in sys.argv:
   bpy.ops.wm.open_mainfile(filepath=str(out/'model.blend'));modified(out);restore_foreign_uv_schema(out);run(out,out/'inspection/stored-materials',render=True,export=False);return
  bpy.ops.wm.open_mainfile(filepath=str(gate/'model.blend'));bpy.context.view_layer.update();context={o.name:dict(vertices=[list(o.matrix_world@v.co)for v in o.data.vertices],visible=not o.hide_render,source_node=o.get('source_node'))for o in bpy.data.collections['nottingham Working'].all_objects if o.type=='MESH' and o.get('asset_group')==gate.name}

@@ -7,7 +7,7 @@ def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def main():
  import bpy,bmesh
  gate=WORK/'round-39/assets/nottingham-castle-gate-arch'
- tower=WORK/'round-42/assets/nottingham-castle-gate-east-tower'
+ tower=WORK/'round-43/assets/nottingham-castle-gate-east-tower'
  def read(path):
   bpy.ops.wm.open_mainfile(filepath=str(path));bpy.context.view_layer.update();out={}
   for o in bpy.data.collections['nottingham Working'].all_objects:
@@ -21,19 +21,20 @@ def main():
  old=read(WORK/'round-23/assets'/tower.name/'model.blend')
  arch=read(gate/'model.blend');final=read(tower/'model.blend');base=read(tower/'baseline.blend')
  owned={n:r for n,r in old.items()if r['asset']==tower.name}
- assert all(final[n]['geometry_sha256']==r['geometry_sha256']for n,r in owned.items())
+ crown_changes={n for n,r in owned.items()if r['component']=='mechanism-upper' or r['node']=='building-338'}
+ assert all(final[n]['geometry_sha256']==r['geometry_sha256']for n,r in owned.items()if n not in crown_changes)
  context={n:r for n,r in arch.items()if r['asset']==gate.name}
  assert all(final[n]['geometry_sha256']==r['geometry_sha256']for n,r in context.items())
  nodes={r['node']for r in context.values()}
  assert {n for n,r in final.items()if r['node']in nodes}==set(context)
- assert all(final[n]['geometry_sha256']==r['geometry_sha256']for n,r in base.items())
- added=set(final)-set(base);assert len(added)==1;name=added.pop();assert final[name]['component']=='gate-jamb-exterior'
+ assert all(final[n]['geometry_sha256']==r['geometry_sha256']for n,r in base.items()if n not in crown_changes)
+ assert set(final)==set(base);name=next(n for n,r in final.items()if r['component']=='gate-jamb-exterior')
  assert final[name]['topology']['nonmanifold_edges']==0 and final[name]['topology']['degenerate_faces']==0
  priorarch=read(WORK/'round-30/assets'/gate.name/'model.blend')
  preserved={n:r for n,r in priorarch.items()if r['asset']==gate.name and(r['state']or r['node']in ['building-335','building-336'])}
  assert all(arch[n]['geometry_sha256']==r['geometry_sha256']for n,r in preserved.items())
  offset=11/(31.6296/35.94214+.348)
- report=dict(status='PASS',gate_model_sha256=sha(gate/'model.blend'),tower_model_sha256=sha(tower/'model.blend'),tower_baseline_sha256=sha(tower/'baseline.blend'),all_original_tower_meshes_preserved=list(owned),all_frozen_context_meshes_preserved=len(base),paired_arch_context_exact=list(context),stale_canonical_context_duplicates=0,arch_preserved_crown_and_endpoint_meshes=list(preserved),added_exterior=final[name],physical_aperture_at_gate_plane=[910-offset,984-offset],physical_aperture_center=947-offset,original_lowered_sprite_bounds=[910,966],sprite_center_error=abs(938-(947-offset)),inferred_metal_geometry_added=False,floor_changed=False)
+ report=dict(status='PASS',gate_model_sha256=sha(gate/'model.blend'),tower_model_sha256=sha(tower/'model.blend'),tower_baseline_sha256=sha(tower/'baseline.blend'),original_tower_meshes_preserved_except_measured_crown=[n for n in owned if n not in crown_changes],measured_crown_changes=sorted(crown_changes),all_frozen_context_meshes_preserved=len(base)-len(crown_changes),paired_arch_context_exact=list(context),stale_canonical_context_duplicates=0,arch_preserved_crown_and_endpoint_meshes=list(preserved),added_exterior=final[name],physical_aperture_at_gate_plane=[910-offset,984-offset],physical_aperture_center=947-offset,original_lowered_sprite_bounds=[910,966],sprite_center_error=abs(938-(947-offset)),inferred_metal_geometry_added=False,floor_changed=False)
  def exterior_signature(path):
   bpy.ops.wm.open_mainfile(filepath=str(path));bpy.context.view_layer.update()
   o=next(o for o in bpy.data.objects if o.get('projection_component')=='gate-jamb-exterior')
@@ -54,5 +55,5 @@ def main():
   state_records.append(dict(state=state,model=str(path),model_sha256=sha(path),static_exterior_mesh_uv_packed_rgb_sha256=signature))
  report['tower_endpoint_exterior_preservation']=state_records
  for w in [gate,tower]:(w/'inspection/final-pair-structure.json').write_text(json.dumps(report,indent=2)+'\n')
- print(json.dumps({k:v for k,v in report.items()if k not in ['all_original_tower_meshes_preserved','paired_arch_context_exact']}),flush=True)
+ print(json.dumps({k:v for k,v in report.items()if k not in ['original_tower_meshes_preserved_except_measured_crown','paired_arch_context_exact']}),flush=True)
 if __name__=='__main__':main()

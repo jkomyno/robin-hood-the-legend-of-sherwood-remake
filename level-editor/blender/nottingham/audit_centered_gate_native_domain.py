@@ -15,3 +15,17 @@ overlay.resize((overlay.width*2,overlay.height*2),Image.Resampling.NEAREST).save
 (w/'inspection/native-domain-rejections.json').write_text(json.dumps(dict(model_sha256=report['model_sha256'],source_sha256=hashlib.sha256((w/'reference/source.png').read_bytes()).hexdigest(),legend=colors,rows=domain_rows),indent=2)+'\\n')
 '''
 exec(compile(code,str(script),'exec'))
+if (w/'crown-correction.json').exists():
+ trace=json.loads(Path(json.loads((w/'crown-correction.json').read_text())['trace']).read_text())
+ caps=collections.defaultdict(list)
+ for corner in trace['corners']:caps[corner['cap']].append(corner['source_pixel'])
+ def inside(x,y,polygon):
+  result=False
+  for a,b in zip(polygon,polygon[1:]+polygon[:1]):
+   if (a[1]>y)!=(b[1]>y) and x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]:result=not result
+  return result
+ cap_report={}
+ for name,polygon in caps.items():
+  rows=[r for r in domain_rows if inside(r['pixel'][0]+.5,r['pixel'][1]+.5,polygon)]
+  cap_report[name]=dict(counts=dict(collections.Counter(r['classification']for r in rows)),no_receiver=[r['pixel']for r in rows if r['classification']=='no_receiver'])
+ (w/'inspection/crown-native-polygon-coverage.json').write_text(json.dumps(dict(model_sha256=report['model_sha256'],caps=cap_report),indent=2)+'\n')
