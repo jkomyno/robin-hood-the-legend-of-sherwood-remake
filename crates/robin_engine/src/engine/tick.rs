@@ -1408,6 +1408,8 @@ impl EngineInner {
             self.hourglass_phase_control_and_cleanup(tcx)
         });
 
+        self.expire_direct_movement(tcx);
+
         time_hourglass_phase(HourglassPhase::Paths, || self.hourglass_phase_paths(tcx));
 
         let was_swordfighting =

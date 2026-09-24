@@ -159,9 +159,9 @@ fn mouse_delta_offset() {
 }
 
 #[test]
-fn movement_offset_preserves_neutral_threshold_gait_and_direction() {
+fn movement_direction_preserves_neutral_threshold_gait_and_direction() {
     let mut pad = GamePadState::new();
-    assert_eq!(pad.movement_offset(), None);
+    assert_eq!(pad.movement_direction(), None);
     for (x, y, expected_running) in [
         (1, 0, false),
         (28000, 0, false),
@@ -176,10 +176,10 @@ fn movement_offset_preserves_neutral_threshold_gait_and_direction() {
             y,
             ..Default::default()
         });
-        let (dx, dy, running) = pad.movement_offset().unwrap();
+        let (dx, dy, running) = pad.movement_direction().unwrap();
         assert_eq!(running, expected_running, "stick ({x}, {y})");
         let distance = (dx * dx + dy * dy).sqrt();
-        let expected_distance = if running { 3.0 * MOVE_UNIT } else { MOVE_UNIT };
+        let expected_distance = 1.0;
         assert!((distance - expected_distance).abs() < 0.001);
         assert_eq!(dx.signum(), (x as f32).signum());
         assert_eq!(dy.signum(), (y as f32).signum());
@@ -537,15 +537,15 @@ fn process_gamepad_input_promotes_pending_to_current() {
 fn keyboard_movement_normalizes_diagonals_and_requires_shift_to_run() {
     use winit::keyboard::KeyCode;
     let walk = keyboard_movement_state(&[KeyCode::KeyW, KeyCode::KeyD].into_iter().collect());
-    let (x, y, running) = walk.movement_offset().unwrap();
+    let (x, y, running) = walk.movement_direction().unwrap();
     assert!(!running);
-    assert!((x.hypot(y) - 25.).abs() < 0.01);
+    assert!((x.hypot(y) - 1.).abs() < 0.01);
     let run = keyboard_movement_state(&[KeyCode::KeyW, KeyCode::ShiftLeft].into_iter().collect());
-    let (x, y, running) = run.movement_offset().unwrap();
+    let (x, y, running) = run.movement_direction().unwrap();
     assert!(running);
-    assert!((x.hypot(y) - 75.).abs() < 0.01);
+    assert!((x.hypot(y) - 1.).abs() < 0.01);
     let cancelled = keyboard_movement_state(&[KeyCode::KeyA, KeyCode::KeyD].into_iter().collect());
-    assert!(cancelled.movement_offset().is_none());
+    assert!(cancelled.movement_direction().is_none());
 }
 
 #[test]
@@ -627,4 +627,45 @@ fn lobby_seeded_devices_are_connected_and_unknown_devices_do_not_add_seats() {
             .collect::<Vec<_>>(),
         vec![10, 20]
     );
+}
+
+#[test]
+fn stick_emits_direction_every_frame_without_picking_a_surface() {
+    use crate::host::test_support::{add_pc_with_status, fixture};
+    use robin_engine::engine::SimulationFrameInput;
+    let (mut engine, assets, _) = fixture();
+    let owner = add_pc_with_status(&mut engine, 10., 10., Posture::Upright, true, 100);
+    engine
+        .advance_frame(
+            &assets,
+            SimulationFrameInput::new(vec![
+                PlayerCommand::SelectPc {
+                    pc_id: owner,
+                    append: false,
+                }
+                .into(),
+            ])
+            .with_hourglass(false),
+        )
+        .unwrap();
+    let mut pad = GamePadState::new();
+    pad.update(JoystickState {
+        x: 0,
+        y: 32000,
+        ..Default::default()
+    });
+    for _ in 0..3 {
+        let commands = pad.manage_move_axis(&engine, PlayerId::HOST);
+        assert!(matches!(commands.as_slice(),
+            [PlayerCommand::DirectMove { actors, direction, running: true }]
+            if actors == &[owner] && *direction == engine_coordinates::MapVec::new(0., -1.)));
+        engine
+            .advance_frame(
+                &assets,
+                SimulationFrameInput::default().with_hourglass(false),
+            )
+            .unwrap();
+    }
+    pad.update(JoystickState::default());
+    assert!(pad.manage_move_axis(&engine, PlayerId::HOST).is_empty());
 }

@@ -9,6 +9,12 @@ A list of which additional features we have added, which ones we might still wan
 
 ## Done
 
+- **Local directional gamepad movement.** Left-stick and optional WASD movement
+  drive each selected hero on their current layer, stopping at blocking geometry
+  instead of pathfinding toward a projected cursor target. Walk/run input remains
+  available. Releasing input, changing selection, or disconnecting stops direct
+  movement; point-and-click orders retain route finding.
+
 - **Hackable scenery-occlusion PNGs.** Datadir conversion exports every level's
   authored occlusion bitmaps as lossless grayscale PNGs with map placement,
   global/per-layer identities and obstacle references. Existing hackable datadirs

@@ -2470,6 +2470,236 @@ fn apply_live_anti_collision_step(
     })
 }
 
+/// Sweep only the current layer along the requested direction. The animation
+/// system needs a short local segment, but this never picks screen geometry or
+/// searches for a route to its endpoint.
+fn direct_movement_endpoint(
+    grid: &crate::fast_find_grid::FastFindGrid,
+    source: MapPoint,
+    layer: u16,
+    move_box: &crate::coordinates::MoveBox,
+    direction: MapVec,
+) -> MapPoint {
+    let mut endpoint = source;
+    for step in 1..=16 {
+        let candidate = MapPoint::new(
+            source.x + direction.x * step as f32 * 2.0,
+            source.y + direction.y * step as f32 * 2.0,
+        );
+        if !grid.is_straight_movement_authorized(source, candidate, layer, move_box) {
+            break;
+        }
+        endpoint = candidate;
+    }
+    endpoint
+}
+
+impl EngineInner {
+    pub(super) fn apply_direct_move(
+        &mut self,
+        tcx: TickCtx<'_>,
+        owner: EntityId,
+        direction: MapVec,
+        running: bool,
+    ) {
+        let magnitude = direction.length();
+        if !magnitude.is_finite() || magnitude <= f32::EPSILON {
+            tracing::warn!(?owner, ?direction, "invalid direct movement direction");
+            return;
+        }
+        let Some(entity) = self.world.entities.get(owner) else {
+            tracing::warn!(?owner, "direct movement owner is missing");
+            return;
+        };
+        if !entity.is_pc() || self.is_very_very_busy(owner) {
+            return;
+        }
+        let source = entity.element_data().position_map();
+        let layer = entity.element_data().layer();
+        let endpoint = direct_movement_endpoint(
+            &self.world.fast_grid,
+            source,
+            layer,
+            entity.position_iface().get_move_box(),
+            MapVec::new(direction.x / magnitude, direction.y / magnitude),
+        );
+        let previous = entity
+            .actor_data()
+            .expect("PC has actor data")
+            .direct_control;
+        if endpoint == source {
+            // A newly blocked stick also cancels an earlier click route.
+            self.stop_actor_orders(
+                tcx,
+                &mut Vec::new(),
+                owner,
+                crate::sequence::SequencePriority::Normal,
+            );
+            self.world
+                .entities
+                .get_mut(owner)
+                .expect("direct movement owner disappeared")
+                .actor_data_mut()
+                .expect("PC has actor data")
+                .direct_control = None;
+            return;
+        }
+        if let Some(previous) = previous.filter(|state| state.running == running) {
+            let instruction = previous.instruction;
+            if let Some(element) = self
+                .orders
+                .sequence_manager
+                .get_element_mut(instruction.sequence_id, instruction.element_index)
+                .filter(|element| {
+                    matches!(
+                        element.state,
+                        crate::sequence::SequenceState::Todo
+                            | crate::sequence::SequenceState::InProgress
+                    )
+                })
+            {
+                if let crate::sequence::SequenceElementData::Movement { destination, .. } =
+                    &mut element.data
+                {
+                    *destination = endpoint;
+                } else {
+                    panic!("direct control owns a non-movement instruction");
+                }
+                for order in element.orders.iter_mut() {
+                    order.target_x = endpoint.x;
+                    order.target_y = endpoint.y;
+                }
+                let compute_direction =
+                    element.current_order().map(|order| order.compute_direction);
+                let entity = self
+                    .world
+                    .entities
+                    .get_mut(owner)
+                    .expect("direct movement owner disappeared");
+                if entity
+                    .actor_data()
+                    .expect("PC has actor data")
+                    .selected_sequence_element
+                    == Some(instruction)
+                    && let Some(compute_direction) = compute_direction
+                {
+                    let position = entity.position_iface_mut();
+                    position.set_map_goal(endpoint);
+                    position.reset_box_blocked();
+                    position.compute_increment_all(compute_direction);
+                }
+                entity
+                    .actor_data_mut()
+                    .expect("PC has actor data")
+                    .direct_control
+                    .as_mut()
+                    .expect("direct control state disappeared")
+                    .refreshed_frame = self.control.frame_counter;
+                return;
+            }
+        }
+        let mut element = crate::sequence::SequenceElement::new_movement(
+            1,
+            crate::element::Command::Move,
+            Some(owner),
+            if running {
+                OrderType::RunningUpright
+            } else {
+                OrderType::WalkingUpright
+            },
+        );
+        if let crate::sequence::SequenceElementData::Movement {
+            destination,
+            layer: goal_layer,
+            flags,
+            ..
+        } = &mut element.data
+        {
+            *destination = endpoint;
+            *goal_layer = layer;
+            *flags =
+                crate::sequence::MoveFlags::STRAIGHT | crate::sequence::MoveFlags::NO_TRANSITIONS;
+        }
+        let sequence_id = self.launch_element(tcx, element);
+        self.world
+            .entities
+            .get_mut(owner)
+            .expect("direct movement owner disappeared")
+            .actor_data_mut()
+            .expect("PC has actor data")
+            .direct_control = Some(crate::element::DirectControlMotion {
+            instruction: crate::sequence::SequenceElementRef::new(sequence_id, 0),
+            refreshed_frame: self.control.frame_counter,
+            running,
+        });
+    }
+
+    /// Input is a per-frame pulse, so release, selection changes, UI capture and
+    /// disconnect all stop driving without depending on a delivered release event.
+    pub(super) fn expire_direct_movement(&mut self, tcx: TickCtx<'_>) {
+        let owners: Vec<EntityId> = self.world.entities.pcs().map(|(id, _)| id.into()).collect();
+        for owner in owners {
+            let Some(state) = self
+                .world
+                .entities
+                .get(owner)
+                .and_then(|entity| entity.actor_data())
+                .and_then(|actor| actor.direct_control)
+            else {
+                continue;
+            };
+            // Commands precede the hourglass's clock increment.
+            if self
+                .control
+                .frame_counter
+                .wrapping_sub(state.refreshed_frame)
+                <= 1
+            {
+                continue;
+            }
+            let entity = self
+                .world
+                .entities
+                .get_mut(owner)
+                .expect("direct movement owner disappeared");
+            let actor = entity.actor_data_mut().expect("PC has actor data");
+            actor.direct_control = None;
+            // Never stop an interaction or mouse order which superseded the stick.
+            if actor.selected_sequence_element != Some(state.instruction) {
+                continue;
+            }
+            // Ordinary route stopping plays a deceleration step toward the old
+            // order target. Direct input must stop at the release position.
+            let position = entity.element_data().position_map();
+            entity.position_iface_mut().set_map_goal(position);
+            entity.position_iface_mut().zero_all_increments();
+            let element = self
+                .orders
+                .sequence_manager
+                .get_element_mut(
+                    state.instruction.sequence_id,
+                    state.instruction.element_index,
+                )
+                .expect("direct movement instruction disappeared");
+            if let crate::sequence::SequenceElementData::Movement { destination, .. } =
+                &mut element.data
+            {
+                *destination = position;
+            }
+            for order in element.orders.iter_mut() {
+                order.target_x = position.x;
+                order.target_y = position.y;
+            }
+            self.stop_owner_current(
+                tcx,
+                &mut Vec::new(),
+                owner,
+                crate::sequence::SequencePriority::Normal,
+            );
+        }
+    }
+}
+
 impl EngineInner {
     /// Opt-in sequence/path ownership trace for parity frontiers where the
     /// queued path operands already agree but the selected movement command

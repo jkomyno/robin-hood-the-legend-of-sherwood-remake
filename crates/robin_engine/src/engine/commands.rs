@@ -169,7 +169,9 @@ impl EngineInner {
             return false;
         }
         match command {
-            GroupMove { actors, .. } => actors.iter().copied().all(allowed),
+            GroupMove { actors, .. } | DirectMove { actors, .. } => {
+                actors.iter().copied().all(allowed)
+            }
             LaunchInteraction { actor, .. }
             | LaunchGroundTarget { actor, .. }
             | LaunchSelfAbility { actor, .. }
@@ -262,6 +264,15 @@ impl EngineInner {
 
             // ── Movement ────────────────────────────────────────
             GroupMove { .. } => self.apply_group_move_command(tcx, cmd),
+            DirectMove {
+                actors,
+                direction,
+                running,
+            } => {
+                for &owner in actors {
+                    self.apply_direct_move(tcx, owner, *direction, *running);
+                }
+            }
             // Stopping an actor leaves its default Wait element alone. For real
             // movement it rewrites/stops the sequence so its transition can
             // finish; it does not directly force the action state to Waiting.
@@ -1055,7 +1066,7 @@ impl EngineInner {
                     .achievements
                     .cancel_quick_action_for_manual_order(*pc_id);
             }
-            GroupMove { actors, .. } => {
+            GroupMove { actors, .. } | DirectMove { actors, .. } => {
                 for actor in actors {
                     self.mission_domain
                         .achievements

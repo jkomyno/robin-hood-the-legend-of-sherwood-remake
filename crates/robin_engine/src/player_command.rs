@@ -1430,6 +1430,13 @@ pub enum PlayerCommand {
     SetFogOfWar {
         enabled: bool,
     },
+    /// One simulation frame of local directional control. No destination picking
+    /// or route search; absence of fresh input stops this movement.
+    DirectMove {
+        actors: Vec<EntityId>,
+        direction: crate::coordinates::MapVec,
+        running: bool,
+    },
 }
 
 impl PlayerCommand {

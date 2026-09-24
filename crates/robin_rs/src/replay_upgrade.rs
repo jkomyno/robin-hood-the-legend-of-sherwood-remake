@@ -154,7 +154,7 @@ fn upgrade_header(header: &mut serde_json::Value) -> Result<u32> {
         .context("replay header has no valid schema")?;
     ensure!(
         version == REPLAY_SCHEMA_VERSION
-            || ((43..=55).contains(&version) && (43..=55).contains(&REPLAY_SCHEMA_VERSION)),
+            || ((43..=56).contains(&version) && (43..=56).contains(&REPLAY_SCHEMA_VERSION)),
         "replay schema {version} needs an input migration before upgrading to {REPLAY_SCHEMA_VERSION}"
     );
     if version < 55 {
@@ -481,7 +481,7 @@ mod tests {
         for version in [42, REPLAY_SCHEMA_VERSION + 1] {
             assert!(upgrade_header(&mut serde_json::json!({"version":version})).is_err());
         }
-        for version in 43..=55 {
+        for version in 43..=56 {
             let mut header = serde_json::json!({
                 "version": version,
                 "sim_config": {"bypass_fog_sprites_crash": true, "fog_of_war": true}

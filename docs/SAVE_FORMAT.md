@@ -6,6 +6,10 @@ Bumped on every incompatible change to the serialized fields.
 The counter starts from 1.
 
 ## History
+- **v96** (2026-09-24, direct movement): actor state retains the direct-input
+  instruction and its last refreshed frame so release and disconnect stop it
+  deterministically. Network protocol 64, snapshot schema 6, and replay schema
+  56 include this ownership and the new direction command.
 - **v95** (2026-09-20, cooperative parties): simulation rules, per-seat assigned
   hero, and duplicate origin identities persist in mission saves. Network
   protocol 63 and snapshot schema 5 carry this state; replay schema 55 records

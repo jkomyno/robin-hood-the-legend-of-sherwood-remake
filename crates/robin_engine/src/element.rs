@@ -626,6 +626,23 @@ impl InstalledActorOrder {
     }
 }
 
+/// The movement instruction currently owned by continuously refreshed direct input.
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    robin_state_hash_derive::StateHash,
+    bitcode::Encode,
+    bitcode::Decode,
+)]
+pub struct DirectControlMotion {
+    pub instruction: crate::sequence::SequenceElementRef,
+    pub refreshed_frame: u32,
+    pub running: bool,
+}
+
 /// Actor-level data.
 #[derive(
     Debug,
@@ -637,6 +654,8 @@ impl InstalledActorOrder {
     bitcode::Decode,
 )]
 pub struct ActorData {
+    #[serde(default)]
+    pub direct_control: Option<DirectControlMotion>,
     pub continuation: crate::actor_state::ActorContinuationState,
     pub old_action: Animation,
     pub is_ignored_for_anti_collision: bool,
@@ -737,6 +756,7 @@ pub struct ActorData {
 impl Default for ActorData {
     fn default() -> Self {
         Self {
+            direct_control: None,
             continuation: crate::actor_state::ActorContinuationState::default(),
             old_action: Animation::default(),
             is_ignored_for_anti_collision: false,

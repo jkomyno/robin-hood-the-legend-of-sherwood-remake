@@ -91,7 +91,8 @@ pub const INPUT_DELAY_FRAMES: u32 = 2;
 /// Protocol 61 carries unified host output and canonical human opponent records.
 /// Protocol 62 removes inferred corpse-posture and special-strike tracking state.
 /// Protocol 63 adds authenticated co-op chat.
-pub const NET_PROTOCOL_VERSION: u32 = 63;
+/// Protocol 64 carries direct movement commands and actor input ownership.
+pub const NET_PROTOCOL_VERSION: u32 = 64;
 
 /// Maximum bytes in one resumable full-mod transfer chunk. The outer native
 /// transport frame has a larger bound for engine snapshots, so content must

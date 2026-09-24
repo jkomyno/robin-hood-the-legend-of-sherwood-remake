@@ -20,8 +20,6 @@ use serde::{Deserialize, Serialize};
 
 /// Conversion factor for mouse simulation from axis values.
 const MOUSE_CONVERSION: f32 = 1638.0;
-/// Movement unit for character movement per frame.
-const MOVE_UNIT: f32 = 25.0;
 /// Axis magnitude above which the character runs instead of walks.
 const RUN_THRESHOLD: f32 = 28000.0;
 /// Axis magnitude above which a sword hit is registered as strong.
@@ -422,20 +420,15 @@ impl GamePadState {
         (self.current.x as f32, self.current.y as f32)
     }
 
-    /// Per-cadence movement displacement and gait. A centered stick emits no move.
-    fn movement_offset(&self) -> Option<(f32, f32, bool)> {
+    /// Unit movement direction and gait. A centered stick emits no input.
+    fn movement_direction(&self) -> Option<(f32, f32, bool)> {
         let (x, y) = self.main_stick();
         if x == 0.0 && y == 0.0 {
             return None;
         }
         let norm = (x * x + y * y).sqrt();
         let running = norm > RUN_THRESHOLD;
-        let scale = if running {
-            3.0 * MOVE_UNIT / norm
-        } else {
-            MOVE_UNIT / norm
-        };
-        Some((x * scale, y * scale, running))
+        Some((x / norm, y / norm, running))
     }
 
     /// Simulated mouse delta from Rz and Slider\[0\], centered at
@@ -589,15 +582,6 @@ impl GamePadState {
 
     /// Left-stick → character movement + crouch toggle.
     ///
-    /// The dispatch is gated on `frame_counter % 5 == 0` AND on a
-    /// successful `get_sector_screen` probe at the destination (only
-    /// emit on a sector that is patch / area+motion / door / jump).
-    /// We don't thread the resolved layer/sector/patch into a separate
-    /// `PadMove` variant because `EngineInner::perform_group_move`
-    /// already redoes the `get_sector_screen` probe inline from the
-    /// destination point and drives the same per-PC routing — caching
-    /// the resolved sector/patch would only avoid the redundant probe,
-    /// not inject distinct semantics.
     pub fn manage_move_axis(
         &self,
         engine: &robin_engine::engine::Engine,
@@ -609,50 +593,17 @@ impl GamePadState {
             return cmds;
         };
         let selected = engine.hero_selection(local_seat);
-        let leader_pos = leader_entity.element_data().position_map();
         let leader_posture = leader_entity.element_data().posture();
         let leader_swordfighting = leader_entity
             .human_data()
             .is_some_and(|h| !h.opponents.is_empty());
 
-        if engine.frame_counter().is_multiple_of(5)
-            && let Some((dx, stick_dy, running)) = self.movement_offset()
-        {
-            // The DirectInput-style movement vector uses screen/map Y, while
-            // gilrs' left-stick Y is positive toward the bottom of the pad's
-            // logical coordinate system. Flip it at the direct-move target;
-            // cursor movement has its own, already-correct conversion.
-            let dy = -stick_dy;
-            let dest = engine_coordinates::MapPoint::new(leader_pos.x + dx, leader_pos.y + dy);
-
-            // Validity check: probe the destination and only dispatch
-            // the move when the sector is a patch (auto-valid after the
-            // is_patch unwrap) or one of area+motion / door / jump.
-            // Drops the move when the stick points at unreachable
-            // terrain instead of letting it resolve through
-            // `perform_group_move`'s snap-to-walkable fallback.
-            let leader_ref = engine_coordinates::MapPoint::new(leader_pos.x, leader_pos.y);
-            let hit = engine.fast_grid().get_sector_screen(dest, leader_ref);
-            let hit_is_patch = hit
-                .sector_idx
-                .and_then(|i| engine.fast_grid().level.sectors.get(usize::from(i)))
-                .is_some_and(|s| s.sector_type.is_patch());
-            if hit.is_valid_for_move(engine.fast_grid()) || hit_is_patch {
-                cmds.push(PlayerCommand::GroupMove {
-                    actors: selected.to_vec(),
-                    destination: dest,
-                    running,
-                    show_marker: false,
-                    // Gamepad cursor doesn't yet plumb the patch
-                    // override through; spatial lookup at the cursor
-                    // position is the existing behaviour.
-                    goal_override: None,
-                    goal_sector_index_override: None,
-                    door_route_override: None,
-                    recorded_gate_routes: Vec::new(),
-                    recorded_failed_gate_routes: Vec::new(),
-                });
-            }
+        if let Some((x, y, running)) = self.movement_direction() {
+            cmds.push(PlayerCommand::DirectMove {
+                actors: selected.to_vec(),
+                direction: engine_coordinates::MapVec::new(x, -y),
+                running,
+            });
         }
 
         // CROUCH_CHINESE on release ─────────────────────────────

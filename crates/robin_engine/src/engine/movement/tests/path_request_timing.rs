@@ -655,3 +655,243 @@ mod suite {
         .take_next_expired_failure();
     }
 }
+
+#[cfg(test)]
+mod direct_movement_tests {
+    use super::super::*;
+    use crate::coordinates::MoveBox;
+    use crate::element::Posture;
+    use crate::engine::test_support::actors::TestActor;
+    use crate::fast_find_grid::{FastFindGrid, GridLine};
+
+    #[test]
+    fn direct_movement_stops_at_wall_without_selecting_clear_upper_layer() {
+        let mut grid = FastFindGrid::new();
+        grid.size_map(4, 4);
+        grid.allocate_layers(2);
+        grid.add_line(
+            GridLine::new(MapPoint::new(0., 128.), MapPoint::new(256., 128.), true),
+            0,
+        );
+        let source = MapPoint::new(100., 110.);
+        let bounds = MoveBox::from_coords(-5., -5., 5., 5.);
+        let direction = MapVec::new(0., 1.);
+        let ground = direct_movement_endpoint(&grid, source, 0, &bounds, direction);
+        let upper = direct_movement_endpoint(&grid, source, 1, &bounds, direction);
+        assert_eq!(ground.x, source.x);
+        assert!(ground.y > source.y && ground.y < 128. - 5.);
+        assert_eq!(upper, MapPoint::new(100., 142.));
+        assert_eq!(
+            direct_movement_endpoint(&grid, ground, 0, &bounds, direction),
+            ground
+        );
+        // Turning away works immediately, without looking for stairs or an escape route.
+        assert!(
+            direct_movement_endpoint(&grid, ground, 0, &bounds, MapVec::new(0., -1.)).y < ground.y
+        );
+    }
+
+    fn fixture() -> (EngineInner, LevelAssets, EntityId) {
+        let mut engine = EngineInner::new();
+        engine.world.fast_grid_mut().size_map(4, 4);
+        engine.world.fast_grid_mut().allocate_layers(2);
+        let mut pc = TestActor::pc(Posture::Upright)
+            .map_position(MapPoint::new(100., 100.))
+            .build();
+        let mut conversion = crate::engine::test_support::unmapped_conversion();
+        let mut scripts = Vec::new();
+        for (action, distance) in [
+            (OrderType::WalkingUpright, 4),
+            (OrderType::RunningUpright, 8),
+            (OrderType::WaitingUpright, 0),
+        ] {
+            conversion[action as usize] = scripts.len() as u16;
+            scripts.extend(vec![
+                crate::sprite_script::SpriteScript {
+                    action_id: action as u16,
+                    action_done: 0,
+                    average_speed: distance as f32,
+                    hotspot: crate::coordinates::SpriteLocalPoint::ZERO,
+                    sum_distance: distance,
+                    frame_ids: vec![1],
+                    delays: vec![0],
+                    distances: vec![distance],
+                    offsets: vec![crate::coordinates::SpriteFrameOffset::ZERO],
+                    sound_ids: vec![0],
+                };
+                16
+            ]);
+        }
+        pc.element_data_mut().sprite = crate::sprite::Sprite::new(
+            std::sync::Arc::new(scripts),
+            std::sync::Arc::new(conversion),
+        );
+        pc.element_data_mut()
+            .set_position_map(MapPoint::new(100., 100.));
+        pc.element_data_mut().set_layer(0);
+        pc.element_data_mut().active = true;
+        pc.position_iface_mut()
+            .set_move_box(MoveBox::from_coords(-5., -5., 5., 5.));
+        let owner = engine.add_test_entity(pc);
+        let assets = engine.test_runtime_assets();
+        (engine, assets, owner)
+    }
+
+    #[test]
+    fn direct_movement_drives_animation_and_stops_on_release() {
+        let (mut engine, assets, owner) = fixture();
+        let sim = crate::sim_rng::test_context();
+        let tcx = TickCtx::new(&sim, &assets);
+        for frame in 0..12 {
+            engine.control.frame_counter = frame;
+            engine.apply_direct_move(tcx, owner, MapVec::new(1., 0.), false);
+            engine.control.frame_counter += 1;
+            engine.expire_direct_movement(tcx);
+            engine.t_tick_actor_owner_envelopes(&assets);
+            engine.t_hourglass_phase_sequences(&assets);
+        }
+        let reached = engine.elem(owner).position_map();
+        assert!(
+            reached.x > 100.,
+            "held input must actually move the character: {reached:?}"
+        );
+        assert_eq!(reached.y, 100.);
+        engine.control.frame_counter += 1;
+        engine.expire_direct_movement(tcx);
+        for _ in 0..3 {
+            engine.t_tick_actor_owner_envelopes(&assets);
+            engine.t_hourglass_phase_sequences(&assets);
+        }
+        assert_eq!(engine.elem(owner).position_map(), reached);
+        assert!(engine.orders.pending_path_requests.waiting.is_empty());
+        assert!(engine.orders.pending_path_requests.in_flight.is_none());
+    }
+
+    #[test]
+    fn direct_movement_held_into_wall_never_crosses_or_routes_around_it() {
+        let (mut engine, assets, owner) = fixture();
+        engine.world.fast_grid_mut().add_line(
+            GridLine::new(MapPoint::new(130., 0.), MapPoint::new(130., 256.), true),
+            0,
+        );
+        let sim = crate::sim_rng::test_context();
+        let tcx = TickCtx::new(&sim, &assets);
+        for frame in 0..30 {
+            engine.control.frame_counter = frame;
+            engine.apply_direct_move(tcx, owner, MapVec::new(1., 0.), true);
+            engine.control.frame_counter += 1;
+            engine.expire_direct_movement(tcx);
+            engine.t_tick_actor_owner_envelopes(&assets);
+            engine.t_hourglass_phase_sequences(&assets);
+            let position = engine.elem(owner).position_map();
+            assert!(position.x >= 100. && position.x < 125., "{position:?}");
+            assert_eq!(position.y, 100.);
+            assert_eq!(engine.elem(owner).layer(), 0);
+            assert!(engine.orders.pending_path_requests.waiting.is_empty());
+            assert!(engine.orders.pending_path_requests.in_flight.is_none());
+        }
+        assert!(engine.elem(owner).position_map().x > 100.);
+    }
+
+    #[test]
+    fn direct_movement_retargets_same_instruction_and_expires_without_input() {
+        let (mut engine, assets, owner) = fixture();
+        let sim = crate::sim_rng::test_context();
+        let tcx = TickCtx::new(&sim, &assets);
+        engine.apply_direct_move(tcx, owner, MapVec::new(1., 0.), false);
+        let instruction = engine.actor(owner).direct_control.unwrap().instruction;
+        engine.t_hourglass_phase_sequences(&assets);
+        assert!(engine.orders.pending_path_requests.waiting.is_empty());
+        assert!(engine.orders.pending_path_requests.in_flight.is_none());
+        assert_eq!(
+            engine.actor(owner).selected_sequence_element,
+            Some(instruction)
+        );
+        engine.control.frame_counter = 1;
+        engine.apply_direct_move(tcx, owner, MapVec::new(-1., 0.), false);
+        assert_eq!(
+            engine.actor(owner).direct_control.unwrap().instruction,
+            instruction
+        );
+        assert_eq!(
+            engine.ent(owner).position_iface().map_goal(),
+            MapPoint::new(68., 100.)
+        );
+        let element = engine
+            .orders
+            .sequence_manager
+            .get_element(instruction.sequence_id, instruction.element_index)
+            .unwrap();
+        assert!(element.orders.iter().all(|order| order.target_x == 68.));
+        let bytes = crate::engine::snapshot::encode_native_engine_inner(&engine);
+        let mut restored = crate::engine::snapshot::decode_native_engine_inner(&bytes).unwrap();
+        assert_eq!(
+            restored.actor(owner).direct_control.unwrap().instruction,
+            instruction
+        );
+        restored.control.frame_counter = 3;
+        restored.expire_direct_movement(tcx);
+        assert!(restored.actor(owner).direct_control.is_none());
+
+        engine.control.frame_counter = 2;
+        engine.expire_direct_movement(tcx);
+        assert!(engine.actor(owner).direct_control.is_some());
+        engine.control.frame_counter = 3;
+        engine.expire_direct_movement(tcx);
+        assert!(engine.actor(owner).direct_control.is_none());
+        assert_eq!(engine.elem(owner).position_map(), MapPoint::new(100., 100.));
+        assert!(engine.orders.pending_path_requests.waiting.is_empty());
+        assert!(engine.orders.pending_path_requests.in_flight.is_none());
+    }
+
+    #[test]
+    fn direct_movement_release_preserves_pending_mouse_order() {
+        let (mut engine, assets, owner) = fixture();
+        let sim = crate::sim_rng::test_context();
+        let tcx = TickCtx::new(&sim, &assets);
+        engine.apply_direct_move(tcx, owner, MapVec::new(1., 0.), false);
+        engine.t_hourglass_phase_sequences(&assets);
+        let replacement = engine.t_launch_element(
+            &assets,
+            crate::sequence::SequenceElement::new_movement(
+                1,
+                crate::element::Command::Move,
+                Some(owner),
+                OrderType::WalkingUpright,
+            ),
+        );
+        engine.control.frame_counter = 2;
+        engine.expire_direct_movement(tcx);
+        assert_eq!(
+            engine
+                .orders
+                .sequence_manager
+                .get_element(replacement, 0)
+                .unwrap()
+                .state,
+            crate::sequence::SequenceState::Todo
+        );
+        assert!(engine.actor(owner).direct_control.is_none());
+    }
+
+    #[test]
+    fn direct_movement_release_does_not_stop_replacement_order() {
+        let (mut engine, assets, owner) = fixture();
+        let sim = crate::sim_rng::test_context();
+        let tcx = TickCtx::new(&sim, &assets);
+        engine.apply_direct_move(tcx, owner, MapVec::new(1., 0.), false);
+        engine.t_hourglass_phase_sequences(&assets);
+        let replacement = engine.t_launch_element(
+            &assets,
+            crate::sequence::SequenceElement::new(1, crate::element::Command::Wait, Some(owner)),
+        );
+        engine.select_sequence_element(owner, Some((replacement, 0)));
+        engine.control.frame_counter = 2;
+        engine.expire_direct_movement(tcx);
+        assert_eq!(
+            engine.actor(owner).selected_sequence_element,
+            Some(crate::sequence::SequenceElementRef::new(replacement, 0))
+        );
+        assert!(engine.actor(owner).direct_control.is_none());
+    }
+}
