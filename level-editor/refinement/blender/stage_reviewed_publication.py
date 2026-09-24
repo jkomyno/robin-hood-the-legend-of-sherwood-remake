@@ -66,7 +66,7 @@ def stage(plan_path):
         # Applied drawbridge endpoints are exported independently at the same pivot.
         plan['static_variants'] = [
             {'asset_id': item['asset_id'], 'initial_name': 'Initial',
-             'states': {'applied': dict(child)}}
+             'states': {'initial': dict(item, name='Initial'), 'applied': dict(child)}}
             for item in plan['imports'] for child in item.get('texture_states', [])
             if child.get('endpoint_id') == 'applied']
     bpy.ops.wm.open_mainfile(filepath=str(Path(plan['baseline']).resolve(strict=True)))
