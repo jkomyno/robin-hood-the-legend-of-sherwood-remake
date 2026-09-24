@@ -41,6 +41,17 @@ class ReconciliationTests(unittest.TestCase):
         np.testing.assert_array_equal(wider[:, :, 3], preserved[:, :, 3])
         self.assertLess(wider[16, 60, 0], default[16, 60, 0])
 
+    def test_luminance_preserves_unknown_chromaticity(self):
+        raw = self.source.copy()
+        raw[:, :, :3] = [.2, .4, .6]
+        preserved = raw.copy()
+        preserved[self.known] = self.source[self.known]
+        result = reconcile_tile(preserved, self.source, raw, self.known, fade_pixels=96, gain_mode="luminance")
+        np.testing.assert_array_equal(result[self.known], preserved[self.known])
+        np.testing.assert_allclose(result[16, 20, :3] / raw[16, 20, :3], [result[16, 20, 0] / .2] * 3)
+        with self.assertRaises(ValueError):
+            reconcile_tile(preserved, self.source, raw, self.known, gain_mode="invalid")
+
     def test_invalid_fade_fails(self):
         for value in [0, -1, 1025, float("nan"), float("inf"), True, "96"]:
             with self.assertRaises(ValueError):
