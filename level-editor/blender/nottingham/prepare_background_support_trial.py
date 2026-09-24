@@ -1,6 +1,7 @@
 """Freeze a cached-generation background-support trial without changing source art."""
 import hashlib,json,os,shutil,sys
 from pathlib import Path
+from texture_experiment_paths import selected_experiment
 import numpy as np
 from PIL import Image
 ROOT=Path(__file__).resolve().parents[3]
@@ -8,9 +9,11 @@ sys.path.insert(0,str(ROOT/'level-editor/refinement/blender'))
 from generated_surface_support import support
 sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
 for asset in sys.argv[1:]:
- p=ROOT/'level-editor/work/nottingham-refinement/texture-generation/experiments'/asset;o=p/'repair-background-support';o.mkdir(exist_ok=False)
+ p=selected_experiment(asset);o=p/'repair-background-support';o.mkdir(exist_ok=False)
  active=json.loads((p/'texture-review.json').read_text()) if (p/'texture-review.json').exists() else {}
- manifest=p/'views.json';g=p/active.get('generation','generation-short-no-mask-with-lighting-openrouter')
+ manifest=p/'views.json'
+ raw_review=json.loads((p/'generation-review.json').read_text())
+ g=p/active['generation'] if active.get('generation') else Path(raw_review['generated_preserved_path']).parent
  validation=p/active.get('bake','bake-batch-001')/'validation.json'
  if validation.exists():
   evidence=json.loads(validation.read_text()).get('evidence_sha256',{})

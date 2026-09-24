@@ -1,5 +1,6 @@
 """Record a human/agent visual inspection after inspecting the actual eight views."""
 import argparse
+import os
 import json
 from pathlib import Path
 from bake_ready_textures import ROOT, sha, write, update_ledger
@@ -23,7 +24,7 @@ def record(asset, status, observations):
     write(output/'texture-review.json',report)
     experiment=Path(job['experiment'])
     generation=json.loads((experiment/'generation-review.json').read_text())
-    gallery=dict(status='ready-for-user' if status=='ready-for-user-texture-review' else 'fix-needed',bake=str(output.relative_to(experiment)),generation=str(Path(generation['generated_preserved_path']).parent.relative_to(experiment)),all_eight_actual_views_inspected=True,actual_sheet_sha256=job['actual_sheet_sha256'],baked_model_sha256=job['model_sha256'],notes=observations)
+    gallery=dict(status='ready-for-user' if status=='ready-for-user-texture-review' else 'fix-needed',bake=str(output.relative_to(experiment)),generation=os.path.relpath(Path(generation['generated_preserved_path']).parent,experiment),all_eight_actual_views_inspected=True,actual_sheet_sha256=job['actual_sheet_sha256'],baked_model_sha256=job['model_sha256'],notes=observations)
     write(experiment/'texture-review.json',gallery)
     job.update(status=status,texture_review=str(output/'texture-review.json'),texture_review_sha256=sha(output/'texture-review.json'))
     update_ledger(ledger_path,asset,job)

@@ -1,10 +1,11 @@
 """Withdraw only visually confirmed background-spill candidates, preserving old reviews."""
 import json,shutil,sys
 from pathlib import Path
+from texture_experiment_paths import selected_experiment
 from bake_ready_textures import ROOT,update_ledger
 r=ROOT/'level-editor/work/nottingham-refinement/texture-generation'
 for asset in sys.argv[1:]:
- p=r/'experiments'/asset;f=p/'texture-review.json'
+ p=selected_experiment(asset);f=p/'texture-review.json'
  if f.exists():
   history=p/'texture-review-before-background-hold.json'
   if not history.exists():shutil.copy2(f,history)
