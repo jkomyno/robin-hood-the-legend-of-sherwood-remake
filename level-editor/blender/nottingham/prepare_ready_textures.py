@@ -42,8 +42,21 @@ def verify_prepared(directory):
     return approval
 
 
+def selected_paths(asset_id, previous_rows, default_manifest, default_experiment):
+    """Retain explicit revision pointers; stale selections must fail validation."""
+    matches=[r for r in previous_rows if r['asset_id']==asset_id]
+    if len(matches)>1:raise ValueError('Duplicate preparation selection: '+asset_id)
+    if not matches or not matches[0].get('experiment'):
+        return default_manifest,default_experiment,False
+    row=matches[0]
+    if not row.get('normalized_manifest'):
+        raise ValueError('Selected experiment lacks normalized authorization: '+asset_id)
+    return Path(row['normalized_manifest']),Path(row['experiment']),True
+
+
 def batch(output=GEN/'preparation-jobs.json'):
     gallery=read(WORK/'gallery-candidates.json')
+    previous_rows=read(Path(output)).get('assets',[]) if Path(output).exists() else []
     rows=[]
     for item in gallery['items']:
         if 'parent_asset_id' in item:continue
@@ -56,7 +69,9 @@ def batch(output=GEN/'preparation-jobs.json'):
         manifest=normalized/'manifest.json'
         if aid in PILOTS:
             manifest=PILOTS[aid]['manifest'];experiment=PILOTS[aid]['experiment']
-        if manifest.exists() and aid not in PILOTS:
+        manifest,experiment,explicit_selection=selected_paths(aid,previous_rows,manifest,experiment)
+        normalized=manifest.parent
+        if manifest.exists() and aid not in PILOTS and not explicit_selection:
             old=read(manifest)['items'][0]
             old_frames=read(Path(old['textured']).parent/'views.json')
             if old_frames['tile_size']==[256,256] and not old.get('transport_padding'):
@@ -64,6 +79,8 @@ def batch(output=GEN/'preparation-jobs.json'):
                 manifest=normalized/'manifest.json'
         row.update(normalized_manifest=str(manifest),experiment=str(experiment))
         try:
+            if explicit_selection and not manifest.exists():
+                raise ValueError('Selected immutable authorization is missing')
             if not manifest.exists():
                 lighting=GEN/'lighting'/aid/'review.json'
                 if lighting.exists() and read(lighting).get('status')=='PASS':
@@ -95,6 +112,8 @@ def batch(output=GEN/'preparation-jobs.json'):
             else:
                 shared.prepare(manifest,aid,experiment)
                 approval=verify_prepared(experiment)
+            if approval.get('preparation_revision',approval['geometry_revision'])!=normalized_item['revision']['sha256']:
+                raise ValueError('Selected prepared experiment revision differs from authorization')
             row.update(status='ready',editable_pixels=check['editable_pixels'],
                        geometry_revision=approval['geometry_revision'],input_sha256=approval['input_sha256'],
                        approval=str(experiment/'approval.json'),frames=str(experiment/'views.json'))
