@@ -23,8 +23,7 @@ def main():
  assert len(rgb['packets'])==1 and rgb['packets'][0]['views_sha256']==frames
  comparison=json.loads((w/'inspection/source-material-comparison.json').read_text())
  assert comparison['model_sha256']==model and comparison['modified_views_sha256']==frames and comparison['proposed_geometry_misses']==0
- comparison['status']='PASS';comparison['visual_source_comparison_inspected']=True
- (w/'inspection/source-material-comparison.json').write_text(json.dumps(comparison,indent=2)+'\n')
+ assert comparison['status']=='PASS' and comparison.get('visual_source_comparison_inspected') is True
  native=json.loads((w/'inspection/full-native-source-coverage.json').read_text())
  assert native['native_pixels']==6932 and native['counts']=={'accepted':6932},native['counts']
  evidence_root=ROOT/'level-editor/work/nottingham-refinement/coordinator-audit/small-hut-projection'
