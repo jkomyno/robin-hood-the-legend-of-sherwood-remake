@@ -101,9 +101,31 @@ export async function prepareMapCandidate(
       const saved = parseLevel3D(await readJson<unknown>(dir, docName), {
         map: sceneDoc.map, glb: glbName, level: lvl ?? undefined,
       });
-      for (const reference of saved.assetSources ?? []) {
-        const prepared = await prepareProjectionAsset(library, reference, sceneDoc.map, reference);
-        asset.add(prepared.asset);
+      const references = saved.assetSources ?? [];
+      const preparedSources = new Array<Awaited<ReturnType<typeof prepareProjectionAsset>>>(references.length);
+      let nextReference = 0;
+      let failed = false;
+      let failure: unknown;
+      const loadNext = async () => {
+        while (!failed && nextReference < references.length) {
+          const index = nextReference++;
+          const reference = references[index]!;
+          try {
+            const prepared = await prepareProjectionAsset(library, reference, sceneDoc.map, reference);
+            // Transfer ownership immediately, including completions after another
+            // worker failed. The outer catch retires everything after workers settle.
+            asset!.add(prepared.asset);
+            preparedSources[index] = prepared;
+          } catch (error) {
+            if (!failed) { failed = true; failure = error; }
+          }
+        }
+      };
+      // Limit simultaneous model decoding and texture allocation on large maps.
+      await Promise.all(Array.from({ length: Math.min(4, references.length) }, loadNext));
+      if (failed) throw failure;
+      for (const prepared of preparedSources) {
+        asset.add(prepared.asset); // Retain document order regardless of completion order.
         for (const [key, node] of prepared.sources) {
           if (nextSources.has(key)) throw new Error(`Duplicate standalone source node ${key}`);
           nextSources.set(key, node);

@@ -1,4 +1,5 @@
 import test from "node:test";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -63,7 +64,7 @@ function fixture(saved: unknown = {}, map = "York", standalone = false) {
   asset.add(buildings);
   let disposals = 0;
   mesh.geometry.addEventListener("dispose", () => disposals++);
-  return { directory, asset, mesh, buildings, disposals: () => disposals };
+  return { directory, files, asset, mesh, buildings, disposals: () => disposals };
 }
 
 test("validated candidate retains ownership until accepted or rejected by its caller", async (t) => {
@@ -171,4 +172,88 @@ test("authored standalone scenes open without a matching datadir level", async (
   assert.equal(candidate.level, null);
   assert.equal(candidate.document.map, "York");
   disposeObjectResources([candidate.asset]);
+});
+
+function parallelFixture(count: number) {
+  const f = fixture();
+  const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
+  const references = Array.from({ length: count }, (_, i) => {
+    const id = `asset-${i}`, model = `${id}.glb`, descriptor = `${id}.json`;
+    const bytes = new Uint8Array([100 + i]);
+    const descriptorBytes = new TextEncoder().encode(JSON.stringify({
+      version: 1, kind: "projection-mapped-asset", id, name: id, source_map: "Derby", model,
+      source_origin_scene: [0,0,0], source_origin_game: [0,0,0],
+      parts: [{ node: "building-000", name: id, source_obstacle: 0, obstacle_local_game: {
+        points: [{x:0,y:0,z_bottom:0,z_top:10},{x:10,y:0,z_bottom:0,z_top:10},{x:0,y:10,z_bottom:0,z_top:10}],
+        solid:true, opaque:true, mouse:true, show_shadow_polygon:false, default_material:0, material_indices:[], projection_area:null,
+      }}],
+    }));
+    f.files.set(model, new File([bytes], model));
+    f.files.set(descriptor, new File([descriptorBytes], descriptor));
+    return { id, model, descriptor, model_sha256:hash(bytes), descriptor_sha256:hash(descriptorBytes) };
+  });
+  const saved = {version:1,map:"York",size:[100,200],camera:{kind:"oblique-orthographic",elevation_deg:35},glb:"York-volumes.scene.glb",groups:[],objects:[],assetSources:references};
+  f.files.set("York.level3d.json", new File([JSON.stringify(saved)], "document.json"));
+  const pending = new Map<number, {resolve():void; reject(error:Error):void}>();
+  const retired: number[] = [];
+  let active = 0, peak = 0;
+  const started: number[] = [];
+  const parse = async (bytes: ArrayBuffer) => {
+    if (bytes.byteLength === 3) return {scene:f.asset};
+    const i = new Uint8Array(bytes)[0]! - 100;
+    started.push(i); active++; peak=Math.max(peak,active);
+    await new Promise<void>((resolve,reject)=>pending.set(i,{resolve,reject})).finally(()=>active--);
+    const scene=new THREE.Group(),root=new THREE.Group(),group=new THREE.Group();
+    root.name="map";group.userData.asset_group=`asset-${i}`;scene.add(root);root.add(group);
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());
+    mesh.name="building-000";mesh.userData.source_obstacle=0;group.add(mesh);
+    mesh.geometry.addEventListener("dispose",()=>retired.push(i));
+    return {scene};
+  };
+  return {...f,pending,retired,started,parse,peak:()=>peak};
+}
+async function untilLoaded(check:()=>boolean) {
+  for(let i=0;i<500;i++) {
+    if(check())return;
+    await new Promise(resolve=>setTimeout(resolve,1));
+  }
+  assert.fail("Timed out waiting for controlled model loads");
+}
+
+test("external assets load four at a time and preserve document order", async t => {
+  const f=parallelFixture(7);
+  t.mock.method(GLTFLoader.prototype,"parseAsync",f.parse);
+  const load=prepareMapCandidate("York",f.directory,null);
+  await untilLoaded(()=>f.pending.size===4);
+  assert.deepEqual([...f.started].sort(),[0,1,2,3]);
+  f.pending.get(2)!.resolve();
+  await untilLoaded(()=>f.pending.has(4));
+  f.pending.get(4)!.resolve();
+  await untilLoaded(()=>f.pending.has(5));
+  f.pending.get(5)!.resolve();
+  await untilLoaded(()=>f.pending.has(6));
+  for(const job of f.pending.values())job.resolve();
+  const candidate=await load;
+  assert.equal(f.peak(),4);
+  assert.deepEqual([...candidate.sources.keys()].slice(1),Array.from({length:7},(_,i)=>`asset:asset-${i}:building-000`));
+  assert.equal(f.retired.length,0);
+  disposeObjectResources([candidate.asset]);
+  assert.deepEqual(f.retired.sort(),[0,1,2,3,4,5,6]);
+});
+
+test("failed parallel loads stop scheduling and retire late completions before rejecting", async t => {
+  const f=parallelFixture(7);
+  t.mock.method(GLTFLoader.prototype,"parseAsync",f.parse);
+  let settled=false;
+  const load=prepareMapCandidate("York",f.directory,null);
+  const rejected=assert.rejects(load,/model decode failed/).then(()=>{settled=true;});
+  await untilLoaded(()=>f.pending.size===4);
+  f.pending.get(1)!.reject(new Error("model decode failed"));
+  await new Promise(resolve=>setTimeout(resolve,10));
+  assert.equal(settled,false,"in-flight assets must settle before resource retirement");
+  for(const [i,job] of f.pending)if(i!==1)job.resolve();
+  await rejected;
+  assert.equal(f.started.length,4);
+  assert.equal(f.disposals(),1);
+  assert.deepEqual(f.retired.sort(),[0,2,3]);
 });
