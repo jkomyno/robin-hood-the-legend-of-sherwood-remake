@@ -100,4 +100,19 @@ class CompleteStates(unittest.TestCase):
         with self.assertRaises(ValueError):self.run_guard()
 
 
+class StateRevisions(unittest.TestCase):
+    def test_existing_revision_unchanged(self):
+        packets = {'covered': {'hashes': {'views.json': 'abc'}}}
+        import hashlib
+        expected = hashlib.sha256(json.dumps(packets, sort_keys=True).encode()).hexdigest()
+        self.assertEqual(collector.state_bundle_hash(packets), expected)
+        self.assertIsNone(collector.state_bundle_hash({}))
+
+    def test_material_contract_change_invalidates_state_revision(self):
+        packets = {'covered': {'hashes': {'views.json': 'abc'}}}
+        before = collector.state_bundle_hash(packets, {'material-states.json': 'old'})
+        after = collector.state_bundle_hash(packets, {'material-states.json': 'new'})
+        self.assertNotEqual(before, after)
+
+
 if __name__=='__main__':unittest.main()

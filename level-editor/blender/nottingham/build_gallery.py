@@ -146,6 +146,15 @@ def projection_records(config, manifest, available):
     return result
 
 
+def state_bundle_hash(state_records, complete_contracts=None):
+    """Preserve existing revisions; explicit states also bind their material contract."""
+    if not state_records and not complete_contracts:
+        return None
+    payload = ({"packets": state_records, "complete_state_contracts": complete_contracts}
+               if complete_contracts else state_records)
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+
+
 def complete_state_records(workspace, config, manifest, available, framing):
     """Validate complete appearances against frozen source and visibility authority.
 
@@ -592,8 +601,15 @@ def main(argv=None):
                 state_records['revealed_input'] = supplemental_packet(
                     baseline_dir, asset['id'], framing, mask_origin=origin)
             evidence['state_packets'] = state_records
-            evidence['state_bundle_sha256'] = (hashlib.sha256(json.dumps(
-                state_records, sort_keys=True).encode()).hexdigest() if state_records else None)
+            contracts = evidence.get('complete_state_contracts')
+            if contracts:
+                bindings = read(workspace / 'inspection/state-models/manifest.json')
+                for binding in bindings['states']:
+                    displayed = state_records.get(binding['state'])
+                    require(displayed is not None and Path(displayed['directory']).resolve() ==
+                            Path(binding['frame_manifest']).resolve().parent,
+                            'Displayed state differs from validated complete-state packet')
+            evidence['state_bundle_sha256'] = state_bundle_hash(state_records, contracts)
             from lighting_review import load_lighting_review
             lighting_review, lighting_solids = load_lighting_review(
                 workspace, evidence, root / 'lighting-calibration/map-lighting.json')
