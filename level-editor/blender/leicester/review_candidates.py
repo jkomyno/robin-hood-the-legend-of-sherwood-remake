@@ -113,6 +113,16 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
         for key in ('revealed_solid', 'revealed_textured', 'revealed_context'):
             if handoff.get(key):
                 item[key] = str((workspace / handoff[key]).resolve(strict=True))
+        # Explicit opt-in preserves historical approval identities while new
+        # revisions bind their supplementary source images to the decision.
+        source_image_keys = ('source_trace', 'source_comparison', 'projection_errors')
+        if handoff.get('bind_source_evidence_images'):
+            for key in source_image_keys:
+                if handoff.get(key):
+                    path = (workspace / handoff[key]).resolve(strict=True)
+                    if not path.is_relative_to(workspace.resolve()):
+                        raise ValueError('Source evidence must stay inside workspace')
+                    item[key] = str(path)
         validation = json.loads(Path(item['validation']).read_text())
         if status == 'ready-for-user':
             if validation.get('status') != 'PASS':
@@ -181,6 +191,7 @@ def collect(catalog_path, assets, output, decisions_path=None, ground_workspace=
             'solid', 'textured', 'context', 'validation', 'review', 'ownership',
             'revealed_solid', 'revealed_textured', 'revealed_context') if key in item}
         evidence.update(recipe=recipe, handoff=handoff_path)
+        evidence.update({key: Path(item[key]) for key in source_image_keys if key in item})
         evidence.update(material_files)
         evidence.update(endpoint_files)
         item['revision'] = {'model_sha256': model_sha256,
