@@ -228,7 +228,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                             receiver_face_indices=manifest.get('texture_receiver_face_indices'),
                             material_suffix=manifest.get('texture_material_suffix'),
                             exclude_occluder_components=layer.get('exclude_occluder_components'),
-                            provenance_directory=output/f'provenance-{index}')))
+                            provenance_directory=output/f'provenance-{index}'))
     assigned = {node for report in reports for node in report['receiver_nodes']}
     if assigned != nodes or assigned_objects != {obj.name for obj in targets}:
         raise ValueError('Not all approved asset receiver objects received a selected source projection layer')
