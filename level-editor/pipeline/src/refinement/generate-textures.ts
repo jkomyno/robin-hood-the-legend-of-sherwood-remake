@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import sharp from "sharp";
 import { requireEnv } from "../env.ts";
 import { imageProvider, providerIdentity, openRouterBody, validateOpenRouterCapabilities } from "./image-provider.ts";
+import { atlasPrompt } from "./atlas-prompt.ts";
 
 async function main(): Promise<void> {
   if (!process.argv[2]) throw new Error("Supply experiment directory and --prepare or --generate");
@@ -111,16 +112,15 @@ Replace every masked untextured surface with the appropriate texture. Return the
     short:"Create an image from the provided reference sheet of 8 views of the same asset. The untextured gray shaded areas mark missing textures. Use the mask. Fill in these regions logically and consistently across all views, preserving all existing pixels outside the mask exactly. Keep the same asset design, textures, lighting, perspective, and black background.",
     detailed:"This image is a fixed 4-column by 2-row contact sheet of EIGHT orthographic views of ONE identical medieval gatehouse, azimuths 0,45,90,135 degrees on the top row and 180,225,270,315 on the bottom. Untextured gray shaded surfaces show existing 3D geometry where texture is missing. Use the mask. Preserve every pixel outside the mask, including the existing textured artwork and black background, exactly. Texture ONLY the editable shaded surfaces in ALL EIGHT views TOGETHER, deriving consistent weathered grey-brown masonry, small rounded reddish-brown roof shingles, metal roof caps, lighting and fine painterly pixel grain from the known views. Use the shading to understand the surface shape and depth. Preserve every tile's exact camera, silhouette, geometry, roof peaks, eaves, arches, occlusion edges, dimensions and pixel locations. Do not rearrange, resize, merge, crop, flip, rotate, or relayout views. Do not transfer the front camera to another tile. The building and material pattern must remain consistent across all eight azimuths. Continue small stone/shingle courses at the exact original physical scale; no new windows, doors, people, objects, lettering or geometry. Retain all existing image boundaries."
   };
-  const planar=manifest.projection_kind==="planar-atlas";
-  if(planar&&(manifest.views.length!==1||variant!=="short"))throw new Error("Planar atlas requires exactly one view and short prompt");
+  const atlasInstructions=atlasPrompt(manifest.projection_kind,manifest.views.length,variant,!!lighting);
   const omitMask=process.argv.includes("--no-mask");
   if(omitMask&&variant!=="short")throw new Error("The no-mask control currently requires --prompt-variant short");
   const outputDirectory=path.join(directory,`generation-${variant}${omitMask?"-no-mask":""}${lighting?"-with-lighting":""}${provider==="openrouter"?"-openrouter":""}`);
   await fs.mkdir(outputDirectory,{recursive:true});
-  const prompt=planar?"Complete the missing neutral-gray areas of this single planar texture atlas. It is one image, not a contact sheet. Continue the surrounding ground textures at the same pixel scale and exact coordinates. Gray cutouts mark unknown ground underneath removed scenery, not object silhouettes to preserve. Preserve every existing textured pixel exactly. Do not resize, crop, reframe, rotate, or add objects.":omitMask?"Create an image from the provided reference sheet of 8 views of the same asset. The untextured gray shaded areas mark missing textures. Fill in these regions logically and consistently across all views, preserving all existing textured pixels exactly. Keep the same asset design, textures, lighting, perspective, and black background.":prompts[variant];
+  const prompt=omitMask?"Create an image from the provided reference sheet of 8 views of the same asset. The untextured gray shaded areas mark missing textures. Fill in these regions logically and consistently across all views, preserving all existing textured pixels exactly. Keep the same asset design, textures, lighting, perspective, and black background.":prompts[variant];
   const parameters={model:identity.model,quality:"high",size:`${canvasWidth}x${canvasHeight}`,n:"1",output_format:"png",
-    prompt:prompt+(planar?" Preserve the existing planar lighting without inventing terrain relief.":" Follow the lighting and shading shown on the gray surfaces, preserving the same sun direction across all eight views.")+
-      (lighting?(planar?" The second image is the exact aligned planar surface in pure gray; use it as the lighting and coverage reference. Return only the completed first image.":" The second image shows the same eight views entirely in gray; use it as the reference for lighting, shadows, and shape, and return only the completed first image."):"")+
+    prompt:(atlasInstructions ?? (prompt+" Follow the lighting and shading shown on the gray surfaces, preserving the same sun direction across all eight views."+
+      (lighting?" The second image shows the same eight views entirely in gray; use it as the reference for lighting, shadows, and shape, and return only the completed first image.":"")))+
       (promptSuffix?" "+promptSuffix:"")};
   const hash=crypto.createHash("sha256").update(input).update(lighting??Buffer.alloc(0)).update(omitMask?Buffer.alloc(0):mask).update(JSON.stringify(parameters)).update(JSON.stringify({provider,endpoint:identity.endpoint})).digest("hex");
   const cache=path.join(directory,"api-cache",hash);await fs.mkdir(cache,{recursive:true});
