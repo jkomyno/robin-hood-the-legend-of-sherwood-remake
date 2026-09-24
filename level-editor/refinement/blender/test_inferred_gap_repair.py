@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from inferred_gap_repair import repair_face,validate_policy
+from inferred_gap_repair import repair_face,validate_policy,face_allowed
 
 
 def policy():
@@ -9,6 +9,15 @@ def policy():
 
 
 class GapRepair(unittest.TestCase):
+    def test_explicit_face_scope_rejects_foreign_invalid_and_missing_faces(self):
+        p=policy();p['receiver_faces']={'own':[2,5]}
+        validate_policy(p,['own'],{'own':6})
+        self.assertTrue(face_allowed(p,'own',2));self.assertFalse(face_allowed(p,'own',3))
+        self.assertTrue(face_allowed(policy(),'own',3))
+        for faces in ({'foreign':[2]},{'own':[]},{'own':[2,2]},{'own':[True]},{'own':[6]}):
+            p['receiver_faces']=faces
+            with self.assertRaises(ValueError):validate_policy(p,['own'],{'own':6})
+
     def fixture(self):
         colors=np.zeros((20,20,4));colors[:,:,:3]=.2;colors[:,:,3]=.7
         generated=np.ones((20,20),dtype=bool);generated[0,:]=False

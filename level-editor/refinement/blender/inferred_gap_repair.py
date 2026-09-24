@@ -3,16 +3,26 @@ import numpy as np
 from scipy.ndimage import distance_transform_edt, label
 
 
-def validate_policy(policy, receiver_names=None):
+def validate_policy(policy, receiver_names=None, receiver_face_counts=None):
     keys={'version','receiver_objects','max_distance_texels','max_distance_world','bottom_band_world',
           'max_face_fraction','max_total_texels','max_abs_normal_z'}
-    if not isinstance(policy,dict) or not keys<=set(policy) or set(policy)-keys-{'face_bottom_bands'} or policy['version']!=1:
+    if not isinstance(policy,dict) or not keys<=set(policy) or set(policy)-keys-{'face_bottom_bands','receiver_faces'} or policy['version']!=1:
         raise ValueError('Invalid inferred-gap repair policy')
     names=policy['receiver_objects']
     if not isinstance(names,list) or not names or any(not isinstance(n,str) or not n for n in names) or len(set(names))!=len(names):
         raise ValueError('Repair requires explicit unique receiver names')
     if receiver_names is not None and not set(names)<=set(receiver_names):
         raise ValueError('Gap repair names a foreign or excluded receiver')
+    selected=policy.get('receiver_faces')
+    if selected is not None:
+        if not isinstance(selected,dict) or set(selected)!=set(names):
+            raise ValueError('Explicit face scope must cover exactly the named receivers')
+        for name,faces in selected.items():
+            if (not isinstance(faces,list) or not faces or any(type(i) is not int or i<0 for i in faces)
+                    or len(set(faces))!=len(faces)):
+                raise ValueError('Explicit face scope requires unique nonnegative indices')
+            if receiver_face_counts is not None and (name not in receiver_face_counts or any(i>=receiver_face_counts[name] for i in faces)):
+                raise ValueError('Explicit repair face is absent from saved receiver')
     limits={'max_distance_texels':16,'max_distance_world':8,'bottom_band_world':4,
             'max_face_fraction':.05,'max_total_texels':10000,'max_abs_normal_z':.05}
     for key,limit in limits.items():
@@ -32,6 +42,11 @@ def validate_policy(policy, receiver_names=None):
                 not policy['bottom_band_world']<=height<=12):
                 raise ValueError('Invalid bounded per-face basal extent')
     return policy
+
+
+def face_allowed(policy, object_name, face_index):
+    selected=policy.get('receiver_faces')
+    return selected is None or face_index in selected.get(object_name,[])
 
 
 def repair_face(colors, protected, generated, positions, policy, object_min_z, bottom_band_override=None):

@@ -72,8 +72,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
             raise ValueError('Explicit texture receivers are absent from projection layer')
         receivers = [obj for obj in receivers if obj.name in names]
     if inferred_gap_repair is not None:
-        from inferred_gap_repair import validate_policy, repair_face
-        validate_policy(inferred_gap_repair, [obj.name for obj in receivers])
+        from inferred_gap_repair import validate_policy, repair_face, face_allowed
+        validate_policy(inferred_gap_repair, [obj.name for obj in receivers], {obj.name:len(obj.data.polygons) for obj in receivers})
         if hidden_sampler is None or provenance_directory is None:
             raise ValueError('Gap repair requires generated-sample provenance')
     repaired_total = 0
@@ -337,6 +337,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                     raise ValueError("Hidden sampler modified protected source pixels")
             repaired_samples = np.zeros(len(accepted), dtype=bool)
             if (inferred_gap_repair is not None and obj.name in inferred_gap_repair['receiver_objects']
+                    and face_allowed(inferred_gap_repair,obj.name,fid)
                     and abs(normal.z) <= inferred_gap_repair['max_abs_normal_z']):
                 repaired, repair_mask, repair_stats = repair_face(
                     colors.reshape(h+4,w+4,4), accepted.reshape(h+4,w+4),
