@@ -5,7 +5,7 @@ ROOT=Path(__file__).resolve().parents[3];WORK=ROOT/'level-editor/work/nottingham
 from render_slots import acquire
 from freeze_tooling import select_tooling
 from correct_source_projection import geometry,geometry_sha
-W=WORK/'round-41/assets/nottingham-castle-main-hall'
+W=Path(sys.argv[sys.argv.index('--')+1]).resolve()if'--'in sys.argv else WORK/'round-41/assets/nottingham-castle-main-hall'
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def write(p,d):Path(p).parent.mkdir(parents=True,exist_ok=True);Path(p).write_text(json.dumps(d,indent=2)+'\n')
 def main():
@@ -43,5 +43,5 @@ def main():
    if p.name!='views.json':(dst/'modified'/p.name).symlink_to(p.resolve(),target_is_directory=p.is_dir())
   state_records.append({'patch_id':'patch-008','state':state,'path':str(path),'visibility_review':visibility,'view_sha256':sha(path/'views.json'),'object_names':rr['object_names']});bindings.append({'state':state,'model':str(dst/'model.blend'),'model_sha256':sha(dst/'model.blend'),'frame_manifest':str(path/'views.json'),'frame_manifest_sha256':sha(path/'views.json'),'object_names':names[state]})
  write(W/'states-final/states.json',{'version':1,'asset_id':cfg['asset_id'],'states':state_records});write(W/'state-packet.json',{'version':1,'directory':str(W/'states-final'),'revealed_input':'input'});write(W/'inspection/state-models/manifest.json',{'version':1,'primary_model_sha256':sha(W/'model.blend'),'states':bindings,'material_states_sha256':sha(W/'material-states.json')})
- bpy.ops.wm.open_mainfile(filepath=str(W/'model.blend'));write(W/'validation.json',validate(W));print('HALL41 COMPLETE STATE PACKETS READY FOR QA',flush=True)
+ bpy.ops.wm.open_mainfile(filepath=str(W/'model.blend'));write(W/'validation.json',validate(W));print('HALL COMPLETE STATE PACKETS READY FOR QA',str(W),flush=True)
 if __name__=='__main__':main()
