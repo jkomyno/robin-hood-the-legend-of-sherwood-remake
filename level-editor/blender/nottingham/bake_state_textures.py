@@ -3,17 +3,17 @@ import json
 from pathlib import Path
 import sys
 import traceback
+import time
 
 ROOT = Path(__file__).resolve().parents[3]
 GEN = ROOT / 'level-editor/work/nottingham-refinement/texture-generation'
 sys.path.insert(0, str(Path(__file__).parent))
 sys.path.insert(0, str(ROOT / 'level-editor/refinement/blender'))
 from bake_ready_textures import reviewed_inputs, sha, write, claim
-from render_slots import acquire
+from render_slots import acquire, release
 
 
 def main():
-    acquire()
     import bpy
     from bake_reviewed_asset import stage
     ledger_path = GEN / 'state-bake-jobs.json'
@@ -33,6 +33,7 @@ def main():
             if output.exists() and not (output / 'validation.json').exists():
                 raise ValueError('Incomplete bake retained; inspect before retrying')
             if not output.exists():
+                acquire()
                 ledger['states'][key] = dict(asset_id=job['asset_id'], state=job['state'], status='baking', output=str(output))
                 write(ledger_path, ledger)
                 bpy.ops.wm.open_mainfile(filepath=str(experiment / 'approved-model.blend'))
@@ -55,6 +56,8 @@ def main():
         finally:
             write(ledger_path, ledger)
             lock.close()
+            release()
+            time.sleep(1.1)
 
 
 if __name__ == '__main__':
