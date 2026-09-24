@@ -29,7 +29,7 @@ def main():
     packet['inspected_views']=list(range(8));packet['alpha_preserved_exactly']=True
    d['status']='PASS';write(report,d)
   return
- rows=[r for r in audit['packets']if any(k!='primary'and not k.endswith('-full-height')for k in r['roles'])and(not args.asset or r['asset_id']in args.asset)]
+ rows=[r for r in audit['packets']if any(k!='primary'for k in r['roles'])and(not args.asset or r['asset_id']in args.asset)]
  assets={}
  for r in rows:assets.setdefault(r['asset_id'],[]).append(r)
  import bpy
