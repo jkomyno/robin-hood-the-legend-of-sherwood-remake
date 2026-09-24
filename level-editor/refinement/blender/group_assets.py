@@ -55,7 +55,14 @@ def reconcile_asset_groups(catalog_path):
             if identifier in parents:
                 raise ValueError(f"Duplicate asset group object: {identifier}")
             parents[identifier] = obj
-    obsolete = [obj for identifier, obj in parents.items() if identifier not in groups]
+    # Map-background assets are outside the obstacle catalog. Retain their
+    # existing ownership when a later batch reconciles obstacle groups.
+    backgrounds = {identifier for identifier, obj in parents.items()
+        if obj.children and all(child.type == "MESH"
+            and child.get("source_node") == "ground"
+            and child.get("asset_group") == identifier for child in obj.children)}
+    obsolete = [obj for identifier, obj in parents.items()
+                if identifier not in groups and identifier not in backgrounds]
     for obj in obsolete:
         if any(child not in meshes for child in obj.children):
             raise ValueError(f"Obsolete group contains unclassified children: {obj.name}")
