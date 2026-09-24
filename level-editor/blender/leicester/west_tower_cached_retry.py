@@ -63,4 +63,51 @@ def run(covered, revealed, state="both"):
         (output/'sampling-diagnosis.json').write_text(json.dumps(diagnostics,indent=2)+'\n')
         print('PASS guarded cached bake',index,flush=True)
 
-if __name__=='__main__':run(*sys.argv[sys.argv.index('--')+1:])
+
+
+def restore_audited_floor_faces(revealed):
+    """Keep correct interior-side assignments exposed by the frozen-camera audit."""
+    from verify_staged_handoffs import snapshot
+    from east_tower_texture_retry import validate_covered_state
+    e=Path(revealed).resolve(); old=e/'bake-openrouter-gray-v4/worker.blend'
+    current=e/'bake-state-direct-single-v2/worker.blend';out=e/'bake-state-direct-single-v5'
+    if out.exists():raise FileExistsError(out)
+    m=json.loads((e/'views.json').read_text())
+    bpy.ops.wm.open_mainfile(filepath=str(old))
+    scope={f'West Moat Tower / West Moat Tower component {i}':
+           list(range(len(bpy.data.objects[f'West Moat Tower / West Moat Tower component {i}'].data.polygons)))
+           for i in (248,253,255)}
+    assignments={name:{i:bpy.data.objects[name].data.materials[bpy.data.objects[name].data.polygons[i].material_index].name for i in faces} for name,faces in scope.items()}
+    bpy.ops.wm.open_mainfile(filepath=str(current))
+    _,protected=capture(m,labels=['__no_selected_label__'])
+    original=original_layers(m)
+    for name,faces in assignments.items():
+        obj=bpy.data.objects[name]
+        for index,material in faces.items():
+            slots=[slot.name if slot else None for slot in obj.data.materials]
+            if material not in slots:raise ValueError('Original material absent: '+material)
+            obj.data.polygons[index].material_index=slots.index(material)
+            del protected[name][str(index)]
+    preservation=verify(m,protected)
+    if original!=original_layers(m,original):raise ValueError('UVs/images changed')
+    out.mkdir();bpy.ops.wm.save_as_mainfile(filepath=str(out/'worker.blend'))
+    validate_covered_state(out/'worker.blend',e/'views.json',out/'reopen')
+    import shutil
+    shutil.copytree(out/'reopen/actual',out/'actual')
+    validation=json.loads((current.parent/'validation.json').read_text())
+    validation.update(final_model_sha256=digest(out/'worker.blend'),
+        audited_face_restore={'old':str(old),'old_sha256':digest(old),'assignments':assignments,
+        'new_base':str(current),'new_base_sha256':digest(current),'preservation':preservation,
+        'reopen_validation':str(out/'reopen/validation.json'),'reopen_validation_sha256':digest(out/'reopen/validation.json')})
+    (out/'validation.json').write_text(json.dumps(validation,indent=2)+'\n')
+    (out/'protected-materials.json').write_text(json.dumps(preservation,indent=2)+'\n')
+    shutil.copy2(current.parent/'report.json',out/'report.json')
+    print('PASS audited face restoration',flush=True)
+
+if __name__ == '__main__':
+    args=sys.argv[sys.argv.index('--')+1:]
+    if args[0]=='restore':
+        restore_audited_floor_faces(args[1])
+    else:
+        run(*args)
+        if len(args)<3 or args[2]!='covered':restore_audited_floor_faces(args[1])
