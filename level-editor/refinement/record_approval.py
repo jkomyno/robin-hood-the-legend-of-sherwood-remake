@@ -56,6 +56,16 @@ def record_gallery_decision(gallery_path, records_path, asset_id, decision, exac
             packet_file = workspace / 'modified' / name
             if hashlib.sha256(packet_file.read_bytes()).hexdigest() != expected:
                 raise ValueError('Current packet differs from the displayed approval revision: ' + asset_id)
+        lighting_review = workspace / 'lighting-review'
+        if evidence.get('lighting_review_sha256'):
+            lighting_path = lighting_review / 'review.json'
+            if hashlib.sha256(lighting_path.read_bytes()).hexdigest() != evidence['lighting_review_sha256']:
+                raise ValueError('Lighting review differs from the displayed approval revision: ' + asset_id)
+            lighting = json.loads(lighting_path.read_text())
+            for packet in lighting['packets']:
+                for key in ('solid', 'original_solid', 'source_blend', 'frame_manifest'):
+                    if hashlib.sha256(Path(packet[key]).read_bytes()).hexdigest() != packet[key + '_sha256']:
+                        raise ValueError('Lighting evidence differs from the displayed approval revision: ' + asset_id)
         archive = records_path.parent / 'approval-evidence' / asset_id / record['model_sha256'][:12]
         archive.mkdir(parents=True, exist_ok=True)
         for name in ('model.blend', 'candidate.json', 'validation.json', 'review.md', 'projection-correction.json'):
@@ -65,9 +75,6 @@ def record_gallery_decision(gallery_path, records_path, asset_id, decision, exac
         if not (archive / 'modified').exists():
             shutil.copytree(workspace / 'modified', archive / 'modified')
         if evidence.get('lighting_review_sha256') and not (archive / 'lighting-review').exists():
-            lighting_review = workspace / 'lighting-review'
-            if hashlib.sha256((lighting_review / 'review.json').read_bytes()).hexdigest() != evidence['lighting_review_sha256']:
-                raise ValueError('Lighting review differs from the displayed approval revision: ' + asset_id)
             shutil.copytree(lighting_review, archive / 'lighting-review')
         (archive / 'gallery-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
         record['evidence_directory'] = str(archive)

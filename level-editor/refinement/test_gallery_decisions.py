@@ -63,6 +63,28 @@ class GalleryDecisionTests(unittest.TestCase):
             self.decide('approved')
         self.assertFalse(self.records.exists())
 
+    def test_lighting_sheet_change_cannot_approve(self):
+        folder = self.workspace / 'lighting-review'
+        folder.mkdir()
+        sheet = folder / 'solid.png'
+        sheet.write_bytes(b'reviewed map lighting')
+        packet = {'solid': sheet, 'original_solid': self.workspace / 'modified/solid.png',
+                  'source_blend': self.workspace / 'model.blend',
+                  'frame_manifest': self.workspace / 'modified/views.json'}
+        digest = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+        binding = {key: str(path) for key, path in packet.items()}
+        binding.update({key + '_sha256': digest(path) for key, path in packet.items()})
+        review = folder / 'review.json'
+        review.write_text(json.dumps({'packets': [binding]}))
+        evidence_path = self.gallery / 'ownership.json'
+        evidence = json.loads(evidence_path.read_text())
+        evidence['lighting_review_sha256'] = digest(review)
+        evidence_path.write_text(json.dumps(evidence))
+        sheet.write_bytes(b'unreviewed replacement')
+        with self.assertRaisesRegex(ValueError, 'Lighting evidence differs'):
+            self.decide('approved')
+        self.assertFalse(self.records.exists())
+
 
 if __name__ == '__main__':
     unittest.main()
