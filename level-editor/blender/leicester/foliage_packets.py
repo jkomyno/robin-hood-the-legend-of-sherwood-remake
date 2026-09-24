@@ -20,8 +20,9 @@ def run(workspace):
     from audit_stored_materials import run as audit
     bpy.ops.wm.open_mainfile(filepath=str(workspace/'model.blend'),load_ui=False)
     feedback=json.loads((workspace/'user-feedback.json').read_text())
-    report=json.loads((workspace/'inspection/foliage-recipe.json').read_text())
-    if not report['recipe'].startswith(('leicester-foliage-lobes-','leicester-neutral-regional-fringe-')):
+    volume_report=workspace/'inspection/continuous-volume/report.json'
+    report=json.loads((volume_report if volume_report.exists() else workspace/'inspection/foliage-recipe.json').read_text())
+    if not report['recipe'].startswith(('leicester-foliage-lobes-','leicester-neutral-regional-fringe-','leicester-continuous-forest-volume-')):
         raise ValueError('Apply current foliage recipe before building the packet')
     modified(workspace)
     latest=max((workspace/'projection').glob('*/ownership.json'),key=lambda p:p.stat().st_mtime_ns)
@@ -30,6 +31,9 @@ def run(workspace):
     recipe='foliage_trees.py'
     if report['recipe'].startswith('leicester-neutral-regional-fringe-'):
         recipe='forest_fringe.py'
+        shutil.copy2(Path(__file__).with_name(recipe),workspace/recipe)
+    if report['recipe'].startswith('leicester-continuous-forest-volume-'):
+        recipe='forest_volume.py'
         shutil.copy2(Path(__file__).with_name(recipe),workspace/recipe)
     audit_output=workspace/'inspection/stored-materials'
     if audit_output.exists():
@@ -44,7 +48,7 @@ def run(workspace):
     finally:
         bpy.app.handlers.render_pre.remove(_cutout_ray_depth)
     material_report['render']['transparent_max_bounces']=128
-    material_report['render']['transparent_depth_reason']='Layered foliage coverage must survive all transparent surface traversals.'
+    material_report['render']['transparent_depth_reason']='Physical foliage coverage must survive transparent front and rear surface traversals.'
     (audit_output/'audit.json').write_text(json.dumps(material_report,indent=2)+'\n')
     handoff=json.loads((workspace/'handoff.json').read_text())
     handoff.update(status='fix-needed',recipe=recipe,all_eight_views_inspected=False,
