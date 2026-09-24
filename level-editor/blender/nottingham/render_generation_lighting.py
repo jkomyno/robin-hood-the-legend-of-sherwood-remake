@@ -13,8 +13,13 @@ def main():
   for aid in args.asset:
    report=out/aid/'review.json';d=json.loads(report.read_text());assert d['status']!='blocked-missing-state-proof'
    assert sha(config)==d['lighting_config_sha256']
+   source=next(r for r in audit['packets']if r['asset_id']==aid);workspace=Path(source['workspace'])
+   assert sha(workspace/'model.blend')==d['model_sha256']
+   assert sha(workspace/'modified/views.json')==d['modified_views_sha256']
    for packet in d['packets']:
     for key in ['frame_manifest','source_blend','solid','original_solid']:assert sha(packet[key])==packet[key+'_sha256']
+    for key in ['state_binding','material_audit']:
+     if packet.get(key):assert sha(packet[key])==packet[key+'_sha256']
     original=Image.open(packet['original_solid']).convert('RGBA');solid=Image.open(packet['solid']).convert('RGBA');assert original.size==solid.size
     assert ImageChops.difference(original.getchannel('A'),solid.getchannel('A')).getbbox()is None,'Silhouette drift'
     tilew,tileh=json.loads(Path(packet['frame_manifest']).read_text())['tile_size']
