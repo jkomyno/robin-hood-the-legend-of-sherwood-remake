@@ -1,9 +1,9 @@
 """Bake explicitly diagnosed background-spill trials, releasing the lease per asset."""
 import sys,json,time
 from pathlib import Path
-from texture_experiment_paths import selected_experiment
 ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(Path(__file__).parent))
+from texture_experiment_paths import selected_experiment
 sys.path.insert(0,str(ROOT/'level-editor/refinement/blender'))
 from render_slots import acquire,release
 from bake_ready_textures import claim
