@@ -207,7 +207,7 @@ def collect(experiments, output, map_name, additional_experiments=()):
         if item['user_approval'] == 'approved':
             item['notes'][0] = 'Texture explicitly approved for this baked revision.'
     manifest = output / 'texture-candidates.json'
-    manifest.write_text(json.dumps({'map': map_name + ' texture', 'items': items}, indent=2) + '\n')
+    manifest.write_text(json.dumps({'map': map_name + ' texture', 'review_kind':'texture', 'items': items}, indent=2) + '\n')
     build(manifest, output / 'gallery', map_name=map_name + ' texture', pending_only=True)
     return {'gallery': str(output / 'gallery/index.html'),
             'candidates': sum(item['user_approval'] != 'approved' for item in items),

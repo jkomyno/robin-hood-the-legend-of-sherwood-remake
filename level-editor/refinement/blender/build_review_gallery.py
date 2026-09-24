@@ -149,7 +149,13 @@ def build(index_path, output, *, pending_only=False, map_name=None):
     map_name = map_name if map_name is not None else data.get("map", "Derby")
     if not isinstance(map_name, str) or not map_name.strip():
         raise ValueError("Review gallery requires a nonempty map name")
-    title = html.escape(map_name.strip() + " model review")
+    texture_review = data.get("review_kind") == "texture"
+    title = html.escape(map_name.strip() + (" review" if texture_review else " model review"))
+    description = ("Generated textures baked onto the approved geometry. Review the actual mesh views and every additional state. "
+                   "Click any sheet for its full resolution. Texture approval is a separate decision."
+                   if texture_review else "Geometry candidates, not generated textures. Gray means no accepted original texture. "
+                   "Click any sheet for its full resolution. Review status does not imply user approval.")
+    texture_mode_label = "Baked textures" if texture_review else "Original textures + gray"
     items = data["items"]
     if pending_only:
         items = [item for item in items if not (str(item.get("user_approval", "")).lower().startswith("approved")
@@ -405,8 +411,7 @@ body[data-mode=solid] figure[data-kind$=textured],body[data-mode=textured] figur
 body:not([data-mode=both]) .sheets{grid-template-columns:1fr}
 @media(max-width:1000px){.sheets{grid-template-columns:1fr}}
 </style><body data-mode="both"><header><h1>'''+title+'''</h1>
-<p>Geometry candidates, not generated textures. Gray means no accepted original texture.
-Click any sheet for its full resolution. Review status does not imply user approval.</p>
+<p>'''+description+'''</p>
 '''+(f'<p><strong>{data.get("total_groups", len(items))} catalog assets'
       +(f' plus {data["supplemental_count"]} separate terrain packet' if data.get('supplemental_count') else '')+
       f'; {len(items)} pending review packets'
@@ -416,7 +421,7 @@ Click any sheet for its full resolution. Review status does not imply user appro
       f'{sum(item["status"] == "ready-for-user" for item in items)} ready for your decision.</strong> '
       'Items marked validation-pending or fix-needed are still being worked on.</p>' if pending_only else '')+'''
 <label>Show <select id="mode"><option value="both">Both sheets</option><option value="solid">Solid geometry</option>
-<option value="textured">Original textures + gray</option></select></label>
+<option value="textured">'''+texture_mode_label+'''</option></select></label>
 <label>Assets <select id="readiness"><option value="all">All pending assets</option>
 <option value="ready">Ready for review</option></select></label><nav>'''+nav+'''</nav></header><main>'''+"".join(cards)+missing_section+'''</main>
 <footer class="review-export"><button id="copy-reviews" type="button">Copy review results</button>

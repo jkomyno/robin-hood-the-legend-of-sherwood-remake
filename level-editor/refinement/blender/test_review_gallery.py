@@ -45,6 +45,26 @@ class StableGalleryLinks(unittest.TestCase):
                                  record['sha256'])
             self.assertTrue(list((output / 'history').glob('*/index.html')))
 
+    def test_texture_review_labels_do_not_change_geometry_default(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest, output = root / 'manifest.json', root / 'gallery'
+            for kind in (None, 'texture'):
+                output = root / ('gallery-' + str(kind))
+                data = {'map': 'Test', 'items': []}
+                if kind:
+                    data['review_kind'] = kind
+                manifest.write_text(json.dumps(data))
+                gallery.build(manifest, output)
+                page = (output / 'index.html').read_text()
+                if kind:
+                    self.assertIn('Generated textures baked onto the approved geometry', page)
+                    self.assertIn('Baked textures</option>', page)
+                    self.assertNotIn('Geometry candidates, not generated textures', page)
+                else:
+                    self.assertIn('Geometry candidates, not generated textures', page)
+                    self.assertIn('Original textures + gray</option>', page)
+
     def test_model_revision_and_blocked_approval(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
