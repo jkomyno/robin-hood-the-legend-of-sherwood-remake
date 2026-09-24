@@ -43,5 +43,10 @@ def main():
    if p.name!='views.json':(dst/'modified'/p.name).symlink_to(p.resolve(),target_is_directory=p.is_dir())
   state_records.append({'patch_id':'patch-008','state':state,'path':str(path),'visibility_review':visibility,'view_sha256':sha(path/'views.json'),'object_names':rr['object_names']});bindings.append({'state':state,'model':str(dst/'model.blend'),'model_sha256':sha(dst/'model.blend'),'frame_manifest':str(path/'views.json'),'frame_manifest_sha256':sha(path/'views.json'),'object_names':names[state]})
  write(W/'states-final/states.json',{'version':1,'asset_id':cfg['asset_id'],'states':state_records});write(W/'state-packet.json',{'version':1,'directory':str(W/'states-final'),'revealed_input':'input'});write(W/'inspection/state-models/manifest.json',{'version':1,'primary_model_sha256':sha(W/'model.blend'),'states':bindings,'material_states_sha256':sha(W/'material-states.json')})
- bpy.ops.wm.open_mainfile(filepath=str(W/'model.blend'));write(W/'validation.json',validate(W));print('HALL COMPLETE STATE PACKETS READY FOR QA',str(W),flush=True)
+ bpy.ops.wm.open_mainfile(filepath=str(W/'model.blend'))
+ if '--authoring' in sys.argv:
+  assert 'round-41' in W.parts
+  write(W/'validation.json',{'status':'authoring-only-not-ready','reason':'Mask authority evolved after frozen input; final round42 must freeze final authority and pass ordinary validation.'})
+ else:write(W/'validation.json',validate(W))
+ print('HALL COMPLETE STATE PACKETS READY FOR QA',str(W),flush=True)
 if __name__=='__main__':main()

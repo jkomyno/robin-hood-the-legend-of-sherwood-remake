@@ -18,3 +18,12 @@ def apply():
  for loop in mesh.loops:
   v=obj.matrix_world@mesh.vertices[loop.vertex_index].co;uv.data[loop.index].uv=(v.x/2304,1-(-v.y*s-v.z*c)/3520)
  return {'object':obj.name,'source_cap':cap,'native_top':top,'native_bottom':bottom,'closed':True,'vertices':len(mesh.vertices),'faces':len(mesh.polygons)}
+
+def apply_masks(workspace):
+ import json
+ from pathlib import Path
+ p=Path(workspace)/'source-masks.json';m=json.loads(p.read_text())
+ for label,indices,exclude in [('exterior',[449],[442,444,445,451]),('interior-patch-008',[457,458,459],[1110])]:
+  rows=m['projections'][label]['assignments'];rows[:]=[r for r in rows if not(r.get('source_node')=='building-500'and r.get('projection_component')=='castle-hall-stair-parapet')]
+  rows.append({'source_node':'building-500','projection_component':'castle-hall-stair-parapet','mask_indices':indices,'exclude_mask_indices':exclude,'reviewed':True,'native_ownership_reviewed':True,'exclusions_reviewed':True,'constraint_kind':'reviewed-source-traced-parapet','review_note':'Source-traced horizontal cap and vertical foreground stairside masonry. Native457/458/459 plus first-hit; do not paint these pixels onto stair treads. Covered source has its own independent material.','exclusion_reason':'Separate foreground spires retain ownership; removed silhouettes are excluded only outside revealed patch.','review_evidence':str((Path(__file__).resolve().parents[2]/'work/nottingham-refinement/castle-audit/hall39-blocker-independent/parapet-proposal.json').resolve())})
+ p.write_text(json.dumps(m,indent=2)+'\n')
