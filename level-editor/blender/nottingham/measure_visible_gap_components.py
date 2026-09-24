@@ -1,5 +1,5 @@
 """Read-only connected physical UV gap measurements for ray-proven visible receivers."""
-import sys,json,hashlib
+import sys,json,hashlib,argparse
 from pathlib import Path
 HERE=Path(__file__).resolve().parent;sys.path.insert(0,str(HERE))
 import bpy,numpy as np
@@ -8,8 +8,10 @@ from scipy.spatial import cKDTree
 from texture_experiment_paths import selected_experiment
 cross=lambda a,b:a[...,0]*b[...,1]-a[...,1]*b[...,0]
 sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
-for asset in sys.argv[sys.argv.index('--')+1:]:
- b=selected_experiment(asset)/'bake-background-support-001';ray=b/'actual-gray-ray-attribution.json';r=json.loads(ray.read_text())
+parser=argparse.ArgumentParser();parser.add_argument('--ray',default='actual-gray-ray-attribution.json');parser.add_argument('--output',default='visible-gap-components.json');parser.add_argument('assets',nargs='+');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
+if any(Path(v).name!=v for v in (args.ray,args.output)):raise ValueError('Local evidence filenames required')
+for asset in args.assets:
+ b=selected_experiment(asset)/'bake-background-support-001';ray=b/args.ray;r=json.loads(ray.read_text())
  if r['model_sha256']!=sha(b/'worker.blend'):raise ValueError('Ray evidence stale')
  targets={}
  for row in r['samples']:
@@ -51,4 +53,4 @@ for asset in sys.argv[sys.argv.index('--')+1:]:
    results.append(dict(object=name,face=face,component=record))
   if outside:results.append(dict(object=name,face=face,ray_samples_outside_physical_texel_centers=outside))
  report=dict(status='DIAGNOSTIC-ONLY',model_sha256=sha(b/'worker.blend'),ray_evidence_sha256=sha(ray),components=results)
- (b/'visible-gap-components.json').write_text(json.dumps(report,indent=2)+'\n');print(asset,len(results),flush=True)
+ (b/args.output).write_text(json.dumps(report,indent=2)+'\n');print(asset,len(results),flush=True)
