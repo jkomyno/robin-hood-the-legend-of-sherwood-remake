@@ -9,6 +9,7 @@ from render_slots import acquire,release
 from bake_ready_textures import claim
 import bpy
 from bake_reviewed_asset import stage
+from render_texture_coverage import inspect
 for asset in sys.argv[sys.argv.index('--')+1:]:
  p=selected_experiment(asset)
  scoped=p/'repair-background-support';g=p/'generation-short-no-mask-with-lighting-openrouter'
@@ -24,6 +25,7 @@ for asset in sys.argv[sys.argv.index('--')+1:]:
   if output.exists():raise RuntimeError('Output appeared while waiting for render lease: '+str(output))
   bpy.ops.wm.open_mainfile(filepath=str(scoped/'approved-model.blend'))
   result=stage(scoped/'views.json',g/'generated-preserved.png',output,texels_per_unit=2,reconciliation_reference=g/'generated-raw.png')
+  inspect(scoped/'views.json',output,output/'coverage')
   print('BACKGROUND SUPPORT BAKED '+asset+' '+str(output),flush=True)
  finally:
   release()
