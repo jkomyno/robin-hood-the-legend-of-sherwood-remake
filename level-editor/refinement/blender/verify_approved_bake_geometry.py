@@ -21,7 +21,8 @@ def verify(packet_path, worker_path, output):
     packet=json.loads(packet_path.read_text())
     approval=json.loads((packet_path.parent/'approval.json').read_text())
     if approval['status']!='approved':raise ValueError('Packet is not approved')
-    if sha(packet['source_blend'])!=approval['geometry_revision']:
+    approved_model_hash=approval.get('saved_model_sha256',approval['geometry_revision'])
+    if sha(packet['source_blend'])!=approved_model_hash:
         raise ValueError('Approved source blend changed')
     if packet['geometry_revision']!=approval['geometry_revision']:
         raise ValueError('Packet names another geometry revision')
@@ -37,7 +38,8 @@ def verify(packet_path, worker_path, output):
     bpy.ops.wm.open_mainfile(filepath=str(worker_path.resolve(strict=True)))
     after={name:_geometry(bpy.data.objects[name]) for name in names}
     if before!=after:raise ValueError('Baked geometry differs from approved model')
-    report={'status':'PASS','approved_source_sha256':approval['geometry_revision'],
+    report={'status':'PASS','approved_source_sha256':approved_model_hash,
+            'approved_revision':approval['geometry_revision'],
             'baked_worker_sha256':sha(worker_path),'meshes':before,'mask_evidence_files':len(evidence),
             'packet_sha256':sha(packet_path)}
     Path(output).write_text(json.dumps(report,indent=2)+'\n')
