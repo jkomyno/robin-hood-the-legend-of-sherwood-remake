@@ -337,6 +337,10 @@ def inspect(workspace, asset):
             expected_layers = prison_endpoint_records(workspace, config, expected_layers)
         require(after_layers == expected_layers,
                 "Modified projection layers do not match validated own-asset projection reviews")
+    elif config.get("source_projection_ground_exclusion"):
+        from ground_projection_review import validate as validate_ground_projection
+        validate_ground_projection(config, packets["input"]["projection_layers"],
+                                   packets["modified"]["projection_layers"])
     else:
         require(packets["input"]["projection_layers"] == packets["modified"]["projection_layers"],
                 "Projection layers changed without reviewed working manifest")
