@@ -66,8 +66,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
     if approval.get('asset_id') != manifest['asset_id']:
         raise ValueError('Approval asset does not match camera manifest')
     reviewed = Path(manifest['reviewed_packet'])
-    if hashlib.sha256((reviewed/'textured.png').read_bytes()).hexdigest() != input_hash:
-        raise ValueError('Reviewed source sheet changed after approval')
+    from reviewed_input_contract import validate as validate_reviewed_input
+    validate_reviewed_input(manifest_path, lambda path: _read(path)[::-1])
     if hashlib.sha256((reviewed/'views.json').read_bytes()).hexdigest() != manifest['reviewed_manifest_sha256']:
         raise ValueError('Reviewed cameras or lighting changed after approval')
     reviewed_manifest = json.loads((reviewed/'views.json').read_text())
