@@ -12,7 +12,7 @@ import { insertProjectionAsset } from "../../app/src/asset-commands.ts";
 import { libraryDir } from "./env.ts";
 
 const name = "Wychford", output = path.join(libraryDir, "scenes");
-const size: [number, number] = [2600, 2200];
+const size: [number, number] = [3600, 2400];
 const camera = { kind: "oblique-orthographic" as const, elevation_deg: 35 };
 const filename = path.join(output, name + ".level3d.json");
 try {
@@ -35,10 +35,10 @@ async function asset(id: string) {
   cache.set(id, result);
   return result;
 }
-let document: Level3D = { lighting: {enabled:true,sunAzimuth:305,sunElevation:48,shadowOpacity:.48}, version: 1, map: name, size, camera, glb: name + "-volumes.scene.glb", objects: [], groups: [],
-  notes: "The Tollkeeper's Ledger. Editable market-town layout: northern keep, central market, western church/orchard, eastern river workshops. Patrols, navigation and mission scripting are not implemented." };
-const riverPoints: [number,number,number][] = [[1950,0,0],[1910,300,0],[1770,680,0],
-  [1800,1030,0],[1810,1320,0],[1870,1540,0],[1850,1750,0],[1740,1990,0],[1690,2200,0]];
+let document: Level3D = { lighting: {enabled:true,sunAzimuth:305,sunElevation:48,shadowOpacity:.78}, version: 1, map: name, size, camera, glb: name + "-volumes.scene.glb", objects: [], groups: [],
+  notes: "The Tollkeeper's Ledger. Editable market-town layout: eastern ridge stronghold, western village and market, central river and mill. Patrols, navigation and mission scripting are not implemented." };
+const riverPoints: [number,number,number][] = [[1770,0,0],[1710,380,0],[1610,780,0],
+  [1650,1080,0],[1690,1370,0],[1740,1660,0],[1680,1940,0],[1560,2400,0]];
 const riverSamples=splineCurve({id:"river",name:"river",kind:"river",width:110,repeatLength:220,closed:false,points:riverPoints},camera)
   .getPoints(1024).map(p=>[p.x,-p.y*Math.sin(camera.elevation_deg*Math.PI/180)]);
 const ease = (n:number) => { const t=Math.max(0,Math.min(1,n)); return t*t*(3-2*t); };
@@ -48,9 +48,11 @@ function riverX(y:number) {
   return a[0]!+(b[0]!-a[0]!)*(y-a[1]!)/(b[1]!-a[1]!);
 }
 function groundHeight(x:number,y:number) {
-  const hill = 46 * (1-ease((Math.max(Math.abs(x-990)/610,Math.abs(y-660)/480)-.74)/.26));
-  const shore=ease((Math.abs(x-riverX(y))-54)/62);
-  return (14+hill)*shore-5*(1-shore);
+  const ridge=Math.hypot((x-2720)/760,(y-820)/900);
+  const hill=68*(1-ease((ridge-.60)/.4));
+  const rolling=8*Math.sin(x/380)*Math.sin(y/430)+18*(1-ease(x/330));
+  const shore=ease((Math.abs(x-riverX(y))-54)/68);
+  return (16+hill+rolling)*shore-5*(1-shore);
 }
 async function place(id: string, label: string, x: number, y: number, rotation=0) {
   const source = await asset(id);
@@ -60,109 +62,103 @@ async function place(id: string, label: string, x: number, y: number, rotation=0
   group.name=label;
   group.transform.rot_deg=rotation;
 }
-const buildings: [string,string,number,number][] = [
-  ["leicester-great-keep","Tollkeeper's keep",980,600],
-  ["derby-south-gatehouse","Market gate",1010,1020],
-  ["derby-east-courtyard-north-shelter","Quartermaster's shelter",1300,880],
-  ["derby-east-bailey-well","Garrison well",790,875],
-  ["leicester-south-hall","Wychford guildhall",1280,1220],
-  ["leicester-north-village-cottage","Baker's house",730,1460],
-  ["leicester-northeast-gabled-house","Market apothecary",730,1680],
-  ["leicester-east-edge-thatched-house","Cloth merchant",1460,1430],
-  ["leicester-mill-south-cottage","Cooper's cottage",1450,1660],
-  ["leicester-village-well","Market well",1080,1570],
-  ["leicester-northeast-handcart","Produce cart",1250,1510],
-  ["derby-lower-east-supplies","Merchant's wagon",890,1570],
-  ["leicester-northeast-handcart","Cloth market cart",1190,1590],
-  ["leicester-south-stilt-shed","Market storehouse",1280,1770],
-  ["leicester-church","St. Edmund's church",420,1190],
-  ["leicester-church-west-archway","Churchyard entrance",490,1450],
-  ["leicester-courtyard-well","Churchyard well",275,1390],
-  ["leicester-mill-north-cottage","Sexton's cottage",350,1610],
-  ["leicester-southeast-cottage","Orchard keeper's house",420,1880],
-  ["leicester-mill-north-cottage","Riverside workshop",1630,1190],
-  ["leicester-east-riverside-house","Ferryman's house",2080,1440],
-  ["leicester-northeast-longhouse","East-bank granary",2180,1130],
-  ["leicester-watermill","Wychford watermill",1900,1900],
-  ["leicester-south-footbridge","Lower river crossing",1850,1750],
-  ["leicester-east-village-footbridge","Open timber market bridge",1810,1320],
-  ["leicester-east-riverside-hay-mound","Granary haystack",2310,1300],
-  ["derby-east-bailey-stacked-timber","Workshop timber",1650,1375],
-  ["derby-lower-east-supplies","Granary cart",2060,1250],
-  ["leicester-mill-south-trough","Ferryman's trough",2200,1540],
-  ["leicester-east-riverside-hay-mound","South approach haystack",1320,1940],
-];
-buildings.push(
-  ["leicester-southeast-wall-turret","Northwest bailey bastion",540,420],
-  ["derby-lower-west-wall-turret","Northeast bailey bastion",1460,440],
-  ["leicester-southeast-wall-turret","Southeast bailey bastion",1450,990],
-  ["derby-lower-west-wall-turret","Southwest bailey bastion",540,960],
-  ["leicester-northeast-gabled-house","West market shop",600,1450],
-  ["leicester-mill-south-cottage","Brewery",650,1260],
-  ["leicester-southeast-cottage","South street merchant",770,1910],
-  ["leicester-north-village-cottage","Cobbler",1080,1850],
-  ["leicester-east-edge-thatched-house","Dyer",1460,1860],
-  ["leicester-mill-south-cottage","Carter",1220,2070],
-  ["leicester-mill-north-cottage","Weaver",1480,2070],
-  ["leicester-northeast-gabled-house","East-bank smith",2180,1650],
-  ["leicester-southeast-manor","East-bank manor",2300,1990],
-  ["leicester-south-stilt-shed","Timber wharf",2050,950],
-  ["leicester-northeast-longhouse","North-bank warehouse",2170,740],
-  ["leicester-mill-south-cottage","Church lane cottage",430,1740],
-);
-for (const item of buildings) await place(...item);
-const crossing=document.groups.find(group => group.name === "Open timber market bridge")!;
-crossing.transform.rot_deg=56;
-crossing.transform.dz=8;
-
-for (const [x,y] of [[1580,1310],[1605,1320],[2160,1200],[2190,1210],[890,1620],[1240,1730],[1270,930]])
-  await place("derby-east-bailey-crate","Working-yard barrel",x!,y!);
-const treeAssets = ["leicester-northwest-forest-tree", "leicester-north-church-tree",
-  "leicester-moat-bank-tree", "leicester-northwest-tower-tree", "leicester-southeast-cottage-tree"];
-const trees = [[120,400],[200,520],[160,740],[170,890],[200,1030],[140,1240],[180,1480],
-  [150,1710],[220,1990],[350,2110],[560,2110],[130,2150],
-  [1650,490],[1650,770],[1630,1040],[1680,1550],[1610,1910],
-  [2130,360],[2310,400],[2400,590],[2380,880],[2390,1200],[2400,1460],
-  [2300,1780],[2100,2120],[1940,2150]];
-for (const [i,p] of trees.entries()) await place(treeAssets[i % treeAssets.length]!,
-  "Woodland / riverside tree " + (i+1),p[0]!,p[1]!);
-for (const item of [
-  ["leicester-southwest-woodland-bank","Western wooded ridge",170,530],
-  ["leicester-southwest-edge-bank","Northwest rock bank",280,230],
-  ["leicester-southwest-field-bank","Northern field terrace",1090,170],
-  ["leicester-south-field-corner-bank","Riverside bank",1670,1100],
-  ["leicester-south-edge-field-bank","Mill approach bank",1650,1860],
-  ["leicester-north-village-field-fence","Church garden enclosure",520,1930],
-  ["leicester-south-cottage-garden-fence","South street gardens",820,2040],
-  ["leicester-roadside-rail-fence","East-bank pasture",2280,1480],
-  ["leicester-northeast-field-boundary","Northern pasture",2320,580],
-  ["leicester-mill-south-yard-wall","Mill yard",2070,1910],
-  ["leicester-mill-south-trough","Workshop trough",1460,1750],
-  ["leicester-village-well-bucket","Market bucket",1100,1590],
-  ["leicester-mill-south-barrel","Wharf cargo",2080,1040],
-  ["leicester-south-field-corner-rock","River crossing rock",1750,1400],
-  ["leicester-south-fence-end-rock","Woodland outcrop",290,920],
-] as [string,string,number,number][]) await place(...item);
-const battlement = await asset("derby-upper-east-curtain");
+type Placement = [string,string,number,number,number?];
+const layout = JSON.parse(await fs.readFile(new URL("../../maps/wychford/layout.json",import.meta.url),"utf8")) as {
+  buildings:Placement[]; props:Placement[]; fences:Placement[]; terrain:Placement[];
+  roads:[string,number,[number,number][]][];
+};
+for (const item of [...layout.buildings,...layout.props,...layout.fences]) await place(...item);
+for (const item of layout.terrain) {
+  const source=await asset(item[0]);
+  const bounds=(source.descriptor as ProjectionAssetDescriptor & {bounds_local_scene?:{min:[number,number,number];max:[number,number,number]}}).bounds_local_scene;
+  let x=item[2],y=item[3];
+  if(bounds){x=Math.max(-bounds.min[0],Math.min(size[0]-bounds.max[0],x));
+    const sin=Math.sin(camera.elevation_deg*Math.PI/180);
+    y=Math.max(bounds.max[1]*sin,Math.min(size[1]+bounds.min[1]*sin,y));}
+  await place(item[0],item[1],x,y,item[4]);
+}
+for(const label of ["Market bridge","Mill footbridge"]) document.groups.find(g=>g.name===label)!.transform.dz=9;
+const treeAssets=["sherwood-leaning-tree","leicester-moat-bank-tree","sherwood-spreading-oak",
+  "leicester-southeast-cottage-tree"];
+const trees=[[190,230],[360,340],[210,620],[180,840],[170,1240],[170,1780],[140,2120],
+  [380,2320],[970,2300],[1480,2290],[1520,610],[1490,1160],[1510,1530],
+  [1900,260],[2070,400],[2060,720],[1980,1040],[2200,1880],[2360,2100],
+  [2530,2240],[2750,2280],[3300,2260],[3430,1900],[3390,1580],[3430,1170],
+  [3410,860],[3320,480],[3110,210],[2910,130],[2620,190],[2340,240],[300,175],[170,470],[270,540],[170,720],
+  [180,970],[180,1520],[190,1940],[220,2280],[1220,2300],[1490,2100],
+  [1900,550],[2020,880],[1910,1390],[2290,2250],[2730,2110],[3370,2060],
+  [3330,1740],[3370,1340],[3350,1030],[3290,290]];
+for(const [i,[x,y]] of trees.entries()) await place(treeAssets[i%treeAssets.length]!,"Woodland tree "+(i+1),x!,y!);
+for(const [i,[x,y]] of [[1550,220],[1590,900],[1800,1220],[1770,2110],[2100,1650],[2280,340],
+  [3290,930],[3260,1460],[330,580],[210,2010],[2560,2180],[2980,210]].entries())
+  await place(["sherwood-rock-057","sherwood-rock-059","sherwood-rock-062","sherwood-rock-067","sherwood-rock-074","sherwood-rock-080"][i%6]!,"Rock outcrop "+i,x!,y!);
+for(const item of [
+  ["sherwood-camp-table-011","Bread stall",930,1530],
+  ["sherwood-camp-table-012","Cloth stall",1160,1520],
+  ["sherwood-camp-table-014","Pottery stall",1220,1450],
+  ["sherwood-round-stool","Potter's stool",540,2160],
+  ["sherwood-cooking-cauldron","Market cookpot",1190,1570],
+  ["sherwood-cooper-barrel","Cooper's finished cask",740,2280],
+  ["sherwood-supply-barrel","Mill grain cask",1960,2000],
+  ["sherwood-logs-116","Carpenter's logs",410,1770],
+  ["sherwood-logs-117","Garrison firewood",2940,1180],
+  ["sherwood-logs-118","Brewer's fuel",680,1880],
+] as Placement[]) await place(...item);
+const battlement=await asset("derby-upper-east-curtain");
 document.assetSources!.push(battlement.reference);
-const wall = (id:string,name:string,a:[number,number],b:[number,number]):LevelSpline => ({
-  id,name,kind:"wall",asset:battlement.reference.id,axis:"x",sourceAngle:82.4,
-  sourceStart:.18,sourceEnd:.72,flipCrossSection:true,width:72,repeatLength:340,closed:false,
-  points:[a,b].map(([x,y])=>[x,y,groundHeight(x,y)]),
-});
-document.splines = [
+const corner=await asset("derby-lower-west-wall-turret");
+document.assetSources!.push(corner.reference);
+const contour:[number,number][]=[[2405,1370],[2240,1220],[2150,980],[2160,680],
+  [2310,430],[2600,360],[2880,410],[3140,610],[3210,890],[3120,1140],[2890,1310],[2670,1380]];
+document.splines=[
   {id:"wych-river",name:"River Wych",kind:"river",width:110,repeatLength:220,closed:false,points:riverPoints},
-  wall("bailey-sw","Gate to southwest bastion",[890,1010],[540,960]),
-  wall("bailey-west","West curtain",[540,960],[540,420]),
-  wall("bailey-north","North curtain",[540,420],[1460,440]),
-  wall("bailey-east","East curtain",[1460,440],[1450,990]),
-  wall("bailey-se","Southeast bastion to gate",[1450,990],[1140,1040]),
+  {id:"ridge-curtain",name:"Ridge curtain",kind:"wall",asset:battlement.reference.id,axis:"x",sourceAngle:82.4,
+   cornerAsset:corner.reference.id,cornerMinAngle:38,cornerScale:1.65,cornerWidthScale:1.8,sourceStart:.18,sourceEnd:.72,flipCrossSection:true,width:72,repeatLength:340,closed:false,
+   points:contour.map(([x,y])=>[x,y,groundHeight(x,y)])},
 ];
-// Art is painted in ground-plane proportions (roughly 2600 : 2200/sin(35°)).
+function road(label:string,width:number,points:[number,number][]) {
+  const path:LevelSpline={id:"path-"+document.splines!.length,name:label,kind:"road",width,repeatLength:160,closed:false,
+    points:points.map(([x,y])=>[x,y,0])};
+  // Densely sample the centerline so every footpath follows the relief.
+  const samples=splineCurve(path,camera).getPoints(Math.max(2,Math.ceil(splineCurve(path,camera).getLength()/35)));
+  path.points=samples.map(p=>{const x=p.x,y=-p.y*Math.sin(camera.elevation_deg*Math.PI/180);return [x,y,groundHeight(x,y)+1.5];});
+  document.splines!.push(path);
+}
+for(const [label,width,points] of layout.roads) road(label,width,points);
+// Door approaches meet streets at deliberate junctions and leave the yards open.
+for(const [label,points] of [
+  ["Baker doorstep",[[490,835],[510,900],[530,950]]],
+  ["Apothecary doorstep",[[960,860],[975,920],[960,970]]],
+  ["Weaver doorstep",[[1400,950],[1430,1000],[1450,1050]]],
+  ["Church porch",[[570,1340],[600,1410],[600,1460]]],
+  ["Guildhall steps",[[1230,1340],[1190,1390],[1180,1460]]],
+  ["Carpenter yard",[[355,1700],[350,1780],[300,1810]]],
+  ["Brewer front yard",[[735,1860],[710,1960],[720,2040]]],
+  ["Granary yard",[[1080,1985],[1150,2010],[1220,2020]]],
+  ["Ferry steps",[[1460,1840],[1510,1870],[1560,1850]]],
+  ["Potter approach",[[490,2160],[570,2200],[850,2160]]],
+  ["Cooper approach",[[700,2270],[830,2240],[860,2260]]],
+  ["Dyer approach",[[1365,2205],[1480,2170],[1540,1990],[1560,1850]]],
+  ["Reeve gate",[[1150,585],[1160,625],[1200,635]]],
+  ["Mill door",[[1840,1840],[1850,1890],[1900,1920]]],
+  ["Keep approach",[[2720,1000],[2720,1100],[2630,1160]]],
+  ["Stores approach",[[3040,1190],[2800,1200],[2630,1160]]],
+  ["Gatekeeper yard",[[2920,1690],[2860,1760],[2790,1790]]],
+  ["Stable entrance",[[3080,1970],[3070,2050],[3010,2050]]],
+] as [string,[number,number][]][]) road(label,21,points);
+// Art is painted in ground-plane proportions (roughly 3600 : 2400/sin(35°)).
 // Bake it to map-pixel proportions so its detail shares the meshes' foreshortening.
 const art = new URL("../../maps/wychford/", import.meta.url);
 const terrain = await sharp(await fs.readFile(new URL("terrain.png", art))).resize(size[0],size[1],{fit:"fill"}).png().toBuffer();
 const riverTile = await sharp(await fs.readFile(new URL("river.png", art))).resize(256,512,{fit:"fill"}).png().toBuffer();
+const roadPixels = await sharp(await fs.readFile(new URL("path.png",art))).resize(128,256).ensureAlpha().raw().toBuffer();
+for(let y=0;y<256;y++) for(let x=0;x<128;x++) {
+  const edge=Math.min(x,127-x)/127;
+  const irregular=.035*Math.sin(y*Math.PI/32)+.018*Math.sin(y*Math.PI/8);
+  roadPixels[(y*128+x)*4+3]=Math.round(230*ease((edge-irregular)/.18));
+}
+const roadTile=await sharp(roadPixels,{raw:{width:128,height:256,channels:4}}).png().toBuffer();
+for(const spline of document.splines!) if(spline.kind==="road") spline.texture="data:image/png;base64,"+roadTile.toString("base64");
 document.splines![0]!.texture = "data:image/png;base64," + riverTile.toString("base64");
 await fs.mkdir(output,{recursive:true});
 await fs.writeFile(path.join(output,name+"-ground.png"),terrain);

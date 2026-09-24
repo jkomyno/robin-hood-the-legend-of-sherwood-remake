@@ -2,12 +2,12 @@
 export interface LevelSpline {
   id: string;
   name: string;
-  kind: "river" | "wall";
+  kind: "river" | "road" | "wall";
   points: [number, number, number][];
   closed: boolean;
   width: number;
   repeatLength: number;
-  /** River tile embedded in the document so save/reload needs no extra file grant. */
+  /** Surface tile embedded in the document so save/reload needs no extra file grant. */
   texture?: string;
   /** Wall asset ID in Level3D.assetSources. */
   asset?: string;
@@ -15,6 +15,14 @@ export interface LevelSpline {
   sourceAngle?: number;
   /** Reflect the cross-section so the parapet can face the exterior. */
   flipCrossSection?: boolean;
+  /** Optional matching tower from the wall preset, placed at qualifying turns. */
+  cornerAsset?: string;
+  cornerMinAngle?: number;
+  cornerScale?: number;
+  cornerWidthScale?: number;
+  cornerRotation?: number;
+  /** Control point indices explicitly left as continuous wall. */
+  cornerDisabled?: number[];
   /** Retained interval along the source model, useful for trimming fixed end caps. */
   sourceStart?: number;
   sourceEnd?: number;

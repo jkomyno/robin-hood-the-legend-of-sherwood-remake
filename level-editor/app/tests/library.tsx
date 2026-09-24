@@ -15,6 +15,8 @@ async function until(test: () => boolean) {
 }
 
 export async function checkSharedLibrary() {
+  const oldPresets=localStorage.getItem("rle.wallPresets");
+  localStorage.removeItem("rle.wallPresets");
   const files = new Map<string, File>();
   const json = (name: string, value: unknown) => files.set(name, new File([JSON.stringify(value)], name));
   const obstacle = { points: [{ x: 0, y: 0, z_bottom: 0, z_top: 30 }, { x: 30, y: 0, z_bottom: 0, z_top: 30 },
@@ -51,7 +53,7 @@ export async function checkSharedLibrary() {
     { id: "house", name: "Stone House", source_map: "Leicester", asset_type: "Building", tags: ["stone"] },
     { id: "tree", name: "Oak Tree", source_map: "Derby", asset_type: "Vegetation", tags: ["oak"] },
     ...Array.from({ length: 38 }, (_, index) => ({
-      id: `prop-${index}`, name: `Courtyard prop ${index}`, source_map: "York", asset_type: "Prop", tags: ["courtyard"],
+      id: `prop-${index}`, name: index === 0 ? "Round corner tower" : `Courtyard prop ${index}`, source_map: "York", asset_type: "Prop", tags: ["courtyard"],
     })),
   ].map(entry => ({ ...entry, descriptor: `${entry.id}/asset.json`, model: `${entry.id}/model.glb` }));
   json("3d-assets/index.json", { version: 1, assets: entries });
@@ -191,12 +193,23 @@ export async function checkSharedLibrary() {
       (document.querySelector('input[aria-label="Path name"]') as HTMLInputElement)?.value === "Battlement wall");
     await drawPoint(0.3, 0.7);
     await drawPoint(0.55, 0.75);
+    await drawPoint(0.6, 0.45);
+    select("Corner tower asset","prop-0");
+    await until(()=>!(document.querySelector('select[aria-label="Corner tower asset"]') as HTMLSelectElement)?.disabled);
+    await until(()=>!!document.querySelector('input[aria-label="Corner tower scale"]'));
     const flip = document.querySelector('input[aria-label="Flip battlement side"]') as HTMLInputElement;
     flip.checked = true;
     flip.dispatchEvent(new Event("change", { bubbles: true }));
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     click("Finish path");
     await until(() => document.querySelectorAll(".spline-list button").length === 2);
+    await until(()=>[...document.querySelectorAll("button")].some(b=>b.textContent==="Save as wall preset"));
+    click("Save as wall preset");
+    click("Draw path");
+    await until(()=>(document.querySelector('input[aria-label="Path name"]') as HTMLInputElement)?.value==="Footpath");
+    await drawPoint(.2,.6);await drawPoint(.35,.55);
+    click("Finish path");
+    await until(()=>document.querySelectorAll(".spline-list button").length===3);
     const sun = document.querySelector('input[aria-label="Cast sun shadows"]') as HTMLInputElement;
     sun.checked=true;sun.dispatchEvent(new Event("change",{bubbles:true}));
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
@@ -206,15 +219,25 @@ export async function checkSharedLibrary() {
       "Battlement-side choice was not saved");
     assert(JSON.parse(await files.get("scenes/York.level3d.json")!.text()).lighting?.enabled === true,
       "Sun settings were not saved");
+    const pathsSaved=JSON.parse(await files.get("scenes/York.level3d.json")!.text());
+    assert(pathsSaved.splines.some((p:{kind:string;cornerAsset?:string})=>p.kind==="wall" && p.cornerAsset==="prop-0"),"Corner tower source was not saved");
+    assert(pathsSaved.splines.some((p:{kind:string})=>p.kind==="road"),"Footpath was not saved");
     click("Lincoln");
     await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "Lincoln");
+    select("Wall preset","Battlement wall");
+    await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
+    click("Draw wall");
+    await until(()=>!!document.querySelector('input[aria-label="Corner tower scale"]'));
+    assert((document.querySelector('select[aria-label="Corner tower asset"]') as HTMLSelectElement).value==="prop-0","Preset did not restore its tower across levels");
+    click("Cancel");
     click("York");
     await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "York");
-    assert(document.querySelectorAll(".spline-list button").length === 2, "River and wall paths failed to reload");
+    assert(document.querySelectorAll(".spline-list button").length === 3, "River, wall and footpath failed to reload");
     assert(errors.length === 0, errors.join("\n"));
   } catch (error) {
     throw new Error(`${error}; errors: ${errors.join("; ")}; UI: ${document.querySelector("#root")?.textContent}`);
   } finally {
+    if(oldPresets===null)localStorage.removeItem("rle.wallPresets");else localStorage.setItem("rle.wallPresets",oldPresets);
     dispose();
     host.style.display = previousDisplay;
     host.style.flexDirection = previousDirection;

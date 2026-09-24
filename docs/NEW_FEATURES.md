@@ -9,6 +9,15 @@ A list of which additional features we have added, which ones we might still wan
 
 ## Done
 
+- **Wall corner presets and editable footpaths.** Wall paths can pair a pinned
+  curtain asset with a tower model. Turns above a configurable angle create
+  oriented corner towers automatically, with individual opt-outs and scale/
+  rotation controls. Named presets persist across levels in the same browser;
+  each map retains its own settings and source hashes. Footpaths are separate
+  textured, height-aware splines with save/reload and undo support. Wychford now
+  places its village west of the river and stronghold, using Leicester, Derby
+  and Sherwood props, terrain and selected irregular trees.
+
 - **Editor sun and terrain shadows.** Authored maps can save a sun direction,
   elevation and shadow strength. Editable meshes cast filtered shadows onto
   terrain without relighting baked source textures. River surfaces and editing

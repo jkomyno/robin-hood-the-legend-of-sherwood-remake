@@ -1,0 +1,889 @@
+{
+  "buildings": [
+    [
+      "leicester-great-keep",
+      "Tollkeeper's keep",
+      2730,
+      800
+    ],
+    [
+      "derby-south-gatehouse",
+      "Stronghold gate",
+      2540,
+      1370
+    ],
+    [
+      "derby-east-courtyard-north-shelter",
+      "Garrison stores",
+      3030,
+      1140
+    ],
+    [
+      "leicester-church",
+      "Village church",
+      570,
+      1190
+    ],
+    [
+      "leicester-church-west-archway",
+      "Churchyard entrance",
+      690,
+      1430
+    ],
+    [
+      "leicester-south-hall",
+      "Guildhall",
+      1220,
+      1180
+    ],
+    [
+      "leicester-north-village-cottage",
+      "Baker",
+      480,
+      760
+    ],
+    [
+      "leicester-northeast-gabled-house",
+      "Apothecary",
+      950,
+      790
+    ],
+    [
+      "leicester-east-edge-thatched-house",
+      "Weaver",
+      1400,
+      890
+    ],
+    [
+      "leicester-mill-south-cottage",
+      "Carpenter",
+      340,
+      1620
+    ],
+    [
+      "leicester-east-riverside-house",
+      "Ferryman",
+      1430,
+      1770
+    ],
+    [
+      "leicester-northeast-longhouse",
+      "Granary",
+      1080,
+      1920
+    ],
+    [
+      "leicester-southeast-cottage",
+      "Brewer",
+      720,
+      1790
+    ],
+    [
+      "leicester-mill-north-cottage",
+      "Potter",
+      480,
+      2090
+    ],
+    [
+      "leicester-southeast-manor",
+      "Reeve's house",
+      1140,
+      490
+    ],
+    [
+      "leicester-watermill",
+      "Watermill",
+      1830,
+      1760
+    ],
+    [
+      "leicester-south-stilt-shed",
+      "Mill store",
+      2020,
+      1970
+    ],
+    [
+      "leicester-northeast-gabled-house",
+      "Cooper",
+      690,
+      2200
+    ],
+    [
+      "leicester-north-village-cottage",
+      "Dyer",
+      1360,
+      2130
+    ],
+    [
+      "leicester-east-edge-thatched-house",
+      "Gatekeeper's lodging",
+      2910,
+      1610
+    ],
+    [
+      "leicester-mill-south-cottage",
+      "Stable yard",
+      3090,
+      1880
+    ],
+    [
+      "leicester-east-village-footbridge",
+      "Market bridge",
+      1690,
+      1370,
+      56
+    ],
+    [
+      "leicester-south-footbridge",
+      "Mill footbridge",
+      1680,
+      1940
+    ],
+    [
+      "derby-lower-east-cottage",
+      "Cobbler",
+      770,
+      1150
+    ],
+    [
+      "derby-lower-northwest-cottage",
+      "Chandler",
+      1170,
+      1680
+    ],
+    [
+      "derby-lower-southeast-cottage",
+      "Mason",
+      550,
+      520
+    ],
+    [
+      "derby-lower-southwest-cottage",
+      "Tanner",
+      1260,
+      750
+    ],
+    [
+      "derby-lower-west-cottage",
+      "Fisher",
+      1400,
+      1510
+    ],
+    [
+      "derby-east-courtyard-south-shelter",
+      "Garrison smithy",
+      2350,
+      990
+    ]
+  ],
+  "roads": [
+    [
+      "Market approach",
+      62,
+      [
+        [
+          880,
+          2400
+        ],
+        [
+          850,
+          2090
+        ],
+        [
+          915,
+          1740
+        ],
+        [
+          1050,
+          1490
+        ],
+        [
+          1120,
+          1030
+        ],
+        [
+          1130,
+          930
+        ]
+      ]
+    ],
+    [
+      "Gate road",
+      68,
+      [
+        [
+          1010,
+          1490
+        ],
+        [
+          1390,
+          1430
+        ],
+        [
+          1690,
+          1370
+        ],
+        [
+          2040,
+          1400
+        ],
+        [
+          2360,
+          1490
+        ],
+        [
+          2540,
+          1480
+        ],
+        [
+          2540,
+          1370
+        ],
+        [
+          2630,
+          1160
+        ]
+      ]
+    ],
+    [
+      "Church lane",
+      35,
+      [
+        [
+          300,
+          2290
+        ],
+        [
+          280,
+          1850
+        ],
+        [
+          440,
+          1450
+        ],
+        [
+          850,
+          1470
+        ],
+        [
+          1050,
+          1490
+        ]
+      ]
+    ],
+    [
+      "North village lane",
+      34,
+      [
+        [
+          320,
+          910
+        ],
+        [
+          600,
+          960
+        ],
+        [
+          920,
+          970
+        ],
+        [
+          1130,
+          930
+        ],
+        [
+          1450,
+          1050
+        ],
+        [
+          1500,
+          1270
+        ],
+        [
+          1390,
+          1430
+        ]
+      ]
+    ],
+    [
+      "Mill lane",
+      30,
+      [
+        [
+          1390,
+          1430
+        ],
+        [
+          1520,
+          1590
+        ],
+        [
+          1560,
+          1850
+        ],
+        [
+          1680,
+          1940
+        ],
+        [
+          1900,
+          1920
+        ],
+        [
+          2090,
+          2040
+        ]
+      ]
+    ],
+    [
+      "South lane",
+      32,
+      [
+        [
+          280,
+          1850
+        ],
+        [
+          540,
+          1970
+        ],
+        [
+          850,
+          2090
+        ],
+        [
+          1220,
+          2020
+        ],
+        [
+          1560,
+          1850
+        ]
+      ]
+    ],
+    [
+      "Garden path",
+      20,
+      [
+        [
+          430,
+          1450
+        ],
+        [
+          480,
+          1660
+        ],
+        [
+          850,
+          1630
+        ],
+        [
+          1050,
+          1490
+        ]
+      ]
+    ],
+    [
+      "North field path",
+      22,
+      [
+        [
+          600,
+          960
+        ],
+        [
+          700,
+          670
+        ],
+        [
+          980,
+          620
+        ],
+        [
+          1280,
+          640
+        ],
+        [
+          1470,
+          720
+        ]
+      ]
+    ],
+    [
+      "Stable lane",
+      30,
+      [
+        [
+          2540,
+          1480
+        ],
+        [
+          2770,
+          1770
+        ],
+        [
+          2970,
+          2040
+        ],
+        [
+          3340,
+          2140
+        ]
+      ]
+    ],
+    [
+      "Cobbler approach",
+      20,
+      [
+        [
+          790,
+          1250
+        ],
+        [
+          820,
+          1370
+        ],
+        [
+          850,
+          1470
+        ]
+      ]
+    ],
+    [
+      "Chandler approach",
+      20,
+      [
+        [
+          1180,
+          1740
+        ],
+        [
+          1090,
+          1760
+        ],
+        [
+          915,
+          1740
+        ]
+      ]
+    ],
+    [
+      "Mason approach",
+      20,
+      [
+        [
+          570,
+          600
+        ],
+        [
+          620,
+          675
+        ],
+        [
+          700,
+          670
+        ]
+      ]
+    ],
+    [
+      "Tanner approach",
+      20,
+      [
+        [
+          1280,
+          820
+        ],
+        [
+          1210,
+          870
+        ],
+        [
+          1130,
+          930
+        ]
+      ]
+    ],
+    [
+      "Fisher approach",
+      18,
+      [
+        [
+          1410,
+          1570
+        ],
+        [
+          1470,
+          1610
+        ],
+        [
+          1530,
+          1660
+        ]
+      ]
+    ],
+    [
+      "Smithy approach",
+      24,
+      [
+        [
+          2360,
+          1060
+        ],
+        [
+          2480,
+          1110
+        ],
+        [
+          2570,
+          1160
+        ],
+        [
+          2630,
+          1160
+        ]
+      ]
+    ]
+  ],
+  "props": [
+    [
+      "leicester-village-well",
+      "Market well",
+      1030,
+      1490
+    ],
+    [
+      "leicester-northeast-handcart",
+      "Vegetable cart",
+      930,
+      1440
+    ],
+    [
+      "derby-lower-east-supplies",
+      "Merchant wagon",
+      1240,
+      1530
+    ],
+    [
+      "leicester-village-well-bucket",
+      "Well bucket",
+      1060,
+      1510
+    ],
+    [
+      "derby-east-bailey-well",
+      "Garrison well",
+      2570,
+      1100
+    ],
+    [
+      "derby-east-bailey-stacked-timber",
+      "Garrison repairs",
+      3040,
+      1220
+    ],
+    [
+      "derby-east-bailey-yard-prop",
+      "Garrison yard tools",
+      2900,
+      1180
+    ],
+    [
+      "leicester-courtyard-well",
+      "Church well",
+      470,
+      1410
+    ],
+    [
+      "leicester-mill-south-trough",
+      "Stable trough",
+      2980,
+      1950
+    ],
+    [
+      "leicester-mill-north-trough",
+      "Dyer's trough",
+      1430,
+      2230
+    ],
+    [
+      "derby-lower-northwest-wash-tub",
+      "Washtub",
+      810,
+      2250
+    ],
+    [
+      "derby-lower-courtyard-prop",
+      "Carpenter's yard tools",
+      420,
+      1720
+    ],
+    [
+      "leicester-mill-south-bucket",
+      "Mill bucket",
+      1810,
+      1860
+    ],
+    [
+      "leicester-mill-south-barrel",
+      "Flour barrel",
+      1870,
+      1900
+    ],
+    [
+      "leicester-east-riverside-hay-mound",
+      "Stable hay",
+      3180,
+      1980
+    ],
+    [
+      "derby-east-bailey-stacked-timber",
+      "Carpenter's timber",
+      490,
+      1760
+    ],
+    [
+      "derby-east-bailey-crate",
+      "Baker supplies",
+      530,
+      850
+    ],
+    [
+      "leicester-southeast-cottage-barrel",
+      "Brewer barrel",
+      810,
+      1820
+    ],
+    [
+      "derby-lower-east-cottage-barrel",
+      "Brewer cask",
+      825,
+      1840
+    ],
+    [
+      "derby-lower-northwest-cottage-barrel",
+      "Market cask",
+      1280,
+      1560
+    ],
+    [
+      "leicester-mill-south-barrel",
+      "Apothecary barrel",
+      1040,
+      820
+    ],
+    [
+      "leicester-northeast-handcart",
+      "Mill cart",
+      1970,
+      1860
+    ],
+    [
+      "derby-east-bailey-crate",
+      "Mill grain crate",
+      1890,
+      1890
+    ],
+    [
+      "derby-lower-east-supplies",
+      "Stable wagon",
+      2930,
+      2070
+    ],
+    [
+      "leicester-east-riverside-hay-mound",
+      "Granary hay",
+      1230,
+      1890
+    ],
+    [
+      "leicester-mill-south-bucket",
+      "Potter's bucket",
+      560,
+      2110
+    ],
+    [
+      "derby-lower-east-cottage-barrel",
+      "Ferry stores",
+      1480,
+      1850
+    ],
+    [
+      "leicester-southeast-cottage-barrel",
+      "Gate stores",
+      2640,
+      1460
+    ]
+  ],
+  "fences": [
+    [
+      "leicester-north-village-field-fence",
+      "Baker garden",
+      430,
+      620
+    ],
+    [
+      "leicester-south-cottage-garden-fence",
+      "Brewer garden",
+      650,
+      1870
+    ],
+    [
+      "leicester-roadside-rail-fence",
+      "Stable paddock west",
+      2830,
+      1980
+    ],
+    [
+      "leicester-northeast-field-boundary",
+      "Stable paddock east",
+      3340,
+      1870
+    ],
+    [
+      "derby-lower-northwest-yard-fence",
+      "Potter yard",
+      360,
+      2170
+    ],
+    [
+      "leicester-north-village-field-fence",
+      "Weaver garden",
+      1450,
+      760
+    ],
+    [
+      "leicester-south-cottage-garden-fence",
+      "Reeve garden",
+      1180,
+      300
+    ],
+    [
+      "leicester-roadside-rail-fence",
+      "North pasture",
+      460,
+      390
+    ],
+    [
+      "derby-lower-northwest-yard-fence",
+      "Dyer garden",
+      1320,
+      2260
+    ],
+    [
+      "leicester-mill-south-yard-wall",
+      "Mill retaining wall",
+      2010,
+      1720
+    ],
+    [
+      "leicester-mill-path-boundary-wall",
+      "Ferry bank wall",
+      1550,
+      1690
+    ],
+    [
+      "leicester-church-courtyard-wall",
+      "Churchyard boundary",
+      370,
+      1320
+    ]
+  ],
+  "terrain": [
+    [
+      "leicester-southwest-woodland-bank",
+      "Northwest wooded bank",
+      160,
+      370
+    ],
+    [
+      "leicester-southwest-edge-bank",
+      "West ridge",
+      150,
+      1030
+    ],
+    [
+      "leicester-southwest-field-bank",
+      "North pasture terrace",
+      620,
+      280
+    ],
+    [
+      "leicester-south-edge-field-bank",
+      "North riverbank",
+      1530,
+      410
+    ],
+    [
+      "leicester-south-field-corner-bank",
+      "Mill bank",
+      1530,
+      1840
+    ],
+    [
+      "leicester-southwest-woodland-bank",
+      "Eastern woodland ridge",
+      3430,
+      700
+    ],
+    [
+      "leicester-southwest-edge-bank",
+      "Stronghold rock shoulder",
+      2220,
+      500
+    ],
+    [
+      "leicester-southwest-field-bank",
+      "South paddock terrace",
+      3060,
+      2220
+    ],
+    [
+      "leicester-south-field-corner-rock",
+      "Bridge boulder",
+      1600,
+      1480
+    ],
+    [
+      "leicester-south-fence-end-rock",
+      "West ridge rock",
+      210,
+      1460
+    ],
+    [
+      "leicester-south-field-corner-rock",
+      "Mill stream rock",
+      1770,
+      2010
+    ],
+    [
+      "leicester-south-fence-end-rock",
+      "Stronghold approach rock",
+      2270,
+      1380
+    ],
+    [
+      "leicester-north-edge-field-boundary",
+      "Northern ridge edge",
+      2830,
+      180
+    ],
+    [
+      "leicester-south-field-corner-bank",
+      "Eastern rock shelf",
+      3260,
+      1350
+    ],
+    [
+      "leicester-south-edge-field-bank",
+      "Southern garden bank",
+      580,
+      2290
+    ],
+    [
+      "leicester-southwest-edge-bank",
+      "Southeast woodland bank",
+      3450,
+      2060
+    ]
+  ]
+}

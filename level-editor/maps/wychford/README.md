@@ -1,66 +1,69 @@
 # Wychford — The Tollkeeper's Ledger
 
-An original fortified riverside market town assembled from the shared Leicester
-and Derby asset catalog. The town controls a narrow river crossing; the keep
-overlooks a market and working yards, while the opposite bank remains rural.
+An editable fortified market town assembled from Leicester, Derby and Sherwood
+assets. The village occupies the west bank; the stronghold stands on the ridge
+across the river to its east. Lincoln assets are not used.
 
 ## Layout
 
-- **North: tollkeeper's keep.** A compact walled bailey, guarded gatehouse and
-  administrative courtyard form the destination.
-- **Center: market square.** The well is the visual landmark. Cottages, a guildhall,
-  carts and delivery yards frame the square without filling the pedestrian routes.
-- **West: church and gardens.** A quiet approach through orchard cover and
-  residential backyards reaches the bailey's western side.
-- **East: river and workshops.** Two crossings connect the riverside work yards
-  with cottages on the rural bank. Trees and cargo break long sightlines.
-- **South: entry road.** A broad road introduces the market and the keep beyond.
-  A western lane and eastern river path offer early alternatives.
+The market bridge connects the western church, shops and working yards to the
+stronghold gate. Smaller lanes connect cottages, gardens and the mill crossing.
+The eastern pasture contains the stable yard and gatekeeper's lodging. Fences
+mark gardens, church boundaries and paddocks rather than blocking the roads.
+Wooded margins, bank meshes and distinct Sherwood boulders break up the terrain.
 
-The River Wych and the bailey battlements are editable 3D splines. Select them
-in the Paths panel to reshape the river or fortifications. Wall width is measured
-across each local section, so a bent source segment retains a substantial walkway.
-Five straight curtain sections join corner defenses and the gate. Their cross-sections
-are flipped to face the parapets outside the bailey; the Paths panel exposes this
-as **Flip battlement side**. The ground mesh has a raised bailey and sloping banks
-around the winding river. Gardens, wooded ridges, fences and working yards make
-the space between buildings part of the layout.
+`layout.json` contains the building, prop, fence, terrain and main-lane placements.
+The recipe adds doorstep paths, trees, market furniture, river and fortifications.
+The current scene has 158 placed asset groups, 33 road splines, one river and one
+curtain wall, using 82 distinct shared models including the derived corner towers.
 
-The recipe uses 50 distinct shared assets, including five tree models and a
-watermill. `terrain.png` is an image-generated ground background that follows the
-placement recipe's roads and courtyards, using the library's terrain and a game
-scene as references. It is painted in ground-plane proportions (approximately
-2600 × 3836) and compressed to map-pixel proportions on export, matching the
-35° camera's foreshortening rather than displaying overhead texture details. `river.png` is a separate image-generated repeating water tile based
-on the library's moat palette; it stays attached to the editable river spline.
-The main crossing uses the open East Village Footbridge asset.
+The curtain uses Derby's wall segment and matching conical turret. Sharp turns
+insert towers automatically and terminate adjacent wall spans; gentler controls
+retain a continuous curved wall. The gate opening remains deliberate. The wall's
+parapet faces outward. Tower placement, minimum turn angle, size, orientation and
+individual corner opt-outs remain editable in the Paths panel. A named wall preset
+can be saved for reuse across levels in the same browser. Presets are browser
+preferences; a map saves its own settings and pinned model references.
 
-**Sun & shadows** controls the light direction, elevation and shadow strength.
-The scene starts with a northwest sun. Buildings, battlements and foliage cast
-shadows onto the terrain while their baked texture colors remain unchanged.
-Lighting settings save with the map and participate in undo/redo.
+The four selected tree models are Leicester's irregular moat-bank and southeast
+cottage trees plus Sherwood's leaning and spreading forms. The export helper
+freezes Sherwood's animated leaf atlas into a static cutout texture with explicit
+UVs and alpha for editor rendering and shadows. Other staged tree forms remain
+available in the library but are not used in this layout.
 
+## Ground, paths and lighting
 
-## Proposed mission
+`terrain.png` is image-generated overhead ground art, referenced to the game's
+rendered palette. It contains no buildings or painted roads. Ground-plane image
+proportions are approximately 3600 × 4184; the recipe compresses them to the
+3600 × 2400 map image so the 35° camera provides the correct foreshortening.
+The ground mesh supplies a raised eastern ridge and sloped riverbanks.
 
-Recover the tollkeeper's ledger from the keep and escape over the southern
-footbridge. The market road is the direct, exposed route. The orchard and church
-yards provide the cautious route. The river workshops provide the longer flank.
-Guard positions, patrols, mission scripts and navigation are design proposals,
-not implemented mission content.
+`path.png` supplies fine earth and gravel for editable footpaths, with a softened,
+irregular alpha edge. Dense height samples keep the authored paths on the ground.
+`river.png` is the repeating water and bank tile. The main crossing uses the open
+East Village Footbridge, with a smaller timber crossing near the mill.
+
+Sun direction and shadow strength save with the map. Wychford starts with a
+northwest sun and 78% shadow opacity; buildings, trees and walls cast onto terrain.
+Their baked source colors remain unchanged.
 
 ## Build and open
 
-From level-editor/:
+From `level-editor/`, stage the supplemental Sherwood pack into a fresh directory:
 
+    blender --background work/sherwood-refinement/sherwood-refinement.blend --python blender/export-wychford-sherwood.py -- --output work/wychford/sherwood-pack
+    pnpm --filter pipeline exec node src/publish-model-assets.ts ../work/wychford/sherwood-pack ../library/3d-assets
     pnpm --filter pipeline exec node src/compose-wychford.ts
 
-The generator writes Wychford.level3d.json, its terrain GLB and scene metadata,
-to library/scenes/. Reload the editor with that library
-connected and select **Wychford**. All placed assets remain individual editable
-groups and retain pinned references to the shared library. To regenerate an
-existing scene, pass `--overwrite`; this replaces local edits to Wychford.
+The generator writes Wychford.level3d.json, its terrain GLB and scene metadata to
+library/scenes/. Reload the connected library and select **Wychford**. Pass
+`--overwrite` to regenerate an existing scene; this replaces local Wychford edits.
 
-This is an editor scene, not an installed playable level. The current game baker
-does not support imported standalone geometry. The deterministic placement recipe
-and terrain generation are in pipeline/src/compose-wychford.ts.
+The source Blender workspace and published library models are local assets. The
+committed recipe, layout and ground materials reproduce the scene with that library.
+
+This is an editor scene, not an installed playable mission. Navigation, patrols,
+mission scripts and game baking for imported geometry/splines are not implemented.
+The proposed mission is to steal the tollkeeper's ledger from the keep and escape
+via the southern footbridge, using either the market road or the garden lanes.

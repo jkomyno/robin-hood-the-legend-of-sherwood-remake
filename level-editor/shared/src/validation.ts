@@ -463,7 +463,7 @@ export function parseLevel3D(
     text(spline.name, "spline.name");
     check(!splineIds.has(spline.id), spline.id, "duplicate spline");
     splineIds.add(spline.id);
-    check(spline.kind === "river" || spline.kind === "wall", spline.id, "invalid spline kind");
+    check(spline.kind === "river" || spline.kind === "road" || spline.kind === "wall", spline.id, "invalid spline kind");
     check(typeof spline.closed === "boolean", spline.id, "closed must be boolean");
     finite(spline.width, "spline.width");
     finite(spline.repeatLength, "spline.repeatLength");
@@ -482,6 +482,19 @@ export function parseLevel3D(
       check(spline.axis === "x" || spline.axis === "y", spline.id, "invalid source axis");
       if (spline.flipCrossSection !== undefined) check(typeof spline.flipCrossSection === "boolean", spline.id, "flipCrossSection must be boolean");
       if (spline.sourceAngle !== undefined) finite(spline.sourceAngle, "spline.sourceAngle");
+      if (spline.cornerAsset !== undefined) {
+        check(assetIds.has(spline.cornerAsset), spline.id, "missing corner tower asset source");
+        const angle = spline.cornerMinAngle ?? 35, scale = spline.cornerScale ?? 1;
+        finite(angle, "spline.cornerMinAngle"); finite(scale, "spline.cornerScale");
+        check(angle > 0 && angle < 180 && scale > 0 && scale <= 10, spline.id, "invalid corner angle or scale");
+        if (spline.cornerWidthScale !== undefined) {
+          finite(spline.cornerWidthScale,"spline.cornerWidthScale");
+          check(spline.cornerWidthScale > 0 && spline.cornerWidthScale <= 10,spline.id,"invalid corner width scale");
+        }
+        if (spline.cornerRotation !== undefined) finite(spline.cornerRotation, "spline.cornerRotation");
+        if (spline.cornerDisabled !== undefined) for (const index of array(spline.cornerDisabled, "spline.cornerDisabled"))
+          check(Number.isInteger(index) && index >= 0 && index < points.length, spline.id, "invalid disabled corner index");
+      }
       const start = spline.sourceStart ?? 0, end = spline.sourceEnd ?? 1;
       finite(start, "spline.sourceStart"); finite(end, "spline.sourceEnd");
       check(start >= 0 && end <= 1 && end - start >= 0.05, spline.id, "invalid source trim interval");

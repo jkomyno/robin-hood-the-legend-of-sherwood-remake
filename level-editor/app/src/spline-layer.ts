@@ -23,11 +23,11 @@ export class SplineLayer {
   constructor() { this.root.add(this.controls); }
   private release(path: LevelSpline, object: THREE.Object3D) {
     object.removeFromParent();
-    if (path.kind === "river") disposeObjectResources([object]);
+    if (path.kind !== "wall") disposeObjectResources([object]);
     else object.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
   }
   private build(path: LevelSpline) {
-    return path.kind === "river" ? riverMesh(path, this.camera) : wallMesh(path, this.camera, this.sources);
+    return path.kind === "wall" ? wallMesh(path, this.camera, this.sources) : riverMesh(path, this.camera);
   }
   sync(paths: LevelSpline[], camera: MapCamera, sources: Map<string, THREE.Object3D>) {
     this.camera = camera;

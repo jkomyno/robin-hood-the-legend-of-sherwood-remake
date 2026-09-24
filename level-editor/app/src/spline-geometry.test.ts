@@ -86,3 +86,45 @@ test("documents round-trip splines and reject dangling sources and invalid contr
   assert.throws(() => parseLevel3D({ ...document, splines: [{ ...river, points: [[0,0,0]] }] }), /control points/);
   assert.throws(() => parseLevel3D({ ...document, splines: [{ ...river, kind: "wall", asset: "missing", axis: "x" }] }), /wall asset/);
 });
+
+test("corner towers join turns, skip straight controls and retain shared resources", () => {
+  const curtain=new THREE.Mesh(new THREE.BoxGeometry(100,12,40),new THREE.MeshBasicMaterial());
+  const tower=new THREE.Mesh(new THREE.CylinderGeometry(24,24,50,16).rotateX(Math.PI/2),new THREE.MeshBasicMaterial());
+  const sources=new Map([["asset:wall:building-000",curtain],["asset:tower:building-001",tower]]);
+  const path:LevelSpline={...river,kind:"wall",asset:"wall",axis:"x",cornerAsset:"tower",cornerMinAngle:40,cornerWidthScale:2,
+    width:12,repeatLength:100,points:[[0,0,0],[100,0,0],[200,0,0],[200,150,20]]};
+  const layer=new SplineLayer();let disposed=0;
+  tower.geometry.addEventListener("dispose",()=>disposed++);tower.material.addEventListener("dispose",()=>disposed++);
+  layer.sync([path],camera,sources);
+  const joined=layer.root.children[1]!;
+  const corners=joined.children.filter(c=>c.userData.cornerPoint!==undefined);
+  assert.equal(corners.length,1);assert.equal(corners[0]!.userData.cornerPoint,2);
+  assert.ok(corners[0]!.position.distanceTo(new THREE.Vector3(200,0,0))<.001);
+  const fitted=new THREE.Box3().setFromObject(corners[0]!,true).getSize(new THREE.Vector3());
+  assert.ok(fitted.x>94 && fitted.x<98 && Math.abs(fitted.z-50)<.001,"tower width must change independently of height");
+  layer.sync([{...path,cornerDisabled:[2]}],camera,sources);
+  assert.ok(!layer.root.children[1]!.children.some(c=>c.userData.cornerPoint!==undefined));
+  layer.clear();assert.equal(disposed,0);
+  curtain.geometry.dispose();curtain.material.dispose();tower.geometry.dispose();tower.material.dispose();
+});
+test("closed walls place seam towers once, including a single remaining corner", () => {
+  const source=new THREE.Mesh(new THREE.BoxGeometry(100,12,40),new THREE.MeshBasicMaterial());
+  const sources=new Map([["asset:wall:building-000",source],["asset:tower:building-001",source]]);
+  const path:LevelSpline={...river,kind:"wall",asset:"wall",axis:"x",cornerAsset:"tower",closed:true,
+    points:[[0,0,0],[200,0,0],[200,200,0],[0,200,0]]};
+  for(const disabled of [[],[1,2,3]]) {
+    const result=wallMesh({...path,cornerDisabled:disabled},camera,sources);
+    assert.equal(result.children.filter(c=>c.userData.cornerPoint!==undefined).length,4-disabled.length);
+    result.traverse(n=>{if(n instanceof THREE.Mesh)n.geometry.dispose();});
+  }
+  source.geometry.dispose();source.material.dispose();
+});
+test("footpaths save independently of water and follow authored height", () => {
+  const road:LevelSpline={...river,kind:"road",width:24,points:[[0,0,5],[80,20,30],[160,40,40]]};
+  const doc:Level3D={version:1,map:"Roads",glb:"map.glb",size:[300,300],camera,objects:[],groups:[],splines:[road]};
+  assert.deepEqual(parseLevel3D(JSON.parse(JSON.stringify(doc))).splines,[road]);
+  const geometry=riverGeometry(road,camera);assert.ok(geometry.getAttribute("position").getZ(0)>5);
+  const layer=new SplineLayer();layer.sync([road],camera,new Map());
+  assert.equal(layer.root.children[1]!.userData.noSunShadow,true);
+  layer.clear();geometry.dispose();
+});

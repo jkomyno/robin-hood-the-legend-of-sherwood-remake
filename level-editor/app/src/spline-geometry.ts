@@ -34,7 +34,7 @@ export function riverGeometry(path: LevelSpline, camera: MapCamera) {
 }
 
 /** A small seamless river tile; custom semi-tileable art can replace it. */
-export function defaultRiverTexture() {
+export function defaultRiverTexture(road = false) {
   const width = 128, height = 256, data = new Uint8Array(width * height * 4);
   for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
     const u = x / (width - 1), v = y / height;
@@ -46,7 +46,10 @@ export function defaultRiverTexture() {
     data[i] = 63 + bank * 58 + wave * 5 + foam * 12;
     data[i + 1] = 94 + bank * 19 + wave * 7 + foam * 15;
     data[i + 2] = 91 - bank * 21 + wave * 7 + foam * 15;
-    data[i + 3] = Math.min(255, Math.min(u, 1 - u) * 12800);
+    if (road) { const grain=Math.sin(x*73.1+y*91.7)*7;
+      data[i]=139+grain;data[i+1]=121+grain;data[i+2]=84+grain;
+    }
+    data[i + 3] = Math.min(255, Math.min(u, 1 - u) * (road ? 2200 : 12800));
   }
   const texture = new THREE.DataTexture(data, width, height);
   texture.needsUpdate = true;
@@ -54,7 +57,7 @@ export function defaultRiverTexture() {
 }
 
 export function riverMesh(path: LevelSpline, camera: MapCamera) {
-  const texture = path.texture ? new THREE.TextureLoader().load(path.texture) : defaultRiverTexture();
+  const texture = path.texture ? new THREE.TextureLoader().load(path.texture) : defaultRiverTexture(path.kind === "road");
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -211,7 +214,61 @@ export function wallGeometry(source: THREE.BufferGeometry, matrix: THREE.Matrix4
   return geometry;
 }
 
-export function wallMesh(path: LevelSpline, camera: MapCamera, sources: Map<string, THREE.Object3D>) {
+/** Turns are measured in the ground plane, including the seam of closed walls. */
+export function wallCorners(path: LevelSpline, camera: MapCamera) {
+  if (!path.cornerAsset) return [];
+  const points=path.points.map(p=>new THREE.Vector3(...gameToScene(camera,...p)));
+  return points.flatMap((p,i)=>{
+    if ((!path.closed && (i===0 || i===points.length-1)) || path.cornerDisabled?.includes(i)) return [];
+    const incoming=p.clone().sub(points[(i+points.length-1)%points.length]!);incoming.z=0;incoming.normalize();
+    const outgoing=points[(i+1)%points.length]!.clone().sub(p);outgoing.z=0;outgoing.normalize();
+    const angle=THREE.MathUtils.radToDeg(incoming.angleTo(outgoing));
+    if(angle<(path.cornerMinAngle ?? 35)) return [];
+    const direction=incoming.add(outgoing).normalize();
+    return [{index:i,position:p,rotation:Math.atan2(direction.y,direction.x)+THREE.MathUtils.degToRad(path.cornerRotation ?? 0)}];
+  });
+}
+
+function towerWall(path: LevelSpline, camera: MapCamera, sources: Map<string,THREE.Object3D>): THREE.Group {
+  const corners=wallCorners(path,camera), result=new THREE.Group();
+  if(!corners.length) return wallMesh({...path,cornerAsset:undefined},camera,sources);
+  const tower=new THREE.Group();
+  for(const [key,node] of sources) if(key.startsWith("asset:"+path.cornerAsset+":")) tower.add(node.clone(true));
+  if(!tower.children.length) throw new Error("Missing corner tower source: "+path.cornerAsset);
+  tower.updateWorldMatrix(true,true);
+  const bounds=new THREE.Box3().setFromObject(tower), center=bounds.getCenter(new THREE.Vector3());
+  const anchor=new THREE.Vector3(center.x,center.y,bounds.min.z);
+  try {
+    // Each tower terminates adjoining spans, avoiding a rounded curtain bulge
+    // underneath a sharp corner. Gentle intermediate controls stay curved.
+    const breaks=corners.map(c=>c.index);
+    const runs:number[][]=[];
+    if(path.closed) for(let j=0;j<breaks.length;j++) {
+      const run=[breaks[j]!],end=breaks[(j+1)%breaks.length]!;
+      let i=(breaks[j]!+1)%path.points.length;
+      while(i!==end){run.push(i);i=(i+1)%path.points.length;}
+      run.push(end);runs.push(run);
+    } else {
+      const stops=[0,...breaks,path.points.length-1];
+      for(let j=0;j<stops.length-1;j++) runs.push(Array.from({length:stops[j+1]!-stops[j]!+1},(_,k)=>stops[j]!+k));
+    }
+    for(const run of runs) result.add(wallMesh({...path,cornerAsset:undefined,closed:false,points:run.map(i=>path.points[i]!)},camera,sources));
+    for(const corner of corners) {
+      const instance=tower.clone(true);
+      instance.traverse(node=>{if(node instanceof THREE.Mesh)node.geometry=node.geometry.clone();});
+      const offset=new THREE.Group();offset.add(instance);instance.position.sub(anchor);
+      const scale=path.cornerScale ?? 1, widthScale=path.cornerWidthScale ?? 1;
+      offset.scale.set(scale*widthScale,scale*widthScale,scale);offset.rotation.z=corner.rotation;offset.position.copy(corner.position);
+      offset.userData.cornerPoint=corner.index;result.add(offset);
+    }
+    return result;
+  } catch(error) {
+    result.traverse(node=>{if(node instanceof THREE.Mesh)node.geometry.dispose();});throw error;
+  }
+}
+
+export function wallMesh(path: LevelSpline, camera: MapCamera, sources: Map<string, THREE.Object3D>): THREE.Group {
+  if(path.cornerAsset) return towerWall(path,camera,sources);
   const source = new THREE.Group();
   for (const [key, node] of sources) if (key.startsWith("asset:" + path.asset + ":")) source.add(node.clone(true));
   if (!source.children.length) throw new Error("Missing wall source: " + path.asset);
