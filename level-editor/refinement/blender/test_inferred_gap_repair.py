@@ -65,6 +65,8 @@ class GapRepair(unittest.TestCase):
         self.assertEqual(np.flatnonzero(filled[0]).tolist(),list(range(3,12)))
         np.testing.assert_array_equal(out[~filled],c[~filled]);np.testing.assert_array_equal(out[:,:,3],c[:,:,3])
         self.assertEqual(stats['eligible_samples'],180)
+        small=np.zeros((20,20),bool);small[:2,5:10]=True
+        with self.assertRaises(ValueError):repair_face(c,p,g,x,settings,0,physical_domain=small)
         with self.assertRaises(ValueError):repair_face(c,p,g,x,settings,0)
         with self.assertRaises(ValueError):repair_face(c,p,g,x,policy(),0,physical_domain=domain)
         for gutter in (-1,3,True,1.5):
