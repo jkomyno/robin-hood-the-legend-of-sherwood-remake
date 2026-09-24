@@ -5,7 +5,7 @@ from bake_ready_textures import ROOT,sha,update_ledger
 from record_texture_review import record
 asset,bake_name,*notes=sys.argv[1:]
 p=ROOT/'level-editor/work/nottingham-refinement/texture-generation/experiments'/asset;b=p/bake_name
-ledger_path=p.parents[1]/'static-bake-jobs.json';job=json.loads(ledger_path.read_text())['assets'][asset]
+ledger_path=p.parents[1]/'static-bake-jobs.json';job=json.loads(ledger_path.read_text())['assets'].get(asset,dict(asset_id=asset,experiment=str(p),generation_review_sha256=sha(p/'generation-review.json'),status='baked-awaiting-visual-review'))
 for src,name in [(p/'texture-review.json','previous-root-texture-review.json')]:
  if src.exists() and not (b/name).exists():shutil.copy2(src,b/name)
 if not (b/'previous-static-job.json').exists():(b/'previous-static-job.json').write_text(json.dumps(job,indent=2)+'\n')
