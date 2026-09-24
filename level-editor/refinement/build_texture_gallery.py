@@ -122,6 +122,12 @@ def candidate(experiment, map_name, *, supplemental=False):
         'source_trace_label': ('Raw Sunburst output — inferred-color calibration only' if validation.get('reconciliation_reference') else 'Raw Sunburst output — reference only, not used for this bake'),
         'validation': str(bake / 'validation.json'), 'review': str(review_path),
     }
+    if report.get('provider') == 'cached-appearance-reuse':
+        item.update(
+            textured_label='Existing textures transferred onto approved geometry — approval candidate',
+            source_comparison_label='Approved source textures before appearance transfer',
+            source_comparison_secondary_label='Cached appearance comparison with original pixels restored',
+            source_trace_label='Cached donor appearance rendered in approved views — no new generation')
     references = artwork_reference(experiment)
     if references:
         item['artwork_references'] = references
@@ -140,6 +146,9 @@ def attach_states(item, review, approval, experiment, map_name):
         spec = {'id': state['id'], 'name': state.get('name', state['id']),
                 'image_fields': list(IMAGE_FIELDS), 'report_fields': ['validation', 'review'],
                 'model': str(Path(child['validation']).parent / 'worker.blend')}
+        if child.get('source_trace_label', '').startswith('Cached donor appearance'):
+            spec['image_labels'] = {key: child[key + '_label'] for key in spec['image_fields']
+                                    if key + '_label' in child}
         prefix = 'texture_state_' + spec['id'] + '_'
         for key in (*spec['image_fields'], *spec['report_fields']):
             item[prefix + key] = child[key]

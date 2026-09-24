@@ -272,7 +272,7 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             texture_state_ids.add(identifier)
             for field in state['image_fields']:
                 sheets.append(('texture_state_' + identifier + '_' + field,
-                               state['name'] + ': ' + texture_labels[field]))
+                               state['name'] + ': ' + state.get('image_labels', {}).get(field, texture_labels[field])))
         for key, label in sheets:
             source = Path(item[key])
             if not source.is_absolute():

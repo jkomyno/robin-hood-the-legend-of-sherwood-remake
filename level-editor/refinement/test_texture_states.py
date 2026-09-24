@@ -74,6 +74,24 @@ class TextureStateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'state evidence changed'):
             bind(item, [decision])
 
+    def test_cached_appearance_labels_do_not_change_evidence_fields(self):
+        from build_texture_gallery import candidate
+        from texture_decisions import IMAGE_FIELDS
+        original, _, _ = candidate(self.primary, 'Leicester')
+        self.update(self.primary / 'generation/generation.json', provider='cached-appearance-reuse')
+        reused, _, _ = candidate(self.primary, 'Leicester')
+        self.assertIn('Raw Sunburst output', original['source_trace_label'])
+        self.assertIn('no new generation', reused['source_trace_label'])
+        self.assertIn('transferred', reused['textured_label'])
+        for field in IMAGE_FIELDS:
+            self.assertEqual(original[field], reused[field])
+        self.assertEqual(original['validation'], reused['validation'])
+        self.update(self.secondary / 'generation/generation.json', provider='cached-appearance-reuse')
+        _, items = self.build()
+        markup = (self.output / 'gallery/index.html').read_text()
+        self.assertIn('Applied endpoint: Cached donor appearance', markup)
+
+
     def test_other_pair_revision_rejected(self):
         self.update(self.secondary / 'approval.json', geometry_revision='different-pair')
         with self.assertRaisesRegex(ValueError, 'identity/revision'):
