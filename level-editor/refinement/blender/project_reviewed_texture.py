@@ -124,6 +124,10 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
     targets = objects if scope is None else [obj for obj in objects if obj.name in set(scope)]
     if not targets or (scope is not None and set(scope) != {obj.name for obj in targets}):
         raise ValueError('Texture receiver scope is empty or includes absent/foreign meshes')
+    repair_policy = manifest.get('texture_inferred_gap_repair')
+    if repair_policy is not None:
+        from inferred_gap_repair import validate_policy
+        validate_policy(repair_policy, [obj.name for obj in targets])
     nodes = {obj.get('source_node') for obj in targets}
     two_sided = set(manifest.get('texture_two_sided_object_names', []))
     if two_sided - {obj.name for obj in targets}:
@@ -216,6 +220,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
         if not layer_targets:
             continue
         assigned_objects.update(obj.name for obj in layer_targets)
+        repair_names = [obj.name for obj in layer_targets if repair_policy and obj.name in repair_policy['receiver_objects']]
+        layer_repair = {**repair_policy, 'receiver_objects':repair_names} if repair_names else None
         reports.append(bake(map_name,layer['source_path'], output/f'layer-{index}.json',
                             collection_name=manifest['collection_name'],
                             receiver_nodes=receivers, occluder_nodes=layer['occluder_nodes'],
@@ -229,7 +235,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                             receiver_face_indices=manifest.get('texture_receiver_face_indices'),
                             material_suffix=manifest.get('texture_material_suffix'),
                             exclude_occluder_components=layer.get('exclude_occluder_components'),
-                            provenance_directory=output/f'provenance-{index}'))
+                            provenance_directory=output/f'provenance-{index}', inferred_gap_repair=layer_repair))
     assigned = {node for report in reports for node in report['receiver_nodes']}
     if assigned != nodes or assigned_objects != {obj.name for obj in targets}:
         raise ValueError('Not all approved asset receiver objects received a selected source projection layer')
@@ -247,6 +253,13 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
             if mask_manifest:
                 mat['generated_source_mask_manifest'] = mask_manifest
                 mat['generated_source_mask_evidence_sha256'] = hashlib.sha256(json.dumps(manifest['source_mask_evidence'],sort_keys=True).encode()).hexdigest()
+    repaired_count = sum(face['repaired_texels'] for layer in reports for obj in layer['objects'] for face in obj.get('inferred_gap_repairs', []))
+    if repair_policy is not None:
+        if repaired_count > repair_policy['max_total_texels']:
+            raise ValueError('Gap repair exceeds cross-layer texel budget')
+        stats['extrapolated_texels_including_padding'] = repaired_count
+        stats['unfilled_texels_including_padding'] -= repaired_count
+        if stats['unfilled_texels_including_padding'] < 0:raise ValueError('Gap repair provenance count mismatch')
     report = {'asset_id':manifest['asset_id'], 'input_sha256':input_hash,'generated_sha256':image_hash,
               'texture_receiver_object_names':[obj.name for obj in targets],
               'texture_two_sided_object_names':sorted(two_sided),
@@ -267,5 +280,6 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
               'reconciliation_gain_mode':manifest.get('texture_reconciliation_gain_mode','rgb'),
               'reconciliation_minimum_gain':manifest.get('texture_reconciliation_minimum_gain',.4),
               'counts':stats,'layers':reports}
+    if repair_policy is not None:report['inferred_gap_repair'] = repair_policy
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     return report

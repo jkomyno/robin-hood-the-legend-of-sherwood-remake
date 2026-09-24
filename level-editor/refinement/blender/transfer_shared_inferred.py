@@ -16,7 +16,7 @@ def merge_inferred(canonical, target, donor_ownership, target_ownership):
     if not np.isfinite(canonical).all() or not np.isfinite(target).all():
         raise ValueError('Nonfinite atlas pixels')
     for ownership in (donor_ownership,target_ownership):
-        if ownership.shape != target.shape[:2] or not np.isin(ownership,[0,1,2]).all():
+        if ownership.shape != target.shape[:2] or not np.isin(ownership,[0,1,2,3]).all():
             raise ValueError('Invalid explicit texel provenance')
     selected = (donor_ownership == 2) & (target_ownership != 1)
     result = target.copy()

@@ -36,7 +36,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
          hidden_sampler=None, projection_region=None, exclude_occluder_components=None,
          receiver_components=None, receiver_asset_id=None, receiver_object_names=None,
          receiver_face_indices=None, material_suffix=None, hidden_sampler_receives_face=False,
-         collection_name=None, provenance_directory=None):
+         collection_name=None, provenance_directory=None, inferred_gap_repair=None):
     import bpy
     import numpy as np
     from mathutils import Vector
@@ -71,6 +71,12 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         if names - {obj.name for obj in receivers}:
             raise ValueError('Explicit texture receivers are absent from projection layer')
         receivers = [obj for obj in receivers if obj.name in names]
+    if inferred_gap_repair is not None:
+        from inferred_gap_repair import validate_policy, repair_face
+        validate_policy(inferred_gap_repair, [obj.name for obj in receivers])
+        if hidden_sampler is None or provenance_directory is None:
+            raise ValueError('Gap repair requires generated-sample provenance')
+    repaired_total = 0
     reproject_authored_nodes = set(reproject_authored_nodes or ())
     if reproject_authored_nodes - {o.get("source_node") for o in receivers}:
         raise ValueError("Authored texture reset must name receiver nodes")
@@ -244,6 +250,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         provenance = np.zeros((height, width), dtype=np.uint8) if provenance_directory else None
         atlas[:, :, 3] = 0 if hidden_fill == "synthesized" else 1
         known = unknown = mask_rejected = fallback_known = 0
+        gap_repairs = []
         masks = constraints.for_object(obj) if constraints else None
         for fid, origin, axis, vertical, normal, low, size, w, h, left, bottom in islands:
             yy, xx = np.mgrid[-2:h+2, -2:w+2]
@@ -328,6 +335,20 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                     colors[selected] = sampled_colors
                 if not np.array_equal(colors[accepted], protected_colors):
                     raise ValueError("Hidden sampler modified protected source pixels")
+            repaired_samples = np.zeros(len(accepted), dtype=bool)
+            if (inferred_gap_repair is not None and obj.name in inferred_gap_repair['receiver_objects']
+                    and abs(normal.z) <= inferred_gap_repair['max_abs_normal_z']):
+                repaired, repair_mask, repair_stats = repair_face(
+                    colors.reshape(h+4,w+4,4), accepted.reshape(h+4,w+4),
+                    generated_samples.reshape(h+4,w+4), positions.reshape(h+4,w+4,3),
+                    inferred_gap_repair, min(p.z for p in world))
+                colors = repaired.reshape(-1,4)
+                repaired_samples = repair_mask.ravel()
+                repaired_total += repair_stats['repaired_texels']
+                if repaired_total > inferred_gap_repair['max_total_texels']:
+                    raise ValueError('Gap repair exceeds total texel budget')
+                if repair_stats['repaired_texels']:
+                    gap_repairs.append({'face_index':fid, **repair_stats})
             if hidden_fill == "synthesized":
                 colors[:, 3] = accepted.astype(np.float32)
             inside = best >= 0
@@ -338,6 +359,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                 flags = accepted.astype(np.uint8)
                 if hidden_sampler is not None:
                     flags[generated_samples] = 2
+                flags[repaired_samples] = 3
                 provenance[bottom-2:bottom+h+2, left-2:left+w+2] = flags.reshape(h+4, w+4)
             if hidden_fill == "synthesized":
                 tile = colors.reshape(h+4, w+4, 4)
@@ -416,6 +438,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         obj['reprojection_known_texels'] = known
         obj['reprojection_unknown_texels'] = unknown
         report["objects"][-1]["degenerate_faces_unchanged"] = degenerate
+        if inferred_gap_repair is not None:
+            report["objects"][-1]["inferred_gap_repairs"] = gap_repairs
         if provenance is not None:
             directory = Path(provenance_directory)
             directory.mkdir(parents=True, exist_ok=True)
@@ -423,7 +447,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
             np.savez_compressed(path, ownership=provenance)
             report['objects'][-1]['texel_provenance'] = {
                 'path': str(path.resolve()), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
-                'semantics': {'0': 'unfilled-or-padding', '1': 'protected-source', '2': 'generated'},
+                'semantics': {'0': 'unfilled-or-padding', '1': 'protected-source', '2': 'generated', '3': 'bounded-same-face-extrapolation'},
                 'packed_image_sha256': hashlib.sha256(image.packed_file.data).hexdigest(),
                 'rgba8_sha256': hashlib.sha256(np.rint(np.clip(atlas,0,1)*255).astype(np.uint8).tobytes()).hexdigest(),
                 'uv_sha256': hashlib.sha256(json.dumps([list(entry.uv) for entry in layer.data]).encode()).hexdigest()}

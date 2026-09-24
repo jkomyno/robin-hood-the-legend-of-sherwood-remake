@@ -16,7 +16,7 @@ class SharedInferred(unittest.TestCase):
 
     def test_reject_missing_or_invalid_provenance(self):
         a=np.zeros((1,2,4));mask=np.array([[1,2]])
-        with self.assertRaises(ValueError):merge_inferred(a,a,np.array([[0,3]]),mask)
+        with self.assertRaises(ValueError):merge_inferred(a,a,np.array([[0,4]]),mask)
         with self.assertRaises(ValueError):merge_inferred(a,a,np.array([[0]]),mask)
         with self.assertRaises(ValueError):merge_inferred(a,np.zeros((1,3,4)),mask,mask)
         b=a.copy();b[0,0,0]=np.nan
