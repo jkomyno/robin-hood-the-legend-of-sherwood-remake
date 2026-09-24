@@ -424,6 +424,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
             report['objects'][-1]['texel_provenance'] = {
                 'path': str(path.resolve()), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
                 'semantics': {'0': 'unfilled-or-padding', '1': 'protected-source', '2': 'generated'},
+                'packed_image_sha256': hashlib.sha256(image.packed_file.data).hexdigest(),
                 'rgba8_sha256': hashlib.sha256(np.rint(np.clip(atlas,0,1)*255).astype(np.uint8).tobytes()).hexdigest(),
                 'uv_sha256': hashlib.sha256(json.dumps([list(entry.uv) for entry in layer.data]).encode()).hexdigest()}
         if hidden_fill == "synthesized":
