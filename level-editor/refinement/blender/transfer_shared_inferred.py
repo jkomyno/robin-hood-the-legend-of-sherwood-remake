@@ -62,9 +62,11 @@ def run(canonical, target, output):
         bpy.context.view_layer.update()
         names = set(manifest['render_object_names'])
         return {o.name:o for o in bpy.context.scene.objects if o.name in names and o.type=='MESH' and o.get('asset_group')==manifest['asset_id']}
-    def signature(obj):
+    def signature(obj, *, full_pixels=True):
         appearance = appearance_state(obj,appearance_cache)
         def image_hash(image):
+            if not full_pixels and image.packed_file and not image.is_dirty:
+                return 'packed:'+hashlib.sha256(image.packed_file.data).hexdigest()
             key=image.as_pointer()
             if key not in pixel_cache:
                 pixel_cache[key]=hashlib.sha256(np.asarray(image.pixels[:],dtype=np.float32).tobytes()).hexdigest()
@@ -128,7 +130,7 @@ def run(canonical, target, output):
         if data and _geometry(obj)==original[0][name][0]:donors[name]=(_geometry(obj),data[2],data[3],verified_mask(name,data,provenance_maps[0],obj))
     targets=load(target/'bake-v1/worker.blend',manifests[1])
     geometry={o.name:_geometry(o) for o in bpy.context.scene.objects}
-    before={o.name:signature(o) for o in bpy.context.scene.objects if o.type=='MESH'}
+    before={o.name:signature(o,full_pixels=False) for o in bpy.context.scene.objects if o.type=='MESH'}
     changed=[];skipped=[];expected_saved={}
     for name,obj in targets.items():
         data=atlas(obj) if name in donors else None
@@ -150,7 +152,7 @@ def run(canonical, target, output):
     changed_names={r['object'] for r in changed}
     if geometry!={o.name:_geometry(o) for o in bpy.context.scene.objects}:raise ValueError('Geometry changed')
     appearance_cache.clear();pixel_cache.clear()
-    if any(before[o.name]!=signature(o) for o in bpy.context.scene.objects if o.type=='MESH' and o.name not in changed_names):raise ValueError('Outside appearance changed')
+    if any(before[o.name]!=signature(o,full_pixels=False) for o in bpy.context.scene.objects if o.type=='MESH' and o.name not in changed_names):raise ValueError('Outside appearance changed')
     if hashes!={p:sha(Path(p)) for p in hashes}:raise ValueError('Inputs changed')
     output.mkdir(parents=True)
     bpy.ops.wm.save_as_mainfile(filepath=str(output/'worker.blend'))

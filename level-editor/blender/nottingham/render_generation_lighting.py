@@ -5,8 +5,8 @@ ROOT=Path(__file__).resolve().parents[3];WORK=ROOT/'level-editor/work/nottingham
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def write(p,d):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(d,indent=2)+'\n')
 def main():
- p=argparse.ArgumentParser();p.add_argument('--asset',action='append');p.add_argument('--state-proof',type=Path);p.add_argument('--approve-inspected',action='store_true');args=p.parse_args(sys.argv[sys.argv.index('--')+1:]if '--'in sys.argv else None)
- audit=json.loads((WORK/'texture-generation/lighting-audit/audit.json').read_text());config=WORK/'lighting-calibration/map-lighting.json';light=json.loads(config.read_text())['lighting'];out=WORK/'texture-generation/lighting'
+ p=argparse.ArgumentParser();p.add_argument('--asset',action='append');p.add_argument('--audit',type=Path,default=WORK/'texture-generation/lighting-audit/audit.json');p.add_argument('--output-root',type=Path,default=WORK/'texture-generation/lighting');p.add_argument('--state-proof',type=Path);p.add_argument('--approve-inspected',action='store_true');args=p.parse_args(sys.argv[sys.argv.index('--')+1:]if '--'in sys.argv else None)
+ audit=json.loads(args.audit.read_text());config=WORK/'lighting-calibration/map-lighting.json';light=json.loads(config.read_text())['lighting'];out=args.output_root.resolve()
  if args.approve_inspected:
   from PIL import Image,ImageChops
   assert args.asset,'Explicit visually inspected assets required'
