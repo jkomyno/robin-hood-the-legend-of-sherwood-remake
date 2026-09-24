@@ -21,6 +21,10 @@ def record(asset, status, observations):
             'Unfilled atlas counts include padding and surfaces unseen in the eight cameras; the eight-view inspection does not prove underside completeness.',
             'Texture approval is separate from the earlier geometry approval.'])
     write(output/'texture-review.json',report)
+    experiment=Path(job['experiment'])
+    generation=json.loads((experiment/'generation-review.json').read_text())
+    gallery=dict(status='ready-for-user' if status=='ready-for-user-texture-review' else 'fix-needed',bake=str(output.relative_to(experiment)),generation=str(Path(generation['generated_preserved_path']).parent.relative_to(experiment)),all_eight_actual_views_inspected=True,actual_sheet_sha256=job['actual_sheet_sha256'],baked_model_sha256=job['model_sha256'],notes=observations)
+    write(experiment/'texture-review.json',gallery)
     job.update(status=status,texture_review=str(output/'texture-review.json'),texture_review_sha256=sha(output/'texture-review.json'))
     update_ledger(ledger_path,asset,job)
 
