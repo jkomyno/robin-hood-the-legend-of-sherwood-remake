@@ -96,6 +96,13 @@ def candidate(experiment, map_name, *, supplemental=False):
     report = json.loads((generation / 'generation.json').read_text())
     validate_reconciliation_reference(validation)
     validate_planar_bake(experiment, validation)
+    manifest_path = experiment / 'views.json'
+    generation_manifest = json.loads(manifest_path.read_text()) if manifest_path.is_file() else {}
+    if 'uv-atlas' in (validation.get('projection_kind'), generation_manifest.get('projection_kind')):
+        if validation.get('projection_kind') != generation_manifest.get('projection_kind'):
+            raise ValueError('UV atlas generation and bake types differ')
+        from uv_atlas import validate_uv_atlas_bake
+        validate_uv_atlas_bake(validation, experiment, bake)
     if (review.get('all_eight_actual_views_inspected') is not True
             or review.get('status') != expected_status
             or validation.get('geometry_verified') is not True
