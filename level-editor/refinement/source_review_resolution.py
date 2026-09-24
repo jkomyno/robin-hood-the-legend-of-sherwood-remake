@@ -20,6 +20,12 @@ def apply_generation_gate(item, handoff, handoff_path, resolutions_path):
                             and handoff.get('texture_generation') == 'blocked'
                             and not handoff.get('texture_issue')
                             and not handoff.get('generation_blocked'))
+    issue = handoff.get('texture_issue')
+    nested_review_hold = (isinstance(issue, dict)
+                          and issue.get('status') == 'correction-awaiting-user-review'
+                          and issue.get('generation_blocked') is True
+                          and handoff.get('texture_generation') == 'blocked'
+                          and not handoff.get('generation_blocked'))
     blockers = {key: handoff[key] for key in ('generation_blocked', 'texture_issue', 'source_review', 'texture_generation')
                 if handoff.get(key) and (key != 'source_review' or handoff[key] == 'pending' or geometry_review_only)
                 and (key != 'texture_generation' or handoff[key] == 'blocked')}
@@ -27,7 +33,7 @@ def apply_generation_gate(item, handoff, handoff_path, resolutions_path):
     # Manifest-level holds must match the frozen handoff; decisions cannot carry
     # an unresolved texture issue and also clear it via a sidecar.
     for key in ('generation_blocked', 'texture_issue'):
-        derived_geometry_hold = (key == 'generation_blocked' and geometry_review_only
+        derived_geometry_hold = (key == 'generation_blocked' and (geometry_review_only or nested_review_hold)
                                  and item.get(key) is True)
         if item.get(key) and item[key] != handoff.get(key) and not derived_geometry_hold:
             errors.append('additional manifest ' + key)

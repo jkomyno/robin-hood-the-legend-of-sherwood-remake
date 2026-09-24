@@ -65,6 +65,17 @@ class ResolutionTests(unittest.TestCase):
     def test_missing_resolution_blocks(self):
         self.assertFalse(apply_generation_gate(self.item, self.handoff, self.file, self.path))
 
+    def test_collector_derived_flag_for_exact_nested_source_review(self):
+        self.handoff['texture_generation'] = 'blocked'
+        self.file.write_text(json.dumps(self.handoff))
+        self.item['revision']['evidence']['handoff']['sha256'] = sha(self.file)
+        self.item['generation_blocked'] = True
+        self.resolution.update(handoff_sha256=sha(self.file),
+            cleared_blockers={'handoff.'+key:value for key,value in self.handoff.items()})
+        self.assertTrue(self.run_gate())
+        self.resolution['approval_decision'] = {}
+        self.assertFalse(self.run_gate())
+
     def geometry_review_fixture(self):
         self.handoff = {'texture_generation': 'blocked', 'source_review': GEOMETRY_REVIEW_ONLY}
         self.file.write_text(json.dumps(self.handoff))
