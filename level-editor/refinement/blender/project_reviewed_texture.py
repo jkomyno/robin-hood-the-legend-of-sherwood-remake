@@ -45,7 +45,8 @@ def _reconcile(generated, manifest, predicted=None):
         corrected[rows,cols] = reconcile_tile(generated[rows,cols], source[rows,cols],
                                                predicted[rows,cols], known,
                                                fade_pixels=manifest.get("texture_reconciliation_fade_pixels", 24),
-                                               gain_mode=manifest.get("texture_reconciliation_gain_mode", "rgb"))
+                                               gain_mode=manifest.get("texture_reconciliation_gain_mode", "rgb"),
+                                               minimum_gain=manifest.get("texture_reconciliation_minimum_gain", .4))
     return corrected
 
 
@@ -264,6 +265,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
               'seam_reconciliation':'Unknown colors only: low frequency RGB gain from explicit observed regions; source atlas texels remain exact',
               'reconciliation_fade_pixels':manifest.get('texture_reconciliation_fade_pixels',24),
               'reconciliation_gain_mode':manifest.get('texture_reconciliation_gain_mode','rgb'),
+              'reconciliation_minimum_gain':manifest.get('texture_reconciliation_minimum_gain',.4),
               'counts':stats,'layers':reports}
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     return report

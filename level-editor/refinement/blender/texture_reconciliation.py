@@ -3,7 +3,7 @@ import numpy as np
 from scipy.ndimage import gaussian_filter, distance_transform_edt
 
 
-def reconcile_tile(generated, source, predicted, known, *, fade_pixels=24, gain_mode="rgb"):
+def reconcile_tile(generated, source, predicted, known, *, fade_pixels=24, gain_mode="rgb", minimum_gain=.4):
     """Leave observed pixels exact; derive gains from the uncomposited prediction.
 
     Dark or unsupported samples carry no reliable multiplicative color evidence.
@@ -14,6 +14,8 @@ def reconcile_tile(generated, source, predicted, known, *, fade_pixels=24, gain_
         raise ValueError('Reconciliation source, prediction, and ownership dimensions differ')
     if isinstance(fade_pixels, bool) or not isinstance(fade_pixels, (int, float)) or not np.isfinite(fade_pixels) or not 1 <= fade_pixels <= 1024:
         raise ValueError("Reconciliation fade must be finite and between 1 and 1024 pixels")
+    if isinstance(minimum_gain, bool) or not isinstance(minimum_gain, (int, float)) or not np.isfinite(minimum_gain) or not .01 <= minimum_gain <= 1:
+        raise ValueError("Minimum reconciliation gain must be finite and between .01 and 1")
     if gain_mode not in ("rgb", "luminance"):
         raise ValueError("Reconciliation gain mode must be rgb or luminance")
     corrected = generated.copy()
@@ -29,7 +31,7 @@ def reconcile_tile(generated, source, predicted, known, *, fade_pixels=24, gain_
         observed = gaussian_filter(source[:, :, channel] * known, 6)
         estimate = gaussian_filter(predicted[:, :, channel] * known, 6)
         valid = (support > 1e-8) & (estimate > .015 * support)
-        ratios[:, :, channel][valid] = np.clip(observed[valid] / estimate[valid], .4, 1.8)
+        ratios[:, :, channel][valid] = np.clip(observed[valid] / estimate[valid], minimum_gain, 1.8)
     distance, nearest = distance_transform_edt(~known, return_indices=True)
     gains = 1 + (ratios[nearest[0], nearest[1]] - 1) * np.exp(-distance / fade_pixels)[:, :, None]
     corrected[~known, :3] = np.clip(corrected[~known, :3] * gains[~known], 0, 1)

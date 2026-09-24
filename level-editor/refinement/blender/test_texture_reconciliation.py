@@ -52,6 +52,20 @@ class ReconciliationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             reconcile_tile(preserved, self.source, raw, self.known, gain_mode="invalid")
 
+    def test_deep_source_shadow_can_use_scoped_gain_floor(self):
+        source = self.source.copy()
+        source[:, :, :3] = .04
+        raw = self.source.copy()
+        preserved = raw.copy()
+        preserved[self.known] = source[self.known]
+        default = reconcile_tile(preserved, source, raw, self.known)
+        deep = reconcile_tile(preserved, source, raw, self.known, minimum_gain=.1)
+        np.testing.assert_array_equal(deep[self.known], preserved[self.known])
+        self.assertLess(deep[16, 16, 0], default[16, 16, 0])
+        for value in [0, -1, 1.1, float("nan"), True, "0.1"]:
+            with self.assertRaises(ValueError):
+                reconcile_tile(preserved, source, raw, self.known, minimum_gain=value)
+
     def test_invalid_fade_fails(self):
         for value in [0, -1, 1025, float("nan"), float("inf"), True, "96"]:
             with self.assertRaises(ValueError):
