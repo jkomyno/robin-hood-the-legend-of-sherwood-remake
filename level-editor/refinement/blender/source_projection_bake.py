@@ -36,7 +36,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
          hidden_sampler=None, projection_region=None, exclude_occluder_components=None,
          receiver_components=None, receiver_asset_id=None, receiver_object_names=None,
          receiver_face_indices=None, material_suffix=None, hidden_sampler_receives_face=False,
-         collection_name=None):
+         collection_name=None, provenance_directory=None):
     import bpy
     import numpy as np
     from mathutils import Vector
@@ -241,6 +241,7 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         if height > 16384:
             raise ValueError(f"Ownership atlas for {obj.name} exceeds 16384 pixels; lower texels_per_unit or split the mesh")
         atlas = np.zeros((height, width, 4), dtype=np.float32)
+        provenance = np.zeros((height, width), dtype=np.uint8) if provenance_directory else None
         atlas[:, :, 3] = 0 if hidden_fill == "synthesized" else 1
         known = unknown = mask_rejected = fallback_known = 0
         masks = constraints.for_object(obj) if constraints else None
@@ -312,12 +313,18 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                 fallback_known += int(np.count_nonzero(fallback_samples & (best>=0)))
             if hidden_sampler is not None:
                 protected_colors = colors[accepted].copy()
+                generated_samples = np.zeros(len(accepted), dtype=bool)
                 for sample_normal, selected in normal_groups:
                     sampled_colors = colors[selected].copy()
                     if hidden_sampler_receives_face:
-                        hidden_sampler(obj, sample_normal, positions[selected], accepted[selected], sampled_colors, face_index=fid)
+                        filled = hidden_sampler(obj, sample_normal, positions[selected], accepted[selected], sampled_colors, face_index=fid)
                     else:
-                        hidden_sampler(obj, sample_normal, positions[selected], accepted[selected], sampled_colors)
+                        filled = hidden_sampler(obj, sample_normal, positions[selected], accepted[selected], sampled_colors)
+                    if provenance is not None:
+                        filled = np.asarray(filled)
+                        if filled.dtype != bool or filled.shape != (int(selected.sum()),) or np.any(filled & accepted[selected]):
+                            raise ValueError('Provenance requires an explicit unknown-only sampler fill mask')
+                        generated_samples[selected] = filled
                     colors[selected] = sampled_colors
                 if not np.array_equal(colors[accepted], protected_colors):
                     raise ValueError("Hidden sampler modified protected source pixels")
@@ -327,6 +334,11 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
             known += int(np.count_nonzero(accepted & inside))
             unknown += int(np.count_nonzero(~accepted & inside))
             atlas[bottom-2:bottom+h+2, left-2:left+w+2] = colors.reshape(h+4, w+4, 4)
+            if provenance is not None:
+                flags = accepted.astype(np.uint8)
+                if hidden_sampler is not None:
+                    flags[generated_samples] = 2
+                provenance[bottom-2:bottom+h+2, left-2:left+w+2] = flags.reshape(h+4, w+4)
             if hidden_fill == "synthesized":
                 tile = colors.reshape(h+4, w+4, 4)
                 donor = donor_patch(tile, (accepted & inside).reshape(h+4, w+4))
@@ -404,6 +416,16 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
         obj['reprojection_known_texels'] = known
         obj['reprojection_unknown_texels'] = unknown
         report["objects"][-1]["degenerate_faces_unchanged"] = degenerate
+        if provenance is not None:
+            directory = Path(provenance_directory)
+            directory.mkdir(parents=True, exist_ok=True)
+            path = directory / (hashlib.sha256(obj.name.encode()).hexdigest()[:20] + '.npz')
+            np.savez_compressed(path, ownership=provenance)
+            report['objects'][-1]['texel_provenance'] = {
+                'path': str(path.resolve()), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                'semantics': {'0': 'unfilled-or-padding', '1': 'protected-source', '2': 'generated'},
+                'rgba8_sha256': hashlib.sha256(np.rint(np.clip(atlas,0,1)*255).astype(np.uint8).tobytes()).hexdigest(),
+                'uv_sha256': hashlib.sha256(json.dumps([list(entry.uv) for entry in layer.data]).encode()).hexdigest()}
         if hidden_fill == "synthesized":
             pending_fill.append((obj, image, islands, report["objects"][-1]))
     tiles = {}
