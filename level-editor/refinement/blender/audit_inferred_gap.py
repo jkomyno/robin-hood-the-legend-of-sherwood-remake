@@ -36,7 +36,7 @@ def run(previous, output):
             pixels = np.asarray(image.pixels[:], dtype=np.float32).reshape(image.size[1], image.size[0], 4)
             mask = np.load(provenance)['ownership']
             geometry = ([tuple(v.co) for v in obj.data.vertices], [tuple(p.vertices) for p in obj.data.polygons], [tuple(row) for row in obj.matrix_world])
-            uv = [tuple(v.uv) for v in obj.data.uv_layers.active.data]
+            uv = {layer.name:[tuple(v.uv) for v in layer.data] for layer in obj.data.uv_layers}
             result[name] = (pixels, mask, geometry, uv)
         return result
     old, new = read(previous, entries[0]), read(output, entries[1])
