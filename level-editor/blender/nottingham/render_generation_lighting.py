@@ -48,7 +48,12 @@ def main():
    previous=json.loads(report.read_text());assert previous['model_sha256']==primarysha and previous['lighting_config_sha256']==sha(config)
    for r in previous['packets']:
     assert sha(r['frame_manifest'])==r['frame_manifest_sha256']and sha(r['solid'])==r['solid_sha256']and sha(r['source_blend'])==r['source_blend_sha256']
-   if len(previous['packets'])==len(packets) and all(existing_material_audit(r) for r in packets if r.get('saved_state_model')) and all(r.get('saved_state_model') for r in packets):print('REUSE',aid,flush=True);continue
+    if r.get('state_binding'):assert sha(r['state_binding'])==r['state_binding_sha256']
+   prior_by_frame={r['frame_manifest']:r for r in previous['packets']}
+   complete=set(prior_by_frame)=={r['frame_manifest']for r in packets}
+   if complete:
+    resolved=[dict(r,saved_state_model=prior_by_frame[r['frame_manifest']]['source_blend'],saved_state_model_sha256=prior_by_frame[r['frame_manifest']]['source_blend_sha256'])for r in packets]
+    if all(existing_material_audit(r)for r in resolved):print('REUSE',aid,flush=True);continue
   for row in packets:
    frame=Path(row['frame_manifest']);f=json.loads(frame.read_text());assert sha(frame)==row['frame_manifest_sha256'],'Approved frame drift'
    model=Path(row['saved_state_model'])if row['saved_state_model']else None
