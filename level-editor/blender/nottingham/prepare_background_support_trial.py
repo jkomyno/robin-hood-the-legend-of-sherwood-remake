@@ -1,5 +1,5 @@
 """Freeze a cached-generation background-support trial without changing source art."""
-import hashlib,json,os,shutil,sys
+import hashlib,json,os,shutil,sys,argparse
 from pathlib import Path
 from texture_experiment_paths import selected_experiment
 import numpy as np
@@ -8,12 +8,14 @@ ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/'level-editor/refinement/blender'))
 from generated_surface_support import support
 sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
-for asset in sys.argv[1:]:
- p=selected_experiment(asset);o=p/'repair-background-support';o.mkdir(exist_ok=False)
+parser=argparse.ArgumentParser();parser.add_argument('--scope',default='repair-background-support');parser.add_argument('--use-generation-review',action='store_true');parser.add_argument('assets',nargs='+');args=parser.parse_args()
+if Path(args.scope).name!=args.scope:raise ValueError('Scope must be a directory name')
+for asset in args.assets:
+ p=selected_experiment(asset);o=p/args.scope;o.mkdir(exist_ok=False)
  active=json.loads((p/'texture-review.json').read_text()) if (p/'texture-review.json').exists() else {}
  manifest=p/'views.json'
  raw_review=json.loads((p/'generation-review.json').read_text())
- g=p/active['generation'] if active.get('generation') else Path(raw_review['generated_preserved_path']).parent
+ g=p/active['generation'] if active.get('generation') and not args.use_generation_review else Path(raw_review['generated_preserved_path']).parent
  validation=p/active.get('bake','bake-batch-001')/'validation.json'
  if validation.exists():
   evidence=json.loads(validation.read_text()).get('evidence_sha256',{})

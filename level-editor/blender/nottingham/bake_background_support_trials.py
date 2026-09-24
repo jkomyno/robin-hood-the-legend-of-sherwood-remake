@@ -1,5 +1,5 @@
 """Bake explicitly diagnosed background-spill trials, releasing the lease per asset."""
-import sys,json,time
+import sys,json,time,argparse
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(Path(__file__).parent))
@@ -10,9 +10,11 @@ from bake_ready_textures import claim
 import bpy
 from bake_reviewed_asset import stage
 from render_texture_coverage import inspect
-for asset in sys.argv[sys.argv.index('--')+1:]:
+parser=argparse.ArgumentParser();parser.add_argument('--scope',default='repair-background-support');parser.add_argument('assets',nargs='+');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
+if Path(args.scope).name!=args.scope:raise ValueError('Scope must be a directory name')
+for asset in args.assets:
  p=selected_experiment(asset)
- scoped=p/'repair-background-support';g=p/'generation-short-no-mask-with-lighting-openrouter'
+ scoped=p/args.scope;g=p/'generation-short-no-mask-with-lighting-openrouter'
  diagnosis=json.loads((scoped/'diagnosis.json').read_text());g=Path(diagnosis.get('generation_directory',g));m=json.loads((scoped/'views.json').read_text())
  if diagnosis['asset_id']!=asset or m.get('texture_generated_background_max_rgb')!=.015:raise ValueError('Missing scoped diagnosis/policy')
  claim_handle=claim(p)

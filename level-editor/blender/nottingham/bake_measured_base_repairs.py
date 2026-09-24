@@ -1,5 +1,5 @@
 """Bake measured base-only candidates and verify their exact untouched atlas data."""
-import sys,json,time,traceback
+import sys,json,time,traceback,argparse
 from pathlib import Path
 HERE=Path(__file__).resolve().parent
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(HERE.parents[1]/'refinement/blender'))
@@ -10,8 +10,10 @@ from bake_ready_textures import claim,sha
 from bake_reviewed_asset import stage
 from audit_inferred_gap import run as audit
 from render_texture_coverage import inspect
-for asset in sys.argv[sys.argv.index('--')+1:]:
- p=selected_experiment(asset);scoped=p/'repair-measured-base-v1';out=p/'bake-measured-base-v1'
+parser=argparse.ArgumentParser();parser.add_argument('--scope',default='repair-measured-base-v1');parser.add_argument('--output',default='bake-measured-base-v1');parser.add_argument('assets',nargs='+');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
+if any(Path(n).name!=n for n in [args.scope,args.output]):raise ValueError('Local directory names required')
+for asset in args.assets:
+ p=selected_experiment(asset);scoped=p/args.scope;out=p/args.output
  contract=json.loads((scoped/'repair-contract.json').read_text());old=Path(contract['previous_bake'])
  if sha(scoped/'views.json')!=contract['manifest_sha256'] or sha(old/'worker.blend')!=contract['previous_model_sha256']:raise ValueError('Repair contract drift')
  handle=claim(p)

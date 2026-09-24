@@ -10,8 +10,11 @@ cross=lambda a,b:a[...,0]*b[...,1]-a[...,1]*b[...,0]
 sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
 arguments=sys.argv[sys.argv.index('--')+1:]
 bake='bake-background-support-001'
+band=4.
 if arguments[:1]==['--bake']:
  bake=arguments[1];arguments=arguments[2:]
+if arguments[:1]==['--band']:
+ band=float(arguments[1]);arguments=arguments[2:]
 for asset in arguments:
  folder=selected_experiment(asset)/bake
  validation=json.loads((folder/'validation.json').read_text())
@@ -51,14 +54,14 @@ for asset in arguments:
     normal.normalize()
     f=faces.setdefault(tri.polygon_index,dict(face=tri.polygon_index,abs_normal_z=abs(float(normal.z)),interior_texels=0,class0_texels=0,class0_bottom4_texels=0,zmin=None,zmax=None))
     f['interior_texels']+=int(inside.sum());f['class0_texels']+=int(unknown.sum())
-    f['class0_bottom4_texels']+=int((unknown&(world[:,2]<=minimum+4)).sum())
+    f['class0_bottom4_texels']+=int((unknown&(world[:,2]<=minimum+band)).sum())
     if unknown.any():
      zs=world[unknown,2];f['zmin']=min(f['zmin'] if f['zmin'] is not None else float('inf'),float(zs.min()));f['zmax']=max(f['zmax'] if f['zmax'] is not None else -float('inf'),float(zs.max()))
    for index,parts in samples.items():
     f=faces[index]
     if not f['class0_bottom4_texels']:continue
     pixel=np.concatenate([p[0] for p in parts]);world=np.concatenate([p[1] for p in parts]);classes=np.concatenate([p[2] for p in parts])
-    donors=classes==2;targets=(classes==0)&(world[:,2]<=minimum+4)
+    donors=classes==2;targets=(classes==0)&(world[:,2]<=minimum+band)
     f['original_generated_donors']=int(donors.sum())
     if donors.any():
      distance,nearest=cKDTree(pixel[donors]).query(pixel[targets])
@@ -66,5 +69,9 @@ for asset in arguments:
      f['bottom4_nearest_generated']=dict(min_texels=float(distance.min()),max_texels=float(distance.max()),p95_texels=float(np.percentile(distance,95)),max_world=float(wd.max()),within_8texel_4world=int(((distance<=8)&(wd<=4)).sum()),target_count=int(targets.sum()))
    records.append(dict(object=obj.name,minimum_world_z=minimum,provenance_sha256=proof['sha256'],faces=[f for f in faces.values() if f['class0_texels']]))
  report=dict(status='DIAGNOSTIC-ONLY',model_sha256=sha(folder/'worker.blend'),validation_sha256=sha(folder/'validation.json'),method='Strictly interior UV triangle pixel centers; excludes atlas padding and triangle edges. Class zero means unfilled physical surface, not proof of camera visibility.',objects=records)
- (folder/'residual-physical-provenance.json').write_text(json.dumps(report,indent=2)+'\n')
+ report['analysis_band_world']=band
+ filename='residual-physical-provenance.json' if band==4 else f'residual-physical-provenance-band-{band:g}.json'
+ serialized=json.dumps(report,indent=2)
+ if band!=4:serialized=serialized.replace('class0_bottom4_texels','class0_band_texels').replace('bottom4_nearest_generated','band_nearest_generated')
+ (folder/filename).write_text(serialized+'\n')
  print(asset,sum(f['class0_texels'] for o in records for f in o['faces']),flush=True)
