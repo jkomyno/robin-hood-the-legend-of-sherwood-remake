@@ -47,7 +47,9 @@ for asset in arguments:
     world=(1-u[inside]-v[inside])[:,None]*positions[tri.vertices[0]]+u[inside,None]*positions[tri.vertices[1]]+v[inside,None]*positions[tri.vertices[2]]
     unknown=ownership[ys,xs]==0
     samples.setdefault(tri.polygon_index,[]).append((np.column_stack((xs,ys)),world,ownership[ys,xs]))
-    f=faces.setdefault(tri.polygon_index,dict(face=tri.polygon_index,interior_texels=0,class0_texels=0,class0_bottom4_texels=0,zmin=None,zmax=None))
+    normal=obj.matrix_world.to_3x3().inverted().transposed()@mesh.polygons[tri.polygon_index].normal
+    normal.normalize()
+    f=faces.setdefault(tri.polygon_index,dict(face=tri.polygon_index,abs_normal_z=abs(float(normal.z)),interior_texels=0,class0_texels=0,class0_bottom4_texels=0,zmin=None,zmax=None))
     f['interior_texels']+=int(inside.sum());f['class0_texels']+=int(unknown.sum())
     f['class0_bottom4_texels']+=int((unknown&(world[:,2]<=minimum+4)).sum())
     if unknown.any():
