@@ -108,12 +108,11 @@ const battlement=await asset("derby-upper-east-curtain");
 document.assetSources!.push(battlement.reference);
 const corner=await asset("derby-lower-west-wall-turret");
 document.assetSources!.push(corner.reference);
-const contour:[number,number][]=[[2405,1370],[2240,1220],[2150,980],[2160,680],
-  [2310,430],[2600,360],[2880,410],[3140,610],[3210,890],[3120,1140],[2890,1310],[2670,1380]];
+const contour:[number,number][]=[[2405,1370],[2170,1160],[2200,580],[2460,380],[3090,480],[3190,970],[2940,1300],[2670,1380]];
 document.splines=[
   {id:"wych-river",name:"River Wych",kind:"river",width:110,repeatLength:220,closed:false,points:riverPoints},
   {id:"ridge-curtain",name:"Ridge curtain",kind:"wall",asset:battlement.reference.id,axis:"x",sourceAngle:82.4,
-   cornerAsset:corner.reference.id,cornerMinAngle:38,cornerScale:1.65,cornerWidthScale:1.8,sourceStart:.18,sourceEnd:.72,flipCrossSection:true,width:72,repeatLength:340,closed:false,
+   cornerAsset:corner.reference.id,cornerMinAngle:25,cornerScale:1.65,cornerWidthScale:1,sourceStart:.18,sourceEnd:.72,flipCrossSection:true,width:44,repeatLength:340,closed:false,
    points:contour.map(([x,y])=>[x,y,groundHeight(x,y)])},
 ];
 function road(label:string,width:number,points:[number,number][]) {

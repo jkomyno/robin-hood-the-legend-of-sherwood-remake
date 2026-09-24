@@ -17,7 +17,9 @@ The recipe adds doorstep paths, trees, market furniture, river and fortification
 The current scene has 158 placed asset groups, 33 road splines, one river and one
 curtain wall, using 82 distinct shared models including the derived corner towers.
 
-The curtain uses Derby's wall segment and matching conical turret. Sharp turns
+The curtain uses Derby's wall segment and matching conical turret. Its irregular
+perimeter has straight curtain spans, a width of 44 units, and uniformly scaled
+1.65× towers without additional horizontal widening. Sharp turns
 insert towers automatically and terminate adjacent wall spans; gentler controls
 retain a continuous curved wall. The gate opening remains deliberate. The wall's
 parapet faces outward. Tower placement, minimum turn angle, size, orientation and
