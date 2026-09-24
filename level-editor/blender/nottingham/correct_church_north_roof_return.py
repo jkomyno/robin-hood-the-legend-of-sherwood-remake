@@ -15,7 +15,7 @@ def main():
  try:
   select_tooling(WORK/'tooling/58744eeaf71a21e9')
   from refinement_workspace import modified
-  old=WORK/'round-9/assets/nottingham-church-north-house';w=WORK/'round-50/assets/nottingham-church-north-house'
+  old=WORK/'round-9/assets/nottingham-church-north-house';w=WORK/'round-51/assets/nottingham-church-north-house'
   if w.exists():raise RuntimeError('Immutable candidate exists')
   clone_workspace(old,w);bpy.ops.wm.open_mainfile(filepath=str(w/'model.blend'));before=geometry()
   objects={o.get('source_node'):o for o in bpy.data.collections['nottingham Working'].all_objects if o.get('asset_group')=='nottingham-church-north-house'}
@@ -27,7 +27,7 @@ def main():
    base=Vector((x,0,0))+y*down
    return base+toward*(normal.dot(a-base)/normal.dot(toward))
   outer_ridge=on_roof(ridge.x-7,ridge.dot(down)+5.2)
-  outer_eave=on_roof(eave.x-7,eave.dot(down)+5.2)
+  outer_eave=on_roof(ridge.x-7,eave.dot(down)+5.2)
   top=[ridge,eave,outer_eave,outer_ridge];bottom=[p-Vector((0,0,2)) for p in top]
   v=[target.matrix_world@p.co for p in target.data.vertices];faces=[tuple(f.vertices) for f in target.data.polygons];old_count=len(v)
   added=[(0,1,2,3),(7,6,5,4),(0,4,5,1),(1,5,6,2),(2,6,7,3),(3,7,4,0)]
@@ -43,7 +43,7 @@ def main():
   for f,prior in zip(mesh.polygons,target.data.polygons):f.material_index=prior.material_index
   mesh.uv_layers.new(name='UVMap');target.data=mesh
   bpy.context.view_layer.update();bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(w/'model.blend'))
-  report=dict(status='awaiting-source-and-independent-review',prior_model_sha256=sha(old/'model.blend'),added_vertices=[list(p) for p in top+bottom],added_faces=newfaces,added_closed_component_volume=volume,preserved_original_vertices=True,unchanged_source_masks=True,geometry_inference='Seven-source-pixel roof return with two-world-unit thickness; exact inner edge joins unchanged front roof131. Added return intercepts grazing roof-edge pixels formerly stretched across rear gable130.',approval='pending',recipe=str(Path(__file__).resolve()))
+  report=dict(status='awaiting-source-and-independent-review',prior_model_sha256=sha(old/'model.blend'),added_vertices=[list(p) for p in top+bottom],added_faces=newfaces,added_closed_component_volume=volume,preserved_original_vertices=True,unchanged_source_masks=True,geometry_inference='Source-traced vertically bounded, tapered roof return with two-world-unit thickness; exact inner edge joins unchanged front roof131. Added return intercepts grazing roof-edge pixels formerly stretched across rear gable130.',approval='pending',recipe=str(Path(__file__).resolve()))
   (w/'roof-return-correction.json').write_text(json.dumps(report,indent=2)+'\n')
   modified(w);after=geometry();changed=[n for n in before if before[n]!=after[n]];assert changed==[target.name],changed
   report.update(model_sha256=sha(w/'model.blend'),modified_views_sha256=sha(w/'modified/views.json'),changed_meshes=changed)
