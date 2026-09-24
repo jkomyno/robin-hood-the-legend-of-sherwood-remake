@@ -59,6 +59,51 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(mask[1,1,3],255)
         self.assertEqual(mask[0,0,3],255)
 
+    def add_bound_preparation(self):
+        frame_path=self.packet/'views.json';frames=json.loads(frame_path.read_text());frames['object_names']=['owned'];frame_path.write_text(json.dumps(frames))
+        self.item['revision']['evidence']['frames']['sha256']=sha(frame_path)
+        lighting = self.root/'lighting.json'
+        lighting.write_text(json.dumps({'lighting': {'direction':[1,2,3]}}))
+        state_model = self.root/'state.blend';state_model.write_bytes(b'exact revealed state')
+        supplemental = self.root/'supplement';supplemental.mkdir()
+        sheet=Image.new('RGBA',(self.tile_size[0]*4,self.tile_size[1]*2))
+        paths=[]
+        for i in range(8):
+            original=Image.open(self.packet/'views'/f'view-{i}-solid.png').convert('RGBA')
+            pixels=np.array(original);pixels[:,:,:3]=[90,100,110]
+            image=Image.fromarray(pixels);path=supplemental/f'view-{i}.png';image.save(path);paths.append(str(path))
+            sheet.paste(image,(i%4*self.tile_size[0],i//4*self.tile_size[1]))
+        sheet.save(supplemental/'solid.png')
+        self.item.update(preparation_model=str(state_model),preparation_state='revealed',
+                         solid=str(supplemental/'solid.png'),solid_view_paths=paths,
+                         derive_unknown_lighting=True,
+                         preparation_lighting={'config':str(lighting),'lighting':{'direction':[1,2,3]}})
+        evidence=self.item['revision']['evidence']
+        for i,path in enumerate([lighting,state_model,supplemental/'solid.png',*[Path(p) for p in paths]]):
+            evidence['preparation_'+str(i)]={'path':str(path),'sha256':sha(path)}
+        identity={'asset_id':'fixture','model_sha256':sha(self.root/'model.blend'),
+                  'evidence':{k:v['sha256'] for k,v in evidence.items()}}
+        self.item['revision']['sha256']=hashlib.sha256(json.dumps(identity,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        self.save();record(self.manifest,['fixture'],'Explicit approved geometry and generation lighting')
+        return state_model,paths
+
+    def test_saved_state_and_unknown_only_lighting_are_exact(self):
+        model,_=self.add_bound_preparation()
+        prepare(self.manifest,'fixture',self.root/'relit')
+        self.assertEqual(sha(model),sha(self.root/'relit/approved-model.blend'))
+        before=np.array(Image.open(self.packet/'views/view-0-textured.png').convert('RGBA'))
+        after=np.array(Image.open(self.root/'relit/views/view-0-input.png').convert('RGBA'))
+        expected=before.copy();expected[1,2,:3]=[90,100,110]
+        np.testing.assert_array_equal(after,expected)
+        approval=json.loads((self.root/'relit/approval.json').read_text())
+        self.assertTrue(approval['derived_input']['known_and_background_rgba_preserved'])
+        self.assertEqual(approval['review_state'],'revealed')
+
+    def test_changed_supplemental_view_rejected(self):
+        _,paths=self.add_bound_preparation();Path(paths[0]).write_bytes(b'changed')
+        with self.assertRaises(ValueError):prepare(self.manifest,'fixture',self.root/'bad-light')
+        self.assertFalse((self.root/'bad-light').exists())
+
     def test_check_only_validates_without_output(self):
         result=prepare(self.manifest,'fixture',self.root/'dry-run',check_only=True)
         self.assertEqual(result['status'],'eligible')

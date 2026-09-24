@@ -81,6 +81,34 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
         item['solid']=selected_endpoint['solid'];item['textured']=selected_endpoint['textured']
     elif endpoint is not None:
         raise ValueError('Endpoint selection requires a paired review packet')
+    # A normalized state handoff retains the parent's approval identity while
+    # selecting an independently hash-bound saved state for projection.
+    bound_files = {str(Path(e['path']).resolve()): e['sha256']
+                   for e in item['revision']['evidence'].values()}
+    def bound_file(path):
+        path = Path(path).resolve(strict=True)
+        if bound_files.get(str(path)) != sha(path):
+            raise ValueError('Preparation artifact is absent from approved evidence: ' + str(path))
+        return path
+    if item.get('preparation_selection'):
+        selection = json.loads(bound_file(item['preparation_selection']).read_text())
+        if any(item.get(key) != value for key, value in selection.items()):
+            raise ValueError('Normalized preparation selection changed')
+    if item.get('preparation_model'):
+        if endpoint is not None or revealed:
+            raise ValueError('Normalized state already selects its exact preparation model')
+        model = bound_file(item['preparation_model'])
+    solid_views = item.get('solid_view_paths')
+    if solid_views is not None:
+        if len(solid_views) != 8 or len(set(solid_views)) != 8:
+            raise ValueError('Expected eight unique supplemental solid views')
+        solid_views = [bound_file(path) for path in solid_views]
+        bound_file(item['solid'])
+    preparation_lighting = item.get('preparation_lighting')
+    if preparation_lighting:
+        lighting_config = json.loads(bound_file(preparation_lighting['config']).read_text())
+        if lighting_config['lighting'] != preparation_lighting['lighting']:
+            raise ValueError('Preparation lighting differs from bound map configuration')
     packet = Path(item['textured']).parent.resolve(strict=True)
     frames_path = packet / 'views.json'
     bound_frames = list(item['revision']['evidence'].values()) + list(item['user_decision'].get('geometry_basis', {}).get('files', {}).values())
@@ -113,6 +141,8 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     input_sheet = Image.new('RGBA', canvas)
     solid_sheet = Image.new('RGBA', canvas)
     prepared_views = []
+    relit_views = {}
+    relit_sheet = Image.new('RGBA', canvas) if item.get('derive_unknown_lighting') else None
     editable = 0
     for view in frames['views']:
         index = view['index']
@@ -120,7 +150,7 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
         if sha(known_path) != view['ownership_sha256']:
             raise ValueError('Reviewed ownership pixels changed')
         known_image = Image.open(known_path).convert('RGBA')
-        solid_image = Image.open(packet / 'views' / f'view-{index}-solid.png').convert('RGBA')
+        solid_image = Image.open(solid_views[index] if solid_views is not None else packet / 'views' / f'view-{index}-solid.png').convert('RGBA')
         input_image = Image.open(packet / 'views' / f'view-{index}-textured.png').convert('RGBA')
         if any(image.size != (width, height) for image in (known_image, solid_image, input_image)):
             raise ValueError('Per-view image dimensions differ from frozen cameras')
@@ -128,6 +158,15 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
         solid = np.asarray(solid_image)[:, :, 3] > 0
         unknown = solid & ~known
         editable += int(unknown.sum())
+        if relit_sheet is not None:
+            if not preparation_lighting or solid_views is None:
+                raise ValueError('Derived unknown lighting requires bound supplemental views and profile')
+            pixels = np.array(input_image)
+            lit = np.asarray(solid_image)
+            pixels[unknown, :3] = lit[unknown, :3]
+            # Known source and background, including alpha, remain exact.
+            relit_views[index] = Image.fromarray(pixels)
+            relit_sheet.paste(relit_views[index], (index % 4 * width, index // 4 * height))
         pixels = np.full((height, width, 4), 255, dtype=np.uint8)
         pixels[unknown, 3] = 0
         mask = Image.fromarray(pixels)
@@ -149,10 +188,16 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     output.mkdir(parents=True)
     (output / 'views').mkdir()
     shutil.copyfile(model, output / 'approved-model.blend')
-    shutil.copyfile(item['textured'], output / 'input.png')
+    if relit_sheet is not None:
+        relit_sheet.save(output / 'input.png')
+    else:
+        shutil.copyfile(item['textured'], output / 'input.png')
     shutil.copyfile(item['solid'], output / 'solid.png')
     for index, input_name, mask_name, mask in prepared_views:
-        shutil.copyfile(packet / 'views' / f'view-{index}-textured.png', output / input_name)
+        if relit_sheet is not None:
+            relit_views[index].save(output / input_name)
+        else:
+            shutil.copyfile(packet / 'views' / f'view-{index}-textured.png', output / input_name)
         mask.save(output / mask_name)
     mask_sheet.save(output / 'mask.png')
     revision = item['revision']['sha256']
@@ -160,6 +205,12 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     frames.update(reviewed_packet=str(packet), reviewed_manifest_sha256=sha(frames_path),
                   source_blend=str(output / 'approved-model.blend'), geometry_revision=revision,
                   input_sha256=sha(output / 'input.png'))
+    if item.get('preparation_state'):
+        frames['review_state'] = item['preparation_state']
+        frames['texture_receiver_object_names'] = frames['object_names']
+    if preparation_lighting:
+        frames['lighting'] = preparation_lighting['lighting']
+        frames['lighting_config_sha256'] = sha(Path(preparation_lighting['config']))
     if revealed:
         frames['review_state']='revealed'
         frames['texture_receiver_object_names']=frames['object_names']
@@ -174,6 +225,14 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
                 'solid_sha256': sha(output / 'solid.png'), 'lighting_sha256': sha(output / 'solid.png'),
                 'saved_model_sha256': sha(output / 'approved-model.blend'),
                 'source_decision': item['user_decision'], 'texture_approval': 'pending'}
+    if item.get('preparation_state'):approval['review_state']=item['preparation_state']
+    if item.get('approval_provenance'):approval['approval_provenance']=item['approval_provenance']
+    if relit_sheet is not None:
+        approval['derived_input'] = {'kind':'unknown-geometry-lighting-only',
+            'original_approved_source_sha256':sha(Path(item['textured'])),
+            'lighting_config_sha256':sha(Path(preparation_lighting['config'])),
+            'known_and_background_rgba_preserved':True, 'alpha_preserved':True,
+            'approval_scope':'Geometry approved; derived lighting authorized for texture generation, not separately reviewed.'}
     if revealed:approval['review_state']='revealed'
     if reconstruction:
         approval['state_reconstruction']=reconstruction
