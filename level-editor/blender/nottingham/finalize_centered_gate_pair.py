@@ -14,11 +14,11 @@ for workspace in [gate,tower]:
  assert read(independent)['status']=='PASS'
  assert read(workspace/'known-rgb-validation.json')['status']=='PASS'
  assert read(inspection/'final-pair-structure.json')['status']=='PASS'
- actual=inspection/'stored-materials';assert read(actual/'audit.json')['status']=='PASS'
+ actual=inspection/'stored-materials';assert read(actual/'audit.json')['status']=='STRUCTURAL-PASS'
  state_manifest=inspection/'endpoints-v6/states.json';states=read(state_manifest)['states'];assert len(states)==2
  for state in states:
   assert sha(state['model'])==state['model_sha256'] and sha(state['views'])==state['views_sha256']
-  assert read(Path(state['directory'])/'stored-materials/audit.json')['status']=='PASS'
+  assert read(Path(state['directory'])/'stored-materials/audit.json')['status']=='STRUCTURAL-PASS'
  changes=(['Corrected the concealed tunnel and pier depth direction to the measured native axis; the exact original portcullis is centered within 0.043 source pixel at its own plane.',
            'Retained both metal endpoint meshes, front contour, crown and floor. Removed the redundant filler slab now contained by the corrected continuous walkway.',
            'Transferred the measured brown right jamb volume to its native375 exterior owner in the paired east tower.'] if arch else
