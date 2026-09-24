@@ -34,7 +34,14 @@ def audit_evidence(workspace):
     wood = np.zeros_like(native)
     for index in spec['roof']:
         excluded |= forest_fringe.paste_mask(masks[index], spec['box'])
-    for index in spec['wood']:
+    own_wood = {index for projection in manifest['projections'].values()
+                for assignment in projection['assignments']
+                if assignment.get('source_node') == 'building-092'
+                and assignment.get('projection_component') == 'wood'
+                for index in assignment['mask_indices']}
+    if not own_wood:
+        raise ValueError('North church wood lacks individual native authority')
+    for index in own_wood:
         wood |= forest_fringe.paste_mask(masks[index], spec['box'])
     visible = np.indices(coverage.shape)[0] + spec['box'][1] >= 0
     if np.any(coverage & excluded) or np.any(coverage & visible & ~native):
@@ -51,7 +58,7 @@ def audit_evidence(workspace):
     report = {
         'status': 'PASS', 'asset_id': config['asset_id'],
         'native_regional_mask': 28, 'excluded_roof_masks': spec['roof'],
-        'separate_wood_masks': spec['wood'],
+        'separate_wood_masks': sorted(own_wood),
         'observed_regional_coverage_pixels': int((coverage & visible).sum()),
         'inferred_offmap_coverage_pixels': int((coverage & ~visible).sum()),
         'front_wood_exclusion_pixels': int((coverage & wood).sum()),
