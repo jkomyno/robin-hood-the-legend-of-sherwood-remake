@@ -31,7 +31,7 @@ def run(canonical, target, output):
     import numpy as np
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     sys.path.append(str(Path(__file__).resolve().parents[2] / 'blender/nottingham'))
-    from render_slots import acquire
+    from render_slots import acquire, release
     acquire()
     from refinement_workspace import _geometry
     from workspace_components import appearance_state
@@ -97,7 +97,18 @@ def run(canonical, target, output):
             hashes[str(path)]=sha(path)
             result[entry['object']]=(proof,np.load(path)['ownership'])
         return result
-    provenance_maps=[provenance(p,m) for p,m in zip((canonical,target),manifests)]
+    provenance_maps=[]
+    for experiment,manifest in zip((canonical,target),manifests):
+        print('Transfer: verifying provenance for '+str(experiment),flush=True)
+        provenance_maps.append(provenance(experiment,manifest))
+        # No Blender operation remains in flight here. Let queued assets run
+        # between expensive state replays, then recheck all immutable inputs.
+        release()
+        import time
+        time.sleep(1.1)
+        acquire()
+        if hashes!={p:sha(Path(p)) for p in hashes}:
+            raise ValueError('Transfer input changed while yielding the render lease')
     original=[]
     for p,m in zip((canonical,target),manifests):
         original.append({name:signature(o) for name,o in load(p/'approved-model.blend',m).items()})
@@ -130,6 +141,7 @@ def run(canonical, target, output):
         if data and _geometry(obj)==original[0][name][0]:donors[name]=(_geometry(obj),data[2],data[3],verified_mask(name,data,provenance_maps[0],obj))
     targets=load(target/'bake-v1/worker.blend',manifests[1])
     geometry={o.name:_geometry(o) for o in bpy.context.scene.objects}
+    print('Transfer: binding complete scene appearance before edits',flush=True)
     before={o.name:signature(o,full_pixels=False) for o in bpy.context.scene.objects if o.type=='MESH'}
     changed=[];skipped=[];expected_saved={}
     for name,obj in targets.items():
@@ -152,6 +164,7 @@ def run(canonical, target, output):
     changed_names={r['object'] for r in changed}
     if geometry!={o.name:_geometry(o) for o in bpy.context.scene.objects}:raise ValueError('Geometry changed')
     appearance_cache.clear();pixel_cache.clear()
+    print('Transfer: checking unchanged scene appearance after edits',flush=True)
     if any(before[o.name]!=signature(o,full_pixels=False) for o in bpy.context.scene.objects if o.type=='MESH' and o.name not in changed_names):raise ValueError('Outside appearance changed')
     if hashes!={p:sha(Path(p)) for p in hashes}:raise ValueError('Inputs changed')
     output.mkdir(parents=True)
