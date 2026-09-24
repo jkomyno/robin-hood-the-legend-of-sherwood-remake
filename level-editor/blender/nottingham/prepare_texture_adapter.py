@@ -102,12 +102,25 @@ def normalize(asset_id, output, *, state='covered', material_audit=None,
         rows = [r for r in reconstruction['states'] if Path(r.get('frame_manifest', Path(r.get('packet', ''))/'views.json')).resolve() == frame_path.resolve()]
         require(len(rows) == 1, 'Reconstruction does not identify selected exact frame')
         selected_binding = rows[0]
-        require(selected_binding['frames_sha256'] == sha(frame_path), 'Reconstructed state frame changed')
+        require(selected_binding.get('frame_manifest_sha256', selected_binding.get('frames_sha256')) == sha(frame_path), 'Reconstructed state frame changed')
         model = Path(selected_binding['source_blend']).resolve(strict=True)
         require(sha(model) == selected_binding['source_blend_sha256'], 'Reconstructed state model changed')
         require(set(selected_binding['render_object_names']) == set(frames['object_names']), 'Reconstructed state visibility differs')
         require(all(selected_binding.get(k) is True for k in ('source_rgb_preserved', 'solid_pixels_preserved', 'ownership_buffers_reproduced')),
                 'State reconstruction lacks exact source/solid/ownership proof')
+        require(selected_binding.get('approved_inputs_unchanged') is True, 'Reconstruction changed approved inputs')
+        comparisons = selected_binding.get('comparisons', [])
+        expected_comparisons = {'solid.png', 'textured.png'} | {
+            f'views/view-{i}-{kind}.png' for i in range(8) for kind in ('solid','known','textured')}
+        require(expected_comparisons <= {r['relative'] for r in comparisons}, 'Reconstruction omits eight-view evidence')
+        for comparison in comparisons:
+            require(comparison.get('pixels_equal') is True and
+                    comparison['approved_sha256'] == comparison['reproduced_sha256'] == sha(packet/comparison['relative']),
+                    'Reconstructed state does not preserve approved pixels')
+        actual = selected_binding.get('actual_material_check', {})
+        require(actual.get('status') == 'STRUCTURAL-PASS' and sha(actual['path']) == actual['sha256'],
+                'State actual material proof changed')
+        if material_audit is None: material_audit = actual['path']
         for path, digest in selected_binding.get('artifact_sha256', {}).items():
             artifact = Path(path)
             if not artifact.is_absolute(): artifact = reconstruction_path.parent/artifact
@@ -150,6 +163,13 @@ def normalize(asset_id, output, *, state='covered', material_audit=None,
     # Per-view hashes are bound into the derived revision. Their assembly is
     # checked against the explicitly approved supplemental sheet by preparation.
     audit_paths = [Path(material_audit)] if material_audit else list(workspace.glob('inspection/**/audit.json'))
+    if material_audit is None:
+        from generation_material_audits import existing
+        generated = existing({'workspace':str(workspace), 'asset_id':asset_id,
+                              'saved_state_model_sha256':sha(model), 'frame_manifest':str(frame_path),
+                              'frame_manifest_sha256':sha(frame_path)})
+        if generated: audit_paths.insert(0, generated)
+
     audits = [p for p in audit_paths if read(p).get('model_sha256') == sha(model)
               and read(p).get('frame_manifest_sha256') == sha(frame_path)
               and read(p).get('status') == 'STRUCTURAL-PASS' and not read(p).get('problems')]

@@ -127,14 +127,19 @@ def glb_report(path):
                 for m in doc.get('meshes', []) for p in m['primitives']]}
 
 
-def run(workspace, output, *, render=False, export=False, render_object_names=None, frame_manifest=None):
+def run(workspace, output, *, render=False, export=False, render_object_names=None, frame_manifest=None,
+        model_path=None, use_loaded=False):
     workspace, output = Path(workspace).resolve(), Path(output).resolve()
     if output.exists():
         raise FileExistsError(output)
     config = json.loads((workspace/'workspace.json').read_text())
-    model = workspace/'model.blend'
+    model = Path(model_path).resolve(strict=True) if model_path else workspace/'model.blend'
     before = digest(model)
-    bpy.ops.wm.open_mainfile(filepath=str(model))
+    if use_loaded:
+        if Path(bpy.data.filepath).resolve() != model.resolve():
+            raise ValueError('Loaded material audit model differs from the exact requested model')
+    else:
+        bpy.ops.wm.open_mainfile(filepath=str(model))
     objects = sorted([o for o in bpy.data.collections[config['collection_name']].all_objects
                       if o.type == 'MESH' and (not o.hide_render if render_object_names is None else o.name in render_object_names) and o.get('asset_group') == config['asset_id']], key=lambda o:o.name)
     if render_object_names is not None and set(render_object_names) != {o.name for o in objects}:
