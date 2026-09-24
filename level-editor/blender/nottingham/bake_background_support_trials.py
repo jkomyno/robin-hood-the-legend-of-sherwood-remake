@@ -21,6 +21,7 @@ for asset in sys.argv[sys.argv.index('--')+1:]:
  output=p/f'bake-background-support-{index:03d}'
  acquire()
  try:
+  if output.exists():raise RuntimeError('Output appeared while waiting for render lease: '+str(output))
   bpy.ops.wm.open_mainfile(filepath=str(scoped/'approved-model.blend'))
   result=stage(scoped/'views.json',g/'generated-preserved.png',output,texels_per_unit=2,reconciliation_reference=g/'generated-raw.png')
   print('BACKGROUND SUPPORT BAKED '+asset+' '+str(output),flush=True)
