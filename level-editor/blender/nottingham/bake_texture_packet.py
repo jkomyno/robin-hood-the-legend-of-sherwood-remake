@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--generated',type=Path)
     parser.add_argument('--manifest',type=Path)
     parser.add_argument('--reconciliation-reference',type=Path)
+    parser.add_argument('--render-coverage',action='store_true',help='Render exact provenance under the same lease after baking')
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
     experiment=args.experiment.resolve();output=args.output.resolve()
     generated=(args.generated or experiment/'generation-short-no-mask-with-lighting-openrouter/generated-preserved.png').resolve()
@@ -31,6 +32,9 @@ def main():
     from bake_reviewed_asset import stage
     bpy.ops.wm.open_mainfile(filepath=str(experiment/'approved-model.blend'))
     report=stage(manifest,generated,output,texels_per_unit=2,reconciliation_reference=args.reconciliation_reference)
+    if args.render_coverage:
+        from render_texture_coverage import inspect
+        inspect(manifest,output,output/'coverage')
     print(json.dumps(dict(asset=report['asset_id'],output=str(output),counts=report['counts'],geometry_verified=report['geometry_verified'],outside_objects_unchanged=report['outside_objects_unchanged'])),flush=True)
 
 if __name__=='__main__':main()
