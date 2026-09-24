@@ -1,5 +1,15 @@
 """Explicit component selectors for a reviewed revealed projection pass."""
 
+# Door animation graphics are distinct projection sources, but use the room's
+# reviewed removable cover components. Keep this association explicit: a label
+# suffix or a selector's requested patch alone is not ownership authority.
+ENDPOINT_COVER_PATCHES = {
+    'upper-prison-door-initial': 'patch-002',
+    'upper-prison-door-applied': 'patch-002',
+    'southwest-prison-door-initial': 'patch-007',
+    'southwest-prison-door-applied': 'patch-007',
+}
+
 
 def filter_receivers(objects, selectors=None, *, available_objects=None):
     """Restrict named source nodes to reviewed components within one layer."""
@@ -59,9 +69,10 @@ def filter_occluders(objects, selectors=None, *, projection_label, available_obj
     objects=list(objects)
     if not selectors:
         return objects
-    if not projection_label.startswith('interior-'):
+    patch = ENDPOINT_COVER_PATCHES.get(projection_label)
+    if patch is None and not projection_label.startswith('interior-'):
         raise ValueError('Cover component exclusion requires an interior projection label')
-    patch=projection_label.removeprefix('interior-')
+    patch = patch or projection_label.removeprefix('interior-')
     catalog=list(available_objects) if available_objects is not None else objects
     excluded=set()
     for selector in selectors:
