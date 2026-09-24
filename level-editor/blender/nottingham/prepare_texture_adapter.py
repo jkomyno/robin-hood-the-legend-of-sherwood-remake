@@ -74,11 +74,17 @@ def normalize(asset_id, output, *, state='covered', material_audit=None,
         require(collector.file_hashes(Path(entry['directory'])) == entry['hashes'], 'State packet changed')
     require(collector.state_bundle_hash(states, fresh.get('complete_state_contracts')) == evidence.get('state_bundle_sha256'),
             'Approved state bundle changed')
+    full_height = state.endswith('-full-height')
+    state_key = state.removesuffix('-full-height') if full_height else state
     if state == 'covered':
         packet = Path(states['covered']['directory']) if 'covered' in states else workspace/'modified'
     else:
-        require(state in states and state != 'revealed_input', 'Requested state has no approved packet')
-        packet = Path(states[state]['directory'])
+        require(state_key in states and state_key != 'revealed_input', 'Requested state has no approved packet')
+        packet = Path(states[state_key]['directory'])
+        if full_height:
+            require(state_key.startswith('animation-'), 'Full-height selection requires an explicit endpoint')
+            packet = packet/'full-height'
+            require('full-height/views.json' in states[state_key]['hashes'], 'Full-height frame absent from approved state bundle')
     frame_path = packet/'views.json'
     frames = read(frame_path)
     # Saved endpoint and complete-state models are selected through hash-bound
@@ -89,7 +95,8 @@ def normalize(asset_id, output, *, state='covered', material_audit=None,
         if path.exists():
             for binding in read(path)['states']:
                 frame = binding.get('frame_manifest') or binding.get('views')
-                if frame and Path(frame).resolve() == frame_path.resolve():
+                if frame and (Path(frame).resolve() == frame_path.resolve() or
+                              (full_height and Path(frame).resolve().parent/'full-height/views.json' == frame_path.resolve())):
                     selected_binding = binding
                     model = Path(binding['model'])
                     require(sha(model) == binding['model_sha256'], 'Saved state model changed')
@@ -200,8 +207,12 @@ def normalize(asset_id, output, *, state='covered', material_audit=None,
     for name in ('workspace.json', 'source-masks.json', 'projection-layers.json', 'projection-state-layers.json',
                  'material-states.json', 'inspection/state-models/manifest.json', 'inspection/endpoints-v6/states.json'):
         if (workspace/name).exists(): paths['workspace_'+name] = workspace/name
+    parent_identity = {key:approval.get(key) for key in
+                       ('asset_id','model_sha256','modified_views_sha256','state_bundle_sha256','lighting_review_sha256')}
+    parent_revision = hashlib.sha256(json.dumps(parent_identity,sort_keys=True,separators=(',',':')).encode()).hexdigest()
     selection = {'preparation_model':str(model), 'preparation_state':state,
                  'solid_view_paths':[str(p) for p in solid_views], 'derive_unknown_lighting':True,
+                 'parent_geometry_revision':parent_revision,
                  'preparation_lighting':{'config':str(profile), 'lighting':read(profile)['lighting']}}
     selection_path = output/'preparation-selection.json'
     selection_path.write_text(json.dumps(selection,indent=2)+'\n')
@@ -216,7 +227,8 @@ def normalize(asset_id, output, *, state='covered', material_audit=None,
                   'preparation_model':str(model), 'preparation_state':state,
                   'solid_view_paths':[str(p) for p in solid_views], 'derive_unknown_lighting':True,
                   'preparation_lighting':{'config':str(profile), 'lighting':read(profile)['lighting']},
-                  'approval_provenance':provenance, 'preparation_selection':str(selection_path), 'revision':revision}
+                  'approval_provenance':provenance, 'preparation_selection':str(selection_path),
+                  'parent_geometry_revision':parent_revision, 'revision':revision}
     decision = {'asset_id':asset_id, 'scope':'geometry', 'decision':'approved',
                 'exact_user_text':approval['exact_text'], 'revision_sha256':revision['sha256'],
                 'approval_provenance':provenance}

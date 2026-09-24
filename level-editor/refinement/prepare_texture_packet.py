@@ -20,7 +20,7 @@ from review_evidence import bind_decision, load_decisions, sha
 from source_review_resolution import apply_generation_gate
 
 
-def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=False, endpoint=None, revealed=False, reconstruction_report=None):
+def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=False, endpoint=None, revealed=False, reconstruction_report=None, check_only_atlas_size=None):
     manifest_path = Path(manifest_path).resolve(strict=True)
     data = json.loads(manifest_path.read_text())
     matches = [i for i in data['items'] if i['id'] == asset_id]
@@ -90,6 +90,8 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
         if bound_files.get(str(path)) != sha(path):
             raise ValueError('Preparation artifact is absent from approved evidence: ' + str(path))
         return path
+    if item.get('parent_geometry_revision') and not item.get('preparation_selection'):
+        raise ValueError('Parent geometry identity requires a bound preparation selection')
     if item.get('preparation_selection'):
         selection = json.loads(bound_file(item['preparation_selection']).read_text())
         if any(item.get(key) != value for key, value in selection.items()):
@@ -127,8 +129,16 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
         raise ValueError('Frozen camera tile dimensions must be positive integers')
     canvas = (width * 4, height * 2)
     cw, ch = canvas
-    if (cw % 16 or ch % 16 or max(canvas) > 3840 or max(canvas) / min(canvas) > 3
-            or not 655360 <= cw * ch <= 8294400):
+    transport_size = canvas
+    if check_only_atlas_size is not None:
+        if not check_only:
+            raise ValueError('Atlas canvas override is valid only for check-only validation')
+        if len(check_only_atlas_size) != 2 or any(isinstance(v, bool) or not isinstance(v, int) or v <= 0 for v in check_only_atlas_size):
+            raise ValueError('Atlas canvas dimensions must be positive integers')
+        transport_size = tuple(check_only_atlas_size)
+    tw, th = transport_size
+    if (tw % 16 or th % 16 or max(transport_size) > 3840 or max(transport_size) / min(transport_size) > 3
+            or not 655360 <= tw * th <= 8294400):
         raise ValueError('Approved canvas is outside Sunburst custom-size constraints; never rescale')
     for path in (Path(item['textured']), Path(item['solid'])):
         with Image.open(path) as image:
@@ -204,7 +214,9 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
             shutil.copyfile(packet / 'views' / f'view-{index}-textured.png', output / input_name)
         mask.save(output / mask_name)
     mask_sheet.save(output / 'mask.png')
-    revision = item['revision']['sha256']
+    preparation_revision = item['revision']['sha256']
+    revision = item.get('parent_geometry_revision', preparation_revision)
+    frames['preparation_revision'] = preparation_revision
     frames['layout'].update(width=cw, height=ch)
     frames.update(reviewed_packet=str(packet), reviewed_manifest_sha256=sha(frames_path),
                   source_blend=str(output / 'approved-model.blend'), geometry_revision=revision,
@@ -225,7 +237,7 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     approval = {'status': 'approved', 'approved_by': 'user', 'asset_id': asset_id,
                 'scope': 'geometry; texture candidate generation only',
                 'exact_user_text': item['user_decision']['exact_user_text'],
-                'geometry_revision': revision, 'input_sha256': sha(output / 'input.png'),
+                'geometry_revision': revision, 'preparation_revision':preparation_revision, 'input_sha256': sha(output / 'input.png'),
                 'solid_sha256': sha(output / 'solid.png'), 'lighting_sha256': sha(output / 'solid.png'),
                 'saved_model_sha256': sha(output / 'approved-model.blend'),
                 'source_decision': item['user_decision'], 'texture_approval': 'pending'}

@@ -99,6 +99,22 @@ class PreparationTests(unittest.TestCase):
         self.assertTrue(approval['derived_input']['known_and_background_rgba_preserved'])
         self.assertEqual(approval['review_state'],'revealed')
 
+    def test_bound_parent_identity_is_shared_but_preparation_revision_stays_exact(self):
+        self.add_bound_preparation()
+        parent='a'*64;selection=self.root/'selection.json'
+        selection.write_text(json.dumps({'parent_geometry_revision':parent}))
+        self.item.update(parent_geometry_revision=parent,preparation_selection=str(selection))
+        self.item['revision']['evidence']['selection']={'path':str(selection),'sha256':sha(selection)}
+        identity={'asset_id':'fixture','model_sha256':sha(self.root/'model.blend'),
+                  'evidence':{k:v['sha256'] for k,v in self.item['revision']['evidence'].items()}}
+        self.item['revision']['sha256']=hashlib.sha256(json.dumps(identity,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        self.save();record(self.manifest,['fixture'],'Explicit shared parent geometry approval')
+        prepare(self.manifest,'fixture',self.root/'parent')
+        approval=json.loads((self.root/'parent/approval.json').read_text())
+        self.assertEqual(approval['geometry_revision'],parent)
+        self.assertEqual(approval['preparation_revision'],self.item['revision']['sha256'])
+        self.assertNotEqual(approval['geometry_revision'],approval['preparation_revision'])
+
     def test_changed_supplemental_view_rejected(self):
         _,paths=self.add_bound_preparation();Path(paths[0]).write_bytes(b'changed')
         with self.assertRaises(ValueError):prepare(self.manifest,'fixture',self.root/'bad-light')
@@ -174,6 +190,15 @@ class InvalidCanvas(unittest.TestCase):
             prepare(self.manifest,'fixture',self.root/'blocked')
         self.assertFalse((self.root/'blocked').exists())
 
+    def test_atlas_check_only_validates_new_canvas_without_resizing_original(self):
+        before=sha(self.packet/'textured.png')
+        result=prepare(self.manifest,'fixture',self.root/'check',check_only=True,check_only_atlas_size=(2304,3520))
+        self.assertEqual(result['status'],'eligible');self.assertEqual(sha(self.packet/'textured.png'),before)
+        self.assertFalse((self.root/'check').exists())
+        with self.assertRaisesRegex(ValueError,'only for check-only'):
+            prepare(self.manifest,'fixture',self.root/'bad',check_only_atlas_size=(2304,3520))
+        with self.assertRaisesRegex(ValueError,'custom-size'):
+            prepare(self.manifest,'fixture',self.root/'bad2',check_only=True,check_only_atlas_size=(128,128))
 
 
 class EndpointPreparationTests(unittest.TestCase):
