@@ -18,6 +18,13 @@ def main():
  final='--final' in sys.argv
  new=WORK/'round-34/assets'/asset if final else WORK/'texture-generation/projection-corrections'/asset
  c=json.loads((old/'workspace.json').read_text())
+ if '--audit-only' in sys.argv:
+  (new/'inspection').mkdir(exist_ok=True)
+  from restore_foreign_uv_schema import restore_foreign_uv_schema
+  restore_foreign_uv_schema(new,apply=True)
+  from audit_stored_materials import run
+  run(new,new/'inspection/stored-materials',render=True,export=False)
+  return
  if not new.exists():
   if '--geometry-only' in sys.argv:raise ValueError('Prepare the workspace under a render lease before using geometry-only mode')
   mask_source=old/'source-masks.json'
@@ -74,6 +81,7 @@ def main():
  bpy.ops.wm.save_as_mainfile(filepath=str(new/'model.blend'))
  if '--geometry-only' in sys.argv:return
  rw.modified(new)
+ (new/'inspection').mkdir(exist_ok=True)
  from restore_foreign_uv_schema import restore_foreign_uv_schema
  restore_foreign_uv_schema(new,apply=True)
  from audit_stored_materials import run
