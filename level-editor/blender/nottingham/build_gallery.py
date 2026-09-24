@@ -367,7 +367,7 @@ def supplemental_packet(directory, asset_id, framing, *, mask_origin=None):
 def main(argv=None):
     root = Path(__file__).resolve().parents[2] / "work/nottingham-refinement"
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--catalog", type=Path, default=root / "grouping/catalog-v13.json")
+    parser.add_argument("--catalog", type=Path, default=root / "grouping/catalog-v15.json")
     parser.add_argument("--assets", type=Path, default=root / "round-1/assets")
     parser.add_argument("--output", type=Path, default=root / "gallery")
     parser.add_argument('--workspace-map', type=Path, default=root / 'workspace-overrides.json',
