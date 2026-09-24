@@ -7,7 +7,9 @@ import numpy as np
 root=Path(__file__).resolve().parents[3]/'level-editor/work/nottingham-refinement'
 sys.path.insert(0,str(Path(__file__).parent))
 from render_slots import acquire
-acquire()
+# This opt-in audit performs only CPU ray intersections and image reads.
+if '--no-render-lease' not in sys.argv:
+ acquire()
 from freeze_tooling import select_tooling
 select_tooling(root/'tooling/94116d984f92dbae')
 from refinement_review import _tree

@@ -4,7 +4,7 @@ from pathlib import Path
 from mathutils import Vector
 from mathutils.bvhtree import BVHTree
 from PIL import Image,ImageDraw
-ROOT=Path(__file__).resolve().parents[3];W=ROOT/'level-editor/work/nottingham-refinement';A='nottingham-village-dovecote';out=W/'round-48/assets'/A
+ROOT=Path(__file__).resolve().parents[3];W=ROOT/'level-editor/work/nottingham-refinement';A='nottingham-village-dovecote';out=W/'round-50/assets'/A
 S=math.sin(math.radians(35));C=math.cos(math.radians(35));toward=Vector((0,-C,S));snapshots={}
 def tree(path,roof_only=False):
  bpy.ops.wm.open_mainfile(filepath=str(path));bpy.context.view_layer.update();vs=[];ts=[];owners=[]
@@ -28,9 +28,11 @@ def main():
  for a,b,c in rt:
   q=[weld[a],weld[b],weld[c]];degenerate+=int(len(set(q))<3 or (rv[b]-rv[a]).cross(rv[c]-rv[a]).length<1e-8)
   for a,b in zip(q,q[1:]+q[:1]):edges[tuple(sorted((a,b)))]+=1
- roof_topology=dict(triangles=len(rt),degenerate_triangles=degenerate,nonmanifold_edges=sum(n!=2 for n in edges.values()),weld_tolerance=.002)
+ assert max(p.z for p in rv)<=240.671
+ assert min((p-Vector((2113.12,-5380.54,240.67))).length for p in rv)<.001
+ roof_topology=dict(apex_preserved=True,maximum_world_z=max(p.z for p in rv),triangles=len(rt),degenerate_triangles=degenerate,nonmanifold_edges=sum(n!=2 for n in edges.values()),weld_tolerance=.002)
  assert not degenerate and not roof_topology['nonmanifold_edges'],roof_topology
- invp=Path(json.loads((out/'source-masks.json').read_text())['mask_inventory']);inv=json.loads(invp.read_text());r=next(r for r in inv['masks']if r['index']==260);native=Image.new('L',(2304,3520));native.paste(Image.open(invp.parent/r['png']).convert('L'),tuple(r['box_top_left'][:2]));mask=Image.open(W/'dovecote-projection-audit/wall-authority-v5/painted-masonry-native260.png').convert('L');counts={};misses=[];changed=[]
+ invp=Path(json.loads((out/'source-masks.json').read_text())['mask_inventory']);inv=json.loads(invp.read_text());r=next(r for r in inv['masks']if r['index']==260);native=Image.new('L',(2304,3520));native.paste(Image.open(invp.parent/r['png']).convert('L'),tuple(r['box_top_left'][:2]));mask=Image.open(W/'dovecote-projection-audit/wall-authority-v7/painted-masonry-native260.png').convert('L');counts={};misses=[];changed=[]
  for y in range(2850,3180):
   for x in range(2000,2230):
    if not native.getpixel((x,y)):continue
@@ -64,4 +66,25 @@ def main():
   if o.type=='MESH' and (o.get('asset_group')!=A or o.get('source_node')not in [f'building-{i}'for i in range(293,302)]):o.hide_render=True
  bpy.context.view_layer.update();render('nottingham Working',(2000,2850,2230,3190),out/'inspection/actual-source-materials.png')
  source=Image.open(out/'reference/source.png').convert('RGB').crop((2000,2850,2230,3190));actual=Image.open(out/'inspection/actual-source-materials.png').convert('RGB');pair=Image.new('RGB',(460,340));pair.paste(source,(0,0));pair.paste(actual,(230,0));pair.resize((920,680),Image.Resampling.NEAREST).save(out/'inspection/source-comparison.png')
-if __name__=='__main__':main()
+def full_native():
+ vs,ts,owners=tree(out/'model.blend');mesh=BVHTree.FromPolygons(vs,ts,all_triangles=True);ip=Path(json.loads((out/'source-masks.json').read_text())['mask_inventory']);r=next(r for r in json.loads(ip.read_text())['masks']if r['index']==260);mask=Image.open(ip.parent/r['png']).convert('L');ox,oy=r['box_top_left'][:2];missing=[];counts={};native_count=0
+ for y in range(mask.height):
+  for x in range(mask.width):
+   if not mask.getpixel((x,y)):continue
+   native_count+=1;hit,n,i,d=cast(mesh,x+ox+.5,y+oy+.5)
+   if i is None:missing.append([x+ox,y+oy])
+   else:counts[owners[i]]=counts.get(owners[i],0)+1
+ source=Image.open(out/'reference/source.png').convert('RGB');marked=source.copy();draw=ImageDraw.Draw(marked)
+ for x,y in missing:draw.point((x,y),fill='magenta')
+ box=(2000,2850,2230,3200);pair=Image.new('RGB',(460,350));pair.paste(source.crop(box),(0,0));pair.paste(marked.crop(box),(230,0));pair.resize((920,700),Image.Resampling.NEAREST).save(out/'inspection/full-native-domain-rejections.png')
+ from PIL import ImageFilter,ImageChops
+ roof=BVHTree.FromPolygons(vs,[t for t,o in zip(ts,owners)if o in [f'building-{i}'for i in range(294,300)]],all_triangles=True);silhouette=Image.new('L',(230,350));sd=ImageDraw.Draw(silhouette)
+ for y in range(2850,3200):
+  for x in range(2000,2230):
+   if cast(roof,x+.5,y+.5)[2]is not None:sd.point((x-2000,y-2850),fill=255)
+ edge=ImageChops.subtract(silhouette,silhouette.filter(ImageFilter.MinFilter(3)));overlay=source.crop(box);overlay.paste((0,255,255),(0,0),edge);pair=Image.new('RGB',(460,350));pair.paste(source.crop(box),(0,0));pair.paste(overlay,(230,0));pair.resize((920,700),Image.Resampling.NEAREST).save(out/'inspection/actual-roof-silhouette.png')
+ report=dict(model_sha256=hashlib.sha256((out/'model.blend').read_bytes()).hexdigest(),native_index=260,native_positive_pixels=native_count,receiver_counts=counts,no_receiver_pixels=missing,domain='Every positive pixel of native260, including its complete recorded bounding box; independent of revised acceptance mask.')
+ (out/'inspection/full-native-domain-rejections.json').write_text(json.dumps(report,indent=2)+'\n');print('FULL_NATIVE',native_count,len(missing),counts)
+if __name__=='__main__':
+ if '--full-native'in sys.argv:full_native()
+ else:main()
