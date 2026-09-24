@@ -80,11 +80,19 @@ def run(canonical, target, output):
         entries=[entry for layer in validation['layers'] for entry in layer['objects']]
         if not all(entry.get('texel_provenance',{}).get('packed_image_sha256') for entry in entries):
             replay=experiment/'provenance-replay-v2'
-            if not (replay/'report.json').exists():
-                from project_reviewed_texture import apply
-                load(experiment/'approved-model.blend',manifest)
-                apply(experiment/'views.json', validation['generated_image'], replay,
-                      texels_per_unit=2,reconciliation_reference=validation.get('reconciliation_reference'))
+            import fcntl
+            with (experiment/'provenance-replay-v2.lock').open('a+') as replay_lock:
+                try:
+                    fcntl.flock(replay_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+                except BlockingIOError as error:
+                    raise ValueError('Canonical provenance replay is already running; retry after it finishes') from error
+                if not (replay/'report.json').exists():
+                    if replay.exists():
+                        raise ValueError('Incomplete provenance replay exists; inspect before retrying')
+                    from project_reviewed_texture import apply
+                    load(experiment/'approved-model.blend',manifest)
+                    apply(experiment/'views.json', validation['generated_image'], replay,
+                          texels_per_unit=2,reconciliation_reference=validation.get('reconciliation_reference'))
             replay_report=json.loads((replay/'report.json').read_text())
             if replay_report['generated_sha256']!=validation['generated_sha256'] or replay_report['input_sha256']!=validation['input_sha256']:
                 raise ValueError('Provenance replay input mismatch')
