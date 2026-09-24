@@ -53,9 +53,30 @@ export class TextureDisplay {
   }
 
   apply(root: THREE.Object3D, maxAnisotropy = 1) {
+    // Authored room floors sit just above retained floor shells. Their narrow
+    // separation can lose the depth test in the editor's full-map projection.
+    const roomFloor = (object: THREE.Object3D) =>
+      object.userData.reveal_component_role === "interior-floor" &&
+      /^patch-\d+-room-floor$/.test(object.userData.projection_component ?? "");
+    const unrelated = new Set<THREE.Material>();
+    root.traverse(object => {
+      if (!(object instanceof THREE.Mesh) || roomFloor(object)) return;
+      for (const material of Array.isArray(object.material) ? object.material : [object.material])
+        unrelated.add(material);
+    });
     const textures = new Set<THREE.Texture>();
     root.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
+      if (roomFloor(object)) {
+        const offset = (material: THREE.Material) => {
+          const target = unrelated.has(material) ? material.clone() : material;
+          target.polygonOffset = true;
+          target.polygonOffsetFactor = -2;
+          target.polygonOffsetUnits = -2;
+          return target;
+        };
+        object.material = Array.isArray(object.material) ? object.material.map(offset) : offset(object.material);
+      }
       for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
         if (material.userData.foliage_physical_opacity === true && !object.geometry.getAttribute("color"))
           throw new Error(`Foliage mesh ${object.name} is missing its separate ownership COLOR_0 attribute`);

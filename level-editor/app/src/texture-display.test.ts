@@ -98,3 +98,30 @@ test("foliage shader variants do not share a program when reverse evidence diffe
   display.material(neutral); display.material(generated);
   assert.notEqual(neutral.customProgramCacheKey(), generated.customProgramCacheKey());
 });
+
+
+test("authored room floors keep depth priority without changing shared wall materials", () => {
+  const texture = new THREE.Texture();
+  const original = new THREE.MeshBasicMaterial({ map: texture });
+  const geometry = new THREE.PlaneGeometry();
+  const floor = new THREE.Mesh(geometry, original);
+  floor.userData = { reveal_component_role: "interior-floor", projection_component: "patch-006-room-floor" };
+  const wall = new THREE.Mesh(geometry, original);
+  const walkway = new THREE.Mesh(geometry, original);
+  walkway.userData = { reveal_component_role: "interior-floor", projection_component: "walkway" };
+  const mislabeled = new THREE.Mesh(geometry, original);
+  mislabeled.userData = { reveal_component_role: "retained-shell", projection_component: "patch-005-room-floor" };
+  const root = new THREE.Group(); root.add(floor, wall, walkway, mislabeled);
+  const display = new TextureDisplay(); display.apply(root);
+  assert.notEqual(floor.material, original);
+  assert.equal(floor.material.polygonOffset, true);
+  assert.equal(floor.material.polygonOffsetFactor, -2);
+  assert.equal(floor.material.polygonOffsetUnits, -2);
+  assert.equal(floor.material.map, texture);
+  assert.equal(floor.geometry, geometry);
+  assert.equal(original.polygonOffset, false);
+  for (const mesh of [wall, walkway, mislabeled]) assert.equal(mesh.material, original);
+  const configured = floor.material;
+  display.apply(root);
+  assert.equal(floor.material, configured);
+});
