@@ -65,7 +65,7 @@ def prepare(experiment, labels):
             'protected_faces': sum(map(len, protected.values()))}
 
 
-def bake(experiment, output, source_blend=None):
+def bake(experiment, output, source_blend=None, generation_directory=None):
     experiment, output = Path(experiment).resolve(), Path(output).resolve()
     manifest_path = experiment / 'views-scoped.json'
     manifest = json.loads(manifest_path.read_text())
@@ -75,7 +75,8 @@ def bake(experiment, output, source_blend=None):
                                   displayed_names=manifest['texture_receiver_object_names'])
     if selected != manifest['texture_receiver_face_indices']:
         raise ValueError('Material ownership differs from the approved polygon scope')
-    generation = experiment / 'generation-short-no-mask-with-lighting'
+    generation = (Path(generation_directory).resolve() if generation_directory else
+                  experiment / 'generation-short-no-mask-with-lighting')
     source_sha = digest(source)
     original = original_layers(manifest)
     stage(manifest_path, generation / 'generated-preserved.png', output,
