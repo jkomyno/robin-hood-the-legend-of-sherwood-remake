@@ -6,6 +6,7 @@ if _refinement_legacy not in _refinement_sys.path:
     _refinement_sys.path.append(_refinement_legacy)
 
 import json
+import hashlib
 from pathlib import Path
 import struct
 import sys
@@ -23,6 +24,55 @@ def gltf(path):
         return json.loads(handle.read(length))
 
 
+def verify_static_inventory(asset_id, descriptor, models, owned, imports, proof):
+    """Bind disjoint endpoint exports to content-verified original workers."""
+    primary = next((item for item in imports if item['asset_id'] == asset_id), None)
+    if primary is None or primary.get('endpoint_id') != 'initial':
+        raise ValueError('Static endpoints require an approved initial handoff')
+    reviewed = {'initial': primary, **{s['endpoint_id']: s for s in primary.get('texture_states', [])
+                                     if s.get('endpoint_id')}}
+    variants = descriptor['state_variants']
+    if set(reviewed) != {'initial', 'applied'} or set(variants) != set(reviewed):
+        raise ValueError('Static endpoint inventory differs from reviewed pair')
+    if proof.get('status') != 'PASS':
+        raise ValueError('Static assets require completed independent content verification')
+    union = set()
+    for state, variant in variants.items():
+        records = [r for r in proof.get('static_variants', []) if r['asset_id'] == asset_id and r['state'] == state]
+        if len(records) != 1 or records[0].get('status') != 'PASS':
+            raise ValueError('Static endpoint lacks independent reviewed-worker comparison')
+        record = records[0]
+        if record.get('reviewed_source_blend_sha256') != reviewed[state]['blend_sha256']:
+            raise ValueError('Static endpoint proof names a different reviewed worker')
+        exact = set(record['reviewed_source_nodes'])
+        if not exact or not record.get('reviewed_worker_reexport_matches'):
+            raise ValueError('Static endpoint lacks exact reviewed native ownership/export proof')
+        components = variant['components']
+        if ({c['source_node'] for c in components} != exact or
+                {p['node'] for p in variant['parts']} != exact or len(components) != record['meshes']):
+            raise ValueError('Static descriptor differs from reviewed endpoint ownership: ' + asset_id + ' ' + state)
+        model = models[state]
+        canonical = [n['name'] for n in model['nodes'] if n.get('name', '').startswith(('mission-', 'building-'))]
+        if len(canonical) != len(exact) or set(canonical) != exact:
+            raise ValueError('Static GLB differs from exact reviewed endpoint ownership: ' + asset_id + ' ' + state)
+        if len([n for n in model['nodes'] if 'mesh' in n]) != len(components):
+            raise ValueError('Static endpoint component count differs')
+        forbidden = {'drawbridge_hinge_matrix', 'drawbridge_pose_angles_degrees', 'drawbridge_pose',
+                     'drawbridge_patch_id', 'native_patch', 'native_patch_preview',
+                     'reveal_hide_when_applied', 'reveal_show_when_applied', 'reveal_material_states',
+                     'reveal_material_patch', 'reveal_material_state', 'reveal_patch_ids', 'reveal_component_patch_id'}
+        if model.get('animations') or any(forbidden & set(n.get('extras', {})) for n in model['nodes']):
+            raise ValueError('Standalone static endpoint carries animation/native-map binding')
+        union |= exact
+    initial = variants['initial']
+    if (descriptor['model'] != initial['model'] or descriptor['parts'] != initial['parts']
+            or descriptor['components'] != initial['components']):
+        raise ValueError('Primary standalone descriptor is not the isolated reviewed initial endpoint')
+    if union != owned:
+        raise ValueError('Union of reviewed endpoints differs from canonical catalog ownership')
+    return union
+
+
 def verify(directory,catalog_path):
     directory=Path(directory)
     catalog=json.loads(Path(catalog_path).read_text())
@@ -30,6 +80,8 @@ def verify(directory,catalog_path):
     index=json.loads((directory/'assets/index.json').read_text())
     expected={g['id']:g for g in catalog['groups']}
     plan=json.loads(Path(stage['plan']).read_text()) if stage.get('plan') else {}
+    proof_path=directory/'handoff-verification.json'
+    proof=json.loads(proof_path.read_text()) if proof_path.exists() else {}
     selected=set(plan.get('export_asset_ids',expected))
     ground_ids={item['asset_id'] for item in plan.get('imports',[]) if item.get('source_nodes')==['ground']}
     if selected-set(expected)-ground_ids:raise ValueError('Export subset contains unknown assets')
@@ -43,23 +95,19 @@ def verify(directory,catalog_path):
         actual={c['source_node'] for c in descriptor['components']}
         if asset['id'] in ground_ids and (descriptor.get('parts')!=[] or descriptor.get('editor_usage')!='map-background' or asset.get('editor_usage')!='map-background'):
             raise ValueError('Ground must declare map-background capability without obstacle parts')
+        model=gltf(directory/'assets'/asset['model'])
+        if descriptor.get('state_variants'):
+            models={state:gltf(directory/'assets'/Path(asset['descriptor']).parent/variant['model'])
+                    for state,variant in descriptor['state_variants'].items()}
+            actual=verify_static_inventory(asset['id'],descriptor,models,owned,plan.get('imports',[]),proof)
+            for state,variant in descriptor['state_variants'].items():
+                record=next(r for r in proof['static_variants'] if r['asset_id']==asset['id'] and r['state']==state)
+                model_path=directory/'assets'/Path(asset['descriptor']).parent/variant['model']
+                if hashlib.sha256(model_path.read_bytes()).hexdigest()!=record['model_sha256']:
+                    raise ValueError('Static endpoint changed after independent content verification')
         if owned!=actual or nodes & actual:
             raise ValueError('Standalone canonical ownership differs: '+asset['id'])
         nodes |= actual
-        model=gltf(directory/'assets'/asset['model'])
-        for state, variant in descriptor.get('state_variants', {}).items():
-            variant_model=gltf(directory/'assets'/Path(asset['descriptor']).parent/variant['model'])
-            mission_nodes=[n for n in variant_model['nodes'] if n.get('name','').startswith(('mission-','building-'))]
-            variant_components=variant.get('components',descriptor['components'])
-            variant_owned={c['source_node'] for c in variant_components}
-            if {n['name'] for n in mission_nodes} != variant_owned or not variant_owned <= owned:
-                raise ValueError('Static variant canonical ownership differs: '+asset['id'])
-            for node in variant_model['nodes']:
-                extras=node.get('extras',{})
-                if any(k in extras for k in ('drawbridge_hinge_matrix','drawbridge_pose_angles_degrees','drawbridge_pose','native_patch_preview')):
-                    raise ValueError('Standalone static endpoint carries animation/native-map binding')
-            if len([n for n in variant_model['nodes'] if 'mesh' in n]) != len(variant_components):
-                raise ValueError('Static endpoint component count differs')
         materials=model.get('materials',[])
         generated_materials=[m for m in materials if m.get('extras',{}).get('generated_source_sha256')]
         asset_material_coverage.append({'asset_id':asset['id'],'material_count':len(materials),

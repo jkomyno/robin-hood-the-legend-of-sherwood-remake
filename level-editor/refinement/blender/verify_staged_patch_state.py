@@ -114,6 +114,7 @@ def verify_reviewed_states(stage, item, bindings, collection):
         drift = compare_handoff(reference, actual, reviewed_state=True)
         reports.append({'asset_id': item['asset_id'], 'id': binding['id'], 'status': 'PASS',
                         'source_blend_sha256': source['blend_sha256'], 'meshes': len(actual),
+                        'reviewed_source_nodes': sorted({r['source'] for r in reference}),
                         'applied_patches': binding['applied_patches'],
                         'maximum_world_coordinate_drift': drift,
                         'comparison': 'Exact topology, assigned material graphs, packed image bytes and every UV layer; independently activated visible mesh inventory.'})
@@ -130,15 +131,18 @@ def verify_static_variants(plan, stage):
         raise ValueError('Static endpoint coverage differs from publication plan')
     for item in plan['imports']:
         endpoint_states = {s['endpoint_id'] for s in item.get('texture_states', []) if s.get('endpoint_id')}
+        if item.get('endpoint_id'):
+            endpoint_states.add(item['endpoint_id'])
         if endpoint_states != {state for asset, state in expected if asset == item['asset_id']}:
             raise ValueError('Approved secondary endpoint was not exported: ' + item['asset_id'])
     for (asset_id, state), source in expected.items():
         report = actual[(asset_id, state)]
         approved = next(item for item in plan['imports'] if item['asset_id'] == asset_id)
-        child = next((s for s in approved.get('texture_states', []) if s.get('endpoint_id') == state), None)
-        if child is not None and (source['blend_path'], source['blend_sha256']) != (child['blend_path'], child['blend_sha256']):
+        child = (approved if approved.get('endpoint_id') == state else
+                 next((s for s in approved.get('texture_states', []) if s.get('endpoint_id') == state), None))
+        if child is None or (source['blend_path'], source['blend_sha256']) != (child['blend_path'], child['blend_sha256']):
             raise ValueError('Static variant substituted an unreviewed endpoint')
-        reference = _reference(child or source)
+        reference = _reference(child)
         if (report['source_blend'], report['source_blend_sha256']) != (source['blend_path'], source['blend_sha256']):
             raise ValueError('Static endpoint source binding changed')
         if _sha(report['worker']) != report['worker_sha256'] or _sha(report['model']) != report['model_sha256']:
@@ -161,6 +165,8 @@ def verify_static_variants(plan, stage):
             raise ValueError('Static endpoint exported bytes differ from verified reviewed worker: ' + asset_id)
         reports.append({'asset_id': asset_id, 'state': state, 'status': 'PASS',
                         'meshes': len(records), 'maximum_world_coordinate_drift': drift,
+                        'reviewed_source_nodes': sorted({r['source'] for r in reference}),
+                        'reviewed_source_blend_sha256': child['blend_sha256'],
                         'reviewed_worker_reexport_matches': True,
                         'reference_export': str(reference_model),
                         'worker_sha256': report['worker_sha256'], 'model_sha256': report['model_sha256']})
