@@ -112,6 +112,10 @@ export interface BakeOptions {
 
 /** Obstacle reconstruction cannot reproduce independently imported GLB meshes. */
 export function assertReconstructedBakeSources(document: unknown): void {
+  if (document !== null && typeof document === "object" && "splines" in document &&
+      Array.isArray(document.splines) && document.splines.length)
+    throw new Error("Game baking does not yet support spline geometry; save the editor document instead.");
+
   if (document !== null && typeof document === "object" && "objects" in document &&
       Array.isArray(document.objects) && document.objects.some(part => part?.kind === "mission")) {
     throw new Error("Game baking does not yet support supplemental mission models; save the editor document instead.");

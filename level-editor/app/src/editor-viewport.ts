@@ -1,3 +1,4 @@
+import { SplineLayer, type SplineEditMode } from "./spline-layer.ts";
 import type { ExternalAssetSource } from "@rle/shared";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -235,6 +236,8 @@ export class EditorViewport {
   private readonly mapRoot = new THREE.Group();
   private readonly objectsRoot = new THREE.Group();
   private readonly overlayRoot = new THREE.Group();
+  private readonly splines = new SplineLayer();
+  private splineMode: SplineEditMode | null = null;
   private readonly partViews = new Map<string, View>();
   private readonly groupViews = new Map<string, View>();
   private readonly sourceNodes = new Map<string, THREE.Object3D>();
@@ -262,7 +265,7 @@ export class EditorViewport {
     this.scene.background = new THREE.Color(0x1c1c1c);
     this.mapRoot.quaternion.set(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
     this.scene.add(this.mapRoot);
-    this.mapRoot.add(this.objectsRoot, this.overlayRoot);
+    this.mapRoot.add(this.objectsRoot, this.overlayRoot, this.splines.root);
     this.selectionBox.visible = false;
     this.scene.add(this.selectionBox);
   }
@@ -347,6 +350,8 @@ export class EditorViewport {
     tick();
   }
   private retireMap() {
+    this.splineMode = null;
+    this.splines.clear();
     this.cancelPointerGesture?.();
     this.replaceEntities(null);
     this.flight = null;
@@ -414,6 +419,7 @@ export class EditorViewport {
       RIGHT: null as unknown as THREE.MOUSE,
     };
     this.setupCursorOrbit(this.renderer.domElement);
+    this.setupSplineInteraction(this.renderer.domElement);
     this.gizmo = this.ownControl(
       new TransformControls(this.camera, this.renderer.domElement),
     );
@@ -454,7 +460,7 @@ export class EditorViewport {
         const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]);
         downAt = null;
         if (moved > 4 || this.dragging) return;
-        this.pick(e, e.altKey);
+        if (!this.splineMode) this.pick(e, e.altKey);
       },
       { signal: this.listeners.signal },
     );
@@ -731,6 +737,7 @@ export class EditorViewport {
     const box = new THREE.Box3();
     if (this.groundNode) box.expandByObject(this.groundNode);
     box.expandByObject(this.objectsRoot);
+    box.expandByObject(this.splines.root);
     return box;
   }
 
@@ -800,6 +807,7 @@ export class EditorViewport {
   }
 
   syncViews(d: Level3D) {
+    this.splines.sync(d.splines ?? [], d.camera, this.sourceNodes);
     const aliveGroups = new Set<string>();
     for (const g of d.groups) {
       aliveGroups.add(g.id);
@@ -917,6 +925,56 @@ export class EditorViewport {
     this.bindings.commitTransform({ ...t, dx, dy, dz });
   }
 
+  setSplineEdit(mode: SplineEditMode | null) {
+    if (mode && !this.splineMode) this.select(null);
+    this.splineMode = mode;
+    this.splines.setMode(mode);
+  }
+
+  private setupSplineInteraction(canvas: HTMLCanvasElement) {
+    let gesture: { mode: SplineEditMode; index: number | null; point: Vec3; pointer: number } | null = null;
+    const consume = (event: PointerEvent) => { event.preventDefault(); event.stopImmediatePropagation(); };
+    canvas.addEventListener("pointerdown", event => {
+      const mode = this.splineMode;
+      if (!mode || event.button !== 0) return;
+      const point = this.assetDropPosition(event.clientX, event.clientY);
+      if (!point) return;
+      const index = this.splines.hitHandle(this.raycaster);
+      if (!mode.drawing && index === null) return;
+      consume(event);
+      gesture = { mode, index, point, pointer: event.pointerId };
+      if (index !== null) mode.selectPoint(index);
+      canvas.setPointerCapture(event.pointerId);
+      if (this.orbit) this.orbit.enabled = false;
+    }, { capture: true, signal: this.listeners.signal });
+    canvas.addEventListener("pointermove", event => {
+      if (!gesture || gesture.pointer !== event.pointerId) return;
+      consume(event);
+      const point = this.assetDropPosition(event.clientX, event.clientY);
+      if (!point) return;
+      gesture.point = point;
+      if (gesture.index !== null) {
+        const points = gesture.mode.path.points.map((p, i) => i === gesture!.index ? point : p);
+        this.splines.showPreview({ ...gesture.mode.path, points });
+      }
+    }, { capture: true, signal: this.listeners.signal });
+    const finish = (event: PointerEvent) => {
+      if (!gesture || gesture.pointer !== event.pointerId) return;
+      consume(event);
+      const active = gesture;
+      gesture = null;
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+      if (this.orbit) this.orbit.enabled = true;
+      if (event.type === "pointerup" && this.splineMode?.path.id === active.mode.path.id) {
+        if (active.index === null) active.mode.append(active.point);
+        else active.mode.move(active.index, active.point);
+      }
+      this.splines.setMode(this.splineMode);
+    };
+    canvas.addEventListener("pointerup", finish, { capture: true, signal: this.listeners.signal });
+    canvas.addEventListener("pointercancel", finish, { capture: true, signal: this.listeners.signal });
+  }
+
   /** Locate the drop on visible terrain, falling back to the map ground plane. */
   assetDropPosition(clientX: number, clientY: number): Vec3 | null {
     const document = this.bindings.document();
@@ -930,9 +988,17 @@ export class EditorViewport {
     const hit = this.groundNode
       ? this.raycaster.intersectObject(this.groundNode, true).find(hit => isEffectivelyVisible(hit.object))
       : undefined;
-    const point = hit?.point ?? this.raycaster.ray.intersectPlane(
-      new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3());
-    return point ? sceneToGame(document.camera, [point.x, -point.z, point.y]) : null;
+    let point = hit?.point ?? null;
+    if (!point) {
+      const ray = this.raycaster.ray;
+      if (Math.abs(ray.direction.y) < 1e-8) return null;
+      const distance = -ray.origin.y / ray.direction.y;
+      // Orthographic views use a signed near plane: lower-screen rays can
+      // begin below the ground while the ground remains inside the view volume.
+      if (distance < 0 && !(this.activeCamera() instanceof THREE.OrthographicCamera)) return null;
+      point = ray.at(distance, new THREE.Vector3());
+    }
+    return sceneToGame(document.camera, [point.x, -point.z, point.y]);
   }
 
   private pick(e: PointerEvent, partOnly: boolean) {

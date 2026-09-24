@@ -307,6 +307,7 @@ export function parseProtoLevel(value: unknown): ProtoLevel {
 
 export function parseSceneDoc(value: unknown): SceneDoc {
   const d = base(value, "scene");
+  if (d.standalone !== undefined) check(typeof d.standalone === "boolean", "scene.standalone", "expected boolean");
   array(d.placements, "scene.placements").forEach((p, i) => {
     object(p, "placement");
     text(p.asset, `placements[${i}].asset`);
@@ -444,6 +445,36 @@ export function parseLevel3D(
   for (const group of d.groups) if (group.states !== undefined) {
     const members = d.objects.filter((part: any) => part.group === group.id);
     validateAssetStates(group.states, new Map(members.map((part: any) => [part.id, !!part.hidden])), group.id);
+  }
+  const splineIds = new Set<string>();
+  if (d.splines !== undefined) for (const spline of array(d.splines, "splines")) {
+    object(spline, "spline");
+    text(spline.id, "spline.id");
+    text(spline.name, "spline.name");
+    check(!splineIds.has(spline.id), spline.id, "duplicate spline");
+    splineIds.add(spline.id);
+    check(spline.kind === "river" || spline.kind === "wall", spline.id, "invalid spline kind");
+    check(typeof spline.closed === "boolean", spline.id, "closed must be boolean");
+    finite(spline.width, "spline.width");
+    finite(spline.repeatLength, "spline.repeatLength");
+    check(spline.width > 0 && spline.repeatLength >= 1, spline.id, "invalid width or repeat length");
+    const points = array(spline.points, "spline.points");
+    check(points.length >= (spline.closed ? 3 : 2) && points.length <= 256, spline.id, "expected 2–256 control points (3 for closed paths)");
+    points.forEach((point, index) => {
+      tuple(point, 3, "spline.point");
+      if (index) check(Math.hypot(point[0] - points[index - 1][0], point[1] - points[index - 1][1]) > 0.01,
+        spline.id, "adjacent control points must differ");
+    });
+    if (spline.texture !== undefined) check(typeof spline.texture === "string" &&
+      /^data:image\/(png|jpeg|webp);base64,/.test(spline.texture), spline.id, "expected embedded PNG, JPEG or WebP tile");
+    if (spline.kind === "wall") {
+      check(assetIds.has(spline.asset), spline.id, "missing wall asset source");
+      check(spline.axis === "x" || spline.axis === "y", spline.id, "invalid source axis");
+      if (spline.sourceAngle !== undefined) finite(spline.sourceAngle, "spline.sourceAngle");
+      const start = spline.sourceStart ?? 0, end = spline.sourceEnd ?? 1;
+      finite(start, "spline.sourceStart"); finite(end, "spline.sourceEnd");
+      check(start >= 0 && end <= 1 && end - start >= 0.05, spline.id, "invalid source trim interval");
+    }
   }
   if (d.provenance !== undefined) {
     const p = object(d.provenance, "provenance");

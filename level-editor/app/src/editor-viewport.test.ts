@@ -511,3 +511,20 @@ test("asset drops convert the cursor's world ground hit to game coordinates", ()
   Object.assign(viewport, { renderer: null, orbit: null });
   viewport.dispose();
 });
+
+test("orthographic ground picking includes visible points behind the ray origin", () => {
+  const { viewport, publish } = fixture();
+  const document = documentFixture();
+  publish({ ...document, objects: [], groups: [] });
+  const camera = new THREE.OrthographicCamera(-100, 100, 100, -100, -10000, 10000);
+  camera.position.set(0, 10, 10);
+  camera.lookAt(0,0,0);
+  camera.updateMatrixWorld();
+  Object.assign(viewport, { camera, orbit: { target: new THREE.Vector3() }, renderer: { domElement: {
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 200, height: 200 }),
+  } } });
+  const position = viewport.assetDropPosition(100, 190);
+  assert.ok(position && position.every(Number.isFinite), "lower-screen visible ground must be pickable");
+  Object.assign(viewport, { renderer: null, orbit: null });
+  viewport.dispose();
+});

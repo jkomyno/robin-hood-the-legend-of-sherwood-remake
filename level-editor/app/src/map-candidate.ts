@@ -44,7 +44,7 @@ export async function prepareMapCandidate(
         `${name}-volumes.scene.json: source map is ${sceneDoc.map}`,
       );
     }
-    const lvl = idx ? await loadProtoLevel(idx, sceneDoc.map) : null;
+    const lvl = idx && !sceneDoc.standalone ? await loadProtoLevel(idx, sceneDoc.map) : null;
     const file = await (await dir.getFileHandle(glbName)).getFile();
     const bytes = await file.arrayBuffer();
     const provenance = await documentProvenance(lvl, bytes);

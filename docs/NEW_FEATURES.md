@@ -9,6 +9,15 @@ A list of which additional features we have added, which ones we might still wan
 
 ## Done
 
+- **3D spline authoring and Wychford.** Draw and reshape river ribbons and
+  battlement walls with viewport control points. River tiles repeat by arc
+  length; wall meshes are subdivided and bent in 3D with interpolated UVs.
+  Width, repeat length, closed paths, source alignment and end trimming are
+  editable. Paths participate in save/reload and undo/redo. The Wychford scene
+  generator assembles an original riverside market town from shared assets,
+  with editable river and bailey-wall paths. These are editor geometry;
+  collision/navigation and game baking are not generated for splines yet.
+
 - **Shared 3D editor asset library.** Browse published assets from every source
   level in one panel, with 3D previews that rotate on hover, tags, text search,
   and combined asset-type/source-level filters. Drag objects onto the scene's

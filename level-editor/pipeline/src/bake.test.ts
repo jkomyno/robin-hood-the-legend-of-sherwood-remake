@@ -21,3 +21,7 @@ test("existing reconstructed documents and absent optional documents remain supp
   assert.doesNotThrow(() => assertReconstructedBakeSources({ objects: [] }));
   assert.doesNotThrow(() => assertReconstructedBakeSources({ assetSources: [] }));
 });
+
+test("spline geometry cannot silently disappear during game baking", () => {
+  assert.throws(() => assertReconstructedBakeSources({ splines: [{ kind: "river" }] }), /spline geometry/);
+});

@@ -156,6 +156,50 @@ export async function checkSharedLibrary() {
     click("York");
     await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "York");
     assert(document.querySelectorAll(".object-list li").length > 1, "Saved cross-level asset failed to reload");
+    // Exercise actual viewport path handling. Synthetic pointer events cannot
+    // acquire native pointer capture, so the fixture supplies that browser API.
+    const drawingCanvas = document.querySelector(".editor-canvas canvas") as HTMLCanvasElement;
+    drawingCanvas.setPointerCapture = () => {};
+    drawingCanvas.hasPointerCapture = () => false;
+    const drawPoint = async (x: number, y: number) => {
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      const rect = drawingCanvas.getBoundingClientRect();
+      const init = { bubbles: true, cancelable: true, pointerId: 1, button: 0,
+        clientX: rect.left + rect.width * x, clientY: rect.top + rect.height * y };
+      drawingCanvas.dispatchEvent(new PointerEvent("pointerdown", init));
+      drawingCanvas.dispatchEvent(new PointerEvent("pointerup", init));
+      await new Promise(resolve => requestAnimationFrame(resolve));
+    };
+    click("Draw river");
+    await until(() => !!document.querySelector('input[aria-label="Path name"]'));
+    await drawPoint(0.25, 0.45);
+    await drawPoint(0.5, 0.5);
+    await drawPoint(0.75, 0.65);
+    click("Finish path");
+    await until(() => document.querySelectorAll(".spline-list button").length === 1);
+    click("Save *");
+    await until(() => ![...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Save *"));
+    const riverSaved = JSON.parse(await files.get("scenes/York.level3d.json")!.text());
+    assert(riverSaved.splines[0].points.length === 3, "River control points were not saved");
+    click("Undo");
+    await until(() => document.querySelectorAll(".spline-list button").length === 0);
+    click("Redo");
+    await until(() => document.querySelectorAll(".spline-list button").length === 1);
+    select("Wall path asset", "house");
+    click("Draw wall");
+    await until(() => document.querySelector('input[aria-label="Path name"]')?.getAttribute("value") === "Battlement wall" ||
+      (document.querySelector('input[aria-label="Path name"]') as HTMLInputElement)?.value === "Battlement wall");
+    await drawPoint(0.3, 0.7);
+    await drawPoint(0.55, 0.75);
+    click("Finish path");
+    await until(() => document.querySelectorAll(".spline-list button").length === 2);
+    click("Save *");
+    await until(() => ![...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Save *"));
+    click("Lincoln");
+    await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "Lincoln");
+    click("York");
+    await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "York");
+    assert(document.querySelectorAll(".spline-list button").length === 2, "River and wall paths failed to reload");
     assert(errors.length === 0, errors.join("\n"));
   } catch (error) {
     throw new Error(`${error}; errors: ${errors.join("; ")}; UI: ${document.querySelector("#root")?.textContent}`);

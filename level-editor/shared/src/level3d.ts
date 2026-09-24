@@ -61,6 +61,7 @@ export interface Level3DGroup {
 }
 
 export interface Level3D {
+  splines?: import("./splines.ts").LevelSpline[];
   /** Standalone models referenced by namespaced object nodes. */
   assetSources?: ExternalAssetSource[];
   provenance?: { source_sha256?: string; glb_sha256?: string };

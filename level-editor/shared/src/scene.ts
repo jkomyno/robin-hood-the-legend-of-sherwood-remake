@@ -98,6 +98,8 @@ export interface SceneGround {
 
 export interface SceneDoc {
   version: 1;
+  /** Authored scenes have no backing datadir level; the saved document supplies obstacles. */
+  standalone?: boolean;
   /** source map name as in the datadir */
   map: string;
   /** map size in pixels */

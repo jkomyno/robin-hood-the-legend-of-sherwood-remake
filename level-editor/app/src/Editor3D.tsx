@@ -34,6 +34,7 @@ import {
   patchGroup,
   type Selection,
 } from "./document-commands";
+import SplinePanel from "./SplinePanel";
 import AssetLibrary from "./AssetLibrary";
 import { ASSET_DRAG_TYPE } from "./asset-library";
 import { insertProjectionAsset } from "./asset-commands";
@@ -629,6 +630,8 @@ export default function Editor3D(props: EditorProps) {
             if (entry && placement) void addAsset(entry, placement);
           }} />
         <aside class="editor-panel">
+          <SplinePanel document={doc} library={() => props.library()?.handle ?? null} entries={assetEntries}
+            viewport={viewport} commit={pushHistory} onError={props.onError} />
           <section class="view-settings">
             <h2>View</h2>
             <label class="perspective-control">

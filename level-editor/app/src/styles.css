@@ -740,3 +740,15 @@ input.num {
 .shared-library footer { padding: 12px; border-top: 1px solid #353e4c; color: #aebdce; }
 .asset-drop-active { outline: 3px solid #86d1d7; outline-offset: -3px; }
 @media (max-width: 1100px) { .shared-library { width: 270px; } .editor-panel { width: 240px; } }
+
+.spline-panel { padding: 4px 0 14px; margin-bottom: 14px; border-bottom: 1px solid #3a4552; }
+.spline-panel > label { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.spline-panel > label.check { flex-direction: row; }
+.spline-panel input:not([type="checkbox"]), .spline-panel select { width: 100%; min-width: 0; }
+.spline-panel input[type="file"] { font-size: 11px; }
+.spline-actions, .spline-points { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+.spline-fields, .spline-coordinates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 8px 0; }
+.spline-coordinates { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.spline-fields label, .spline-coordinates label { display: flex; flex-direction: column; gap: 4px; }
+.spline-list { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; }
+.spline-list button { text-align: left; }

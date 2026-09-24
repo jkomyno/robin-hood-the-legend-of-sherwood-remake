@@ -18,7 +18,7 @@ const chrome = spawn(
     "--use-angle=swiftshader",
     "--remote-debugging-port=0",
     `--user-data-dir=${profile}`,
-    `${process.argv[2] ?? "http://localhost:5181"}/tests/lifecycle.html`,
+    `${process.argv[2] ?? "http://localhost:5181"}/tests/lifecycle.html${process.env.TEST_QUERY ?? ""}`,
   ],
   { stdio: ["ignore", "ignore", "pipe"] },
 );

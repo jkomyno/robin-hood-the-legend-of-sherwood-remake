@@ -5,9 +5,10 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { prepareMapCandidate } from "./map-candidate.ts";
 import { disposeObjectResources } from "./resources.ts";
 
-function fixture(saved: unknown = {}, map = "York") {
+function fixture(saved: unknown = {}, map = "York", standalone = false) {
   const scene = {
     version: 1,
+    standalone,
     map,
     size: [100, 200],
     camera: { kind: "oblique-orthographic", elevation_deg: 35 },
@@ -161,4 +162,13 @@ test("authored exports preserve saved user names and reject mismatched canonical
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: bad.asset }));
   await assert.rejects(prepareMapCandidate("York", bad.directory, null), /Invalid authored GLB part metadata/);
   assert.equal(bad.disposals(), 1);
+});
+
+test("authored standalone scenes open without a matching datadir level", async (t) => {
+  const f = fixture({}, "York", true);
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  const candidate = await prepareMapCandidate("York", f.directory, { maps: new Set(), levelsDir: f.directory });
+  assert.equal(candidate.level, null);
+  assert.equal(candidate.document.map, "York");
+  disposeObjectResources([candidate.asset]);
 });

@@ -311,6 +311,12 @@ function button(label: string) {
 async function main() {
   await checkConnectionPersistence();
   await checkSharedLibrary();
+  if (location.search.includes("library-only")) {
+    assert([...gpu.values()].every(resources => resources.size === 0), "Spline/library GPU resources retained");
+    assert(frames.size === 0 && observers === 0, "Spline/library frame or observer retained");
+    result.textContent = "PASS shared library and 3D spline drawing, undo/redo, save/reload and GPU cleanup";
+    return;
+  }
   const initialContextLosses = contextLosses;
   const library = await fixtures();
   const replacement = await fixtures(["c", "d"]);
