@@ -83,7 +83,7 @@ def repair_face(colors, protected, generated, positions, policy, object_min_z, b
               (z<=object_min_z+band))
     count=int(selected.sum())
     if count>policy['max_total_texels'] or count>colors.shape[0]*colors.shape[1]*policy['max_face_fraction']:
-        raise ValueError('Inferred-gap repair exceeds its narrow per-face/count budget')
+        raise ValueError(f'Inferred-gap repair exceeds its narrow per-face/count budget: selected={count}, face_samples={colors.shape[0]*colors.shape[1]}, fraction={count/(colors.shape[0]*colors.shape[1]):.6f}, max_fraction={policy["max_face_fraction"]}, max_count={policy["max_total_texels"]}')
     donors=colors[tuple(nearest)]
     result[selected,:3]=donors[selected,:3]
     if not np.array_equal(result[~selected],colors[~selected]) or not np.array_equal(result[...,3],colors[...,3]):
