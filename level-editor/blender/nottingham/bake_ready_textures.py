@@ -92,7 +92,7 @@ def main():
             old=current['assets'].get(asset,{})
             if old.get('status') == 'baking':
                 continue
-            if old.get('generation_review_sha256') == review_hash and old.get('status') in ('baked-awaiting-visual-review','ready-for-user-texture-review','needs-refinement','failed'):
+            if old.get('generation_review_sha256') == review_hash and old.get('status') in ('baked-awaiting-visual-review','ready-for-user-texture-review','needs-refinement'):
                 continue
             index=1
             while (experiment/f'bake-batch-{index:03d}').exists():
