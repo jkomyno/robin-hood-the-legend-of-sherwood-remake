@@ -22,6 +22,60 @@ def _unique(values, label):
     return values
 
 
+SCOPE_FIELDS = {'texture_receiver_object_names', 'texture_receiver_face_indices',
+                'texture_projection_labels', 'texture_material_suffix'}
+SAMPLING_FIELDS = SCOPE_FIELDS | {'texture_view_selection', 'texture_preferred_face_views',
+                                'texture_two_sided_object_names', 'texture_two_sided_face_indices'}
+
+
+def _validate_scope(frames):
+    names = set(frames['object_names'])
+    receivers = frames.get('texture_receiver_object_names', frames['object_names'])
+    if not set(_unique(receivers, 'texture receiver names')) <= names:
+        raise ValueError('Texture scope contains foreign receivers')
+    for field in ('texture_receiver_face_indices', 'texture_two_sided_face_indices'):
+        if field not in frames:
+            continue
+        mapping = frames[field]
+        if not isinstance(mapping, dict) or not set(mapping) <= set(receivers):
+            raise ValueError('Texture face scope contains foreign receivers')
+        for faces in mapping.values():
+            if (not isinstance(faces, list) or not faces or len(set(faces)) != len(faces) or
+                    any(type(face) is not int or face < 0 for face in faces)):
+                raise ValueError('Texture scope requires exact nonnegative face indices')
+    if 'texture_projection_labels' in frames:
+        available = {layer['projection_label'] for layer in frames.get('projection_layers', [])}
+        if not set(_unique(frames['texture_projection_labels'], 'texture projection labels')) <= available:
+            raise ValueError('Texture scope contains foreign projection labels')
+    if 'texture_material_suffix' in frames and not isinstance(frames['texture_material_suffix'], str):
+        raise ValueError('Texture material suffix must be a string')
+
+
+def _guarded_scope(frames, path, validation):
+    """Bind sampler-only edits to a reviewed bake without relaxing camera evidence."""
+    _validate_scope(frames)
+    digest = sha(path)
+    for evidence_path, expected in validation.get('evidence_sha256', {}).items():
+        evidence_path = Path(evidence_path)
+        if sha(evidence_path) != expected:
+            raise ValueError('Guarded scope evidence changed')
+        if expected == digest:
+            return True
+        if evidence_path.suffix == '.json':
+            other = _json(evidence_path)
+            if isinstance(other, dict) and 'views' in other and 'object_names' in other:
+                _validate_scope(other)
+                if ({k: v for k, v in frames.items() if k not in SAMPLING_FIELDS} ==
+                        {k: v for k, v in other.items() if k not in SAMPLING_FIELDS}):
+                    return True
+    derived = validation.get('derived_covered_state', {})
+    if (isinstance(derived, dict) and derived.get('state_frame_manifest') and
+            Path(derived['state_frame_manifest']).resolve() == path.resolve() and
+            derived.get('state_frame_manifest_sha256') == digest):
+        return True
+    return False
+
+
 def _derived_packet(experiment, frames, item, protected):
     """Reconstruct immutable packet data when a reviewed retry lacks its receipt."""
     import numpy as np
@@ -35,7 +89,7 @@ def _derived_packet(experiment, frames, item, protected):
         raise ValueError('Derived texture packet lacks directly approved camera evidence')
     original = _json(frame_path)
     additions = {'reviewed_packet', 'reviewed_manifest_sha256', 'source_blend', 'geometry_revision',
-                 'input_sha256', 'texture_view_selection', 'texture_preferred_face_views'}
+                 'input_sha256', 'texture_view_selection', 'texture_preferred_face_views'} | SCOPE_FIELDS
     for key, value in original.items():
         if key not in {'views', 'layout', 'source_blend', 'geometry_revision', 'input_sha256'} and frames.get(key) != value:
             raise ValueError('Derived texture packet changed approved camera/ownership: ' + key)
@@ -189,6 +243,12 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
             if not path.is_relative_to(experiment):
                 raise ValueError('Prepared evidence escapes experiment: ' + relative)
             if sha(path) != digest:
+                scoped_before = {key: value for key, value in frames.items() if key not in SCOPE_FIELDS}
+                if (relative == 'views.json' and SCOPE_FIELDS & set(frames) and
+                        hashlib.sha256((json.dumps(scoped_before, indent=2)+'\n').encode()).hexdigest() == digest and
+                        _guarded_scope(frames, path, validation)):
+                    protected[path] = sha(path)
+                    continue
                 # A reviewed sampler-only retry retains its original preparation receipt.
                 before = dict(frames); before.pop('texture_view_selection', None)
                 if (relative != 'views.json' or frames.get('texture_view_selection') != 'best-facing-single' or
@@ -198,6 +258,8 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
             protected[path] = sha(path)
     else:
         _derived_packet(experiment, frames, item, protected)
+        if SCOPE_FIELDS & set(frames) and not _guarded_scope(frames, frames_path, validation):
+            raise ValueError('Derived texture scope lacks guarded bake evidence')
     for relative, digest in review.get('artifact_sha256', {}).items():
         path = (experiment/relative).resolve(strict=True)
         if not path.is_relative_to(experiment) or sha(path) != digest:

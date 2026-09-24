@@ -13,6 +13,45 @@ from texture_decisions import IMAGE_FIELDS, fields
 
 
 class TextureStagingTests(unittest.TestCase):
+    def test_scoped_manifest_requires_hash_bound_unchanged_core(self):
+        from texture_staging import _guarded_scope
+        frames = {'object_names': ['wall'], 'views': [{'index': 0, 'camera': [1, 2, 3]}],
+                  'projection_layers': [{'projection_label': 'exterior'}],
+                  'texture_receiver_object_names': ['wall'],
+                  'texture_receiver_face_indices': {'wall': [0, 1]},
+                  'texture_projection_labels': ['exterior'], 'texture_material_suffix': 'current'}
+        current = self.root / 'scope.json'
+        current.write_text(json.dumps(frames))
+        bound = self.root / 'bound-scope.json'
+        bound.write_text(json.dumps(dict(frames, texture_material_suffix='reviewed')))
+        validation = {'evidence_sha256': {str(bound): sha(bound)}}
+        self.assertTrue(_guarded_scope(frames, current, validation))
+        changed = copy.deepcopy(frames); changed['views'][0]['camera'][0] = 9
+        current.write_text(json.dumps(changed))
+        self.assertFalse(_guarded_scope(changed, current, validation))
+        changed = dict(frames, arbitrary_override=True)
+        current.write_text(json.dumps(changed))
+        self.assertFalse(_guarded_scope(changed, current, validation))
+        changed = dict(frames, texture_receiver_object_names=['foreign'])
+        with self.assertRaisesRegex(ValueError, 'foreign receivers'):
+            _guarded_scope(changed, current, validation)
+        changed = dict(frames, texture_projection_labels=['foreign'])
+        with self.assertRaisesRegex(ValueError, 'foreign projection'):
+            _guarded_scope(changed, current, validation)
+        bound.write_text('{}')
+        with self.assertRaisesRegex(ValueError, 'evidence changed'):
+            _guarded_scope(frames, current, validation)
+
+    def test_derived_covered_scope_binds_exact_state_manifest(self):
+        from texture_staging import _guarded_scope
+        frames = {'object_names': ['wall'], 'views': []}
+        path = self.root / 'covered.json'; path.write_text(json.dumps(frames))
+        validation = {'derived_covered_state': {'state_frame_manifest': str(path),
+                                              'state_frame_manifest_sha256': sha(path)}}
+        self.assertTrue(_guarded_scope(frames, path, validation))
+        validation['derived_covered_state']['state_frame_manifest_sha256'] = 'wrong'
+        self.assertFalse(_guarded_scope(frames, path, validation))
+
     def test_exact_endpoint_native_ownership(self):
         class Object(dict):
             name = 'deck'
