@@ -130,6 +130,14 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     canvas = (width * 4, height * 2)
     cw, ch = canvas
     transport_size = canvas
+    padding = item.get('transport_padding')
+    if padding is not None:
+        expected_padding = {'version':1, 'kind':'bottom-padding', 'width':1024, 'height':640,
+                            'content_box':{'left':0,'top':0,'width':1024,'height':512}}
+        if (canvas != (1024,512) or padding != expected_padding or
+                not item.get('preparation_selection') or selection.get('transport_padding') != padding):
+            raise ValueError('Invalid or unbound transport padding; geometry pixels must not be resized')
+        transport_size = (padding['width'], padding['height'])
     if check_only_atlas_size is not None:
         if not check_only:
             raise ValueError('Atlas canvas override is valid only for check-only validation')
@@ -217,6 +225,7 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
     preparation_revision = item['revision']['sha256']
     revision = item.get('parent_geometry_revision', preparation_revision)
     frames['preparation_revision'] = preparation_revision
+    if padding is not None: frames['transport_padding'] = padding
     frames['layout'].update(width=cw, height=ch)
     frames.update(reviewed_packet=str(packet), reviewed_manifest_sha256=sha(frames_path),
                   source_blend=str(output / 'approved-model.blend'), geometry_revision=revision,
@@ -241,6 +250,7 @@ def prepare(manifest_path, asset_id, output, decisions_path=None, *, check_only=
                 'solid_sha256': sha(output / 'solid.png'), 'lighting_sha256': sha(output / 'solid.png'),
                 'saved_model_sha256': sha(output / 'approved-model.blend'),
                 'source_decision': item['user_decision'], 'texture_approval': 'pending'}
+    if padding is not None: approval['transport_padding'] = padding
     if item.get('preparation_state'):approval['review_state']=item['preparation_state']
     if item.get('approval_provenance'):approval['approval_provenance']=item['approval_provenance']
     if relit_sheet is not None:

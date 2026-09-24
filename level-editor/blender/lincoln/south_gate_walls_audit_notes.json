@@ -1,0 +1,142 @@
+{
+ "lincoln-south-curtain-wall-central": {
+  "status": "PASS",
+  "observation": "Owned wall face, walk strip seen through the crenels and both parapets are accepted over the full source-visible run (x 1344-1850). Rejected pixels are 1-2 px antialias fringes along the merlon tops (mask 230 top edge is smooth over notches). Neutral areas: (1) the lowest courses (z<220) on the south face are hidden by the baseline inner-bailey plateau volume 062 (and cliff ledge 070) whose flat top extends in front of the wall; (2) the angle bastion and stair region of the composite mask 230/408 is owned by lincoln-south-wall-stair; (3) the west end is the east gate tower in front. Foreground check: every native mask overlapping the owned first-hit domain was listed and inspected; none is vegetation or an object drawn in front of these receivers (overlaps are neighbours behind, layer-2/4 sector masks, or props behind the wall). Grass tufts at wall feet have no native mask.",
+  "explanations": {
+   "foreign:lincoln-castle-hill-inner-bailey-plateau": "terrain lane: plateau 062 must recede to the wall face so the masonry below z=220 becomes visible",
+   "foreign:lincoln-south-wall-stair": "composite 230/408 neighbour (bastion body 085, stair 106)",
+   "foreign:lincoln-south-gatehouse-east-tower": "tower in front of the wall end",
+   "foreign:lincoln-south-ravine-cliff-ledge": "cliff ledge 070 in front of the east footing (terrain lane)",
+   "rejected_edge": "antialias fringe at merlon tops"
+  },
+  "limitations": [
+   "Lower masonry stays neutral until the terrain lane recedes plateau 062/070."
+  ]
+ },
+ "lincoln-south-curtain-wall-west": {
+  "status": "PASS",
+  "observation": "SW face, walk and merlons accepted inside mask 246. Rejected-far pixels are (a) the lower courses between the bottom edge of mask 246 (z~236-250) and the footing at z=218, which the artwork shows as dark masonry partly hidden by the rock outcrop, and (b) the NW end strip x 750-771 left of the mask box where the wall runs into the west-tower complex. Mask 246 was not widened. Blue is the west gate tower in front of the SE end. Foreground check: every native mask overlapping the owned first-hit domain was listed and inspected; none is vegetation or an object drawn in front of these receivers (overlaps are neighbours behind, layer-2/4 sector masks, or props behind the wall). Grass tufts at wall feet have no native mask.",
+  "explanations": {
+   "rejected_far": "outside native mask 246 envelope (lower courses behind rocks, NW end outside the mask box); not widened per mask-review policy",
+   "foreign:lincoln-south-gatehouse-west-tower": "tower in front"
+  },
+  "limitations": [
+   "Lower courses and NW end stay neutral: mask 246 envelope stops above the footing and at x=771."
+  ]
+ },
+ "lincoln-southeast-curtain-wall": {
+  "status": "PASS",
+  "observation": "South face, walk and 13 crenels accepted in mask 231; the corner-turret parapet ring accepted after adding mask 232 to node 099 in the workspace source-masks.json (the first audit showed the ring rejected because it lies in the 232 envelope). Neutral bottom band: baseline plateau 062 hides the courses below z=220. West end: cone turret junction (composite 231 owned by lincoln-south-wall-cone-turret). Small foreign hits: lean-to/thatched store props in front. Foreground check: bush mask 153 (drawn over the walk at the west end, inspection/foreground-mask-153.png) is excluded from 084/099 by a reviewed recipe-applied exclusion. Grass tufts at the wall foot have no native mask and remain painted on the lowest visible courses.",
+  "explanations": {
+   "foreign:lincoln-castle-hill-inner-bailey-plateau": "terrain lane must recede plateau to the wall face",
+   "foreign:lincoln-south-wall-cone-turret": "composite 231 neighbour",
+   "foreign:lincoln-south-wall-lean-to": "prop in front",
+   "foreign:lincoln-south-wall-thatched-store": "prop in front"
+  },
+  "limitations": [
+   "Working mask change: building-099 mask_indices [231] -> [231, 232] (documented in source-masks.json review_note).",
+   "Foreground grass tufts at the wall foot (no native mask) remain in the lowest-course texture."
+  ]
+ },
+ "lincoln-southeast-corner-turret": {
+  "status": "PASS",
+  "observation": "Walk top of the corner turret and east curtain accepted in mask 232. The turret face below the parapet is mostly neutral in this workspace because the baseline 099 pillar (SE curtain asset, native z 0-363) has the same outer ring line, so its coplanar face wins first hit in vertical stripes; after the SE curtain refinement 099 starts at z=350 and 083 is the only surface below. The east curtain's SE face is covered by node 098 (lincoln-east-curtain-wall-lower) in front, which owns that face. Bottom: plateau volumes 062/064. Foreground check: every native mask overlapping the owned first-hit domain was listed and inspected; none is vegetation or an object drawn in front of these receivers (overlaps are neighbours behind, layer-2/4 sector masks, or props behind the wall). Grass tufts at wall feet have no native mask.",
+  "explanations": {
+   "foreign:lincoln-southeast-curtain-wall": "baseline 099 pillar coplanar with the turret face (resolved by the refined 099)",
+   "foreign:lincoln-east-curtain-wall-lower": "098 front skin owns the east curtain face",
+   "foreign:lincoln-castle-hill-inner-bailey-plateau": "terrain lane"
+  },
+  "limitations": [
+   "Turret face texture must be re-checked after integration with the refined 099."
+  ]
+ },
+ "lincoln-south-gatehouse-west-tower": {
+  "status": "PASS",
+  "observation": "Tower front arc, platform and both parapet arcs accepted in the composite 248/270. The east half of the front arc is neutral in this workspace because the baseline gate pier 092 footprint protrudes in front of the tower (native x 1017); the arch asset cuts 092 back to the tower surface, so the integrated scene exposes this masonry. The west facets were pulled in to the mask silhouette; remaining rejected pixels are edge fringes and the footing band below the mask bottom. Foreground check: bush mask 66 in front of the tower foot (inspection/foreground-mask-66.png) is excluded from 121 by a reviewed recipe-applied exclusion.",
+  "explanations": {
+   "foreign:lincoln-south-gatehouse-arch": "baseline pier 092 in front (fixed in the arch asset)",
+   "foreign:lincoln-castle-hill-inner-bailey-plateau": "terrain lane",
+   "foreign:lincoln-south-gate-drawbridge": "baseline 457 block in front of the gate side",
+   "rejected": "edge fringe and footing below mask 248"
+  },
+  "limitations": [
+   "East half of the front arc verified only together with the refined arch asset."
+  ]
+ },
+ "lincoln-south-gatehouse-east-tower": {
+  "status": "PASS",
+  "observation": "Front arc, platform and six front crenels accepted in 248/270. East facets pulled in ~5 px after the first audit showed a rejected strip outside the mask silhouette. Blue areas are the gate block (arch asset) and the cone turret in the same composite envelope, plus the plateau at the footing. A 3-5 px strip along the lower east edge remains rejected: the artwork tower base narrows slightly more than the faceted native outline (x~1340 at the foot); left as a faceting limitation rather than distorting the ring. Foreground check: every native mask overlapping the owned first-hit domain was listed and inspected; none is vegetation or an object drawn in front of these receivers (overlaps are neighbours behind, layer-2/4 sector masks, or props behind the wall). Grass tufts at wall feet have no native mask.",
+  "explanations": {
+   "foreign:lincoln-south-gatehouse-arch": "composite 248/270 neighbour",
+   "foreign:lincoln-south-gatehouse-cone-turret": "composite neighbour",
+   "foreign:lincoln-castle-hill-inner-bailey-plateau": "terrain lane",
+   "rejected": "edge fringe"
+  },
+  "limitations": [
+   "Revealed (Patch01) interior not audited.",
+   "Lower east silhouette overshoots the artwork by 3-5 px (faceted outline)."
+  ]
+ },
+ "lincoln-south-gatehouse-arch": {
+  "status": "PASS",
+  "observation": "Gate front, arch soffit, front and rear parapets and walk accepted. The raised leaf inside the arch belongs to the drawbridge asset (mask 415), so the opening is correctly outside this asset's mask. Blue: east tower, west tower and cone turret in the composite 248/270. Small rejected bands at the pier feet where the footing reaches below the mask bottom (rock in front). Foreground check: every native mask overlapping the owned first-hit domain was listed and inspected; none is vegetation or an object drawn in front of these receivers (overlaps are neighbours behind, layer-2/4 sector masks, or props behind the wall). Grass tufts at wall feet have no native mask.",
+  "explanations": {
+   "foreign:lincoln-south-gatehouse-east-tower": "composite neighbour",
+   "foreign:lincoln-south-gatehouse-west-tower": "composite neighbour",
+   "foreign:lincoln-south-gatehouse-cone-turret": "composite neighbour",
+   "foreign:lincoln-south-gate-drawbridge": "leaf / landing",
+   "foreign:lincoln-castle-hill-inner-bailey-plateau": "terrain lane",
+   "rejected": "pier feet below mask 248 bottom and merlon fringes"
+  },
+  "limitations": [
+   "Slab 112 spans the gate block and the east tower; component split needed."
+  ]
+ },
+ "lincoln-south-gate-drawbridge": {
+  "status": "PASS",
+  "observation": "Raised leaf 457 accepted inside mask 415 (edge fringe only); landing 059 accepted in mask 414, with its side margins hidden by the baseline plateau. The whole footbridge 058 is neutral because source-masks-v1 assigns it reject-all (terrain group 52-58); its rail masks 179/180 are unassigned and the deck has no occluder mask. Not widened here: coordinator decision. Foreground check: every native mask overlapping the owned first-hit domain was listed and inspected; none is vegetation or an object drawn in front of these receivers (overlaps are neighbours behind, layer-2/4 sector masks, or props behind the wall). Grass tufts at wall feet have no native mask.",
+  "explanations": {
+   "rejected:building-058": "reject-all by mask review; needs coordinator ownership review",
+   "foreign:lincoln-castle-hill-inner-bailey-plateau": "terrain lane",
+   "foreign:lincoln-south-gatehouse-arch": "gate piers around the leaf"
+  },
+  "limitations": [
+   "Lowered state validated only by source-camera overlay (inspection/drawbridge-states.png)."
+  ]
+ },
+ "lincoln-south-wall-stair": {
+  "status": "PASS",
+  "observation": "Diagonal wall face and parapet (109), landing parapets, bastion body and the upper stair treads accepted after adding mask 231 to nodes 106/085 in the workspace source-masks.json (first audit: 1394 of 1399 stair pixels rejected because the treads are drawn inside the 231 envelope). Blue: cone turret and central wall parapet (composite neighbours), plateau/ledge 062/070 at the footing. Foreground check: every native mask overlapping the owned first-hit domain was listed and inspected; none is vegetation or an object drawn in front of these receivers (overlaps are neighbours behind, layer-2/4 sector masks, or props behind the wall). Grass tufts at wall feet have no native mask.",
+  "explanations": {
+   "foreign:lincoln-south-wall-cone-turret": "composite 231 neighbour",
+   "foreign:lincoln-south-curtain-wall-central": "bastion parapet 110 in front",
+   "foreign:lincoln-castle-hill-inner-bailey-plateau": "terrain lane",
+   "foreign:lincoln-south-ravine-cliff-ledge": "terrain lane"
+  },
+  "limitations": [
+   "Working mask change: building-085/106 mask_indices [230, 408] -> [230, 231, 408]."
+  ]
+ },
+ "lincoln-south-wall-cone-turret": {
+  "status": "PASS",
+  "observation": "Roof, turret walls and junction blocks accepted in mask 231. Blue: stair/diagonal wall and SE curtain in the same composite, plateau at the footing. Rejected pixels are roof-edge fringes only; the finial needle is not modelled (sub-pixel). Foreground check: every native mask overlapping the owned first-hit domain was listed and inspected; none is vegetation or an object drawn in front of these receivers (overlaps are neighbours behind, layer-2/4 sector masks, or props behind the wall). Grass tufts at wall feet have no native mask.",
+  "explanations": {
+   "foreign:lincoln-south-wall-stair": "composite neighbour",
+   "foreign:lincoln-southeast-curtain-wall": "composite neighbour",
+   "foreign:lincoln-castle-hill-inner-bailey-plateau": "terrain lane"
+  },
+  "limitations": []
+ },
+ "lincoln-south-gatehouse-cone-turret": {
+  "status": "PASS",
+  "observation": "Cone, eave disk and turret walls accepted. The rest of the composite 248/270 envelope belongs to the east tower and gate block. The doorway shows the east-tower platform (foreign). The finial needle is outside geometry (not modelled). Foreground check: every native mask overlapping the owned first-hit domain was listed and inspected; none is vegetation or an object drawn in front of these receivers (overlaps are neighbours behind, layer-2/4 sector masks, or props behind the wall). Grass tufts at wall feet have no native mask.",
+  "explanations": {
+   "foreign:lincoln-south-gatehouse-east-tower": "composite neighbour and platform through the doorway",
+   "foreign:lincoln-south-gatehouse-arch": "composite neighbour",
+   "foreign:lincoln-castle-hill-inner-bailey-plateau": "finial pixels see the courtyard"
+  },
+  "limitations": [
+   "Finial not modelled."
+  ]
+ }
+}

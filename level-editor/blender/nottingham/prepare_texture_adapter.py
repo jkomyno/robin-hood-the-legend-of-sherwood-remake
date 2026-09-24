@@ -214,6 +214,9 @@ def normalize(asset_id, output, *, state='covered', material_audit=None,
                  'solid_view_paths':[str(p) for p in solid_views], 'derive_unknown_lighting':True,
                  'parent_geometry_revision':parent_revision,
                  'preparation_lighting':{'config':str(profile), 'lighting':read(profile)['lighting']}}
+    if frames['tile_size'] == [256,256] and asset_id != 'nottingham-terrain-ground':
+        selection['transport_padding'] = {'version':1, 'kind':'bottom-padding', 'width':1024, 'height':640,
+                                          'content_box':{'left':0,'top':0,'width':1024,'height':512}}
     selection_path = output/'preparation-selection.json'
     selection_path.write_text(json.dumps(selection,indent=2)+'\n')
     paths['preparation_selection'] = selection_path
@@ -229,6 +232,7 @@ def normalize(asset_id, output, *, state='covered', material_audit=None,
                   'preparation_lighting':{'config':str(profile), 'lighting':read(profile)['lighting']},
                   'approval_provenance':provenance, 'preparation_selection':str(selection_path),
                   'parent_geometry_revision':parent_revision, 'revision':revision}
+    normalized.update(selection)
     decision = {'asset_id':asset_id, 'scope':'geometry', 'decision':'approved',
                 'exact_user_text':approval['exact_text'], 'revision_sha256':revision['sha256'],
                 'approval_provenance':provenance}

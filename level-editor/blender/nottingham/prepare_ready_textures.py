@@ -56,6 +56,12 @@ def batch(output=GEN/'preparation-jobs.json'):
         manifest=normalized/'manifest.json'
         if aid in PILOTS:
             manifest=PILOTS[aid]['manifest'];experiment=PILOTS[aid]['experiment']
+        if manifest.exists() and aid not in PILOTS:
+            old=read(manifest)['items'][0]
+            old_frames=read(Path(old['textured']).parent/'views.json')
+            if old_frames['tile_size']==[256,256] and not old.get('transport_padding'):
+                normalized=normalized/'transport-padding-v1'
+                manifest=normalized/'manifest.json'
         row.update(normalized_manifest=str(manifest),experiment=str(experiment))
         try:
             if not manifest.exists():

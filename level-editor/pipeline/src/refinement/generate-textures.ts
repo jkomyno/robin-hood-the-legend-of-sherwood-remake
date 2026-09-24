@@ -6,6 +6,7 @@ import sharp from "sharp";
 import { requireEnv } from "../env.ts";
 import { imageProvider, providerIdentity, openRouterBody, validateOpenRouterCapabilities } from "./image-provider.ts";
 import { atlasPrompt } from "./atlas-prompt.ts";
+import { validatePadding, padTransport, cropTransport, type Padding } from "./transport-padding.ts";
 
 async function main(): Promise<void> {
   if (!process.argv[2]) throw new Error("Supply experiment directory and --prepare or --generate");
@@ -15,7 +16,7 @@ async function main(): Promise<void> {
   const identity=providerIdentity(provider);
   const directory = path.resolve(process.argv[2]);
   const manifest = JSON.parse(await fs.readFile(path.join(directory,"views.json"),"utf8")) as {
-    source_image:string; projection_kind?:string;
+    source_image:string; projection_kind?:string; transport_padding?:Padding;
     source_pixel_audit?:{output_xy:[number,number];source_xy:[number,number];source_rgb:number[]}[];
     layout:{width:number;height:number}; views:{input:string;mask:string;camera_matrix_world:number[][];ortho_scale:number;crop:{left:number;top:number;width:number;height:number}}[];
   };
@@ -62,14 +63,15 @@ async function main(): Promise<void> {
   if (!process.argv.includes("--generate")) throw new Error("Choose --prepare or --generate");
   const input=await fs.readFile(path.join(directory,"input.png"));
   const approval=JSON.parse(await fs.readFile(path.join(directory,"approval.json"),"utf8")) as {
-    status?:string; approved_by?:string; input_sha256?:string; geometry_revision?:string;
+    status?:string; approved_by?:string; input_sha256?:string; geometry_revision?:string; transport_padding?:Padding;
   };
   const inputHash=crypto.createHash("sha256").update(input).digest("hex");
   if(approval.status!=="approved"||approval.approved_by!=="user"||
      approval.input_sha256!==inputHash||!approval.geometry_revision)
     throw new Error("Sunburst requires explicit user approval for this exact preview and geometry revision");
   const mask=await fs.readFile(path.join(directory,"mask.png"));
-  const {width:canvasWidth,height:canvasHeight}=manifest.layout;
+  const padding=validatePadding(manifest.layout,manifest.transport_padding,approval.transport_padding);
+  const {width:canvasWidth,height:canvasHeight}=padding??manifest.layout;
   if(!Number.isInteger(canvasWidth)||!Number.isInteger(canvasHeight)||
      canvasWidth<=0||canvasHeight<=0||canvasWidth%16||canvasHeight%16||
      Math.max(canvasWidth,canvasHeight)>3840||
@@ -78,7 +80,7 @@ async function main(): Promise<void> {
     throw new Error("Approved canvas is outside Sunburst custom-size constraints; do not silently resize it");
   for(const [name,bytes] of [["input",input],["mask",mask]] as const){
     const info=await sharp(bytes).metadata();
-    if(info.width!==canvasWidth||info.height!==canvasHeight)
+    if(info.width!==manifest.layout.width||info.height!==manifest.layout.height)
       throw new Error(`${name} dimensions differ from the approved camera manifest`);
   }
   const lightingIndex=process.argv.indexOf("--lighting-reference");
@@ -118,15 +120,18 @@ Replace every masked untextured surface with the appropriate texture. Return the
   const outputDirectory=path.join(directory,`generation-${variant}${omitMask?"-no-mask":""}${lighting?"-with-lighting":""}${provider==="openrouter"?"-openrouter":""}`);
   await fs.mkdir(outputDirectory,{recursive:true});
   const prompt=omitMask?"Create an image from the provided reference sheet of 8 views of the same asset. The untextured gray shaded areas mark missing textures. Fill in these regions logically and consistently across all views, preserving all existing textured pixels exactly. Keep the same asset design, textures, lighting, perspective, and black background.":prompts[variant];
+  const transportInput=await padTransport(input,padding);
+  const transportMask=await padTransport(mask,padding,true);
+  const transportLighting=lighting?await padTransport(lighting,padding):null;
   const parameters={model:identity.model,quality:"high",size:`${canvasWidth}x${canvasHeight}`,n:"1",output_format:"png",
     prompt:(atlasInstructions ?? (prompt+" Follow the lighting and shading shown on the gray surfaces, preserving the same sun direction across all eight views."+
       (lighting?" The second image shows the same eight views entirely in gray; use it as the reference for lighting, shadows, and shape, and return only the completed first image.":"")))+
-      (promptSuffix?" "+promptSuffix:"")};
-  const hash=crypto.createHash("sha256").update(input).update(lighting??Buffer.alloc(0)).update(omitMask?Buffer.alloc(0):mask).update(JSON.stringify(parameters)).update(JSON.stringify({provider,endpoint:identity.endpoint})).digest("hex");
+      (promptSuffix?" "+promptSuffix:"")+(padding?" The bottom 128 pixels are locked transport padding. Preserve them; the eight original views occupy the top 1024 by 512 pixels without any scaling or repositioning.":"")};
+  const hash=crypto.createHash("sha256").update(transportInput).update(transportLighting??Buffer.alloc(0)).update(omitMask?Buffer.alloc(0):transportMask).update(JSON.stringify(parameters)).update(JSON.stringify({provider,endpoint:identity.endpoint})).digest("hex");
   const cache=path.join(directory,"api-cache",hash);await fs.mkdir(cache,{recursive:true});
-  await fs.writeFile(path.join(cache,"request.json"),JSON.stringify({provider,endpoint:identity.endpoint,parameters,input_sha256:crypto.createHash("sha256").update(input).digest("hex"),lighting_sha256:lighting?crypto.createHash("sha256").update(lighting).digest("hex"):null,mask_sha256:omitMask?null:crypto.createHash("sha256").update(mask).digest("hex")},null,2));
-  await fs.writeFile(path.join(cache,"input.png"),input);await fs.writeFile(path.join(cache,"mask.png"),mask);
-  if(lighting)await fs.writeFile(path.join(cache,"lighting.png"),lighting);
+  await fs.writeFile(path.join(cache,"request.json"),JSON.stringify({provider,endpoint:identity.endpoint,parameters,transport_padding:padding,input_sha256:crypto.createHash("sha256").update(transportInput).digest("hex"),lighting_sha256:transportLighting?crypto.createHash("sha256").update(transportLighting).digest("hex"):null,mask_sha256:omitMask?null:crypto.createHash("sha256").update(transportMask).digest("hex")},null,2));
+  await fs.writeFile(path.join(cache,"input.png"),transportInput);await fs.writeFile(path.join(cache,"mask.png"),transportMask);
+  if(transportLighting)await fs.writeFile(path.join(cache,"lighting.png"),transportLighting);
   let response:{status:number;body:unknown};
   try { response=JSON.parse(await fs.readFile(path.join(cache,"response.json"),"utf8")); }
   catch(error) {
@@ -134,7 +139,7 @@ Replace every masked untextured surface with the appropriate texture. Return the
     let body: FormData | string;
     const headers: Record<string,string>={Authorization:`Bearer ${requireEnv(identity.credential)}`};
     if(provider==="openrouter"){
-      const request=openRouterBody(parameters,input,lighting,omitMask);
+      const request=openRouterBody(parameters,transportInput,transportLighting,omitMask);
       const capabilities=await fetch(`${identity.endpoint}/models/${identity.model}/endpoints`,{headers});
       if(!capabilities.ok)throw new Error(`OpenRouter capability discovery failed: ${capabilities.status}`);
       const metadata:unknown=await capabilities.json();
@@ -144,9 +149,9 @@ Replace every masked untextured surface with the appropriate texture. Return the
       body=JSON.stringify(request);
     }else{
     const form=new FormData();for(const [key,value]of Object.entries(parameters))form.append(key,value);
-    form.append(lighting?"image[]":"image",new Blob([new Uint8Array(input)],{type:"image/png"}),"input.png");
-    if(lighting)form.append("image[]",new Blob([new Uint8Array(lighting)],{type:"image/png"}),"lighting.png");
-    if(!omitMask)form.append("mask",new Blob([new Uint8Array(mask)],{type:"image/png"}),"mask.png");
+    form.append(lighting?"image[]":"image",new Blob([new Uint8Array(transportInput)],{type:"image/png"}),"input.png");
+    if(lighting)form.append("image[]",new Blob([new Uint8Array(transportLighting!)],{type:"image/png"}),"lighting.png");
+    if(!omitMask)form.append("mask",new Blob([new Uint8Array(transportMask)],{type:"image/png"}),"mask.png");
     body=form;
     }
     console.log(JSON.stringify({status:"requesting",provider,endpoint:identity.endpoint,model:identity.model,quality:parameters.quality,size:parameters.size,cache}));
@@ -162,9 +167,10 @@ Replace every masked untextured surface with the appropriate texture. Return the
   const editMask=await sharp(mask).ensureAlpha().raw().toBuffer();
   const generatedInfo=await sharp(generated).metadata();
   if(generatedInfo.format!=="png")throw new Error("Generated output is not the requested lossless PNG");
-  if(generatedInfo.width!==manifest.layout.width||generatedInfo.height!==manifest.layout.height)
+  if(generatedInfo.width!==canvasWidth||generatedInfo.height!==canvasHeight)
     throw new Error(`Generated dimensions ${generatedInfo.width}x${generatedInfo.height} differ from input; refusing to rescale texture coordinates`);
-  const pixels=await sharp(generated).ensureAlpha().raw().toBuffer();
+  const cropped=await cropTransport(generated,padding);
+  const pixels=await sharp(cropped).ensureAlpha().raw().toBuffer();
   const result=Buffer.from(original);let filled=0;
   for(let i=0;i<result.length;i+=4)if(editMask[i+3]===0){pixels.copy(result,i,i,i+3);result[i+3]=255;filled++;}
   let changedProtected=0,rawChangedProtected=0,protectedTexturePixels=0,rawChangedTexturePixels=0,rawTextureAbsoluteError=0,rawChangedBackgroundPixels=0;
@@ -181,7 +187,7 @@ Replace every masked untextured surface with the appropriate texture. Return the
     }
   }
   await sharp(result,{raw:{width:manifest.layout.width,height:manifest.layout.height,channels:4}}).png().toFile(path.join(outputDirectory,"generated-preserved.png"));
-  const report={model:identity.model,provider,endpoint:identity.endpoint,quality:parameters.quality,variant,maskSent:!omitMask,lightingReferenceSent:!!lighting,prompt:parameters.prompt,status:response.status,filled,changedProtected,rawChangedProtected,
+  const report={transportPadding:padding,model:identity.model,provider,endpoint:identity.endpoint,quality:parameters.quality,variant,maskSent:!omitMask,lightingReferenceSent:!!lighting,prompt:parameters.prompt,status:response.status,filled,changedProtected,rawChangedProtected,
     protectedTexturePixels,rawChangedTexturePixels,rawChangedBackgroundPixels,
     rawProtectedTextureMeanAbsoluteError:protectedTexturePixels?rawTextureAbsoluteError/(3*protectedTexturePixels):0,cache,outputDirectory};
   await fs.writeFile(path.join(outputDirectory,"generation.json"),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
