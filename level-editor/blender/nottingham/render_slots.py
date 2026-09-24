@@ -38,3 +38,14 @@ def acquire(slots=2):
             print(f'Waiting for Nottingham render slot ({elapsed:.0f}s)', flush=True)
             last_notice = elapsed
         time.sleep(1)
+
+
+def release():
+    """Release the current asset's lease so queued work can run between bakes."""
+    global _lease
+    if _lease is not None:
+        fcntl.flock(_lease, fcntl.LOCK_UN)
+        _lease.close()
+        _lease = None
+        return True
+    return False

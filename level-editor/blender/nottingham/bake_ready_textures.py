@@ -6,13 +6,14 @@ import json
 import os
 import sys
 import traceback
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(Path(__file__).parent))
 sys.path.insert(0, str(ROOT/'level-editor/refinement/blender'))
-from render_slots import acquire
+from render_slots import acquire, release
 
 
 def sha(path):
@@ -72,7 +73,6 @@ def main():
     ledger=json.loads(ledger_path.read_text()) if ledger_path.exists() else dict(version=1,assets={})
     def persist(asset, record):
         update_ledger(ledger_path,asset,record)
-    acquire()
     import bpy
     from bake_reviewed_asset import stage
     count=0
@@ -100,6 +100,7 @@ def main():
             output=experiment/f'bake-batch-{index:03d}'
             record=dict(asset_id=asset,experiment=str(experiment),output=str(output),generation_review_sha256=review_hash,status='baking',worker_pid=os.getpid(),started_utc=datetime.now(timezone.utc).isoformat())
             ledger['assets'][asset]=record;persist(asset,record)
+            acquire()
             bpy.ops.wm.open_mainfile(filepath=str(experiment/'approved-model.blend'))
             report=stage(experiment/'views.json',review['generated_preserved_path'],output,texels_per_unit=2,reconciliation_reference=review['generated_raw_path'])
             # Re-check the external generation review after a long-running bake.
@@ -112,6 +113,8 @@ def main():
             record=ledger['assets'].setdefault(asset,dict(asset_id=asset))
             record.update(status='failed',error=str(error))
         finally:
+            if release():
+                time.sleep(1.1)  # Give existing one-second lease waiters a turn.
             if 'record' in locals() and record.get('asset_id') == asset:
                 persist(asset,record)
             job_lock.close()
