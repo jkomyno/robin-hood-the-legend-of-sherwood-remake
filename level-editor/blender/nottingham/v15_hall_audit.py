@@ -12,8 +12,8 @@ r=json.loads((OUT/'regroup-preservation.json').read_text());assert r['model_sha2
 actual={ident(o):fingerprint(o)for o in selected(bpy.data.collections['nottingham Working'])};assert actual==r['objects']
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'refinement/blender'))
 from audit_stored_materials import run
-states=json.loads((OUT/'states/states.json').read_text());results=[]
+state_dir=Path(json.loads((OUT/'state-packet.json').read_text())['directory']);audit_dir=OUT/'inspection'/('actual-materials-owned' if state_dir.name=='states-owned' else 'actual-materials');states=json.loads((state_dir/'states.json').read_text());results=[]
 for state in states['states']:
- report=run(OUT,OUT/'inspection/actual-materials'/state['state'],render=True,render_object_names=state['object_names'],frame_manifest=Path(state['path'])/'views.json')
- assert not report['problems'],report['problems'];results.append({'state':state['state'],'audit_sha256':sha(OUT/'inspection/actual-materials'/state['state']/'audit.json')})
-write(OUT/'inspection/actual-materials/validation.json',{'status':'PASS','model_sha256':sha(OUT/'model.blend'),'donor_snapshots_preserved':True,'states':results,'visual_review':'pending-independent-review'})
+ report=run(OUT,audit_dir/state['state'],render=True,render_object_names=state['object_names'],frame_manifest=Path(state['path'])/'views.json')
+ assert not report['problems'],report['problems'];results.append({'state':state['state'],'audit_sha256':sha(audit_dir/state['state']/'audit.json')})
+write(audit_dir/'validation.json',{'status':'PASS','model_sha256':sha(OUT/'model.blend'),'donor_snapshots_preserved':True,'states':results,'visual_review':'pending-independent-review'})

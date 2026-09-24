@@ -5,7 +5,8 @@ sys.path.insert(0,str(Path(__file__).parent))
 from v15_hall_packet import OUT,ASSET,sha,write
 import bpy
 records=[]
-for state in json.loads((OUT/'states/states.json').read_text())['states']:
+state_dir=Path(json.loads((OUT/'state-packet.json').read_text())['directory'])
+for state in json.loads((state_dir/'states.json').read_text())['states']:
  bpy.ops.wm.open_mainfile(filepath=str(OUT/'model.blend'))
  objects=[o for o in bpy.data.collections['nottingham Working'].all_objects if o.type=='MESH' and o.get('asset_group')==ASSET]
  names=set(state['object_names']);assert names<={o.name for o in objects}
