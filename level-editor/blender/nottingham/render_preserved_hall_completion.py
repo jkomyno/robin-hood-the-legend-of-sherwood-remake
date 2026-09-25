@@ -22,6 +22,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('experiment', type=Path)
     parser.add_argument('reconstructed', type=Path)
+    parser.add_argument('--donor-bake', default='bake-donor-v1')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     experiment, output = args.experiment.resolve(), args.reconstructed.resolve()
     proof_path = output / 'provenance.json'
@@ -32,7 +33,8 @@ def main():
     assert generation_review['status'] == 'ready-for-bake'
     generated = Path(generation_review['generated_preserved_path'])
     assert sha(generated) == generation_review['generated_preserved_sha256']
-    donor = read(experiment / 'bake-donor-v1/validation.json')
+    donor_path = experiment / args.donor_bake / 'validation.json'
+    donor = read(donor_path)
     assert donor['generated_sha256'] == sha(generated) and donor['geometry_verified']
     assert not (output / 'worker.blend').exists() and not (output / 'actual').exists()
     shutil.copy2(output / 'model.blend', output / 'worker.blend')
@@ -60,8 +62,8 @@ def main():
         outside_objects_unchanged=proof['outside_objects_unchanged'],
         source_preservation='Every approved source RGBA texel, atlas alpha, geometry and UV preserved exactly after reopening; generated colors only fill unknown atlas texels.',
         preservation_report=str(proof_path), preservation_report_sha256=sha(proof_path),
-        original_donor_validation=str(experiment / 'bake-donor-v1/validation.json'),
-        original_donor_validation_sha256=sha(experiment / 'bake-donor-v1/validation.json'),
+        original_donor_validation=str(donor_path),
+        original_donor_validation_sha256=sha(donor_path),
         actual_sheet_sha256=sha(output / 'actual/textured.png'),
         review_status='awaiting-independent-actual-and-coverage-review')
     # Keep original donor counters explicitly separate from final atlas counts.
