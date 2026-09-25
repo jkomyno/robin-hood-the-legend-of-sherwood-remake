@@ -103,7 +103,21 @@ def validate_occluder_nodes(requested, visible_objects, available_objects,
     hidden = [obj for obj in catalog if obj.type == 'MESH'
               and obj.get('source_node') in missing]
     if (missing - {obj.get('source_node') for obj in hidden}
-            or any(not obj.hide_render for obj in hidden)
-            or filter_occluders(hidden, selectors, projection_label=projection_label,
-                                available_objects=catalog)):
+            or any(not obj.hide_render for obj in hidden)):
         raise ValueError('Unknown projection nodes: ' + str(missing))
+    remaining = filter_occluders(hidden, selectors, projection_label=projection_label,
+                                 available_objects=catalog)
+    excluded = [obj for obj in hidden if obj not in remaining]
+    for node in missing:
+        covers = [obj for obj in excluded if obj.get('source_node') == node]
+        owners = {obj.get('asset_group') for obj in covers}
+        if not covers or len(owners) != 1 or None in owners:
+            raise ValueError('Hidden projection node has no owned excluded cover: ' + node)
+        # Superseded unpartitioned meshes can remain hidden beside their authored
+        # replacement. They never enter the visible ray tree; retained components
+        # and meshes of another asset must not acquire this exception.
+        if any(obj.get('projection_component') is not None
+               or obj.get('reveal_component_role') is not None
+               or obj.get('asset_group') not in owners
+               for obj in remaining if obj.get('source_node') == node):
+            raise ValueError('Hidden projection node includes an unexcluded component: ' + node)

@@ -11,7 +11,7 @@ class Object(dict):
 
 class HiddenCovers(unittest.TestCase):
     def setUp(self):
-        self.cover = Object(source_node='cover', projection_component='roof',
+        self.cover = Object(source_node='cover', projection_component='roof', asset_group='hall',
                             reveal_component_role='removable-cover',
                             reveal_component_patch_id='patch-008')
         self.selector = dict(source_node='cover', projection_component='roof',
@@ -36,6 +36,14 @@ class HiddenCovers(unittest.TestCase):
         retained = Object(self.cover, projection_component='wall',
                           reveal_component_role='retained-wall')
         with self.assertRaises(ValueError): self.validate(objects=[self.cover, retained])
+
+    def test_hidden_unpartitioned_same_owner_mesh_can_accompany_cover(self):
+        old = Object(source_node='cover', asset_group='hall')
+        self.validate(objects=[self.cover, old])
+
+    def test_hidden_other_owner_mesh_cannot_accompany_cover(self):
+        old = Object(source_node='cover', asset_group='other')
+        with self.assertRaises(ValueError): self.validate(objects=[self.cover, old])
 
     def test_wrong_room_or_role_fails(self):
         for key, value in [('reveal_component_patch_id', 'patch-007'),
