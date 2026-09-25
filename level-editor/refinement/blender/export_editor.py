@@ -17,6 +17,7 @@ import bpy
 from mathutils import Matrix, Vector
 from patch_material_export import export_states
 from catalog_schema import source_for_part
+from publication_contract import publication_parts, validate_export_records
 
 
 def projection_metadata(source):
@@ -264,8 +265,37 @@ def mission_editor_footprint(sources, pivot):
         'show_shadow_polygon':False,'default_material':0,'material_indices':[]}
 
 
+def component_editor_footprint(sources, pivot, obstacle):
+    """Scope collision metadata to the reviewed component mesh's convex footprint."""
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated = [obj.evaluated_get(depsgraph) for obj in sources]
+    vertices = [obj.matrix_world @ vertex.co for obj in evaluated for vertex in obj.data.vertices]
+    points = sorted(set((float(v.x), float(v.y)) for v in vertices))
+    def cross(a, b, c):
+        return (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])
+    lower, upper = [], []
+    for point in points:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], point) <= 0:
+            lower.pop()
+        lower.append(point)
+    for point in reversed(points):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], point) <= 0:
+            upper.pop()
+        upper.append(point)
+    hull = lower[:-1] + upper[:-1]
+    if len(hull) < 3:
+        raise ValueError('Component requires a nondegenerate collision footprint')
+    px, py, pz = pivot
+    sin, cos = math.sin(math.radians(35)), math.cos(math.radians(35))
+    bottom, top = min(v.z for v in vertices), max(v.z for v in vertices)
+    result = json.loads(json.dumps(obstacle))
+    result['points'] = [{'x': x-px, 'y': (-y+py)*sin,
+                         'z_bottom': (bottom-pz)*cos, 'z_top': (top-pz)*cos} for x, y in hull]
+    return result
+
+
 def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None,
-                  include_hidden_objects=None):
+                  include_hidden_objects=None, catalog=None, level=None):
     """Export visible meshes plus explicitly named inactive reviewed components.
 
     ``include_hidden_objects`` contains exact object names, never source-node
@@ -301,10 +331,18 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
         sources = [o for o in sources if o.get("asset_group") == asset_id]
     if not sources or any(not o.get("source_node") for o in sources):
         raise ValueError("Every exported mesh must retain its editor source node")
+    declared = publication_parts(catalog) if catalog is not None else {}
+    part_keys = validate_export_records(catalog, [dict(name=o.name, source_node=o['source_node'],
+        asset_group=o.get('asset_group'), projection_component=o.get('projection_component')) for o in sources],
+        [asset_id] if asset_id else None) if catalog is not None else {o.name:o['source_node'] for o in sources}
+    part_keys.update({o.name:'ground' for o in sources if o['source_node']=='ground'})
+    if any(value['source_components'] for value in declared.values()) and level is None:
+        raise ValueError('Partitioned publication requires original obstacle metadata')
     visibility = {}
     ownership = {}
     for source in sources:
-        key = source['source_node']
+        key = part_keys[source.name]
+        original_key = source['source_node']
         if not isinstance(key, str):
             raise ValueError('Source node must be a stable string')
         if key != 'ground':
@@ -312,7 +350,7 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
                 source_for_part({'node':key,'mission_profile':source.get('mission_patch_profile')})
                 if source.get('source_obstacle') is not None:
                     raise ValueError('Mission part must not alias a sight obstacle: '+key)
-            elif not key.startswith('building-') or not key[9:].isdigit():
+            elif not original_key.startswith('building-') or not original_key[9:].isdigit():
                 raise ValueError('Invalid canonical editor source node: '+key)
             if any(not isinstance(source.get(field), str) or not source[field].strip()
                    for field in ('asset_group', 'asset_name', 'part_name')):
@@ -360,7 +398,8 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
         root['default_hidden_source_nodes'] = sorted(key for key, hidden in visibility.items() if hidden)
         groups, parts = {}, {}
         for source in sources:
-            key = source["source_node"]
+            key = part_keys[source.name]
+            original_key = source['source_node']
             mesh = bpy.data.meshes.new_from_object(source.evaluated_get(depsgraph),
                 preserve_all_data_layers=True, depsgraph=depsgraph)
             mesh.transform(Matrix.Translation(-pivot) @ source.matrix_world)
@@ -388,7 +427,15 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
                         part['native_patch_preview']=source['native_patch_preview'].to_dict()
                     part['obstacle_local_game']=mission_editor_footprint([o for o in sources if o['source_node']==key],pivot)
                 else:
-                    part["source_obstacle"] = int(key.split("-")[1])
+                    part["source_obstacle"] = int(original_key.split("-")[1])
+                part['source_node'] = original_key
+                selectors = declared.get(key, {}).get('source_components', [])
+                if selectors:
+                    part['source_components'] = selectors
+                    part['obstacle_local_game'] = component_editor_footprint(
+                        [o for o in sources if part_keys[o.name] == key], pivot,
+                        level['sight_obstacles'][part['source_obstacle']])
+                    part['footprint_basis'] = 'Reviewed component mesh convex footprint; original obstacle flags retained.'
                 part["part_name"] = source["part_name"]
                 part['default_hidden'] = visibility[key]
                 parts[key] = part
@@ -400,7 +447,8 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
                 if variant_mesh != mesh:
                     meshes.append(variant_mesh)
                 piece = node(source.name if state == 'default' else source.name + ' / ' + state, parts[key], variant_mesh)
-                piece["source_node"] = key
+                piece["source_node"] = original_key
+                piece['editor_part_node'] = key
                 piece['default_hidden'] = bool(source.hide_render)
                 for metadata_key, value in projection_metadata(source).items():
                     piece[metadata_key] = value
@@ -443,12 +491,16 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
                 "source_origin_scene": list(pivot),
                 "bounds_local_scene": {"min": list(lo - pivot), "max": list(hi - pivot)},
                 "components": [{"name": source.name, "source_node": source["source_node"],
+                                "editor_part_node": part_keys[source.name],
                                 "default_hidden": bool(source.hide_render), **projection_metadata(source)} for source in sources],
                 "parts": [{"node": key, "name": obj["part_name"],
                            **({'mission_profile':obj['mission_patch_profile'],
                                'obstacle_local_game':obj['obstacle_local_game'].to_dict(),
                                'footprint_basis':'Editor bounds only; no sight-obstacle association or animation inferred.'}
                               if key.startswith('mission-') else {'source_obstacle':obj['source_obstacle']}),
+                           **({'source_node':obj['source_node'], 'source_components':list(obj['source_components']),
+                               'obstacle_local_game':obj['obstacle_local_game'].to_dict(),
+                               'footprint_basis':obj['footprint_basis']} if obj.get('source_components') else {}),
                            "default_hidden": visibility[key]} for key, obj in parts.items()]}
             if {source['source_node'] for source in sources} == {'ground'}:
                 descriptor['editor_usage'] = 'map-background'
@@ -469,7 +521,7 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
 
 
 def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=None,
-                         include_hidden_objects=None, asset_ids=None):
+                         include_hidden_objects=None, asset_ids=None, catalog=None):
     """Export every named asset, local collision volumes, and merge the library index.
 
     Run into a fresh staging directory for each revision, then publish reviewed
@@ -527,13 +579,13 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
     for key in ids:
         report = export_editor(map_name, output_dir / key / "model.glb", asset_id=key,
             standalone_pivot=pivots.get(key),
-            include_hidden_objects=[name for name in requested if named[name]['asset_group'] == key])
+            include_hidden_objects=[name for name in requested if named[name]['asset_group'] == key], catalog=catalog, level=level)
         descriptor = report["asset"]
         px, py, pz = descriptor["source_origin_scene"]
         sin, cos = math.sin(math.radians(35)), math.cos(math.radians(35))
         descriptor["source_origin_game"] = [px, -py * sin, pz * cos]
         for part in descriptor["parts"]:
-            if 'mission_profile' in part:
+            if 'mission_profile' in part or part.get('source_components'):
                 # export_editor has already applied the common variant pivot.
                 continue
             else:

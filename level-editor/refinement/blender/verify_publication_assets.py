@@ -11,6 +11,7 @@ from pathlib import Path
 import struct
 import sys
 from catalog_schema import source_for_part
+from publication_contract import publication_parts, validate_export_records
 
 
 def gltf(path):
@@ -22,6 +23,31 @@ def gltf(path):
         if kind!=0x4e4f534a:
             raise ValueError('Expected JSON chunk')
         return json.loads(handle.read(length))
+
+
+def verify_component_nodes(model, expected):
+    """Reject duplicate part identities or meshes escaping their selector parent."""
+    nodes=model['nodes']
+    named=[node['name'] for node in nodes if node.get('name','').startswith(('building-','mission-'))]
+    if len(named)!=len(set(named)) or set(named)!=set(expected):
+        raise ValueError('GLB selectable part identities overlap or differ from catalog')
+    for node in nodes:
+        identity=expected.get(node.get('name'))
+        if not identity or not identity['source_components']:
+            continue
+        extra=node.get('extras',{})
+        if (extra.get('source_node')!=identity['source_node'] or
+                extra.get('source_components')!=identity['source_components'] or
+                not extra.get('obstacle_local_game',{}).get('points')):
+            raise ValueError('GLB split part lost provenance or scoped collision metadata')
+        children=[nodes[index] for index in node.get('children',[])]
+        if len(children)!=1 or 'mesh' not in children[0]:
+            raise ValueError('Split selector must export exactly one reviewed component mesh')
+        child=children[0].get('extras',{})
+        if (child.get('source_node')!=identity['source_node'] or
+                child.get('projection_component')!=identity['source_components'][0] or
+                child.get('editor_part_node')!=node['name']):
+            raise ValueError('GLB mesh differs from its exact component owner')
 
 
 def verify_static_inventory(asset_id, descriptor, models, owned, imports, proof):
@@ -79,6 +105,7 @@ def verify(directory,catalog_path):
     stage=json.loads((directory/'stage.json').read_text())
     index=json.loads((directory/'assets/index.json').read_text())
     expected={g['id']:g for g in catalog['groups']}
+    declared=publication_parts(catalog)
     plan=json.loads(Path(stage['plan']).read_text()) if stage.get('plan') else {}
     proof_path=directory/'handoff-verification.json'
     proof=json.loads(proof_path.read_text()) if proof_path.exists() else {}
@@ -91,11 +118,34 @@ def verify(directory,catalog_path):
     asset_material_coverage=[]
     for asset in index['assets']:
         descriptor=json.loads((directory/'assets'/asset['descriptor']).read_text())
-        owned={'ground'} if asset['id'] in ground_ids else {source_for_part(part) for part in expected[asset['id']]['parts']}
-        actual={c['source_node'] for c in descriptor['components']}
+        owned={'ground'} if asset['id'] in ground_ids else {key for key,value in declared.items() if value['asset_id']==asset['id']}
+        actual={c.get('editor_part_node',c['source_node']) for c in descriptor['components']}
+        if (asset['id'] not in ground_ids and not descriptor.get('state_variants')
+                and any(declared[key]['source_components'] for key in owned)):
+            bindings=validate_export_records(catalog,[dict(c,asset_group=asset['id']) for c in descriptor['components']], [asset['id']])
+            if any(c.get('editor_part_node',c['source_node'])!=bindings[c['name']] for c in descriptor['components']):
+                raise ValueError('Descriptor component has an incorrect selectable identity')
+            part_nodes=[part['node'] for part in descriptor['parts']]
+            if len(part_nodes)!=len(set(part_nodes)) or set(part_nodes)!=owned:
+                raise ValueError('Standalone part identities overlap or omit catalog parts')
+            for part in descriptor['parts']:
+                identity=declared[part['node']]
+                if identity['source_components']:
+                    if (part.get('source_node')!=identity['source_node'] or
+                            part.get('source_components')!=identity['source_components'] or
+                            part.get('source_obstacle')!=int(identity['source_node'][9:]) or
+                            not part.get('obstacle_local_game',{}).get('points') or
+                            not part.get('footprint_basis','').startswith('Reviewed component mesh')):
+                        raise ValueError('Split part lost exact provenance or scoped collision metadata')
         if asset['id'] in ground_ids and (descriptor.get('parts')!=[] or descriptor.get('editor_usage')!='map-background' or asset.get('editor_usage')!='map-background'):
             raise ValueError('Ground must declare map-background capability without obstacle parts')
         model=gltf(directory/'assets'/asset['model'])
+        if any(declared.get(key,{}).get('source_components') for key in owned):
+            verify_component_nodes(model,{key:declared[key] for key in owned})
+            model_parts={node.get('name'):node.get('extras',{}) for node in model['nodes']}
+            for part in descriptor['parts']:
+                if part.get('source_components') and part['obstacle_local_game']!=model_parts[part['node']].get('obstacle_local_game'):
+                    raise ValueError('Standalone component collision differs from exported mesh metadata')
         if descriptor.get('state_variants'):
             models={state:gltf(directory/'assets'/Path(asset['descriptor']).parent/variant['model'])
                     for state,variant in descriptor['state_variants'].items()}
@@ -122,9 +172,14 @@ def verify(directory,catalog_path):
                     raise ValueError('Standalone lost component ownership metadata')
         components+=len(descriptor['components'])
     model=gltf(Path(stage['map']['file']))
-    expected_map={source_for_part(p) for g in expected.values() for p in g['parts']}
-    actual_map={n['name'] for n in model['nodes'] if n.get('name','').startswith(('building-','mission-'))}
+    expected_map=set(declared)
+    actual_names=[n['name'] for n in model['nodes'] if n.get('name','').startswith(('building-','mission-'))]
+    if len(actual_names)!=len(set(actual_names)):
+        raise ValueError('Full map contains duplicate selectable identities')
+    actual_map=set(actual_names)
     if actual_map!=expected_map:raise ValueError('Full map canonical coverage differs from publication catalog')
+    if any(identity['source_components'] for identity in declared.values()):
+        verify_component_nodes(model,declared)
     generated={}
     for material in model.get('materials',[]):
         extra=material.get('extras',{})

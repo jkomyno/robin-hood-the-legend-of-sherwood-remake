@@ -23,7 +23,8 @@ from publication_contract import canonical_parts, scene_filename, validate_cover
 def stage(plan_path):
     plan_path=Path(plan_path).resolve(strict=True)
     plan=json.loads(plan_path.read_text())
-    expected=canonical_parts(json.loads(Path(plan['catalog']).read_text()),plan['map_name'])
+    catalog=json.loads(Path(plan['catalog']).read_text())
+    expected=canonical_parts(catalog,plan['map_name'])
     scene_file=scene_filename(plan)
     output=Path(plan['output']).resolve()
     output.mkdir(parents=True,exist_ok=False)
@@ -192,8 +193,9 @@ def stage(plan_path):
             'canonical_parts':len(canonical_after),'approved_texture_checks':texture_checks,
             'unselected_meshes_preserved':len(outside_before),'unselected_mesh_state_identical':outside_before==outside_after,
             'generated_materials':{sha:sorted(names) for sha,names in generated.items()},
-            'map':export_editor(plan['map_name'],output/scene_file),
-            'assets':export_asset_library(plan['map_name'],output/'assets',plan['hackable_map'],asset_ids=plan.get('export_asset_ids'))}
+            'map':export_editor(plan['map_name'],output/scene_file,catalog=catalog,
+                                level=json.loads(Path(plan['hackable_map']).read_text())),
+            'assets':export_asset_library(plan['map_name'],output/'assets',plan['hackable_map'],asset_ids=plan.get('export_asset_ids'),catalog=catalog)}
     if plan.get('static_variants'):
         from export_static_variants import export_variants
         report['static_variants']=export_variants(plan,output)
