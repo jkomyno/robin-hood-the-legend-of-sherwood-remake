@@ -81,6 +81,7 @@ export default function Editor3D(props: EditorProps) {
   const [assetEntries, setAssetEntries] = createSignal<ProjectionAssetEntry[]>([]);
   const [libraryLoading, setLibraryLoading] = createSignal(false);
   const [libraryError, setLibraryError] = createSignal("");
+  const [mapLoadProgress, setMapLoadProgress] = createSignal<{ completed: number; total: number; phase: string } | null>(null);
   const [dropActive, setDropActive] = createSignal(false);
   const [addingAsset, setAddingAsset] = createSignal(false);
   let paletteAttempt = 0;
@@ -250,6 +251,7 @@ export default function Editor3D(props: EditorProps) {
     let preparedAsset: THREE.Object3D | null = null;
     let preparedEntities: SceneEntities | null = null;
     props.onStatus(`loading ${requestedMission ?? name}…`);
+    setMapLoadProgress({ completed: 0, total: 1, phase: "Reading map" });
     try {
       const mission = requestedMission && idx ? await readMission(idx, requestedMission) : null;
       if (mission) {
@@ -275,9 +277,12 @@ export default function Editor3D(props: EditorProps) {
         setMissionInfo(preparedEntities ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}` : "");
         preparedEntities = null;
         props.onStatus(null);
+        setMapLoadProgress(null);
         return;
       }
-      const candidate = await prepareMapCandidate(name, lib.handle, idx);
+      const candidate = await prepareMapCandidate(name, lib.handle, idx, (completed, total, phase) => {
+        if (attempt === openAttempt) setMapLoadProgress({ completed, total, phase });
+      });
       preparedAsset = candidate.asset;
       if (mission && idx) {
         if (!candidate.level) throw new Error("Mission requires level data");
@@ -326,11 +331,13 @@ export default function Editor3D(props: EditorProps) {
       viewport.gameCamera(true);
       setInfo(`${d.groups.length} buildings, ${d.objects.length} parts`);
       props.onStatus(null);
+      setMapLoadProgress(null);
     } catch (e) {
       preparedEntities?.dispose();
       if (preparedAsset) disposeObjectResources([preparedAsset]);
       if (session.isCurrent(generation) && !disposed) {
-        props.onStatus(null);
+      props.onStatus(null);
+      setMapLoadProgress(null);
         props.onError(String(e));
       }
     }
@@ -617,6 +624,12 @@ export default function Editor3D(props: EditorProps) {
           {(s) => <span class="editor-status">{s()}</span>}
         </Show>
       </div>
+      <Show when={mapLoadProgress()}>
+        {(progress) => <div class="map-load-progress" role="status" aria-label={`Loading map: ${progress().phase}`}>
+          <div class="map-load-progress-label"><span>{progress().phase}</span><span>{progress().total > 1 ? `${progress().completed} / ${progress().total} assets` : ""}</span></div>
+          <progress max={progress().total} value={progress().completed} />
+        </div>}
+      </Show>
       <div class="editor-body">
         <AssetLibrary root={props.library()?.handle ?? null} entries={assetEntries()}
           loading={libraryLoading()} error={libraryError()} canInsert={!!doc() && !addingAsset()}

@@ -32,6 +32,7 @@ export async function prepareMapCandidate(
   name: string,
   library: FileSystemDirectoryHandle,
   idx: DatadirIndex | null,
+  onProgress?: (completed: number, total: number, phase: string) => void,
 ) {
   let asset: THREE.Object3D | null = null;
   try {
@@ -41,6 +42,7 @@ export async function prepareMapCandidate(
     const sceneDoc = parseSceneDoc(
       await readJson<unknown>(dir, `${name}-volumes.scene.json`),
     );
+    onProgress?.(0, 1, "Reading map");
     if (sceneDoc.map.toLowerCase() !== name.toLowerCase()) {
       throw new Error(
         `${name}-volumes.scene.json: source map is ${sceneDoc.map}`,
@@ -119,6 +121,7 @@ export async function prepareMapCandidate(
             // worker failed. The outer catch retires everything after workers settle.
             asset!.add(prepared.asset);
             preparedSources[index] = prepared;
+            onProgress?.(preparedSources.filter(Boolean).length, references.length, "Loading assets");
           } catch (error) {
             if (!failed) { failed = true; failure = error; }
           }
@@ -127,6 +130,7 @@ export async function prepareMapCandidate(
       // Limit simultaneous model decoding and texture allocation on large maps.
       await Promise.all(Array.from({ length: Math.min(4, references.length) }, loadNext));
       if (failed) throw failure;
+      onProgress?.(references.length, references.length, "Finalizing map");
       for (const prepared of preparedSources) {
         asset.add(prepared.asset); // Retain document order regardless of completion order.
         for (const [key, node] of prepared.sources) {
