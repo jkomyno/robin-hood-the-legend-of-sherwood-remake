@@ -52,8 +52,8 @@ for asset in arguments:
     samples.setdefault(tri.polygon_index,[]).append((np.column_stack((xs,ys)),world,ownership[ys,xs]))
     normal=obj.matrix_world.to_3x3().inverted().transposed()@mesh.polygons[tri.polygon_index].normal
     normal.normalize()
-    f=faces.setdefault(tri.polygon_index,dict(face=tri.polygon_index,abs_normal_z=abs(float(normal.z)),interior_texels=0,class0_texels=0,class0_bottom4_texels=0,zmin=None,zmax=None))
-    f['interior_texels']+=int(inside.sum());f['class0_texels']+=int(unknown.sum())
+    f=faces.setdefault(tri.polygon_index,dict(face=tri.polygon_index,abs_normal_z=abs(float(normal.z)),interior_texels=0,class3_texels=0,class0_texels=0,class0_bottom4_texels=0,zmin=None,zmax=None))
+    f['interior_texels']+=int(inside.sum());f['class0_texels']+=int(unknown.sum());f['class3_texels']+=int((ownership[ys,xs]==3).sum())
     f['class0_bottom4_texels']+=int((unknown&(world[:,2]<=minimum+band)).sum())
     if unknown.any():
      zs=world[unknown,2];f['zmin']=min(f['zmin'] if f['zmin'] is not None else float('inf'),float(zs.min()));f['zmax']=max(f['zmax'] if f['zmax'] is not None else -float('inf'),float(zs.max()))
@@ -67,7 +67,7 @@ for asset in arguments:
      distance,nearest=cKDTree(pixel[donors]).query(pixel[targets])
      wd=np.linalg.norm(world[targets]-world[donors][nearest],axis=1)
      f['bottom4_nearest_generated']=dict(min_texels=float(distance.min()),max_texels=float(distance.max()),p95_texels=float(np.percentile(distance,95)),max_world=float(wd.max()),within_8texel_4world=int(((distance<=8)&(wd<=4)).sum()),target_count=int(targets.sum()))
-   records.append(dict(object=obj.name,minimum_world_z=minimum,provenance_sha256=proof['sha256'],faces=[f for f in faces.values() if f['class0_texels']]))
+   records.append(dict(object=obj.name,minimum_world_z=minimum,provenance_sha256=proof['sha256'],faces=[f for f in faces.values() if f['class0_texels'] or f['class3_texels']]))
  report=dict(status='DIAGNOSTIC-ONLY',model_sha256=sha(folder/'worker.blend'),validation_sha256=sha(folder/'validation.json'),method='Strictly interior UV triangle pixel centers; excludes atlas padding and triangle edges. Class zero means unfilled physical surface, not proof of camera visibility.',objects=records)
  report['analysis_band_world']=band
  filename='residual-physical-provenance.json' if band==4 else f'residual-physical-provenance-band-{band:g}.json'
