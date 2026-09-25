@@ -5,6 +5,7 @@ This guard is necessary but not sufficient: new atlas source coverage is audited
 separately before a texture candidate can be accepted.
 """
 from collections import Counter
+import math
 
 
 def frozen(value):
@@ -16,6 +17,14 @@ def frozen(value):
 
 
 def triangle_key(triangle):
+    positions = [c['position'] for c in triangle['corners']]
+    if len(positions) != 3 or any(len(p) != 3 or not all(math.isfinite(x) for x in p) for p in positions):
+        raise ValueError('Finite three-dimensional triangle coordinates required')
+    a,b,c = positions
+    u=[b[i]-a[i] for i in range(3)];v=[c[i]-a[i] for i in range(3)]
+    cross=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]]
+    if sum(x*x for x in cross) == 0:
+        raise ValueError('Degenerate physical triangle')
     corners = tuple(frozen(c) for c in triangle['corners'])
     if len(corners) != 3 or len(set(corners)) != 3:
         raise ValueError('Three distinct triangle corners required')
@@ -52,7 +61,7 @@ def verify_equivalence(before, after, scopes):
             if face not in ids:
                 if polygon != replacement:
                     raise ValueError(f'Unscoped polygon changed: {name}/{face}')
-            elif Counter(map(triangle_key, polygon['triangles'])) != Counter(map(triangle_key, replacement['triangles'])):
+            elif not polygon['triangles'] or not replacement['triangles'] or Counter(map(triangle_key, polygon['triangles'])) != Counter(map(triangle_key, replacement['triangles'])):
                 raise ValueError(f'Physical triangle/material/non-atlas UV mismatch: {name}/{face}')
         counts[name] = sum(len(old['polygons'][face]['triangles']) for face in ids)
     return {'status': 'PASS', 'scoped_oriented_triangles': counts,

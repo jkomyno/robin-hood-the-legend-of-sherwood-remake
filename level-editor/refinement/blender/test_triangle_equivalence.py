@@ -30,6 +30,15 @@ class TriangleEquivalenceTests(unittest.TestCase):
             old=scene();new=copy.deepcopy(old);mutate(new)
             with self.assertRaises(ValueError):verify_equivalence(old,new,{'stair':[0]})
 
+    def test_rejects_vacuous_and_nonfinite_targets(self):
+        old=scene();new=copy.deepcopy(old)
+        old['stair']['polygons'][0]['triangles']=[]
+        new['stair']['polygons'][0]['triangles']=[]
+        with self.assertRaises(ValueError):verify_equivalence(old,new,{'stair':[0]})
+        for position in [(float('nan'),0,0),(1,0,0)]:
+            old=scene();old['stair']['polygons'][0]['triangles'][0]['corners'][0]['position']=position
+            with self.assertRaises(ValueError):verify_equivalence(old,copy.deepcopy(old),{'stair':[0]})
+
     def test_rejects_duplicate_missing_triangle(self):
         old=scene();new=copy.deepcopy(old);new['stair']['polygons'][0]['triangles'].pop()
         with self.assertRaises(ValueError):verify_equivalence(old,new,{'stair':[0]})
