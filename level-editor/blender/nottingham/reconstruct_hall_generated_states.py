@@ -165,8 +165,28 @@ def main(contract_path,out):
             row=next(r for r in report if r['object']==name);flags=np.load(row['texel_provenance']['path'])['ownership'];proof=read(proof_path)
             assert all(flags[t['atlas'][1],t['atlas'][0]]==1 for pixel in proof['pixels'] for t in pixel['taps'] if t['weight']>1e-8)
             witnesses[name]=dict(count=len(proof['pixels']),all_source_taps_exact=True,original_proof=str(proof_path),original_proof_sha256=sha(proof_path))
+        shared_consistency=None
+        if state=='revealed' and (out/'covered/provenance.json').exists():
+            covered_report=read(out/'covered/provenance.json')
+            assert sha(out/'covered/model.blend')==covered_report['model_sha256']
+            revealed_pixels={row['object']:np.array(Image.open(io.BytesIO(bytes(image_binding(bpy.data.objects[row['object']],row['material_slot'])[0].packed_file.data))).convert('RGBA'))[::-1].copy() for row in report}
+            bpy.ops.wm.open_mainfile(filepath=str(out/'covered/model.blend'));bpy.context.view_layer.update()
+            consistency=[]
+            covered_objects={r['object']:r for r in covered_report['objects']}
+            for row in report:
+                name=row['object']
+                if name not in covered_objects:continue
+                other=covered_objects[name]
+                assert row['texel_provenance']['uv_sha256']==other['texel_provenance']['uv_sha256']
+                current=np.load(row['texel_provenance']['path']);prior=np.load(other['texel_provenance']['path'])
+                shared=(current['ownership']==2)&(current['donor_state']==1)&(prior['ownership']==2)
+                image,_=image_binding(bpy.data.objects[name],other['material_slot']);covered_pixels=np.array(Image.open(io.BytesIO(bytes(image.packed_file.data))).convert('RGBA'))[::-1]
+                count=int(shared.sum());mismatch=int(np.count_nonzero(np.any(covered_pixels[shared]!=revealed_pixels[name][shared],axis=1)))
+                assert mismatch==0,'Shared unknown surface colors differ: '+name
+                consistency.append(dict(object=name,shared_completion_texels=count,mismatches=mismatch))
+            shared_consistency=dict(status='PASS',covered_model_sha256=covered_report['model_sha256'],objects=consistency)
         write(destination/'workspace.json',cfg)
-        write(destination/'provenance.json',dict(objects=report,model_sha256=sha(destination/'model.blend'),contract_sha256=sha(contract_path),status='PASS',geometry_uv_exact=True,source_rgba_alpha_exact=True,outside_objects_unchanged=len(outside_before),outside_object_signatures=outside_before,witnesses=witnesses))
+        write(destination/'provenance.json',dict(objects=report,model_sha256=sha(destination/'model.blend'),contract_sha256=sha(contract_path),status='PASS',shared_surface_consistency=shared_consistency,geometry_uv_exact=True,source_rgba_alpha_exact=True,outside_objects_unchanged=len(outside_before),outside_object_signatures=outside_before,witnesses=witnesses))
         results.append(dict(state=state,model_sha256=sha(destination/'model.blend')))
     name='reconstruction-'+requested[0]+'.json' if len(requested)==1 else 'reconstruction.json'
     write(out/name,dict(states=results,status='awaiting-independent-QA'))
