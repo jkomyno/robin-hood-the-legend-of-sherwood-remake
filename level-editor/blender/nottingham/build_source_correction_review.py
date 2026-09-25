@@ -41,6 +41,11 @@ def enrich(item):
         if not path.is_relative_to(workspace) or sha(path)!=artifacts[name]:
             raise ValueError('Actual material image changed: '+name)
     item.update(stored_material_textured=str(audit_path.parent/'materials.png'),stored_material_audit=str(audit_path))
+    for key in ('source_comparison', 'source_comparison_secondary'):
+        label = candidate.get(key + '_label')
+        if item.get(key) and label:
+            if not isinstance(label, str):raise ValueError('Review image label must be text')
+            item[key + '_label'] = label
     item['notes'].append('This corrected revision requires a new decision. Previous geometry and texture approvals do not approve this revision; texture generation remains on hold.')
     return item
 
