@@ -8,7 +8,9 @@ def main():
  for r in inventory['jobs']+inventory['skips']:
   a=r.get('asset_id');row={k:r[k]for k in ('asset_id','review','bake','model_sha256')if k in r}
   if not a or not r.get('bake'):row['status']='outside-current-audit';row['reason']=r['status'];rows.append(row);continue
-  candidates=[OUT/a/'coverage.json',OUT/'legacy-replay'/a/'coverage/coverage.json'];p=next((p for p in candidates if p.exists()),None)
+  candidates=[OUT/a/'coverage.json',OUT/'legacy-replay'/a/'coverage-transfer/coverage.json',OUT/'legacy-replay'/a/'coverage/coverage.json']
+  if a=='nottingham-terrain-ground':candidates.insert(0,OUT/'terrain-uv/coverage/coverage.json')
+  p=next((p for p in candidates if p.exists()),None)
   if p is None:row['status']='pending';row['reason']=r['status'];rows.append(row);continue
   current=json.loads(Path(r['review']).read_text());current_model=Path(r['review']).parent/current['bake']/'worker.blend'
   if sha(current_model)!=r['model_sha256']:
