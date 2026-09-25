@@ -1,6 +1,7 @@
 """Append a source-baked roof contact to exact approved hall material states."""
 import copy
 import hashlib
+import io
 import json
 import shutil
 import sys
@@ -127,6 +128,39 @@ def promote_covered(new):
     write(report_path, report)
 
 
+def apply_restored_wall(objects, packet):
+    """Copy only the guarded restored image into the original state's binding."""
+    import bpy
+    import numpy as np
+    from PIL import Image
+    report_path = packet / 'source-restoration.json'
+    report = json.loads(report_path.read_text())
+    assert report['status'] == 'PASS' and sha(packet / 'model.blend') == report['model_sha256']
+    for key in ['geometry_uv_material_schema_preserved', 'prior_allowed_source_texels_preserved',
+                'alpha_preserved', 'all_outside_patch_rgba_preserved']:
+        assert report[key], key
+    target = next(o for o in objects if o.get('source_node') == 'building-504'
+                  and o.get('projection_component') is None)
+    material = target.data.materials[target.data.polygons[17].material_index]
+    image = next(n.image for n in material.node_tree.nodes if n.type == 'TEX_IMAGE')
+    assert hashlib.sha256(image.packed_file.data).hexdigest() == report['original_packed_image_sha256']
+    with bpy.data.libraries.load(str(packet / 'model.blend'), link=False) as (source, loaded):
+        loaded.objects = [target.name]
+    donor = loaded.objects[0]
+    donor_material = donor.data.materials[donor.data.polygons[17].material_index]
+    donor_image = next(n.image for n in donor_material.node_tree.nodes if n.type == 'TEX_IMAGE')
+    assert hashlib.sha256(donor_image.packed_file.data).hexdigest() == report['packed_image_sha256']
+    pixels = np.array(Image.open(io.BytesIO(bytes(donor_image.packed_file.data))).convert('RGBA'))[::-1]
+    image.pixels.foreach_set((pixels.astype(np.float32)/255).ravel())
+    image.update()
+    image.pack()
+    assert hashlib.sha256(image.packed_file.data).hexdigest() == report['packed_image_sha256']
+    bpy.data.objects.remove(donor, do_unlink=True)
+    return target.name, dict(report=str(report_path), report_sha256=sha(report_path),
+        changed_texels=report['changed_texels'], original_packed_image_sha256=report['original_packed_image_sha256'],
+        packed_image_sha256=report['packed_image_sha256'], restored_object_signature=signature(target))
+
+
 def main():
     import bpy
     from render_slots import acquire
@@ -151,6 +185,11 @@ def main():
         bpy.ops.wm.open_mainfile(filepath=state['model'])
         owned = [o for o in bpy.data.objects if o.type == 'MESH' and o.get('asset_group') == config['asset_id']]
         before = {o.name: signature(o) for o in owned}
+        wall_record = None
+        if '--wall-packets' in sys.argv:
+            packet = Path(sys.argv[sys.argv.index('--wall-packets') + 1]).resolve() / label
+            wall_name, wall_record = apply_restored_wall(owned, packet)
+            del before[wall_name]
         with bpy.data.libraries.load(str(new / 'model.blend'), link=False) as (source, target):
             assert EXTENSION in source.objects and all(n in source.objects for n in CONTEXT)
             target.objects = [EXTENSION, *CONTEXT]
@@ -163,7 +202,7 @@ def main():
             # unlinked donor can have an unevaluated world matrix; keep the receiver's.
             bpy.data.objects.remove(donor, do_unlink=True)
         assert extension.name == EXTENSION
-        assert before == {o.name: signature(o) for o in owned}, 'Original hall source data changed'
+        assert before == {o.name: signature(o) for o in owned if o.name in before}, 'Original hall source data changed'
         expected_extension = signature(extension)
         names = state['object_names'] + [EXTENSION]
         for o in owned + [extension]:
@@ -179,10 +218,14 @@ def main():
         bpy.ops.wm.open_mainfile(filepath=str(dest / 'model.blend'))
         after = {n: signature(bpy.data.objects[n]) for n in before}
         assert before == after and signature(bpy.data.objects[EXTENSION]) == expected_extension
+        if wall_record:
+            assert signature(bpy.data.objects[wall_name]) == wall_record['restored_object_signature']
         write(dest / 'source-preservation.json', dict(status='PASS', original_model_sha256=state['model_sha256'],
               model_sha256=sha(dest / 'model.blend'), original_owned_object_hashes=before,
               saved_owned_object_hashes=after, extension_hash=expected_extension,
-              note='All original hall meshes, per-face materials, UV coordinates and packed image bytes unchanged.'))
+              **({'wall_source_restoration': wall_record} if wall_record else {}),
+              note=('47 original hall objects exact; wall504 changes only guarded newly authorized source pixels.'
+                    if wall_record else 'All original hall meshes, per-face materials, UV coordinates and packed image bytes unchanged.')))
         layers = copy.deepcopy(state_layers[label])
         if label == 'revealed':
             layers[0].setdefault('receiver_components', []).append(dict(source_node='building-505',
