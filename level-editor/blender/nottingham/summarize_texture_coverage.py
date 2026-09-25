@@ -10,6 +10,9 @@ def main():
   if not a or not r.get('bake'):row['status']='outside-current-audit';row['reason']=r['status'];rows.append(row);continue
   candidates=[OUT/a/'coverage.json',OUT/'legacy-replay'/a/'coverage/coverage.json'];p=next((p for p in candidates if p.exists()),None)
   if p is None:row['status']='pending';row['reason']=r['status'];rows.append(row);continue
+  current=json.loads(Path(r['review']).read_text());current_model=Path(r['review']).parent/current['bake']/'worker.blend'
+  if sha(current_model)!=r['model_sha256']:
+   row['status']='pending';row['reason']='Canonical saved model changed after diagnostic inventory.';rows.append(row);continue
   d=json.loads(p.read_text());row.update(coverage_report=str(p),coverage_report_sha256=sha(p),model_sha256=d['model_sha256'],manifest_sha256=d['manifest_sha256'],rendered_red_pixels=sum(v['unfilled_visible_pixels']for v in d['views']))
   center=p.with_name('center-ray-classification.json')
   if d['unverified_materials']:row['status']='pending';row['reason']='unverified-materials'
