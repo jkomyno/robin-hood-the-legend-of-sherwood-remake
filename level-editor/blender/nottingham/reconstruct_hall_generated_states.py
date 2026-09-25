@@ -112,7 +112,7 @@ def main(contract_path,out):
             assert hashlib.sha256(image.packed_file.data).hexdigest()==entry['packed_image_sha256']
             assert sha(entry['path'])==entry['sha256'];flags=np.load(entry['path'])['ownership'].copy();protected=flags==1
             original=np.array(Image.open(io.BytesIO(bytes(image.packed_file.data))).convert('RGBA'))[::-1].copy();result=original.copy();h,w=flags.shape
-            best=np.full((h,w),-np.inf);lineage=np.full((h,w),-1,np.float32);choice=np.zeros((h,w),np.uint8)
+            best=np.full((h,w),-np.inf);lineage=np.full((h,w),-1,np.float32);choice=np.zeros((h,w),np.uint8);fallback=np.zeros((h,w),bool)
             obj.data.calc_loop_triangles()
             for tri in obj.data.loop_triangles:
                 if tri.material_index!=slot:continue
@@ -122,6 +122,10 @@ def main(contract_path,out):
                 if not len(xx):continue
                 local=np.array([list(obj.data.vertices[i].co) for i in tri.vertices]);world=np.array([list(obj.matrix_world@obj.data.vertices[i].co) for i in tri.vertices]);points=bary@world
                 use_covered=np.ones(len(xx),bool) if state=='covered' else np.array([same_source_hit(p,trees) for p in points])
+                missing_covered=np.zeros(len(xx),bool)
+                covered_receiver=donors['covered'].get(obj.name)
+                if state=='revealed' and (covered_receiver is None or tuple(tri.vertices) not in covered_receiver['triangles']):
+                    missing_covered=use_covered.copy();use_covered[:]=False
                 for donor_state,select in [('covered',use_covered),('revealed',~use_covered)]:
                     if not select.any():continue
                     donor=donors[donor_state].get(obj.name)
@@ -131,11 +135,11 @@ def main(contract_path,out):
                     if triangle is None or triangle['face']!=tri.polygon_index:raise ValueError('Donor physical face differs')
                     data=donor['images'][triangle['slot']];rgb,valid,source_fraction=sample_donor(data['rgba'],data['ownership'],bary[select]@triangle['uv'])
                     indices=np.flatnonzero(select)[valid];ax,ay=xx[indices],yy[indices]
-                    result[ay,ax,:3]=np.rint(np.clip(rgb[valid],0,1)*255).astype(np.uint8);flags[ay,ax]=2;lineage[ay,ax]=source_fraction[valid];choice[ay,ax]=1 if donor_state=='covered' else 2;best[ay,ax]=scores[indices]
+                    result[ay,ax,:3]=np.rint(np.clip(rgb[valid],0,1)*255).astype(np.uint8);flags[ay,ax]=2;lineage[ay,ax]=source_fraction[valid];choice[ay,ax]=1 if donor_state=='covered' else 2;best[ay,ax]=scores[indices];fallback[ay,ax]=missing_covered[indices]
             assert np.array_equal(original[protected],result[protected]) and np.array_equal(original[:,:,3],result[:,:,3])
             image.pixels.foreach_set((result.astype(np.float32)/255).ravel());image.update();image.pack()
-            path=destination/'provenance'/f'{len(report):03}.npz';path.parent.mkdir(exist_ok=True);np.savez_compressed(path,ownership=flags,donor_source_weight=lineage,donor_state=choice)
-            report.append(dict(object=obj.name,material_slot=slot,protected_source_texels=int(protected.sum()),completion_texels=int((flags==2).sum()),source_alpha_exact=True,protected_rgba8_sha256=hashlib.sha256(original[protected].tobytes()).hexdigest(),alpha8_sha256=hashlib.sha256(original[:,:,3].tobytes()).hexdigest(),source_protection=dict(path=contract['states'][state]['protection_manifest'],sha256=contract['states'][state]['protection_manifest_sha256']),donor_lineage_counts={'fully_generated':int(((flags==2)&(lineage==0)).sum()),'fully_donor_source':int(((flags==2)&(lineage==1)).sum()),'mixed':int(((flags==2)&(lineage>0)&(lineage<1)).sum())},texel_provenance=dict(path=str(path.resolve()),sha256=sha(path),packed_image_sha256=hashlib.sha256(image.packed_file.data).hexdigest(),uv_sha256=hashlib.sha256(json.dumps([list(v.uv) for v in uv.data]).encode()).hexdigest())))
+            path=destination/'provenance'/f'{len(report):03}.npz';path.parent.mkdir(exist_ok=True);np.savez_compressed(path,ownership=flags,donor_source_weight=lineage,donor_state=choice,revealed_fallback_missing_covered_receiver=fallback)
+            report.append(dict(object=obj.name,material_slot=slot,protected_source_texels=int(protected.sum()),completion_texels=int((flags==2).sum()),source_alpha_exact=True,revealed_fallback_missing_covered_receiver_texels=int(fallback.sum()),protected_rgba8_sha256=hashlib.sha256(original[protected].tobytes()).hexdigest(),alpha8_sha256=hashlib.sha256(original[:,:,3].tobytes()).hexdigest(),source_protection=dict(path=contract['states'][state]['protection_manifest'],sha256=contract['states'][state]['protection_manifest_sha256']),donor_lineage_counts={'fully_generated':int(((flags==2)&(lineage==0)).sum()),'fully_donor_source':int(((flags==2)&(lineage==1)).sum()),'mixed':int(((flags==2)&(lineage>0)&(lineage<1)).sum())},texel_provenance=dict(path=str(path.resolve()),sha256=sha(path),packed_image_sha256=hashlib.sha256(image.packed_file.data).hexdigest(),uv_sha256=hashlib.sha256(json.dumps([list(v.uv) for v in uv.data]).encode()).hexdigest())))
         assert all_geometry=={o.name:geometry(o) for o in bpy.data.objects if o.type=='MESH'}
         bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(destination/'model.blend'))
         bpy.ops.wm.open_mainfile(filepath=str(destination/'model.blend'));bpy.context.view_layer.update()
@@ -152,6 +156,7 @@ def main(contract_path,out):
             row=next(r for r in report if r['object']==name);flags=np.load(row['texel_provenance']['path'])['ownership'];proof=read(proof_path)
             assert all(flags[t['atlas'][1],t['atlas'][0]]==1 for pixel in proof['pixels'] for t in pixel['taps'] if t['weight']>1e-8)
             witnesses[name]=dict(count=len(proof['pixels']),all_source_taps_exact=True,original_proof=str(proof_path),original_proof_sha256=sha(proof_path))
+        write(destination/'workspace.json',cfg)
         write(destination/'provenance.json',dict(objects=report,model_sha256=sha(destination/'model.blend'),contract_sha256=sha(contract_path),status='PASS',geometry_uv_exact=True,source_rgba_alpha_exact=True,witnesses=witnesses))
         results.append(dict(state=state,model_sha256=sha(destination/'model.blend')))
     write(out/'reconstruction.json',dict(states=results,status='awaiting-independent-QA'))
