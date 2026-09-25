@@ -149,6 +149,8 @@ def run(config_path):
         proof=proofs[name]['texel_provenance']; dest=out/'provenance-course'/Path(proof['path']).name
         dest.parent.mkdir(exist_ok=True); np.savez_compressed(dest,ownership=flags[name])
         proof.update(path=str(dest.resolve()),sha256=sha(dest),packed_image_sha256=hashlib.sha256(image.packed_file.data).hexdigest(),rgba8_sha256=hashlib.sha256(after.tobytes()).hexdigest())
+        if any(edit['object'] == name and edit.get('donor_face', edit['face']) != edit['face'] for edit in edits):
+            proof['semantics'] = {**proof.get('semantics', {}), '3': 'bounded-same-face-or-proved-coplanar-continuation'}
     for filename,report in reports.items():
         (out/filename).write_text(json.dumps(report,indent=2)+'\n')
     count=sum(int(a.sum()) for a in allowed.values())
