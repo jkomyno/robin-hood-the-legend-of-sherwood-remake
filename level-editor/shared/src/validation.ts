@@ -1,3 +1,4 @@
+import { componentIdentityMatches, obstaclePartIdentity } from "./component-parts.ts";
 import { validatePopulation } from "./population.ts";
 import { safeLibraryPath, type ExternalAssetSource, type ProjectionAssetDescriptor, type ProjectionAssetEntry } from "./projection-assets.ts";
 import type { Level3D } from "./level3d.ts";
@@ -405,9 +406,9 @@ export function parseLevel3D(
     );
     text(o.node, `${o.id}.node`);
     if (o.node.startsWith("asset:")) {
-      const match = /^asset:([^:]+):((?:building|terrace)-\d+|mission-[a-zA-Z0-9_-]+)$/.exec(o.node);
+      const match = /^asset:([^:]+):((?:building|terrace)-\d+(?:--component-[a-zA-Z0-9_-]+)?|mission-[a-zA-Z0-9_-]+)$/.exec(o.node);
       check(!!match && assetIds.has(match[1]), o.id, "dangling external asset source");
-      if (!match![2]!.startsWith("mission-")) check(Number(match![2]!.split("-")[1]) === o.source?.obstacle, o.id, "external asset canonical obstacle mismatch");
+      if (!match![2]!.startsWith("mission-")) check(componentIdentityMatches(match![2]!, o.source?.obstacle, o.source?.components), o.id, "external asset canonical obstacle mismatch");
       else check(o.kind === "mission", o.id, "mission source requires mission kind");
     }
     if (context.nodes)
@@ -424,6 +425,8 @@ export function parseLevel3D(
         o.id,
         "invalid obstacle index or mission profile",
       );
+      if (!o.node.startsWith("asset:") && (o.source.components !== undefined || o.node.includes("--component-")))
+        check(componentIdentityMatches(o.node, o.source.obstacle, o.source.components), o.id, "component identity mismatch");
       if (context.level && !o.node.startsWith("asset:"))
         check(
           o.source.obstacle < context.level.sight_obstacles.length,
@@ -568,7 +571,7 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
   tuple(d.source_origin_scene, 3, "asset.source_origin_scene");
   tuple(d.source_origin_game, 3, "asset.source_origin_game");
   const nodes = new Set<string>();
-  const obstacles = new Set<number>();
+  const obstacles = new Map<number, Set<string>>();
   const parts = array(d.parts, "asset.parts");
   if (d.editor_usage !== undefined) check(d.editor_usage === "map-background", "editor_usage", "unsupported asset capability");
   if (d.editor_usage === "map-background") {
@@ -580,14 +583,16 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     object(part, "asset part");
     text(part.node, "asset part.node");
     text(part.name, "asset part.name");
-    const match = /^(building|terrace)-(\d+)$/.exec(part.node);
+    const identity = obstaclePartIdentity(part.node);
     if (part.mission_profile !== undefined) {
       text(part.mission_profile, "asset part.mission_profile");
       check(/^mission-[a-zA-Z0-9_-]+$/.test(part.node) && part.source_obstacle === undefined, part.node, "mission parts cannot claim an obstacle index");
     } else {
-      check(!!match && Number(match[2]) === part.source_obstacle, part.node, "canonical obstacle mismatch");
-      check(!obstacles.has(part.source_obstacle), part.node, "duplicate asset part");
-      obstacles.add(part.source_obstacle);
+      check(componentIdentityMatches(part.node, part.source_obstacle, part.source_components), part.node, "canonical obstacle mismatch");
+      const claims = obstacles.get(part.source_obstacle) ?? new Set<string>();
+      const claim = identity!.component ?? "*";
+      check(!claims.has(claim) && !claims.has("*") && !(claim === "*" && claims.size), part.node, "duplicate asset part");
+      claims.add(claim); obstacles.set(part.source_obstacle, claims);
     }
     check(!nodes.has(part.node), part.node, "duplicate asset part");
     nodes.add(part.node);

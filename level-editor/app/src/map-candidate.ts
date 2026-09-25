@@ -8,6 +8,8 @@ import {
   groupObstacles,
   snapFloatingParts,
   authoredAssetGroups,
+  obstaclePartIdentity,
+  componentIdentityMatches,
   upgradeGeneratedAssetGroups,
   type AuthoredAssetCatalog,
   type AuthoredAssetPart,
@@ -74,7 +76,7 @@ export async function prepareMapCandidate(
           if (typeof id !== "string" || !id.trim() || typeof label !== "string" || !label.trim())
             throw new Error("Incomplete authored GLB group metadata");
           return { id, name: label, parts: group.children.map((node): AuthoredAssetPart => {
-            const match = /^(building|terrace)-(\d+)$/.exec(node.name);
+            const identity = obstaclePartIdentity(node.name);
             const obstacle: unknown = node.userData.source_obstacle;
             const partName: unknown = node.userData.part_name;
             if (/^mission-[a-zA-Z0-9_-]+$/.test(node.name)) {
@@ -85,9 +87,10 @@ export async function prepareMapCandidate(
               return { node: node.name, name: partName, mission_profile: profile,
                 obstacle_local_game: node.userData.obstacle_local_game };
             }
-            if (!match || obstacle !== Number(match[2]) || typeof partName !== "string" || !partName.trim())
+            if (!identity || !componentIdentityMatches(node.name, obstacle, node.userData.source_components) || typeof partName !== "string" || !partName.trim())
               throw new Error(`Invalid authored GLB part metadata: ${node.name}`);
-            return { obstacle: Number(match[2]), name: partName };
+            if (identity.component && !node.userData.obstacle_local_game) throw new Error(`Missing component footprint: ${node.name}`);
+            return { obstacle: identity.obstacle, name: partName, ...(identity.component ? { node: node.name, components: [identity.component], obstacle_local_game: node.userData.obstacle_local_game } : {}) };
           }) };
         }),
       };
@@ -160,16 +163,16 @@ export async function prepareMapCandidate(
       const objects: Level3DObject[] = [];
       const terraces = new Set<number>();
       for (const nodeName of [...nextSources.keys()].sort()) {
-        const m = /^(building|terrace)-(\d+)$/.exec(nodeName);
-        if (!m) continue;
-        const obstacle = Number(m[2]);
-        if (m[1] === "terrace") terraces.add(obstacle);
+        const identity = obstaclePartIdentity(nodeName);
+        if (!identity) continue;
+        const obstacle = identity.obstacle;
+        if (identity.kind === "terrace") terraces.add(obstacle);
         objects.push({
           id: nodeName,
-          kind: m[1] as "building" | "terrace",
+          kind: identity.kind,
           node: nodeName,
-          source: { map: sceneDoc.map, obstacle },
-          obstacle: lvl.sight_obstacles[obstacle]!,
+          source: { map: sceneDoc.map, obstacle, ...(identity.component ? { components: [identity.component] } : {}) },
+          obstacle: identity.component ? structuredClone(nextSources.get(nodeName)!.userData.obstacle_local_game) : lvl.sight_obstacles[obstacle]!,
           transform: { ...IDENTITY_TRANSFORM },
         });
       }

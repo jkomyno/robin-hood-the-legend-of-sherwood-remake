@@ -59,3 +59,12 @@ test("shared assets keep source provenance when placed in a different level", ()
   assert.equal(result.document.objects[0]!.source.map, "Leicester");
   assert.equal(result.document.groups[0]!.transform.dx, 12);
 });
+
+test("inserting a split part retains its scoped footprint and source provenance", () => {
+  const {descriptor,reference,document}=assetFixture();
+  descriptor.parts=[{...descriptor.parts[0]!,node:"building-000--component-west",source_obstacle:0,source_components:["west"]}];
+  const result=insertProjectionAsset(document,descriptor,reference,[10,20,0]);
+  assert.deepEqual(result.document.objects[0]!.source,{map:"Leicester",obstacle:0,components:["west"]});
+  assert.deepEqual(result.document.objects[0]!.obstacle,descriptor.parts[0]!.obstacle_local_game);
+  assert.equal(result.document.objects[0]!.node,"asset:house:building-000--component-west");
+});

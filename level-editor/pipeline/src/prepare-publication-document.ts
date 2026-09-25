@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { authoredAssetGroups, documentProvenance, IDENTITY_TRANSFORM, parseProtoLevel,
-  parseSceneDoc, parseLevel3D, type AuthoredAssetCatalog, type AuthoredAssetPart,
+  parseSceneDoc, parseLevel3D, obstaclePartIdentity, componentIdentityMatches, type AuthoredAssetCatalog, type AuthoredAssetPart,
   type Level3D, type Level3DObject } from "@rle/shared";
 
 type Node = { name?: string; children?: number[]; extras?: Record<string, unknown> };
@@ -25,12 +25,14 @@ export function catalogFromExport(nodes: Node[], reviewed: AuthoredAssetCatalog)
       const part = nodes[child], name = part?.name, extras = part?.extras;
       if (!name || seen.has(name)) throw new Error("Missing or duplicated export part");
       seen.add(name);
-      const match = /^(building|terrace)-(\d+)$/.exec(name);
-      const expected = authority.parts.find(entry => match ? entry.obstacle === Number(match[2]) : entry.node === name);
+      const identity = obstaclePartIdentity(name);
+      const expected = authority.parts.find(entry => identity ? entry.obstacle === identity.obstacle &&
+        (identity.component ? entry.components?.includes(identity.component) : entry.components === undefined) : entry.node === name);
       if (!expected || extras?.part_name !== expected.name) throw new Error("Export part differs from reviewed ownership: " + name);
-      if (match) {
-        if (extras?.source_obstacle !== Number(match[2])) throw new Error("Export obstacle identity mismatch: " + name);
-        parts.push({ obstacle: Number(match[2]), name: expected.name });
+      if (identity) {
+        if (!componentIdentityMatches(name, extras?.source_obstacle, extras?.source_components)) throw new Error("Export obstacle identity mismatch: " + name);
+        if (identity.component && !extras?.obstacle_local_game) throw new Error("Missing component footprint: " + name);
+        parts.push({ obstacle: identity.obstacle, name: expected.name, ...(identity.component ? { node: name, components: [identity.component], obstacle_local_game: extras!.obstacle_local_game as NonNullable<AuthoredAssetPart["obstacle_local_game"]> } : {}) });
       } else {
         if (!/^mission-[a-zA-Z0-9_-]+$/.test(name) || expected.mission_profile !== extras?.mission_patch_profile ||
             !extras?.obstacle_local_game || extras.source_obstacle !== undefined)
@@ -39,7 +41,7 @@ export function catalogFromExport(nodes: Node[], reviewed: AuthoredAssetCatalog)
           obstacle_local_game: extras.obstacle_local_game as NonNullable<AuthoredAssetPart["obstacle_local_game"]> });
       }
     }
-    if (parts.length !== authority.parts.length) throw new Error("Missing reviewed group parts: " + id);
+    if (parts.length !== authority.parts.reduce((total, part) => total + (part.components?.length ?? 1), 0)) throw new Error("Missing reviewed group parts: " + id);
     catalog.groups.push({ id, name: authority.name, parts });
   }
   if (catalog.groups.length !== reviewed.groups.length || new Set(catalog.groups.map(group => group.id)).size !== reviewed.groups.length)
@@ -63,11 +65,12 @@ export async function prepareDocument(scenePath: string, levelPath: string, glbP
         source: { map: scene.map, mission_profile: part.mission_profile },
         obstacle: structuredClone(part.obstacle_local_game!), transform: { ...IDENTITY_TRANSFORM } });
     } else {
-      const node = model.nodes.find(node => node.extras?.source_obstacle === part.obstacle && /^(building|terrace)-\d+$/.test(node.name ?? ""))!;
-      const obstacle = level.sight_obstacles[part.obstacle];
+      const node = model.nodes.find(node => node.extras?.source_obstacle === part.obstacle && componentIdentityMatches(node.name ?? "", part.obstacle, part.components) &&
+        (part.node === undefined || node.name === part.node))!;
+      const obstacle = part.components ? part.obstacle_local_game : level.sight_obstacles[part.obstacle];
       if (!obstacle) throw new Error("Missing source obstacle " + part.obstacle);
       objects.push({ id: node.name!, node: node.name!, kind: node.name!.startsWith("terrace-") ? "terrace" : "building",
-        source: { map: scene.map, obstacle: part.obstacle }, obstacle, transform: { ...IDENTITY_TRANSFORM } });
+        source: { map: scene.map, obstacle: part.obstacle, ...(part.components ? { components: [...part.components] } : {}) }, obstacle, transform: { ...IDENTITY_TRANSFORM } });
     }
   }
   const groups = authoredAssetGroups(scene.map, objects, catalog)!;

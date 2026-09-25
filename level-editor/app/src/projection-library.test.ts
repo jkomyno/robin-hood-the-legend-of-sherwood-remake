@@ -190,3 +190,14 @@ test("shared catalog lists assets from every source level", async () => {
   const entries = await listProjectionAssets(f.directory);
   assert.deepEqual(entries.map(entry => entry.source_map), ["Leicester", "York"]);
 });
+
+test("standalone component metadata must match the pinned scoped descriptor", async (t) => {
+  const f=fixture();const name="building-000--component-west";
+  f.json(f.entry.descriptor,{...f.descriptor,parts:[{...f.descriptor.parts[0],node:name,source_components:["west"]}]});
+  f.mesh.name=name;f.mesh.userData.source_components=["west"];
+  t.mock.method(GLTFLoader.prototype,"parseAsync",async()=>({scene:f.asset}));
+  const prepared=await prepareProjectionAsset(f.directory,f.entry,"York");
+  assert.ok(prepared.sources.has("asset:house:"+name));
+  f.mesh.userData.source_components=["east"];
+  await assert.rejects(prepareProjectionAsset(f.directory,f.entry,"York"),/Unexpected/);
+});

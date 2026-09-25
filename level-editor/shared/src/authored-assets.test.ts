@@ -160,3 +160,14 @@ test("legacy fallback skips absent explicit mission previews but never missing c
   assert.equal(catalogForLegacyReconstruction(catalog, current).groups.length, 40);
   assert.equal(authoredAssetGroups("Derby", current, catalog)!.length, 40);
 });
+
+test("scoped components of one obstacle retain independent reviewed groups", () => {
+  const catalog: AuthoredAssetCatalog = { map:"Derby",groups:["west","east"].map(component=>({id:component,name:component,parts:[{obstacle:0,components:[component],name:"Wall"}]})) };
+  const parts = ["west","east"].map(component=>({...objects()[0]!,node:`building-000--component-${component}`,id:component,source:{map:"Derby",obstacle:0,components:[component]}}));
+  authoredAssetGroups("Derby",parts,catalog);
+  assert.deepEqual(parts.map(part=>part.group),["west","east"]);
+  const overlap = structuredClone(catalog); overlap.groups[1]!.parts[0] = { obstacle:0,name:"Whole wall" };
+  assert.throws(()=>authoredAssetGroups("Derby",parts,overlap),/overlapping/);
+  parts[1]!.source.components = ["west"];
+  assert.throws(()=>authoredAssetGroups("Derby",parts,catalog),/obstacle set/);
+});

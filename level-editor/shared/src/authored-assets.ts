@@ -1,11 +1,12 @@
+import { componentIdentityMatches } from "./component-parts.ts";
 import derby from "../assets/derby.json" with { type: "json" };
 import { IDENTITY_TRANSFORM, isIdentity, type Level3D, type Level3DGroup, type Level3DObject } from "./level3d.ts";
 import type { SightObstacle } from "./level.ts";
 import { parseLevel3D } from "./validation.ts";
 
 export type AuthoredAssetPart = { name: string } & (
-  { obstacle: number; node?: never; mission_profile?: never; obstacle_local_game?: never } |
-  { obstacle?: never; node: string; mission_profile: string; obstacle_local_game?: SightObstacle }
+  { obstacle: number; node?: string; components?: string[]; mission_profile?: never; obstacle_local_game?: SightObstacle } |
+  { obstacle?: never; components?: never; node: string; mission_profile: string; obstacle_local_game?: SightObstacle }
 );
 
 export interface AuthoredAssetCatalog {
@@ -80,6 +81,7 @@ export function authoredAssetGroups(map: string, objects: Level3DObject[], suppl
   if (!catalog) return null;
   if (catalog.map.toLowerCase() !== map.toLowerCase()) throw new Error("Asset catalog belongs to a different map");
   const parts = new Map<string, { group: AuthoredAssetCatalog["groups"][number]; part: AuthoredAssetPart }>();
+  const obstacleClaims = new Map<number, Set<string>>();
   const groupIds = new Set<string>();
   const groupNames = new Set<string>();
   for (const group of catalog.groups) {
@@ -88,20 +90,31 @@ export function authoredAssetGroups(map: string, objects: Level3DObject[], suppl
     groupIds.add(group.id);
     groupNames.add(group.name.toLowerCase());
     for (const part of group.parts) {
-      const key = part.mission_profile !== undefined ? part.node : `obstacle:${part.obstacle}`;
+      const scoped = part.mission_profile === undefined && part.components !== undefined;
+      const key = part.mission_profile !== undefined ? part.node : scoped ? `obstacle:${part.obstacle}:component:${part.components!.join(",")}` : `obstacle:${part.obstacle}`;
       const valid = part.mission_profile !== undefined ?
         part.obstacle === undefined && /^mission-[a-zA-Z0-9_-]+$/.test(part.node) && !!part.mission_profile.trim() :
-        Number.isInteger(part.obstacle) && part.obstacle >= 0;
+        Number.isInteger(part.obstacle) && part.obstacle >= 0 && (!scoped ||
+          part.components!.length === 1 && /^[a-zA-Z0-9_-]+$/.test(part.components![0]!) &&
+          (part.node === undefined || componentIdentityMatches(part.node, part.obstacle, part.components)));
       if (!valid || !part.name.trim() || parts.has(key))
         throw new Error(`${map} asset catalog has invalid or duplicate obstacle ownership`);
+      if (part.mission_profile === undefined) {
+        const claims = obstacleClaims.get(part.obstacle) ?? new Set<string>();
+        const claim = scoped ? part.components![0]! : "*";
+        if (claims.has(claim) || claims.has("*") || (claim === "*" && claims.size))
+          throw new Error(`${map} asset catalog has overlapping obstacle ownership`);
+        claims.add(claim); obstacleClaims.set(part.obstacle, claims);
+      }
       parts.set(key, { group, part });
     }
   }
-  const objectKey = (object: Level3DObject) => object.kind === "mission" ? object.node : `obstacle:${object.source.obstacle}`;
+  const objectKey = (object: Level3DObject) => object.kind === "mission" ? object.node : object.source.components ? `obstacle:${object.source.obstacle}:component:${object.source.components.join(",")}` : `obstacle:${object.source.obstacle}`;
   const ids = new Set(objects.map(objectKey));
   if (parts.size !== ids.size || objects.length !== ids.size || [...ids].some(id => !parts.has(id)) ||
       objects.some(object => object.source.map.toLowerCase() !== map.toLowerCase() ||
-        object.source.mission_profile !== parts.get(objectKey(object))?.part.mission_profile)) {
+        object.source.mission_profile !== parts.get(objectKey(object))?.part.mission_profile ||
+        (object.source.components !== undefined && !componentIdentityMatches(object.node, object.source.obstacle, object.source.components)))) {
     throw new Error(`${map} asset catalog does not match this reconstruction's obstacle set`);
   }
   for (const object of objects) {

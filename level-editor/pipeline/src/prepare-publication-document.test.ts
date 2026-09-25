@@ -28,3 +28,12 @@ test("missing, duplicated and foreign ownership cannot initialize a document", (
   const wrong = nodes(); wrong[2]!.extras!.source_obstacle = 9;
   assert.throws(() => catalogFromExport(wrong, catalog), /identity mismatch/);
 });
+
+test("split publication parts use scoped metadata rather than complete source obstacles", () => {
+  const reviewed: AuthoredAssetCatalog={map:"York",groups:[{id:"wall",name:"Wall",parts:[{obstacle:3,name:"West",components:["west"]}]}]};
+  const footprint={points:[{x:1,y:2,z_bottom:0,z_top:3}],opaque:true};
+  const model=[{name:"map",children:[1]},{name:"Wall",children:[2],extras:{asset_group:"wall"}},{name:"building-003--component-west",extras:{source_obstacle:3,part_name:"West",source_components:["west"],obstacle_local_game:footprint}}];
+  assert.equal(catalogFromExport(model,reviewed).groups[0]!.parts[0]!.obstacle_local_game,footprint);
+  model[2]!.extras!.source_components=["east"];
+  assert.throws(()=>catalogFromExport(model,reviewed),/identity mismatch/);
+});

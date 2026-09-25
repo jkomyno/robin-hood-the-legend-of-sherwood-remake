@@ -101,6 +101,7 @@ export async function prepareProjectionAsset(
       const part = parts.get(node.name);
       const key = assetNodeKey(entry.id, node.name);
       if (!part || sources.has(key) || node.userData.source_obstacle !== part.source_obstacle ||
+          JSON.stringify(node.userData.source_components) !== JSON.stringify(part.source_components) ||
           (part.mission_profile !== undefined && node.userData.mission_patch_profile !== part.mission_profile))
         throw new Error(`Unexpected or duplicate standalone part: ${node.name}`);
       let meshes = 0;

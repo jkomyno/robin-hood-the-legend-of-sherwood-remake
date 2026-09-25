@@ -257,3 +257,18 @@ test("failed parallel loads stop scheduling and retire late completions before r
   assert.equal(f.disposals(),1);
   assert.deepEqual(f.retired.sort(),[0,2,3]);
 });
+
+test("component exports restore scoped group ownership and reject missing footprints", async (t) => {
+  const f=authoredFixture();
+  const document=JSON.parse(await f.files.get("York.level3d.json")!.text());
+  const name="building-000--component-west";
+  document.objects[0].node=name;document.objects[0].id=name;document.objects[0].source.components=["west"];
+  f.files.set("York.level3d.json",new File([JSON.stringify(document)],"York.level3d.json"));
+  f.mesh.name=name;f.mesh.userData.source_components=["west"];f.mesh.userData.obstacle_local_game=document.objects[0].obstacle;
+  t.mock.method(GLTFLoader.prototype,"parseAsync",async()=>({scene:f.asset}));
+  const candidate=await prepareMapCandidate("York",f.directory,null);
+  assert.equal(candidate.document.objects[0]!.group,"york-north-hall");
+  assert.deepEqual(candidate.document.objects[0]!.source.components,["west"]);
+  delete f.mesh.userData.obstacle_local_game;
+  await assert.rejects(prepareMapCandidate("York",f.directory,null),/Missing component footprint/);
+});

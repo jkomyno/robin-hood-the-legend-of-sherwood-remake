@@ -24,8 +24,8 @@ export interface ProjectionAssetDescriptor {
   /** Independent static models sharing an origin; these do not imply animation. */
   state_variants?: Partial<Record<AssetState, { name: string; model: string; parts?: ProjectionAssetDescriptor["parts"] }>>;
   parts: ({ node: string; name: string; default_hidden?: boolean; obstacle_local_game: SightObstacle } & (
-    { source_obstacle: number; mission_profile?: never } |
-    { source_obstacle?: never; mission_profile: string }
+    { source_obstacle: number; source_components?: string[]; mission_profile?: never } |
+    { source_obstacle?: never; source_components?: never; mission_profile: string }
   ))[];
 }
 

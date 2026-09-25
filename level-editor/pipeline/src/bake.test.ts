@@ -25,3 +25,8 @@ test("existing reconstructed documents and absent optional documents remain supp
 test("spline geometry cannot silently disappear during game baking", () => {
   assert.throws(() => assertReconstructedBakeSources({ splines: [{ kind: "river" }] }), /spline geometry/);
 });
+
+test("split source components cannot silently replace complete canonical obstacles", () => {
+  assert.throws(() => assertReconstructedBakeSources({objects:[{source:{obstacle:0,components:["west"]}}]}), /split obstacle/);
+  assert.throws(() => assertReconstructedBakeSources({objects:[{node:"building-000--component-west"}]}), /split obstacle/);
+});
