@@ -137,17 +137,21 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
         raise ValueError('Two-sided texture scoring must be inside explicit receiver scope')
     from texture_face_sampling import face_sampling, eligibility
     face_policy = face_sampling(manifest, {obj.name: len(obj.data.polygons) for obj in targets})
-    vertices, triangles = [], []
+    from generated_visibility import bounded_faces, far_plane, bounded_origin, visible_sample
+    finite_faces = bounded_faces(manifest, {obj.name: len(obj.data.polygons) for obj in targets})
+    vertices, triangles, triangle_owners = [], [], []
     for obj in objects:
         offset = len(vertices)
         vertices.extend(obj.matrix_world @ vertex.co for vertex in obj.data.vertices)
         obj.data.calc_loop_triangles()
         triangles.extend(tuple(offset+i for i in tri.vertices) for tri in obj.data.loop_triangles)
+        triangle_owners.extend((obj.name,tri.polygon_index) for tri in obj.data.loop_triangles)
     tree = BVHTree.FromPolygons(vertices, triangles, all_triangles=True)
     cameras = []
     for view in manifest['views']:
         matrix = Matrix(view['camera_matrix_world'])
         cameras.append((view, matrix.inverted(), matrix.to_3x3() @ Vector((0,0,1))))
+    finite_planes = {view['index']: far_plane(vertices,direction) for view,_,direction in cameras} if finite_faces else {}
     from texture_view_selection import policy, ordered, eligible, preferred_views, SINGLE
     selection = policy(manifest)
     preferred = preferred_views(manifest, {obj.name:len(obj.data.polygons) for obj in targets})
@@ -185,7 +189,12 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                 if mask[y,x,3] >= .5:
                     continue
                 point = Vector(positions[indices[k]])
-                hit,_,_,_ = tree.ray_cast(point+direction*100000, -direction)
+                origin = (Vector(bounded_origin(point,direction,finite_planes[view['index']]))
+                          if (obj.name,face_index) in finite_faces else point+direction*100000)
+                hit,_,hit_index,_ = tree.ray_cast(origin, -direction)
+                if (obj.name,face_index) in finite_faces and not visible_sample(
+                        hit,point,triangle_owners[hit_index] if hit_index is not None else None,(obj.name,face_index)):
+                    continue
                 if hit is None or (hit-point).length > .02:
                     continue
                 # Bilinear filtering stays inside the candidate camera tile.
@@ -295,5 +304,6 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
               'reconciliation_minimum_gain':manifest.get('texture_reconciliation_minimum_gain',.4),
               'counts':stats,'layers':reports}
     if repair_policy is not None:report['inferred_gap_repair'] = repair_policy
+    if finite_faces:report['generated_bounded_visibility'] = manifest['texture_generated_bounded_visibility']
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     return report
