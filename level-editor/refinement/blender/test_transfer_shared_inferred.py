@@ -1,9 +1,14 @@
 import unittest
 import numpy as np
-from transfer_shared_inferred import merge_inferred, transferred_ownership
+from transfer_shared_inferred import merge_inferred, transferred_ownership, require_empty_receiver
 
 
 class SharedInferred(unittest.TestCase):
+    def test_missing_provenance_only_allowed_for_empty_mesh(self):
+        require_empty_receiver(0,0)
+        for polygons,loops in [(1,3),(0,3),(1,0)]:
+            with self.assertRaises(ValueError):require_empty_receiver(polygons,loops)
+
     def test_only_proven_generated_colors_change(self):
         donor=np.array([[[.1,.2,.3,1],[.4,.5,.6,1],[.7,.8,.9,1],[.2,.4,.6,1]]])
         target=np.array([[[.8,.7,.6,1],[.3,.2,.1,1],[.2,.3,.4,1],[.9,.8,.7,1]]])

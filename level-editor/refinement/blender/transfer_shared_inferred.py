@@ -35,6 +35,12 @@ def merge_inferred(canonical, target, donor_ownership, target_ownership, *, allo
     return result, int(selected.sum())
 
 
+def require_empty_receiver(polygons, loops):
+    """Only a genuinely empty mesh can lack atlas ownership evidence."""
+    if polygons != 0 or loops != 0:
+        raise ValueError('Nonempty receiver lacks texel provenance')
+
+
 def run(canonical, target, output, *, allow_bounded_donors=False, shared_surface_policy=None):
     import bpy
     import numpy as np
@@ -99,10 +105,20 @@ def run(canonical, target, output, *, allow_bounded_donors=False, shared_surface
         appearance['image_pixels'] = [image_hash(n.image)
             for m in obj.data.materials if m and m.use_nodes for n in m.node_tree.nodes if n.type=='TEX_IMAGE' and n.image]
         return (_geometry(obj), hashlib.sha256(json.dumps(appearance,sort_keys=True).encode()).hexdigest())
+    empty_receivers={}
     def provenance(experiment, manifest):
         performed_replay=False
         validation=json.loads((experiment/'bake-v1/validation.json').read_text())
         entries=[entry for layer in validation['layers'] for entry in layer['objects']]
+        missing={entry['object'] for entry in entries if 'texel_provenance' not in entry}
+        empty_receivers[str(experiment)]=missing
+        if missing:
+            for source in ('approved-model.blend','bake-v1/worker.blend'):
+                objects=load(experiment/source,manifest)
+                for name in missing:
+                    obj=objects[name]
+                    require_empty_receiver(len(obj.data.polygons),len(obj.data.loops))
+        entries=[entry for entry in entries if entry['object'] not in missing]
         if not all(entry.get('texel_provenance',{}).get('packed_image_sha256') for entry in entries):
             replay=experiment/'provenance-replay-v2'
             import fcntl
@@ -122,7 +138,7 @@ def run(canonical, target, output, *, allow_bounded_donors=False, shared_surface
             replay_report=json.loads((replay/'report.json').read_text())
             if replay_report['generated_sha256']!=validation['generated_sha256'] or replay_report['input_sha256']!=validation['input_sha256']:
                 raise ValueError('Provenance replay input mismatch')
-            entries=[entry for layer in replay_report['layers'] for entry in layer['objects']]
+            entries=[entry for layer in replay_report['layers'] for entry in layer['objects'] if entry['object'] not in missing]
             hashes[str(replay/'report.json')]=sha(replay/'report.json')
         result={}
         for entry in entries:
@@ -247,6 +263,10 @@ def run(canonical, target, output, *, allow_bounded_donors=False, shared_surface
     for layer in report['layers']:
         for entry in layer['objects']:
             name=entry['object']
+            if name in empty_receivers[str(target)]:
+                require_empty_receiver(len(saved[name].data.polygons),len(saved[name].data.loops))
+                entry['empty_mesh_provenance_not_applicable']=True
+                continue
             original_proof,original_mask=provenance_maps[1][name]
             if name not in updated_masks:
                 entry['texel_provenance']=original_proof
