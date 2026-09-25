@@ -154,7 +154,8 @@ def main():
         bpy.data.collections[config['collection_name']].objects.link(extension)
         body = bpy.data.objects[CONTEXT]
         body.data = donor.data.copy()
-        body.matrix_world = donor.matrix_world.copy()
+        # Both packets retain the same original transform. A freshly appended,
+        # unlinked donor can have an unevaluated world matrix; keep the receiver's.
         bpy.data.objects.remove(donor, do_unlink=True)
         assert extension.name == EXTENSION
         assert before == {o.name: signature(o) for o in owned}, 'Original hall source data changed'
