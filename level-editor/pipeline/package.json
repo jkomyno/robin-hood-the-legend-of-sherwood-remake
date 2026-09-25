@@ -16,6 +16,7 @@
     "merge-detections": "node src/merge-detections.ts",
     "compare-backends": "node src/compare-backends.ts",
     "glb-preview": "node src/glb-preview.ts",
+    "build-previews": "node src/build-preview-assets.ts",
     "volumes": "node src/volumes.ts",
     "bake": "node src/bake.ts"
   },
@@ -28,6 +29,7 @@
     "dotenv": "^17.4.2",
     "earcut": "^3.2.3",
     "gl-matrix": "^3.4.4",
+    "meshoptimizer": "^1.3.0",
     "polygon-clipping": "^0.15.7",
     "sharp": "^0.35.4"
   },

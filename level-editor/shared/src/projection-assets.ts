@@ -41,6 +41,8 @@ export interface ProjectionAssetEntry {
   source_map: string;
   descriptor: string;
   model: string;
+  /** Optional lightweight model used only by the asset browser preview. */
+  preview_model?: string;
 }
 
 /** Paths are relative to the granted library root; hashes pin saved instances. */
