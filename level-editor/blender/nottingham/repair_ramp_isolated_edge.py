@@ -141,6 +141,9 @@ def run():
     for filename, report in reports.items():
         (OUT / filename).write_text(json.dumps(report, indent=2) + '\n')
     validation['layers'] = list(reports.values())
+    validation['counts_before_isolated_edge_repair'] = dict(validation['counts'])
+    validation['counts']['unfilled_texels_including_padding'] -= len(edits)
+    validation['counts']['extrapolated_texels_including_padding'] = validation['counts'].get('extrapolated_texels_including_padding', 0) + len(edits)
     validation['isolated_edge_repair'] = edits
     validation['previous_model_sha256'] = ray['model_sha256']
     (OUT / 'validation.json').write_text(json.dumps(validation, indent=2) + '\n')
