@@ -98,12 +98,13 @@ def main(contract_path,out):
         assert sha(row['worker'])==row['worker_sha256']
         assert {path:sha(path) for path in row['reports']}==row['report_sha256']
     donors={state:donor_inventory(Path(d['worker']),d['reports']) for state,d in contract['donors'].items()}
-    camera_patch=None
+    camera_patch=None;shared_final={}
     if contract.get('shared_camera_repair'):
         patch=contract['shared_camera_repair']
         for key in ('model','provenance','report'):assert sha(patch[key])==patch[key+'_sha256']
         patch_report=read(patch['report']);assert patch_report['status']=='PASS' and patch_report['model_sha256']==patch['model_sha256']
         patch_inventory=donor_inventory(Path(patch['model']),[patch['provenance']])
+        shared_final={r['object']:dict(receiver=patch_inventory[r['object']],slot=r['material_slot'],uv_sha256=r['texel_provenance']['uv_sha256'],lineage=np.load(r['texel_provenance']['path'])['donor_source_weight']) for r in read(patch['provenance'])['objects']}
         assert len(patch_report['scope'])==1
         patch_name=next(iter(patch_report['scope']));assert patch_report['scope'][patch_name]==[1]
         patch_row=next(r for r in read(patch['provenance'])['objects'] if r['object']==patch_name)
@@ -151,6 +152,11 @@ def main(contract_path,out):
                     triangle=donor['triangles'].get(tuple(tri.vertices))
                     if triangle is None or triangle['face']!=tri.polygon_index:raise ValueError('Donor physical face differs')
                     data=donor['images'][triangle['slot']];rgb,valid,source_fraction=sample_donor(data['rgba'],data['ownership'],bary[select]@triangle['uv'])
+                    if state=='revealed' and donor_state=='covered' and obj.name in shared_final:
+                        final=shared_final[obj.name]
+                        assert hashlib.sha256(json.dumps([list(v.uv) for v in uv.data]).encode()).hexdigest()==final['uv_sha256']
+                        atlas=final['receiver']['images'][final['slot']];sx,sy=xx[select],yy[select];exact=atlas['ownership'][sy,sx]==2
+                        rgb[exact]=atlas['rgba'][sy[exact],sx[exact],:3];source_fraction[exact]=final['lineage'][sy[exact],sx[exact]];valid[exact]=True
                     indices=np.flatnonzero(select)[valid];ax,ay=xx[indices],yy[indices]
                     result[ay,ax,:3]=np.rint(np.clip(rgb[valid],0,1)*255).astype(np.uint8);flags[ay,ax]=2;lineage[ay,ax]=source_fraction[valid];choice[ay,ax]=1 if donor_state=='covered' else 2;best[ay,ax]=scores[indices];fallback[ay,ax]=missing_covered[indices]
             shared_camera_counts=dict(transferred=0,protected=0,different_state_visibility=0)
