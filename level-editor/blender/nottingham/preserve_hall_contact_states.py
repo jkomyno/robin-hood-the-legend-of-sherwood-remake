@@ -10,7 +10,11 @@ ROOT = Path(__file__).resolve().parents[3]
 WORK = ROOT / 'level-editor/work/nottingham-refinement'
 sys.path[:0] = [str(ROOT / 'level-editor/refinement/blender'), str(Path(__file__).parent)]
 EXTENSION = 'building-505__castle-hall-northwest-contact'
-CONTEXT = 'Castle hall northwestern spire / Structural volume 519'
+CONTEXT = [
+    'Castle hall northwestern spire / Structural volume 519',
+    'Castle hall northwestern spire / Sloped structural component 520',
+    'Castle hall northwestern spire / Sloped structural component 521',
+]
 
 
 def sha(path):
@@ -148,15 +152,16 @@ def main():
         owned = [o for o in bpy.data.objects if o.type == 'MESH' and o.get('asset_group') == config['asset_id']]
         before = {o.name: signature(o) for o in owned}
         with bpy.data.libraries.load(str(new / 'model.blend'), link=False) as (source, target):
-            assert EXTENSION in source.objects and CONTEXT in source.objects
-            target.objects = [EXTENSION, CONTEXT]
-        extension, donor = target.objects
+            assert EXTENSION in source.objects and all(n in source.objects for n in CONTEXT)
+            target.objects = [EXTENSION, *CONTEXT]
+        extension, *donors = target.objects
         bpy.data.collections[config['collection_name']].objects.link(extension)
-        body = bpy.data.objects[CONTEXT]
-        body.data = donor.data.copy()
-        # Both packets retain the same original transform. A freshly appended,
-        # unlinked donor can have an unevaluated world matrix; keep the receiver's.
-        bpy.data.objects.remove(donor, do_unlink=True)
+        for name, donor in zip(CONTEXT, donors):
+            body = bpy.data.objects[name]
+            body.data = donor.data.copy()
+            # Both packets retain the same original transform. A freshly appended,
+            # unlinked donor can have an unevaluated world matrix; keep the receiver's.
+            bpy.data.objects.remove(donor, do_unlink=True)
         assert extension.name == EXTENSION
         assert before == {o.name: signature(o) for o in owned}, 'Original hall source data changed'
         expected_extension = signature(extension)
