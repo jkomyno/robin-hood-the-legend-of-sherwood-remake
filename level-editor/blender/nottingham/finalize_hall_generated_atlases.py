@@ -33,12 +33,14 @@ def main(source,destination,experiment,repair=False):
             generated_meta[state]=dict(reconciliation_reference=v.get('reconciliation_reference'),reconciliation_reference_sha256=v.get('reconciliation_reference_sha256'),generated_source_sha256=v['generated_sha256'],generated_image=v['generated_image'],generated_camera_manifest=str(folder/'views.json'),generated_camera_manifest_sha256=sha(folder/'views.json'),generated_approved_input_sha256=sha(folder/'input.png'))
     repair_targets={};tree=None
     if repair:
-        hits=read(source/'coverage/center-ray-classification.json')['views'][2]['unfilled_center_hits']
-        name='Castle main hall and revealed interior / Structural volume 529';assert len(hits)==15
-        assert all(h['object']==name and h['face']==1 and h['material_slot']==4 for h in hits)
+        assert repair in (529,500)
+        repair_state='covered' if repair==529 else 'revealed';camera_index=2 if repair==529 else 1;minimum_cosine=.12 if repair==529 else .10;slot=4 if repair==529 else 6;expected_count=15 if repair==529 else 13
+        hits=read(source/'coverage/center-ray-classification.json')['views'][camera_index]['unfilled_center_hits']
+        name='Castle main hall and revealed interior / '+('Structural volume 529' if repair==529 else 'Roof or surface projection component 500');assert len(hits)==expected_count
+        assert all(h['object']==name and h['face']==1 and h['material_slot']==slot for h in hits)
         row=next(r for r in provenance['objects'] if r['object']==name);arr=np.load(row['texel_provenance']['path']);flags=arr['ownership'];H,W=flags.shape
         wanted={(x,y) for hit in hits for x,y,w in taps(hit['uv'],[W,H]) if flags[y,x]==0}
-        obj=bpy.data.objects[name];image,uv=image_binding(obj,4);obj.data.calc_loop_triangles()
+        obj=bpy.data.objects[name];image,uv=image_binding(obj,slot);obj.data.calc_loop_triangles()
         for tri in obj.data.loop_triangles:
             if tri.polygon_index!=1:continue
             coords=np.array([list(uv.data[i].uv) for i in tri.loops]);basis=np.vstack([coords.T,np.ones(3)])
@@ -54,7 +56,7 @@ def main(source,destination,experiment,repair=False):
             for t in o.data.loop_triangles:triangles.append(tuple(start+i for i in t.vertices));owners.append((o.name,t.polygon_index))
         tree=BVHTree.FromPolygons(points,triangles,all_triangles=True)
         scoped=dict(manifest,texture_generated_bounded_visibility={name:[1]});assert bounded_faces(scoped,{name:len(obj.data.polygons)})=={(name,1)}
-        mask=_read(experiment/'mask.png');generated=_read(generated_meta['covered']['generated_image']);reference=generated_meta['covered']['reconciliation_reference'];assert sha(reference)==generated_meta['covered']['reconciliation_reference_sha256'];generated=_reconcile(generated,manifest,_read(reference));height,width=mask.shape[:2];view=next(v for v in manifest['views'] if v['index']==2);matrix=Matrix(view['camera_matrix_world']);direction=matrix.to_3x3()@Vector((0,0,1));inverse=matrix.inverted();plane=far_plane(points,direction);normal=(obj.matrix_world.to_3x3().inverted().transposed()@obj.data.polygons[1].normal).normalized();assert normal.dot(direction)>.12
+        mask=_read(experiment/'mask.png');generated=_read(generated_meta[repair_state]['generated_image']);reference=generated_meta[repair_state]['reconciliation_reference'];assert sha(reference)==generated_meta[repair_state]['reconciliation_reference_sha256'];generated=_reconcile(generated,manifest,_read(reference));height,width=mask.shape[:2];view=next(v for v in manifest['views'] if v['index']==camera_index);matrix=Matrix(view['camera_matrix_world']);direction=matrix.to_3x3()@Vector((0,0,1));inverse=matrix.inverted();plane=far_plane(points,direction);normal=(obj.matrix_world.to_3x3().inverted().transposed()@obj.data.polygons[1].normal).normalized();assert normal.dot(direction)>minimum_cosine
         for (x,y),world in repair_targets.items():
             p=Vector(world);local=inverse@p;horizontal,vertical=orthographic_extents(view);crop=view['crop'];px=crop['left']+(.5+local.x/horizontal)*crop['width'];py=height-crop['top']-(.5-local.y/vertical)*crop['height'];ix,iy=math.floor(px),math.floor(py)
             assert crop['left']<=ix<crop['left']+crop['width'] and height-crop['top']-crop['height']<=iy<height-crop['top']
@@ -63,13 +65,13 @@ def main(source,destination,experiment,repair=False):
             old,_,oi,_=tree.ray_cast(p+direction*100000,-direction)
             fx,fy=px-.5,py-.5;x0,y0=math.floor(fx),math.floor(fy);ax,ay=fx-x0,fy-y0;x0=max(crop['left'],min(crop['left']+crop['width']-1,x0));y0=max(height-crop['top']-crop['height'],min(height-crop['top']-1,y0));x1=min(crop['left']+crop['width']-1,x0+1);y1=min(height-crop['top']-1,y0+1)
             color=(generated[y0,x0,:3]*(1-ax)+generated[y0,x1,:3]*ax)*(1-ay)+(generated[y1,x0,:3]*(1-ax)+generated[y1,x1,:3]*ax)*ay
-            repairs.append(dict(atlas=[x,y],world=list(world),view=2,image_coordinate=[px,py],mask_alpha=float(mask[iy,ix,3]),facing=normal.dot(direction),bounded_hit=owners[index],bounded_error=(hit-p).length,legacy_error=(old-p).length if old else None,rgb8=np.rint(np.clip(color,0,1)*255).astype(int).tolist()))
+            repairs.append(dict(atlas=[x,y],world=list(world),view=camera_index,minimum_cosine=minimum_cosine,image_coordinate=[px,py],mask_alpha=float(mask[iy,ix,3]),facing=normal.dot(direction),bounded_hit=owners[index],bounded_error=(hit-p).length,legacy_error=(old-p).length if old else None,rgb8=np.rint(np.clip(color,0,1)*255).astype(int).tolist()))
         changed_object=name
     for i,row in enumerate(provenance['objects']):
         row=dict(row);proof=dict(row['texel_provenance']);assert sha(proof['path'])==proof['sha256'];arrays={k:v.copy() for k,v in np.load(proof['path']).items()};flags=arrays['ownership'];obj=bpy.data.objects[row['object']];image,uv=image_binding(obj,row['material_slot']);original=np.array(Image.open(io.BytesIO(bytes(image.packed_file.data))).convert('RGBA'))[::-1].copy();pixels=original.copy()
         if row['object']==changed_object:
             for record in repairs:
-                x,y=record['atlas'];assert flags[y,x]==0;pixels[y,x,:3]=record['rgb8'];flags[y,x]=2;arrays['donor_source_weight'][y,x]=0;arrays['donor_state'][y,x]=1
+                x,y=record['atlas'];assert flags[y,x]==0;pixels[y,x,:3]=record['rgb8'];flags[y,x]=2;arrays['donor_source_weight'][y,x]=0;arrays['donor_state'][y,x]=1 if repair_state=='covered' else 2
             allowed=np.zeros(flags.shape,bool)
             for x,y in repair_targets:allowed[y,x]=True
             assert np.array_equal(pixels[~allowed],original[~allowed]) and np.array_equal(pixels[:,:,3],original[:,:,3])
@@ -95,7 +97,7 @@ def main(source,destination,experiment,repair=False):
         image,uv=image_binding(bpy.data.objects[row['object']],row['material_slot']);assert hashlib.sha256(image.packed_file.data).hexdigest()==row['texel_provenance']['packed_image_sha256'];pixels=np.array(Image.open(io.BytesIO(bytes(image.packed_file.data))).convert('RGBA'))[::-1];flags=np.load(row['texel_provenance']['path'])['ownership'];assert hashlib.sha256(pixels[flags==1].tobytes()).hexdigest()==row['protected_rgba8_sha256'];assert hashlib.sha256(pixels[:,:,3].tobytes()).hexdigest()==row['alpha8_sha256']
     if repair:
         flags=np.load(next(r for r in rows if r['object']==changed_object)['texel_provenance']['path'])['ownership'];assert all(flags[y,x] in (1,2) for hit in hits for x,y,w in taps(hit['uv'],[W,H]))
-    provenance.update(objects=rows,model_sha256=sha(destination/'model.blend'),finalization=dict(source_model_sha256=sha(source/'model.blend'),source_provenance_sha256=sha(source/'provenance.json'),unchanged_other_mesh_material_image_uv_signatures={name:value for name,value in before.items() if name!=changed_object},geometry_uv_exact=True,source_alpha_exact=True,repair_texels=len(repairs),repaired_center_witnesses=15 if repair else 0))
-    write(destination/'provenance.json',provenance);write(destination/'camera-repair.json',dict(status='PASS',model_sha256=provenance['model_sha256'],scope={changed_object:[1]} if repair else {},original_generated_image=generated_meta.get('covered'),manifest_sha256=sha(experiment/'views.json'),mask_sha256=sha(experiment/'mask.png'),repairs=repairs));shutil.copy2(source/'workspace.json',destination/'workspace.json');print(json.dumps(dict(status='PASS',model_sha256=provenance['model_sha256'],repair_texels=len(repairs))))
+    provenance.update(objects=rows,model_sha256=sha(destination/'model.blend'),finalization=dict(source_model_sha256=sha(source/'model.blend'),source_provenance_sha256=sha(source/'provenance.json'),unchanged_other_mesh_material_image_uv_signatures={name:value for name,value in before.items() if name!=changed_object},geometry_uv_exact=True,source_alpha_exact=True,repair_texels=len(repairs),repaired_center_witnesses=expected_count if repair else 0))
+    write(destination/'provenance.json',provenance);write(destination/'camera-repair.json',dict(status='PASS',model_sha256=provenance['model_sha256'],scope={changed_object:[1]} if repair else {},original_generated_image=generated_meta.get(repair_state) if repair else None,manifest_sha256=sha(experiment/'views.json'),mask_sha256=sha(experiment/'mask.png'),repairs=repairs));shutil.copy2(source/'workspace.json',destination/'workspace.json');print(json.dumps(dict(status='PASS',model_sha256=provenance['model_sha256'],repair_texels=len(repairs))))
 if __name__=='__main__':
-    a=sys.argv[sys.argv.index('--')+1:];main(Path(a[0]).resolve(),Path(a[1]).resolve(),Path(a[2]).resolve(),'--repair-529' in a)
+    a=sys.argv[sys.argv.index('--')+1:];main(Path(a[0]).resolve(),Path(a[1]).resolve(),Path(a[2]).resolve(),529 if '--repair-529' in a else 500 if '--repair-500' in a else False)
