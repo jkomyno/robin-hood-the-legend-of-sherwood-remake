@@ -84,6 +84,7 @@ def same_source_hit(point,trees):
 
 
 def main(contract_path,out):
+    from preserve_hall_contact_states import signature
     from render_slots import acquire
     acquire(slots=2)
     import bpy
@@ -105,6 +106,8 @@ def main(contract_path,out):
         bpy.ops.wm.open_mainfile(filepath=states[state]['model']);bpy.context.view_layer.update();destination=out/state;destination.mkdir(parents=True,exist_ok=False)
         all_geometry={o.name:geometry(o) for o in bpy.data.objects if o.type=='MESH'};report=[]
         protections=read(contract['states'][state]['protection_manifest'])
+        target_names={r['object'] for r in protections['objects']}
+        outside_before={o.name:signature(o) for o in bpy.data.objects if o.type=='MESH' and o.name not in target_names}
         for entry in protections['objects']:
             obj=bpy.data.objects[entry['object']];slot=entry['slot'];image,uv=image_binding(obj,slot)
             for other in bpy.data.objects:
@@ -145,9 +148,11 @@ def main(contract_path,out):
             path=destination/'provenance'/f'{len(report):03}.npz';path.parent.mkdir(exist_ok=True);np.savez_compressed(path,ownership=flags,donor_source_weight=lineage,donor_state=choice,revealed_fallback_missing_covered_receiver=fallback)
             report.append(dict(object=obj.name,material_slot=slot,protected_source_texels=int(protected.sum()),completion_texels=int((flags==2).sum()),source_alpha_exact=True,revealed_fallback_missing_covered_receiver_texels=int(fallback.sum()),protected_rgba8_sha256=hashlib.sha256(original[protected].tobytes()).hexdigest(),alpha8_sha256=hashlib.sha256(original[:,:,3].tobytes()).hexdigest(),source_protection=dict(path=contract['states'][state]['protection_manifest'],sha256=contract['states'][state]['protection_manifest_sha256']),donor_lineage_counts={'fully_generated':int(((flags==2)&(lineage==0)).sum()),'fully_donor_source':int(((flags==2)&(lineage==1)).sum()),'mixed':int(((flags==2)&(lineage>0)&(lineage<1)).sum())},texel_provenance=dict(path=str(path.resolve()),sha256=sha(path),packed_image_sha256=hashlib.sha256(image.packed_file.data).hexdigest(),uv_sha256=hashlib.sha256(json.dumps([list(v.uv) for v in uv.data]).encode()).hexdigest())))
         assert all_geometry=={o.name:geometry(o) for o in bpy.data.objects if o.type=='MESH'}
+        assert outside_before=={name:signature(bpy.data.objects[name]) for name in outside_before}
         bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(destination/'model.blend'))
         bpy.ops.wm.open_mainfile(filepath=str(destination/'model.blend'));bpy.context.view_layer.update()
         assert all_geometry=={o.name:geometry(o) for o in bpy.data.objects if o.type=='MESH'}
+        assert outside_before=={name:signature(bpy.data.objects[name]) for name in outside_before}
         for row in report:
             image,uv=image_binding(bpy.data.objects[row['object']],row['material_slot']);proof=row['texel_provenance']
             assert hashlib.sha256(image.packed_file.data).hexdigest()==proof['packed_image_sha256']
@@ -161,7 +166,7 @@ def main(contract_path,out):
             assert all(flags[t['atlas'][1],t['atlas'][0]]==1 for pixel in proof['pixels'] for t in pixel['taps'] if t['weight']>1e-8)
             witnesses[name]=dict(count=len(proof['pixels']),all_source_taps_exact=True,original_proof=str(proof_path),original_proof_sha256=sha(proof_path))
         write(destination/'workspace.json',cfg)
-        write(destination/'provenance.json',dict(objects=report,model_sha256=sha(destination/'model.blend'),contract_sha256=sha(contract_path),status='PASS',geometry_uv_exact=True,source_rgba_alpha_exact=True,witnesses=witnesses))
+        write(destination/'provenance.json',dict(objects=report,model_sha256=sha(destination/'model.blend'),contract_sha256=sha(contract_path),status='PASS',geometry_uv_exact=True,source_rgba_alpha_exact=True,outside_objects_unchanged=len(outside_before),outside_object_signatures=outside_before,witnesses=witnesses))
         results.append(dict(state=state,model_sha256=sha(destination/'model.blend')))
     name='reconstruction-'+requested[0]+'.json' if len(requested)==1 else 'reconstruction.json'
     write(out/name,dict(states=results,status='awaiting-independent-QA'))
