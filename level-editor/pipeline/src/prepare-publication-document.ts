@@ -73,6 +73,11 @@ export async function prepareDocument(scenePath: string, levelPath: string, glbP
         source: { map: scene.map, obstacle: part.obstacle, ...(part.components ? { components: [...part.components] } : {}) }, obstacle, transform: { ...IDENTITY_TRANSFORM } });
     }
   }
+  for (const object of objects) {
+    const hidden = model.nodes.find(node => node.name === object.node)?.extras?.default_hidden;
+    if (hidden !== undefined && typeof hidden !== "boolean") throw new Error("Invalid exported visibility: " + object.node);
+    if (hidden === true) object.hidden = true;
+  }
   const groups = authoredAssetGroups(scene.map, objects, catalog)!;
   const provenance = await documentProvenance(level, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer);
   const document: Level3D = { version: 1, map: scene.map, size: scene.size, camera: scene.camera,
