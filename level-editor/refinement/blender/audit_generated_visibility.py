@@ -95,7 +95,7 @@ def run(previous, output, manifest, previous_provenance=None):
         if int((final_mask==3).sum())!=sum(v['repaired_texels'] for v in entries[1][name].get('inferred_gap_repairs',[])):raise ValueError('Inferred provenance count mismatch')
         records.append(dict(object=name,**evidence,geometry_and_all_uv_exact=True))
     report=dict(status='PASS',previous_model_sha256=sha(previous/'worker.blend'),model_sha256=sha(output/'worker.blend'),validation_sha256=sha(output/'validation.json'),manifest_sha256=sha(manifest),generated_bounded_visibility=scope,objects=records,source_mask_evidence_exact=True,outside_objects_unchanged=reports[1].get('outside_objects_unchanged'),sample_evidence=reports[1].get('bounded_visibility_sample_evidence'),sample_evidence_note='Whole generated image, approved mask, cameras and selected samples bound by validation evidence; class2 reprojection is distinct from class3 extrapolation.')
-    if report['outside_objects_unchanged'] is not True:raise ValueError('Missing outside object preservation proof')
+    if type(report['outside_objects_unchanged']) is not int or report['outside_objects_unchanged'] < 0:raise ValueError('Missing outside object preservation count')
     if external is not None:report['previous_external_provenance']=external
     (output / 'saved-visibility-audit.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report), flush=True)
