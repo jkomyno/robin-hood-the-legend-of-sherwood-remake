@@ -3,15 +3,15 @@ import sys,json,hashlib,argparse
 from pathlib import Path
 HERE=Path(__file__).resolve().parent;sys.path.insert(0,str(HERE))
 import bpy,numpy as np
-from scipy.ndimage import label,binary_dilation
+from scipy.ndimage import label,binary_dilation,distance_transform_edt
 from scipy.spatial import cKDTree
 from texture_experiment_paths import selected_experiment
 cross=lambda a,b:a[...,0]*b[...,1]-a[...,1]*b[...,0]
 sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
-parser=argparse.ArgumentParser();parser.add_argument('--ray',default='actual-gray-ray-attribution.json');parser.add_argument('--output',default='visible-gap-components.json');parser.add_argument('assets',nargs='+');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
-if any(Path(v).name!=v for v in (args.ray,args.output)):raise ValueError('Local evidence filenames required')
+parser=argparse.ArgumentParser();parser.add_argument('--bake',default='bake-background-support-001');parser.add_argument('--ray',default='actual-gray-ray-attribution.json');parser.add_argument('--output',default='visible-gap-components.json');parser.add_argument('assets',nargs='+');args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
+if any(Path(v).name!=v for v in (args.ray,args.output,args.bake)):raise ValueError('Local evidence filenames required')
 for asset in args.assets:
- b=selected_experiment(asset)/'bake-background-support-001';ray=b/args.ray;r=json.loads(ray.read_text())
+ b=selected_experiment(asset)/args.bake;ray=b/args.ray;r=json.loads(ray.read_text())
  if r['model_sha256']!=sha(b/'worker.blend'):raise ValueError('Ray evidence stale')
  targets={}
  for row in r['samples']:
@@ -34,8 +34,9 @@ for asset in args.assets:
    if abs(den)<1e-10:continue
    u=cross(points-a,d-a)/den;w=cross(c-a,points-a)/den;inside=(u>=-1e-7)&(w>=-1e-7)&(u+w<=1+1e-7)
    world=(1-u[inside]-w[inside])[:,None]*positions[tri.vertices[0]]+u[inside,None]*positions[tri.vertices[1]]+w[inside,None]*positions[tri.vertices[2]]
-   samples.append((np.column_stack((xx[inside],yy[inside])),world))
-  pixel=np.concatenate([p[0] for p in samples]);world=np.concatenate([p[1] for p in samples]);pixel,indices=np.unique(pixel,axis=0,return_index=True);world=world[indices]
+   area=np.linalg.norm(np.cross(positions[tri.vertices[1]]-positions[tri.vertices[0]],positions[tri.vertices[2]]-positions[tri.vertices[0]]))/abs(den)
+   samples.append((np.column_stack((xx[inside],yy[inside])),world,np.full(len(world),area)))
+  pixel=np.concatenate([p[0] for p in samples]);world=np.concatenate([p[1] for p in samples]);areas=np.concatenate([p[2] for p in samples]);pixel,indices=np.unique(pixel,axis=0,return_index=True);world=world[indices];areas=areas[indices]
   lo=pixel.min(0);hi=pixel.max(0)+1;shape=(hi[1]-lo[1],hi[0]-lo[0]);inside=np.zeros(shape,bool);inside[pixel[:,1]-lo[1],pixel[:,0]-lo[0]]=True
   classes=own[pixel[:,1],pixel[:,0]];missing=np.zeros(shape,bool);unknown=classes==0;missing[pixel[unknown,1]-lo[1],pixel[unknown,0]-lo[0]]=True
   components,count=label(missing);ids=components[pixel[:,1]-lo[1],pixel[:,0]-lo[0]];donors=classes==2;tree=cKDTree(pixel[donors]) if donors.any() else None
@@ -46,7 +47,7 @@ for asset in args.assets:
    else:outside+=1
   for cid,hits in visible.items():
    selection=ids==cid;pp=pixel[selection];ww=world[selection];component=components==cid
-   record=dict(component=cid,texels=int(selection.sum()),face_texels=len(pixel),face_fraction=float(selection.mean()),visible_gray_witnesses=hits,atlas_bbox=[*pp.min(0).tolist(),*(pp.max(0)+1).tolist()],world_min=ww.min(0).tolist(),world_max=ww.max(0).tolist(),touches_face_edge=bool((binary_dilation(component)&~inside).any()))
+   record=dict(physical_area_world2=float(areas[selection].sum()),face_area_world2=float(areas.sum()),maximum_inscribed_diameter_texels=float(distance_transform_edt(np.pad(component,1)).max()*2),component=cid,texels=int(selection.sum()),face_texels=len(pixel),face_fraction=float(selection.mean()),visible_gray_witnesses=hits,atlas_bbox=[*pp.min(0).tolist(),*(pp.max(0)+1).tolist()],world_min=ww.min(0).tolist(),world_max=ww.max(0).tolist(),touches_face_edge=bool((binary_dilation(component)&~inside).any()))
    if tree:
     distances,nearest=tree.query(pp);wd=np.linalg.norm(ww-world[donors][nearest],axis=1)
     record.update(max_donor_texels=float(distances.max()),p95_donor_texels=float(np.percentile(distances,95)),max_donor_world=float(wd.max()),within16texel8world=int(((distances<=16)&(wd<=8)).sum()))
