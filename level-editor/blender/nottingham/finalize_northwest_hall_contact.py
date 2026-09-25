@@ -75,6 +75,14 @@ def main():
                 assert sha(workspace / path) == digest
             evidence.extend([migration_path, workspace / 'projection-state-layers.json',
                              workspace / 'material-states.json', workspace / 'contact-state-supplement.json'])
+            geometry_path = workspace / 'inspection/baseline-geometry-comparison.json'
+            geometry = read(geometry_path)
+            assert geometry['model_sha256'] == model and geometry['baseline_sha256'] == sha(workspace / 'baseline.blend')
+            assert geometry['added'] == geometry['removed'] == geometry['changed'] == []
+            assert geometry['signatures']['baseline.blend'] == geometry['signatures']['model.blend']
+            assert geometry['original42_added'] == ['building-505__castle-hall-northwest-contact']
+            assert geometry['original42_changed'] == []
+            evidence.append(geometry_path)
             material_path = workspace / 'inspection/contact-material-provenance.json'
             material = read(material_path)
             assert material['status'] == 'PASS' and material['model_sha256'] == model
@@ -148,11 +156,16 @@ def main():
                                      'render_northwest_hall_contact.py', 'verify_hall_contact_atlas.py',
                                      'hall_contact_wall_authority.py', 'restore_hall_wall_source.py',
                                      'migrate_hall_contact_contract.py', 'build_gallery.py',
+                                     'verify_hall_baseline_geometry.py',
                                      'finalize_northwest_hall_contact.py']]
         candidate['source_comparison'] = 'inspection/paired-source-comparison.png'
         candidate['source_comparison_label'] = 'Original artwork and corrected hall–tower join'
         candidate['source_comparison_secondary_label'] = 'Paired hall and northwest spire — saved materials, eight views'
         if key == 'hall':
+            candidate['geometry_refined'] = False
+            candidate['no_change_reason'] = ('The frozen prepared input already contains the independently reviewed contact cap; '
+                'final state promotion preserves that physical geometry exactly. The cap is newly added relative to the '
+                'previously approved round-42 hall, so renewed user approval remains required.')
             supplement = read(workspace / 'contact-state-supplement.json')
             original_manifest = Path(supplement['original_state_manifest']['path'])
             candidate['revealed_input'] = str(original_manifest.parents[2] / 'input')
