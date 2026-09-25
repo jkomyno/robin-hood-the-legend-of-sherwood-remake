@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "meshoptimizer";
 import {
   assetNodeKey, assetVariantId, parseExternalAssetSources, parseProjectionAssetDescriptor,
   parseProjectionAssetIndex, safeLibraryPath,
@@ -19,6 +20,10 @@ async function libraryFile(root: FileSystemDirectoryHandle, path: string): Promi
 
 async function hash(bytes: ArrayBuffer): Promise<string> {
   return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function previewLoader() {
+  return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 }
 
 /** The projection-model index is separate from the cutout library index. */
@@ -126,7 +131,7 @@ export async function loadProjectionAssetPreview(root: FileSystemDirectoryHandle
     return (await new GLTFLoader().parseAsync(bytes, "")).scene;
   }
   if (entry.preview_model) {
-    const preview = (await new GLTFLoader().parseAsync(await (await libraryFile(root, entry.preview_model)).arrayBuffer(), "")).scene;
+    const preview = (await previewLoader().parseAsync(await (await libraryFile(root, entry.preview_model)).arrayBuffer(), "")).scene;
     const mapRoot = preview.children.find(child => child.name === "map");
     const group = mapRoot?.children[0];
     if (group) for (const part of parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text())).parts) {
