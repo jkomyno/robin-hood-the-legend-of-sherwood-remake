@@ -8,14 +8,22 @@ def main():
  for r in inventory['jobs']+inventory['skips']:
   a=r.get('asset_id');row={k:r[k]for k in ('asset_id','review','bake','model_sha256')if k in r}
   if not a or not r.get('bake'):row['status']='outside-current-audit';row['reason']=r['status'];rows.append(row);continue
-  candidates=[OUT/a/'coverage.json',OUT/'legacy-replay'/a/'coverage-transfer/coverage.json',OUT/'legacy-replay'/a/'coverage/coverage.json']
+  current=json.loads(Path(r['review']).read_text());current_bake=(Path(r['review']).parent/current['bake']).resolve();current_hash=sha(current_bake/'worker.blend')
+  candidates=[current_bake/'coverage/coverage.json',OUT/a/'coverage.json',OUT/'legacy-replay'/a/'coverage-transfer/coverage.json',OUT/'legacy-replay'/a/'coverage/coverage.json']
   if a=='nottingham-terrain-ground':candidates.insert(0,OUT/'terrain-uv/coverage/coverage.json')
-  p=next((p for p in candidates if p.exists()),None)
+  p=next((p for p in candidates if p.exists() and json.loads(p.read_text())['model_sha256']==current_hash),None)
   if p is None:row['status']='pending';row['reason']=r['status'];rows.append(row);continue
-  current=json.loads(Path(r['review']).read_text());current_model=Path(r['review']).parent/current['bake']/'worker.blend'
-  if sha(current_model)!=r['model_sha256']:
-   row['status']='pending';row['reason']='Canonical saved model changed after diagnostic inventory.';rows.append(row);continue
-  d=json.loads(p.read_text());row.update(coverage_report=str(p),coverage_report_sha256=sha(p),model_sha256=d['model_sha256'],manifest_sha256=d['manifest_sha256'],rendered_red_pixels=sum(v['unfilled_visible_pixels']for v in d['views']))
+  row['bake']=str(current_bake);row['review_sha256']=sha(r['review'])
+  d=json.loads(p.read_text())
+  assert sha(p.with_name('coverage.png'))==d['coverage_sheet_sha256']
+  for view in d['views']:assert sha(p.parent/f"view-{view['index']}-textured.png")==view['sha256']
+  for evidence in d['atlas_evidence']:
+   assert sha(evidence['report'])==evidence['report_sha256']
+   assert sha(evidence['provenance']['path'])==evidence['provenance']['sha256']
+  validation=json.loads((current_bake/'validation.json').read_text());frame_digests=[digest for name,digest in validation.get('evidence_sha256',{}).items() if Path(name).name=='views.json']
+  if (current_bake/'qa-views.json').exists():frame_digests.append(sha(current_bake/'qa-views.json'))
+  assert d['manifest_sha256'] in frame_digests,(a,'Unbound camera manifest')
+  row.update(coverage_report=str(p),coverage_report_sha256=sha(p),model_sha256=d['model_sha256'],manifest_sha256=d['manifest_sha256'],rendered_red_pixels=sum(v['unfilled_visible_pixels']for v in d['views']))
   center=p.with_name('center-ray-classification.json')
   if d['unverified_materials']:row['status']='pending';row['reason']='unverified-materials'
   elif not row['rendered_red_pixels']:row['status']='PASS';row['reason']='All eight explicit-provenance views contain zero unfilled visible pixels; every displayed material verified.'
