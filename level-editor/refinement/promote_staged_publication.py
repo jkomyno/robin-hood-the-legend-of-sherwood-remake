@@ -4,10 +4,28 @@ Preparing never edits the live library. Applying backs up every existing target
 before writing and restores copied targets if any replacement raises an error.
 """
 import argparse
+from contextlib import contextmanager
+import fcntl
 import hashlib
 import json
 from pathlib import Path
 import shutil
+
+
+@contextmanager
+def library_lock(library):
+    with (Path(library)/'.publication.lock').open('a+') as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        yield
+
+
+def merge_index(current, staged):
+    selected = {asset['id'] for asset in staged['assets']}
+    if len(selected) != len(staged['assets']):
+        raise ValueError('Duplicate staged asset identity')
+    current['assets'] = [a for a in current['assets'] if a['id'] not in selected] + staged['assets']
+    current['assets'].sort(key=lambda a: a['id'])
+    return current
 
 
 def sha(path):
@@ -57,6 +75,11 @@ def asset_file_pairs(stage_assets, library_assets, asset):
 
 
 def prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_target=None):
+    with library_lock(library):
+        return _prepare(stage, library, main_blend, map_name, catalog_source, catalog_target)
+
+
+def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_target=None):
     if (catalog_source is None) != (catalog_target is None):
         raise ValueError('Catalog source and target must be supplied together')
     for name in ('asset-verification.json', 'handoff-verification.json', 'browser-result.json'):
@@ -65,9 +88,7 @@ def prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_t
     index_path=library/'3d-assets/index.json'
     current=json.loads(index_path.read_text())
     staged=json.loads((stage/'assets/index.json').read_text())
-    selected={a['id'] for a in staged['assets']}
-    current['assets']=[a for a in current['assets'] if a['id'] not in selected]+staged['assets']
-    current['assets'].sort(key=lambda a:a['id'])
+    current=merge_index(current, staged)
     merged=stage/'promotion-library-index.json'
     merged.write_text(json.dumps(current,indent=2)+'\n')
     pairs=[(stage/'worker.blend',main_blend),(stage/f'{map_name}.scene.glb',library/f'scenes/{map_name}-volumes.scene.glb'),
@@ -95,7 +116,11 @@ def prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_t
     for suffix in ('-volumes.scene.json',):
         path=library/f'scenes/{map_name}{suffix}'
         protected.append({'path':str(path),'sha256':sha(path)})
-    manifest={'status':'PREPARED_NOT_APPLIED','stage':str(stage),'files':records,'protected_files':protected}
+    manifest={'status':'PREPARED_NOT_APPLIED','stage':str(stage),'files':records,'protected_files':protected,
+              'library':str(library.resolve()), 'index_merge':{
+                  'staged_index':str((stage/'assets/index.json').resolve()),
+                  'staged_index_sha256':sha(stage/'assets/index.json'),
+                  'target':str(index_path.resolve())}}
     path=stage/'promotion.json'
     if path.exists():
         raise FileExistsError(path)
@@ -105,8 +130,33 @@ def prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_t
 
 def apply(path):
     manifest=json.loads(path.read_text())
+    library=Path(manifest.get('library', Path(next(item['target'] for item in manifest['files']
+        if item['target'].endswith('/3d-assets/index.json'))).parents[1]))
+    with library_lock(library):
+        return _apply(path)
+
+
+def _apply(path):
+    manifest=json.loads(path.read_text())
     if manifest['status']!='PREPARED_NOT_APPLIED':
         raise ValueError('Promotion manifest already applied')
+    merge=manifest.get('index_merge')
+    if merge:
+        staged_path=Path(merge['staged_index'])
+        if sha(staged_path)!=merge['staged_index_sha256']:
+            raise ValueError('Staged asset index changed')
+        item=next(item for item in manifest['files'] if item['target']==merge['target'])
+        target=Path(item['target'])
+        previous=sha(target)
+        merged=merge_index(json.loads(target.read_text()),json.loads(staged_path.read_text()))
+        if sha(target)!=previous:
+            raise ValueError('Library index changed during merge')
+        Path(item['source']).write_text(json.dumps(merged,indent=2)+'\n')
+        item['source_sha256']=sha(Path(item['source']))
+        item['previous_sha256']=previous
+        # Install the index last, after every file it references exists.
+        manifest['files']=[record for record in manifest['files'] if record is not item]+[item]
+        path.write_text(json.dumps(manifest,indent=2)+'\n')
     for record in manifest['protected_files']:
         if sha(Path(record['path']))!=record['sha256']:
             raise ValueError('Protected editor document changed')
@@ -123,6 +173,8 @@ def apply(path):
     try:
         for item in manifest['files']:
             target=Path(item['target']);target.parent.mkdir(parents=True,exist_ok=True)
+            if sha(target)!=item['previous_sha256']:
+                raise ValueError('Promotion target changed before write: '+str(target))
             temporary=target.with_name(target.name+'.publication-tmp')
             if temporary.exists():raise FileExistsError(temporary)
             shutil.copy2(item['source'],temporary)

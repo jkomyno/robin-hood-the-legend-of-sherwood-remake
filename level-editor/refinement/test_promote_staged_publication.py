@@ -69,6 +69,43 @@ class PromotionTests(unittest.TestCase):
             promotion.apply(self.stage / 'promotion.json')
         self.assertEqual(self.main.read_bytes(), b'old blend')
 
+    def test_latest_other_map_entries_are_merged_and_backed_up(self):
+        self.prepare()
+        index=self.library/'3d-assets/index.json'
+        latest={'assets':[{'id':'other-map-new','model':'new.glb'}], 'metadata':'retained'}
+        self.write_json(index, latest)
+        previous=index.read_bytes()
+        promotion.apply(self.stage/'promotion.json')
+        merged=json.loads(index.read_text())
+        self.assertEqual(merged['metadata'],'retained')
+        self.assertEqual({a['id'] for a in merged['assets']},{'bridge','other-map-new'})
+        manifest=json.loads((self.stage/'promotion.json').read_text())
+        self.assertEqual(manifest['files'][-1]['target'],str(index))
+        self.assertEqual(Path(manifest['files'][-1]['backup']).read_bytes(),previous)
+
+    def test_staged_index_change_is_rejected_before_writes(self):
+        self.prepare()
+        self.write_json(self.stage/'assets/index.json',{'assets':[]})
+        with self.assertRaisesRegex(ValueError,'Staged asset index changed'):
+            promotion.apply(self.stage/'promotion.json')
+        self.assertEqual(self.main.read_bytes(),b'old blend')
+
+    def test_external_index_race_preserves_new_index_and_rolls_back_assets(self):
+        self.prepare()
+        index=self.library/'3d-assets/index.json'
+        concurrent={'assets':[{'id':'concurrent-map'}]}
+        copy=promotion.shutil.copy2
+        def race(source,target):
+            result=copy(source,target)
+            if Path(source)==self.stage/'worker.blend':
+                self.write_json(index,concurrent)
+            return result
+        with patch.object(promotion.shutil,'copy2',side_effect=race):
+            with self.assertRaisesRegex(ValueError,'target changed before write'):
+                promotion.apply(self.stage/'promotion.json')
+        self.assertEqual(json.loads(index.read_text()),concurrent)
+        self.assertEqual(self.main.read_bytes(),b'old blend')
+
     def test_standalone_endpoints_keep_covered_model_and_copy_both(self):
         (self.stage / 'assets/bridge/covered.glb').write_bytes(b'covered default')
         self.entry['model'] = 'bridge/covered.glb'
