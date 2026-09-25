@@ -158,6 +158,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
     stats = {'generated_texels_including_padding':0, 'unfilled_texels_including_padding':0,
              'protected_texels_including_padding':0, 'views': {str(v['index']):0 for v,_,_ in cameras}}
 
+    visibility_samples={}
+
     def sample(obj, normal, positions, accepted, colors, *, face_index):
         stats['protected_texels_including_padding'] += int(accepted.sum())
         remaining = ~accepted.copy()
@@ -215,6 +217,11 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                         [generated_support[y0,x0], generated_support[y0,x1], generated_support[y1,x0], generated_support[y1,x1]])
                     if color is None:
                         continue
+                if (obj.name,face_index) in finite_faces:
+                    key=(obj.name,face_index,view['index'])
+                    witnesses=visibility_samples.setdefault(key,[])
+                    if len(witnesses)<3:
+                        witnesses.append(dict(world=list(point),sheet_pixel=[float(px[k]),float(py[k])],reconciled_rgb=[float(v) for v in color],score=float(score),first_hit_error=float((hit-point).length)))
                 sample_index = indices[k]
                 if not np.isfinite(best_scores[sample_index]):
                     best_scores[sample_index] = score
@@ -304,6 +311,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
               'reconciliation_minimum_gain':manifest.get('texture_reconciliation_minimum_gain',.4),
               'counts':stats,'layers':reports}
     if repair_policy is not None:report['inferred_gap_repair'] = repair_policy
-    if finite_faces:report['generated_bounded_visibility'] = manifest['texture_generated_bounded_visibility']
+    if finite_faces:
+        report['generated_bounded_visibility'] = manifest['texture_generated_bounded_visibility']
+        report['bounded_visibility_sample_evidence'] = dict(kind='Accepted unknown-only camera samples; near-tie samples may be blended by the recorded selection policy',samples=[dict(object=name,face=face,view=view,witnesses=rows) for (name,face,view),rows in visibility_samples.items()])
     (output/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     return report
