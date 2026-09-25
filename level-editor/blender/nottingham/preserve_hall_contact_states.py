@@ -163,6 +163,9 @@ def main():
         names = state['object_names'] + [EXTENSION]
         for o in owned + [extension]:
             o.hide_render = o.name not in names
+        if label == 'covered':
+            from refinement_workspace import validate
+            validate(new)
         dest = new / 'inspection/state-models' / label
         dest.mkdir(parents=True, exist_ok=False)
         write(dest / 'workspace.json', config)
