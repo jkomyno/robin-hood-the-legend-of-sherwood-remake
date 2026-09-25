@@ -4,8 +4,9 @@ Each patch binds its face, physical height interval and rigid translation.
 Coplanar sibling triangles additionally bind explicit target/donor coordinates
 and the subpixel world-space sampling error.
 Only original class-2 donors may replace original class-0 targets. Unsupported
-samples remain unfilled; this utility never expands a patch or selects nearest
-colors. The saved/reloaded worker is checked against every unchanged value.
+samples remain unfilled. Separately measured small components may use bounded
+same-face donors, with exact component coordinates and explicit distance caps.
+The saved/reloaded worker is checked against every unchanged value.
 """
 import argparse
 import hashlib
@@ -23,6 +24,7 @@ from repair_ramp_isolated_edge import physical_face, pixels, rgba8
 from refinement_workspace import _geometry
 from bake_reviewed_asset import _materials
 from course_patch_guards import coordinates, coplanar_measurements, ownership_classes
+from isolated_edge_texels import donor
 
 
 def sha(path):
@@ -43,7 +45,7 @@ def run(config_path):
     materials = {o.name: _materials(o) for o in bpy.data.objects if o.type == 'MESH'}
     packed = {i.name: hashlib.sha256(i.packed_file.data).hexdigest() for i in bpy.data.images if i.packed_file and i.users > 0}
     buffers, flags, images, edits = {}, {}, {}, []
-    for patch in spec['patches']:
+    for patch in spec.get('patches', []):
         name, fid = patch['object'], patch['face']
         obj = bpy.data.objects[name]
         face = obj.data.polygons[fid]
@@ -114,6 +116,44 @@ def run(config_path):
         assert errors.max() <= patch['max_sampling_error_world']
         assert (positions[0][:,2] >= patch['z_min']).all() and (positions[0][:,2] <= patch['z_max']).all()
         edits.append(dict(object=name,face=face.index,donor_face=sibling.index,target_xy=coords[0].tolist(),donor_xy=coords[1].tolist(),world_translation=desired.tolist(),sampling_error_max_world=float(errors.max()),unique_donor_texels=len(np.unique(coords[1],axis=0)),plane_offset_world=plane_error,normal_delta=normal_error,original_provenance=proofs[name]['texel_provenance'].copy()))
+    if spec.get('measured_component_patches'):
+        assert sha(spec['component_report']) == spec['component_report_sha256']
+    for patch in spec.get('measured_component_patches', []):
+        name, fid = patch['object'], patch['face']
+        obj = bpy.data.objects[name]; face = obj.data.polygons[fid]
+        node = next(n for n in obj.data.materials[face.material_index].node_tree.nodes if n.type == 'TEX_IMAGE' and n.image)
+        uv = obj.data.uv_layers[node.inputs['Vector'].links[0].from_node.uv_map]
+        proof = proofs[name]['texel_provenance']
+        assert sha(proof['path']) == proof['sha256']
+        assert hashlib.sha256(node.image.packed_file.data).hexdigest() == proof['packed_image_sha256']
+        assert hashlib.sha256(json.dumps([list(e.uv) for e in uv.data]).encode()).hexdigest() == proof['uv_sha256']
+        if name not in buffers:
+            buffers[name] = pixels(node.image)
+            flags[name] = np.load(proof['path'])['ownership'].copy()
+            images[name] = node.image
+        own = flags[name]
+        target, _ = coordinates(patch['target_xy'], patch['target_xy'], own.shape)
+        assert hashlib.sha256(target.tobytes()).hexdigest() == patch['target_xy_sha256']
+        (left, bottom), physical, pos = physical_face(obj, face, uv, own.shape)
+        local_xy = target - [left, bottom]
+        assert (local_xy >= 0).all() and (local_xy < [physical.shape[1], physical.shape[0]]).all()
+        h, w = physical.shape; local = own[bottom:bottom+h, left:left+w]
+        expected = [(int(y), int(x)) for x, y in local_xy]
+        assert len(target) <= patch['max_count']
+        assert len(target) / int(physical.sum()) <= patch['max_fraction']
+        obj.data.calc_loop_triangles()
+        area = 0.0
+        for tri in obj.data.loop_triangles:
+            if tri.polygon_index == fid:
+                verts = np.array([obj.matrix_world @ obj.data.vertices[i].co for i in tri.vertices])
+                area += float(np.linalg.norm(np.cross(verts[1]-verts[0], verts[2]-verts[0])) / 2)
+        assert area * len(target) / int(physical.sum()) <= patch['max_area_world2']
+        selected, distances = [], []
+        for x, y in local_xy:
+            (sy, sx), texels, world = donor(local, physical, pos, (int(y), int(x)), max_texels=patch['max_texels'], max_world=patch['max_world'], expected_component=expected)
+            selected.append([int(sx+left), int(sy+bottom)])
+            distances.append(dict(texels=texels, world=world))
+        edits.append(dict(object=name, face=fid, method='bounded-measured-same-face-component', target_xy=target.tolist(), donor_xy=selected, distances=distances, component_area_world2=area*len(target)/int(physical.sum()), original_provenance=proof.copy()))
     original = {name: rgba8(values) for name, values in buffers.items()}
     original_flags = {name: value.copy() for name, value in flags.items()}
     allowed = {name: np.zeros(value.shape, bool) for name, value in flags.items()}
@@ -159,6 +199,8 @@ def run(config_path):
     validation['counts']['unfilled_texels_including_padding']-=count
     validation['counts']['extrapolated_texels_including_padding']=validation['counts'].get('extrapolated_texels_including_padding',0)+count
     validation['course_translation']={'config_path':str(config_path.resolve()),'sha256':sha(config_path),'repaired_texels':count}
+    if spec.get('measured_component_patches'):
+        validation['measured_component_repairs'] = {'component_report': spec['component_report'], 'component_report_sha256': spec['component_report_sha256'], 'components': len(spec['measured_component_patches']), 'method': 'bounded-measured-same-face-component'}
     (out/'validation.json').write_text(json.dumps(validation,indent=2)+'\n')
     report=dict(status='PASS',model_sha256=sha(out/'worker.blend'),previous_model_sha256=spec['model_sha256'],geometry_uv_material_layout_exact=True,alpha_exact=True,source_and_existing_generated_exact=True,outside_patch_rgba_exact=True,original_class2_donors_only=True,repaired_texels=count,edits=edits,config_sha256=sha(config_path),script_sha256=sha(__file__))
     (out/'saved-course-audit.json').write_text(json.dumps(report,indent=2)+'\n')
