@@ -64,7 +64,14 @@ def snapshot(collection_name, include_values=False, select=None):
             continue
         if select is not None and not select(obj):
             continue
-        slots = [material(mat) for mat in obj.data.materials]
+        # Historical source materials can remain in unassigned slots after an
+        # atlas replaces them. Only face-assigned slots contribute to this
+        # mesh; active modifiers can change assignments, so retain the strict
+        # all-slot check in that case. Assigned image bytes must still be packed.
+        used_slots = {p.material_index for p in obj.data.polygons}
+        all_slots = any(m.show_render or m.show_viewport for m in obj.modifiers)
+        slots = [material(mat) if all_slots or i in used_slots else None
+                 for i, mat in enumerate(obj.data.materials)]
         value = {'vertices': [[round(c, 5) for c in obj.matrix_world @ v.co] for v in obj.data.vertices],
                  'faces': [list(p.vertices) for p in obj.data.polygons],
                  'smooth_faces': [p.use_smooth for p in obj.data.polygons],
