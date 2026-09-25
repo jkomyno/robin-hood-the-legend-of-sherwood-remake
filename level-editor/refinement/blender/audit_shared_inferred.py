@@ -46,7 +46,7 @@ def run(output):
     donor_masks,target_masks=masks(canonical),masks(target)
     saved=read(output/'worker.blend');records=[]
     for name in sorted(names):
-        expected,count=merge_inferred(donor[name],prior[name],donor_masks[name],target_masks[name])
+        expected,count=merge_inferred(donor[name],prior[name],donor_masks[name],target_masks[name],allow_bounded_donors=transfer.get('allow_bounded_donors',False))
         if not np.array_equal(saved[name],expected):
             diff=np.abs(saved[name]-expected)
             raise ValueError(f'Saved RGBA mismatch {name}: {np.count_nonzero(diff)} channels; max {diff.max()}')

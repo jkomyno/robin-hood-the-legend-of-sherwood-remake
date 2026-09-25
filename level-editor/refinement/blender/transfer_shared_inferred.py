@@ -9,7 +9,16 @@ import json
 import sys
 
 
-def merge_inferred(canonical, target, donor_ownership, target_ownership):
+def transferred_ownership(donor, target, *, allow_bounded_donors=False):
+    import numpy as np
+    if donor.shape!=target.shape or not np.isin(donor,[0,1,2,3]).all() or not np.isin(target,[0,1,2,3]).all():
+        raise ValueError('Invalid transfer ownership buffers')
+    selected=((donor==2)|(allow_bounded_donors & (donor==3)))&(target!=1)
+    result=target.copy();result[selected]=donor[selected]
+    return result,selected
+
+
+def merge_inferred(canonical, target, donor_ownership, target_ownership, *, allow_bounded_donors=False):
     import numpy as np
     if canonical.shape != target.shape or canonical.shape[-1] != 4:
         raise ValueError('Atlas dimensions differ')
@@ -18,7 +27,7 @@ def merge_inferred(canonical, target, donor_ownership, target_ownership):
     for ownership in (donor_ownership,target_ownership):
         if ownership.shape != target.shape[:2] or not np.isin(ownership,[0,1,2,3]).all():
             raise ValueError('Invalid explicit texel provenance')
-    selected = (donor_ownership == 2) & (target_ownership != 1)
+    _,selected=transferred_ownership(donor_ownership,target_ownership,allow_bounded_donors=allow_bounded_donors)
     result = target.copy()
     result[selected, :3] = canonical[selected, :3]
     assert np.array_equal(result[..., 3], target[..., 3])
@@ -26,7 +35,7 @@ def merge_inferred(canonical, target, donor_ownership, target_ownership):
     return result, int(selected.sum())
 
 
-def run(canonical, target, output):
+def run(canonical, target, output, *, allow_bounded_donors=False):
     import bpy
     import numpy as np
     sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -54,6 +63,21 @@ def run(canonical, target, output):
         validation=json.loads((experiment/'bake-v1/validation.json').read_text())
         if not validation.get('geometry_verified') or validation['asset_id']!=manifest['asset_id']:
             raise ValueError('Input bake lacks geometry validation')
+    if allow_bounded_donors:
+        from inferred_gap_repair import validate_policy
+        donor_validation=json.loads((canonical/'bake-v1/validation.json').read_text())
+        policy=donor_validation.get('inferred_gap_repair')
+        if policy is None or policy!=manifests[0].get('texture_inferred_gap_repair'):
+            raise ValueError('Bounded donor policy is missing or differs from frozen manifest')
+        validate_policy(policy,manifests[0]['render_object_names'])
+        audit_path=canonical/'bake-v1/saved-gap-audit.json'
+        audit=json.loads(audit_path.read_text())
+        if (audit.get('status')!='PASS' or audit.get('model_sha256')!=sha(canonical/'bake-v1/worker.blend') or
+            audit.get('validation_sha256')!=sha(canonical/'bake-v1/validation.json') or
+            audit.get('source_and_untouched_rgba_exact') is not True or audit.get('all_alpha_exact') is not True or
+            not audit.get('objects') or not all(row.get('geometry_and_uv_exact') is True for row in audit['objects'])):
+            raise ValueError('Bounded donor lacks exact saved source/alpha/geometry proof')
+        hashes[str(audit_path)]=sha(audit_path)
     appearance_cache={};pixel_cache={}
     def load(path, manifest):
         appearance_cache.clear();pixel_cache.clear()
@@ -122,6 +146,11 @@ def run(canonical, target, output):
         acquire()
         if hashes!={p:sha(Path(p)) for p in hashes}:
             raise ValueError('Transfer input changed while yielding the render lease')
+    if allow_bounded_donors:
+        bounded_count=sum(int((mask==3).sum()) for _,mask in provenance_maps[0].values())
+        if (not bounded_count or bounded_count!=donor_validation['counts'].get('extrapolated_texels_including_padding') or
+            bounded_count!=sum(row.get('repaired_texels',0) for row in audit['objects'])):
+            raise ValueError('Bounded donor provenance count differs from exact repair proof')
     original=[]
     for p,m in zip((canonical,target),manifests):
         original.append({name:signature(o) for name,o in load(p/'approved-model.blend',m).items()})
@@ -156,13 +185,13 @@ def run(canonical, target, output):
     geometry={o.name:_geometry(o) for o in bpy.context.scene.objects}
     print('Transfer: binding complete scene appearance before edits',flush=True)
     before={o.name:signature(o,full_pixels=False) for o in bpy.context.scene.objects if o.type=='MESH'}
-    changed=[];skipped=[];expected_saved={}
+    changed=[];skipped=[];expected_saved={};updated_masks={}
     for name,obj in targets.items():
         data=atlas(obj) if name in donors else None
         if not data or donors[name][0]!=_geometry(obj) or original[1][name][0]!=_geometry(obj) or donors[name][1]!=data[2]:
             skipped.append(name);continue
         target_mask=verified_mask(name,data,provenance_maps[1],obj)
-        merged,count=merge_inferred(donors[name][2],data[3],donors[name][3],target_mask)
+        merged,count=merge_inferred(donors[name][2],data[3],donors[name][3],target_mask,allow_bounded_donors=allow_bounded_donors)
         if not count:continue
         material,node,_,pixels=data
         # Detach material and image even if another state/context shares them.
@@ -172,6 +201,8 @@ def run(canonical, target, output):
         image=node.image.copy();node.image=image
         image.pixels.foreach_set(merged.ravel());image.update();image.pack()
         expected_saved[name]=merged
+        donor_mask=donors[name][3]
+        updated_masks[name],_=transferred_ownership(donor_mask,target_mask,allow_bounded_donors=allow_bounded_donors)
         changed.append({'object':name,'inferred_texels':count,'protected_texels':int((target_mask==1).sum()),'before_rgba_sha256':hashlib.sha256(pixels.tobytes()).hexdigest(),'after_rgba_sha256':hashlib.sha256(merged.tobytes()).hexdigest()})
     if not changed:raise ValueError('No eligible shared inferred atlas texels')
     changed_names={r['object'] for r in changed}
@@ -188,7 +219,27 @@ def run(canonical, target, output):
         if actual is None or not np.array_equal(actual[3],expected):
             raise ValueError('Saved packed image roundtrip changed transferred or protected texels: '+name)
     report=json.loads((target/'bake-v1/validation.json').read_text())
-    report['shared_inferred_transfer']={'inputs_sha256':hashes,'canonical':str(canonical),'target':str(target),'changed':changed,'skipped':skipped,'geometry_preserved':True,'outside_appearance_preserved':True,'target_observed_rgba_preserved':True,'all_target_alpha_preserved':True,'saved_roundtrip_rgba_exact':True}
+    report['shared_inferred_transfer']={'allow_bounded_donors':allow_bounded_donors,'inputs_sha256':hashes,'canonical':str(canonical),'target':str(target),'changed':changed,'skipped':skipped,'geometry_preserved':True,'outside_appearance_preserved':True,'target_observed_rgba_preserved':True,'all_target_alpha_preserved':True,'saved_roundtrip_rgba_exact':True}
+    proof_dir=output/'provenance-transfer';proof_dir.mkdir()
+    for layer in report['layers']:
+        for entry in layer['objects']:
+            name=entry['object']
+            original_proof,original_mask=provenance_maps[1][name]
+            if name not in updated_masks:
+                entry['texel_provenance']=original_proof
+                continue
+            actual=atlas(saved[name]);mask=updated_masks[name]
+            proof_path=proof_dir/(hashlib.sha256(name.encode()).hexdigest()[:20]+'.npz')
+            np.savez_compressed(proof_path,ownership=mask)
+            entry['texel_provenance']={**original_proof,'path':str(proof_path),'sha256':sha(proof_path),
+                'packed_image_sha256':hashlib.sha256(actual[1].image.packed_file.data).hexdigest(),
+                'rgba8_sha256':hashlib.sha256(np.rint(np.clip(actual[3],0,1)*255).astype(np.uint8).tobytes()).hexdigest(),
+                'semantics':{'0':'unfilled-or-padding','1':'protected-source','2':'generated','3':'bounded-same-face-extrapolation'}}
+    final_masks=[updated_masks.get(name,mask) for name,(_,mask) in provenance_maps[1].items()]
+    report['counts'].update(protected_texels_including_padding=sum(int((m==1).sum()) for m in final_masks),
+        generated_texels_including_padding=sum(int((m==2).sum()) for m in final_masks),
+        extrapolated_texels_including_padding=sum(int((m==3).sum()) for m in final_masks),
+        unfilled_texels_including_padding=sum(int((m==0).sum()) for m in final_masks))
     report['model_sha256']=sha(output/'worker.blend')
     (output/'validation.json').write_text(json.dumps(report,indent=2)+'\n')
     width,height=manifests[1]['tile_size']
@@ -202,4 +253,8 @@ def run(canonical, target, output):
 
 
 if __name__=='__main__':
-    run(*sys.argv[sys.argv.index('--')+1:])
+    import argparse
+    parser=argparse.ArgumentParser();parser.add_argument('canonical');parser.add_argument('target');parser.add_argument('output')
+    parser.add_argument('--allow-bounded-donors',action='store_true')
+    args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
+    run(args.canonical,args.target,args.output,allow_bounded_donors=args.allow_bounded_donors)
