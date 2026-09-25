@@ -242,6 +242,7 @@ def run(canonical, target, output, *, allow_bounded_donors=False):
         unfilled_texels_including_padding=sum(int((m==0).sum()) for m in final_masks))
     report['model_sha256']=sha(output/'worker.blend')
     (output/'validation.json').write_text(json.dumps(report,indent=2)+'\n')
+    (output/'transferred-provenance.json').write_text(json.dumps({'version':1,'status':'PASS','model_sha256':report['model_sha256'],'validation_sha256':sha(output/'validation.json'),'objects':[entry for layer in report['layers'] for entry in layer['objects']]},indent=2)+'\n')
     width,height=manifests[1]['tile_size']
     render(target/'views.json',output/'actual',width=width)
     buffers=[]
