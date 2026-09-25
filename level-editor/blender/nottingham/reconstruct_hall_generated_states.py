@@ -98,6 +98,16 @@ def main(contract_path,out):
         assert sha(row['worker'])==row['worker_sha256']
         assert {path:sha(path) for path in row['reports']}==row['report_sha256']
     donors={state:donor_inventory(Path(d['worker']),d['reports']) for state,d in contract['donors'].items()}
+    camera_patch=None
+    if contract.get('shared_camera_repair'):
+        patch=contract['shared_camera_repair']
+        for key in ('model','provenance','report'):assert sha(patch[key])==patch[key+'_sha256']
+        patch_report=read(patch['report']);assert patch_report['status']=='PASS' and patch_report['model_sha256']==patch['model_sha256']
+        patch_inventory=donor_inventory(Path(patch['model']),[patch['provenance']])
+        assert len(patch_report['scope'])==1
+        patch_name=next(iter(patch_report['scope']));assert patch_report['scope'][patch_name]==[1]
+        patch_row=next(r for r in read(patch['provenance'])['objects'] if r['object']==patch_name)
+        camera_patch=dict(name=patch_name,report=patch_report,receiver=patch_inventory[patch_name],uv_sha256=patch_row['texel_provenance']['uv_sha256'],slot=patch_row['material_slot'])
     trees=[source_tree(states[s]['model'],cfg['collection_name']) for s in ('covered','revealed')]
     results=[]
     requested=[sys.argv[sys.argv.index('--state')+1]] if '--state' in sys.argv else ['covered','revealed']
@@ -143,10 +153,21 @@ def main(contract_path,out):
                     data=donor['images'][triangle['slot']];rgb,valid,source_fraction=sample_donor(data['rgba'],data['ownership'],bary[select]@triangle['uv'])
                     indices=np.flatnonzero(select)[valid];ax,ay=xx[indices],yy[indices]
                     result[ay,ax,:3]=np.rint(np.clip(rgb[valid],0,1)*255).astype(np.uint8);flags[ay,ax]=2;lineage[ay,ax]=source_fraction[valid];choice[ay,ax]=1 if donor_state=='covered' else 2;best[ay,ax]=scores[indices];fallback[ay,ax]=missing_covered[indices]
+            shared_camera_counts=dict(transferred=0,protected=0,different_state_visibility=0)
+            if state=='revealed' and camera_patch and obj.name==camera_patch['name']:
+                assert hashlib.sha256(json.dumps([list(v.uv) for v in uv.data]).encode()).hexdigest()==camera_patch['uv_sha256']
+                donor=camera_patch['receiver'];assert np.array_equal(donor['vertices'],np.array([list(v.co) for v in obj.data.vertices])) and np.array_equal(donor['matrix'],np.array(obj.matrix_world))
+                data=donor['images'][camera_patch['slot']]
+                for repair in camera_patch['report']['repairs']:
+                    x,y=repair['atlas']
+                    if protected[y,x]:shared_camera_counts['protected']+=1;continue
+                    if not same_source_hit(repair['world'],trees):shared_camera_counts['different_state_visibility']+=1;continue
+                    assert data['ownership'][y,x]==2
+                    result[y,x,:3]=np.rint(data['rgba'][y,x,:3]*255).astype(np.uint8);flags[y,x]=2;lineage[y,x]=0;choice[y,x]=1;fallback[y,x]=False;shared_camera_counts['transferred']+=1
             assert np.array_equal(original[protected],result[protected]) and np.array_equal(original[:,:,3],result[:,:,3])
             image.pixels.foreach_set((result.astype(np.float32)/255).ravel());image.update();image.pack()
             path=destination/'provenance'/f'{len(report):03}.npz';path.parent.mkdir(exist_ok=True);np.savez_compressed(path,ownership=flags,donor_source_weight=lineage,donor_state=choice,revealed_fallback_missing_covered_receiver=fallback)
-            report.append(dict(object=obj.name,material_slot=slot,protected_source_texels=int(protected.sum()),completion_texels=int((flags==2).sum()),source_alpha_exact=True,revealed_fallback_missing_covered_receiver_texels=int(fallback.sum()),protected_rgba8_sha256=hashlib.sha256(original[protected].tobytes()).hexdigest(),alpha8_sha256=hashlib.sha256(original[:,:,3].tobytes()).hexdigest(),source_protection=dict(path=contract['states'][state]['protection_manifest'],sha256=contract['states'][state]['protection_manifest_sha256']),donor_lineage_counts={'fully_generated':int(((flags==2)&(lineage==0)).sum()),'fully_donor_source':int(((flags==2)&(lineage==1)).sum()),'mixed':int(((flags==2)&(lineage>0)&(lineage<1)).sum())},texel_provenance=dict(path=str(path.resolve()),sha256=sha(path),packed_image_sha256=hashlib.sha256(image.packed_file.data).hexdigest(),uv_sha256=hashlib.sha256(json.dumps([list(v.uv) for v in uv.data]).encode()).hexdigest())))
+            report.append(dict(object=obj.name,material_slot=slot,shared_camera_repair=shared_camera_counts,protected_source_texels=int(protected.sum()),completion_texels=int((flags==2).sum()),source_alpha_exact=True,revealed_fallback_missing_covered_receiver_texels=int(fallback.sum()),protected_rgba8_sha256=hashlib.sha256(original[protected].tobytes()).hexdigest(),alpha8_sha256=hashlib.sha256(original[:,:,3].tobytes()).hexdigest(),source_protection=dict(path=contract['states'][state]['protection_manifest'],sha256=contract['states'][state]['protection_manifest_sha256']),donor_lineage_counts={'fully_generated':int(((flags==2)&(lineage==0)).sum()),'fully_donor_source':int(((flags==2)&(lineage==1)).sum()),'mixed':int(((flags==2)&(lineage>0)&(lineage<1)).sum())},texel_provenance=dict(path=str(path.resolve()),sha256=sha(path),packed_image_sha256=hashlib.sha256(image.packed_file.data).hexdigest(),uv_sha256=hashlib.sha256(json.dumps([list(v.uv) for v in uv.data]).encode()).hexdigest())))
         assert all_geometry=={o.name:geometry(o) for o in bpy.data.objects if o.type=='MESH'}
         assert outside_before=={name:signature(bpy.data.objects[name]) for name in outside_before}
         bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(destination/'model.blend'))
