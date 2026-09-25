@@ -31,6 +31,8 @@ def main():
     from mathutils import Vector
     from mathutils.bvhtree import BVHTree
     from source_projection_bake import bake
+    from render_slots import acquire
+    acquire(slots=2)
     args = sys.argv[sys.argv.index('--') + 1:]
     workspace, witnesses, output = [Path(p).resolve() for p in args[:3]]
     output.mkdir(parents=True, exist_ok=False)
@@ -42,6 +44,7 @@ def main():
     obj = bpy.data.objects[CAP]
     _, _, before = binding(obj)
     report = bake(config['map_name'], config['source_path'], output / 'replay.json',
+                  texels_per_unit=float(obj.get('source_contact_texels_per_unit', 1)),
                   receiver_nodes=['building-505'], projection_label='exterior',
                   receiver_object_names=[CAP], receiver_asset_id=config['asset_id'],
                   preserve_authored=False, source_mask_manifest=config['source_mask_manifest'],
