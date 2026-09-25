@@ -13,7 +13,7 @@ def verify_samples(before, mask, after, final_mask, scoped):
     if not np.array_equal(original,final_mask==1) or not np.array_equal(before[original],after[original]):
         raise ValueError('Original source ownership/RGBA changed')
     inferred=(final_mask==3)&(mask==0)
-    allowed=inferred | (scoped & ~original)
+    allowed=inferred | (scoped & ~original & (mask!=3))
     if not np.array_equal(before[~allowed],after[~allowed]) or not np.array_equal(mask[~allowed],final_mask[~allowed]):
         raise ValueError('Outside scoped face/inferred destination changed')
     if not np.array_equal(before[...,3],after[...,3]):raise ValueError('Physical alpha changed')
