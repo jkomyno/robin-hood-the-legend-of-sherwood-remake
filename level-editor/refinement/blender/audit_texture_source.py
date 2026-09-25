@@ -2,6 +2,15 @@
 from pathlib import Path
 import hashlib,json,sys
 
+def verify_source_record(before,after):
+    import numpy as np
+    pixels,mask,geometry=before;final,flags,final_geometry=after
+    if pixels.shape!=final.shape or mask.shape!=pixels.shape[:2] or flags.shape!=mask.shape or geometry!=final_geometry:raise ValueError('Geometry, all UV or atlas layout changed')
+    known=mask==1
+    if not np.array_equal(known,flags==1) or not np.array_equal(pixels[known],final[known]) or not np.array_equal(pixels[...,3],final[...,3]):raise ValueError('Protected source RGBA/ownership or alpha changed')
+    return dict(source_texels=int(known.sum()),source_rgba_exact=True,source_mask_exact=True,all_alpha_exact=True,geometry_and_all_uv_exact=True)
+
+
 def run(previous,output):
     import bpy,numpy as np
     previous,output=Path(previous).resolve(),Path(output).resolve()
@@ -27,12 +36,8 @@ def run(previous,output):
     before,old=snapshot(previous);after,new=snapshot(output)
     if old.keys()!=new.keys() or before.get('source_mask_evidence')!=after.get('source_mask_evidence'):raise ValueError('Source ownership contract changed')
     results=[]
-    for name,(pixels,mask,geometry) in old.items():
-        final,flags,final_geometry=new[name]
-        if pixels.shape!=final.shape or geometry!=final_geometry:raise ValueError('Geometry, all UV or atlas layout changed')
-        known=mask==1
-        if not np.array_equal(known,flags==1) or not np.array_equal(pixels[known],final[known]) or not np.array_equal(pixels[...,3],final[...,3]):raise ValueError('Protected source RGBA/ownership or alpha changed')
-        results.append(dict(object=name,source_texels=int(known.sum()),source_rgba_exact=True,source_mask_exact=True,all_alpha_exact=True,geometry_and_all_uv_exact=True))
+    for name in old:
+        results.append(dict(object=name,**verify_source_record(old[name],new[name])))
     report=dict(status='PASS',previous_model_sha256=sha(previous/'worker.blend'),model_sha256=sha(output/'worker.blend'),validation_sha256=sha(output/'validation.json'),objects=results,outside_objects_unchanged=after['outside_objects_unchanged'],scope='Source protection only: generated RGB is intentionally allowed to change; composition evidence and all8 material review must validate generated changes separately.')
     (output/'saved-source-audit.json').write_text(json.dumps(report,indent=2)+'\n');print('SAVED SOURCE PASS',output)
 
