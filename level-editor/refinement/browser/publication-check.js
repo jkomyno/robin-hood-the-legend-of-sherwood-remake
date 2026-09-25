@@ -68,10 +68,10 @@
   const title=`${group.name} (${group.parts.length} parts)`;
   row.click();await wait(()=>document.querySelector('.object-detail h2')?.textContent===title,'Select group '+group.id);
   row=document.querySelectorAll('.object-list li.depth-0')[index];row.querySelector('.chev-btn').click();
-  const parts=[];for(let child=row.nextElementSibling;child?.classList.contains('depth-1');child=child.nextElementSibling)parts.push(child);
-  assert(parts.length===group.parts.length,'Selectable part count '+group.id);
+  const currentParts=()=>{const result=[];const current=document.querySelectorAll('.object-list li.depth-0')[index];for(let child=current.nextElementSibling;child?.classList.contains('depth-1');child=child.nextElementSibling)result.push(child);return result;};
+  assert(currentParts().length===group.parts.length,'Selectable part count '+group.id);
   for(const [partIndex,part]of group.parts.entries()){
-   parts[partIndex].click();await wait(()=>document.querySelector('.object-detail h2')?.textContent===part.name,'Select part '+part.id);
+   currentParts()[partIndex].click();await wait(()=>document.querySelector('.object-detail h2')?.textContent===part.name,'Select part '+part.id);
    assert(button('Select building '+group.id),'Selected part belongs to '+group.id);
   }
   click('Select building '+group.id);assert(document.querySelector('.object-detail h2')?.textContent===title,'Return to complete group '+group.id);
