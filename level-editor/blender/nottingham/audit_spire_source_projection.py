@@ -15,7 +15,7 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def source_census(workspace, asset, box):
+def source_census(workspace, asset, box, *, render_materials=True):
     import bpy
     from mathutils import Vector
     from refinement_review import _tree
@@ -27,7 +27,8 @@ def source_census(workspace, asset, box):
     bpy.context.view_layer.update()
     objects = [o for o in bpy.data.collections[config['collection_name']].all_objects
                if o.type == 'MESH' and not o.hide_render]
-    owned = [o for o in objects if o.get('asset_group') == asset]
+    selected_assets = {asset} if isinstance(asset, str) else set(asset)
+    owned = [o for o in objects if o.get('asset_group') in selected_assets]
     all_tree, all_owners, _ = _tree(objects)
     tree, owners, _ = _tree(owned)
     constraints = SourceMaskConstraints(workspace / 'source-masks.json', 'exterior',
@@ -43,6 +44,8 @@ def source_census(workspace, asset, box):
             if index is not None:
                 obj = owners[index]
                 entry['receiver'] = obj['source_node']
+                entry['receiver_object'] = obj.name
+                entry['receiver_component'] = obj.get('projection_component')
                 entry['cosine'] = normal.dot(toward)
                 if not constraints.allowed_pixel(obj, x, y):
                     entry['state'] = 'mask-rejected'
@@ -62,7 +65,8 @@ def source_census(workspace, asset, box):
     from render_source_atlas_crop import render
     destination = workspace / 'inspection/source-actual.png'
     destination.parent.mkdir(exist_ok=True)
-    render(collection.name, box, destination)
+    if render_materials:
+        render(collection.name, box, destination)
     return result, destination
 
 
