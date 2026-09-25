@@ -29,17 +29,19 @@ export async function listProjectionAssets(root: FileSystemDirectoryHandle, map?
   try { index = await readJson(dir, "index.json"); }
   catch (error) { if (isNotFound(error)) return []; throw error; }
   const entries = parseProjectionAssetIndex(index).filter(entry => (!map || entry.source_map.toLowerCase() === map.toLowerCase()))
-    .map(entry => ({ ...entry, descriptor: `3d-assets/${entry.descriptor}`, model: `3d-assets/${entry.model}` }));
+    .map(entry => ({ ...entry, descriptor: `3d-assets/${entry.descriptor}`, model: `3d-assets/${entry.model}`,
+      ...(entry.preview_model ? { preview_model: `3d-assets/${entry.preview_model}` } : {}) }));
   const expanded = await Promise.all(entries.map(async entry => {
     const descriptor = parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text()));
     if (descriptor.id !== entry.id || descriptor.source_map.toLowerCase() !== entry.source_map.toLowerCase()) throw new Error(`Asset catalog identity mismatch: ${entry.id}`);
-    if (!descriptor.state_variants) return [entry];
+    const variants = descriptor.state_variants ?? descriptor.standalone_variants;
+    if (!variants) return [entry];
     const parent = entry.descriptor.split("/").slice(0, -1).join("/");
-    return (["initial", "applied"] as const).flatMap(state => {
-      const variant = descriptor.state_variants?.[state];
+    return [...(descriptor.standalone_variants ? [entry] : []), ...(["initial", "applied"] as const).flatMap(state => {
+      const variant = variants[state];
       return variant ? [{ ...entry, id: assetVariantId(entry.id, state), name: `${entry.name} — ${variant.name} (static)`,
-        state_variant: state, model: `${parent}/${variant.model}` }] : [];
-    });
+        state_variant: state, model: `${parent}/${variant.model}`, preview_model: undefined }] : [];
+    })];
   }));
   const flattened = expanded.flat();
   if (new Set(flattened.map(entry => entry.id)).size !== flattened.length) throw new Error("Duplicate static asset variant identity");
@@ -65,10 +67,10 @@ export async function prepareProjectionAsset(
   const descriptorHash = await hash(descriptorBytes);
   if (expected && expected.descriptor_sha256 !== descriptorHash) throw new Error(`Asset descriptor changed: ${entry.id}`);
   const original = parseProjectionAssetDescriptor(JSON.parse(new TextDecoder().decode(descriptorBytes)));
-  const variant = entry.state_variant ? original.state_variants?.[entry.state_variant] : undefined;
+  const variant = entry.state_variant ? (original.state_variants ?? original.standalone_variants)?.[entry.state_variant] : undefined;
   if (entry.state_variant && !variant) throw new Error(`Unknown static asset variant: ${entry.state_variant}`);
   const descriptor = variant ? { ...original, id: assetVariantId(original.id, entry.state_variant!),
-    name: `${original.name} — ${variant.name}`, model: variant.model, parts: variant.parts ?? original.parts, state_variants: undefined } : original;
+    name: `${original.name} — ${variant.name}`, model: variant.model, parts: variant.parts ?? original.parts, state_variants: undefined, standalone_variants: undefined } : original;
   if (descriptor.id !== entry.id)
     throw new Error(`Asset identity mismatch: ${entry.id}`);
   if (descriptor.editor_usage === "map-background") throw new Error("Map backgrounds are part of the map and cannot be inserted as objects");
@@ -122,6 +124,16 @@ export async function loadProjectionAssetPreview(root: FileSystemDirectoryHandle
   if (entry.editor_usage === "map-background") {
     const bytes = await (await libraryFile(root, entry.model)).arrayBuffer();
     return (await new GLTFLoader().parseAsync(bytes, "")).scene;
+  }
+  if (entry.preview_model) {
+    const preview = (await new GLTFLoader().parseAsync(await (await libraryFile(root, entry.preview_model)).arrayBuffer(), "")).scene;
+    const mapRoot = preview.children.find(child => child.name === "map");
+    const group = mapRoot?.children[0];
+    if (group) for (const part of parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text())).parts) {
+      const node = group.children.find(child => child.name === part.node);
+      if (node) node.visible = !part.default_hidden;
+    }
+    return preview;
   }
   const prepared = await prepareProjectionAsset(root, entry, entry.source_map);
   for (const part of prepared.descriptor.parts) {

@@ -201,3 +201,25 @@ test("standalone component metadata must match the pinned scoped descriptor", as
   f.mesh.userData.source_components=["east"];
   await assert.rejects(prepareProjectionAsset(f.directory,f.entry,"York"),/Unexpected/);
 });
+
+test("additional complete variants retain the covered base and pin each endpoint on reload", async (t) => {
+  const f=fixture();
+  const endpointParts=[{...f.descriptor.parts[0]!,name:"Open door",obstacle_local_game:{...f.descriptor.parts[0]!.obstacle_local_game,solid:false}}];
+  f.json(f.entry.descriptor,{...f.descriptor,standalone_variants:{initial:{name:"Door closed",model:"closed.glb"},applied:{name:"Door open",model:"open.glb",parts:endpointParts}}});
+  f.files.set("3d-assets/house/closed.glb",new File([new Uint8Array([4])],"closed.glb"));
+  f.files.set("3d-assets/house/open.glb",new File([new Uint8Array([5])],"open.glb"));
+  const entries=await listProjectionAssets(f.directory,"Leicester");
+  assert.deepEqual(entries.map(entry=>entry.id),["house","house--state-initial","house--state-applied"]);
+  assert.equal(entries[0]!.model,f.entry.model);
+  const loaded:number[][]=[];
+  t.mock.method(GLTFLoader.prototype,"parseAsync",async(bytes:ArrayBuffer)=>{loaded.push([...new Uint8Array(bytes)]);return{scene:f.asset};});
+  const base=await prepareProjectionAsset(f.directory,entries[0]!,"York");
+  const initial=await prepareProjectionAsset(f.directory,entries[1]!,"York");
+  const applied=await prepareProjectionAsset(f.directory,entries[2]!,"York");
+  assert.deepEqual(loaded,[[3,2,1],[4],[5]]);
+  assert.equal(base.reference.state_variant,undefined);
+  assert.equal(initial.reference.state_variant,"initial");
+  assert.equal(applied.descriptor.parts[0]!.obstacle_local_game.solid,false);
+  assert.deepEqual((await prepareProjectionAsset(f.directory,applied.reference,"York",applied.reference)).reference,applied.reference);
+  await assert.rejects(prepareProjectionAsset(f.directory,{...entries[2]!,model:f.entry.model},"York"),/path mismatch/);
+});

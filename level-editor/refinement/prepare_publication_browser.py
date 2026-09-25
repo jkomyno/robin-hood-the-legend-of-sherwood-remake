@@ -103,10 +103,14 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         descriptor = json.loads((source / entry["descriptor"]).read_text())
         add("3d-assets/" + entry["descriptor"], source / entry["descriptor"])
         add("3d-assets/" + entry["model"], source / entry["model"])
-        variants = descriptor.get("state_variants")
+        if entry.get("preview_model"):
+            add("3d-assets/" + entry["preview_model"], source / entry["preview_model"])
+        variants = descriptor.get("state_variants") or descriptor.get("standalone_variants")
         if not variants:
             expanded.append(entry)
             continue
+        if descriptor.get("standalone_variants"):
+            expanded.append(entry)
         for state in ("initial", "applied"):
             if state not in variants:
                 continue

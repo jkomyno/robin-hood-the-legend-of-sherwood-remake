@@ -539,6 +539,7 @@ export function parseExternalAssetSources(value: unknown): ExternalAssetSource[]
     check(!/[\\/:\0]/.test(entry.id) && !ids.has(entry.id), "asset source id", "invalid or duplicate identity");
     ids.add(entry.id);
     for (const key of ["descriptor", "model"]) check(safeLibraryPath(entry[key]), key, "expected safe library-relative path");
+    if (entry.preview_model !== undefined) check(safeLibraryPath(entry.preview_model), "preview_model", "expected safe library-relative path");
     for (const key of ["descriptor_sha256", "model_sha256"])
       check(typeof entry[key] === "string" && /^[a-f0-9]{64}$/.test(entry[key]), key, "expected SHA-256");
   }
@@ -602,16 +603,17 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
   }
   if (d.states !== undefined)
     validateAssetStates(d.states, new Map(parts.map(part => [part.node, !!part.default_hidden])), "asset.states");
-  if (d.state_variants !== undefined) {
-    check(d.states === undefined && d.editor_usage !== "map-background", "asset.state_variants", "static models cannot also define part states or map backgrounds");
-    const variants = object(d.state_variants, "asset.state_variants");
+  check(d.state_variants === undefined || d.standalone_variants === undefined, "asset.variants", "cannot combine replacement and additional static variants");
+  for (const field of ["state_variants", "standalone_variants"]) if (d[field] !== undefined) {
+    check(d.states === undefined && d.editor_usage !== "map-background", "asset." + field, "static models cannot also define part states or map backgrounds");
+    const variants = object(d[field], "asset." + field);
     check(Object.keys(variants).length > 0, "asset.state_variants", "expected nonempty variants");
     for (const [key, value] of Object.entries(variants)) {
       check(key === "initial" || key === "applied", "asset.state_variants", "invalid static variant");
       const variant = object(value, `asset.state_variants.${key}`);
       text(variant.name, "variant.name");
       check(safeLibraryPath(variant.model), "variant.model", "expected safe relative path");
-      if (variant.parts !== undefined) parseProjectionAssetDescriptor({ ...d, state_variants: undefined, model: variant.model, parts: variant.parts });
+      if (variant.parts !== undefined) parseProjectionAssetDescriptor({ ...d, state_variants: undefined, standalone_variants: undefined, model: variant.model, parts: variant.parts });
     }
   }
   return value as ProjectionAssetDescriptor;

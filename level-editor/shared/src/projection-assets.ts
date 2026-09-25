@@ -23,6 +23,8 @@ export interface ProjectionAssetDescriptor {
   states?: AssetStates;
   /** Independent static models sharing an origin; these do not imply animation. */
   state_variants?: Partial<Record<AssetState, { name: string; model: string; parts?: ProjectionAssetDescriptor["parts"] }>>;
+  /** Additional complete appearances; the primary model remains separately insertable. */
+  standalone_variants?: ProjectionAssetDescriptor["state_variants"];
   parts: ({ node: string; name: string; default_hidden?: boolean; obstacle_local_game: SightObstacle } & (
     { source_obstacle: number; source_components?: string[]; mission_profile?: never } |
     { source_obstacle?: never; source_components?: never; mission_profile: string }
@@ -39,6 +41,8 @@ export interface ProjectionAssetEntry {
   source_map: string;
   descriptor: string;
   model: string;
+  /** Optional lightweight model used only by the asset browser preview. */
+  preview_model?: string;
 }
 
 /** Paths are relative to the granted library root; hashes pin saved instances. */

@@ -76,3 +76,11 @@ test("split obstacle descriptors require scoped identity and disjoint ownership"
   document.objects[0]!.source.components = ["east"];
   assert.throws(() => parseLevel3D(document), /canonical/);
 });
+
+test("additional standalone variants retain a separate primary and reject ambiguous catalogs", () => {
+  const variants={initial:{name:"Closed",model:"closed.glb"},applied:{name:"Open",model:"open.glb",parts:descriptor.parts}};
+  assert.doesNotThrow(()=>parseProjectionAssetDescriptor({...descriptor,standalone_variants:variants}));
+  assert.throws(()=>parseProjectionAssetDescriptor({...descriptor,state_variants:variants,standalone_variants:variants}),/cannot combine/);
+  for(const standalone_variants of [{},{other:variants.initial},{initial:{...variants.initial,model:"../outside.glb"}},{initial:{...variants.initial,parts:[]}}])
+    assert.throws(()=>parseProjectionAssetDescriptor({...descriptor,standalone_variants}));
+});
