@@ -21,7 +21,7 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def inspect(manifest_path, bake, output):
+def inspect(manifest_path, bake, output, *, provenance_reports=None):
     manifest_path, bake, output = map(Path, (manifest_path, bake, output))
     if output.exists():
         raise ValueError('Coverage output must be a fresh directory')
@@ -32,7 +32,9 @@ def inspect(manifest_path, bake, output):
     scene = bpy.data.scenes[manifest['scene_name']]
     bpy.context.window.scene = scene
     records = []
-    for report_path in sorted(bake.glob('layer-*.json')):
+    report_paths = ([Path(path) for path in provenance_reports] if provenance_reports is not None
+                    else sorted(bake.glob('layer-*.json')))
+    for report_path in report_paths:
         for entry in json.loads(report_path.read_text())['objects']:
             if entry.get('texel_provenance'):
                 records.append((report_path, entry))
@@ -147,6 +149,8 @@ if __name__ == '__main__':
     parser.add_argument('manifest', type=Path)
     parser.add_argument('bake', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--provenance-report', type=Path, action='append', default=None,
+                        help='Exact replay report; saved packed atlas and UV hashes must still match')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
-    result = inspect(args.manifest, args.bake, args.output)
+    result = inspect(args.manifest, args.bake, args.output, provenance_reports=args.provenance_report)
     print(json.dumps({'asset': result['asset_id'], 'views': result['views'], 'unverified_materials': result['unverified_materials']}))
