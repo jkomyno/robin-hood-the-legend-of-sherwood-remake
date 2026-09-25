@@ -97,7 +97,9 @@ def main(contract_path,out):
     donors={state:donor_inventory(Path(d['worker']),d['reports']) for state,d in contract['donors'].items()}
     trees=[source_tree(states[s]['model'],cfg['collection_name']) for s in ('covered','revealed')]
     results=[]
-    for state in ('covered','revealed'):
+    requested=[sys.argv[sys.argv.index('--state')+1]] if '--state' in sys.argv else ['covered','revealed']
+    assert set(requested)<=set(states)
+    for state in requested:
         bpy.ops.wm.open_mainfile(filepath=states[state]['model']);bpy.context.view_layer.update();destination=out/state;destination.mkdir(parents=True,exist_ok=False)
         all_geometry={o.name:geometry(o) for o in bpy.data.objects if o.type=='MESH'};report=[]
         protections=read(contract['states'][state]['protection_manifest'])
@@ -159,6 +161,7 @@ def main(contract_path,out):
         write(destination/'workspace.json',cfg)
         write(destination/'provenance.json',dict(objects=report,model_sha256=sha(destination/'model.blend'),contract_sha256=sha(contract_path),status='PASS',geometry_uv_exact=True,source_rgba_alpha_exact=True,witnesses=witnesses))
         results.append(dict(state=state,model_sha256=sha(destination/'model.blend')))
-    write(out/'reconstruction.json',dict(states=results,status='awaiting-independent-QA'))
+    name='reconstruction-'+requested[0]+'.json' if len(requested)==1 else 'reconstruction.json'
+    write(out/name,dict(states=results,status='awaiting-independent-QA'))
 if __name__=='__main__':
     a=sys.argv[sys.argv.index('--')+1:];main(Path(a[0]).resolve(),Path(a[1]).resolve())
