@@ -161,6 +161,36 @@ def main():
     patched, changed, skipped = patch_texels(original, source, domain, candidates.values(), prior_allowed, visible)
     if not changed:
         raise ValueError('No newly authorized visible source texels to restore')
+    padding = []
+    if 'edge_padding_proposal' in contract:
+        proposal_path = Path(contract['edge_padding_proposal'])
+        if sha(proposal_path) != contract['edge_padding_sha256']:
+            raise ValueError('Source-edge padding proposal changed')
+        proposal = json.loads(proposal_path.read_text())
+        direct = {tuple(row['atlas']): row for row in changed}
+        if len(proposal['samples']) != 24 or len({tuple(r['target']) for r in proposal['samples']}) != 24:
+            raise ValueError('Only the exact reviewed 24 edge support samples are permitted')
+        for sample in proposal['samples']:
+            target, donor = tuple(sample['target']), tuple(sample['donor'])
+            distance = math.dist(target, donor)
+            if target in direct or donor not in direct or target not in candidates or distance > 1.000001:
+                raise ValueError('Padding must use an original direct-source donor exactly one texel away on face17')
+            row, donor_row = candidates[target], direct[donor]
+            sx, sy = row['source']
+            if prior_allowed(sx, sy):
+                raise ValueError('Padding attempted to overwrite previously authorized source')
+            authorized = 0 <= sx < source.shape[1] and 0 <= sy < source.shape[0] and domain[sy, sx]
+            direct_visible = bool(authorized and visible(row))
+            ax, ay = target
+            dx, dy = donor
+            # Prefer the exact camera source if the target is independently eligible.
+            patched[ay, ax, :3] = source[sy, sx, :3] if direct_visible else patched[dy, dx, :3]
+            padding.append(dict(target=list(target), donor=list(donor), atlas_distance=distance,
+                world_distance=math.dist(row['world'], donor_row['world']), target_physical=True,
+                target_source=row['source'], donor_source=donor_row['source'],
+                target_in_authorized_domain=bool(authorized), exact_target_source=direct_visible,
+                reason='exact-target-source' if direct_visible else
+                       'source-occluded-filter-support' if authorized else 'outside-authority-filter-support'))
     other_before = {o.name: signature(o) for o in bpy.data.objects
                     if o.type == 'MESH' and o.get('asset_group') == obj.get('asset_group') and o != obj}
     def schema():
@@ -193,7 +223,9 @@ def main():
     proof = dict(status='PASS', state=contract['state'], contract_sha256=sha(contract_path),
                  original_model_sha256=contract['model_sha256'], model_sha256=sha(destination/'model.blend'),
                  original_packed_image_sha256=image_hash, packed_image_sha256=hashlib.sha256(image.packed_file.data).hexdigest(),
-                 changed_texels=len(changed), skipped=skipped, changes=changed,
+                 changed_texels=len(changed)+len(padding), direct_source_texels=len(changed),
+                 edge_padding_texels=len(padding), edge_padding=padding,
+                 skipped=skipped, changes=changed,
                  protected_other_objects=other_before, geometry_uv_material_schema_preserved=True,
                  prior_allowed_source_texels_preserved=True, alpha_preserved=True,
                  all_outside_patch_rgba_preserved=True)
