@@ -34,7 +34,7 @@
  const patches=new Set();candidate.asset.traverse(o=>{if(o.userData.reveal_material_patch)patches.add(o.userData.reveal_material_patch);for(const k of ['reveal_hide_when_applied','reveal_show_when_applied'])for(const id of o.userData[k]??[])patches.add(id);});
  for(const id of config.expected.required_patches)assert(patches.has(id),'Required patch missing '+id);
  const display=new PatchDisplay(),patchChecks=[];
- const checkVisible=active=>{let matched=0;candidate.asset.traverse(o=>{const u=o.userData;let visible=true,governed=false;if(u.reveal_material_patch){governed=true;visible=(u.reveal_material_state==='revealed')===active.has(u.reveal_material_patch);}if(u.reveal_hide_when_applied){governed=true;visible=visible&&!u.reveal_hide_when_applied.some(p=>active.has(p));}if(u.reveal_show_when_applied){governed=true;visible=visible&&u.reveal_show_when_applied.some(p=>active.has(p));}if(governed){assert(o.visible===visible,'Patch visibility '+o.name);matched++;}});assert(matched>0,'No governed patch nodes');return matched;};
+ const checkVisible=active=>{let matched=0;candidate.asset.traverse(o=>{const u=o.userData;let visible=true,governed=false;if(u.reveal_material_patch){governed=true;visible=(u.reveal_material_state==='revealed')===active.has(u.reveal_material_patch);}if(u.reveal_hide_when_applied){governed=true;visible=visible&&!u.reveal_hide_when_applied.some(p=>active.has(p));}if(u.reveal_show_when_applied){governed=true;visible=visible&&u.reveal_show_when_applied.some(p=>active.has(p));}if(governed){assert(o.visible===visible,'Patch visibility '+o.name);matched++;}});assert(matched>0||!patches.size,'No governed patch nodes');return matched;};
  const transforms=[];candidate.asset.traverse(o=>transforms.push([o,o.matrix.toArray()]));
  display.apply(candidate.asset);checkVisible(new Set());
  for(const id of patches){display.set(id,true);display.apply(candidate.asset);const nodes=checkVisible(new Set([id]));display.set(id,false);display.apply(candidate.asset);checkVisible(new Set());patchChecks.push({id,nodes,roundTrip:true});}
@@ -69,12 +69,12 @@
   row.click();await wait(()=>document.querySelector('.object-detail h2')?.textContent===title,'Select group '+group.id);
   row=document.querySelectorAll('.object-list li.depth-0')[index];row.querySelector('.chev-btn').click();
   const currentParts=()=>{const result=[];const current=document.querySelectorAll('.object-list li.depth-0')[index];for(let child=current.nextElementSibling;child?.classList.contains('depth-1');child=child.nextElementSibling)result.push(child);return result;};
-  assert(currentParts().length===group.parts.length,'Selectable part count '+group.id);
+  await wait(()=>currentParts().length===group.parts.length,'Selectable part count '+group.id);
   for(const [partIndex,part]of group.parts.entries()){
    currentParts()[partIndex].click();await wait(()=>document.querySelector('.object-detail h2')?.textContent===part.name,'Select part '+part.id);
    assert(button('Select building '+group.id),'Selected part belongs to '+group.id);
   }
-  click('Select building '+group.id);assert(document.querySelector('.object-detail h2')?.textContent===title,'Return to complete group '+group.id);
+  click('Select building '+group.id);await wait(()=>document.querySelector('.object-detail h2')?.textContent===title,'Return to complete group '+group.id);
   document.querySelectorAll('.object-list li.depth-0')[index].querySelector('.chev-btn').click();
   selectionChecks.push({id:group.id,parts:group.parts.map(part=>part.id),groupAndPartsSelectable:true});
  }

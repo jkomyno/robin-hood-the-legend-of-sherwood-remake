@@ -19,6 +19,20 @@ root; evidence lives in `level-editor/work/lincoln-refinement/` (resume from `RE
 9. `build_gallery.py` collects packets into the pending-only review gallery. It requires a
    hash-bound `source-coverage-audit.json` for every ready card.
 
+10. Publication (staging never touches the live library):
+    - `publish_stage.py` (Blender) takes a hash-bound plan (e.g. `publication-1/stage-v1.plan.json`):
+      grouped baseline plus the approved models that differ from it. It writes `worker.blend`, the
+      staged catalog and `integration.json`.
+    - `verify_publication_scene.py` checks every approved model against the staged worker.
+    - `publish_export.py` exports the full map (component splits become
+      `building-NNN--component-<name>` parts), the standalone assets and `publication-metadata.json`.
+      Freeze its tooling into the publication directory with `freeze_tooling.py --output`.
+    - Then run `verify_publication_assets.py`, `verify_staged_handoffs.py` (with
+      `effective-plan.json`), `pipeline/src/prepare-publication-document.ts` (first
+      `lincoln.level3d.json`), `prepare_publication_browser.py --document` with
+      `browser/verify_publication.mjs`, and finally `promote_staged_publication.py`.
+    - A texture republish is a new plan whose imports name the approved baked workers.
+
 `freeze_tooling.py` pins shared helpers in `tooling/<id>`, and `render_slots.py` limits
 concurrent Blender renders to three.
 
