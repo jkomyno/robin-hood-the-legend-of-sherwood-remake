@@ -58,6 +58,23 @@ def main():
                        'Moved adjacent hall shingle ownership onto the paired closed roof contact; retained tower masonry and door artwork.',
                        'Closed the unsupported right body edge below the eave to expose the original hall roof without painting shingles onto the tower.']
         else:
+            sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+            from build_gallery import complete_state_records, projection_available_nodes
+            from refinement_workspace import _validated_projection
+            config = read(workspace / 'workspace.json')
+            before = read(workspace / 'input/views.json')
+            after = read(workspace / 'modified/views.json')
+            available = projection_available_nodes(before['projection_layers'], after['projection_layers'], config['part_ids'])
+            expected = complete_state_records(workspace, config, _validated_projection(config), available, before)
+            assert after['projection_layers'] == expected
+            migration_path = workspace / 'inspection/complete-state-contract-migration.json'
+            migration = read(migration_path)
+            assert migration['status'] == 'PASS' and migration['model_sha256'] == model
+            assert migration['new_frame_sha256'] == frames
+            for path, digest in migration['protected_models_and_pngs'].items():
+                assert sha(workspace / path) == digest
+            evidence.extend([migration_path, workspace / 'projection-state-layers.json',
+                             workspace / 'material-states.json', workspace / 'contact-state-supplement.json'])
             material_path = workspace / 'inspection/contact-material-provenance.json'
             material = read(material_path)
             assert material['status'] == 'PASS' and material['model_sha256'] == model
@@ -130,8 +147,11 @@ def main():
                                      'audit_northwest_hall_contact.py', 'preserve_hall_contact_states.py',
                                      'render_northwest_hall_contact.py', 'verify_hall_contact_atlas.py',
                                      'hall_contact_wall_authority.py', 'restore_hall_wall_source.py',
+                                     'migrate_hall_contact_contract.py', 'build_gallery.py',
                                      'finalize_northwest_hall_contact.py']]
         candidate['source_comparison'] = 'inspection/paired-source-comparison.png'
+        candidate['source_comparison_label'] = 'Original artwork and corrected hall–tower join'
+        candidate['source_comparison_secondary_label'] = 'Paired hall and northwest spire — saved materials, eight views'
         if key == 'hall':
             for state in ['covered', 'revealed']:
                 for kind in ['textured', 'solid', 'context']:
