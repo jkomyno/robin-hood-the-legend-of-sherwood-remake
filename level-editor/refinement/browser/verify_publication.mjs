@@ -31,7 +31,13 @@ try{
   ws.send(JSON.stringify({id:rid,method,params}));
  });
  const screenshot=async name=>writeFile(join(here,name+'.png'),Buffer.from((await request('Page.captureScreenshot',{format:'png'})).data,'base64'));
- for(let i=0;i<100;i++){if(await evaluate(ws,++id,"document.querySelector('.app')!==null"))break;await new Promise(r=>setTimeout(r,100));}
+ let appReady=false;
+ for(let i=0;i<300;i++){
+  try{if(await evaluate(ws,++id,"document.querySelector('.app')!==null")){appReady=true;break;}}
+  catch(error){if(!/Cannot find default execution context|Execution context was destroyed/.test(String(error)))throw error;}
+  await new Promise(r=>setTimeout(r,100));
+ }
+ if(!appReady)throw Error('Editor application did not become ready');
  await evaluate(ws,++id,'window.__publicationConfig='+JSON.stringify(config));
  await evaluate(ws,++id,await readFile(new URL('./publication-check.js',import.meta.url),'utf8'));
  let result,phase,lastProgress=0;

@@ -14,7 +14,9 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migration_path=None):
+def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migration_path=None, document_path=None):
+    if document_path is not None and (live or migration_path is not None):
+        raise ValueError("Explicit staged document cannot replace live or migration authority")
     stage, output = Path(stage).resolve(), Path(output).resolve()
     scope = json.loads(Path(scope_path).read_text())
     library = Path("level-editor/library").resolve()
@@ -27,7 +29,8 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
     groups = [nodes[index] for index in map_node["children"] if nodes[index].get("name") != "ground"]
     part_names = {nodes[index]["name"] for group in groups for index in group.get("children", [])}
     live_document = library / f"scenes/{map_name}.level3d.json"
-    document = json.loads(live_document.read_text())
+    source_document = Path(document_path).resolve(strict=True) if document_path is not None else live_document
+    document = json.loads(source_document.read_text())
     if migration_path is not None and not live:
         migration = json.loads(Path(migration_path).read_text())
         if sha(live_document) != migration["prior_document_sha256"]:
@@ -149,6 +152,8 @@ if __name__ == "__main__":
     parser.add_argument("--map", default="leicester")
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--migration", type=Path)
+    parser.add_argument("--document", type=Path, help="Explicit canonical staged document for first publication")
     args = parser.parse_args()
     print(json.dumps(prepare(args.stage, args.scope, args.output, map_name=args.map,
-                             live=args.live, migration_path=args.migration)))
+                             live=args.live, migration_path=args.migration,
+                             document_path=args.document)))

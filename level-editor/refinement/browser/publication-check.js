@@ -22,7 +22,7 @@
  const {prepareProjectionAsset}=await import('/src/projection-library.ts');
  const {disposeObjectResources}=await import('/src/resources.ts');
  window.__publicationProgress={phase:'production-loader-and-state-preflight'};
- const {groundMeshes,groundTextures,generatedCounts,patchIds,patchChecks}=await(async()=>{
+ const {groundMeshes,groundTextures,generatedCounts,patchIds,patchChecks,selectionGroups}=await(async()=>{
  const candidate=await prepareMapCandidate(config.map,library,null);
  assert(candidate.document.groups.length===config.expected.groups,'Map group count');
  assert(candidate.document.objects.length===config.expected.parts,'Map part count');
@@ -41,7 +41,8 @@
  for(const id of patches)display.set(id,true);display.apply(candidate.asset);checkVisible(patches);
  for(const id of patches)display.set(id,false);display.apply(candidate.asset);checkVisible(new Set());
  for(const [o,m]of transforms)assert(JSON.stringify(o.matrix.toArray())===JSON.stringify(m),'Patch preview changed geometry transform '+o.name);
- const summary={groundMeshes,groundTextures,generatedCounts:Object.fromEntries(Object.entries(generated).map(([sha,set])=>[sha,set.size])),patchIds:[...patches],patchChecks};
+ const selectionGroups=candidate.document.groups.map(group=>({id:group.id,name:group.name??group.id,parts:candidate.document.objects.filter(part=>part.group===group.id).map(part=>({id:part.id,name:part.name??part.id}))}));
+ const summary={groundMeshes,groundTextures,generatedCounts:Object.fromEntries(Object.entries(generated).map(([sha,set])=>[sha,set.size])),patchIds:[...patches],patchChecks,selectionGroups};
  disposeObjectResources([candidate.asset,candidate.ground]);
  return summary;
  })();
@@ -60,6 +61,23 @@
  window.__publicationContinue=false;window.__publicationPhase={phase:'map-revealed'};await wait(()=>window.__publicationContinue,'revealed map screenshot');
  if(config.visual_only){window.__publicationResult={status:'PASS',visualOnly:true,mapGroups:config.expected.groups,mapParts:config.expected.parts,uiPatchControls:uiPatchLabels.length,patchChecks,checks:['supplemental covered/revealed full-map visual capture; comprehensive functional checks recorded separately'],liveWrites:false};return;}
  for(const label of [...document.querySelectorAll('.view-settings label')].filter(l=>l.textContent.includes('Reveal interior:'))){const input=label.querySelector('input');input.checked=false;input.dispatchEvent(new Event('change',{bubbles:true}));}
+ const selectionChecks=[];
+ for(const [index,group]of selectionGroups.entries()){
+  window.__publicationProgress={phase:'map-group-and-part-selection',index,total:selectionGroups.length,asset:group.id};
+  let row=document.querySelectorAll('.object-list li.depth-0')[index];
+  const title=`${group.name} (${group.parts.length} parts)`;
+  row.click();await wait(()=>document.querySelector('.object-detail h2')?.textContent===title,'Select group '+group.id);
+  row=document.querySelectorAll('.object-list li.depth-0')[index];row.querySelector('.chev-btn').click();
+  const parts=[];for(let child=row.nextElementSibling;child?.classList.contains('depth-1');child=child.nextElementSibling)parts.push(child);
+  assert(parts.length===group.parts.length,'Selectable part count '+group.id);
+  for(const [partIndex,part]of group.parts.entries()){
+   parts[partIndex].click();await wait(()=>document.querySelector('.object-detail h2')?.textContent===part.name,'Select part '+part.id);
+   assert(button('Select building '+group.id),'Selected part belongs to '+group.id);
+  }
+  click('Select building '+group.id);assert(document.querySelector('.object-detail h2')?.textContent===title,'Return to complete group '+group.id);
+  document.querySelectorAll('.object-list li.depth-0')[index].querySelector('.chev-btn').click();
+  selectionChecks.push({id:group.id,parts:group.parts.map(part=>part.id),groupAndPartsSelectable:true});
+ }
  const scenes=await library.getDirectoryHandle('scenes');
  const saved=async()=>JSON.parse(await(await(await scenes.getFileHandle(config.map+'.level3d.json')).getFile()).text());
  const save=async()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim().startsWith('Save'));if(!b.disabled)b.click();await wait(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Save'&&b.disabled),'save');return saved();};
@@ -85,5 +103,5 @@
  assert(doc.groups.at(-1).id!==last.id&&doc.groups.at(-1).transform.dx!==last.transform.dx,'Independent duplicate');
  window.__publicationResult={status:'PASS',filesHashVerified:config.files.length,mapGroups:config.expected.groups,mapParts:config.expected.parts,groundMeshes,groundTextures,
   generatedMaterials:generatedCounts,insertedAssets:inserted,savedGroups:doc.groups.length,savedParts:doc.objects.length,
-  sourceReferences:doc.assetSources,patchChecks,stateChecks,uiPatchControls:uiPatchLabels.length,checks:['actual Editor3D palette and map','ground geometry and image loaded','All standalone Add actions select named logical groups; ground cannot be inserted','independent duplicate and Undo/Redo','private OPFS save','covered/revealed visibility round-trips through production PatchDisplay and actual UI controls','initial/applied standalone variants or selectors'],liveWrites:false};
+  sourceReferences:doc.assetSources,patchChecks,stateChecks,selectionChecks,uiPatchControls:uiPatchLabels.length,checks:['actual Editor3D palette and map','ground geometry and image loaded','every map group and owned part selectable through actual editor controls','All standalone Add actions select named logical groups; ground cannot be inserted','independent duplicate and Undo/Redo','private OPFS save','covered/revealed visibility round-trips through production PatchDisplay and actual UI controls','initial/applied standalone variants or selectors'],liveWrites:false};
 })().catch(error=>{window.__publicationResult={status:'FAIL',error:String(error),stack:error.stack};});
