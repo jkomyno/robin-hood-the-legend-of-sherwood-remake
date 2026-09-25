@@ -2,6 +2,7 @@
 import copy
 import hashlib
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -56,6 +57,72 @@ def signature(obj):
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
+def promote_covered(new):
+    """Promote verified covered materials without rerunning source baking."""
+    import bpy
+    from refinement_review import render_review
+    from refinement_workspace import validate
+    from audit_stored_materials import run
+    from audit_spire_source_projection import exact_rgb
+    old = WORK / 'round-42/assets/nottingham-castle-main-hall'
+    manifest_path = new / 'inspection/state-models/manifest.json'
+    manifest = json.loads(manifest_path.read_text())
+    state_hashes = {s['model']: sha(s['model']) for s in manifest['states']}
+    covered = next(s for s in manifest['states'] if s['state'] == 'covered')
+    proof = json.loads(Path(covered['preservation_report']).read_text())
+    assert proof['status'] == 'PASS'
+    assert sha(covered['model']) == covered['model_sha256'] == proof['model_sha256']
+    config = json.loads((new / 'workspace.json').read_text())
+    # Validate the intended primary before replacing any current review artifact.
+    bpy.ops.wm.open_mainfile(filepath=covered['model'])
+    validation = validate(new)
+    before_sha = sha(new / 'model.blend')
+    history = new / 'history/before-covered-state-promotion'
+    history.mkdir(parents=True, exist_ok=False)
+    for name in ['model.blend', 'modified', 'validation.json', 'known-rgb-validation.json', 'geometry-report.json']:
+        if (new / name).exists():
+            if name == 'model.blend' or name == 'geometry-report.json':
+                shutil.copy2(new / name, history / name)
+            else:
+                (new / name).rename(history / name)
+    if (new / 'inspection/stored-materials').exists():
+        (new / 'inspection/stored-materials').rename(history / 'stored-materials')
+    shutil.copy2(covered['model'], new / 'model.blend')
+    bpy.ops.wm.open_mainfile(filepath=str(new / 'model.blend'))
+    for obj in bpy.data.objects:
+        if obj.type == 'MESH' and obj.get('asset_group') == config['asset_id']:
+            obj.hide_render = False
+    frames = json.loads((new / 'input/views.json').read_text())
+    frames['render_object_names'] = sorted(covered['object_names'])
+    layers = json.loads((old / 'projection-state-layers.json').read_text())['covered']
+    layers[0].setdefault('receiver_components', []).append(dict(source_node='building-505',
+        projection_components=['castle-hall-retained-roof', 'castle-hall-removable-cover',
+                               'castle-hall-northwest-contact'], patch_id='patch-008'))
+    render_review(new / 'modified', scene_name=config['scene_name'],
+                  collection_name=config['collection_name'], asset_id=config['asset_id'],
+                  source_path=config['source_path'], frame_manifest=frames,
+                  projection_layers=layers, source_mask_manifest=config['source_mask_manifest'],
+                  render_object_names=covered['object_names'],
+                  allow_projection_revision=True, allow_mask_revision=True)
+    run(new, new / 'inspection/stored-materials', render=True, export=False,
+        render_object_names=covered['object_names'], frame_manifest=new / 'modified/views.json')
+    exact_rgb(new)
+    bpy.ops.wm.open_mainfile(filepath=str(new / 'model.blend'))
+    write(new / 'validation.json', validate(new))
+    assert state_hashes == {s['model']: sha(s['model']) for s in manifest['states']}
+    manifest['primary_model_sha256'] = sha(new / 'model.blend')
+    manifest['status'] = 'awaiting-independent-joint-review'
+    write(manifest_path, manifest)
+    report_path = new / 'geometry-report.json'
+    report = json.loads(report_path.read_text())
+    report['model_sha256'] = sha(new / 'model.blend')
+    report['modified_views_sha256'] = sha(new / 'modified/views.json')
+    report['covered_material_promotion'] = dict(previous_primary_sha256=before_sha,
+        covered_state_sha256=covered['model_sha256'], state_models_unchanged=True,
+        source_preservation_report=covered['preservation_report'])
+    write(report_path, report)
+
+
 def main():
     import bpy
     from render_slots import acquire
@@ -63,6 +130,9 @@ def main():
     from audit_stored_materials import run
     acquire(slots=2)
     new = Path(sys.argv[sys.argv.index('--') + 1]).resolve()
+    if '--promote-covered' in sys.argv:
+        promote_covered(new)
+        return
     old = WORK / 'round-42/assets/nottingham-castle-main-hall'
     original = json.loads((old / 'inspection/state-models/manifest.json').read_text())
     assert sha(old / 'model.blend') == original['primary_model_sha256']
