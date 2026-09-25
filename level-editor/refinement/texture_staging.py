@@ -188,9 +188,15 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
             raise ValueError('Texture endpoint identity differs from approved state identifier')
     elif endpoint_id is not None:
         raise ValueError('Texture endpoint is absent from geometry approval')
+    geometry_revision = item['revision']['sha256']
+    if (item.get('parent_geometry_revision') and
+            approval.get('geometry_revision') != geometry_revision):
+        from texture_preparation_identity import resolve as resolve_preparation_identity
+        item, workspace, geometry_revision, expected_model = resolve_preparation_identity(
+            item, workspace, protected, experiment, approval, frames, supplemental=_state is not None)
     config_path = workspace/'workspace.json'; config = _json(config_path)
     if (approval.get('status') != 'approved' or approval.get('approved_by') != 'user' or
-            approval.get('asset_id') != asset_id or approval.get('geometry_revision') != item['revision']['sha256'] or
+            approval.get('asset_id') != asset_id or approval.get('geometry_revision') != geometry_revision or
             approval.get('saved_model_sha256') != expected_model):
         raise ValueError('Texture experiment differs from currently approved geometry')
     if (review.get('status') != ('supplemental' if _state is not None else 'ready-for-user') or review.get('all_eight_actual_views_inspected') is not True or
@@ -200,7 +206,7 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
         raise ValueError('Texture frame/worker identity mismatch')
     uv_atlas = frames.get('projection_kind') == 'uv-atlas'
     frame_input = frames.get('input_sha256', validation.get('input_sha256') if uv_atlas else None)
-    if frames.get('geometry_revision') != item['revision']['sha256'] or frame_input != approval['input_sha256']:
+    if frames.get('geometry_revision') != geometry_revision or frame_input != approval['input_sha256']:
         raise ValueError('Texture frame revision/input differs from approved geometry')
     if (sha(experiment/'input.png') != approval['input_sha256'] or
             sha(paths['solid']) != approval['solid_sha256'] or
@@ -275,9 +281,17 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
     if _json(generation_path).get('changedProtected') != 0:
         raise ValueError('Generated composite changed protected source pixels')
     reference = validation.get('reconciliation_reference')
-    if reference and (Path(reference).resolve() != paths['source_trace'] or
-                      sha(paths['source_trace']) != validation.get('reconciliation_reference_sha256')):
-        raise ValueError('Texture reconciliation reference changed')
+    if reference:
+        reference = Path(reference).resolve(strict=True)
+        if sha(reference) != validation.get('reconciliation_reference_sha256'):
+            raise ValueError('Texture reconciliation reference changed')
+        if reference != paths['source_trace']:
+            padding = _json(generation_path).get('transportPadding')
+            if padding != approval.get('transport_padding') or padding != frames.get('transport_padding'):
+                raise ValueError('Transport padding differs from approved preparation')
+            from texture_transport import validate_crop
+            validate_crop(paths['source_trace'], reference, paths['source_comparison_secondary'], padding)
+        protected[reference] = sha(reference)
     for path in [*all_paths.values(), approval_path, frames_path, config_path,
                  approved_model, generation_path, texture_decisions_path, geometry_manifest]:
         protected[path.resolve()] = sha(path)
@@ -339,6 +353,8 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
                     'validation_sha256': sha(all_paths[prefix + 'validation'])})
         if item.get('endpoint_reviews') and {result['endpoint_id'], *(s['endpoint_id'] for s in result['texture_states'])} != {'initial', 'applied'}:
             raise ValueError('Both approved texture endpoints are required for publication')
+    from texture_triangle_partition import receipt as partition_receipt
+    result['triangle_partition'] = partition_receipt(result)
     return result
 
 
@@ -386,6 +402,12 @@ def verify_baked_geometry(handoff):
     for path, digest in handoff['protected_files'].items():
         if sha(Path(path)) != digest:
             raise ValueError('Validated texture evidence changed before import: ' + path)
+    partition = handoff.get('triangle_partition')
+    if partition:
+        from texture_triangle_partition import receipt as partition_receipt
+        if partition != partition_receipt(handoff):
+            raise ValueError('Partition handoff differs from hash-bound review proof')
+    partition_snapshots = []
     def snapshot(path):
         bpy.ops.wm.open_mainfile(filepath=str(path))
         bpy.context.window.scene = bpy.data.scenes[handoff['scene_name']]
@@ -403,9 +425,22 @@ def verify_baked_geometry(handoff):
         if handoff['projection_kind'] in {'planar-atlas', 'uv-atlas'}:
             for o in objects:
                 result[o.name]['uv'] = {l.name: [list(v.uv) for v in l.data] for l in o.data.uv_layers}
+        if partition:
+            from texture_triangle_partition import snapshot as surface_snapshot
+            scoped = {}
+            for name in partition['scoped_oriented_triangles']:
+                obj = next((o for o in objects if o.name == name), None)
+                if obj is None: raise ValueError('Partition object missing')
+                uv_names = partition_snapshots[0][name]['invariants']['uv_names'] if partition_snapshots else None
+                scoped[name] = surface_snapshot(obj, uv_names)
+                result[name]['geometry'] = 'scoped-partition-verified-separately'
+            partition_snapshots.append(scoped)
         return result
     before = snapshot(handoff['approved_source_blend'])
     after = snapshot(handoff['blend_path'])
+    if partition:
+        from texture_triangle_partition import verify as verify_partition
+        verify_partition(*partition_snapshots, partition)
     if before != after:
         raise ValueError('Baked worker changed approved geometry, transforms, visibility or planar UVs')
     return {'geometry_verified': True, 'planar_uv_verified': handoff['projection_kind'] == 'planar-atlas',
