@@ -1,5 +1,14 @@
 # Post-port Features
 
+- **Authored town population previews.** Wychford includes 46 soldiers, civilians
+  and beggars, 14 item placements and nine guarded or civilian routines inspired
+  by the mission layouts. Directional idle/walk sprites load from library atlases;
+  patrols pause and reverse, paired guards use separate lanes, and wall sentries
+  stand on the curtain walk. The editor exposes pause and route overlays plus
+  actor duties and beggar hints. Population data saves with the scene. Combat,
+  dialogue and item collection still require a playable mission export.
+
+
 - **Background replay checkpoints.** Leaderboard viewers download and validate seek
   checkpoints after the mission starts. Interactive seeks restore a settled
   checkpoint first, then render progress while simulating the remaining records;

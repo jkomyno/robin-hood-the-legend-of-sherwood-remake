@@ -18,7 +18,7 @@ import {
   type ProtoLevel,
   type Vec3,
 } from "@rle/shared";
-import type { MissionEntities } from "./mission.ts";
+import type { SceneEntities } from "./population-view.ts";
 import type { Selection } from "./document-commands.ts";
 import { disposeObjectResources } from "./resources.ts";
 import { TextureDisplay } from "./texture-display.ts";
@@ -95,7 +95,7 @@ export class EditorViewport {
   private framingKey = "";
   private framingDistance = 0;
   private readonly perspectiveCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 200000);
-  private entities: MissionEntities | null = null;
+  private entities: SceneEntities | null = null;
 
   setPerspective(value: number) {
     this.perspective = THREE.MathUtils.clamp(value, 0, 65);
@@ -108,11 +108,13 @@ export class EditorViewport {
   setSpriteOrientationLock(enabled: boolean) {
     this.spriteOrientationLock = enabled;
   }
-  replaceEntities(entities: MissionEntities | null) {
+  replaceEntities(entities: SceneEntities | null) {
     this.entities?.dispose();
     this.entities = entities;
     if (entities) this.scene.add(entities.root);
   }
+  setPopulationPlaying(value: boolean) { this.entities?.setPlaying?.(value); }
+  setPopulationRoutesVisible(value: boolean) { this.entities?.setRoutesVisible?.(value); }
   setEntitiesVisible(visible: boolean) {
     if (this.entities) this.entities.root.visible = visible;
   }

@@ -57,6 +57,7 @@ From `level-editor/`, stage the supplemental Sherwood pack into a fresh director
     blender --background work/sherwood-refinement/sherwood-refinement.blend --python blender/export-wychford-sherwood.py -- --output work/wychford/sherwood-pack
     pnpm --filter pipeline exec node src/publish-model-assets.ts ../work/wychford/sherwood-pack ../library/3d-assets
     pnpm --filter pipeline exec node src/compose-wychford.ts
+    pnpm --filter pipeline exec node src/populate-wychford.ts
 
 The generator writes Wychford.level3d.json, its terrain GLB and scene metadata to
 library/scenes/. Reload the connected library and select **Wychford**. Pass
@@ -65,7 +66,31 @@ library/scenes/. Reload the connected library and select **Wychford**. Pass
 The source Blender workspace and published library models are local assets. The
 committed recipe, layout and ground materials reproduce the scene with that library.
 
-This is an editor scene, not an installed playable mission. Navigation, patrols,
-mission scripts and game baking for imported geometry/splines are not implemented.
+## Population
+
+`population.json` authors 21 soldiers, 22 civilians and three beggars, plus 14 item
+placements. The layouts of **Attack Derby** and **Robin’s Godfather** informed the
+guarded crossings, elevated lookouts and contrast between town and garrison. Guard pairs patrol the market, bridge approach and inner bailey.
+Static sentries cover the gate, crossings, stores and stables; four ranged guards
+stand on the curtain walk. Six civilian routines connect the church, homes, shops,
+well, mill and stable yard. Routes pause at stations and reverse at endpoints.
+Pairs use separate lanes so they do not occupy the same waiting position.
+
+Supplies belong to their surroundings: food and money at market stalls, herbs at
+the apothecary, ale at the brewery, nets by the ferryman, and ammunition near the
+guards. Beggars sit at the church, market and gate approach; their authored hints
+and every actor’s duty can be read in the editor’s **Town population** panel.
+That panel also pauses animation and displays the nine route lines.
+
+The population builder reads extracted character manifests from
+`HACKABLE_DATADIR` (default: the local full-game extraction), packs the required
+16-direction idle/walking frames into the connected library and samples the
+terrain for placement heights. Run it after regenerating terrain. It updates only
+the saved scene’s population and notes, preserving geometry edits. Runtime preview
+loads these packed sprites from the library without reconnecting a game datadir.
+
+This is an editor scene, not an installed playable mission. The animated routes
+are placement previews; combat AI, beggar dialogue, collecting items, navigation,
+mission scripts and game baking for imported geometry/splines remain pending.
 The proposed mission is to steal the tollkeeper's ledger from the keep and escape
 via the southern footbridge, using either the market road or the garden lanes.

@@ -1,3 +1,4 @@
+import { validatePopulation } from "./population.ts";
 import { safeLibraryPath, type ExternalAssetSource, type ProjectionAssetDescriptor, type ProjectionAssetEntry } from "./projection-assets.ts";
 import type { Level3D } from "./level3d.ts";
 import type { ProtoLevel } from "./level.ts";
@@ -456,6 +457,7 @@ export function parseLevel3D(
     check(light.sunElevation >= 10 && light.sunElevation <= 85,"lighting.sunElevation","expected 10–85 degrees");
     check(light.shadowOpacity >= 0 && light.shadowOpacity <= 1,"lighting.shadowOpacity","expected 0–1");
   }
+  if (d.population !== undefined) validatePopulation(d.population);
   const splineIds = new Set<string>();
   if (d.splines !== undefined) for (const spline of array(d.splines, "splines")) {
     object(spline, "spline");

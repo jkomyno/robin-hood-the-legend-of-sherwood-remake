@@ -45,6 +45,7 @@ import { EditorViewport } from "./editor-viewport";
 import { disposeObjectResources } from "./resources";
 import { listFiles, subdir, writeText } from "./fs";
 import { MissionEntities, readMission } from "./mission";
+import { PopulationView, type SceneEntities } from "./population-view";
 import type { DatadirIndex } from "./datadir";
 
 export type { Selection } from "./document-commands";
@@ -64,6 +65,8 @@ export interface EditorProps {
 export default function Editor3D(props: EditorProps) {
   const [missionName, setMissionName] = createSignal("");
   const [missionInfo, setMissionInfo] = createSignal("");
+  const [populationPlaying, setPopulationPlaying] = createSignal(true);
+  const [populationRoutes, setPopulationRoutes] = createSignal(false);
   const [perspective, setPerspective] = createSignal(0);
   const [rotationSnap, setRotationSnap] = createSignal(false);
   const [spriteOrientationLock, setSpriteOrientationLock] = createSignal(true);
@@ -245,7 +248,7 @@ export default function Editor3D(props: EditorProps) {
     const generation = session.beginLoad();
     const current = () => !disposed && attempt === openAttempt && props.index() === idx && props.library() === lib;
     let preparedAsset: THREE.Object3D | null = null;
-    let preparedEntities: MissionEntities | null = null;
+    let preparedEntities: SceneEntities | null = null;
     props.onStatus(`loading ${requestedMission ?? name}…`);
     try {
       const mission = requestedMission && idx ? await readMission(idx, requestedMission) : null;
@@ -257,14 +260,17 @@ export default function Editor3D(props: EditorProps) {
       if (disposed || attempt !== openAttempt) return;
       const currentDocument = doc();
       const currentLevel = level();
-      if (name === mapName() && currentDocument && currentLevel && loadedIndex === idx && loadedLibrary === lib) {
-        if (mission && idx) preparedEntities = await MissionEntities.load(idx, mission, currentLevel, currentDocument.camera, current);
+      if (name === mapName() && currentDocument && loadedIndex === idx && loadedLibrary === lib) {
+        if (mission && idx && currentLevel) preparedEntities = await MissionEntities.load(idx, mission, currentLevel, currentDocument.camera, current);
+        else if (currentDocument.population) preparedEntities = await PopulationView.load(lib.handle, currentDocument.population, currentDocument.camera, current);
         if (disposed || attempt !== openAttempt || props.index() !== idx || props.library() !== lib) {
           preparedEntities?.dispose();
           return;
         }
         viewport.replaceEntities(preparedEntities);
         viewport.setEntitiesVisible(showEntities());
+        viewport.setPopulationPlaying(populationPlaying());
+        viewport.setPopulationRoutesVisible(populationRoutes());
         setMissionName(mission?.name ?? "");
         setMissionInfo(preparedEntities ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}` : "");
         preparedEntities = null;
@@ -276,6 +282,8 @@ export default function Editor3D(props: EditorProps) {
       if (mission && idx) {
         if (!candidate.level) throw new Error("Mission requires level data");
         preparedEntities = await MissionEntities.load(idx, mission, candidate.level, candidate.document.camera, current);
+      } else if (candidate.document.population) {
+        preparedEntities = await PopulationView.load(lib.handle, candidate.document.population, candidate.document.camera, current);
       }
       const {
         document: d,
@@ -303,6 +311,8 @@ export default function Editor3D(props: EditorProps) {
       preparedAsset = null;
       viewport.replaceEntities(preparedEntities);
       viewport.setEntitiesVisible(showEntities());
+      viewport.setPopulationPlaying(populationPlaying());
+      viewport.setPopulationRoutesVisible(populationRoutes());
       setMissionName(mission?.name ?? "");
       setMissionInfo(preparedEntities ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}` : "");
       preparedEntities = null;
@@ -654,6 +664,14 @@ export default function Editor3D(props: EditorProps) {
                 setPatchPreviewRevision(value => value + 1);
               }} /> Reveal interior: {patch.name}</label>
             }</For>
+            <Show when={doc()?.population}>{population => <details>
+              <summary>Town population — {population().actors.length} people, {population().items.length} items</summary>
+              <label class="check"><input type="checkbox" checked={populationPlaying()} onChange={e => {setPopulationPlaying(e.currentTarget.checked); viewport.setPopulationPlaying(e.currentTarget.checked);}} /> Animate routines and patrols</label>
+              <label class="check"><input type="checkbox" checked={populationRoutes()} onChange={e => {setPopulationRoutes(e.currentTarget.checked); viewport.setPopulationRoutesVisible(e.currentTarget.checked);}} /> Show patrol and civilian routes</label>
+              <p class="hint">Preview of authored routines. Combat, dialogue and item collection require a playable mission export.</p>
+              <For each={population().actors}>{actor => <details><summary>{actor.name}</summary><p>{actor.duty}</p><Show when={actor.information}><p>{actor.information}</p></Show></details>}</For>
+              <For each={population().items}>{item => <p>{item.name} ×{item.quantity} — {item.purpose}</p>}</For>
+            </details>}</Show>
             <Show when={missionName()}><p class="mission-summary">{missionName()} — {missionInfo()}</p>
               <p class="hint">Initial placements; mission scripts are not run. Green markers show spawn points. Magenta markers indicate missing sprite assets. Standing characters, prone bodies, pickups, and scenery use different depth profiles.</p>
             </Show>
