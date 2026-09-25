@@ -63,7 +63,8 @@ try{
    const cards=[...document.querySelectorAll('article[data-review-revision]')],a=cards[0],b=cards[1]??cards[0],single=cards.length===1;
    const select=(element,value)=>{element.value=value;element.dispatchEvent(new Event('change',{bubbles:true}));};
    const note=(card,text)=>{const element=card.querySelector('.review-note');element.value=text;element.dispatchEvent(new Event('input',{bubbles:true}));};
-   select(a.querySelector('.decision'),'approved');note(a,'QA ONLY asset A');
+   const aDecision=a.querySelector('.decision').querySelector('option[value="approved"]')?'approved':'needs refinement';
+   select(a.querySelector('.decision'),aDecision);note(a,'QA ONLY asset A');
    if(single)select(a.querySelector('.decision'),'');
    // Reproduce the historical browser-restoration bug: a foreign select value
    // appears without a user change event while the user edits this card's note.
@@ -86,7 +87,7 @@ try{
    if(document.querySelector('#review-export').value!==expected)throw Error('Card reorder/restoration changed exported IDs');
    Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.__capturedReviewClipboard=text;}}});
    document.querySelector('#copy-reviews').click();
-   return {assetA:a.id,assetB:b.id,expected,intermediate,crossCardAndReorderTested:!single,clipboardIntercepted:true,simulatedHeldFilter:true};
+   return {assetA:a.id,assetB:b.id,aDecision,expected,intermediate,crossCardAndReorderTested:!single,clipboardIntercepted:true,simulatedHeldFilter:true};
  })()`);
  await new Promise(r=>setTimeout(r,50));
  if(await inspect('window.__capturedReviewClipboard')!==exercised.expected)throw new Error('Clipboard handler exported the wrong cards');
@@ -103,8 +104,8 @@ try{
      b:[b.querySelector('.decision').value,b.querySelector('.review-note').value],
      storage:Object.keys(localStorage).filter(k=>k.startsWith('model-review-v1:')).map(k=>JSON.parse(localStorage.getItem(k)))};
  })()`);
- if(restored.export!==exercised.expected || JSON.stringify(restored.a)!==JSON.stringify(exercised.crossCardAndReorderTested?['approved','QA ONLY asset A']:['needs refinement','QA ONLY asset B']) ||
-    JSON.stringify(restored.b)!==JSON.stringify(['needs refinement','QA ONLY asset B']))throw new Error('Reload attached feedback to wrong asset');
+ if(restored.export!==exercised.expected || JSON.stringify(restored.a)!==JSON.stringify(exercised.crossCardAndReorderTested?[exercised.aDecision,'QA ONLY asset A']:['needs refinement','QA ONLY asset B']) ||
+    JSON.stringify(restored.b)!==JSON.stringify(['needs refinement','QA ONLY asset B']))throw new Error('Reload feedback mismatch: '+JSON.stringify({expected:exercised,restored}));
  const revisions=new Map(loaded.revisions);
  if(restored.storage.some(r=>revisions.get(r.asset_id)!==r.revision))throw new Error('Saved draft lost exact asset/revision identity');
  await inspect("document.querySelector('#clear-reviews').click()");
