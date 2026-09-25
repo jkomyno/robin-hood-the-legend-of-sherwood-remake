@@ -110,7 +110,7 @@ def run(canonical, target, output, *, allow_bounded_donors=False, shared_surface
         performed_replay=False
         validation=json.loads((experiment/'bake-v1/validation.json').read_text())
         entries=[entry for layer in validation['layers'] for entry in layer['objects']]
-        missing={entry['object'] for entry in entries if 'texel_provenance' not in entry}
+        missing={entry['object'] for entry in entries if 'texel_provenance' not in entry and not entry.get('faces',0)}
         empty_receivers[str(experiment)]=missing
         if missing:
             for source in ('approved-model.blend','bake-v1/worker.blend'):
