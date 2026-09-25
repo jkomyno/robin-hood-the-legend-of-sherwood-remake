@@ -39,15 +39,8 @@ def stage(plan_path):
         if any(item.get('texture_handoff') for item in plan['imports']) or plan.get('ground_texture_handoff'):
             raise ValueError('Approval-validated bakes cannot be overridden by another texture handoff')
         sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-        from texture_staging import validate_texture_handoff, verify_baked_geometry
-        for item in plan['imports']:
-            validated=validate_texture_handoff(item['geometry_manifest'],item['asset_id'],
-                item['texture_decisions'],item['geometry_decisions'])
-            for key in ('blend_path','blend_sha256','object_names','source_nodes','geometry_revision_sha256','texture_states','render_object_names'):
-                if item.get(key)!=validated[key]:raise ValueError('Approved texture plan changed: '+item['asset_id']+' '+key)
-            texture_checks.append(verify_baked_geometry(validated))
-            for child in validated.get('texture_states', []):
-                texture_checks.append(verify_baked_geometry(child))
+        from publication_preflight import run_blender
+        texture_checks = run_blender(plan, plan_path)
     ground_imports=[item for item in plan['imports'] if item.get('source_nodes')==['ground']]
     if ground_imports and (not plan.get('approved_texture_imports') or len(ground_imports)!=1):
         raise ValueError('Planar ground requires one approval-validated texture handoff')

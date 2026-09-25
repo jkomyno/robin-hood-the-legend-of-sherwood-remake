@@ -6,8 +6,29 @@ import shutil
 from pathlib import Path
 
 
+_sha_cache = {}
+
+
 def sha(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """Cache bytes only while inode, size, modification and change times match."""
+    path = Path(path).resolve(strict=True)
+    def identity(stat):
+        return (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+    before = identity(path.stat())
+    cached = _sha_cache.get(path)
+    if cached and cached[0] == before:
+        return cached[1]
+    with path.open('rb') as stream:
+        import os
+        if identity(os.fstat(stream.fileno())) != before:
+            raise ValueError('File changed before hashing: ' + str(path))
+        result = hashlib.file_digest(stream, 'sha256').hexdigest()
+        if identity(os.fstat(stream.fileno())) != before:
+            raise ValueError('File changed during hashing: ' + str(path))
+    if identity(path.stat()) != before:
+        raise ValueError('File replaced during hashing: ' + str(path))
+    _sha_cache[path] = (before, result)
+    return result
 
 
 
