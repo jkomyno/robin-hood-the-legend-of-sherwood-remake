@@ -36,3 +36,13 @@ def coplanar_measurements(vertices):
     normal_delta = float(np.linalg.norm(normals[0] - normals[1]))
     offset = float(np.max(np.abs((vertices[1] - vertices[0][0]) @ normals[0])))
     return normal_delta, offset
+
+
+def ownership_classes(ownership, target, donor):
+    target, donor = coordinates(target, donor, ownership.shape)
+    tx, ty = target.T
+    sx, sy = donor.T
+    if not (ownership[ty, tx] == 0).all():
+        raise ValueError('A target already has source or inferred texture')
+    if not (ownership[sy, sx] == 2).all():
+        raise ValueError('Donors must be original generated samples')

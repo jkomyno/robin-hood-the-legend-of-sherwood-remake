@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT / 'level-editor/refinement/blender'))
 from repair_ramp_isolated_edge import physical_face, pixels, rgba8
 from refinement_workspace import _geometry
 from bake_reviewed_asset import _materials
-from course_patch_guards import coordinates, coplanar_measurements
+from course_patch_guards import coordinates, coplanar_measurements, ownership_classes
 
 
 def sha(path):
@@ -119,8 +119,7 @@ def run(config_path):
     allowed = {name: np.zeros(value.shape, bool) for name, value in flags.items()}
     for edit in edits:
         name=edit['object']; tx,ty=np.array(edit['target_xy']).T; sx,sy=np.array(edit['donor_xy']).T
-        assert (original_flags[name][ty,tx] == 0).all()
-        assert (original_flags[name][sy,sx] == 2).all()
+        ownership_classes(original_flags[name], edit['target_xy'], edit['donor_xy'])
         assert not allowed[name][ty,tx].any()
         buffers[name][ty,tx,:3]=buffers[name][sy,sx,:3]
         flags[name][ty,tx]=3

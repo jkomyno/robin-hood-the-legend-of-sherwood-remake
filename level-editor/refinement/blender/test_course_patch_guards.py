@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from course_patch_guards import coordinates, coplanar_measurements
+from course_patch_guards import coordinates, coplanar_measurements, ownership_classes
 
 
 class CoursePatchGuards(unittest.TestCase):
@@ -32,6 +32,16 @@ class CoursePatchGuards(unittest.TestCase):
         for bad in [np.zeros((3, 3)), good * float('nan')]:
             with self.assertRaises(ValueError):
                 coplanar_measurements([good, bad])
+
+    def test_protected_targets_and_nongenerated_donors_rejected(self):
+        own = np.array([[0, 1, 2, 3]])
+        ownership_classes(own, [[0, 0]], [[2, 0]])
+        for target in [1, 2, 3]:
+            with self.assertRaises(ValueError):
+                ownership_classes(own, [[target, 0]], [[2, 0]])
+        for donor in [0, 1, 3]:
+            with self.assertRaises(ValueError):
+                ownership_classes(own, [[0, 0]], [[donor, 0]])
 
     def test_coplanar_and_offset_measured(self):
         a = np.array([[0., 0, 0], [1, 0, 0], [0, 1, 0]])
