@@ -6,6 +6,7 @@ from mathutils import Matrix,Vector
 from mathutils.bvhtree import BVHTree
 from PIL import Image,ImageDraw
 ROOT=Path(__file__).resolve().parents[3];w=ROOT/'level-editor/work/nottingham-refinement/texture-generation/projection-corrections/v4/nottingham-village-small-hut'
+if '--' in sys.argv:w=Path(sys.argv[sys.argv.index('--')+1]).resolve()
 bpy.ops.wm.open_mainfile(filepath=str(w/'model.blend'));data=json.loads((w/'modified/views.json').read_text());scene=bpy.context.scene;verts=[];faces=[];lookup=[]
 for name in (data.get('render_object_names') or data['object_names']):
  o=bpy.data.objects[name];offset=len(verts);verts.extend(o.matrix_world@v.co for v in o.data.vertices);o.data.calc_loop_triangles()
