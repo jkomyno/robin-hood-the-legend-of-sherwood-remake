@@ -13,9 +13,15 @@ def digest(value):
 
 def code_files():
     root=Path(__file__).resolve().parent
-    # All shared review/approval validators, plus the geometry snapshot helpers.
-    return sorted([*root.glob('*.py'), *(root/'blender'/name for name in
-        ['refinement_workspace.py','workspace_components.py','triangle_equivalence.py','stage_reviewed_publication.py'])])
+    # Exact dependency closure for validate_texture_handoff and
+    # verify_baked_geometry. Compilers/exporters/promoters run afterward and
+    # have their own stage verification; they cannot affect these checks.
+    shared = ['publication_preflight.py', 'review_evidence.py', 'texture_staging.py',
+              'texture_decisions.py', 'stage_approved_editor_asset.py',
+              'texture_preparation_identity.py', 'texture_transport.py',
+              'texture_triangle_partition.py', 'uv_atlas_publication.py']
+    blender = ['refinement_workspace.py', 'triangle_equivalence.py']
+    return sorted([*(root/name for name in shared), *(root/'blender'/name for name in blender)])
 
 
 def inventory(plan):
