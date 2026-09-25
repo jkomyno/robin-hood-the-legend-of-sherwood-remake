@@ -153,6 +153,9 @@ def main():
         candidate['source_comparison_label'] = 'Original artwork and corrected hall–tower join'
         candidate['source_comparison_secondary_label'] = 'Paired hall and northwest spire — saved materials, eight views'
         if key == 'hall':
+            supplement = read(workspace / 'contact-state-supplement.json')
+            original_manifest = Path(supplement['original_state_manifest']['path'])
+            candidate['revealed_input'] = str(original_manifest.parents[2] / 'input')
             for state in ['covered', 'revealed']:
                 for kind in ['textured', 'solid', 'context']:
                     candidate[f'{state}_{kind}'] = f'states-contact/patch-008/{state}/{kind}.png'
