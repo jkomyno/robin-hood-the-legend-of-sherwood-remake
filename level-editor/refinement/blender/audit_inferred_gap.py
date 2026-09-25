@@ -5,13 +5,21 @@ import json
 import sys
 
 
-def run(previous, output):
+def run(previous, output, previous_provenance=None):
     import bpy
     import numpy as np
     previous, output = Path(previous).resolve(), Path(output).resolve()
     sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
     reports = [json.loads((p / 'validation.json').read_text()) for p in (previous, output)]
     entries = [{e['object']: e for layer in r['layers'] for e in layer['objects']} for r in reports]
+    external = None
+    if previous_provenance is not None:
+        path=Path(previous_provenance).resolve()
+        external=json.loads(path.read_text())
+        alternate={e['object']:e for layer in external['layers'] for e in layer['objects']}
+        if alternate.keys()!=entries[0].keys():raise ValueError('External provenance receiver set changed')
+        entries[0]={name:{**entry,'texel_provenance':alternate[name]['texel_provenance']} for name,entry in entries[0].items()}
+        external={'path':str(path),'sha256':sha(path)}
     if entries[0].keys() != entries[1].keys():
         raise ValueError('Receiver set changed')
     def read(folder, records):
@@ -35,6 +43,11 @@ def run(previous, output):
                 raise ValueError('Provenance drift')
             pixels = np.asarray(image.pixels[:], dtype=np.float32).reshape(image.size[1], image.size[0], 4)
             mask = np.load(provenance)['ownership']
+            uv_nodes=[n.uv_map for n in material.node_tree.nodes if n.type=='UVMAP']
+            if len(uv_nodes)!=1:raise ValueError('Ambiguous material UV binding')
+            bound_uv=[list(v.uv) for v in obj.data.uv_layers[uv_nodes[0]].data]
+            if hashlib.sha256(json.dumps(bound_uv).encode()).hexdigest()!=proof['uv_sha256']:raise ValueError('Provenance UV binding changed')
+            if mask.shape!=pixels.shape[:2] or not np.isin(mask,[0,1,2,3]).all():raise ValueError('Invalid provenance classes/layout')
             geometry = ([tuple(v.co) for v in obj.data.vertices], [tuple(p.vertices) for p in obj.data.polygons], [tuple(row) for row in obj.matrix_world])
             uv = {layer.name:[tuple(v.uv) for v in layer.data] for layer in obj.data.uv_layers}
             result[name] = (pixels, mask, geometry, uv)
@@ -56,9 +69,12 @@ def run(previous, output):
             raise ValueError('Repair count mismatch')
         records.append({'object': name, 'repaired_texels': count, 'protected_source_texels': int((mask == 1).sum()), 'existing_generated_texels': int((mask == 2).sum()), 'unchanged_rgba_exact': True, 'all_alpha_exact': True, 'geometry_and_uv_exact': True})
     report = {'status': 'PASS', 'previous_model_sha256': sha(previous / 'worker.blend'), 'model_sha256': sha(output / 'worker.blend'), 'validation_sha256': sha(output / 'validation.json'), 'objects': records, 'source_and_untouched_rgba_exact': True, 'all_alpha_exact': True}
+    if external is not None:report['previous_external_provenance']=external
     (output / 'saved-gap-audit.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report), flush=True)
 
 
 if __name__ == '__main__':
-    run(*sys.argv[sys.argv.index('--') + 1:])
+    import argparse
+    p=argparse.ArgumentParser();p.add_argument('previous');p.add_argument('output');p.add_argument('--previous-provenance')
+    args=p.parse_args(sys.argv[sys.argv.index('--')+1:]);run(args.previous,args.output,args.previous_provenance)
