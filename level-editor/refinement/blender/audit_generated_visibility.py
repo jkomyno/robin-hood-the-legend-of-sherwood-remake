@@ -33,6 +33,10 @@ def run(previous, output, manifest, previous_provenance=None):
     if not scope:raise ValueError('Explicit bounded visibility face scope required')
     if reports[1].get('generated_bounded_visibility')!=scope or reports[1].get('evidence_sha256',{}).get(str(manifest))!=sha(manifest):raise ValueError('Visibility manifest is not bound to this saved bake')
     if reports[1].get('geometry_verified') is not True:raise ValueError('Missing saved geometry verification')
+    for bands in contract.get('texture_inferred_gap_repair',{}).get('face_coordinate_bands',{}).values():
+        for rule in bands.values():
+            if rule['reference_model_sha256']!=sha(previous/'worker.blend'):raise ValueError('Coordinate band reference model drift')
+
     if reports[0].get('source_mask_evidence')!=reports[1].get('source_mask_evidence'):raise ValueError('Original source mask evidence changed')
     entries = [{e['object']: e for layer in r['layers'] for e in layer['objects']} for r in reports]
     external = None

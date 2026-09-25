@@ -342,7 +342,8 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                     and face_allowed(inferred_gap_repair,obj.name,fid)
                     and abs(normal.z) <= inferred_gap_repair['max_abs_normal_z']):
                 component_limits=inferred_gap_repair.get('face_component_limits',{}).get(obj.name,{}).get(str(fid))
-                if component_limits is not None and any(n.dot(normal)<1-1e-5 for n in triangle_normals.values()):
+                coordinate_band=inferred_gap_repair.get('face_coordinate_bands',{}).get(obj.name,{}).get(str(fid))
+                if (component_limits is not None or coordinate_band is not None) and any(n.dot(normal)<1-1e-5 for n in triangle_normals.values()):
                     raise ValueError('Physical component area requires a planar receiver face')
                 repaired, repair_mask, repair_stats = repair_face(
                     colors.reshape(h+4,w+4,4), accepted.reshape(h+4,w+4),
@@ -352,6 +353,18 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
                     physical_domain=((best>=0).reshape(h+4,w+4) if 'physical_gutter_texels' in inferred_gap_repair else None),
                     distance_override=inferred_gap_repair.get('face_distance_limits',{}).get(obj.name,{}).get(str(fid)),
                     component_limits=component_limits,physical_texel_area=float(size.x*size.y/w/h))
+                if coordinate_band is not None:
+                    from coordinate_gap_repair import repair_coordinate_band
+                    repaired, band_mask, band_stats = repair_coordinate_band(
+                        repaired,accepted.reshape(h+4,w+4),generated_samples.reshape(h+4,w+4),
+                        positions.reshape(h+4,w+4,3),(best>=0).reshape(h+4,w+4),
+                        (left-2,bottom-2),float(size.x*size.y/w/h),coordinate_band)
+                    if np.any(band_mask & repair_mask):raise ValueError('Coordinate band overlaps basal repair')
+                    repair_mask |= band_mask
+                    repair_stats.update(band_stats)
+                    repair_stats['repaired_texels']=int(repair_mask.sum())
+                    repair_stats['physical_repaired_texels']=int((repair_mask & (best>=0).reshape(h+4,w+4)).sum())
+                    if repair_stats['physical_repaired_texels']>np.count_nonzero(best>=0)*inferred_gap_repair['max_face_fraction']:raise ValueError('Combined band and basal repair exceeds physical cap')
                 colors = repaired.reshape(-1,4)
                 repaired_samples = repair_mask.ravel()
                 repaired_total += repair_stats['repaired_texels']

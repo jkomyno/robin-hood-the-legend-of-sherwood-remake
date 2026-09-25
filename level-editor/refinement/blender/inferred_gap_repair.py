@@ -6,7 +6,7 @@ from scipy.ndimage import distance_transform_edt, label, binary_dilation
 def validate_policy(policy, receiver_names=None, receiver_face_counts=None):
     keys={'version','receiver_objects','max_distance_texels','max_distance_world','bottom_band_world',
           'max_face_fraction','max_total_texels','max_abs_normal_z'}
-    if not isinstance(policy,dict) or not keys<=set(policy) or set(policy)-keys-{'face_bottom_bands','receiver_faces','physical_gutter_texels','face_distance_limits','face_component_limits','physical_donors_only'} or policy['version']!=1:
+    if not isinstance(policy,dict) or not keys<=set(policy) or set(policy)-keys-{'face_bottom_bands','receiver_faces','physical_gutter_texels','face_distance_limits','face_component_limits','physical_donors_only','face_coordinate_bands'} or policy['version']!=1:
         raise ValueError('Invalid inferred-gap repair policy')
     gutter=policy.get('physical_gutter_texels')
     if gutter is not None and (type(gutter) is not int or not 0<=gutter<=2):
@@ -82,6 +82,14 @@ def validate_policy(policy, receiver_names=None, receiver_face_counts=None):
                 raise ValueError('Component physical texel cap must be integer')
             if limits['max_face_fraction']>.05 and (limits['max_distance_texels']>6.4 or limits['max_distance_world']>3.2):
                 raise ValueError('Small-face exception requires tighter donor limits')
+    from coordinate_gap_repair import validate_band
+    bands=policy.get('face_coordinate_bands',{})
+    if not isinstance(bands,dict) or not set(bands)<=set(names):raise ValueError('Coordinate band names a foreign receiver')
+    for name,faces in bands.items():
+        if not isinstance(faces,dict) or not faces or 'physical_gutter_texels' not in policy:raise ValueError('Coordinate bands require explicit physical faces')
+        for face,rule in faces.items():
+            if not isinstance(face,str) or not face.isdigit() or str(int(face))!=face or selected is None or int(face) not in selected[name]:raise ValueError('Coordinate band face outside explicit scope')
+            validate_band(rule)
     return policy
 
 
