@@ -226,7 +226,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
         repair_names = [obj.name for obj in layer_targets if repair_policy and obj.name in repair_policy['receiver_objects']]
         layer_repair = {**repair_policy, 'receiver_objects':repair_names} if repair_names else None
         if layer_repair:
-            for key in ('receiver_faces','face_bottom_bands'):
+            for key in ('receiver_faces','face_bottom_bands','face_distance_limits'):
                 if key in layer_repair:
                     layer_repair[key]={name:value for name,value in layer_repair[key].items() if name in repair_names}
         if layer_repair is not None and 'face_bottom_bands' in layer_repair:

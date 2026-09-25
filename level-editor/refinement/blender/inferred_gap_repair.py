@@ -6,7 +6,7 @@ from scipy.ndimage import distance_transform_edt, label
 def validate_policy(policy, receiver_names=None, receiver_face_counts=None):
     keys={'version','receiver_objects','max_distance_texels','max_distance_world','bottom_band_world',
           'max_face_fraction','max_total_texels','max_abs_normal_z'}
-    if not isinstance(policy,dict) or not keys<=set(policy) or set(policy)-keys-{'face_bottom_bands','receiver_faces','physical_gutter_texels'} or policy['version']!=1:
+    if not isinstance(policy,dict) or not keys<=set(policy) or set(policy)-keys-{'face_bottom_bands','receiver_faces','physical_gutter_texels','face_distance_limits'} or policy['version']!=1:
         raise ValueError('Invalid inferred-gap repair policy')
     gutter=policy.get('physical_gutter_texels')
     if gutter is not None and (type(gutter) is not int or not 0<=gutter<=2):
@@ -44,7 +44,29 @@ def validate_policy(policy, receiver_names=None, receiver_face_counts=None):
                 isinstance(height,bool) or not isinstance(height,(int,float)) or not np.isfinite(height) or
                 not policy['bottom_band_world']<=height<=12):
                 raise ValueError('Invalid bounded per-face basal extent')
+    distances=policy.get('face_distance_limits',{})
+    if not isinstance(distances,dict) or not set(distances)<=set(names):
+        raise ValueError('Distance override names a foreign receiver')
+    for name,faces in distances.items():
+        if not isinstance(faces,dict) or not faces:
+            raise ValueError('Distance override requires explicit faces')
+        for face,bounds in faces.items():
+            if (not isinstance(face,str) or not face.isdigit() or str(int(face))!=face or
+                selected is None or int(face) not in selected.get(name,[])):
+                raise ValueError('Distance override requires a selected face')
+            validate_distance_limits(bounds)
     return policy
+
+
+def validate_distance_limits(bounds):
+    limits={'max_distance_texels':20,'max_distance_world':10}
+    if not isinstance(bounds,dict) or set(bounds)!=set(limits):
+        raise ValueError('Invalid per-face distance limits')
+    for key,cap in limits.items():
+        value=bounds[key]
+        if isinstance(value,bool) or not isinstance(value,(int,float)) or not np.isfinite(value) or not 0<value<=cap:
+            raise ValueError('Unsafe per-face distance limit')
+    return bounds
 
 
 def face_allowed(policy, object_name, face_index):
@@ -52,13 +74,14 @@ def face_allowed(policy, object_name, face_index):
     return selected is None or face_index in selected.get(object_name,[])
 
 
-def repair_face(colors, protected, generated, positions, policy, object_min_z, bottom_band_override=None, physical_domain=None):
+def repair_face(colors, protected, generated, positions, policy, object_min_z, bottom_band_override=None, physical_domain=None, distance_override=None):
     """All samples belong to one face, including its clamped atlas gutter.
 
     No accepted source or existing generated color can become a destination;
     donors come only from the original generated mask, never repaired pixels.
     """
     validate_policy(policy)
+    distances=policy if distance_override is None else validate_distance_limits(distance_override)
     shape=colors.shape[:2]
     if (colors.shape!=(*shape,4) or positions.shape!=(*shape,3) or
         protected.shape!=shape or generated.shape!=shape or protected.dtype!=bool or generated.dtype!=bool or
@@ -88,8 +111,8 @@ def repair_face(colors, protected, generated, positions, policy, object_min_z, b
         components,_=label(~protected & ~generated)
         seeds=np.unique(components[(z>=object_min_z-1e-6)&(z<=object_min_z+policy['bottom_band_world'])])
         connected=np.isin(components,seeds[seeds!=0])
-    selected=(eligible & connected & ~protected & ~generated & (distance<=policy['max_distance_texels']) &
-              (world_distance<=policy['max_distance_world']) & (z>=object_min_z-1e-6) &
+    selected=(eligible & connected & ~protected & ~generated & (distance<=distances['max_distance_texels']) &
+              (world_distance<=distances['max_distance_world']) & (z>=object_min_z-1e-6) &
               (z<=object_min_z+band))
     count=int(selected.sum())
     if count>policy['max_total_texels'] or count>colors.shape[0]*colors.shape[1]*policy['max_face_fraction']:
@@ -104,6 +127,7 @@ def repair_face(colors, protected, generated, positions, policy, object_min_z, b
     result[selected,:3]=donors[selected,:3]
     if not np.array_equal(result[~selected],colors[~selected]) or not np.array_equal(result[...,3],colors[...,3]):
         raise ValueError('Gap repair altered protected RGB or physical alpha')
+    stats.update(distance_limit_texels=float(distances['max_distance_texels']),distance_limit_world=float(distances['max_distance_world']))
     stats.update(eligible_samples=int(eligible.sum()),face_samples=int(colors.shape[0]*colors.shape[1]),bottom_band_world=float(band),connected_basal_component=bottom_band_override is not None)
     if count:
         stats.update(repaired_texels=count,maximum_distance_texels=float(distance[selected].max()),

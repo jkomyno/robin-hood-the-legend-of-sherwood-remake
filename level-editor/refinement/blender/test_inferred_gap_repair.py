@@ -73,6 +73,21 @@ class GapRepair(unittest.TestCase):
             settings['physical_gutter_texels']=gutter
             with self.assertRaises(ValueError):validate_policy(settings)
 
+    def test_distance_override_is_explicit_face_scoped_and_bounded(self):
+        c,p,g,x=self.fixture();x[0,1,0]+=8
+        settings=policy();settings['receiver_faces']={'own':[2]}
+        settings['face_distance_limits']={'own':{'2':{'max_distance_texels':20,'max_distance_world':10}}}
+        validate_policy(settings,['own'],{'own':3})
+        _,base,_=repair_face(c,p,g,x,settings,0)
+        result,expanded,_=repair_face(c,p,g,x,settings,0,distance_override=settings['face_distance_limits']['own']['2'])
+        self.assertFalse(base[0,1]);self.assertTrue(expanded[0,1])
+        np.testing.assert_array_equal(result[p],c[p]);np.testing.assert_array_equal(result[:,:,3],c[:,:,3])
+        settings['face_distance_limits']['own']['3']=settings['face_distance_limits']['own']['2']
+        with self.assertRaises(ValueError):validate_policy(settings)
+        del settings['face_distance_limits']['own']['3']
+        settings['face_distance_limits']['own']['2']['max_distance_world']=10.1
+        with self.assertRaises(ValueError):validate_policy(settings)
+
     def test_foreign_receiver_and_unbounded_policy_rejected(self):
         with self.assertRaises(ValueError):validate_policy(policy(),['other'])
         bad=policy();bad['max_distance_texels']=50
