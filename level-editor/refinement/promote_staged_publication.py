@@ -39,7 +39,10 @@ def asset_file_pairs(stage_assets, library_assets, asset):
     if descriptor_path.parent / safe_relative(descriptor['model']) != model_path:
         raise ValueError('Asset descriptor model path mismatch: ' + asset['id'])
     paths = [descriptor_path, model_path]
-    variants = descriptor.get('state_variants')
+    variant_fields = [key for key in ('state_variants', 'standalone_variants') if key in descriptor]
+    if len(variant_fields) > 1 or ('standalone_variants' in descriptor and 'states' in descriptor):
+        raise ValueError('Conflicting static asset variants')
+    variants = descriptor[variant_fields[0]] if variant_fields else None
     if variants is not None:
         if not isinstance(variants, dict) or not variants:
             raise ValueError('Expected nonempty state_variants')

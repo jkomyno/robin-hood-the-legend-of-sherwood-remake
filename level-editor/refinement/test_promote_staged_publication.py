@@ -69,6 +69,32 @@ class PromotionTests(unittest.TestCase):
             promotion.apply(self.stage / 'promotion.json')
         self.assertEqual(self.main.read_bytes(), b'old blend')
 
+    def test_standalone_endpoints_keep_covered_model_and_copy_both(self):
+        (self.stage / 'assets/bridge/covered.glb').write_bytes(b'covered default')
+        self.entry['model'] = 'bridge/covered.glb'
+        self.descriptor['model'] = 'covered.glb'
+        self.write_json(self.stage / 'assets/index.json', {'assets': [self.entry]})
+        self.variants()
+        self.descriptor['standalone_variants'] = self.descriptor.pop('state_variants')
+        manifest = self.prepare()
+        self.assertEqual(len(manifest['files']), 8)
+        promotion.apply(self.stage / 'promotion.json')
+        for name in ('covered.glb', 'raised.glb', 'lowered.glb'):
+            self.assertEqual((self.library / '3d-assets/bridge' / name).read_bytes(),
+                             (self.stage / 'assets/bridge' / name).read_bytes())
+
+    def test_standalone_variants_reject_conflicting_metadata_and_unsafe_paths(self):
+        self.variants()
+        self.descriptor['standalone_variants'] = dict(self.descriptor['state_variants'])
+        self.write_json(self.stage / 'assets/bridge/asset.json', self.descriptor)
+        with self.assertRaisesRegex(ValueError, 'Conflicting'):
+            promotion.asset_file_pairs(self.stage / 'assets', self.library / '3d-assets', self.entry)
+        del self.descriptor['state_variants']
+        self.descriptor['standalone_variants']['applied']['model'] = '../escape.glb'
+        self.write_json(self.stage / 'assets/bridge/asset.json', self.descriptor)
+        with self.assertRaisesRegex(ValueError, 'Unsafe'):
+            promotion.asset_file_pairs(self.stage / 'assets', self.library / '3d-assets', self.entry)
+
     def test_late_variant_failure_rolls_back_old_and_new_files(self):
         self.variants()
         raised = self.library / '3d-assets/bridge/raised.glb'
