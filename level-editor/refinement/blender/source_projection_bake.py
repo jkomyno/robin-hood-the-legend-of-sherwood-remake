@@ -341,13 +341,17 @@ def bake(map_name, source_path, report_path, receiver_nodes=None,
             if (inferred_gap_repair is not None and obj.name in inferred_gap_repair['receiver_objects']
                     and face_allowed(inferred_gap_repair,obj.name,fid)
                     and abs(normal.z) <= inferred_gap_repair['max_abs_normal_z']):
+                component_limits=inferred_gap_repair.get('face_component_limits',{}).get(obj.name,{}).get(str(fid))
+                if component_limits is not None and any(n.dot(normal)<1-1e-5 for n in triangle_normals.values()):
+                    raise ValueError('Physical component area requires a planar receiver face')
                 repaired, repair_mask, repair_stats = repair_face(
                     colors.reshape(h+4,w+4,4), accepted.reshape(h+4,w+4),
                     generated_samples.reshape(h+4,w+4), positions.reshape(h+4,w+4,3),
                     inferred_gap_repair, min(p.z for p in world),
                     bottom_band_override=inferred_gap_repair.get('face_bottom_bands',{}).get(obj.name,{}).get(str(fid)),
                     physical_domain=((best>=0).reshape(h+4,w+4) if 'physical_gutter_texels' in inferred_gap_repair else None),
-                    distance_override=inferred_gap_repair.get('face_distance_limits',{}).get(obj.name,{}).get(str(fid)))
+                    distance_override=inferred_gap_repair.get('face_distance_limits',{}).get(obj.name,{}).get(str(fid)),
+                    component_limits=component_limits,physical_texel_area=float(size.x*size.y/w/h))
                 colors = repaired.reshape(-1,4)
                 repaired_samples = repair_mask.ravel()
                 repaired_total += repair_stats['repaired_texels']

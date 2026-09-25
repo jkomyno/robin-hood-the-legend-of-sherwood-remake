@@ -88,6 +88,24 @@ class GapRepair(unittest.TestCase):
         settings['face_distance_limits']['own']['2']['max_distance_world']=10.1
         with self.assertRaises(ValueError):validate_policy(settings)
 
+    def test_small_face_exception_selects_only_bounded_edge_component(self):
+        c,p,g,x=self.fixture();p[:]=False;g[:]=True;x[:,:,2]-=2
+        domain=np.zeros((20,20),bool);domain[2:12,2:12]=True
+        g[2:4,9:12]=False  # Six physical samples, 6% of the small face.
+        g[2:7,2:6]=False   # A separate broad unsupported component must remain exact.
+        g[7,8]=False       # Isolated interior gap must not be extrapolated.
+        settings=policy();settings.update(bottom_band_world=4,physical_gutter_texels=2)
+        limits=dict(max_physical_texels=10,max_physical_area_world2=3,max_face_fraction=.1,max_distance_texels=2,max_distance_world=2)
+        out,filled,stats=repair_face(c,p,g,x,settings,0,physical_domain=domain,component_limits=limits,physical_texel_area=.25)
+        self.assertEqual(int(filled.sum()),6)
+        self.assertTrue(filled[2:4,9:12].all());self.assertFalse(filled[2:7,2:6].any());self.assertFalse(filled[7,8])
+        np.testing.assert_array_equal(out[~filled],c[~filled]);np.testing.assert_array_equal(out[:,:,3],c[:,:,3])
+        self.assertEqual(stats['physical_repaired_texels'],6)
+        with self.assertRaises(ValueError):repair_face(c,p,g,x,settings,0,physical_domain=domain,component_limits=limits)
+        for key,value in [('max_physical_texels',151),('max_physical_area_world2',37),('max_face_fraction',.21),('max_distance_world',3.3)]:
+            bad=dict(limits);bad[key]=value
+            with self.assertRaises(ValueError):repair_face(c,p,g,x,settings,0,physical_domain=domain,component_limits=bad,physical_texel_area=.25)
+
     def test_foreign_receiver_and_unbounded_policy_rejected(self):
         with self.assertRaises(ValueError):validate_policy(policy(),['other'])
         bad=policy();bad['max_distance_texels']=50

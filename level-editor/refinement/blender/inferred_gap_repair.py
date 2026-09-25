@@ -1,12 +1,12 @@
 """Bounded, opt-in RGB extrapolation within one physical receiver face."""
 import numpy as np
-from scipy.ndimage import distance_transform_edt, label
+from scipy.ndimage import distance_transform_edt, label, binary_dilation
 
 
 def validate_policy(policy, receiver_names=None, receiver_face_counts=None):
     keys={'version','receiver_objects','max_distance_texels','max_distance_world','bottom_band_world',
           'max_face_fraction','max_total_texels','max_abs_normal_z'}
-    if not isinstance(policy,dict) or not keys<=set(policy) or set(policy)-keys-{'face_bottom_bands','receiver_faces','physical_gutter_texels','face_distance_limits'} or policy['version']!=1:
+    if not isinstance(policy,dict) or not keys<=set(policy) or set(policy)-keys-{'face_bottom_bands','receiver_faces','physical_gutter_texels','face_distance_limits','face_component_limits'} or policy['version']!=1:
         raise ValueError('Invalid inferred-gap repair policy')
     gutter=policy.get('physical_gutter_texels')
     if gutter is not None and (type(gutter) is not int or not 0<=gutter<=2):
@@ -55,6 +55,31 @@ def validate_policy(policy, receiver_names=None, receiver_face_counts=None):
                 selected is None or int(face) not in selected.get(name,[])):
                 raise ValueError('Distance override requires a selected face')
             validate_distance_limits(bounds)
+    rules=policy.get('face_component_limits',{})
+    if not isinstance(rules,dict) or not set(rules)<=set(names):
+        raise ValueError('Component limit names a foreign receiver')
+    fields={'max_physical_texels','max_physical_area_world2','max_face_fraction','max_distance_texels','max_distance_world'}
+    for name,faces in rules.items():
+        if not isinstance(faces,dict) or not faces or 'physical_gutter_texels' not in policy:
+            raise ValueError('Component limits require explicit faces and physical domain')
+        for face,limits in faces.items():
+            if (not isinstance(face,str) or not face.isdigit() or str(int(face))!=face or
+                    not isinstance(limits,dict) or set(limits)!=fields):
+                raise ValueError('Invalid per-face component limits')
+            if selected is not None and int(face) not in selected[name]:
+                raise ValueError('Component limit face is outside explicit scope')
+            if receiver_face_counts is not None and int(face)>=receiver_face_counts[name]:
+                raise ValueError('Component limit face is absent')
+            caps={'max_physical_texels':150,'max_physical_area_world2':36,'max_face_fraction':.2,
+                  'max_distance_texels':16,'max_distance_world':8}
+            for key,cap in caps.items():
+                value=limits[key]
+                if isinstance(value,bool) or not isinstance(value,(int,float)) or not np.isfinite(value) or not 0<value<=cap:
+                    raise ValueError('Unsafe component limit: '+key)
+            if type(limits['max_physical_texels']) is not int:
+                raise ValueError('Component physical texel cap must be integer')
+            if limits['max_face_fraction']>.05 and (limits['max_distance_texels']>6.4 or limits['max_distance_world']>3.2):
+                raise ValueError('Small-face exception requires tighter donor limits')
     return policy
 
 
@@ -74,7 +99,7 @@ def face_allowed(policy, object_name, face_index):
     return selected is None or face_index in selected.get(object_name,[])
 
 
-def repair_face(colors, protected, generated, positions, policy, object_min_z, bottom_band_override=None, physical_domain=None, distance_override=None):
+def repair_face(colors, protected, generated, positions, policy, object_min_z, bottom_band_override=None, physical_domain=None, distance_override=None, component_limits=None, physical_texel_area=None):
     """All samples belong to one face, including its clamped atlas gutter.
 
     No accepted source or existing generated color can become a destination;
@@ -111,23 +136,49 @@ def repair_face(colors, protected, generated, positions, policy, object_min_z, b
         components,_=label(~protected & ~generated)
         seeds=np.unique(components[(z>=object_min_z-1e-6)&(z<=object_min_z+policy['bottom_band_world'])])
         connected=np.isin(components,seeds[seeds!=0])
-    selected=(eligible & connected & ~protected & ~generated & (distance<=distances['max_distance_texels']) &
-              (world_distance<=distances['max_distance_world']) & (z>=object_min_z-1e-6) &
+    fraction_limit=policy['max_face_fraction']
+    distance_limit=distances['max_distance_texels'];world_limit=distances['max_distance_world']
+    if component_limits is not None:
+        if physical_domain is None or physical_texel_area is None or not np.isfinite(physical_texel_area) or physical_texel_area<=0:
+            raise ValueError('Component repair requires exact physical sampling area')
+        validate_policy(dict(policy,face_component_limits={'own':{'0':component_limits}},receiver_objects=['own'],receiver_faces={'own':[0]},face_bottom_bands={},face_distance_limits={}))
+        components,count_components=label(physical_domain & ~protected & ~generated)
+        chosen=[];stats['components']=[]
+        distance_limit=min(distance_limit,component_limits['max_distance_texels'])
+        world_limit=min(world_limit,component_limits['max_distance_world'])
+        fraction_limit=component_limits['max_face_fraction']
+        for cid in range(1,count_components+1):
+            component=components==cid;count_component=int(component.sum())
+            edge=bool((binary_dilation(component)&~physical_domain).any())
+            basal=bool((component & (z>=object_min_z-1e-6)&(z<=object_min_z+policy['bottom_band_world'])).any())
+            valid=(edge and basal and count_component<=component_limits['max_physical_texels'] and
+                   count_component*physical_texel_area<=component_limits['max_physical_area_world2'] and
+                   count_component<=physical_domain.sum()*fraction_limit and
+                   np.all(distance[component]<=distance_limit) and np.all(world_distance[component]<=world_limit) and
+                   np.all(z[component]>=object_min_z-1e-6) and np.all(z[component]<=object_min_z+band))
+            stats['components'].append(dict(component=cid,physical_texels=count_component,physical_area_world2=count_component*physical_texel_area,edge_connected=edge,basal_connected=basal,eligible=bool(valid)))
+            if valid:chosen.append(cid)
+        _,nearest_physical=distance_transform_edt(~physical_domain,return_indices=True)
+        eligible &= np.isin(components[tuple(nearest_physical)],chosen)
+    selected=(eligible & connected & ~protected & ~generated & (distance<=distance_limit) &
+              (world_distance<=world_limit) & (z>=object_min_z-1e-6) &
               (z<=object_min_z+band))
     count=int(selected.sum())
-    if count>policy['max_total_texels'] or count>colors.shape[0]*colors.shape[1]*policy['max_face_fraction']:
+    if count>policy['max_total_texels'] or count>colors.shape[0]*colors.shape[1]*fraction_limit:
         raise ValueError(f'Inferred-gap repair exceeds its narrow per-face/count budget: selected={count}, face_samples={colors.shape[0]*colors.shape[1]}, fraction={count/(colors.shape[0]*colors.shape[1]):.6f}, max_fraction={policy["max_face_fraction"]}, max_count={policy["max_total_texels"]}')
     if physical_domain is not None:
         physical_count=int(np.count_nonzero(selected & physical_domain))
         physical_samples=int(physical_domain.sum())
-        if physical_count>physical_samples*policy['max_face_fraction']:
+        if physical_count>physical_samples*fraction_limit:
             raise ValueError(f'Inferred-gap repair exceeds physical face budget: selected={physical_count}, physical_samples={physical_samples}')
+        if component_limits is not None and (physical_count>component_limits['max_physical_texels'] or physical_count*physical_texel_area>component_limits['max_physical_area_world2']):
+            raise ValueError('Combined physical components exceed explicit per-face cap')
         stats.update(physical_repaired_texels=physical_count,physical_face_samples=physical_samples)
     donors=colors[tuple(nearest)]
     result[selected,:3]=donors[selected,:3]
     if not np.array_equal(result[~selected],colors[~selected]) or not np.array_equal(result[...,3],colors[...,3]):
         raise ValueError('Gap repair altered protected RGB or physical alpha')
-    stats.update(distance_limit_texels=float(distances['max_distance_texels']),distance_limit_world=float(distances['max_distance_world']))
+    stats.update(distance_limit_texels=float(distance_limit),distance_limit_world=float(world_limit))
     stats.update(eligible_samples=int(eligible.sum()),face_samples=int(colors.shape[0]*colors.shape[1]),bottom_band_world=float(band),connected_basal_component=bottom_band_override is not None)
     if count:
         stats.update(repaired_texels=count,maximum_distance_texels=float(distance[selected].max()),
