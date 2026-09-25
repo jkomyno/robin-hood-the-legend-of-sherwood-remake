@@ -84,6 +84,8 @@ def same_source_hit(point,trees):
 
 
 def main(contract_path,out):
+    from render_slots import acquire
+    acquire(slots=2)
     import bpy
     from PIL import Image
     contract=read(contract_path);workspace=Path(contract['source_workspace']);cfg=read(workspace/'workspace.json')
