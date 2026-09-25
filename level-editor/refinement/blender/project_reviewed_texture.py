@@ -135,6 +135,8 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
     two_sided = set(manifest.get('texture_two_sided_object_names', []))
     if two_sided - {obj.name for obj in targets}:
         raise ValueError('Two-sided texture scoring must be inside explicit receiver scope')
+    from texture_face_sampling import face_sampling, eligibility
+    face_policy = face_sampling(manifest, {obj.name: len(obj.data.polygons) for obj in targets})
     vertices, triangles = [], []
     for obj in objects:
         offset = len(vertices)
@@ -159,10 +161,12 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
         weights = np.zeros(len(positions))
         blended = np.zeros((len(positions),3))
         # Selection is per texel: occlusion can vary within a single polygon.
-        candidates = ordered((((abs(normal.dot(direction)) if obj.name in two_sided else normal.dot(direction)), view, inverse, direction)
+        minimum_cosine, face_two_sided = eligibility(face_policy, obj.name, face_index,
+                                                    legacy_two_sided=obj.name in two_sided)
+        candidates = ordered((((abs(normal.dot(direction)) if face_two_sided else normal.dot(direction)), view, inverse, direction)
                              for view,inverse,direction in cameras), selection, preferred.get((obj.name,face_index)))
         for score, view, inverse, direction in candidates:
-            if score <= .12:
+            if score <= minimum_cosine:
                 continue
             indices = np.flatnonzero(eligible(accepted, remaining, score, best_scores, selection))
             if not len(indices):
@@ -272,6 +276,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
     report = {'asset_id':manifest['asset_id'], 'input_sha256':input_hash,'generated_sha256':image_hash,
               'texture_receiver_object_names':[obj.name for obj in targets],
               'texture_two_sided_object_names':sorted(two_sided),
+              'texture_generated_face_sampling':manifest.get('texture_generated_face_sampling', {}),
               'generated_image':str(Path(image_path).resolve()),
               'source_mask_manifest':mask_manifest,
               'source_mask_evidence':manifest.get('source_mask_evidence'),

@@ -15,10 +15,12 @@ def main():
     parser.add_argument('manifest', type=Path)
     parser.add_argument('bake', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--provenance-report', type=Path, action='append')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     acquire()
     try:
-        result = inspect(args.manifest, args.bake, args.output)
+        result = inspect(args.manifest, args.bake, args.output,
+                         provenance_reports=args.provenance_report)
         print(result['asset_id'], result['views'], flush=True)
     finally:
         release()
