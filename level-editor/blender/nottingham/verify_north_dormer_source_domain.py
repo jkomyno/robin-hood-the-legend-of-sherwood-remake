@@ -11,7 +11,7 @@ def main():
  from occlusion_constraints import SourceMaskConstraints
  from source_visibility import first_source_hit
  from PIL import Image
- old=WORK/'round-38/assets/nottingham-north-dormer-house';new=WORK/'texture-generation/projection-corrections/north-dormer-v23/nottingham-north-dormer-house';box=(1620,280,1840,630);s,c=math.sin(math.radians(35)),math.cos(math.radians(35));toward=Vector((0,-c,s));states=[];receiver_states=[]
+ old=WORK/'round-38/assets/nottingham-north-dormer-house';new=WORK/'texture-generation/projection-corrections/north-dormer-v25/nottingham-north-dormer-house';box=(1620,280,1840,630);s,c=math.sin(math.radians(35)),math.cos(math.radians(35));toward=Vector((0,-c,s));states=[];receiver_states=[]
  for w in [old,new]:
   bpy.ops.wm.open_mainfile(filepath=str(w/'model.blend'));config=json.loads((w/'workspace.json').read_text());bpy.context.window.scene=bpy.data.scenes[config['scene_name']];bpy.context.view_layer.update();objs=[o for o in bpy.data.collections[config['collection_name']].all_objects if o.type=='MESH'and not o.hide_render];targets=[o for o in objs if o.get('asset_group')=='nottingham-north-dormer-house'];tree,owners,_=_tree(objs);own,ownowners,_=_tree(targets);domains={label:SourceMaskConstraints(w/'source-masks.json',label,sha(w/'reference/source.png'),(2304,3520))for label in ['exterior','mission-custom1']};pixels={};pixel_receivers={}
   for y in range(box[1],box[3]):
@@ -30,7 +30,7 @@ def main():
  for number in [525,526]:
   row=next(r for r in inventory['masks']if r['index']==number);im=Image.new('L',(2304,3520));im.paste(Image.open(inventory_path.parent/row['png']).convert('L'),tuple(row['box_top_left']));native[number]=im
  for p in removed:
-  reason=('unresolved-owned-prop-'+str(receiver_states[0].get(p))+'-'+b[p] if receiver_states[0].get(p)in ['building-553','building-554'] else 'unresolved-board526-'+b[p] if native[526].getpixel(p) else 'foreign-unmodeled-storage525' if native[525].getpixel(p) else 'foreign-foreground-wall-below-house' if p[1]>=540 or (p[1]>=535 and p[0]<=1762) else 'unresolved-'+b[p])
+  reason=('unresolved-owned-prop-'+str(receiver_states[0].get(p))+'-'+b[p] if receiver_states[0].get(p)in ['building-553','building-554'] else 'unresolved-board526-'+b[p] if native[526].getpixel(p) else 'foreign-stair-tread-edge' if p==(1794,446) else 'foreign-unmodeled-storage525' if native[525].getpixel(p) else 'foreign-foreground-wall-below-house' if p[1]>=540 or (p[1]>=535 and p[0]<=1762) else 'unresolved-'+b[p])
   classified[reason].append(p)
  ins=new/'inspection';ins.mkdir(exist_ok=True);source=Image.open(new/'reference/source.png').convert('RGB');left=source.crop(box);right=left.copy()
  for p in kept:right.putpixel((p[0]-box[0],p[1]-box[1]),(0,160,0))

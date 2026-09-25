@@ -9,7 +9,7 @@ ROOT=Path(__file__).resolve().parents[3];WORK=ROOT/'level-editor/work/nottingham
 def build_domain(old):
  """Retain native inventories and append the source-classified house domain."""
  from PIL import Image,ImageChops,ImageDraw
- root=WORK/'coordinator-audit/north-dormer-stripe/domain-v23';out=root/'source-masks.json'
+ root=WORK/'coordinator-audit/north-dormer-stripe/domain-v25';out=root/'source-masks.json'
  if out.exists():return out
  root.mkdir(parents=True);m=json.loads((old/'source-masks.json').read_text());ip=Path(m['mask_inventory']);inv=json.loads(ip.read_text());dest=root/'inventory';dest.mkdir()
  for row in inv['masks']:shutil.copy2(ip.parent/row['png'],dest/row['png'])
@@ -19,11 +19,15 @@ def build_domain(old):
  for point in [[1746, 536], [1746, 537], [1746, 538], [1746, 539], [1747, 537], [1747, 538], [1747, 539], [1748, 537], [1748, 538], [1748, 539], [1749, 537], [1749, 538], [1749, 539], [1750, 537], [1750, 538], [1750, 539], [1751, 537], [1751, 538], [1751, 539], [1752, 537], [1752, 538], [1752, 539], [1753, 537], [1753, 538], [1753, 539], [1754, 537], [1754, 538], [1754, 539], [1755, 537], [1755, 538], [1755, 539], [1756, 538], [1756, 539], [1757, 538], [1757, 539], [1758, 538], [1758, 539], [1759, 538], [1759, 539], [1760, 539], [1761, 539]]:mask.putpixel(tuple(point),0)
  idx=len(inv['masks']);name=f'{idx:06d}.png';mask.save(dest/name)
  inv['masks'].append(dict(index=idx,layer=-1,layer_index=idx,png=name,mask_type=0,box_top_left=[0,0],box_size=[2304,3520],character_polyline=None,projectile_polyline=None,obstacle_indices=[],authored=True,description='House domain excluding separately owned storage525/526, foreground below y540, and41source-traced foreground coping pixels.'))
+ bodymask=mask.copy();stair=json.loads(Path(__file__).with_name('north_dormer_stair_exclusion.json').read_text())
+ for point in stair['pixels']:bodymask.putpixel(tuple(point),0)
+ bodyidx=len(inv['masks']);bodyname=f'{bodyidx:06d}.png';bodymask.save(dest/bodyname);bodyrow=dict(inv['masks'][-1]);bodyrow.update(index=bodyidx,layer_index=bodyidx,png=bodyname,description='Body122/124 only: additionally exclude128 independently traced stair-side samples, with one-pixel timber/stair boundary uncertainty.');inv['masks'].append(bodyrow)
+ (root/'stair-exclusion-evidence.json').write_text(json.dumps(stair,indent=2)+'\n')
  (dest/'manifest.json').write_text(json.dumps(inv,indent=2)+'\n');m['mask_inventory']=str(dest/'manifest.json')
  for projection in m['projections'].values():
   for assignment in projection['assignments']:
    if assignment['source_node'] in ['building-122','building-123','building-124','building-125']:
-    assignment['mask_indices']=[idx];assignment['review_note']='Valid house retained; storage525/526 and lower foreground excluded.'
+    assignment['mask_indices']=[bodyidx if assignment['source_node']in ['building-122','building-124']else idx];assignment['review_note']='Valid house retained; storage525/526 and lower foreground excluded.'
  out.write_text(json.dumps(m,indent=2)+'\n');return out
 def apply():
  import bpy,bmesh
@@ -116,7 +120,7 @@ def main():
  from refinement_review import render_review
  from reproject_map import reproject_map
  from source_projection_bake import bake
- old=WORK/'round-38/assets/nottingham-north-dormer-house';w=WORK/'texture-generation/projection-corrections/north-dormer-v23/nottingham-north-dormer-house'
+ old=WORK/'round-38/assets/nottingham-north-dormer-house';w=WORK/'texture-generation/projection-corrections/north-dormer-v25/nottingham-north-dormer-house'
  layers=json.loads((old/'preserved-projection-layers.json').read_text())['layers']
  def render(config,output,baseline=None):
   result=render_review(output,scene_name=config['scene_name'],collection_name=config['collection_name'],asset_id=config['asset_id'],source_path=config['source_path'],frame_manifest=baseline,width=256,height=320,context_padding=35,framing_padding=1.1,projection_layers=layers,source_mask_manifest=config['source_mask_manifest'],allow_projection_revision=bool(baseline),allow_mask_revision=bool(baseline))

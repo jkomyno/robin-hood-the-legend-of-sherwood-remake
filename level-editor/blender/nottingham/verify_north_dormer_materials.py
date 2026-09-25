@@ -8,7 +8,7 @@ if '--no-render' not in sys.argv:acquire()
 select_tooling(r/'level-editor/work/nottingham-refinement/tooling/58744eeaf71a21e9')
 from correct_source_projection import geometry
 from audit_stored_materials import run
-w=r/'level-editor/work/nottingham-refinement/texture-generation/projection-corrections/north-dormer-v23/nottingham-north-dormer-house';old=r/'level-editor/work/nottingham-refinement/round-38/assets/nottingham-north-dormer-house'
+w=r/'level-editor/work/nottingham-refinement/texture-generation/projection-corrections/north-dormer-v25/nottingham-north-dormer-house';old=r/'level-editor/work/nottingham-refinement/round-38/assets/nottingham-north-dormer-house'
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def outside():return {o.name:dict(uv={u.name:[list(v.uv)for v in u.data]for u in o.data.uv_layers},materials=[m.name if m else None for m in o.data.materials],slots=[p.material_index for p in o.data.polygons])for o in bpy.data.objects if o.type=='MESH'and o.get('source_node') not in ['building-122','building-123','building-124','building-125','building-553','building-554']}
 bpy.ops.wm.open_mainfile(filepath=str(old/'model.blend'));before=geometry();uv=outside()
