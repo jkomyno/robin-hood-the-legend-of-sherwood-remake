@@ -21,6 +21,8 @@ def main():
     traces = Path(__file__).with_name('spire_metal_ridge_traces.json')
     spec = json.loads(traces.read_text())['assets'][asset]
     old = WORK/spec['approved_workspace']
+    if new == old.resolve():
+        raise ValueError('The paired correction must not overwrite the approved workspace')
     assert sha(old/'model.blend') == spec['approved_model_sha256']
     evidence = WORK/'texture-generation/projection-corrections/spire-ridges-v2'/asset/'inspection'
     proposal_path = evidence/'foreign-shingle-polygon-proposal.json'

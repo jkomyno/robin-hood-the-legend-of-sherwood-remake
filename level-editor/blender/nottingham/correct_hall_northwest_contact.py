@@ -14,7 +14,6 @@ def main():
     import refinement_workspace as rw
     from render_slots import acquire
     from northwest_spire_source_authority import prepare_authority
-    from refine_village_secondary import replace
     new = Path(sys.argv[sys.argv.index('--') + 1]).resolve()
     spire = new.parent / 'nottingham-castle-northwest-spire'
     old = WORK / 'round-42/assets/nottingham-castle-main-hall'
@@ -59,8 +58,9 @@ def main():
     donor = target.objects[0]
     body = next(o for o in bpy.data.collections[config['collection_name']].all_objects
                 if o.type == 'MESH' and o.get('source_node') == 'building-519')
-    replace(body, [donor.matrix_world @ v.co for v in donor.data.vertices],
-            [tuple(p.vertices) for p in donor.data.polygons], 'Paired concealed roof contact')
+    # Both packets retain the same canonical object transform. An unlinked
+    # library object's matrix_world is not yet evaluated; copy local mesh data.
+    body.data = donor.data.copy()
     bpy.data.objects.remove(donor, do_unlink=True)
     rw.prepare(new, asset_id=config['asset_id'], scene_name=config['scene_name'],
                collection_name=config['collection_name'], source_path=old / 'reference/source.png',

@@ -1,5 +1,6 @@
 """Render a disposable paired roof/tower inspection without regrouping either asset."""
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -37,6 +38,37 @@ def main():
                   source_mask_manifest=config['source_mask_manifest'])
     audit = run(output, output / 'actual', render=True, export=False)
     assert not audit['problems'], audit['problems']
+    from mathutils import Matrix, Vector
+    from PIL import Image, ImageDraw
+    box = (245, 465, 318, 605)
+    sine, cosine = math.sin(math.radians(35)), math.cos(math.radians(35))
+    toward, down = Vector((0, -cosine, sine)), Vector((0, -sine, -cosine))
+    scene = bpy.context.scene
+    camera = bpy.data.objects.new('Paired contact source camera', bpy.data.cameras.new('Paired contact source camera'))
+    scene.collection.objects.link(camera)
+    camera.data.type = 'ORTHO'
+    camera.data.clip_end = 20000
+    rotation = Matrix(((1, 0, 0), (0, sine, -cosine), (0, cosine, sine))).to_4x4()
+    rotation.translation = Vector(((box[0]+box[2])/2, 0, 0)) + down*((box[1]+box[3])/2) + toward*10000
+    camera.matrix_world = rotation
+    scene.camera = camera
+    scene.render.resolution_x, scene.render.resolution_y = box[2]-box[0], box[3]-box[1]
+    camera.data.ortho_scale = 1
+    frame = camera.data.view_frame(scene=scene)
+    scale_x = (box[2]-box[0]) / (max(v.x for v in frame)-min(v.x for v in frame))
+    scale_y = (box[3]-box[1]) / (max(v.y for v in frame)-min(v.y for v in frame))
+    assert abs(scale_x-scale_y) < 1e-3
+    camera.data.ortho_scale = scale_x
+    scene.render.filepath = str(output / 'source-actual.png')
+    bpy.ops.render.render(write_still=True)
+    source_image = Image.open(config['source_path']).convert('RGB').crop(box)
+    actual_image = Image.open(output / 'source-actual.png').convert('RGB')
+    comparison = Image.new('RGB', (source_image.width*2, source_image.height+18))
+    draw = ImageDraw.Draw(comparison)
+    for index, (panel, label) in enumerate([(source_image, 'Original art'), (actual_image, 'Paired saved model')]):
+        comparison.paste(panel, (index*source_image.width, 18))
+        draw.text((index*source_image.width+2, 2), label, fill='white')
+    comparison.resize((comparison.width*4, comparison.height*4), Image.Resampling.NEAREST).save(output / 'source-comparison.png')
     (output / 'scope.json').write_text(json.dumps(dict(
         source_pair_sha256=sha(source / 'model.blend'), model_sha256=sha(output / 'model.blend'),
         purpose='Inspection-only display grouping; original canonical asset groups retained in original-groups.json.',
