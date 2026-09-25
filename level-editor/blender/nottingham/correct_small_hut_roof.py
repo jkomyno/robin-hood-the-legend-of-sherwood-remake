@@ -15,7 +15,7 @@ def main():
  import refinement_workspace as rw
  from mathutils import Vector
  from refine_village_secondary import replace,digest
- old=WORK/'round-23/assets'/ASSET;out=WORK/'texture-generation/projection-corrections/v5'/ASSET
+ old=WORK/'round-23/assets'/ASSET;out=WORK/'texture-generation/projection-corrections/v6'/ASSET
  c=json.loads((old/'workspace.json').read_text())
  if not out.exists():
   bpy.ops.wm.open_mainfile(filepath=str(old/'model.blend'))
@@ -60,6 +60,8 @@ def main():
    assignment['mask_indices']=[210,211]
    assignment['review_evidence']=str(WORK/'coordinator-audit/small-hut-projection/native211-domain.png')
    assignment['review_note']='Native211 owns the forge hearth, white masonry side and chimney hood; native210 owns roof/posts. Restored reviewed ownership; all foreground first-hit constraints remain active.'
+ from small_hut_eave_ownership import apply as review_eave
+ masks=review_eave(out,masks)
  (out/'source-masks.json').write_text(json.dumps(masks,indent=2)+'\n')
  rw.modified(out)
  report['model_sha256']=sha(out/'model.blend')
