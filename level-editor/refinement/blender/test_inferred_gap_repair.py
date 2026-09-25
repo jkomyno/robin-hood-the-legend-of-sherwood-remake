@@ -26,6 +26,23 @@ class GapRepair(unittest.TestCase):
         y,x=np.mgrid[:20,:20];positions=np.stack((x,np.zeros_like(x),y),axis=-1).astype(float)
         return colors,protected,generated,positions
 
+    def test_physical_donor_ignores_nearer_invalid_clamped_gutter(self):
+        c,p,g,x=self.fixture();g[:]=True;p[:]=False
+        g[0,5]=False;x[0,5]=[5,0,0]
+        domain=np.ones((20,20),bool);domain[:,4]=False
+        x[0,4]=[100,0,0];c[0,4,:3]=[1,0,0]
+        c[1,5,:3]=[0,1,0];x[1,5]=[5,0,1]
+        settings=policy();settings['physical_gutter_texels']=0
+        _,old,_=repair_face(c,p,g,x,settings,0,physical_domain=domain)
+        self.assertFalse(old[0,5])
+        settings['physical_donors_only']=True
+        result,new,stats=repair_face(c,p,g,x,settings,0,physical_domain=domain)
+        self.assertTrue(new[0,5]);self.assertTrue(stats['physical_donors_only'])
+        self.assertFalse(np.array_equal(result[0,5,:3],[1,0,0]))
+        np.testing.assert_array_equal(result[~new],c[~new]);np.testing.assert_array_equal(result[...,3],c[...,3])
+        settings.pop('physical_gutter_texels')
+        with self.assertRaises(ValueError):validate_policy(settings)
+
     def test_source_alpha_and_existing_generation_exact(self):
         c,p,g,x=self.fixture();out,filled,stats=repair_face(c,p,g,x,policy(),0)
         self.assertEqual(stats['repaired_texels'],19)

@@ -6,11 +6,13 @@ from scipy.ndimage import distance_transform_edt, label, binary_dilation
 def validate_policy(policy, receiver_names=None, receiver_face_counts=None):
     keys={'version','receiver_objects','max_distance_texels','max_distance_world','bottom_band_world',
           'max_face_fraction','max_total_texels','max_abs_normal_z'}
-    if not isinstance(policy,dict) or not keys<=set(policy) or set(policy)-keys-{'face_bottom_bands','receiver_faces','physical_gutter_texels','face_distance_limits','face_component_limits'} or policy['version']!=1:
+    if not isinstance(policy,dict) or not keys<=set(policy) or set(policy)-keys-{'face_bottom_bands','receiver_faces','physical_gutter_texels','face_distance_limits','face_component_limits','physical_donors_only'} or policy['version']!=1:
         raise ValueError('Invalid inferred-gap repair policy')
     gutter=policy.get('physical_gutter_texels')
     if gutter is not None and (type(gutter) is not int or not 0<=gutter<=2):
         raise ValueError('Physical repair gutter must be an explicit 0..2 texels')
+    if 'physical_donors_only' in policy and (policy['physical_donors_only'] is not True or 'physical_gutter_texels' not in policy):
+        raise ValueError('Physical-only donors require explicit physical domain and true opt-in')
     names=policy['receiver_objects']
     if not isinstance(names,list) or not names or any(not isinstance(n,str) or not n for n in names) or len(set(names))!=len(names):
         raise ValueError('Repair requires explicit unique receiver names')
@@ -125,8 +127,10 @@ def repair_face(colors, protected, generated, positions, policy, object_min_z, b
         raise ValueError('Physical domain requires an explicit repair policy')
     result=colors.copy();selected=np.zeros(shape,dtype=bool)
     stats={'repaired_texels':0,'maximum_distance_texels':0.,'maximum_distance_world':0.}
-    if not generated.any():return result,selected,stats
-    distance,nearest=distance_transform_edt(~generated,return_indices=True)
+    donor_mask=generated & physical_domain if policy.get('physical_donors_only') else generated
+    stats['physical_donors_only']=bool(policy.get('physical_donors_only'))
+    if not donor_mask.any():return result,selected,stats
+    distance,nearest=distance_transform_edt(~donor_mask,return_indices=True)
     donor_positions=positions[tuple(nearest)]
     world_distance=np.linalg.norm(positions-donor_positions,axis=-1)
     z=positions[...,2]
