@@ -155,6 +155,9 @@ def state_bundle_hash(state_records, complete_contracts=None):
     return hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
 
 
+ORIGINAL_HALL_STATE_MANIFEST = Path(__file__).resolve().parents[3] / 'level-editor/work/nottingham-refinement/round-42/assets/nottingham-castle-main-hall/inspection/state-models/manifest.json'
+
+
 def complete_state_records(workspace, config, manifest, available, framing):
     """Validate complete appearances against frozen source and visibility authority.
 
@@ -190,6 +193,24 @@ def complete_state_records(workspace, config, manifest, available, framing):
             require(all(isinstance(v.get("slot"), int) and v["slot"] >= 0
                         and isinstance(v.get("material"), str) and v["material"] for v in faces.values()),
                     "Invalid state material assignment")
+    supplement_path = workspace / "contact-state-supplement.json"
+    supplement = read(supplement_path) if supplement_path.exists() else None
+    if supplement:
+        require(supplement.get("version") == 1 and supplement.get("model_sha256") == model_hash,
+                "Contact state supplement has stale model")
+        require((supplement.get("source_node"), supplement.get("component"), supplement.get("patch_id")) ==
+                ("building-505", "castle-hall-northwest-contact", patch), "Unsupported contact state receiver")
+        cap_binding = supplement["cap_proof"]
+        cap_path = Path(cap_binding["path"])
+        require(cap_path.resolve() == (workspace / "inspection/contact-material-provenance.json").resolve()
+                and sha(cap_path) == cap_binding["sha256"], "Contact atlas proof changed")
+        cap = read(cap_path)
+        require(cap.get("status") == "PASS" and cap.get("model_sha256") == model_hash
+                and cap.get("all_source_pixels") == cap.get("transferred_pixels") == 407,
+                "Contact source atlas is not completely verified")
+        require(len([r for r in records if r["source_node"] == "building-505"
+                     and r.get("projection_component") == "castle-hall-northwest-contact"]) == 1,
+                "Contact material receiver missing or duplicate")
     states = bindings["states"]
     require(len(states) == 2 and {s["state"] for s in states} == set(layers),
             "Saved state bindings must cover both states exactly")
@@ -205,8 +226,16 @@ def complete_state_records(workspace, config, manifest, available, framing):
                "occluder_nodes": sorted(available - set(hidden.get("hidden_nodes", [])))}
         if state == "revealed":
             row["exclude_occluder_components"] = hidden.get("hidden_components", [])
-        require(layers[state] == [row], "Complete state projection differs from source/ownership/visibility authority")
-        expected[state] = [dict(row, source_sha256=sha(source))]
+        rows = [row]
+        if supplement and state == "revealed":
+            row["receiver_components"] = [dict(source_node="building-505", patch_id=patch,
+                projection_components=["castle-hall-retained-roof", "castle-hall-removable-cover"])]
+            rows.append(dict(source_path=str((directory / manifest["sources"]["exterior"]).resolve()),
+                projection_label="exterior", receiver_nodes=["building-505"], occluder_nodes=row["occluder_nodes"],
+                receiver_components=[dict(source_node="building-505", patch_id=patch,
+                    projection_components=["castle-hall-northwest-contact"])]))
+        require(layers[state] == rows, "Complete state projection differs from source/ownership/visibility authority")
+        expected[state] = [dict(r, source_sha256=sha(r["source_path"])) for r in rows]
         binding = next(s for s in states if s["state"] == state)
         require(binding.get("hidden_context_nodes") == sorted(set(hidden.get("hidden_nodes", [])) - set(config["part_ids"])),
                 "Saved state foreign visibility differs from reviewed context")
@@ -215,6 +244,19 @@ def complete_state_records(workspace, config, manifest, available, framing):
                 "Saved state paths escape workspace")
         require(sha(model) == binding["model_sha256"] and sha(frame) == binding["frame_manifest_sha256"],
                 "Saved state model or packet changed")
+        if supplement:
+            proof_binding = supplement["states"][state]
+            proof_path = Path(proof_binding["path"])
+            require(proof_path.resolve() == (workspace / "inspection/state-models" / state / "source-preservation.json").resolve()
+                    and sha(proof_path) == proof_binding["sha256"], "Contact state preservation proof changed")
+            proof = read(proof_path)
+            require(proof.get("status") == "PASS" and proof.get("model_sha256") ==
+                    proof_binding["model_sha256"] == binding["model_sha256"], "Contact state proof has stale model")
+            require(bool(proof.get("extension_hash")), "Contact object/material signature absent")
+            if state == "covered":
+                contact_signature = proof["extension_hash"]
+            else:
+                require(proof["extension_hash"] == contact_signature, "Contact material or geometry differs between states")
         hidden_components = {(r["source_node"], r["projection_component"]) for r in hidden.get("hidden_components", [])}
         visible_names = {r["object"] for r in records if r["source_node"] not in hidden.get("hidden_nodes", [])
                          and (r["source_node"], r.get("projection_component")) not in hidden_components}
@@ -226,7 +268,21 @@ def complete_state_records(workspace, config, manifest, available, framing):
         require(packet["source_sha256"] == sha(source) and Path(packet["source_image"]).resolve() == source,
                 "Saved state source differs")
         require(packet.get("source_mask_evidence") == mask_evidence, "Saved state mask evidence differs")
-        supplemental_packet(frame.parent, config["asset_id"], framing)
+        state_framing = framing
+        if supplement:
+            origin = supplement.get("original_state_manifest")
+            if origin:
+                origin_path = Path(origin["path"])
+                require(origin_path.resolve() == ORIGINAL_HALL_STATE_MANIFEST.resolve(), "Unrecognized original state framing authority")
+                require(sha(origin_path) == origin["sha256"], "Frozen original state manifest changed")
+                original_states = read(origin_path)["states"]
+                original_state = next(r for r in original_states if r["state"] == state)
+                require(sha(original_state["model"]) == original_state["model_sha256"] == proof["original_model_sha256"],
+                        "Frozen original state model differs from preservation authority")
+                original_frame = Path(original_state["frame_manifest"])
+                require(sha(original_frame) == original_state["frame_manifest_sha256"], "Frozen original state framing changed")
+                state_framing = read(original_frame)
+        supplemental_packet(frame.parent, config["asset_id"], state_framing)
     return expected["covered"]
 
 
@@ -443,6 +499,8 @@ def inspect(workspace, asset):
             name: sha(workspace / name) for name in (
                 "projection-state-layers.json", "material-states.json",
                 "inspection/state-models/manifest.json")}
+        if (workspace / "contact-state-supplement.json").exists():
+            evidence["complete_state_contracts"]["contact-state-supplement.json"] = sha(workspace / "contact-state-supplement.json")
     return status, limitations, evidence, review
 
 

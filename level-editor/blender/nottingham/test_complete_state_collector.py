@@ -99,6 +99,76 @@ class CompleteStates(unittest.TestCase):
         self.write(str(p),m);self.save_bindings()
         with self.assertRaises(ValueError):self.run_guard()
 
+    def add_contact_contract(self):
+        # The supplement is supported only for the exact reviewed hall component.
+        self.config['part_ids'].append('building-505');self.available.add('building-505')
+        materials=json.loads((self.p/'material-states.json').read_text())
+        materials['records'].append(dict(object='contact',source_node='building-505',
+            projection_component='castle-hall-northwest-contact',
+            covered_face_materials={'0':{'slot':0,'material':'source'}},
+            revealed_face_materials={'0':{'slot':0,'material':'source'}}))
+        self.write('material-states.json',materials)
+        proof=self.p/'inspection/contact-material-provenance.json'
+        self.write(str(proof),dict(status='PASS',model_sha256=collector.sha(self.p/'model.blend'),
+            all_source_pixels=407,transferred_pixels=407))
+        supplement=dict(version=1,model_sha256=collector.sha(self.p/'model.blend'),source_node='building-505',
+            component='castle-hall-northwest-contact',patch_id='patch-008',
+            cap_proof=dict(path=str(proof),sha256=collector.sha(proof)),states={})
+        for b in self.bindings:
+            state=b['state']; row=self.layers[state][0]
+            row['receiver_nodes']=self.config['part_ids'][:];row['occluder_nodes']=sorted(set(row['occluder_nodes'])|{'building-505'})
+            if state=='revealed':
+                row['receiver_components']=[dict(source_node='building-505',patch_id='patch-008',
+                    projection_components=['castle-hall-retained-roof','castle-hall-removable-cover'])]
+                self.layers[state].append(dict(source_path=str(self.p/'covered.png'),projection_label='exterior',
+                    receiver_nodes=['building-505'],occluder_nodes=row['occluder_nodes'],receiver_components=[dict(
+                        source_node='building-505',patch_id='patch-008',projection_components=['castle-hall-northwest-contact'])]))
+            frame=Path(b['frame_manifest']);packet=json.loads(frame.read_text())
+            packet['projection_layers']=[dict(r,source_sha256=collector.sha(r['source_path'])) for r in self.layers[state]]
+            packet['object_names'].append('contact');packet['render_object_names'].append('contact')
+            self.write(str(frame),packet);b['frame_manifest_sha256']=collector.sha(frame);b['object_names'].append('contact')
+            proof=self.p/'inspection/state-models'/state/'source-preservation.json'
+            self.write(str(proof),dict(status='PASS',model_sha256=b['model_sha256'],extension_hash='exact-material-signature'))
+            supplement['states'][state]=dict(path=str(proof),sha256=collector.sha(proof),model_sha256=b['model_sha256'])
+        self.write('contact-state-supplement.json',supplement);self.write('projection-state-layers.json',self.layers);self.save_bindings()
+
+    def test_contact_exact_supplement_passes(self):
+        self.add_contact_contract();self.run_guard()
+
+    def test_contact_changed_component_source_model_or_proof_fails(self):
+        self.add_contact_contract()
+        path=self.p/'contact-state-supplement.json';original=json.loads(path.read_text())
+        for key,value in [('component','other'),('model_sha256','wrong')]:
+            with self.subTest(key=key):
+                changed=copy.deepcopy(original);changed[key]=value;self.write(str(path),changed)
+                with self.assertRaises(ValueError):self.run_guard()
+        self.write(str(path),original)
+        changed=copy.deepcopy(self.layers);changed['revealed'][1]['source_path']=str(self.p/'revealed.png')
+        self.write('projection-state-layers.json',changed)
+        with self.assertRaises(ValueError):self.run_guard()
+        self.write('projection-state-layers.json',self.layers)
+        Path(original['cap_proof']['path']).write_text('{}')
+        with self.assertRaises(ValueError):self.run_guard()
+
+    def test_frozen_state_framing_rejects_wrong_reference_hash_and_model(self):
+        self.add_contact_contract()
+        supplement_path=self.p/'contact-state-supplement.json';supplement=json.loads(supplement_path.read_text())
+        origin=self.p/'original-state-manifest.json'
+        self.write(str(origin),dict(states=copy.deepcopy(self.bindings)))
+        supplement['original_state_manifest']=dict(path=str(origin),sha256=collector.sha(origin))
+        self.write(str(supplement_path),supplement)
+        with patch.object(collector,'ORIGINAL_HALL_STATE_MANIFEST',self.p/'different'):
+            with self.assertRaises(ValueError):self.run_guard()
+        with patch.object(collector,'ORIGINAL_HALL_STATE_MANIFEST',origin):
+            supplement['original_state_manifest']['sha256']='wrong';self.write(str(supplement_path),supplement)
+            with self.assertRaises(ValueError):self.run_guard()
+            supplement['original_state_manifest']['sha256']=collector.sha(origin)
+            for state in ('covered','revealed'):
+                b=supplement['states'][state];proof=json.loads(Path(b['path']).read_text())
+                proof['original_model_sha256']='wrong';self.write(b['path'],proof);b['sha256']=collector.sha(b['path'])
+            self.write(str(supplement_path),supplement)
+            with self.assertRaises(ValueError):self.run_guard()
+
 
 class StateRevisions(unittest.TestCase):
     def test_existing_revision_unchanged(self):
