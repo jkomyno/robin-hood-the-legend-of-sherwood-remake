@@ -45,6 +45,9 @@ for asset in args.assets:
   for x,y in witnesses:
    if lo[0]<=x<hi[0] and lo[1]<=y<hi[1] and components[y-lo[1],x-lo[0]]:visible[int(components[y-lo[1],x-lo[0]])]=visible.get(int(components[y-lo[1],x-lo[0]]),0)+1
    else:outside+=1
+  if tree is not None and witnesses:
+   distances,nearest=tree.query(np.array(witnesses));nearest_surface_distance,wi=cKDTree(pixel).query(np.array(witnesses));wd=np.linalg.norm(world[wi]-world[donors][nearest],axis=1)
+   results.append(dict(object=name,face=face,witness_donor_bounds=dict(count=len(witnesses),max_distance_texels=float(distances.max()),max_distance_world=float(wd.max()),max_nearest_physical_texel_distance=float(nearest_surface_distance.max()),within16texel8world=int(((distances<=16)&(wd<=8)).sum()),world_z_min=float(world[wi,2].min()),world_z_max=float(world[wi,2].max()))))
   for cid,hits in visible.items():
    selection=ids==cid;pp=pixel[selection];ww=world[selection];component=components==cid
    record=dict(physical_area_world2=float(areas[selection].sum()),face_area_world2=float(areas.sum()),maximum_inscribed_diameter_texels=float(distance_transform_edt(np.pad(component,1)).max()*2),component=cid,texels=int(selection.sum()),face_texels=len(pixel),face_fraction=float(selection.mean()),visible_gray_witnesses=hits,atlas_bbox=[*pp.min(0).tolist(),*(pp.max(0)+1).tolist()],world_min=ww.min(0).tolist(),world_max=ww.max(0).tolist(),touches_face_edge=bool((binary_dilation(component)&~inside).any()))

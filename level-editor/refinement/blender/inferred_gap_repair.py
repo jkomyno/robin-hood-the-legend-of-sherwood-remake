@@ -172,7 +172,7 @@ def repair_face(colors, protected, generated, positions, policy, object_min_z, b
         if physical_count>physical_samples*fraction_limit:
             raise ValueError(f'Inferred-gap repair exceeds physical face budget: selected={physical_count}, physical_samples={physical_samples}')
         if component_limits is not None and (physical_count>component_limits['max_physical_texels'] or physical_count*physical_texel_area>component_limits['max_physical_area_world2']):
-            raise ValueError('Combined physical components exceed explicit per-face cap')
+            raise ValueError(f'Combined physical components exceed explicit per-face cap: texels={physical_count}, area={physical_count*physical_texel_area:.6f}, limits={component_limits}, selected_components={[v for v in stats["components"] if v["eligible"]]}')
         stats.update(physical_repaired_texels=physical_count,physical_face_samples=physical_samples)
     donors=colors[tuple(nearest)]
     result[selected,:3]=donors[selected,:3]
