@@ -528,3 +528,23 @@ test("orthographic ground picking includes visible points behind the ray origin"
   Object.assign(viewport, { renderer: null, orbit: null });
   viewport.dispose();
 });
+
+test("source node names cannot redirect a hit to another asset's wrapper", () => {
+  const {viewport, publish}=fixture();
+  const document=documentFixture();
+  document.objects.push({...structuredClone(document.objects[0]!),id:"other",node:"other-source"});
+  const source=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());
+  source.name="other";
+  const other=source.clone();
+  const asset=new THREE.Group();asset.add(source,other);
+  viewport.replaceMap(asset,null,new Map([["building-000",source],["other-source",other]]));
+  publish(document);
+  const internals=viewport as unknown as {
+    partViews:Map<string,{wrapper:THREE.Group;meshes:THREE.Mesh[]}>;
+    partOfHit(hit:{object:THREE.Object3D}):Level3D["objects"][number]|null;
+  };
+  const clicked=internals.partViews.get("part")!.meshes[0]!;
+  assert.equal(clicked.name,"other");
+  assert.equal(internals.partOfHit({object:clicked})?.id,"part");
+  viewport.dispose();
+});

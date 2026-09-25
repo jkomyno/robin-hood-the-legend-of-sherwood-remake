@@ -1,0 +1,47 @@
+{
+  "model": "openai/gpt-image-2.5-sunburst",
+  "provider": "openrouter",
+  "prompt": "Refine ONLY the terrain patch in image 1 into detailed native-resolution game ground. Image 1 is a crop of the existing base texture; preserve its exact framing, river position, bank shape, path locations and the fine-scale material palette. Increase actual detail, do not simply enlarge it. Image 2 is the matching exact layout drawing crop. It overrides image 1 inside the clearly bounded CASTLE COURTYARD polygon: replace the grass and rough rocks there with worn compacted ochre-brown earth, irregular aged limestone cobbles and flagstone paving along the pale gate-to-keep and stores approaches. The interior must clearly differ from the grassy exterior. Fill that polygon to its exact boundary, without painting walls or an outline; real 3D curtain walls will cover the boundary. No grass lawn inside the castle, only tiny weeds at paving joints. Elsewhere follow image 1, correcting path positions to image 2 if necessary. Image 3 shows the WHOLE base texture for color and spatial context only; do NOT output the whole image. Images 4 and 5 are original-game style references for grass, rocks, path dirt and water. Do not copy their objects or perspective. Strict flat overhead diffuse terrain, not isometric art. Do not add buildings, walls, bridges, fences, props, characters, cliffs, tall bushes, tree canopies, hard shadows, labels, frames or borders. Grass should be natural fine blades, stones small embedded pieces, banks muddy and water olive-brown with restrained ripples. Keep outer edge colors and features consistent with image 1 so the patch joins neighboring crops seamlessly. Output the entire first patch at exactly 2816x2816 pixels.",
+  "base_sha256": "1803b10cb85231677c573ca251f74c361be954a16be8ced7918805098c409582",
+  "patches": [
+    {
+      "x": 0,
+      "y": 0
+    },
+    {
+      "x": 1152,
+      "y": 0
+    },
+    {
+      "x": 0,
+      "y": 1152
+    },
+    {
+      "x": 1152,
+      "y": 1152
+    }
+  ],
+  "source_crop_size": 1408,
+  "native_patch_size": 2816,
+  "output_size": 5120,
+  "overlap_pixels": 512,
+  "style_references": [
+    {
+      "file": "Robin's Godfather.png",
+      "description": "original game: grass, banks, olive water, pale rocks and worn dirt",
+      "sha256": "8aacfa1580a138f0013156676e516f7df4b72ad32cfaf7f63690f6026a044901"
+    },
+    {
+      "file": "Sherwood Forest.png",
+      "description": "original game: grass blades, rock surfaces and woodland ground",
+      "sha256": "59fa8f733b83cd8d8b2903a7f940610b36a40ead70e187c2c0f93910f107efa0"
+    }
+  ],
+  "runtime_encoding": {
+    "format": "jpeg",
+    "quality": 95,
+    "chroma_subsampling": "4:4:4",
+    "width": 5120,
+    "height": 5120
+  }
+}

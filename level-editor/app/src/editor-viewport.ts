@@ -22,7 +22,8 @@ import type { SceneEntities } from "./population-view.ts";
 import type { Selection } from "./document-commands.ts";
 import { disposeObjectResources } from "./resources.ts";
 import { TextureDisplay } from "./texture-display.ts";
-import { PatchDisplay, isEffectivelyVisible } from "./patch-display.ts";
+import { PatchDisplay } from "./patch-display.ts";
+import { setViewportRay, visibleSurface } from "./viewport-picking.ts";
 
 interface View {
   wrapper: THREE.Group;
@@ -548,7 +549,7 @@ export class EditorViewport {
 
   private partOfHit(h: THREE.Intersection): Level3DObject | null {
     let node: THREE.Object3D | null = h.object;
-    while (node && !this.partViews.has(node.name)) node = node.parent;
+    while (node && this.partViews.get(node.name)?.wrapper !== node) node = node.parent;
     return node
       ? (this.bindings.document()?.objects.find((o) => o.id === node!.name) ??
           null)
@@ -594,7 +595,8 @@ export class EditorViewport {
         ((e.clientX - rect.left) / rect.width) * 2 - 1,
         -((e.clientY - rect.top) / rect.height) * 2 + 1,
       );
-      this.raycaster.setFromCamera(ndc, this.activeCamera());
+      this.scene.updateMatrixWorld(true);
+      setViewportRay(this.raycaster, ndc, this.activeCamera());
     };
     el.addEventListener(
       "pointerdown",
@@ -611,7 +613,7 @@ export class EditorViewport {
         const hits = this.raycaster.intersectObjects(
           [this.objectsRoot, ...(this.groundNode ? [this.groundNode] : [])],
           true,
-        ).filter(hit => isEffectivelyVisible(hit.object));
+        ).filter(visibleSurface);
         if (e.button === 0) {
           // a left drag that starts on the selection moves it along the ground plane
           const s = this.bindings.selection();
@@ -1007,9 +1009,10 @@ export class EditorViewport {
       (clientX - rect.left) / rect.width * 2 - 1,
       -(clientY - rect.top) / rect.height * 2 + 1,
     );
-    this.raycaster.setFromCamera(ndc, this.activeCamera());
+    this.scene.updateMatrixWorld(true);
+    setViewportRay(this.raycaster, ndc, this.activeCamera());
     const hit = this.groundNode
-      ? this.raycaster.intersectObject(this.groundNode, true).find(hit => isEffectivelyVisible(hit.object))
+      ? this.raycaster.intersectObject(this.groundNode, true).find(visibleSurface)
       : undefined;
     let point = hit?.point ?? null;
     if (!point) {
@@ -1031,8 +1034,9 @@ export class EditorViewport {
       ((e.clientX - rect.left) / rect.width) * 2 - 1,
       -((e.clientY - rect.top) / rect.height) * 2 + 1,
     );
-    this.raycaster.setFromCamera(ndc, this.activeCamera());
-    const hits = this.raycaster.intersectObject(this.objectsRoot, true).filter(hit => isEffectivelyVisible(hit.object));
+    this.scene.updateMatrixWorld(true);
+    setViewportRay(this.raycaster, ndc, this.activeCamera());
+    const hits = this.raycaster.intersectObject(this.objectsRoot, true).filter(visibleSurface);
     for (const h of hits) {
       const part = this.partOfHit(h);
       if (!part) continue;

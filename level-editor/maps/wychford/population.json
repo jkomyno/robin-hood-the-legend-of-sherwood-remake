@@ -639,8 +639,8 @@
       "role": "soldier",
       "sprite": "soldier",
       "position": [
-        2620,
-        1080
+        2540,
+        1100
       ],
       "direction": 8,
       "duty": "Restricts access to the keep stairs."
@@ -651,8 +651,8 @@
       "role": "soldier",
       "sprite": "guard",
       "position": [
-        2860,
-        1090
+        2780,
+        1110
       ],
       "direction": 8,
       "duty": "Covers the eastern keep approach."
@@ -1023,8 +1023,8 @@
       "role": "civilian",
       "sprite": "worker",
       "position": [
-        2370,
-        1090
+        2300,
+        1210
       ],
       "direction": 4,
       "duty": "Works in the garrison repair yard."
@@ -1302,8 +1302,8 @@
       "name": "Tollkeeper ledger",
       "sprite": "ledger",
       "position": [
-        2740,
-        1100
+        2660,
+        1120
       ],
       "quantity": 1,
       "purpose": "Mission objective at the guarded keep approach."

@@ -1,5 +1,18 @@
 # Post-port Features
 
+- **Visible-surface editor picking.** Selection and drag rays cover the complete
+  orthographic clipping range with reversed depth, skip transparent foliage and
+  atlas pixels, and
+  identify imported parts by their actual wrapper objects. Reused model node
+  names no longer redirect clicks to unrelated assets. Building texture ownership
+  masks retain their opaque display behavior when picking.
+- **Wychford terrain and courtyard revision.** Reference-guided OpenRouter
+  Sunburst generation produces a 5120-square terrain mosaic from four overlapping
+  patches. The castle has worn earth and paving, its gate faces outward, and the
+  repositioned keep leaves more space along the eastern curtain. Full-resolution
+  ground art is retained in scene export.
+
+
 - **Authored town population previews.** Wychford includes 46 soldiers, civilians
   and beggars, 14 item placements and nine guarded or civilian routines inspired
   by the mission layouts. Directional idle/walk sprites load from library atlases;

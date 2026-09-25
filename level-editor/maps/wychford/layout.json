@@ -3,14 +3,15 @@
     [
       "leicester-great-keep",
       "Tollkeeper's keep",
-      2730,
-      800
+      2650,
+      820
     ],
     [
       "derby-south-gatehouse",
       "Stronghold gate",
       2540,
-      1370
+      1370,
+      27
     ],
     [
       "derby-east-courtyard-north-shelter",
@@ -172,8 +173,8 @@
     [
       "derby-east-courtyard-south-shelter",
       "Garrison smithy",
-      2350,
-      990
+      2310,
+      1130
     ]
   ],
   "roads": [

@@ -140,15 +140,15 @@ for(const [label,points] of [
   ["Dyer approach",[[1365,2205],[1480,2170],[1540,1990],[1560,1850]]],
   ["Reeve gate",[[1150,585],[1160,625],[1200,635]]],
   ["Mill door",[[1840,1840],[1850,1890],[1900,1920]]],
-  ["Keep approach",[[2720,1000],[2720,1100],[2630,1160]]],
+  ["Keep approach",[[2640,1020],[2680,1110],[2630,1160]]],
   ["Stores approach",[[3040,1190],[2800,1200],[2630,1160]]],
   ["Gatekeeper yard",[[2920,1690],[2860,1760],[2790,1790]]],
   ["Stable entrance",[[3080,1970],[3070,2050],[3010,2050]]],
 ] as [string,[number,number][]][]) road(label,21,points);
-// Art is painted in ground-plane proportions (roughly 3600 : 2400/sin(35°)).
-// Bake it to map-pixel proportions so its detail shares the meshes' foreshortening.
+// Ground art is authored from an overhead guide and projected by the ground mesh.
 const art = new URL("../../maps/wychford/", import.meta.url);
-const terrain = await sharp(await fs.readFile(new URL("terrain.png", art))).resize(size[0],size[1],{fit:"fill"}).png().toBuffer();
+// Ground UVs cover the full texture independently of map dimensions.
+const terrain = await fs.readFile(new URL("terrain.jpg", art));
 const riverTile = await sharp(await fs.readFile(new URL("river.png", art))).resize(256,512,{fit:"fill"}).png().toBuffer();
 const roadPixels = await sharp(await fs.readFile(new URL("path.png",art))).resize(128,256).ensureAlpha().raw().toBuffer();
 for(let y=0;y<256;y++) for(let x=0;x<128;x++) {
@@ -160,12 +160,12 @@ const roadTile=await sharp(roadPixels,{raw:{width:128,height:256,channels:4}}).p
 for(const spline of document.splines!) if(spline.kind==="road") spline.texture="data:image/png;base64,"+roadTile.toString("base64");
 document.splines![0]!.texture = "data:image/png;base64," + riverTile.toString("base64");
 await fs.mkdir(output,{recursive:true});
-await fs.writeFile(path.join(output,name+"-ground.png"),terrain);
+await fs.writeFile(path.join(output,name+"-ground.jpg"),terrain);
 const gltf=new Document(),buffer=gltf.createBuffer(),unlit=gltf.createExtension(KHRMaterialsUnlit);
 const root=gltf.createNode("map").setRotation([-Math.SQRT1_2,0,0,Math.SQRT1_2]);
 gltf.createScene("scene").addChild(root);
 const material=gltf.createMaterial("Wychford ground").setDoubleSided(true)
-  .setBaseColorTexture(gltf.createTexture().setImage(terrain).setMimeType("image/png"))
+  .setBaseColorTexture(gltf.createTexture().setImage(terrain).setMimeType("image/jpeg"))
   .setExtension("KHR_materials_unlit",unlit.createUnlit());
 // A banked river channel and raised bailey are actual ground geometry.
 const nx=130,ny=110,positions:number[]=[],texcoords:number[]=[],indices:number[]=[];
@@ -186,7 +186,7 @@ root.addChild(gltf.createNode("ground").setMesh(gltf.createMesh().addPrimitive(g
   .setAttribute("POSITION",pos).setAttribute("TEXCOORD_0",uv).setIndices(idx).setMaterial(material))));
 await new NodeIO().registerExtensions(ALL_EXTENSIONS).write(path.join(output,document.glb),gltf);
 document.provenance={glb_sha256:hash(await fs.readFile(path.join(output,document.glb)))};
-const scene=parseSceneDoc({version:1,standalone:true,map:name,size,camera,placements:[],ground:{texture:name+"-ground.png",rect:[0,0,...size]}});
+const scene=parseSceneDoc({version:1,standalone:true,map:name,size,camera,placements:[],ground:{texture:name+"-ground.jpg",rect:[0,0,...size]}});
 parseLevel3D(document,{scene});
 await fs.writeFile(filename,JSON.stringify(document,null,2)+"\n");
 await fs.writeFile(path.join(output,name+"-volumes.scene.json"),JSON.stringify(scene,null,2)+"\n");
