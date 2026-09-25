@@ -683,6 +683,8 @@ def main(argv=None):
                     require(file_hashes(baseline_dir) == original_config['input_files'],
                             'Frozen hall baseline packet changed')
                 origin = frozen_mask_origins(workspace, config)
+                if (workspace / 'contact-state-supplement.json').exists():
+                    origin.update(frozen_mask_origins(original_workspace, original_config))
                 state_records['revealed_input'] = supplemental_packet(
                     baseline_dir, asset['id'], complete_state_framing(workspace, 'revealed', framing), mask_origin=origin)
             evidence['state_packets'] = state_records
