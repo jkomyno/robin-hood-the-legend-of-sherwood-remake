@@ -6,11 +6,12 @@ from mathutils import Matrix,Vector
 from mathutils.bvhtree import BVHTree
 from PIL import Image
 sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
-def run(folder,subrays=False):
+def run(folder,subrays=False,bake=None):
  folder=Path(folder);report=json.loads((folder/'coverage.json').read_text());model=None
  # Every provenance evidence binds its saved model independently in coverage.json.
  jobroot=Path(__file__).resolve().parents[3]/'level-editor/work/nottingham-refinement/coordinator-audit/final-texture-coverage'
- if (folder.parent/'worker.blend').exists():bake=folder.parent
+ if bake is not None:bake=Path(bake).resolve()
+ elif (folder.parent/'worker.blend').exists():bake=folder.parent
  elif (folder.parent/'depth-review.json').exists():bake=Path(json.loads((folder.parent/'depth-review.json').read_text())['bake'])
  else:
   jobs=json.loads((jobroot/'jobs.json').read_text());rows=jobs['jobs']+jobs['skips'];row=next(r for r in rows if r.get('model_sha256')==report['model_sha256']);bake=Path(row['bake'])
