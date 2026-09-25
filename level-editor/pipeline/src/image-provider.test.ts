@@ -18,6 +18,10 @@ test("Provider identity isolates cache and credentials while OpenAI remains defa
   assert.notDeepEqual(providerIdentity("openai"),providerIdentity("openrouter"));
   assert.throws(()=>imageProvider("other"),/Choose/);
 });
+test("Explanatory references follow unchanged source and lighting references", () => {
+  const body=openRouterBody({n:"1"},Buffer.from("source"),Buffer.from("light"),true,[Buffer.from("crop-a"),Buffer.from("crop-b")]);
+  assert.deepEqual(body.input_references.map(r=>Buffer.from(r.image_url.url.split(",")[1]!,"base64").toString()),["source","light","crop-a","crop-b"]);
+});
 test("Capability guard rejects unavailable model, quality and reference capacity", () => {
   const meta={id:"openai/gpt-image-2.5-sunburst",endpoints:[{supported_parameters:{quality:{type:"enum",values:["high"]},n:{type:"range",min:1,max:10},input_references:{type:"range",min:0,max:16}}}]};
   assert.doesNotThrow(()=>validateOpenRouterCapabilities(meta,2));

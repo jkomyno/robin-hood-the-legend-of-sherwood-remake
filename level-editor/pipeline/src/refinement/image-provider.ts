@@ -9,10 +9,10 @@ export function providerIdentity(provider: ImageProvider) {
     ? { provider, model: "openai/gpt-image-2.5-sunburst", endpoint: "https://openrouter.ai/api/v1/images", credential: "OPENROUTER_API_KEY" }
     : { provider, model: "gpt-image-2.5-sunburst", endpoint: "https://api.openai.com/v1/images/edits", credential: "OPENAI_API_KEY" };
 }
-export function openRouterBody<T extends Record<string,string>>(parameters: T, input: Buffer, lighting: Buffer | null, omitMask: boolean) {
+export function openRouterBody<T extends Record<string,string>>(parameters: T, input: Buffer, lighting: Buffer | null, omitMask: boolean, auxiliary: Buffer[] = []) {
   if (!omitMask) throw new Error("OpenRouter transport requires --no-mask; local source protection remains required");
   return { ...parameters, model: providerIdentity("openrouter").model, n: Number(parameters.n),
-    input_references: [input, ...(lighting ? [lighting] : [])].map(bytes => ({ type: "image_url", image_url: { url: `data:image/png;base64,${bytes.toString("base64")}` } })) };
+    input_references: [input, ...(lighting ? [lighting] : []), ...auxiliary].map(bytes => ({ type: "image_url", image_url: { url: `data:image/png;base64,${bytes.toString("base64")}` } })) };
 }
 type Capability = { type: string; values?: string[]; min?: number; max?: number };
 export function validateOpenRouterCapabilities(value: unknown, references: number): void {

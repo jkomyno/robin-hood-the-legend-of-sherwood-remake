@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import sharp from "sharp";
 import { requireEnv } from "../env.ts";
 import { imageProvider, providerIdentity, openRouterBody, validateOpenRouterCapabilities } from "./image-provider.ts";
+import { auxiliaryReferences } from "./auxiliary-references.ts";
 import { atlasPrompt } from "./atlas-prompt.ts";
 import { validatePadding, padTransport, cropTransport, type Padding } from "./transport-padding.ts";
 
@@ -87,6 +88,10 @@ async function main(): Promise<void> {
   const lightingPath=lightingIndex<0?null:process.argv[lightingIndex+1];
   if(lightingIndex>=0&&!lightingPath)throw new Error("Supply the pure-gray lighting reference path");
   const lighting=lightingPath?await fs.readFile(path.resolve(lightingPath)):null;
+  const auxiliaryIndex=process.argv.indexOf("--auxiliary-references");
+  const auxiliaryPath=auxiliaryIndex<0?null:process.argv[auxiliaryIndex+1];
+  if(auxiliaryIndex>=0&&(!auxiliaryPath||auxiliaryPath.startsWith("--")))throw new Error("Supply the auxiliary reference manifest");
+  const auxiliary=await auxiliaryReferences(auxiliaryPath?path.resolve(auxiliaryPath):null,input,lighting);
   const suffixIndex=process.argv.indexOf("--prompt-suffix");
   const promptSuffix=suffixIndex<0?"":process.argv[suffixIndex+1];
   if(suffixIndex>=0&&(!promptSuffix||promptSuffix.startsWith("--")))
@@ -117,7 +122,7 @@ Replace every masked untextured surface with the appropriate texture. Return the
   const atlasInstructions=atlasPrompt(manifest.projection_kind,manifest.views.length,variant,!!lighting);
   const omitMask=process.argv.includes("--no-mask");
   if(omitMask&&variant!=="short")throw new Error("The no-mask control currently requires --prompt-variant short");
-  const outputDirectory=path.join(directory,`generation-${variant}${omitMask?"-no-mask":""}${lighting?"-with-lighting":""}${provider==="openrouter"?"-openrouter":""}`);
+  const outputDirectory=path.join(directory,`generation-${variant}${omitMask?"-no-mask":""}${lighting?"-with-lighting":""}${provider==="openrouter"?"-openrouter":""}${auxiliary.images.length?"-with-auxiliary":""}`);
   await fs.mkdir(outputDirectory,{recursive:true});
   const prompt=omitMask?"Create an image from the provided reference sheet of 8 views of the same asset. The untextured gray shaded areas mark missing textures. Fill in these regions logically and consistently across all views, preserving all existing textured pixels exactly. Keep the same asset design, textures, lighting, perspective, and black background.":prompts[variant];
   const transportInput=await padTransport(input,padding);
@@ -126,12 +131,15 @@ Replace every masked untextured surface with the appropriate texture. Return the
   const parameters={model:identity.model,quality:"high",size:`${canvasWidth}x${canvasHeight}`,n:"1",output_format:"png",
     prompt:(atlasInstructions ?? (prompt+" Follow the lighting and shading shown on the gray surfaces, preserving the same sun direction across all eight views."+
       (lighting?" The second image shows the same eight views entirely in gray; use it as the reference for lighting, shadows, and shape, and return only the completed first image.":"")))+
-      (promptSuffix?" "+promptSuffix:"")+(padding?" The bottom 128 pixels are locked transport padding. Preserve them; the eight original views occupy the top 1024 by 512 pixels without any scaling or repositioning.":"")};
-  const hash=crypto.createHash("sha256").update(transportInput).update(transportLighting??Buffer.alloc(0)).update(omitMask?Buffer.alloc(0):transportMask).update(JSON.stringify(parameters)).update(JSON.stringify({provider,endpoint:identity.endpoint})).digest("hex");
+      (promptSuffix?" "+promptSuffix:"")+auxiliary.instructions+(padding?" The bottom 128 pixels are locked transport padding. Preserve them; the eight original views occupy the top 1024 by 512 pixels without any scaling or repositioning.":"")};
+  const cacheHash=crypto.createHash("sha256").update(transportInput).update(transportLighting??Buffer.alloc(0)).update(omitMask?Buffer.alloc(0):transportMask).update(JSON.stringify(parameters)).update(JSON.stringify({provider,endpoint:identity.endpoint}));
+  if(auxiliary.evidence){cacheHash.update(JSON.stringify(auxiliary.evidence));for(const image of auxiliary.images)cacheHash.update(image);}
+  const hash=cacheHash.digest("hex");
   const cache=path.join(directory,"api-cache",hash);await fs.mkdir(cache,{recursive:true});
-  await fs.writeFile(path.join(cache,"request.json"),JSON.stringify({provider,endpoint:identity.endpoint,parameters,transport_padding:padding,input_sha256:crypto.createHash("sha256").update(transportInput).digest("hex"),lighting_sha256:transportLighting?crypto.createHash("sha256").update(transportLighting).digest("hex"):null,mask_sha256:omitMask?null:crypto.createHash("sha256").update(transportMask).digest("hex")},null,2));
+  await fs.writeFile(path.join(cache,"request.json"),JSON.stringify({provider,endpoint:identity.endpoint,parameters,transport_padding:padding,input_sha256:crypto.createHash("sha256").update(transportInput).digest("hex"),lighting_sha256:transportLighting?crypto.createHash("sha256").update(transportLighting).digest("hex"):null,mask_sha256:omitMask?null:crypto.createHash("sha256").update(transportMask).digest("hex"),...(auxiliary.evidence?{auxiliary_references:auxiliary.evidence}:{})},null,2));
   await fs.writeFile(path.join(cache,"input.png"),transportInput);await fs.writeFile(path.join(cache,"mask.png"),transportMask);
   if(transportLighting)await fs.writeFile(path.join(cache,"lighting.png"),transportLighting);
+  for(const [index,image] of auxiliary.images.entries())await fs.writeFile(path.join(cache,`auxiliary-${index}.png`),image);
   let response:{status:number;body:unknown};
   try { response=JSON.parse(await fs.readFile(path.join(cache,"response.json"),"utf8")); }
   catch(error) {
@@ -139,18 +147,19 @@ Replace every masked untextured surface with the appropriate texture. Return the
     let body: FormData | string;
     const headers: Record<string,string>={Authorization:`Bearer ${requireEnv(identity.credential)}`};
     if(provider==="openrouter"){
-      const request=openRouterBody(parameters,transportInput,transportLighting,omitMask);
+      const request=openRouterBody(parameters,transportInput,transportLighting,omitMask,auxiliary.images);
       const capabilities=await fetch(`${identity.endpoint}/models/${identity.model}/endpoints`,{headers});
       if(!capabilities.ok)throw new Error(`OpenRouter capability discovery failed: ${capabilities.status}`);
       const metadata:unknown=await capabilities.json();
       await fs.writeFile(path.join(cache,"capabilities.json"),JSON.stringify(metadata,null,2));
-      validateOpenRouterCapabilities(metadata,lighting?2:1);
+      validateOpenRouterCapabilities(metadata,(lighting?2:1)+auxiliary.images.length);
       headers["Content-Type"]="application/json";
       body=JSON.stringify(request);
     }else{
     const form=new FormData();for(const [key,value]of Object.entries(parameters))form.append(key,value);
     form.append(lighting?"image[]":"image",new Blob([new Uint8Array(transportInput)],{type:"image/png"}),"input.png");
     if(lighting)form.append("image[]",new Blob([new Uint8Array(transportLighting!)],{type:"image/png"}),"lighting.png");
+    for(const [index,image] of auxiliary.images.entries())form.append("image[]",new Blob([new Uint8Array(image)],{type:"image/png"}),`auxiliary-${index}.png`);
     if(!omitMask)form.append("mask",new Blob([new Uint8Array(transportMask)],{type:"image/png"}),"mask.png");
     body=form;
     }
@@ -188,7 +197,7 @@ Replace every masked untextured surface with the appropriate texture. Return the
     }
   }
   await sharp(result,{raw:{width:manifest.layout.width,height:manifest.layout.height,channels:4}}).png().toFile(path.join(outputDirectory,"generated-preserved.png"));
-  const report={transportPadding:padding,model:identity.model,provider,endpoint:identity.endpoint,quality:parameters.quality,variant,maskSent:!omitMask,lightingReferenceSent:!!lighting,prompt:parameters.prompt,status:response.status,filled,changedProtected,rawChangedProtected,
+  const report={transportPadding:padding,model:identity.model,provider,endpoint:identity.endpoint,quality:parameters.quality,variant,maskSent:!omitMask,lightingReferenceSent:!!lighting,...(auxiliary.evidence?{auxiliary_references:auxiliary.evidence}:{}),prompt:parameters.prompt,status:response.status,filled,changedProtected,rawChangedProtected,
     protectedTexturePixels,rawChangedTexturePixels,rawChangedBackgroundPixels,
     rawProtectedTextureMeanAbsoluteError:protectedTexturePixels?rawTextureAbsoluteError/(3*protectedTexturePixels):0,cache,outputDirectory};
   await fs.writeFile(path.join(outputDirectory,"generation.json"),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
