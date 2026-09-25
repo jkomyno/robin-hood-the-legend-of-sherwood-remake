@@ -38,3 +38,14 @@ def bounded_origin(point,direction,plane):
 def visible_sample(hit, point, hit_owner, expected_owner):
     return (hit is not None and hit_owner==expected_owner and
             float(np.linalg.norm(np.asarray(hit,dtype=np.float64)-np.asarray(point,dtype=np.float64)))<=.02)
+
+
+def background_faces(manifest, face_counts):
+    key='texture_generated_background_face_indices'
+    if key not in manifest:return None
+    if manifest.get('texture_generated_background_max_rgb') is None:
+        raise ValueError('Face-scoped background filtering requires an explicit threshold')
+    proxy=dict(manifest,texture_generated_bounded_visibility=manifest[key])
+    scope=bounded_faces(proxy,face_counts)
+    if not scope:raise ValueError('Face-scoped background filtering requires nonempty scope')
+    return scope
