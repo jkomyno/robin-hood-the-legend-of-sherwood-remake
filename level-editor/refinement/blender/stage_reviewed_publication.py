@@ -139,7 +139,7 @@ def stage(plan_path):
         bpy.context.view_layer.update()
         ground_handoff=import_asset_geometry(item['blend_path'],asset_id=item['asset_id'],
             object_names=item['object_names'],collection_name=collection.name,source_nodes=['ground'])
-        ground_handoff['projection_kind']='planar-atlas'
+        ground_handoff['projection_kind']=item['projection_kind']
         ground_handoff['source_blend_sha256']=item['blend_sha256']
         imports.append(ground_handoff)
     if plan.get('ground_texture_handoff'):

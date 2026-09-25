@@ -101,10 +101,10 @@ def stage(manifest, asset_id, output, *, map_name, level, decisions=None, expect
         raise ValueError('Private library included unapproved asset')
     descriptor=json.loads((output/'3d-assets'/asset_id/'asset.json').read_text())
     expected_parts=sorted(node for state in endpoint_plan['states'].values() for node in state['source_nodes']) if endpoint_plan else sorted(config['part_ids'])
-    if texture_handoff and texture_handoff['projection_kind']=='planar-atlas':
+    if texture_handoff and texture_handoff['projection_kind'] in {'planar-atlas', 'uv-atlas'}:
         if descriptor['parts'] or {c['source_node'] for c in descriptor['components']}!={'ground'}:
             raise ValueError('Planar export must retain ground component without obstacle parts')
-        descriptor['projection_kind']='planar-atlas'
+        descriptor['projection_kind']=texture_handoff['projection_kind']
         (output/'3d-assets'/asset_id/'asset.json').write_text(json.dumps(descriptor,indent=2)+'\n')
     elif sorted(part['node'] for part in descriptor['parts'])!=expected_parts:
         raise ValueError('Export omitted approved canonical part')

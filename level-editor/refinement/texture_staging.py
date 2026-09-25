@@ -198,7 +198,9 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
         raise ValueError('Texture handoff requires completed geometry and actual-view validation')
     if frames.get('asset_id') != asset_id or config.get('asset_id') != asset_id:
         raise ValueError('Texture frame/worker identity mismatch')
-    if frames.get('geometry_revision') != item['revision']['sha256'] or frames.get('input_sha256') != approval['input_sha256']:
+    uv_atlas = frames.get('projection_kind') == 'uv-atlas'
+    frame_input = frames.get('input_sha256', validation.get('input_sha256') if uv_atlas else None)
+    if frames.get('geometry_revision') != item['revision']['sha256'] or frame_input != approval['input_sha256']:
         raise ValueError('Texture frame revision/input differs from approved geometry')
     if (sha(experiment/'input.png') != approval['input_sha256'] or
             sha(paths['solid']) != approval['solid_sha256'] or
@@ -210,8 +212,8 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
     if sha(approved_model) != expected_model:
         raise ValueError('Approved experiment model differs from geometry approval')
     planar = frames.get('projection_kind') == 'planar-atlas'
-    if planar:
-        if config['part_ids'] != ['ground'] or validation.get('projection_kind') != 'planar-atlas':
+    if planar or uv_atlas:
+        if config['part_ids'] != ['ground'] or validation.get('projection_kind') != frames['projection_kind']:
             raise ValueError('Planar ground requires exact ground ownership')
         if validation.get('uv_verified') is not True or validation.get('protected_changes') != 0:
             raise ValueError('Planar handoff must preserve exact UVs and protected pixels')
@@ -224,6 +226,10 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
         if sha(reviewed_frames) != validation.get('frame_manifest_sha256'):
             raise ValueError('Planar review cameras changed')
         protected[qa_path] = sha(qa_path); protected[reviewed_frames] = sha(reviewed_frames)
+        if uv_atlas:
+            from uv_atlas_publication import validate as validate_uv_atlas
+            protected.update(validate_uv_atlas(experiment, paths['validation'].parent,
+                                               frames, validation, approval, paths['model']))
     else:
         if config['part_ids'] == ['ground']:
             raise ValueError('Ground requires the planar texture branch')
@@ -283,7 +289,7 @@ def validate_texture_handoff(geometry_manifest, asset_id, texture_decisions_path
             'source_nodes': _unique(config['part_ids'], 'canonical source nodes'),
             'approved_source_blend': str(approved_model), 'workspace': str(workspace),
             'map_name': config['map_name'], 'collection_name': config['collection_name'],
-            'scene_name': config['scene_name'], 'projection_kind': 'planar-atlas' if planar else 'multiview',
+            'scene_name': config['scene_name'], 'projection_kind': frames['projection_kind'] if planar or uv_atlas else 'multiview',
             'geometry_revision_sha256': item['revision']['sha256'], 'geometry_decision': item['user_decision'],
             'texture_decision': decision, 'geometry_manifest': str(geometry_manifest),
             'geometry_decisions': str(geometry_decisions), 'texture_decisions': str(texture_decisions_path),
@@ -394,7 +400,7 @@ def verify_baked_geometry(handoff):
             objects = owned
         ownership = _object_ownership(objects, handoff)
         result = {o.name: {'geometry': _geometry(o), 'ownership': ownership[o.name]} for o in objects}
-        if handoff['projection_kind'] == 'planar-atlas':
+        if handoff['projection_kind'] in {'planar-atlas', 'uv-atlas'}:
             for o in objects:
                 result[o.name]['uv'] = {l.name: [list(v.uv) for v in l.data] for l in o.data.uv_layers}
         return result
@@ -403,6 +409,7 @@ def verify_baked_geometry(handoff):
     if before != after:
         raise ValueError('Baked worker changed approved geometry, transforms, visibility or planar UVs')
     return {'geometry_verified': True, 'planar_uv_verified': handoff['projection_kind'] == 'planar-atlas',
+            'uv_atlas_verified': handoff['projection_kind'] == 'uv-atlas',
             'object_names': handoff['object_names'], 'model_sha256': handoff['blend_sha256']}
 
 
