@@ -137,8 +137,9 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
         raise ValueError('Two-sided texture scoring must be inside explicit receiver scope')
     from texture_face_sampling import face_sampling, eligibility
     face_policy = face_sampling(manifest, {obj.name: len(obj.data.polygons) for obj in targets})
-    from generated_visibility import bounded_faces, far_plane, bounded_origin, visible_sample
+    from generated_visibility import bounded_faces, far_plane, bounded_origin, visible_sample, background_faces
     finite_faces = bounded_faces(manifest, {obj.name: len(obj.data.polygons) for obj in targets})
+    filtered_faces = background_faces(manifest, {obj.name: len(obj.data.polygons) for obj in targets})
     vertices, triangles, triangle_owners = [], [], []
     for obj in objects:
         offset = len(vertices)
@@ -209,7 +210,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
                 y1 = min(height-crop['top']-1,y0+1)
                 color = ((generated[y0,x0,:3]*(1-ax)+generated[y0,x1,:3]*ax)*(1-ay)+
                          (generated[y1,x0,:3]*(1-ax)+generated[y1,x1,:3]*ax)*ay)
-                if background_limit is not None:
+                if background_limit is not None and (filtered_faces is None or (obj.name,face_index) in filtered_faces):
                     from generated_surface_support import filtered_color
                     color = filtered_color(
                         [generated[y0,x0,:3], generated[y0,x1,:3], generated[y1,x0,:3], generated[y1,x1,:3]],
@@ -311,6 +312,7 @@ def apply(manifest_path, image_path, output_dir, *, texels_per_unit=2, map_name=
               'reconciliation_minimum_gain':manifest.get('texture_reconciliation_minimum_gain',.4),
               'counts':stats,'layers':reports}
     if repair_policy is not None:report['inferred_gap_repair'] = repair_policy
+    if filtered_faces is not None:report['generated_background_face_indices'] = manifest['texture_generated_background_face_indices']
     if finite_faces:
         report['generated_bounded_visibility'] = manifest['texture_generated_bounded_visibility']
         report['bounded_visibility_sample_evidence'] = dict(kind='Accepted unknown-only camera samples; near-tie samples may be blended by the recorded selection policy',samples=[dict(object=name,face=face,view=view,witnesses=rows) for (name,face,view),rows in visibility_samples.items()])

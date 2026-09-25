@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent))
 import numpy as np
-from generated_visibility import bounded_faces,far_plane,bounded_origin,visible_sample
+from generated_visibility import bounded_faces,far_plane,bounded_origin,visible_sample,background_faces
 
 class GeneratedVisibility(unittest.TestCase):
     def test_scope_is_explicit_and_foreign_faces_fail(self):
@@ -12,6 +12,13 @@ class GeneratedVisibility(unittest.TestCase):
         for scope in [{'foreign':[0]},{'own':[2]},{'own':[True]},{'own':[0,0]},{'own':[]}]:
             with self.assertRaises(ValueError):bounded_faces({'texture_generated_bounded_visibility':scope},{'own':2})
         with self.assertRaises(ValueError):bounded_faces({'texture_generated_bounded_visibility':{'own':[1]},'texture_receiver_face_indices':{'own':[0]}},{'own':2})
+    def test_background_filter_scope_preserves_global_default(self):
+        self.assertIsNone(background_faces({'texture_generated_background_max_rgb':.015},{'own':2}))
+        m={'texture_generated_background_max_rgb':.015,'texture_generated_background_face_indices':{'own':[1]}}
+        self.assertEqual(background_faces(m,{'own':2}),{('own',1)})
+        for change in [{'texture_generated_background_face_indices':{}},{'texture_generated_background_face_indices':{'foreign':[0]}},{'texture_generated_background_max_rgb':None}]:
+            with self.assertRaises(ValueError):background_faces(dict(m,**change),{'own':2})
+
     def test_finite_origin_lies_beyond_all_occluders(self):
         vertices=np.array([[5000,-6000,0],[5010,-6020,100],[4900,-6100,20]])
         d=np.array([.06,.8,.597]);d/=np.linalg.norm(d)
