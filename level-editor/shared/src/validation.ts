@@ -539,7 +539,6 @@ export function parseExternalAssetSources(value: unknown): ExternalAssetSource[]
     check(!/[\\/:\0]/.test(entry.id) && !ids.has(entry.id), "asset source id", "invalid or duplicate identity");
     ids.add(entry.id);
     for (const key of ["descriptor", "model"]) check(safeLibraryPath(entry[key]), key, "expected safe library-relative path");
-    if (entry.preview_model !== undefined) check(safeLibraryPath(entry.preview_model), "preview_model", "expected safe library-relative path");
     for (const key of ["descriptor_sha256", "model_sha256"])
       check(typeof entry[key] === "string" && /^[a-f0-9]{64}$/.test(entry[key]), key, "expected SHA-256");
   }

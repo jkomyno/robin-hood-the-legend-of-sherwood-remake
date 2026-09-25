@@ -29,8 +29,7 @@ export async function listProjectionAssets(root: FileSystemDirectoryHandle, map?
   try { index = await readJson(dir, "index.json"); }
   catch (error) { if (isNotFound(error)) return []; throw error; }
   const entries = parseProjectionAssetIndex(index).filter(entry => (!map || entry.source_map.toLowerCase() === map.toLowerCase()))
-    .map(entry => ({ ...entry, descriptor: `3d-assets/${entry.descriptor}`, model: `3d-assets/${entry.model}`,
-      ...(entry.preview_model ? { preview_model: `3d-assets/${entry.preview_model}` } : {}) }));
+    .map(entry => ({ ...entry, descriptor: `3d-assets/${entry.descriptor}`, model: `3d-assets/${entry.model}` }));
   const expanded = await Promise.all(entries.map(async entry => {
     const descriptor = parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text()));
     if (descriptor.id !== entry.id || descriptor.source_map.toLowerCase() !== entry.source_map.toLowerCase()) throw new Error(`Asset catalog identity mismatch: ${entry.id}`);
@@ -124,16 +123,6 @@ export async function loadProjectionAssetPreview(root: FileSystemDirectoryHandle
   if (entry.editor_usage === "map-background") {
     const bytes = await (await libraryFile(root, entry.model)).arrayBuffer();
     return (await new GLTFLoader().parseAsync(bytes, "")).scene;
-  }
-  if (entry.preview_model) {
-    const preview = (await new GLTFLoader().parseAsync(await (await libraryFile(root, entry.preview_model)).arrayBuffer(), "")).scene;
-    const mapRoot = preview.children.find(child => child.name === "map");
-    const group = mapRoot?.children[0];
-    if (group) for (const part of parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text())).parts) {
-      const node = group.children.find(child => child.name === part.node);
-      if (node) node.visible = !part.default_hidden;
-    }
-    return preview;
   }
   const prepared = await prepareProjectionAsset(root, entry, entry.source_map);
   for (const part of prepared.descriptor.parts) {
