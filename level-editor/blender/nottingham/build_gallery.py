@@ -268,22 +268,38 @@ def complete_state_records(workspace, config, manifest, available, framing):
         require(packet["source_sha256"] == sha(source) and Path(packet["source_image"]).resolve() == source,
                 "Saved state source differs")
         require(packet.get("source_mask_evidence") == mask_evidence, "Saved state mask evidence differs")
-        state_framing = framing
-        if supplement:
-            origin = supplement.get("original_state_manifest")
-            if origin:
-                origin_path = Path(origin["path"])
-                require(origin_path.resolve() == ORIGINAL_HALL_STATE_MANIFEST.resolve(), "Unrecognized original state framing authority")
-                require(sha(origin_path) == origin["sha256"], "Frozen original state manifest changed")
-                original_states = read(origin_path)["states"]
-                original_state = next(r for r in original_states if r["state"] == state)
-                require(sha(original_state["model"]) == original_state["model_sha256"] == proof["original_model_sha256"],
-                        "Frozen original state model differs from preservation authority")
-                original_frame = Path(original_state["frame_manifest"])
-                require(sha(original_frame) == original_state["frame_manifest_sha256"], "Frozen original state framing changed")
-                state_framing = read(original_frame)
-        supplemental_packet(frame.parent, config["asset_id"], state_framing)
+        supplemental_packet(frame.parent, config["asset_id"], complete_state_framing(workspace, state, framing))
     return expected["covered"]
+
+
+def complete_state_framing(workspace, state, default):
+    """Resolve inherited state cameras only through exact preservation authority."""
+    supplement_path = workspace / 'contact-state-supplement.json'
+    if not supplement_path.exists():
+        return default
+    supplement = read(supplement_path)
+    require(supplement.get('model_sha256') == sha(workspace / 'model.blend'), 'State framing has stale primary model')
+    origin = supplement.get('original_state_manifest')
+    if not origin:
+        return default
+    require(state in ('covered', 'revealed'), 'Unknown preserved framing state')
+    origin_path = Path(origin['path'])
+    require(origin_path.resolve() == ORIGINAL_HALL_STATE_MANIFEST.resolve(), 'Unrecognized original state framing authority')
+    require(sha(origin_path) == origin['sha256'], 'Frozen original state manifest changed')
+    binding = next(r for r in read(workspace / 'inspection/state-models/manifest.json')['states'] if r['state'] == state)
+    proof_binding = supplement['states'][state]
+    proof_path = workspace / 'inspection/state-models' / state / 'source-preservation.json'
+    require(Path(proof_binding['path']).resolve() == proof_path.resolve() and sha(proof_path) == proof_binding['sha256'],
+            'State framing preservation proof changed')
+    proof = read(proof_path)
+    require(proof.get('status') == 'PASS' and proof['model_sha256'] == binding['model_sha256'] == sha(binding['model']),
+            'State framing has stale saved model')
+    original_state = next(r for r in read(origin_path)['states'] if r['state'] == state)
+    require(sha(original_state['model']) == original_state['model_sha256'] == proof['original_model_sha256'],
+            'Frozen original state model differs from preservation authority')
+    original_frame = Path(original_state['frame_manifest'])
+    require(sha(original_frame) == original_state['frame_manifest_sha256'], 'Frozen original state framing changed')
+    return read(original_frame)
 
 
 def frozen_mask_origins(workspace, config):
@@ -639,7 +655,7 @@ def main(argv=None):
             framing = read(workspace / 'input/views.json')
             if worker.get('covered_solid'):
                 folder = local(worker['covered_solid']).parent
-                state_records['covered'] = supplemental_packet(folder, asset['id'], framing)
+                state_records['covered'] = supplemental_packet(folder, asset['id'], complete_state_framing(workspace, 'covered', framing))
                 require(local(worker['covered_textured']).resolve() == folder.resolve() / 'textured.png'
                         and local(worker['covered_context']).resolve() == folder.resolve() / 'context.png',
                         'Covered sheets must come from one validated packet')
@@ -653,15 +669,22 @@ def main(argv=None):
                 state_records[key] = supplemental_packet(local(state['directory']), asset['id'], framing)
             if worker.get('revealed_solid'):
                 state_dir = local(worker['revealed_solid']).parent
-                state_records['revealed'] = supplemental_packet(state_dir, asset['id'], framing)
+                state_records['revealed'] = supplemental_packet(state_dir, asset['id'], complete_state_framing(workspace, 'revealed', framing))
                 require(local(worker['revealed_textured']).resolve() == state_dir.resolve() / 'textured.png'
                         and local(worker['revealed_context']).resolve() == state_dir.resolve() / 'context.png',
                         'Revealed sheets must come from one validated packet')
                 baseline_dir = local(worker.get('revealed_input', 'revealed/input'))
                 config = read(workspace / 'workspace.json')
+                if (workspace / 'contact-state-supplement.json').exists():
+                    original_workspace = ORIGINAL_HALL_STATE_MANIFEST.parents[2]
+                    require(baseline_dir.resolve() == (original_workspace / 'input').resolve(),
+                            'Preserved hall baseline differs from frozen original input')
+                    original_config = read(original_workspace / 'workspace.json')
+                    require(file_hashes(baseline_dir) == original_config['input_files'],
+                            'Frozen hall baseline packet changed')
                 origin = frozen_mask_origins(workspace, config)
                 state_records['revealed_input'] = supplemental_packet(
-                    baseline_dir, asset['id'], framing, mask_origin=origin)
+                    baseline_dir, asset['id'], complete_state_framing(workspace, 'revealed', framing), mask_origin=origin)
             evidence['state_packets'] = state_records
             contracts = evidence.get('complete_state_contracts')
             if contracts:
