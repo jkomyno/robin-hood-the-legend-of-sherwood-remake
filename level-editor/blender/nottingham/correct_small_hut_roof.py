@@ -15,7 +15,7 @@ def main():
  import refinement_workspace as rw
  from mathutils import Vector
  from refine_village_secondary import replace,digest
- old=WORK/'round-23/assets'/ASSET;out=WORK/'texture-generation/projection-corrections/v4'/ASSET
+ old=WORK/'round-23/assets'/ASSET;out=WORK/'texture-generation/projection-corrections/v5'/ASSET
  c=json.loads((old/'workspace.json').read_text())
  if not out.exists():
   bpy.ops.wm.open_mainfile(filepath=str(old/'model.blend'))
@@ -30,7 +30,7 @@ def main():
  q=(av[17]+bv[17])*.5
  ridge_front=(av[18]+bv[16])*.5
  p=ridge_front.lerp(q,.43)
- p.z+=8.5;q.z+=8.5
+ p.z+=8.5
  # Fit the two outer eave runs and retain the front lower roof tip. The front hip
  # rises to the observed thatch/chimney junction, hidden partly by the hood.
  e=Vector((ridge_front.x,ridge_front.y,45.2));base=44.5
@@ -44,16 +44,23 @@ def main():
  from small_hut_source_structure import repair
  reports.extend(repair(objects))
  changed=[name for name,v in before.items()if digest(bpy.data.objects[name])!=v]
- assert set(changed)=={a.name,b.name,objects["building-284"].name},changed
+ assert set(changed)=={a.name,b.name,objects["building-284"].name,objects["building-281"].name},changed
  bpy.context.preferences.filepaths.save_version=0;bpy.ops.wm.save_as_mainfile(filepath=str(out/'model.blend'))
  def project(v):return [v.x,-v.y*math.sin(math.radians(35))-v.z*math.cos(math.radians(35))]
- report=dict(version=1,asset_id=ASSET,status='prototype-awaiting-independent-source-review',geometry_approval='pending-new-user-review',previous_workspace=str(old),previous_model_sha256=sha(old/'model.blend'),model_sha256=sha(out/'model.blend'),changed_objects=changed,outside_objects_preserved=len(before)-3,components=reports,source_hip_junction=project(p),source_hip_junction_observation=None,concealed_ridge_lift_world=8.5,source_visible_left_contour=[[355,2840],[380,2813],[394,2799]],source_uncertainty_pixels=3,source_eaves=[project(x)for x in [av[19],av[16],bv[19],bv[18]]],changes=['Replaced the false front gable with a sloping front hip; concealed ridge starts behind the chimney hood.','Raised the concealed ridge by 8.5 world units to put the rear slope behind the source-visible left roof contour; fitted the two outer eave edges within two source pixels and preserved the body walls; the chimney taper and supports are corrected separately.','Native source mask and facing threshold remain unchanged; the generic zero-ground proxy is excluded from source occlusion with measured foot evidence.'],limitations=['Concealed ridge position, height and support thickness are inferred from the visible left roof contour, not directly measured.','Source silhouette uncertainty is approximately three pixels; original eave anchors are preserved in the immutable baseline for comparison.','This is a new geometry revision and is not authorized for texture generation until reviewed.'],recipe=str(Path(__file__).resolve()),recipe_sha256=sha(__file__))
+ report=dict(version=1,asset_id=ASSET,status='prototype-awaiting-independent-source-review',geometry_approval='pending-new-user-review',previous_workspace=str(old),previous_model_sha256=sha(old/'model.blend'),model_sha256=sha(out/'model.blend'),changed_objects=changed,outside_objects_preserved=len(before)-4,components=reports,source_hip_junction=project(p),source_hip_junction_observation=None,concealed_ridge_lift_world=dict(front=8.5,rear=0),source_visible_left_contour=[[355,2840],[380,2813],[394,2799]],source_uncertainty_pixels=3,source_eaves=[project(x)for x in [av[19],av[16],bv[19],bv[18]]],changes=['Replaced the false front gable with a sloping front hip; concealed ridge starts behind the chimney hood.','Raised only the concealed front ridge by 8.5 world units; retained the original rear endpoint to match the source roof silhouette to put the rear slope behind the source-visible left roof contour; fitted the two outer eave edges within two source pixels and preserved the body walls; the chimney taper and supports are corrected separately.','Native bitmaps and facing threshold remain unchanged; restored211 to body/hood receivers; the generic zero-ground proxy is excluded from source occlusion with measured foot evidence.'],limitations=['Concealed ridge position, height and support thickness are inferred from the visible left roof contour, not directly measured.','Source silhouette uncertainty is approximately three pixels; original eave anchors are preserved in the immutable baseline for comparison.','This is a new geometry revision and is not authorized for texture generation until reviewed.'],recipe=str(Path(__file__).resolve()),recipe_sha256=sha(__file__))
  (out/'geometry-report.json').write_text(json.dumps(report,indent=2)+'\n')
  evidence=out/'post-ground-evidence.json'
- evidence.write_text(json.dumps(dict(version=1,source_sha256=sha(old/'reference/source.png'),native_source_domain='unchanged native210',source_landmarks=reports[2]['landmarks'],ground_world_z=0,ground_object='nottingham Terrain',rationale='All three visible support feet descend below the flat zero-height proxy when their top anchors and native artwork heights are preserved. The local depicted slope is lower than this generic plane. Exclude only that ground plane from source occlusion; keep all structural foreground occluders.'),indent=2)+'\n')
+ evidence.write_text(json.dumps(dict(version=1,source_sha256=sha(old/'reference/source.png'),native_source_domain='native210 roof/posts plus native211 masonry/hearth/hood',source_landmarks=next(r['landmarks'] for r in reports if 'landmarks' in r),ground_world_z=0,ground_object='nottingham Terrain',rationale='All three visible support feet descend below the flat zero-height proxy when their top anchors and native artwork heights are preserved. The local depicted slope is lower than this generic plane. Exclude only that ground plane from source occlusion; keep all structural foreground occluders.'),indent=2)+'\n')
  config=json.loads((out/'workspace.json').read_text())
  config['source_projection_ground_exclusion']=dict(version=1,asset_id=ASSET,object_name='nottingham Terrain',rationale='Measured source-visible timber feet lie below the inaccurate flat ground proxy; preserve their native artwork while retaining structural occluders.',source_sha256=sha(old/'reference/source.png'),evidence=str(evidence),evidence_sha256=sha(evidence))
  (out/'workspace.json').write_text(json.dumps(config,indent=2)+'\n')
+ masks=json.loads((out/'source-masks.json').read_text())
+ for assignment in masks['projections']['exterior']['assignments']:
+  if assignment.get('source_node') in ['building-281','building-284']:
+   assignment['mask_indices']=[210,211]
+   assignment['review_evidence']=str(WORK/'coordinator-audit/small-hut-projection/native211-domain.png')
+   assignment['review_note']='Native211 owns the forge hearth, white masonry side and chimney hood; native210 owns roof/posts. Restored reviewed ownership; all foreground first-hit constraints remain active.'
+ (out/'source-masks.json').write_text(json.dumps(masks,indent=2)+'\n')
  rw.modified(out)
  report['model_sha256']=sha(out/'model.blend')
  (out/'geometry-report.json').write_text(json.dumps(report,indent=2)+'\n')

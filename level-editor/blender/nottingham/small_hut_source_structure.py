@@ -8,11 +8,19 @@ def repair(objects):
     import bpy
     a=objects['building-282']; b=objects['building-283']; body=objects['building-281']; chimney=objects['building-284']
     reports=[]
+    body_vertices=[body.matrix_world@v.co for v in body.data.vertices]
+    for p in body_vertices:
+        if p.z<1:p.z-=2.5
+        if p.x>441.9:p.x+=.75
+    body_before=digest(body);body.data=body.data.copy();inverse=body.matrix_world.inverted()
+    for vertex,point in zip(body.data.vertices,body_vertices):vertex.co=inverse@point
+    body.data.update()
+    reports.append(dict(object=body.name,before_sha256=body_before,after_sha256=digest(body),change='Lower source-visible masonry base 2.5 and extend right outline .75; preserve inherited topology exactly.'))
     # End elevations follow the three visible feet, rather than forcing the
     # sloping local ground to the map's global zero plane.
-    anchors=[('front left',357.0,-5027.366211,2847,2898,4.0),
-             ('front right',409.5,-5058.05127,2862,2907,3.5),
-             ('rear right',451.5,-4977.524414,2817,2863,4.3)]
+    anchors=[('front left',357.0,-5027.366211,2847,2889.5,3.5),
+             ('front right',409.5,-5058.05127,2862,2905,3.5),
+             ('rear right',450.0,-4977.524414,2817,2861.5,3.5)]
     u=Vector((.883,-.469,0));v=Vector((.469,.883,0));verts=[];faces=[]
     def box_ring(center,lo,hi,r):
         start=len(verts)

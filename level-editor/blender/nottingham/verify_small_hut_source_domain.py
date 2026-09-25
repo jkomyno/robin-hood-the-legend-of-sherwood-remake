@@ -3,6 +3,7 @@ import sys,json,math,hashlib,collections
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 sys.path.insert(0,str(ROOT/'level-editor/refinement/blender'))
+sys.path.insert(0,str(Path(__file__).parent))
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def main():
  import bpy
@@ -18,11 +19,12 @@ def main():
  if exclude:objs=[o for o in objs if o.name!=exclude['object_name']]
  targets=[o for o in objs if o.get('asset_group')==c['asset_id']];tree,owners,_=_tree(objs);own,ownowners,_=_tree(targets)
  constraints=SourceMaskConstraints(w/'source-masks.json','exterior',sha(w/'reference/source.png'),(2304,3520));s,co=math.sin(math.radians(35)),math.cos(math.radians(35));tow=Vector((0,-co,s))
- mask=ROOT/'level-editor/work/nottingham-refinement/mask-review/inventory-v6/000210.png';m=Image.open(mask).convert('L');counts=collections.Counter();rejected=collections.defaultdict(list);src=Image.open(w/'reference/source.png').convert('RGB');box=(340,2745,470,2910);overlay=src.crop(box)
+ from small_hut_source_domain import domain
+ full,domain_proof=domain();m=full.crop((340,2745,470,2910));counts=collections.Counter();rejected=collections.defaultdict(list);src=Image.open(w/'reference/source.png').convert('RGB');box=(340,2745,470,2910);overlay=src.crop(box)
  for dy in range(m.height):
   for dx in range(m.width):
    if not m.getpixel((dx,dy)):continue
-   x,y=dx+352,dy+2755;origin=Vector((x+.5,-(y+.5)*s,-(y+.5)*co))+tow*10000
+   x,y=dx+340,dy+2745;origin=Vector((x+.5,-(y+.5)*s,-(y+.5)*co))+tow*10000
    hit,n,i,_=own.ray_cast(origin,-tow);reason='accepted'
    if i is None:reason='missing-receiver'
    else:
@@ -35,6 +37,6 @@ def main():
    counts[reason]+=1
    if reason!='accepted':rejected[reason].append([x,y]);overlay.putpixel((x-box[0],y-box[1]),(255,0,255)if reason=='missing-receiver'else(255,70,0))
  ins=w/'inspection';ins.mkdir(exist_ok=True);overlay.resize((780,990),Image.Resampling.NEAREST).save(ins/'full-native-source-coverage.png')
- report=dict(status='PASS'if not rejected else'NEEDS-REVIEW',asset_id=c['asset_id'],model_sha256=sha(w/'model.blend'),modified_views_sha256=sha(w/'modified/views.json'),source_sha256=sha(w/'reference/source.png'),domain_sha256=sha(mask),native_pixels=sum(counts.values()),counts=dict(counts),rejected_pixels=dict(rejected),ground_exclusion=exclude,method='Every nonzero native210 pixel center, independent of candidate masks; exact saved target first-hit geometry, source-facing cosine, native ownership and complete-scene foreground occlusion. Only the explicitly evidenced generic ground proxy is excluded.')
+ report=dict(status='PASS'if not rejected else'NEEDS-REVIEW',asset_id=c['asset_id'],model_sha256=sha(w/'model.blend'),modified_views_sha256=sha(w/'modified/views.json'),source_sha256=sha(w/'reference/source.png'),domain_sha256=domain_proof['domain_sha256'],domain_evidence=domain_proof,native_pixels=sum(counts.values()),counts=dict(counts),rejected_pixels=dict(rejected),ground_exclusion=exclude,method='Every nonzero native210+211 union pixel center, independent of candidate masks; exact saved target first-hit geometry, source-facing cosine, native ownership and complete-scene foreground occlusion. Only the explicitly evidenced generic ground proxy is excluded.')
  (ins/'full-native-source-coverage.json').write_text(json.dumps(report,indent=2)+'\n');print(dict(counts),flush=True)
 if __name__=='__main__':main()

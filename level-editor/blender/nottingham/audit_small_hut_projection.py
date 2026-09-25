@@ -27,8 +27,9 @@ if "--repair-supports" in args:
 for o in bpy.data.collections["nottingham Working"].all_objects:
  if o.type!="MESH" or o.hide_render or o.get("asset_group")!=A:continue
  vertices=[o.matrix_world@v.co for v in o.data.vertices];faces=[]
+ o.data.calc_loop_triangles()
  for f in o.data.polygons:
   n=(o.matrix_world.to_3x3().inverted().transposed()@f.normal).normalized()
   faces.append({"index":f.index,"vertices":list(f.vertices),"normal":list(n),"toward":n.dot(toward),"source":[[vertices[i].x,-vertices[i].y*S-vertices[i].z*C] for i in f.vertices]})
- rows.append({"name":o.name,"node":o.get("source_node"),"vertices":[list(v)for v in vertices],"faces":faces})
+ rows.append({"name":o.name,"node":o.get("source_node"),"vertices":[list(v)for v in vertices],"faces":faces,"triangles":[list(t.vertices) for t in o.data.loop_triangles]})
 out=Path(args[1]) if len(args)>1 else W/"coordinator-audit/small-hut-projection";out.mkdir(parents=True,exist_ok=True);(out/"faces.json").write_text(json.dumps(rows,indent=2)+"\n");print(str(out/"faces.json"))
