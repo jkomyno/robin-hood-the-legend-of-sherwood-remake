@@ -9,10 +9,11 @@ sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def run(folder):
  folder=Path(folder);report=json.loads((folder/'coverage.json').read_text());model=None
  # Every provenance evidence binds its saved model independently in coverage.json.
- jobroot=folder
- while jobroot.name!='final-texture-coverage':jobroot=jobroot.parent
- jobs=json.loads((jobroot/'jobs.json').read_text());rows=jobs['jobs']+jobs['skips']
- row=next(r for r in rows if r.get('model_sha256')==report['model_sha256']);bake=Path(row['bake']);validation=json.loads((bake/'validation.json').read_text());manifest=next(Path(p)for p in validation['evidence_sha256'] if Path(p).name=='views.json')
+ jobroot=Path(__file__).resolve().parents[3]/'level-editor/work/nottingham-refinement/coordinator-audit/final-texture-coverage'
+ if (folder.parent/'worker.blend').exists():bake=folder.parent
+ else:
+  jobs=json.loads((jobroot/'jobs.json').read_text());rows=jobs['jobs']+jobs['skips'];row=next(r for r in rows if r.get('model_sha256')==report['model_sha256']);bake=Path(row['bake'])
+ validation=json.loads((bake/'validation.json').read_text());manifest=next(Path(p)for p in validation['evidence_sha256'] if Path(p).name=='views.json')
  if sha(bake/'worker.blend')!=report['model_sha256'] or sha(manifest)!=report['manifest_sha256']:raise ValueError('Stale coverage')
  data=json.loads(manifest.read_text());bpy.ops.wm.open_mainfile(filepath=str(bake/'worker.blend'));scene=bpy.data.scenes[data['scene_name']];bpy.context.window.scene=scene
  names=data.get('render_object_names')or data['object_names'];vertices=[];triangles=[];refs=[];proofs={}
