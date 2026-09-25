@@ -9,14 +9,16 @@ ROOT=Path(__file__).resolve().parents[3];WORK=ROOT/'level-editor/work/nottingham
 def build_domain(old):
  """Retain native inventories and append the source-classified house domain."""
  from PIL import Image,ImageChops,ImageDraw
- root=WORK/'coordinator-audit/north-dormer-stripe/domain-v6';out=root/'source-masks.json'
+ root=WORK/'coordinator-audit/north-dormer-stripe/domain-v23';out=root/'source-masks.json'
  if out.exists():return out
  root.mkdir(parents=True);m=json.loads((old/'source-masks.json').read_text());ip=Path(m['mask_inventory']);inv=json.loads(ip.read_text());dest=root/'inventory';dest.mkdir()
  for row in inv['masks']:shutil.copy2(ip.parent/row['png'],dest/row['png'])
  def native(k):
   row=inv['masks'][k];im=Image.new('L',(2304,3520));im.paste(Image.open(ip.parent/row['png']).convert('L'),tuple(row['box_top_left']));return im
- mask=ImageChops.lighter(native(79),ImageChops.lighter(native(83),native(84)));mask=ImageChops.subtract(mask,ImageChops.lighter(native(525),native(526)));ImageDraw.Draw(mask).rectangle((0,540,2303,3519),fill=0);idx=len(inv['masks']);name=f'{idx:06d}.png';mask.save(dest/name)
- inv['masks'].append(dict(index=idx,layer=-1,layer_index=idx,png=name,mask_type=0,box_top_left=[0,0],box_size=[2304,3520],character_polyline=None,projectile_polyline=None,obstacle_indices=[],authored=True,description='House domain excluding separately owned storage525/526 and foreground below y540.'))
+ mask=ImageChops.lighter(native(79),ImageChops.lighter(native(83),native(84)));mask=ImageChops.subtract(mask,ImageChops.lighter(native(525),native(526)));ImageDraw.Draw(mask).rectangle((0,540,2303,3519),fill=0)
+ for point in [[1746, 536], [1746, 537], [1746, 538], [1746, 539], [1747, 537], [1747, 538], [1747, 539], [1748, 537], [1748, 538], [1748, 539], [1749, 537], [1749, 538], [1749, 539], [1750, 537], [1750, 538], [1750, 539], [1751, 537], [1751, 538], [1751, 539], [1752, 537], [1752, 538], [1752, 539], [1753, 537], [1753, 538], [1753, 539], [1754, 537], [1754, 538], [1754, 539], [1755, 537], [1755, 538], [1755, 539], [1756, 538], [1756, 539], [1757, 538], [1757, 539], [1758, 538], [1758, 539], [1759, 538], [1759, 539], [1760, 539], [1761, 539]]:mask.putpixel(tuple(point),0)
+ idx=len(inv['masks']);name=f'{idx:06d}.png';mask.save(dest/name)
+ inv['masks'].append(dict(index=idx,layer=-1,layer_index=idx,png=name,mask_type=0,box_top_left=[0,0],box_size=[2304,3520],character_polyline=None,projectile_polyline=None,obstacle_indices=[],authored=True,description='House domain excluding separately owned storage525/526, foreground below y540, and41source-traced foreground coping pixels.'))
  (dest/'manifest.json').write_text(json.dumps(inv,indent=2)+'\n');m['mask_inventory']=str(dest/'manifest.json')
  for projection in m['projections'].values():
   for assignment in projection['assignments']:
@@ -40,9 +42,18 @@ def apply():
  oldv=[roof.matrix_world@v.co for v in roof.data.vertices];oldf=[tuple(f.vertices)for f in roof.data.polygons];n=len(oldv);replace(roof,oldv+top+bottom,oldf+[tuple(i+n for i in f)for f in faces])
  bv=[body.matrix_world@v.co for v in body.data.vertices];foot=[Vector((1794,bv[0].y,0)),Vector((1794,-1000,0)),bv[1].copy(),bv[2].copy(),bv[3].copy()];upper=[]
  for p in foot:
-  p.z=68
+  p.z=0
   q=p.copy();q.z=a.z-(normal.x*(q.x-a.x)+normal.y*(q.y-a.y))/normal.z-2.25;upper.append(q)
- faces=[tuple(range(4,-1,-1)),tuple(range(5,10))]+[(i,(i+1)%5,(i+1)%5+5,i+5)for i in range(5)];replace(body,foot+upper,faces)
+ # Retain the native lower footprint, with a concealed transition to the source-fitted upper wall.
+ t=(-1000-bv[0].y)/(bv[1].y-bv[0].y);native_foot=[bv[0].copy(),bv[0].lerp(bv[1],t),bv[1].copy(),bv[2].copy(),bv[3].copy()]
+ lower=[]
+ for z in [0,40]:
+  for p in native_foot:q=p.copy();q.z=z;lower.append(q)
+ for p in foot:p.z=68
+ verts=lower+foot+upper;faces=[tuple(range(4,-1,-1)),tuple(range(15,20))]
+ for ring in range(3):
+  for i in range(5):j=(i+1)%5;faces.append((ring*5+i,ring*5+j,(ring+1)*5+j,(ring+1)*5+i))
+ replace(body,verts,faces)
  board=objects['building-553']
  vv=[board.matrix_world@v.co for v in board.data.vertices];ba,bb,bc=[vv[i]for i in [4,7,6]];bn=(bb-ba).cross(bc-ba).normalized()
  for i,(sx,sy) in enumerate([(1791,514),(1771,548),(1755.5,537.5),(1775,501.5)]):
@@ -95,7 +106,7 @@ def apply():
  for component in sorted(components,key=len)[:-1]:
   points=[body.matrix_world@v.co for v in component];assert max(max(p[i]for p in points)-min(p[i]for p in points)for i in range(3))<1;bmesh.ops.delete(bm,geom=list(component),context='VERTS')
  bm.to_mesh(body.data);bm.free()
- return dict(changed_nodes=['building-122','building-123','building-553'],roof_return_source=[[1782.5,480],[1791.5,454],[1797.5,433],[1799.5,414]],body_bend_world=[1794,-1000],base_elevation=68,inference='Short timber return followed by source-edge-on hidden side; top follows existing roof plane. Roof outer edge follows visible tile boundary. Concealed return depth, raised base and board recess require user review. Board stays at its original plane; its perimeter follows native526 within0.25sourcepixel.')
+ return dict(changed_nodes=['building-122','building-123','building-553'],roof_return_source=[[1782.5,480],[1791.5,454],[1797.5,433],[1799.5,414]],body_bend_world=[1794,-1000],base_elevation=0,inference='Short timber return followed by source-edge-on hidden side; top follows existing roof plane. Roof outer edge follows visible tile boundary. Concealed return depth and board recess require user review. Base0 and lower footprint match native house data and adjacent street datum; concealed wall transition40..68 is inferred. Board stays at its original plane; its perimeter follows native526 within0.25sourcepixel.')
 def main():
  from freeze_tooling import select_tooling
  from render_slots import acquire,release
@@ -105,7 +116,7 @@ def main():
  from refinement_review import render_review
  from reproject_map import reproject_map
  from source_projection_bake import bake
- old=WORK/'round-38/assets/nottingham-north-dormer-house';w=WORK/'texture-generation/projection-corrections/north-dormer-v19/nottingham-north-dormer-house'
+ old=WORK/'round-38/assets/nottingham-north-dormer-house';w=WORK/'texture-generation/projection-corrections/north-dormer-v23/nottingham-north-dormer-house'
  layers=json.loads((old/'preserved-projection-layers.json').read_text())['layers']
  def render(config,output,baseline=None):
   result=render_review(output,scene_name=config['scene_name'],collection_name=config['collection_name'],asset_id=config['asset_id'],source_path=config['source_path'],frame_manifest=baseline,width=256,height=320,context_padding=35,framing_padding=1.1,projection_layers=layers,source_mask_manifest=config['source_mask_manifest'],allow_projection_revision=bool(baseline),allow_mask_revision=bool(baseline))
@@ -114,7 +125,7 @@ def main():
   nodes=['building-122','building-123','building-124','building-125'];source=layers[0]['source_path'];directory=Path(directory);directory.mkdir(parents=True,exist_ok=True)
   report=reproject_map('nottingham',source,directory/'source.json',receiver_nodes=nodes,occluder_nodes=layers[0]['occluder_nodes'],projection_label='exterior',receiver_asset_id=config['asset_id'])
   report['ownership']=bake('nottingham',source,directory/'ownership.json',projection_label='exterior',receiver_nodes=nodes,occluder_nodes=layers[0]['occluder_nodes'],elevation_deg=35,preserve_authored=False,source_mask_manifest=config['source_mask_manifest'],receiver_asset_id=config['asset_id'])
-  propnodes=['building-553'];source=layers[1]['source_path']
+  propnodes=['building-553','building-554'];source=layers[1]['source_path']
   report['board']=reproject_map('nottingham',source,directory/'board-source.json',receiver_nodes=propnodes,occluder_nodes=layers[1]['occluder_nodes'],projection_label='mission-custom1',receiver_asset_id=config['asset_id'])
   report['board_ownership']=bake('nottingham',source,directory/'board-ownership.json',projection_label='mission-custom1',receiver_nodes=propnodes,occluder_nodes=layers[1]['occluder_nodes'],elevation_deg=35,preserve_authored=False,source_mask_manifest=config['source_mask_manifest'],receiver_asset_id=config['asset_id'])
   return report
