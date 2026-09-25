@@ -11,5 +11,5 @@ for file in ['baseline.blend','model.blend','../../../../round-42/assets/notting
   rows[o.name]=hashlib.sha256(json.dumps(d,sort_keys=True).encode()).hexdigest()
  records[file]=rows
 old,new=records['baseline.blend'],records['model.blend'];out={'baseline_sha256':hashlib.sha256((p/'baseline.blend').read_bytes()).hexdigest(),'model_sha256':hashlib.sha256((p/'model.blend').read_bytes()).hexdigest(),'added':sorted(set(new)-set(old)),'removed':sorted(set(old)-set(new)),'changed':sorted(n for n in old.keys()&new.keys() if old[n]!=new[n]),'signatures':records}
-original=records['../../../../round-42/assets/nottingham-castle-main-hall/model.blend'];out['original42_added']=sorted(set(new)-set(original));out['original42_changed']=sorted(n for n in original.keys()&new.keys() if original[n]!=new[n]);
+original=records['../../../../round-42/assets/nottingham-castle-main-hall/model.blend'];out['original42_sha256']=hashlib.sha256((p/'../../../../round-42/assets/nottingham-castle-main-hall/model.blend').read_bytes()).hexdigest();out['original42_added']=sorted(set(new)-set(original));out['original42_changed']=sorted(n for n in original.keys()&new.keys() if original[n]!=new[n]);
 (p/'inspection/baseline-geometry-comparison.json').write_text(json.dumps(out,indent=2)+'\n');print(json.dumps({k:v for k,v in out.items() if k!='signatures'}))
