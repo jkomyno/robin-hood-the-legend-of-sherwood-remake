@@ -94,7 +94,7 @@ export default function Editor3D(props: EditorProps) {
   const session = new SessionPublication<Level3D, FileSystemDirectoryHandle>(
     (snapshot, reason) => {
       setRevision(snapshot);
-      if (reason === "revision") viewport.syncViews(snapshot.document);
+      if (reason === "revision") viewport.syncViews(snapshot.document, false);
     },
   );
   let saving = false;

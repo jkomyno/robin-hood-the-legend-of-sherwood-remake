@@ -819,8 +819,8 @@ export class EditorViewport {
     v.rot.matrixWorldNeedsUpdate = true;
   }
 
-  syncViews(d: Level3D) {
-    this.splines.sync(d.splines ?? [], d.camera, this.sourceNodes);
+  syncViews(d: Level3D, rebuildFraming = true) {
+    if (rebuildFraming) this.splines.sync(d.splines ?? [], d.camera, this.sourceNodes);
     const aliveGroups = new Set<string>();
     for (const g of d.groups) {
       aliveGroups.add(g.id);
@@ -879,6 +879,13 @@ export class EditorViewport {
       if (aliveParts.has(id)) continue;
       v.wrapper.parent?.remove(v.wrapper);
       this.partViews.delete(id);
+    }
+    if (!rebuildFraming) {
+      // Transform edits only need to move existing wrappers. Rebuilding the
+      // projection point cache below walks every vertex in every imported mesh;
+      // doing that for each 15° button press makes a large map appear frozen.
+      this.refreshSelectionBox();
+      return;
     }
     this.patchDisplay.apply(this.objectsRoot);
     const s = this.bindings.selection();
