@@ -50,18 +50,20 @@ def main():
     extension['reveal_component_patch_id'] = 'patch-008'
     extension['reveal_component_role'] = 'retained-roof'
     bpy.data.collections[config['collection_name']].objects.link(extension)
-    # Import only the corrected context receiver; preserve its stable ownership.
+    # Every paired tower component must match the scene used by source audits.
+    # The original sloped roof otherwise blocks the newly assigned roof contact.
+    context_nodes = {'building-519', 'building-520', 'building-521'}
     with bpy.data.libraries.load(str(spire / 'model.blend'), link=False) as (source, target):
-        target.objects = [n for n in source.objects if n == 'Castle hall northwestern spire / Structural volume 519']
-    if len(target.objects) != 1:
-        raise ValueError('Expected one paired northwest tower body')
-    donor = target.objects[0]
-    body = next(o for o in bpy.data.collections[config['collection_name']].all_objects
-                if o.type == 'MESH' and o.get('source_node') == 'building-519')
-    # Both packets retain the same canonical object transform. An unlinked
-    # library object's matrix_world is not yet evaluated; copy local mesh data.
-    body.data = donor.data.copy()
-    bpy.data.objects.remove(donor, do_unlink=True)
+        target.objects = [n for n in source.objects if n.startswith('Castle hall northwestern spire /')]
+    donors = {o.get('source_node'): o for o in target.objects if o and o.type == 'MESH'}
+    if set(donors) != context_nodes:
+        raise ValueError('Expected all three paired northwest tower components')
+    for node, donor in donors.items():
+        body = next(o for o in bpy.data.collections[config['collection_name']].all_objects
+                    if o.type == 'MESH' and o.get('source_node') == node)
+        # Unlinked library transforms are unevaluated; retain canonical placement.
+        body.data = donor.data.copy()
+        bpy.data.objects.remove(donor, do_unlink=True)
     rw.prepare(new, asset_id=config['asset_id'], scene_name=config['scene_name'],
                collection_name=config['collection_name'], source_path=old / 'reference/source.png',
                grouping_manifest=old / 'reference/grouping.json', inventory_path=old / 'reference/inventory.json',
@@ -82,7 +84,7 @@ def main():
                   modified_views_sha256=sha(new / 'modified/views.json'),
                   paired_spire_model_sha256=sha(spire / 'model.blend'),
                   changes=['Continued existing retained roof plane into the traced northwest contact.',
-                           'Paired tower context has the same closed concealed contact recess.'],
+                           'All three paired tower context components match the corrected spire, including its closed concealed contact recess.'],
                   limitations=['Hidden attachment geometry is inferred; renewed paired user review is required.',
                                'Covered and revealed state verification remains required before readiness.'])
     (new / 'geometry-report.json').write_text(json.dumps(report, indent=2) + '\n')
