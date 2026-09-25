@@ -194,9 +194,11 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def finalize(asset_id):
-    workspace = LINCOLN / 'round-1/assets' / asset_id
-    notes = NOTES[asset_id]
+def finalize(asset_id, round_name='round-1', notes=None, no_change_reason=None, findings=None,
+             auto_stale=True, finalizer=None):
+    workspace = LINCOLN / round_name / 'assets' / asset_id
+    notes = notes or NOTES[asset_id]
+    finalizer = finalizer or HERE / 'courtyard_finalize.py'
     measured = json.loads((workspace / 'inspection/source-coverage.json').read_text())
     recipe_report = json.loads((workspace / 'geometry-recipe.json').read_text())
     c = measured['counts']
@@ -244,12 +246,18 @@ def finalize(asset_id):
         'observation': observation,
         'measurements': measured,
         'evidence': {str(p): sha(p) for p in evidence_files},
-        'limitations': notes['limitations'] + ([STALE] if foreign and not any('stale' in x or 'baseline' in x for x in notes['limitations']) else []),
+        'limitations': notes['limitations'] + ([STALE] if auto_stale and foreign and not any('stale' in x or 'baseline' in x for x in notes['limitations']) else []),
     }
     (workspace / 'source-coverage-audit.json').write_text(json.dumps(audit, indent=2) + '\n')
     nodes = recipe_report['nodes']
-    node_lines = '\n'.join(f"- `{n}`: {len(v['shells'])} closed shell(s), {v['faces']} triangles, native z "
-                           f"{v['native_z_range'][0]}..{v['native_z_range'][1]}" for n, v in sorted(nodes.items()))
+    node_lines = '\n'.join(f"- `{n}`: " + (f"{len(v['shells'])} closed shell(s), " if 'shells' in v else 'kept, ')
+                           + f"{v['faces']} faces, native z {v['native_z_range'][0]}..{v['native_z_range'][1]}"
+                           for n, v in sorted(nodes.items()))
+    round_note = ''
+    if no_change_reason:
+        round_note += '\n## Round-2 decision: geometry unchanged\n' + no_change_reason + '\n'
+    if findings:
+        round_note += '\n## Round-2 findings (integrated neighbours, refitted cameras)\n' + '\n'.join('- ' + x for x in findings) + '\n'
     review = f"""# {asset_id}: geometry review (courtyard lane)
 
 Recipe: `{RECIPE}` (shapes in `courtyard_shapes.py`, working-mask revisions in `courtyard_masks.py`,
@@ -257,8 +265,8 @@ audit in `courtyard_audit.py`). Re-run:
 
     /usr/bin/blender --background --threads 2 --python-exit-code 1 --python {RECIPE} -- \\
         --workspace {workspace} --packet --closeup --audit
-    python3 {HERE / 'courtyard_finalize.py'} {asset_id}
-
+    python3 {finalizer} {asset_id}
+{round_note}
 ## Ground height
 {GROUND}
 
@@ -277,9 +285,8 @@ outside geometry hashes are unchanged ({recipe_report['outside_objects_preserved
 ## Checks
 - Silhouette fitted against the native masks over enlarged covered.png crops with pixel grids
   (`scratch/courtyard/fit-{asset_id}.png`), then against the saved model.
-- All eight modified solid/textured/known views inspected, plus auto-framed close-ups in
-  `inspection/closeup/` (the frozen cameras are fitted to the old datum pillars, so the refined asset sits
-  in the top part of each frozen view).
+- All eight modified solid/textured/known views and the context inspected, plus auto-framed close-ups in
+  `inspection/closeup/`.
 - Source coverage (`source-coverage-audit.json`, `inspection/source-coverage.png`): {status}.
   {observation}
 
@@ -293,12 +300,14 @@ outside geometry hashes are unchanged ({recipe_report['outside_objects_preserved
     candidate = {
         'version': 1, 'asset_id': asset_id,
         'status': 'ready-for-user' if status == 'PASS' else 'fix-needed',
-        'geometry_refined': True, 'geometry_reviewed': True,
+        'geometry_refined': not no_change_reason, 'geometry_reviewed': True,
         'inspected_views': list(range(8)),
         'recipe': str(RECIPE),
         'model_sha256': model_sha, 'modified_views_sha256': views_sha,
-        'changes': notes['changes'],
+        'changes': [] if no_change_reason else notes['changes'],
         'limitations': audit['limitations'],
+        **({'no_change_reason': no_change_reason} if no_change_reason else {}),
+        **({'round_2_findings': findings} if findings else {}),
         'ground_native_z': 220,
         'geometry_approval': 'pending', 'texture_generation': 'not-started',
         'source_comparison': 'inspection/source-coverage.png',

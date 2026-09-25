@@ -10,6 +10,7 @@ Writes <workspace>/inspection/coverage-hits.npz: first-hit class per pixel
 domain is geometric and independent of the acceptance masks; the offline
 south_gate_walls_audit.py compares it with the native masks and the artwork.
 """
+import os
 import argparse
 import hashlib
 import json
@@ -28,7 +29,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--asset', required=True)
     args = p.parse_args(argv)
-    ws = R / 'round-1/assets' / args.asset
+    ws = R / os.environ.get('SOUTH_GATE_ROUND', 'round-1') / 'assets' / args.asset
     from render_slots import acquire
     acquire()
     import bpy
@@ -55,6 +56,10 @@ def main():
     node = np.full((y1 - y0, x1 - x0), 255, np.uint8)
     zhit = np.zeros((y1 - y0, x1 - x0), np.float32)
     owned_names = {o.name: nodes.index(o['source_node']) for o in owned}
+    components = {n: sorted({o.get('projection_component') for o in owned if o['source_node'] == n},
+                            key=lambda c: (c is None, c or '')) for n in nodes}
+    comp_index = {o.name: components[o['source_node']].index(o.get('projection_component')) for o in owned}
+    comp = np.full((y1 - y0, x1 - x0), 255, np.uint8)
     hidden_names = {o.name for o in hidden}
     working = {o.name for o in objs}  # baseline copies and helpers are ignored
     foreign = []
@@ -76,6 +81,7 @@ def main():
                 if ob.name in owned_names:
                     cls[j, i] = 1
                     node[j, i] = owned_names[ob.name]
+                    comp[j, i] = comp_index[ob.name]
                 else:
                     cls[j, i] = 2
                     group = ob.get('asset_group') or ob.get('source_node')
@@ -84,9 +90,11 @@ def main():
                     node[j, i] = min(254, foreign.index(group))
                 zhit[j, i] = to_native(tuple(loc))[2]
                 break
+    (ws / 'inspection').mkdir(exist_ok=True)
     out = ws / 'inspection/coverage-hits.npz'
-    np.savez_compressed(out, cls=cls, node=node, z=zhit, origin=np.array([x0, y0]))
-    meta = {'asset_id': args.asset, 'nodes': nodes, 'foreign_groups': foreign, 'box': [x0, y0, x1, y1],
+    np.savez_compressed(out, cls=cls, node=node, comp=comp, z=zhit, origin=np.array([x0, y0]))
+    meta = {'asset_id': args.asset, 'nodes': nodes,
+            'components': {n: c for n, c in components.items() if c != [None]}, 'foreign_groups': foreign, 'box': [x0, y0, x1, y1],
             'model_sha256': hashlib.sha256((ws / 'model.blend').read_bytes()).hexdigest(),
             'hidden_objects_skipped': sorted(hidden_names)}
     (ws / 'inspection/coverage-hits.json').write_text(json.dumps(meta, indent=1) + '\n')

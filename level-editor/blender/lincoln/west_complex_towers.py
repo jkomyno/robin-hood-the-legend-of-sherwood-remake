@@ -388,6 +388,34 @@ GROUND = {'lincoln-west-round-tower': {'387': PLATEAU_Z, 'roof/band': 'on shaft'
           'lincoln-west-slate-tower': {'377/381': PLATEAU_Z, '380': 317.0, '73 (ground floor)': PLATEAU_Z}}
 
 
+TOWER_ASSETS = ('lincoln-west-round-tower', 'lincoln-west-tower-hall', 'lincoln-west-slate-tower')
+
+
+def all_tower_shapes(obstacles):
+    """Every node built by this module, independent of catalog ownership."""
+    shapes = {}
+    for part in (round_tower(obstacles), hall(obstacles), slate_tower(obstacles)):
+        if set(part) & set(shapes):
+            raise ValueError('Tower node built twice')
+        shapes.update(part)
+    return shapes
+
+
+def build_owned(asset, owned_nodes):
+    """Build the nodes the loaded scene assigns to ``asset``.
+
+    Round-2 user review moved hall south slope 391 from the slate tower to the
+    hall (grouping-proposal.json); building by ownership keeps the recipe valid
+    before and after the coordinator regroups the catalog.
+    """
+    shapes, info = build(asset)
+    everything = all_tower_shapes(native_obstacles())
+    missing = set(owned_nodes) - set(everything)
+    if missing:
+        raise ValueError(f'No tower geometry for owned nodes {sorted(missing)}')
+    return {n: everything[n] for n in owned_nodes}, info
+
+
 def build(asset):
     obstacles = native_obstacles()
     if asset == 'lincoln-west-round-tower':

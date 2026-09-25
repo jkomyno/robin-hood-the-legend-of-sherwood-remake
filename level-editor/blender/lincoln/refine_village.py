@@ -122,9 +122,10 @@ def refine(asset_id):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--asset', required=True)
+    parser.add_argument('--round', default='round-1', help='workspace round directory, e.g. round-2')
     parser.add_argument('--packet', action='store_true', help='also regenerate modified/ with the frozen tooling')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
-    workspace = ROOT / 'round-1/assets' / args.asset
+    workspace = ROOT / args.round / 'assets' / args.asset
     from render_slots import acquire
     acquire()
     bpy.ops.wm.open_mainfile(filepath=str(workspace / 'model.blend'))

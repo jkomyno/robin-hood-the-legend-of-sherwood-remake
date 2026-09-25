@@ -248,8 +248,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--asset', required=True)
     parser.add_argument('--packet', action='store_true', help='also regenerate modified/ with the frozen tooling')
+    parser.add_argument('--round', type=int, default=1, choices=(1, 2, 3),
+                        help='2: start from the round-2 baseline (which already holds the round-1 result) and '
+                             'apply only the integrated-context fixes in great_hall_round2.py')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
-    workspace = ROOT / 'round-1/assets' / args.asset
+    workspace = ROOT / f'round-{args.round}/assets' / args.asset
     part_ids = set(json.loads((workspace / 'validation.json').read_text())['part_ids'])
     mask_changes = apply_mask_revisions(args.asset, workspace, part_ids)
     print(json.dumps({'mask_revisions': mask_changes}))
@@ -261,7 +264,17 @@ def main():
     owned = refine(args.asset)
     restore_baseline(workspace, owned)
     report = []
-    for obj in sorted(owned, key=lambda o: o.get('source_node')):
+    if args.round >= 2:
+        import great_hall_round2
+        by_node = {o.get('source_node'): o for o in owned}
+        fixes = great_hall_round2.apply(args.asset, by_node)
+        for obj in sorted(owned, key=lambda o: o.get('source_node')):
+            world = [obj.matrix_world @ v.co for v in obj.data.vertices]
+            report.append({'object': obj.name, 'source_node': obj.get('source_node'), 'cut': False,
+                           'round2_fix': fixes.get(obj.get('source_node')),
+                           'vertices': len(world), 'faces': len(obj.data.polygons),
+                           'native_z': [round(min(p.z for p in world) * COS, 2), round(max(p.z for p in world) * COS, 2)]})
+    for obj in sorted(owned if args.round == 1 else [], key=lambda o: o.get('source_node')):
         node = obj.get('source_node')
         if not node or not obj.get('asset_group'):
             raise ValueError(f'{obj.name} lost its ownership properties')
@@ -273,7 +286,7 @@ def main():
                        'native_z': [round(min(p.z for p in world) * COS, 2), round(max(p.z for p in world) * COS, 2)],
                        **stats})
     # Per-asset detail passes (traced merlons, roofs, steps) live in great_hall_<part>.py.
-    module_name = DETAIL_MODULES.get(args.asset)
+    module_name = DETAIL_MODULES.get(args.asset) if args.round == 1 else None
     if module_name:
         import importlib
         module = importlib.import_module(module_name)

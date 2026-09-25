@@ -17,6 +17,8 @@ asset's own masks and inspecting each over the covered artwork:
   123 low fence in front of the thatched cottage's west corner
   153 shrub drawn over the south lean-to's west roof edge
   157/161 tree foliage (duplicate layer-0/layer-2 masks) over the west hutch
+  122 the stile (thatched-cottage asset) in front of the shingle cottage's
+      west corner (added in round 2)
 Parapet masks 187/190/191/192 overlap the south sheds but are already fully
 covered by the reviewed curtain exclusions 230/231/232 (residual <= 4 px).
 Masks 206/227 (inner gatehouse masonry) lie behind the privy and stay.
@@ -49,6 +51,10 @@ REVISIONS = {
     },
     'lincoln-bailey-thatched-cottage': {
         node: {'exclude_mask_indices': [67, 123]} for node in ('building-349', 'building-350', 'building-351')},
+    # Round 2: the stile 355 (thatched cottage asset) is drawn in front of the
+    # shingle cottage's west corner; keep the existing thatch exclusion 168.
+    'lincoln-bailey-shingle-cottage': {
+        node: {'exclude_mask_indices': [168, 122]} for node in ('building-352', 'building-353', 'building-354')},
     'lincoln-bailey-hay-cart': {
         node: {'exclude_mask_indices': [121]} for node in ('building-359', 'building-360', 'building-361')},
     'lincoln-south-wall-lean-to': {'building-368': {'exclude_mask_indices': [231, 153]}},

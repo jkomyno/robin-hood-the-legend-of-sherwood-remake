@@ -433,6 +433,182 @@ def build_ne_curtain(base):
 
 
 # --------------------------------------------------------------------------
+# Round-2 revisions (user review): middle run, corner turret, north-eastern
+# curtain.  Explicit coordinates only, so the builders work from the round-2
+# baseline (which already holds the round-1 meshes).
+# --------------------------------------------------------------------------
+
+# Shared castle-wall levels, from the rectified middle-run parapet (notch
+# shadow slits span z 370-380 along the authored 151/158 outer face) and the
+# gate towers (walk +12 crenel floor, +24 merlon top).
+WALK_Z, CRENEL_Z, MERLON_Z = 357.0, 369.0, 381.0
+# Thickness direction of the middle run (perpendicular to the run, per world unit).
+MID_U = (-0.652, -0.435)
+
+
+def mid_front(x):
+    """Outer face of the middle run: authored 151 and 158 outer edges are collinear."""
+    return (x, 1302.0 - 0.4893 * (x - 2648.0))
+
+
+def mid_offset(p, d):
+    return (p[0] + MID_U[0] * d, p[1] + MID_U[1] * d)
+
+
+MIDDLE_R2 = {
+    # Shadowed west end faces of merlons (source px x) along the outer face line;
+    # the notch lies west of each face.  2780.5 is hidden by ivy (pitch-inferred).
+    'slits': [2650.0, 2668.5, 2687.0, 2706.0, 2724.5, 2743.0, 2762.0, 2780.5, 2799.5,
+              2818.5, 2837.0, 2857.0],
+    'notch_x': 9.1,                       # 12 world units along the run
+    'parapet_d': 8.0,                     # parapet thickness (world)
+    'x_start': 2641.0, 'x_end': 2872.0,   # slate-tower corner turret -> corner turret
+    'splits': {151: (2641.0, 2729.0), 159: (2729.0, 2808.0), 158: (2808.0, 2872.0)},
+    # Walk inner edge from the mask 239 upper boundary at walk height 357.
+    'inner': lambda x: 1268.0 - 0.5 * (x - 2650.0),
+    'walk_x': (2628.0, 2866.0),
+    # Stair 150 along the inner face: courtyard (z 220, west) to the walk (east).
+    'stair': [(2692.1, 1201.6), (2716.0, 1235.0), (2816.2, 1185.0), (2790.0, 1153.1)],
+}
+
+
+def _crenel_run(x0, x1, notches_x, d0, d1, z_base):
+    a, b = mid_front(x0), mid_front(x1)
+    outer = (mid_offset(a, d0), mid_offset(b, d0))
+    inner = (mid_offset(a, d1), mid_offset(b, d1))
+    notches = []
+    for lo, hi in notches_x:
+        t0, t1 = (lo - x0) / (x1 - x0), (hi - x0) / (x1 - x0)
+        t0, t1 = max(t0, 0.0), min(t1, 1.0)
+        if t1 - t0 > 1e-3:
+            notches.append((t0, t1))
+    return G.crenellated_wall(outer, inner, z_base, CRENEL_Z, MERLON_Z, notches), len(notches)
+
+
+def build_middle_run_r2(base):
+    c = MIDDLE_R2
+    notches_x = [(x - c['notch_x'], x) for x in c['slits']]
+    out, counts = {}, {}
+    for node, (x0, x1) in c['splits'].items():
+        shell, counts[node] = _crenel_run(x0, x1, notches_x, 0.0, c['parapet_d'], PLATEAU)
+        out[node] = (shell, 'Measured Crenellated Parapet')
+    # Walk 141: between the parapet back and the painted inner edge, level at 357.
+    wx0, wx1 = c['walk_x']
+    back0, back1 = mid_offset(mid_front(wx0), c['parapet_d']), mid_offset(mid_front(wx1), c['parapet_d'])
+    walk = G.Shell()
+    walk.prism([back0, back1, (back1[0], c['inner'](back1[0])), (back0[0], c['inner'](back0[0]))],
+               PLATEAU, WALK_Z)
+    out[141] = (walk, 'Level Wall Walk')
+    # Stair 150: stepped flight along the inner face, courtyard (west) up to the
+    # walk (east); painted treads show above the parapet at x 2760-2800.
+    a, b, cc, d = c['stair']
+    n = 18
+    rise = (WALK_Z - PLATEAU) / n
+    prof = [(0.0, PLATEAU)]
+    for k in range(n):
+        prof += [(k / n, PLATEAU + rise * (k + 1)), ((k + 1) / n, PLATEAU + rise * (k + 1))]
+    prof += [(1.0, PLATEAU)]
+    u = (d[0] - a[0], d[1] - a[1])
+    wv = (b[0] - a[0], b[1] - a[1])
+    out[150] = (G.extrude_profile(prof, a, u, wv, (0.0, 1.0)), 'Stepped Stair To Walk')
+    # 157: the authored full-height outward slope contradicted the straight
+    # painted face (the source parapet is on one line).  Kept as an internal
+    # base course flush behind the outer face so it adds no visible surface.
+    p0, p1 = mid_front(2728.0), mid_front(2821.0)
+    course = G.Shell()
+    course.prism([mid_offset(p0, 1.0), mid_offset(p1, 1.0), mid_offset(p1, 7.0), mid_offset(p0, 7.0)],
+                 PLATEAU, PLATEAU + 30.0)
+    out[157] = (course, 'Internal Base Course')
+    return out, {'walk_z': WALK_Z, 'crenel_z': CRENEL_Z, 'merlon_z': MERLON_Z,
+                 'notches': counts, 'ground_z': PLATEAU}
+
+
+CORNER_R2 = {'cx': 2886.0, 'cy': 1176.0, 'r': 35.0, 'r_in': 29.0,
+             # Painted outline tapers from width 66 (px 840-847 at the sides) to a
+             # 24-wide shaft (px ~900) that continues down to the ground.
+             'corbel': (285.0, 12.0, 329.0),  # z_bottom, r_bottom, z_top
+             'shaft': (12.0, 220.0, 284.9),
+             'merlons': {'count': 8, 'phase_deg': 10.0, 'width_deg': 22.5}}
+
+
+def frustum(shell, cx, cy, r0, z0, r1, z1, segments=40):
+    lo = [(*G.ellipse_point(cx, cy, r0, 2 * math.pi * i / segments), z0) for i in range(segments)]
+    hi = [(*G.ellipse_point(cx, cy, r1, 2 * math.pi * i / segments), z1) for i in range(segments)]
+    shell.face(list(reversed(lo)))
+    shell.face(hi)
+    for i in range(segments):
+        j = (i + 1) % segments
+        shell.face([lo[i], lo[j], hi[j], hi[i]])
+    return shell
+
+
+def build_corner_turret_r2(base):
+    c = CORNER_R2
+    m = c['merlons']
+    merlons = G.merlon_intervals(m['phase_deg'], 360.0 / m['count'], m['width_deg'], m['count'])
+    zb, rb, zt = c['corbel']
+    shell = G.crenellated_ring(c['cx'], c['cy'], c['r'], c['r_in'], zt, CRENEL_Z, MERLON_Z,
+                               merlons, step_deg=7.5)
+    frustum(shell, c['cx'], c['cy'], rb, zb, c['r'], zt - 0.1)
+    G.cylinder(shell, c['cx'], c['cy'], c['r_in'] - 0.2, zt, WALK_Z, 40)
+    sr, sz0, sz1 = c['shaft']
+    G.cylinder(shell, c['cx'], c['cy'], sr, sz0, sz1, 24)
+    return {152: (shell, 'Corbelled Turret On Shaft')}, {'merlons': m['count'], 'corbel': c['corbel'],
+                                                          'shaft': c['shaft'], 'ground_z': PLATEAU}
+
+
+NE_R2 = {
+    # East run: walk paving x 2848-2893, thin parapet strip x 2893-2901.  Merlon
+    # tops are the bright 7-8 px runs along x 2895-2897 (px y + 381 = native y).
+    'walk': ((2848.0, 2893.0), (999.0, 1172.0)),  # meets walk 155 at y 999
+    'parapet_x': (2893.0, 2901.0), 'parapet_y': (992.0, 1165.0),
+    'merlons_y': [(995, 1002), (1009, 1017), (1024, 1032), (1038, 1046), (1052, 1059),
+                  (1067, 1074), (1081, 1089), (1096, 1104), (1110, 1117), (1124, 1132),
+                  (1139, 1146), (1153, 1160)],
+    # Diagonal run: merlon caps (bright at z 380) / shadowed faces (dark at z 372)
+    # measured along the authored line (2801.7, 908) -> (2901.2, 996.2).
+    'diag_line': ((2801.7, 908.0), (2901.2, 996.2)),
+    'diag_quad': {'outer': ((2805.1, 906.55), (2905.0, 994.8)),
+                  'inner': ((2798.2, 909.1), (2898.1, 997.35))},
+    'diag_merlons_t': [(0.065 + 0.1357 * k, 0.065 + 0.1357 * k + 0.0704) for k in range(7)] + [(0.95, 1.0)],
+    'walk155': [(2778.9, 936.6), (2781.6, 920.2), (2800.4, 910.4), (2898.1, 997.35), (2893.0, 999.0),
+                (2848.0, 999.0)],
+}
+
+
+def build_ne_curtain_r2(base):
+    c = NE_R2
+    (wx0, wx1), (wy0, wy1) = c['walk']
+    walk = G.Shell()
+    walk.prism([(wx0, wy0), (wx1, wy0), (wx1, wy1), (wx0, wy1)], PLATEAU, WALK_Z)
+    px0, px1 = c['parapet_x']
+    py0, py1 = c['parapet_y']
+    cuts = sorted({py0, py1} | {v for m in c['merlons_y'] for v in m if py0 < v < py1})
+    par = G.Shell()
+    for a, b in zip(cuts, cuts[1:]):
+        par.hexa((px0, a), (px1, a), (px0, b), (px1, b), PLATEAU, CRENEL_Z)
+        if any(lo <= (a + b) / 2 <= hi for lo, hi in c['merlons_y']):
+            par.hexa((px0, a), (px1, a), (px0, b), (px1, b), CRENEL_Z, MERLON_Z)
+    par.cancel()
+    (ax, ay), (bx, by) = c['diag_line']
+    q = c['diag_quad']
+    ox0, ox1 = q['outer'][0][0], q['outer'][1][0]
+    # Map merlon parameters (measured along diag_line) to the quad by x.
+    def tq(t):
+        return ((ax + (bx - ax) * t) - ox0) / (ox1 - ox0)
+    merl = [(max(tq(a), 0.0), min(tq(b), 1.0)) for a, b in c['diag_merlons_t']]
+    edges = sorted({0.0, 1.0} | {v for m in merl for v in m if 0 < v < 1})
+    notches = [(a, b) for a, b in zip(edges, edges[1:]) if not any(lo <= (a + b) / 2 <= hi for lo, hi in merl)]
+    diag = G.crenellated_wall(q['outer'], q['inner'], PLATEAU, CRENEL_Z, MERLON_Z, notches)
+    walk155 = G.Shell()
+    walk155.prism(c['walk155'], PLATEAU, WALK_Z)
+    return {153: (walk, 'Level Wall Walk'), 154: (par, 'Measured Crenellated Parapet'),
+            155: (walk155, 'Level Wall Walk'), 156: (diag, 'Measured Crenellated Parapet')}, {
+        'east_merlons': len(c['merlons_y']), 'diagonal_merlons': len(merl), 'walk_z': WALK_Z,
+        'ground_z': PLATEAU}
+
+
+# --------------------------------------------------------------------------
 # North-eastern square tower (163 body, 160 parapet, 161 front band,
 # 162 turret, 164/165 spire halves)
 # --------------------------------------------------------------------------
@@ -603,6 +779,27 @@ INNER_REAR = {132: (PLATEAU, 363.0), 93: (PLATEAU, 363.0), 133: (276.0, 363.0)}
 INNER_REAR_DEPTH = 16.0
 
 
+# West half-round tower 130 (round 2).  The authored skin put the west flank
+# at (1989, 1480), 13 native units in front of the circle through its painted
+# front (2015/1488, 2039/1486) and flanks (x 1989 / 2062).  A half-round of
+# world radius 36.5 about (2025.5, 1467.1) fits the painted round silhouette and
+# joins the curtain strip at y ~1465-1467; the old flank intersected the
+# courtyard privy 196 and hid its painted roof verge (x 1976-1999, px 1175-1213).
+INNER_WEST_TOWER = {'cx': 2025.5, 'cy': 1467.1, 'r_out': 36.5, 'r_in': 31.5,
+                    'east_deg': 16.0, 'z0': PLATEAU, 'z1': 365.0}
+
+
+def inner_west_tower():
+    t = INNER_WEST_TOWER
+    arc = lambda r, a0, a1, n: [G.ellipse_point(t['cx'], t['cy'], r, math.radians(a0 + (a1 - a0) * i / n))
+                                for i in range(n + 1)]
+    outer = [(1956.6, 1461.5), (1979.9, 1465.0)] + arc(t['r_out'], 180.0, t['east_deg'], 20) + [(2094.0, 1476.0)]
+    inner = [(2096.0, 1471.9)] + arc(t['r_in'], t['east_deg'] - 4.0, 180.0, 20) + [(1988.0, 1459.9), (1957.8, 1457.4)]
+    shell = G.Shell()
+    shell.prism(outer + inner, t['z0'], t['z1'])
+    return shell
+
+
 def build_inner_gatehouse(base):
     out = {}
     for node, (z0, z1) in INNER_REAR.items():
@@ -612,6 +809,7 @@ def build_inner_gatehouse(base):
         shell = G.Shell()
         shell.prism([front[0], front[1], back[1], back[0]], z0, z1)
         out[node] = (shell, 'Thickened Coped Wall')
+    out[130] = (inner_west_tower(), 'Half-Round West Tower')
     for node in INNER_NODES:
         if node in out:
             continue
@@ -623,13 +821,91 @@ def build_inner_gatehouse(base):
     return out, {'ground_z': PLATEAU, 'crenellations': 'none (continuous coping in source)'}
 
 
+def build_ne_stair_r2(base):
+    """Round 2: marker strip 71 no longer drawn as a long ground slab.
+
+    71 is a non-visual sight obstacle whose authored top is exactly the plateau
+    (native z 220) and which runs from the stair foot north across the tower
+    footprint; it has no painted counterpart.  Until the coordinator moves it
+    (grouping-proposal.json: whole node to the north-bailey plateau terrain),
+    it is kept as a small closed block inside the stair's first step so the
+    stair asset shows no stray piece.  Flight 167 and landing 166 keep their
+    round-1 geometry (rebuilt identically).
+    """
+    out, facts = build_ne_stair(base)
+    marker = G.Shell()
+    marker.prism([(2634.0, 946.0), (2640.5, 936.5), (2645.0, 944.0)], PLATEAU - 1.0, PLATEAU + 2.0)
+    out[71] = (marker, 'Hidden Marker Stub')
+    return out, {**facts, 'marker_71': 'stub inside first step'}
+
+
+# --------------------------------------------------------------------------
+# Round 3 (catalog v3 regroup)
+# --------------------------------------------------------------------------
+
+LOWER_WALK_R3 = {
+    # Walk component 083 "east-curtain-walk" (authored by the south lane at z 350)
+    # is raised to the lane walk height 357.  Its inner edge (36-37 native units
+    # from the parapet 098 inner line) moves 7 units towards the viewer so the
+    # painted inner paving edge (pixel = y - z) stays where the z-350 walk fitted it.
+    'line': ((2489.8, 1665.6), (2377.3, 1811.7)), 'inner_sd': 30.0, 'rise': 7.0,
+    'from_z': 350.0, 'to_z': WALK_Z,
+}
+
+
+def build_lower_r3(base):
+    c = LOWER_WALK_R3
+    data = base[83]
+    (ax, ay), (bx, by) = c['line']
+    L = math.hypot(bx - ax, by - ay)
+    verts = []
+    moved = 0
+    for x, y, z in data['verts']:
+        sd = ((bx - ax) * (y - ay) - (by - ay) * (x - ax)) / L
+        if sd > c['inner_sd']:
+            y += c['rise']
+            moved += 1
+        if abs(z - c['from_z']) < 0.05:
+            z = c['to_z']
+        verts.append((x, y, z))
+    shell = G.Shell(digits=4)
+    for f in data['faces']:
+        shell.face([verts[i] for i in f])
+    return {83: (shell, 'Walk Raised To Lane Height')}, {
+        'walk_z': c['to_z'], 'inner_edge_vertices_moved': moved, 'ground_z': 'unchanged (ravine foot 177-204)'}
+
+
+SLATE_FLOOR_R3 = {
+    # Tower footprint: outer lines of walls 146 (west), 147 (north), 145 (south)
+    # and corner turret 144 (south-east); the east side has no wall obstacle.
+    'poly': [(2502.0, 1300.0), (2505.6, 1295.0), (2540.0, 1259.4), (2545.0, 1261.2), (2600.6, 1277.8),
+             (2641.3, 1293.0), (2646.0, 1317.8), (2626.0, 1333.0), (2604.0, 1334.0), (2586.0, 1323.8),
+             (2562.0, 1317.0)],
+    'top': 344.0,   # level of the south walk that enters the tower
+}
+
+
+def build_slate_floor_r3(base):
+    c = SLATE_FLOOR_R3
+    shell = G.Shell()
+    shell.prism(c['poly'], PLATEAU, c['top'])
+    return {140: (shell, 'Tower Floor Block')}, {'floor_z': c['top'], 'ground_z': PLATEAU}
+
+
+# Coordinator decision (round 3): walk 083 "east-curtain-walk" stays at z 350 so it
+# meets the south lane's corner turret and curtain 084 walks without a step;
+# build_lower_r3 is kept for reference only and is not registered.
+BUILDERS_R3 = {
+    'lincoln-east-slate-tower': build_slate_floor_r3,
+}
+
 BUILDERS = {
     'lincoln-east-curtain-wall-south': build_south_run,
-    'lincoln-east-curtain-wall-middle': build_middle_run,
-    'lincoln-east-corner-turret': build_corner_turret,
-    'lincoln-northeast-curtain-wall': build_ne_curtain,
+    'lincoln-east-curtain-wall-middle': build_middle_run_r2,
+    'lincoln-east-corner-turret': build_corner_turret_r2,
+    'lincoln-northeast-curtain-wall': build_ne_curtain_r2,
     'lincoln-northeast-square-tower': build_ne_tower,
-    'lincoln-northeast-tower-stair': build_ne_stair,
+    'lincoln-northeast-tower-stair': build_ne_stair_r2,
     'lincoln-east-slate-tower': build_slate_tower,
     'lincoln-inner-gatehouse': build_inner_gatehouse,
     'lincoln-east-gate-north-tower': lambda base: build_round_tower(ROUND_TOWERS['lincoln-east-gate-north-tower'], base),
@@ -646,6 +922,10 @@ BUILDERS = {
 # (evidence: inspection/mask-revision-234.png).  Both masks stay subject to
 # first-hit receiver gating.
 MASK_REVISIONS = {
+    # User: "stairs missing texture?" - the painted treads of stair 150 lie in
+    # silhouette 240 (walk/corner-turret envelope), not in 239/409
+    # (inspection/mask-revision-150-240.png; 744 of 1374 stair first-hit px).
+    'lincoln-east-curtain-wall-middle': {'building-150': [239, 240, 409]},
     'lincoln-east-gate-arch': {
         'building-079': [233, 234], 'building-082': [233, 234], 'building-096': [233, 234],
     },
@@ -688,8 +968,8 @@ def apply_mask_revisions(workspace, asset):
         if node in revisions and row['mask_indices'] != revisions[node]:
             row['mask_indices'] = list(revisions[node])
             row['requires_first_hit_gating'] = True
-            row['worker_revision'] = ('east_gate_walls lane: painted pixels of this receiver lie in the '
-                                      'gate-wall silhouette 234; see inspection/mask-revision-234.png')
+            row['worker_revision'] = ('east_gate_walls lane: painted pixels of this receiver lie in the added '
+                                      'native silhouette; see inspection/mask-revision-*.png')
             changed.append(node)
         if vegetation and node in vegetation[0]:
             excl = sorted(set(row.get('exclude_mask_indices', [])) | set(vegetation[1]))
@@ -714,7 +994,101 @@ def _sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def run(asset, packet):
+# Round-2 component split (user: "again has a hut thing that should be
+# separate" / slate tower: "this is what the above should be part of").  Walk
+# 140 is cut by the vertical plane through the slate-tower south face (145
+# outer edge, extended); the part inside the tower becomes its own component.
+SPLIT_140 = {'p1': (2501.8, 1300.1), 'p2': (2562.0, 1316.9),
+             'walk': 'east-curtain-south-walk', 'tower': 'slate-tower-floor-block'}
+
+
+def split_south_walk(workspace, owned, report):
+    """Replace mesh 140 by two closed components cut from the baseline mesh."""
+    import bmesh
+    import bpy
+    from mathutils import Vector
+    src = owned[140]
+    matrix = src.matrix_world.copy()
+    with bpy.data.libraries.load(str(workspace / 'baseline.blend'), link=False) as (lib_src, lib_dst):
+        if src.name not in lib_src.objects:
+            raise ValueError('Baseline lacks ' + src.name)
+        lib_dst.objects = [src.name]
+    base_obj = lib_dst.objects[0]
+    base_mesh = base_obj.data
+    bpy.data.objects.remove(base_obj)
+    collection = bpy.data.collections[json.loads((workspace / 'workspace.json').read_text())['collection_name']]
+    for obj in list(collection.all_objects):
+        if obj.type == 'MESH' and obj.get('source_node') == 'building-140' and obj is not src:
+            bpy.data.objects.remove(obj)   # idempotent: drop an earlier second component
+    (x1, y1), (x2, y2) = SPLIT_140['p1'], SPLIT_140['p2']
+    p1w = Vector(G.to_world((x1, y1, 0.0)))
+    p2w = Vector(G.to_world((x2, y2, 0.0)))
+    d = p2w - p1w
+    normal = Vector((-d.y, d.x, 0.0)).normalized()   # points into the tower (north)
+    test = Vector(G.to_world((2570.0, 1290.0, 300.0))) - p1w
+    if normal.dot(test) < 0:
+        normal = -normal
+    inverse = matrix.inverted()
+    results = []
+    for keep_tower, component, label in ((False, SPLIT_140['walk'], 'Wall Walk Component'),
+                                         (True, SPLIT_140['tower'], 'Slate Tower Floor Component')):
+        bm = bmesh.new()
+        bm.from_mesh(base_mesh)
+        bm.transform(matrix)   # baseline mesh is local to the same (unchanged) transform
+        # Concave n-gons (walk top/bottom) must be triangulated before bisecting.
+        bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method='BEAUTY', ngon_method='EAR_CLIP')
+        geom = list(bm.verts) + list(bm.edges) + list(bm.faces)
+        cut = bmesh.ops.bisect_plane(bm, geom=geom, plane_co=p1w, plane_no=normal,
+                                     clear_inner=keep_tower, clear_outer=not keep_tower)
+        edges = [e for e in cut['geom_cut'] if isinstance(e, bmesh.types.BMEdge)]
+        bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary], sides=0)
+        bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4],
+                              quad_method='BEAUTY', ngon_method='EAR_CLIP')
+        bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+        bm.transform(inverse)
+        if keep_tower:
+            obj = src.copy()
+            obj.data = src.data.copy()
+            for coll in src.users_collection:
+                coll.objects.link(obj)
+            obj.name = src.name.replace('Roof or surface projection component 140',
+                                        'Slate tower floor component 140')
+        else:
+            obj = src
+        mesh = bpy.data.meshes.new(obj.name + ' ' + label)
+        bm.to_mesh(mesh)
+        nonmanifold = sum(not e.is_manifold for e in bm.edges)
+        bm.free()
+        for material in src.data.materials:
+            mesh.materials.append(material)
+        mesh.uv_layers.new(name='UVMap')
+        old = obj.data
+        obj.data = mesh
+        if old.users == 0:
+            bpy.data.meshes.remove(old)
+        obj['source_node'] = 'building-140'
+        obj['asset_group'] = src['asset_group']
+        obj['projection_component'] = component
+        obj['source_projection_current'] = False
+        if [list(r) for r in obj.matrix_world] != [list(r) for r in matrix]:
+            raise ValueError('Component transform drifted')
+        results.append({'object': obj.name, 'projection_component': component, 'vertices': len(mesh.vertices),
+                        'faces': len(mesh.polygons), 'nonmanifold_edges': nonmanifold,
+                        'world_volume': round(G.mesh_volume(obj), 2)})
+    tmp = bmesh.new()
+    tmp.from_mesh(base_mesh)
+    tmp.transform(matrix)
+    bmesh.ops.triangulate(tmp, faces=tmp.faces[:], quad_method='BEAUTY', ngon_method='EAR_CLIP')
+    base_volume = tmp.calc_volume(signed=True)
+    tmp.free()
+    if base_mesh.users == 0:
+        bpy.data.meshes.remove(base_mesh)
+    report['split_140'] = {'components': results, 'baseline_volume': round(base_volume, 2),
+                           'component_volume_sum': round(sum(r['world_volume'] for r in results), 2)}
+    return results
+
+
+def run(asset, packet, packet_only=False, only_nodes=None, split_140=False, round3=False):
     import bpy
     sys.path.insert(0, str(HERE))
     from render_slots import acquire
@@ -731,26 +1105,46 @@ def run(asset, packet):
     for obj in collection.all_objects:
         if obj.type == 'MESH' and obj.get('asset_group') == asset:
             node = int(obj['source_node'].split('-')[1])
+            if split_140 and obj.get('projection_component') == SPLIT_140['tower']:
+                continue  # rebuilt from the baseline by split_south_walk
             if node in owned:
                 raise ValueError(f'Duplicate owned mesh for node {node}')
             owned[node] = obj
-    base = G.load_baseline_native(workspace / 'baseline.blend', {o.name: o.matrix_world.copy() for o in owned.values()})
-    base = {node: base[obj.name] for node, obj in owned.items()}
-    generated, facts = BUILDERS[asset](base)
+    if packet_only:
+        # Round 2+: baseline.blend already holds the reviewed geometry; keep it.
+        generated, facts = {}, {'packet_only': True}
+    else:
+        base = G.load_baseline_native(workspace / 'baseline.blend', {o.name: o.matrix_world.copy() for o in owned.values()})
+        base = {node: base[obj.name] for node, obj in owned.items()}
+        generated, facts = (BUILDERS_R3 if round3 else BUILDERS)[asset](base)
+        if only_nodes:
+            # Round 2+: rebuild just these nodes; the rest keep the reviewed geometry.
+            generated = {k: v for k, v in generated.items() if k in only_nodes}
+            facts = {**facts, 'only_nodes': sorted(only_nodes)}
     changes = []
     for node, (shell, label) in sorted(generated.items()):
         if node not in owned:
             raise ValueError(f'Builder produced unowned node {node}')
         changes.append(G.replace_mesh(owned[node], shell, label))
     bad = [c for c in changes if c['nonmanifold_edges'] or c['degenerate_faces'] or c['world_volume'] <= 0]
+    split_report = {}
+    if split_140:
+        if asset != 'lincoln-east-curtain-wall-south':
+            raise ValueError('--split-140 applies only to the south curtain workspace')
+        split = split_south_walk(workspace, owned, split_report)
+        bad += [c for c in split if c['nonmanifold_edges'] or c['world_volume'] <= 0]
     bpy.context.preferences.filepaths.save_version = 0
     bpy.ops.wm.save_as_mainfile(filepath=str(blend))
     inspection = workspace / 'inspection'
     inspection.mkdir(exist_ok=True)
     actual = {}
-    for node, obj in owned.items():
+    for obj in collection.all_objects:
+        if obj.type != 'MESH' or obj.get('asset_group') != asset:
+            continue
+        node = int(obj['source_node'].split('-')[1])
+        key = str(node) + (':' + obj['projection_component'] if obj.get('projection_component') else '')
         m = obj.matrix_world
-        actual[str(node)] = {'object': obj.name,
+        actual[key] = {'object': obj.name,
                              'verts': [G.to_native(tuple(m @ v.co)) for v in obj.data.vertices],
                              'faces': [list(p.vertices) for p in obj.data.polygons]}
     (inspection / 'actual-native.json').write_text(json.dumps(actual) + '\n')
@@ -758,7 +1152,7 @@ def run(asset, packet):
               'recipe_sha256': _sha(__file__), 'helper_sha256': _sha(G.__file__),
               'changed_objects': changes, 'unchanged_nodes': sorted(set(owned) - set(generated)),
               'facts': facts, 'topology_exceptions': bad,
-              'world_transform_drift': 0}
+              'world_transform_drift': 0, **split_report}
     (inspection / 'geometry-recipe.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report, indent=2))
     report['mask_revisions'] = apply_mask_revisions(workspace, asset)
@@ -773,8 +1167,15 @@ def run(asset, packet):
 def main():
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:]
     parser = argparse.ArgumentParser()
-    parser.add_argument('--asset', required=True, choices=sorted(BUILDERS))
+    parser.add_argument('--asset', required=True, choices=sorted(set(BUILDERS) | set(BUILDERS_R3)))
     parser.add_argument('--no-packet', action='store_true')
+    parser.add_argument('--packet-only', action='store_true',
+                        help='Keep the workspace geometry (round-2 baselines hold round-1 results); '
+                             'export evidence and regenerate the packet only')
+    parser.add_argument('--round3', action='store_true', help='Use the round-3 (catalog v3) builders')
+    parser.add_argument('--split-140', action='store_true',
+                        help='South curtain: split walk 140 into walk and slate-tower floor components')
+    parser.add_argument('--only-nodes', help='Comma list of owned node numbers to rebuild (round 2+)')
     parser.add_argument('--preview', help='Plain-Python mode: native JSON of the baseline scene')
     parser.add_argument('--out', help='Plain-Python mode: write generated native shells here')
     args = parser.parse_args(argv)
@@ -786,7 +1187,8 @@ def main():
                                               for k, (s, label) in generated.items()}) + '\n')
         print(json.dumps(facts))
         return
-    run(args.asset, not args.no_packet)
+    run(args.asset, not args.no_packet, args.packet_only,
+        {int(n) for n in args.only_nodes.split(',')} if args.only_nodes else None, args.split_140, args.round3)
 
 
 if __name__ == '__main__':

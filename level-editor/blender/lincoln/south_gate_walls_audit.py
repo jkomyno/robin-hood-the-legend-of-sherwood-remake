@@ -16,6 +16,7 @@ workspace source-coverage-audit.json. PASS requires a reviewed explanation
 for every substantial neutral class (EXPLAIN below, written after inspecting
 the overlay and all eight modified views).
 """
+import os
 import hashlib
 import json
 import sys
@@ -37,12 +38,24 @@ def sha(p):
 _man = None
 
 
+_inv = MASKS
+
+
+def use_inventory(manifest_path):
+    """Select the mask inventory named by a workspace source-masks.json."""
+    global _man, _inv
+    path = Path(manifest_path)
+    if path != _inv / 'manifest.json':
+        _inv = path.parent
+        _man = None
+
+
 def native_mask(i):
     global _man
     if _man is None:
-        _man = {m['index']: m for m in json.loads((MASKS / 'manifest.json').read_text())['masks']}
+        _man = {m['index']: m for m in json.loads((_inv / 'manifest.json').read_text())['masks']}
     rec = _man[i]
-    a = np.array(Image.open(MASKS / rec['png'])) > 0
+    a = np.array(Image.open(_inv / rec['png'])) > 0
     full = np.zeros((H, W), bool)
     x0, y0 = rec['box_top_left']
     h, w = a.shape
@@ -51,21 +64,50 @@ def native_mask(i):
 
 
 # Per-asset reviewed explanations of neutral classes (filled after inspection).
-EXPLAIN = json.loads((HERE / 'south_gate_walls_audit_notes.json').read_text()) \
-    if (HERE / 'south_gate_walls_audit_notes.json').exists() else {}
+_ROUND = os.environ.get('SOUTH_GATE_ROUND', 'round-1')
+_NOTES = HERE / ('south_gate_walls_audit_notes.json' if _ROUND == 'round-1'
+                 else f'south_gate_walls_audit_notes-{_ROUND}.json')
+EXPLAIN = json.loads(_NOTES.read_text()) if _NOTES.exists() else {}
 
 
 def audit(asset):
-    ws = R / 'round-1/assets' / asset
+    ws = R / os.environ.get('SOUTH_GATE_ROUND', 'round-1') / 'assets' / asset
     hits = np.load(ws / 'inspection/coverage-hits.npz')
     meta = json.loads((ws / 'inspection/coverage-hits.json').read_text())
     cls, node = hits['cls'], hits['node']
     x0, y0, x1, y1 = meta['box']
-    masks = json.loads((ws / 'source-masks.json').read_text())['projections']['exterior']['assignments']
-    by = {a['source_node']: a for a in masks}
+    working = json.loads((ws / 'source-masks.json').read_text())
+    use_inventory((ws / working['mask_inventory']).resolve())
+    masks = working['projections']['exterior']['assignments']
+    by = {a['source_node']: a for a in masks if 'projection_component' not in a}
+    by_comp = {(a['source_node'], a['projection_component']): a for a in masks if 'projection_component' in a}
+    comp_map = hits['comp'] if 'comp' in hits.files else None
+    comp_names = meta.get('components', {})
+
+    def mask_of(a):
+        m = np.zeros((H, W), bool)
+        for i in a['mask_indices']:
+            if i != 428:
+                m |= native_mask(i)
+        for i in a.get('exclude_mask_indices', []) or []:
+            m &= ~native_mask(i)
+        return m[y0:y1, x0:x1]
     node_mask = {}
     for k, n in enumerate(meta['nodes']):
-        a = by[n]
+        comps = comp_names.get(n)
+        a = by.get(n)
+        if a is None:  # only component-level rows exist for this node
+            a = next(r for (nn, c), r in by_comp.items() if nn == n)
+        if comps and any((n, c) in by_comp for c in comps):
+            # Component-specific receivers: the owned first-hit pixels of each
+            # component are judged against that component's own mask.
+            per = np.zeros((y1 - y0, x1 - x0), bool)
+            node_px = (cls == 1) & (node == k)
+            for ci, c in enumerate(comps):
+                row = by_comp.get((n, c), a)
+                per |= mask_of(row) & node_px & (comp_map == ci)
+            node_mask[k] = per | (mask_of(a) & ~node_px)
+            continue
         m = np.zeros((H, W), bool)
         for i in a['mask_indices']:
             if i == 428:
@@ -98,8 +140,8 @@ def audit(asset):
     per_node = {n: {'owned_hits': int((own & (node == k)).sum()),
                     'accepted': int((acc & (node == k)).sum()),
                     'rejected': int((rej & (node == k)).sum()),
-                    'masks': by[n]['mask_indices'],
-                    'reject_all': by[n]['mask_indices'] == [428]}
+                    'masks': sorted({i for r in [by.get(n)] + [r for (nn, c), r in by_comp.items() if nn == n] if r for i in r['mask_indices']}),
+                    'reject_all': all(r['mask_indices'] == [428] for r in [by.get(n)] + [r for (nn, c), r in by_comp.items() if nn == n] if r)}
                 for k, n in enumerate(meta['nodes'])}
     src = np.array(Image.open(R / 'source-states/covered.png').convert('RGB'))[y0:y1, x0:x1]
     over = (src * 0.35).astype(np.uint8)

@@ -1,6 +1,6 @@
 """Write mask-review evidence sheets for the rocks/terrain lane (system python + PIL).
 
-    python3 level-editor/blender/lincoln/rocks_terrain_volumes_evidence.py <asset-id>
+    python3 level-editor/blender/lincoln/rocks_terrain_volumes_evidence.py <asset-id> [round-1|round-2]
 
 For every owned node with a reviewed row in rocks_terrain_volumes_masks.MASKS
 it writes inspection/mask-review-<node>.png: the unmarked covered crop, the
@@ -24,7 +24,8 @@ S35, C35 = math.sin(math.radians(35)), math.cos(math.radians(35))
 
 def main():
     asset = sys.argv[1]
-    workspace = ROOT / 'round-1/assets' / asset
+    rnd = sys.argv[2] if len(sys.argv) > 2 else 'round-1'
+    workspace = ROOT / rnd / 'assets' / asset
     config = json.loads((workspace / 'workspace.json').read_text())
     working = json.loads(Path(config['source_mask_manifest']).read_text())
     inventory_path = (Path(config['source_mask_manifest']).parent / working['mask_inventory']).resolve()

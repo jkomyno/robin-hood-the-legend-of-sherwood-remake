@@ -1,0 +1,37 @@
+{
+ "lincoln-south-wall-stair": {
+  "status": "PASS",
+  "observation": "The stair now ends in its own top landing (085 south-wall-stair-top-landing, walk height z 320) where you stand after going up; the landing parapets 107/108 stand on it, so the stair asset is complete on its own. Round 4 (catalog v4 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Riser count 12 is inferred (lower flight hidden).",
+   "The landing meets the angled walk along a straight cut on the native walk edge (coplanar cut face, by design)."
+  ]
+ },
+ "lincoln-south-curtain-wall-angle": {
+  "status": "PASS",
+  "observation": "The upper stair landing moved to lincoln-south-wall-stair; this run keeps the angled wall skin 109 with 5 crenels, its walk (085 south-angle-curtain-walk) and the wall fill below the door turret. Round 4 (catalog v4 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Lowest drawn courses are covered by the terrain cliff surface (terrain lane)."
+  ]
+ },
+ "lincoln-southeast-curtain-wall": {
+  "status": "PASS",
+  "observation": "Split into two pieces as asked: this asset is now only the straight crenellated run (084 + 099 southeast-parapet-straight); the short angled walk-step block (122 + 100) is the new asset lincoln-south-wall-walk-step. Round 4 (catalog v4 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Grass tufts at the wall foot (no native mask) remain in the texture.",
+   "Lowest drawn courses are covered by the terrain cliff surface (terrain lane)."
+  ]
+ },
+ "lincoln-south-wall-walk-step": {
+  "status": "PASS",
+  "observation": "New modular piece (second of the two pieces the user asked for on the SE curtain): the angled junction block 122 whose walk rises from z 320 (door-turret level) to z 350 (SE curtain level), with its parapet 100. Round 4 (catalog v4 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Walk-step heights are fixed to this location (320 -> 350).",
+   "Sloped top keeps the native plane; no stepped treads are drawn in the art."
+  ]
+ }
+}

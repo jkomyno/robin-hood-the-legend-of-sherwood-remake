@@ -36,7 +36,11 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 REFINEMENT = HERE.parents[1] / 'work/lincoln-refinement'
-ASSETS_DIR = REFINEMENT / 'round-1/assets'
+# Workspace round: round-1 (default) or round-2 (integrated context); set with
+# --round or the WEST_COMPLEX_ROUND environment variable.
+import os as _os
+ROUND = int(_os.environ.get('WEST_COMPLEX_ROUND', '1'))
+ASSETS_DIR = REFINEMENT / f'round-{ROUND}/assets'
 S, C = math.sin(math.radians(35)), math.cos(math.radians(35))
 
 
@@ -228,10 +232,14 @@ def load_combined(base_asset):
 def main():
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     parser = argparse.ArgumentParser()
+    parser.add_argument('--round', type=int, default=None)
     parser.add_argument('--asset', required=True)
     parser.add_argument('--combined', action='store_true',
                         help='also audit against the other lane assets refined meshes (inspection only)')
     args = parser.parse_args(argv)
+    if args.round is not None:
+        global ASSETS_DIR
+        ASSETS_DIR = ASSETS_DIR.parents[1] / f'round-{args.round}/assets'
     from render_slots import acquire
     acquire()
     if args.combined:

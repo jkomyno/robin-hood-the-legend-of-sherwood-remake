@@ -57,6 +57,10 @@ MASKS = {
          'reason': FOLIAGE + '; 282/283/284 are the bastion wall silhouettes',
          'note': 'Moat-bank rock envelope 265 also covers the western plateau cliff face behind the bank rocks; '
                  'composite with nodes 423-431, first-hit gating partitions it.'},
+    57: {'include': [152],
+         'note': 'Round 3: 057 is the northern half of the ravine bridge deck (catalog v3); native bridge '
+                 'silhouette 152 (parapet, arch and arch opening) lies mostly over it. Composite with 075; '
+                 'first-hit gating partitions it.'},
     75: {'include': [152],
          'note': 'Native silhouette 152 is the south-western stone arch bridge; node 075 is its arch volume.'},
 }

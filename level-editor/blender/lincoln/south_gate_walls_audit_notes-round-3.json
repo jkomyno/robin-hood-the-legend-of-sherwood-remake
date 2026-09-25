@@ -1,0 +1,86 @@
+{
+ "lincoln-south-gatehouse": {
+  "status": "PASS",
+  "observation": "Gate block (arch), east round tower and cone stair turret are now one asset lincoln-south-gatehouse, as asked on the approved east tower (\"should either be merged with above or have some geometry of above\") and cone turret (\"should be merged with above\"). The round-2 full-depth gate block (\"weird split of geometry?\") is kept. Walkway slab 112 no longer needs a split. Round 3 (catalog v3 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Machicolations, arrow slits and portcullis grooves are projected texture only.",
+   "East tower lower east edge overshoots the artwork by 3-5 px (faceted outline).",
+   "Cone finial not modelled; Patch01 revealed interior not reviewed.",
+   "Lowest drawn courses are covered by the terrain cliff surface (terrain lane)."
+  ]
+ },
+ "lincoln-south-angle-bastion": {
+  "status": "PASS",
+  "observation": "New modular corner piece: half-round bastion body (085 south-angle-bastion-body) with its crenellated parapet (110 south-angle-bastion-parapet), separate from the straight curtain runs and the stairs, so walls can be composed from straight runs and corner pieces. Round 3 (catalog v3 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Bastion notch positions are manual readings (1-2 px).",
+   "The bastion body has coplanar cut faces where it meets the straight runs (by design for modular placement).",
+   "Lowest drawn courses are covered by the terrain cliff surface (terrain lane)."
+  ]
+ },
+ "lincoln-south-curtain-wall-angle": {
+  "status": "PASS",
+  "observation": "Round 3 feedback (\"this is where that upper thing on the stairs is instead of being part of the stairs\"): the stair top landing is cut out of the walk as new component 085 south-wall-stair-top-landing and proposed to move to lincoln-south-wall-stair in grouping-proposal.json (catalog v4); the recipe builds it with SOUTH_GATE_LANDING_SPLIT=1 once the catalog lists it (the frozen v3 tooling rejects unlisted components, so this workspace keeps the unsplit walk). Earlier: new straight run between the angle bastion and the door turret: angled wall skin with 5 crenels (109), its walk (085 south-angle-curtain-walk) and the wall fill below the door turret (104/127 wall-fill-below-door-turret). The stairs and the door turret are now separate assets. Round 3 (catalog v3 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Lowest drawn courses are covered by the terrain cliff surface (terrain lane).",
+   "Junction block 122/100 to the SE curtain belongs to lincoln-southeast-curtain-wall."
+  ]
+ },
+ "lincoln-south-curtain-wall-central": {
+  "status": "PASS",
+  "observation": "Now only the straight run: wall body 086 and the straight crenellated parapet (110 south-central-parapet-straight). The half-round corner piece is the separate asset lincoln-south-angle-bastion. Round 3 (catalog v3 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Lowest drawn courses (z~165-195) are covered by the terrain cliff surface (terrain lane).",
+   "Corbel band is projected texture only."
+  ]
+ },
+ "lincoln-south-wall-stair": {
+  "status": "PASS",
+  "observation": "Stairs are now their own asset: 12-riser stair (106) with its two landing parapets (107/108). The round corner part moved to lincoln-south-angle-bastion and the angled wall to lincoln-south-curtain-wall-angle. Round 3 (catalog v3 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Riser count 12 is inferred (lower flight hidden).",
+   "Landing parapets 107/108 stand on the walk of lincoln-south-curtain-wall-angle and float when this asset is viewed alone; if the user prefers, they can move to the angled run."
+  ]
+ },
+ "lincoln-south-wall-cone-turret": {
+  "status": "PASS",
+  "observation": "Round 3 fix for \"front is indentet for no reason\": the native L-shaped wall fragments sat 6-10 units behind the roof edge; the turret is now a square box flush under its pyramid roof (1-unit eave), split into the two owned halves (104/127 door-turret-wall), with a 6-unit door niche (z 320-356) where the art draws the doorway; eave plate 105 matches the roof base. Earlier (round 2): the door turret is a standalone placeable prop: pyramid roof (102/103), floor 105, block 101 and the turret walls above the wall walk (104/127 door-turret-wall, base z 320). The wall fill below it belongs to the angled curtain run; it sits on any wall walk at z 320. Round 3 (catalog v3 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "The prop base is the south wall walk height (z 320); on other walls it must be placed on the walk surface.",
+   "Finial not modelled."
+  ]
+ },
+ "lincoln-southeast-curtain-wall": {
+  "status": "PASS",
+  "observation": "Now only the straight run: 084 body, the straight parapet (099 southeast-parapet-straight, 13 crenels) and the junction pieces 122/100 to the door turret. The round corner piece is lincoln-southeast-corner-turret. Round 3 (catalog v3 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Grass tufts at the wall foot (no native mask) remain in the texture.",
+   "Lowest drawn courses are covered by the terrain cliff surface (terrain lane)."
+  ]
+ },
+ "lincoln-southeast-corner-turret": {
+  "status": "PASS",
+  "observation": "Corner piece only: round turret body (083 southeast-corner-turret-body) with its crenellated ring (099 southeast-corner-turret-parapet). The east-curtain walkway (083 east-curtain-walk) now belongs to lincoln-east-curtain-wall-lower as the east lane requested. Round 3 (catalog v3 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Seam to coordinate: turret walk top is z 350 (same as the SE curtain walk 084; ring notch floor 367). The east lane plans to raise the east-curtain walk to z 357; that leaves a 7-unit step at the turret/east-walk junction unless both agree on one level.",
+   "Rounded turret keeps the native faceted outline."
+  ]
+ },
+ "lincoln-south-gate-drawbridge": {
+  "status": "PASS",
+  "observation": "Footbridge deck now textured through authored domain 432 (masks v3); rails through native masks 179/180. The v3 merge had put 432 on the rails component with no deck row; the working source-masks.json now gives 432 to footbridge-deck and 179/180 to footbridge-rails. Leaf 457 texture accepted (edge fringe only). Round 3 (catalog v3 regroup): membership checked against the catalog and the rendered views; no moved piece is missing and no foreign piece is included. Neutral areas are composite neighbours now in separate modular assets, the terrain cliff at the footings, and edge fringes.",
+  "explanations": {},
+  "limitations": [
+   "Rail sizes inferred; a thin rail-coloured streak shows on the deck where the drawn handrail overlaps domain 432.",
+   "Lowered state validated by overlay only (inspection/drawbridge-states.png, round 2); mecanisme patch not modelled."
+  ]
+ }
+}

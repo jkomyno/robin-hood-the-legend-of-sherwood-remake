@@ -50,7 +50,7 @@ def main():
     scene = json.loads(Path(sys.argv[2]).read_text())
     actual = json.loads((workspace / 'inspection/actual-native.json').read_text())
     masks = json.loads((workspace / 'source-masks.json').read_text())
-    owned_nodes = {f'building-{int(k):03d}' for k in actual}
+    owned_nodes = {f'building-{int(k.split(":")[0]):03d}' for k in actual}
     include, exclude = set(), set()
     rows = masks['projections']['exterior']['assignments']
     for row in rows:
@@ -69,10 +69,14 @@ def main():
     y1 = int(min(2176, max(max(ys), ys_m.max() if len(ys_m) else -1e9) + 8))
     box = (x0, y0, x1, y1)
     context = []
+    asset_id = json.loads((workspace / 'workspace.json').read_text())['asset_id']
     for node, objs in scene.items():
-        if f'building-{int(node):03d}' in owned_nodes:
-            continue
         for o in objs:
+            if o.get('asset_group') == asset_id or (
+                    o.get('asset_group') is None and f'building-{int(node):03d}' in owned_nodes):
+                continue  # owned (component-aware); foreign components stay occluders
+            if o.get('hide_render'):
+                continue
             v = o['verts']
             px = [p[0] for p in v]
             py = [p[1] - p[2] for p in v]

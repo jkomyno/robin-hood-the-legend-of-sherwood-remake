@@ -13,6 +13,7 @@ inspected. Manual overrides are listed per run with a reason.
 Usage: python3 south_gate_walls_trace.py <asset-id> [...]  (or 'all')
 Writes <workspace>/inspection/corner-trace.json and corner-trace-<run>.png.
 """
+import os
 import hashlib
 import json
 import math
@@ -28,7 +29,7 @@ from south_gate_walls_geometry import polyline_length, point_at  # noqa: E402
 ROOT = Path(__file__).resolve().parents[3]
 R = ROOT / 'level-editor/work/lincoln-refinement'
 SOURCE = R / 'source-states/covered.png'
-ASSETS = R / 'round-1/assets'
+ASSETS = R / os.environ.get('SOUTH_GATE_ROUND', 'round-1') / 'assets'
 
 # Each run: native outer (camera-facing) polyline and matching inner polyline,
 # the z window of the elevation, probe band, and classification sense.
@@ -39,8 +40,12 @@ RUNS = {
     'lincoln-south-curtain-wall-central': [
         {'run': 'central-front', 'node': 'building-110',
          'outer': [(1344, 2060), (1777, 2014)], 'inner': [(1344, 2057), (1782, 2011)],
-         'z': (300, 372), 'merlon_top': 358, 'sill': 345, 'probe': (348, 355),
-         'notch_is': 'bright', 'min_width': 4},
+         'z': (300, 372), 'merlon_top': 355, 'sill': 345, 'probe': (348, 353),
+         'notch_is': 'bright', 'min_width': 4,
+         'notes': 'Round 2: merlon top lowered 358 -> 355. The silhouette top of each merlon in native mask '
+                  '230 (358 measured at the front face) is the BACK edge of the 3-unit-deep cap, so the cap '
+                  'surface is at 358 - 3 = 355; at 358 the caps overlapped 1-3 px of the south-wall cottage '
+                  'roof drawn behind them (courtyard-lane cross-check, round-2 coverage-hits).'},
         {'run': 'central-bastion', 'node': 'building-110',
          'outer': [(1777, 2014), (1805, 2024), (1838, 2020), (1850, 2006), (1846, 1992)],
          'inner': [(1782, 2011), (1804, 2019), (1833, 2015), (1843, 2004), (1840, 1988)],
@@ -56,6 +61,15 @@ RUNS = {
          'outer': [(756, 1808), (861, 1885)], 'inner': [(762, 1806), (868, 1887)],
          'z': (340, 395), 'merlon_top': 379, 'sill': 366, 'probe': (369, 376),
          'notch_is': 'bright', 'min_width': 4},
+        {'run': 'west-bump', 'node': 'building-376',
+         'outer': [(861, 1885), (843, 1894), (882, 1924), (899, 1915)],
+         'inner': [(868, 1887), (852, 1895), (883, 1918), (899, 1911)],
+         'z': (340, 400), 'merlon_top': 382, 'sill': 368, 'probe': (371, 378),
+         'notch_is': 'bright', 'min_width': 2, 'drop': [(0, 2.5), (70, 90)],
+         'notes': 'Dropped: a 3 px sliver at the west return and the lit corner pilaster at the east corner '
+                  '(x 881-897), which is solid stone in the crop, not a notch. Round 2 (user: "middle part should be sticking out and also have battlements"): the projecting '
+                  'middle bay (16 units proud of the curtain face) carries its own merlons, 3-4 units higher than '
+                  'the curtain run.'},
         {'run': 'west-c', 'node': 'building-376',
          'outer': [(899, 1915), (993, 1988)], 'inner': [(899, 1911), (999, 1985)],
          'z': (340, 395), 'merlon_top': 379, 'sill': 366, 'probe': (369, 376),

@@ -31,7 +31,7 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import rocks_terrain_volumes_core as core  # noqa: E402
-from refine_rocks_terrain import ASSETS, ROOT, MaskStore  # noqa: E402
+from refine_rocks_terrain import ROOT, MaskStore  # noqa: E402
 
 S35, C35 = core.SIN35, core.COS35
 
@@ -78,8 +78,9 @@ def raster(depth, owner, tris, label, x0, y0):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--asset', required=True)
+    parser.add_argument('--round', default='round-1', choices=['round-1', 'round-2', 'round-3', 'round-4'])
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
-    workspace = (ASSETS / args.asset).resolve(strict=True)
+    workspace = (ROOT / args.round / 'assets' / args.asset).resolve(strict=True)
     config = json.loads((workspace / 'workspace.json').read_text())
     bpy.ops.wm.open_mainfile(filepath=str(workspace / 'model.blend'))
     scene = bpy.data.scenes[config['scene_name']]
@@ -97,6 +98,9 @@ def main():
     y0, y1 = max(0, int(sy.min()) - 2), min(2176, int(sy.max()) + 3)
     depth = np.full((y1 - y0, x1 - x0), -np.inf)
     owner = np.zeros((y1 - y0, x1 - x0), int)
+    # Second buffer without the asset: who would be seen if it were absent.
+    depth_wo = np.full((y1 - y0, x1 - x0), -np.inf)
+    owner_wo = np.zeros((y1 - y0, x1 - x0), int)
     labels = {}
     for obj in meshes:
         b = [obj.matrix_world @ __import__('mathutils').Vector(c) for c in obj.bound_box]
@@ -108,6 +112,8 @@ def main():
         labels[label] = obj
         tris = own_tris[obj['source_node']] if obj in owned else world_tris(obj)
         raster(depth, owner, tris, label, x0, y0)
+        if obj not in owned:
+            raster(depth_wo, owner_wo, tris, label, x0, y0)
     own_labels = {k for k, o in labels.items() if o in owned}
     front = np.isin(owner, list(own_labels))
     silhouette = np.zeros_like(front)
@@ -137,32 +143,54 @@ def main():
         excluded |= sel & inc & exc
     foreign_union = np.zeros(front.shape, bool)
     part_ids = set(config['part_ids'])
-    seen = set()
+    mask_owner = {}
     for node, row in rows.items():
         if node in part_ids:
             continue
-        for i in row['mask_indices'] + row.get('exclude_mask_indices', []):
-            if i == 428 or i in seen:
-                continue
-            seen.add(i)
-            r = masks.records[i]
-            bx, by = r['box_top_left']
-            bw, bh = r['box_size']
-            if bx > x1 or bx + bw < x0 or by > y1 or by + bh < y0:
-                continue
-            foreign_union |= masks.get(i)[y0:y1, x0:x1]
+        for i in row['mask_indices']:
+            if i != 428:
+                mask_owner.setdefault(i, set()).add(node)
+    foreign_by_mask = {}
+    for i in sorted(mask_owner):
+        r = masks.records[i]
+        bx, by = r['box_top_left']
+        bw, bh = r['box_size']
+        if bx > x1 or bx + bw < x0 or by > y1 or by + bh < y0:
+            continue
+        m = masks.get(i)[y0:y1, x0:x1]
+        foreign_union |= m
+        foreign_by_mask[i] = m
     rest = front & ~accepted & ~excluded
     foreign = rest & foreign_union
+    # Foreign pixels whose mask owner is the mesh directly behind this asset:
+    # the asset hides a neighbour's reviewed receiver (a real defect).
+    behind_node = np.full(front.shape, '', object)
+    for label, obj in labels.items():
+        if obj not in owned:
+            behind_node[owner_wo == label] = obj.get('source_node') or ''
+    hiding = np.zeros(front.shape, bool)
+    for i, m in foreign_by_mask.items():
+        sel = foreign & m
+        if sel.any():
+            hiding |= sel & np.isin(behind_node, list(mask_owner[i]))
+    foreign_detail = {}
+    for label in own_labels:
+        node = labels[label]['source_node']
+        sel = foreign & (owner == label)
+        rows_ = sorted(((int((sel & m).sum()), i) for i, m in foreign_by_mask.items()), reverse=True)
+        foreign_detail[node] = [{'mask': i, 'pixels': c, 'owners': sorted(mask_owner[i])[:6]}
+                                for c, i in rows_[:6] if c > 50]
     unmasked = rest & ~foreign_union
     hidden = silhouette & ~front
     counts = {k: int(v.sum()) for k, v in (('front', front), ('accepted', accepted), ('excluded', excluded),
-                                           ('foreign_mask', foreign), ('unmasked', unmasked),
+                                           ('foreign_mask', foreign), ('hides_foreign_receiver', hiding),
+                                           ('unmasked', unmasked),
                                            ('hidden_behind_other_meshes', hidden))}
     from PIL import Image
     src = np.array(Image.open(ROOT / 'source-states/covered.png').convert('RGB'))[y0:y1, x0:x1]
     vis = (src * 0.45).astype(np.uint8)
     for sel, col in ((accepted, (0, 230, 230)), (excluded, (230, 0, 230)), (foreign, (240, 200, 0)),
-                     (unmasked, (230, 40, 40)), (hidden, (70, 70, 160))):
+                     (unmasked, (230, 40, 40)), (hidden, (70, 70, 160)), (hiding, (255, 110, 0))):
         vis[sel] = (0.45 * src[sel] + 0.55 * np.array(col)).astype(np.uint8)
     sheet = np.concatenate([src, np.full((src.shape[0], 6, 3), 30, np.uint8), vis], 1)
     image = Image.fromarray(sheet)
@@ -177,12 +205,14 @@ def main():
         node = labels[label]['source_node']
         sel = owner == label
         per_node[node] = {'front': int(sel.sum()), 'accepted': int((sel & accepted).sum()),
-                          'unmasked': int((sel & unmasked).sum()), 'foreign_mask': int((sel & foreign).sum())}
+                          'unmasked': int((sel & unmasked).sum()), 'foreign_mask': int((sel & foreign).sum()),
+                          'hides_foreign_receiver': int((sel & hiding).sum())}
     report = {'asset_id': args.asset, 'crop': [x0, y0, x1, y1], 'counts': counts, 'per_node': per_node,
-              'occluded_by': occluded_by,
+              'occluded_by': occluded_by, 'foreign_detail': foreign_detail,
               'legend': {'cyan': 'accepted', 'magenta': 'reviewed exclusion (foreground)',
                          'yellow': 'foreign reviewed mask', 'red': 'no reviewed native silhouette',
-                         'blue': 'own surface hidden behind another mesh'},
+                         'blue': 'own surface hidden behind another mesh',
+                         'orange': 'asset hides the reviewed receiver of the mesh behind it'},
               'model_sha256': hashlib.sha256((workspace / 'model.blend').read_bytes()).hexdigest(),
               'method': 'first-hit z-buffer of all render-visible scene meshes at the frozen source '
                         'camera (pixel = x, y - z), classified against the working masks'}

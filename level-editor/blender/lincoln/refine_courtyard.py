@@ -123,6 +123,9 @@ def main():
     parser.add_argument('--packet', action='store_true')
     parser.add_argument('--closeup', action='store_true',
                         help='also render auto-framed eight-view close-ups to inspection/closeup')
+    parser.add_argument('--keep-geometry', action='store_true',
+                        help='review pass: keep the saved geometry and working masks (e.g. a round-2 '
+                             'workspace whose baseline already holds this recipe\'s result)')
     parser.add_argument('--audit', action='store_true',
                         help='write the source-coverage measurement (inspection/source-coverage.json)')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
@@ -133,15 +136,25 @@ def main():
     bpy.ops.wm.open_mainfile(filepath=str(workspace / 'model.blend'))
     asset_id = config['asset_id']
     before = {o.name: _geometry_hash(o) for o in bpy.data.objects if o.get('asset_group') != asset_id}
-    nodes = refine(asset_id)
+    if args.keep_geometry:
+        nodes = {o.get('source_node'): {'object': o.name, 'geometry_sha256': _geometry_hash(o),
+                                        'faces': len(o.data.polygons), 'kept': True,
+                                        'native_z_range': [round(min((o.matrix_world @ v.co).z for v in o.data.vertices) * courtyard_shapes.C, 2),
+                                                           round(max((o.matrix_world @ v.co).z for v in o.data.vertices) * courtyard_shapes.C, 2)]}
+                 for o in bpy.context.scene.objects if o.type == 'MESH' and o.get('asset_group') == asset_id}
+    else:
+        nodes = refine(asset_id)
     bpy.context.view_layer.update()
     after = {o.name: _geometry_hash(o) for o in bpy.data.objects if o.get('asset_group') != asset_id}
     if before != after:
         raise ValueError('Recipe changed an outside asset')
     bpy.context.preferences.filepaths.save_version = 0
-    bpy.ops.wm.save_as_mainfile(filepath=str(workspace / 'model.blend'))
-    import courtyard_masks
-    mask_report = courtyard_masks.apply(workspace)
+    if args.keep_geometry:
+        mask_report = {'asset_id': asset_id, 'revisions': 'kept (working masks unchanged)'}
+    else:
+        bpy.ops.wm.save_as_mainfile(filepath=str(workspace / 'model.blend'))
+        import courtyard_masks
+        mask_report = courtyard_masks.apply(workspace)
     report = {'mask_revisions': mask_report,'version': 1, 'asset_id': asset_id, 'recipe': str(Path(__file__).resolve()),
               'shapes': str((HERE / 'courtyard_shapes.py').resolve()),
               'ground_native_z': courtyard_shapes.GROUND, 'nodes': nodes,

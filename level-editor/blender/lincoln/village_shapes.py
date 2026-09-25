@@ -295,3 +295,15 @@ def bowl(loops):
         faces += [(a + k, a + (k + 1) % n, b + (k + 1) % n, b + k) for k in range(n)]
     faces.append(tuple(3 * n + k for k in range(n)))             # inner floor (faces up)
     return verts, faces
+
+
+def loft(rings):
+    """Closed shell through equal-length horizontal-ish loops (bottom first)."""
+    n = len(rings[0])
+    verts = [p for r in rings for p in r]
+    faces = [tuple(reversed(range(n)))]
+    for i in range(len(rings) - 1):
+        a, b = i * n, (i + 1) * n
+        faces += [(a + k, a + (k + 1) % n, b + (k + 1) % n, b + k) for k in range(n)]
+    faces.append(tuple((len(rings) - 1) * n + k for k in range(n)))
+    return verts, faces

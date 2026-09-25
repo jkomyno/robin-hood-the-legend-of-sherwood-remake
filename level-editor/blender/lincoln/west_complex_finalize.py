@@ -20,7 +20,11 @@ import json
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-ASSETS_DIR = HERE.parents[1] / 'work/lincoln-refinement/round-1/assets'
+# Workspace round: round-1 (default) or round-2 (integrated context); set with
+# --round or the WEST_COMPLEX_ROUND environment variable.
+import os as _os
+ROUND = int(_os.environ.get('WEST_COMPLEX_ROUND', '1'))
+ASSETS_DIR = HERE.parents[1] / 'work/lincoln-refinement' / f'round-{ROUND}/assets'
 
 
 def sha(path):
@@ -29,8 +33,11 @@ def sha(path):
 
 def finalize(asset):
     workspace = ASSETS_DIR / asset
-    recipe_report = json.loads((workspace / 'inspection/geometry-recipe.json').read_text())
     notes = json.loads((workspace / 'inspection/review-notes.json').read_text())
+    report_path = workspace / 'inspection/geometry-recipe.json'
+    unchanged = bool(notes.get('no_change_reason'))
+    recipe_report = ({} if unchanged or not report_path.exists() else json.loads(report_path.read_text()))
+    recipe_report.setdefault('module', notes.get('module'))
     coverage = json.loads((workspace / 'inspection/coverage/coverage.json').read_text())
     model = sha(workspace / 'model.blend')
     views = sha(workspace / 'modified/views.json')
@@ -43,7 +50,7 @@ def finalize(asset):
                       'inspection/closeup/context.png', 'modified/textured.png', 'modified/solid.png',
                       'modified/context.png', 'inspection/geometry-recipe.json']
     evidence_files += notes.get('extra_evidence', [])
-    evidence = {str(workspace / p): sha(workspace / p) for p in evidence_files}
+    evidence = {str(workspace / p): sha(workspace / p) for p in evidence_files if (workspace / p).exists()}
     audit = {'version': 1, 'asset_id': asset, 'status': notes['audit_status'],
              'model_sha256': model, 'modified_views_sha256': views,
              'inspected_views': list(range(8)),
@@ -63,19 +70,24 @@ def finalize(asset):
              'limitations': notes.get('audit_limitations', [])}
     (workspace / 'source-coverage-audit.json').write_text(json.dumps(audit, indent=2) + '\n')
     candidate = {'version': 1, 'asset_id': asset, 'status': notes['status'],
-                 'geometry_refined': True, 'geometry_reviewed': True,
+                 'geometry_refined': not unchanged, 'geometry_reviewed': True,
                  'inspected_views': list(range(8)),
                  'recipe': str((HERE / 'refine_west_complex.py').resolve()),
                  'recipe_modules': {m: sha(HERE / m) for m in
                                     ('refine_west_complex.py', 'west_complex_geom.py', recipe_report['module'] + '.py')},
                  'model_sha256': model, 'modified_views_sha256': views,
-                 'ground_native_z': recipe_report.get('ground_native_z'),
-                 'changes': recipe_report.get('changes', []) + notes.get('extra_changes', []),
-                 'limitations': recipe_report.get('limitations', []) + notes.get('extra_limitations', []),
+                 'ground_native_z': recipe_report.get('ground_native_z', notes.get('ground_native_z')),
+                 'changes': [] if unchanged else recipe_report.get('changes', []) + notes.get('extra_changes', []),
+                 'limitations': (notes.get('limitations') if unchanged else recipe_report.get('limitations', []))
+                                + notes.get('extra_limitations', []),
                  'geometry_approval': 'pending', 'texture_generation': 'not-started',
                  'source_comparison': 'inspection/closeup/textured.png',
                  'source_trace': notes.get('source_trace', 'inspection/coverage/coverage.png'),
                  'coverage_audit': 'source-coverage-audit.json'}
+    if unchanged:
+        candidate['no_change_reason'] = notes['no_change_reason']
+    if not (workspace / 'inspection/closeup/textured.png').exists():
+        candidate['source_comparison'] = 'modified/textured.png'
     if notes.get('projection_errors'):
         candidate['projection_errors'] = notes['projection_errors']
     (workspace / 'candidate.json').write_text(json.dumps(candidate, indent=2) + '\n')
@@ -85,8 +97,13 @@ def finalize(asset):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--round', type=int, default=None)
     parser.add_argument('--asset', required=True)
-    finalize(parser.parse_args().asset)
+    args = parser.parse_args()
+    if args.round is not None:
+        global ASSETS_DIR
+        ASSETS_DIR = ASSETS_DIR.parents[1] / f'round-{args.round}/assets'
+    finalize(args.asset)
 
 
 if __name__ == '__main__':

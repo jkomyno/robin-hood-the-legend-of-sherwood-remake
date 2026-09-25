@@ -37,8 +37,8 @@ def preflight_source(scene_name, collection_name, catalog):
         raise ValueError(f"Missing source scene/working collection: {scene_name}/{collection_name}")
     bpy.context.window.scene = scene
     bpy.context.view_layer.update()
-    expected = {f"building-{part['obstacle']:03d}": group["id"]
-                for group in catalog["groups"] for part in group["parts"]}
+    from catalog_schema import parse_catalog
+    index = parse_catalog(catalog)
     meshes = [obj for obj in collection.all_objects if obj.type == "MESH" and not obj.hide_render]
     errors, checked = [], 0
     if not meshes:
@@ -49,9 +49,9 @@ def preflight_source(scene_name, collection_name, catalog):
             continue
         checked += 1
         prefix = f"{obj.name} ({node!r}): "
-        if not node or node not in expected:
+        if not node or node not in index.sources:
             errors.append(prefix + "missing or unknown stable source_node")
-        elif obj.get("asset_group") != expected[node]:
+        elif obj.get("asset_group") != index.owner_for(node, obj.get("projection_component"))[0]["id"]:
             errors.append(prefix + "asset_group differs from reviewed catalog")
         if any(mod.show_render or mod.show_viewport for mod in obj.modifiers):
             errors.append(prefix + "active modifiers must be baked before reprojection")

@@ -49,7 +49,11 @@ def sha(path):
 def masks_for(workspace, nodes):
     doc = json.loads((workspace / 'source-masks.json').read_text())
     assignments = {e['source_node']: e for e in doc['projections']['exterior']['assignments']}
-    inventory = json.loads((ROOT / 'mask-review/inventory-v1/manifest.json').read_text())['masks']
+    manifest = Path(doc['mask_inventory'])
+    if not manifest.is_absolute():
+        manifest = ROOT / 'mask-review' / manifest
+    inventory = json.loads(manifest.read_text())['masks']
+    inv_dir = manifest.parent
     result = {}
     for node in nodes:
         entry = assignments[node]
@@ -59,13 +63,13 @@ def masks_for(workspace, nodes):
                 continue
             m = inventory[index]
             bx, by = m['box_top_left']
-            bitmap = np.array(Image.open(ROOT / 'mask-review/inventory-v1' / m['png']).convert('L')) > 0
+            bitmap = np.array(Image.open(inv_dir / m['png']).convert('L')) > 0
             h, w = bitmap.shape
             include[by:by + h, bx:bx + w] |= bitmap
         for index in entry.get('exclude_mask_indices', []):
             m = inventory[index]
             bx, by = m['box_top_left']
-            bitmap = np.array(Image.open(ROOT / 'mask-review/inventory-v1' / m['png']).convert('L')) > 0
+            bitmap = np.array(Image.open(inv_dir / m['png']).convert('L')) > 0
             h, w = bitmap.shape
             include[by:by + h, bx:bx + w] &= ~bitmap
         result[node] = (include, entry)
@@ -75,9 +79,10 @@ def masks_for(workspace, nodes):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--asset', required=True)
+    parser.add_argument('--round', default='round-1', help='workspace round directory, e.g. round-2')
     parser.add_argument('--pad', type=int, default=16)
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
-    workspace = ROOT / 'round-1/assets' / args.asset
+    workspace = ROOT / args.round / 'assets' / args.asset
     from render_slots import acquire
     acquire()
     bpy.ops.wm.open_mainfile(filepath=str(workspace / 'model.blend'))
@@ -87,8 +92,10 @@ def main():
     verts, tris, owner = [], [], []
     names = []
     owned_bounds = []
+    exclusion = config.get('source_projection_ground_exclusion')
+    excluded = exclusion['object_name'] if exclusion else None
     for obj in working.all_objects:
-        if obj.type != 'MESH' or obj.hide_render:
+        if obj.type != 'MESH' or obj.hide_render or obj.name == excluded:
             continue
         ev = obj.evaluated_get(depsgraph)
         mesh = ev.to_mesh()
@@ -180,6 +187,27 @@ def main():
                    f'blue mask-only ground/none, yellow mask-only other | saved model source view', fill=(255, 255, 255))
     out_dir = workspace / 'inspection'
     out_dir.mkdir(exist_ok=True)
+    # Authored-domain proposals for reject-all receivers: the first-hit domain of
+    # each such node, as a full-resolution-coordinate bitmap and column polygon.
+    reject_domains = {}
+    for node in nodes:
+        if masks[node][1]['constraint_kind'] != 'unknown-no-approved-source':
+            continue
+        dom = np.isin(hit_owner, [i for i in owned_idx if node_of[i] == node])
+        if not dom.any():
+            continue
+        ys_, xs_ = np.where(dom)
+        top, bottom = [], []
+        for cx in range(xs_.min(), xs_.max() + 1):
+            col = np.where(dom[:, cx])[0]
+            if len(col):
+                top.append([int(cx + x0), int(col.min() + y0)])
+                bottom.append([int(cx + x0 + 1), int(col.max() + y0 + 1)])
+        bitmap = out_dir / f'reject-all-domain-{node}.png'
+        Image.fromarray((dom * 255).astype(np.uint8)).save(bitmap)
+        reject_domains[node] = {'pixels': int(dom.sum()), 'bitmap': str(bitmap), 'bitmap_sha256': sha(bitmap),
+                                'bitmap_box_top_left': [x0, y0], 'bitmap_size': [x1 - x0, y1 - y0],
+                                'column_polygon_source_px': top + bottom[::-1]}
     png = out_dir / 'source-coverage.png'
     sheet.save(png)
     report = {'version': 1, 'asset_id': args.asset, 'model_sha256': sha(workspace / 'model.blend'),
@@ -199,6 +227,8 @@ def main():
               'mask_only_other_owners': other_owners,
               'mask_union_pixels': int(union.sum()),
               'per_node': per_node,
+              'ground_exclusion': excluded,
+              'reject_all_first_hit_domains': reject_domains,
               'evidence': {str(png): sha(png)}}
     (out_dir / 'source-coverage-domain.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps({k: v for k, v in report.items() if k not in ('per_node',)}))

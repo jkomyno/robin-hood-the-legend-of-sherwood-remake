@@ -19,6 +19,10 @@ def main():
     parser.add_argument('--review', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--tooling-dir', type=Path)
+    parser.add_argument('--reconcile', action='store_true',
+                        help='Revise an existing asset hierarchy (reconcile_asset_groups) instead of creating it')
+    parser.add_argument('--import-model', action='append', default=[], metavar='ASSET=BLEND',
+                        help='Import a worker model not covered by the integration report before regrouping')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     if args.output.exists():
         raise FileExistsError(args.output)
@@ -65,7 +69,42 @@ def main():
                        ('grouping-review.json', args.review)):
         shutil.copy2(path, evidence / name)
     bpy.ops.wm.save_as_mainfile(filepath=str(args.output.resolve()))
-    result = group_assets(args.catalog)
+    imports = []
+    if args.import_model:
+        from import_reviewed_geometry import import_asset_geometry
+        owned = {}
+        for spec in args.import_model:
+            asset, blend = spec.split('=', 1)
+            with bpy.data.libraries.load(blend, link=False) as (source, _):
+                names = list(source.objects)
+            owned[asset] = (blend, names)
+        for asset, (blend, names) in owned.items():
+            candidates = [o for o in bpy.data.collections['lincoln Working'].all_objects
+                          if o.type == 'MESH' and o.get('asset_group') == asset]
+            wanted = []
+            with bpy.data.libraries.load(blend, link=False) as (source, destination):
+                destination.objects = list(names)
+            for name, obj in zip(names, destination.objects):
+                if obj and obj.type == 'MESH' and not obj.hide_render and obj.get('asset_group') == asset:
+                    wanted.append(name)
+            for obj in destination.objects:
+                if obj:
+                    bpy.data.objects.remove(obj, do_unlink=True)
+            imports.append(import_asset_geometry(blend, asset_id=asset, object_names=sorted(wanted),
+                                                 collection_name='lincoln Working'))
+            imports[-1]['model_sha256'] = sha(blend)
+        # Regrouping must not move geometry: capture the post-import state as the reference.
+        before = {obj: (obj.matrix_world.copy(),
+                        [tuple(v.co) for v in obj.data.vertices] if obj.type == 'MESH' else None)
+                  for obj in bpy.data.collections['lincoln Working'].all_objects}
+    if args.reconcile:
+        from group_assets import reconcile_asset_groups
+        result = reconcile_asset_groups(args.catalog)
+        # Unlike group_assets, reconciliation leaves saving to the caller.
+        bpy.ops.wm.save_as_mainfile(filepath=str(args.output.resolve()))
+    else:
+        result = group_assets(args.catalog)
+    result['extra_imports'] = imports
     for obj, (matrix, vertices) in before.items():
         if vertices is None:
             continue

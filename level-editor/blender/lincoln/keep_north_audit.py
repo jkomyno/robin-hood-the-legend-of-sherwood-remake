@@ -71,8 +71,9 @@ def main():
     argv = sys.argv[sys.argv.index('--') + 1:]
     ap = argparse.ArgumentParser()
     ap.add_argument('--asset', required=True)
+    ap.add_argument('--assets-dir', default=str(ASSETS))
     args = ap.parse_args(argv)
-    ws = ASSETS / args.asset
+    ws = Path(args.assets_dir) / args.asset
     from render_slots import acquire
     acquire()
     bpy.ops.wm.open_mainfile(filepath=str(ws / 'model.blend'))

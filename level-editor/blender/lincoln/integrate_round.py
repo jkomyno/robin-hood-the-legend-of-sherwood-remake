@@ -30,6 +30,8 @@ def main(argv):
     parser.add_argument('--progress', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--collection', default='lincoln Working')
+    parser.add_argument('--statuses', default='ready-for-user',
+                        help='Comma-separated collector statuses whose current models are imported')
     args = parser.parse_args(argv)
     if args.output.exists():
         raise FileExistsError(args.output)
@@ -45,7 +47,7 @@ def main(argv):
     evidence_dir = args.progress.parent / (args.progress.name.removesuffix('-progress.json') + '-packet-evidence')
     ready, skipped = [], []
     for row in progress['assets']:
-        if row['status'] != 'ready-for-user':
+        if row['status'] not in args.statuses.split(','):
             skipped.append({'asset_id': row['id'], 'status': row['status']})
             continue
         evidence = json.loads((evidence_dir / (row['id'] + '.json')).read_text())

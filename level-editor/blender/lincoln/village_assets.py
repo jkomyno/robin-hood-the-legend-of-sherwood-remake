@@ -7,7 +7,7 @@ offline overlay checks against ``source-states/covered.png``.
 import math
 
 from village_shapes import SIN, COS  # noqa: F401
-from village_shapes import mound, extrude_between, hip_roof, ring, bowl  # noqa: E402
+from village_shapes import mound, extrude_between, hip_roof, ring, bowl, loft  # noqa: E402
 from village_shapes import lathe as _lathe  # noqa: F401,E402
 from village_shapes import (Frame, extrude, frame_box, box, lathe, post, merge, roof_halves,
                             gable_walls, add, sub, mul, lerp, unit, length, weld)
@@ -56,7 +56,10 @@ def ladder_cottage():
     post_r = post(f.at(40.0, -4.5, 0.0), f.at(40.0, -4.5, 51.0), 2.4)
     finial = post(f.at(168.0, 67.2, 100.0), f.at(168.0, 67.2, 123.0), 1.6)
     lumber = extrude(Frame((261.6, -421.6, 0.0), (-97.3, 69.2)),
-                     [(0.0, 0.0), (26.0, 0.0), (26.0, 36.0), (12.0, 44.0), (0.0, 20.0)], 0.0, 116.0)
+                     # Round 2 (user: "that wall piece shouldn't be part of the house"): a
+                     # free-standing low dry-stone wall behind the rear eave, on the native
+                     # footprint with battered faces; proposed as its own asset.
+                     [(0.0, 0.0), (15.5, 0.0), (13.2, 36.0), (2.3, 36.0)], 0.0, 140.0)
     return {'building-003': [('timber walls', *walls)],
             'building-004': [('front thatch slope', *front), ('rear thatch slope', *back),
                              ('east ridge finial post', *finial)],
@@ -65,7 +68,7 @@ def ladder_cottage():
             'building-005': [('porch roof east slope', *pr)],
             'building-008': [('porch west post', *post_l)],
             'building-009': [('porch east post', *post_r)],
-            'building-041': [('lumber pile behind the rear eave', *lumber)]}, {
+            'building-041': [('free-standing dry-stone wall behind the rear eave', *lumber)]}, {
         'ground_z': GROUND_Z,
         'inferred': ['Rear thatch slope and rear wall are hidden; heights follow the native obstacle.',
                      'The damaged thatch opening with exposed rafters under the ladder is left as projected texture.',
@@ -130,6 +133,24 @@ def _slab(frame, x0, x1, pts, thickness):
     return extrude(frame, list(pts) + [(y, z - thickness) for y, z in reversed(pts)], x0, x1)
 
 
+def _chimney(M, split_z=72.0):
+    def side(z):
+        # 30 at the foot, smooth (smoothstep) thinning from z 30 to z 110, 15.8 at the crown.
+        t = min(1.0, max(0.0, (z - 30.0) / 80.0))
+        return 30.0 - (30.0 - 16.6) * t * t * (3 - 2 * t) - 0.8 * max(0.0, z - 110.0) / 40.0
+
+    def centre(z):
+        return (528.0 + 1.5 * z / 150.0, -722.0, z)
+
+    def ring_at(z):
+        c = centre(z)
+        h = side(z) / 2
+        return [add(c, add(mul(M.ex, sx * h), mul(M.ey, sy * h))) for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+    zs = [0.0, 15.0, 30.0, 40.0, 50.0, 60.0, split_z]
+    zu = [split_z, 80.0, 90.0, 100.0, 110.0, 125.0, 150.0]
+    return loft([ring_at(z) for z in zs]), loft([ring_at(z) for z in zu])
+
+
 def longhouse():
     # Main range frame M: x from the north-west ridge end towards the south-east
     # hip, y from the ridge (0) towards the rear (+) / front (-).  Wing frame W:
@@ -157,9 +178,10 @@ def longhouse():
     gable = extrude(W, [(-58.0, 74.0), (50.0, 74.0), (50.0, 82.0), (0.0, 118.0), (-58.0, 76.0)], 176.0, 179.0)
     bay_posts = merge(post(W.at(182.0, -35.0, 0.0), W.at(182.0, -35.0, 100.0), 2.6),
                       post(W.at(182.0, 62.0, 0.0), W.at(182.0, 62.0, 57.0), 2.6))
-    # External stone chimney: stepped base and tapering stack, both on the ground.
-    chimney_base = box((507.0, -737.0, 0.0), (25.0, -14.0, 0.0), (14.5, 27.0, 0.0), (0.0, 0.0, 72.0))
-    stack = box((518.0, -730.0, 0.0), (15.0, -8.0, 0.0), (8.0, 16.0, 0.0), (0.0, 0.0, 150.0))
+    # External stone chimney (round-2 user feedback): one smooth taper, measured
+    # from the per-row width of chimney mask 103 (41 px at the base, 22 px from
+    # py 330 up to the top at py 288), square section on the main-range axes.
+    chimney_lower, chimney_upper = _chimney(M)
     return {'building-024': [('main range timber walls', *walls)],
             'building-025': [('main range thatch, hipped south-east end', *main_roof)],
             'building-026': [('wing thatch, hipped into the main ridge', *wing_roof), ('wing front gable infill', *gable)],
@@ -167,8 +189,8 @@ def longhouse():
             'building-028': [('west lean-to over the cart bay', *lean_to),
                              ('cart bay posts', *bay_posts)],
             'building-029': [('north-west annex walls (hidden)', *annex)],
-            'building-030': [('chimney stepped base', *chimney_base)],
-            'building-031': [('chimney stack', *stack)]}, {
+            'building-030': [('chimney tapering lower shaft', *chimney_lower)],
+            'building-031': [('chimney upper shaft', *chimney_upper)]}, {
         'ground_z': GROUND_Z,
         'inferred': ['The wing bay is open (cart and tub stand under it); only its front posts are visible.',
                      'The annex and the rear main-range wall face away from the camera; they follow the native obstacles.',
@@ -304,7 +326,9 @@ def _fence(a, b, height, post_height, spacing, thickness=3.0, post_radius=1.6):
 
 
 def field_wattle_fence():
-    west = _fence((368.5, -500.0, 0.0), (549.5, -198.5, 0.0), 32.0, 42.0, 21.0)
+    # Round 2: the run now starts at the ladder cottage east gable instead of
+    # inside its wall corner (found against the refined neighbour).
+    west = _fence((373.1, -492.3, 0.0), (549.5, -198.5, 0.0), 32.0, 42.0, 21.0)
     corner = _fence((549.0, -199.5, 0.0), (580.0, -191.5, 0.0), 32.0, 42.0, 16.0)
     north = _fence((579.5, -192.0, 0.0), (931.0, -359.5, 0.0), 30.0, 42.0, 22.0)
     return {'building-038': [('western wattle run with stakes', *west)],
@@ -344,10 +368,12 @@ def north_edge_rock():
 
 
 BRIDGE_WATER_Z = -60.0  # painted stream bed at the pier foot, relative to the bank datum
-# The painted arches and pier lie entirely below the flat ground plane (z = 0),
-# which occludes them from the source camera, and the frozen review framing
-# covers only the datum-seated bridge.  Enable once the terrain has a channel.
-BRIDGE_STREAM_CHANNEL = False
+# The painted arches and pier reach below the flat ground plane (z = 0) into the
+# painted stream channel.  Round 2 (user: "the surface of the bridge is missing as
+# is the pillar") enables them; the workspace declares a reviewed ground
+# exclusion so the flat plane does not occlude them from the source camera.
+# The terrain still needs a stream channel for them to show in the map.
+BRIDGE_STREAM_CHANNEL = True
 
 
 def _bridge_curves():
@@ -374,21 +400,20 @@ def stone_footbridge():
     cap_front, deck, cap_rear = _bridge_curves()
     w = BRIDGE_WATER_Z
     deck_t = 2.5
-    if BRIDGE_STREAM_CHANNEL:
-        xa, xb = -36.0, 192.0
-    else:
-        # Deck ends where the underside (deck - 2.5) is 0.5 above the bank datum.
-        half = math.sqrt((cap_front(78.0) - 9.0 - deck_t - 0.5) / 0.0027)
-        xa, xb = 78.0 - half, 78.0 + half
+    # Deck ends where the underside (deck - 2.5) is 0.5 above the bank datum.
+    half = math.sqrt((cap_front(78.0) - 9.0 - deck_t - 0.5) / 0.0027)
+    xa, xb = 78.0 - half, 78.0 + half
     xs_w = [xa + (85.0 - xa) * i / 16 for i in range(17)]
     xs_e = [85.0 + (xb - 85.0) * i / 16 for i in range(17)]
     # West body: deck underside, west abutment, left arch (springs 18 / 76), half pier;
-    # the east arch springs from the pier (95) and the east abutment (170).
+    # the east arch springs from the pier (95) and the east abutment (150); crowns ~11.
     west = [(x, deck(x) - deck_t) for x in xs_w]
     east = [(x, deck(x) - deck_t) for x in xs_e]
     if BRIDGE_STREAM_CHANNEL:
-        west += [(85.0, w), (76.0, w)] + _arc(47.0, -18.5, 29.0, 0.0, 180.0, 12) + [(18.0, w), (-28.0, w)]
-        east += [(184.0, w), (170.0, w)] + _arc(132.5, -27.0, 37.5, 0.0, 180.0, 14) + [(95.0, w), (85.0, w)]
+        # Below the bank datum only the channel masonry is built: arch legs, the
+        # pier and 6-unit abutment faces; the banks themselves are terrain.
+        west += [(85.0, w), (76.0, w)] + _arc(47.0, -18.5, 29.0, 0.0, 180.0, 12) + [(18.0, w), (12.0, w), (12.0, 0.0), (xa, 0.0)]
+        east += [(xb, 0.0), (156.0, 0.0), (156.0, w), (150.0, w)] + _arc(122.5, -16.5, 27.5, 0.0, 180.0, 14) + [(95.0, w), (85.0, w)]
     else:
         west += [(85.0, 0.0), (xa, 0.0)]
         east += [(xb, 0.0), (85.0, 0.0)]
@@ -421,12 +446,31 @@ def stone_footbridge():
         'ground_z': GROUND_Z,
         'stream_bed_z': BRIDGE_WATER_Z, 'stream_channel_variant': BRIDGE_STREAM_CHANNEL,
         'inferred': ['Arch soffits, pier and parapet caps are measured on the front face; the rear face repeats the same arches.',
-                     'The painted arches, pier and stream bed (about z = -60) lie below the flat ground plane; the bridge is '
-                     'seated on the bank datum. BRIDGE_STREAM_CHANNEL builds the measured arches once terrain has a channel.',
+                     'Arch legs, pier and abutments continue below the bank datum to the painted stream bed (z = -60); the '
+                     'terrain needs a stream channel under the bridge for them to show in the integrated map.',
                      'The deck top is reject-all in the mask manifest and stays neutral.']}
 
 
+def _ladder_all():
+    return ladder_cottage()
+
+
+def ladder_cottage_house():
+    # Round 3 (catalog v3): node 041 moved to its own asset; the cottage keeps 003-009.
+    parts, notes = _ladder_all()
+    parts.pop('building-041')
+    return parts, notes
+
+
+def ladder_cottage_rear_stone_wall():
+    parts, notes = _ladder_all()
+    return {'building-041': parts['building-041']}, {
+        'ground_z': GROUND_Z,
+        'inferred': ['Most of the wall runs behind the cottage roof and the bushes; its hidden course and length follow the native footprint.']}
+
+
 ASSETS = {
+    'lincoln-village-ladder-cottage-rear-stone-wall': ladder_cottage_rear_stone_wall,
     'lincoln-village-stone-footbridge': stone_footbridge,
     'lincoln-village-stream-boat': stream_boat,
     'lincoln-village-north-rail-fence': north_edge_rock,
@@ -438,7 +482,7 @@ ASSETS = {
     'lincoln-village-longhouse': longhouse,
     'lincoln-village-open-barn': open_barn,
     'lincoln-village-west-cottage': west_cottage,
-    'lincoln-village-ladder-cottage': ladder_cottage,
+    'lincoln-village-ladder-cottage': ladder_cottage_house,
     'lincoln-village-northwest-cottage': northwest_cottage,
 }
 

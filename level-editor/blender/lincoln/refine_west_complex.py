@@ -26,7 +26,11 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 REFINEMENT = ROOT / 'work/lincoln-refinement'
-ASSETS_DIR = REFINEMENT / 'round-1/assets'
+# Workspace round: round-1 (default) or round-2 (integrated context); set with
+# --round or the WEST_COMPLEX_ROUND environment variable.
+import os as _os
+ROUND = int(_os.environ.get('WEST_COMPLEX_ROUND', '1'))
+ASSETS_DIR = REFINEMENT / f'round-{ROUND}/assets'
 TOOLING = REFINEMENT / 'tooling/e6b57cb851c7142b'
 
 MODULES = {
@@ -86,7 +90,7 @@ MASK_REVISIONS = {
         'Chimney 403: its body is drawn inside masks 250 and 291 (inspection/chimney-masks.png: 249 cyan, 250 '
         'magenta, 291 yellow); the round-tower 291 exclusion removed the chimney from its own receiver. First-hit '
         'gating keeps hall-roof pixels on the hall receivers.'),
-        evidence=[str(ASSETS_DIR / 'lincoln-west-round-tower/inspection/chimney-masks.png')]),
+        evidence=[str(REFINEMENT / 'round-1/assets/lincoln-west-round-tower/inspection/chimney-masks.png')]),
     'lincoln-west-tower-terrace': _merge(
         _rev((60, 69, 410, 411, 412, 413), add=[418], reason=DOOR_418,
              evidence=[str(SCRATCH / 'terrace/door-mask.png'), str(SCRATCH / 'terrace/door-rev.png')]),
@@ -95,6 +99,18 @@ MASK_REVISIONS = {
                                             evidence=[VEG_A]),
     'lincoln-inner-west-gate': _rev(tuple(range(289, 306)), add=[67], reason=BUSH_67, evidence=[GATE_VEG]),
 }
+
+
+# Covered-state display: applied-state nodes are hidden in the exterior packet.
+# 463 is the open bastion door that exists only after Patch08 is applied; the
+# covered artwork shows the closed door 462 (mask 418). The object and its
+# geometry are kept. Hiding it for the covered packet is not possible with the
+# pinned tooling: refinement_review rejects a change of projection receiver
+# membership against the frozen input unless a reviewed projection manifest
+# exists (none for this workspace), so 463 stays render-visible and is tagged.
+STATE_VISIBILITY = {'lincoln-west-tower-terrace': {463: {
+    'hide_render': False, 'state': 'patch08-applied-only; should be hidden in the covered state '
+                                   '(needs a reviewed projection/state manifest)'}}}
 
 
 def apply_mask_revisions(asset):
@@ -171,14 +187,29 @@ def apply(asset, packet=True):
     bpy.ops.wm.open_mainfile(filepath=str(workspace / 'model.blend'))
     config = json.loads((workspace / 'workspace.json').read_text())
     module = importlib.import_module(MODULES[asset])
-    shapes, info = module.build(asset)
     objects = [o for o in bpy.data.collections[config['collection_name']].all_objects
                if o.type == 'MESH' and o.get('asset_group') == asset]
+    if hasattr(module, 'build_owned'):
+        shapes, info = module.build_owned(asset, sorted({int(o['source_node'].split('-')[1]) for o in objects}))
+    else:
+        shapes, info = module.build(asset)
     by_node = {}
     for obj in objects:
         by_node.setdefault(int(obj['source_node'].split('-')[1]), []).append(obj)
-    if set(shapes) - set(by_node):
-        raise ValueError(f'Geometry for unowned nodes: {sorted(set(shapes) - set(by_node))}')
+    # Nodes regrouped to another asset (catalog v3 moves, e.g. gate 300/301 to the
+    # hall approach ramp) are built by this lane's module but no longer owned
+    # here; they must belong to another asset in the scene, never be dropped silently.
+    moved = sorted(set(shapes) - set(by_node))
+    if moved:
+        scene_groups = {int(o['source_node'].split('-')[1]): o.get('asset_group')
+                        for o in bpy.data.collections[config['collection_name']].all_objects
+                        if o.type == 'MESH' and str(o.get('source_node', '')).startswith('building-')}
+        orphans = [n for n in moved if not scene_groups.get(n)]
+        if orphans:
+            raise ValueError(f'Geometry for nodes absent from the scene: {orphans}')
+        print('Skipping nodes regrouped to other assets:', {n: scene_groups[n] for n in moved})
+        shapes = {n: v for n, v in shapes.items() if n in by_node}
+        info = {**info, 'regrouped_elsewhere': {f'building-{n:03}': scene_groups[n] for n in moved}}
     changes = []
     for node, shape in sorted(shapes.items()):
         if len(by_node[node]) != 1:
@@ -191,13 +222,19 @@ def apply(asset, packet=True):
         if [list(r) for r in obj.matrix_world] != matrix or any(obj[k] != v for k, v in props.items()):
             raise ValueError(f'Identity or transform drift on {obj.name}')
         changes.append({'source_node': f'building-{node:03}', 'object': obj.name, **stats})
+    states = {}
+    for node, state in STATE_VISIBILITY.get(asset, {}).items():
+        obj = by_node[node][0]
+        obj.hide_render = state['hide_render']
+        obj['display_state'] = state['state']
+        states[f'building-{node:03}'] = state
     bpy.context.preferences.filepaths.save_version = 0
     bpy.ops.wm.save_as_mainfile(filepath=str(workspace / 'model.blend'))
     report = {'version': 1, 'asset_id': asset, 'recipe': str(Path(__file__).resolve()),
               'recipe_sha256': sha(__file__), 'module': MODULES[asset],
               'module_sha256': sha(HERE / (MODULES[asset] + '.py')),
               'geometry_helpers_sha256': sha(HERE / 'west_complex_geom.py'),
-              'changed_objects': changes,
+              'changed_objects': changes, 'state_visibility': states,
               'unchanged_owned_nodes': sorted(f'building-{n:03}' for n in set(by_node) - set(shapes)),
               **{k: v for k, v in info.items() if k != 'strict'}}
     (workspace / 'inspection').mkdir(exist_ok=True)
@@ -227,9 +264,13 @@ def closeup(workspace):
 def main():
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     parser = argparse.ArgumentParser()
+    parser.add_argument('--round', type=int, default=None)
     parser.add_argument('--asset', required=True, choices=sorted(MODULES))
     parser.add_argument('--no-packet', action='store_true')
     args = parser.parse_args(argv)
+    if args.round is not None:
+        global ASSETS_DIR
+        ASSETS_DIR = ASSETS_DIR.parents[1] / f'round-{args.round}/assets'
     apply(args.asset, packet=not args.no_packet)
 
 

@@ -52,7 +52,7 @@ ASSETS = ROOT / 'round-1/assets'
 INVENTORY = ROOT / 'inventory/inventory.json'
 TOOLING = ROOT / 'tooling/e6b57cb851c7142b'
 TAG = 'lincoln_rocks_terrain_recipe'
-VERSION = 'rocks-terrain-v1'
+VERSION = 'rocks-terrain-v2'
 
 # Terrain volumes whose native tops are the reviewed ground for rocks. Tops are
 # never changed by this lane, so other lanes may rely on the same surfaces.
@@ -97,9 +97,9 @@ NODES = {
     451: rock(cell=1.5, support=False),
     # South-eastern bank rocks. The outcrop's painted foot descends to native
     # z ~150 east of the bank plateau outline; the small pair sits on it.
-    443: rock(cell=3.0, floor=150.0, round=10.0),
-    444: rock(cell=3.0, floor=150.0, round=10.0),
-    445: rock(cell=1.5), 446: rock(cell=1.5),
+    443: rock(cell=3.0, floor=150.0, round=10.0, unhide=True),
+    444: rock(cell=3.0, floor=150.0, round=10.0, unhide=True),
+    445: rock(cell=1.5, unhide=True), 446: rock(cell=1.5, unhide=True),
     # West tower hillside: a rock on the lower northern slope behind the west
     # tower hall roof and a boulder on the western grass slope. The two
     # non-solid sight volumes 455/456 stand west of the plateau outline on the
@@ -119,16 +119,30 @@ NODES = {
     # great hall west wing masonry shows above them); 434 is raised to the
     # painted crest traced at the keep annex round turret; 435/465 keep their
     # native tops above the bailey plateau.
-    432: rock(cell=2.0, round=6.0, floor=220.0), 433: rock(cell=2.0, round=6.0, floor=220.0),
+    # Garden walls 212/213/220 and corner tower 322 stand on the spur: their
+    # pixels hide rock (support it); unhide keeps the rock behind their faces.
+    432: rock(cell=2.0, round=6.0, floor=220.0, occluders=[212, 213, 220, 322], unhide=True, unhide_margin=2),
+    433: rock(cell=2.0, round=6.0, floor=220.0, occluders=[212, 213, 220, 322], unhide=True),
     434: trim(raise_={'points': [[1655, 1117, 1498], [1670, 1120, 1512], [1693, 1147, 1521],
                                   [1717, 1177, 1521], [1733, 1207, 1518]],
-                       'slope': 1.6, 'reach': 45}),
-    435: trim(), 465: trim(),
+                       'slope': 1.6, 'reach': 45}, unhide=True, unhide_margin=2),
+    435: trim(unhide=True, unhide_margin=2), 465: trim(),
 }
 
+# South-western ravine bridge (round-2 revision): the parapets 074/076 were
+# datum pillars reaching z = 0 through the ravine; they now stand on the deck
+# 056 (and the road volumes at their ends). Deck 056 and arch wall 075 keep
+# their native volumes (the painted arch wall reaches the ravine floor).
+BRIDGE_PARAPET = dict(support_nodes=[56, 57], cell=1.0, floor=150.0)
 # Terrain assets keep their native geometry.
 for _n in (52, 53, 54, 55, 56, 57, 61, 62, 63, 64, 65, 66, 67, 68, 74, 75, 76):
     NODES[_n] = KEEP
+# Round 3: 071 (marker slab from the NE tower stair, now in the north-bailey
+# plateau group) is a collision-only marker; it is sunk just below the
+# plateau top so it never shows or receives source pixels.
+NODES[71] = {'mode': 'bury', 'top': 140.0, 'depth': 3.0}
+NODES[74] = trim(**BRIDGE_PARAPET)
+NODES[76] = trim(**BRIDGE_PARAPET)
 
 from rocks_terrain_volumes_masks import (MASKS, FOLIAGE, WALLS, CLIFF_WALLS,  # noqa: E402
                                           CLIFF_FOLIAGE)
@@ -216,10 +230,10 @@ class MaskStore:
 # Geometry
 # --------------------------------------------------------------------------
 
-def support_surface(grid, exclude):
+def support_surface(grid, exclude, nodes=None):
     """Highest supporting terrain top per cell (0 = generic ground plane)."""
     out = np.zeros((grid.ny, grid.nx))
-    for n in SUPPORT_NODES:
+    for n in (nodes or SUPPORT_NODES):
         if n in exclude:
             continue
         tris, _ = native_triangles(node_name(n))
@@ -415,6 +429,22 @@ def stump_mesh(tris, spec):
                 'rings_height_radiusfraction': rings}
 
 
+def tile_mesh(bm, size):
+    """Cut large dissolved faces on a world-space XY grid (bounded projection islands)."""
+    xs = [v.co.x for v in bm.verts]
+    ys = [v.co.y for v in bm.verts]
+    for axis, lo, hi in ((0, min(xs), max(xs)), (1, min(ys), max(ys))):
+        k = math.floor(lo / size) + 1
+        while k * size < hi:
+            co = [0.0, 0.0, 0.0]
+            co[axis] = k * size
+            no = [0.0, 0.0, 0.0]
+            no[axis] = 1.0
+            bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-4,
+                                   plane_co=co, plane_no=no)
+            k += 1
+
+
 def finalize(bm, label):
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
     bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=1e-5)
@@ -445,21 +475,27 @@ def terrain_front(lanes=None, **kw):
 
 NODES[455] = terrain_front(cell=2.0, foreign_masks=[138, 139])
 NODES[456] = terrain_front(cell=2.0, foreign_masks=[138, 139])
-NODES[62] = terrain_front()
-NODES[63] = terrain_front()
-NODES[64] = terrain_front()
-NODES[70] = terrain_front(cell=2.0)
+# Round 2 (integrated neighbours): terrain and rock columns additionally recede
+# wherever they would stand in front of a neighbour's reviewed receiver that
+# the integrated scene now shows behind them ('unhide').
+NODES[62] = terrain_front(unhide=True, dissolve_tolerance=2)
+NODES[63] = terrain_front(unhide=True)
+NODES[64] = terrain_front(unhide=True)
+NODES[70] = terrain_front(cell=2.0, unhide=True)
+NODES[53] = terrain_front(no_front=True, unhide=True)
+NODES[52] = terrain_front(cell=2.0, no_front=True, unhide=True, unhide_despike=True)
+NODES[57] = terrain_front(cell=2.0, no_front=True, unhide=True, unhide_edge_trim=True)
 # West plateau: the bastion's lower rooms (terrace volumes 060/069, floor
 # z = 147) are cut out of it, and its front below the western complex is
 # carved to the moat-bank envelope with the bastion walls treated as foreign.
-NODES[65] = terrain_front(WEST_LANES + WALL_LANES, cutout=[60, 69])
+NODES[65] = terrain_front(WEST_LANES + WALL_LANES, cutout=[60, 69], unhide=True)
 # South-western cliff rocks meet the bastion wall feet (traced z 95-150 by the
 # western complex lane): carve their band in front of the bastion likewise.
 for _n in (423, 424, 425, 426, 427, 428, 429, 430, 431):
     # Foliage exclusions hide rock (support it); bastion wall exclusions do
     # not, so the cliff recedes below the bastion's painted wall feet.
     NODES[_n] = rock(cell=2.0, support=True, round=0.0, edge=1.0, smooth=1, fill=True, dissolve=True,
-                     vsmooth=True, occluders=CLIFF_FOLIAGE, occluders_only=True)
+                     vsmooth=True, occluders=CLIFF_FOLIAGE, occluders_only=True, unhide=True)
 
 
 def wall_nodes(lanes):
@@ -522,7 +558,7 @@ def raise_to_trace(grid, heights, inside, base, trace):
     return new, inside | zone, raised, np.where(zone, new, np.nan)
 
 
-def rebuild(obj, spec, masks, working_assignment, dry=False, neighbours=()):
+def rebuild(obj, spec, masks, working_assignment, dry=False, neighbours=(), context=None):
     n = int(obj['source_node'].split('-')[-1])
     tris, matrix = native_triangles(obj['source_node'])
     if max(abs(a - b) for ra, rb in zip(matrix, obj.matrix_world) for a, b in zip(ra, rb)) > 1e-4:
@@ -533,6 +569,35 @@ def rebuild(obj, spec, masks, working_assignment, dry=False, neighbours=()):
     if spec['mode'] == 'keep':
         report['changed'] = restore_native(obj)
         return report, None
+    if spec['mode'] == 'bury':
+        nat = tris.reshape(-1, 3)
+        if dry:
+            return report, None
+        lo = spec['top'] - spec['depth']
+        pts = np.unique(np.round(nat[:, :2], 3), axis=0)
+        centre = pts.mean(0)
+        order = np.argsort(np.arctan2(pts[:, 1] - centre[1], pts[:, 0] - centre[0]))
+        ring = [p for p in pts[order]]
+        hull = []
+        for p in ring:  # drop collinear/duplicate corners
+            if not hull or np.linalg.norm(p - hull[-1]) > 0.05:
+                hull.append(p)
+        n = len(hull)
+        world = core.native_to_world(np.array([[p[0], p[1], lo] for p in hull] + [[p[0], p[1], spec['top']] for p in hull]))
+        bm = bmesh.new()
+        verts = [bm.verts.new(Vector(p)) for p in world]
+        bm.faces.new(verts[:n][::-1])
+        bm.faces.new(verts[n:])
+        for i in range(n):
+            j = (i + 1) % n
+            bm.faces.new([verts[i], verts[j], verts[n + j], verts[n + i]])
+        report['construction'] = (f"native footprint kept, sunk to z {lo}-{spec['top']} inside the plateau "
+                                  '(collision-only marker, never visible)')
+        report['topology'] = finalize(bm, obj.name)
+        inverse = obj.matrix_world.inverted()
+        for v in bm.verts:
+            v.co = inverse @ v.co
+        return report, bm
     if spec['mode'] == 'stump':
         if dry:
             return report, None
@@ -559,7 +624,7 @@ def rebuild(obj, spec, masks, working_assignment, dry=False, neighbours=()):
         report['cutout_nodes'] = spec['cutout']
         native_inside &= ~cut
     top = np.where(native_inside, top, np.nan)
-    support = support_surface(grid, exclude={n}) if spec['support'] else np.zeros_like(top)
+    support = support_surface(grid, exclude={n}, nodes=spec.get('support_nodes')) if spec['support'] else np.zeros_like(top)
     base = np.maximum(support, spec['floor'])
     buried = native_inside & (top <= base + 0.5)
     report['native_cells'] = int(native_inside.sum())
@@ -568,7 +633,12 @@ def rebuild(obj, spec, masks, working_assignment, dry=False, neighbours=()):
     report['floor'] = spec['floor']
     report['base_range'] = [round(float(base[native_inside & ~buried].min()), 1),
                             round(float(base[native_inside & ~buried].max()), 1)] if (native_inside & ~buried).any() else None
-    if spec['mode'] == 'front':
+    if spec['mode'] == 'front' and spec.get('no_front'):
+        heights = np.where(native_inside, top, np.nan)
+        report['front_carve'] = {'native_columns': int(native_inside.sum()), 'lowered_columns': 0,
+                                 'dropped_to_base': 0}
+        inside = native_inside.copy()
+    elif spec['mode'] == 'front':
         if spec.get('foreign_masks'):
             foreign = masks.union(spec['foreign_masks'])
             eligible = native_inside
@@ -632,6 +702,49 @@ def rebuild(obj, spec, masks, working_assignment, dry=False, neighbours=()):
         if raise_cap is not None:
             cap = np.where(~np.isnan(raise_cap), np.fmax(cap, raise_cap), cap)
         heights = np.minimum(heights, cap)
+    if spec.get('unhide'):
+        if context is None:
+            raise ValueError(f'{obj.name}: unhide requires the neighbour depth context')
+        receiver = context.receiver(set(working_assignment['mask_indices']), masks, spec.get('unhide_margin', 0))
+        prior = np.where(inside, heights, np.nan)
+        heights, lowered = core.unhide(grid, prior, inside, base, receiver,
+                                       context.depth, context.x0, context.y0)
+        if spec.get('unhide_edge_trim'):
+            # Replace the per-column cut by a clean vertical retreat of the
+            # north edge: per x column, drop every cell north of the southern-
+            # most lowered cell (window-max over 5 columns), keep the rest at
+            # its full height.
+            cut = inside & (heights < prior - 0.5)
+            ys = np.arange(grid.ny)[:, None] * np.ones((1, grid.nx), int)
+            last = np.where(cut.any(0), np.where(cut, ys, -1).max(0), -1)
+            smooth_last = last.copy()
+            for k in range(grid.nx):
+                smooth_last[k] = last[max(0, k - 2):k + 3].max()
+            drop = ys <= smooth_last[None, :]
+            report['unhide_edge_trim_cells'] = int((inside & drop).sum())
+            inside = inside & ~drop
+            heights = np.where(inside, prior, np.nan)
+        if spec.get('unhide_despike'):
+            # Lower-only 3x3 minimum around lowered cells removes the one-cell
+            # sawtooth the per-column cut leaves along long edges.
+            cut = inside & (heights < prior - 0.5)
+            ring = cut.copy()
+            ring[1:, :] |= cut[:-1, :]
+            ring[:-1, :] |= cut[1:, :]
+            ring[:, 1:] |= cut[:, :-1]
+            ring[:, :-1] |= cut[:, 1:]
+            filled = np.where(inside, heights, np.inf)
+            low = filled.copy()
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    low = np.minimum(low, np.roll(np.roll(filled, dy, 0), dx, 1))
+            low = np.maximum(low, base)
+            heights = np.where(ring & inside & np.isfinite(low), np.minimum(heights, low), heights)
+        inside = inside & (heights > base + 0.5)
+        labels, sizes = core.components(inside)
+        inside = core.break_pinches(np.isin(labels, [k for k, v in enumerate(sizes) if k and v >= 4]))
+        heights = np.where(inside, heights, np.nan)
+        report['unhide_lowered_columns'] = lowered
     report['kept_cells'] = int(inside.sum())
     report['kept_height_range'] = [round(float(np.nanmin(heights)), 1), round(float(np.nanmax(heights)), 1)] if inside.any() else None
     if not inside.any():
@@ -639,7 +752,8 @@ def rebuild(obj, spec, masks, working_assignment, dry=False, neighbours=()):
     if dry:
         return report, None
     raised = native_inside & (base > 0.5)
-    if spec['mode'] == 'front' and report.get('front_carve', {}).get('lowered_columns', 1) == 0:
+    if (spec['mode'] == 'front' and report.get('front_carve', {}).get('lowered_columns', 1) == 0
+            and not report.get('unhide_lowered_columns')):
         report['construction'] = 'native volume kept: no column covers neighbouring wall masonry'
         report['changed'] = restore_native(obj)
         return report, None
@@ -660,12 +774,34 @@ def rebuild(obj, spec, masks, working_assignment, dry=False, neighbours=()):
             bm.faces.new([verts[i] for i in p])
         except ValueError:
             pass
-    if spec.get('dissolve'):
-        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
-        bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(0.5), verts=bm.verts, edges=bm.edges)
     report['construction'] = ('closed native-top solid over the unburied footprint, based on the supporting terrain'
                               if spec['mode'] == 'trim' else 'closed heightfield solid over carved native footprint')
-    defects = finalize(bm, obj.name)
+    defects = None
+    if spec.get('dissolve'):
+        # Merge coplanar lattice faces; keep the undissolved lattice if the
+        # result is not a clean closed shell.
+        trial = bm.copy()
+        bmesh.ops.remove_doubles(trial, verts=trial.verts, dist=1e-4)
+        bmesh.ops.dissolve_limit(trial, angle_limit=math.radians(0.5), verts=trial.verts, edges=trial.edges)
+        tile_mesh(trial, spec.get('tile', 48.0))
+        trial_defects = finalize(trial, obj.name)
+        # A single triangulation artefact on a very large dissolved terrain is
+        # accepted (and reported) when the lattice alone would overflow the
+        # frozen ownership atlas.
+        tolerable = (spec.get('dissolve_tolerance', 0) >= trial_defects['nonmanifold_edges']
+                     and not trial_defects['boundary_edges'] and not trial_defects['degenerate_faces'])
+        if tolerable and trial_defects['nonmanifold_edges']:
+            report['topology_exception'] = (f"{trial_defects['nonmanifold_edges']} non-manifold edge(s) from "
+                                            'triangulating the dissolved flat top; accepted to keep the '
+                                            'ownership atlas within 16384 px')
+        if any(trial_defects.values()) and not tolerable:
+            trial.free()
+            report['dissolve_skipped'] = trial_defects
+        else:
+            bm.free()
+            bm, defects = trial, trial_defects
+    if defects is None:
+        defects = finalize(bm, obj.name)
     report['topology'] = defects
     inverse = obj.matrix_world.inverted()
     for v in bm.verts:
@@ -673,11 +809,201 @@ def rebuild(obj, spec, masks, working_assignment, dry=False, neighbours=()):
     return report, bm
 
 
+class NeighbourContext:
+    """Source-camera z-buffer of every visible non-owned mesh around the asset.
+
+    ``receiver(own_masks)`` marks pixels whose front-most neighbour owns a
+    reviewed mask covering that pixel (masks the node includes itself are
+    ignored: shared composites are resolved by first-hit gating instead).
+    """
+
+    def __init__(self, collection, owned, masks, rows, part_ids, margin=40):
+        pts = []
+        for obj in owned:
+            tris, _ = native_triangles(obj['source_node'])
+            nat = tris.reshape(-1, 3)
+            pts.append(np.stack([nat[:, 0], nat[:, 1] - nat[:, 2]], 1))
+            pts.append(np.stack([nat[:, 0], nat[:, 1]], 1))
+        pts = np.vstack(pts)
+        self.x0 = max(0, int(pts[:, 0].min()) - margin)
+        self.y0 = max(0, int(pts[:, 1].min()) - margin)
+        x1 = min(2944, int(pts[:, 0].max()) + margin)
+        y1 = min(2176, int(pts[:, 1].max()) + margin)
+        shape = (y1 - self.y0, x1 - self.x0)
+        self.depth = np.full(shape, -np.inf)
+        label_of = np.zeros(shape, int)
+        names = ['']
+        owned_set = set(owned)
+        for obj in collection.all_objects:
+            if obj.type != 'MESH' or obj.hide_render or obj in owned_set:
+                continue
+            tris = np.array(object_world_triangles(obj), float).reshape(-1, 3, 3)
+            if not len(tris):
+                continue
+            sx = tris[..., 0]
+            sy = -tris[..., 1] * core.SIN35 - tris[..., 2] * core.COS35
+            if sx.max() < self.x0 or sx.min() > x1 or sy.max() < self.y0 or sy.min() > y1:
+                continue
+            names.append(obj.get('source_node') or '')
+            core.zbuffer(self.depth, label_of, tris, len(names) - 1, self.x0, self.y0)
+        front_node = np.array(names, object)[label_of]
+        self.selections = {}
+        owners = {}
+        for node, row in rows.items():
+            if node in part_ids:
+                continue
+            for i in row['mask_indices']:
+                if i != 428:
+                    owners.setdefault(i, set()).add(node)
+        for i, nodes in owners.items():
+            r = masks.records[i]
+            bx, by = r['box_top_left']
+            bw, bh = r['box_size']
+            if bx > x1 or bx + bw < self.x0 or by > y1 or by + bh < self.y0:
+                continue
+            sel = masks.get(i)[self.y0:y1, self.x0:x1] & np.isin(front_node, list(nodes))
+            if sel.any():
+                self.selections[i] = sel
+        self.shape = shape
+
+    def receiver(self, own_masks, masks, margin=0):
+        """Neighbour receiver pixels (optionally dilated), minus the node's own silhouette."""
+        out = np.zeros(self.shape, bool)
+        for i, sel in self.selections.items():
+            if i not in own_masks:
+                out |= sel
+        for _ in range(margin):
+            grown = out.copy()
+            grown[1:, :] |= out[:-1, :]
+            grown[:-1, :] |= out[1:, :]
+            grown[:, 1:] |= out[:, :-1]
+            grown[:, :-1] |= out[:, 1:]
+            out = grown
+        own = [i for i in own_masks if i != 428]
+        if own:
+            y1, x1 = self.y0 + self.shape[0], self.x0 + self.shape[1]
+            out &= ~masks.union(own)[self.y0:y1, self.x0:x1]
+        return out
+
+
+def _island_height(points):
+    """Height of the per-face projection island the frozen bake packs into shelves."""
+    o = points[0]
+    normal = (points[1] - o).cross(points[2] - o)
+    if normal.length < 1e-12:
+        return 0.0
+    normal.normalize()
+    axis = max((p - o for p in points), key=lambda v: v.length).normalized()
+    vertical = normal.cross(axis).normalized()
+    ys = [(p - o).dot(vertical) for p in points]
+    return max(ys) - min(ys)
+
+
+# Painted arch opening of the south-western ravine bridge, traced on the
+# unmarked covered art (pixel x, y), on the east face of arch wall 075.
+BRIDGE_ARCH_PIXELS = [(673, 1960), (673, 1920), (675, 1912), (678, 1906), (683, 1901), (690, 1898),
+                      (697, 1899), (702, 1903), (706, 1910), (708, 1918), (708, 1960)]
+BRIDGE_ARCH_FACE = ((659.8, 2057.3), (716.4, 1986.0))  # native footprint edge of 075's east face
+BRIDGE_ARCH_NODES = ('building-057', 'building-075')
+
+
+def arch_cutter(depth=180.0, outset=6.0):
+    """Closed prism: the traced arch outline on the face, pushed through the bridge."""
+    (ax, ay), (bx, by) = BRIDGE_ARCH_FACE
+    ux, uy = bx - ax, by - ay
+    length = math.hypot(ux, uy)
+    nx, ny = uy / length, -ux / length  # outward (south-east) normal in native xy
+    if nx < 0:
+        nx, ny = -nx, -ny
+    ring = []
+    for px, py in BRIDGE_ARCH_PIXELS:
+        t = (px - ax) / ux
+        y = ay + t * uy
+        ring.append((px, y, y - py))
+    front = [(x + nx * outset, y + ny * outset, z) for x, y, z in ring]
+    back = [(x - nx * depth, y - ny * depth, z) for x, y, z in ring]
+    nat = np.array(front + back)
+    world = core.native_to_world(nat)
+    n = len(ring)
+    mesh = bpy.data.meshes.new(TAG + ' arch cutter')
+    faces = [tuple(range(n)), tuple(range(2 * n - 1, n - 1, -1))]
+    faces += [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
+    mesh.from_pydata([tuple(p) for p in world], [], faces)
+    mesh.update()
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(mesh)
+    bm.free()
+    return mesh, {'traced_pixels': BRIDGE_ARCH_PIXELS, 'face_edge_native_xy': BRIDGE_ARCH_FACE,
+                  'native_outline_xyz': [[round(c, 1) for c in p] for p in ring],
+                  'passage_depth': depth}
+
+
+def cut_bridge_arch(objects):
+    """Boolean the painted arch passage out of the bridge deck 057 and arch wall 075."""
+    mesh, record = arch_cutter()
+    cutter = bpy.data.objects.new(TAG + ' arch cutter', mesh)
+    bpy.context.scene.collection.objects.link(cutter)
+    results = {}
+    for obj in objects:
+        before = sum(p.area for p in obj.data.polygons)
+        # Native prisms carry 0.1-unit duplicate corners and open caps; weld
+        # and close them so the boolean yields a closed shell.
+        bm = bmesh.new()
+        bm.from_mesh(obj.data)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.3)
+        open_edges = [e for e in bm.edges if e.is_boundary]
+        if open_edges:
+            bmesh.ops.holes_fill(bm, edges=open_edges, sides=0)
+        bmesh.ops.dissolve_degenerate(bm, edges=bm.edges, dist=1e-4)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        bm.to_mesh(obj.data)
+        bm.free()
+        obj.data.update()
+        mod = obj.modifiers.new('arch passage', 'BOOLEAN')
+        mod.operation = 'DIFFERENCE'
+        mod.solver = 'EXACT'
+        mod.object = cutter
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        new = bpy.data.meshes.new_from_object(obj.evaluated_get(depsgraph))
+        obj.modifiers.remove(mod)
+        old = obj.data
+        new.materials.clear()
+        for m in old.materials:
+            new.materials.append(m)
+        obj.data = new
+        if old.users == 0:
+            bpy.data.meshes.remove(old)
+        new.name = obj.name
+        bm = bmesh.new()
+        bm.from_mesh(new)
+        record_obj = {'nonmanifold_edges': sum(not e.is_manifold for e in bm.edges),
+                      'boundary_edges': sum(e.is_boundary for e in bm.edges),
+                      'faces': len(bm.faces), 'area_before': round(before, 1),
+                      'area_after': round(sum(f.calc_area() for f in bm.faces), 1)}
+        bm.free()
+        results[obj['source_node']] = record_obj
+    bpy.data.objects.remove(cutter)
+    bpy.data.meshes.remove(mesh)
+    record['results'] = results
+    return record
+
+
 def apply_mesh(obj, bm):
     old = obj.data
     mesh = bpy.data.meshes.new(obj.name)
-    bm.to_mesh(mesh)
+    # Order faces by projection-island height (tallest first) so the frozen
+    # shelf packer fills rows evenly; geometry is unchanged.
+    world = obj.matrix_world
+    verts = [v.co.copy() for v in bm.verts]
+    bm.verts.index_update()
+    faces = [[v.index for v in f.verts] for f in bm.faces]
     bm.free()
+    heights = [_island_height([world @ verts[i] for i in f]) for f in faces]
+    order = sorted(range(len(faces)), key=lambda k: -heights[k])
+    mesh.from_pydata(verts, [], [faces[k] for k in order])
+    mesh.update()
     # Keep the original fallback material only; the frozen projection helper
     # rebuilds its own projection materials and UV layers.
     mesh.materials.append(old.materials[0])
@@ -798,8 +1124,9 @@ def main():
     parser.add_argument('--asset', required=True)
     parser.add_argument('--packet', action='store_true')
     parser.add_argument('--analyse', action='store_true')
+    parser.add_argument('--round', default='round-1', choices=['round-1', 'round-2', 'round-3', 'round-4'])
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
-    workspace = (ASSETS / args.asset).resolve(strict=True)
+    workspace = (ROOT / args.round / 'assets' / args.asset).resolve(strict=True)
     config = json.loads((workspace / 'workspace.json').read_text())
     if config['asset_id'] != args.asset:
         raise ValueError('Workspace asset mismatch')
@@ -817,6 +1144,7 @@ def main():
     mask_changes, working = apply_masks(workspace, config, part_ids, write=not args.analyse)
     assignments = {r['source_node']: r for r in working['projections']['exterior']['assignments'] if 'source_node' in r}
     masks = MaskStore(config['source_mask_manifest'])
+    context = None
     reports = []
     for obj in sorted(owned, key=lambda o: o['source_node']):
         n = int(obj['source_node'].split('-')[-1])
@@ -824,8 +1152,10 @@ def main():
         before = geometry_hash(obj)
         neighbours = [o['source_node'] for o in owned if o is not obj
                       and NODES[int(o['source_node'].split('-')[-1])]['mode'] in ('carve', 'trim', 'keep')]
+        if spec.get('unhide') and context is None:
+            context = NeighbourContext(collection, owned, masks, assignments, set(part_ids))
         report, bm = rebuild(obj, spec, masks, assignments[obj['source_node']], dry=args.analyse,
-                             neighbours=neighbours)
+                             neighbours=neighbours, context=context)
         if bm is not None:
             apply_mesh(obj, bm)
             report['changed'] = True
@@ -836,6 +1166,17 @@ def main():
         report['faces'] = len(obj.data.polygons)
         obj[TAG] = VERSION
         reports.append(report)
+    arch = None
+    if set(BRIDGE_ARCH_NODES) <= {o['source_node'] for o in owned} and not args.analyse:
+        arch = cut_bridge_arch([o for o in owned if o['source_node'] in BRIDGE_ARCH_NODES])
+        for r in reports:
+            if r['source_node'] in BRIDGE_ARCH_NODES:
+                r['arch_passage'] = arch['results'][r['source_node']]
+                r['changed'] = True
+                obj = next(o for o in owned if o['source_node'] == r['source_node'])
+                r['geometry_sha256'] = geometry_hash(obj)
+                r['vertices'] = len(obj.data.vertices)
+                r['faces'] = len(obj.data.polygons)
     silhouette = silhouette_stats(owned, assignments, masks)
     after = {o.name: geometry_hash(o) for o in scene.objects if o.type == 'MESH' and o not in owned}
     if after != outside:
@@ -844,6 +1185,7 @@ def main():
               'recipe_version': VERSION, 'recipe_sha256': sha(__file__),
               'core_sha256': sha(HERE / 'rocks_terrain_volumes_core.py'),
               'mask_changes': mask_changes, 'silhouette': silhouette, 'nodes': reports,
+              **({'bridge_arch': {k: v for k, v in arch.items() if k != 'results'}} if arch else {}),
               'outside_objects_unchanged': len(outside)}
     inspection = workspace / 'inspection'
     inspection.mkdir(exist_ok=True)

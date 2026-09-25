@@ -63,7 +63,17 @@ def fountain(obstacles):
 
 
 def garden(obstacles):
-    ground = prism(_poly(obstacles, 416), PLATEAU_Z, GARDEN_Z)
+    # Round 2 (integrated context): the refined upper curtain wall stands on a
+    # traced south foot at z 392-423 over the rock face. A fill reaching the
+    # plateau was exposed below the walkway (its south face, and with a sloped
+    # bottom its underside) and received painted rock in the round-2 coverage
+    # audit. The garden is therefore a 10-unit terrace slab (z 380-390) held
+    # between the curtain wall (south) and the north retaining wall 415, whose
+    # feet both lie below it; the mass underneath belongs to the terrain lane
+    # (keep plateau z 220 and rock spur 432/433, which must rise to the traced
+    # curtain-wall foot).
+    poly = _poly(obstacles, 416)  # (1222,1499) (1003,1576) (841,1675) (738,1554) (1120,1409)
+    ground = prism(poly, 380.0, GARDEN_Z)
     seat = _poly(obstacles, 422)  # (874,1503) (881,1508) (839,1524) (832,1518)
     edge_a = (seat[0], seat[3])
     edge_b = (seat[1], seat[2])
@@ -98,10 +108,10 @@ def build(asset):
         shapes = garden(obstacles)
         info = {'ground_native_z': GARDEN_Z,
                 'changes': [
-                    'Garden ground 416 trimmed from a native z 0-390 pillar to a raised terrace fill z 220-390 resting on the keep plateau.',
+                    'Garden ground 416 trimmed from a native z 0-390 pillar to a 10-unit terrace slab (z 380-390) held between the curtain wall and the north retaining wall; round 2: the former z 220-390 fill showed below the curtain wall\'s raised south foot in the integrated scene and received painted rock.',
                     'Bench 422 rebuilt from a floating 3-unit slab into a closed stone bench: seat top z 405 on two end supports reaching the garden floor at z 390.'],
                 'limitations': [
-                    'Terrace fill below z 390 is hidden in the covered artwork; its base at the plateau height (z 220) is inferred.',
+                    'The mass below the garden slab (between the curtain-wall foot and the plateau) is terrain-lane geometry: rock spur 432/433 must rise to the traced curtain-wall foot (z 392-423) or a gap shows under the walkway.',
                     'Planting beds and paths are flat projected texture on the z 390 surface.']}
     elif asset == 'lincoln-garden-north-wall':
         shapes = north_wall(obstacles)

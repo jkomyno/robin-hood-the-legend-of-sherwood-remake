@@ -279,12 +279,15 @@ def shingle_cottage():
                    const(GROUND), const(251))]
     for x, y, top in ((1727, 1678, 290), (1785, 1660, 265), (1832, 1625, 255)):
         base = W(x, y, GROUND)
-        fence.append(box_between(base, W(x, y, top), 3.0, 3.0))
-    for (xa, ya, za), (xb, yb, zb) in (((1728, 1677.7, 263.5), (1785, 1660, 260)),
-                                       ((1728, 1677.7, 241.5), (1785, 1660, 240)),
-                                       ((1785, 1660, 261), (1832, 1625, 251.5)),
-                                       ((1785, 1660, 241), (1832, 1625, 234.5))):
-        fence.append(box_between(W(xa, ya, za), W(xb, yb, zb), 2.5, 2.5))
+        fence.append(box_between(base, W(x, y, top), 4.0, 4.0))
+    # Rail heights (round 2) from mask 120 column runs: top/bottom rail rows
+    # 1426/1443 at x 1735, 1409.5/1426.5 at x 1780, 1401/1419 at x 1795 and
+    # 1382.5/1399 at x 1825, extrapolated to the posts in each bay's plane.
+    for (xa, ya, za), (xb, yb, zb) in (((1727, 1678, 249.1), (1785, 1660, 252.3)),
+                                       ((1727, 1678, 232.1), (1785, 1660, 235.3)),
+                                       ((1785, 1660, 252.9), (1832, 1625, 246.8)),
+                                       ((1785, 1660, 234.4), (1832, 1625, 230.6))):
+        fence.append(box_between(W(xa, ya, za), W(xb, yb, zb), 4.5, 4.5))  # drawn rails ~4-5 px
     return {
         'building-353': [back_roof, back_body],
         'building-352': [front_roof, front_body],
@@ -350,12 +353,14 @@ def well():
     centre = W(1743, 1822, GROUND)
     shaft = cylinder(centre, centre + [0, 0, (236 - GROUND) / C], 22.0, 20)
     roof = slab([W(1720.5, 1812, 269), W(1765, 1827, 269), W(1760, 1832, 259), W(1715, 1817, 259)], 3.0)
-    # Posts from the shaft rim to the roof, visible at pixels x 1724 and 1760.
+    # Posts from the shaft rim to the roof, measured from mask 163 (round 2):
+    # drawn at pixel columns 1724-1727 (foot row 1581) and 1756-1758 (foot row
+    # 1593) where they stand on the rim at native z 236.
     posts = []
-    for x, y in ((1724, 1822), (1761, 1832)):
+    for x, y in ((1725.5, 1817), (1757, 1829)):
         base = W(x, y, 236)
         roof_z = Plane(W(1720.5, 1812, 269), W(1765, 1827, 269), W(1760, 1832, 259))(base[0], base[1])
-        posts.append(box_between(base - [0, 0, 1.0], [base[0], base[1], roof_z - 3.0 / C + 0.5], 3.0, 3.0))
+        posts.append(box_between(base - [0, 0, 1.0], [base[0], base[1], roof_z - 3.0 / C + 0.5], 3.5, 3.5))
     return {'building-373': [shaft], 'building-374': [roof] + posts}
 
 
@@ -443,15 +448,38 @@ def gabled_box(pts, z_body, z_ridge):
 
 
 def hutches():
+    """Two slatted wooden hutches on short legs under flat plank lids.
+
+    Round 2 (user: "model completely wrong"): measured afresh from the artwork.
+    Each hutch is a box rotated ~45 degrees in plan (slatted south-west face,
+    plank east face) on four short legs, under a planked lid that overhangs
+    the box only slightly (drawn corner posts at the lid corners) and rises slightly toward the back (north) corner.
+    Lid corners of the east hutch in artwork pixels: W (2586,672),
+    N (2598,660), E (2628,667), S (2613,678); feet at pixel row ~707 below the
+    S corner. The west hutch is drawn identical, offset (-49, -10) native
+    (masks 186 vs 185 top rows 646/657). Heights: legs 220..227, box
+    227..247, lid 247..~251.
+    """
     out = {}
-    # Plan diamonds are inflated: the drawn hutch feet sit ~15 px above the
-    # obstacle's front corner. Keep the back corner and shorten the depth.
-    for node, pts in (('building-168', [(2586, 931), (2600, 918), (2628, 927), (2614, 941)]),
-                      ('building-169', [(2537, 921), (2549, 908), (2577, 917), (2565, 930)])):
-        back_y = min(p[1] for p in pts)
-        pts = [(x, back_y + (y - back_y) * 0.45) for x, y in pts]
-        body, lid = gabled_box(pts, 253, 264)
-        out[node] = [body, lid]
+    lid_px = {'W': (2586, 672), 'N': (2598, 660), 'E': (2628, 667), 'S': (2613, 678)}
+    z_lid = {'S': 249.0, 'W': 250.5, 'E': 250.5, 'N': 252.0}
+    for node, (dx, dy) in (('building-168', (0, 0)), ('building-169', (-49, -10))):
+        lid_top = {k: W(x + dx, y + dy + z_lid[k], z_lid[k] + 1.0) for k, (x, y) in lid_px.items()}
+        # ~2-unit roof overhang: pull every lid corner toward the centre for the box.
+        centre = sum(lid_top.values()) / 4
+        order = ['W', 'N', 'E', 'S']
+
+        def inset(p, d):
+            v = np.array([centre[0] - p[0], centre[1] - p[1], 0.0])
+            return p + v / np.linalg.norm(v) * d
+        box_plan = [inset(lid_top[k], 0.8) for k in order]  # drawn corner posts sit at the lid corners
+        body = prism(xy(*box_plan), const(227.0), const(247.0))
+        lid = slab([lid_top[k] for k in order], 3.0)
+        legs = []
+        for corner in box_plan:
+            foot = inset(corner, 1.0)
+            legs.append(box_between([foot[0], foot[1], GROUND / C], [foot[0], foot[1], 227.5 / C], 2.5, 2.5))
+        out[node] = [body, lid] + legs
     return out
 
 

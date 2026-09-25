@@ -30,7 +30,7 @@ import keep_north_geom as G  # noqa: E402
 
 ROOT = HERE.parents[2]
 REFINE = ROOT / 'level-editor/work/lincoln-refinement'
-ASSETS = REFINE / 'round-1/assets'
+ASSETS = REFINE / 'round-1/assets'  # --assets-dir selects round-2
 TOOLING = REFINE / 'tooling/e6b57cb851c7142b'
 GROUND = G.GROUND
 
@@ -158,6 +158,16 @@ def annex_spec():
     EVIDENCE.clear()
     G.prism(M(189), pts(189), GROUND, 472.0)          # lower storey below the Patch07 room
     G.prism(M(198), pts(198), 545.0, 550.0)           # raised wall-walk slab
+    # Round 2 (user: "just look at it"): the walk slab was carried only by thin parapet
+    # walls, leaving the north-east arm and the west wing hollow down to the courtyard.
+    # Solid masonry cores now fill the terrace outside the Patch07 room block 189.
+    # North-east arm: between parapet walls 202 (west) and 201 (east), from the keep side
+    # down to the north edge of 189.
+    ARM = [(1733.6, 1251.9), (1788.8, 1231.0), (1878.7, 1367.3), (1818.0, 1380.4)]
+    # West wing: between the south-west parapet 203, the front-left parapet 204 and 189.
+    WING = [(1613.6, 1458.4), (1818.0, 1380.4), (1726.4, 1399.8), (1732.0, 1469.0), (1644.0, 1486.6)]
+    G.prism(M(198), ARM, GROUND, 545.0)
+    G.prism(M(198), WING, GROUND, 545.0)
     # 201: east parapet of the north-east arm; 13 lit merlon end faces were
     # located from a brightness profile along the run (see inspection JSON).
     lit = [1800.5, 1811, 1819, 1827, 1838, 1847, 1856, 1864.5, 1874, 1882.5, 1891.5, 1900, 1908.5]
@@ -182,15 +192,19 @@ def annex_spec():
     G.prism(M(458), pts(458), GROUND, 533.0)          # Patch07 cover (kept)
     G.prism(M(205), pts(205), 531.0, 580.0)
     # 225: front parapet; 1830-1888 is a plain lower stretch in the artwork.
-    p225 = pts(225)
+    p225 = behind_shed(pts(225))
     G.prism(M(225), p225, GROUND, 565.0)
     crenel_run(M(225), '225', [p225[4], p225[3], p225[2], p225[1], p225[0]], p225[6],
                [(1748, 1765), (1773, 1789), (1797, 1830), (1888, 1921)], 565.0, 575.0, 575.0,
                thickness=6.0)
     # 222/223: lower facade pieces behind the courtyard shed, from the courtyard.
-    z222 = [p['z_top'] for p in so[222]['points']]
-    G.prism(M(222), pts(222), GROUND, z222)
-    G.prism(M(223), pts(223), GROUND, 472.0)
+    # Round 2: faces that touched or crossed the shed back wall line are clamped behind it.
+    # 222 was a native sloped-top volume (358 at the shed roof line rising to 542) whose top
+    # received facade artwork as a fake roof.  It is now a vertical plinth with a flat top at
+    # the room floor (470), matching the 223 plinth beside it; the facade above belongs to 225.
+    G.prism(M(222), behind_facade(pts(222)), GROUND, 470.0)
+    # 223 stood wholly proud of the facade; it becomes a 3 px plinth band just behind it.
+    G.prism(M(223), [(1750.8, 1501.4), (1780.6, 1495.5), (1780.6, 1492.5), (1750.8, 1498.4)], GROUND, 472.0)
     # 330-333: Patch07 room furniture standing on the room floor (was from z = 0).
     for n in (330, 331, 332):
         G.prism(M(n), pts(n), 472.0, so[n]['points'][0]['z_top'])
@@ -202,8 +216,41 @@ def annex_spec():
 
 CONE = dict(cx=1945.0, cy=1452.0, r=35.0, bottom=392.0, tip=352.0, tip_r=12.0,
             eave=597.0, eave_r=43.0, apex=647.0, pole_top=682.0)
-TURRET = dict(cx=1719.0, cy=1495.0, r=50.0, crown_in=42.5, floor=478.0, notch=492.0,
-              top=503.0, merlons=11, phase=84.0, merlon_deg=14.0)
+# Round 2: the turret centre moves 6 native y north and every level rises 6, which leaves
+# every source pixel (x, y - z) unchanged but keeps the body behind the courtyard shed's
+# back wall (the round-1 circle pierced the shed roof's north-west corner by ~10 units).
+TURRET = dict(cx=1719.0, cy=1489.0, r=50.0, crown_in=42.5, floor=484.0, notch=498.0,
+              top=509.0, merlons=11, phase=84.0, merlon_deg=14.0)
+
+# Courtyard shed back-wall outer line (native, node 195 south edge); annex faces must
+# stay at or behind it.  Positive margin keeps a small clearance.
+SHED_BACK = ((1944.0, 1473.0), (1725.0, 1519.0))
+
+
+# Front facade plane of parapet wall 225 (native), west and east of its jog at x 1822-1827.
+FACADE = [((1751.0, 1502.0), (1822.0, 1488.0)), ((1826.8, 1496.7), (1921.5, 1477.6))]
+
+
+def behind_facade(poly, margin=0.3):
+    """Clamp plinth vertices so nothing stands proud of the 225 facade plane."""
+    out = []
+    for x, y in behind_shed(poly):
+        seg = FACADE[0] if x <= 1824.4 else FACADE[1]
+        (ax, ay), (bx, by) = seg
+        limit = ay + (by - ay) * (x - ax) / (bx - ax) - margin
+        out.append((x, min(y, limit)))
+    return out
+
+
+def behind_shed(poly, margin=0.3):
+    (ax, ay), (bx, by) = SHED_BACK
+    out = []
+    for x, y in poly:
+        if bx <= x <= ax:
+            limit = ay + (by - ay) * (x - ax) / (bx - ax) - margin
+            y = min(y, limit)
+        out.append((x, y))
+    return out
 
 
 def cone_turret_spec():
@@ -250,7 +297,9 @@ def north_hall_spec():
     G.prism(out[node(184)], [p184[3], p184[0], p184[1], p184[2]], 355.0, [370.0, 370.0, 412.0, 412.0])
     # 182: external stair from the wall walk (370) to the courtyard (220).
     p182 = pts(182)
-    G.stair(out[node(182)], p182[0], p182[3], p182[1], p182[2], 370.0, GROUND, 15, GROUND)
+    # Round 2: 18 steps.  Tread bands in covered.png repeat every ~11.8 px (rows 620, 632,
+    # 644, 656, 667, 679) with the nose advancing ~4 px per step; 217 px total drop / 11.8.
+    G.stair(out[node(182)], p182[0], p182[3], p182[1], p182[2], 370.0, GROUND, 18, GROUND)
     return out
 
 
@@ -336,6 +385,23 @@ MASK_REVISIONS = {
         'add_include': [],
         'reason': 'mask49 contains the parapet and merlons between x 2200-2420 (stonework; its foliage lies '
                   'behind the wall).'},
+    # Round 2 (user: "why there a red bar across? some texture missing"): native roof mask399
+    # ends at y 941 and body mask224 starts at y 947, leaving a 6 px unaccepted band and edge
+    # slivers.  The annex envelope mask255 contains the whole turret silhouette; first-hit
+    # gating keeps the annex merlon in front on the annex.
+    'lincoln-keep-annex-cone-turret': {'nodes': [197, 199, 200], 'drop_exclude': [], 'add_exclude': [],
+        'add_include': [255],
+        'reason': 'mask399 (roof) and mask224 (body) leave a 6 px gap at y 941-947 across the turret; the annex '
+                  'envelope mask255 contains the complete turret silhouette and is added as an include '
+                  '(evidence inspection/mask-revision-cone-masks.png).'},
+    # Round 2 (user: "stairs should be separate and they are missing texture"): the stair has
+    # its own native silhouette mask247, which no receiver claimed; mask245 stops at the hall end.
+    'lincoln-north-hall': {'nodes': [182], 'drop_exclude': [], 'add_exclude': [78, 85], 'add_include': [247],
+        'set_include': [247],
+        'reason': 'native mask247 is the stair silhouette (x 2092-2130, y 610-700) and was unassigned; mask245 '
+                  '(hall) does not cover the stair, so the stair receiver now uses mask247 only.  The foreground '
+                  'tree masks 78/85 are excluded where foliage hangs over the upper steps (evidence '
+                  'inspection/mask-revision-stair-247.png).'},
     # mask413 was reviewed for the round turret and rejected: its envelope also covers the
     # turret's left masonry column (inspection/mask-revision-rock413.png), so no revision.
 }
@@ -354,7 +420,8 @@ def revise_masks(asset):
             continue
         r.clear()
         r.update(json.loads(json.dumps(orig)))
-        r['mask_indices'] = orig['mask_indices'] + [i for i in rev['add_include'] if i not in orig['mask_indices']]
+        base_inc = rev.get('set_include', orig['mask_indices'])
+        r['mask_indices'] = list(base_inc) + [i for i in rev['add_include'] if i not in base_inc]
         excl = [i for i in orig.get('exclude_mask_indices', []) if i not in rev['drop_exclude']]
         excl += [i for i in rev['add_exclude'] if i not in excl]
         r['exclude_mask_indices'] = excl
@@ -423,7 +490,13 @@ def main():
     ap.add_argument('--asset', required=True)
     ap.add_argument('--packet', action='store_true')
     ap.add_argument('--preview', action='store_true')
+    ap.add_argument('--assets-dir', default=None)
+    ap.add_argument('--no-mask-revision', action='store_true',
+                    help='round 2: masks v2 already hold the reviewed revisions')
     args = ap.parse_args(argv)
+    global ASSETS
+    if args.assets_dir:
+        ASSETS = Path(args.assets_dir).resolve()
     ws = ASSETS / args.asset
     if args.preview:
         import keep_north_preview as P
@@ -434,7 +507,8 @@ def main():
     import bpy
     from render_slots import acquire
     acquire()
-    revise_masks(args.asset)
+    if not args.no_mask_revision:
+        revise_masks(args.asset)
     bpy.ops.wm.open_mainfile(filepath=str(ws / 'model.blend'))
     report = apply(args.asset, ws / 'inspection/geometry-recipe.json')
     print(json.dumps({k: report[k] for k in ('asset_id', 'unchanged_nodes')}))

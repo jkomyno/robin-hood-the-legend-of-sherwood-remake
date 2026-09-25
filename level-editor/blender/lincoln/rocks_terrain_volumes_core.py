@@ -433,3 +433,87 @@ def carve_foreign(grid, top, base, foreign, step=1.0):
     counts = {'native_columns': int(valid.sum()), 'lowered_columns': int(lowered.sum()),
               'dropped_to_base': int((valid & (height <= base + 1e-6)).sum())}
     return height, counts
+
+
+def nearness(y_native, z_native):
+    """Distance toward the source camera (larger is nearer) of a native point."""
+    return y_native / math.tan(math.radians(35)) + z_native * math.tan(math.radians(35))
+
+
+def zbuffer(depth, owner, tris_world, label, x0, y0):
+    """Rasterise world triangles into a source-pixel z-buffer (nearest wins)."""
+    h, w = depth.shape
+    px = tris_world[..., 0] - x0
+    py = -tris_world[..., 1] * SIN35 - tris_world[..., 2] * COS35 - y0
+    near = -tris_world[..., 1] * COS35 + tris_world[..., 2] * SIN35
+    for k in range(len(tris_world)):
+        xs, ys, zs = px[k], py[k], near[k]
+        i0, i1 = max(0, int(math.floor(xs.min()))), min(w, int(math.ceil(xs.max())) + 1)
+        j0, j1 = max(0, int(math.floor(ys.min()))), min(h, int(math.ceil(ys.max())) + 1)
+        if i0 >= i1 or j0 >= j1:
+            continue
+        det = (xs[1] - xs[0]) * (ys[2] - ys[0]) - (xs[2] - xs[0]) * (ys[1] - ys[0])
+        if abs(det) < 1e-9:
+            continue
+        gx, gy = np.meshgrid(np.arange(i0, i1) + 0.5, np.arange(j0, j1) + 0.5)
+        l1 = ((gx - xs[0]) * (ys[2] - ys[0]) - (xs[2] - xs[0]) * (gy - ys[0])) / det
+        l2 = ((xs[1] - xs[0]) * (gy - ys[0]) - (gx - xs[0]) * (ys[1] - ys[0])) / det
+        l0 = 1 - l1 - l2
+        inside = (l0 >= -1e-6) & (l1 >= -1e-6) & (l2 >= -1e-6)
+        z = l0 * zs[0] + l1 * zs[1] + l2 * zs[2]
+        vd = depth[j0:j1, i0:i1]
+        vo = owner[j0:j1, i0:i1]
+        upd = inside & (z > vd)
+        vd[upd] = z[upd]
+        vo[upd] = label
+
+
+def unhide(grid, heights, inside, base, receiver, depth, x0, y0, step=1.0):
+    """Lower columns whose top or front face would stand in front of a neighbour's receiver.
+
+    ``receiver`` marks source pixels (crop origin x0, y0) where the front-most
+    neighbour mesh owns the reviewed mask; ``depth`` is that mesh's nearness.
+    Every point (x, y, zz) of a column between its base and its top projects
+    to pixel (x, y - zz). The column is cut just below the lowest such point
+    that is nearer than the neighbour on a receiver pixel, so no part of it
+    hides a neighbour's painted receiver. Returns (heights, lowered_columns).
+    """
+    X, Y = grid.centers()
+    h, w = receiver.shape
+    valid = inside & ~np.isnan(heights)
+    px = np.floor(X - x0).astype(int)
+    pxc = np.clip(px, 0, w - 1)
+    first_bad = np.full(heights.shape, np.inf)
+    top = np.where(valid, heights, -np.inf)
+    span = float(np.nanmax(np.where(valid, heights - base, 0))) if valid.any() else 0.0
+    for dz in np.arange(0.0, span + step, step):
+        zz = base + dz
+        live = valid & (zz <= top) & np.isinf(first_bad)
+        if not live.any():
+            continue
+        py = np.floor(Y - zz - y0).astype(int)
+        ok = live & (px >= 0) & (px < w) & (py >= 0) & (py < h)
+        pyc = np.clip(py, 0, h - 1)
+        bad = ok & receiver[pyc, pxc] & (nearness(Y, zz) > depth[pyc, pxc] + 0.5)
+        first_bad[bad] = zz[bad] if np.ndim(zz) else zz
+    lowered = valid & np.isfinite(first_bad)
+    out = np.where(lowered, np.maximum(first_bad - step, base), heights)
+    return out, int(lowered.sum())
+
+
+def break_pinches(inside):
+    """Remove one cell of every diagonal-only contact (keeps the outline manifold)."""
+    out = inside.copy()
+    while True:
+        a = out[:-1, :-1]
+        b = out[:-1, 1:]
+        c = out[1:, :-1]
+        d = out[1:, 1:]
+        p1 = a & d & ~b & ~c
+        p2 = b & c & ~a & ~d
+        if not (p1.any() or p2.any()):
+            return out
+        js, is_ = np.nonzero(p1)
+        out[js + 1, is_ + 1] = False
+        js, is_ = np.nonzero(p2)
+        out[js + 1, is_] = False

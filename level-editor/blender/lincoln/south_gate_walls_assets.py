@@ -5,7 +5,10 @@ Footprints come from the frozen native sight obstacles (see the outline
 constants, copied from the reviewed inventory top faces); heights and notch
 positions come from the lane's corner traces. Nothing here reads Blender.
 """
+import json
 import math
+import os
+from pathlib import Path
 
 from south_gate_walls_geometry import (Mesh, prism, ribbon, crenellated_strip,
                                        polyline_length, point_at, lerp)
@@ -64,9 +67,8 @@ def central_wall(trace):
     outer = front['outer_polyline']
     inner_walk = [(1333, 2024), (1773, 1978)]
     body = body_strip(outer, inner_walk, ground, sorted(set(ts) | {0.0, 1.0}), 320.0)
-    par = Mesh()
-    par.add_shell(parapet(front, 320.0))
-    par.add_shell(parapet(bastion, 320.0))
+    par = {'south-central-parapet-straight': parapet(front, 320.0),
+           'south-angle-bastion-parapet': parapet(bastion, 320.0)}
     zs = [r['z'] for r in profile_by_name(trace, 'central-front')['samples']]
     return {
         'meshes': {'building-086': body, 'building-110': par},
@@ -78,6 +80,8 @@ def central_wall(trace):
             f'footing ({min(zs):.0f}-{max(zs):.0f}); the native z=0 pillar is removed. The footing follows the '
             'bottom edge of native mask 230 along the south face, where the masonry visibly continues down the cliff.',
             'South face of body 086 moved onto the parapet front line so the face is flush (native 086 edge was 2-4 px behind 110).',
+            'Round 2: merlon cap lowered to the cap-surface height (mask-230 silhouette top is the back edge of the '
+            '3-unit cap), removing a 1-3 px overlap with the south-wall cottage roof drawn behind the parapet.',
             f"Front parapet 110 rebuilt with {len(front['notches'])} measured crenels "
             f"(notch floor z={front['sill_z']}, merlon top z={front['merlon_top_z']}) from numbered corners; "
             'native flat 340 top and z=0 pillar replaced.',
@@ -126,9 +130,8 @@ def southeast_curtain(trace):
     ground, ts = profile_fn(prof)
     body = body_strip(front['outer_polyline'], [(1981, 1854), (2320, 1813)], ground,
                       sorted(set(ts) | {0.0, 1.0}), 350.0)
-    par = Mesh()
-    par.add_shell(parapet(front, 350.0))
-    par.add_shell(parapet(turret, 350.0))
+    par = {'southeast-parapet-straight': parapet(front, 350.0),
+           'southeast-corner-turret-parapet': parapet(turret, 350.0)}
     zs = [r['z'] for r in prof['samples']]
     return {
         'meshes': {'building-084': body, 'building-099': par},
@@ -169,9 +172,17 @@ def southeast_curtain(trace):
 
 def southeast_corner_turret(trace):
     f, pts = x_profile_fn(profile_by_name(trace, 'se-turret-front'), profile_by_name(trace, 'se-east-face'))
-    poly = [(2320, 1814), (2328, 1811), (2450, 1654), (2488, 1664), (2387, 1810), (2396, 1814),
+    # Round 2: inner (NW) walk edge moved 2.5 units toward the wall (normal (0.79, 0.61));
+    # at the native edge the walk covered a 2-5 px sliver outside mask 232 that the
+    # artwork gives to the southeast lean-to roof (mask 146).
+    poly = [(2320, 1814), (2330.0, 1812.5), (2452.0, 1655.5), (2488, 1664), (2387, 1810), (2396, 1814),
             (2390, 1844), (2369, 1850), (2343, 1850), (2329, 1843)]
-    body = prism(poly, lambda x, y: f(x), 350.0, subdivide=6)
+    turret_poly = [(2320, 1814), (2330.0, 1812.5), (2387, 1810), (2396, 1814), (2390, 1844), (2369, 1850),
+                   (2343, 1850), (2329, 1843)]
+    walk_poly = [(2330.0, 1812.5), (2452.0, 1655.5), (2488, 1664), (2387, 1810)]
+    body = {'southeast-corner-turret-body': prism(turret_poly, lambda x, y: f(x), 350.0, subdivide=6),
+            'east-curtain-walk': prism(walk_poly, lambda x, y: f(x), 350.0, subdivide=6)}
+    assert poly  # full outline documented above; pieces share the cut (2330,1812.5)-(2387,1810)
     zs = [z for _, z in pts]
     return {
         'meshes': {'building-083': body},
@@ -181,6 +192,8 @@ def southeast_corner_turret(trace):
         'changes': [
             f'Corner turret and east-curtain walk body 083 rebuilt from walk z=350 down to the measured footing '
             f'({min(zs):.0f}-{max(zs):.0f}); native z=0 pillar removed.',
+            'Round 2: inner (NW) walk edge of 083 trimmed 2.5 units toward the wall so it no longer covers the '
+            'southeast lean-to roof drawn behind it (it lay 2-5 px outside mask 232).',
             'Turret front vertices moved onto the outer line of the parapet ring (099) so the tower face is flush '
             '(native 083 turret face was 3 px behind its parapet).',
         ],
@@ -203,7 +216,9 @@ def west_curtain(trace):
     skin.add_shell(parapet(a, ground))
     bump_outer = [(861, 1885), (843, 1894), (882, 1924), (899, 1915)]
     bump_inner = [(868, 1887), (852, 1895), (883, 1918), (899, 1911)]
-    skin.add_shell(ribbon(bump_outer, bump_inner, [0.0, 1.0], ground, [(a['merlon_top_z'],) * 2]))
+    bump = run_by_name(trace, 'west-bump')
+    skin.add_shell(crenellated_strip(bump_outer, bump_inner, [(n['t0'], n['t1']) for n in bump['notches']],
+                                     ground, bump['merlon_top_z'], bump['sill_z']))
     skin.add_shell(parapet(c, ground))
     walk = [(763, 1806), (801, 1789), (1038, 1967), (997, 1985), (899, 1910), (882, 1917), (851, 1894), (868, 1886)]
     body = prism(walk, ground, 350.0)
@@ -219,7 +234,9 @@ def west_curtain(trace):
             '(plateau 220 minus 2).',
             f"Parapet 376 rebuilt with {len(a['notches'])} + {len(c['notches'])} measured crenels on the two straight runs "
             f"(notch floor z={a['sill_z']}, merlon top z={a['merlon_top_z']}; native flat top 365).",
-            'Pilaster/buttress jog in the middle of the run kept as a solid, uncrenellated block to merlon height.',
+            'Round 2 (user feedback): the projecting middle bay (16 units proud of the curtain, full height) now '
+            'carries its own battlements: 3 traced crenels (floor 368, merlon top 382) on its front and west return; '
+            'the lit corner pilaster stays solid.',
         ],
         'inferred': ['Back (NE) face and walk body are inferred; the SW face and walk top are source-visible.',
                      'Buttress top detail (corbelled cap) is flattened to merlon height.'],
@@ -365,7 +382,7 @@ def east_gate_tower(trace):
 def gatehouse_arch(trace):
     front, back = run_by_name(trace, 'gate-front'), run_by_name(trace, 'gate-back')
     g = PLATEAU - EMBED
-    walk, top, sill = 400.0, front['merlon_top_z'], front['sill_z']
+    walk, top, sill = 395.0, front['merlon_top_z'], front['sill_z']
     btop, bsill = back['merlon_top_z'], back['sill_z']
     fo = [(1070, 2066), (1094, 2074), (1167, 2094), (1212, 2107)]
     fi = [(1071, 2062), (1095, 2070), (1168, 2090), (1213, 2103)]
@@ -379,20 +396,25 @@ def gatehouse_arch(trace):
     # east front arc (tower face y~2049 vs pier face y~2057 at x=1040), so it
     # hid tower masonry that the artwork shows. The pier now starts at the
     # tower surface.
-    m.add_shell(prism([(1066, 2048), (1080, 2044), (1112, 2053), (1094, 2074), (1070, 2066)], g, walk))
+    # Round 2 ("weird split of geometry?"): the piers and lintel were thin front
+    # slabs leaving a hollow box between the gate front and the rear wall. They
+    # now run full depth to the rear wall (115/116/114 south face), so the gate
+    # block reads as one mass pierced by the passage; top at 395 under the walk
+    # plates 088/090 (395-400).
+    m.add_shell(prism([(1066, 2048), (1070, 2066), (1094, 2074), (1149, 2008), (1107, 1998)], g, walk))
     m.add_shell(crenel_on(seg(fo, 0, 1), seg(fi, 0, 1), [front], walk, top, sill))
     meshes['building-092'] = m
     # Lintel 113 with a segmental arch soffit over the passage.
     spring, apex = 300.0, 318.0
     arch = lambda t: spring + (apex - spring) * math.sqrt(max(0.0, 1 - (2 * t - 1) ** 2))
     m = Mesh()
-    m.add_shell(ribbon([(1094, 2074), (1167, 2094)], [(1112, 2052), (1186, 2073)],
+    m.add_shell(ribbon([(1094, 2074), (1167, 2094)], [(1149, 2008), (1197, 2021)],
                        [i / 16 for i in range(17)], arch, [(walk, walk)] * 16))
     m.add_shell(crenel_on(seg(fo, 1, 2), seg(fi, 1, 2), [front], walk, top, sill))
     meshes['building-113'] = m
     # East pier 089.
     m = Mesh()
-    m.add_shell(prism([(1167, 2095), (1184, 2074), (1203, 2079), (1205, 2078), (1216, 2108)], g, walk))
+    m.add_shell(prism([(1167, 2094), (1197, 2021), (1240, 2033), (1205, 2078), (1206, 2088), (1216, 2108)], g, walk))
     m.add_shell(crenel_on(seg(fo, 2, 3), seg(fi, 2, 3), [front], walk, top, sill))
     meshes['building-089'] = m
     # Rear parapets 115/116/114 (camera-facing south faces traced).
@@ -411,6 +433,10 @@ def gatehouse_arch(trace):
         'changes': [
             'West pier 092 footprint cut back to the west-tower surface (x>=1066): the native pier protruded '
             'in front of the tower front arc and occluded tower masonry visible in the artwork.',
+            'Round 2 (user: "weird split of geometry?"): piers 092/089 and the arched lintel 113 now run the full '
+            'depth of the gate block from the front to the rear wall (115/116/114), closing the hollow box that '
+            'made the front and rear walls read as separate slabs; the passage (x 1094-1167 at the front, '
+            '1149-1197 at the rear opening under 116) stays open; block top 395 under the walk plates.',
             'Gate piers 092/089 trimmed from z=0 pillars to the plateau (218) and to the wall-walk level 400; the '
             'sloped native 092 top is replaced by the walk level.',
             f'Lintel 113 rebuilt with a segmental arch soffit (springing {spring:.0f}, apex {apex:.0f}) matching the '
@@ -503,6 +529,10 @@ def gate_cone_turret(trace):
 
 
 STAIR_STEPS = 12
+ROUND3 = os.environ.get('SOUTH_GATE_ROUND', 'round-1') not in ('round-1', 'round-2')
+# The stair top-landing component exists only once a catalog (v4+) lists it;
+# the frozen tooling rejects unknown components in earlier workspaces.
+LANDING_SPLIT = os.environ.get('SOUTH_GATE_LANDING_SPLIT') == '1'
 
 
 def wall_stair(trace):
@@ -512,7 +542,24 @@ def wall_stair(trace):
     walk_poly = [(1774, 1978), (1793, 1975), (1863, 1915), (1831, 1901), (1852, 1885), (1896, 1903),
                  (1898, 1898), (1888, 1893), (1943, 1852), (1955, 1882), (1916, 1912), (1922, 1914),
                  (1846, 1992), (1850, 2006), (1838, 2020), (1805, 2024), (1777, 2014)]
-    walk = prism(walk_poly, lambda x, y: min(g, f(x)), 320.0, subdivide=6)
+    bastion_poly = [(1774, 1978), (1793, 1975), (1846, 1992), (1850, 2006), (1838, 2020), (1805, 2024), (1777, 2014)]
+    angle_poly = [(1793, 1975), (1863, 1915), (1831, 1901), (1852, 1885), (1896, 1903), (1898, 1898), (1888, 1893),
+                  (1943, 1852), (1955, 1882), (1916, 1912), (1922, 1914), (1846, 1992)]
+    assert walk_poly
+    walk = {'south-angle-bastion-body': prism(bastion_poly, lambda x, y: min(g, f(x)), 320.0, subdivide=6),
+            'south-angle-curtain-walk': prism(angle_poly, lambda x, y: min(g, f(x)), 320.0, subdivide=6)}
+    if LANDING_SPLIT:
+        # Round 3 (user: stair "missing the upper ending of the stair where you can
+        # stand on after going up"; angle run "this is where that upper thing on the
+        # stairs is"): the top landing between the stair head (1831,1901)-(1863,1915)
+        # and the landing parapets 108/107 becomes its own piece. The cut from the
+        # stair head corner (1863,1915) to (1884,1898.1) lies on the native walk edge.
+        cut = (1884.0, 1885 + (1884 - 1852) * 18 / 44)
+        walk_rest = [(1793, 1975), (1863, 1915), cut, (1896, 1903), (1898, 1898), (1888, 1893),
+                     (1943, 1852), (1955, 1882), (1916, 1912), (1922, 1914), (1846, 1992)]
+        landing = [(1863, 1915), (1831, 1901), (1852, 1885), cut]
+        walk['south-angle-curtain-walk'] = prism(walk_rest, lambda x, y: min(g, f(x)), 320.0, subdivide=6)
+        walk['south-wall-stair-top-landing'] = prism(landing, lambda x, y: min(g, f(x)), 320.0, subdivide=6)
     rise = (321.0 - PLATEAU) / STAIR_STEPS
     stations = [i / STAIR_STEPS for i in range(STAIR_STEPS + 1)]
     stair = ribbon([(1793, 1974), (1863, 1915)], [(1761, 1962), (1831, 1902)], stations, g,
@@ -562,6 +609,57 @@ def wall_stair(trace):
     }
 
 
+P104 = [(1917, 1912), (1950, 1885), (1941, 1881), (1944, 1878), (1961, 1886), (1924, 1914)]
+P127 = [(1881, 1896), (1896, 1902), (1898, 1898), (1889, 1893), (1917, 1871), (1927, 1875), (1930, 1872), (1918, 1867)]
+WALK_Z = 320.0
+
+
+def inset(poly, d):
+    cx = sum(p[0] for p in poly) / len(poly)
+    cy = sum(p[1] for p in poly) / len(poly)
+    out = []
+    for x, y in poly:
+        vx, vy = x - cx, y - cy
+        n = math.hypot(vx, vy)
+        out.append((x - vx / n * d, y - vy / n * d))
+    return out
+
+
+DOOR_TOP = 356.0
+
+
+def turret_half(side, L, B, Rr, F, margin=1.0, niche=6.0):
+    """Round 3 (user: "front is indented for no reason"): the door turret is a
+    square box flush under its pyramid roof (1 unit eave), split into west/east
+    halves through the door axis, with a 6-unit-deep door niche in the
+    camera-facing SW face (x 1896-1917, z 320-356) where the artwork draws the
+    dark doorway. Replaces the native L-shaped fragments whose faces sat 6-10
+    units behind the roof edge."""
+    Li, Bi, Ri, Fi = inset([L, B, Rr, F], margin)
+    fm = lerp(Li, Fi, 0.5)
+    bm = lerp(Bi, Ri, 0.5)
+    # door jambs on the front face (x of the native doorway 1896..1917)
+    def at_x(x):
+        t = (x - Li[0]) / (Fi[0] - Li[0])
+        return lerp(Li, Fi, t)
+    jl, jr = at_x(1896.0), at_x(1917.0)
+    # inward direction (front -> back), normalised
+    vx, vy = bm[0] - fm[0], bm[1] - fm[1]
+    n = math.hypot(vx, vy)
+    ix, iy = vx / n * niche, vy / n * niche
+    fmn = (fm[0] + ix, fm[1] + iy)
+    if side == 'west':
+        full = [Li, fm, bm, Bi]
+        lower = [Li, jl, (jl[0] + ix, jl[1] + iy), fmn, bm, Bi]
+    else:
+        full = [fm, Fi, Ri, bm]
+        lower = [fmn, (jr[0] + ix, jr[1] + iy), jr, Fi, Ri, bm]
+    m = Mesh()
+    m.add_shell(prism(lower, WALK_Z, DOOR_TOP))
+    m.add_shell(prism(full, DOOR_TOP, 371.0))
+    return m
+
+
 def south_wall_cone_turret(trace):
     f, pts = x_profile_fn(profile_by_name(trace, 'turret-junction'))
     g = PLATEAU - EMBED
@@ -587,10 +685,13 @@ def south_wall_cone_turret(trace):
         'meshes': {
             'building-103': pyramid([L, B, M]),
             'building-102': pyramid([B, Rr, F, M]),
-            'building-104': prism([(1917, 1912), (1950, 1885), (1941, 1881), (1944, 1878), (1961, 1886), (1924, 1914)],
-                                  g, 373.0),
-            'building-127': prism([(1881, 1896), (1896, 1902), (1898, 1898), (1889, 1893), (1917, 1871), (1927, 1875),
-                                   (1930, 1872), (1918, 1867)], g, 373.0),
+            'building-104': {'door-turret-wall': turret_half('east', L, B, Rr, F) if ROUND3 else prism(P104, WALK_Z, 373.0),
+                             'wall-fill-below-door-turret': prism(P104, g, WALK_Z)},
+            'building-127': {'door-turret-wall': turret_half('west', L, B, Rr, F) if ROUND3 else prism(P127, WALK_Z, 373.0),
+                             'wall-fill-below-door-turret': prism(P127, g, WALK_Z)},
+            **({'building-105': prism(inset([L, B, Rr, F], 0.0), 371.0, zb),
+                'building-101': prism([(1922, 1915), (1950, 1891), (1962, 1896), (1934, 1920)], 317.0, 374.9)}
+               if ROUND3 else {}),
             'building-122': prism(list(top122), ground, lambda x, y: top122[(x, y)]),
             'building-100': prism(list(top100), ground, lambda x, y: top100[(x, y)]),
         },
@@ -598,7 +699,11 @@ def south_wall_cone_turret(trace):
                    'building-127': {'z': g, 'datum_removed': 'native z=0 pillar'},
                    'building-122': {'method': 'mask 231 bottom edge along the junction face', 'z_min': min(z for _, z in pts)},
                    'building-100': {'method': 'mask 231 bottom edge along the junction face', 'z_min': min(z for _, z in pts)}},
-        'changes': [
+        'changes': ([
+            'Round 3 (user: "front is indented for no reason"): door-turret walls 104/127 rebuilt as a square box '
+            'flush under the pyramid roof (1-unit eave) instead of the native L-shaped fragments whose faces sat '
+            '6-10 units behind the roof edge; a 6-unit door niche (z 320-356) keeps the drawn doorway on the SW face. '
+            'Eave plate 105 now matches the roof base (z 371-375); band 101 capped at the eave (374.9).'] if ROUND3 else []) + [
             'Pyramidal roof rebuilt as one closed pyramid split along the native seam into 103 (west) and 102 '
             '(east). The native roof wedges floated 31 units above the turret walls along the source view ray; '
             'both were shifted by (dy, dz) = (-31, -31), which leaves every roof pixel unchanged and seats the '
@@ -674,9 +779,11 @@ def lowered_angle():
 
 def drawbridge(trace):
     deck_top, deck_thick, rail_h = 220.0, 6.0, 16.0
-    foot = [(1053, 2108), (1128, 2128), (1078, 2188), (1004, 2167)]
+    # Round 2: south end extended onto the bank to the drawn plank ends
+    # (px (995, 1965) and (1072, 1980) at z=220); native 058 stopped 10-12 px short.
+    foot = [(1053, 2108), (1128, 2128), (1074, 2199), (997, 2184)]
+    deck = prism(foot, deck_top - deck_thick, deck_top)
     bridge = Mesh()
-    bridge.add_shell(prism(foot, deck_top - deck_thick, deck_top))
     # Rails along the two long sides: three posts each and a handrail beam.
     for a, b in ((foot[3], foot[0]), (foot[2], foot[1])):
         d = (b[0] - a[0], b[1] - a[1])
@@ -699,7 +806,8 @@ def drawbridge(trace):
     p0, p1 = hinge()
     from south_gate_walls_geometry import to_world
     return {
-        'meshes': {'building-457': leaf_raised(), 'building-058': bridge},
+        'meshes': {'building-457': leaf_raised(),
+                   'building-058': {'footbridge-deck': deck, 'footbridge-rails': bridge}},
         'ground': {'building-058': {'deck_top': deck_top, 'note': 'deck spans from the gate landing (059) to the '
                                     'south bank plateau (053), both at z=220; native z=0 pillar removed'},
                    'building-457': {'hinge_z': LEAF_BOTTOM, 'note': 'raised leaf stands on the gate threshold'},
@@ -712,14 +820,19 @@ def drawbridge(trace):
             f'leaf by {angle:+.0f} degrees about it gives the lowered (Pont_levis applied) pose lying on landing 059.',
             'Footbridge 058 rebuilt from a z=0 pillar into a 6-unit plank deck at z=220 with two railings '
             '(3 posts and a handrail each, rail top 16 above the deck from masks 179/180).',
+            'Round 2 (user: "texture missing?"): footbridge deck extended 10-12 units south onto the bank to the '
+            'drawn plank ends; 058 split into components footbridge-deck and footbridge-rails; the rails receive source texture '
+            'through native masks 179/180 assigned to the rails component only. '
+            'The deck top has no native mask; its authored domain is documented for mask inventory v3 '
+            '(inspection/footbridge-deck-domain.json/png). Leaf 457 texture checked: front face accepted in mask 415 '
+            '(only a 1-2 px edge fringe rejected); its back and sides are hidden in the source view.',
             'Landing 059 (z 216-220) unchanged: it is the lowered-deck footprint and the rock ledge in the covered art.',
         ],
         'inferred': ['Leaf thickness (4) and rail post/handrail sizes are inferred.',
                      'The diagonal brace under the footbridge (visible at the SE rail) is not modelled.',
                      'Chains and the portcullis behind the leaf (lowered frame) are not modelled; no owned obstacle.'],
         'limitations': [
-            'Footbridge 058 is reject-all in source-masks-v1 (terrain group) so it stays neutral gray; native rail '
-            'masks 179/180 are unassigned and the deck has no occluder mask. Coordinator: review 058 ownership.',
+            'Rail geometry sizes are inferred; only rail surfaces coinciding with the drawn rails take texture.',
             'Lowered pose: a 90 degree swing of the 85-unit leaf reaches about 13 native px past the art deck '
             'end onto the footbridge (the art lowered deck is shorter than the raised leaf); geometry keeps one '
             'rigid leaf.',
@@ -728,6 +841,21 @@ def drawbridge(trace):
             'The mecanisme patch (doors 11-16) has no obstacle and is not modelled.'],
         'notes': {'building-457': {'role': 'drawbridge leaf (raised pose)'},
                   'building-058': {'role': 'footbridge deck and rails'}},
+        'mask_revisions': {'building-058::footbridge-deck': {
+            'set': [432], 'review_group': 'c-footbridge-deck',
+            'evidence': 'inspection/footbridge-deck-domain.png',
+            'note': 'Round 3: authored deck domain 432 (mask inventory v3, traced in round 2, '
+                    'inspection/footbridge-deck-domain.json) assigned to the footbridge-deck component. '
+                    'The v3 merge had put 432 on the rails component and dropped any deck row.'},
+            'building-058::footbridge-rails': {
+            'set': [179, 180], 'review_group': 'c-footbridge-rails',
+            'evidence': 'inspection/footbridge-deck-domain.png',
+            'note': 'Round 2 (user: "texture missing?"): native masks 179 and 180 are exactly the two drawn '
+                    'footbridge railings (posts + handrail, unassigned in source-masks-v1/v2); they are '
+                    'assigned to the footbridge-rails component of 058 only, so the deck (component '
+                    'footbridge-deck, still reject-all) does not pick up rail pixels. The deck top has no native '
+                    'occluder mask (actors walk on it); its authored domain polygon for mask inventory v3 is '
+                    'in inspection/footbridge-deck-domain.json.'}},
         'object_properties': {'building-457': {'south_gate_state_hinge': {
             'pivot_native': list(p0), 'axis_end_native': list(p1),
             'pivot_world': list(to_world(p0)), 'axis_end_world': list(to_world(p1)),
@@ -759,3 +887,53 @@ def build(asset, trace):
     if asset not in BUILDERS:
         raise KeyError(f'No builder for {asset}')
     return BUILDERS[asset](trace)
+
+
+# Catalog v3+ assets are composed of pieces produced by the original lane
+# builders (whose traces live in the round-2/round-1 workspaces).
+CATALOG_SOURCES = {
+    'lincoln-south-gatehouse': ['lincoln-south-gatehouse-arch', 'lincoln-south-gatehouse-east-tower',
+                                'lincoln-south-gatehouse-cone-turret'],
+    'lincoln-south-angle-bastion': ['lincoln-south-curtain-wall-central', 'lincoln-south-wall-stair'],
+    'lincoln-south-curtain-wall-angle': ['lincoln-south-wall-stair', 'lincoln-south-wall-cone-turret'],
+    'lincoln-south-curtain-wall-central': ['lincoln-south-curtain-wall-central'],
+    'lincoln-south-wall-stair': ['lincoln-south-wall-stair'],
+    'lincoln-south-wall-cone-turret': ['lincoln-south-wall-cone-turret'],
+    'lincoln-southeast-curtain-wall': ['lincoln-southeast-curtain-wall', 'lincoln-south-wall-cone-turret'],
+    'lincoln-southeast-corner-turret': ['lincoln-southeast-corner-turret', 'lincoln-southeast-curtain-wall'],
+    'lincoln-south-gate-drawbridge': ['lincoln-south-gate-drawbridge'],
+}
+# Components introduced by a later split that may be created in a workspace
+# owning the node.
+NEW_COMPONENTS = {
+    'lincoln-south-curtain-wall-angle': {'building-085': ['south-wall-stair-top-landing']},
+}
+
+
+def _trace_for(root, source):
+    for rnd in ('round-2', 'round-1'):
+        p = Path(root) / rnd / 'assets' / source / 'inspection/corner-trace.json'
+        if p.exists():
+            return json.loads(p.read_text())
+    return None
+
+
+def build_catalog(asset, root):
+    out = {'pieces': {}, 'notes': {}, 'ground': {}, 'changes': [], 'inferred': [], 'limitations': [],
+           'states': {}, 'mask_revisions': {}, 'object_properties': {},
+           'new_components': NEW_COMPONENTS.get(asset, {})}
+    for source in CATALOG_SOURCES[asset]:
+        b = BUILDERS[source](_trace_for(root, source))
+        for node, mesh in b['meshes'].items():
+            if isinstance(mesh, dict):
+                for comp, m in mesh.items():
+                    out['pieces'][(node, comp)] = m
+            else:
+                out['pieces'][(node, None)] = m if False else mesh
+        for k in ('notes', 'ground', 'mask_revisions', 'object_properties'):
+            out[k].update(b.get(k, {}))
+        for k in ('changes', 'inferred', 'limitations'):
+            out[k] += [f'[{source}] ' + c for c in b.get(k, [])]
+        if b.get('states'):
+            out['states'].update(b['states'])
+    return out
