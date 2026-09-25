@@ -30,6 +30,10 @@ def main():
             constraint_kind='reviewed-authored-source-domain',
             review_evidence=str(spire / 'contact-trace.json'),
             review_note='Exact source-traced foreground shingles at northwest tower attachment.'))
+        if '--wall-authority' in sys.argv:
+            from hall_contact_wall_authority import apply as apply_wall_authority
+            apply_wall_authority(authority, assignments,
+                Path(sys.argv[sys.argv.index('--wall-authority') + 1]))
         (authority / 'assignments.json').write_text(json.dumps(assignments, indent=2) + '\n')
     layers_path = authority / 'projection-layers.json'
     if not layers_path.exists():
@@ -75,6 +79,18 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=str(new / 'model.blend'))
     rw.modified(new)
     (new / 'inspection').mkdir(exist_ok=True)
+    # A dense atlas keeps bilinear footprints inside the small traced contact.
+    # The ordinary one-texel atlas blended neutral samples into its source edge.
+    from source_projection_bake import bake
+    extension = bpy.data.objects['building-505__castle-hall-northwest-contact']
+    extension['source_contact_texels_per_unit'] = 16
+    bake(config['map_name'], old / 'reference/source.png',
+         new / 'inspection/contact-dense-source-bake.json',
+         receiver_nodes=['building-505'], receiver_object_names=[extension.name],
+         receiver_asset_id=config['asset_id'], projection_label='exterior',
+         source_mask_manifest=new / 'source-masks.json', preserve_authored=False,
+         collection_name=config['collection_name'], texels_per_unit=16)
+    bpy.ops.wm.save_as_mainfile(filepath=str(new / 'model.blend'))
     from restore_foreign_uv_schema import restore_foreign_uv_schema
     restore_foreign_uv_schema(new, apply=True)
     from audit_stored_materials import run

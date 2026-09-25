@@ -41,3 +41,54 @@ def apply(body, roof_vertices, roof_faces, source_polygon, *, roof_face=1,
     bpy.ops.object.modifier_apply(modifier=modifier.name);bpy.data.objects.remove(cutter,do_unlink=True);clean(body)
     report=dict(method='Continue the existing roof slope with a closed contact tile cap; subtract only its source-traced footprint from the tower ahead of the cap.',body_before=before,body_after=topology(body),extension_topology=topology(extension),roof_normal=list(normal),thickness=thickness,clearance=clearance,contact_cap_offset_toward_source=contact_cap_offset,source_polygon=source_polygon,contact_vertices=[dict(source=p,roof_world=list(q))for p,q in zip(source_polygon,top)],limitation='Closed contact tile cap is 2 world units thick and offset 0.5 toward the source camera (0.287 vertically), overlapping the existing roof rather than floating. Concealed joint/recess is inferred and requires renewed paired user geometry review.')
     return extension,report
+
+
+def trim_unsupported_side(body, *, source_x=303.0, source_y=446.0):
+    """Close the tower's concealed side at the measured native body silhouette."""
+    import bpy
+    import bmesh
+    from mathutils import Vector
+    toward = Vector((0, -math.cos(math.radians(35)), math.sin(math.radians(35))))
+    down = Vector((0, -math.sin(math.radians(35)), -math.cos(math.radians(35))))
+    world = [body.matrix_world @ vertex.co for vertex in body.data.vertices]
+    right = max(point.x for point in world) + 10
+    bottom = max(point.dot(down) for point in world) + 10
+    depths = [min(point.dot(toward) for point in world)-10,
+              max(point.dot(toward) for point in world)+10]
+    outline = [(source_x, source_y), (right, source_y), (right, bottom), (source_x, bottom)]
+    points = [Vector((x, 0, 0)) + down*y + toward*depth
+              for depth in depths for x, y in outline]
+    faces = [(0, 3, 2, 1), (4, 5, 6, 7)] + [(i, (i+1)%4, (i+1)%4+4, i+4) for i in range(4)]
+    mesh = bpy.data.meshes.new('Unsupported tower side cutter')
+    mesh.from_pydata(points, [], faces)
+    mesh.update()
+    cutter = bpy.data.objects.new(mesh.name, mesh)
+    bpy.context.scene.collection.objects.link(cutter)
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    bm.to_mesh(mesh)
+    bm.free()
+    bpy.context.view_layer.objects.active = body
+    modifier = body.modifiers.new('Native body silhouette at hall attachment', 'BOOLEAN')
+    modifier.operation = 'DIFFERENCE'
+    modifier.solver = 'EXACT'
+    modifier.object = cutter
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    bpy.data.objects.remove(cutter, do_unlink=True)
+    bm = bmesh.new()
+    bm.from_mesh(body.data)
+    bmesh.ops.remove_doubles(bm, verts=list(bm.verts), dist=.0001)
+    bmesh.ops.dissolve_degenerate(bm, edges=list(bm.edges), dist=.0001)
+    bmesh.ops.triangulate(bm, faces=list(bm.faces))
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    report = dict(source_x=source_x, source_y=source_y,
+                  nonmanifold_edges=sum(not edge.is_manifold for edge in bm.edges),
+                  degenerate_faces=sum(face.calc_area()<1e-8 for face in bm.faces),
+                  signed_volume=bm.calc_volume(signed=True),
+                  rationale='Below the roof eave, native spire442 ends at source column302. Close the unsupported right side at x303 to expose the hall roof and leave the background gap outside the asset.',
+                  limitation='The concealed flat side joining the hall is inferred from the source silhouette.')
+    assert report['nonmanifold_edges'] == report['degenerate_faces'] == 0 and report['signed_volume'] > 0
+    bm.to_mesh(body.data)
+    bm.free()
+    return report

@@ -14,7 +14,7 @@ def main():
     import refinement_workspace as rw
     from render_slots import acquire
     from northwest_spire_source_authority import prepare_authority
-    from spire_roof_contact import apply
+    from spire_roof_contact import apply, trim_unsupported_side
     from refine_village_secondary import replace
     new = Path(sys.argv[sys.argv.index('--')+1]).resolve()
     asset = 'nottingham-castle-northwest-spire'
@@ -84,6 +84,19 @@ def main():
     body = next(o for o in bpy.context.scene.objects if o.get('source_node')=='building-519')
     temporary, contact = apply(body, plane['vertices'], plane['faces'], proposal['polygon'])
     bpy.data.objects.remove(temporary, do_unlink=True)
+    from PIL import Image
+    import numpy as np
+    inventory = json.loads((authority / 'manifest.json').read_text())
+    native = next(row for row in inventory['masks'] if row['index'] == 442)
+    bitmap = np.array(Image.open(authority / native['png']).convert('L')) > 0
+    yy, xx = np.where(bitmap)
+    assert not np.any((xx + native['box_top_left'][0] >= 303) &
+                      (yy + native['box_top_left'][1] >= 446)), 'Trim overlaps native spire artwork'
+    side = trim_unsupported_side(body)
+    side['native_mask_sha256'] = sha(authority / native['png'])
+    side['removed_native_source_pixels'] = 0
+    contact['side_silhouette_trim'] = side
+    contact['limitation'] += ' ' + side['limitation']
     vertices = [body.matrix_world @ v.co for v in body.data.vertices]
     faces = [tuple(p.vertices) for p in body.data.polygons]
     replace(body, vertices, faces, 'Tower with concealed hall roof attachment recess')
