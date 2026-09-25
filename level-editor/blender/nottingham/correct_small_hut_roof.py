@@ -2,7 +2,7 @@
 
 This writes a separate geometry candidate requiring renewed user review.
 """
-import json,sys,hashlib,math
+import json,sys,hashlib,math,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3];WORK=ROOT/'level-editor/work/nottingham-refinement';ASSET='nottingham-village-small-hut'
 sys.path.insert(0,str(ROOT/'level-editor/refinement/blender'))
@@ -15,11 +15,15 @@ def main():
  import refinement_workspace as rw
  from mathutils import Vector
  from refine_village_secondary import replace,digest
- old=WORK/'round-23/assets'/ASSET;out=WORK/'texture-generation/projection-corrections/v6'/ASSET
+ old=WORK/'round-23/assets'/ASSET;out=WORK/'texture-generation/projection-corrections/v7'/ASSET
  c=json.loads((old/'workspace.json').read_text())
  if not out.exists():
+  from small_hut_eave_ownership import apply as review_eave
+  authority=WORK/'mask-review/hut-eave-v7';authority.mkdir(parents=True,exist_ok=True)
+  prepared_masks=review_eave(authority,json.loads((old/'source-masks.json').read_text()),old/'reference/source.png')
+  authored=authority/'source-masks.json';authored.write_text(json.dumps(prepared_masks,indent=2)+'\n')
   bpy.ops.wm.open_mainfile(filepath=str(old/'model.blend'))
-  rw.prepare(out,asset_id=ASSET,scene_name=c['scene_name'],collection_name=c['collection_name'],source_path=old/'reference/source.png',grouping_manifest=old/'reference/grouping.json',inventory_path=old/'reference/inventory.json',review_path=old/'reference/grouping-review.json',source_mask_manifest=old/'source-masks.json',width=c['width'],height=c['height'],context_padding=c['context_padding'],framing_padding=c['framing_padding'],lighting=json.loads((WORK/'lighting-calibration/map-lighting.json').read_text())['lighting'])
+  rw.prepare(out,asset_id=ASSET,scene_name=c['scene_name'],collection_name=c['collection_name'],source_path=old/'reference/source.png',grouping_manifest=old/'reference/grouping.json',inventory_path=old/'reference/inventory.json',review_path=old/'reference/grouping-review.json',source_mask_manifest=authored,width=c['width'],height=c['height'],context_padding=c['context_padding'],framing_padding=c['framing_padding'],lighting=json.loads((WORK/'lighting-calibration/map-lighting.json').read_text())['lighting'])
  bpy.ops.wm.open_mainfile(filepath=str(out/'baseline.blend'));bpy.context.view_layer.update()
  before={o.name:digest(o) for o in bpy.context.scene.objects if o.type=='MESH'}
  objects={o.get('source_node'):o for o in bpy.context.scene.objects if o.type=='MESH' and not o.hide_render and o.get('asset_group')==ASSET}
@@ -60,8 +64,7 @@ def main():
    assignment['mask_indices']=[210,211]
    assignment['review_evidence']=str(WORK/'coordinator-audit/small-hut-projection/native211-domain.png')
    assignment['review_note']='Native211 owns the forge hearth, white masonry side and chimney hood; native210 owns roof/posts. Restored reviewed ownership; all foreground first-hit constraints remain active.'
- from small_hut_eave_ownership import apply as review_eave
- masks=review_eave(out,masks)
+ shutil.copytree(WORK/'mask-review/hut-eave-v7/reviewed-eave-domain',out/'reviewed-eave-domain',dirs_exist_ok=True)
  (out/'source-masks.json').write_text(json.dumps(masks,indent=2)+'\n')
  rw.modified(out)
  report['model_sha256']=sha(out/'model.blend')
