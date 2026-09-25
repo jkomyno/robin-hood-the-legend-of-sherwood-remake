@@ -76,11 +76,14 @@ export class EditorViewport {
     this.textureDisplay.synthesized.value = synthesized;
     this.refreshTextureDisplay();
   }
-  private refreshTextureDisplay() {
+  private refreshTextureDisplay(root?: THREE.Object3D) {
     const anisotropy = this.renderer?.capabilities.getMaxAnisotropy() ?? 1;
-    for (const root of [this.sourceAsset, this.ground, this.objectsRoot]) {
-      if (root) this.textureDisplay.apply(root, anisotropy);
+    if (root) {
+      this.textureDisplay.apply(root, anisotropy);
+      return;
     }
+    for (const sceneRoot of [this.sourceAsset, this.ground, this.objectsRoot])
+      if (sceneRoot) this.textureDisplay.apply(sceneRoot, anisotropy);
   }
   readonly listeners = new AbortController();
   private renderer: THREE.WebGLRenderer | null = null;
@@ -334,7 +337,7 @@ export class EditorViewport {
     this.sourceAsset.add(asset);
     for (const [key, node] of sources) this.sourceNodes.set(key, node);
     this.externalAssetHashes.set(reference.id, hash);
-    this.refreshTextureDisplay();
+    this.refreshTextureDisplay(asset);
     return true;
   }
 

@@ -88,6 +88,30 @@ export default function SplinePanel(props: {
     } catch(error){props.onError(String(error));}
     finally {if(prepared)disposeObjectResources([prepared.asset]);if(!disposed)setBusy(false);}
   }
+  async function loadWall(id: string) {
+    const current = path(), document = props.document(), root = props.library();
+    if (!current || current.kind !== "wall" || !document || !root || busy()) return;
+    if (!id) return;
+    const entry = props.entries().find(e => e.id === id);
+    if (!entry) return props.onError("Wall model is missing from the shared library");
+    const token = ++attempt; setBusy(true);
+    let prepared: Awaited<ReturnType<typeof prepareProjectionAsset>> | null = null;
+    try {
+      prepared = await prepareProjectionAsset(root, entry, document.map);
+      if (disposed || token !== attempt || document !== props.document() || path()?.id !== current.id) return;
+      const existing = document.assetSources?.find(s => s.id === id);
+      if (existing && (existing.model_sha256 !== prepared.reference.model_sha256 || existing.descriptor_sha256 !== prepared.reference.descriptor_sha256))
+        throw new Error("The scene already uses a different revision of this wall asset");
+      const reference = prepared.reference;
+      if (!props.viewport.adoptAsset(reference, prepared.asset, prepared.sources)) disposeObjectResources([prepared.asset]);
+      prepared = null;
+      if (!existing) pendingSources = pendingSources.filter(s => s.id !== id).concat(reference);
+      const next = { ...current, asset: id };
+      if (draft()) setDraft(next);
+      else publish({ ...document, assetSources: existing ? document.assetSources : [...(document.assetSources ?? []), reference], splines: document.splines?.map(s => s.id === current.id ? next : s) });
+    } catch (error) { props.onError(String(error)); }
+    finally { if (prepared) disposeObjectResources([prepared.asset]); if (!disposed) setBusy(false); }
+  }
   async function begin(kind: "river" | "road" | "wall") {
     const document = props.document(), root = props.library();
     if (!document || !root || busy()) return;
@@ -196,7 +220,7 @@ export default function SplinePanel(props: {
     <label>Wall preset<select aria-label="Wall preset" value={presetName()} onChange={e=>setPresetName(e.currentTarget.value)}>
       <option value="">Custom wall</option><For each={presets()}>{p=><option value={p.name}>{p.name}</option>}</For>
     </select></label>
-    <label>Wall asset<select aria-label="Wall path asset" value={wallSource()} onChange={event => {setWallSource(event.currentTarget.value);setPresetName("");}}>
+    <label>Wall asset<select aria-label="Wall path asset" value={path()?.kind === "wall" ? (path()?.asset ?? wallSource()) : wallSource()} onChange={event => {const id = event.currentTarget.value; setWallSource(id);setPresetName(""); if (path()?.kind === "wall") void loadWall(id);}}>
       <option value="">Choose a wall segment…</option>
       <For each={sources()}>{entry => <option value={entry.id}>{entry.name} · {entry.source_map}</option>}</For>
     </select></label>
