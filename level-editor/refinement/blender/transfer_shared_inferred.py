@@ -35,7 +35,7 @@ def merge_inferred(canonical, target, donor_ownership, target_ownership, *, allo
     return result, int(selected.sum())
 
 
-def run(canonical, target, output, *, allow_bounded_donors=False):
+def run(canonical, target, output, *, allow_bounded_donors=False, shared_surface_policy=None):
     import bpy
     import numpy as np
     sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -151,10 +151,31 @@ def run(canonical, target, output, *, allow_bounded_donors=False):
         if (not bounded_count or bounded_count!=donor_validation['counts'].get('extrapolated_texels_including_padding') or
             bounded_count!=sum(row.get('repaired_texels',0) for row in audit['objects'])):
             raise ValueError('Bounded donor provenance count differs from exact repair proof')
-    original=[]
+    original=[];identities=[]
     for p,m in zip((canonical,target),manifests):
-        original.append({name:signature(o) for name,o in load(p/'approved-model.blend',m).items()})
+        selected=load(p/'approved-model.blend',m)
+        original.append({name:signature(o) for name,o in selected.items()})
+        identities.append({name:{key:o.get(key) for key in ('asset_group','source_node','projection_component')}
+                           for name,o in selected.items()})
     common={name for name in original[0].keys() & original[1].keys() if original[0][name]==original[1][name]}
+    policy_evidence=None
+    if shared_surface_policy is not None:
+        from shared_surface_policy import validate as validate_shared_policy
+        policy_path=Path(shared_surface_policy).resolve();policy=json.loads(policy_path.read_text())
+        record_path=Path(policy['source_material_states']).resolve()
+        if sha(record_path)!=policy['source_material_states_sha256']:
+            raise ValueError('Reviewed source material state evidence changed')
+        allowed=validate_shared_policy(policy,asset_id=manifests[0]['asset_id'],
+            geometry_revision=approvals[0]['geometry_revision'],
+            model_hashes=[sha(p/'approved-model.blend') for p in (canonical,target)],
+            states=[m.get('review_state') for m in manifests],originals=original,
+            identities=identities,material_records=json.loads(record_path.read_text())['records'])
+        hashes[str(policy_path)]=sha(policy_path);hashes[str(record_path)]=sha(record_path)
+        common.update(allowed)
+        policy_evidence={'policy':str(policy_path),'sha256':sha(policy_path),
+            'surfaces':{name:{'geometry_sha256':original[0][name][0],
+                'original_appearance_sha256':[state[name][1] for state in original],
+                'source_identity':identities[0][name]} for name in sorted(allowed)}}
     def atlas(obj):
         slots={f.material_index for f in obj.data.polygons}
         if len(slots)!=1:return None
@@ -220,6 +241,8 @@ def run(canonical, target, output, *, allow_bounded_donors=False):
             raise ValueError('Saved packed image roundtrip changed transferred or protected texels: '+name)
     report=json.loads((target/'bake-v1/validation.json').read_text())
     report['shared_inferred_transfer']={'allow_bounded_donors':allow_bounded_donors,'inputs_sha256':hashes,'canonical':str(canonical),'target':str(target),'changed':changed,'skipped':skipped,'geometry_preserved':True,'outside_appearance_preserved':True,'target_observed_rgba_preserved':True,'all_target_alpha_preserved':True,'saved_roundtrip_rgba_exact':True}
+    if policy_evidence is not None:
+        report['shared_inferred_transfer']['shared_surface_policy']=policy_evidence
     proof_dir=output/'provenance-transfer';proof_dir.mkdir()
     for layer in report['layers']:
         for entry in layer['objects']:
@@ -257,5 +280,7 @@ if __name__=='__main__':
     import argparse
     parser=argparse.ArgumentParser();parser.add_argument('canonical');parser.add_argument('target');parser.add_argument('output')
     parser.add_argument('--allow-bounded-donors',action='store_true')
+    parser.add_argument('--shared-surface-policy',type=Path)
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:])
-    run(args.canonical,args.target,args.output,allow_bounded_donors=args.allow_bounded_donors)
+    run(args.canonical,args.target,args.output,allow_bounded_donors=args.allow_bounded_donors,
+        shared_surface_policy=args.shared_surface_policy)
