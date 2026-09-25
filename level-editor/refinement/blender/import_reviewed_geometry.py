@@ -10,8 +10,15 @@ import json
 from pathlib import Path
 
 
-def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name, source_nodes=None, source_asset_id=None, replace_hidden_source_nodes=False):
+def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name, source_nodes=None, source_asset_id=None, replace_hidden_source_nodes=False, inactive_object_bindings=None):
     import bpy
+    inactive = {} if inactive_object_bindings is None else {row['staged_name']: row for row in inactive_object_bindings}
+    if len(inactive) != len(inactive_object_bindings or []) or not set(inactive) <= set(object_names):
+        raise ValueError('Inactive import requires exact unique reviewed names')
+    for row in inactive.values():
+        if (not row.get('source_name') or not row.get('reviewed_state_id') or
+                hashlib.sha256(Path(row['source_blend']).read_bytes()).hexdigest() != row['source_blend_sha256']):
+            raise ValueError('Inactive import source proof changed')
     from refinement_workspace import _geometry
     from bake_reviewed_asset import _materials
     if source_asset_id and source_asset_id != asset_id and not source_nodes:
@@ -47,9 +54,17 @@ def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name
         scene.collection.children.link(temporary)
         for obj in set(bpy.data.objects)-existing:
             temporary.objects.link(obj)
+        for name in inactive:
+            if loaded[name] is not None:
+                loaded[name].hide_viewport = False
         bpy.context.view_layer.update()
-        if any(o is None or o.type!='MESH' or o.hide_render or o.get('asset_group')!=(source_asset_id or asset_id) for o in loaded.values()):
+        if any(o is None or o.type!='MESH' or (o.hide_render and name not in inactive) or o.get('asset_group')!=(source_asset_id or asset_id) for name,o in loaded.items()):
             raise ValueError('Handoff escaped visible asset ownership')
+        for name, row in inactive.items():
+            obj = loaded[name]
+            if (not obj.hide_render or not obj.get('publication_inactive') or obj.get('source_node') != row['source_node']
+                    or any(obj.get(key) for key in ('reveal_show_when_applied', 'reveal_hide_when_applied', 'reveal_patch_ids', 'reveal_component_patch_id', 'native_patch', 'drawbridge_patch_id'))):
+                raise ValueError('Inactive import is not an isolated hidden reviewed source')
         if {o.get('source_node') for o in loaded.values()}!=expected:
             raise ValueError('Handoff changed canonical part coverage')
         for name in loaded:
@@ -78,6 +93,8 @@ def import_asset_geometry(blend_path, *, asset_id, object_names, collection_name
         drift=max(abs(o.matrix_world[r][c]-world[name][r][c]) for name,o in loaded.items() for r in range(4) for c in range(4))
         if drift>1e-5:
             raise ValueError('Reviewed world transform drift: '+str(drift))
+        for name in inactive:
+            loaded[name].hide_viewport = True
     finally:
         if temporary:
             bpy.data.collections.remove(temporary)

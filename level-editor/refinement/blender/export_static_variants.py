@@ -62,4 +62,6 @@ def export_variants(plan, output):
         descriptor_path.write_text(json.dumps(descriptor,indent=2)+'\n')
         # Restore the staged map after exporting the independent endpoint worker.
         bpy.ops.wm.open_mainfile(filepath=str(output/'worker.blend'))
+    from export_appearance_variants import export_appearance_variants
+    reports.extend(export_appearance_variants(plan, output))
     return reports

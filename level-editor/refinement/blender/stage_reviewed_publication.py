@@ -98,7 +98,8 @@ def stage(plan_path):
         else:
             result=import_asset_geometry(blend,asset_id=item['asset_id'],object_names=names,
                 collection_name=collection.name,source_nodes=item.get('source_nodes'),source_asset_id=item.get('source_asset_id'),
-                replace_hidden_source_nodes=item.get('endpoint_id') == 'initial')
+                replace_hidden_source_nodes=item.get('endpoint_id') == 'initial' or bool(state_compilation and state_compilation.get('inactive_object_bindings')),
+                inactive_object_bindings=state_compilation.get('inactive_object_bindings') if state_compilation else None)
         if item.get('texture_handoff'):
             result['texture_handoff']=import_asset_textures(item['texture_handoff'],asset_id=item['asset_id'],
                 collection_name=collection.name,source_nodes=item.get('source_nodes'))
@@ -118,6 +119,8 @@ def stage(plan_path):
         for state in result['state_bindings']:
             for row in state['objects']:
                 row['staged_name'] = objects[row['staged_name']].name
+        for row in result.get('inactive_object_bindings', []):
+            row['staged_name'] = objects[row['staged_name']].name
         result['object_names'] = sorted(obj.name for obj in objects.values())
     ground_handoff=None
     if ground_imports:
@@ -182,14 +185,15 @@ def stage(plan_path):
     bpy.ops.wm.save_as_mainfile(filepath=str(output/'worker.blend'))
     effective_plan=output/'effective-plan.json'
     effective_plan.write_text(json.dumps(plan,indent=2)+'\n')
+    inactive_names = [row['staged_name'] for item in imports for row in item.get('inactive_object_bindings', [])]
     report={'plan':str(effective_plan),'imports':imports,'grouping':grouping,'ground_texture_handoff':ground_handoff,
             'canonical_parts':len(canonical_after),'approved_texture_checks':texture_checks,
             'unselected_meshes_preserved':len(outside_before),'unselected_mesh_state_identical':outside_before==outside_after,
             'generated_materials':{sha:sorted(names) for sha,names in generated.items()},
             'map':export_editor(plan['map_name'],output/scene_file,catalog=catalog,
-                                level=json.loads(Path(plan['hackable_map']).read_text())),
-            'assets':export_asset_library(plan['map_name'],output/'assets',plan['hackable_map'],asset_ids=plan.get('export_asset_ids'),catalog=catalog)}
-    if plan.get('static_variants'):
+                                level=json.loads(Path(plan['hackable_map']).read_text()), include_hidden_objects=inactive_names),
+            'assets':export_asset_library(plan['map_name'],output/'assets',plan['hackable_map'],asset_ids=plan.get('export_asset_ids'),catalog=catalog,include_hidden_objects=inactive_names)}
+    if plan.get('static_variants') or any(item.get('texture_state_roles') for item in plan['imports']):
         from export_static_variants import export_variants
         report['static_variants']=export_variants(plan,output)
     (output/'stage.json').write_text(json.dumps(report,indent=2)+'\n')

@@ -9,7 +9,8 @@ def fixture():
                 for state, model, node in [('initial', 'model.glb', 'building-001'),
                                            ('applied', 'model-applied.glb', 'building-002')]}
     descriptor = {**variants['initial'], 'state_variants': variants}
-    models = {state: {'nodes': [{'name': variant['parts'][0]['node'], 'mesh': 0}]}
+    models = {state: {'nodes': [{'name': variant['parts'][0]['node'], 'children': [1]},
+                                {'name': variant['parts'][0]['node'] + '__retained', 'mesh': 0}]}
               for state, variant in variants.items()}
     imports = [{'asset_id': 'bridge', 'endpoint_id': 'initial', 'blend_sha256': 'initial-hash',
                 'texture_states': [{'endpoint_id': 'applied', 'blend_sha256': 'applied-hash'}]}]

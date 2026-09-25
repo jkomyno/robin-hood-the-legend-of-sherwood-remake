@@ -117,6 +117,33 @@ def check():
         else:
             raise AssertionError('Accepted a correctly hashed export of the wrong endpoint')
         print('PASS: applied endpoint reviewed worker and exact re-export; wrong endpoint payload rejected')
+        # Three independently reviewed children must not become three OR-triggered map layers.
+        initial = fixture_worker(root / 'door-initial.blend', True)
+        applied = fixture_worker(root / 'door-applied.blend', True)
+        initial['id'], applied['id'] = 'door-initial', 'door-applied'
+        child['id'], child['endpoint_id'] = 'revealed', None
+        primary['texture_states'] = [child, initial, applied]
+        primary['texture_state_roles'] = {'revealed': 'map-reveal', 'door-initial': 'standalone-initial', 'door-applied': 'standalone-applied'}
+        packet_records = []
+        for state, endpoint in [('initial', initial), ('applied', applied)]:
+            packet = str(root / ('packet-' + state))
+            Path(endpoint['review_manifest']).write_text(json.dumps({'collection_name': 'Fixture Working', 'reviewed_packet': packet, 'source_sha256': state}))
+            packet_records.append({'path': packet, 'source_sha256': state, 'object_names': endpoint['render_object_names']})
+        states = root / 'states.json'
+        states.write_text(json.dumps({'asset_id': 'house', 'states': packet_records}))
+        primary['texture_state_role_evidence'] = {'states_json': str(states), 'states_sha256': _sha(states)}
+        compiled_pair = compile_states(primary, root / 'compiled-three.blend')
+        assert [binding['id'] for binding in compiled_pair['state_bindings']] == ['covered', 'revealed']
+        shutil.copyfile(compiled_pair['blend_path'], stage / 'worker.blend')
+        assert len(verify_reviewed_states(stage, primary, compiled_pair['state_bindings'], 'Fixture Working')) == 2
+        from export_appearance_variants import export_appearance_variants
+        plan.update(imports=[primary], static_variants=[])
+        reports = export_appearance_variants(plan, stage)
+        assert len(verify_static_variants(plan, {'static_variants': reports})) == 2
+        descriptor = json.loads((stage / 'assets/house/asset.json').read_text())
+        assert descriptor['model'] == 'model.glb' and set(descriptor['standalone_variants']) == {'initial', 'applied'}
+        print('PASS: three-child prison roles retain two map appearances and exact separate door exports')
+
 
 
 if __name__ == '__main__':

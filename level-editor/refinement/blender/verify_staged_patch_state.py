@@ -7,6 +7,7 @@ import sys
 import bpy
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from verify_staged_handoffs import snapshot, compare_handoff
+from texture_state_roles import partition_texture_states, validate_texture_state_role_evidence
 
 
 def _sha(path):
@@ -63,7 +64,8 @@ def activate_reviewed_state(collection, asset_id, applied):
 
 def verify_reviewed_states(stage, item, bindings, collection):
     """Check both activated compiled states against immutable reviewed workers."""
-    children = item.get('texture_states', [])
+    children, _standalone = partition_texture_states(item)
+    validate_texture_state_role_evidence(item)
     primary_id = item.get('endpoint_id') or 'covered'
     expected = {primary_id: item, **{s['id']: s for s in children}}
     if len(bindings) != len(expected) or {b['id'] for b in bindings} != set(expected):
@@ -121,11 +123,61 @@ def verify_reviewed_states(stage, item, bindings, collection):
     return reports
 
 
+def verify_inactive_states(stage, item, bindings, collection):
+    """Account only for canonical parts absent from both active map appearances."""
+    children, endpoints = partition_texture_states(item)
+    references = [_reference(source) for source in [item, *children]]
+    active_sources = {row['source'] for reference in references for row in reference}
+    missing = set(item['source_nodes']) - active_sources
+    if not missing and not bindings:
+        return []
+    if not endpoints or {row['source_node'] for row in bindings} != missing:
+        raise ValueError('Inactive canonical inventory is not the exact missing reviewed subset')
+    initial = endpoints['initial']
+    wanted = [row for row in _reference(initial) if row['source'] in missing]
+    if len(bindings) != len(wanted) or {row['source_name'] for row in bindings} != {row['name'] for row in wanted}:
+        raise ValueError('Inactive bindings differ from exact reviewed initial components')
+    for row in bindings:
+        if (row['source_blend'], row['source_blend_sha256'], row['reviewed_state_id']) != (initial['blend_path'], initial['blend_sha256'], initial['id']):
+            raise ValueError('Inactive binding substituted another endpoint')
+    bpy.ops.wm.open_mainfile(filepath=str(Path(stage) / 'worker.blend'))
+    objects = [obj for obj in bpy.data.collections[collection].all_objects
+               if obj.type == 'MESH' and obj.get('asset_group') == item['asset_id'] and obj.get('publication_inactive')]
+    if {obj.name for obj in objects} != {row['staged_name'] for row in bindings}:
+        raise ValueError('Inactive staged inventory differs from proof')
+    forbidden = ('native_patch', 'drawbridge_patch_id', 'reveal_show_when_applied', 'reveal_hide_when_applied',
+                 'reveal_patch_ids', 'reveal_component_patch_id', 'reveal_material_states')
+    if any(not obj.hide_render or not obj.hide_viewport or any(obj.get(key) for key in forbidden) for obj in objects):
+        raise ValueError('Inactive canonical part is visible or has runtime activation')
+    names = {obj.name for obj in objects}
+    try:
+        for obj in objects:
+            obj.hide_viewport = False
+        bpy.context.view_layer.update()
+        actual = snapshot(collection, True, select=lambda obj: obj.name in names)
+        drift = compare_handoff(wanted, actual, reviewed_state=True)
+    finally:
+        for obj in objects:
+            obj.hide_viewport = True
+        bpy.context.view_layer.update()
+    return [{'asset_id': item['asset_id'], 'status': 'PASS', 'meshes': len(actual),
+             'source_nodes': sorted(missing), 'source_blend_sha256': initial['blend_sha256'],
+             'maximum_world_coordinate_drift': drift, 'inactive_object_names': sorted(names)}]
+
+
 def verify_static_variants(plan, stage):
     """Verify independent endpoint workers as well as their exported file binding."""
     reports = []
     expected = {(entry['asset_id'], state): item for entry in plan.get('static_variants', [])
                 for state, item in entry['states'].items()}
+    appearances = {}
+    for parent in plan['imports']:
+        _, endpoints = partition_texture_states(parent)
+        validate_texture_state_role_evidence(parent)
+        appearances.update({(parent['asset_id'], state): child for state, child in endpoints.items()})
+    if set(expected) & set(appearances):
+        raise ValueError('Static and appearance endpoint identities overlap')
+    expected.update(appearances)
     actual = {(r['asset_id'], r['state']): r for r in stage.get('static_variants', [])}
     if len(actual) != len(stage.get('static_variants', [])) or set(actual) != set(expected):
         raise ValueError('Static endpoint coverage differs from publication plan')
@@ -133,12 +185,12 @@ def verify_static_variants(plan, stage):
         endpoint_states = {s['endpoint_id'] for s in item.get('texture_states', []) if s.get('endpoint_id')}
         if item.get('endpoint_id'):
             endpoint_states.add(item['endpoint_id'])
-        if endpoint_states != {state for asset, state in expected if asset == item['asset_id']}:
+        if endpoint_states != {state for asset, state in expected if asset == item['asset_id'] and (asset, state) not in appearances}:
             raise ValueError('Approved secondary endpoint was not exported: ' + item['asset_id'])
     for (asset_id, state), source in expected.items():
         report = actual[(asset_id, state)]
         approved = next(item for item in plan['imports'] if item['asset_id'] == asset_id)
-        child = (approved if approved.get('endpoint_id') == state else
+        child = appearances.get((asset_id, state)) or (approved if approved.get('endpoint_id') == state else
                  next((s for s in approved.get('texture_states', []) if s.get('endpoint_id') == state), None))
         if child is None or (source['blend_path'], source['blend_sha256']) != (child['blend_path'], child['blend_sha256']):
             raise ValueError('Static variant substituted an unreviewed endpoint')
@@ -155,11 +207,19 @@ def verify_static_variants(plan, stage):
         # hash emitted by the staging code as proof of its actual contents.
         from export_editor import export_asset_library
         descriptor = json.loads((Path(plan['output']) / 'assets' / asset_id / 'asset.json').read_text())
+        if (asset_id, state) in appearances:
+            variant = descriptor.get('standalone_variants', {}).get(state)
+            if not variant or Path(report['model']).name != variant['model'] or variant['model'] == descriptor['model']:
+                raise ValueError('Isolated appearance descriptor binding changed')
         proof_parent = Path(plan['output']) / 'verification-exports' / asset_id
         proof_parent.mkdir(parents=True, exist_ok=True)
         proof_output = Path(tempfile.mkdtemp(prefix=state + '-', dir=proof_parent))
         export_asset_library(plan['map_name'], proof_output, plan['hackable_map'], asset_ids=[asset_id],
                              standalone_pivots={asset_id: descriptor['source_origin_scene']})
+        if (asset_id, state) in appearances:
+            reference_descriptor = json.loads((proof_output / asset_id / 'asset.json').read_text())
+            if any(variant.get(key) != reference_descriptor[key] for key in ('parts', 'components')):
+                raise ValueError('Isolated appearance descriptor inventory differs from reviewed worker')
         reference_model = proof_output / asset_id / 'model.glb'
         if _sha(reference_model) != report['model_sha256']:
             raise ValueError('Static endpoint exported bytes differ from verified reviewed worker: ' + asset_id)

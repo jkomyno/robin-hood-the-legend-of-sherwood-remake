@@ -7,7 +7,9 @@ import hashlib
 import json
 from pathlib import Path
 import bpy
+from mathutils import Matrix
 from verify_staged_handoffs import snapshot
+from texture_state_roles import partition_texture_states, validate_texture_state_role_evidence
 
 
 def _sha(path):
@@ -33,6 +35,7 @@ def _capture(item):
         if record['group'] != item['asset_id'] or record['source'] not in item['source_nodes']:
             raise ValueError('Reviewed state escapes asset ownership')
         record['triggers'] = _triggers(bpy.data.objects[record['name']])
+        record['world_matrix'] = [list(row) for row in bpy.data.objects[record['name']].matrix_world]
         record['value'].pop('patch_state', None)
         record['value'].pop('visibility', None)
     return records
@@ -46,15 +49,23 @@ def _triggers(obj):
 
 
 def compile_states(item, output):
-    children = item.get('texture_states', [])
+    children, standalone = partition_texture_states(item)
+    validate_texture_state_role_evidence(item)
     if not children:
         return None
-    if len(children) != 1:
-        raise ValueError('Only one explicitly reviewed revealed appearance is supported')
     child = children[0]
     covered_records = _capture(item)
     revealed_records = _capture(child)
     covered_names, revealed_names = set(covered_records), set(revealed_records)
+    missing_sources = set(item['source_nodes']) - {record['source'] for record in [*covered_records.values(), *revealed_records.values()]}
+    dormant_records = {}
+    if missing_sources:
+        if not standalone:
+            raise ValueError('Reviewed map appearances omit canonical source parts')
+        initial_records = _capture(standalone['initial'])
+        dormant_records = {name: record for name, record in initial_records.items() if record['source'] in missing_sources}
+        if {record['source'] for record in dormant_records.values()} != missing_sources:
+            raise ValueError('Missing canonical parts are not present in reviewed initial endpoint')
     # Patch membership is explicit authored component metadata, never sight geometry.
     patches = sorted({patch for name in covered_names - revealed_names
                       for patch in covered_records[name]['triggers']})
@@ -117,13 +128,57 @@ def compile_states(item, output):
     for obj in bpy.data.objects:
         if obj.type == 'MESH' and obj.get('asset_group') == item['asset_id'] and obj.name not in names:
             obj.hide_render = obj.hide_viewport = True
+    inactive_bindings = []
+    if dormant_records:
+        before_dormant = set(bpy.data.objects)
+        initial = standalone['initial']
+        with bpy.data.libraries.load(initial['blend_path'], link=False) as (src, dst):
+            dst.objects = sorted(dormant_records)
+        dormant_loaded = dict(zip(sorted(dormant_records), dst.objects))
+        temporary = bpy.data.collections.new('Reviewed inactive transform capture')
+        bpy.context.scene.collection.children.link(temporary)
+        for obj in set(bpy.data.objects) - before_dormant:
+            temporary.objects.link(obj)
+        bpy.context.view_layer.update()
+        for source_name, obj in dormant_loaded.items():
+            world = Matrix(dormant_records[source_name]['world_matrix'])
+            obj.parent = next(iter(original.values())).parent
+            obj.matrix_world = world
+            obj.name = source_name + ' / reviewed inactive endpoint'
+            collection.objects.link(obj)
+            for key in ('native_patch', 'native_patch_preview', 'drawbridge_patch_id',
+                        'drawbridge_hinge_matrix', 'drawbridge_pose_angles_degrees', 'drawbridge_pose',
+                        'reveal_hide_when_applied', 'reveal_show_when_applied', 'reveal_patch_ids',
+                        'reveal_component_patch_id', 'reveal_material_states', 'reveal_material_patch',
+                        'reveal_material_state'):
+                if key in obj:
+                    del obj[key]
+            obj['publication_inactive'] = True
+            obj.hide_render = obj.hide_viewport = False
+            inactive_bindings.append({'staged_name': obj.name, 'source_name': source_name,
+                                      'source_node': dormant_records[source_name]['source'],
+                                      'source_blend': initial['blend_path'], 'source_blend_sha256': initial['blend_sha256'],
+                                      'reviewed_state_id': initial['id']})
+        bpy.context.view_layer.update()
+        keep_dormant = set(dormant_loaded.values())
+        bpy.data.collections.remove(temporary)
+        for obj in set(bpy.data.objects) - before_dormant - keep_dormant:
+            bpy.data.objects.remove(obj, do_unlink=True)
+        bpy.context.view_layer.update()
+        for obj in keep_dormant:
+            obj.hide_render = obj.hide_viewport = True
+        names = sorted([*names, *(obj.name for obj in keep_dormant)])
     path = Path(output).resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
         raise FileExistsError(path)
     bpy.ops.wm.save_as_mainfile(filepath=str(path))
     result = {'blend_path': str(path), 'blend_sha256': _sha(path), 'object_names': names,
-              'state_bindings': bindings, 'shared_identical_objects': sorted(identical),
+              'state_bindings': bindings, 'inactive_object_bindings': inactive_bindings, 'shared_identical_objects': sorted(identical),
               'state_note': 'Only covered and combined revealed endpoints were reviewed; partial patch combinations were not separately reviewed.'}
+    if standalone:
+        result['standalone_texture_states'] = {key: {'id': value['id'], 'blend_path': value['blend_path'],
+            'blend_sha256': value['blend_sha256'], 'review_manifest': value['review_manifest']} for key, value in standalone.items()}
+        result['state_note'] += ' Separate door endpoint appearances are isolated library variants, not additional simultaneous map meshes.'
     path.with_suffix('.states.json').write_text(json.dumps(result, indent=2) + '\n')
     return result

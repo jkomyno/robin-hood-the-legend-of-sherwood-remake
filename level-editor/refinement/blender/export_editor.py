@@ -28,7 +28,7 @@ def projection_metadata(source):
                 "projection_layer", "projection_component", "projection_min_cosine", "step_count", "crenellation_notches", "arch_segments",
                 "gate_refinement", "cottage_refinement", "architecture_refinement", "embrasure_count", "refinement_recipe",
                 "derby_furniture_floor_clip", "support_floor_source_node", "support_floor_scene_z",
-                "projection_subdivision_spacing"):
+                "projection_subdivision_spacing", "publication_inactive"):
             value = source[key]
             if hasattr(value, "to_list"):
                 value = value.to_list()
@@ -296,6 +296,24 @@ def component_editor_footprint(sources, pivot, obstacle):
 
 def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None,
                   include_hidden_objects=None, catalog=None, level=None):
+    """Evaluate explicitly retained hidden parts without enabling their render visibility."""
+    working = bpy.data.collections[map_name + ' Working']
+    names = include_hidden_objects or []
+    evaluated = {obj: obj.hide_viewport for obj in working.objects if obj.name in names}
+    try:
+        for obj in evaluated:
+            obj.hide_viewport = False
+        bpy.context.view_layer.update()
+        return _export_editor(map_name, output_path, asset_id, standalone_pivot=standalone_pivot,
+                              include_hidden_objects=include_hidden_objects, catalog=catalog, level=level)
+    finally:
+        for obj, hidden in evaluated.items():
+            obj.hide_viewport = hidden
+        bpy.context.view_layer.update()
+
+
+def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None,
+                   include_hidden_objects=None, catalog=None, level=None):
     """Export visible meshes plus explicitly named inactive reviewed components.
 
     ``include_hidden_objects`` contains exact object names, never source-node

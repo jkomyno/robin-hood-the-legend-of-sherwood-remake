@@ -181,8 +181,9 @@ def verify(plan_path):
         drift = compare_handoff(wanted, actual)
         reports.append({'asset_id': asset_id, 'meshes': len(actual), 'content_matches_handoff': True,
                         'maximum_world_coordinate_drift': drift})
-    from verify_staged_patch_state import verify_reviewed_states, verify_static_variants
+    from verify_staged_patch_state import verify_reviewed_states, verify_static_variants, verify_inactive_states
     state_reports = []
+    inactive_reports = []
     for item in plan['imports']:
         bindings = staged_imports[item['asset_id']].get('state_bindings', [])
         children = item.get('texture_states', [])
@@ -191,6 +192,7 @@ def verify(plan_path):
         if bindings:
             states = verify_reviewed_states(plan['output'], item, bindings, plan['collection_name'])
             state_reports.extend(states)
+            inactive_reports.extend(verify_inactive_states(plan['output'], item, staged_imports[item['asset_id']].get('inactive_object_bindings', []), plan['collection_name']))
             reports.append({'asset_id': item['asset_id'], 'content_matches_handoff': True,
                             'reviewed_states': [s['id'] for s in states]})
     variant_reports = verify_static_variants(plan, stage)
@@ -200,7 +202,7 @@ def verify(plan_path):
         reports.append({'asset_id': 'ground-cleanup', 'meshes': 1, 'content_matches_handoff': True,
                         'maximum_world_coordinate_drift': drift})
     report = {'status': 'PASS', 'outside_meshes_preserved': len(before), 'imports': reports,
-              'reviewed_states': state_reports, 'static_variants': variant_reports,
+              'reviewed_states': state_reports, 'static_variants': variant_reports, 'inactive_canonical_parts': inactive_reports,
               'comparison': 'World geometry within 0.001 units; exact topology, UVs, assigned material graphs, packed image bytes, visibility. Untouched mesh content exact.'}
     output = Path(plan['output']) / 'handoff-verification.json'
     output.write_text(json.dumps(report, indent=2) + '\n')

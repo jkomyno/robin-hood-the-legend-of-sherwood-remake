@@ -12,6 +12,7 @@ import struct
 import sys
 from catalog_schema import source_for_part
 from publication_contract import publication_parts, validate_export_records
+from texture_state_roles import partition_texture_states, validate_texture_state_role_evidence
 
 
 def gltf(path):
@@ -28,7 +29,7 @@ def gltf(path):
 def verify_component_nodes(model, expected):
     """Reject duplicate part identities or meshes escaping their selector parent."""
     nodes=model['nodes']
-    named=[node['name'] for node in nodes if node.get('name','').startswith(('building-','mission-'))]
+    named=[node['name'] for node in nodes if 'mesh' not in node and node.get('name','').startswith(('building-','mission-'))]
     if len(named)!=len(set(named)) or set(named)!=set(expected):
         raise ValueError('GLB selectable part identities overlap or differ from catalog')
     for node in nodes:
@@ -53,11 +54,15 @@ def verify_component_nodes(model, expected):
 def verify_static_inventory(asset_id, descriptor, models, owned, imports, proof):
     """Bind disjoint endpoint exports to content-verified original workers."""
     primary = next((item for item in imports if item['asset_id'] == asset_id), None)
-    if primary is None or primary.get('endpoint_id') != 'initial':
+    isolated = bool(descriptor.get('standalone_variants'))
+    if primary is None or (not isolated and primary.get('endpoint_id') != 'initial'):
         raise ValueError('Static endpoints require an approved initial handoff')
     reviewed = {'initial': primary, **{s['endpoint_id']: s for s in primary.get('texture_states', [])
                                      if s.get('endpoint_id')}}
-    variants = descriptor['state_variants']
+    if isolated:
+        validate_texture_state_role_evidence(primary)
+        _, reviewed = partition_texture_states(primary)
+    variants = descriptor['standalone_variants' if isolated else 'state_variants']
     if set(reviewed) != {'initial', 'applied'} or set(variants) != set(reviewed):
         raise ValueError('Static endpoint inventory differs from reviewed pair')
     if proof.get('status') != 'PASS':
@@ -78,7 +83,7 @@ def verify_static_inventory(asset_id, descriptor, models, owned, imports, proof)
                 {p['node'] for p in variant['parts']} != exact or len(components) != record['meshes']):
             raise ValueError('Static descriptor differs from reviewed endpoint ownership: ' + asset_id + ' ' + state)
         model = models[state]
-        canonical = [n['name'] for n in model['nodes'] if n.get('name', '').startswith(('mission-', 'building-'))]
+        canonical = [n['name'] for n in model['nodes'] if 'mesh' not in n and n.get('name', '').startswith(('mission-', 'building-'))]
         if len(canonical) != len(exact) or set(canonical) != exact:
             raise ValueError('Static GLB differs from exact reviewed endpoint ownership: ' + asset_id + ' ' + state)
         if len([n for n in model['nodes'] if 'mesh' in n]) != len(components):
@@ -90,6 +95,10 @@ def verify_static_inventory(asset_id, descriptor, models, owned, imports, proof)
         if model.get('animations') or any(forbidden & set(n.get('extras', {})) for n in model['nodes']):
             raise ValueError('Standalone static endpoint carries animation/native-map binding')
         union |= exact
+    if isolated:
+        if not union <= owned or any(variant['model'] == descriptor['model'] for variant in variants.values()):
+            raise ValueError('Isolated appearance escapes canonical ownership or replaces covered default')
+        return union
     initial = variants['initial']
     if (descriptor['model'] != initial['model'] or descriptor['parts'] != initial['parts']
             or descriptor['components'] != initial['components']):
@@ -155,6 +164,16 @@ def verify(directory,catalog_path):
                 model_path=directory/'assets'/Path(asset['descriptor']).parent/variant['model']
                 if hashlib.sha256(model_path.read_bytes()).hexdigest()!=record['model_sha256']:
                     raise ValueError('Static endpoint changed after independent content verification')
+        if descriptor.get('standalone_variants'):
+            alternatives = descriptor['standalone_variants']
+            models = {state: gltf(directory/'assets'/Path(asset['descriptor']).parent/variant['model'])
+                      for state, variant in alternatives.items()}
+            verify_static_inventory(asset['id'], descriptor, models, owned, plan.get('imports', []), proof)
+            for state, variant in alternatives.items():
+                record = next(r for r in proof['static_variants'] if r['asset_id'] == asset['id'] and r['state'] == state)
+                model_path = directory/'assets'/Path(asset['descriptor']).parent/variant['model']
+                if hashlib.sha256(model_path.read_bytes()).hexdigest() != record['model_sha256']:
+                    raise ValueError('Isolated appearance changed after independent content verification')
         if owned!=actual or nodes & actual:
             raise ValueError('Standalone canonical ownership differs: '+asset['id'])
         nodes |= actual
@@ -173,7 +192,7 @@ def verify(directory,catalog_path):
         components+=len(descriptor['components'])
     model=gltf(Path(stage['map']['file']))
     expected_map=set(declared)
-    actual_names=[n['name'] for n in model['nodes'] if n.get('name','').startswith(('building-','mission-'))]
+    actual_names=[n['name'] for n in model['nodes'] if 'mesh' not in n and n.get('name','').startswith(('building-','mission-'))]
     if len(actual_names)!=len(set(actual_names)):
         raise ValueError('Full map contains duplicate selectable identities')
     actual_map=set(actual_names)
