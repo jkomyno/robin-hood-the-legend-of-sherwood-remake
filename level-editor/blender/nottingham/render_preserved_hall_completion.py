@@ -68,6 +68,11 @@ def main():
         review_status='awaiting-independent-actual-and-coverage-review')
     # Keep original donor counters explicitly separate from final atlas counts.
     validation['donor_counts'] = validation.pop('counts')
+    validation['render_manifest'] = str(experiment / 'views.json')
+    validation['render_manifest_sha256'] = sha(experiment / 'views.json')
+    validation['evidence_sha256'] = {
+        **validation['evidence_sha256'],
+        str(experiment / 'views.json'): sha(experiment / 'views.json')}
     validation['counts'] = {
         'protected_texels_including_padding': sum(r['protected_source_texels'] for r in proof['objects']),
         'generated_texels_including_padding': sum(r['completion_texels'] for r in proof['objects'])}
