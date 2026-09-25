@@ -33,7 +33,18 @@ def slot_provenance(evidence, objects):
    result[key]=ownership
  return result
 
-def run(folder,subrays=False,bake=None):
+def coverage_manifest(report, validation, explicit=None):
+ if explicit is not None:
+  candidate=Path(explicit)
+  if sha(candidate)!=report['manifest_sha256']:raise ValueError('Explicit coverage manifest differs')
+  return candidate
+ matches=[Path(p) for p,digest in validation['evidence_sha256'].items() if digest==report['manifest_sha256'] and Path(p).suffix=='.json']
+ if not matches:raise ValueError('Coverage camera manifest is not bound by validation; provide the exact manifest explicitly for diagnosis')
+ candidate=matches[0]
+ if sha(candidate)!=report['manifest_sha256']:raise ValueError('Coverage camera manifest changed')
+ return candidate
+
+def run(folder,subrays=False,bake=None,manifest=None):
  folder=Path(folder);report=json.loads((folder/'coverage.json').read_text());model=None
  # Every provenance evidence binds its saved model independently in coverage.json.
  jobroot=Path(__file__).resolve().parents[3]/'level-editor/work/nottingham-refinement/coordinator-audit/final-texture-coverage'
@@ -42,7 +53,7 @@ def run(folder,subrays=False,bake=None):
  elif (folder.parent/'depth-review.json').exists():bake=Path(json.loads((folder.parent/'depth-review.json').read_text())['bake'])
  else:
   jobs=json.loads((jobroot/'jobs.json').read_text());rows=jobs['jobs']+jobs['skips'];row=next(r for r in rows if r.get('model_sha256')==report['model_sha256']);bake=Path(row['bake'])
- validation=json.loads((bake/'validation.json').read_text());manifest=next(Path(p)for p in validation['evidence_sha256'] if Path(p).name=='views.json')
+ validation=json.loads((bake/'validation.json').read_text());manifest=coverage_manifest(report,validation,manifest)
  if sha(bake/'worker.blend')!=report['model_sha256'] or sha(manifest)!=report['manifest_sha256']:raise ValueError('Stale coverage')
  data=json.loads(manifest.read_text());bpy.ops.wm.open_mainfile(filepath=str(bake/'worker.blend'));scene=bpy.data.scenes[data['scene_name']];bpy.context.window.scene=scene
  names=data.get('render_object_names')or data['object_names'];vertices=[];triangles=[];refs=[];proofs=slot_provenance(report['atlas_evidence'],scene.objects)

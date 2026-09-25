@@ -11,7 +11,7 @@ import bpy
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
-from trace_texture_coverage_pixels import slot_provenance
+from trace_texture_coverage_pixels import slot_provenance, coverage_manifest
 
 
 class MaterialSlotProvenanceTests(unittest.TestCase):
@@ -75,6 +75,32 @@ class MaterialSlotProvenanceTests(unittest.TestCase):
         np.savez_compressed(path, ownership=np.ones((2, 2), dtype=np.uint8))
         with self.assertRaisesRegex(ValueError, 'Provenance changed'):
             slot_provenance(self.evidence, bpy.context.scene.objects)
+
+
+class CoverageManifestBindingTests(unittest.TestCase):
+    def test_camera_manifest_is_selected_by_hash_not_basename(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'final-covered-cameras.json'
+            path.write_text('{"views": []}')
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            report = {'manifest_sha256': digest}
+            validation = {'evidence_sha256': {str(path): digest}}
+            self.assertEqual(coverage_manifest(report, validation), path)
+            path.write_text('{}')
+            with self.assertRaisesRegex(ValueError, 'changed'):
+                coverage_manifest(report, validation)
+
+    def test_explicit_diagnostic_manifest_must_match_coverage(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'views.json'
+            path.write_text('{}')
+            report = {'manifest_sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+            with self.assertRaisesRegex(ValueError, 'not bound'):
+                coverage_manifest(report, {'evidence_sha256': {}})
+            self.assertEqual(coverage_manifest(report, {'evidence_sha256': {}}, path), path)
+            path.write_text('{"changed": true}')
+            with self.assertRaisesRegex(ValueError, 'differs'):
+                coverage_manifest(report, {'evidence_sha256': {}}, path)
 
 
 if __name__ == '__main__':
