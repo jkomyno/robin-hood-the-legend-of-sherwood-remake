@@ -736,9 +736,9 @@ input.num {
 .library-filters label { display: flex; flex-direction: column; gap: 5px; color: #b4c0cf; }
 .library-filters select { width: 100%; min-width: 0; padding: 7px; }
 .library-summary { padding: 0 14px; }
-.shared-library > .hint, .library-error { padding: 0 14px; }
+.library-content > .hint, .library-error { padding: 0 14px; }
 .library-error { color: #ffac9c; overflow-wrap: anywhere; }
-.asset-grid { overflow-y: auto; flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 0 12px 12px; align-content: start; grid-auto-rows: max-content; }
+.asset-grid { overflow-y: auto; flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; padding: 0 12px 12px; align-content: start; grid-auto-rows: max-content; }
 .asset-card { border: 1px solid #354050; border-radius: 8px; overflow: hidden; background: #222a35; min-width: 0; }
 .asset-card[draggable="true"] { cursor: grab; }
 .asset-card:hover { border-color: #80b4c8; }
@@ -795,7 +795,16 @@ select, input.search { background: #171c22; border-color: var(--border); min-hei
 .mission-picker select { width: 165px; background: #171c22; border-color: var(--border); color: #e1e7eb; }
 .editor-bar .primary-action { background: var(--accent); color: #18251e; border-color: var(--accent); font-weight: 650; padding-inline: 18px; }
 .editor-body { position: relative; overflow: hidden; }
-.asset-browser { display: flex; flex: none; min-height: 0; width: 284px; }
+.asset-browser { position: relative; display: flex; flex: none; min-height: 0; width: 284px; max-width: 45vw; }
+.library-content { display: flex; flex-direction: column; gap: 14px; flex: 1; min-height: 0; }
+.shared-library .library-heading { display: flex; align-items: center; gap: 8px; padding: 12px 10px 0; }
+.library-heading button { width: 30px; flex-shrink: 0; padding: 0; font-size: 20px; }
+.shared-library .library-heading h2 { margin: 0; white-space: nowrap; }
+.asset-browser.collapsed .library-heading { flex-direction: column; padding: 10px 6px; gap: 14px; }
+.asset-browser.collapsed .library-heading h2 { writing-mode: vertical-rl; }
+.library-resizer { position: absolute; right: -3px; top: 0; bottom: 0; width: 7px; cursor: col-resize; touch-action: none; z-index: 4; }
+.library-resizer:hover, .library-resizer:focus-visible { background: #acd3ad66; outline: none; }
+.scrub-number { cursor: ew-resize; touch-action: none; }
 .shared-library { width: 100%; min-width: 0; gap: 14px; background: #1b2026; border-color: var(--border); }
 .shared-library header { padding: 20px 16px 0; }
 .shared-library h2 { font-size: 14px; margin-bottom: 5px; }

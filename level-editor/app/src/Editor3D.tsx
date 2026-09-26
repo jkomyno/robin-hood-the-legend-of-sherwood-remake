@@ -31,6 +31,7 @@ import { createNewMap } from "./new-map";
 import SplinePanel from "./SplinePanel";
 import LightingPanel from "./LightingPanel";
 import AssetLibrary from "./AssetLibrary";
+import ScrubNumber from './ScrubNumber';
 import { ASSET_DRAG_TYPE } from "./asset-library";
 import { insertProjectionAsset } from "./asset-commands";
 import { listProjectionAssets, prepareProjectionAsset } from "./projection-library";
@@ -68,6 +69,10 @@ export default function Editor3D(props: EditorProps) {
   const [newMapError, setNewMapError] = createSignal("");
   const [panel, setPanel] = createSignal("Selection");
   const [libraryOpen, setLibraryOpen] = createSignal(true);
+  const [libraryWidth, setLibraryWidth] = createSignal(284);
+  let libraryResize: { x: number; width: number } | undefined;
+  const maxLibraryWidth = () => Math.max(200, Math.min(600, window.innerWidth * 0.45));
+  const resizeLibrary = (width: number) => setLibraryWidth(Math.max(200, Math.min(maxLibraryWidth(), width)));
   const [helpOpen, setHelpOpen] = createSignal(false);
   const [editingPath, setEditingPath] = createSignal(false);
   const [missionName, setMissionName] = createSignal("");
@@ -184,6 +189,80 @@ export default function Editor3D(props: EditorProps) {
     return { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
   }
 
+  type PreparedAsset = Awaited<ReturnType<typeof prepareProjectionAsset>>;
+  type WarmAsset = { id: string; library: LibraryRef; map: string; retired: boolean;
+    value: PreparedAsset | null; promise: Promise<PreparedAsset> };
+  let warmAsset: WarmAsset | null = null;
+  function clearWarmAsset() {
+    const old = warmAsset; warmAsset = null;
+    if (old) { old.retired = true; if (old.value) disposeObjectResources([old.value.asset]); old.value = null; }
+  }
+  function preloadAsset(entry: ProjectionAssetEntry) {
+    const document = doc(), library = props.library();
+    if (!document || !library) return null;
+    if (warmAsset?.id === entry.id && warmAsset.library === library && warmAsset.map === document.map) return warmAsset;
+    clearWarmAsset();
+    const next: WarmAsset = {id:entry.id, library, map:document.map, retired:false, value:null,
+      promise:prepareProjectionAsset(library.handle, entry, document.map).then(value => {
+        if (next.retired) { disposeObjectResources([value.asset]); throw new Error('Asset preload cancelled'); }
+        next.value = value; return value;
+      })};
+    // Hover failures are reported if the user actually attempts placement.
+    void next.promise.catch(() => {});
+    return warmAsset = next;
+  }
+  async function takeAsset(entry: ProjectionAssetEntry) {
+    const pending = preloadAsset(entry);
+    if (!pending) throw new Error('Open a map before placing assets');
+    const result = await pending.promise;
+    pending.value = null;
+    if (warmAsset === pending) warmAsset = null;
+    return result;
+  }
+  type AssetDrag = { entry: ProjectionAssetEntry; base: Level3D; attempt: number; inside: boolean;
+    dropped: boolean; position: [number, number, number] | null; result: ReturnType<typeof insertProjectionAsset> | null };
+  let assetDrag: AssetDrag | null = null;
+  function hideAssetDrag() {
+    if (assetDrag) { assetDrag.inside = false; if (assetDrag.result && doc()) viewport.syncViews(doc()!, false); }
+    setDropActive(false);
+  }
+  function cancelAssetDrag() {
+    hideAssetDrag(); assetDrag = null; clearWarmAsset();
+  }
+  function updateAssetDrag() {
+    const drag = assetDrag;
+    if (!drag || !drag.result || !drag.position || !drag.inside) return;
+    if (doc() !== drag.base || openAttempt !== drag.attempt) { cancelAssetDrag(); return; }
+    const group = drag.result.document.groups.find(group => group.id === drag.result!.selection.id)!;
+    [group.transform.dx, group.transform.dy, group.transform.dz] = drag.position;
+    viewport.syncViews(drag.result.document, false);
+    if (drag.dropped) {
+      assetDrag = null;
+      pushHistory(drag.result.document);
+      select(drag.result.selection);
+      setInfo(`Added ${drag.entry.name}`);
+      setDropActive(false);
+    }
+  }
+  async function startAssetDrag(entry: ProjectionAssetEntry) {
+    if (!doc() || addingAsset()) return;
+    if (assetDrag) cancelAssetDrag();
+    const drag: AssetDrag = {entry, base:doc()!, attempt:openAttempt, inside:false, dropped:false, position:null, result:null};
+    assetDrag = drag;
+    let prepared: PreparedAsset | null = null;
+    try {
+      prepared = await takeAsset(entry);
+      if (disposed || assetDrag !== drag || doc() !== drag.base || openAttempt !== drag.attempt) return;
+      drag.result = insertProjectionAsset(drag.base, prepared.descriptor, prepared.reference, [0,0,0]);
+      parseLevel3D(drag.result.document, {level:level() ?? undefined});
+      if (!viewport.adoptAsset(prepared.reference, prepared.asset, prepared.sources)) disposeObjectResources([prepared.asset]);
+      prepared = null;
+      updateAssetDrag();
+    } catch (error) {
+      if (!disposed && assetDrag === drag) { cancelAssetDrag(); props.onError(String(error)); }
+    } finally { if (prepared) disposeObjectResources([prepared.asset]); }
+  }
+
   async function addAsset(entry: ProjectionAssetEntry, placement?: [number, number, number]) {
     const document = doc();
     const library = props.library();
@@ -192,7 +271,7 @@ export default function Editor3D(props: EditorProps) {
     setAddingAsset(true);
     let prepared: Awaited<ReturnType<typeof prepareProjectionAsset>> | null = null;
     try {
-      prepared = await prepareProjectionAsset(library.handle, entry, document.map);
+      prepared = await takeAsset(entry);
       if (disposed || attempt !== openAttempt || props.library() !== library || doc() !== document) return;
       const center = viewportElementCenter();
       const position = placement ?? viewport.assetDropPosition(center.x, center.y);
@@ -280,6 +359,7 @@ export default function Editor3D(props: EditorProps) {
   }
 
   async function openMap(name: string, requestedMission?: string) {
+    cancelAssetDrag();
     const lib = props.library();
     const idx = props.index();
     if (!lib) return;
@@ -442,6 +522,13 @@ export default function Editor3D(props: EditorProps) {
     if (!t || !Number.isFinite(value)) return;
     setTransform({ ...t, [field]: value });
   }
+  function previewTransformField(field: keyof GameTransform, value: number) {
+    const document = doc(), transform = selectedTransform(), selection = selected();
+    if (!document || !transform || !selection) return;
+    const changes = {transform:{...transform, [field]:value}};
+    const next = selection.kind === 'group' ? patchGroup(document, selection.id, changes) : patchPart(document, selection.id, changes);
+    viewport.syncViews(next, false);
+  }
   function setHidden(hidden: boolean) {
     const g = selectedGroup();
     const p = selectedPart();
@@ -495,6 +582,7 @@ export default function Editor3D(props: EditorProps) {
     signal: viewport.listeners.signal,
   });
   onCleanup(() => {
+    cancelAssetDrag();
     disposed = true;
     session.dispose();
     viewport.dispose();
@@ -648,7 +736,6 @@ export default function Editor3D(props: EditorProps) {
           Save{dirty() ? " *" : ""}
         </button>
         <button disabled={!doc()} onClick={() => downloadMap(mapName()!,doc()!)}>Download</button>
-        <button aria-expanded={libraryOpen() ? "true" : "false"} aria-controls="asset-browser" onClick={() => setLibraryOpen(!libraryOpen())}>Assets</button>
         <button aria-expanded={helpOpen() ? "true" : "false"} aria-controls="editor-help" onClick={() => setHelpOpen(!helpOpen())}>Help</button>
         {props.toolbarEnd?.()}
       </header>
@@ -659,10 +746,32 @@ export default function Editor3D(props: EditorProps) {
         </div>}
       </Show>
       <div class="editor-body">
-        <div id="asset-browser" class="asset-browser" hidden={!libraryOpen()}>
+        <div id="asset-browser" class={`asset-browser${libraryOpen() ? '' : ' collapsed'}`}
+          style={{width: libraryOpen() ? `${libraryWidth()}px` : '44px'}}>
         <AssetLibrary root={props.library()?.handle ?? null} entries={assetEntries()}
+          collapsed={!libraryOpen()} onToggle={() => setLibraryOpen(!libraryOpen())}
+          onPreload={entry => { preloadAsset(entry); }} onDragStart={entry => { void startAssetDrag(entry); }}
+          onDragReturn={hideAssetDrag}
           loading={libraryLoading()} error={libraryError()} canInsert={!!doc() && !addingAsset()}
-          onAdd={entry => void addAsset(entry)} onDragEnd={() => setDropActive(false)} />
+          onAdd={entry => void addAsset(entry)} onDragEnd={() => { if (!assetDrag?.dropped) cancelAssetDrag(); }} />
+        <div class="library-resizer" hidden={!libraryOpen()} role="separator" tabindex={0}
+          aria-label="Resize asset library" aria-orientation="vertical" aria-valuemin={200}
+          aria-valuemax={maxLibraryWidth()} aria-valuenow={libraryWidth()}
+          onPointerDown={event => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            libraryResize = {x: event.clientX, width: event.currentTarget.parentElement!.getBoundingClientRect().width};
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={event => { if (libraryResize) resizeLibrary(libraryResize.width + event.clientX - libraryResize.x); }}
+          onPointerUp={event => { libraryResize = undefined; event.currentTarget.releasePointerCapture(event.pointerId); }}
+          onLostPointerCapture={() => { libraryResize = undefined; }}
+          onKeyDown={event => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            resizeLibrary(event.key === 'Home' ? 200 : event.key === 'End' ? maxLibraryWidth()
+              : libraryWidth() + (event.key === 'ArrowLeft' ? -16 : 16));
+          }} />
         </div>
         <div class={`editor-canvas ${dropActive() ? "asset-drop-active" : ""}`} ref={(element) => { viewportElement = element; viewport.setup(element); }}
           onDragOver={event => {
@@ -670,9 +779,14 @@ export default function Editor3D(props: EditorProps) {
             event.preventDefault();
             event.dataTransfer.dropEffect = "copy";
             setDropActive(true);
+            if (assetDrag) {
+              assetDrag.position = viewport.assetDropPosition(event.clientX, event.clientY);
+              assetDrag.inside = !!assetDrag.position;
+              updateAssetDrag();
+            }
           }}
           onDragLeave={event => {
-            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropActive(false);
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) hideAssetDrag();
           }}
           onDrop={event => {
             setDropActive(false);
@@ -681,7 +795,10 @@ export default function Editor3D(props: EditorProps) {
             event.preventDefault();
             const entry = assetEntries().find(entry => entry.id === id);
             const placement = viewport.assetDropPosition(event.clientX, event.clientY);
-            if (entry && placement) void addAsset(entry, placement);
+            if (assetDrag && entry?.id === assetDrag.entry.id && placement) {
+              assetDrag.position = placement; assetDrag.inside = true; assetDrag.dropped = true;
+              updateAssetDrag();
+            } else if (entry && placement) void addAsset(entry, placement);
           }} >
           <Show when={!doc() && !mapLoadProgress()}>
             <div class="viewport-welcome"><span class="eyebrow">MAP WORKSPACE</span>
@@ -692,7 +809,7 @@ export default function Editor3D(props: EditorProps) {
           </Show>
           <Show when={helpOpen()}><div id="editor-help" class="viewport-help">
             <div class="detail-head"><h2>Viewport controls</h2><button aria-label="Close help" onClick={() => setHelpOpen(false)}>×</button></div>
-            <dl><dt>Select / move</dt><dd>Click / drag object</dd><dt>Select a part</dt><dd>Alt-click or click again</dd><dt>Pan / orbit</dt><dd>Left / right drag</dd><dt>Zoom</dt><dd>Mouse wheel</dd><dt>Frame / game view</dt><dd>F / G</dd><dt>Rotate</dt><dd>Q / E</dd><dt>Duplicate / delete</dt><dd>D / Delete</dd><dt>Save / undo</dt><dd>Ctrl or ⌘ + S / Z</dd></dl>
+            <dl><dt>Select / move</dt><dd>Click / drag object</dd><dt>Select a part</dt><dd>Alt-click</dd><dt>Pan / orbit</dt><dd>Left / right drag</dd><dt>Zoom</dt><dd>Mouse wheel</dd><dt>Frame / game view</dt><dd>F / G</dd><dt>Rotate</dt><dd>Q / E</dd><dt>Duplicate / delete</dt><dd>D / Delete</dd><dt>Save / undo</dt><dd>Ctrl or ⌘ + S / Z</dd></dl>
           </div></Show>
         </div>
         <aside class="editor-panel" aria-label="Inspector">
@@ -877,14 +994,13 @@ export default function Editor3D(props: EditorProps) {
                   {(f) => (
                     <div class="meta-row">
                       <span class="meta-key">{{ dx: "Offset X", dy: "Offset Y", dz: "Height offset", rot_deg: "Rotation (°)" }[f]}</span>
-                      <input
-                        type="number"
-                        aria-label={{ dx: "Offset X", dy: "Offset Y", dz: "Height offset", rot_deg: "Rotation (°)" }[f]}
+                      <ScrubNumber
+                        label={{ dx: "Offset X", dy: "Offset Y", dz: "Height offset", rot_deg: "Rotation (°)" }[f]}
                         step={f === "rot_deg" ? 5 : 1}
                         value={t()[f]}
-                        onChange={(e) =>
-                          setTransformField(f, Number(e.currentTarget.value))
-                        }
+                        onPreview={value => previewTransformField(f, value)}
+                        onCommit={value => setTransformField(f, value)}
+                        onCancel={() => { if (!disposed && doc()) viewport.syncViews(doc()!, false); }}
                       />
                     </div>
                   )}

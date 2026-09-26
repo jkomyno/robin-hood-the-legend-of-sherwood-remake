@@ -90,15 +90,22 @@ Failed or superseded loads retain the current scene and release candidate resour
 
 One header combines map and mission selection, editing actions, and the optional
 game-data connection. Controls wrap within that bar on narrower windows.
+The asset library's arrow collapses it to a narrow title strip. Drag its right
+edge to resize it, or focus that edge and use the arrow keys. Reopening preserves
+the chosen width and filters. Wider panels add asset columns while keeping previews compact.
+Hovering an asset prepares its placement model. Dragging into the viewport renders
+the actual instance under the cursor before release; returning to the library removes
+that provisional instance. Dropping commits one undoable insertion. Transform input
+drags likewise preview live and commit one undo step; Escape cancels the drag.
 
 | action | how |
 |---|---|
 | pan / orbit around the point under the cursor / zoom to cursor | left drag / right drag / wheel |
 | reset to the map's own view | `g` or **Reset view** |
 | frame everything | `f` |
-| select building / single part | click / alt-click (or click again inside the selected building); `Esc` clears |
-| move | drag the selected building/part along the ground, or the gizmo (tick "lift" for height), or type dx/dy/dz |
-| turn | `q` / `e` (15°) or type rot_deg |
+| select building / single part | click / alt-click; repeated normal clicks keep the whole building selected; `Esc` clears |
+| move | drag the selected building/part along the ground, use the gizmo (tick "lift" for height), or type/drag the X, Y, Z inputs |
+| turn | `q` / `e` (15°), or type/drag the rotation input; Shift gives finer input dragging |
 | duplicate / delete | `d` / `Del` |
 | hide | checkbox (hidden buildings and parts are left out of the bake) |
 | snap a floating part | parts tagged "float?" show the suggested Δ; the button shifts y and z by −Δ (same map pixels) |

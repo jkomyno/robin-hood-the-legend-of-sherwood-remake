@@ -9,6 +9,11 @@ export default function AssetLibrary(props: {
   loading: boolean;
   error: string;
   canInsert: boolean;
+  collapsed: boolean;
+  onToggle: () => void;
+  onPreload: (entry: ProjectionAssetEntry) => void;
+  onDragStart: (entry: ProjectionAssetEntry) => void;
+  onDragReturn: () => void;
   onAdd: (entry: ProjectionAssetEntry) => void;
   onDragEnd: () => void;
 }) {
@@ -19,8 +24,16 @@ export default function AssetLibrary(props: {
   const renderer = new AssetPreviewRenderer();
   onCleanup(() => renderer.dispose());
   const filtered = () => filterAssets(props.entries, search(), type(), source());
-  return <aside class="shared-library">
-    <header><h2>Asset library</h2><span>Shared across all levels</span></header>
+  return <aside class="shared-library" onDragEnter={props.onDragReturn}
+    onDragOver={event => { if (event.dataTransfer?.types.includes(ASSET_DRAG_TYPE)) { event.preventDefault(); event.dataTransfer.dropEffect = 'none'; } }}
+    onDrop={event => { if (event.dataTransfer?.types.includes(ASSET_DRAG_TYPE)) { event.preventDefault(); props.onDragEnd(); } }}>
+    <header class="library-heading">
+      <button onClick={props.onToggle} aria-expanded={props.collapsed ? 'false' : 'true'} aria-controls="asset-library-content"
+        aria-label={props.collapsed ? 'Show asset library' : 'Hide asset library'}
+        title={props.collapsed ? 'Show asset library' : 'Hide asset library'}>{props.collapsed ? '→' : '←'}</button>
+      <h2>Asset library</h2>
+    </header>
+    <div id="asset-library-content" class="library-content" hidden={props.collapsed}>
     <div class="library-filters">
       <input class="search" aria-label="Find assets" placeholder="Search assets or tags…" value={search()}
         onInput={event => setSearch(event.currentTarget.value)} />
@@ -43,10 +56,15 @@ export default function AssetLibrary(props: {
     <div class="asset-grid">
       <For each={filtered()}>{entry =>
         <article class="asset-card" draggable={props.canInsert && entry.editor_usage !== "map-background" ? "true" : "false"}
+          onPointerEnter={() => { if (props.canInsert && entry.editor_usage !== 'map-background') props.onPreload(entry); }}
+          onFocus={() => { if (props.canInsert && entry.editor_usage !== 'map-background') props.onPreload(entry); }}
           onDragStart={event => {
             if (!props.canInsert || entry.editor_usage === "map-background") { event.preventDefault(); return; }
             event.dataTransfer!.setData(ASSET_DRAG_TYPE, entry.id);
             event.dataTransfer!.effectAllowed = "copy";
+            const image = document.createElement('canvas'); image.width = image.height = 1;
+            event.dataTransfer!.setDragImage(image, 0, 0);
+            props.onDragStart(entry);
           }} onDragEnd={props.onDragEnd}>
           <AssetPreview entry={entry} root={props.root!} renderer={renderer} />
           <div class="asset-card-info"><strong title={entry.name}>{entry.name}</strong>
@@ -60,5 +78,6 @@ export default function AssetLibrary(props: {
       }</For>
     </div>
     <footer>{props.canInsert ? "Drag an asset into the scene to place it." : "Open a level to place assets."}</footer>
+    </div>
   </aside>;
 }

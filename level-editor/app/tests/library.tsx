@@ -2,6 +2,7 @@ import { render } from "@solidjs/web";
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import Editor3D from "../src/Editor3D";
+import { EditorViewport } from '../src/editor-viewport';
 import { ASSET_DRAG_TYPE } from "../src/asset-library";
 import { disposeObjectResources } from "../src/resources";
 
@@ -15,6 +16,14 @@ async function until(test: () => boolean) {
 }
 
 export async function checkSharedLibrary() {
+  let viewport: EditorViewport | undefined;
+  const setup = EditorViewport.prototype.setup;
+  EditorViewport.prototype.setup = function(element) { viewport = this; setup.call(this, element); };
+  const elevation = () => {
+    const camera = (viewport as unknown as {camera: THREE.Camera}).camera;
+    return THREE.MathUtils.radToDeg(Math.asin(-camera.getWorldDirection(new THREE.Vector3()).y));
+  };
+  const renderedGroups = () => (viewport as unknown as {objectsRoot: THREE.Group}).objectsRoot.children.length;
   const oldPresets=localStorage.getItem("rle.wallPresets");
   localStorage.removeItem("rle.wallPresets");
   const files = new Map<string, File>();
@@ -110,16 +119,29 @@ export async function checkSharedLibrary() {
     element.dispatchEvent(new Event("change", { bubbles: true }));
   };
   try {
+    assert(Math.abs(elevation() - 35) < 1e-8, 'Initial camera differs from the default map elevation');
     await until(() => document.querySelectorAll(".asset-card").length === 40);
     await until(() => !document.querySelector(".asset-card:first-child .preview-status"));
     assert(!(document.querySelector(".spline-panel") as HTMLElement).checkVisibility(), "Drawing controls clutter the initial inspector");
     assert(!(document.querySelector(".view-settings") as HTMLElement).checkVisibility(), "View controls clutter the initial inspector");
     const originalWidth = document.querySelector(".editor-canvas")!.getBoundingClientRect().width;
-    click("Assets");
-    await until(() => !(document.querySelector(".shared-library") as HTMLElement).checkVisibility());
+    (document.querySelector('button[aria-label="Hide asset library"]') as HTMLElement).click();
+    await until(() => !(document.querySelector(".library-content") as HTMLElement).checkVisibility());
+    assert((document.querySelector('.library-heading h2') as HTMLElement).checkVisibility(), 'Collapsed library lost its title');
     assert(document.querySelector(".editor-canvas")!.getBoundingClientRect().width > originalWidth, "Hiding assets did not expand the viewport");
-    click("Assets");
-    await until(() => (document.querySelector(".shared-library") as HTMLElement).checkVisibility());
+    (document.querySelector('button[aria-label="Show asset library"]') as HTMLElement).click();
+    await until(() => (document.querySelector(".library-content") as HTMLElement).checkVisibility());
+    const resizer = document.querySelector('.library-resizer') as HTMLElement;
+    const width = document.querySelector('#asset-browser')!.getBoundingClientRect().width;
+    resizer.dispatchEvent(new KeyboardEvent('keydown', {key:'ArrowRight', bubbles:true}));
+    await until(() => document.querySelector('#asset-browser')!.getBoundingClientRect().width > width);
+    resizer.dispatchEvent(new KeyboardEvent('keydown', {key:'End', bubbles:true}));
+    await until(() => getComputedStyle(document.querySelector('.asset-grid')!).gridTemplateColumns.split(' ').length > 2);
+    const resized = document.querySelector('#asset-browser')!.getBoundingClientRect().width;
+    (document.querySelector('button[aria-label="Hide asset library"]') as HTMLElement).click();
+    await until(() => !(document.querySelector('.library-content') as HTMLElement).checkVisibility());
+    (document.querySelector('button[aria-label="Show asset library"]') as HTMLElement).click();
+    await until(() => document.querySelector('#asset-browser')!.getBoundingClientRect().width === resized);
     click("Help");
     await until(() => !!document.querySelector("#editor-help"));
     click("Help");
@@ -156,9 +178,35 @@ export async function checkSharedLibrary() {
     assert(transfer.getData(ASSET_DRAG_TYPE) === "house", "Drag did not identify the asset");
     const viewport = document.querySelector(".editor-canvas")!;
     const rect = viewport.getBoundingClientRect();
+    const beforeDrag = renderedGroups();
+    const moveDrag = () => viewport.dispatchEvent(new DragEvent('dragover', {bubbles:true, cancelable:true, dataTransfer:transfer,
+      clientX:rect.left+rect.width*0.6, clientY:rect.top+rect.height*0.6}));
+    moveDrag();
+    await until(() => renderedGroups() === beforeDrag + 1);
+    assert(document.querySelectorAll('.object-list li').length === 1, 'Dragging committed an edit before release');
+    document.querySelector('.shared-library')!.dispatchEvent(new DragEvent('dragenter', {bubbles:true,dataTransfer:transfer}));
+    await until(() => renderedGroups() === beforeDrag);
+    moveDrag();
+    await until(() => renderedGroups() === beforeDrag + 1);
     viewport.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: transfer,
       clientX: rect.left + rect.width * 0.6, clientY: rect.top + rect.height * 0.6 }));
     await until(() => document.querySelector(".editor-status")?.textContent === "Added Stone House");
+    const x = document.querySelector('input[aria-label="Offset X"]') as HTMLInputElement;
+    const originalX = Number(x.value);
+    const currentX = () => Number((document.querySelector('input[aria-label="Offset X"]') as HTMLInputElement).value);
+    // Synthetic pointers cannot capture a native pointer; exercise the real component handlers and history.
+    const capture = x.setPointerCapture, release = x.releasePointerCapture;
+    x.setPointerCapture = () => {}; x.releasePointerCapture = () => {};
+    try {
+      x.dispatchEvent(new PointerEvent('pointerdown', {bubbles:true,button:0,pointerId:1,clientX:100}));
+      x.dispatchEvent(new PointerEvent('pointermove', {bubbles:true,pointerId:1,clientX:120}));
+      x.dispatchEvent(new PointerEvent('pointermove', {bubbles:true,pointerId:1,clientX:140}));
+      x.dispatchEvent(new PointerEvent('pointerup', {bubbles:true,pointerId:1,clientX:140}));
+      await until(() => Math.abs(currentX() - originalX - 40) < 0.01);
+      click('Undo');
+      await until(() => currentX() === originalX);
+      assert(document.querySelectorAll('.object-list li').length > 1, 'Scrub created extra history entries or undid insertion');
+    } finally { x.setPointerCapture = capture; x.releasePointerCapture = release; }
     click("Save *");
     await until(() => ![...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Save *"));
     const saved = JSON.parse(await files.get("scenes/York.level3d.json")!.text());
@@ -264,6 +312,10 @@ export async function checkSharedLibrary() {
     await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "New forest");
     assert(document.querySelectorAll(".object-list li").length === 0, "New map inherited objects");
     assert(JSON.parse(await files.get("scenes/New forest.level3d.json")!.text()).size === null, "New map acquired fixed bounds");
+    const initialElevation = elevation();
+    click('Reset view');
+    await new Promise(resolve => setTimeout(resolve, 900));
+    assert(Math.abs(elevation() - initialElevation) < 1e-8, 'Reset view changed the initial map elevation');
     click("Add to scene");
     await until(() => document.querySelectorAll(".object-list li").length > 0);
     click("View");
@@ -288,6 +340,7 @@ export async function checkSharedLibrary() {
   } catch (error) {
     throw new Error(`${error}; errors: ${errors.join("; ")}; UI: ${document.querySelector("#root")?.textContent}`);
   } finally {
+    EditorViewport.prototype.setup = setup;
     if(oldPresets===null)localStorage.removeItem("rle.wallPresets");else localStorage.setItem("rle.wallPresets",oldPresets);
     dispose();
     host.style.display = previousDisplay;

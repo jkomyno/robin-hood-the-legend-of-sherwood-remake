@@ -434,7 +434,8 @@ export class EditorViewport {
     this.refreshTextureDisplay();
     el.appendChild(this.renderer.domElement);
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -100000, 100000);
-    this.camera.position.set(0, 2000, 3000);
+    const elevation = THREE.MathUtils.degToRad(this.bindings.document()?.camera.elevation_deg ?? 35);
+    this.camera.position.set(0, Math.sin(elevation), Math.cos(elevation)).multiplyScalar(3600);
     this.orbit = this.ownControl(
       new OrbitControls(this.camera, this.renderer.domElement),
     );
@@ -1103,13 +1104,7 @@ export class EditorViewport {
     for (const h of hits) {
       const part = this.partOfHit(h);
       if (!part) continue;
-      // a click inside the selected building picks its part; alt always does
-      const s = this.bindings.selection();
-      if (
-        part.group &&
-        !partOnly &&
-        !(s?.kind === "group" && s.id === part.group)
-      )
+      if (part.group && !partOnly)
         this.select({ kind: "group", id: part.group });
       else this.select({ kind: "part", id: part.id });
       return;

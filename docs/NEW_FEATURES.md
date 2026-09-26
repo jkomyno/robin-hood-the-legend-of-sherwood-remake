@@ -9,9 +9,14 @@
 
 - **Focused level-editor workspace.** A compact map picker replaces the map
   button strip. Selection, drawing, and view settings have separate inspector
-  sections; the asset browser can be collapsed to expand the viewport. A status
+  sections; the asset browser can be resized or collapsed to a narrow title strip.
+  Its arrow remains available when collapsed, and wider panels show more columns. A status
   bar tracks unsaved edits, and contextual help explains navigation shortcuts.
   Unfinished paths keep drawing controls visible until finished or cancelled.
+  Asset drags render provisional instances in the scene; returning to the library
+  removes them, and releasing commits one insertion. Transform fields support
+  horizontal dragging with one undo step and Shift for finer control. Repeated
+  normal clicks keep group selection; Alt-click selects individual parts.
   New maps need only a name and persist an unbounded canvas (`size: null`);
   the adaptive workspace grid is an editor guide, not saved terrain or a boundary.
   Assets added from the library are placed at the viewport center. Fixed image

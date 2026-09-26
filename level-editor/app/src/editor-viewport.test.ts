@@ -100,6 +100,27 @@ function documentFixture() {
   });
 }
 
+test('repeated normal clicks retain group selection; only Alt-click selects a part', () => {
+  const {viewport, publish, selection} = fixture();
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(10,10,10), new THREE.MeshBasicMaterial());
+  const source = new THREE.Group(); source.add(mesh);
+  viewport.replaceMap(source, null, new Map([['building-000',mesh]]));
+  publish(documentFixture());
+  const root = (viewport as unknown as {objectsRoot:THREE.Group}).objectsRoot;
+  root.updateWorldMatrix(true,true);
+  const center = new THREE.Box3().setFromObject(root).getCenter(new THREE.Vector3());
+  const camera = new THREE.OrthographicCamera(-100,100,100,-100,-10000,10000);
+  camera.position.copy(center).add(new THREE.Vector3(0,100,100)); camera.lookAt(center);
+  Object.assign(viewport, {camera, orbit:{target:center}, renderer:{domElement:{getBoundingClientRect:()=>({left:0,top:0,width:200,height:200})}}});
+  const pick = (alt:boolean) => (viewport as unknown as {pick:(event:unknown,alt:boolean)=>void}).pick({clientX:100,clientY:100},alt);
+  try {
+    pick(false); assert.deepEqual(selection(), {kind:'group',id:'house'});
+    pick(false); assert.deepEqual(selection(), {kind:'group',id:'house'});
+    pick(true); assert.deepEqual(selection(), {kind:'part',id:'part'});
+    pick(false); assert.deepEqual(selection(), {kind:'group',id:'house'});
+  } finally { Object.assign(viewport, {renderer:null}); viewport.dispose(); }
+});
+
 test("scene revisions retire selection without disposing shared reconstruction resources", () => {
   const { viewport, publish, selection } = fixture();
   const document = documentFixture();
