@@ -57,7 +57,7 @@ Every script has a module docstring; `--help` lists its arguments.
   change an existing worker's implementation. Pure-Python modules in
   `refinement/` are not part of those snapshots.
 - **Render slots.** `render_slots.acquire()` (in `refinement/`) takes one of
-  three machine-wide slots in `work/lincoln-refinement/render-slots/`; every map
+  six machine-wide slots in `work/lincoln-refinement/render-slots/`; every map
   and shared tool uses that one pool. Acquire before loading large scenes.
 - **Recipe provenance.** Gallery builders re-hash the `candidate.json` `"recipe"`
   path on every rebuild. New packets should call

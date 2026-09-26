@@ -13,7 +13,7 @@ import time
 import uuid
 
 POOL = Path(__file__).resolve().parents[1] / 'work/lincoln-refinement/render-slots'
-SLOTS = 3
+SLOTS = 6
 _lease = None
 
 
