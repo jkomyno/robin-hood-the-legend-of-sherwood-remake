@@ -61,10 +61,11 @@ Source obstacle/profile identifiers may remain as provenance. A reusable
 appearance switch has an asset-local ID.
 
 The map's `assetSources` pins the catalog descriptor, model, selected scene, and
-resources. Objects name their source with `asset:<asset-id>:<part-name>`. Their
-local footprints and part/group transforms use the same representation as manual
-palette insertion. Group and object IDs, hidden state, collision flags, and
-native source obstacle IDs survive conversion.
+resources. A version 2 map stores one entry in `placements` for each placed asset
+group. Its `assets` array names the catalog assets that make up that placement;
+the placement retains its ID, name, and transform. The pinned descriptors supply
+the default parts, local transforms, collision footprints, names, and visibility.
+The editor expands placements into its normal group and object model when loading.
 
 A descriptor part is an obstacle part (`source_obstacle` plus
 `obstacle_local_game`), a mission part (`mission_profile` plus editor-only
@@ -77,11 +78,16 @@ rotates about its asset-local origin, and its group pivot ignores it. The index
 entry is an ordinary asset entry. Game baking rejects scenery until the compiler
 can place its geometry.
 
-Saved maps omit asset-part fields that equal the pinned descriptor: name, kind,
-source provenance, collision footprint, local transform, and default visibility.
-The loader restores these fields before editing or validation. An instance keeps
-any field it changes, so edited collision shapes and other per-part overrides
-remain in the map. Mission bindings and group placement remain map data.
+Only changed parts appear in a placement's `parts` object, keyed by descriptor
+part node. Each entry stores fields that differ from the descriptor defaults,
+including mission bindings or an edited transform or collision shape. `removed`
+lists deleted descriptor parts; `copies` describes extra instances of a part.
+Mixed-asset placements use full `asset:<asset-id>:<part-node>` keys. `idMode`
+selects the existing object ID convention, and an exceptional object ID appears
+as a part override. An optional top-level `order` preserves object order when it
+differs from descriptor order. Old version 1 maps remain readable and expand into
+the same editor model. Run `node pipeline/src/migrate-map-v2.ts library` to check
+an existing library, then add `--apply` to save version 2 files with backups.
 
 Mission-specific reveal triggers and drawbridge bindings belong in per-object
 `missionBindings`. Bindings are applied to the placed clone, so inserting the same

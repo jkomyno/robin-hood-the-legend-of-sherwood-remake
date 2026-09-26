@@ -22,6 +22,8 @@ def import_document(glb, output, document):
 def scene_metadata(library, document):
     if 'glb' in document or 'sceneAssets' not in document:
         raise ValueError('Expected a JSON/assets map; explicitly import older handoffs first')
+    from stored_map import expand_document
+    document = expand_document(library, document)
     nodes = [{'name': 'map', 'children': [], 'extras':copy.deepcopy(document.get('sceneMetadata', {}))}]
     materials = {}
     verified = set()

@@ -7,7 +7,7 @@ import { listProjectionAssets, prepareProjectionAsset } from "./projection-libra
 import { disposeObjectResources } from "./resources.ts";
 import { insertProjectionAsset } from "./asset-commands.ts";
 import { prepareMapCandidate } from "./map-candidate.ts";
-import { compactAssetInstances, type Level3D } from "@rle/shared";
+import { serializeStoredMap, type Level3D } from "@rle/shared";
 
 function fixture() {
   const obstacle = {
@@ -147,7 +147,7 @@ test("changed files reject before model publication; bad model cleanup is owned"
   assert.equal(bad.disposed(), 1);
 });
 
-test("saved compact asset parts reload before document validation and retire with their map", async (t) => {
+test("saved version 2 asset placements reload before document validation", async (t) => {
   const f = fixture();
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
   const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
@@ -167,10 +167,12 @@ test("saved compact asset parts reload before document validation and retire wit
     [50, 50, 0],
   );
   inserted.document.objects[0]!.obstacle.points[0]!.x = 1;
-  const compact = compactAssetInstances(
+  const compact = serializeStoredMap(
     inserted.document,
     new Map([[prepared.descriptor.id, prepared.descriptor]]),
   );
+  assert.equal((compact as { version: number }).version, 2);
+  assert.equal("objects" in (compact as object), false);
   f.json("scenes/York.rhlos-map.json", compact);
   f.json("scenes/York-volumes.scene.json", {
     version: 1,

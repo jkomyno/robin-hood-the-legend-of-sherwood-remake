@@ -66,7 +66,10 @@ def graph(staged, previous):
     maps = sorted((staged/'scenes').glob('*.rhlos-map.json'))
     for path in maps:
         value = document(str(path.relative_to(staged)))
-        if any(not part['node'].startswith('asset:') for part in value['objects']):
+        if value.get('version') == 2:
+            if any(not placement.get('assets') for placement in value['placements']):
+                raise ValueError('Map contains an assetless placement: '+str(path))
+        elif any(not part['node'].startswith('asset:') for part in value['objects']):
             raise ValueError('Map contains world-scene objects: '+str(path))
         for reference in value['sceneAssets']+value.get('assetSources', []):
             if reference['model'] not in models: raise ValueError('Map references a non-catalog model')

@@ -2,11 +2,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import {
-  compactAssetInstances,
   descriptorForSource,
-  hydrateAssetInstances,
+  parseStoredMap,
   parseExternalAssetSources,
   parseLevel3D,
+  serializeStoredMap,
   type ExternalAssetSource,
   type Level3D,
   type ProjectionAssetDescriptor,
@@ -35,12 +35,12 @@ export async function pinnedDescriptors(
 export async function readStoredMap(file: string, library: string): Promise<Level3D> {
   const raw = JSON.parse(await fs.readFile(file, "utf8"));
   const descriptors = await pinnedDescriptors(library, raw.assetSources ?? []);
-  return hydrateAssetInstances(raw, descriptors);
+  return parseStoredMap(raw, descriptors);
 }
 
 export async function compactStoredMap(document: Level3D, library: string): Promise<unknown> {
   parseLevel3D(document);
-  return compactAssetInstances(
+  return serializeStoredMap(
     document,
     await pinnedDescriptors(library, document.assetSources ?? []),
   );

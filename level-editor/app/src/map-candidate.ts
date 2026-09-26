@@ -1,10 +1,5 @@
 import * as THREE from "three";
-import {
-  documentProvenance,
-  hydrateAssetInstances,
-  parseLevel3D,
-  snapFloatingParts,
-} from "@rle/shared";
+import { documentProvenance, parseStoredMap, parseLevel3D, snapFloatingParts } from "@rle/shared";
 import { readJson, subdir } from "./fs.ts";
 import { loadProtoLevel, type DatadirIndex } from "./datadir.ts";
 import {
@@ -30,40 +25,16 @@ export async function prepareMapCandidate(
     const directory = await subdir(library, ["scenes"]);
     if (!directory) throw new Error("scenes/ missing");
     const saved = importedDocument ?? (await readJson(directory, `${name}.rhlos-map.json`));
-    const compact =
-      typeof saved === "object" &&
-      saved !== null &&
-      Array.isArray((saved as { objects?: unknown }).objects) &&
-      (
-        saved as {
-          objects: {
-            node?: string;
-            obstacle?: unknown;
-            source?: unknown;
-            kind?: unknown;
-            transform?: unknown;
-          }[];
-        }
-      ).objects.some(
-        (part) =>
-          part?.node?.startsWith("asset:") &&
-          (part.obstacle === undefined ||
-            part.source === undefined ||
-            part.kind === undefined ||
-            part.transform === undefined),
-      );
-    const document = compact
-      ? hydrateAssetInstances(
-          saved,
-          await readPinnedAssetDescriptors(
-            library,
-            (saved as { assetSources?: import("@rle/shared").ExternalAssetSource[] })
-              .assetSources ?? [],
-          ),
-        )
-      : parseLevel3D(saved, { map: documentMap });
+    const document = parseStoredMap(
+      saved,
+      await readPinnedAssetDescriptors(
+        library,
+        (saved as { assetSources?: import("@rle/shared").ExternalAssetSource[] }).assetSources ??
+          [],
+      ),
+    );
     if (document.map.toLowerCase() !== documentMap.toLowerCase())
-      throw new Error(`Expected map ${documentMap}, got ${document.map}`);
+      throw new Error(`level3d.map: expected source ${documentMap}, got ${document.map}`);
     asset.userData = structuredClone(document.sceneMetadata ?? {});
     const level = idx && document.sourceMap ? await loadProtoLevel(idx, document.sourceMap) : null;
     const sources = new Map<string, THREE.Object3D>();

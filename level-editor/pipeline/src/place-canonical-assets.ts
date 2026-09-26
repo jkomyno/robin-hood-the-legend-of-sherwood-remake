@@ -5,7 +5,7 @@ import { mat4 } from "gl-matrix";
 import {
   assetNodeKey,
   assetVariantId,
-  compactAssetInstances,
+  serializeStoredMap,
   descriptorForSource,
   gameTransformMatrix,
   groupCentroid,
@@ -170,7 +170,7 @@ for (const item of plan.maps) {
     );
   await fs.writeFile(
     destination,
-    JSON.stringify(compactAssetInstances(doc, instanceDescriptors), null, 2) + "\n",
+    JSON.stringify(serializeStoredMap(doc, instanceDescriptors), null, 2) + "\n",
   );
   const result = {
     map: doc.map,

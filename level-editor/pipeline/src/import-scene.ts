@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 import { createHash } from "node:crypto";
 import {
   groupObstacles,
-  hydrateAssetInstances,
+  parseStoredMap,
   IDENTITY_TRANSFORM,
   parseLevel3D,
   parseProtoLevel,
@@ -74,17 +74,18 @@ export async function importScene(
   sourceMap?: string,
 ) {
   if (
-    Array.isArray(document.objects) &&
-    document.objects.some(
-      (object: any) =>
-        object?.node?.startsWith("asset:") &&
-        (object.obstacle === undefined ||
-          object.source === undefined ||
-          object.kind === undefined ||
-          object.transform === undefined),
-    )
+    document.version === 2 ||
+    (Array.isArray(document.objects) &&
+      document.objects.some(
+        (object: any) =>
+          object?.node?.startsWith("asset:") &&
+          (object.obstacle === undefined ||
+            object.source === undefined ||
+            object.kind === undefined ||
+            object.transform === undefined),
+      ))
   )
-    document = hydrateAssetInstances(
+    document = parseStoredMap(
       document,
       await pinnedDescriptors(
         outputLibrary,

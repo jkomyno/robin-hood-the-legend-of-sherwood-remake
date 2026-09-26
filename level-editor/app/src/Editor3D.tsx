@@ -4,7 +4,7 @@ import type { JSX } from "@solidjs/web";
 import type * as THREE from "three";
 import {
   IDENTITY_TRANSFORM,
-  compactAssetInstances,
+  serializeStoredMap,
   parseLevel3D,
   groupParts,
   isIdentity,
@@ -460,11 +460,11 @@ export default function Editor3D(props: EditorProps) {
     props.onStatus(`loading ${requestedMission ?? mapLabel(name)}…`);
     setMapLoadProgress({ completed: 0, total: 1, phase: "Reading map" });
     try {
-      let importedDocument: Level3D | undefined;
+      let importedDocument: unknown;
       if (importedFile) {
-        importedDocument = parseLevel3D(JSON.parse(await importedFile.text()));
-        const id = importedDocument.map;
-        if (!id || id === "." || id === ".." || /[\\/\0]/.test(id))
+        importedDocument = JSON.parse(await importedFile.text());
+        const id = (importedDocument as { map?: unknown }).map;
+        if (typeof id !== "string" || !id || id === "." || id === ".." || /[\\/\0]/.test(id))
           throw new Error("Invalid map name in dropped JSON");
         name = lib.savedMapName?.(id) ?? id;
       }
@@ -731,7 +731,7 @@ export default function Editor3D(props: EditorProps) {
       await writeText(
         snapshot.resources,
         `${snapshot.name}.rhlos-map.json`,
-        JSON.stringify(compactAssetInstances(snapshot.document, descriptors), null, 2),
+        JSON.stringify(serializeStoredMap(snapshot.document, descriptors), null, 2),
       );
       const savedName = library?.savedMapName?.(snapshot.name) ?? snapshot.name;
       if (transientMapName === snapshot.name) transientMapName = null;
@@ -758,7 +758,7 @@ export default function Editor3D(props: EditorProps) {
       const descriptors = document.assetSources?.length
         ? await readPinnedAssetDescriptors(props.library()!.handle, document.assetSources)
         : new Map();
-      downloadMap(document.map, compactAssetInstances(document, descriptors));
+      downloadMap(document.map, serializeStoredMap(document, descriptors));
     } catch (error) {
       props.onError(String(error));
     }

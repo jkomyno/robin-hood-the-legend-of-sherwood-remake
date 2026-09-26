@@ -6,6 +6,7 @@ import unittest
 
 from scene_manifest import export_document, scene_metadata
 from canonical_assets import read_model
+from stored_map import expand_document
 
 
 class LocalMapExportTests(unittest.TestCase):
@@ -42,11 +43,15 @@ class LocalMapExportTests(unittest.TestCase):
             (root/'source.gltf').write_text(json.dumps(model))
             result = export_document(root/'source.gltf', root/'fixture.rhlos-map.json', 'Fixture',
                                      {'sight_obstacles': obstacles}, size=[1024, 512])
-            document = result['document']; library = Path(result['library'])
+            stored = result['document']; library = Path(result['library'])
+            self.assertEqual(stored['version'], 2)
+            self.assertNotIn('objects', stored)
+            document = expand_document(library, stored)
             self.assertEqual(document['sceneAssets'], [])
             self.assertEqual(len(document['assetSources']), 2)
             self.assertTrue(all(p['node'].startswith('asset:') for p in document['objects']))
-            self.assertNotIn('transform', document['objects'][0])
+            self.assertEqual(document['objects'][0]['transform'], dict(dx=0, dy=0, dz=0, rot_deg=0))
+            self.assertTrue(all('parts' not in placement for placement in stored['placements']))
             refs = document['assetSources']
             self.assertEqual(refs[0]['resources'], refs[1]['resources'])
             self.assertEqual(len(list((library/'3d-assets/blobs').iterdir())), 0)

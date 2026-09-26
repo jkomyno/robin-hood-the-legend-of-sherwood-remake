@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from scene_manifest import scene_metadata
+from stored_map import expand_document, store_document
 
 
 def sha(path):
@@ -25,9 +26,11 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
     output.parent.mkdir(parents=True, exist_ok=True)
     live_document = library / f"scenes/{map_name}.rhlos-map.json"
     source_document = Path(document_path).resolve(strict=True) if document_path is not None else live_document
-    document = json.loads(source_document.read_text())
     asset_library = library if live else stage / 'map-assets'
-    staged_document = document if live else json.loads((stage / f"{map_name}.rhlos-map.json").read_text())
+    document = expand_document(asset_library if document_path is not None else library,
+                               json.loads(source_document.read_text()))
+    staged_document = document if live else expand_document(asset_library,
+        json.loads((stage / f"{map_name}.rhlos-map.json").read_text()))
     model = scene_metadata(asset_library, staged_document)
     nodes = model["nodes"]
     map_node = next(node for node in nodes if node.get("name") == "map")
@@ -61,8 +64,9 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
     if not live and staged_document.get('assetSources'):
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', dir=stage) as previous:
             json.dump(document, previous); previous.flush()
-            document=json.loads(subprocess.check_output(['node', str(Path(__file__).resolve().parents[1]/'pipeline/src/rebase-map-assets.ts'),
-                previous.name, str(library), str(stage/f'{map_name}.rhlos-map.json'), str(asset_library)], text=True))
+            document=expand_document(asset_library, json.loads(subprocess.check_output(['node',
+                str(Path(__file__).resolve().parents[1]/'pipeline/src/rebase-map-assets.ts'),
+                previous.name, str(library), str(stage/f'{map_name}.rhlos-map.json'), str(asset_library)], text=True)))
     def canonical(node): return node.split(':', 2)[-1] if node.startswith('asset:') else node
     if {canonical(obj["node"]) for obj in document["objects"]} != part_names:
         raise ValueError("Canonical part identities changed; explicit editor document migration required")
@@ -78,11 +82,12 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         document.pop("glb", None)
         document.setdefault("provenance", {}).pop("glb_sha256", None)
         document_path = stage / "browser-document.rhlos-map.json"
+        stored = store_document(asset_library, document)
         if document_path.exists():
-            if json.loads(document_path.read_text()) != document:
+            if json.loads(document_path.read_text()) != stored:
                 raise ValueError("Existing staged document differs from current canonical editor state")
         else:
-            document_path.write_text(json.dumps(document, indent=2) + "\n")
+            document_path.write_text(json.dumps(stored, indent=2) + "\n")
     sources = {entry["id"]: (entry, library / "3d-assets") for entry in
                json.loads((library / "3d-assets/index.json").read_text())["assets"]}
     if not live:

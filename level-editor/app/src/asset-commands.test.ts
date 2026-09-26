@@ -6,7 +6,9 @@ import {
   hydrateAssetInstances,
   parseLevel3D,
   parseProjectionAssetDescriptor,
+  parseStoredMap,
   partPivot,
+  serializeStoredMap,
   transformedObstacle,
   type Level3D,
   type ProjectionAssetDescriptor,
@@ -115,6 +117,41 @@ test("saved asset instances inherit unchanged subparts and retain edited overrid
   const cleared = compactAssetInstances(edited, descriptors);
   assert.deepEqual(hydrateAssetInstances(cleared, descriptors), edited);
   assert.throws(() => hydrateAssetInstances(compact, new Map()), /Missing pinned asset descriptor/);
+});
+
+test("version 2 stores placements and only exceptional part records", () => {
+  const { descriptor, reference, document } = assetFixture();
+  const placed = insertProjectionAsset(document, descriptor, reference, [50, 40, 0]).document;
+  const descriptors = new Map([[descriptor.id, descriptor]]);
+  const simple = serializeStoredMap(placed, descriptors) as {
+    version: number;
+    placements: { parts?: Record<string, unknown>; removed?: string[]; copies?: unknown[] }[];
+    objects?: unknown;
+  };
+  assert.equal(simple.version, 2);
+  assert.equal(simple.objects, undefined);
+  assert.equal(simple.placements[0]!.parts, undefined);
+  assert.deepEqual(parseStoredMap(simple, descriptors), placed);
+
+  const edited = structuredClone(placed);
+  edited.objects[0]!.missionBindings = { Wall: { reveal_hide_when_applied: ["patch-001"] } };
+  edited.objects[0]!.transform = { ...IDENTITY_TRANSFORM, dx: 7 };
+  edited.objects.splice(1, 1);
+  const copied = duplicateSelection(edited, { kind: "part", id: edited.objects[0]!.id }).document;
+  const stored = serializeStoredMap(copied, descriptors) as typeof simple;
+  assert.equal(Object.keys(stored.placements[0]!.parts ?? {}).length, 1);
+  assert.equal(stored.placements[0]!.removed?.length, 1);
+  assert.equal(stored.placements[0]!.copies?.length, 1);
+  assert.deepEqual(parseStoredMap(stored, descriptors), copied);
+
+  const duplicated = duplicateSelection(placed, {
+    kind: "group",
+    id: placed.groups[0]!.id,
+  }).document;
+  assert.deepEqual(
+    parseStoredMap(serializeStoredMap(duplicated, descriptors), descriptors),
+    duplicated,
+  );
 });
 
 test("saved maps retain reveal labels without legacy game state copies", () => {
