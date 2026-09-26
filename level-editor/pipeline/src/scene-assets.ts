@@ -15,7 +15,7 @@ export async function readSceneAsset(library: string, reference: SceneAssetSourc
   };
   let bytes = await checked(reference.model,reference.model_sha256);
   if (reference.descriptor) await checked(reference.descriptor,reference.descriptor_sha256!);
-  if (!reference.model.endsWith(".gltf") && reference.model_scene) bytes = Buffer.from(selectGlbScene(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength) as ArrayBuffer,reference.model_scene));
+  if (!reference.model.endsWith(".gltf")) bytes = Buffer.from(selectGlbScene(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength) as ArrayBuffer,reference.model_scene,reference.model));
   const json = reference.model.endsWith(".gltf") ? resolveGltfResources(reference.model, selectGltfScene(JSON.parse(bytes.toString()),reference.model_scene)) : JSON.parse(bytes.toString("utf8",20,20+bytes.readUInt32LE(12)));
   const resources: Record<string, Uint8Array<ArrayBuffer>> = {};
   for (const resource of reference.resources) resources[resource.path] = new Uint8Array(await checked(resource.path,resource.sha256));
@@ -24,7 +24,18 @@ export async function readSceneAsset(library: string, reference: SceneAssetSourc
 export async function loadSceneModel(library: string, reference: SceneAssetSource) {
   const {json,resources,bytes} = await readSceneAsset(library,reference);
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
-  return reference.model.endsWith(".gltf") ? io.readJSON({json,resources}) : io.readBinary(bytes);
+  if (reference.model.endsWith(".gltf")) return io.readJSON({json,resources});
+  // NodeIO's binaryToJSON rejects external GLB resources. Supply the checked
+  // external files and embedded BIN together through its JSON interface.
+  if ((json.buffers ?? []).some((buffer: {uri?:string}) => buffer.uri === undefined)) {
+    const start = 20+bytes.readUInt32LE(12);
+    if (start+8>bytes.length || bytes.readUInt32LE(start+4)!==0x004e4942)
+      throw new Error('Missing GLB binary chunk');
+    const uri = '__embedded_glb_buffer__';
+    resources[uri] = new Uint8Array(bytes.subarray(start+8,start+8+bytes.readUInt32LE(start)));
+    for (const buffer of json.buffers) if (buffer.uri === undefined) buffer.uri = uri;
+  }
+  return io.readJSON({json,resources});
 }
 
 /** Assemble only node metadata for ownership and native patch verification. */

@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import shutil
 from urllib.parse import unquote
-from canonical_assets import digest
+from canonical_assets import digest, read_model
 from promote_staged_publication import library_lock, contained_path, safe_relative
 
 
@@ -33,9 +33,11 @@ def graph(staged, previous):
         if any(key in descriptor for key in ('source_origin_scene', 'source_origin_game', 'reveal')):
             raise ValueError('Map metadata remains in asset: '+relative)
         model_path = str(Path(relative).parent/descriptor['model'])
-        if model_path != '3d-assets/'+entry['model'] or not model_path.endswith('.gltf'):
+        if model_path != '3d-assets/'+entry['model'] or Path(model_path).suffix not in ('.gltf', '.glb'):
             raise ValueError('Catalog must use its canonical glTF model')
-        model = models.setdefault(model_path, document(model_path))
+        model_file = include(model_path)
+        model, _, _ = read_model(model_file, staged if model_file.is_relative_to(staged) else previous)
+        models[model_path] = model
         scenes = [scene.get('name') for scene in model['scenes']]
         for value in [descriptor, *descriptor.get('state_variants', {}).values(), *descriptor.get('standalone_variants', {}).values()]:
             if value['model'] != descriptor['model'] or scenes.count(value.get('model_scene')) != 1:

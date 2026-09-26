@@ -18,7 +18,7 @@ def encoded(value):
 def read_model(path, library):
     path = Path(path)
     if path.suffix == '.glb':
-        model, binary, _ = _splitter.read_glb(path)
+        model, binary, _ = _splitter.read_glb(path, allow_external=True)
     else:
         model, binary = json.loads(path.read_text()), b''
     if model.get('skins') or model.get('animations') or set(model.get('extensionsUsed', [])) - {'KHR_materials_unlit'}:

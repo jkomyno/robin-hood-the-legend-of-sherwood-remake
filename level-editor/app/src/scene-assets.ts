@@ -32,7 +32,7 @@ export class SceneAssetLoader {
     let bytes = await checked(await read(this.root, reference.model), reference.model_sha256);
     if (reference.descriptor) await checked(await read(this.root, reference.descriptor), reference.descriptor_sha256!);
     if (reference.model.endsWith(".gltf")) bytes = new TextEncoder().encode(JSON.stringify(resolveGltfResources(reference.model, selectGltfScene(JSON.parse(new TextDecoder().decode(bytes)), reference.model_scene)))).buffer;
-    else bytes = selectGlbScene(bytes, reference.model_scene);
+    else bytes = selectGlbScene(bytes, reference.model_scene, reference.resources.length ? reference.model : undefined);
     const urls = new Map<string, string>();
     await Promise.all(reference.resources.map(async resource => {
       const key = `${resource.path}:${resource.sha256}`;

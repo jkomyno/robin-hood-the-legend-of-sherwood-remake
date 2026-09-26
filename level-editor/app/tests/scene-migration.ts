@@ -12,10 +12,10 @@ const name = query.get("map") ?? "york";
 const staged = query.get("staged") ?? "/library/";
 const baseline = query.get("baseline") ?? "/library/scenes/backups/map-manifest-migration/";
 const result = document.querySelector("#result")!;
-const directory = (prefix = ""): FileSystemDirectoryHandle => ({
-  async getDirectoryHandle(name: string) { return directory(prefix + name + "/"); },
+const directory = (prefix = "", base = staged): FileSystemDirectoryHandle => ({
+  async getDirectoryHandle(name: string) { return directory(prefix + name + "/", base); },
   async getFileHandle(name: string) {
-    let response = await fetch(staged + prefix + name);
+    let response = await fetch(base + prefix + name);
     if (response.status === 404) response = await fetch("/library/" + prefix + name);
     if (!response.ok) throw new Error(`Missing ${prefix}${name}: ${response.status}`);
     const file = new File([await response.arrayBuffer()], name);
@@ -37,6 +37,8 @@ async function main() {
     ? await (await fetch(query.get("baselineDocument")! + `scenes/${name}.level3d.json`)).json() as Level3D : document;
   const root = directory();
   result.textContent = "Loading baseline " + name;
+  const baselineCandidate = await (async () => {
+  if (query.has("baselineCatalog")) return prepareMapCandidate(name, directory("", query.get("baselineCatalog")!), null);
   const asset = (await new GLTFLoader().loadAsync(baseline + `scenes/${name}-volumes.scene.glb`)).scene;
   const map = asset.children.find(node => node.name === "map")!;
   const ground = map.children.find(node => node.name === "ground") ?? null;
@@ -47,9 +49,11 @@ async function main() {
     asset.add(external.asset);
     for (const [key, value] of external.sources) sources.set(key, value);
   }
-  const before = viewport(baselineDocument);
-  before.replaceMap(asset, ground, sources, baselineDocument.assetSources);
-  before.syncViews(baselineDocument);
+  return {asset, ground, sources, document:baselineDocument};
+  })();
+  const before = viewport(baselineCandidate.document);
+  before.replaceMap(baselineCandidate.asset, baselineCandidate.ground, baselineCandidate.sources, baselineCandidate.document.assetSources);
+  before.syncViews(baselineCandidate.document);
   const bounds = new THREE.Box3().setFromObject(before["mapRoot"]);
   const center = bounds.getCenter(new THREE.Vector3());
   const distance = bounds.getSize(new THREE.Vector3()).length();
@@ -122,13 +126,13 @@ async function main() {
           }
           (window as any).__migrationImages = { before:encode(previous), after:encode(next), difference:encode(diff) };
         }
-        if (changedPixels > 1024*768*0.005 || totalDelta/next.length > 0.05) throw new Error(`${name}: state ${state}, camera ${camera}: ${changed} changed channels, max delta ${max}`);
+        if (query.has("exact") || changedPixels > 1024*768*0.005 || totalDelta/next.length > 0.05) throw new Error(`${name}: state ${state}, camera ${camera}: ${changed} changed channels, max delta ${max}`);
       }
       compared++;
     }
   }
   after.dispose(); target.dispose(); renderer.dispose();
 
-  result.textContent = `PASS ${name}: ${compared} renders within rounding tolerance, ${candidate.document.objects.length} parts, ${patches.length} patch previews; ${JSON.stringify(differences)}`;
+  result.textContent = `PASS ${name}: ${compared} ${query.has("exact") ? "pixel-identical renders" : "renders within rounding tolerance"}, ${candidate.document.objects.length} parts, ${patches.length} patch previews; ${JSON.stringify(differences)}`;
 }
 main().catch(error => { result.textContent = "FAIL " + (error.stack ?? error); });

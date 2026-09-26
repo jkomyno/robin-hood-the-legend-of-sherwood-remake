@@ -12,9 +12,10 @@ library/
   scenes/backups/...
   3d-assets/index.json
   3d-assets/<asset-id>/asset.json
-  3d-assets/<asset-id>/model.gltf
+  3d-assets/<asset-id>/model.glb
   3d-assets/blobs/<sha256>.bin
   3d-assets/blobs/<sha256>.png
+  3d-assets/blobs/<sha256>.jpg
 ```
 
 The index identifies assets and their descriptors. A descriptor records local
@@ -24,10 +25,16 @@ collision footprints, stable part names, the model, and its pinned resources.
 semantics. Different appearances share geometry and image payloads where their
 bytes match.
 
-`blobs/` contains the actual shared geometry buffers and encoded textures used by
-these catalog models. It is not a second copy of textures embedded in active
-palette models. glTF files use ordinary model-relative `../blobs/...` URIs;
-descriptors and saved references pin library-relative paths and SHA-256 hashes.
+Each asset uses one GLB, including its named appearances. Private payloads and
+small shared payloads are embedded. A payload stays external only when sharing
+between distinct assets saves at least 256 KiB: `bytes × (asset count − 1)`.
+Sharing between appearances of a single asset happens inside its GLB and never
+requires an external file. Models with `resources: []` are self-contained.
+
+`blobs/` holds only the worthwhile shared buffers and textures, such as the large
+reconstruction atlases. GLBs that use these files reference ordinary relative
+`../blobs/...` URIs; descriptors and saved references pin library-relative paths
+and SHA-256 hashes. Packaging preserves texture encoding and accessor bytes.
 Optional preview models are derived browser thumbnails, never map geometry.
 
 ## Local assets and placed instances
@@ -91,3 +98,12 @@ running `python3 refinement/apply_canonical_library.py work/canonical/plan.json
 --apply`. Without `--apply`, this command validates source guards and the complete
 active graph and reports the proposed cleanup. It archives superseded files and
 restores previous files if installation fails.
+
+To repack an existing local catalog using the hybrid policy, run
+`python3 refinement/hybrid_library.py library work/hybrid/staged`, review its
+report and rendered comparisons, then run
+`python3 refinement/apply_canonical_library.py work/hybrid/plan.json --apply`.
+The packer also accepts an existing hybrid catalog and rediscovers sharing from
+embedded payloads. `--min-savings` sets the byte threshold. The refinement map
+exporter runs this packing step automatically across its staged catalog;
+library-wide repacking can additionally find sharing across separate publications.

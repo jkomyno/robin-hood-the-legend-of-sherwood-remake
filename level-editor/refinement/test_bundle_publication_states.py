@@ -29,6 +29,12 @@ class BundlePublicationTests(unittest.TestCase):
             report = {'model': str(root/'library'/ref['model']), 'model_sha256': ref['model_sha256'],
                       'model_scene': 'applied'}
             self.assertEqual(verify_bundled_reference(report, reference)['scene'], 'applied')
+            from hybrid_library import pack
+            packed_source, packed_binary, packed_external = read_model(root/'library'/ref['model'],root/'library')
+            raw, _, _, _ = pack(packed_source, packed_binary, packed_external, set())
+            glb = root/'library/3d-assets/house/model.glb'; glb.write_bytes(raw)
+            packed_report = {**report, 'model':str(glb), 'model_sha256':sha(glb), 'canonical_model':True}
+            self.assertEqual(verify_bundled_reference(packed_report,reference)['scene'],'applied')
             (root/'library'/ref['resources'][0]['path']).write_bytes(struct.pack('<9f', 0, 0, 0, 2, 0, 0, 0, 1, 0))
             with self.assertRaisesRegex(ValueError, 'Canonical endpoint differs'):
                 verify_bundled_reference(report, reference)

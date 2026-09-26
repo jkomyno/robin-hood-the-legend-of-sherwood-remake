@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import tempfile
 from unify_map_assets import stage
+from hybrid_library import stage_hybrid
 
 
 def export_local_map(gltf, output, document):
@@ -39,14 +40,16 @@ def export_local_map(gltf, output, document):
         conversion = stage(source, destination)
         subprocess.run(['node',str(Path(__file__).resolve().parents[1]/'pipeline/src/place-canonical-assets.ts'),
                         str(destination.parent/'plan.json')], check=True)
-        shutil.move(str(destination), library)
+        hybrid = root/'hybrid'/'library'
+        packing = stage_hybrid(destination, hybrid)
+        shutil.move(str(hybrid), library)
         result = json.loads((library/'scenes'/output.name).read_text())
         output.write_text(json.dumps(result,indent=2)+'\n')
         receipt = json.loads((root/'converted/plan.json').read_text())
         # Source paths in the receipt are temporary. Preserve verifiable content
         # signatures and the placement proof instead of dangling file references.
         (output.parent/'local-assets-verification.json').write_text(json.dumps({
-            'status':'PASS', 'assets':conversion['assets'], 'scenes':receipt['proofs'],
+            'status':'PASS', 'assets':conversion['assets'], 'scenes':receipt['proofs'], 'packing':packing,
             'placements':json.loads((root/'converted/placement-proof.json').read_text())},indent=2)+'\n')
     if selected['assets']:
         backup = output.parent/'backups'/'asset-export'

@@ -16,7 +16,7 @@ def sha(path):
 
 def verify_bundled_reference(report, reference):
     """An exact worker re-export and independently recomputed scene must agree."""
-    if str(report['model']).endswith('.gltf'):
+    if str(report['model']).endswith('.gltf') or report.get('canonical_model'):
         from canonical_assets import read_model
         from unify_map_assets import local_states
         if sha(report['model']) != report['model_sha256']:

@@ -204,7 +204,7 @@ def stage(plan_path):
         variant=(descriptor.get('state_variants') or descriptor['standalone_variants'])[row['state']]
         row.update(model=str(output/'assets'/row['asset_id']/variant['model']),
                    model_sha256=hashlib.sha256((output/'assets'/row['asset_id']/variant['model']).read_bytes()).hexdigest(),
-                   model_scene=variant['model_scene'])
+                   model_scene=variant['model_scene'], canonical_model=True)
     (output/'stage.json').write_text(json.dumps(report,indent=2)+'\n')
     collection = bpy.data.collections[plan['collection_name']]
     visibility = {obj: obj.hide_render for obj in collection.all_objects}

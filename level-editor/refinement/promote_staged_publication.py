@@ -61,7 +61,7 @@ def asset_file_pairs(stage_assets, library_assets, asset):
     scene_identity(descriptor)
     paths = [descriptor_path, model_path]
     receipt_path = descriptor_path.parent / 'bundle.receipt.json'
-    if descriptor.get('model_scene') is not None and model_path.suffix == '.glb':
+    if descriptor.get('model_scene') is not None and model_path.suffix == '.glb' and 'resources' not in descriptor:
         receipt = json.loads(contained_path(stage_assets, receipt_path, required=True).read_text())
         if (receipt.get('asset_id') != asset['id'] or
                 receipt.get('output', {}).get('sha256') != sha(contained_path(stage_assets, model_path, required=True)) or

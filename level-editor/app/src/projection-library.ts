@@ -113,7 +113,7 @@ export async function prepareProjectionAsset(
   parseExternalAssetSources([reference]);
   let asset: THREE.Object3D | null = null;
   try {
-    if (entry.model.endsWith(".gltf")) {
+    if (entry.model.endsWith(".gltf") || descriptor.resources !== undefined) {
       const loader = sharedLoader ?? new SceneAssetLoader(root);
       try { asset = await loader.load({ ...reference, role: "objects", resources: descriptor.resources ?? [] }); }
       finally { if (!sharedLoader) loader.dispose(); }
@@ -156,15 +156,11 @@ export async function prepareProjectionAsset(
 /** The caller owns preview model resources and must dispose them when retired. */
 export async function loadProjectionAssetPreview(root: FileSystemDirectoryHandle, entry: ProjectionAssetEntry): Promise<THREE.Object3D> {
   if (entry.editor_usage === "map-background") {
-    if (entry.model.endsWith(".gltf")) {
-      const descriptor = parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text()));
-      const bytes = await (await libraryFile(root, entry.model)).arrayBuffer();
-      const loader = new SceneAssetLoader(root);
-      try { return await loader.load({ id:entry.id,role:"ground",model:entry.model,model_scene:entry.model_scene,model_sha256:await hash(bytes),resources:descriptor.resources ?? [] }); }
-      finally { loader.dispose(); }
-    }
+    const descriptor = parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text()));
     const bytes = await (await libraryFile(root, entry.model)).arrayBuffer();
-    return (await new GLTFLoader().parseAsync(selectGlbScene(bytes, entry.model_scene), "")).scene;
+    const loader = new SceneAssetLoader(root);
+    try { return await loader.load({ id:entry.id,role:"ground",model:entry.model,model_scene:entry.model_scene,model_sha256:await hash(bytes),resources:descriptor.resources ?? [] }); }
+    finally { loader.dispose(); }
   }
   if (entry.preview_model) {
     const original = parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text()));

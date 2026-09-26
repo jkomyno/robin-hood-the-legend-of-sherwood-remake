@@ -40,7 +40,7 @@ def scene_metadata(library, document):
                 raise ValueError('Scene resource changed: ' + resource['path'])
             verified.add(key)
         if model_path.suffix == '.glb':
-            model, _, _ = _splitter.read_glb(model_path)
+            model, _, _ = _splitter.read_glb(model_path, allow_external=True)
         else:
             model = json.loads(model_path.read_text())
         model = select_scene(model, asset.get('model_scene'))

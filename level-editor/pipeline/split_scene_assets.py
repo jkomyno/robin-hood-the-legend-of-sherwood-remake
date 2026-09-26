@@ -16,7 +16,7 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def read_glb(path):
+def read_glb(path, *, allow_external=False):
     raw = Path(path).read_bytes()
     magic, version, length = struct.unpack_from('<III', raw)
     if magic != 0x46546c67 or version != 2 or length != len(raw):
@@ -36,7 +36,7 @@ def read_glb(path):
         raise ValueError('Animated, skinned, or camera-bearing imports require explicit support')
     if set(model.get('extensionsUsed', [])) - {'KHR_materials_unlit'}:
         raise ValueError('Unsupported GLB extension; refusing a lossy conversion')
-    if any('uri' in buffer for buffer in model.get('buffers', [])):
+    if not allow_external and any('uri' in buffer for buffer in model.get('buffers', [])):
         raise ValueError('Expected embedded GLB buffers')
     return model, binary, digest(raw)
 

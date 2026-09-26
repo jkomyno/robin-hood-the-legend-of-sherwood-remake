@@ -37,7 +37,7 @@ def check():
         document=json.loads((root/'fixture.level3d.json').read_text())
         assert 'glb' not in document and document['assetSources'] and not document['sceneAssets']
         assert not list(root.glob('*.glb'))
-        assert len(list((root/'map-assets/3d-assets/blobs').glob('*.png')))==1
+        assert not list((root/'map-assets/3d-assets/blobs').glob('*'))
         (root/'stage.json').write_text(json.dumps({'map':report,'generated_materials':{}}))
         verify(root,catalog_path)
         for name in ['left','right']:
@@ -48,6 +48,7 @@ def check():
             points=part['obstacle_local_game']['points'];assert max(p['x']for p in points)-min(p['x']for p in points)==2
             assert len(descriptor['components'])==1
             assert 'source_origin_scene' not in descriptor
+            assert descriptor['model']=='model.glb' and not descriptor['resources']
             nodes=gltf(root/'assets'/name/descriptor['model'])['nodes']
             assert len([n for n in nodes if 'mesh'in n])==1
             mesh_node=next(n for n in nodes if 'mesh'in n)

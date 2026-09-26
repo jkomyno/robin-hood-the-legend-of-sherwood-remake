@@ -660,8 +660,9 @@ hash logic. This keeps the same review contract across all maps.
 
 Map exports use `<map>.level3d.json` and one reusable local catalog under
 `map-assets/3d-assets/`. Both map instances and palette entries reference the same
-`<asset-id>/model.gltf`; encoded images and geometry buffers are shared through
-`blobs/`. Named scenes are reusable appearances, never map-coordinate versions.
+`<asset-id>/model.glb`. Private payloads are embedded; `blobs/` contains only
+cross-asset payloads whose sharing saves at least 256 KiB. Named scenes are
+reusable appearances, never map-coordinate versions.
 See [the library format](../docs/library-format.md).
 
 `scene_filename` in publication plans must end in `.level3d.json`.

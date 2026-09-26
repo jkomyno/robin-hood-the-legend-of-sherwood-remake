@@ -9,7 +9,7 @@ from canonical_assets import read_model
 
 
 class LocalMapExportTests(unittest.TestCase):
-    def test_map_exports_local_catalog_instances_with_shared_payloads(self):
+    def test_map_exports_local_catalog_instances_with_small_payloads_embedded(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             model = {'asset': {'version': '2.0'}, 'scene': 0, 'scenes': [{'nodes': [0]}],
@@ -41,14 +41,16 @@ class LocalMapExportTests(unittest.TestCase):
             self.assertEqual(document['objects'][0]['transform'], dict(dx=0, dy=0, dz=0, rot_deg=0))
             refs = document['assetSources']
             self.assertEqual(refs[0]['resources'], refs[1]['resources'])
-            self.assertEqual(len(list((library/'3d-assets/blobs').iterdir())), 1)
+            self.assertEqual(len(list((library/'3d-assets/blobs').iterdir())), 0)
             for ref in refs:
                 descriptor = json.loads((library/ref['descriptor']).read_text())
                 self.assertNotIn('source_origin_scene', descriptor)
                 self.assertNotIn('source_origin_game', descriptor)
-                local, _, external = read_model(library/ref['model'], library)
-                self.assertTrue(local['buffers'][0]['uri'].startswith('../blobs/'))
-                self.assertEqual(len(external(local['buffers'][0]['uri'])), 36)
+                local, binary, _ = read_model(library/ref['model'], library)
+                self.assertTrue(ref['model'].endswith('.glb'))
+                self.assertEqual(ref['resources'], [])
+                self.assertNotIn('uri', local['buffers'][0])
+                self.assertEqual(len(binary), 36)
                 self.assertLess(max(abs(p['x']) for p in descriptor['parts'][0]['obstacle_local_game']['points']), 3)
             self.assertTrue(scene_metadata(library, document)['nodes'])
 

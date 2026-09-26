@@ -103,8 +103,9 @@ copy a second set of palette models.
 The [library format](../docs/library-format.md) describes descriptors, named local
 appearances, shared payloads and per-instance mission bindings. Asset descriptors
 contain local collision records and source IDs, but no source-map coordinates.
-`blobs/` holds the geometry and textures referenced by catalog glTF files; active
-palette models do not embed duplicate copies. Optional previews are derived data.
+Each catalog asset is a GLB. Private payloads are embedded; `blobs/` retains only
+payloads whose cross-asset sharing saves at least 256 KiB. Optional previews are
+derived data.
 
 ## Independent Blender workers
 
