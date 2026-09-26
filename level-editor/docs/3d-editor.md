@@ -45,7 +45,10 @@ Game inputs load automatically over HTTP from `library/game-data/`. Run
 `pnpm library:game-data` after updating the hackable export; it defaults to
 `../datadirs/fullgame_gog_hackable`, or accepts `--source <directory>` (also
 `HACKABLE_DATADIR`). The script copies level and mission JSON, sprite profiles,
-and each sprite pose’s first frame, retaining all preview directions. Its generated
+and only the sprite profiles and initial poses referenced by mission entities,
+retaining their first frame in all preview directions. Character idle fallbacks
+and scenery ambiance fallbacks match the preview loader. Unused generated files
+from the previous copy are removed on refresh. Its generated
 file index supports directory enumeration without a browser permission prompt.
 Serve this subdirectory alongside the rest of the library on standalone deployments. Pick a published **Map**, or use **New map** to
 start an unbounded canvas without choosing dimensions. Insert assets from the
