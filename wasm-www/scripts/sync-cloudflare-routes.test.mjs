@@ -195,3 +195,15 @@ test('live check rejects missing, scripted, and unexpected public-host routes', 
         );
     }
 });
+
+
+test('independent editor routes are accepted only with their assigned workers', async () => {
+    const { EDITOR_ROUTES } = await import('./sync-cloudflare-routes.mjs');
+    const routes = [...EXPECTED_PUBLIC_ROUTES, ...EDITOR_ROUTES];
+    const api = routeApi(routes);
+    await reconcilePublicRoutes({ zoneId, apiToken, apply: false, fetchImpl: api.fetchImpl });
+    const bad = routeApi([...EXPECTED_PUBLIC_ROUTES, { ...EDITOR_ROUTES[0], script: 'wrong' }]);
+    await assert.rejects(reconcilePublicRoutes({
+        zoneId, apiToken, apply: false, fetchImpl: bad.fetchImpl,
+    }), /has script/u);
+});

@@ -73,6 +73,8 @@ export interface ProjectionAssetDescriptor {
 }
 
 export interface ProjectionAssetEntry {
+  /** Verified source hash supplied by deployments that omit original model bytes. */
+  model_sha256?: string;
   asset_type?: string;
   tags?: string[];
   state_variant?: AssetState;

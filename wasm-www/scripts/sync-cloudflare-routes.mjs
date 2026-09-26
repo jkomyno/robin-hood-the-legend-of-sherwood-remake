@@ -7,6 +7,15 @@ import {
     validateDeploymentSnapshot,
 } from './verify-cloudflare-deployment.mjs';
 
+// Independently deployed by level-editor/refinement/publish_{editor,library}.py.
+// Accept these when present, but never create or require them in game deployments.
+export const EDITOR_ROUTES = Object.freeze([
+    { pattern: `${DEPLOYMENT.publicHost}/editor`, script: 'robinhood-editor' },
+    { pattern: `${DEPLOYMENT.publicHost}/editor/*`, script: 'robinhood-editor' },
+    { pattern: `${DEPLOYMENT.publicHost}/editor/library`, script: 'robinhood-editor-library' },
+    { pattern: `${DEPLOYMENT.publicHost}/editor/library/*`, script: 'robinhood-editor-library' },
+]);
+
 function normalizedScript(value) {
     return typeof value === 'string' && value.length > 0 ? value : null;
 }
@@ -95,6 +104,7 @@ function assertLiveRoutes(
     allowedRoutes = requiredRoutes,
     repairableRoutes = [],
 ) {
+    allowedRoutes = [...allowedRoutes, ...EDITOR_ROUTES];
     if (!Array.isArray(liveRoutes)) throw new Error('Cloudflare route list is not an array');
     const byPattern = new Map();
     for (const route of liveRoutes) {

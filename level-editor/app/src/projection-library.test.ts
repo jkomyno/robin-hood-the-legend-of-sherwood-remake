@@ -721,3 +721,35 @@ test("indexed lossy models load without receipts or published model reads on rel
     /lossy\.glb/,
   );
 });
+
+test("published catalog supports insertion without original models or receipts", async (t) => {
+  const f = fixture();
+  const model_sha256 = createHash("sha256")
+    .update(new Uint8Array([3, 2, 1]))
+    .digest("hex");
+  f.json("3d-assets/index.json", {
+    version: 1,
+    assets: [
+      {
+        ...f.entry,
+        descriptor: "house/asset.json",
+        model: "house/model.glb",
+        lossy_model: "house/lossy.glb",
+        model_sha256,
+      },
+    ],
+  });
+  f.files.delete(f.entry.model);
+  f.files.set("3d-assets/house/lossy.glb", new File([new Uint8Array([9, 9])], "lossy.glb"));
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  const [entry] = await listProjectionAssets(f.directory);
+  const inserted = await prepareProjectionAsset(f.directory, entry, "Leicester");
+  assert.equal(inserted.reference.model_sha256, model_sha256);
+  await assert.rejects(
+    prepareProjectionAsset(f.directory, entry, "Leicester", {
+      ...inserted.reference,
+      model_sha256: "0".repeat(64),
+    }),
+    /model changed/,
+  );
+});

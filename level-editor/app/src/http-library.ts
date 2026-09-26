@@ -39,7 +39,10 @@ function segment(name: string) {
 }
 
 /** Read-only HTTP originals and separately selectable browser-local map copies. */
-export async function openHttpLibrary(base = "/library/", storage?: FileSystemDirectoryHandle) {
+export async function openHttpLibrary(
+  base = (import.meta.env?.BASE_URL ?? "/") + "library/",
+  storage?: FileSystemDirectoryHandle,
+) {
   const response = await fetch(base + "3d-assets/index.json", { cache: "no-store" });
   if (!response.ok) throw new Error(`Cannot load library catalog (${response.status})`);
   const catalog = await response.json();

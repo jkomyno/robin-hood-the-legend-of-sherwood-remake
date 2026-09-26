@@ -110,6 +110,7 @@ export async function listProjectionAppearances(
                   ? entry.preview_model
                   : undefined,
               lossy_model: variant.model === descriptor.model ? entry.lossy_model : undefined,
+              model_sha256: variant.model === descriptor.model ? entry.model_sha256 : undefined,
             },
           ]
         : [];
@@ -172,7 +173,7 @@ export async function prepareProjectionAsset(
   root: FileSystemDirectoryHandle,
   entry: Pick<
     ProjectionAssetEntry,
-    "id" | "descriptor" | "model" | "state_variant" | "model_scene" | "lossy_model"
+    "id" | "descriptor" | "model" | "state_variant" | "model_scene" | "lossy_model" | "model_sha256"
   >,
   _map: string,
   expected?: ExternalAssetSource,
@@ -218,14 +219,17 @@ export async function prepareProjectionAsset(
   )
     throw new Error(`Asset saved reference mismatch: ${entry.id}`);
   if (modelPath !== entry.model) throw new Error(`Asset model path mismatch: ${entry.id}`);
-  // A saved pin selects the lossy model without reading the published model; a new insertion
-  // hashes the published model first so its reference pins the current revision.
+  // Deployments can supply the verified source hash without serving original model bytes.
+  // Local catalogs without that hash still read the original for new insertions.
   const lossy = entry.lossy_model && lossyApplies(entry.model) ? entry.lossy_model : undefined;
   const read = (path: string) => libraryFile(root, path);
-  let lossyBytes = lossy && expected ? await readLossyModel(read, lossy) : null;
+  if (expected && entry.model_sha256 && expected.model_sha256 !== entry.model_sha256)
+    throw new Error(`Asset model changed: ${entry.id}`);
+  const sourceHash = entry.model_sha256 ?? expected?.model_sha256;
+  let lossyBytes = lossy && sourceHash ? await readLossyModel(read, lossy) : null;
   let modelBytes: ArrayBuffer | null = null,
     modelHash: string;
-  if (lossyBytes) modelHash = expected!.model_sha256;
+  if (lossyBytes) modelHash = sourceHash!;
   else {
     modelBytes = await (await libraryFile(root, entry.model)).arrayBuffer();
     modelHash = await hash(modelBytes);
