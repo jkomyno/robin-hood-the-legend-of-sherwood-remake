@@ -42,6 +42,15 @@ class PromotionTests(unittest.TestCase):
         self.assertEqual(doc['assetSources'][0]['model_scene'],'initial')
         self.assertFalse((self.lib/'a/model-applied.glb').exists())
 
+    def test_rebuilt_models_drop_their_stale_lossy_model(self):
+        live = json.loads((self.lib/'index.json').read_text())
+        live['assets'][0]['lossy_model'] = 'a/lossy.glb'
+        (self.lib/'index.json').write_bytes(encoded(live))
+        apply(self.plan,self.root/'backup')
+        entry = json.loads((self.lib/'index.json').read_text())['assets'][0]
+        self.assertNotIn('lossy_model', entry)
+        self.assertEqual(entry['tags'], ['keep'])
+
     def test_failure_rolls_back(self):
         def hook(phase,n):
             if phase=='after' and n==6: raise RuntimeError('injected')

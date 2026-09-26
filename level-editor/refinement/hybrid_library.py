@@ -107,6 +107,8 @@ def stage_hybrid(library, output, min_savings=DEFAULT_MIN_SAVINGS):
         (output/model_path).write_bytes(raw)
         (output/temporary['model']).unlink()
         descriptor.update(model='model.glb', resources=resources)
+        # Repacked model bytes invalidate lossy receipts; they are re-derived, never carried.
+        entry.pop('lossy_model', None)
         for field in ('state_variants', 'standalone_variants'):
             for variant in descriptor.get(field, {}).values(): variant['model'] = 'model.glb'
         if descriptor.get('preview_model'):

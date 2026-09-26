@@ -31,6 +31,7 @@ class HybridLibraryTests(unittest.TestCase):
                 path = library/'3d-assets'/identity/'asset.json'; path.write_text(json.dumps(descriptor))
                 entries.append({'id':identity,'source_map':'Derby','descriptor':identity+'/asset.json','model':identity+'/model.gltf'})
                 if identity == 'c':
+                    entries[-1]['lossy_model'] = identity+'/lossy.glb'
                     entries[-1]['preview_model'] = identity+'/preview.glb'
                     (path.parent/'preview.glb').write_bytes(b'preview')
                     (path.parent/'preview.glb.receipt.json').write_text('{"proof":"preserve"}')
@@ -39,6 +40,8 @@ class HybridLibraryTests(unittest.TestCase):
             (library/'scenes/map.rhlos-map.json').write_text(json.dumps({'sceneAssets':[],'assetSources':references,'objects':[]}))
             staged = root/'first/staged'; report = stage_hybrid(library, staged)
             self.assertEqual(report['self_contained'],1)
+            # Repacked model bytes: the lossy model is re-derived later, never carried.
+            self.assertFalse(any('lossy_model' in e for e in json.loads((staged/'3d-assets/index.json').read_text())['assets']))
             self.assertEqual(report['shared_payloads'],1)
             self.assertEqual(report['verified_scenes'],4)
             self.assertEqual(len(list((staged/'3d-assets/blobs').iterdir())),1)

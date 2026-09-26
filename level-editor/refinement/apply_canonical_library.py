@@ -53,6 +53,12 @@ def graph(staged, previous):
                 if resource not in pins: raise ValueError('Unpinned resource: '+resource)
                 include(resource, pins[resource]); requested.add(resource)
         if requested != set(pins): raise ValueError('Descriptor resources do not match model')
+        if entry.get('lossy_model'):
+            lossy = '3d-assets/'+entry['lossy_model']
+            receipt = json.loads(include(lossy+'.receipt.json').read_text())
+            if receipt.get('source') != files[model_path]['sha256']:
+                raise ValueError('Lossy model does not bind the catalog model: '+lossy)
+            include(lossy, receipt.get('output'))
         if entry.get('preview_model'):
             preview = '3d-assets/'+entry['preview_model']; include(preview)
             receipt = preview+'.receipt.json'

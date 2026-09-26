@@ -42,6 +42,23 @@ class CanonicalPublicationTests(unittest.TestCase):
             self.assertFalse((live/'3d-assets/obsolete.glb').exists())
             self.assertEqual((live/'scenes/fixture.rhlos-map.json').read_bytes(), (staged/'scenes/fixture.rhlos-map.json').read_bytes())
 
+    def test_lossy_models_are_carried_only_while_bound_to_the_model(self):
+        from apply_canonical_library import graph
+        with tempfile.TemporaryDirectory() as temporary:
+            live, staged, plan, sources = self.fixture(Path(temporary))
+            model = digest((staged/'3d-assets/ground/model.gltf').read_bytes())
+            (staged/'3d-assets/ground/lossy.glb').write_bytes(b'lossy')
+            receipt = staged/'3d-assets/ground/lossy.glb.receipt.json'
+            receipt.write_text(json.dumps({'source':model, 'output':digest(b'lossy')}))
+            index = json.loads((staged/'3d-assets/index.json').read_text())
+            index['assets'][0]['lossy_model'] = 'ground/lossy.glb'
+            (staged/'3d-assets/index.json').write_text(json.dumps(index))
+            files = graph(staged, live)[0]
+            self.assertIn('3d-assets/ground/lossy.glb', files)
+            self.assertIn('3d-assets/ground/lossy.glb.receipt.json', files)
+            receipt.write_text(json.dumps({'source':'a'*64, 'output':digest(b'lossy')}))
+            with self.assertRaisesRegex(ValueError, 'does not bind'): graph(staged, live)
+
     def test_failed_install_restores_every_previous_file(self):
         with tempfile.TemporaryDirectory() as temporary:
             live, staged, plan, sources = self.fixture(Path(temporary))

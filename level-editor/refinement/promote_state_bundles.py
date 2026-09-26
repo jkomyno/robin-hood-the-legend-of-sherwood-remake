@@ -117,6 +117,9 @@ def merge_index(index, entries):
             # Retain live names, tags and any unrelated metadata.
             for key in ('model', 'descriptor', 'model_scene', 'preview_model'):
                 entry[key] = updates[entry['id']][key]
+            # New model bytes: a lossy model bound to the old bytes would be stale. The next
+            # publication staging or `lossy_assets.py -- library` run derives it again.
+            entry.pop('lossy_model', None)
     if found != set(updates):
         raise ValueError('Missing live index asset')
     return result
