@@ -17,13 +17,13 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { NodeIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
-import { meshopt, simplify, textureCompress, unpartition } from "@gltf-transform/functions";
+import { dequantize, meshopt, simplify, textureCompress, unpartition } from "@gltf-transform/functions";
 import { MeshoptEncoder, MeshoptSimplifier } from "meshoptimizer";
 import sharp from "sharp";
 
 export const SETTINGS = {
   ratio: 0.12,
-  error: 0.015,
+  error: 0.001,
   level: "high",
   targetFormat: "avif",
   quality: 45,
@@ -80,6 +80,9 @@ export async function generatePreview(input: string): Promise<{ bytes: Uint8Arra
   const transforms = [
     // Shared-payload models read their external buffers; the preview embeds one buffer.
     unpartition(),
+    // Re-quantization remaps positions through negative values; use floats so unsigned
+    // source accessors cannot corrupt those intermediate coordinates.
+    dequantize(),
     simplify({ simplifier: MeshoptSimplifier, ratio: SETTINGS.ratio, error: SETTINGS.error }),
     meshopt({ encoder: MeshoptEncoder, level: SETTINGS.level }),
   ];
