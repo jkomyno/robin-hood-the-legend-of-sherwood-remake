@@ -95,15 +95,20 @@ def asset_file_pairs(stage_assets, library_assets, asset):
     return pairs
 
 
-def prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_target=None):
+def prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_target=None,
+            browser_waiver=None):
     with library_lock(library):
-        return _prepare(stage, library, main_blend, map_name, catalog_source, catalog_target)
+        return _prepare(stage, library, main_blend, map_name, catalog_source, catalog_target, browser_waiver)
 
 
-def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_target=None):
+def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_target=None,
+             browser_waiver=None):
     if (catalog_source is None) != (catalog_target is None):
         raise ValueError('Catalog source and target must be supplied together')
-    for name in ('asset-verification.json', 'handoff-verification.json', 'browser-result.json'):
+    required = ['asset-verification.json', 'handoff-verification.json']
+    if browser_waiver is None:
+        required.append('browser-result.json')
+    for name in required:
         if json.loads((stage/name).read_text())['status'] != 'PASS':
             raise ValueError('Missing successful verification: ' + name)
     index_path=library/'3d-assets/index.json'
@@ -164,6 +169,8 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
         path=library/f'scenes/{map_name}{suffix}'
         protected.append({'path':str(path),'sha256':sha(path)})
     manifest={'status':'PREPARED_NOT_APPLIED','stage':str(stage),'files':records,'protected_files':protected,
+              'browser_check': ({'status': 'WAIVED', 'reason': browser_waiver} if browser_waiver is not None
+                                else {'status': 'PASS'}),
               'library':str(library.resolve()), 'index_merge':{
                   'staged_index':str(staged_index.resolve()),
                   'staged_index_sha256':sha(staged_index),
@@ -246,6 +253,8 @@ if __name__=='__main__':
     parser.add_argument('--catalog-source',type=Path,help='Optional staged authored catalog to promote atomically')
     parser.add_argument('--catalog-target',type=Path,help='Live authored catalog target; requires --catalog-source')
     parser.add_argument('--apply',action='store_true')
+    parser.add_argument('--waive-browser-check',metavar='REASON',
+                        help='Prepare without a passing browser-result.json; the reason is recorded in promotion.json')
     args=parser.parse_args();stage=args.stage.resolve(strict=True)
     if args.apply:apply(stage/'promotion.json')
     else:
@@ -254,4 +263,5 @@ if __name__=='__main__':
         # manifest records a missing target and guards that absence before apply.
         prepare(stage,args.library.resolve(strict=True),args.main_blend.resolve(),args.map,
                 args.catalog_source.resolve(strict=True) if args.catalog_source else None,
-                args.catalog_target.resolve() if args.catalog_target else None)
+                args.catalog_target.resolve() if args.catalog_target else None,
+                args.waive_browser_check)
