@@ -5,8 +5,9 @@ import json
 import os
 from pathlib import Path
 import re
-import shutil
 import warnings
+
+from game_data_atlas import pack_atlas
 
 EDITOR = Path(__file__).resolve().parents[1]
 # Keep aligned with app/src/sprite-profiles.ts (checked by test_copy_game_data.py).
@@ -56,7 +57,7 @@ def copy_game_data(source, destination):
     source, destination = Path(source).resolve(strict=True), Path(destination).resolve()
     if destination.is_relative_to(source) or source.is_relative_to(destination):
         raise ValueError('Source and destination must be separate directories')
-    files, generated = set(), {}
+    files, generated, atlases = set(), {}, {}
 
     def include(path):
         path = path.resolve(strict=True)
@@ -131,7 +132,7 @@ def copy_game_data(source, destination):
 
     for bank, chosen_profiles in selected.items():
         manifest = deepcopy(banks[bank])
-        kept = []
+        kept, frame_sources = [], []
         for profile in manifest['profiles']:
             chosen_rows = chosen_profiles.get(profile['name'])
             if chosen_rows is None:
@@ -151,14 +152,24 @@ def copy_game_data(source, destination):
                     raise ValueError(f'{bank}: missing frame directory {row["path"]}')
                 if Path(frame['file']).name != frame['file'] or '\\' in frame['file']:
                     raise ValueError('Invalid sprite frame filename')
-                include(frame_dir / frame['file'])
-                # Explicit paths still work when pruning leaves just one profile.
-                row['path'] = frame_dir.relative_to(bank).as_posix()
+                source_frame = (frame_dir / frame['file']).resolve(strict=True)
+                if not source_frame.is_relative_to(source):
+                    raise ValueError(f'Sprite frame escapes source: {source_frame}')
+                frame_sources.append((frame, source_frame))
+                row['path'] = '.'
                 row['frames'] = [frame]
                 rows.append(row)
             profile['rows'] = rows
             kept.append(profile)
         manifest['profiles'] = kept
+        atlas_bytes, rectangles = pack_atlas([path for _, path in frame_sources])
+        atlas_relative = (bank.relative_to(source) / 'atlas.png').as_posix()
+        files.add(atlas_relative)
+        atlases[atlas_relative] = atlas_bytes
+        manifest['atlas'] = 'atlas.png'
+        for frame, path in frame_sources:
+            frame['file'] = 'atlas.png'
+            frame['rect'] = rectangles[path]
         relative = include(bank / 'manifest.json')
         generated[relative] = manifest
 
@@ -178,7 +189,7 @@ def copy_game_data(source, destination):
         if relative in generated:
             target.write_text(json.dumps(generated[relative], separators=(',', ':')) + '\n')
         else:
-            shutil.copy2(source / relative, target)
+            target.write_bytes(atlases[relative])
     temporary = destination / 'index.json.tmp'
     temporary.write_text(json.dumps({'version': 1, 'files': sorted(files)}, separators=(',', ':')) + '\n')
     temporary.replace(destination / 'index.json')

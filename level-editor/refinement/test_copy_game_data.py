@@ -3,10 +3,24 @@ from pathlib import Path
 import re
 import tempfile
 import unittest
+from io import BytesIO
+from PIL import Image
+from game_data_atlas import pack_atlas
 from copy_game_data import BONUS_SPRITES, EDITOR, copy_game_data
 
 
 class CopyGameDataTests(unittest.TestCase):
+    def test_atlas_deduplicates_identical_pixels_and_is_deterministic(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            a, b = Path(temporary) / 'a.png', Path(temporary) / 'b.png'
+            Image.new('RGBA', (5, 7), (20, 40, 60, 128)).save(a)
+            b.write_bytes(a.read_bytes())
+            payload, rectangles = pack_atlas([a, b])
+            self.assertEqual(rectangles[a], rectangles[b])
+            self.assertEqual(pack_atlas([a, b])[0], payload)
+            with Image.open(BytesIO(payload)) as atlas:
+                self.assertEqual(atlas.size, (7, 9))
+
     def test_bonus_mapping_matches_preview(self):
         source = (EDITOR / 'app/src/sprite-profiles.ts').read_text()
         table = source.split('export const BONUS_SPRITES:')[1].split('];')[0]
@@ -30,7 +44,11 @@ class CopyGameDataTests(unittest.TestCase):
                             rows.append({'action_id': action, 'direction': direction, 'path': path,
                                          'frames': [{'file': '00.png'}, {'file': '01.png'}]})
                             for frame in ('00', '01'):
-                                write(f'{relative}/{name}/{path}/{frame}.png', frame)
+                                target = source / f'{relative}/{name}/{path}/{frame}.png'
+                                target.parent.mkdir(parents=True, exist_ok=True)
+                                image = Image.new('RGBA', (direction + 1, 3), (action, direction, int(frame), 127))
+                                image.putpixel((0, 0), (55, 66, 77, 0))
+                                image.save(target)
                     profiles.append({'name': name, 'rows': rows})
                 write(f'{relative}/manifest.json', {'profiles': profiles, 'pixel_format': 'rgba'})
 
@@ -63,7 +81,7 @@ class CopyGameDataTests(unittest.TestCase):
             (output / 'notes.txt').write_text('keep user file')
             (output / 'index.json').write_text(json.dumps({'version': 1, 'files': ['old/unused.png']}))
             count = copy_game_data(source, output)
-            self.assertEqual(count, 3 + 4 + 16 * (3 + 2 + 1 + 1))
+            self.assertEqual(count, 3 + 4 * 2)
             index = json.loads((output / 'index.json').read_text())
             self.assertEqual(len(index['files']), count)
             self.assertFalse(any('01.png' in p or 'Unused' in p or '/Fog/' in p or 'action_42' in p
@@ -75,20 +93,29 @@ class CopyGameDataTests(unittest.TestCase):
             rows = manifest['profiles'][0]['rows']
             self.assertEqual({row['action_id'] for row in rows}, {0, 3, 5})
             self.assertTrue(all(len(row['frames']) == 1 for row in rows))
-            # Pruned manifests must resolve directly even though just one profile remains.
+            # Atlas crops must reproduce every retained source pixel, including hidden RGB.
             for relative in index['files']:
                 if relative.endswith('/manifest.json'):
                     directory = output / relative
                     manifest = json.loads(directory.read_text())
                     for profile in manifest['profiles']:
                         for row in profile['rows']:
-                            self.assertTrue((directory.parent / row['path'] / row['frames'][0]['file']).is_file())
+                            frame = row['frames'][0]
+                            with Image.open(directory.parent / manifest['atlas']) as atlas:
+                                x, y, width, height = frame['rect']
+                                crop = atlas.crop((x, y, x + width, y + height))
+                            original = source / directory.parent.relative_to(output) / profile['name'] / f'action_{row["action_id"]}/dir_{row["direction"]:02}/00.png'
+                            with Image.open(original) as image:
+                                self.assertEqual(crop.tobytes(), image.convert('RGBA').tobytes())
+                                self.assertEqual(crop.size, image.size)
             self.assertEqual(copy_game_data(source, output), count)
             # A changed mission removes poses that used to be selected.
             mission['civilians'] = []
             write('Data/Levels/Mission.rhm.json', mission)
-            self.assertEqual(copy_game_data(source, output), count - 16)
-            self.assertFalse((output / 'Data/Characters/Bank.rhs.d/Guard One/action_5').exists())
+            self.assertEqual(copy_game_data(source, output), count)
+            refreshed = json.loads((output / 'Data/Characters/Bank.rhs.d/manifest.json').read_text())
+            self.assertEqual({r['action_id'] for r in refreshed['profiles'][0]['rows']}, {0, 3})
+            self.assertFalse(any(p.name == '00.png' for p in output.rglob('*.png')))
 
 
 if __name__ == '__main__':

@@ -18,6 +18,8 @@ import {
   type SpriteKind,
 } from "./sprite-profiles.ts";
 
+import { SpriteAtlasImages, spriteAtlasRect } from "./sprite-atlas.ts";
+
 class MissingSpriteError extends Error {}
 
 type RecordData = Record<string, unknown>;
@@ -97,6 +99,7 @@ export class MissionEntities {
   private geometries = new Set<THREE.BufferGeometry>();
   private materials = new Set<THREE.Material>();
   private disposed = false;
+  private atlasImages = new SpriteAtlasImages();
   get count() {
     return this.root.children.length;
   }
@@ -156,6 +159,8 @@ export class MissionEntities {
     } catch (error) {
       result.dispose();
       throw error;
+    } finally {
+      result.atlasImages.dispose();
     }
   }
   private async load(
@@ -425,6 +430,7 @@ export class MissionEntities {
     ambiance: string,
   ): Promise<Map<number, SpriteFrame>> {
     let dir: FileSystemDirectoryHandle | null = null;
+    let bankKey = "";
     const paths =
       kind === "scenery"
         ? [...new Set([ambiance, "Day", ""])].map((a) => [
@@ -437,6 +443,7 @@ export class MissionEntities {
     for (const path of paths) {
       try {
         dir = await directory(root, path);
+        bankKey = path.join("/").toLowerCase();
         break;
       } catch (error) {
         if (!(error instanceof MissingSpriteError)) throw error;
@@ -463,36 +470,45 @@ export class MissionEntities {
       if (!current()) throw new Error("Mission load superseded");
       const frame = rows(row.frames, "sprite frames")[0];
       if (!frame) throw new Error(`${filename}: empty sprite row`);
-      const rowPath = string(row.path, "sprite row path")
-        .split("/")
-        .filter((part) => part !== ".");
-      let frameDir: FileSystemDirectoryHandle;
-      try {
-        frameDir = await directory(dir, rowPath);
-      } catch (error) {
-        if (
-          !(error instanceof MissingSpriteError) ||
-          rows(manifest.profiles, "profiles").length === 1
-        )
-          throw error;
-        frameDir = await directory(dir, [sanitizedProfileName(profileName), ...rowPath]);
+      let bitmap: ImageBitmap;
+      let crop: [number, number, number, number];
+      const isAtlas = manifest.atlas !== undefined;
+      if (isAtlas) {
+        bitmap = await this.atlasImages.get(dir, bankKey, string(manifest.atlas, "sprite atlas"));
+        crop = spriteAtlasRect(frame.rect, bitmap.width, bitmap.height);
+      } else {
+        const rowPath = string(row.path, "sprite row path")
+          .split("/")
+          .filter((part) => part !== ".");
+        let frameDir: FileSystemDirectoryHandle;
+        try {
+          frameDir = await directory(dir, rowPath);
+        } catch (error) {
+          if (
+            !(error instanceof MissingSpriteError) ||
+            rows(manifest.profiles, "profiles").length === 1
+          )
+            throw error;
+          frameDir = await directory(dir, [sanitizedProfileName(profileName), ...rowPath]);
+        }
+        const fileName = string(frame.file, "sprite frame file");
+        if (/[\\/]/.test(fileName) || fileName === "..")
+          throw new Error("Invalid sprite frame path");
+        const file = await (await frameDir.getFileHandle(fileName)).getFile();
+        bitmap = await createImageBitmap(file);
+        crop = [0, 0, bitmap.width, bitmap.height];
       }
-      const fileName = string(frame.file, "sprite frame file");
-      if (/[\\/]/.test(fileName) || fileName === "..") throw new Error("Invalid sprite frame path");
-      const file = await (await frameDir.getFileHandle(fileName)).getFile();
-      const bitmap = await createImageBitmap(file);
-      const width = bitmap.width,
-        heightPx = bitmap.height;
+      const [sourceX, sourceY, width, heightPx] = crop;
       const canvas = new OffscreenCanvas(width, heightPx);
       const context = canvas.getContext("2d", { willReadFrequently: true });
       if (!context) {
-        bitmap.close();
+        if (!isAtlas) bitmap.close();
         throw new Error("Cannot decode sprite pixels");
       }
       try {
-        context.drawImage(bitmap, 0, 0);
+        context.drawImage(bitmap, sourceX, sourceY, width, heightPx, 0, 0, width, heightPx);
       } finally {
-        bitmap.close();
+        if (!isAtlas) bitmap.close();
       }
       const pixels = context.getImageData(0, 0, width, heightPx);
       if (

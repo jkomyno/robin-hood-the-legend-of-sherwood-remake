@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { checkSharedLibrary } from "./library";
 import Editor3D from "../src/Editor3D";
+import { checkSpriteAtlas } from "./sprite-atlas";
 import { checkHttpLibrary } from "./http-library";
 import "../src/styles.css";
 
@@ -307,6 +308,11 @@ function button(label: string) {
 }
 
 async function main() {
+  await checkSpriteAtlas();
+  if (location.search.includes("atlas-only")) {
+    result.textContent = "PASS sprite atlas PNG cropping, dimensions, and one fetch across poses";
+    return;
+  }
   await checkHttpLibrary();
   await checkSharedLibrary();
   if (location.search.includes("library-only")) {

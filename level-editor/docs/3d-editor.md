@@ -46,7 +46,10 @@ Game inputs load automatically over HTTP from `library/game-data/`. Run
 `../datadirs/fullgame_gog_hackable`, or accepts `--source <directory>` (also
 `HACKABLE_DATADIR`). The script copies level and mission JSON, sprite profiles,
 and only the sprite profiles and initial poses referenced by mission entities,
-retaining their first frame in all preview directions. Character idle fallbacks
+retaining their first frame in all preview directions. The script requires Pillow
+and packs these frames into one lossless `atlas.png` per sprite bank (characters,
+pickups, and scenery), deduplicating identical pixels. Manifests store frame
+rectangles; the preview fetches and decodes each atlas once per mission load. Character idle fallbacks
 and scenery ambiance fallbacks match the preview loader. Unused generated files
 from the previous copy are removed on refresh. Its generated
 file index supports directory enumeration without a browser permission prompt.
