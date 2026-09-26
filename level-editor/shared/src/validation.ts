@@ -458,11 +458,36 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
   for (const o of array(d.objects, "level3d.objects")) {
     object(o, "level3d.objects[]");
     text(o.id, "object.id");
-    if (o.missionBindings !== undefined) {
-      object(o.missionBindings, "missionBindings");
-      for (const [name, values] of Object.entries(o.missionBindings)) {
-        text(name, "mission binding node");
-        object(values, "mission binding metadata");
+    check(!Object.hasOwn(o, "missionBindings"), o.id, "obsolete missionBindings");
+    if (o.patchBindings !== undefined) {
+      object(o.patchBindings, "patchBindings");
+      check(Object.keys(o.patchBindings).length > 0, o.id, "empty patchBindings");
+      for (const [name, raw] of Object.entries(o.patchBindings)) {
+        text(name, "patch binding node");
+        const binding = object(raw, "patch binding");
+        check(Object.keys(binding).length > 0, name, "empty patch binding");
+        for (const key of Object.keys(binding))
+          check(["hide", "show", "material"].includes(key), name, `unknown patch binding ${key}`);
+        for (const key of ["hide", "show"] as const) {
+          const patches = binding[key];
+          if (patches === undefined) continue;
+          check(Array.isArray(patches) && patches.length > 0, name, `invalid ${key} patches`);
+          for (const patch of patches as unknown[]) text(patch, `${name}.${key}`);
+        }
+        if (binding.material !== undefined) {
+          const material = object(binding.material, "patch material");
+          check(
+            Object.keys(material).every((key) => ["patch", "state"].includes(key)),
+            name,
+            "unknown patch material field",
+          );
+          text(material.patch, `${name}.material.patch`);
+          check(
+            material.state === "covered" || material.state === "revealed",
+            name,
+            "invalid patch material state",
+          );
+        }
       }
     }
     check(!ids.has(o.id), o.id, "duplicate ID");

@@ -83,7 +83,7 @@ can place its geometry.
 
 Only changed parts appear in a placement's `parts` object, keyed by descriptor
 part node. Each entry stores fields that differ from the descriptor defaults,
-including mission bindings or an edited transform or collision shape. `removed`
+including patch bindings or an edited transform or collision shape. `removed`
 lists deleted descriptor parts; `copies` describes extra instances of a part.
 Mixed-asset placements use full `asset:<asset-id>:<part-node>` keys. `idMode`
 selects the existing object ID convention, and an exceptional object ID appears
@@ -93,9 +93,10 @@ longer accepted in version 2 maps. Old version 1 maps remain readable and expand
 into the same editor model. Run `node pipeline/src/migrate-map-v2.ts library` to check
 an existing library, then add `--apply` to save version 2 files with backups.
 
-Mission-specific reveal triggers and drawbridge bindings belong in per-object
-`missionBindings`. Bindings are applied to the placed clone, so inserting the same
-library asset elsewhere does not attach it to the original mission. The map keeps
+Mission-specific reveal triggers belong in per-object `patchBindings`. Each node
+stores only `hide`, `show`, or a `material` patch ID and state when that placement
+needs them. The editor applies these rules to the placed clone. Asset component
+roles and publication evidence stay with their source data. The map keeps
 only reveal patch IDs and names in `sceneMetadata.reveal.patches` for editor labels;
 game patch states and review frames stay in their source manifests. The map
 does not need export origins for editing or rendering; publication reads those

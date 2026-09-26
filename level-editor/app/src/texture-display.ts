@@ -73,7 +73,6 @@ export class TextureDisplay {
     // Authored room floors sit just above retained floor shells. Their narrow
     // separation can lose the depth test in the editor's full-map projection.
     const roomFloor = (object: THREE.Object3D) =>
-      object.userData.reveal_component_role === "interior-floor" &&
       /^patch-\d+-room-floor$/.test(object.userData.projection_component ?? "");
     const unrelated = new Set<THREE.Material>();
     root.traverse((object) => {

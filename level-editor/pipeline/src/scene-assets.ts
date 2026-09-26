@@ -8,6 +8,7 @@ import {
   selectGlbScene,
   selectGltfScene,
   resolveGltfResources,
+  patchBindingExtras,
   type SceneAssetSource,
   type Level3D,
 } from "@rle/shared";
@@ -92,8 +93,8 @@ export async function sceneAssetNodes(library: string, document: Level3D) {
       )) {
         const name = part.node.slice(`asset:${reference.id}:`.length);
         for (const node of json.nodes ?? []) {
-          if (part.missionBindings?.[node.name])
-            node.extras = { ...node.extras, ...part.missionBindings[node.name] };
+          if (part.patchBindings?.[node.name])
+            node.extras = { ...node.extras, ...patchBindingExtras(part.patchBindings[node.name]!) };
           if (node.name === name) node.name = part.node;
         }
       }

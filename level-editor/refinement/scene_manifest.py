@@ -50,7 +50,13 @@ def scene_metadata(library, document):
             parts = {obj['node'].split(':', 2)[-1]:obj for obj in document['objects'] if obj['node'].startswith('asset:'+asset['id']+':')}
             for node in model['nodes']:
                 for part in parts.values():
-                    node.setdefault('extras', {}).update(copy.deepcopy(part.get('missionBindings', {}).get(node.get('name'), {})))
+                    binding = part.get('patchBindings', {}).get(node.get('name'), {})
+                    extras = node.setdefault('extras', {})
+                    if 'hide' in binding: extras['reveal_hide_when_applied'] = copy.deepcopy(binding['hide'])
+                    if 'show' in binding: extras['reveal_show_when_applied'] = copy.deepcopy(binding['show'])
+                    if 'material' in binding:
+                        extras['reveal_material_patch'] = binding['material']['patch']
+                        extras['reveal_material_state'] = binding['material']['state']
             root = model['nodes'][model['scenes'][0]['nodes'][0]]
             for group_index in root.get('children', []):
                 group = model['nodes'][group_index]

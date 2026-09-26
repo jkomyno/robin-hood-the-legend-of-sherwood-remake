@@ -140,20 +140,12 @@ test("authored room floors keep depth priority without changing shared wall mate
   const original = new THREE.MeshBasicMaterial({ map: texture });
   const geometry = new THREE.PlaneGeometry();
   const floor = new THREE.Mesh(geometry, original);
-  floor.userData = {
-    reveal_component_role: "interior-floor",
-    projection_component: "patch-006-room-floor",
-  };
+  floor.userData = { projection_component: "patch-006-room-floor" };
   const wall = new THREE.Mesh(geometry, original);
   const walkway = new THREE.Mesh(geometry, original);
-  walkway.userData = { reveal_component_role: "interior-floor", projection_component: "walkway" };
-  const mislabeled = new THREE.Mesh(geometry, original);
-  mislabeled.userData = {
-    reveal_component_role: "retained-shell",
-    projection_component: "patch-005-room-floor",
-  };
+  walkway.userData = { projection_component: "walkway" };
   const root = new THREE.Group();
-  root.add(floor, wall, walkway, mislabeled);
+  root.add(floor, wall, walkway);
   const display = new TextureDisplay();
   display.apply(root);
   assert.notEqual(floor.material, original);
@@ -163,7 +155,7 @@ test("authored room floors keep depth priority without changing shared wall mate
   assert.equal(floor.material.map, texture);
   assert.equal(floor.geometry, geometry);
   assert.equal(original.polygonOffset, false);
-  for (const mesh of [wall, walkway, mislabeled]) assert.equal(mesh.material, original);
+  for (const mesh of [wall, walkway]) assert.equal(mesh.material, original);
   const configured = floor.material;
   display.apply(root);
   assert.equal(floor.material, configured);

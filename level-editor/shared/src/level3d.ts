@@ -5,6 +5,7 @@ import type { AssetStates, ExternalAssetSource } from "./projection-assets.ts";
 import type { MapCamera } from "./scene.ts";
 import type { ObstaclePoint, SightObstacle } from "./level.ts";
 import { signedPolygonArea } from "./geometry.ts";
+import type { PatchBindings } from "./patch-bindings.ts";
 
 /** rigid transform in game coordinates: translate (map px, absolute z) and turn about the vertical axis */
 export interface GameTransform {
@@ -42,8 +43,8 @@ export interface Level3DObject {
   group?: string;
   hidden?: boolean;
   name?: string;
-  /** Mission-specific metadata applied to this placed instance, keyed by node name. */
-  missionBindings?: Record<string, Record<string, unknown>>;
+  /** Mission patch IDs applied to this placed instance, keyed by node name. */
+  patchBindings?: PatchBindings;
 }
 
 /** a building: several parts moved together */

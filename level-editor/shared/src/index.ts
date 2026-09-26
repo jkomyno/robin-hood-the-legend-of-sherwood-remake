@@ -5,6 +5,7 @@ export * from "./walls.ts";
 export * from "./terrain.ts";
 export * from "./scene.ts";
 export * from "./level3d.ts";
+export * from "./patch-bindings.ts";
 export * from "./authored-assets.ts";
 export * from "./asset-instance-document.ts";
 export * from "./stored-level.ts";

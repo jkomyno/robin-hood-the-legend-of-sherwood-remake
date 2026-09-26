@@ -136,20 +136,13 @@ def stage(library, output):
                     if identity:part_owners[name]=identity
                     collected={}
                     def visit(i):
-                        node=model['nodes'][i];values={k:v for k,v in node.get('extras',{}).items()if runtime_key(k)}
+                        node=model['nodes'][i]
+                        values={k:v for k,v in node.get('extras',{}).items()
+                                if k in ('reveal_hide_when_applied', 'reveal_show_when_applied',
+                                         'reveal_material_patch', 'reveal_material_state') and v}
                         if values:collected[node['name']]=values
                         for c in node.get('children',[]):visit(c)
                     visit(child)
-                    # Static endpoint exports can rename their mesh children. Bind
-                    # the whole placed endpoint when every mesh has the same state.
-                    mesh_values=[]
-                    def endpoints(i):
-                        node=model['nodes'][i]
-                        if 'mesh' in node: mesh_values.append(collected.get(node['name'], {}))
-                        for c in node.get('children', []): endpoints(c)
-                    endpoints(child)
-                    if mesh_values and mesh_values[0].get('drawbridge_state') and all(value == mesh_values[0] for value in mesh_values):
-                        collected={name:mesh_values[0]}
                     if collected:bindings[name]=collected
         # Existing authored catalog entries are authoritative. Ungrouped reconstructions
         # become normal local assets using the editor's existing logical groups.

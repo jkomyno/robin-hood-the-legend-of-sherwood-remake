@@ -14,6 +14,7 @@ import {
   groupCentroid,
   groupParts,
   partPivot,
+  patchBindingExtras,
   transformedObstacle,
   type GameTransform,
   type Level3D,
@@ -915,10 +916,11 @@ export class EditorViewport {
         if (!src) throw new Error(`Missing source node ${o.node} for ${o.id}`);
         v = this.makeView(o.id);
         const node = src.clone(true);
-        if (o.missionBindings)
+        if (o.patchBindings)
           node.traverse((child) => {
-            const binding = o.missionBindings![child.name];
-            if (binding) Object.assign(child.userData, structuredClone(binding));
+            const binding = o.patchBindings![child.name];
+            if (binding)
+              Object.assign(child.userData, structuredClone(patchBindingExtras(binding)));
           });
         node.traverse((c) => {
           const m = c as THREE.Mesh;

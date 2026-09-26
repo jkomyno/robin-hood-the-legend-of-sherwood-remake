@@ -14,6 +14,7 @@ import {
   partMatrix,
   transformedObstacle,
   parseLevel3D,
+  patchBindingsFromMetadata,
   type Level3D,
   type ProjectionAssetDescriptor,
   type ExternalAssetSource,
@@ -96,7 +97,7 @@ for (const item of plan.maps) {
     if (definition.obstacle_local_game)
       part.obstacle = structuredClone(definition.obstacle_local_game);
     else delete part.obstacle;
-    if (item.bindings[before.node]) part.missionBindings = item.bindings[before.node];
+    part.patchBindings = patchBindingsFromMetadata(item.bindings[before.node]);
   }
   for (const group of doc.groups) {
     const before = old.groups.find((g) => g.id === group.id)!;
