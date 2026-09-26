@@ -92,6 +92,7 @@ export default function Editor3D(props: EditorProps) {
   let openAttempt = 0;
   let loadedIndex: DatadirIndex | null = null;
   let loadedLibrary: LibraryRef | null = null;
+  let transientMapName: string | null = null;
   const [maps, setMaps] = createSignal<string[]>([]);
   const [mapLabels, setMapLabels] = createSignal<ReadonlyMap<string, string>>(new Map());
   const mapLabel = (name: string) => mapLabels().get(name) ?? name;
@@ -153,6 +154,7 @@ export default function Editor3D(props: EditorProps) {
       session.beginLoad();
       openAttempt++;
       setMaps([]);
+      transientMapName = null;
       setMapLabels(new Map());
       if (!lib) return;
       void (async () => {
@@ -366,7 +368,7 @@ export default function Editor3D(props: EditorProps) {
     else if (p) updatePart(p.id, { transform: t });
   }
 
-  async function openMap(name: string, requestedMission?: string) {
+  async function openMap(name: string, requestedMission?: string, importedFile?: File) {
     cancelAssetDrag();
     const lib = props.library();
     const idx = props.index();
@@ -379,6 +381,13 @@ export default function Editor3D(props: EditorProps) {
     props.onStatus(`loading ${requestedMission ?? mapLabel(name)}…`);
     setMapLoadProgress({ completed: 0, total: 1, phase: "Reading map" });
     try {
+      let importedDocument: Level3D | undefined;
+      if (importedFile) {
+        importedDocument = parseLevel3D(JSON.parse(await importedFile.text()));
+        const id = importedDocument.map;
+        if (!id || id === '.' || id === '..' || /[\\/\0]/.test(id)) throw new Error('Invalid map name in dropped JSON');
+        name = lib.savedMapName?.(id) ?? id;
+      }
       const mission = requestedMission && idx ? await readMission(idx, requestedMission) : null;
       if (mission) {
         const matching = (doc()?.sourceMap ?? doc()?.map)?.toLowerCase() === mission.map.toLowerCase() ? mapName()
@@ -389,7 +398,7 @@ export default function Editor3D(props: EditorProps) {
       if (disposed || attempt !== openAttempt) return;
       const currentDocument = doc();
       const currentLevel = level();
-      if (name === mapName() && currentDocument && loadedIndex === idx && loadedLibrary === lib) {
+      if (!importedFile && name === mapName() && currentDocument && loadedIndex === idx && loadedLibrary === lib) {
         if (mission && idx && currentLevel) preparedEntities = await MissionEntities.load(idx, mission, currentLevel, currentDocument.camera, current);
         else if (currentDocument.population) preparedEntities = await PopulationView.load(lib.handle, currentDocument.population, currentDocument.camera, current);
         if (disposed || attempt !== openAttempt || props.index() !== idx || props.library() !== lib) {
@@ -409,7 +418,7 @@ export default function Editor3D(props: EditorProps) {
       }
       const candidate = await prepareMapCandidate(name, lib.handle, idx, (completed, total, phase) => {
         if (attempt === openAttempt) setMapLoadProgress({ completed, total, phase });
-      }, lib.documentMap?.(name) ?? name);
+      }, lib.documentMap?.(name) ?? name, importedDocument);
       preparedAsset = candidate.asset;
       if (mission && idx) {
         if (!candidate.level) throw new Error("Mission requires level data");
@@ -448,7 +457,18 @@ export default function Editor3D(props: EditorProps) {
       setMissionName(mission?.name ?? "");
       setMissionInfo(preparedEntities ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}` : "");
       preparedEntities = null;
-      session.publish(generation, name, d, dir, candidate.saved);
+      if (transientMapName && transientMapName !== name) {
+        const previous = transientMapName;
+        setMaps(names => names.filter(name => name !== previous));
+        transientMapName = null;
+      }
+      if (importedFile) {
+        if (!maps().includes(name)) transientMapName = name;
+        setMaps(names => [...new Set([...names, name])].sort());
+        const sourceName = lib.documentMap?.(name) ?? name;
+        if (sourceName !== name) setMapLabels(labels => new Map(labels).set(name, `${labels.get(sourceName) ?? sourceName} (Modified)`));
+      }
+      session.publish(generation, name, d, dir, candidate.saved && !importedFile);
       loadedIndex = idx;
       loadedLibrary = lib;
       setLevel(lvl);
@@ -555,6 +575,7 @@ export default function Editor3D(props: EditorProps) {
         JSON.stringify(snapshot.document, null, 2),
       );
       const savedName = library?.savedMapName?.(snapshot.name) ?? snapshot.name;
+      if (transientMapName === snapshot.name) transientMapName = null;
       const labels = await library?.mapLabels?.();
       if (!disposed && props.library() === library) {
         if (labels) setMapLabels(labels);
@@ -790,6 +811,12 @@ export default function Editor3D(props: EditorProps) {
         </div>
         <div class={`editor-canvas ${dropActive() ? "asset-drop-active" : ""}`} ref={(element) => { viewportElement = element; viewport.setup(element); }}
           onDragOver={event => {
+            if (event.dataTransfer?.types.includes('Files')) {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'copy';
+              setDropActive(true);
+              return;
+            }
             if (!doc() || addingAsset() || !event.dataTransfer?.types.includes(ASSET_DRAG_TYPE)) return;
             event.preventDefault();
             event.dataTransfer.dropEffect = "copy";
@@ -805,6 +832,18 @@ export default function Editor3D(props: EditorProps) {
           }}
           onDrop={event => {
             setDropActive(false);
+            if (event.dataTransfer?.types.includes('Files')) {
+              event.preventDefault();
+              const files = [...event.dataTransfer.files];
+              if (files.length !== 1 || !files[0]!.name.toLowerCase().endsWith('.json')) {
+                props.onError('Drop one map JSON file onto the viewport.');
+              } else if (!props.library()) {
+                props.onError('Wait for the asset library to load before importing a map.');
+              } else {
+                void openMap(files[0]!.name, undefined, files[0]);
+              }
+              return;
+            }
             const id = event.dataTransfer?.getData(ASSET_DRAG_TYPE);
             if (!id) return;
             event.preventDefault();

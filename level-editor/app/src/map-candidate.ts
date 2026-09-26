@@ -8,13 +8,13 @@ import { disposeObjectResources } from "./resources.ts";
 
 /** Load a complete JSON manifest. Publication happens only after every pinned asset validates. */
 export async function prepareMapCandidate(name: string, library: FileSystemDirectoryHandle, idx: DatadirIndex | null,
-  onProgress?: (completed: number, total: number, phase: string) => void, documentMap = name) {
+  onProgress?: (completed: number, total: number, phase: string) => void, documentMap = name, importedDocument?: unknown) {
   const asset = new THREE.Group();
   const loader = new SceneAssetLoader(library, await listLossyModels(library));
   try {
     const directory = await subdir(library, ["scenes"]);
     if (!directory) throw new Error("scenes/ missing");
-    const document = parseLevel3D(await readJson(directory, `${name}.level3d.json`), { map: documentMap });
+    const document = parseLevel3D(importedDocument ?? await readJson(directory, `${name}.level3d.json`), { map: documentMap });
     asset.userData = structuredClone(document.sceneMetadata ?? {});
     const level = idx && document.sourceMap ? await loadProtoLevel(idx, document.sourceMap) : null;
     const sources = new Map<string, THREE.Object3D>();

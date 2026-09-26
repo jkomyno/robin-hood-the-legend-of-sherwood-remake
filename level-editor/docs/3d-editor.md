@@ -14,9 +14,15 @@ after reopening on the same browser and origin. Existing browser saves also appe
 as modified copies without changing their stored files.
 Built-in maps have capitalized English display names (including Crossroads 1–3);
 their file and mission identifiers stay unchanged. **Download** exports the current
-document, including unsaved changes, as JSON. Clearing site data removes local
+document, including unsaved changes, as JSON with a local date and time to the second,
+using hyphens and no timezone suffix, for example `york_2026-09-26T16-30-12.level3d.json`.
+Clearing site data removes local
 copies, so download maps you want to keep outside the browser. Saving and publishing
 are separate from the reconstruction-only game-file baker described below.
+Drop one map JSON file onto the viewport to load it, including a timestamped download.
+The document's map name determines its identity. Referenced assets must exist in
+the connected library and pass validation. Imports remain unsaved until **Save**;
+imports of built-in maps use the modified copy and keep the original selectable.
 
 ## Running
 

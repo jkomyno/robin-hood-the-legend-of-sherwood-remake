@@ -55,7 +55,7 @@ export async function checkHttpLibrary() {
     let exported: Promise<unknown> | undefined;
     const click = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = function () {
-      assert(this.download === 'New forest.level3d.json', 'Download filename changed');
+      assert(/^New forest_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.level3d\.json$/.test(this.download), 'Download filename must include a local timestamp to the second');
       exported = originalFetch(this.href).then(response => response.json());
     };
     try { downloadMap('New forest', document); } finally { HTMLAnchorElement.prototype.click = click; }

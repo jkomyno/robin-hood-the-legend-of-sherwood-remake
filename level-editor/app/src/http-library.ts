@@ -84,7 +84,10 @@ export async function openHttpLibrary(base = '/library/', storage?: FileSystemDi
 }
 
 export function downloadMap(name: string, document: unknown) {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
   const url = URL.createObjectURL(new Blob([JSON.stringify(document,null,2)+'\n'], {type:'application/json'}));
-  const link = window.document.createElement('a'); link.href=url; link.download=name+'.level3d.json'; link.click();
+  const link = window.document.createElement('a'); link.href=url; link.download=`${name}_${timestamp}.level3d.json`; link.click();
   setTimeout(() => URL.revokeObjectURL(url),0);
 }

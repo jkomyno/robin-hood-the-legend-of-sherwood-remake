@@ -400,6 +400,37 @@ export async function checkSharedLibrary() {
     await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "New forest");
     assert(document.querySelectorAll(".object-list li").length > 0, "New map assets were not restored");
     assert((document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).value === "10", "Export frame was not restored");
+    const dropJson = (text: string, filename = 'download_2026-09-26T16-30-12.level3d.json') => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([text], filename, {type: 'application/json'}));
+      document.querySelector('.editor-canvas')!.dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: transfer}));
+    };
+    const imported = { ...newSaved, exportBounds: [...newSaved.exportBounds] };
+    imported.exportBounds[2] = 77;
+    dropJson(JSON.stringify(imported));
+    await until(() => (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement)?.value === '77');
+    assert(document.querySelector('.document-state')?.textContent?.includes('Unsaved changes'), 'Imported map must be unsaved');
+    assert(JSON.parse(await files.get('scenes/New forest.level3d.json')!.text()).exportBounds[2] === 10, 'Dropping JSON wrote a map before Save');
+    dropJson('{ invalid JSON');
+    await until(() => errors.length > 0);
+    errors.pop();
+    assert((document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).value === '77', 'Invalid import replaced the open map');
+    dropJson(JSON.stringify({ ...imported, map: 'York' }));
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === 'York (Modified)');
+    assert(document.querySelector('select[aria-label="Map"] option[value="York"]')?.textContent === 'York', 'Import removed the original map');
+    click('Save *');
+    await until(() => ![...document.querySelectorAll('button')].some(b => b.textContent?.trim() === 'Save *'));
+    select('Map', 'York');
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === 'York');
+    assert(document.querySelectorAll('.object-list li').length === 1, 'Imported map overwrote the original');
+    select('Map', 'York (Modified)');
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === 'York (Modified)');
+    assert((document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).value === '77', 'Imported map failed to save and reload');
+    dropJson(JSON.stringify({ ...imported, map: 'Dropped forest' }));
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === 'Dropped forest');
+    select('Map', 'York');
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === 'York');
+    assert(!document.querySelector('select[aria-label="Map"] option[value="Dropped forest"]'), 'Discarded unsaved import left an unloadable map entry');
     assert(errors.length === 0, errors.join("\n"));
   } catch (error) {
     throw new Error(`${error}; errors: ${errors.join("; ")}; UI: ${document.querySelector("#root")?.textContent}`);
