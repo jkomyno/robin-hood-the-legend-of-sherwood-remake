@@ -7,7 +7,7 @@ import time
 _lease = None
 
 
-def acquire(slots=6):
+def acquire(slots=4):
     """Hold one process-scoped render lease until exit; repeated calls are safe."""
     global _lease
     if _lease is not None:
