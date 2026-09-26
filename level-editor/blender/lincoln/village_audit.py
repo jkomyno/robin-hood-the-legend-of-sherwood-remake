@@ -81,6 +81,9 @@ def main():
     parser.add_argument('--asset', required=True)
     parser.add_argument('--round', default='round-1', help='workspace round directory, e.g. round-2')
     parser.add_argument('--pad', type=int, default=16)
+    parser.add_argument('--terrain-blend', help='preview only: swap in the ground mesh from this blend (not saved)')
+    parser.add_argument('--rebuild', action='store_true', help='preview only: rebuild owned meshes from the current recipe (not saved)')
+    parser.add_argument('--out-dir', help='preview only: write evidence here instead of the workspace inspection/')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     workspace = ROOT / args.round / 'assets' / args.asset
     from render_slots import acquire
@@ -88,6 +91,20 @@ def main():
     bpy.ops.wm.open_mainfile(filepath=str(workspace / 'model.blend'))
     config = json.loads((workspace / 'workspace.json').read_text())
     working = bpy.data.collections[config['collection_name']]
+    preview = bool(args.terrain_blend or args.rebuild)
+    if preview and not args.out_dir:
+        raise ValueError('Preview modes must write to --out-dir, never the frozen workspace evidence')
+    if args.terrain_blend:
+        with bpy.data.libraries.load(args.terrain_blend) as (src, dst):
+            dst.objects = [n for n in src.objects if n == 'lincoln Terrain']
+        new = dst.objects[0]
+        old = working.all_objects['lincoln Terrain']
+        old.data = new.data.copy()
+        old.matrix_world = new.matrix_world.copy()
+    if args.rebuild:
+        import refine_village
+        refine_village.refine(args.asset)
+        bpy.context.view_layer.update()
     depsgraph = bpy.context.evaluated_depsgraph_get()
     verts, tris, owner = [], [], []
     names = []
@@ -129,6 +146,8 @@ def main():
             if index is not None:
                 hit_owner[py - y0, px - x0] = owner[index]
     owned_idx = {i for i, o in enumerate(names) if o.get('asset_group') == args.asset}
+    out_dir_early = Path(args.out_dir) if args.out_dir else workspace / 'inspection'
+    out_dir_early.mkdir(parents=True, exist_ok=True)
     node_of = {i: names[i].get('source_node') for i in owned_idx}
     nodes = sorted(set(node_of.values()))
     masks = masks_for(workspace, nodes)
@@ -151,6 +170,9 @@ def main():
             rejected_reject_all |= hit
         else:
             rejected_outside |= hit & ~m
+        if preview and not reject_all and (hit & ~m).any():
+            rej = out_dir_early / f'rejected-outside-mask-{node}.png'
+            Image.fromarray(((hit & ~m) * 255).astype(np.uint8)).save(rej)
         rec = per_node.setdefault(node, {'first_hit_pixels': 0, 'accepted': 0, 'rejected_outside_mask': 0,
                                          'reject_all': reject_all, 'mask_indices': entry['mask_indices'],
                                          'exclude_mask_indices': entry.get('exclude_mask_indices', [])})
@@ -185,8 +207,8 @@ def main():
     d = ImageDraw.Draw(sheet)
     d.text((2, 2), f'{args.asset} crop {x0},{y0} | source | green accepted, red owned-outside-mask, orange reject-all, '
                    f'blue mask-only ground/none, yellow mask-only other | saved model source view', fill=(255, 255, 255))
-    out_dir = workspace / 'inspection'
-    out_dir.mkdir(exist_ok=True)
+    out_dir = Path(args.out_dir) if args.out_dir else workspace / 'inspection'
+    out_dir.mkdir(parents=True, exist_ok=True)
     # Authored-domain proposals for reject-all receivers: the first-hit domain of
     # each such node, as a full-resolution-coordinate bitmap and column polygon.
     reject_domains = {}
@@ -210,7 +232,8 @@ def main():
                                 'column_polygon_source_px': top + bottom[::-1]}
     png = out_dir / 'source-coverage.png'
     sheet.save(png)
-    report = {'version': 1, 'asset_id': args.asset, 'model_sha256': sha(workspace / 'model.blend'),
+    report = {'version': 1, 'asset_id': args.asset, 'preview': preview, 'terrain_blend': args.terrain_blend,
+              'rebuilt_from_recipe': args.rebuild, 'model_sha256': sha(workspace / 'model.blend'),
               'modified_views_sha256': sha(workspace / 'modified/views.json'),
               'source_sha256': sha(config['source_path']),
               'crop': [x0, y0, x1, y1],

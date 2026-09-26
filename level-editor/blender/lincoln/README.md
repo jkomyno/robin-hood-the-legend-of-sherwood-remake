@@ -23,7 +23,15 @@ root; evidence lives in `level-editor/work/lincoln-refinement/` (resume from `RE
     - `publish_stage.py` (Blender) takes a hash-bound plan (e.g. `publication-1/stage-v1.plan.json`):
       grouped baseline plus the approved models that differ from it. It writes `worker.blend`, the
       staged catalog and `integration.json`.
-    - `verify_publication_scene.py` checks every approved model against the staged worker.
+    - `global_reproject.py apply` (Blender) is a publication-level material fix on the staged worker:
+      every still-unknown texel of a first-hit source-visible surface receives its source RGB (masks
+      are not applied; grazing faces below `--grazing-cosine`/`projection_min_cosine` are reset to
+      unknown). `global_reproject.py audit` renders any worker from the source camera and counts gray
+      pixels; `verify_global_reprojection.py` proves only unknown texels changed. Fill masks in
+      `<stage>/global-reprojection/` tell generated-texture bakes which texels are now source-known.
+      `stage_combined_worker.py` stages a texture-combined worker on top.
+    - `verify_publication_scene.py` checks every approved model against the staged worker (after a
+      global reprojection only `materials` may differ; run it on the unmodified stage-in as well).
     - `publish_export.py` exports the full map (component splits become
       `building-NNN--component-<name>` parts), the standalone assets and `publication-metadata.json`.
       Freeze its tooling into the publication directory with `freeze_tooling.py --output`.

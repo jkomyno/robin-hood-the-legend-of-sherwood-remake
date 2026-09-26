@@ -41,10 +41,10 @@ EDITOR = ROOT / 'level-editor'
 WORK = EDITOR / 'work/lincoln-refinement'
 TEXTURES = WORK / 'textures'
 CATALOG = WORK / 'grouping/catalog-v4.json'
-ASSETS = WORK / 'round-4/assets'
-WORKSPACE_MAP = WORK / 'workspace-overrides-v4.json'
+ASSETS = WORK / 'round-6/assets'
+WORKSPACE_MAP = WORK / 'workspace-overrides-v6.json'
 APPROVALS = WORK / 'approvals.json'
-COLLECTOR_EVIDENCE = WORK / 'round-4/gallery-packet-evidence'
+COLLECTOR_EVIDENCE = WORK / 'textures/collector/gallery-packet-evidence'  # fresh collector run over v6 overrides
 TOOLING = WORK / 'tooling/e6b57cb851c7142b'
 AUTHORIZATION = ('User approved running texture generation for all geometry-approved Lincoln assets '
                  '(relayed by the coordinator, 2026-09-25). '
@@ -73,7 +73,9 @@ def require(condition, message):
 
 
 def catalog_groups():
-    return {group['id']: group for group in read(CATALOG)['groups']}
+    catalog = read(CATALOG)
+    terrain = {'id': catalog['terrain']['id'], 'name': catalog['terrain']['name'], 'role': 'terrain', 'parts': []}
+    return {group['id']: group for group in [*catalog['groups'], terrain]}
 
 
 def workspace_for(asset_id):
@@ -120,8 +122,11 @@ def verify_current(asset_id):
             'Stateful or relit approvals need a separate state lane')
     evidence_path = COLLECTOR_EVIDENCE / (asset_id + '.json')
     evidence = read(evidence_path)
-    require(evidence.get('status') == 'approved' and evidence.get('user_decision_matches_revision') is True,
-            'Round-4 collector evidence does not show this revision as approved')
+    # The collector evidence may predate the approval record (the round-6 gallery is rebuilt
+    # separately); the approval is bound to the fresh hashes above, and the evidence must
+    # describe exactly the same packet and model.
+    require(evidence.get('status') in ('approved', 'ready-for-user'),
+            'Collector evidence does not show a reviewed revision')
     require(evidence['packet_hashes'] == fresh['packet_hashes'] and evidence['model_sha256'] == fresh['model_sha256'],
             'Collector evidence packets differ from the current workspace')
     require(not evidence.get('state_packets'), 'State packets require a separate state lane')
@@ -228,32 +233,58 @@ def verify_prepared(experiment):
     return approval
 
 
-def retry(asset_id, name):
-    """Copy the exact prepared inputs into a separate retry experiment (no API cache)."""
-    source = TEXTURES / 'experiments' / asset_id
-    verify_prepared(source)
-    target = TEXTURES / 'retries' / f'{asset_id}--{name}'
-    require(not target.exists(), 'Retry experiment already exists: ' + str(target))
-    target.mkdir(parents=True)
-    for entry in read(source / 'preparation.json')['files']:
-        (target / entry).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source / entry, target / entry)
-    shutil.copy2(source / 'preparation.json', target / 'preparation.json')
-    write(target / 'retry-of.json', {'version': 1, 'asset_id': asset_id, 'original_experiment': str(source),
-                                     'original_preparation_sha256': sha(source / 'preparation.json')})
-    verify_prepared(target)
-    return target
+def retry(asset_id, name, view_selection='best-facing-single'):
+    """Separate retry experiment: same approved inputs, no cached generation, own prompt later."""
+    return variant(asset_id, name, view_selection, directory='retries', copy_generation=False)
 
 
 PROVIDER_AUTHORIZATION = {
-    'openrouter': {'exact_user_text': 'use openrouter ith sunburst model',
-                   'relayed_by': 'coordinator (team-lead), 2026-09-25',
+    'openrouter': {'exact_user_text': 'use openrouter ith sunburst model; you run the scripts (ask for permission)',
+                   'relayed_by': 'coordinator (team-lead), 2026-09-25; run by coordinator with user permission',
                    'scope': 'OpenRouter transport of openai/gpt-image-2.5-sunburst for approved Lincoln assets'},
 }
 
 
 def generation_directory(experiment, provider='openrouter'):
     return Path(experiment) / ('generation-short-no-mask-with-lighting' + ('-openrouter' if provider == 'openrouter' else ''))
+
+
+def variant(asset_id, name, view_selection=None, source=None, directory='variants', copy_generation=True):
+    """Clone an experiment with a changed bake policy, reusing its exact cached generation.
+
+    Inputs, approval and the API response are byte-identical copies; only the bake manifest
+    changes (e.g. texture_view_selection). A new preparation record binds the new files and
+    names the original preparation.
+    """
+    source = Path(source).resolve() if source else TEXTURES / 'experiments' / asset_id
+    verify_prepared(source)
+    target = TEXTURES / directory / f'{asset_id}--{name}'
+    require(not target.exists(), 'Variant experiment already exists: ' + str(target))
+    target.mkdir(parents=True)
+    files = read(source / 'preparation.json')['files']
+    for entry in files:
+        (target / entry).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source / entry, target / entry)
+    for folder in (['api-cache', *[p.name for p in source.glob('generation-*') if p.is_dir()]]
+                   if copy_generation else []):
+        if (source / folder).is_dir():
+            shutil.copytree(source / folder, target / folder)
+    manifest = read(target / 'views.json')
+    changes = {}
+    if view_selection:
+        changes['texture_view_selection'] = view_selection
+    manifest.update(changes)
+    write(target / 'views.json', manifest)
+    report = read(source / 'preparation.json')
+    report['files'] = {str(p.relative_to(target)): sha(p) for p in sorted(target.rglob('*'))
+                       if p.is_file() and str(p.relative_to(target)) in files}
+    report['derived_from'] = {'experiment': str(source), 'preparation_sha256': sha(source / 'preparation.json'),
+                              'bake_manifest_changes': changes,
+                              'generation_reused': ('api-cache and generation outputs copied byte-for-byte; no new request'
+                                                    if copy_generation else 'none; separate retry generation required')}
+    write(target / 'preparation.json', report)
+    verify_prepared(target)
+    return target
 
 
 def generate(experiment, prompt_suffix=None, provider='openrouter'):
@@ -281,7 +312,7 @@ def generate(experiment, prompt_suffix=None, provider='openrouter'):
     return report
 
 
-def bake(experiment, bake_name, provider='openrouter'):
+def bake(experiment, bake_name, provider='openrouter', texels_per_unit=2, reconcile=True):
     """Run inside Blender: shared guarded bake of generated-preserved.png, raw as tone reference."""
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from render_slots import acquire
@@ -298,7 +329,8 @@ def bake(experiment, bake_name, provider='openrouter'):
     from bake_reviewed_asset import stage
     bpy.ops.wm.open_mainfile(filepath=str(experiment / 'approved-model.blend'))
     result = stage(experiment / 'views.json', generation / 'generated-preserved.png', output,
-                   texels_per_unit=2, reconciliation_reference=generation / 'generated-raw.png')
+                   texels_per_unit=texels_per_unit,
+                   reconciliation_reference=generation / 'generated-raw.png' if reconcile else None)
     return {'asset': result['asset_id'], 'output': str(output), 'counts': result['counts'],
             'geometry_verified': result['geometry_verified'],
             'outside_objects_unchanged': result['outside_objects_unchanged']}
@@ -366,6 +398,15 @@ def main():
     command.add_argument('experiment', type=Path)
     command.add_argument('bake_name')
     command.add_argument('--provider', default='openrouter', choices=['openai', 'openrouter'])
+    command.add_argument('--texels-per-unit', type=float, default=2,
+                         help='Lower for large terrain meshes whose ownership atlas would exceed 16384 px')
+    command.add_argument('--no-reconciliation', action='store_true',
+                         help='Skip raw-output tone calibration of inferred colors')
+    command = sub.add_parser('variant')
+    command.add_argument('id')
+    command.add_argument('name')
+    command.add_argument('--view-selection', choices=['near-tie-blend', 'best-facing-single'])
+    command.add_argument('--source', type=Path)
     command = sub.add_parser('retry')
     command.add_argument('id')
     command.add_argument('name')
@@ -389,7 +430,10 @@ def main():
                 result.append({'experiment': str(experiment), 'status': 'failed', 'reason': str(error)})
             print(json.dumps(result[-1]), flush=True)
     elif args.command == 'bake':
-        result = bake(args.experiment, args.bake_name, args.provider)
+        result = bake(args.experiment, args.bake_name, args.provider, args.texels_per_unit,
+                      not args.no_reconciliation)
+    elif args.command == 'variant':
+        result = {'variant': str(variant(args.id, args.name, args.view_selection, args.source))}
     else:
         result = {'retry': str(retry(args.id, args.name))}
     print(json.dumps(result), flush=True)

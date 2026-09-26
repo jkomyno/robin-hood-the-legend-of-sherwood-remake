@@ -338,7 +338,29 @@ def field_wattle_fence():
         'inferred': ['Stake spacing is regularised from the visible stakes; panels are thin closed slabs.']}
 
 
+# Round 5 (new heightfield terrain, round-4): the painted water surface is the
+# terrain stream bed at world Z -58.  The punt floats with BOAT_DRAFT below it.
+# Moving a measured object down along the source-camera ray keeps its artwork
+# pixels: dY = -dZ * cos35 / sin35.
+BOAT_WATER_Z = -58.0
+BOAT_DRAFT = 2.0  # inner floor (keel + 4) stays 2 above the water surface
+BOAT_REFIT_TO_WATER = True
+
+
 def stream_boat():
+    if BOAT_REFIT_TO_WATER:
+        parts, notes = _stream_boat_datum()
+        dz = BOAT_WATER_Z - BOAT_DRAFT
+        dy = -dz * COS / SIN
+        moved = {n: [(label, [(p[0], p[1] + dy, p[2] + dz) for p in v], f) for label, v, f in items]
+                 for n, items in parts.items()}
+        notes = dict(notes, ground_z=BOAT_WATER_Z, water_z=BOAT_WATER_Z, draft=BOAT_DRAFT,
+                     reseat_shift_along_source_ray=[0.0, round(dy, 3), dz])
+        return moved, notes
+    return _stream_boat_datum()
+
+
+def _stream_boat_datum():
     # Flat-bottomed punt with raked ends; the gunwale rises towards the north-east
     # end as the native obstacle and the artwork show.  Water level = ground datum.
     f = Frame((428.3, -1284.0, 0.0), (59.0, 108.0))
@@ -367,7 +389,14 @@ def north_edge_rock():
         'inferred': ['Everything north of the map edge is outside the source; the rock continues as a rounded ridge.']}
 
 
-BRIDGE_WATER_Z = -60.0  # painted stream bed at the pier foot, relative to the bank datum
+BRIDGE_WATER_Z = -58.5  # round 5: terrain stream bed is world Z -58 (native -47.5); pier foot 0.5 below it
+# Round 5: fill under the deck ends (outside the abutment faces) down to this
+# level so the new terrain's bank trenches (x 0..12 and 156..168) never show a
+# gap under the bridge; buried wherever the bank is higher.
+# Off by default: the artwork paints grass bank there, so the proper fix is the
+# terrain bank rising to the datum; enable only if the terrain keeps the trenches.
+BRIDGE_ABUTMENT_FILL = False
+BRIDGE_ABUTMENT_FILL_Z = -40.0
 # The painted arches and pier reach below the flat ground plane (z = 0) into the
 # painted stream channel.  Round 2 (user: "the surface of the bridge is missing as
 # is the pillar") enables them; the workspace declares a reviewed ground
@@ -376,9 +405,26 @@ BRIDGE_WATER_Z = -60.0  # painted stream bed at the pier foot, relative to the b
 BRIDGE_STREAM_CHANNEL = True
 
 
+# Round 5 numbered-corner trace of the front parapet west end (source px ->
+# front-face frame x, z; scratch/village-r5/west-parapet-trace.json): the painted
+# cap drops from the round-3 parabola at x ~25 to the end stone at x -7.7.
+BRIDGE_WEST_CAP_TRACE = ((-7.67, 11.36), (3.02, 20.28), (18.46, 31.01))
+BRIDGE_WEST_CAP_JOIN = 25.6
+
+
 def _bridge_curves():
-    def cap_front(x):
+    def cap_parabola(x):
         return 44.0 - 0.0027 * (x - 78.0) ** 2
+
+    def cap_front(x):
+        if x >= BRIDGE_WEST_CAP_JOIN:
+            return cap_parabola(x)
+        pts = list(BRIDGE_WEST_CAP_TRACE) + [(BRIDGE_WEST_CAP_JOIN, cap_parabola(BRIDGE_WEST_CAP_JOIN))]
+        if x <= pts[0][0]:
+            (xa_, za), (xb_, zb) = pts[0], pts[1]
+        else:
+            (xa_, za), (xb_, zb) = next((p, q) for p, q in zip(pts, pts[1:]) if p[0] <= x <= q[0])
+        return za + (zb - za) * (x - xa_) / (xb_ - xa_)
 
     def deck(x):
         return max(0.0, cap_front(x) - 9.0)
@@ -402,7 +448,9 @@ def stone_footbridge():
     deck_t = 2.5
     # Deck ends where the underside (deck - 2.5) is 0.5 above the bank datum.
     half = math.sqrt((cap_front(78.0) - 9.0 - deck_t - 0.5) / 0.0027)
-    xa, xb = 78.0 - half, 78.0 + half
+    xb = 78.0 + half
+    # West end: the deck underside meets the datum at the traced parapet end.
+    xa = next(x / 20 for x in range(-600, 1600) if deck(x / 20) - deck_t >= 0.5)
     xs_w = [xa + (85.0 - xa) * i / 16 for i in range(17)]
     xs_e = [85.0 + (xb - 85.0) * i / 16 for i in range(17)]
     # West body: deck underside, west abutment, left arch (springs 18 / 76), half pier;
@@ -412,8 +460,9 @@ def stone_footbridge():
     if BRIDGE_STREAM_CHANNEL:
         # Below the bank datum only the channel masonry is built: arch legs, the
         # pier and 6-unit abutment faces; the banks themselves are terrain.
-        west += [(85.0, w), (76.0, w)] + _arc(47.0, -18.5, 29.0, 0.0, 180.0, 12) + [(18.0, w), (12.0, w), (12.0, 0.0), (xa, 0.0)]
-        east += [(xb, 0.0), (156.0, 0.0), (156.0, w), (150.0, w)] + _arc(122.5, -16.5, 27.5, 0.0, 180.0, 14) + [(95.0, w), (85.0, w)]
+        fz = BRIDGE_ABUTMENT_FILL_Z if BRIDGE_ABUTMENT_FILL else 0.0
+        west += [(85.0, w), (76.0, w)] + _arc(47.0, -18.5, 29.0, 0.0, 180.0, 12) + [(18.0, w), (12.0, w), (12.0, fz), (xa + 10.0, fz)]
+        east += [(xb - 10.0, fz), (156.0, fz), (156.0, w), (150.0, w)] + _arc(122.5, -16.5, 27.5, 0.0, 180.0, 14) + [(95.0, w), (85.0, w)]
     else:
         west += [(85.0, 0.0), (xa, 0.0)]
         east += [(xb, 0.0), (85.0, 0.0)]
@@ -429,12 +478,15 @@ def stone_footbridge():
     body_e = elevation(east, -1.0, 81.0)
     deck_w = elevation([(x, deck(x)) for x in xs_w] + [(x, deck(x) - deck_t) for x in reversed(xs_w)], 7.0, 72.0)
     deck_e = elevation([(x, deck(x)) for x in xs_e] + [(x, deck(x) - deck_t) for x in reversed(xs_e)], 7.0, 72.0)
-    fx_w = [0.0 + 85.0 * i / 12 for i in range(13)]
+    fx0 = BRIDGE_WEST_CAP_TRACE[0][0]
+    fx_w = [fx0 + (85.0 - fx0) * i / 16 for i in range(17)]
     fx_e = [85.0 + 93.0 * i / 12 for i in range(13)]
     front_w = elevation([(x, cap_front(x)) for x in fx_w] + [(x, deck(x) - deck_t) for x in reversed(fx_w)], -1.0, 7.0)
     front_e = elevation([(x, cap_front(x)) for x in fx_e] + [(x, deck(x) - deck_t) for x in reversed(fx_e)], -1.0, 7.0)
-    rx_w = [max(-30.0, xa) + (85.0 - max(-30.0, xa)) * i / 12 for i in range(13)]
-    rx_e = [85.0 + 90.0 * i / 12 for i in range(13)]
+    # Round 5: rear parapet ends trimmed to the painted cap ends (source px ~665
+    # west, ~812 east); the round-3 ends projected onto bush and bank (267/155 px).
+    rx_w = [-5.0 + 90.0 * i / 12 for i in range(13)]
+    rx_e = [85.0 + 83.0 * i / 12 for i in range(13)]
     rear_w = elevation([(x, cap_rear(x)) for x in rx_w] + [(x, deck(x) - deck_t) for x in reversed(rx_w)], 72.0, 81.0)
     rear_e = elevation([(x, cap_rear(x)) for x in rx_e] + [(x, deck(x) - deck_t) for x in reversed(rx_e)], 72.0, 81.0)
     return {'building-045': [('west arch, abutment and half pier', *body_w), ('front parapet, west half', *front_w)],
