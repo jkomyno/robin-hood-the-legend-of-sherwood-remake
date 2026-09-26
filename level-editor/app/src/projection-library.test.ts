@@ -223,3 +223,29 @@ test("additional complete variants retain the covered base and pin each endpoint
   assert.deepEqual((await prepareProjectionAsset(f.directory,applied.reference,"York",applied.reference)).reference,applied.reference);
   await assert.rejects(prepareProjectionAsset(f.directory,{...entries[2]!,model:f.entry.model},"York"),/path mismatch/);
 });
+
+test("scene selectors are descriptor-bound and pinned in saved references", async (t) => {
+  const f = fixture();
+  f.json(f.entry.descriptor, { ...f.descriptor, model_scene: "base", standalone_variants: {
+    initial: { name: "Closed", model: "model.glb", model_scene: "closed" },
+    applied: { name: "Open", model: "model.glb", model_scene: "open" },
+  } });
+  f.json("3d-assets/index.json", {version: 1, assets: [{...f.entry, descriptor: "house/asset.json", model: "house/model.glb", model_scene: "base", preview_model: "house/preview.glb"}]});
+  const entries = await listProjectionAssets(f.directory);
+  assert.deepEqual(entries.map(entry => entry.model_scene), ["base", "closed", "open"]);
+  assert.equal(entries[2]!.preview_model, "3d-assets/house/preview.glb");
+  const json = new TextEncoder().encode(JSON.stringify({asset:{version:"2.0"},scenes:[{name:"base"},{name:"closed"},{name:"open"}]}));
+  const bytes = new Uint8Array(20+Math.ceil(json.length/4)*4); const header=new DataView(bytes.buffer);
+  header.setUint32(0,0x46546c67,true);header.setUint32(4,2,true);header.setUint32(8,bytes.length,true);header.setUint32(12,bytes.length-20,true);header.setUint32(16,0x4e4f534a,true);bytes.fill(32,20);bytes.set(json,20);
+  f.files.set(f.entry.model,new File([bytes],"model.glb"));
+  t.mock.method(GLTFLoader.prototype,"parseAsync",async(buffer:ArrayBuffer)=>{
+    const view=new DataView(buffer),parsed=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,20,view.getUint32(12,true))));
+    assert.equal(parsed.scenes.length,1);assert.equal(parsed.scenes[0].name,"open");return {scene:f.asset};
+  });
+  const prepared=await prepareProjectionAsset(f.directory,entries[2]!,"York");
+  assert.equal(prepared.reference.model_scene,"open");
+  assert.deepEqual((await prepareProjectionAsset(f.directory,prepared.reference,"York",prepared.reference)).reference,prepared.reference);
+  await assert.rejects(prepareProjectionAsset(f.directory,{...entries[2]!,model_scene:"closed"},"York"),/scene mismatch/);
+  await assert.rejects(prepareProjectionAsset(f.directory,entries[2]!,"York",{...prepared.reference,model_scene:"closed"}),/saved reference mismatch/);
+  await assert.rejects(prepareProjectionAsset(f.directory,entries[2]!,"York",{...prepared.reference,model_sha256:"c".repeat(64)}),/model changed/);
+});

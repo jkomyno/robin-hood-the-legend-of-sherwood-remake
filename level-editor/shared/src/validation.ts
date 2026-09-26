@@ -539,6 +539,7 @@ export function parseExternalAssetSources(value: unknown): ExternalAssetSource[]
   const ids = new Set<string>();
   for (const entry of array(value, "assetSources")) {
     object(entry, "assetSources[]");
+    if (entry.model_scene !== undefined) check(typeof entry.model_scene === "string" && !!entry.model_scene.trim(), "model_scene", "expected nonempty scene name");
     if (entry.state_variant !== undefined) check(entry.state_variant === "initial" || entry.state_variant === "applied", "asset source state_variant", "invalid static variant");
     text(entry.id, "asset source id");
     check(!/[\\/:\0]/.test(entry.id) && !ids.has(entry.id), "asset source id", "invalid or duplicate identity");
@@ -559,6 +560,7 @@ export function parseProjectionAssetIndex(value: unknown): ProjectionAssetEntry[
     object(entry, "projection asset entry");
     if (entry.editor_usage !== undefined) check(entry.editor_usage === "map-background", "editor_usage", "unsupported asset capability");
     for (const key of ["id", "name", "source_map"]) text(entry[key], key);
+    if (entry.model_scene !== undefined) check(typeof entry.model_scene === "string" && !!entry.model_scene.trim(), "model_scene", "expected nonempty scene name");
     if (entry.asset_type !== undefined) text(entry.asset_type, "asset_type");
     if (entry.tags !== undefined) for (const tag of array(entry.tags, "tags")) text(tag, "tag");
     check(!/[\\/:\0]/.test(entry.id) && !ids.has(entry.id), "asset id", "invalid or duplicate identity");
@@ -573,6 +575,7 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
   check(d.version === 1 && d.kind === "projection-mapped-asset", "projection asset", "unsupported kind/version");
   for (const key of ["id", "name", "source_map"]) text(d[key], key);
   check(!/[\\/:\0]/.test(d.id), "asset id", "invalid identity");
+  if (d.model_scene !== undefined) check(typeof d.model_scene === "string" && !!d.model_scene.trim(), "asset.model_scene", "expected nonempty scene name");
   check(safeLibraryPath(d.model), "asset.model", "expected safe relative path");
   tuple(d.source_origin_scene, 3, "asset.source_origin_scene");
   tuple(d.source_origin_game, 3, "asset.source_origin_game");
@@ -617,6 +620,7 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
       check(key === "initial" || key === "applied", "asset.state_variants", "invalid static variant");
       const variant = object(value, `asset.state_variants.${key}`);
       text(variant.name, "variant.name");
+      if (variant.model_scene !== undefined) check(typeof variant.model_scene === "string" && !!variant.model_scene.trim(), "variant.model_scene", "expected nonempty scene name");
       check(safeLibraryPath(variant.model), "variant.model", "expected safe relative path");
       if (variant.parts !== undefined) parseProjectionAssetDescriptor({ ...d, state_variants: undefined, standalone_variants: undefined, model: variant.model, parts: variant.parts });
     }
