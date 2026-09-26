@@ -1,6 +1,7 @@
 /** Merge a staged Blender asset pack into the reusable 3D model library. */
-import { readFile, writeFile, mkdir, copyFile, rename } from "node:fs/promises";
+import { readFile, mkdir, copyFile, rename } from "node:fs/promises";
 import { resolve, join } from "node:path";
+import { validateAssetIndex, writeAssetIndex } from "./asset-index.ts";
 
 interface Entry {
   id: string;
@@ -8,6 +9,8 @@ interface Entry {
   source_map: string;
   descriptor: string;
   model: string;
+  lossy_model?: string;
+  preview_model?: string;
 }
 const [stageArg, destinationArg] = process.argv.slice(2);
 if (!stageArg || !destinationArg)
@@ -56,24 +59,28 @@ try {
 if (old.version !== 1 || !Array.isArray(old.assets))
   throw new Error("Invalid destination asset index");
 const entries = new Map(old.assets.map((entry) => [entry.id, entry]));
-await mkdir(destination, { recursive: true });
+const files = new Map<string, string>();
 for (const entry of staged.assets) {
-  await mkdir(join(destination, entry.id), { recursive: true });
-  for (const file of [entry.model, entry.descriptor]) {
-    await copyFile(join(stage, file), join(destination, file + ".pending"));
-    await rename(join(destination, file + ".pending"), join(destination, file));
+  for (const file of [entry.model, entry.descriptor]) files.set(file, join(stage, file));
+  for (const derivative of [entry.lossy_model, entry.preview_model]) {
+    if (!derivative) continue;
+    files.set(derivative, join(stage, derivative));
+    files.set(derivative + ".receipt.json", join(stage, derivative + ".receipt.json"));
   }
   entries.set(entry.id, entry);
 }
-await writeFile(
-  join(destination, "index.json.pending"),
-  JSON.stringify(
-    { version: 1, assets: [...entries.values()].sort((a, b) => a.id.localeCompare(b.id)) },
-    null,
-    2,
-  ) + "\n",
-);
-await rename(join(destination, "index.json.pending"), join(destination, "index.json"));
+const index = {
+  version: 1,
+  assets: [...entries.values()].sort((a, b) => a.id.localeCompare(b.id)),
+};
+validateAssetIndex(destination, index, Object.fromEntries(files));
+await mkdir(destination, { recursive: true });
+for (const entry of staged.assets) await mkdir(join(destination, entry.id), { recursive: true });
+for (const [file, source] of files) {
+  await copyFile(source, join(destination, file + ".pending"));
+  await rename(join(destination, file + ".pending"), join(destination, file));
+}
+writeAssetIndex(destination, index);
 console.log(
   JSON.stringify({ assets: staged.assets.length, index: join(destination, "index.json") }),
 );

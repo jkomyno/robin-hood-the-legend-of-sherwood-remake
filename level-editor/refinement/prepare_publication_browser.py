@@ -6,6 +6,7 @@ The scope lists asset_ids, already_published, and optional required_patches.
 import argparse
 import hashlib
 import json
+from asset_index import write_asset_index
 import subprocess
 import tempfile
 from pathlib import Path
@@ -98,7 +99,16 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         raise ValueError("Missing expected assets: " + repr(sorted(expected_ids - sources.keys())))
     entries = [sources[identity][0] for identity in sorted(expected_ids)]
     private_index = output.with_name("private-index.json")
-    private_index.write_text(json.dumps({"version": 1, "assets": entries}, indent=2) + "\n")
+    prospective = {}
+    for entry in entries:
+        source = sources[entry["id"]][1]
+        for key in ("model", "lossy_model"):
+            if entry.get(key): prospective[entry[key]] = source / entry[key]
+        if entry.get("lossy_model"):
+            receipt = entry["lossy_model"] + ".receipt.json"
+            prospective[receipt] = source / receipt
+    write_asset_index(library / "3d-assets", {"version": 1, "assets": entries},
+                      target=private_index, files=prospective)
     files, seen = [], set()
 
     def add(path, source):
@@ -126,9 +136,8 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         if entry.get("preview_model"):
             add("3d-assets/" + entry["preview_model"], source / entry["preview_model"])
         if entry.get("lossy_model"):
-            # The editor loads lossy models and checks their receipts against the source model.
+            # The private index was validated above; the browser needs only model bytes.
             add("3d-assets/" + entry["lossy_model"], source / entry["lossy_model"])
-            add("3d-assets/" + entry["lossy_model"] + ".receipt.json", source / (entry["lossy_model"] + ".receipt.json"))
         variants = descriptor.get("state_variants") or descriptor.get("standalone_variants")
         if not variants:
             expanded.append(entry)

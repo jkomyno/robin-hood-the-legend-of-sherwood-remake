@@ -10,6 +10,27 @@ from stored_map import expand_document
 
 
 class LocalMapExportTests(unittest.TestCase):
+    def test_unifying_models_drops_lossy_derivatives_of_the_previous_source(self):
+        from unify_map_assets import stage
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source, output = root/'source', root/'output'
+            asset = source/'3d-assets/house'; asset.mkdir(parents=True)
+            (source/'scenes').mkdir()
+            model = {'asset': {'version': '2.0'}, 'scene': 0,
+                     'scenes': [{'name': 'default', 'nodes': [0]}], 'nodes': [{'name': 'part'}]}
+            (asset/'model.gltf').write_text(json.dumps(model))
+            descriptor = {'id': 'house', 'name': 'House', 'model': 'model.gltf',
+                          'source_map': 'Derby', 'parts': [], 'resources': []}
+            (asset/'asset.json').write_text(json.dumps(descriptor))
+            (source/'3d-assets/index.json').write_text(json.dumps({'version': 1, 'assets': [{
+                'id': 'house', 'model': 'house/model.gltf', 'descriptor': 'house/asset.json',
+                'lossy_model': 'house/old.lossy.glb'}]}))
+            stage(source, output)
+            entry = json.loads((output/'3d-assets/index.json').read_text())['assets'][0]
+            self.assertNotIn('lossy_model', entry)
+            self.assertTrue((output/'3d-assets'/entry['model']).is_file())
+
     def test_map_exports_local_catalog_instances_with_small_payloads_embedded(self):
         self.export_fixture(scenery=False)
 

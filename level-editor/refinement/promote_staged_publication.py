@@ -8,6 +8,7 @@ from contextlib import contextmanager
 import fcntl
 import hashlib
 import json
+from asset_index import write_asset_index
 from pathlib import Path
 import shutil
 import sys
@@ -118,7 +119,6 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
     staged=json.loads(staged_index.read_text())
     current=merge_index(current, staged)
     merged=stage/'promotion-library-index.json'
-    merged.write_text(json.dumps(current,indent=2)+'\n')
     asset_library = stage / 'map-assets'
     document_path = stage / 'browser-document.rhlos-map.json'
     if not document_path.exists():
@@ -152,6 +152,10 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
                     pairs.append((contained_path(staged_index.parent, relative, required=True),
                                   contained_path(library/'3d-assets', relative)))
     # Install manifests only after all referenced assets exist.
+    asset_root = (library/'3d-assets').resolve()
+    prospective = {str(target.resolve().relative_to(asset_root)): source for source, target in pairs
+                   if target.resolve().is_relative_to(asset_root)}
+    write_asset_index(asset_root, current, target=merged, files=prospective)
     pairs.extend([(document_path,library/f'scenes/{map_name}.rhlos-map.json'),(merged,index_path)])
     records=[]
     targets={}
@@ -205,7 +209,11 @@ def _apply(path):
         merged=merge_index(json.loads(target.read_text()),json.loads(staged_path.read_text()))
         if sha(target)!=previous:
             raise ValueError('Library index changed during merge')
-        Path(item['source']).write_text(json.dumps(merged,indent=2)+'\n')
+        asset_root = target.parent.resolve()
+        prospective = {str(Path(record['target']).resolve().relative_to(asset_root)): Path(record['source'])
+                       for record in manifest['files']
+                       if Path(record['target']).resolve().is_relative_to(asset_root)}
+        write_asset_index(asset_root, merged, target=Path(item['source']), files=prospective)
         item['source_sha256']=sha(Path(item['source']))
         item['previous_sha256']=previous
         # Install the index last, after every file it references exists.
@@ -231,8 +239,12 @@ def _apply(path):
                 raise ValueError('Promotion target changed before write: '+str(target))
             temporary=target.with_name(target.name+'.publication-tmp')
             if temporary.exists():raise FileExistsError(temporary)
-            shutil.copy2(item['source'],temporary)
-            temporary.replace(target);written.append(item)
+            if target.resolve() == (Path(manifest['library'])/'3d-assets/index.json').resolve():
+                write_asset_index(target.parent, Path(item['source']).read_bytes())
+            else:
+                shutil.copy2(item['source'],temporary)
+                temporary.replace(target)
+            written.append(item)
             if sha(target)!=item['source_sha256']:raise ValueError('Copied hash mismatch')
     except Exception:
         for item in reversed(written):

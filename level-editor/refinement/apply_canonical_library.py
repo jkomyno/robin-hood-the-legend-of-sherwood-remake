@@ -2,6 +2,7 @@
 import argparse
 from datetime import datetime, timezone
 import json
+from asset_index import validate_asset_index, write_asset_index
 from pathlib import Path
 import shutil
 from urllib.parse import unquote
@@ -55,10 +56,8 @@ def graph(staged, previous):
         if requested != set(pins): raise ValueError('Descriptor resources do not match model')
         if entry.get('lossy_model'):
             lossy = '3d-assets/'+entry['lossy_model']
-            receipt = json.loads(include(lossy+'.receipt.json').read_text())
-            if receipt.get('source') != files[model_path]['sha256']:
-                raise ValueError('Lossy model does not bind the catalog model: '+lossy)
-            include(lossy, receipt.get('output'))
+            include(lossy+'.receipt.json')
+            include(lossy)
         if entry.get('preview_model'):
             preview = '3d-assets/'+entry['preview_model']; include(preview)
             receipt = preview+'.receipt.json'
@@ -79,6 +78,9 @@ def graph(staged, previous):
             descriptor = json.loads(Path(files[reference['descriptor']]['source']).read_text())
             if reference['resources'] != descriptor['resources']: raise ValueError('Map resource pins differ from catalog')
             for resource in reference['resources']: include(resource['path'], resource['sha256'])
+    validate_asset_index(staged/'3d-assets', index, files={
+        relative.removeprefix('3d-assets/'): record['source']
+        for relative, record in files.items() if relative.startswith('3d-assets/')})
     return files, len(entries), len(maps)
 
 
@@ -108,11 +110,14 @@ def publish(plan_path, apply=False):
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 path.rename(destination); moved.append((destination, path))
             # Maps and the index become visible only after their payloads exist.
-            changes.sort(key=lambda relative: (relative.startswith('scenes/') or relative == '3d-assets/index.json', relative))
+            changes.sort(key=lambda relative: (2 if relative == '3d-assets/index.json' else 1 if relative.startswith('scenes/') else 0, relative))
             for relative in changes:
                 target = library/relative; target.parent.mkdir(parents=True, exist_ok=True)
                 installed.append(target)
-                shutil.copy2(files[relative]['source'], target)
+                if relative == '3d-assets/index.json':
+                    write_asset_index(target.parent, Path(files[relative]['source']).read_bytes())
+                else:
+                    shutil.copy2(files[relative]['source'], target)
             graph(library, library)
             (backup/'migration.json').write_text(json.dumps({**report, 'files':files}, indent=2)+'\n')
         except BaseException:

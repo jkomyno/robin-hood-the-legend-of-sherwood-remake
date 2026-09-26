@@ -2,6 +2,7 @@
 import argparse
 import copy
 import json
+from asset_index import write_asset_index
 import math
 from pathlib import Path
 from canonical_assets import AssetBundle, read_model, digest, encoded, localize_positions
@@ -102,6 +103,8 @@ def stage(library, output):
         if variant_field:
             for name,value in descriptor[variant_field].items(): value.update(model='model.gltf',model_scene=name)
         entry = entries[identity];entry.update(model=str(Path(entry['descriptor']).parent/'model.gltf'),model_scene=primary)
+        # Rewritten source bytes require newly derived display models.
+        entry.pop('lossy_model', None)
         # Derived GLB previews keep their original encoding and are not canonical geometry.
         descriptors[identity]=descriptor;references[identity]=reference;proofs[identity]=bundle.proofs
         print('catalog '+identity,flush=True)
@@ -200,7 +203,7 @@ def stage(library, output):
     for identity,descriptor in descriptors.items():
         path=output/'3d-assets'/entries[identity]['descriptor'];path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(encoded(descriptor))
         references[identity].update(descriptor='3d-assets/'+entries[identity]['descriptor'],descriptor_sha256=digest(path.read_bytes()))
-    index['assets']=sorted(entries.values(),key=lambda entry:entry['id']);(output/'3d-assets/index.json').write_bytes(encoded(index))
+    index['assets']=sorted(entries.values(),key=lambda entry:entry['id']);write_asset_index(output/'3d-assets', index)
     plan={'library':str(library),'output':str(output),'sources':sources,'maps':maps,'origins':origins,'references':references,'proofs':proofs}
     (output.parent/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
     return {'assets':len(descriptors),'maps':len(maps),'verified_scenes':sum(len(v)for v in proofs.values())}

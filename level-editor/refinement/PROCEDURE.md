@@ -509,8 +509,12 @@ Staging also derives lossy browser models by default: once the staged catalog's
 model bytes are final it writes `<asset dir>/lossy.glb` (+ `lossy.glb.receipt.json`),
 sets `lossy_model`, and rebuilds `preview.glb` from it
 (`refinement/blender/lossy_assets.py`). Pass `--no-lossy` (or plan `"lossy": false`)
-to skip it. `verify_publication_assets.py` rejects stale derivatives and
-`promote_staged_publication.py` installs them with the models. Backfill an existing
+to skip it. All asset-index publication goes through
+`refinement/asset_index.py::write_asset_index`, which rejects any declared lossy
+asset whose source/output receipt hashes are not current before replacing the index.
+`verify_publication_assets.py` also checks preview derivatives, and
+`promote_staged_publication.py` installs them with the models. The editor loads
+indexed lossy models directly and does not fetch receipts. Backfill an existing
 library with `lossy_assets.py -- library --root level-editor/library/3d-assets
 --run <dir> [--apply]` (dry run without `--apply`; `-- rollback --run <dir>` undoes it).
 

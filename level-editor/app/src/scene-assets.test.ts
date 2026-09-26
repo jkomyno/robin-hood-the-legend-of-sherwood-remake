@@ -83,7 +83,7 @@ test("map manifests reject old whole-map storage and unsafe asset references", (
     assert.throws(() => parseLevel3D({ ...document, sceneAssets: [asset] }));
 });
 
-test("ground lossy models load in place of their pinned GLB only with a matching receipt", async (t) => {
+test("indexed ground lossy models load without receipts or shared source resources", async (t) => {
   const files = new Map<string, File>();
   const root = (prefix = ""): FileSystemDirectoryHandle =>
     ({
@@ -105,10 +105,6 @@ test("ground lossy models load in place of their pinned GLB only with a matching
     resources: [],
   };
   files.set("3d-assets/terrain/lossy.glb", new File([lossy], "lossy.glb"));
-  files.set(
-    "3d-assets/terrain/lossy.glb.receipt.json",
-    new File([JSON.stringify({ source: hash(published), output: hash(lossy) })], "r.json"),
-  );
   const loaded: number[][] = [];
   t.mock.method(GLTFLoader.prototype, "parseAsync", async (bytes: ArrayBuffer) => {
     loaded.push([...new Uint8Array(bytes)]);
@@ -120,16 +116,7 @@ test("ground lossy models load in place of their pinned GLB only with a matching
   );
   await loader.load(reference);
   assert.deepEqual(loaded, [[7]]);
-  // Stale receipt: fall back to the published model (absent here, so the load fails on it).
-  t.mock.method(console, "warn", () => {});
-  files.set(
-    "3d-assets/terrain/lossy.glb.receipt.json",
-    new File([JSON.stringify({ source: "c".repeat(64), output: hash(lossy) })], "r.json"),
-  );
-  await assert.rejects(loader.load(reference), /terrain\/model\.glb/);
   files.set(reference.model, new File([published], "model.glb"));
-  await loader.load(reference);
-  assert.deepEqual(loaded.at(-1), [1, 2, 3]);
   // Resource-backed models: the self-contained lossy model replaces model and shared payloads.
   const shared = {
     ...reference,
@@ -138,10 +125,6 @@ test("ground lossy models load in place of their pinned GLB only with a matching
     resources: [{ path: "3d-assets/blobs/atlas.jpg", sha256: hash("atlas") }],
   };
   files.set("3d-assets/shared/lossy.glb", new File([lossy], "lossy.glb"));
-  files.set(
-    "3d-assets/shared/lossy.glb.receipt.json",
-    new File([JSON.stringify({ source: shared.model_sha256, output: hash(lossy) })], "r.json"),
-  );
   await new SceneAssetLoader(root(), new Map([[shared.model, "3d-assets/shared/lossy.glb"]])).load(
     shared,
   );

@@ -83,7 +83,7 @@ export interface ProjectionAssetEntry {
   model_scene?: string;
   /** Optional lightweight model used only by the asset browser preview. */
   preview_model?: string;
-  /** Optional derived model for display, bound to `model` by `<lossy_model>.receipt.json`. */
+  /** Optional derived model for display, validated against `model` during index publication. */
   lossy_model?: string;
 }
 

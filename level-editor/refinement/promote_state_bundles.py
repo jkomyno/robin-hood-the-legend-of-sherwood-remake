@@ -4,6 +4,7 @@ import copy
 import fcntl
 import hashlib
 import json
+from asset_index import validate_asset_index, write_asset_index
 import os
 from pathlib import Path
 import shutil
@@ -140,6 +141,8 @@ def apply(plan, backup, hook=lambda phase, n: None):
         initial_index = index_path.read_bytes()
         index_sha = hashlib.sha256(initial_index).hexdigest()
         new_index = encoded(merge_index(json.loads(initial_index), plan['entries']))
+        prospective = {str(Path(f['path']).relative_to(library)): Path(f['source']) for f in plan['files']}
+        validate_asset_index(library, new_index, files=prospective)
         jobs = []
         for f in plan['files']:
             check(f['source'], f['after'])
@@ -176,7 +179,10 @@ def apply(plan, backup, hook=lambda phase, n: None):
                     data = Path(j['data_source']).read_bytes() if 'data_source' in j else j['data']
                     if hashlib.sha256(data).hexdigest() != j['after']:
                         raise ValueError('Stage changed during publication')
-                    atomic(p, data)
+                    if j.get('index'):
+                        write_asset_index(library, data)
+                    else:
+                        atomic(p, data)
                 op['status'] = 'installed'
                 save()
                 if j.get('index'):

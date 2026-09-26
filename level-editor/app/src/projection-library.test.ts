@@ -673,7 +673,7 @@ test("scene selectors are descriptor-bound and pinned in saved references", asyn
   );
 });
 
-test("lossy models replace pinned published models only while their receipt names that pin", async (t) => {
+test("indexed lossy models load without receipts or published model reads on reload", async (t) => {
   const f = fixture();
   const sha = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
   const published = new Uint8Array([3, 2, 1]),
@@ -690,7 +690,6 @@ test("lossy models replace pinned published models only while their receipt name
     ],
   });
   f.files.set("3d-assets/house/lossy.glb", new File([lossy], "lossy.glb"));
-  f.json("3d-assets/house/lossy.glb.receipt.json", { source: sha(published), output: sha(lossy) });
   const [entry] = await listProjectionAssets(f.directory);
   assert.equal(entry.lossy_model, "3d-assets/house/lossy.glb");
   const loaded: number[][] = [];
@@ -715,19 +714,10 @@ test("lossy models replace pinned published models only while their receipt name
     [9, 9],
     [9, 9],
   ]);
-  // A stale lossy model (built from another source revision) falls back to the published model.
-  f.files.set(f.entry.model, new File([published], "model.glb"));
-  f.json("3d-assets/house/lossy.glb.receipt.json", { source: "a".repeat(64), output: sha(lossy) });
-  t.mock.method(console, "warn", () => {});
-  await prepareProjectionAsset(f.directory, entry, "Leicester", inserted.reference);
-  assert.deepEqual(loaded.at(-1), [3, 2, 1]);
-  // Lossy bytes that differ from their receipt are a broken library, not a fallback.
-  f.json("3d-assets/house/lossy.glb.receipt.json", {
-    source: sha(published),
-    output: "b".repeat(64),
-  });
+  // A missing indexed derivative is an error.
+  f.files.delete("3d-assets/house/lossy.glb");
   await assert.rejects(
     prepareProjectionAsset(f.directory, entry, "Leicester", inserted.reference),
-    /does not match its receipt/,
+    /lossy\.glb/,
   );
 });

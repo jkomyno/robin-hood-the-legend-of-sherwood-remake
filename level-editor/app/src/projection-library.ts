@@ -222,8 +222,7 @@ export async function prepareProjectionAsset(
   // hashes the published model first so its reference pins the current revision.
   const lossy = entry.lossy_model && lossyApplies(entry.model) ? entry.lossy_model : undefined;
   const read = (path: string) => libraryFile(root, path);
-  let lossyBytes =
-    lossy && expected ? await readLossyModel(read, lossy, expected.model_sha256) : null;
+  let lossyBytes = lossy && expected ? await readLossyModel(read, lossy) : null;
   let modelBytes: ArrayBuffer | null = null,
     modelHash: string;
   if (lossyBytes) modelHash = expected!.model_sha256;
@@ -232,7 +231,7 @@ export async function prepareProjectionAsset(
     modelHash = await hash(modelBytes);
     if (expected && expected.model_sha256 !== modelHash)
       throw new Error(`Asset model changed: ${entry.id}`);
-    if (lossy && !expected) lossyBytes = await readLossyModel(read, lossy, modelHash);
+    if (lossy && !expected) lossyBytes = await readLossyModel(read, lossy);
   }
   const displayBytes = (lossyBytes ?? modelBytes)!;
   const resourcePins = (resources: ExternalAssetSource["resources"]) =>

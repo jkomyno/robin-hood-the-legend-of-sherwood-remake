@@ -51,6 +51,16 @@ class PromotionTests(unittest.TestCase):
         self.assertNotIn('lossy_model', entry)
         self.assertEqual(entry['tags'], ['keep'])
 
+    def test_stale_unchanged_asset_blocks_before_payload_installation(self):
+        live = json.loads((self.lib/'index.json').read_text())
+        live['assets'][1]['lossy_model'] = 'foreign.lossy.glb'
+        (self.lib/'index.json').write_bytes(encoded(live))
+        before = (self.lib/'index.json').read_bytes()
+        with self.assertRaisesRegex(ValueError, 'foreign: lossy model or receipt missing'):
+            apply(self.plan, self.root/'backup')
+        self.assertEqual((self.lib/'a/model.glb').read_bytes(), b'old')
+        self.assertEqual((self.lib/'index.json').read_bytes(), before)
+
     def test_failure_rolls_back(self):
         def hook(phase,n):
             if phase=='after' and n==6: raise RuntimeError('injected')

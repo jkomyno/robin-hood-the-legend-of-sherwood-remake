@@ -7,6 +7,9 @@ import tempfile
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from asset_index import write_asset_index
+
 import bpy
 from mathutils import Matrix, Vector
 from patch_material_export import export_states
@@ -612,7 +615,7 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
         if descriptor.get('editor_usage'):
             entries[key]['editor_usage'] = descriptor['editor_usage']
     index["assets"] = sorted(entries.values(), key=lambda entry: entry["id"])
-    index_path.write_text(json.dumps(index, indent=2) + "\n")
+    write_asset_index(output_dir, index)
     return {"assets": len(ids), "index": str(index_path)}
 
 

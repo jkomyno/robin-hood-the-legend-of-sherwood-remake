@@ -48,7 +48,7 @@ export class SceneAssetLoader {
   lossyFor(model: string): string | undefined {
     return this.lossyModels.get(model);
   }
-  /** `verifiedLossy`: lossy bytes the caller already bound to `reference.model_sha256`. */
+  /** `verifiedLossy`: lossy bytes already loaded by the caller. */
   async load(reference: SceneAssetSource, verifiedLossy?: ArrayBuffer): Promise<THREE.Group> {
     const applies = lossyApplies(reference.model);
     if (verifiedLossy && !applies)
@@ -56,9 +56,7 @@ export class SceneAssetLoader {
     const lossy = applies ? this.lossyModels.get(reference.model) : undefined;
     const lossyBytes =
       verifiedLossy ??
-      (lossy
-        ? await readLossyModel((path) => read(this.root, path), lossy, reference.model_sha256)
-        : null);
+      (lossy ? await readLossyModel((path) => read(this.root, path), lossy) : null);
     let bytes =
       lossyBytes ?? (await checked(await read(this.root, reference.model), reference.model_sha256));
     // Lossy models embed everything, so the published model's shared resources are not fetched.

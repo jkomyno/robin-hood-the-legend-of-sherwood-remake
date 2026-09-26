@@ -117,6 +117,18 @@ class LossyAssetsTest(unittest.TestCase):
         self.assertEqual(self.derived, ['house'])
         self.assertEqual(lossy_assets.verify_derivatives(self.root), [])
 
+    def test_scoped_refresh_does_not_publish_while_an_unselected_lossy_asset_is_stale(self):
+        self.refresh()
+        index_path = self.root/'index.json'
+        index = json.loads(index_path.read_text())
+        index['assets'].append({'id': 'other', 'model': 'other/model.glb',
+                                'lossy_model': 'other/lossy.glb'})
+        index_path.write_text(json.dumps(index))
+        before = index_path.read_bytes()
+        with self.assertRaisesRegex((ValueError, RuntimeError), 'other: lossy model or receipt missing'):
+            self.refresh(ids={'house'})
+        self.assertEqual(index_path.read_bytes(), before)
+
     def test_disabled_refresh_removes_the_field_and_refusals_keep_none(self):
         self.refresh()
         report = self.refresh(lossy=False)

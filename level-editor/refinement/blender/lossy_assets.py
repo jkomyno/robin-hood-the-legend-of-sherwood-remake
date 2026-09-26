@@ -68,6 +68,9 @@ LEVEL_EDITOR = HERE.parents[1]
 ROOT = LEVEL_EDITOR / 'work'  # scratch outputs and run records stay inside the work tree
 PIPELINE = LEVEL_EDITOR / 'pipeline'
 RENDER_SLOTS = LEVEL_EDITOR / 'refinement'  # render_slots.py: machine-wide Blender render slot pool
+sys.path.insert(0, str(RENDER_SLOTS))
+from asset_index import write_asset_index, validate_asset_index, lossy_problems
+
 SOURCE_UV, NEW_UV = 'Published source', 'Lossy atlas'
 COMPONENTS = {5120: np.int8, 5121: np.uint8, 5122: np.int16, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}
 WIDTH = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT2': 4, 'MAT3': 9, 'MAT4': 16}
@@ -1201,8 +1204,8 @@ def main_export_worker(args):
         target.parent.mkdir(parents=True, exist_ok=False)
         export_editor(args.map_name, target, asset_id)
         print(f'EXPORTED {asset_id} {target.stat().st_size}', flush=True)
-    (output / 'index.json').write_text(json.dumps({'version': 1, 'assets': [
-        {'id': key, 'descriptor': f'{key}/asset.json', 'model': f'{key}/model.glb'} for key in args.assets]}, indent=2) + '\n')
+    write_asset_index(output, {'version': 1, 'assets': [
+        {'id': key, 'descriptor': f'{key}/asset.json', 'model': f'{key}/model.glb'} for key in args.assets]})
     (output / 'export.json').write_text(json.dumps({'worker': str(worker), 'worker_sha256': args.worker_sha256,
                                                     'assets': args.assets}, indent=2) + '\n')
 
@@ -1278,6 +1281,11 @@ def publish_one(root, run, entry_id, model, files, fields, source_sha, record):
         require(len(entries) == 1, f'Asset left the index during derivation: {entry_id}')
         entry = entries[0]
         require(sha(root / model) == source_sha, f'Model changed during derivation; rerun: {model}')
+        candidate = copy.deepcopy(index)
+        candidate_entry = next(e for e in candidate['assets'] if e['id'] == entry_id)
+        if model == candidate_entry['model']:
+            candidate_entry.update(fields)
+        validate_asset_index(root, candidate, files=files)
         backup = run / 'backup'
         for name, staged in files.items():
             target = root / name
@@ -1290,14 +1298,11 @@ def publish_one(root, run, entry_id, model, files, fields, source_sha, record):
             target.parent.mkdir(parents=True, exist_ok=True)
             atomic_write(target, Path(staged).read_bytes())
             record['files'][-1]['sha256'] = sha(target)
-        changed = False
         for key, value in fields.items():
             if model == entry['model'] and entry.get(key) != value:
                 record['index'].append({'id': entry_id, 'field': key, 'previous': entry.get(key), 'value': value})
                 entry[key] = value
-                changed = True
-        if changed:
-            atomic_write(index_path, (json.dumps(index, indent=2) + '\n').encode())
+        write_asset_index(root, index)
         record['index_sha256'] = sha(index_path)
         (run / 'record.json').write_text(json.dumps(record, indent=2) + '\n')
 
@@ -1419,6 +1424,9 @@ def main_rollback(args):
                 entry.pop(key)
             else:
                 entry[key] = change['previous']
+        restored_files = {change['path']: run / 'backup' / change['path']
+                          for change in record['files'] if change['previous_sha256'] is not None}
+        validate_asset_index(root, index, files=restored_files)
         for change in reversed(record['files']):
             target = root / change['path']
             require(not target.exists() or sha(target) == change['sha256'], f'File changed since the run: {change["path"]}')
@@ -1426,7 +1434,7 @@ def main_rollback(args):
                 target.unlink(missing_ok=True)
             else:
                 atomic_write(target, (run / 'backup' / change['path']).read_bytes())
-        atomic_write(index_path, (json.dumps(index, indent=2) + '\n').encode())
+        write_asset_index(root, index)
     print(f'Rolled back {len(record["index"])} index entries and {len(record["files"])} files', flush=True)
 
 
@@ -1441,22 +1449,13 @@ def default_settings(**overrides):
     return args
 
 
-def verify_derivatives(root):
+def verify_derivatives(root, *, index=None):
     """Problems with the lossy/preview derivatives an index declares (empty list = consistent)."""
     root = Path(root)
-    problems = []
-    for entry in json.loads((root / 'index.json').read_text())['assets']:
+    index = json.loads((root / 'index.json').read_text()) if index is None else index
+    problems = lossy_problems(root, index)
+    for entry in index['assets']:
         model = entry['model']
-        if entry.get('lossy_model'):
-            receipt_path = root / (entry['lossy_model'] + '.receipt.json')
-            if not (root / entry['lossy_model']).is_file() or not receipt_path.is_file():
-                problems.append(f'{entry["id"]}: lossy model or receipt missing')
-            else:
-                receipt = json.loads(receipt_path.read_text())
-                if receipt.get('source') != sha(root / model):
-                    problems.append(f'{entry["id"]}: lossy receipt does not bind the current model')
-                if receipt.get('output') != sha(root / entry['lossy_model']):
-                    problems.append(f'{entry["id"]}: lossy model bytes differ from its receipt')
         if entry.get('preview_model'):
             receipt_path = root / (entry['preview_model'] + '.receipt.json')
             if not (root / entry['preview_model']).is_file() or not receipt_path.is_file():
@@ -1512,7 +1511,6 @@ def refresh_derivatives(root, work, *, lossy=True, previews=True, ids=None, sett
             report['derived'].append(row)
             log(f'LOSSY {model}: {json.dumps(row)}')
         entry['lossy_model'] = target
-    atomic_write(index_path, (json.dumps(index, indent=2) + '\n').encode())
     if previews:
         for entry in index['assets']:
             if ids is not None and entry['id'] not in ids:
@@ -1523,9 +1521,9 @@ def refresh_derivatives(root, work, *, lossy=True, previews=True, ids=None, sett
                 info = write_preview(root / source, source, root / preview)
                 report.setdefault('previews_built', []).append({'id': entry['id'], 'bytes': info['bytes'], 'edge': info['edge']})
             entry['preview_model'] = preview
-        atomic_write(index_path, (json.dumps(index, indent=2) + '\n').encode())
-    problems = verify_derivatives(root)
+    problems = verify_derivatives(root, index=index)
     require(not problems, f'Derivatives inconsistent after refresh: {problems}')
+    write_asset_index(root, index)
     return report
 
 
