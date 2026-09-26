@@ -1,5 +1,6 @@
 // Edit JSON maps assembled from pinned library assets, with game and orbit cameras.
 import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
+import type { JSX } from "@solidjs/web";
 import type * as THREE from "three";
 import {
   IDENTITY_TRANSFORM,
@@ -55,6 +56,8 @@ export interface EditorProps {
   library: () => LibraryRef | null;
   onError: (msg: string) => void;
   onStatus: (msg: string | null) => void;
+  toolbarStart?: () => JSX.Element;
+  toolbarEnd?: () => JSX.Element;
 }
 
 export default function Editor3D(props: EditorProps) {
@@ -601,7 +604,8 @@ export default function Editor3D(props: EditorProps) {
           </fieldset>
         </form>
       </dialog>
-      <div class="editor-bar">
+      <header class="topbar editor-bar">
+        {props.toolbarStart?.()}
         <button disabled={!props.library() || editingPath()} title={!props.library() ? "Waiting for assets" : "Create a blank map"}
           onClick={() => { setNewMapError(""); newMapDialog.showModal(); }}>New map</button>
         <label class="mission-picker">Map
@@ -646,7 +650,8 @@ export default function Editor3D(props: EditorProps) {
         <button disabled={!doc()} onClick={() => downloadMap(mapName()!,doc()!)}>Download</button>
         <button aria-expanded={libraryOpen() ? "true" : "false"} aria-controls="asset-browser" onClick={() => setLibraryOpen(!libraryOpen())}>Assets</button>
         <button aria-expanded={helpOpen() ? "true" : "false"} aria-controls="editor-help" onClick={() => setHelpOpen(!helpOpen())}>Help</button>
-      </div>
+        {props.toolbarEnd?.()}
+      </header>
       <Show when={mapLoadProgress()}>
         {(progress) => <div class="map-load-progress" role="status" aria-label={`Loading map: ${progress().phase}`}>
           <div class="map-load-progress-label"><span>{progress().phase}</span><span>{progress().total > 1 ? `${progress().completed} / ${progress().total} assets` : ""}</span></div>

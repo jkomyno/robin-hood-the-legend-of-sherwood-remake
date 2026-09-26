@@ -788,6 +788,9 @@ select, input.search { background: #171c22; border-color: var(--border); min-hei
 .topbar .error { color: #ffc0b5; overflow-wrap: anywhere; max-width: 100%; }
 .topbar .busy { color: #e7cd95; }
 .editor-bar { gap: 8px; padding: 10px 16px; background: #20262d; border-color: var(--border); }
+.topbar.editor-bar { min-height: 52px; padding: 8px 12px; }
+.editor-bar > h1, .editor-bar > button, .editor-bar > .mission-picker { flex-shrink: 0; }
+.editor-bar > .busy, .editor-bar > .error { flex-basis: 100%; }
 .mission-picker { color: var(--muted); gap: 7px; }
 .mission-picker select { width: 165px; background: #171c22; border-color: var(--border); color: #e1e7eb; }
 .editor-bar .primary-action { background: var(--accent); color: #18251e; border-color: var(--accent); font-weight: 650; padding-inline: 18px; }

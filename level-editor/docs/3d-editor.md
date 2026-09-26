@@ -88,6 +88,9 @@ Failed or superseded loads retain the current scene and release candidate resour
 
 ## Controls
 
+One header combines map and mission selection, editing actions, and the optional
+game-data connection. Controls wrap within that bar on narrower windows.
+
 | action | how |
 |---|---|
 | pan / orbit around the point under the cursor / zoom to cursor | left drag / right drag / wheel |

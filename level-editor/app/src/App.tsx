@@ -98,44 +98,43 @@ export default function App() {
 
   return (
     <div class="app editor-app">
-      <header class="topbar">
-        <h1>Sherwood <span class="brand-subtitle">Level editor</span></h1>
-        <Show
-          when={index()}
-          fallback={
-            <button
-              class="connect"
-              title="Optional, read-only game data for mission previews, sprites, and reference terrain"
-              onClick={needsReconnect() ? onReconnect : onPick}
-            >
-              {needsReconnect()
-                ? "Reconnect game data"
-                : "Connect game data…"}
-            </button>
-          }
-        >
-          {(idx) => (
-            <span class="connected">
-              Game data · {idx().maps.size} maps{" "}
-              <button onClick={onPick}>change</button>
-            </span>
-          )}
-        </Show>
-        <span class="spacer" />
-        <Show when={status()}>{(s) => <span class="busy">{s()}</span>}</Show>
-        <Show when={error()}>
-          {(e) => (
-            <span class="error" role="alert">
-              {e()} <button aria-label="Dismiss error" onClick={() => setError(null)}>×</button>
-            </span>
-          )}
-        </Show>
-      </header>
       <Editor3D
         index={index}
         library={library}
         onError={setError}
         onStatus={setStatus}
+        toolbarStart={() => <h1 title="Level editor">Sherwood</h1>}
+        toolbarEnd={() => <>
+          <Show
+            when={index()}
+            fallback={
+              <button
+                class="connect"
+                title="Optional, read-only game data for mission previews, sprites, and reference terrain"
+                onClick={needsReconnect() ? onReconnect : onPick}
+              >
+                {needsReconnect()
+                  ? "Reconnect game data"
+                  : "Connect game data…"}
+              </button>
+            }
+          >
+            {(idx) => (
+              <span class="connected">
+                Game data · {idx().maps.size} maps{" "}
+                <button onClick={onPick}>change</button>
+              </span>
+            )}
+          </Show>
+          <Show when={status()}>{(s) => <span class="busy">{s()}</span>}</Show>
+          <Show when={error()}>
+            {(e) => (
+              <span class="error" role="alert">
+                {e()} <button aria-label="Dismiss error" onClick={() => setError(null)}>×</button>
+              </span>
+            )}
+          </Show>
+        </>}
       />
     </div>
   );
