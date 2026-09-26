@@ -6,6 +6,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createHash } from "node:crypto";
 import {
+  expandStoredMap,
   groupObstacles,
   parseStoredMap,
   IDENTITY_TRANSFORM,
@@ -89,7 +90,8 @@ export async function importScene(
       document,
       await pinnedDescriptors(
         outputLibrary,
-        (document.assetSources ?? []) as import("@rle/shared").ExternalAssetSource[],
+        (expandStoredMap(document).assetSources ??
+          []) as import("@rle/shared").ExternalAssetSource[],
       ),
     ) as unknown as Record<string, unknown>;
   const reportFile = path.join(outputLibrary, "import-reports", `${String(document.map)}.json`);

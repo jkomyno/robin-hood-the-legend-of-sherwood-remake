@@ -35,7 +35,14 @@ class HybridLibraryTests(unittest.TestCase):
                     entries[-1]['preview_model'] = identity+'/preview.glb'
                     (path.parent/'preview.glb').write_bytes(b'preview')
                     (path.parent/'preview.glb.receipt.json').write_text('{"proof":"preserve"}')
-                references.append({**ref,'id':identity,'descriptor':'3d-assets/'+identity+'/asset.json','descriptor_sha256':digest(path.read_bytes())})
+                if identity == 'c':
+                    references.append({'id': identity, 'descriptor': '3d-assets/'+identity+'/asset.json',
+                        'descriptor_sha256': digest(path.read_bytes()), 'appearances': [
+                            {'state': state, 'model': ref['model'], 'model_sha256': ref['model_sha256'],
+                             'model_scene': scene, 'resources': ref['resources']}
+                            for state, scene in [('base', 'default'), ('applied', 'applied')]]})
+                else:
+                    references.append({**ref,'id':identity,'descriptor':'3d-assets/'+identity+'/asset.json','descriptor_sha256':digest(path.read_bytes())})
             (library/'3d-assets/index.json').write_text(json.dumps({'assets':entries}))
             (library/'scenes/map.rhlos-map.json').write_text(json.dumps({'sceneAssets':[],'assetSources':references,'objects':[]}))
             staged = root/'first/staged'; report = stage_hybrid(library, staged)
@@ -46,6 +53,8 @@ class HybridLibraryTests(unittest.TestCase):
             self.assertEqual(report['verified_scenes'],4)
             self.assertEqual(len(list((staged/'3d-assets/blobs').iterdir())),1)
             self.assertEqual(graph(staged,library)[1:],(3,1))
+            bundled = json.loads((staged/'scenes/map.rhlos-map.json').read_text())['assetSources'][-1]
+            self.assertEqual([entry['state'] for entry in bundled['appearances']], ['base', 'applied'])
             self.assertEqual((staged/'3d-assets/derby/c/preview.glb').read_bytes(), b'preview')
             self.assertEqual(json.loads((staged/'3d-assets/derby/c/preview.glb.receipt.json').read_text()), {'proof':'preserve'})
             for identity in ('a','b','c'):

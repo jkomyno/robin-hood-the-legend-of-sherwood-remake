@@ -3,11 +3,15 @@ import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { listProjectionAssets, prepareProjectionAsset } from "./projection-library.ts";
+import {
+  listProjectionAppearances,
+  listProjectionAssets,
+  prepareProjectionAsset,
+} from "./projection-library.ts";
 import { disposeObjectResources } from "./resources.ts";
 import { insertProjectionAsset } from "./asset-commands.ts";
 import { prepareMapCandidate } from "./map-candidate.ts";
-import { serializeStoredMap, type Level3D } from "@rle/shared";
+import { expandStoredMap, parseStoredMap, serializeStoredMap, type Level3D } from "@rle/shared";
 
 function fixture() {
   const obstacle = {
@@ -119,6 +123,12 @@ test("standalone index filters the current map and actual model parts receive na
   assert.equal(f.disposed(), 1);
 });
 
+test("ordinary palette entries load from the index without reading descriptors", async () => {
+  const f = fixture();
+  f.files.delete(f.entry.descriptor);
+  assert.deepEqual(await listProjectionAssets(f.directory, "Leicester"), [f.entry]);
+});
+
 test("changed files reject before model publication; bad model cleanup is owned", async (t) => {
   const f = fixture();
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
@@ -217,10 +227,15 @@ test("static model variants load one endpoint, retain endpoint obstacles, and co
     },
   });
   f.files.set("3d-assets/house/lowered.glb", new File([new Uint8Array([8, 9])], "lowered.glb"));
-  const entries = await listProjectionAssets(f.directory, "Leicester");
+  const palette = await listProjectionAssets(f.directory, "Leicester");
+  assert.deepEqual(
+    palette.map((entry) => entry.name),
+    ["House"],
+  );
+  const entries = await listProjectionAppearances(f.directory, palette[0]!);
   assert.deepEqual(
     entries.map((entry) => entry.name),
-    ["House — Raised (static)", "House — Lowered (static)"],
+    ["Raised", "Lowered"],
   );
   const loaded: number[][] = [];
   t.mock.method(GLTFLoader.prototype, "parseAsync", async (bytes: ArrayBuffer) => {
@@ -254,6 +269,48 @@ test("static model variants load one endpoint, retain endpoint obstacles, and co
     ).document;
   assert.equal(document.assetSources!.length, 2);
   assert.notEqual(document.objects[0].node, document.objects[1].node);
+  const descriptors = new Map([
+    [raised.descriptor.id, raised.descriptor],
+    [lowered.descriptor.id, lowered.descriptor],
+  ]);
+  const stored = serializeStoredMap(document, descriptors) as {
+    assetSources: { id: string; appearances?: unknown[] }[];
+    placements: { assets: string[]; appearances?: Record<string, string[]> }[];
+  };
+  assert.deepEqual(
+    stored.assetSources.map((source) => source.id),
+    ["house"],
+  );
+  assert.equal(stored.assetSources[0]!.appearances?.length, 2);
+  assert.deepEqual(
+    stored.placements.map((placement) => placement.assets),
+    [["house"], ["house"]],
+  );
+  assert.deepEqual(stored.placements[1]!.appearances, { house: ["applied"] });
+  assert.deepEqual((expandStoredMap(stored).assetSources as unknown[]).length, 2);
+  assert.deepEqual(parseStoredMap(stored, descriptors), document);
+  const appliedOnly = insertProjectionAsset(
+    {
+      ...document,
+      groups: [],
+      objects: [],
+      assetSources: [],
+    },
+    lowered.descriptor,
+    lowered.reference,
+    [0, 0, 0],
+  ).document;
+  const appliedStored = serializeStoredMap(appliedOnly, descriptors) as typeof stored;
+  assert.deepEqual(
+    appliedStored.assetSources.map((source) => source.id),
+    ["house"],
+  );
+  assert.deepEqual(appliedStored.placements[0]!.appearances, { house: ["applied"] });
+  assert.deepEqual(parseStoredMap(appliedStored, descriptors), appliedOnly);
+  assert.throws(
+    () => parseStoredMap({ ...stored, assetSources: document.assetSources }, descriptors),
+    /Separate appearance source is unsupported/,
+  );
   const reloaded = await prepareProjectionAsset(
     f.directory,
     lowered.reference,
@@ -472,7 +529,12 @@ test("additional complete variants retain the covered base and pin each endpoint
   });
   f.files.set("3d-assets/house/closed.glb", new File([new Uint8Array([4])], "closed.glb"));
   f.files.set("3d-assets/house/open.glb", new File([new Uint8Array([5])], "open.glb"));
-  const entries = await listProjectionAssets(f.directory, "Leicester");
+  const palette = await listProjectionAssets(f.directory, "Leicester");
+  assert.deepEqual(
+    palette.map((entry) => entry.id),
+    ["house"],
+  );
+  const entries = await listProjectionAppearances(f.directory, palette[0]!);
   assert.deepEqual(
     entries.map((entry) => entry.id),
     ["house", "house--state-initial", "house--state-applied"],
@@ -523,7 +585,12 @@ test("scene selectors are descriptor-bound and pinned in saved references", asyn
       },
     ],
   });
-  const entries = await listProjectionAssets(f.directory);
+  const palette = await listProjectionAssets(f.directory);
+  assert.deepEqual(
+    palette.map((entry) => entry.model_scene),
+    ["base"],
+  );
+  const entries = await listProjectionAppearances(f.directory, palette[0]!);
   assert.deepEqual(
     entries.map((entry) => entry.model_scene),
     ["base", "closed", "open"],

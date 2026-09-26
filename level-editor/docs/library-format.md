@@ -60,12 +60,15 @@ files contain no hinge positions in map coordinates or mission-state records.
 Source obstacle/profile identifiers may remain as provenance. A reusable
 appearance switch has an asset-local ID.
 
-The map's `assetSources` pins the catalog descriptor, model, selected scene, and
-resources. A version 2 map stores one entry in `placements` for each placed asset
-group. Its `assets` array names the catalog assets that make up that placement;
-the placement retains its ID, name, and transform. The pinned descriptors supply
-the default parts, local transforms, collision footprints, names, and visibility.
-The editor expands placements into its normal group and object model when loading.
+The map's `assetSources` pins each catalog asset. When an asset has multiple
+appearances in the scene, one source entry holds the descriptor pin and an
+`appearances` array of model and scene pins. A version 2 map stores one entry
+in `placements` for each placed asset group. Its `assets` array names each
+catalog asset once; `appearances` records which of its forms are present in
+that placement. The placement retains its ID, name, and transform. The pinned
+descriptors supply the default parts, local transforms, collision footprints,
+names, and visibility. The editor expands placements into its normal group
+and object model when loading.
 
 A descriptor part is an obstacle part (`source_obstacle` plus
 `obstacle_local_game`), a mission part (`mission_profile` plus editor-only
@@ -85,8 +88,9 @@ lists deleted descriptor parts; `copies` describes extra instances of a part.
 Mixed-asset placements use full `asset:<asset-id>:<part-node>` keys. `idMode`
 selects the existing object ID convention, and an exceptional object ID appears
 as a part override. An optional top-level `order` preserves object order when it
-differs from descriptor order. Old version 1 maps remain readable and expand into
-the same editor model. Run `node pipeline/src/migrate-map-v2.ts library` to check
+differs from descriptor order. Separate `--state-*` asset source records are no
+longer accepted in version 2 maps. Old version 1 maps remain readable and expand
+into the same editor model. Run `node pipeline/src/migrate-map-v2.ts library` to check
 an existing library, then add `--apply` to save version 2 files with backups.
 
 Mission-specific reveal triggers and drawbridge bindings belong in per-object

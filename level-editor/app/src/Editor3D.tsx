@@ -1,5 +1,5 @@
 // Edit JSON maps assembled from pinned library assets, with game and orbit cameras.
-import { For, Show, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, onCleanup, untrack } from "solid-js";
 import type { JSX } from "@solidjs/web";
 import type * as THREE from "three";
 import {
@@ -663,7 +663,7 @@ export default function Editor3D(props: EditorProps) {
 
   createEffect(
     () => ({ obstacles: showObstacles(), elevation: showElevation() }),
-    () => viewport.buildOverlays(),
+    () => untrack(() => viewport.buildOverlays()),
   );
   createEffect(
     () => gizmoVertical(),
@@ -1111,7 +1111,7 @@ export default function Editor3D(props: EditorProps) {
           class={`editor-canvas ${dropActive() ? "asset-drop-active" : ""}`}
           ref={(element) => {
             viewportElement = element;
-            viewport.setup(element);
+            untrack(() => viewport.setup(element));
           }}
           onDragOver={(event) => {
             if (event.dataTransfer?.types.includes("Files")) {
@@ -1151,7 +1151,9 @@ export default function Editor3D(props: EditorProps) {
             const id = event.dataTransfer?.getData(ASSET_DRAG_TYPE);
             if (!id) return;
             event.preventDefault();
-            const entry = assetEntries().find((entry) => entry.id === id);
+            const entry =
+              (assetDrag?.entry.id === id ? assetDrag.entry : undefined) ??
+              assetEntries().find((entry) => entry.id === id);
             const placement = viewport.assetDropPosition(event.clientX, event.clientY);
             if (assetDrag && entry?.id === assetDrag.entry.id && placement) {
               assetDrag.position = placement;

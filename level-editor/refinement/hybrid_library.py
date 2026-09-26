@@ -136,7 +136,16 @@ def stage_hybrid(library, output, min_savings=DEFAULT_MIN_SAVINGS):
         relative = str(path.relative_to(library)); document = json.loads(read(relative))
         for ref in document['sceneAssets']+document.get('assetSources', []):
             if ref.get('descriptor') not in references: raise ValueError('Map reference is not in catalog')
-            ref.update(references[ref['descriptor']])
+            replacement = references[ref['descriptor']]
+            if 'appearances' in ref:
+                ref['descriptor'] = replacement['descriptor']
+                ref['descriptor_sha256'] = replacement['descriptor_sha256']
+                for appearance in ref['appearances']:
+                    appearance.update(model=replacement['model'],
+                                      model_sha256=replacement['model_sha256'],
+                                      resources=replacement['resources'])
+            else:
+                ref.update(replacement)
         (output/relative).write_bytes(encoded(document))
     for path in (output/'3d-assets/blobs').iterdir():
         if str(path.relative_to(output)) not in external_paths: path.unlink()

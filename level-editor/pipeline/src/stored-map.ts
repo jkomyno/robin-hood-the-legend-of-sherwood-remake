@@ -3,6 +3,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import {
   descriptorForSource,
+  expandStoredMap,
   parseStoredMap,
   parseExternalAssetSources,
   parseLevel3D,
@@ -34,7 +35,10 @@ export async function pinnedDescriptors(
 
 export async function readStoredMap(file: string, library: string): Promise<Level3D> {
   const raw = JSON.parse(await fs.readFile(file, "utf8"));
-  const descriptors = await pinnedDescriptors(library, raw.assetSources ?? []);
+  const descriptors = await pinnedDescriptors(
+    library,
+    (expandStoredMap(raw).assetSources as ExternalAssetSource[] | undefined) ?? [],
+  );
   return parseStoredMap(raw, descriptors);
 }
 

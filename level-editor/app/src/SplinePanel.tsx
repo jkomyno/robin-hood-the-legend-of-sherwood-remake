@@ -1,4 +1,4 @@
-import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
+import { For, Show, createEffect, createSignal, onCleanup, untrack } from "solid-js";
 import {
   parseLevel3D,
   type ExternalAssetSource,
@@ -365,26 +365,28 @@ export default function SplinePanel(props: {
       drawing: !!draft(),
     }),
     ({ current, selected, drawing }) => {
-      props.viewport.setSplineEdit(
-        current
-          ? {
-              path: current,
-              point: selected,
-              drawing,
-              append(position) {
-                const last = current.points.at(-1);
-                if (last && Math.hypot(last[0] - position[0], last[1] - position[1]) < 1) return;
-                if (current.points.length >= 256) {
-                  props.onError("A path supports at most 256 control points");
-                  return;
-                }
-                patch({ points: [...current.points, position] });
-                setPoint(current.points.length);
-              },
-              move,
-              selectPoint: setPoint,
-            }
-          : null,
+      untrack(() =>
+        props.viewport.setSplineEdit(
+          current
+            ? {
+                path: current,
+                point: selected,
+                drawing,
+                append(position) {
+                  const last = current.points.at(-1);
+                  if (last && Math.hypot(last[0] - position[0], last[1] - position[1]) < 1) return;
+                  if (current.points.length >= 256) {
+                    props.onError("A path supports at most 256 control points");
+                    return;
+                  }
+                  patch({ points: [...current.points, position] });
+                  setPoint(current.points.length);
+                },
+                move,
+                selectPoint: setPoint,
+              }
+            : null,
+        ),
       );
     },
   );

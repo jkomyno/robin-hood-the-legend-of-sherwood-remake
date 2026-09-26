@@ -71,7 +71,8 @@ def graph(staged, previous):
                 raise ValueError('Map contains an assetless placement: '+str(path))
         elif any(not part['node'].startswith('asset:') for part in value['objects']):
             raise ValueError('Map contains world-scene objects: '+str(path))
-        for reference in value['sceneAssets']+value.get('assetSources', []):
+        from stored_map import asset_source_references
+        for reference in value['sceneAssets']+list(asset_source_references(value)):
             if reference['model'] not in models: raise ValueError('Map references a non-catalog model')
             include(reference['model'], reference['model_sha256'])
             include(reference['descriptor'], reference['descriptor_sha256'])

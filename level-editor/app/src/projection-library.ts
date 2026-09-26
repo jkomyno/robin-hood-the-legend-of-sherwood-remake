@@ -71,50 +71,50 @@ export async function listProjectionAssets(
       ...(entry.preview_model ? { preview_model: `3d-assets/${entry.preview_model}` } : {}),
       ...(entry.lossy_model ? { lossy_model: `3d-assets/${entry.lossy_model}` } : {}),
     }));
-  const expanded = await Promise.all(
-    entries.map(async (entry) => {
-      const descriptor = parseProjectionAssetDescriptor(
-        JSON.parse(await (await libraryFile(root, entry.descriptor)).text()),
-      );
-      if (
-        descriptor.id !== entry.id ||
-        descriptor.source_map.toLowerCase() !== entry.source_map.toLowerCase()
-      )
-        throw new Error(`Asset catalog identity mismatch: ${entry.id}`);
-      if (entry.model_scene !== descriptor.model_scene)
-        throw new Error(`Asset catalog scene mismatch: ${entry.id}`);
-      const variants = descriptor.state_variants ?? descriptor.standalone_variants;
-      if (!variants) return [entry];
-      const parent = entry.descriptor.split("/").slice(0, -1).join("/");
-      return [
-        ...(descriptor.standalone_variants ? [entry] : []),
-        ...(["initial", "applied"] as const).flatMap((state) => {
-          const variant = variants[state];
-          return variant
-            ? [
-                {
-                  ...entry,
-                  id: assetVariantId(entry.id, state),
-                  name: `${entry.name} — ${variant.name} (static)`,
-                  state_variant: state,
-                  model: `${parent}/${variant.model}`,
-                  model_scene: variant.model_scene,
-                  preview_model:
-                    variant.model === descriptor.model && variant.model_scene
-                      ? entry.preview_model
-                      : undefined,
-                  lossy_model: variant.model === descriptor.model ? entry.lossy_model : undefined,
-                },
-              ]
-            : [];
-        }),
-      ];
-    }),
+  return entries;
+}
+
+/** Read alternate appearances only for a card the user opens, not for every catalog entry. */
+export async function listProjectionAppearances(
+  root: FileSystemDirectoryHandle,
+  entry: ProjectionAssetEntry,
+): Promise<ProjectionAssetEntry[]> {
+  const descriptor = parseProjectionAssetDescriptor(
+    JSON.parse(await (await libraryFile(root, entry.descriptor)).text()),
   );
-  const flattened = expanded.flat();
-  if (new Set(flattened.map((entry) => entry.id)).size !== flattened.length)
-    throw new Error("Duplicate static asset variant identity");
-  return flattened;
+  if (
+    descriptor.id !== entry.id ||
+    descriptor.source_map.toLowerCase() !== entry.source_map.toLowerCase()
+  )
+    throw new Error(`Asset catalog identity mismatch: ${entry.id}`);
+  if (entry.model_scene !== descriptor.model_scene)
+    throw new Error(`Asset catalog scene mismatch: ${entry.id}`);
+  const variants = descriptor.state_variants ?? descriptor.standalone_variants;
+  if (!variants) return [entry];
+  const parent = entry.descriptor.split("/").slice(0, -1).join("/");
+  return [
+    ...(descriptor.standalone_variants ? [entry] : []),
+    ...(["initial", "applied"] as const).flatMap((state) => {
+      const variant = variants[state];
+      return variant
+        ? [
+            {
+              ...entry,
+              id: assetVariantId(entry.id, state),
+              name: variant.name,
+              state_variant: state,
+              model: `${parent}/${variant.model}`,
+              model_scene: variant.model_scene,
+              preview_model:
+                variant.model === descriptor.model && variant.model_scene
+                  ? entry.preview_model
+                  : undefined,
+              lossy_model: variant.model === descriptor.model ? entry.lossy_model : undefined,
+            },
+          ]
+        : [];
+    }),
+  ];
 }
 
 /** Library model path -> lossy model path, both prefixed like saved references. */

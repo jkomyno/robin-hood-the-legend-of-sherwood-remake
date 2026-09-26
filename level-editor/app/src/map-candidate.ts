@@ -1,5 +1,11 @@
 import * as THREE from "three";
-import { documentProvenance, parseStoredMap, parseLevel3D, snapFloatingParts } from "@rle/shared";
+import {
+  documentProvenance,
+  expandStoredMap,
+  parseStoredMap,
+  parseLevel3D,
+  snapFloatingParts,
+} from "@rle/shared";
 import { readJson, subdir } from "./fs.ts";
 import { loadProtoLevel, type DatadirIndex } from "./datadir.ts";
 import {
@@ -25,12 +31,12 @@ export async function prepareMapCandidate(
     const directory = await subdir(library, ["scenes"]);
     if (!directory) throw new Error("scenes/ missing");
     const saved = importedDocument ?? (await readJson(directory, `${name}.rhlos-map.json`));
+    const expanded = expandStoredMap(saved);
     const document = parseStoredMap(
       saved,
       await readPinnedAssetDescriptors(
         library,
-        (saved as { assetSources?: import("@rle/shared").ExternalAssetSource[] }).assetSources ??
-          [],
+        (expanded.assetSources as import("@rle/shared").ExternalAssetSource[] | undefined) ?? [],
       ),
     );
     if (document.map.toLowerCase() !== documentMap.toLowerCase())

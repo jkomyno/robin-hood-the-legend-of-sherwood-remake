@@ -5,7 +5,7 @@ import {
   hydrateAssetInstances,
 } from "./asset-instance-document.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "./level3d.ts";
-import type { ProjectionAssetDescriptor } from "./projection-assets.ts";
+import type { ExternalAssetSource, ProjectionAssetDescriptor } from "./projection-assets.ts";
 import { parseLevel3D } from "./validation.ts";
 
 type Descriptors = ReadonlyMap<string, ProjectionAssetDescriptor>;
@@ -79,6 +79,128 @@ function patched(defaults: Level3DObject, override: Entry): Level3DObject {
 
 function assetId(node: string): string | null {
   return /^asset:([^:]+):.+$/.exec(node)?.[1] ?? null;
+}
+
+function appearanceId(id: string): { asset: string; state: "base" | "initial" | "applied" } {
+  const match = /^(.*)--state-(initial|applied)$/.exec(id);
+  return match
+    ? { asset: match[1]!, state: match[2] as "initial" | "applied" }
+    : { asset: id, state: "base" };
+}
+
+function compactSources(sources: ExternalAssetSource[]): unknown[] {
+  const grouped = new Map<string, ExternalAssetSource[]>();
+  for (const source of sources) {
+    const asset = appearanceId(source.id).asset;
+    const group = grouped.get(asset) ?? [];
+    group.push(source);
+    grouped.set(asset, group);
+  }
+  return [...grouped].map(([id, group]) => {
+    if (group.every((source) => appearanceId(source.id).state === "base")) return group[0]!;
+    const first = group[0]!;
+    if (
+      group.some(
+        (source) =>
+          source.descriptor !== first.descriptor ||
+          source.descriptor_sha256 !== first.descriptor_sha256,
+      )
+    )
+      throw new Error(`Appearance descriptors disagree: ${id}`);
+    return {
+      id,
+      descriptor: first.descriptor,
+      descriptor_sha256: first.descriptor_sha256,
+      appearances: group.map((source) => ({
+        state: appearanceId(source.id).state,
+        model: source.model,
+        model_sha256: source.model_sha256,
+        ...(source.model_scene ? { model_scene: source.model_scene } : {}),
+        ...(source.resources ? { resources: source.resources } : {}),
+      })),
+    };
+  });
+}
+
+function compactPlacement(placement: Entry): Entry {
+  const assets = placement.assets as string[];
+  const grouped = new Map<string, ("base" | "initial" | "applied")[]>();
+  for (const id of assets) {
+    const appearance = appearanceId(id);
+    const states = grouped.get(appearance.asset) ?? [];
+    states.push(appearance.state);
+    grouped.set(appearance.asset, states);
+  }
+  const appearances = Object.fromEntries(
+    [...grouped].filter(([, states]) => states.some((state) => state !== "base")),
+  );
+  return {
+    ...placement,
+    assets: [...grouped.keys()],
+    ...(Object.keys(appearances).length ? { appearances } : {}),
+  };
+}
+
+/** Expand a saved appearance bundle into the editor's pinned runtime references. */
+export function expandStoredMap(value: unknown): Entry {
+  const saved = record(value, "document");
+  if (saved.version !== 2) return saved;
+  const assetSources = (saved.assetSources as unknown[] | undefined)?.flatMap((raw) => {
+    const source = record(raw, "asset source");
+    if (source.appearances === undefined) {
+      if (typeof source.id === "string" && appearanceId(source.id).state !== "base")
+        throw new Error(`Separate appearance source is unsupported: ${source.id}`);
+      return [source];
+    }
+    if (!Array.isArray(source.appearances) || !source.appearances.length)
+      throw new Error("Invalid stored asset appearances");
+    if (typeof source.id !== "string" || typeof source.descriptor !== "string")
+      throw new Error("Invalid stored asset appearance bundle");
+    const states = new Set<string>();
+    return source.appearances.map((rawAppearance) => {
+      const appearance = record(rawAppearance, "appearance");
+      const state = appearance.state;
+      if (!["base", "initial", "applied"].includes(state as string) || states.has(state as string))
+        throw new Error(`Invalid stored asset appearance: ${source.id}`);
+      states.add(state as string);
+      const { state: _state, ...model } = appearance;
+      return {
+        id: state === "base" ? source.id : `${source.id}--state-${state}`,
+        descriptor: source.descriptor,
+        descriptor_sha256: source.descriptor_sha256,
+        ...model,
+        ...(state === "base" ? {} : { state_variant: state }),
+      };
+    });
+  });
+  const placements = (saved.placements as unknown[] | undefined)?.map((raw) => {
+    const placement = record(raw, "placement");
+    if (!placement.appearances) return placement;
+    const appearances = record(placement.appearances, "placement appearances");
+    if (!Array.isArray(placement.assets)) throw new Error("Invalid stored asset placement");
+    const placementAssets = placement.assets as unknown[];
+    if (Object.keys(appearances).some((id) => !placementAssets.includes(id)))
+      throw new Error("Placement appearance has no asset");
+    const assets = placementAssets.flatMap((id) => {
+      if (typeof id !== "string") throw new Error("Invalid stored asset placement");
+      const states = appearances[id];
+      if (states === undefined) return [id];
+      if (!Array.isArray(states) || !states.length)
+        throw new Error(`Invalid placement appearances: ${id}`);
+      return states.map((state) => {
+        if (state !== "base" && state !== "initial" && state !== "applied")
+          throw new Error(`Invalid placement appearance: ${id}`);
+        return state === "base" ? id : `${id}--state-${state}`;
+      });
+    });
+    const { appearances: _appearances, ...rest } = placement;
+    return { ...rest, assets };
+  });
+  return {
+    ...saved,
+    ...(assetSources ? { assetSources } : {}),
+    ...(placements ? { placements } : {}),
+  };
 }
 
 function partKey(node: string, assets: string[]): string {
@@ -164,9 +286,10 @@ export function storeAssetMap(document: Level3D, descriptors: Descriptors): unkn
   const compact = compactAssetInstances(document, descriptors) as Level3D;
   return {
     ...rest,
+    assetSources: compactSources(document.assetSources),
     ...(compact.sceneMetadata ? { sceneMetadata: compact.sceneMetadata } : {}),
     version: 2,
-    placements,
+    placements: placements.map(compactPlacement),
     ...(order.some((index, position) => index !== position) ? { order } : {}),
   };
 }
@@ -269,7 +392,7 @@ export function serializeStoredMap(document: Level3D, descriptors: Descriptors):
 
 /** Accept both version 2 placements and earlier full or compact part documents. */
 export function parseStoredMap(value: unknown, descriptors: Descriptors): Level3D {
-  const saved = record(value, "document");
+  const saved = expandStoredMap(value);
   if (saved.version === 2) return loadAssetMap(saved, descriptors);
   if (saved.version !== 1) throw new Error("Unsupported stored map version");
   return hydrateAssetInstances(saved, descriptors);

@@ -121,7 +121,8 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
     document = json.loads(document_path.read_text())
     scene_metadata(asset_library, document)
     pairs=[(stage/'worker.blend',main_blend)]
-    for reference in document['sceneAssets'] + document.get('assetSources', []):
+    from stored_map import asset_source_references
+    for reference in document['sceneAssets'] + list(asset_source_references(document)):
         relatives = [reference['model']] + [resource['path'] for resource in reference.get('resources', [])]
         if reference.get('descriptor'): relatives.append(reference['descriptor'])
         pairs.extend((contained_path(asset_library,safe_relative(relative),required=True),

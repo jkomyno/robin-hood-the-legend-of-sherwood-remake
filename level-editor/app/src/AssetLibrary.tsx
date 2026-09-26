@@ -1,6 +1,7 @@
 import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
 import type { ProjectionAssetEntry } from "@rle/shared";
 import AssetPreview, { AssetPreviewRenderer } from "./AssetPreview";
+import { listProjectionAppearances } from "./projection-library";
 import { ASSET_DRAG_TYPE, assetType, assetTags, filterAssets } from "./asset-library";
 
 export default function AssetLibrary(props: {
@@ -119,50 +120,100 @@ export default function AssetLibrary(props: {
         </Show>
         <div class="asset-grid">
           <For each={filtered()}>
-            {(entry) => (
-              <article
-                class="asset-card"
-                draggable={
-                  props.canInsert && entry.editor_usage !== "map-background" ? "true" : "false"
-                }
-                onPointerEnter={() => {
-                  if (props.canInsert && entry.editor_usage !== "map-background")
-                    props.onPreload(entry);
-                }}
-                onFocus={() => {
-                  if (props.canInsert && entry.editor_usage !== "map-background")
-                    props.onPreload(entry);
-                }}
-                onDragStart={(event) => {
-                  if (!props.canInsert || entry.editor_usage === "map-background") {
-                    event.preventDefault();
-                    return;
+            {(entry) => {
+              const [appearances, setAppearances] = createSignal<ProjectionAssetEntry[]>([entry]);
+              const [chosen, setChosen] = createSignal(0);
+              const [ready, setReady] = createSignal(false);
+              const [appearanceError, setAppearanceError] = createSignal("");
+              let pending: Promise<ProjectionAssetEntry[]> | undefined;
+              const selected = () => appearances()[chosen()] ?? entry;
+              const loadAppearances = () =>
+                (pending ??= listProjectionAppearances(props.root!, entry)
+                  .then((items) => {
+                    setAppearances(items);
+                    setReady(true);
+                    return items;
+                  })
+                  .catch((error) => {
+                    setAppearanceError(String(error));
+                    throw error;
+                  }));
+              const preload = () => {
+                void loadAppearances().then(
+                  () => {
+                    if (props.canInsert && entry.editor_usage !== "map-background")
+                      props.onPreload(selected());
+                  },
+                  () => {},
+                );
+              };
+              return (
+                <article
+                  class="asset-card"
+                  draggable={
+                    props.canInsert && entry.editor_usage !== "map-background" ? "true" : "false"
                   }
-                  event.dataTransfer!.setData(ASSET_DRAG_TYPE, entry.id);
-                  event.dataTransfer!.effectAllowed = "copy";
-                  const image = document.createElement("canvas");
-                  image.width = image.height = 1;
-                  event.dataTransfer!.setDragImage(image, 0, 0);
-                  props.onDragStart(entry);
-                }}
-                onDragEnd={props.onDragEnd}
-              >
-                <AssetPreview entry={entry} root={props.root!} renderer={renderer} />
-                <div class="asset-card-info">
-                  <strong title={entry.name}>{entry.name}</strong>
-                  <div class="asset-tags">
-                    <For each={assetTags(entry)}>{(tag) => <span>{tag}</span>}</For>
+                  onPointerEnter={preload}
+                  onFocus={preload}
+                  onDragStart={(event) => {
+                    if (!props.canInsert || entry.editor_usage === "map-background" || !ready()) {
+                      event.preventDefault();
+                      return;
+                    }
+                    const appearance = selected();
+                    event.dataTransfer!.setData(ASSET_DRAG_TYPE, appearance.id);
+                    event.dataTransfer!.effectAllowed = "copy";
+                    const image = document.createElement("canvas");
+                    image.width = image.height = 1;
+                    event.dataTransfer!.setDragImage(image, 0, 0);
+                    props.onDragStart(appearance);
+                  }}
+                  onDragEnd={props.onDragEnd}
+                >
+                  <AssetPreview entry={selected()} root={props.root!} renderer={renderer} />
+                  <div class="asset-card-info">
+                    <strong title={entry.name}>{entry.name}</strong>
+                    <div class="asset-tags">
+                      <For each={assetTags(entry)}>{(tag) => <span>{tag}</span>}</For>
+                    </div>
+                    <Show when={appearances().length > 1}>
+                      <label>
+                        Appearance
+                        <select
+                          aria-label={`${entry.name} appearance`}
+                          value={chosen()}
+                          onChange={(event) => {
+                            setChosen(Number(event.currentTarget.value));
+                            props.onPreload(selected());
+                          }}
+                        >
+                          <For each={appearances()}>
+                            {(appearance, index) => (
+                              <option value={index()}>{appearance.name}</option>
+                            )}
+                          </For>
+                        </select>
+                      </label>
+                    </Show>
+                    <Show when={appearanceError()}>
+                      <span class="library-error">{appearanceError()}</span>
+                    </Show>
+                    <button
+                      disabled={!props.canInsert || entry.editor_usage === "map-background"}
+                      onClick={() =>
+                        void loadAppearances().then(
+                          () => props.onAdd(selected()),
+                          () => {},
+                        )
+                      }
+                      aria-label={`Add ${entry.name}`}
+                    >
+                      {entry.editor_usage === "map-background" ? "Map background" : "Add to scene"}
+                    </button>
                   </div>
-                  <button
-                    disabled={!props.canInsert || entry.editor_usage === "map-background"}
-                    onClick={() => props.onAdd(entry)}
-                    aria-label={`Add ${entry.name}`}
-                  >
-                    {entry.editor_usage === "map-background" ? "Map background" : "Add to scene"}
-                  </button>
-                </div>
-              </article>
-            )}
+                </article>
+              );
+            }}
           </For>
         </div>
         <footer>

@@ -1,4 +1,4 @@
-import { createSignal, onCleanup, Show } from "solid-js";
+import { createEffect, createSignal, onCleanup, Show } from "solid-js";
 import * as THREE from "three";
 import type { ProjectionAssetEntry } from "@rle/shared";
 import { loadProjectionAssetPreview } from "./projection-library";
@@ -42,10 +42,10 @@ export default function AssetPreview(props: {
     if (asset) disposeObjectResources([asset]);
     asset = undefined;
   }
-  async function load() {
+  async function load(root: FileSystemDirectoryHandle, entry: ProjectionAssetEntry) {
     const current = ++generation;
     try {
-      const loaded = await loadProjectionAssetPreview(props.root, props.entry);
+      const loaded = await loadProjectionAssetPreview(root, entry);
       if (!visible || current !== generation) {
         disposeObjectResources([loaded]);
         return;
@@ -83,6 +83,15 @@ export default function AssetPreview(props: {
       }
     }
   }
+  createEffect(
+    () => ({ root: props.root, entry: props.entry }),
+    ({ root, entry }) => {
+      if (!visible) return;
+      release();
+      setStatus("Loading 3D preview…");
+      void load(root, entry);
+    },
+  );
   onCleanup(() => {
     visible = false;
     observer?.disconnect();
@@ -110,7 +119,7 @@ export default function AssetPreview(props: {
             visible = next;
             if (visible) {
               setStatus("Loading 3D preview…");
-              void load();
+              void load(props.root, props.entry);
             } else release();
           });
           observer.observe(element);
