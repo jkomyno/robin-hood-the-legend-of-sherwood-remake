@@ -123,7 +123,8 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
             add("3d-assets/" + model_path, source / model_path)
             expanded.append({**entry, "id": entry["id"] + "--state-" + state,
                              "name": entry["name"] + " — " + variant["name"] + " (static)",
-                             "model": model_path, "state_variant": state, "base_id": entry["id"]})
+                             "model": model_path, "state_variant": state, "base_id": entry["id"],
+                             **({"model_scene": variant["model_scene"]} if "model_scene" in variant else {})})
     generated, patches = {}, set()
     for material in model.get("materials", []):
         identity = material.get("extras", {}).get("generated_source_sha256")

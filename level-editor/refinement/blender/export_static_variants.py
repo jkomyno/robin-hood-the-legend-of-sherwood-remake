@@ -64,4 +64,7 @@ def export_variants(plan, output):
         bpy.ops.wm.open_mainfile(filepath=str(output/'worker.blend'))
     from export_appearance_variants import export_appearance_variants
     reports.extend(export_appearance_variants(plan, output))
-    return reports
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from bundle_publication_states import bundle_exported_variants
+    return bundle_exported_variants(output, reports)

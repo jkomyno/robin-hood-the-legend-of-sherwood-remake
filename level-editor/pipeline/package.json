@@ -18,7 +18,8 @@
     "glb-preview": "node src/glb-preview.ts",
     "build-previews": "node src/build-preview-assets.ts",
     "volumes": "node src/volumes.ts",
-    "bake": "node src/bake.ts"
+    "bake": "node src/bake.ts",
+    "bundle-states": "node src/bundle-library-states.ts"
   },
   "dependencies": {
     "@fal-ai/client": "^1.10.1",

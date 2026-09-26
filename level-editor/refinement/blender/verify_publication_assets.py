@@ -13,6 +13,8 @@ import sys
 from catalog_schema import source_for_part
 from publication_contract import publication_parts, validate_export_records
 from texture_state_roles import partition_texture_states, validate_texture_state_role_evidence
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from asset_scenes import select_scene, scene_identity
 
 
 def gltf(path):
@@ -96,11 +98,11 @@ def verify_static_inventory(asset_id, descriptor, models, owned, imports, proof)
             raise ValueError('Standalone static endpoint carries animation/native-map binding')
         union |= exact
     if isolated:
-        if not union <= owned or any(variant['model'] == descriptor['model'] for variant in variants.values()):
+        if not union <= owned or any(scene_identity(variant) == scene_identity(descriptor) for variant in variants.values()):
             raise ValueError('Isolated appearance escapes canonical ownership or replaces covered default')
         return union
     initial = variants['initial']
-    if (descriptor['model'] != initial['model'] or descriptor['parts'] != initial['parts']
+    if (scene_identity(descriptor) != scene_identity(initial) or descriptor['parts'] != initial['parts']
             or descriptor['components'] != initial['components']):
         raise ValueError('Primary standalone descriptor is not the isolated reviewed initial endpoint')
     if union != owned:
@@ -148,7 +150,7 @@ def verify(directory,catalog_path):
                         raise ValueError('Split part lost exact provenance or scoped collision metadata')
         if asset['id'] in ground_ids and (descriptor.get('parts')!=[] or descriptor.get('editor_usage')!='map-background' or asset.get('editor_usage')!='map-background'):
             raise ValueError('Ground must declare map-background capability without obstacle parts')
-        model=gltf(directory/'assets'/asset['model'])
+        model=select_scene(gltf(directory/'assets'/asset['model']), descriptor.get('model_scene'))
         if any(declared.get(key,{}).get('source_components') for key in owned):
             verify_component_nodes(model,{key:declared[key] for key in owned})
             model_parts={node.get('name'):node.get('extras',{}) for node in model['nodes']}
@@ -156,23 +158,25 @@ def verify(directory,catalog_path):
                 if part.get('source_components') and part['obstacle_local_game']!=model_parts[part['node']].get('obstacle_local_game'):
                     raise ValueError('Standalone component collision differs from exported mesh metadata')
         if descriptor.get('state_variants'):
-            models={state:gltf(directory/'assets'/Path(asset['descriptor']).parent/variant['model'])
+            models={state:select_scene(gltf(directory/'assets'/Path(asset['descriptor']).parent/variant['model']), variant.get('model_scene'))
                     for state,variant in descriptor['state_variants'].items()}
             actual=verify_static_inventory(asset['id'],descriptor,models,owned,plan.get('imports',[]),proof)
             for state,variant in descriptor['state_variants'].items():
                 record=next(r for r in proof['static_variants'] if r['asset_id']==asset['id'] and r['state']==state)
                 model_path=directory/'assets'/Path(asset['descriptor']).parent/variant['model']
-                if hashlib.sha256(model_path.read_bytes()).hexdigest()!=record['model_sha256']:
+                if (hashlib.sha256(model_path.read_bytes()).hexdigest()!=record['model_sha256'] or
+                        variant.get('model_scene') != record.get('model_scene')):
                     raise ValueError('Static endpoint changed after independent content verification')
         if descriptor.get('standalone_variants'):
             alternatives = descriptor['standalone_variants']
-            models = {state: gltf(directory/'assets'/Path(asset['descriptor']).parent/variant['model'])
+            models = {state: select_scene(gltf(directory/'assets'/Path(asset['descriptor']).parent/variant['model']), variant.get('model_scene'))
                       for state, variant in alternatives.items()}
             verify_static_inventory(asset['id'], descriptor, models, owned, plan.get('imports', []), proof)
             for state, variant in alternatives.items():
                 record = next(r for r in proof['static_variants'] if r['asset_id'] == asset['id'] and r['state'] == state)
                 model_path = directory/'assets'/Path(asset['descriptor']).parent/variant['model']
-                if hashlib.sha256(model_path.read_bytes()).hexdigest() != record['model_sha256']:
+                if (hashlib.sha256(model_path.read_bytes()).hexdigest() != record['model_sha256'] or
+                        variant.get('model_scene') != record.get('model_scene')):
                     raise ValueError('Isolated appearance changed after independent content verification')
         if owned!=actual or nodes & actual:
             raise ValueError('Standalone canonical ownership differs: '+asset['id'])

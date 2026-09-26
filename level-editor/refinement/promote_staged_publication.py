@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import shutil
 from scene_manifest import scene_metadata
+from asset_scenes import scene_identity
 
 
 @contextmanager
@@ -57,7 +58,16 @@ def asset_file_pairs(stage_assets, library_assets, asset):
         raise ValueError('Asset descriptor identity mismatch: ' + asset['id'])
     if descriptor_path.parent / safe_relative(descriptor['model']) != model_path:
         raise ValueError('Asset descriptor model path mismatch: ' + asset['id'])
+    scene_identity(descriptor)
     paths = [descriptor_path, model_path]
+    receipt_path = descriptor_path.parent / 'bundle.receipt.json'
+    if descriptor.get('model_scene') is not None:
+        receipt = json.loads(contained_path(stage_assets, receipt_path, required=True).read_text())
+        if (receipt.get('asset_id') != asset['id'] or
+                receipt.get('output', {}).get('sha256') != sha(contained_path(stage_assets, model_path, required=True)) or
+                receipt.get('output_descriptor_sha256') != sha(contained_path(stage_assets, descriptor_path, required=True))):
+            raise ValueError('Bundled asset receipt does not match model')
+        paths.append(receipt_path)
     variant_fields = [key for key in ('state_variants', 'standalone_variants') if key in descriptor]
     if len(variant_fields) > 1 or ('standalone_variants' in descriptor and 'states' in descriptor):
         raise ValueError('Conflicting static asset variants')
@@ -70,6 +80,7 @@ def asset_file_pairs(stage_assets, library_assets, asset):
                 raise ValueError('Invalid static asset variant')
             if not isinstance(variant.get('name'), str) or not variant['name'].strip():
                 raise ValueError('Static asset variant requires a name')
+            scene_identity(variant)
             paths.append(descriptor_path.parent / safe_relative(variant.get('model')))
     return [(contained_path(stage_assets, relative, required=True),
              contained_path(library_assets, relative)) for relative in dict.fromkeys(paths)]

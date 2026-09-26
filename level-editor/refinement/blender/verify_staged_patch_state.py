@@ -8,6 +8,9 @@ import bpy
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from verify_staged_handoffs import snapshot, compare_handoff
 from texture_state_roles import partition_texture_states, validate_texture_state_role_evidence
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from asset_scenes import scene_identity
+from bundle_publication_states import verify_bundled_reference
 
 
 def _sha(path):
@@ -207,9 +210,9 @@ def verify_static_variants(plan, stage):
         # hash emitted by the staging code as proof of its actual contents.
         from export_editor import export_asset_library
         descriptor = json.loads((Path(plan['output']) / 'assets' / asset_id / 'asset.json').read_text())
+        variant = (descriptor.get('standalone_variants') or descriptor.get('state_variants') or {}).get(state)
         if (asset_id, state) in appearances:
-            variant = descriptor.get('standalone_variants', {}).get(state)
-            if not variant or Path(report['model']).name != variant['model'] or variant['model'] == descriptor['model']:
+            if not variant or Path(report['model']).name != variant['model'] or scene_identity(variant) == scene_identity(descriptor):
                 raise ValueError('Isolated appearance descriptor binding changed')
         proof_parent = Path(plan['output']) / 'verification-exports' / asset_id
         proof_parent.mkdir(parents=True, exist_ok=True)
@@ -221,7 +224,11 @@ def verify_static_variants(plan, stage):
             if any(variant.get(key) != reference_descriptor[key] for key in ('parts', 'components')):
                 raise ValueError('Isolated appearance descriptor inventory differs from reviewed worker')
         reference_model = proof_output / asset_id / 'model.glb'
-        if _sha(reference_model) != report['model_sha256']:
+        if report.get('model_scene') is not None:
+            if variant.get('model_scene') != report['model_scene']:
+                raise ValueError('Bundled endpoint descriptor selects a different scene')
+            verify_bundled_reference(report, reference_model)
+        elif _sha(reference_model) != report['model_sha256']:
             raise ValueError('Static endpoint exported bytes differ from verified reviewed worker: ' + asset_id)
         reports.append({'asset_id': asset_id, 'state': state, 'status': 'PASS',
                         'meshes': len(records), 'maximum_world_coordinate_drift': drift,
@@ -229,7 +236,9 @@ def verify_static_variants(plan, stage):
                         'reviewed_source_blend_sha256': child['blend_sha256'],
                         'reviewed_worker_reexport_matches': True,
                         'reference_export': str(reference_model),
-                        'worker_sha256': report['worker_sha256'], 'model_sha256': report['model_sha256']})
+                        'worker_sha256': report['worker_sha256'], 'model_sha256': report['model_sha256'],
+                        **({'model_scene': report['model_scene'], 'original_model_sha256': report['original_model_sha256'],
+                            'bundle_receipt_sha256': report['bundle_receipt_sha256']} if report.get('model_scene') is not None else {})})
     return reports
 
 
