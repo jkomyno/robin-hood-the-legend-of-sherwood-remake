@@ -12,7 +12,11 @@ Run from the repository root after `publish_stage.py` (never promotes anything):
 The worker is opened read-only; its `lincoln …` scene and collection are renamed in memory to
 the catalog's display map name so exported descriptors say `Lincoln`. Catalog-v2 component
 splits are exported as separate selectable parts (`building-NNN--component-<name>`) by the
-shared exporter. Writes `lincoln.rhlos-map.json`, `assets/`, `publication-metadata.json`,
+shared exporter. The standalone assets are exported first; the map is then written in the
+library format (`lincoln.rhlos-map.json` + `map-assets/`) so map instances and palette entries
+reference the same local catalog models (see refinement/PROCEDURE.md "Map publication format").
+Framing (`size`, `camera`, `exportBounds`) is retained from the live library document.
+Writes `lincoln.rhlos-map.json`, `map-assets/`, `assets/`, `publication-metadata.json`,
 `effective-plan.json` (for `verify_staged_handoffs.py`) and `stage.json` (for
 `verify_publication_assets.py`).
 """
@@ -55,7 +59,7 @@ def main(argv):
     plan = json.loads(Path(integration['plan']).read_text())
     approvals = {}
     for record in json.loads((Path.cwd() / plan['approvals']).read_text())['approvals']:
-        if record['decision'] == 'approved' and record['scope'] == 'geometry':
+        if record['decision'] == 'approved' and record['scope'] in ('geometry', 'geometry-and-states'):
             approvals.setdefault(record['asset_id'], []).append(record)
 
     sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -69,6 +73,12 @@ def main(argv):
     from publication_contract import publication_parts, validate_export_records
 
     bpy.ops.wm.open_mainfile(filepath=str(stage / 'worker.blend'))
+    # The map export writes glTF resources as separate files named after the images; baked atlas
+    # names contain ' / '. Rename in memory only (the worker is never saved); published
+    # resources are content-addressed, so names carry no meaning there.
+    for image in bpy.data.images:
+        if '/' in image.name:
+            image.name = image.name.replace('/', '-')
     bpy.data.scenes['lincoln Refinement'].name = map_name + ' Refinement'
     working = bpy.data.collections['lincoln Working']
     working.name = map_name + ' Working'
@@ -177,12 +187,18 @@ def main(argv):
             'approved_model': {'path': str(model), 'sha256': model_sha, 'workspace': str(workspaces[asset_id])},
             'approval': {key: record[key] for key in ('decision', 'scope', 'exact_text', 'model_sha256',
                                                       'modified_views_sha256', 'recorded_utc', 'evidence_directory')},
-            'texture': 'approved source-projected materials; generated texture publication pending',
+            'texture': ('global source reprojection plus generated fill of still-unknown texels'
+                        if 'texture_combine' in integration else
+                        'global source reprojection' if 'global_reprojection' in integration else
+                        'approved source-projected materials'),
         })
 
-    map_report = export_editor(map_name, stage / (map_name.lower() + '.rhlos-map.json'), catalog=catalog, level=level)
     asset_report = export_asset_library(map_name, stage / 'assets', str(args.level.resolve()),
                                         asset_ids=asset_ids, catalog=catalog)
+    live_document = Path.cwd() / 'level-editor/library/scenes' / (map_name.lower() + '.rhlos-map.json')
+    map_settings = json.loads(live_document.read_text()) if live_document.exists() else {}
+    map_report = export_editor(map_name, stage / (map_name.lower() + '.rhlos-map.json'), catalog=catalog,
+                               level=level, map_settings=map_settings)
     index = json.loads((stage / 'assets/index.json').read_text())
     files = {entry['id']: {'descriptor_sha256': sha(stage / 'assets' / entry['descriptor']),
                            'model_sha256': sha(stage / 'assets' / entry['model'])} for entry in index['assets']}
@@ -201,11 +217,12 @@ def main(argv):
                 'level': str(args.level.resolve()), 'level_sha256': sha(args.level),
                 'tooling': tooling['snapshot_id'], 'tooling_directory': tooling['directory'],
                 'map_scene': {'file': map_report['file'], 'sha256': sha(map_report['file']),
+                              'library': map_report.get('library'),
                               'groups': map_report['assets'], 'parts': map_report['parts'],
                               'meshes': map_report['meshes']},
                 'ground': [{'name': o.name, 'asset_group': o.get('asset_group'),
                             'materials': materials(o), 'geometry_sha256': mesh_hashes(o)[0],
-                            'status': 'current ground retained; lincoln-terrain not yet approved'} for o in ground],
+                            'status': 'staged ground (lincoln-terrain catalog asset)'} for o in ground],
                 'assets': records}
     (stage / 'publication-metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
 

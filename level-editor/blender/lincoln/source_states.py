@@ -63,6 +63,32 @@ def validate_composites(output, layers):
     return reports
 
 
+# Reviewed initial graphics that lie inside an earlier patch's cover (interior art).
+# covered.png v1 keeps them; source-states-v2 (covered_source_v2.py) omits them.
+REVIEWED_NESTED_INITIAL = {('patch-002', 'patch-000')}
+
+
+def nested_initial_report(output, layers):
+    """Guard: an initial sprite composited over another patch's unapplied cover must be reviewed."""
+    shape = np.array(Image.open(output / 'revealed.png')).shape[:2]
+    masks = {}
+    for record in layers['patches']:
+        mask = np.zeros(shape, dtype=bool)
+        graphic = record['initial_graphic']
+        if graphic:
+            alpha = np.array(Image.open(output / graphic['image']).convert('RGBA'))[:, :, 3] > 0
+            x, y, w, h = graphic['bbox']
+            x0, y0, x1, y1 = max(x, 0), max(y, 0), min(x + w, shape[1]), min(y + h, shape[0])
+            mask[y0:y1, x0:x1] = alpha[y0 - y:y1 - y, x0 - x:x1 - x]
+        masks[record['id']] = mask
+    order = [r['id'] for r in layers['patches']]
+    found = {(later, cover) for i, later in enumerate(order) if masks[later].any()
+             for cover in order[:i] if masks[cover].any() and not (masks[later] & ~masks[cover]).any()}
+    if found != REVIEWED_NESTED_INITIAL:
+        raise ValueError(f'Unreviewed interior sprites composited over a cover: {sorted(found ^ REVIEWED_NESTED_INITIAL)}')
+    return sorted(found)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--datadir', type=Path, default=ROOT.parent / 'datadirs/fullgame_gog_hackable')
@@ -188,6 +214,7 @@ def main():
     layers['native_mask_manifest'] = 'mask-manifest.json'
     write(output / 'layers.json', layers)
     validate_composites(output, layers)
+    nested_initial_report(output, layers)
     scene = ROOT / 'library/scenes/lincoln-volumes.scene.glb'
     blob = scene.read_bytes()
     size = struct.unpack_from('<I', blob, 12)[0]

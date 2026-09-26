@@ -543,9 +543,12 @@ def main(argv=None):
             if not key.startswith('animation-'):
                 continue
             folder = Path(packet['directory'])
+            declared = next((s for s in evidence['worker_report'].get('animation_states', [])
+                             if 'animation-' + s['id'] == key), {})
             state_item = {'id': key,
-                          'name': key.removeprefix('animation-').replace('-', ' ').capitalize(),
-                          'description': ('The winch/lever sprite changes between these states; tower masonry is unchanged.'
+                          'name': declared.get('name') or key.removeprefix('animation-').replace('-', ' ').capitalize(),
+                          'description': declared.get('description') or (
+                              'The winch/lever sprite changes between these states; tower masonry is unchanged.'
                               if key.startswith('animation-mechanism-') else
                               'An animated state of this same asset. Compare the moving part with the other state.'),
                           'solid': str(folder / 'solid.png'),

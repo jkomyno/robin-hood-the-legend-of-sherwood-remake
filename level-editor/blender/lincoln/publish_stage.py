@@ -55,7 +55,10 @@ def main(plan_path):
         if digest != item['blend_sha256']:
             raise ValueError('Approved model changed: ' + item['asset_id'])
         bound = [record for record in approvals.get(item['asset_id'], [])
-                 if record['scope'] == item['approval']['scope'] and record['model_sha256'] == digest]
+                 if (record['scope'] == item['approval']['scope']
+                     # geometry-and-states approvals include geometry (user decision 2026-09-26)
+                     or (item['approval']['scope'] == 'geometry' and record['scope'] == 'geometry-and-states'))
+                 and record['model_sha256'] == digest]
         if not bound:
             raise ValueError('Import lacks an approval bound to its model: ' + item['asset_id'])
         imports.append((item, path, digest, bound[-1]))

@@ -563,11 +563,11 @@ def bake(objects, size, need_alpha, args, work):
     return np.dstack(result) if need_alpha else result[0]
 
 
-def encode_avif(pixels, work, args):
+def encode_avif(pixels, work, args, name='atlas'):
     from PIL import Image
-    png = work / 'atlas.png'
+    png = work / f'{name}.png'
     Image.fromarray(pixels).save(png)
-    avif = work / 'atlas.avif'
+    avif = work / f'{name}.avif'
     command = ['avifenc', '-q', str(args.quality), '-s', str(args.speed), '-j', '2', str(png), str(avif)]
     if pixels.ndim == 3 and pixels.shape[2] == 4:
         command[1:1] = ['--qalpha', str(args.quality)]
@@ -667,7 +667,8 @@ class Quantizer:
             out[key] = sorted(set(out.get(key, [])) | {'KHR_mesh_quantization'})
 
 
-def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, texture_file=False, normal_bits=None):
+def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, texture_file=False, normal_bits=None,
+                reencoded=None):
     """Copy the published document; replace textured primitives' vertices and all textures.
 
     With `drop_normals`, NORMAL is omitted on rebuilt primitives whose material is unlit (their
@@ -690,7 +691,7 @@ def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, te
         return remap[(index, name)]
 
     rebuilt = {}
-    for record in records:
+    for record in records or []:
         obj, mesh_index = record['object'], record['mesh']
         uv = obj.data.uv_layers[NEW_UV].uv
         values = np.empty(len(uv) * 2, dtype=np.float32)
@@ -706,10 +707,18 @@ def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, te
             source = doc['meshes'][mesh_index]['primitives'][prim_index]
             corners = rebuilt.get(mesh_index, {}).get(prim_index)
             if corners is None:
-                primitive['attributes'] = {name: copy_accessor(index, name) for name, index in source['attributes'].items()}
+                # Untouched primitive, or keep-layout mode (original UVs and images, re-encoded).
+                textured = reencoded is not None and display_texture(doc, source) is not None
+                unlit = textured and 'KHR_materials_unlit' in doc['materials'][source['material']].get('extensions', {})
+                drop = drop_normals and unlit and 'NORMAL' in source['attributes']
+                primitive['attributes'] = {name: copy_accessor(index, name) for name, index in source['attributes'].items()
+                                           if not (drop and name == 'NORMAL')}
                 if 'indices' in source:
                     primitive['indices'] = copy_accessor(source['indices'], None)
-                normals['copied_untextured_primitives'] += 1
+                if not textured:
+                    normals['copied_untextured_primitives'] += 1
+                else:
+                    normals['dropped_primitives' if drop else 'kept_lit_primitives'] += drop or not unlit
                 continue
             unlit = 'KHR_materials_unlit' in doc['materials'][source['material']].get('extensions', {})
             drop = drop_normals and unlit and 'NORMAL' in source['attributes']
@@ -742,23 +751,38 @@ def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, te
             indices = np.array(index_list, dtype=np.uint16 if len(unique) < 65536 else np.uint32)
             primitive['indices'] = emit(None, indices, {'componentType': 5123 if indices.dtype == np.uint16 else 5125,
                                                         'type': 'SCALAR'})
-    textured = {record_material for record in records for *_, record_material in record['materials']}
+    if reencoded is not None:
+        # Keep-layout mode: same images, textures, samplers and materials; AVIF image data.
+        require(not texture_file, 'Sibling texture files are only supported for a single atlas')
+        out['images'] = [{**({'name': image['name']} if 'name' in image else {}), 'mimeType': 'image/avif',
+                          'bufferView': builder.view(reencoded[index])} for index, image in enumerate(doc['images'])]
+        out['textures'] = [{**{k: v for k, v in texture.items() if k in ('sampler', 'name')},
+                            'extensions': {'EXT_texture_avif': {'source': avif_source(texture)}}}
+                           for texture in doc['textures']]
+        textured = set()
+        samplers = None
+    else:
+        textured = {record_material for record in records for *_, record_material in record['materials']}
     # One texture per distinct source sampler, all on the one atlas image: materials keep their
     # filtering (e.g. nearest-neighbour source sampling) and wrap modes.
-    material_sampler = {material_index: json.dumps(sampler, sort_keys=True) for record in records
-                        for *_, material_index in record['materials']
-                        for _, _, sampler in [display_texture(doc, {'material': material_index})]}
-    samplers = sorted(set(material_sampler.values()))
-    if texture_file:
+    if reencoded is None:
+        material_sampler = {material_index: json.dumps(sampler, sort_keys=True) for record in records
+                            for *_, material_index in record['materials']
+                            for _, _, sampler in [display_texture(doc, {'material': material_index})]}
+        samplers = sorted(set(material_sampler.values()))
+    if reencoded is not None:
+        pass
+    elif texture_file:
         # Sibling file (same stem), referenced relative to the GLB.
         texture_path = output.with_suffix('.avif')
         texture_path.write_bytes(atlas_bytes)
         out['images'] = [{'uri': texture_path.name, 'mimeType': 'image/avif', 'name': 'lossy atlas'}]
     else:
         out['images'] = [{'bufferView': builder.view(atlas_bytes), 'mimeType': 'image/avif', 'name': 'lossy atlas'}]
-    out['samplers'] = [json.loads(sampler) for sampler in samplers]
-    out['textures'] = [{'sampler': i, 'extensions': {'EXT_texture_avif': {'source': 0}}} for i in range(len(samplers))]
-    for index, material in enumerate(out.get('materials', [])):
+    if reencoded is None:
+        out['samplers'] = [json.loads(sampler) for sampler in samplers]
+        out['textures'] = [{'sampler': i, 'extensions': {'EXT_texture_avif': {'source': 0}}} for i in range(len(samplers))]
+    for index, material in enumerate(out.get('materials', []) if reencoded is None else []):
         pbr = material.get('pbrMetallicRoughness', {})
         if index in textured:
             texture = samplers.index(material_sampler[index])
@@ -860,6 +884,24 @@ def tool_versions():
             'script': sha(Path(__file__))}
 
 
+def texel_reuse(objects, records):
+    """Per source image: summed face texel area / image texels (>1 = texels shared by faces or
+    tiled), and whether any published UV leaves [0, 1] (repeat tiling)."""
+    covered, out_of_range = {}, False
+    for obj, record in zip(objects, records):
+        _, uv_area = face_geometry(obj, SOURCE_UV)
+        slots = np.empty(len(obj.data.polygons), dtype=np.int32)
+        obj.data.polygons.foreach_get('material_index', slots)
+        values = np.empty(len(obj.data.uv_layers[SOURCE_UV].uv) * 2, dtype=np.float32)
+        obj.data.uv_layers[SOURCE_UV].uv.foreach_get('vector', values)
+        out_of_range |= bool(values.size and (values.min() < -1e-3 or values.max() > 1 + 1e-3))
+        for slot, (image, *_rest) in enumerate(record['materials']):
+            covered[image.name] = covered.get(image.name, 0.0) + float(uv_area[slots == slot].sum()) * image.size[0] * image.size[1]
+    sizes = {record_image.name: record_image.size[0] * record_image.size[1]
+             for record in records for record_image, *_ in record['materials']}
+    return {name: covered[name] / max(sizes[name], 1) for name in covered}, out_of_range
+
+
 def derive(asset_id, model_path, lossy_path, args, work):
     import bpy
     bpy.ops.wm.read_homefile(use_empty=True, use_factory_startup=True)
@@ -887,29 +929,39 @@ def derive(asset_id, model_path, lossy_path, args, work):
     # Per face: the requested density, but never more than the published texture itself holds.
     targets = np.minimum(args.density, source_axes[:, 0])
     uv_area = np.concatenate([face_geometry(o, SOURCE_UV)[1] for o in objects])
-    reencode = len(images) == 1 and uv_area.sum() >= args.reencode_utilization
+    reuse, out_of_range = texel_reuse(objects, records)
+    # Keep the published layout when a unique-texel atlas cannot help: one image the UVs already
+    # fill (map background planes), or texels reused by many faces / tiled (foliage cards).
+    reencode = ((len(images) == 1 and uv_area.sum() >= args.reencode_utilization)
+                or max(reuse.values(), default=0) > args.reuse_ratio or out_of_range)
     if reencode:
-        # One image that the published UVs already fill (a map background plane): keep its layout
-        # and resolution; only the encoding changes.
         from PIL import Image
-        image = next(iter(images.values()))
-        for obj in objects:
-            layer = obj.data.uv_layers.new(name=NEW_UV)
-            values = np.empty(len(layer.uv) * 2, dtype=np.float32)
-            obj.data.uv_layers[SOURCE_UV].uv.foreach_get('vector', values)
-            layer.uv.foreach_set('vector', values)
-        size, required, history = list(image.size), None, []
-        pixels = np.asarray(Image.open(image.filepath_raw).convert('RGBA' if need_alpha else 'RGB'))
-        new_axes = source_axes
+        reencoded, avif_command, size = {}, None, []
+        alpha_images = {image for m in doc['meshes'] for p in m['primitives'] for found in [display_texture(doc, p)]
+                        if found and doc['materials'][p['material']].get('alphaMode', 'OPAQUE') != 'OPAQUE'
+                        for image in [found[1]]}
+        for index, image in images.items():
+            source = Image.open(image.filepath_raw)
+            keep_alpha = index in alpha_images and 'A' in source.getbands()
+            reencoded[index], avif_command, png = encode_avif(np.asarray(source.convert('RGBA' if keep_alpha else 'RGB')),
+                                                             work, args, name=f'image-{index}')
+            png.unlink()
+            size.append(list(image.size))
+        for index in range(len(doc.get('images', []))):
+            require(index in reencoded, f'Image {index} was not decoded')
+        atlas_bytes = b''.join(reencoded.values())
+        required, history, new_axes, atlas_png = None, [], source_axes, None
     else:
+        reencoded = None
         size, required, history = unwrap(objects, args, targets)
         new_axes = np.concatenate([face_axes(o, NEW_UV, size, size) for o in objects])
         pixels = bake(objects, size, need_alpha, args, work)
         size = [size, size]
-    atlas_bytes, avif_command, atlas_png = encode_avif(pixels, work, args)
+        atlas_bytes, avif_command, atlas_png = encode_avif(pixels, work, args)
     lossy_path.parent.mkdir(parents=True, exist_ok=True)
-    lossy_bytes, normals = write_lossy(doc, binary, records, atlas_bytes, lossy_path, not args.keep_normals, args.texture_file,
-                                  None if args.no_quantize else args.normal_bits)
+    lossy_bytes, normals = write_lossy(doc, binary, None if reencode else records, atlas_bytes, lossy_path,
+                                       not args.keep_normals, args.texture_file,
+                                       None if args.no_quantize else args.normal_bits, reencoded=reencoded)
 
     # Validation: rebuild the lossy from its own bytes.
     lossy_doc, lossy_binary, _ = read_glb(lossy_path)
@@ -928,6 +980,7 @@ def derive(asset_id, model_path, lossy_path, args, work):
                       'shared_blob': doc['images'][i].get('uri'),
                       'mime': doc['images'][i]['mimeType']} for i, img in images.items()]
     extent = [bounds['max'][i] - bounds['min'][i] for i in range(3)]
+    lossy_pixels = sum(w * h for w, h in size) if reencode else size[0] * size[1]
     report = {
         'asset_id': asset_id, 'source_model': str(model_path), 'source_sha256': hashlib.sha256(source_bytes).hexdigest(),
         'lossy_model': str(lossy_path), 'lossy_sha256': hashlib.sha256(lossy_bytes).hexdigest(),
@@ -936,11 +989,12 @@ def derive(asset_id, model_path, lossy_path, args, work):
         'bytes': {'source_glb': len(source_bytes), 'lossy_glb': len(lossy_bytes),
                   'source_textures': sum(i['bytes'] for i in source_images), 'lossy_texture_avif': len(atlas_bytes)},
         'textures': {'source': source_images, 'source_pixels': sum(i['pixels'] for i in source_images),
-                     'lossy_size': size, 'lossy_pixels': size[0] * size[1],
+                     'lossy_size': size, 'lossy_pixels': lossy_pixels,
                      'lossy_channels': 4 if need_alpha else 3,
                      'gpu_rgba8_bytes': {'source': sum(i['pixels'] for i in source_images) * 4,
-                                         'lossy': size[0] * size[1] * 4}},
+                                         'lossy': lossy_pixels * 4}},
         'atlas_size': {'mode': 're-encode published layout' if reencode else 'smart-uv + angle-based relax',
+                       'texel_reuse': reuse, 'uv_out_of_range': out_of_range,
                        'size': size, 'required': required, 'multiple': args.multiple, 'min': args.min_size,
                        'max': args.max_size, 'clamped': None if required is None else 'max' if required > args.max_size
                        else 'min' if required < args.min_size else None, 'pack_history': history},
@@ -966,8 +1020,9 @@ def derive(asset_id, model_path, lossy_path, args, work):
                'tools': tool_versions()}
     Path(str(lossy_path) + '.receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
     (work / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
-    shutil.copyfile(atlas_png, work / 'atlas-preview.png')
-    atlas_png.unlink()
+    if atlas_png is not None:
+        shutil.copyfile(atlas_png, work / 'atlas-preview.png')
+        atlas_png.unlink()
     return report
 
 
@@ -1081,7 +1136,7 @@ def main_derive(args):
     require(not failures, f'Failed assets: {failures}')
 
 
-SETTING_KEYS = ('density', 'multiple', 'min_size', 'max_size', 'quality', 'reencode_utilization', 'keep_normals',
+SETTING_KEYS = ('density', 'multiple', 'min_size', 'max_size', 'quality', 'reencode_utilization', 'reuse_ratio', 'keep_normals',
                 'texture_file', 'no_quantize', 'normal_bits', 'speed', 'angle_limit', 'pack_margin_px', 'bake_margin')
 
 
@@ -1095,7 +1150,8 @@ def summary_row(report):
     return {'asset': report['asset_id'], 'extent_map_px': [round(v) for v in report['on_map']['extent_map_px']],
             'faces': report['on_map']['faces'],
             'source_textures': [f'{s["size"][0]}x{s["size"][1]}' for s in t['source']],
-            'lossy_atlas': f'{t["lossy_size"][0]}x{t["lossy_size"][1]}', 'clamped': report['atlas_size']['clamped'],
+            'lossy_atlas': (f'{t["lossy_size"][0]}x{t["lossy_size"][1]}' if isinstance(t['lossy_size'][0], int)
+                            else [f'{w}x{h}' for w, h in t['lossy_size']]), 'clamped': report['atlas_size']['clamped'],
             'mode': report['atlas_size']['mode'],
             'weakest_axis_median': round(report['density_texels_per_map_px']['lossy_weakest_axis']['area_weighted_median'], 3),
             'glb_bytes': [b['source_glb'], b['lossy_glb']], 'texture_bytes': [b['source_textures'], b['lossy_texture_avif']],
@@ -1476,6 +1532,8 @@ def add_settings(parser):
     parser.add_argument('--render-max', type=int, default=1024, help='Validation tile size cap')
     parser.add_argument('--reencode-utilization', type=float, default=0.9,
                         help='Keep the published layout when one image is at least this full')
+    parser.add_argument('--reuse-ratio', type=float, default=1.25,
+                        help='Keep the published layout when faces cover an image this many times over (tiling)')
     parser.add_argument('--keep-normals', action='store_true',
                         help='Keep NORMAL (by default it is dropped on unlit textured primitives)')
     parser.add_argument('--texture-file', action='store_true',

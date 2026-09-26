@@ -44,6 +44,9 @@ def main():
     staged['worker'] = str(output / 'worker.blend')
     staged['worker_sha256'] = args.worker_sha256
     staged['staged_catalog'] = str(output / 'catalog.json')
+    if 'texture_combine' in integration:
+        # Chained texel stages (e.g. a verified correction on top of a combine) keep every link.
+        staged['texture_combine_chain'] = integration.get('texture_combine_chain', []) + [integration['texture_combine']]
     staged['texture_combine'] = {
         'stage_in': str(stage_in), 'stage_in_worker_sha256': integration['worker_sha256'],
         'combine_worker': str(args.worker.resolve()), 'combine_worker_sha256': args.worker_sha256,
