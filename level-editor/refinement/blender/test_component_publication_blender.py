@@ -24,7 +24,19 @@ def check():
             for key,value in {'asset_group':name,'asset_name':name.title(),'part_name':'Shared base','source_node':'building-001','source_obstacle':1,'projection_component':'base-'+name}.items():obj[key]=value
         obstacle={'points':[{'x':x,'y':y,'z_bottom':0,'z_top':100}for x,y in [(-100,-100),(100,-100),(100,100),(-100,100)]],'opaque':True,'solid':True,'mouse':True,'projection_area':[0,0],'show_shadow_polygon':False,'default_material':0,'material_indices':[]}
         level={'sight_obstacles':[obstacle,obstacle]};level_path=root/'level.json';level_path.write_text(json.dumps(level));catalog_path=root/'catalog.json';catalog_path.write_text(json.dumps(catalog))
-        report=export_editor('Fixture',root/'fixture.scene.glb',catalog=catalog,level=level)
+        material=bpy.data.materials.new('Shared textured material');material.use_nodes=True
+        image=bpy.data.images.new('Shared texture',width=2,height=2);image.generated_color=(.2,.6,.1,1)
+        texture=material.node_tree.nodes.new('ShaderNodeTexImage');texture.image=image
+        material.node_tree.links.new(texture.outputs['Color'],material.node_tree.nodes.get('Principled BSDF').inputs['Base Color'])
+        for obj in collection.objects:
+            obj.data.materials.append(material)
+            uv=obj.data.uv_layers.new(name='UVMap')
+            for loop in obj.data.loops:uv.data[loop.index].uv=(loop.vertex_index % 2, (loop.vertex_index // 2) % 2)
+        report=export_editor('Fixture',root/'fixture.level3d.json',catalog=catalog,level=level)
+        document=json.loads((root/'fixture.level3d.json').read_text())
+        assert 'glb' not in document and document['sceneAssets']
+        assert not list(root.glob('*.glb'))
+        assert len(list((root/'map-assets/3d-assets/blobs').glob('*.png')))==1
         export_asset_library('Fixture',root/'assets',level_path,catalog=catalog)
         (root/'stage.json').write_text(json.dumps({'map':report,'generated_materials':{}}))
         verify(root,catalog_path)
@@ -51,7 +63,7 @@ def check():
         else:raise AssertionError('Accepted collision expansion outside exported component metadata')
         path.write_text(saved)
         bpy.data.objects['right']['projection_component']='base-left'
-        try:export_editor('Fixture',root/'bad.glb',catalog=catalog,level=level)
+        try:export_editor('Fixture',root/'bad.level3d.json',catalog=catalog,level=level)
         except ValueError:pass
         else:raise AssertionError('Accepted overlapping mesh selector')
     print('PASS split map/library mesh subsets, source provenance, component footprints, and tamper rejection')

@@ -10,7 +10,7 @@ export function assetFixture() {
   const descriptor: ProjectionAssetDescriptor = { version: 1, kind: "projection-mapped-asset", id: "house", name: "House", source_map: "Leicester", model: "model.glb",
     source_origin_scene: [20, -40, 0], source_origin_game: [20, 23, 0], parts: [0, 1].map(n => ({ node: `building-00${n}`, name: n ? "Roof" : "Wall", source_obstacle: n, obstacle_local_game: structuredClone(obstacle), default_hidden: n === 1 })) };
   const reference: ExternalAssetSource = { id: "house", descriptor: "3d-assets/house/asset.json", model: "3d-assets/house/model.glb", descriptor_sha256: "a".repeat(64), model_sha256: "b".repeat(64) };
-  const document: Level3D = { version: 1, map: "Leicester", glb: "map.glb", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 }, groups: [], objects: [] };
+  const document: Level3D = { version: 1, map: "Leicester", sceneAssets: [], size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 }, groups: [], objects: [] };
   return { descriptor, reference, document };
 }
 

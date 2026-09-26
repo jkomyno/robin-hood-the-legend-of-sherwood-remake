@@ -41,10 +41,12 @@ export async function checkSharedLibrary() {
     return new File([bytes], "model.glb");
   }
   for (const name of ["York", "Lincoln"]) {
-    files.set(`scenes/${name}-volumes.scene.glb`, await model());
+    const baseModel = await model();
+    files.set(`3d-assets/base/${name}.glb`, baseModel);
+    const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", await baseModel.arrayBuffer())), byte => byte.toString(16).padStart(2,"0")).join("");
     json(`scenes/${name}-volumes.scene.json`, { version: 1, map: name, size: [400, 400], camera, placements: [] });
     json(`scenes/${name}.level3d.json`, { version: 1, map: name, size: [400, 400], camera,
-      glb: `${name}-volumes.scene.glb`, groups: [], objects: [{
+      sceneAssets: [{ id: name, role: "objects", model: `3d-assets/base/${name}.glb`, model_sha256: digest, resources: [] }], groups: [], objects: [{
         id: "building-000", node: "building-000", kind: "building", source: { map: name, obstacle: 0 },
         obstacle, transform: { dx: 0, dy: 0, dz: 0, rot_deg: 0 },
       }] });

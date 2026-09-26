@@ -20,6 +20,7 @@ import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import crypto from "node:crypto";
 import { readDocument, pathComponent } from "./inputs.ts";
+import { sceneAssetNodes } from "./scene-assets.ts";
 import { preserveNativePatchPreviews } from "./native-patch-bake.ts";
 import path from "node:path";
 import sharp from "sharp";
@@ -150,14 +151,9 @@ export async function bake(options: BakeOptions): Promise<void> {
   // Structural validation precedes expensive reconstruction; source-index
   // validation follows once the source level is available.
   let parsed = input === undefined ? undefined : parseLevel3D(input, { map });
-  let sourceGlb: Buffer | undefined;
-  if (parsed && (parsed.provenance?.glb_sha256 || parsed.objects.some(part => part.kind === "mission"))) {
-    sourceGlb = await fs.readFile(path.resolve(path.dirname(docPath), parsed.glb));
-    const before = parsed.objects.length;
-    parsed = await preserveNativePatchPreviews(parsed, sourceGlb,
+  if (parsed?.objects.some(part => part.kind === "mission")) {
+    parsed = await preserveNativePatchPreviews(parsed, await sceneAssetNodes(path.resolve(path.dirname(docPath), ".."), parsed),
       mission => fs.readFile(path.join(datadirPath(), "Data", "Levels", `${mission}.rhm.json`)));
-    if (parsed.objects.length !== before)
-      console.log(`Preserving ${before - parsed.objects.length} unchanged native initial patch preview(s); mission files remain unchanged. Static bake uses reconstructed volumes, not refined GLB meshes.`);
   }
   if (parsed?.exportBounds)
     throw new Error("Custom export frames require the authored-map compiler; reconstruction baking cannot safely rebase masks and mission coordinates. Save the editor document instead.");
@@ -177,19 +173,10 @@ export async function bake(options: BakeOptions): Promise<void> {
       .createHash("sha256")
       .update(JSON.stringify(level))
       .digest("hex");
-    let glbSha256: string | undefined;
-    if (parsed.provenance?.glb_sha256) {
-      const glbFile = path.resolve(path.dirname(docPath), parsed.glb);
-      glbSha256 = crypto
-        .createHash("sha256")
-        .update(sourceGlb ?? await fs.readFile(glbFile))
-        .digest("hex");
-    }
     doc = parseLevel3D(parsed, {
       map,
       level,
       sourceSha256,
-      glbSha256,
       scene: { size, camera: cam },
     });
     console.log(`document ${docPath}: ${doc.objects.length} objects`);
@@ -202,7 +189,8 @@ export async function bake(options: BakeOptions): Promise<void> {
       map,
       size,
       camera: cam,
-      glb: `${map.toLowerCase()}-volumes.scene.glb`,
+      sceneAssets: [],
+      sourceMap: map,
       objects: [...ids]
         .sort((a, b) => a - b)
         .map((i) => ({

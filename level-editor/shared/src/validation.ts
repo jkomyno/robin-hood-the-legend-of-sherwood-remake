@@ -327,17 +327,14 @@ export function parseSceneDoc(value: unknown): SceneDoc {
 export interface DocumentContext {
   scene?: Pick<SceneDoc, "size" | "camera">;
   map?: string;
-  glb?: string;
   level?: ProtoLevel;
   nodes?: ReadonlySet<string>;
   sourceSha256?: string;
-  glbSha256?: string;
 }
 
 /** Source hash uses the complete parsed export, including unknown fields, in JSON key order. */
 export async function documentProvenance(
   level: ProtoLevel | null,
-  glb: ArrayBuffer,
 ) {
   const hash = async (bytes: ArrayBuffer) =>
     Array.from(
@@ -348,7 +345,6 @@ export async function documentProvenance(
     source_sha256: level
       ? await hash(new TextEncoder().encode(JSON.stringify(level)).buffer)
       : undefined,
-    glb_sha256: await hash(glb),
   };
 }
 
@@ -376,15 +372,33 @@ export function parseLevel3D(
       "does not match source scene",
     );
   }
-  text(d.glb, "level3d.glb");
+  check(d.glb === undefined, "level3d.glb", "whole-map models must be imported into sceneAssets before opening");
+  const sceneIds = new Set<string>();
+  let grounds = 0;
+  for (const asset of array(d.sceneAssets, "level3d.sceneAssets")) {
+    object(asset, "scene asset"); text(asset.id, "scene asset.id");
+    check(!sceneIds.has(asset.id), asset.id, "duplicate scene asset"); sceneIds.add(asset.id);
+    check(asset.role === "ground" || asset.role === "objects" || asset.role === "metadata", asset.id, "invalid scene asset role");
+    if (asset.role === "ground") grounds++;
+    check(safeLibraryPath(asset.model), asset.id, "unsafe scene asset model");
+    check(/^[a-f0-9]{64}$/.test(asset.model_sha256), asset.id, "invalid scene asset model hash");
+    const paths = new Set<string>();
+    for (const resource of array(asset.resources, "scene asset.resources")) {
+      object(resource, "scene resource");
+      check(safeLibraryPath(resource.path) && !paths.has(resource.path), asset.id, "unsafe or duplicate scene resource");
+      paths.add(resource.path);
+      check(/^[a-f0-9]{64}$/.test(resource.sha256), asset.id, "invalid scene resource hash");
+    }
+  }
+  check(grounds <= 1, "sceneAssets", "multiple ground assets");
+  if (d.sourceMap !== undefined) text(d.sourceMap, "level3d.sourceMap");
   if (context.map)
     check(
       d.map.toLowerCase() === context.map.toLowerCase(),
       "level3d.map",
       `expected source ${context.map}, got ${d.map}`,
     );
-  if (context.glb)
-    check(d.glb === context.glb, "level3d.glb", `expected ${context.glb}`);
+
   if (d.assetSources !== undefined) parseExternalAssetSources(d.assetSources);
   const assetIds = new Set((d.assetSources ?? []).map((entry: ExternalAssetSource) => entry.id));
   const ids = new Set<string>();
@@ -514,7 +528,6 @@ export function parseLevel3D(
     const p = object(d.provenance, "provenance");
     for (const [key, expected] of [
       ["source_sha256", context.sourceSha256],
-      ["glb_sha256", context.glbSha256],
     ]) {
       if (p[key!] !== undefined) {
         check(

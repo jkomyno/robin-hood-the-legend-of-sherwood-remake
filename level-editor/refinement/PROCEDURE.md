@@ -655,3 +655,35 @@ repeated-element counts, world-transform drift, and validation results.
 Map-specific scripts should call the reusable workspace, projection, review,
 and export helpers instead of duplicating their own mask, camera, naming, or
 hash logic. This keeps the same review contract across all maps.
+
+### Map publication format
+
+Map exports use `<map>.level3d.json` plus `map-assets/3d-assets/` containing shared,
+content-addressed glTF models, geometry buffers, and original encoded images.
+`scene_filename` in publication plans must end in `.level3d.json`.
+`export_editor(..., asset_id=None)` requires the source `level` and this JSON output;
+it exports separate resources directly and does not emit a whole-map GLB. Pass
+`map_settings` with the existing document's `size` and `camera` to retain its framing.
+`stage_reviewed_publication.py` reads those settings from `editor_document`, or the
+current library document, and otherwise creates an unbounded map with the standard
+camera. Standalone palette models remain independent GLB assets.
+
+`verify_publication_assets.py` verifies the manifest's pinned resources and authored
+coverage. `prepare_publication_browser.py` combines those assets with the current
+canonical editor state, writes `browser-document.level3d.json`, and audits the same
+JSON/assets format used by the editor. Use `--document <staged-map.level3d.json>` for
+a first publication with no live document. `promote_staged_publication.py` installs
+immutable map assets first, then the audited document and shared palette index,
+with the existing lock, hash guards, backups, and rollback behavior.
+
+Frozen handoffs created before this format must be imported explicitly, without
+editing their original files:
+
+```bash
+python3 level-editor/refinement/scene_manifest.py \
+  <old-stage/map.scene.glb> <old-stage/map.level3d.json> <fresh-import-stage>
+```
+
+Keep the frozen workers and approval evidence. Run the current staging and browser
+verification tools against the imported JSON/assets before preparing promotion;
+previously prepared promotion manifests must not be reused across a format change.

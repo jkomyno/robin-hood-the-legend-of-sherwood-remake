@@ -1,4 +1,5 @@
 /** An editable riverside market town, assembled from shared assets and 3D paths. */
+import { importScene } from "./import-scene.ts";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
@@ -35,7 +36,7 @@ async function asset(id: string) {
   cache.set(id, result);
   return result;
 }
-let document: Level3D = { lighting: {enabled:true,sunAzimuth:305,sunElevation:48,shadowOpacity:.78}, version: 1, map: name, size, camera, glb: name + "-volumes.scene.glb", objects: [], groups: [],
+let document: Level3D = { lighting: {enabled:true,sunAzimuth:305,sunElevation:48,shadowOpacity:.78}, version: 1, map: name, size, camera, sceneAssets: [], objects: [], groups: [],
   notes: "The Tollkeeper's Ledger. Editable market-town layout: eastern ridge stronghold, western village and market, central river and mill. Patrols, navigation and mission scripting are not implemented." };
 const riverPoints: [number,number,number][] = [[1770,0,0],[1710,380,0],[1610,780,0],
   [1650,1080,0],[1690,1370,0],[1740,1660,0],[1680,1940,0],[1560,2400,0]];
@@ -184,10 +185,11 @@ const uv=gltf.createAccessor().setType("VEC2").setArray(new Float32Array(texcoor
 const idx=gltf.createAccessor().setType("SCALAR").setArray(new Uint16Array(indices)).setBuffer(buffer);
 root.addChild(gltf.createNode("ground").setMesh(gltf.createMesh().addPrimitive(gltf.createPrimitive()
   .setAttribute("POSITION",pos).setAttribute("TEXCOORD_0",uv).setIndices(idx).setMaterial(material))));
-await new NodeIO().registerExtensions(ALL_EXTENSIONS).write(path.join(output,document.glb),gltf);
-document.provenance={glb_sha256:hash(await fs.readFile(path.join(output,document.glb)))};
+const intermediate = path.join(libraryDir,"../work",name+"-ground.scene.glb");
+await new NodeIO().registerExtensions(ALL_EXTENSIONS).write(intermediate,gltf);
+document = (await importScene(intermediate,libraryDir,document as unknown as Record<string,unknown>)).document;
 const scene=parseSceneDoc({version:1,standalone:true,map:name,size,camera,placements:[],ground:{texture:name+"-ground.jpg",rect:[0,0,...size]}});
 parseLevel3D(document,{scene});
 await fs.writeFile(filename,JSON.stringify(document,null,2)+"\n");
-await fs.writeFile(path.join(output,name+"-volumes.scene.json"),JSON.stringify(scene,null,2)+"\n");
-console.log(JSON.stringify({map:name,instances:document.groups.length,paths:document.splines.length,assets:cache.size,output}));
+
+console.log(JSON.stringify({map:name,instances:document.groups.length,paths:document.splines?.length ?? 0,assets:cache.size,output}));

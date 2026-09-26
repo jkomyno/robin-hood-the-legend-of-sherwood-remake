@@ -1,4 +1,6 @@
 /** Initialize a staged editor document from reviewed export ownership and source obstacles. */
+import { importScene } from "./import-scene.ts";
+import { dirname } from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -79,12 +81,13 @@ export async function prepareDocument(scenePath: string, levelPath: string, glbP
     if (hidden === true) object.hidden = true;
   }
   const groups = authoredAssetGroups(scene.map, objects, catalog)!;
-  const provenance = await documentProvenance(level, bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer);
+  const provenance = await documentProvenance(level);
   const document: Level3D = { version: 1, map: scene.map, size: scene.size, camera: scene.camera,
-    glb: scene.map.toLowerCase() + "-volumes.scene.glb", groups, objects, provenance };
+    sceneAssets: [], sourceMap: scene.standalone ? undefined : scene.map, groups, objects, provenance };
   parseLevel3D(document, { scene, level, nodes: new Set(objects.map(object => object.node)),
-    sourceSha256: provenance.source_sha256, glbSha256: provenance.glb_sha256 });
-  await writeFile(output, JSON.stringify(document, null, 2) + "\n", { flag: "wx" });
+    sourceSha256: provenance.source_sha256 });
+  const imported = await importScene(glbPath, (dirname(resolve(output)).endsWith("/scenes") ? dirname(dirname(resolve(output))) : resolve(dirname(output), "map-assets")), document as unknown as Record<string,unknown>, document.sourceMap);
+  await writeFile(output, JSON.stringify(imported.document, null, 2) + "\n", { flag: "wx" });
   return { file: output, groups: groups.length, parts: objects.length, provenance };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

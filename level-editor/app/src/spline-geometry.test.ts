@@ -80,7 +80,7 @@ test("spline geometry retirement does not dispose borrowed wall materials or sou
   source.geometry.dispose(); source.material.dispose();
 });
 test("documents round-trip splines and reject dangling sources and invalid control geometry", () => {
-  const document: Level3D = { version: 1, map: "Test", glb: "map.glb", size: [1000,1000], camera, objects: [], groups: [], splines: [river] };
+  const document: Level3D = { version: 1, map: "Test", sceneAssets: [], size: [1000,1000], camera, objects: [], groups: [], splines: [river] };
   assert.deepEqual(parseLevel3D(JSON.parse(JSON.stringify(document))).splines, [river]);
   assert.throws(() => parseLevel3D({ ...document, splines: [{ ...river, width: 0 }] }), /width/);
   assert.throws(() => parseLevel3D({ ...document, splines: [{ ...river, points: [[0,0,0]] }] }), /control points/);
@@ -121,7 +121,7 @@ test("closed walls place seam towers once, including a single remaining corner",
 });
 test("footpaths save independently of water and follow authored height", () => {
   const road:LevelSpline={...river,kind:"road",width:24,points:[[0,0,5],[80,20,30],[160,40,40]]};
-  const doc:Level3D={version:1,map:"Roads",glb:"map.glb",size:[300,300],camera,objects:[],groups:[],splines:[road]};
+  const doc:Level3D={version:1,map:"Roads",sceneAssets: [],size:[300,300],camera,objects:[],groups:[],splines:[road]};
   assert.deepEqual(parseLevel3D(JSON.parse(JSON.stringify(doc))).splines,[road]);
   const geometry=riverGeometry(road,camera);assert.ok(geometry.getAttribute("position").getZ(0)>5);
   const layer=new SplineLayer();layer.sync([road],camera,new Map());

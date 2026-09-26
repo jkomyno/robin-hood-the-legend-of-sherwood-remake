@@ -96,7 +96,7 @@ function document() {
   return {
     version: 1,
     map: "York",
-    glb: "york.glb",
+    sceneAssets: [],
     size: [100, 200],
     camera: { ...camera },
     groups: [],
@@ -131,7 +131,6 @@ test("versioned parsing preserves unknown fields exactly", () => {
   const original = document();
   const parsed = parseLevel3D(original, {
     map: "york",
-    glb: "york.glb",
     nodes: new Set(["building-000"]),
   });
   assert.deepEqual(JSON.parse(JSON.stringify(parsed)), original);
@@ -153,8 +152,8 @@ test("invalid schemas and dangling or mismatched sources fail", () => {
   assert.throws(() => parseLevel3D(document(), { nodes: new Set() }));
   assert.throws(() =>
     parseLevel3D(
-      { ...document(), provenance: { glb_sha256: "a".repeat(64) } },
-      { glbSha256: "b".repeat(64) },
+      { ...document(), provenance: { source_sha256: "a".repeat(64) } },
+      { sourceSha256: "b".repeat(64) },
     ),
   );
 });

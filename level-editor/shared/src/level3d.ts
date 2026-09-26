@@ -60,7 +60,19 @@ export interface Level3DGroup {
   hidden?: boolean;
 }
 
+export interface SceneAssetSource {
+  id: string;
+  role: "objects" | "ground" | "metadata";
+  model: string;
+  model_sha256: string;
+  resources: { path: string; sha256: string }[];
+}
+
 export interface Level3D {
+  /** Published geometry and terrain, in document order, relative to the library. */
+  sceneAssets: SceneAssetSource[];
+  /** Backing game level for overlays and mission entities; absent on authored maps. */
+  sourceMap?: string;
   /** Optional output crop [x, y, width, height] in map pixels; never an editing boundary. */
   exportBounds?: [number, number, number, number];
   /** Sun azimuth is clockwise from north; elevation is above the ground. */
@@ -69,14 +81,13 @@ export interface Level3D {
   splines?: import("./splines.ts").LevelSpline[];
   /** Standalone models referenced by namespaced object nodes. */
   assetSources?: ExternalAssetSource[];
-  provenance?: { source_sha256?: string; glb_sha256?: string };
+  provenance?: { source_sha256?: string };
   version: 1;
   map: string;
   /** Fixed map size in pixels, or null for an unbounded authoring canvas. */
   size: [number, number] | null;
   camera: MapCamera;
-  /** reconstruction GLB (relative to the document) */
-  glb: string;
+
   objects: Level3DObject[];
   groups: Level3DGroup[];
   notes?: string;

@@ -19,7 +19,7 @@ const chrome = spawn(
     "--use-angle=swiftshader",
     "--remote-debugging-port=0",
     `--user-data-dir=${profile}`,
-    `${process.argv[2] ?? "http://localhost:5181"}/tests/lifecycle.html${process.env.TEST_QUERY ?? ""}`,
+    `${process.argv[2] ?? "http://localhost:5181"}/tests/${process.env.TEST_PAGE ?? "lifecycle.html"}${process.env.TEST_QUERY ?? ""}`,
   ],
   { stdio: ["ignore", "ignore", "pipe"] },
 );
@@ -70,7 +70,7 @@ try {
   await socketOpen(socket, { signal: lifetime.signal, timeoutMs: 5000 });
   let id = 0;
   let outcome;
-  const deadline = Date.now() + 60000;
+  const deadline = Date.now() + Number(process.env.TEST_TIMEOUT ?? 60000);
   while (Date.now() < deadline) {
     outcome = await evaluate(
       socket,
@@ -78,7 +78,7 @@ try {
       "document.querySelector('#result')?.textContent",
       {
         signal: lifetime.signal,
-        timeoutMs: Math.min(5000, deadline - Date.now()),
+        timeoutMs: Math.min(Number(process.env.TEST_EVALUATE_TIMEOUT ?? 5000), deadline - Date.now()),
       },
     );
     if (outcome?.startsWith("PASS") || outcome?.startsWith("FAIL")) break;

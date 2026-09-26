@@ -190,7 +190,10 @@ def verify(directory,catalog_path):
                 if not any(e.get('projection_component')==component['projection_component'] for e in exported):
                     raise ValueError('Standalone lost component ownership metadata')
         components+=len(descriptor['components'])
-    model=gltf(Path(stage['map']['file']))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from scene_manifest import scene_metadata
+    document = json.loads(Path(stage['map']['file']).read_text())
+    model = scene_metadata(Path(stage['map']['library']), document)
     expected_map=set(declared)
     actual_names=[n['name'] for n in model['nodes'] if 'mesh' not in n and n.get('name','').startswith(('building-','mission-'))]
     if len(actual_names)!=len(set(actual_names)):

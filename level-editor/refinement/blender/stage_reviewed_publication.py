@@ -185,13 +185,15 @@ def stage(plan_path):
     bpy.ops.wm.save_as_mainfile(filepath=str(output/'worker.blend'))
     effective_plan=output/'effective-plan.json'
     effective_plan.write_text(json.dumps(plan,indent=2)+'\n')
+    settings_path = Path(plan.get('editor_document', Path('level-editor/library/scenes') / scene_file))
+    map_settings = json.loads(settings_path.read_text()) if settings_path.exists() else plan.get('map_settings', {})
     inactive_names = [row['staged_name'] for item in imports for row in item.get('inactive_object_bindings', [])]
     report={'plan':str(effective_plan),'imports':imports,'grouping':grouping,'ground_texture_handoff':ground_handoff,
             'canonical_parts':len(canonical_after),'approved_texture_checks':texture_checks,
             'unselected_meshes_preserved':len(outside_before),'unselected_mesh_state_identical':outside_before==outside_after,
             'generated_materials':{sha:sorted(names) for sha,names in generated.items()},
             'map':export_editor(plan['map_name'],output/scene_file,catalog=catalog,
-                                level=json.loads(Path(plan['hackable_map']).read_text()), include_hidden_objects=inactive_names),
+                                level=json.loads(Path(plan['hackable_map']).read_text()), include_hidden_objects=inactive_names, map_settings=map_settings),
             'assets':export_asset_library(plan['map_name'],output/'assets',plan['hackable_map'],asset_ids=plan.get('export_asset_ids'),catalog=catalog,include_hidden_objects=inactive_names)}
     if plan.get('static_variants') or any(item.get('texture_state_roles') for item in plan['imports']):
         from export_static_variants import export_variants

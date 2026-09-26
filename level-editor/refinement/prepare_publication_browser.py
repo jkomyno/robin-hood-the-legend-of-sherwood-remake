@@ -6,8 +6,8 @@ The scope lists asset_ids, already_published, and optional required_patches.
 import argparse
 import hashlib
 import json
-import struct
 from pathlib import Path
+from scene_manifest import scene_metadata
 
 
 def sha(path):
@@ -21,16 +21,16 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
     scope = json.loads(Path(scope_path).read_text())
     library = Path("level-editor/library").resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    glb = library / f"scenes/{map_name}-volumes.scene.glb" if live else stage / f"{map_name}.scene.glb"
-    raw = glb.read_bytes()
-    model = json.loads(raw[20:20 + struct.unpack_from("<I", raw, 12)[0]])
+    live_document = library / f"scenes/{map_name}.level3d.json"
+    source_document = Path(document_path).resolve(strict=True) if document_path is not None else live_document
+    document = json.loads(source_document.read_text())
+    asset_library = library if live else stage / 'map-assets'
+    staged_document = document if live else json.loads((stage / f"{map_name}.level3d.json").read_text())
+    model = scene_metadata(asset_library, staged_document)
     nodes = model["nodes"]
     map_node = next(node for node in nodes if node.get("name") == "map")
     groups = [nodes[index] for index in map_node["children"] if nodes[index].get("name") != "ground"]
     part_names = {nodes[index]["name"] for group in groups for index in group.get("children", [])}
-    live_document = library / f"scenes/{map_name}.level3d.json"
-    source_document = Path(document_path).resolve(strict=True) if document_path is not None else live_document
-    document = json.loads(source_document.read_text())
     if migration_path is not None and not live:
         migration = json.loads(Path(migration_path).read_text())
         if sha(live_document) != migration["prior_document_sha256"]:
@@ -66,8 +66,10 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         raise ValueError("Editor part ownership differs from staged canonical hierarchy")
     document_path = live_document
     if not live:
-        document["provenance"]["glb_sha256"] = sha(glb)
-        document_path = stage / f"{map_name}.level3d.json"
+        document["sceneAssets"] = staged_document["sceneAssets"]
+        document.pop("glb", None)
+        document.setdefault("provenance", {}).pop("glb_sha256", None)
+        document_path = stage / "browser-document.level3d.json"
         if document_path.exists():
             if json.loads(document_path.read_text()) != document:
                 raise ValueError("Existing staged document differs from current canonical editor state")
@@ -93,8 +95,10 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         files.append({"path": path, "url": "/@fs/" + str(source), "sha256": sha(source)})
         seen.add(path)
 
-    add(f"scenes/{map_name}-volumes.scene.glb", glb)
-    add(f"scenes/{map_name}-volumes.scene.json", library / f"scenes/{map_name}-volumes.scene.json")
+    for reference in document["sceneAssets"]:
+        add(reference["model"], asset_library / reference["model"])
+        for resource in reference["resources"]:
+            add(resource["path"], asset_library / resource["path"])
     add(f"scenes/{map_name}.level3d.json", document_path)
     add("3d-assets/index.json", private_index)
     expanded = []
@@ -135,7 +139,7 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
     if not set(required) <= patches:
         raise ValueError("Required runtime state triggers missing")
     protected = {str(path): sha(path) for path in library.rglob("*")
-                 if path.is_file() and path.suffix in (".json", ".glb")}
+                 if path.is_file() and path.suffix in (".json", ".gltf", ".glb", ".bin", ".png", ".jpg")}
     config = {"map": map_name, "mode": "live" if live else "staged", "files": files,
               "expected": {"groups": len(document["groups"]), "parts": len(document["objects"]),
                            "width": document["size"][0], "assets": expanded,

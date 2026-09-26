@@ -1,11 +1,22 @@
 """Small filesystem fixtures exercise static endpoint promotion without Blender."""
 import json
+import struct
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
 import promote_staged_publication as promotion
+from scene_manifest import import_document
+
+
+def map_fixture(stage, name):
+    model = {'asset': {'version': '2.0'}, 'scene': 0, 'scenes': [{'nodes': [0]}],
+             'nodes': [{'name': 'map', 'children': [1]}, {'name': 'buildings', 'children': [2]}, {'name': 'building-000'}]}
+    data = json.dumps(model).encode(); data += b' ' * (-len(data) % 4)
+    (stage / f'{name}.scene.glb').write_bytes(struct.pack('<III', 0x46546c67, 2, 20+len(data)) + struct.pack('<II',len(data),0x4e4f534a) + data)
+    document, _ = import_document(stage / f'{name}.scene.glb', stage / 'map-assets', {'map': name})
+    (stage / f'{name}.level3d.json').write_text(json.dumps(document))
 
 
 class PromotionTests(unittest.TestCase):
@@ -27,6 +38,7 @@ class PromotionTests(unittest.TestCase):
             self.write_json(self.stage / f'{name}.json', {'status': 'PASS'})
         for name in ('worker.blend', 'derby.scene.glb', 'derby.level3d.json', 'assets/bridge/raised.glb', 'assets/bridge/lowered.glb'):
             (self.stage / name).write_bytes(('new:' + name).encode())
+        map_fixture(self.stage, 'derby')
         self.main.write_bytes(b'old blend')
         self.write_json(self.library / 'scenes/derby-volumes.scene.json', {'protected': True})
 
@@ -45,7 +57,7 @@ class PromotionTests(unittest.TestCase):
         promotion.prepare(self.stage, self.library, self.main, 'derby')
         return json.loads((self.stage / 'promotion.json').read_text())
 
-    def test_existing_asset_keeps_original_six_file_manifest(self):
+    def test_scene_import_publishes_manifest_and_immutable_assets(self):
         manifest = self.prepare()
         self.assertEqual(len(manifest['files']), 6)
         promotion.apply(self.stage / 'promotion.json')
@@ -237,6 +249,7 @@ class FirstPublicationTests(unittest.TestCase):
             (self.stage / name).write_text('staged ' + name)
         (self.library / 'scenes/leicester-volumes.scene.glb').write_text('old map')
         (self.library / 'scenes/leicester-volumes.scene.json').write_text('protected document')
+        map_fixture(self.stage, 'leicester')
         promotion.prepare(self.stage, self.library, self.main, 'leicester')
 
     def test_first_publication_creates_main_and_preserves_other_entries(self):
@@ -247,8 +260,10 @@ class FirstPublicationTests(unittest.TestCase):
         self.assertEqual((self.library / 'scenes/leicester-volumes.scene.json').read_text(), 'protected document')
         report = json.loads((self.stage / 'promotion.json').read_text())
         self.assertEqual(report['status'], 'APPLIED')
-        previous_map = next(r for r in report['files'] if r['target'].endswith('leicester-volumes.scene.glb'))
-        self.assertEqual(Path(previous_map['backup']).read_text(), 'old map')
+        self.assertFalse(any(r['target'].endswith('-volumes.scene.glb') for r in report['files']))
+        document = json.loads((self.library / 'scenes/leicester.level3d.json').read_text())
+        self.assertNotIn('glb', document)
+        self.assertEqual(len(document['sceneAssets']), 1)
 
     def test_new_target_created_after_preparation_blocks_publication(self):
         self.main.parent.mkdir()

@@ -29,7 +29,7 @@ test("library paths and identities reject traversal and duplicate source records
 });
 
 test("documents preserve pinned external sources and reject dangling namespaces", () => {
-  const document = { version: 1, map: "Leicester", glb: "map.glb", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+  const document = { version: 1, map: "Leicester", sceneAssets: [], size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
     groups: [], assetSources: [reference], objects: [{ id: "copy", node: assetNodeKey("house", "building-000"), kind: "building", source: { map: "Leicester", obstacle: 0 },
       obstacle, transform: { dx: 0, dy: 0, dz: 0, rot_deg: 0 } }] };
   assert.equal(parseLevel3D(document).assetSources?.[0], reference);
@@ -71,7 +71,7 @@ test("split obstacle descriptors require scoped identity and disjoint ownership"
   for (const wrong of [{ ...part, source_components: undefined }, { ...part, source_components: ["east"] }, { ...part, node: "building-000" }])
     assert.throws(() => parseProjectionAssetDescriptor({ ...descriptor, parts: [wrong] }), /canonical/);
   assert.throws(() => parseProjectionAssetDescriptor({ ...descriptor, parts: [part, descriptor.parts[0]] }), /duplicate/);
-  const document = { version: 1, map: "Leicester", glb: "map.glb", size: [100,100], camera: {kind:"oblique-orthographic",elevation_deg:35},groups:[],assetSources:[reference],objects:[{id:"copy",node:assetNodeKey("house",part.node),kind:"building",source:{map:"Leicester",obstacle:0,components:["west"]},obstacle,transform:{dx:0,dy:0,dz:0,rot_deg:0}}] };
+  const document = { version: 1, map: "Leicester", sceneAssets: [], size: [100,100], camera: {kind:"oblique-orthographic",elevation_deg:35},groups:[],assetSources:[reference],objects:[{id:"copy",node:assetNodeKey("house",part.node),kind:"building",source:{map:"Leicester",obstacle:0,components:["west"]},obstacle,transform:{dx:0,dy:0,dz:0,rot_deg:0}}] };
   assert.doesNotThrow(() => parseLevel3D(document));
   document.objects[0]!.source.components = ["east"];
   assert.throws(() => parseLevel3D(document), /canonical/);

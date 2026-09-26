@@ -22,7 +22,7 @@ test("sun direction, caster exclusions, and borrowed terrain resource ownership"
   caster.geometry.dispose();caster.material.dispose();ground.geometry.dispose();ground.material.dispose();
 });
 test("lighting settings round-trip and reject out-of-range solar controls",()=>{
-  const document:Level3D={version:1,map:"Test",glb:"test.glb",size:[100,100],camera:{kind:"oblique-orthographic",elevation_deg:35},objects:[],groups:[],lighting:settings};
+  const document:Level3D={version:1,map:"Test",sceneAssets: [],size:[100,100],camera:{kind:"oblique-orthographic",elevation_deg:35},objects:[],groups:[],lighting:settings};
   assert.deepEqual(parseLevel3D(JSON.parse(JSON.stringify(document))).lighting,settings);
   for(const invalid of [{sunElevation:0},{sunAzimuth:361},{shadowOpacity:2}])
     assert.throws(()=>parseLevel3D({...document,lighting:{...settings,...invalid}}),/lighting/);

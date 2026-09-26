@@ -1504,3 +1504,24 @@ The level editor’s Assets panel inserts exported projection assets from the cu
 Explicit foliage materials keep physical leaf coverage separate from source ownership. Their RGBA texture supplies glTF MASK coverage at cutoff 0.5; COLOR_0 red stores the observed-source weight. The editor preserves alpha gaps in normal and source-only views and interprets the color attribute as evidence rather than a surface tint. The export contract supports double-sided cards or explicitly paired one-sided source/neutral cards, with optional unlit rendering. Vertex ownership requires geometry split at evidence boundaries; it cannot encode an arbitrary per-pixel ownership mask inside a triangle. Existing opaque projection materials retain their alpha-as-ownership behavior.
 
 - Reviewed map assets can split one obstacle into independently selectable component parts. Exported component IDs retain canonical obstacle provenance and their own scoped collision footprint in map documents and standalone instances. Game baking rejects these split documents until component geometry compilation is supported.
+
+### Map manifests and shared scene assets
+
+Mission maps are `.level3d.json` documents referencing pinned library assets through
+`sceneAssets`. The editor requires the manifest; it no longer opens whole-map GLBs
+or reconstructs missing documents during loading. Each reference includes its role,
+model hash, and hashes for external geometry and image resources. Shared payloads
+are stored once under content-addressed library paths and checked before loading.
+Transforms, ownership, hidden parts, source obstacles, native patch bindings, and
+reveal metadata remain in the document/assets. Opaque rendering uses stable names
+instead of asynchronous material allocation order to keep overlapping surfaces
+consistent across reloads and asset partitioning.
+
+The refinement exporter produces map JSON and `map-assets/` directly from Blender's
+separate glTF resources. Individual palette assets may still be GLBs. Staging,
+material/ownership verification, browser audits, and guarded promotion consume the
+manifest and install referenced resources before replacing the map document.
+`pipeline/src/import-scene.ts` explicitly converts older published snapshots;
+`pipeline/migrate_scene_library.py` verifies and installs a staged conversion while
+retaining the old snapshots under `library/scenes/backups/`. No mesh quantization,
+texture recompression, or collision regrouping occurs during conversion.

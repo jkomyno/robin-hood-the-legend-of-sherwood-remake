@@ -30,7 +30,8 @@ function fixture(saved: unknown = {}, map = "York", standalone = false) {
         [
           JSON.stringify({
             ...scene,
-            glb: "York-volumes.scene.glb",
+            sceneAssets: [{ id: "base", role: "objects", model: "York-volumes.scene.glb", model_sha256: createHash("sha256").update(new Uint8Array([1,2,3])).digest("hex"), resources: [] }],
+            sourceMap: standalone ? undefined : map,
             groups: [],
             objects: [],
             ...(saved as object),
@@ -73,12 +74,11 @@ test("validated candidate retains ownership until accepted or rejected by its ca
     scene: f.asset,
   }));
   const candidate = await prepareMapCandidate("York", f.directory, null);
-  assert.equal(candidate.asset, f.asset);
+  assert.ok(candidate.asset.children.includes(f.asset));
   assert.equal(candidate.directory, f.directory);
   assert.equal(candidate.sources.get("building-000"), f.mesh);
   assert.equal(candidate.document.map, "York");
-  assert.equal(candidate.saved, false); // New provenance must be saved, not silently acknowledged.
-  assert.match(candidate.document.provenance!.glb_sha256!, /^[a-f0-9]{64}$/);
+  assert.equal(candidate.saved, true);
   assert.equal(f.disposals(), 0);
   disposeObjectResources([candidate.asset]); // Same path used for a stale prepared load.
   assert.equal(f.disposals(), 1);
@@ -95,12 +95,12 @@ test("map source identity remains case-insensitive but never accepts a different
   const wrong = fixture({}, "Lincoln");
   await assert.rejects(
     prepareMapCandidate("York", wrong.directory, null),
-    /source map is Lincoln/,
+    /expected source York/,
   );
   disposeObjectResources([wrong.asset]);
 });
 
-test("invalid saved document releases the parsed asset before rejecting", async (t) => {
+test("invalid saved document rejects before reading geometry", async (t) => {
   const f = fixture({ version: 99 });
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({
     scene: f.asset,
@@ -109,7 +109,8 @@ test("invalid saved document releases the parsed asset before rejecting", async 
     prepareMapCandidate("York", f.directory, null),
     /version/,
   );
-  assert.equal(f.disposals(), 1);
+  assert.equal(f.disposals(), 0);
+  disposeObjectResources([f.asset]);
 });
 
 test("duplicate reconstruction node identity rejects and deduplicates resource disposal", async (t) => {
@@ -120,7 +121,7 @@ test("duplicate reconstruction node identity rejects and deduplicates resource d
   }));
   await assert.rejects(
     prepareMapCandidate("York", f.directory, null),
-    /Duplicate GLB node/,
+    /Duplicate scene source node/,
   );
   assert.equal(f.disposals(), 1);
 });
@@ -139,15 +140,13 @@ function authoredFixture(customName?: string) {
   return f;
 }
 
-test("GLB authored groups restore human names for pristine saved documents on any map", async (t) => {
-  const f = authoredFixture();
-  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
-  const candidate = await prepareMapCandidate("York", f.directory, null);
-  assert.equal(candidate.document.groups[0]!.id, "york-north-hall");
-  assert.equal(candidate.document.groups[0]!.name, "North Hall");
-  assert.equal(candidate.document.objects[0]!.name, "Hall walls");
-  assert.equal(candidate.document.objects[0]!.group, "york-north-hall");
-  assert.equal(candidate.saved, false);
+test("manifest ownership is authoritative and never silently regrouped while loading", async t => {
+  const f=authoredFixture();
+  const before=JSON.parse(await f.files.get("York.level3d.json")!.text());
+  t.mock.method(GLTFLoader.prototype,"parseAsync",async()=>({scene:f.asset}));
+  const candidate=await prepareMapCandidate("York",f.directory,null);
+  assert.deepEqual(candidate.document,before);
+  assert.equal(candidate.saved,true);
   disposeObjectResources([candidate.asset]);
 });
 
@@ -161,7 +160,7 @@ test("authored exports preserve saved user names and reject mismatched canonical
   const bad = authoredFixture();
   bad.mesh.userData.source_obstacle = 99;
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: bad.asset }));
-  await assert.rejects(prepareMapCandidate("York", bad.directory, null), /Invalid authored GLB part metadata/);
+  await assert.rejects(prepareMapCandidate("York", bad.directory, null), /Source obstacle mismatch/);
   assert.equal(bad.disposals(), 1);
 });
 
@@ -192,7 +191,7 @@ function parallelFixture(count: number) {
     f.files.set(descriptor, new File([descriptorBytes], descriptor));
     return { id, model, descriptor, model_sha256:hash(bytes), descriptor_sha256:hash(descriptorBytes) };
   });
-  const saved = {version:1,map:"York",size:[100,200],camera:{kind:"oblique-orthographic",elevation_deg:35},glb:"York-volumes.scene.glb",groups:[],objects:[],assetSources:references};
+  const saved = {version:1,map:"York",size:[100,200],camera:{kind:"oblique-orthographic",elevation_deg:35},sceneAssets: [{ id:"base",role:"objects",model:"York-volumes.scene.glb",model_sha256:hash(new Uint8Array([1,2,3])),resources:[] }],groups:[],objects:[],assetSources:references};
   f.files.set("York.level3d.json", new File([JSON.stringify(saved)], "document.json"));
   const pending = new Map<number, {resolve():void; reject(error:Error):void}>();
   const retired: number[] = [];
@@ -267,7 +266,7 @@ test("component exports restore scoped group ownership and reject missing footpr
   f.mesh.name=name;f.mesh.userData.source_components=["west"];f.mesh.userData.obstacle_local_game=document.objects[0].obstacle;
   t.mock.method(GLTFLoader.prototype,"parseAsync",async()=>({scene:f.asset}));
   const candidate=await prepareMapCandidate("York",f.directory,null);
-  assert.equal(candidate.document.objects[0]!.group,"york-north-hall");
+  assert.equal(candidate.document.objects[0]!.group,"group-000");
   assert.deepEqual(candidate.document.objects[0]!.source.components,["west"]);
   delete f.mesh.userData.obstacle_local_game;
   await assert.rejects(prepareMapCandidate("York",f.directory,null),/Missing component footprint/);

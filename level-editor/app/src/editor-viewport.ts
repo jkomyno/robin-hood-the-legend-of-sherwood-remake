@@ -1,3 +1,4 @@
+import { stableOpaqueSort } from "./render-order.ts";
 import { SunLighting } from "./sun-lighting.ts";
 import { SplineLayer, type SplineEditMode } from "./spline-layer.ts";
 import type { ExternalAssetSource } from "@rle/shared";
@@ -423,6 +424,7 @@ export class EditorViewport {
       throw new Error("Viewport can only mount once");
     this.container = el;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, reversedDepthBuffer: true });
+    this.renderer.setOpaqueSort(stableOpaqueSort);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.shadowMap.autoUpdate = false;

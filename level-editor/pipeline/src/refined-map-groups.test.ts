@@ -18,7 +18,7 @@ function gltf(groups: Record<string, string[]>): AuthoredGltf {
   return { nodes };
 }
 function fixture(): Level3D {
-  return { version: 1, map: "test", size: [100, 100], glb: "test.glb",
+  return { version: 1, map: "test", size: [100, 100], sceneAssets: [],
     camera: { kind: "oblique-orthographic", elevation_deg: 35 },
     groups: ["hall", "stairs", "yard", "custom"].map(id => ({ id, name: id, transform: identity() })),
     objects: ["a", "b", "c", "d", "e"].map((node, i) => ({ id: node, node, kind: "building",

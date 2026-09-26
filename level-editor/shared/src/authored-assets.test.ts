@@ -68,7 +68,7 @@ test("catalog mismatch fails before mutating a document; other maps retain infer
 });
 
 test("untouched saved groups upgrade once, but saved transforms and custom ownership survive", () => {
-  const document: Level3D = { version: 1, map: "Derby", glb: "derby-volumes.scene.glb",
+  const document: Level3D = { version: 1, map: "Derby", sceneAssets: [],
     size: [1920, 2752], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
     objects: objects(), groups: [{ id: "group-000", transform: { ...IDENTITY_TRANSFORM } }] };
   for (const part of document.objects) part.group = "group-000";
@@ -102,7 +102,7 @@ test("explicit catalogs support another map and reject ambiguous ownership atomi
 test("exported catalogs upgrade pristine non-Derby documents without replacing edits", () => {
   const parts = objects().slice(0, 2).map(part => ({ ...part, group: "group-000", source: { ...part.source, map: "Leicester" } }));
   const catalog = { map: "Leicester", groups: [{ id: "house", name: "House", parts: [{ obstacle: 0, name: "Body" }, { obstacle: 1, name: "Roof" }] }] };
-  const document: Level3D = { version: 1, map: "Leicester", glb: "map.glb", size: [100, 100],
+  const document: Level3D = { version: 1, map: "Leicester", sceneAssets: [], size: [100, 100],
     camera: { kind: "oblique-orthographic", elevation_deg: 35 }, objects: parts,
     groups: [{ id: "group-000", transform: { ...IDENTITY_TRANSFORM } }] };
   const edited = structuredClone(document);
@@ -120,7 +120,7 @@ test("explicit mission publication adds one group/part while preserving all 270 
   for (const part of parts) part.obstacle.points = [
     { x: 0, y: 0, z_bottom: 0, z_top: 5 }, { x: 10, y: 0, z_bottom: 0, z_top: 5 }, { x: 0, y: 10, z_bottom: 0, z_top: 5 },
   ];
-  const document: Level3D = { version: 1, map: "Derby", glb: "derby-volumes.scene.glb", size: [1920, 2752],
+  const document: Level3D = { version: 1, map: "Derby", sceneAssets: [], size: [1920, 2752],
     camera: { kind: "oblique-orthographic", elevation_deg: 35 }, objects: parts, groups: authoredAssetGroups("Derby", parts)! };
   document.objects[0]!.transform.dx = 17;
   document.objects[1]!.hidden = true;

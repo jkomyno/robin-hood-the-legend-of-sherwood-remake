@@ -1,4 +1,5 @@
 /** Populate the authored town and pack only the directional sprites it uses. */
+import { loadSceneModel } from "./scene-assets.ts";
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
@@ -11,7 +12,9 @@ import { libraryDir, datadirPath } from "./env.ts";
 const scenePath=path.join(libraryDir,"scenes/Wychford.level3d.json");
 const document=parseLevel3D(JSON.parse(await fs.readFile(scenePath,"utf8")));
 const recipe=JSON.parse(await fs.readFile(new URL("../../maps/wychford/population.json",import.meta.url),"utf8"));
-const gltf=await new NodeIO().registerExtensions(ALL_EXTENSIONS).read(path.join(libraryDir,"scenes",document.glb));
+const groundSource=document.sceneAssets.find(asset=>asset.role==="ground");
+if(!groundSource)throw new Error("Map has no terrain asset");
+const gltf=await loadSceneModel(libraryDir,groundSource);
 const primitive=gltf.getRoot().listNodes().find(n=>n.getName()==="ground")!.getMesh()!.listPrimitives()[0]!;
 const vertices=primitive.getAttribute("POSITION")!.getArray()!;
 const indices=primitive.getIndices()!.getArray()!;

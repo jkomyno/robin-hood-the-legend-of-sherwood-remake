@@ -75,9 +75,9 @@ def validate_export_records(catalog, records, asset_ids=None):
 
 
 def scene_filename(plan):
-    name = plan.get('scene_filename', plan['map_name'].lower().replace(' ', '-') + '.scene.glb')
-    if not isinstance(name, str) or Path(name).name != name or not name.endswith('.glb'):
-        raise ValueError('Staged scene filename must be a local GLB filename')
+    name = plan.get('scene_filename', plan['map_name'].lower().replace(' ', '-') + '.level3d.json')
+    if not isinstance(name, str) or Path(name).name != name or not name.endswith('.level3d.json'):
+        raise ValueError('Staged scene filename must be a local .level3d.json filename')
     return name
 
 

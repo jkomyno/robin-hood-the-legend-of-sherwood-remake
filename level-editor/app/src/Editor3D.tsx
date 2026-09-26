@@ -1,12 +1,4 @@
-// The 3D level editor viewport and panels. Loads the volume reconstruction
-// of a map (library/scenes/<map>-volumes.scene.glb, one node per obstacle)
-// together with the game's level data, keeps a Level3D document (parts =
-// obstacles with an editor transform, grouped into buildings), and lets
-// you select, move, turn, duplicate, hide and delete buildings or single
-// parts. Two cameras: the game's own (oblique orthographic, looking north)
-// and a free orbit around the point under the cursor. Saves
-// <map>.level3d.json next to the GLB; pipeline/src/bake.ts turns that back
-// into game files.
+// Edit JSON maps assembled from pinned library assets, with game and orbit cameras.
 import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
 import type * as THREE from "three";
 import {
@@ -152,8 +144,8 @@ export default function Editor3D(props: EditorProps) {
         if (!dir) return;
         const files = await listFiles(dir);
         const names = files
-          .filter((f) => f.endsWith("-volumes.scene.glb"))
-          .map((f) => f.slice(0, -"-volumes.scene.glb".length))
+          .filter((f) => f.endsWith(".level3d.json"))
+          .map((f) => f.slice(0, -".level3d.json".length))
           .sort();
         if (disposed || props.library() !== lib) return;
         setMaps(names);

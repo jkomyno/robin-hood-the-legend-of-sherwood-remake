@@ -6,14 +6,14 @@ import "../src/styles.css";
 const query = new URLSearchParams(location.search);
 const map = query.get("map") ?? "Wychford";
 if (!/^[a-zA-Z0-9_-]+$/.test(map)) throw new Error("Invalid scene name");
-const root = new URL("../../library/scenes/Wychford-volumes.scene.json", import.meta.url).pathname;
+const root = "/library/";
 const result = document.querySelector("#result")!;
-const files = [map + "-volumes.scene.glb", map + "-volumes.scene.json", map + ".level3d.json"];
+const files = [map + ".level3d.json"];
 const directory = (prefix: string): FileSystemDirectoryHandle => ({
   name: "library", kind: "directory",
   async getDirectoryHandle(name: string) { return directory(prefix + name + "/"); },
   async getFileHandle(name: string) {
-    const response = await fetch(root.slice(0, root.lastIndexOf("/scenes/") + 1) + prefix + name);
+    const response = await fetch(root + prefix + name);
     if (!response.ok) throw new Error("Failed to read " + prefix + name + ": " + response.status);
     const file = new File([await response.arrayBuffer()], name);
     return { getFile: async () => file };

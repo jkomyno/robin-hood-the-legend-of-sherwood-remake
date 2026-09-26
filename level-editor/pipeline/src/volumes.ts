@@ -25,6 +25,7 @@ import {
 import { encode, exportGlb } from "./volume-export.ts";
 import { renders } from "./volume-diagnostics.ts";
 import { pathComponent } from "./inputs.ts";
+import { importScene, initializeSceneDocument } from "./import-scene.ts";
 import { isMissing } from "./provider-cache.ts";
 export { buildGeometry } from "./volume-geometry.ts";
 export type { Face, Geometry } from "./volume-geometry.ts";
@@ -228,7 +229,8 @@ async function main() {
 
   await fs.mkdir(outDir, { recursive: true });
   const stem = `${map.toLowerCase()}-volumes${fill === "none" ? "-holes" : fill === "synth" ? "" : `-${fill}`}`;
-  const glbFile = path.join(outDir, `${stem}.scene.glb`);
+  const glbFile = path.join(workDir, `${map.toLowerCase()}-scene`, `${stem}.scene.glb`);
+  await fs.mkdir(path.dirname(glbFile), { recursive: true });
   await exportGlb(glbFile, g, tex, cam, size, fill);
   const doc: SceneDoc = {
     version: 1,
@@ -238,12 +240,15 @@ async function main() {
     placements: [],
     notes: `sight-obstacle volumes textured by reverse projection of the Day map, per-face atlas, fill=${fill} (volumes.ts)`,
   };
-  await fs.writeFile(
-    path.join(outDir, `${stem}.scene.json`),
-    JSON.stringify(doc, null, 2),
-  );
-  const st = await fs.stat(glbFile);
-  console.log(`wrote ${glbFile} (${(st.size / 1e6).toFixed(1)} MB)`);
+  const bytes = await fs.readFile(glbFile);
+  const model = JSON.parse(bytes.toString("utf8", 20, 20 + bytes.readUInt32LE(12)));
+  const name = map.toLowerCase();
+  const document = initializeSceneDocument(doc, r.level, model.nodes.map((node: { name: string }) => node.name));
+  document.map = name;
+  const converted = await importScene(glbFile, path.dirname(outDir), document as unknown as Record<string, unknown>, map);
+  const documentFile = path.join(outDir, `${name}.level3d.json`);
+  await fs.writeFile(documentFile, JSON.stringify(converted.document, null, 2) + "\n");
+  console.log(`wrote ${documentFile} (${converted.report.verified_assets} library assets)`);
   const atlasOut = path.join(
     workDir,
     `${map.toLowerCase()}-scene`,

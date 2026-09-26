@@ -12,7 +12,7 @@ function fixture() {
   return parseLevel3D({
     version: 1,
     map: "York",
-    glb: "york.glb",
+    sceneAssets: [],
     size: [100, 200],
     camera: { kind: "oblique-orthographic", elevation_deg: 35 },
     groups: [

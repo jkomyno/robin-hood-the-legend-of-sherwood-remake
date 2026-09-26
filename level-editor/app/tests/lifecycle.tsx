@@ -208,7 +208,8 @@ async function fixtures(names = ["a", "b"]) {
     );
     const doc = {
       ...scene,
-      glb: `${name}-volumes.scene.glb`,
+      sceneAssets: [{ id: name, role: "objects", model: `scenes/${name}-volumes.scene.glb`,
+        model_sha256: Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", glb as ArrayBuffer)), byte => byte.toString(16).padStart(2,"0")).join(""), resources: [] }],
       groups: [],
       objects: [
         {

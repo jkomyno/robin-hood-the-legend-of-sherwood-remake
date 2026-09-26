@@ -15,19 +15,13 @@ const identityNode = (node: Node) =>
  * previews can be omitted from the old static-volume bake. Changed previews
  * need mission export support; this is not a refined-GLB renderer.
  */
-export async function preserveNativePatchPreviews(document: Level3D, glb: Buffer,
+export async function preserveNativePatchPreviews(document: Level3D, source: { nodes?: Node[] },
   readMission: (mission: string) => Promise<Buffer>): Promise<Level3D> {
-  if (glb.length < 20 || glb.toString("ascii", 0, 4) !== "glTF" || glb.readUInt32LE(4) !== 2 ||
-      glb.readUInt32LE(8) !== glb.length || glb.readUInt32LE(16) !== 0x4e4f534a || 20 + glb.readUInt32LE(12) > glb.length)
-    throw new Error("Invalid source GLB for native patch verification");
-  const scene = JSON.parse(glb.toString("utf8", 20, 20 + glb.readUInt32LE(12))) as { nodes?: Node[] };
-  const nodes = scene.nodes ?? [];
+  const nodes = source.nodes ?? [];
   const previews = nodes.filter(node => node.name?.startsWith("mission-"));
   const missionObjects = document.objects.filter(part => part.kind === "mission");
   if (!previews.length && !missionObjects.length) return document;
   if (document.assetSources?.length) throw new Error("Native patch preservation does not support imported standalone assets");
-  if (!document.provenance?.glb_sha256 || document.provenance.glb_sha256 !== digest(glb))
-    throw new Error("Native patch previews require the pinned, unchanged source GLB");
   if (previews.length !== missionObjects.length || new Set(previews.map(node => node.name)).size !== previews.length)
     throw new Error("Native patch preview membership changed (deleted, duplicated, or added)");
   for (const node of previews) {

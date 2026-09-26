@@ -4,6 +4,7 @@ import solid from "vite-plugin-solid";
 // Separate production build of the actual editor with in-memory test fixtures.
 export default defineConfig({
   plugins: [solid()],
+  publicDir: false,
   build: {
     target: "esnext",
     outDir: "dist/lifecycle",

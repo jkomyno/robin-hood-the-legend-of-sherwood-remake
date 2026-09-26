@@ -11,6 +11,8 @@ import hashlib
 import json
 import math
 import struct
+import tempfile
+import sys
 from pathlib import Path
 
 import bpy
@@ -295,7 +297,7 @@ def component_editor_footprint(sources, pivot, obstacle):
 
 
 def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None,
-                  include_hidden_objects=None, catalog=None, level=None):
+                  include_hidden_objects=None, catalog=None, level=None, map_settings=None):
     """Evaluate explicitly retained hidden parts without enabling their render visibility."""
     working = bpy.data.collections[map_name + ' Working']
     names = include_hidden_objects or []
@@ -305,7 +307,7 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
             obj.hide_viewport = False
         bpy.context.view_layer.update()
         return _export_editor(map_name, output_path, asset_id, standalone_pivot=standalone_pivot,
-                              include_hidden_objects=include_hidden_objects, catalog=catalog, level=level)
+                              include_hidden_objects=include_hidden_objects, catalog=catalog, level=level, map_settings=map_settings)
     finally:
         for obj, hidden in evaluated.items():
             obj.hide_viewport = hidden
@@ -313,7 +315,7 @@ def export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None
 
 
 def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=None,
-                   include_hidden_objects=None, catalog=None, level=None):
+                   include_hidden_objects=None, catalog=None, level=None, map_settings=None):
     """Export visible meshes plus explicitly named inactive reviewed components.
 
     ``include_hidden_objects`` contains exact object names, never source-node
@@ -328,6 +330,10 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
     output.parent.mkdir(parents=True, exist_ok=True)
     if output.exists():
         raise FileExistsError(output)
+    if asset_id is None and (not output.name.endswith('.level3d.json') or level is None):
+        raise ValueError('Map export requires a .level3d.json output and source level data')
+    export_directory = tempfile.TemporaryDirectory(prefix='map-export-') if asset_id is None else None
+    export_path = Path(export_directory.name) / 'map.gltf' if export_directory else output
     previous_scene = bpy.context.window.scene
     bpy.context.view_layer.update()
     depsgraph = bpy.context.evaluated_depsgraph_get()
@@ -474,17 +480,20 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
                     piece[metadata_key] = value
         bpy.context.window.scene = scene
         bpy.context.view_layer.update()
-        bpy.ops.export_scene.gltf(filepath=str(output), export_format="GLB",
+        bpy.ops.export_scene.gltf(filepath=str(export_path), export_format="GLTF_SEPARATE" if export_directory else "GLB",
             use_active_scene=True, export_yup=False, export_extras=True,
             export_animations=False, export_cameras=False, export_lights=False,
             export_image_format="AUTO")
         # Blender names are globally unique, even across scenes. Strip only our
         # export aliases in the JSON chunk; binary accessor offsets stay intact.
-        data = output.read_bytes()
-        length, kind = struct.unpack_from("<II", data, 12)
-        if kind != 0x4E4F534A:
-            raise ValueError("Expected a GLB JSON chunk")
-        doc = json.loads(data[20:20 + length])
+        if export_directory:
+            doc = json.loads(export_path.read_text())
+        else:
+            data = output.read_bytes()
+            length, kind = struct.unpack_from("<II", data, 12)
+            if kind != 0x4E4F534A:
+                raise ValueError("Expected a GLB JSON chunk")
+            doc = json.loads(data[20:20 + length])
         for item in doc["nodes"]:
             extras = item.get("extras", {})
             if "editor_node_name" in extras:
@@ -493,14 +502,26 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
                 item.setdefault("extras", {})["reveal"] = reveal
         enforce_foliage_contract(doc)
         compact_texture_coordinates(doc)
-        chunk = json.dumps(doc, separators=(",", ":")).encode()
-        chunk += b" " * (-len(chunk) % 4)
-        binary = data[20 + length:]
-        output.write_bytes(struct.pack("<4sII", b"glTF", 2, 20 + len(chunk) + len(binary)) + struct.pack("<II", len(chunk), kind) + chunk + binary)
+        manifest = None
+        if export_directory:
+            export_path.write_text(json.dumps(doc))
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+            from scene_manifest import export_document
+            settings = map_settings or {}
+            manifest = export_document(export_path, output, map_name, level,
+                                       size=settings.get('size'), camera=settings.get('camera'))
+        else:
+            chunk = json.dumps(doc, separators=(",", ":")).encode()
+            chunk += b" " * (-len(chunk) % 4)
+            binary = data[20 + length:]
+            output.write_bytes(struct.pack("<4sII", b"glTF", 2, 20 + len(chunk) + len(binary)) + struct.pack("<II", len(chunk), kind) + chunk + binary)
         report = {"file": str(output), "assets": len(groups), "parts": len(parts),
                   "meshes": len(meshes), "steps": sum(o.get("step_count", 0) for o in sources),
                   "included_hidden_objects": [o.name for o in sources if o.hide_render],
                   "default_hidden_source_nodes": sorted(key for key, hidden in visibility.items() if hidden)}
+        if manifest:
+            report["library"] = manifest["library"]
+            report["verified_assets"] = manifest["report"]["verified_assets"]
         if asset_id:
             descriptor = {"version": 1, "kind": "projection-mapped-asset", "id": asset_id,
                 "name": sources[0]["asset_name"], "source_map": map_name, "model": output.name,
@@ -536,6 +557,8 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
         for material in foliage_materials:
             bpy.data.materials.remove(material)
         bpy.data.scenes.remove(scene)
+        if export_directory:
+            export_directory.cleanup()
 
 
 def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=None,

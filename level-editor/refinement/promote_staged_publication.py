@@ -10,6 +10,7 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+from scene_manifest import scene_metadata
 
 
 @contextmanager
@@ -91,9 +92,17 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
     current=merge_index(current, staged)
     merged=stage/'promotion-library-index.json'
     merged.write_text(json.dumps(current,indent=2)+'\n')
-    pairs=[(stage/'worker.blend',main_blend),(stage/f'{map_name}.scene.glb',library/f'scenes/{map_name}-volumes.scene.glb'),
-           (stage/f'{map_name}.level3d.json',library/f'scenes/{map_name}.level3d.json'),
-           (merged,index_path)]
+    asset_library = stage / 'map-assets'
+    document_path = stage / 'browser-document.level3d.json'
+    if not document_path.exists():
+        document_path = stage / f'{map_name}.level3d.json'
+    document = json.loads(document_path.read_text())
+    scene_metadata(asset_library, document)
+    pairs=[(stage/'worker.blend',main_blend)]
+    for reference in document['sceneAssets']:
+        relatives = [reference['model']] + [resource['path'] for resource in reference['resources']]
+        pairs.extend((contained_path(asset_library,safe_relative(relative),required=True),
+                      contained_path(library,safe_relative(relative))) for relative in relatives)
     if catalog_source is not None:
         catalog = json.loads(catalog_source.read_text())
         if catalog.get('map', '').lower() != map_name.lower() or not isinstance(catalog.get('groups'), list):
@@ -101,6 +110,8 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
         pairs.append((catalog_source, catalog_target))
     for asset in staged['assets']:
         pairs.extend(asset_file_pairs(stage/'assets', library/'3d-assets', asset))
+    # Install manifests only after all referenced assets exist.
+    pairs.extend([(document_path,library/f'scenes/{map_name}.level3d.json'),(merged,index_path)])
     records=[]
     targets={}
     for index,(source,target) in enumerate(pairs):
@@ -113,7 +124,7 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
         records.append({'source':str(source),'target':str(target),'source_sha256':sha(source),
                         'previous_sha256':sha(target),'backup':str(stage/'promotion-backup'/f'{index:03d}-{target.name}')})
     protected=[]
-    for suffix in ('-volumes.scene.json',):
+    for suffix in ('-volumes.scene.json', '-volumes.scene.glb'):
         path=library/f'scenes/{map_name}{suffix}'
         protected.append({'path':str(path),'sha256':sha(path)})
     manifest={'status':'PREPARED_NOT_APPLIED','stage':str(stage),'files':records,'protected_files':protected,

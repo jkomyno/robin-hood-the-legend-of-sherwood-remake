@@ -1,33 +1,45 @@
-/** Publish a refined GLB and refresh its document fingerprint together, retaining a backup. */
+/** Publish immutable scene assets, then atomically replace their map manifest. */
 import { readFile, writeFile, rename, mkdir } from "node:fs/promises";
 import { resolve, dirname, basename, join } from "node:path";
 import { createHash } from "node:crypto";
-import { parseLevel3D, parseSceneDoc } from "@rle/shared";
-import { mergeRefinedGroups, type AuthoredGltf } from "./refined-map-groups.ts";
+import { parseLevel3D } from "@rle/shared";
+import { mergeRefinedGroups } from "./refined-map-groups.ts";
+import { sceneAssetNodes, readSceneAsset } from "./scene-assets.ts";
 
 const [stagedArg, documentArg] = process.argv.slice(2);
-if (!stagedArg || !documentArg) throw new Error("Usage: node publish-refined-map.ts <staged.glb> <map.level3d.json>");
-const documentPath = resolve(documentArg);
-const previousText = await readFile(documentPath, "utf8");
+if (!stagedArg || !documentArg) throw new Error("Usage: node publish-refined-map.ts <staged.level3d.json> <live.level3d.json>");
+const documentPath = resolve(documentArg), library = dirname(dirname(documentPath));
+const stagedPath = resolve(stagedArg);
+const stagedLibrary = basename(dirname(stagedPath)) === "scenes" ? dirname(dirname(stagedPath)) : join(dirname(stagedPath), "map-assets");
+const previousText = await readFile(documentPath,"utf8");
 const document = parseLevel3D(JSON.parse(previousText));
-const glbPath = join(dirname(documentPath), document.glb);
-const oldGlb = await readFile(glbPath);
-const newGlb = await readFile(resolve(stagedArg));
-const hash = (data: Buffer) => createHash("sha256").update(data).digest("hex");
-parseLevel3D(document, { glbSha256: hash(oldGlb) });
-const gltf = JSON.parse(newGlb.toString("utf8", 20, 20 + newGlb.readUInt32LE(12))) as AuthoredGltf;
-const previousGltf = JSON.parse(oldGlb.toString("utf8", 20, 20 + oldGlb.readUInt32LE(12))) as AuthoredGltf;
-const { nodes, ...groupUpdates } = mergeRefinedGroups(document, previousGltf, gltf);
-document.provenance = { ...document.provenance, glb_sha256: hash(newGlb) };
-const scene = parseSceneDoc(JSON.parse(await readFile(glbPath.replace(/\.glb$/, ".json"), "utf8")));
-parseLevel3D(document, { scene, nodes, glbSha256: hash(newGlb) });
-const backup = join(dirname(documentPath), "backups", hash(oldGlb).slice(0, 16));
-await mkdir(backup, { recursive: true });
-await writeFile(join(backup, basename(glbPath)), oldGlb);
-await writeFile(join(backup, basename(documentPath)), previousText);
-await writeFile(glbPath + ".pending", newGlb, { flag: "wx" });
-await writeFile(documentPath + ".pending", JSON.stringify(document, null, 2) + "\n", { flag: "wx" });
-await rename(glbPath + ".pending", glbPath);
-try { await rename(documentPath + ".pending", documentPath); }
-catch (error) { await writeFile(glbPath, oldGlb); throw error; }
-console.log(JSON.stringify({ file: glbPath, document: documentPath, backup, parts: nodes.size, groups: document.groups.length, ...groupUpdates }));
+const staged = parseLevel3D(JSON.parse(await readFile(stagedPath,"utf8")), {map:document.map});
+const previous = await sceneAssetNodes(library,document);
+const next = await sceneAssetNodes(stagedLibrary,staged);
+const {nodes,...updates} = mergeRefinedGroups(document,previous,next);
+document.sceneAssets = staged.sceneAssets;
+parseLevel3D(document,{nodes});
+const installed = new Set<string>();
+const install = async (relative: string, bytes: Uint8Array) => {
+  if (installed.has(relative)) return;
+  const target = join(library,relative);
+  await mkdir(dirname(target),{recursive:true});
+  try { await writeFile(target,bytes,{flag:"wx"}); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    if (!Buffer.from(bytes).equals(await readFile(target))) throw new Error(`Immutable asset changed: ${relative}`);
+  }
+  installed.add(relative);
+};
+for (const reference of document.sceneAssets) {
+  const {bytes,resources} = await readSceneAsset(stagedLibrary,reference);
+  for (const [relative,resource] of Object.entries(resources)) await install(relative,resource);
+  await install(reference.model,bytes);
+}
+const backup = join(dirname(documentPath),"backups",createHash("sha256").update(previousText).digest("hex").slice(0,16));
+await mkdir(backup,{recursive:true});
+await writeFile(join(backup,basename(documentPath)),previousText);
+if (await readFile(documentPath,"utf8") !== previousText) throw new Error("Map changed during publication; refusing to overwrite edits");
+await writeFile(documentPath+".pending",JSON.stringify(document,null,2)+"\n",{flag:"wx"});
+await rename(documentPath+".pending",documentPath);
+console.log(JSON.stringify({document:documentPath,backup,assets:document.sceneAssets.length,parts:nodes.size,...updates}));

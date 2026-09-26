@@ -17,26 +17,17 @@ function fixture() {
     { name: "mission-bridge", extras: { mission_patch_profile: profile, obstacle_local_game: obstacle,
       native_patch_preview: { mission: "H03_Der_MK", mission_sha256: sha(mission), patch_index: 0, profile, state: "initial" } } },
   ];
-  const makeGlb = () => {
-    const json = Buffer.from(JSON.stringify({ nodes }));
-    const padded = Buffer.alloc(Math.ceil(json.length / 4) * 4, 32); json.copy(padded);
-    const header = Buffer.alloc(20);
-    header.write('glTF'); header.writeUInt32LE(2, 4); header.writeUInt32LE(20 + padded.length, 8);
-    header.writeUInt32LE(padded.length, 12); header.writeUInt32LE(0x4e4f534a, 16);
-    return Buffer.concat([header, padded]);
-  };
-  const glb = makeGlb();
-  const document: Level3D = { version: 1, map: "Derby", glb: "derby.glb", size: [100, 100],
-    camera: { kind: "oblique-orthographic", elevation_deg: 35 }, provenance: { glb_sha256: sha(glb) },
+  const document: Level3D = { version: 1, map: "Derby", sceneAssets: [], size: [100, 100],
+    camera: { kind: "oblique-orthographic", elevation_deg: 35 }, provenance: {},
     groups: [{ id: "bridge", transform: { ...IDENTITY_TRANSFORM } }],
     objects: [{ id: "mission-bridge", node: "mission-bridge", kind: "mission", group: "bridge",
       source: { map: "Derby", mission_profile: profile }, obstacle: structuredClone(obstacle), transform: { ...IDENTITY_TRANSFORM } }] };
-  return { document, glb, mission, nodes, makeGlb };
+  return { document, mission, nodes };
 }
 
 test("verified unchanged native preview is omitted only from static reconstruction", async () => {
   const f = fixture(), before = structuredClone(f.document);
-  const out = await preserveNativePatchPreviews(f.document, f.glb, async name => {
+  const out = await preserveNativePatchPreviews(f.document, { nodes: f.nodes }, async name => {
     assert.equal(name, "H03_Der_MK"); return f.mission;
   });
   assert.equal(out.objects.length, 0);
@@ -44,28 +35,27 @@ test("verified unchanged native preview is omitted only from static reconstructi
   assert.equal(out.provenance, f.document.provenance);
 });
 
-test("edited, hidden, duplicated, deleted, unpinned and external previews fail closed", async () => {
+test("edited, hidden, duplicated, deleted and external previews fail closed", async () => {
   const changes: ((d: Level3D) => void)[] = [
     d => { d.objects[0]!.transform.dx = 1; }, d => { d.groups[0]!.transform.rot_deg = 1; },
     d => { d.objects[0]!.hidden = true; }, d => { d.groups[0]!.hidden = true; },
     d => { d.objects[0]!.obstacle.points[0]!.x = 2; },
     d => { d.objects.push({ ...d.objects[0]!, id: "duplicate" }); }, d => { d.objects = []; },
     d => { d.objects[0]!.source = { map: "Derby", mission_profile: "wrong" }; },
-    d => { d.provenance = {}; }, d => { d.objects[0]!.group = "missing"; },
+    d => { d.objects[0]!.group = "missing"; },
     d => { d.assetSources = [{ id: "external", descriptor: "asset.json", model: "model.glb", descriptor_sha256: "a".repeat(64), model_sha256: "b".repeat(64) }]; },
   ];
   for (const change of changes) {
     const f = fixture(); change(f.document);
-    await assert.rejects(preserveNativePatchPreviews(f.document, f.glb, async () => f.mission));
+    await assert.rejects(preserveNativePatchPreviews(f.document, { nodes: f.nodes }, async () => f.mission));
   }
 });
 
 test("native mission bytes, profile and initial binding must match", async () => {
   const f = fixture();
-  await assert.rejects(preserveNativePatchPreviews(f.document, f.glb, async () => Buffer.from('changed')), /source changed/);
+  await assert.rejects(preserveNativePatchPreviews(f.document, { nodes: f.nodes }, async () => Buffer.from('changed')), /source changed/);
   f.nodes[1]!.extras!.native_patch_preview!.state = "applied";
-  const changed = f.makeGlb(); f.document.provenance!.glb_sha256 = sha(changed);
-  await assert.rejects(preserveNativePatchPreviews(f.document, changed, async () => f.mission), /initial-patch binding/);
+  await assert.rejects(preserveNativePatchPreviews(f.document, { nodes: f.nodes }, async () => f.mission), /initial-patch binding/);
 });
 
 test("even hash-matching native data must have the right map/profile and active initial graphic", async () => {
@@ -78,7 +68,6 @@ test("even hash-matching native data must have the right map/profile and active 
     const mission = JSON.parse(f.mission.toString()); mutate(mission);
     const bytes = Buffer.from(JSON.stringify(mission));
     f.nodes[1]!.extras!.native_patch_preview!.mission_sha256 = sha(bytes);
-    const glb = f.makeGlb(); f.document.provenance!.glb_sha256 = sha(glb);
-    await assert.rejects(preserveNativePatchPreviews(f.document, glb, async () => bytes), /profile\/map\/initial state mismatch/);
+    await assert.rejects(preserveNativePatchPreviews(f.document, { nodes: f.nodes }, async () => bytes), /profile\/map\/initial state mismatch/);
   }
 });

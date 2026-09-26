@@ -1,4 +1,5 @@
 import test from "node:test";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -76,15 +77,15 @@ test("saved external models reload before document validation and retire with th
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
   const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
   const base: Level3D = { version: 1, map: "York", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
-    glb: "York-volumes.scene.glb", groups: [], objects: [] };
+    sceneAssets: [], groups: [], objects: [] };
   const inserted = insertProjectionAsset(base, prepared.descriptor, prepared.reference, [50, 50, 0]);
   f.json("scenes/York.level3d.json", inserted.document);
   f.json("scenes/York-volumes.scene.json", { version: 1, map: "York", size: [100, 100], camera: base.camera, placements: [] });
   f.files.set("scenes/York-volumes.scene.glb", new File([new Uint8Array([7])], "map.glb"));
-  const map = new THREE.Group(); let calls = 0;
-  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: calls++ === 0 ? map : f.asset }));
+  let calls = 0;
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => { calls++; return { scene: f.asset }; });
   const candidate = await prepareMapCandidate("York", f.directory, null);
-  assert.equal(calls, 2);
+  assert.equal(calls, 1);
   assert.equal(candidate.sources.get("asset:house:building-000"), f.mesh);
   assert.equal(candidate.document.groups[0]!.transform.dx, 50);
   assert.deepEqual(candidate.document.assetSources, [prepared.reference]);
@@ -116,7 +117,7 @@ test("static model variants load one endpoint, retain endpoint obstacles, and co
   assert.equal(lowered.descriptor.parts[0]!.obstacle_local_game.solid, false);
   assert.ok(lowered.sources.has("asset:house--state-applied:building-000"));
   let document: Level3D = { version: 1, map: "Leicester", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
-    glb: "Leicester-volumes.scene.glb", groups: [], objects: [] };
+    sceneAssets: [], groups: [], objects: [] };
   for (const prepared of [raised, lowered]) document = insertProjectionAsset(document, prepared.descriptor, prepared.reference, [50, 50, 0]).document;
   assert.equal(document.assetSources!.length, 2);
   assert.notEqual(document.objects[0]!.node, document.objects[1]!.node);
@@ -138,7 +139,7 @@ test("supplemental mission models retain profile provenance without inventing an
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
   const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
   const base: Level3D = { version: 1, map: "Leicester", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
-    glb: "map.glb", groups: [], objects: [] };
+    sceneAssets: [], groups: [], objects: [] };
   const result = insertProjectionAsset(base, prepared.descriptor, prepared.reference, [0, 0, 0]);
   assert.equal(result.document.objects[0]!.kind, "mission");
   assert.deepEqual(result.document.objects[0]!.source, { map: "Leicester", mission_profile: mission.mission_profile });
@@ -146,7 +147,7 @@ test("supplemental mission models retain profile provenance without inventing an
   await assert.rejects(prepareProjectionAsset(f.directory, f.entry, "Leicester"), /Unexpected/);
 });
 
-test("full-map mission metadata creates one source and saved deletions remain deleted", async (t) => {
+test("manifest mission metadata preserves sources and saved deletions remain deleted", async (t) => {
   const f = fixture();
   f.group.userData.asset_name = "House";
   f.mesh.userData.part_name = "Wall";
@@ -158,9 +159,17 @@ test("full-map mission metadata creates one source and saved deletions remain de
     obstacle_local_game: f.descriptor.parts[0]!.obstacle_local_game };
   bridgeGroup.add(bridge); f.asset.children[0]!.add(bridgeGroup);
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
-  f.json("scenes/Leicester-volumes.scene.json", { version: 1, map: "Leicester", size: [100, 100],
-    camera: { kind: "oblique-orthographic", elevation_deg: 35 }, placements: [] });
-  f.files.set("scenes/Leicester-volumes.scene.glb", new File([new Uint8Array([7])], "map.glb"));
+  const transform = { dx: 0, dy: 0, dz: 0, rot_deg: 0 };
+  f.files.set("3d-assets/base.glb", new File([new Uint8Array([7])], "base.glb"));
+  f.json("scenes/Leicester.level3d.json", { version: 1, map: "Leicester", sourceMap: "Leicester", size: [100, 100],
+    camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+    sceneAssets: [{ id: "base", role: "objects", model: "3d-assets/base.glb",
+      model_sha256: createHash("sha256").update(new Uint8Array([7])).digest("hex"), resources: [] }],
+    groups: [{ id: "house", transform }, { id: "second-drawbridge", transform }],
+    objects: [{ id: "building-000", node: "building-000", kind: "building", group: "house", transform,
+      source: { map: "Leicester", obstacle: 0 }, obstacle: f.descriptor.parts[0]!.obstacle_local_game },
+    { id: bridge.name, node: bridge.name, kind: "mission", group: "second-drawbridge", transform,
+      source: { map: "Leicester", mission_profile: "Derby - Pont_levis02" }, obstacle: bridge.userData.obstacle_local_game }] });
   f.json("Leicester.rhp.json", { format: "Fullgame", misc: {}, sight_obstacles: [f.descriptor.parts[0]!.obstacle_local_game],
     patches: [], animations: [], material_sectors: [], light_sectors: [], elevation_lines: [], masks: [], sound_sources: [],
     jump_zones: [], jump_line_pairs: [], lifts: [], buildings: [], motion_data: { layers: [], graph_bytes: [] } });
@@ -180,8 +189,9 @@ test("full-map mission metadata creates one source and saved deletions remain de
   f.json("scenes/Leicester.level3d.json", { ...candidate.document,
     objects: candidate.document.objects.filter(object => object.kind !== "mission") });
   assert.equal((await prepareMapCandidate("Leicester", f.directory, null)).document.objects.length, 1);
+  f.json("scenes/Leicester.level3d.json", candidate.document);
   bridge.userData.source_obstacle = 267;
-  await assert.rejects(prepareMapCandidate("Leicester", f.directory, null), /Invalid authored mission/);
+  await assert.rejects(prepareMapCandidate("Leicester", f.directory, null), /Source obstacle mismatch/);
 });
 
 test("shared catalog lists assets from every source level", async () => {

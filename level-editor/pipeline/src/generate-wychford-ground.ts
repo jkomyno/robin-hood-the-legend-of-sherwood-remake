@@ -1,3 +1,5 @@
+import { loadSceneModel } from "./scene-assets.ts";
+import { importScene } from "./import-scene.ts";
 /** Generate terrain from the saved layout and game-art references via OpenRouter. */
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -150,21 +152,24 @@ if(process.argv.includes("--apply")){
   const texture=await sharp(source).jpeg({quality:95,chromaSubsampling:"4:4:4"}).toBuffer();
   if(info.width!==finalSize||info.height!==finalSize)throw new Error("Unexpected reviewed terrain dimensions");
   const io=new NodeIO().registerExtensions(ALL_EXTENSIONS);
-  const glbPath=path.join(libraryDir,"scenes",scene.glb);
-  const gltf=await io.read(glbPath);
+  const groundSource=scene.sceneAssets.find(asset=>asset.role==="ground");
+  if(!groundSource)throw new Error("Map has no terrain asset");
+  const gltf=await loadSceneModel(libraryDir,groundSource);
+  const glbPath=path.join(cache,"updated-ground.glb");
+  const root=gltf.getRoot().getDefaultScene() ?? gltf.getRoot().listScenes()[0]!;
+  if(!root.listChildren().some(node=>node.getName()==="map")) {
+    const wrapper=gltf.createNode("map");for(const child of root.listChildren())wrapper.addChild(child);root.addChild(wrapper);
+  }
   const ground=gltf.getRoot().listNodes().find(n=>n.getName()==="ground")!;
   ground.getMesh()!.listPrimitives()[0]!.getMaterial()!.getBaseColorTexture()!.setImage(texture).setMimeType("image/jpeg");
   await io.write(glbPath,gltf);
   // Re-read the live document so unrelated scene edits made during generation survive.
   const current=parseLevel3D(JSON.parse(await fs.readFile(scenePath,"utf8")));
-  current.provenance!.glb_sha256=crypto.createHash("sha256").update(await fs.readFile(glbPath)).digest("hex");
+  const imported=await importScene(glbPath,libraryDir,current as unknown as Record<string,unknown>);
+  current.sceneAssets=current.sceneAssets.map(asset=>asset.id===groundSource.id?imported.document.sceneAssets.find(asset=>asset.role==="ground")!:asset);
   await fs.writeFile(scenePath,JSON.stringify(current,null,2)+"\n");
   await fs.writeFile(path.join(libraryDir,"scenes/Wychford-ground.jpg"),texture);
   await fs.writeFile(new URL("../../maps/wychford/terrain.jpg",import.meta.url),texture);
-  const sceneMetadataPath=path.join(libraryDir,"scenes/Wychford-volumes.scene.json");
-  const sceneMetadata=JSON.parse(await fs.readFile(sceneMetadataPath,"utf8"));
-  sceneMetadata.ground.texture="Wychford-ground.jpg";
-  await fs.writeFile(sceneMetadataPath,JSON.stringify(sceneMetadata,null,2)+"\n");
   const evidence=JSON.parse(await fs.readFile(metadataPath,"utf8"));
   evidence.style_references=references.map(r=>({file:r.file,description:r.description,sha256:crypto.createHash("sha256").update(r.image).digest("hex")}));
   evidence.runtime_encoding={format:"jpeg",quality:95,chroma_subsampling:"4:4:4",width:finalSize,height:finalSize};
