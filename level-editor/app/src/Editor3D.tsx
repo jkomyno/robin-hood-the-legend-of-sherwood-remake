@@ -7,7 +7,6 @@ import {
   serializeStoredMap,
   parseLevel3D,
   groupParts,
-  isIdentity,
   type GameTransform,
   type Level3D,
   type Level3DGroup,
@@ -120,8 +119,11 @@ export default function Editor3D(props: EditorProps) {
   const dirty = createMemo(() => revision()?.dirty ?? false);
   const history = createMemo(() => revision() ?? { past: [], future: [] });
   const canInsert = createMemo(() => !!doc() && !addingAsset());
+  const [transformBaseline, setTransformBaseline] = createSignal<Level3D | null>(null);
   const session = new SessionPublication<Level3D, FileSystemDirectoryHandle>((snapshot, reason) => {
     setRevision(snapshot);
+    if (reason === "load") setTransformBaseline(snapshot.document);
+    if (reason === "saved") setTransformBaseline(session.current!.saved);
     if (reason === "revision") viewport.syncViews(snapshot.document, false);
   });
   let saving = false;
@@ -808,6 +810,23 @@ export default function Editor3D(props: EditorProps) {
     parts?: number;
     suspect?: boolean;
   }
+  const baselineTransforms = createMemo(() => {
+    const baseline = transformBaseline();
+    return {
+      groups: new Map(baseline?.groups.map((g) => [g.id, g.transform])),
+      parts: new Map(baseline?.objects.map((p) => [p.id, p.transform])),
+    };
+  });
+  function transformMoved(current: GameTransform, baseline: GameTransform | undefined) {
+    // Newly inserted items have no saved placement to have moved away from.
+    return (
+      !!baseline &&
+      (current.dx !== baseline.dx ||
+        current.dy !== baseline.dy ||
+        current.dz !== baseline.dz ||
+        current.rot_deg !== baseline.rot_deg)
+    );
+  }
   const rows = (): Row[] => {
     const d = doc();
     if (!d) return [];
@@ -826,7 +845,7 @@ export default function Editor3D(props: EditorProps) {
         label: g.name ?? g.id,
         depth: 0,
         hidden: !!g.hidden,
-        moved: !isIdentity(g.transform),
+        moved: transformMoved(g.transform, baselineTransforms().groups.get(g.id)),
         parts: parts.length,
         suspect: parts.some(
           (p) => p.source.obstacle !== undefined && suspects().has(p.source.obstacle),
@@ -841,7 +860,7 @@ export default function Editor3D(props: EditorProps) {
               label: p.name ?? p.id,
               depth: 1,
               hidden: !!p.hidden,
-              moved: !isIdentity(p.transform),
+              moved: transformMoved(p.transform, baselineTransforms().parts.get(p.id)),
               suspect: p.source.obstacle !== undefined && suspects().has(p.source.obstacle),
             });
       }
@@ -854,7 +873,7 @@ export default function Editor3D(props: EditorProps) {
         label: o.name ?? o.id,
         depth: 0,
         hidden: !!o.hidden,
-        moved: !isIdentity(o.transform),
+        moved: transformMoved(o.transform, baselineTransforms().parts.get(o.id)),
         suspect: o.source.obstacle !== undefined && suspects().has(o.source.obstacle),
       });
     }
