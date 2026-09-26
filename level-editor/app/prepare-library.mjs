@@ -16,6 +16,7 @@ async function walk(relative = "") {
   for (const entry of await fs.readdir(path.join(source, relative), { withFileTypes: true })) {
     if (entry.name.startsWith(".") || entry.name === "backups" || entry.isSymbolicLink()) continue;
     const name = path.posix.join(relative, entry.name);
+    if (name === "3d-assets") continue;
     if (name === "scenes/index.json") continue;
     if (entry.isDirectory()) await walk(name);
     else if (entry.isFile()) {
@@ -31,8 +32,21 @@ async function walk(relative = "") {
   }
 }
 await walk();
+// Link the asset directory itself so assets published while Vite is running appear at once.
+const assets = path.join(destination, "3d-assets");
+const assetSource = path.join(source, "3d-assets");
+try {
+  const entry = await fs.lstat(assets);
+  if (!entry.isSymbolicLink() || (await fs.readlink(assets)) !== assetSource) {
+    await fs.rm(assets, { recursive: true });
+    await fs.symlink(assetSource, assets, "dir");
+  }
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+  await fs.symlink(assetSource, assets, "dir");
+}
 // Remove links retired by a publication, without following them into the library.
-const active = new Set(catalog);
+const active = new Set([...catalog, "3d-assets"]);
 async function prune(relative = "") {
   for (const entry of await fs.readdir(path.join(destination, relative), { withFileTypes: true })) {
     const name = path.posix.join(relative, entry.name);
@@ -52,4 +66,4 @@ await fs.writeFile(
       .sort((a, b) => a.localeCompare(b)),
   ) + "\n",
 );
-console.log(`Prepared ${catalog.length} library files for static serving.`);
+console.log(`Prepared ${catalog.length} scene files and linked the live asset library.`);
