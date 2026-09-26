@@ -57,6 +57,18 @@ async function signatures(doc: Document) {
   }
   return { resources: { images, accessors, materials, meshes }, sceneData: (s: Scene) => ({ extras: s.getExtras(), nodes: s.listChildren().map(node) }), scene: (s: Scene) => sha256(canonical({ extras: s.getExtras(), nodes: s.listChildren().map(node) })) };
 }
+
+/** Compare decoded content independently of GLB packing and table allocation. */
+export async function verifyCanonicalScene(modelPath: string, sceneName: string, referencePath: string) {
+  const model = await io().read(modelPath), reference = await io().read(referencePath);
+  const selected = model.getRoot().listScenes().filter(scene => scene.getName() === sceneName);
+  const source = reference.getRoot().getDefaultScene() ?? reference.getRoot().listScenes()[0];
+  if (selected.length !== 1 || !source) throw new Error('Missing or ambiguous selected scene.');
+  const expected = (await signatures(reference)).scene(source);
+  if ((await signatures(model)).scene(selected[0]!) !== expected)
+    throw new Error(`Canonical endpoint differs from independently re-exported worker: ${sceneName}`);
+  return { semantic_sha256: expected, scene: sceneName };
+}
 function counts(d: Document): Record<string, number> {
   const r = d.getRoot();
   return { scenes: r.listScenes().length, meshes: r.listMeshes().length, materials: r.listMaterials().length, textures: r.listTextures().length, accessors: r.listAccessors().length };

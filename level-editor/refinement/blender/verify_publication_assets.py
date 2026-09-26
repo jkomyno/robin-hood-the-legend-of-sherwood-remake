@@ -18,6 +18,7 @@ from asset_scenes import select_scene, scene_identity
 
 
 def gltf(path):
+    if Path(path).suffix == ".gltf": return json.loads(Path(path).read_text())
     with Path(path).open('rb') as handle:
         magic,version,_=struct.unpack('<III',handle.read(12))
         if magic!=0x46546c67 or version!=2:

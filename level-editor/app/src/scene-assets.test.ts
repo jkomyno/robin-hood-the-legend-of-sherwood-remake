@@ -19,9 +19,10 @@ function fixture() {
       return { getFile: async () => files.get(key)! };
     },
   }) as unknown as FileSystemDirectoryHandle;
-  const reference: SceneAssetSource = { id: "house", role: "objects", model: "3d-assets/house.gltf", model_sha256: hash("model"),
+  const model = JSON.stringify({ asset: { version: "2.0" }, scenes: [{ nodes: [] }], scene: 0, nodes: [] });
+  const reference: SceneAssetSource = { id: "house", role: "objects", model: "3d-assets/house.gltf", model_sha256: hash(model),
     resources: [{ path: "3d-assets/texture.png", sha256: hash("texture") }] };
-  files.set(reference.model, new File(["model"], "house.gltf"));
+  files.set(reference.model, new File([model], "house.gltf"));
   files.set(reference.resources[0]!.path, new File(["texture"], "texture.png"));
   return { files, reads, reference, loader: new SceneAssetLoader(root()) };
 }

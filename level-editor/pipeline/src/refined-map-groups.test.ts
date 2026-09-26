@@ -69,3 +69,28 @@ test("new groups accept multiple parts, while hidden or colliding custom groups 
   hidden.groups.push({ id: "trough", name: "Custom trough", transform: identity() });
   assert.deepEqual(mergeRefinedGroups(hidden, previous(), refined()).migratedParts, []);
 });
+
+test("local asset origin changes preserve rotated authored placements and flags", async () => {
+  const { rebaseLibraryRevision } = await import("./refined-map-groups.ts");
+  const { transformedObstacle } = await import("@rle/shared");
+  const document = fixture();
+  document.sceneMetadata = { assetOrigins: { hall:[100,200,0] } };
+  document.objects.forEach(part => { part.node = `asset:hall:${part.node}`; });
+  document.groups[0]!.transform = { dx: 100, dy: 24, dz: 3, rot_deg: 35 };
+  document.objects[0]!.transform = { dx: 2, dy: 5, dz: 1, rot_deg: 18 };
+  document.objects[0]!.hidden = true;
+  const expected = document.objects.map(part => transformedObstacle(document, part));
+  const revised = structuredClone(document);
+  revised.sceneMetadata = { assetOrigins: { hall:[120,190,0] } };
+  for (const part of revised.objects) for (const point of part.obstacle.points) {
+    point.x -= 20;
+    point.y -= 10 * Math.sin(35*Math.PI/180);
+  }
+  rebaseLibraryRevision(document, revised);
+  assert.equal(document.objects[0]!.hidden, true);
+  for (let i=0;i<document.objects.length;i++) {
+    const actual = transformedObstacle(document, document.objects[i]!);
+    actual.points.forEach((p,j) => { for (const k of ["x","y","z_bottom","z_top"] as const)
+      assert.ok(Math.abs(p[k]-expected[i]!.points[j]![k]) < 1e-8, `${i}/${j}/${k}`); });
+  }
+});

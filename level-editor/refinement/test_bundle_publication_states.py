@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import tempfile
+import struct
 import unittest
 from unittest.mock import patch
 from bundle_publication_states import sha, verify_bundled_reference, bundle_exported_variants
@@ -8,6 +9,30 @@ from promote_staged_publication import asset_file_pairs
 
 
 class BundlePublicationTests(unittest.TestCase):
+    def test_canonical_endpoint_checks_decoded_resources_and_rejects_tampering(self):
+        from canonical_assets import AssetBundle, read_model
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            binary = struct.pack('<9f', 0, 0, 0, 1, 0, 0, 0, 1, 0)
+            source = {'asset': {'version': '2.0'}, 'scene': 0, 'scenes': [{'nodes': [0]}],
+                'nodes': [{'name': 'endpoint', 'mesh': 0}],
+                'meshes': [{'primitives': [{'attributes': {'POSITION': 0}}]}],
+                'accessors': [{'bufferView': 0, 'componentType': 5126, 'count': 3, 'type': 'VEC3',
+                               'min': [0, 0, 0], 'max': [1, 1, 0]}],
+                'bufferViews': [{'buffer': 0, 'byteLength': len(binary)}],
+                'buffers': [{'uri': 'mesh.bin', 'byteLength': len(binary)}]}
+            (root/'mesh.bin').write_bytes(binary)
+            reference = root/'reference.gltf'; reference.write_text(json.dumps(source))
+            model, data, external = read_model(reference, root)
+            bundle = AssetBundle(root/'library'); bundle.add('applied', model, data, external)
+            ref = bundle.write('house')
+            report = {'model': str(root/'library'/ref['model']), 'model_sha256': ref['model_sha256'],
+                      'model_scene': 'applied'}
+            self.assertEqual(verify_bundled_reference(report, reference)['scene'], 'applied')
+            (root/'library'/ref['resources'][0]['path']).write_bytes(struct.pack('<9f', 0, 0, 0, 2, 0, 0, 0, 1, 0))
+            with self.assertRaisesRegex(ValueError, 'Canonical endpoint differs'):
+                verify_bundled_reference(report, reference)
+
     def test_shared_model_promotes_once_with_bound_receipt(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

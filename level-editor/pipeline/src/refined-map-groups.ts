@@ -27,7 +27,7 @@ function layout(gltf: AuthoredGltf) {
 }
 
 /** Recover an editor transform from a scene matrix at the given editor pivot. */
-function transformAt(document: Level3D, matrix: ArrayLike<number>, pivot: [number, number]): GameTransform {
+export function transformAt(document: Level3D, matrix: ArrayLike<number>, pivot: [number, number]): GameTransform {
   const angle = Math.atan2(matrix[4]!, matrix[0]!);
   const k = -1 / Math.sin(document.camera.elevation_deg * Math.PI / 180);
   const x = pivot[0], y = pivot[1] * k;
@@ -103,4 +103,54 @@ export function mergeRefinedGroups(document: Level3D, previous: AuthoredGltf, re
     return !safe;
   });
   return { nodes: new Set(after.owners.keys()), migratedParts: [...moved.keys()], createdGroups: created, removedGroups: removed };
+}
+
+/** Preserve placed poses when a revised local asset uses a different export origin. */
+export function rebaseLibraryRevision(document: Level3D, staged: Level3D) {
+  const oldOrigins = document.sceneMetadata?.assetOrigins as Record<string, [number, number, number]> | undefined;
+  const newOrigins = staged.sceneMetadata?.assetOrigins as Record<string, [number, number, number]> | undefined;
+  if (!oldOrigins || !newOrigins) throw new Error("Local asset revision requires map placement origins");
+  const sourceName = (node: string) => node.startsWith("asset:") ? node.split(":").slice(2).join(":") : node;
+  const replacements = new Map(staged.objects.map(part => [sourceName(part.node), part]));
+  const desired = new Map<string, mat4>();
+  const offsets = new Map<string, [number, number, number]>();
+  const oldGroups = new Map(document.groups.map(group => [group.id,
+    gameTransformMatrix(document.camera, group.transform, groupCentroid(groupParts(document, group.id)))]));
+  for (const part of document.objects) {
+    const next = replacements.get(sourceName(part.node));
+    if (!next) throw new Error(`Revised map is missing source part ${part.node}`);
+    const oldId = part.node.split(":")[1]!, newId = next.node.split(":")[1]!;
+    if (!oldOrigins[oldId] || !newOrigins[newId]) throw new Error(`Missing asset origin: ${part.id}`);
+    const delta = newOrigins[newId]!.map((value, index) => value-oldOrigins[oldId]![index]!) as [number,number,number];
+    desired.set(part.id, mat4.multiply(new Float64Array(16), partMatrix(document.camera, document, part),
+      mat4.fromTranslation(new Float64Array(16), delta)));
+    offsets.set(part.id, delta);
+  }
+  for (const part of document.objects) {
+    const next = replacements.get(sourceName(part.node))!;
+    part.node = next.node;
+    part.obstacle = structuredClone(next.obstacle);
+    part.source = structuredClone(next.source);
+    part.missionBindings = structuredClone(next.missionBindings);
+  }
+  for (const group of document.groups) {
+    const members = groupParts(document, group.id);
+    const delta = members.length ? offsets.get(members[0]!.id)! : [0,0,0] as [number,number,number];
+    const matrix = mat4.multiply(new Float64Array(16), oldGroups.get(group.id)!, mat4.fromTranslation(new Float64Array(16), delta));
+    group.transform = transformAt(document, matrix, groupCentroid(members));
+  }
+  for (const part of document.objects) {
+    let matrix = desired.get(part.id)!;
+    if (part.group) {
+      const group = document.groups.find(group => group.id === part.group)!;
+      const inverse = mat4.invert(new Float64Array(16), gameTransformMatrix(document.camera, group.transform, groupCentroid(groupParts(document, group.id))));
+      if (!inverse) throw new Error(`Singular group transform: ${group.id}`);
+      matrix = mat4.multiply(new Float64Array(16), inverse, matrix);
+    }
+    part.transform = transformAt(document, matrix, obstacleCentroid(part.obstacle.points));
+  }
+  document.assetSources = structuredClone(staged.assetSources);
+  document.sceneAssets = structuredClone(staged.sceneAssets);
+  document.sceneMetadata = structuredClone(staged.sceneMetadata);
+  return document;
 }

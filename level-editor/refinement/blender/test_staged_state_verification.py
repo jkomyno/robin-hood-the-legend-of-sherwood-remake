@@ -86,7 +86,7 @@ def check():
             else:
                 raise AssertionError('Accepted changed ' + mutation)
         print('PASS: both reviewed states, exact UV/material/geometry, authored visibility, outside preservation and five tamper rejections')
-        from export_editor import export_asset_library
+        from export_editor import export_asset_library, exported_pivot
         level = root / 'level.json'
         level.write_text(json.dumps({'sight_obstacles': [
             {'points': [{'x': 0, 'y': 0, 'z_bottom': 0, 'z_top': 2}]} for _ in range(3)]}))
@@ -97,7 +97,7 @@ def check():
         variant_worker = stage / 'applied.blend'
         bpy.ops.wm.save_as_mainfile(filepath=str(variant_worker))
         export_asset_library('Fixture', stage / 'applied-export', level, asset_ids=['house'],
-                             standalone_pivots={'house': descriptor['source_origin_scene']})
+                             standalone_pivots={'house': exported_pivot(stage/'assets', 'house')})
         variant_model = stage / 'applied-export/house/model.glb'
         child['endpoint_id'] = child['id'] = 'applied'
         plan.update(map_name='Fixture', hackable_map=str(level), static_variants=[{

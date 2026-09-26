@@ -20,8 +20,8 @@ export interface ProjectionAssetDescriptor {
   model: string;
   /** Exact named scene in a shared multi-state GLB. */
   model_scene?: string;
-  source_origin_scene: [number, number, number];
-  source_origin_game: [number, number, number];
+  /** External resources use library-root-relative paths. */
+  resources?: { path: string; sha256: string }[];
   states?: AssetStates;
   /** Independent static models sharing an origin; these do not imply animation. */
   state_variants?: Partial<Record<AssetState, { name: string; model: string; model_scene?: string; parts?: ProjectionAssetDescriptor["parts"] }>>;
@@ -51,6 +51,7 @@ export interface ProjectionAssetEntry {
 
 /** Paths are relative to the granted library root; hashes pin saved instances. */
 export interface ExternalAssetSource {
+  resources?: { path: string; sha256: string }[];
   state_variant?: AssetState;
   id: string;
   descriptor: string;

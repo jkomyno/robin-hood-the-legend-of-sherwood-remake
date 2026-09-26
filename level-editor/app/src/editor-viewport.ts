@@ -63,6 +63,9 @@ export class EditorViewport {
     const patches = new Set<string>();
     const labels = new Map<string, string>();
     this.sourceAsset?.traverse(object => {
+      for (const patch of object.userData.reveal?.patches ?? []) labels.set(patch.id, patch.name);
+    });
+    this.objectsRoot.traverse(object => {
       const id = object.userData.reveal_material_patch;
       if (typeof id === "string") patches.add(id);
       for (const key of ["reveal_hide_when_applied", "reveal_show_when_applied"])
@@ -903,6 +906,10 @@ export class EditorViewport {
         if (!src) throw new Error(`Missing source node ${o.node} for ${o.id}`);
         v = this.makeView(o.id);
         const node = src.clone(true);
+        if (o.missionBindings) node.traverse(child => {
+          const binding = o.missionBindings![child.name];
+          if (binding) Object.assign(child.userData, structuredClone(binding));
+        });
         node.traverse((c) => {
           const m = c as THREE.Mesh;
           if (m.isMesh) v!.meshes.push(m);

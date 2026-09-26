@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import tempfile
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'pipeline/src/bundle-library-states.ts'
@@ -15,6 +16,28 @@ def sha(path):
 
 def verify_bundled_reference(report, reference):
     """An exact worker re-export and independently recomputed scene must agree."""
+    if str(report['model']).endswith('.gltf'):
+        from canonical_assets import read_model
+        from unify_map_assets import local_states
+        if sha(report['model']) != report['model_sha256']:
+            raise ValueError('Canonical endpoint model changed')
+        source, source_binary, source_external = read_model(reference, Path(reference).parent)
+        source = local_states(source)
+        with tempfile.TemporaryDirectory(prefix='verify-local-endpoint-') as temporary:
+            root = Path(temporary)
+            for table in ('buffers', 'images'):
+                for i, value in enumerate(source.get(table, [])):
+                    if 'uri' in value or table == 'buffers':
+                        data = source_external(value['uri']) if 'uri' in value else source_binary
+                        name = f'{table}-{i}.bin'
+                        (root/name).write_bytes(data); value['uri'] = name
+            prepared = root/'reference.gltf'; prepared.write_text(json.dumps(source))
+            script = SCRIPT.with_name('verify-canonical-scene.ts')
+            try:
+                return json.loads(subprocess.check_output(['node', str(script), str(report['model']),
+                    report['model_scene'], str(prepared)], text=True, stderr=subprocess.PIPE))
+            except subprocess.CalledProcessError as error:
+                raise ValueError('Canonical endpoint differs from independently re-exported worker: '+error.stderr) from error
     if sha(reference) != report['original_model_sha256']:
         raise ValueError('Reviewed worker re-export differs from original endpoint bytes')
     receipt_path = Path(report['bundle_receipt'])

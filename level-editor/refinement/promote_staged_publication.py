@@ -61,7 +61,7 @@ def asset_file_pairs(stage_assets, library_assets, asset):
     scene_identity(descriptor)
     paths = [descriptor_path, model_path]
     receipt_path = descriptor_path.parent / 'bundle.receipt.json'
-    if descriptor.get('model_scene') is not None:
+    if descriptor.get('model_scene') is not None and model_path.suffix == '.glb':
         receipt = json.loads(contained_path(stage_assets, receipt_path, required=True).read_text())
         if (receipt.get('asset_id') != asset['id'] or
                 receipt.get('output', {}).get('sha256') != sha(contained_path(stage_assets, model_path, required=True)) or
@@ -82,8 +82,14 @@ def asset_file_pairs(stage_assets, library_assets, asset):
                 raise ValueError('Static asset variant requires a name')
             scene_identity(variant)
             paths.append(descriptor_path.parent / safe_relative(variant.get('model')))
-    return [(contained_path(stage_assets, relative, required=True),
-             contained_path(library_assets, relative)) for relative in dict.fromkeys(paths)]
+    pairs = [(contained_path(stage_assets, relative, required=True),
+              contained_path(library_assets, relative)) for relative in dict.fromkeys(paths)]
+    for resource in descriptor.get('resources', []):
+        relative = safe_relative(resource['path'])
+        source = contained_path(stage_assets.parent/'map-assets', relative, required=True)
+        if sha(source) != resource['sha256']: raise ValueError('Asset resource changed')
+        pairs.append((source, contained_path(library_assets.parent, relative)))
+    return pairs
 
 
 def prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_target=None):
@@ -99,7 +105,9 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
             raise ValueError('Missing successful verification: ' + name)
     index_path=library/'3d-assets/index.json'
     current=json.loads(index_path.read_text())
-    staged=json.loads((stage/'assets/index.json').read_text())
+    staged_index = stage/'map-assets/3d-assets/index.json'
+    if not staged_index.exists(): staged_index = stage/'assets/index.json'
+    staged=json.loads(staged_index.read_text())
     current=merge_index(current, staged)
     merged=stage/'promotion-library-index.json'
     merged.write_text(json.dumps(current,indent=2)+'\n')
@@ -110,8 +118,9 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
     document = json.loads(document_path.read_text())
     scene_metadata(asset_library, document)
     pairs=[(stage/'worker.blend',main_blend)]
-    for reference in document['sceneAssets']:
-        relatives = [reference['model']] + [resource['path'] for resource in reference['resources']]
+    for reference in document['sceneAssets'] + document.get('assetSources', []):
+        relatives = [reference['model']] + [resource['path'] for resource in reference.get('resources', [])]
+        if reference.get('descriptor'): relatives.append(reference['descriptor'])
         pairs.extend((contained_path(asset_library,safe_relative(relative),required=True),
                       contained_path(library,safe_relative(relative))) for relative in relatives)
     if catalog_source is not None:
@@ -119,7 +128,8 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
         if catalog.get('map', '').lower() != map_name.lower() or not isinstance(catalog.get('groups'), list):
             raise ValueError('Catalog source does not match the published map')
         pairs.append((catalog_source, catalog_target))
-    for asset in staged['assets']:
+    selected=json.loads((stage/'assets/index.json').read_text())
+    for asset in selected['assets']:
         pairs.extend(asset_file_pairs(stage/'assets', library/'3d-assets', asset))
     # Install manifests only after all referenced assets exist.
     pairs.extend([(document_path,library/f'scenes/{map_name}.level3d.json'),(merged,index_path)])
@@ -128,7 +138,7 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
     for index,(source,target) in enumerate(pairs):
         source=source.resolve(strict=True);target=target.resolve()
         if target in targets:
-            if targets[target] != source:
+            if targets[target] != source and sha(targets[target]) != sha(source):
                 raise ValueError('Conflicting promotion target: ' + str(target))
             continue
         targets[target]=source
@@ -140,8 +150,8 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
         protected.append({'path':str(path),'sha256':sha(path)})
     manifest={'status':'PREPARED_NOT_APPLIED','stage':str(stage),'files':records,'protected_files':protected,
               'library':str(library.resolve()), 'index_merge':{
-                  'staged_index':str((stage/'assets/index.json').resolve()),
-                  'staged_index_sha256':sha(stage/'assets/index.json'),
+                  'staged_index':str(staged_index.resolve()),
+                  'staged_index_sha256':sha(staged_index),
                   'target':str(index_path.resolve())}}
     path=stage/'promotion.json'
     if path.exists():

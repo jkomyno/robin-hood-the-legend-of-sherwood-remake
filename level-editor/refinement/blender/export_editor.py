@@ -95,7 +95,7 @@ def reveal_metadata(working, sources, include_all=False):
     return {"version": 1, "source_map": manifest["map"], "patches": patches,
             "mission_patches": mission_patches, "mission_graphics": graphics,
             "scope": "complete map patch records" if include_all else "associated patches only; unrelated and unassigned source patches omitted",
-            "coordinates": "Patch state remains in source game coordinates; standalone source_origin_game records the placement offset.",
+            "coordinates": "Mission-state coordinates are stored in the map document.",
             "visibility": "Sight obstacle state does not imply removal of rendered geometry; overlap is candidate association only."}
 
 
@@ -502,6 +502,10 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
                 item.setdefault("extras", {})["reveal"] = reveal
         enforce_foliage_contract(doc)
         compact_texture_coordinates(doc)
+        if asset_id:
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+            from unify_map_assets import local_states
+            doc = local_states(doc)
         manifest = None
         if export_directory:
             export_path.write_text(json.dumps(doc))
@@ -509,7 +513,8 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
             from scene_manifest import export_document
             settings = map_settings or {}
             manifest = export_document(export_path, output, map_name, level,
-                                       size=settings.get('size'), camera=settings.get('camera'))
+                                       size=settings.get('size'), camera=settings.get('camera'),
+                                       export_bounds=settings.get('exportBounds'))
         else:
             chunk = json.dumps(doc, separators=(",", ":")).encode()
             chunk += b" " * (-len(chunk) % 4)
@@ -527,7 +532,6 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
                 "name": sources[0]["asset_name"], "source_map": map_name, "model": output.name,
                 "coordinates": "Z-up mesh children; Y-up glTF map wrapper; units are map pixels",
                 "anchor": "explicit common scene-space pivot" if explicit_pivot is not None else "horizontal bounds center at lowest geometry point",
-                "source_origin_scene": list(pivot),
                 "bounds_local_scene": {"min": list(lo - pivot), "max": list(hi - pivot)},
                 "components": [{"name": source.name, "source_node": source["source_node"],
                                 "editor_part_node": part_keys[source.name],
@@ -543,10 +547,11 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
                            "default_hidden": visibility[key]} for key, obj in parts.items()]}
             if {source['source_node'] for source in sources} == {'ground'}:
                 descriptor['editor_usage'] = 'map-background'
-            if reveal:
-                descriptor["reveal"] = reveal
+            from unify_map_assets import local_descriptor
+            descriptor = local_descriptor(descriptor)
             output.with_name("asset.json").write_text(json.dumps(descriptor, indent=2) + "\n")
             report["asset"] = descriptor
+            report["placement_origin_scene"] = list(pivot)
         return report
     finally:
         bpy.context.window.scene = previous_scene
@@ -617,14 +622,16 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
     if index["version"] != 1:
         raise ValueError("Unsupported asset index version")
     entries = {entry["id"]: entry for entry in index["assets"]}
+    placement_path = output_dir.with_name(output_dir.name+"-placements.json")
+    placements = json.loads(placement_path.read_text()) if placement_path.exists() else {}
     for key in ids:
         report = export_editor(map_name, output_dir / key / "model.glb", asset_id=key,
             standalone_pivot=pivots.get(key),
             include_hidden_objects=[name for name in requested if named[name]['asset_group'] == key], catalog=catalog, level=level)
         descriptor = report["asset"]
-        px, py, pz = descriptor["source_origin_scene"]
+        px, py, pz = report["placement_origin_scene"]
         sin, cos = math.sin(math.radians(35)), math.cos(math.radians(35))
-        descriptor["source_origin_game"] = [px, -py * sin, pz * cos]
+        placements[key] = [px, py, pz]
         for part in descriptor["parts"]:
             if 'mission_profile' in part or part.get('source_components'):
                 # export_editor has already applied the common variant pivot.
@@ -644,4 +651,11 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
             entries[key]['editor_usage'] = descriptor['editor_usage']
     index["assets"] = sorted(entries.values(), key=lambda entry: entry["id"])
     index_path.write_text(json.dumps(index, indent=2) + "\n")
+    placement_path.write_text(json.dumps(placements, indent=2) + "\n")
     return {"assets": len(ids), "index": str(index_path)}
+
+
+def exported_pivot(directory, asset_id):
+    """Placement evidence is kept outside reusable asset descriptors."""
+    directory = Path(directory)
+    return json.loads(directory.with_name(directory.name+'-placements.json').read_text())[asset_id]

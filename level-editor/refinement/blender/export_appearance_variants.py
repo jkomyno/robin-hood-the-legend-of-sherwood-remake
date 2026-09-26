@@ -3,7 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 import bpy
-from export_editor import export_asset_library
+from export_editor import export_asset_library, exported_pivot
 from supplemental_parts import clean_static_metadata
 from texture_state_roles import partition_texture_states, validate_texture_state_role_evidence
 
@@ -49,9 +49,9 @@ def export_appearance_variants(plan, output):
             worker = variant_output / 'worker.blend'
             bpy.ops.wm.save_as_mainfile(filepath=str(worker))
             export_asset_library(plan['map_name'], variant_output, plan['hackable_map'], asset_ids=[asset_id],
-                                 standalone_pivots={asset_id: descriptor['source_origin_scene']})
+                                 standalone_pivots={asset_id: exported_pivot(output/'assets', asset_id)})
             alternative = json.loads((variant_output / asset_id / 'asset.json').read_text())
-            if alternative['source_origin_scene'] != descriptor['source_origin_scene']:
+            if exported_pivot(variant_output, asset_id) != exported_pivot(output/'assets', asset_id):
                 raise ValueError('Appearance pivot drift')
             model_name = 'model-door-' + state + '.glb'
             (variant_output / asset_id / 'model.glb').replace(destination / model_name)

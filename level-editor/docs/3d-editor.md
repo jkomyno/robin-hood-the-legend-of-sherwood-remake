@@ -1,20 +1,13 @@
 # 3D level editor
 
-The editor (`app/`) works on the volume reconstruction of a map
-(`pnpm volumes --map <map>` → `library/scenes/<map>-volumes.scene.glb`, one
-node per obstacle) together with the game's level data from the hackable
-datadir. It keeps a `Level3D` document (`shared/src/level3d.ts`): every
-part carries the game's own obstacle (footprint polygon with absolute
-`z_bottom`/`z_top` per point, flags) plus an editor transform (translate in
-map px and z, turn about the footprint centroid in map coordinates), and
-parts are grouped into buildings. A building in the game data is a stack
-of obstacles (opaque box to the eave, jettied floors, roof slopes,
-chimneys, door posts, furniture); `groupObstacles` joins obstacles whose
-footprints overlap by 40 % of the smaller one and whose height ranges
-touch (York: 975 obstacles → 459 buildings; the castle keep is one 36-part
-group). A building has its own transform, applied after its parts' own.
-The document is saved as `library/scenes/<map>.level3d.json`; `pnpm bake`
-turns it back into game files.
+The editor (`app/`) loads a JSON map document and reusable local library assets.
+Built-in maps use the same assets and placement representation as manual palette
+insertion. Each part retains a local obstacle footprint and flags; part and group
+transforms place it in the map. Mission-specific state belongs to the map.
+See [the library format](library-format.md) for files, resource sharing and bindings.
+
+The document is saved as `library/scenes/<map>.level3d.json`. Saving and publishing
+are separate from the reconstruction-only game-file baker described below.
 
 ## Running
 
@@ -24,11 +17,14 @@ pnpm --filter app dev            # http://localhost:5180
 ```
 
 Open the hackable datadir (read) and the library folder (read/write; it
-holds `scenes/`). Pick a map in the bar. If no `<map>.level3d.json` exists
-the document is built from the reconstruction and the level.
+holds `scenes/` and `3d-assets/`). Pick a published map, or use **New map** to
+start an unbounded canvas without choosing dimensions. Insert assets from the
+library and save the map under its own name. The optional export frame records a
+compile-time crop and does not restrict placement; it can intentionally clip assets.
+There is no automatic reconstruction fallback for missing map manifests.
 
 Choose a mission from the **Mission** menu to open its map and preview its initial
-placements. The map must have a reconstruction in the connected library. Soldiers,
+placements. The map must have a published JSON manifest in the connected library. Soldiers,
 civilians, and rescue characters use their configured sprite profile and initial
 pose, with all 16 directions selected relative to the camera. Missing initial poses
 use idle with a visible notice. Targets, pickups, scrolls, and mobile objects load
@@ -100,11 +96,15 @@ carrying the affine matrix.
 ## Bake
 
 This CLI reconstructs the original obstacle volumes and textures; it does not
-render Blender-refined GLB geometry or generated texture atlases. Editor/asset
+render placed library geometry or generated texture atlases. Editor/asset
 publication and game-file baking are separate workflows.
 
-An unchanged native mission-patch preview may remain in the editor document:
-the baker verifies its pinned source GLB, explicit `native_patch_preview`
+Published catalog maps, unbounded maps and explicit export frames are not supported
+by this CLI. It rejects these inputs rather than replacing reviewed geometry with
+reconstructed boxes. An authored-map compiler remains to be implemented.
+
+For reconstruction-only documents, an unchanged native mission-patch preview may remain:
+the reconstruction path verifies its pinned source model and explicit `native_patch_preview`
 binding, original mission-file hash, profile, initial state, membership,
 footprint, visibility, and identity transforms. It omits that preview from
 static reconstruction while preserving the existing native mission data.

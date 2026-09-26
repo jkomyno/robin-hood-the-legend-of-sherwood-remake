@@ -6,6 +6,8 @@ The scope lists asset_ids, already_published, and optional required_patches.
 import argparse
 import hashlib
 import json
+import subprocess
+import tempfile
 from pathlib import Path
 from scene_manifest import scene_metadata
 
@@ -56,13 +58,19 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
                 raise ValueError("New editor part has unknown ownership")
             document["objects"].append(obj)
             objects[obj["id"]] = obj
-    if {obj["node"] for obj in document["objects"]} != part_names:
+    if not live and staged_document.get('assetSources'):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', dir=stage) as previous:
+            json.dump(document, previous); previous.flush()
+            document=json.loads(subprocess.check_output(['node', str(Path(__file__).resolve().parents[1]/'pipeline/src/rebase-map-assets.ts'),
+                previous.name, str(stage/f'{map_name}.level3d.json')], text=True))
+    def canonical(node): return node.split(':', 2)[-1] if node.startswith('asset:') else node
+    if {canonical(obj["node"]) for obj in document["objects"]} != part_names:
         raise ValueError("Canonical part identities changed; explicit editor document migration required")
     if {group["id"] for group in document["groups"]} != {group["extras"]["asset_group"] for group in groups}:
         raise ValueError("Canonical group identities changed; explicit editor document migration required")
     part_groups = {nodes[index]["name"]: group["extras"]["asset_group"]
                    for group in groups for index in group.get("children", [])}
-    if any(obj["group"] != part_groups[obj["node"]] for obj in document["objects"]):
+    if any(obj["group"] != part_groups[canonical(obj["node"])] for obj in document["objects"]):
         raise ValueError("Editor part ownership differs from staged canonical hierarchy")
     document_path = live_document
     if not live:
@@ -95,9 +103,10 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         files.append({"path": path, "url": "/@fs/" + str(source), "sha256": sha(source)})
         seen.add(path)
 
-    for reference in document["sceneAssets"]:
+    for reference in document["sceneAssets"] + document.get("assetSources", []):
         add(reference["model"], asset_library / reference["model"])
-        for resource in reference["resources"]:
+        if reference.get("descriptor"): add(reference["descriptor"], asset_library / reference["descriptor"])
+        for resource in reference.get("resources", []):
             add(resource["path"], asset_library / resource["path"])
     add(f"scenes/{map_name}.level3d.json", document_path)
     add("3d-assets/index.json", private_index)
@@ -107,6 +116,8 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         descriptor = json.loads((source / entry["descriptor"]).read_text())
         add("3d-assets/" + entry["descriptor"], source / entry["descriptor"])
         add("3d-assets/" + entry["model"], source / entry["model"])
+        for resource in descriptor.get("resources", []):
+            add(resource["path"], source / Path(resource["path"]).relative_to("3d-assets"))
         if entry.get("preview_model"):
             add("3d-assets/" + entry["preview_model"], source / entry["preview_model"])
         variants = descriptor.get("state_variants") or descriptor.get("standalone_variants")

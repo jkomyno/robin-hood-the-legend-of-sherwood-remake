@@ -192,12 +192,19 @@ def stage(plan_path):
             'canonical_parts':len(canonical_after),'approved_texture_checks':texture_checks,
             'unselected_meshes_preserved':len(outside_before),'unselected_mesh_state_identical':outside_before==outside_after,
             'generated_materials':{sha:sorted(names) for sha,names in generated.items()},
-            'map':export_editor(plan['map_name'],output/scene_file,catalog=catalog,
-                                level=json.loads(Path(plan['hackable_map']).read_text()), include_hidden_objects=inactive_names, map_settings=map_settings),
             'assets':export_asset_library(plan['map_name'],output/'assets',plan['hackable_map'],asset_ids=plan.get('export_asset_ids'),catalog=catalog,include_hidden_objects=inactive_names)}
     if plan.get('static_variants') or any(item.get('texture_state_roles') for item in plan['imports']):
         from export_static_variants import export_variants
         report['static_variants']=export_variants(plan,output)
+    report['map']=export_editor(plan['map_name'],output/scene_file,catalog=catalog,
+        level=json.loads(Path(plan['hackable_map']).read_text()), include_hidden_objects=inactive_names, map_settings=map_settings)
+    # Final map and palette references select the same canonical local models.
+    for row in report.get('static_variants', []):
+        descriptor=json.loads((output/'assets'/row['asset_id']/'asset.json').read_text())
+        variant=(descriptor.get('state_variants') or descriptor['standalone_variants'])[row['state']]
+        row.update(model=str(output/'assets'/row['asset_id']/variant['model']),
+                   model_sha256=hashlib.sha256((output/'assets'/row['asset_id']/variant['model']).read_bytes()).hexdigest(),
+                   model_scene=variant['model_scene'])
     (output/'stage.json').write_text(json.dumps(report,indent=2)+'\n')
     collection = bpy.data.collections[plan['collection_name']]
     visibility = {obj: obj.hide_render for obj in collection.all_objects}

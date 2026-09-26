@@ -1,16 +1,5 @@
-// The 3D editor's level document: the game's own obstacle representation
-// per part (footprint polygon with absolute z_bottom/z_top per point), an
-// editor transform on top of the reconstruction it came from, and the
-// parts grouped into buildings. The reconstruction GLB (volumes.ts, one
-// node per obstacle) supplies geometry and textures; the document says
-// where each part now is and which ones exist. Baking
-// (pipeline/src/bake.ts) turns it back into the files the game reads.
-//
-// A building in the game data is a stack of obstacles: an opaque box to
-// the eave, non-opaque boxes for jettied floors and roof slopes, chimneys,
-// door posts, furniture inside. They are grouped here by footprint overlap
-// and height contact, so the editor selects the whole building by default
-// while every part keeps its own transform relative to the group.
+// Level documents place reusable local library assets and retain game obstacle
+// semantics, per-instance mission bindings, and optional compile bounds.
 import polygonClipping, { type Polygon } from "polygon-clipping";
 import type { AssetStates, ExternalAssetSource } from "./projection-assets.ts";
 import type { MapCamera } from "./scene.ts";
@@ -49,6 +38,8 @@ export interface Level3DObject {
   group?: string;
   hidden?: boolean;
   name?: string;
+  /** Mission-specific metadata applied to this placed instance, keyed by node name. */
+  missionBindings?: Record<string, Record<string, unknown>>;
 }
 
 /** a building: several parts moved together */
@@ -61,6 +52,9 @@ export interface Level3DGroup {
 }
 
 export interface SceneAssetSource {
+  model_scene?: string;
+  descriptor?: string;
+  descriptor_sha256?: string;
   id: string;
   role: "objects" | "ground" | "metadata";
   model: string;
@@ -69,6 +63,8 @@ export interface SceneAssetSource {
 }
 
 export interface Level3D {
+  /** Mission triggers and preview labels belong to the placed map. */
+  sceneMetadata?: Record<string, unknown>;
   /** Published geometry and terrain, in document order, relative to the library. */
   sceneAssets: SceneAssetSource[];
   /** Backing game level for overlays and mission entities; absent on authored maps. */

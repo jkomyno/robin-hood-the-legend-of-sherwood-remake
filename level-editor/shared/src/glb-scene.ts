@@ -1,3 +1,11 @@
+/** Select one named scene in a JSON glTF before decoding its resources. */
+export function selectGltfScene<T extends { scenes?: { name?: string }[]; scene?: number }>(json: T, name?: string): T {
+  if (name === undefined) return json;
+  const matches = (json.scenes ?? []).filter(scene => scene.name === name);
+  if (matches.length !== 1) throw new Error(`glTF scene must exist exactly once: ${name}`);
+  return { ...json, scenes: matches, scene: 0 };
+}
+
 /** Select before GLTFLoader parses: it eagerly creates every scene otherwise. */
 export function selectGlbScene(bytes: ArrayBuffer, name?: string): ArrayBuffer {
   if (name === undefined) return bytes;
@@ -22,4 +30,21 @@ export function selectGlbScene(bytes: ArrayBuffer, name?: string): ArrayBuffer {
   target.fill(32, 20, 20 + padded); target.set(encoded, 20);
   target.set(new Uint8Array(bytes, 20 + length), 20 + padded);
   return output;
+}
+
+/** Resolve standard model-relative payload URIs to pinned library paths. */
+export function resolveGltfResources(model: string, json: any) {
+  for (const table of [json.buffers ?? [], json.images ?? []]) for (const value of table) {
+    if (typeof value.uri !== "string") continue;
+    // Imported manifests previously used explicit library-relative payloads.
+    if (value.uri.startsWith("3d-assets/")) continue;
+    if (/[\\\0:#?%]/.test(value.uri)) throw new Error("Unsafe glTF resource URI");
+    const segments = model.split("/").slice(0, -1);
+    for (const segment of value.uri.split("/")) {
+      if (segment === "..") { if (!segments.pop()) throw new Error("glTF resource escapes library"); }
+      else if (segment !== "." && segment !== "") segments.push(segment);
+    }
+    value.uri = segments.join("/");
+  }
+  return json;
 }

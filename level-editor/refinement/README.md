@@ -40,7 +40,12 @@ For a batch of approved geometry/texture handoffs, use
 against the repository root, source blends are hashed, and imports are restricted
 to each catalog group's canonical parts. `source_asset_id` explicitly handles a
 worker retaining an older parent group; it never imports the entire old group.
-The script stages the map and standalone assets without updating the live library.
+The script stages a JSON map and one local asset catalog without updating the live
+library. Map placements and palette entries share the same models and payloads;
+mission bindings and source-map origins live in the map JSON. The final map export
+also converts selected standalone endpoints into the shared catalog. See
+[the library format](../docs/library-format.md) and the
+[publication procedure](PROCEDURE.md#map-publication-format).
 
 Run `blender/verify_staged_handoffs.py` in Blender against the resulting resolved
 `.plan.json` before promotion. It compares untouched meshes exactly and checks

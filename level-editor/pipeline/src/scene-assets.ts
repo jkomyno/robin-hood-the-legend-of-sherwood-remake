@@ -3,7 +3,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { NodeIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
-import { safeLibraryPath, type SceneAssetSource, type Level3D } from "@rle/shared";
+import { safeLibraryPath, selectGlbScene, selectGltfScene, resolveGltfResources, type SceneAssetSource, type Level3D } from "@rle/shared";
 
 export async function readSceneAsset(library: string, reference: SceneAssetSource, verified = new Set<string>()) {
   const checked = async (name: string, expected: string) => {
@@ -13,8 +13,10 @@ export async function readSceneAsset(library: string, reference: SceneAssetSourc
     verified.add(name+":"+expected);
     return bytes;
   };
-  const bytes = await checked(reference.model,reference.model_sha256);
-  const json = reference.model.endsWith(".gltf") ? JSON.parse(bytes.toString()) : JSON.parse(bytes.toString("utf8",20,20+bytes.readUInt32LE(12)));
+  let bytes = await checked(reference.model,reference.model_sha256);
+  if (reference.descriptor) await checked(reference.descriptor,reference.descriptor_sha256!);
+  if (!reference.model.endsWith(".gltf") && reference.model_scene) bytes = Buffer.from(selectGlbScene(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength) as ArrayBuffer,reference.model_scene));
+  const json = reference.model.endsWith(".gltf") ? resolveGltfResources(reference.model, selectGltfScene(JSON.parse(bytes.toString()),reference.model_scene)) : JSON.parse(bytes.toString("utf8",20,20+bytes.readUInt32LE(12)));
   const resources: Record<string, Uint8Array<ArrayBuffer>> = {};
   for (const resource of reference.resources) resources[resource.path] = new Uint8Array(await checked(resource.path,resource.sha256));
   return { json, resources, bytes };
@@ -28,10 +30,19 @@ export async function loadSceneModel(library: string, reference: SceneAssetSourc
 /** Assemble only node metadata for ownership and native patch verification. */
 export async function sceneAssetNodes(library: string, document: Level3D) {
   const verified = new Set<string>();
-  const nodes: any[] = [{ name:"map",children:[] }];
-  for (const reference of document.sceneAssets) {
+  const nodes: any[] = [{ name:"map",children:[],extras:structuredClone(document.sceneMetadata ?? {}) }];
+  for (const reference of [...document.sceneAssets, ...(document.assetSources ?? []).map(ref => ({...ref,role:"objects" as const,resources:ref.resources ?? []}))]) {
     const resources = reference.resources.filter(resource => !verified.has(resource.path+":"+resource.sha256));
     const {json} = await readSceneAsset(library,{...reference,resources},verified);
+    if (document.assetSources?.some(ref => ref.id === reference.id)) {
+      for (const part of document.objects.filter(part => part.node.startsWith(`asset:${reference.id}:`))) {
+        const name = part.node.slice(`asset:${reference.id}:`.length);
+        for (const node of json.nodes ?? []) {
+          if (part.missionBindings?.[node.name]) node.extras = {...node.extras, ...part.missionBindings[node.name]};
+          if (node.name === name) node.name = part.node;
+        }
+      }
+    }
     const offset = nodes.length;
     nodes.push(...(json.nodes ?? []).map((node: any) => ({ ...node,
       ...(node.children ? { children:node.children.map((index:number)=>index+offset) } : {}) })));

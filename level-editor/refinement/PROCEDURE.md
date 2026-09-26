@@ -658,23 +658,38 @@ hash logic. This keeps the same review contract across all maps.
 
 ### Map publication format
 
-Map exports use `<map>.level3d.json` plus `map-assets/3d-assets/` containing shared,
-content-addressed glTF models, geometry buffers, and original encoded images.
-`scene_filename` in publication plans must end in `.level3d.json`.
-`export_editor(..., asset_id=None)` requires the source `level` and this JSON output;
-it exports separate resources directly and does not emit a whole-map GLB. Pass
-`map_settings` with the existing document's `size` and `camera` to retain its framing.
-`stage_reviewed_publication.py` reads those settings from `editor_document`, or the
-current library document, and otherwise creates an unbounded map with the standard
-camera. Standalone palette models remain independent GLB assets.
+Map exports use `<map>.level3d.json` and one reusable local catalog under
+`map-assets/3d-assets/`. Both map instances and palette entries reference the same
+`<asset-id>/model.gltf`; encoded images and geometry buffers are shared through
+`blobs/`. Named scenes are reusable appearances, never map-coordinate versions.
+See [the library format](../docs/library-format.md).
 
-`verify_publication_assets.py` verifies the manifest's pinned resources and authored
-coverage. `prepare_publication_browser.py` combines those assets with the current
-canonical editor state, writes `browser-document.level3d.json`, and audits the same
-JSON/assets format used by the editor. Use `--document <staged-map.level3d.json>` for
-a first publication with no live document. `promote_staged_publication.py` installs
-immutable map assets first, then the audited document and shared palette index,
-with the existing lock, hash guards, backups, and rollback behavior.
+`scene_filename` in publication plans must end in `.level3d.json`.
+`export_editor(..., asset_id=None)` requires the source `level` and JSON output.
+It writes local catalog assets and placed instances directly. Temporary Blender
+geometry and raw standalone exports are conversion inputs, not published maps.
+The staging wrapper exports selected assets/appearances first, then creates the
+map and canonical palette references together. Raw asset exports are retained in
+`backups/asset-export/`; placement evidence is outside reusable descriptors.
+
+`stage_reviewed_publication.py` reads framing from `editor_document` or the current
+library document. Otherwise it starts unbounded. Editing has no fixed boundary;
+`exportBounds` records an optional intentional compile crop.
+
+Mission triggers, patch-state graphics and map coordinates remain in map JSON.
+The local asset contains only reusable appearances and source identity metadata.
+Ordinary float32 conversion roundoff is acceptable; topology, textures, ownership,
+collision flags and mission behavior must be preserved. No custom precision
+extension is part of the format.
+
+`verify_publication_assets.py` verifies pinned resources and authored coverage.
+`prepare_publication_browser.py` preserves editor poses when local export origins
+change, writes `browser-document.level3d.json`, and audits the runtime format.
+Use `--document <staged-map.level3d.json>` for a first publication.
+`promote_staged_publication.py` publishes the canonical map catalog and palette
+index with the existing lock, hash guards, backups and rollback behavior. Resources
+are installed before their manifests. Keep approval and independent handoff checks
+in the existing workflow; conversion is not a new approval.
 
 Frozen handoffs created before this format must be imported explicitly, without
 editing their original files:

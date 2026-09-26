@@ -32,12 +32,12 @@ def check():
             obj.data.materials.append(material)
             uv=obj.data.uv_layers.new(name='UVMap')
             for loop in obj.data.loops:uv.data[loop.index].uv=(loop.vertex_index % 2, (loop.vertex_index // 2) % 2)
+        export_asset_library('Fixture',root/'assets',level_path,catalog=catalog)
         report=export_editor('Fixture',root/'fixture.level3d.json',catalog=catalog,level=level)
         document=json.loads((root/'fixture.level3d.json').read_text())
-        assert 'glb' not in document and document['sceneAssets']
+        assert 'glb' not in document and document['assetSources'] and not document['sceneAssets']
         assert not list(root.glob('*.glb'))
         assert len(list((root/'map-assets/3d-assets/blobs').glob('*.png')))==1
-        export_asset_library('Fixture',root/'assets',level_path,catalog=catalog)
         (root/'stage.json').write_text(json.dumps({'map':report,'generated_materials':{}}))
         verify(root,catalog_path)
         for name in ['left','right']:
@@ -47,7 +47,8 @@ def check():
             assert part['source_obstacle']==1 and part['obstacle_local_game']['solid']is True
             points=part['obstacle_local_game']['points'];assert max(p['x']for p in points)-min(p['x']for p in points)==2
             assert len(descriptor['components'])==1
-            nodes=gltf(root/'assets'/name/'model.glb')['nodes']
+            assert 'source_origin_scene' not in descriptor
+            nodes=gltf(root/'assets'/name/descriptor['model'])['nodes']
             assert len([n for n in nodes if 'mesh'in n])==1
             mesh_node=next(n for n in nodes if 'mesh'in n)
             assert mesh_node['extras']['source_node']=='building-001'

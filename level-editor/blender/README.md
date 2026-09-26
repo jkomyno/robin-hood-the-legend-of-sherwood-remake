@@ -31,11 +31,9 @@ the south gate arch, and a recessed west-cottage doorway. Each script retains
 its hidden source mesh.
 Use `sync_asset_names` to refresh reviewed furniture labels without reparenting.
 
-The editor's `library/scenes/derby-volumes.scene.glb` and
-`derby.level3d.json` are published together. Reopen Derby to load a new revision.
-Names/groups live in the document; mesh IDs remain stable for transforms and
-second-click part selection. Untouched legacy generated documents upgrade on
-load. Saved custom ownership/transforms are retained.
+The editor loads `library/scenes/derby.level3d.json` and the canonical local assets
+in `library/3d-assets/`. Reopen Derby after publication. Map instances use the same
+models as palette insertion; the map JSON retains placement and mission bindings.
 
 ## Running scripts through MCP
 
@@ -45,7 +43,8 @@ Load a module without invoking it implicitly:
 path = ROOT / "level-editor/blender/export_editor.py"
 scope = {"__file__": str(path), "__name__": "export_editor"}
 exec(compile(path.read_text(), str(path), "exec"), scope)
-result = scope["export_editor"]("Derby", STAGING / "derby.scene.glb")
+result = scope["export_editor"]("Derby", STAGING / "derby.level3d.json",
+    level=level, map_settings={"size": None})
 ```
 
 - `setup_map.setup_map(metadata_path, output_path)` imports a volume export into
@@ -81,8 +80,8 @@ result = scope["export_editor"]("Derby", STAGING / "derby.scene.glb")
   nodes; each obstacle can have multiple named geometry components.
 - `export_editor.export_asset_library(map_name, output_dir, level_path)` exports
   **all** named assets as standalone GLBs, descriptors and an index. Use a fresh
-  staging directory. The map export stays in map coordinates; standalone assets
-  are centered horizontally with their lowest geometry at local ground height.
+  staging directory. These are intermediate local exports. Final map staging
+  converts them to the shared catalog, with placement evidence outside assets.
 
 ## Publishing reviewed exports
 
@@ -91,45 +90,21 @@ include_watchtower=True)` reruns the reviewed detail recipes, projection,
 map export, and all standalone exports from an existing grouped checkpoint.
 It saves the main blend after staging; publication remains explicit.
 
-From the repository root:
-
-```sh
-# First publication of named ownership on an unedited reconstruction:
-node level-editor/pipeline/src/publish-asset-catalog.ts \
-  level-editor/library/scenes/derby-volumes.scene.json \
-  datadirs/fullgame_gog_hackable/Data/Levels/Derby.rhp.json
-
-# Publish new geometry while retaining the document and updating its fingerprint:
-node level-editor/pipeline/src/publish-refined-map.ts \
-  level-editor/work/derby-refinement/pass7-publish/derby.scene.glb \
-  level-editor/library/scenes/derby.level3d.json
-
-# Merge standalone models into the reusable library:
-node level-editor/pipeline/src/publish-model-assets.ts \
-  level-editor/work/derby-refinement/pass7-publish/assets \
-  level-editor/library/3d-assets
-```
-
-Map publication retains the prior GLB and document under `scenes/backups/`.
-Library publication validates staged assets and merges the index with other maps.
-It replaces files for the same asset IDs; keep the staging pack for each revision.
+Use `refinement/blender/stage_reviewed_publication.py` for reviewed publication,
+then the handoff, asset and browser verification steps in the
+[shared procedure](../refinement/PROCEDURE.md#map-publication-format). Prepare and
+apply publication through `refinement/promote_staged_publication.py`. It installs
+one canonical map/palette catalog, then the JSON manifest and merged index, with
+hash guards, backups and rollback. Do not publish a whole-map GLB or independently
+copy a second set of palette models.
 
 ## Standalone model contract
 
-`library/3d-assets/index.json` lists each asset's ID, display name, source map,
-descriptor and model paths. `<id>/asset.json` is version 1,
-`kind: "projection-mapped-asset"`, with local bounds, source placement origins,
-stable component nodes, and complete obstacle records in local game coordinates.
-All GLBs contain their textures. Scene-frame mesh children are Z-up; the `map`
-wrapper rotates them to standard glTF Y-up. Restore `source_origin_scene` after
-removing that wrapper to reassemble the source scene exactly.
-
-Component metadata records projection layers and patch associations. Map exports
-retain all patch records; standalone assets retain associated patches. Cover PNGs
-are embedded in reveal metadata. Patch state coordinates remain in the source
-game frame, explicitly separate from local collision records. Sight-state changes
-do not imply removal of rendered walls. Automatic editor cutaway behavior remains
-to be implemented.
+The [library format](../docs/library-format.md) describes descriptors, named local
+appearances, shared payloads and per-instance mission bindings. Asset descriptors
+contain local collision records and source IDs, but no source-map coordinates.
+`blobs/` holds the geometry and textures referenced by catalog glTF files; active
+palette models do not embed duplicate copies. Optional previews are derived data.
 
 ## Independent Blender workers
 
@@ -146,10 +121,5 @@ The worker saves its own blend, log, and result and verifies the source fingerpr
 Integrate reviewed scripts in the primary session before reprojection and export.
 
 This is a 3D model catalog, separate from the older 2D cutout library schema.
-It does not invent segmentation/fit scores or navigation geometry. The current
-editor loads complete maps and selects their groups; a new-map placement palette
-must consume this catalog and persist its added model references. That palette
-is not implemented by this refinement/export pass.
-
-TODO: crop/repack per-asset atlases to reduce duplicate embedded texture data;
-finish asset previews and new-map placement UI; expand geometry work beyond stairs.
+It does not invent segmentation/fit scores or navigation geometry. The editor's
+asset palette supports manual placement and **New map** starts an unbounded canvas.

@@ -373,6 +373,7 @@ export function parseLevel3D(
     );
   }
   check(d.glb === undefined, "level3d.glb", "whole-map models must be imported into sceneAssets before opening");
+  if (d.sceneMetadata !== undefined) object(d.sceneMetadata, "sceneMetadata");
   const sceneIds = new Set<string>();
   let grounds = 0;
   for (const asset of array(d.sceneAssets, "level3d.sceneAssets")) {
@@ -380,6 +381,11 @@ export function parseLevel3D(
     check(!sceneIds.has(asset.id), asset.id, "duplicate scene asset"); sceneIds.add(asset.id);
     check(asset.role === "ground" || asset.role === "objects" || asset.role === "metadata", asset.id, "invalid scene asset role");
     if (asset.role === "ground") grounds++;
+    if (asset.model_scene !== undefined) text(asset.model_scene, "scene asset.model_scene");
+    if (asset.descriptor !== undefined || asset.descriptor_sha256 !== undefined) {
+      check(safeLibraryPath(asset.descriptor), asset.id, "unsafe scene asset descriptor");
+      check(typeof asset.descriptor_sha256 === "string" && /^[a-f0-9]{64}$/.test(asset.descriptor_sha256), asset.id, "invalid descriptor hash");
+    }
     check(safeLibraryPath(asset.model), asset.id, "unsafe scene asset model");
     check(/^[a-f0-9]{64}$/.test(asset.model_sha256), asset.id, "invalid scene asset model hash");
     const paths = new Set<string>();
@@ -416,6 +422,12 @@ export function parseLevel3D(
   for (const o of array(d.objects, "level3d.objects")) {
     object(o, "level3d.objects[]");
     text(o.id, "object.id");
+    if (o.missionBindings !== undefined) {
+      object(o.missionBindings, "missionBindings");
+      for (const [name, values] of Object.entries(o.missionBindings)) {
+        text(name, "mission binding node"); object(values, "mission binding metadata");
+      }
+    }
     check(!ids.has(o.id), o.id, "duplicate ID");
     ids.add(o.id);
     check(
@@ -548,10 +560,21 @@ export function parseLevel3D(
 }
 
 
+function validateResources(value: unknown) {
+  const paths = new Set<string>();
+  for (const resource of array(value, "resources")) {
+    object(resource, "resource");
+    check(safeLibraryPath(resource.path) && !paths.has(resource.path), "resource.path", "unsafe or duplicate resource");
+    check(/^[a-f0-9]{64}$/.test(resource.sha256), "resource.sha256", "invalid hash");
+    paths.add(resource.path);
+  }
+}
+
 export function parseExternalAssetSources(value: unknown): ExternalAssetSource[] {
   const ids = new Set<string>();
   for (const entry of array(value, "assetSources")) {
     object(entry, "assetSources[]");
+    if (entry.resources !== undefined) validateResources(entry.resources);
     if (entry.model_scene !== undefined) check(typeof entry.model_scene === "string" && !!entry.model_scene.trim(), "model_scene", "expected nonempty scene name");
     if (entry.state_variant !== undefined) check(entry.state_variant === "initial" || entry.state_variant === "applied", "asset source state_variant", "invalid static variant");
     text(entry.id, "asset source id");
@@ -590,8 +613,7 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
   check(!/[\\/:\0]/.test(d.id), "asset id", "invalid identity");
   if (d.model_scene !== undefined) check(typeof d.model_scene === "string" && !!d.model_scene.trim(), "asset.model_scene", "expected nonempty scene name");
   check(safeLibraryPath(d.model), "asset.model", "expected safe relative path");
-  tuple(d.source_origin_scene, 3, "asset.source_origin_scene");
-  tuple(d.source_origin_game, 3, "asset.source_origin_game");
+  if (d.resources !== undefined) validateResources(d.resources);
   const nodes = new Set<string>();
   const obstacles = new Map<number, Set<string>>();
   const parts = array(d.parts, "asset.parts");

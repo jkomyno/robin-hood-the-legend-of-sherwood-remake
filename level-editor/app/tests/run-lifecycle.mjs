@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromeEndpoint, socketOpen, evaluate } from "./cdp.mjs";
@@ -83,6 +83,16 @@ try {
     );
     if (outcome?.startsWith("PASS") || outcome?.startsWith("FAIL")) break;
     await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (process.env.TEST_ARTIFACT_DIR) {
+    const images = await evaluate(socket, ++id, "window.__migrationImages", { signal:lifetime.signal, timeoutMs:10000 });
+    if (images) {
+      await mkdir(process.env.TEST_ARTIFACT_DIR, { recursive:true });
+      for (const [name, data] of Object.entries(images)) {
+        if (!["before", "after", "difference"].includes(name)) throw new Error("Unexpected migration artifact");
+        await writeFile(join(process.env.TEST_ARTIFACT_DIR, name+".png"), Buffer.from(data.split(",")[1], "base64"));
+      }
+    }
   }
   if (!outcome?.startsWith("PASS"))
     throw new Error(

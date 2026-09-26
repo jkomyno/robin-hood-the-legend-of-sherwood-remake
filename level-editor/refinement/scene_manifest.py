@@ -22,14 +22,17 @@ def import_document(glb, output, document):
 def scene_metadata(library, document):
     if 'glb' in document or 'sceneAssets' not in document:
         raise ValueError('Expected a JSON/assets map; explicitly import older handoffs first')
-    nodes = [{'name': 'map', 'children': []}]
+    nodes = [{'name': 'map', 'children': [], 'extras':copy.deepcopy(document.get('sceneMetadata', {}))}]
     materials = {}
     verified = set()
-    for asset in document['sceneAssets']:
+    from asset_scenes import select_scene
+    for asset in document['sceneAssets'] + document.get('assetSources', []):
         model_path = Path(library) / asset['model']
         if _splitter.digest(model_path.read_bytes()) != asset['model_sha256']:
             raise ValueError('Scene asset changed: ' + asset['model'])
-        for resource in asset['resources']:
+        if asset.get('descriptor') and _splitter.digest((Path(library)/asset['descriptor']).read_bytes()) != asset['descriptor_sha256']:
+            raise ValueError('Asset descriptor changed: '+asset['id'])
+        for resource in asset.get('resources', []):
             key = (resource['path'], resource['sha256'])
             if key in verified:
                 continue
@@ -40,6 +43,16 @@ def scene_metadata(library, document):
             model, _, _ = _splitter.read_glb(model_path)
         else:
             model = json.loads(model_path.read_text())
+        model = select_scene(model, asset.get('model_scene'))
+        if asset in document.get('assetSources', []):
+            parts = {obj['node'].split(':', 2)[-1]:obj for obj in document['objects'] if obj['node'].startswith('asset:'+asset['id']+':')}
+            for node in model['nodes']:
+                for part in parts.values():
+                    node.setdefault('extras', {}).update(copy.deepcopy(part.get('missionBindings', {}).get(node.get('name'), {})))
+            root = model['nodes'][model['scenes'][0]['nodes'][0]]
+            for group_index in root.get('children', []):
+                group = model['nodes'][group_index]
+                group['children'] = [i for i in group.get('children', []) if model['nodes'][i]['name'] in parts]
         offset = len(nodes)
         for node in model.get('nodes', []):
             node = copy.deepcopy(node)
@@ -59,11 +72,9 @@ def scene_metadata(library, document):
     return {'nodes': nodes, 'materials': list(materials.values())}
 
 
-def export_document(gltf, output, map_name, level, *, size=None, camera=None):
+def export_document(gltf, output, map_name, level, *, size=None, camera=None, export_bounds=None):
     """Publish Blender's separate resources directly as a map manifest."""
     output = Path(output)
-    library = output.parent / 'map-assets'
-    report = _splitter.split_gltf(gltf, library)
     model = json.loads(Path(gltf).read_text())
     nodes = model['nodes']
     root = next(node for node in nodes if node.get('name') == 'map')
@@ -95,9 +106,11 @@ def export_document(gltf, output, map_name, level, *, size=None, camera=None):
             objects.append(item)
     document = dict(version=1, map=map_name, sourceMap=map_name, size=size,
                     camera=camera or {'kind': 'oblique-orthographic', 'elevation_deg': 35},
-                    groups=groups, objects=objects, sceneAssets=report['sceneAssets'])
-    output.write_text(json.dumps(document, indent=2)+'\n')
-    return {'library': str(library), 'document': document, 'report': report}
+                    groups=groups, objects=objects, sceneAssets=[])
+    if export_bounds is not None:
+        document['exportBounds'] = export_bounds
+    from local_map_export import export_local_map
+    return export_local_map(gltf, output, document)
 
 
 if __name__ == '__main__':

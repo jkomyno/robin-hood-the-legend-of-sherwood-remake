@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "meshoptimizer";
-import { safeLibraryPath, type SceneAssetSource } from "@rle/shared";
+import { safeLibraryPath, selectGlbScene, selectGltfScene, resolveGltfResources, type SceneAssetSource } from "@rle/shared";
 import { subdir } from "./fs.ts";
 
 async function read(root: FileSystemDirectoryHandle, path: string) {
@@ -29,7 +29,10 @@ export class SceneAssetLoader {
   private root: FileSystemDirectoryHandle;
   constructor(root: FileSystemDirectoryHandle) { this.root = root; }
   async load(reference: SceneAssetSource): Promise<THREE.Group> {
-    const bytes = await checked(await read(this.root, reference.model), reference.model_sha256);
+    let bytes = await checked(await read(this.root, reference.model), reference.model_sha256);
+    if (reference.descriptor) await checked(await read(this.root, reference.descriptor), reference.descriptor_sha256!);
+    if (reference.model.endsWith(".gltf")) bytes = new TextEncoder().encode(JSON.stringify(resolveGltfResources(reference.model, selectGltfScene(JSON.parse(new TextDecoder().decode(bytes)), reference.model_scene)))).buffer;
+    else bytes = selectGlbScene(bytes, reference.model_scene);
     const urls = new Map<string, string>();
     await Promise.all(reference.resources.map(async resource => {
       const key = `${resource.path}:${resource.sha256}`;
@@ -92,6 +95,11 @@ export class SceneAssetLoader {
       };
     });
     const result = await loader.parseAsync(bytes, "");
+    result.scene.traverse(node => {
+      const index = result.parser?.associations.get(node)?.nodes;
+      const name = index === undefined ? undefined : result.parser.json.nodes[index]?.name;
+      if (typeof name === "string") node.name = name;
+    });
     return result.scene;
   }
   dispose() {

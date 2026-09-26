@@ -15,6 +15,7 @@ export async function prepareMapCandidate(name: string, library: FileSystemDirec
     const directory = await subdir(library, ["scenes"]);
     if (!directory) throw new Error("scenes/ missing");
     const document = parseLevel3D(await readJson(directory, `${name}.level3d.json`), { map: name });
+    asset.userData = structuredClone(document.sceneMetadata ?? {});
     const level = idx && document.sourceMap ? await loadProtoLevel(idx, document.sourceMap) : null;
     const sources = new Map<string, THREE.Object3D>();
     let ground: THREE.Object3D | null = null;
@@ -48,7 +49,7 @@ export async function prepareMapCandidate(name: string, library: FileSystemDirec
         const index = next++;
         try {
           const reference = references[index]!;
-          const result = await prepareProjectionAsset(library, reference, document.map, reference);
+          const result = await prepareProjectionAsset(library, reference, document.map, reference, loader);
           asset.add(result.asset);
           prepared[index] = result;
           onProgress?.(++completed, total, "Loading assets");

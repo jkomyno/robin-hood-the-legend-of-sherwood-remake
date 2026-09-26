@@ -2,7 +2,7 @@
 import hashlib,json
 from pathlib import Path
 import bpy
-from export_editor import export_asset_library
+from export_editor import export_asset_library, exported_pivot
 from group_assets import reconcile_asset_groups
 from import_reviewed_geometry import import_asset_geometry
 from supplemental_parts import clean_static_metadata
@@ -45,11 +45,11 @@ def export_variants(plan, output):
             variant_output.mkdir(parents=True, exist_ok=False)
             bpy.ops.wm.save_as_mainfile(filepath=str(variant_output/'worker.blend'))
             export_asset_library(plan['map_name'],variant_output,plan['hackable_map'],asset_ids=[asset_id],
-                standalone_pivots={asset_id:descriptor['source_origin_scene']})
+                standalone_pivots={asset_id:exported_pivot(output/'assets', asset_id)})
             alternative=json.loads((variant_output/asset_id/'asset.json').read_text())
             model_name='model.glb' if state=='initial' else 'model-applied.glb'
             (variant_output/asset_id/'model.glb').replace(destination/model_name)
-            if alternative['source_origin_scene']!=descriptor['source_origin_scene']:raise ValueError('Static endpoint pivot drift')
+            if exported_pivot(variant_output, asset_id)!=exported_pivot(output/'assets', asset_id):raise ValueError('Static endpoint pivot drift')
             if state=='initial':
                 descriptor=alternative
             variants[state]={'name':item['name'],'model':model_name,'parts':alternative['parts'],'components':alternative['components']}

@@ -7,6 +7,7 @@ import {
   type ExternalAssetSource, type ProjectionAssetDescriptor, type ProjectionAssetEntry,
 } from "@rle/shared";
 import { isNotFound, readJson, subdir } from "./fs.ts";
+import { SceneAssetLoader } from "./scene-assets.ts";
 import { disposeObjectResources } from "./resources.ts";
 
 async function libraryFile(root: FileSystemDirectoryHandle, path: string): Promise<File> {
@@ -78,6 +79,7 @@ export async function prepareProjectionAsset(
   entry: Pick<ProjectionAssetEntry, "id" | "descriptor" | "model" | "state_variant" | "model_scene">,
   _map: string,
   expected?: ExternalAssetSource,
+  sharedLoader?: SceneAssetLoader,
 ): Promise<PreparedProjectionAsset> {
   if (expected) parseExternalAssetSources([expected]);
   const descriptorBytes = await (await libraryFile(root, entry.descriptor)).arrayBuffer();
@@ -99,16 +101,27 @@ export async function prepareProjectionAsset(
   const modelBytes = await (await libraryFile(root, entry.model)).arrayBuffer();
   const modelHash = await hash(modelBytes);
   if (expected && expected.model_sha256 !== modelHash) throw new Error(`Asset model changed: ${entry.id}`);
+  const resourcePins = (resources: ExternalAssetSource["resources"]) =>
+    (resources ?? []).map(resource => `${resource.path}:${resource.sha256}`).sort().join("\n");
+  if (expected && resourcePins(expected.resources) !== resourcePins(descriptor.resources))
+    throw new Error(`Asset saved resource pins mismatch: ${entry.id}`);
   const reference = { id: entry.id, descriptor: entry.descriptor, model: entry.model,
     descriptor_sha256: descriptorHash, model_sha256: modelHash,
+    ...(descriptor.resources ? { resources: descriptor.resources } : {}),
     ...(entry.model_scene ? { model_scene: entry.model_scene } : {}),
     ...(entry.state_variant ? { state_variant: entry.state_variant } : {}) };
   parseExternalAssetSources([reference]);
   let asset: THREE.Object3D | null = null;
   try {
-    const gltf = await new GLTFLoader().parseAsync(selectGlbScene(modelBytes, entry.model_scene), "");
-    asset = gltf.scene;
-    restoreNodeNames(gltf);
+    if (entry.model.endsWith(".gltf")) {
+      const loader = sharedLoader ?? new SceneAssetLoader(root);
+      try { asset = await loader.load({ ...reference, role: "objects", resources: descriptor.resources ?? [] }); }
+      finally { if (!sharedLoader) loader.dispose(); }
+    } else {
+      const gltf = await new GLTFLoader().parseAsync(selectGlbScene(modelBytes, entry.model_scene), "");
+      asset = gltf.scene;
+      restoreNodeNames(gltf);
+    }
     const mapRoot = asset.children.find(child => child.name === "map");
     if (!mapRoot || mapRoot.children.length !== 1) throw new Error(`Standalone asset requires exactly one group: ${entry.id}`);
     const group = mapRoot.children[0]!;
@@ -143,6 +156,13 @@ export async function prepareProjectionAsset(
 /** The caller owns preview model resources and must dispose them when retired. */
 export async function loadProjectionAssetPreview(root: FileSystemDirectoryHandle, entry: ProjectionAssetEntry): Promise<THREE.Object3D> {
   if (entry.editor_usage === "map-background") {
+    if (entry.model.endsWith(".gltf")) {
+      const descriptor = parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text()));
+      const bytes = await (await libraryFile(root, entry.model)).arrayBuffer();
+      const loader = new SceneAssetLoader(root);
+      try { return await loader.load({ id:entry.id,role:"ground",model:entry.model,model_scene:entry.model_scene,model_sha256:await hash(bytes),resources:descriptor.resources ?? [] }); }
+      finally { loader.dispose(); }
+    }
     const bytes = await (await libraryFile(root, entry.model)).arrayBuffer();
     return (await new GLTFLoader().parseAsync(selectGlbScene(bytes, entry.model_scene), "")).scene;
   }

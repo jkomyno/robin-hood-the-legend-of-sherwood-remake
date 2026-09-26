@@ -208,7 +208,7 @@ def verify_static_variants(plan, stage):
         drift = compare_handoff(reference, records, reviewed_state=True)
         # Re-export the verified endpoint worker, rather than trusting a model
         # hash emitted by the staging code as proof of its actual contents.
-        from export_editor import export_asset_library
+        from export_editor import export_asset_library, exported_pivot
         descriptor = json.loads((Path(plan['output']) / 'assets' / asset_id / 'asset.json').read_text())
         variant = (descriptor.get('standalone_variants') or descriptor.get('state_variants') or {}).get(state)
         if (asset_id, state) in appearances:
@@ -218,7 +218,7 @@ def verify_static_variants(plan, stage):
         proof_parent.mkdir(parents=True, exist_ok=True)
         proof_output = Path(tempfile.mkdtemp(prefix=state + '-', dir=proof_parent))
         export_asset_library(plan['map_name'], proof_output, plan['hackable_map'], asset_ids=[asset_id],
-                             standalone_pivots={asset_id: descriptor['source_origin_scene']})
+                             standalone_pivots={asset_id: exported_pivot(Path(plan['output'])/'assets', asset_id)})
         if (asset_id, state) in appearances:
             reference_descriptor = json.loads((proof_output / asset_id / 'asset.json').read_text())
             if any(variant.get(key) != reference_descriptor[key] for key in ('parts', 'components')):
