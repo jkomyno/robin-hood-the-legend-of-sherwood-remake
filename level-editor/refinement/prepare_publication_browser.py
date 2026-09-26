@@ -125,6 +125,10 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
             add(resource["path"], source / Path(resource["path"]).relative_to("3d-assets"))
         if entry.get("preview_model"):
             add("3d-assets/" + entry["preview_model"], source / entry["preview_model"])
+        if entry.get("lossy_model"):
+            # The editor loads lossy models and checks their receipts against the source model.
+            add("3d-assets/" + entry["lossy_model"], source / entry["lossy_model"])
+            add("3d-assets/" + entry["lossy_model"] + ".receipt.json", source / (entry["lossy_model"] + ".receipt.json"))
         variants = descriptor.get("state_variants") or descriptor.get("standalone_variants")
         if not variants:
             expanded.append(entry)

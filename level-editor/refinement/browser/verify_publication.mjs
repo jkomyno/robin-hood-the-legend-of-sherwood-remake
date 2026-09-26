@@ -30,6 +30,21 @@ try{
   ws.addEventListener('message',message);ws.addEventListener('close',closed);ws.addEventListener('error',failed);
   ws.send(JSON.stringify({id:rid,method,params}));
  });
+ // The editor opens its HTTP library (/library/) at startup. Route that library to exactly the
+ // hash-pinned staged inputs, before any page script runs, so the unmodified app loads them.
+ const pinned=Object.fromEntries(config.files.map(item=>[item.path,{url:item.url,sha256:item.sha256}]));
+ await request('Page.enable',{});
+ await request('Page.addScriptToEvaluateOnNewDocument',{source:`(()=>{const files=${JSON.stringify(pinned)},maps=${JSON.stringify([config.map+'.rhlos-map.json'])},original=window.fetch.bind(window);
+  const digest=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
+  window.fetch=async(input,init)=>{const url=new URL(typeof input==='string'||input instanceof URL?String(input):input.url,location.href);
+   if(url.origin!==location.origin||!url.pathname.startsWith('/library/'))return original(input,init);
+   const path=url.pathname.slice('/library/'.length).split('/').map(decodeURIComponent).join('/');
+   if(path==='scenes/index.json')return new Response(JSON.stringify(maps),{headers:{'content-type':'application/json'}});
+   const file=files[path];if(!file)return new Response('',{status:404});
+   const response=await original(file.url,{cache:'no-store'});if(!response.ok)throw Error('Pinned publication file unreadable: '+path);
+   const bytes=await response.arrayBuffer();if(await digest(bytes)!==file.sha256)throw Error('Pinned publication file changed: '+path);
+   return new Response(bytes,{headers:{'content-type':response.headers.get('content-type')??'application/octet-stream'}});};})();`});
+ await request('Page.reload',{});await new Promise(r=>setTimeout(r,1500));
  const screenshot=async name=>writeFile(join(here,name+'.png'),Buffer.from((await request('Page.captureScreenshot',{format:'png'})).data,'base64'));
  let appReady=false;
  for(let i=0;i<300;i++){
@@ -51,6 +66,10 @@ try{
  if(!config.visual_only){
  await writeFile(join(here,'progress.json'),JSON.stringify({status:'RUNNING',phase:'saved-document-full-reload'}));
  await request('Page.reload',{});await new Promise(r=>setTimeout(r,1500));
+ // The editor does not reopen a map after reload; choose the saved browser copy like a user would.
+ const reopen=`(()=>{const chooser=document.querySelector('select[aria-label="Map"]');const value=[...(chooser?.options??[])].map(option=>option.value).find(value=>value===${JSON.stringify(config.map+' (Modified)')});if(!value)return false;chooser.value=value;chooser.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`;
+ let reopened=false;for(let i=0;i<300&&!reopened;i++){try{reopened=await evaluate(ws,++id,reopen);}catch(error){if(!/Cannot find default execution context|Execution context was destroyed/.test(String(error)))throw error;}if(!reopened)await new Promise(r=>setTimeout(r,200));}
+ if(!reopened)throw Error('Saved publication map copy is not offered after reload');
  let restored=false;for(let i=0;i<300;i++){if(await evaluate(ws,++id,`document.querySelectorAll('.object-list li.depth-0').length===${result.savedGroups} && document.querySelectorAll('.shared-library .asset-card button[aria-label^="Add "]').length===${config.expected.assets.length}`)){restored=true;break;}await new Promise(r=>setTimeout(r,200));}
  if(!restored)throw Error('Full browser reload did not restore saved publication instances');
  result.checks.push('full page reload restores saved groups, pinned external models and all palette entries');

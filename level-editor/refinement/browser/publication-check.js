@@ -6,16 +6,14 @@
  const button=label=>[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===label);
  const click=label=>{const b=button(label);assert(b&&!b.disabled,'Button unavailable '+label);b.click();};
  const hash=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
- const opfs=await navigator.storage.getDirectory();
- const library=await opfs.getDirectoryHandle('private-'+config.map+'-publication-check',{create:true});
- window.__publicationProgress={phase:'copying-private-inputs',files:0,total:config.files.length};
+ // verify_publication.mjs routes the app's HTTP library (/library/) to exactly these pinned files.
+ window.__publicationProgress={phase:'hash-verifying-served-library',files:0,total:config.files.length};
  for(const item of config.files){
-  const response=await fetch(item.url);assert(response.ok,'Read '+item.url);
-  const bytes=await response.arrayBuffer();assert(await hash(bytes)===item.sha256,'File hash '+item.path);
-  let dir=library;const parts=item.path.split('/');
-  for(const part of parts.slice(0,-1))dir=await dir.getDirectoryHandle(part,{create:true});
-  const file=await dir.getFileHandle(parts.at(-1),{create:true}),writer=await file.createWritable();await writer.write(bytes);await writer.close();window.__publicationProgress.files++;
+  const response=await fetch('/library/'+item.path.split('/').map(encodeURIComponent).join('/'),{cache:'no-store'});assert(response.ok,'Read '+item.path);
+  const bytes=await response.arrayBuffer();assert(await hash(bytes)===item.sha256,'File hash '+item.path);window.__publicationProgress.files++;
  }
+ const {openHttpLibrary}=await import('/src/http-library.ts');
+ const library=(await openHttpLibrary()).handle;
  // Independently inspect the same real GLBs through the production loader.
  const {prepareMapCandidate}=await import('/src/map-candidate.ts');
  const {PatchDisplay}=await import('/src/patch-display.ts');
@@ -48,9 +46,11 @@
  })();
  const patches=new Set(patchIds);
  window.__publicationProgress={phase:'actual-editor-loading'};
- window.showDirectoryPicker=async()=>library;
- await wait(()=>button('Open library…'),'app shell');click('Open library…');
+ // The app opens its HTTP library at startup; open the staged map through the Map chooser.
  await wait(()=>document.querySelectorAll('.shared-library .asset-card button[aria-label^="Add "]').length===config.expected.assets.length,'published palette');
+ const chooser=()=>document.querySelector('select[aria-label="Map"]');
+ await wait(()=>[...(chooser()?.options??[])].some(option=>option.value===config.map),'Map chooser entry '+config.map);
+ chooser().value=config.map;chooser().dispatchEvent(new Event('change',{bubbles:true}));
  await wait(()=>document.querySelectorAll('.object-list li.depth-0').length===config.expected.groups,'ActualUI map groups');
  window.__publicationPhase={phase:'map-ready',groundMeshes,groundTextures};
  await wait(()=>window.__publicationContinue,'map screenshot');
@@ -78,10 +78,15 @@
   document.querySelectorAll('.object-list li.depth-0')[index].querySelector('.chev-btn').click();
   selectionChecks.push({id:group.id,parts:group.parts.map(part=>part.id),groupAndPartsSelectable:true});
  }
- const scenes=await library.getDirectoryHandle('scenes');
- const saved=async()=>JSON.parse(await(await(await scenes.getFileHandle(config.map+'.rhlos-map.json')).getFile()).text());
+ // Saves of a published map land in the app's browser-local map copies; parse them with the production loader.
+ const saved=async()=>{
+  const maps=await(await(await navigator.storage.getDirectory()).getDirectoryHandle('sherwood-level-editor')).getDirectoryHandle('maps');
+  const stored=JSON.parse(await(await(await maps.getFileHandle(config.map+'.rhlos-map.json')).getFile()).text());
+  const candidate=await prepareMapCandidate(config.map,library,null,undefined,config.map,stored);
+  const parsed=candidate.document;disposeObjectResources([candidate.asset,candidate.ground].filter(Boolean));return parsed;
+ };
  const save=async()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim().startsWith('Save'));if(!b.disabled)b.click();await wait(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Save'&&b.disabled),'save');return saved();};
- const transform=async(value)=>{const row=[...document.querySelectorAll('.object-detail .meta-row')].find(row=>row.querySelector('.meta-key')?.textContent==='dx');const input=row.querySelector('input');input.value=value;input.dispatchEvent(new Event('change',{bubbles:true}));await sleep(50);};
+ const transform=async(value)=>{const row=[...document.querySelectorAll('.object-detail .meta-row')].find(row=>['dx','Offset X'].includes(row.querySelector('.meta-key')?.textContent.trim()));const input=row.querySelector('input');input.value=value;input.dispatchEvent(new Event('change',{bubbles:true}));await sleep(50);};
  const inserted=[],stateChecks=[];
  for(const [index,asset]of config.expected.assets.entries()){
   window.__publicationProgress={phase:'actual-editor-asset-insertion',index,total:config.expected.assets.length,asset:asset.id};
@@ -96,7 +101,12 @@
   if(selector){selector.value='applied';selector.dispatchEvent(new Event('change',{bubbles:true}));await sleep(50);let probe=await save();let group=probe.groups.at(-1);assert(group.states.active==='applied','Applied state persisted');for(const id of group.states.initial)assert(probe.objects.find(o=>o.id===id).hidden,'Initial endpoint hidden');for(const id of group.states.applied)assert(!probe.objects.find(o=>o.id===id).hidden,'Applied endpoint visible');stateChecks.push({asset:asset.id,kind:'state-selector',applied:true});}
   if(asset.state_variant)stateChecks.push({asset:asset.id,kind:'static-variant',state:asset.state_variant});
  }
- let doc=await save();assert(doc.assetSources.length===inserted.length,'All standalone source references');
+ let doc=await save();
+ // Map instances and palette insertions share the local catalog, so each inserted group must pin its own asset source.
+ const added=doc.groups.slice(config.expected.groups);assert(added.length===inserted.length,'All standalone groups inserted in order');
+ for(const [index,group]of added.entries()){const id=inserted[index];const parts=doc.objects.filter(part=>part.group===group.id);
+  assert(parts.length&&parts.every(part=>part.node.startsWith('asset:'+id+':')),'Inserted group references its standalone asset '+id);
+  assert(doc.assetSources.some(source=>source.id===id),'Standalone source reference '+id);}
  assert(doc.groups.length===config.expected.groups+inserted.length,'All standalone groups inserted');
  const last=doc.groups.at(-1);click('Duplicate');await sleep(100);click('Undo');await sleep(100);click('Redo');await sleep(100);
  doc=await save();assert(doc.groups.length===config.expected.groups+inserted.length+1,'Duplicate undo redo');
