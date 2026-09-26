@@ -56,7 +56,7 @@ export default function SplinePanel(props: {
     setDraft(null);
     setPoint(0);
     pendingSources = [];
-    props.viewport.setSplineEdit(null);
+    untrack(() => props.viewport.setSplineEdit(null));
   }
   function publish(next: Level3D) {
     try {

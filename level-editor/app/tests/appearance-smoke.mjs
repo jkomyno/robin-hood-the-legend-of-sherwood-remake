@@ -80,8 +80,16 @@ try {
   })()`);
   assert.equal(result.cards, 1);
   assert.deepEqual(result.options, ["Initial", "Applied endpoint"]);
+  await run(`(() => {
+    const select = document.querySelector("select[aria-label='Map']");
+    const option = Array.from(select.options).find(option => option.value.toLowerCase() === "derby");
+    if (!option) throw new Error("Derby map is unavailable");
+    select.value = option.value;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  })()`);
+  await until(`Number(document.querySelector(".object-count")?.textContent) > 0`);
   assert.deepEqual(await run(`window.__warnings`), []);
-  console.log("One drawbridge card with two appearances; no Solid warnings");
+  console.log("One drawbridge card with two appearances; Derby loads without Solid warnings");
 } finally {
   socket?.close();
   if (chrome.exitCode === null && chrome.signalCode === null) {
