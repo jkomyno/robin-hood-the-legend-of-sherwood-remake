@@ -102,6 +102,7 @@ def _validated_projection(config):
         raise ValueError('Working projection changed frozen source or state inventory')
     from interior_layers import validate_projection_reviews
     validate_projection_reviews(manifest, path.parent)
+    from catalog_schema import is_scenery_node
     def assignments(value, trail=(), result=None):
         result = {} if result is None else result
         if isinstance(value, dict):
@@ -124,7 +125,6 @@ def _validated_projection(config):
     if changed_foreign:
         raise ValueError('Working projection reassigned outside-asset nodes: '+str(sorted(changed_foreign)))
     from workspace_components import validated_scope, owns_assignment
-    from catalog_schema import is_scenery_node
     scope = validated_scope(config)
     if scope:
         def scoped_records(value, trail=(), result=None):
