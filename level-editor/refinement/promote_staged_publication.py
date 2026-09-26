@@ -10,8 +10,11 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import sys
 from scene_manifest import scene_metadata
 from asset_scenes import scene_identity
+sys.path.insert(0, str(Path(__file__).resolve().parent / 'blender'))
+from lossy_assets import verify_derivatives
 
 
 @contextmanager
@@ -131,6 +134,17 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
     selected=json.loads((stage/'assets/index.json').read_text())
     for asset in selected['assets']:
         pairs.extend(asset_file_pairs(stage/'assets', library/'3d-assets', asset))
+    # Lossy models, previews and their receipts come from the catalog whose index is merged;
+    # the merged entries keep lossy_model/preview_model, so republishing retains them.
+    problems = verify_derivatives(staged_index.parent)
+    if problems:
+        raise ValueError('Stale staged derivatives: ' + '; '.join(problems[:5]))
+    for asset in staged['assets']:
+        for key in ('lossy_model', 'preview_model'):
+            if asset.get(key):
+                for relative in (safe_relative(asset[key]), safe_relative(asset[key] + '.receipt.json')):
+                    pairs.append((contained_path(staged_index.parent, relative, required=True),
+                                  contained_path(library/'3d-assets', relative)))
     # Install manifests only after all referenced assets exist.
     pairs.extend([(document_path,library/f'scenes/{map_name}.rhlos-map.json'),(merged,index_path)])
     records=[]

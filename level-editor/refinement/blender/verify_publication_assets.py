@@ -218,11 +218,23 @@ def verify(directory,catalog_path):
             raise ValueError('Map lost selected generated materials: '+sha)
     if component_metadata and not any(n.get('extras',{}).get('projection_component') for n in model['nodes']):
         raise ValueError('Map lost component selectors')
+    # Lossy models and previews are optional, but any that an index declares must bind its
+    # current model bytes (and previews their lossy model or model).
+    from lossy_assets import verify_derivatives
+    derivative_problems=[]
+    for root in (directory/'map-assets/3d-assets', directory/'assets'):
+        if (root/'index.json').exists():
+            derivative_problems+=[f'{root.relative_to(directory)}: {problem}' for problem in verify_derivatives(root)]
+    if derivative_problems:
+        raise ValueError('Stale or broken lossy/preview derivatives: '+'; '.join(derivative_problems[:10]))
+    lossy=stage.get('lossy')
     report={'status':'PASS','groups':len(selected),'parts':len(nodes-{'ground'}),'full_map_parts':len(actual_map),'components':components,
             'component_metadata':component_metadata,'generated_materials':generated,
             'masked_generated_materials':masked_generated,
             'groups_with_generated_materials':sum(bool(a['generated_material_count']) for a in asset_material_coverage),
-            'asset_material_coverage':asset_material_coverage}
+            'asset_material_coverage':asset_material_coverage,
+            'lossy':None if lossy is None else {'catalog':lossy['catalog'],'enabled':lossy['lossy'],
+                'derived':len(lossy['derived']),'current':len(lossy['current']),'refused':lossy['refused']}}
     (directory/'asset-verification.json').write_text(json.dumps(report,indent=2)+'\n')
     return report
 

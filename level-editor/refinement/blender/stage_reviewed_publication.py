@@ -20,7 +20,9 @@ from render_views import render_views
 from publication_contract import canonical_parts, scene_filename, validate_coverage
 
 
-def stage(plan_path):
+def stage(plan_path, lossy=True):
+    """`lossy` (default on; plan `"lossy": false` or CLI `--no-lossy` disables it) also derives
+    lossy.glb models and their previews for the staged catalog once its model bytes are final."""
     plan_path=Path(plan_path).resolve(strict=True)
     plan=json.loads(plan_path.read_text())
     catalog=json.loads(Path(plan['catalog']).read_text())
@@ -218,9 +220,21 @@ def stage(plan_path):
     finally:
         for obj, hidden in visibility.items():
             obj.hide_render = hidden
+    # Lossy models bind exact model bytes, so they are derived last, on the catalog promotion
+    # installs (the packed map catalog when the map export produced one). This resets Blender's
+    # file; the worker was saved above.
+    from lossy_assets import refresh_derivatives
+    catalog_root = output/'map-assets/3d-assets' if (output/'map-assets/3d-assets/index.json').exists() else output/'assets'
+    enabled = lossy and plan.get('lossy', True)
+    report['lossy'] = refresh_derivatives(catalog_root, output/'lossy-work', lossy=enabled, previews=enabled)
+    report['lossy']['catalog'] = str(catalog_root)
+    (output/'stage.json').write_text(json.dumps(report,indent=2)+'\n')
     return report
 
 
 if __name__=='__main__':
-    report=stage(sys.argv[sys.argv.index('--')+1])
+    arguments=sys.argv[sys.argv.index('--')+1:]
+    if any(value not in ('--lossy','--no-lossy') for value in arguments[1:]):
+        raise SystemExit('usage: stage_reviewed_publication.py -- PLAN [--lossy|--no-lossy]')
+    report=stage(arguments[0], lossy='--no-lossy' not in arguments[1:])
     print(json.dumps({'map':report['map'],'assets':report['assets'],'imports':len(report['imports'])}),flush=True)

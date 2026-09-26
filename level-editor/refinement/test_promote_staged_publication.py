@@ -63,6 +63,41 @@ class PromotionTests(unittest.TestCase):
         promotion.apply(self.stage / 'promotion.json')
         self.assertFalse((self.library / '3d-assets/bridge/lowered.glb').exists())
 
+    def stage_derivatives(self, receipt=None):
+        """Staged lossy model and preview for the bridge, with chained receipts."""
+        import hashlib
+        digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+        root = self.stage / 'assets'
+        (root / 'bridge/lossy.glb').write_bytes(b'lossy')
+        self.write_json(root / 'bridge/lossy.glb.receipt.json', receipt or
+                        {'source': digest(root / 'bridge/raised.glb'), 'output': digest(root / 'bridge/lossy.glb')})
+        (root / 'bridge/preview.glb').write_bytes(b'preview')
+        self.write_json(root / 'bridge/preview.glb.receipt.json', {'source': digest(root / 'bridge/lossy.glb'),
+                        'source_model': 'bridge/lossy.glb', 'output': digest(root / 'bridge/preview.glb')})
+        self.entry.update(lossy_model='bridge/lossy.glb', preview_model='bridge/preview.glb')
+        self.write_json(root / 'index.json', {'assets': [self.entry]})
+
+    def test_lossy_models_and_previews_are_promoted_and_kept_in_the_index(self):
+        self.stage_derivatives()
+        manifest = self.prepare()
+        assets = (self.library / '3d-assets').resolve()
+        targets = {Path(item['target']).relative_to(assets).as_posix() for item in manifest['files']
+                   if Path(item['target']).is_relative_to(assets)}
+        self.assertLessEqual({'bridge/lossy.glb', 'bridge/lossy.glb.receipt.json', 'bridge/preview.glb',
+                              'bridge/preview.glb.receipt.json'}, targets)
+        promotion.apply(self.stage / 'promotion.json')
+        live = {e['id']: e for e in json.loads((self.library / '3d-assets/index.json').read_text())['assets']}
+        self.assertEqual((live['bridge']['lossy_model'], live['bridge']['preview_model']),
+                         ('bridge/lossy.glb', 'bridge/preview.glb'))
+        self.assertEqual((self.library / '3d-assets/bridge/lossy.glb').read_bytes(), b'lossy')
+
+    def test_stale_lossy_receipts_block_preparation(self):
+        self.stage_derivatives(receipt={'source': 'a' * 64, 'output': 'b' * 64})
+        self.write_json(self.stage / 'assets/bridge/asset.json', self.descriptor)
+        with self.assertRaisesRegex(ValueError, 'Stale staged derivatives'):
+            promotion.prepare(self.stage, self.library, self.main, 'derby')
+        self.assertFalse((self.stage / 'promotion.json').exists())
+
     def test_variants_deduplicate_default_and_copy_both_with_hashes(self):
         self.variants()
         manifest = self.prepare()

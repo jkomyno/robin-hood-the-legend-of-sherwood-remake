@@ -481,6 +481,15 @@ another map's plan.
   --python level-editor/refinement/blender/stage_reviewed_publication.py -- <publication-plan.json>
 ```
 
+Staging also derives lossy browser models by default: once the staged catalog's
+model bytes are final it writes `<asset dir>/lossy.glb` (+ `lossy.glb.receipt.json`),
+sets `lossy_model`, and rebuilds `preview.glb` from it
+(`refinement/blender/lossy_assets.py`). Pass `--no-lossy` (or plan `"lossy": false`)
+to skip it. `verify_publication_assets.py` rejects stale derivatives and
+`promote_staged_publication.py` installs them with the models. Backfill an existing
+library with `lossy_assets.py -- library --root level-editor/library/3d-assets
+--run <dir> [--apply]` (dry run without `--apply`; `-- rollback --run <dir>` undoes it).
+
 This stages geometry/material imports and exports a map plus standalone assets.
 Staging is not live integration: validate canonical membership, grouping,
 transforms, materials, states and the generated library, then promote the staged
