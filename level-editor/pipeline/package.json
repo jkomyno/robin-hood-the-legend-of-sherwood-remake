@@ -16,7 +16,6 @@
     "merge-detections": "node src/merge-detections.ts",
     "compare-backends": "node src/compare-backends.ts",
     "glb-preview": "node src/glb-preview.ts",
-    "build-previews": "node src/build-preview-assets.ts",
     "volumes": "node src/volumes.ts",
     "bake": "node src/bake.ts",
     "bundle-states": "node src/bundle-library-states.ts"

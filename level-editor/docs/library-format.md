@@ -39,6 +39,9 @@ reconstruction atlases. GLBs that use these files reference ordinary relative
 `../../blobs/...` URIs; descriptors and saved references pin library-relative paths
 and SHA-256 hashes. Packaging preserves texture encoding and accessor bytes.
 Optional preview models are derived browser thumbnails, never map geometry.
+`refinement/blender/lossy_assets.py` builds `preview.glb` from the lossy model (or the
+model when there is none): simplified, meshopt-compressed geometry and an AVIF texture of
+about 1 texel per 8 map pixels. `preview.glb.receipt.json` binds its `source_model` bytes.
 An optional `lossy_model` (for example `<source-map>/<asset-id>/lossy.glb`) is a
 derived lossy display copy of `model`: same nodes, extras, scenes and materials, one
 re-baked texture atlas (EXT_texture_avif), quantized vertices (KHR_mesh_quantization)

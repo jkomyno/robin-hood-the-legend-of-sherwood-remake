@@ -999,6 +999,53 @@ def lossy_name(model_path):
     return 'lossy.glb' if model_path.name == 'model.glb' else model_path.stem + '.lossy.glb'
 
 
+def preview_name(model_path):
+    return 'preview.glb' if model_path.name == 'model.glb' else model_path.stem + '.preview.glb'
+
+
+PREVIEW_CLI = PIPELINE / 'src/preview-model.ts'
+_preview_fingerprint = None
+
+
+def preview_fingerprint():
+    """Preview settings + installed tool versions (pipeline/src/preview-model.ts), cached per run."""
+    global _preview_fingerprint
+    if _preview_fingerprint is None:
+        _preview_fingerprint = subprocess.run(['node', str(PREVIEW_CLI), '--fingerprint'], cwd=PIPELINE, check=True,
+                                              capture_output=True, text=True).stdout.strip().splitlines()[-1]
+    return _preview_fingerprint
+
+
+def preview_current(root, source, preview):
+    """True when `preview` and its receipt bind the current `source` bytes and preview settings."""
+    receipt_path = root / (preview + '.receipt.json')
+    if not (root / preview).exists() or not receipt_path.exists():
+        return False
+    receipt = json.loads(receipt_path.read_text())
+    return (receipt.get('source') == sha(root / source) and receipt.get('source_model') == source
+            and receipt.get('fingerprint') == preview_fingerprint() and receipt.get('output') == sha(root / preview))
+
+
+def write_preview(source_path, source_relative, output):
+    """Preview GLB (simplified, meshopt, AVIF at the size rule) + receipt chained to `source`."""
+    source_path, output = Path(source_path).resolve(strict=True), Path(output).resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_name(f'.{output.name}.{uuid.uuid4().hex}.tmp')
+    try:
+        result = subprocess.run(['node', str(PREVIEW_CLI), str(source_path), str(temporary)], cwd=PIPELINE,
+                                capture_output=True, text=True)
+        if result.returncode:
+            raise RuntimeError(f'Preview failed for {source_relative}: {(result.stderr or result.stdout).strip()[-800:]}')
+        info = json.loads(result.stdout.strip().splitlines()[-1])
+        os.replace(temporary, output)
+    finally:
+        temporary.unlink(missing_ok=True)
+    receipt = {'source': sha(source_path), 'source_model': source_relative, 'fingerprint': preview_fingerprint(),
+               'output': sha(output), 'texture_edge': info['edge']}
+    Path(str(output) + '.receipt.json').write_text(json.dumps(receipt) + '\n')
+    return info
+
+
 def main_derive(args):
     source_root = args.source_root.resolve(strict=True)
     output = args.output.resolve()
@@ -1137,8 +1184,12 @@ def atomic_write(path, data):
         temporary.unlink(missing_ok=True)
 
 
-def publish_one(root, run, entry_id, model, lossy, staged, source_sha, record):
-    """Copy one staged lossy model into the library and set `lossy_model`, under the lock."""
+def publish_one(root, run, entry_id, model, files, fields, source_sha, record):
+    """Copy staged derivative files into the library and set index fields, under the lock.
+
+    `files` maps library-relative paths to staged files; `fields` maps index keys (lossy_model,
+    preview_model) to values. Previous files are kept in the run backup for `rollback`.
+    """
     with LibraryLock(root):
         index_path = root / 'index.json'
         index = json.loads(index_path.read_text())
@@ -1147,28 +1198,31 @@ def publish_one(root, run, entry_id, model, lossy, staged, source_sha, record):
         entry = entries[0]
         require(sha(root / model) == source_sha, f'Model changed during derivation; rerun: {model}')
         backup = run / 'backup'
-        for name in (lossy, lossy + '.receipt.json'):
+        for name, staged in files.items():
             target = root / name
             if target.exists():
-                # Previous lossy files are kept for rollback before being replaced.
                 saved = backup / name
                 saved.parent.mkdir(parents=True, exist_ok=True)
                 if not saved.exists():
                     shutil.copyfile(target, saved)
             record['files'].append({'path': name, 'previous_sha256': sha(target) if target.exists() else None})
             target.parent.mkdir(parents=True, exist_ok=True)
-            atomic_write(target, (staged.parent / Path(name).name).read_bytes())
+            atomic_write(target, Path(staged).read_bytes())
             record['files'][-1]['sha256'] = sha(target)
-        if model == entry['model'] and entry.get('lossy_model') != lossy:
-            record['index'].append({'id': entry_id, 'previous_lossy_model': entry.get('lossy_model'), 'lossy_model': lossy})
-            entry['lossy_model'] = lossy
+        changed = False
+        for key, value in fields.items():
+            if model == entry['model'] and entry.get(key) != value:
+                record['index'].append({'id': entry_id, 'field': key, 'previous': entry.get(key), 'value': value})
+                entry[key] = value
+                changed = True
+        if changed:
             atomic_write(index_path, (json.dumps(index, indent=2) + '\n').encode())
         record['index_sha256'] = sha(index_path)
         (run / 'record.json').write_text(json.dumps(record, indent=2) + '\n')
 
 
 def main_library(args):
-    """Derive and publish lossy models for live library assets (dry run unless --apply)."""
+    """Derive and publish lossy models and previews for live library assets (dry run unless --apply)."""
     root = args.root.resolve(strict=True)
     index = json.loads((root / 'index.json').read_text())
     maps = {m.lower() for m in args.maps} if args.maps else None
@@ -1176,16 +1230,30 @@ def main_library(args):
                 and (not args.assets or e['id'] in args.assets)]
     require(selected, 'No assets selected')
     plan, by_map = [], {}
-    for entry_id, model in library_models(root, [e['id'] for e in selected]):
-        source_map = next(e['source_map'] for e in selected if e['id'] == entry_id)
+    for entry in selected:
+        model = entry['model']
         lossy = str(Path(model).parent / lossy_name(Path(model)))
+        preview = str(Path(model).parent / preview_name(Path(model)))
         reasons = static_check(root, model)
-        state = 'refused' if reasons else 'current' if not args.force and receipt_current(root, model, lossy, args) else 'derive'
-        plan.append({'id': entry_id, 'map': source_map, 'model': model, 'lossy_model': lossy, 'state': state,
-                     'reasons': reasons, 'model_bytes': (root / model).stat().st_size})
-        counts = by_map.setdefault(source_map, {'derive': 0, 'current': 0, 'refused': 0, 'model_bytes': 0})
-        counts[state] += 1
+        lossy_state = 'refused' if reasons else 'current' if not args.force and receipt_current(root, model, lossy, args) else 'derive'
+        # A re-derived lossy model always gets a new preview; a refused one previews the model.
+        preview_source = model if reasons else lossy
+        preview_state = ('derive' if lossy_state == 'derive' or args.force or not preview_current(root, preview_source, preview)
+                         else 'current')
+        plan.append({'id': entry['id'], 'map': entry['source_map'], 'model': model, 'lossy_model': lossy,
+                     'preview_model': preview, 'preview_source': preview_source, 'state': lossy_state,
+                     'preview_state': preview_state, 'reasons': reasons, 'model_bytes': (root / model).stat().st_size,
+                     'preview_bytes_before': (root / entry['preview_model']).stat().st_size
+                     if entry.get('preview_model') and (root / entry['preview_model']).exists() else None})
+        counts = by_map.setdefault(entry['source_map'], {'derive': 0, 'current': 0, 'refused': 0, 'preview_derive': 0,
+                                                          'preview_current': 0, 'previews_before': 0,
+                                                          'model_bytes': 0, 'preview_bytes_before': 0})
+        counts[lossy_state] += 1
+        counts['preview_' + preview_state] += 1
         counts['model_bytes'] += plan[-1]['model_bytes']
+        if plan[-1]['preview_bytes_before'] is not None:
+            counts['previews_before'] += 1
+            counts['preview_bytes_before'] += plan[-1]['preview_bytes_before']
     run = args.run.resolve()
     require(ROOT.resolve() in run.parents, f'Run records must stay under {ROOT}')
     run.mkdir(parents=True, exist_ok=True)
@@ -1210,23 +1278,38 @@ def main_library(args):
             (run / 'backup').mkdir(parents=True, exist_ok=True)
             shutil.copyfile(root / 'index.json', run / 'backup/index.json')
     for item in plan:
-        if item['state'] != 'derive':
+        if item['state'] != 'derive' and item['preview_state'] != 'derive':
             continue
-        if receipt_current(root, item['model'], item['lossy_model'], args) and not args.force:
+        lossy_done = item['state'] != 'derive' or (receipt_current(root, item['model'], item['lossy_model'], args)
+                                                     and not args.force)
+        if lossy_done and preview_current(root, item['preview_source'], item['preview_model']) and not args.force:
             continue  # Resumed run: already published.
-        stage = run / 'stage' / item['lossy_model']
+        stage = run / 'stage'
         work = run / 'work' / Path(item['model']).with_suffix('')
-        for path in (stage.parent, work):
+        for path in (stage / Path(item['model']).parent, work):
             if path.exists():
                 shutil.rmtree(path)
         try:
             source_sha = sha(root / item['model'])
-            report = derive(item['id'], (root / item['model']).resolve(strict=True), stage, args, work)
-            require(report['source_sha256'] == source_sha, 'Model changed while deriving')
-            publish_one(root, run, item['id'], item['model'], item['lossy_model'], stage, source_sha, record)
-            record['reports'][item['model']] = summary_row(report)
+            files, fields, row = {}, {}, {}
+            if not lossy_done:
+                report = derive(item['id'], (root / item['model']).resolve(strict=True), stage / item['lossy_model'], args, work)
+                require(report['source_sha256'] == source_sha, 'Model changed while deriving')
+                row = summary_row(report)
+                for name in (item['lossy_model'], item['lossy_model'] + '.receipt.json'):
+                    files[name] = stage / name
+                fields['lossy_model'] = item['lossy_model']
+            # The preview source is the staged lossy model when one was just derived.
+            source_path = files.get(item['preview_source'], root / item['preview_source'])
+            info = write_preview(source_path, item['preview_source'], stage / item['preview_model'])
+            for name in (item['preview_model'], item['preview_model'] + '.receipt.json'):
+                files[name] = stage / name
+            fields['preview_model'] = item['preview_model']
+            row['preview'] = {'bytes': info['bytes'], 'edge': info['edge'], 'before': item['preview_bytes_before']}
+            publish_one(root, run, item['id'], item['model'], files, fields, source_sha, record)
+            record['reports'][item['model']] = row
             record['failures'].pop(item['model'], None)
-            print(f'LOSSY {item["model"]}: {json.dumps(summary_row(report))}', flush=True)
+            print(f'LOSSY {item["model"]}: {json.dumps(row)}', flush=True)
         except Exception as error:  # Record and continue; a rerun resumes.
             record['failures'][item['model']] = f'{type(error).__name__}: {error}'
             print(f'LOSSY FAILED {item["model"]}: {record["failures"][item["model"]]}', flush=True)
@@ -1249,11 +1332,12 @@ def main_rollback(args):
         entries = {e['id']: e for e in index['assets']}
         for change in reversed(record['index']):
             entry = entries[change['id']]
-            require(entry.get('lossy_model') == change['lossy_model'], f'lossy_model changed since the run: {change["id"]}')
-            if change['previous_lossy_model'] is None:
-                entry.pop('lossy_model')
+            key = change['field']
+            require(entry.get(key) == change['value'], f'{key} changed since the run: {change["id"]}')
+            if change['previous'] is None:
+                entry.pop(key)
             else:
-                entry['lossy_model'] = change['previous_lossy_model']
+                entry[key] = change['previous']
         for change in reversed(record['files']):
             target = root / change['path']
             require(not target.exists() or sha(target) == change['sha256'], f'File changed since the run: {change["path"]}')
@@ -1313,8 +1397,9 @@ def refresh_derivatives(root, work, *, lossy=True, previews=True, ids=None, sett
     current lossy model (receipt binds the model bytes and settings), otherwise derive it into
     `<dir>/lossy.glb` + receipt and set `lossy_model`; entries refused by `static_check` keep no
     lossy model and are reported. `lossy=False` removes `lossy_model` fields instead, so nothing
-    points at a stale derivative. Previews are rebuilt afterwards (incrementally) from the lossy
-    models by the pipeline preview builder. Returns a report; index.json is rewritten atomically.
+    points at a stale derivative. Then each entry's `<dir>/preview.glb` is rebuilt when stale
+    from its lossy model (or its model without one) and `preview_model` set; the preview receipt
+    binds that source's bytes. Returns a report; index.json is rewritten atomically.
     """
     root, work = Path(root).resolve(strict=True), Path(work)
     args = settings_args or default_settings()
@@ -1348,11 +1433,16 @@ def refresh_derivatives(root, work, *, lossy=True, previews=True, ids=None, sett
         entry['lossy_model'] = target
     atomic_write(index_path, (json.dumps(index, indent=2) + '\n').encode())
     if previews:
-        result = subprocess.run(['node', str(PIPELINE / 'src/build-preview-assets.ts'), str(root)], cwd=PIPELINE,
-                                capture_output=True, text=True)
-        if result.returncode:
-            raise RuntimeError(f'Preview build failed: {result.stderr.strip() or result.stdout.strip()}')
-        report['preview_log'] = result.stdout.strip().splitlines()[-1:]
+        for entry in index['assets']:
+            if ids is not None and entry['id'] not in ids:
+                continue
+            source = entry.get('lossy_model', entry['model'])
+            preview = str(Path(entry['model']).parent / preview_name(Path(entry['model'])))
+            if not preview_current(root, source, preview):
+                info = write_preview(root / source, source, root / preview)
+                report.setdefault('previews_built', []).append({'id': entry['id'], 'bytes': info['bytes'], 'edge': info['edge']})
+            entry['preview_model'] = preview
+        atomic_write(index_path, (json.dumps(index, indent=2) + '\n').encode())
     problems = verify_derivatives(root)
     require(not problems, f'Derivatives inconsistent after refresh: {problems}')
     return report

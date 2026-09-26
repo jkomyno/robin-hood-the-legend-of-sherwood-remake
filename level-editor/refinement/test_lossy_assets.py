@@ -59,18 +59,31 @@ class LossyAssetsTest(unittest.TestCase):
 
     def fake_derive(self, asset_id, model_path, lossy_path, args, work):
         """Stands in for the Blender derivation: writes a lossy model and its receipt."""
-        lossy_path.write_bytes(b'lossy:' + model_path.read_bytes()[:8])
+        lossy_path.parent.mkdir(parents=True, exist_ok=True)
+        lossy_path.write_bytes(b'lossy:' + sha(model_path.read_bytes()).encode())
         receipt = {'source': sha(model_path.read_bytes()), 'output': sha(lossy_path.read_bytes()),
                    'settings': lossy_assets.settings(args)}
         Path(str(lossy_path) + '.receipt.json').write_text(json.dumps(receipt))
         self.derived.append(asset_id)
         return {'asset_id': asset_id}
 
-    def refresh(self, **options):
-        self.derived = []
+    def fake_preview(self, source_path, source_relative, output):
+        """Stands in for pipeline/src/preview-model.ts, writing the same receipt chain."""
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(b'preview:' + Path(source_path).read_bytes()[:8])
+        Path(str(output) + '.receipt.json').write_text(json.dumps(
+            {'source': sha(Path(source_path).read_bytes()), 'source_model': source_relative,
+             'fingerprint': 'fp', 'output': sha(output.read_bytes())}))
+        self.previews.append(source_relative)
+        return {'bytes': 10, 'edge': 32}
+
+    def refresh(self, previews=False, **options):
+        self.derived, self.previews = [], []
         with patch.object(lossy_assets, 'derive', self.fake_derive), \
+                patch.object(lossy_assets, 'write_preview', self.fake_preview), \
+                patch.object(lossy_assets, 'preview_fingerprint', lambda: 'fp'), \
                 patch.object(lossy_assets, 'summary_row', lambda report: report):
-            return lossy_assets.refresh_derivatives(self.root, Path(self.temporary.name) / 'work', previews=False,
+            return lossy_assets.refresh_derivatives(self.root, Path(self.temporary.name) / 'work', previews=previews,
                                                     log=lambda message: None, **options)
 
     def test_static_check_accepts_display_textures_and_refuses_others(self):
@@ -124,6 +137,21 @@ class LossyAssetsTest(unittest.TestCase):
         self.assertFalse(lossy_assets.receipt_current(self.root, 'derby/house/model.glb', lossy, self.args))
         self.assertIn('house: lossy model bytes differ from its receipt', lossy_assets.verify_derivatives(self.root))
 
+    def test_previews_follow_the_lossy_model_and_rebuild_when_it_changes(self):
+        self.refresh(previews=True)
+        entry = json.loads((self.root / 'index.json').read_text())['assets'][0]
+        self.assertEqual((entry['preview_model'], self.previews), ('derby/house/preview.glb', ['derby/house/lossy.glb']))
+        self.assertEqual(lossy_assets.verify_derivatives(self.root), [])
+        self.refresh(previews=True)
+        self.assertEqual(self.previews, [])
+        (self.root / 'derby/house/model.glb').write_bytes(glb(dict(UNLIT, doubleSided=True)))
+        self.refresh(previews=True)
+        self.assertEqual((self.derived, self.previews), (['house'], ['derby/house/lossy.glb']))
+        # Without a lossy model the preview comes from the model itself.
+        self.refresh(previews=True, lossy=False)
+        self.assertEqual(self.previews, ['derby/house/model.glb'])
+        self.assertEqual(lossy_assets.verify_derivatives(self.root), [])
+
     def test_preview_receipts_must_bind_the_lossy_model(self):
         self.refresh()
         preview = self.root / 'derby/house/preview.glb'
@@ -141,29 +169,30 @@ class LossyAssetsTest(unittest.TestCase):
 
     def test_library_publish_and_rollback_restore_the_previous_state(self):
         run = Path(self.temporary.name) / 'run'
-        stage = run / 'stage/derby/house/lossy.glb'
-        stage.parent.mkdir(parents=True)
-        self.fake_derive_into(stage)
-        before = (self.root / 'index.json').read_bytes()
+        stage = run / 'stage'
+        self.derived, self.previews = [], []
+        self.fake_derive('house', self.root / 'derby/house/model.glb', stage / 'derby/house/lossy.glb', self.args, None)
+        self.fake_preview(stage / 'derby/house/lossy.glb', 'derby/house/lossy.glb', stage / 'derby/house/preview.glb')
+        files = {name: stage / name for name in ('derby/house/lossy.glb', 'derby/house/lossy.glb.receipt.json',
+                                                 'derby/house/preview.glb', 'derby/house/preview.glb.receipt.json')}
+        fields = {'lossy_model': 'derby/house/lossy.glb', 'preview_model': 'derby/house/preview.glb'}
         (run / 'backup').mkdir(parents=True)
-        (run / 'backup/index.json').write_bytes(before)
+        (run / 'backup/index.json').write_bytes((self.root / 'index.json').read_bytes())
         record = {'root': str(self.root), 'files': [], 'index': [], 'reports': {}, 'failures': {}}
         model_sha = sha((self.root / 'derby/house/model.glb').read_bytes())
-        lossy_assets.publish_one(self.root, run, 'house', 'derby/house/model.glb', 'derby/house/lossy.glb',
-                                 stage, model_sha, record)
-        self.assertEqual(json.loads((self.root / 'index.json').read_text())['assets'][0]['lossy_model'],
-                         'derby/house/lossy.glb')
+        lossy_assets.publish_one(self.root, run, 'house', 'derby/house/model.glb', files, fields, model_sha, record)
+        entry = json.loads((self.root / 'index.json').read_text())['assets'][0]
+        self.assertEqual((entry['lossy_model'], entry['preview_model']), (fields['lossy_model'], fields['preview_model']))
         self.assertEqual(lossy_assets.verify_derivatives(self.root), [])
         with self.assertRaisesRegex(ValueError, 'Model changed'):
-            lossy_assets.publish_one(self.root, run, 'house', 'derby/house/model.glb', 'derby/house/lossy.glb',
-                                     stage, 'a' * 64, dict(record, files=[], index=[]))
+            lossy_assets.publish_one(self.root, run, 'house', 'derby/house/model.glb', files, fields, 'a' * 64,
+                                     dict(record, files=[], index=[]))
         lossy_assets.main_rollback(type('Args', (), {'run': run})())
-        self.assertNotIn('lossy_model', json.loads((self.root / 'index.json').read_text())['assets'][0])
+        entry = json.loads((self.root / 'index.json').read_text())['assets'][0]
+        self.assertNotIn('lossy_model', entry)
+        self.assertNotIn('preview_model', entry)
         self.assertFalse((self.root / 'derby/house/lossy.glb').exists())
-
-    def fake_derive_into(self, lossy_path):
-        self.derived = []
-        self.fake_derive('house', self.root / 'derby/house/model.glb', lossy_path, self.args, None)
+        self.assertFalse((self.root / 'derby/house/preview.glb').exists())
 
 
 if __name__ == '__main__':
