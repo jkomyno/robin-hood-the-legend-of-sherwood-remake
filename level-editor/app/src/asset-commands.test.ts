@@ -126,9 +126,9 @@ test("saved maps retain reveal labels without legacy game state copies", () => {
   };
   const saved = compactAssetInstances(document, new Map()) as Level3D;
   assert.deepEqual(saved.sceneMetadata, {
-    assetOrigins: { house: [10, 20, 0] },
     reveal: { patches: [{ id: "patch-001", name: "Opened room" }] },
   });
+  assert.deepEqual(document.sceneMetadata.assetOrigins, { house: [10, 20, 0] });
   assert.deepEqual(document.sceneMetadata?.reveal, {
     version: 1,
     source_map: "Derby",

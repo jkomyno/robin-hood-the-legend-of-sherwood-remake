@@ -48,7 +48,7 @@ def check():
             assert part['source_obstacle']==1 and part['obstacle_local_game']['solid']is True
             points=part['obstacle_local_game']['points'];assert max(p['x']for p in points)-min(p['x']for p in points)==2
             assert len(descriptor['components'])==1
-            assert 'source_origin_scene' not in descriptor
+            assert len(descriptor['source_origin_scene']) == 3
             assert descriptor['model']=='model.glb' and not descriptor['resources']
             nodes=gltf(root/'assets'/entries[name]['model'])['nodes']
             assert len([n for n in nodes if 'mesh'in n])==1

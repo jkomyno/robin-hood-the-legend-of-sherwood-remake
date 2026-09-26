@@ -80,6 +80,10 @@ test("projection descriptors retain extras and state defaults while validating l
     () => parseProjectionAssetDescriptor({ ...descriptor, model: "../model.glb" }),
     /safe/,
   );
+  assert.throws(
+    () => parseProjectionAssetDescriptor({ ...descriptor, source_origin_scene: [0, Infinity, 0] }),
+    /source_origin_scene/,
+  );
 });
 
 test("library paths and identities reject traversal and duplicate source records", () => {

@@ -143,18 +143,9 @@ for (const item of plan.maps) {
     ...ground,
     ...plan.references[ground.id],
   }));
-  doc.sceneMetadata = {
-    ...item.metadata,
-    assetOrigins: Object.fromEntries(
-      [...references.keys()].map((id) => [
-        id,
-        plan.origins[id.replace(/--state-(initial|applied)$/, "")] ??
-          (old.sceneMetadata?.assetOrigins as Record<string, number[]> | undefined)?.[id] ?? [
-            0, 0, 0,
-          ],
-      ]),
-    ),
-  };
+  const metadata = { ...item.metadata };
+  delete metadata.assetOrigins;
+  doc.sceneMetadata = metadata;
   parseLevel3D(doc);
   const destination = path.join(plan.output, item.file);
   await fs.mkdir(path.dirname(destination), { recursive: true });

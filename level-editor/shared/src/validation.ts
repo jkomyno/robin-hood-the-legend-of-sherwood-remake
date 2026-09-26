@@ -770,6 +770,16 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     "unsupported kind/version",
   );
   for (const key of ["id", "name", "source_map"]) text(d[key], key);
+  if (d.source_origin_scene !== undefined)
+    check(
+      Array.isArray(d.source_origin_scene) &&
+        d.source_origin_scene.length === 3 &&
+        d.source_origin_scene.every(
+          (value: unknown) => typeof value === "number" && Number.isFinite(value),
+        ),
+      "asset.source_origin_scene",
+      "expected three finite coordinates",
+    );
   check(!/[\\/:\0]/.test(d.id), "asset id", "invalid identity");
   if (d.model_scene !== undefined)
     check(

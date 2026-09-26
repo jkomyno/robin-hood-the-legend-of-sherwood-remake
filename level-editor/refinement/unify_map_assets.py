@@ -35,7 +35,7 @@ def local_states(model):
 
 def local_descriptor(descriptor):
     descriptor = copy.deepcopy(descriptor)
-    for key in ('source_origin_scene', 'source_origin_game', 'reveal'): descriptor.pop(key, None)
+    for key in ('source_origin_game', 'reveal'): descriptor.pop(key, None)
     for component in descriptor.get('components', []):
         for key in list(component):
             if runtime_key(key): component.pop(key)
@@ -76,7 +76,8 @@ def stage(library, output):
             model = local_states(model)
             bundle.add(name,model,binary,external,selected)
         reference = bundle.write(identity)
-        descriptor.update(model='model.gltf',model_scene=primary,resources=reference['resources'])
+        descriptor.update(model='model.gltf',model_scene=primary,resources=reference['resources'],
+                          source_origin_scene=origins[identity])
         if variant_field:
             for name,value in descriptor[variant_field].items(): value.update(model='model.gltf',model_scene=name)
         entry = entries[identity];entry.update(model=str(Path(entry['descriptor']).parent/'model.gltf'),model_scene=primary)
@@ -146,7 +147,8 @@ def stage(library, output):
             origin=[round(sum(p['x']for p in points)/len(points)),round(-sum(p['y']for p in points)/len(points)/math.sin(angle)),0]
             game_origin=[origin[0],-origin[1]*math.sin(angle),0];origins[identity]=origin
             descriptor={'version':1,'kind':'projection-mapped-asset','id':identity,'name':next((g.get('name',group_id)for g in document['groups']if g['id']==group_id),group_id),
-                        'source_map':document['map'],'model':'model.gltf','model_scene':'default','parts':[]}
+                        'source_map':document['map'],'source_origin_scene':origin,
+                        'model':'model.gltf','model_scene':'default','parts':[]}
             for part in parts:
                 if part_owners.get(part['node']) in entries:continue
                 model,binary,external,child=source_nodes[part['node']]

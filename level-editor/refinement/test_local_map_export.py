@@ -38,13 +38,13 @@ class LocalMapExportTests(unittest.TestCase):
             self.assertEqual(document['sceneAssets'], [])
             self.assertEqual(len(document['assetSources']), 2)
             self.assertTrue(all(p['node'].startswith('asset:') for p in document['objects']))
-            self.assertEqual(document['objects'][0]['transform'], dict(dx=0, dy=0, dz=0, rot_deg=0))
+            self.assertNotIn('transform', document['objects'][0])
             refs = document['assetSources']
             self.assertEqual(refs[0]['resources'], refs[1]['resources'])
             self.assertEqual(len(list((library/'3d-assets/blobs').iterdir())), 0)
             for ref in refs:
                 descriptor = json.loads((library/ref['descriptor']).read_text())
-                self.assertNotIn('source_origin_scene', descriptor)
+                self.assertEqual(len(descriptor['source_origin_scene']), 3)
                 self.assertNotIn('source_origin_game', descriptor)
                 local, binary, _ = read_model(library/ref['model'], library)
                 self.assertTrue(ref['model'].endswith('.glb'))

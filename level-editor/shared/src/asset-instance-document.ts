@@ -101,14 +101,16 @@ const legacyPatchKeys = new Set([
 ]);
 
 function storedMetadata(metadata: Level3D["sceneMetadata"]): Level3D["sceneMetadata"] {
-  const reveal = metadata?.reveal;
-  if (!reveal || typeof reveal !== "object" || Array.isArray(reveal)) return metadata;
+  if (!metadata) return metadata;
+  const { assetOrigins: _assetOrigins, ...withoutOrigins } = metadata;
+  const reveal = withoutOrigins.reveal;
+  if (!reveal || typeof reveal !== "object" || Array.isArray(reveal)) return withoutOrigins;
   const record = reveal as Record<string, unknown>;
   if (
     !Object.keys(record).every((key) => legacyRevealKeys.has(key)) ||
     !Array.isArray(record.patches)
   )
-    return metadata;
+    return withoutOrigins;
   const patches = record.patches as unknown[];
   if (
     !patches.every(
@@ -121,9 +123,9 @@ function storedMetadata(metadata: Level3D["sceneMetadata"]): Level3D["sceneMetad
         typeof (patch as Record<string, unknown>).name === "string",
     )
   )
-    return metadata;
+    return withoutOrigins;
   return {
-    ...metadata,
+    ...withoutOrigins,
     reveal: {
       patches: patches.map((patch) => ({
         id: (patch as Record<string, string>).id,

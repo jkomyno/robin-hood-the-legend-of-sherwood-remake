@@ -30,7 +30,7 @@ def graph(staged, previous):
         relative = '3d-assets/'+entry['descriptor']
         descriptor = document(relative)
         if descriptor['id'] != entry['id']: raise ValueError('Descriptor identity mismatch')
-        if any(key in descriptor for key in ('source_origin_scene', 'source_origin_game', 'reveal')):
+        if any(key in descriptor for key in ('source_origin_game', 'reveal')):
             raise ValueError('Map metadata remains in asset: '+relative)
         model_path = str(Path(relative).parent/descriptor['model'])
         if model_path != '3d-assets/'+entry['model'] or Path(model_path).suffix not in ('.gltf', '.glb'):

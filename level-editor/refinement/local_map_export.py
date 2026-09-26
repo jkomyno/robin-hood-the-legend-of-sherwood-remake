@@ -28,13 +28,15 @@ def export_local_map(gltf, output, document):
             folder = Path(entry['descriptor']).parent
             shutil.copytree(source_assets/folder, source/'3d-assets'/folder, copy_function=os.link)
         placement_file = source_assets.with_name(source_assets.name+'-placements.json')
-        if placement_file.exists():
-            placements = json.loads(placement_file.read_text())
-            for entry in selected['assets']:
-                path = source/'3d-assets'/entry['descriptor']
-                descriptor = json.loads(path.read_text())
-                descriptor['source_origin_scene'] = placements[entry['id']]
-                # Replace the hardlink before adding temporary conversion metadata.
+        legacy_placements = json.loads(placement_file.read_text()) if placement_file.exists() else {}
+        for entry in selected['assets']:
+            path = source/'3d-assets'/entry['descriptor']
+            descriptor = json.loads(path.read_text())
+            if 'source_origin_scene' not in descriptor:
+                if entry['id'] not in legacy_placements:
+                    raise ValueError('Asset revision lacks export origin: '+entry['id'])
+                descriptor['source_origin_scene'] = legacy_placements[entry['id']]
+                # A legacy conversion must not modify the hardlinked source descriptor.
                 path.unlink(); path.write_text(json.dumps(descriptor))
         destination = root/'converted'/'library'
         conversion = stage(source, destination)

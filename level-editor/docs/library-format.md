@@ -54,9 +54,11 @@ otherwise.
 ## Local assets and placed instances
 
 Mesh children use a local Z-up frame; the glTF `map` wrapper converts to Y-up.
-Asset files contain no source-map placement origins, hinge positions in map
-coordinates, or mission-state records. Source obstacle/profile identifiers may
-remain as provenance. A reusable appearance switch has an asset-local ID.
+Each asset descriptor records its export pivot as `source_origin_scene` so a
+revised asset can be rebased without adding export provenance to the map. Asset
+files contain no hinge positions in map coordinates or mission-state records.
+Source obstacle/profile identifiers may remain as provenance. A reusable
+appearance switch has an asset-local ID.
 
 The map's `assetSources` pins the catalog descriptor, model, selected scene, and
 resources. Objects name their source with `asset:<asset-id>:<part-name>`. Their
@@ -74,12 +76,10 @@ Mission-specific reveal triggers and drawbridge bindings belong in per-object
 `missionBindings`. Bindings are applied to the placed clone, so inserting the same
 library asset elsewhere does not attach it to the original mission. The map keeps
 only reveal patch IDs and names in `sceneMetadata.reveal.patches` for editor labels;
-game patch states and review frames stay in their source manifests.
-`sceneMetadata.assetOrigins` is map-only refinement
-provenance: it lets publication compensate for an exporter choosing a different
-local origin while retaining the author's edits. It is not needed to render an
-asset or insert it manually. Terrain is a pinned background catalog asset in
-`sceneAssets`.
+game patch states and review frames stay in their source manifests. The map
+does not need export origins for editing or rendering; publication reads those
+from the old and new pinned asset descriptors when an asset revision changes
+its local origin. Terrain is a pinned background catalog asset in `sceneAssets`.
 
 Coordinates use ordinary floating-point values. The migration verifies collision
 footprints and flags and compares rendered views, allowing small rasterization

@@ -61,7 +61,7 @@ def check():
             standalone_pivots={'bridge': plan['standalone_pivot']}, include_hidden_objects=['Lowered'])
         descriptor = json.loads((output / 'bridge/asset.json').read_text())
         assert exported_pivot(output, 'bridge') == plan['standalone_pivot']
-        assert 'source_origin_scene' not in descriptor
+        assert descriptor['source_origin_scene'] == plan['standalone_pivot']
         assert {p['node']: p['default_hidden'] for p in descriptor['parts']} == {
             'building-001': False, 'building-002': True}
         assert descriptor['bounds_local_scene'] == {'min': [-7., -3., -1.], 'max': [7., 3., 1.]}

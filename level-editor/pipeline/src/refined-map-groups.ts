@@ -175,15 +175,12 @@ export function mergeRefinedGroups(
 }
 
 /** Preserve placed poses when a revised local asset uses a different export origin. */
-export function rebaseLibraryRevision(document: Level3D, staged: Level3D) {
-  const oldOrigins = document.sceneMetadata?.assetOrigins as
-    | Record<string, [number, number, number]>
-    | undefined;
-  const newOrigins = staged.sceneMetadata?.assetOrigins as
-    | Record<string, [number, number, number]>
-    | undefined;
-  if (!oldOrigins || !newOrigins)
-    throw new Error("Local asset revision requires map placement origins");
+export function rebaseLibraryRevision(
+  document: Level3D,
+  staged: Level3D,
+  oldOrigins: Record<string, [number, number, number]>,
+  newOrigins: Record<string, [number, number, number]>,
+) {
   const sourceName = (node: string) =>
     node.startsWith("asset:") ? node.split(":").slice(2).join(":") : node;
   const replacements = new Map(staged.objects.map((part) => [sourceName(part.node), part]));
@@ -205,7 +202,7 @@ export function rebaseLibraryRevision(document: Level3D, staged: Level3D) {
     const oldId = part.node.split(":")[1]!,
       newId = next.node.split(":")[1]!;
     if (!oldOrigins[oldId] || !newOrigins[newId])
-      throw new Error(`Missing asset origin: ${part.id}`);
+      throw new Error(`Missing pinned asset export origin: ${part.id}`);
     const delta = newOrigins[newId].map((value, index) => value - oldOrigins[oldId]![index]!) as [
       number,
       number,

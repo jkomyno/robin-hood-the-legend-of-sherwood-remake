@@ -17,6 +17,8 @@ export interface ProjectionAssetDescriptor {
   id: string;
   name: string;
   source_map: string;
+  /** Export pivot in the source scene; used when replacing this asset revision. */
+  source_origin_scene?: [number, number, number];
   model: string;
   /** Exact named scene in a shared multi-state GLB. */
   model_scene?: string;
@@ -41,10 +43,29 @@ export interface ProjectionAssetDescriptor {
     node: string;
     name: string;
     default_hidden?: boolean;
-    obstacle_local_game: SightObstacle;
   } & (
-    | { source_obstacle: number; source_components?: string[]; mission_profile?: never }
-    | { source_obstacle?: never; source_components?: never; mission_profile: string }
+    | {
+        source_obstacle: number;
+        source_components?: string[];
+        mission_profile?: never;
+        scenery?: never;
+        obstacle_local_game: SightObstacle;
+      }
+    | {
+        source_obstacle?: never;
+        source_components?: never;
+        mission_profile: string;
+        scenery?: never;
+        obstacle_local_game: SightObstacle;
+      }
+    | {
+        /** Authored scenery (`foliage-*`/`scenery-*`): visual only, the game has no obstacle. */
+        source_obstacle?: never;
+        source_components?: never;
+        mission_profile?: never;
+        scenery: true;
+        obstacle_local_game?: never;
+      }
   ))[];
 }
 

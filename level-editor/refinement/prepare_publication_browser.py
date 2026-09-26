@@ -62,7 +62,7 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', dir=stage) as previous:
             json.dump(document, previous); previous.flush()
             document=json.loads(subprocess.check_output(['node', str(Path(__file__).resolve().parents[1]/'pipeline/src/rebase-map-assets.ts'),
-                previous.name, str(stage/f'{map_name}.rhlos-map.json')], text=True))
+                previous.name, str(library), str(stage/f'{map_name}.rhlos-map.json'), str(asset_library)], text=True))
     def canonical(node): return node.split(':', 2)[-1] if node.startswith('asset:') else node
     if {canonical(obj["node"]) for obj in document["objects"]} != part_names:
         raise ValueError("Canonical part identities changed; explicit editor document migration required")

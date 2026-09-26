@@ -578,8 +578,6 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
     if index["version"] != 1:
         raise ValueError("Unsupported asset index version")
     entries = {entry["id"]: entry for entry in index["assets"]}
-    placement_path = output_dir.with_name(output_dir.name+"-placements.json")
-    placements = json.loads(placement_path.read_text()) if placement_path.exists() else {}
     for key in ids:
         report = export_editor(map_name, output_dir / key / "model.glb", asset_id=key,
             standalone_pivot=pivots.get(key),
@@ -587,7 +585,7 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
         descriptor = report["asset"]
         px, py, pz = report["placement_origin_scene"]
         sin, cos = math.sin(math.radians(35)), math.cos(math.radians(35))
-        placements[key] = [px, py, pz]
+        descriptor["source_origin_scene"] = [px, py, pz]
         for part in descriptor["parts"]:
             if 'mission_profile' in part or part.get('source_components'):
                 # export_editor has already applied the common variant pivot.
@@ -607,11 +605,12 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
             entries[key]['editor_usage'] = descriptor['editor_usage']
     index["assets"] = sorted(entries.values(), key=lambda entry: entry["id"])
     index_path.write_text(json.dumps(index, indent=2) + "\n")
-    placement_path.write_text(json.dumps(placements, indent=2) + "\n")
     return {"assets": len(ids), "index": str(index_path)}
 
 
 def exported_pivot(directory, asset_id):
-    """Placement evidence is kept outside reusable asset descriptors."""
+    """Read the pivot pinned to this exported asset revision."""
     directory = Path(directory)
-    return json.loads(directory.with_name(directory.name+'-placements.json').read_text())[asset_id]
+    index = json.loads((directory/'index.json').read_text())
+    entry = next(entry for entry in index['assets'] if entry['id'] == asset_id)
+    return json.loads((directory/entry['descriptor']).read_text())['source_origin_scene']

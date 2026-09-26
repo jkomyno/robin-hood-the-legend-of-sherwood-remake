@@ -109,7 +109,6 @@ test("local asset origin changes preserve rotated authored placements and flags"
   const { rebaseLibraryRevision } = await import("./refined-map-groups.ts");
   const { transformedObstacle } = await import("@rle/shared");
   const document = fixture();
-  document.sceneMetadata = { assetOrigins: { hall: [100, 200, 0] } };
   document.objects.forEach((part) => {
     part.node = `asset:hall:${part.node}`;
   });
@@ -118,13 +117,12 @@ test("local asset origin changes preserve rotated authored placements and flags"
   document.objects[0]!.hidden = true;
   const expected = document.objects.map((part) => transformedObstacle(document, part));
   const revised = structuredClone(document);
-  revised.sceneMetadata = { assetOrigins: { hall: [120, 190, 0] } };
   for (const part of revised.objects)
     for (const point of part.obstacle.points) {
       point.x -= 20;
       point.y -= 10 * Math.sin((35 * Math.PI) / 180);
     }
-  rebaseLibraryRevision(document, revised);
+  rebaseLibraryRevision(document, revised, { hall: [100, 200, 0] }, { hall: [120, 190, 0] });
   assert.equal(document.objects[0]!.hidden, true);
   for (let i = 0; i < document.objects.length; i++) {
     const actual = transformedObstacle(document, document.objects[i]!);
