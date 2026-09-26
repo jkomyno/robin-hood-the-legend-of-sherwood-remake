@@ -669,8 +669,8 @@ or assets are missing; they must not silently fall back to empty/unowned output.
 
 ## 14. Map-specific recipes and how to generalize them
 
-Files named `derby_asset_*.py`, `derby_round2_*.py`, `derby_round3_*.py`, and
-similar are useful geometry recipes, but they are map-specific worker
+Files named `derby_asset_*.py` and `derby_round*_*.py` in `level-editor/blender/`, and
+the recipes under `level-editor/blender/<map>/`, are useful geometry recipes, but they are map-specific worker
 implementations. For another map, copy the recipe pattern and parameterize:
 
 - source node IDs and logical asset ID;

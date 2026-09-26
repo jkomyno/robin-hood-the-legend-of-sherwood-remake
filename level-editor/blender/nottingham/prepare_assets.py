@@ -100,6 +100,7 @@ def main(argv=None):
         parser.error("Render dimensions must be positive and context padding nonnegative")
 
     sys.path.insert(0, str(Path(__file__).resolve().parent))
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'refinement'))
     from render_slots import acquire
     acquire()
     from freeze_tooling import select_tooling

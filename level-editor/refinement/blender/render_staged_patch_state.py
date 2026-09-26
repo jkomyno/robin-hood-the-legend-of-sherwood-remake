@@ -4,7 +4,6 @@ from pathlib import Path
 import sys
 import bpy
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-sys.path.append(str(Path(__file__).resolve().parents[2]/'blender'))
 from render_multiview_asset import render
 
 

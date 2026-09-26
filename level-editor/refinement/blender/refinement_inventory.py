@@ -3,12 +3,6 @@
 Run through Blender MCP against a copied scene. This module never reparents or
 changes geometry. Reviewed ownership is applied separately with group_assets.
 """
-import sys as _refinement_sys
-from pathlib import Path as _RefinementPath
-_refinement_legacy = str(_RefinementPath(__file__).resolve().parents[2] / 'blender')
-if _refinement_legacy not in _refinement_sys.path:
-    _refinement_sys.path.append(_refinement_legacy)
-
 import hashlib
 import json
 import math

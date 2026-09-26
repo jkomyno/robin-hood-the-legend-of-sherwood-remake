@@ -45,7 +45,7 @@ def run(canonical, target, output, *, allow_bounded_donors=False, shared_surface
     import bpy
     import numpy as np
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    sys.path.append(str(Path(__file__).resolve().parents[2] / 'blender/nottingham'))
+    sys.path.append(str(Path(__file__).resolve().parents[1]))
     from render_slots import acquire, release
     acquire()
     from refinement_workspace import _geometry

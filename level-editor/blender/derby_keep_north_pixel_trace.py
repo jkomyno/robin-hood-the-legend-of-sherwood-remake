@@ -132,6 +132,7 @@ def revise():
     return result
 
 def review():
+    sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'refinement/blender'))
     from refinement_review import render_review
     from source_projection_bake import bake
     from review_sunlight import configuration

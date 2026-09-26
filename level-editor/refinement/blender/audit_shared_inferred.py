@@ -9,7 +9,7 @@ def run(output):
     import bpy
     import numpy as np
     sys.path.insert(0,str(Path(__file__).resolve().parent))
-    sys.path.append(str(Path(__file__).resolve().parents[2]/'blender/nottingham'))
+    sys.path.append(str(Path(__file__).resolve().parents[1]))
     from render_slots import acquire
     from transfer_shared_inferred import merge_inferred
     acquire()

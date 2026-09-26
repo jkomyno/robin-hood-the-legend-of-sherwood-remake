@@ -3,12 +3,6 @@
 Run in an isolated loaded worker blend. Nothing is published or copied into the
 main scene; the resulting worker is suitable for geometry-checked texture import.
 """
-import sys as _refinement_sys
-from pathlib import Path as _RefinementPath
-_refinement_legacy = str(_RefinementPath(__file__).resolve().parents[2] / 'blender')
-if _refinement_legacy not in _refinement_sys.path:
-    _refinement_sys.path.append(_refinement_legacy)
-
 from array import array
 import hashlib
 import json

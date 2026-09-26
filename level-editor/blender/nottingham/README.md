@@ -1,11 +1,18 @@
 # Nottingham refinement
 
-These recipes implement the review workflow in
-`../../work/derby-refinement/REFINEMENT_PROCEDURE.md`. Run commands from the
-repository root. Generated evidence lives in `level-editor/work/nottingham-refinement/`.
+Nottingham is finished and published. This directory keeps only its pipeline
+infrastructure (setup, grouping, source states, workspace preparation, gallery)
+and their tests; the per-asset geometry, texture and audit recipes were removed
+in the 2026-09-26 Python cleanup and remain in git history (tag
+`python-cleanup-base`). They implemented the workflow in
+[`../../refinement/PROCEDURE.md`](../../refinement/PROCEDURE.md). Run commands
+from the repository root. Generated evidence lives in
+`level-editor/work/nottingham-refinement/`.
 
-The reviewed grouping is `grouping/catalog-v7.json`: 117 selectable groups own
-555 canonical source parts exactly once. Terrain has its own additional review
+The initial reviewed grouping was `grouping/catalog-v7.json` (117 selectable
+groups owning 555 canonical source parts exactly once); the final catalog is
+`grouping/catalog-v15.json`, reached through the removed `revise_catalog_v8…v15`
+and `group_scene_v8…v15` migration steps. Terrain has its own additional review
 workspace. The market houses form one market terrace with selectable children.
 
 `setup_scene.py` records the source inventory and recovers the omitted thin slab.
@@ -16,12 +23,11 @@ V11 baseline contains only existing source nodes; component sidecars are applied
 to the owning workspace after its geometry recipe creates those components.
 Unknown ownership is represented by a rejection mask and neutral shading.
 
-`freeze_tooling.py` snapshots implementations from `level-editor/refinement/blender`
-with supporting helpers from `level-editor/blender`; compatibility entry points
-are replaced by their implementations in each new snapshot. Recipes select the
+`freeze_tooling.py` snapshots the shared implementations from
+`level-editor/refinement/blender` (plus the Derby recipes in `level-editor/blender`). Recipes select the
 snapshot referenced by `tooling/current.json`; changing live shared helpers does
-not alter an existing worker's implementation. `render_slots.py` limits expensive
-Blender work to two concurrent processes. Use background Blender with
+not alter an existing worker's implementation. The machine-wide render slot pool
+(`level-editor/refinement/render_slots.py`, three slots) limits expensive Blender work. Use background Blender with
 `--threads 2 --python-exit-code 1` and acquire a render slot before loading and
 rendering large scenes.
 

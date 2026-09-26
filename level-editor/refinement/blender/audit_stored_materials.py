@@ -14,9 +14,6 @@ import struct
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-_legacy = str(Path(__file__).resolve().parents[2] / 'blender')
-if _legacy not in sys.path:
-    sys.path.append(_legacy)
 
 import bpy
 from mathutils import Matrix

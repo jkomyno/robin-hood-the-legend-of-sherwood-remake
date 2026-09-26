@@ -4,12 +4,6 @@ Run annotate_layers(layers_json) after grouping. This only writes metadata; it
 never hides geometry. Render/cutaway visibility is a separate authored decision.
 The manifest preserves each patch's independent mask and sight state changes.
 """
-import sys as _refinement_sys
-from pathlib import Path as _RefinementPath
-_refinement_legacy = str(_RefinementPath(__file__).resolve().parents[2] / 'blender')
-if _refinement_legacy not in _refinement_sys.path:
-    _refinement_sys.path.append(_refinement_legacy)
-
 import json
 import hashlib
 import re

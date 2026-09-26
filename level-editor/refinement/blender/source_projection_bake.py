@@ -3,12 +3,6 @@
 Run once per reveal layer, passing that layer's source image and occluder nodes.
 Geometry and existing UV layers are retained. No save or publication is implicit.
 """
-import sys as _refinement_sys
-from pathlib import Path as _RefinementPath
-_refinement_legacy = str(_RefinementPath(__file__).resolve().parents[2] / 'blender')
-if _refinement_legacy not in _refinement_sys.path:
-    _refinement_sys.path.append(_refinement_legacy)
-
 import hashlib
 import json
 import math

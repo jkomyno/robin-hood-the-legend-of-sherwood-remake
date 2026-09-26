@@ -1,11 +1,16 @@
-# Projection-mapped map refinement
+# Per-map Blender recipes
 
-All Blender operations run through Blender MCP. These scripts accept explicit
-paths and preserve the editor's source obstacle IDs. Generated `.blend`, GLB,
-render and library files stay in the ignored `work/` and `library/` directories.
+This directory holds map-specific recipes only: `blender/<map>/` for Leicester,
+Lincoln, Nottingham and Sherwood, and the Derby recipes at this top level. All
+shared tooling (including `setup_map`, `render_views`, `reproject_map`,
+`run_worker` and the export/review/bake helpers) lives in
+`../refinement/blender/`; see [the refinement index](../refinement/README.md).
+Generated `.blend`, GLB, render and library files stay in the ignored `work/`
+and `library/` directories.
 
-For current progress and known defects, see [derby-review.md](derby-review.md).
-Use the [refinement worker workflow](refinement-workflow.md) for new passes:
+The rest of this file is the Derby history. For its progress and known defects,
+see [derby-review.md](derby-review.md).
+Use the [refinement worker workflow](../refinement/refinement-workflow.md) for new passes:
 review scene grouping first, then prepare one isolated workspace per asset with
 source context and matching eight-view `input/` and `modified/` review packets.
 The textured packets show original projected pixels and shaded unknown surfaces;
@@ -40,7 +45,7 @@ models as palette insertion; the map JSON retains placement and mission bindings
 Load a module without invoking it implicitly:
 
 ```python
-path = ROOT / "level-editor/blender/export_editor.py"
+path = ROOT / "level-editor/refinement/blender/export_editor.py"
 scope = {"__file__": str(path), "__name__": "export_editor"}
 exec(compile(path.read_text(), str(path), "exec"), scope)
 result = scope["export_editor"]("Derby", STAGING / "derby.rhlos-map.json",
@@ -73,7 +78,7 @@ result = scope["export_editor"]("Derby", STAGING / "derby.rhlos-map.json",
 - `reproject_map.reproject_layers(manifest_path, report_dir)` refreshes projection
   after geometry changes. Generate its inputs with `export-interior-layers.ts`.
   Covered exterior artwork and revealed interior artwork have separate receiver
-  and visibility sets. See [reprojection.md](reprojection.md) for limitations.
+  and visibility sets. See [reprojection.md](../refinement/reprojection.md) for limitations.
 - `export_editor.export_editor(map_name, output_path)` exports the current visible
   working meshes, including evaluated modifiers. Hidden baseline/reference
   geometry and cameras are excluded. Each named asset parents stable obstacle
@@ -113,7 +118,7 @@ Run separate jobs against copied checkpoints with `run_worker.py`:
 
 ```sh
 /usr/bin/blender --background --factory-startup --python-exit-code 1 \
-  --python level-editor/blender/run_worker.py -- \
+  --python level-editor/refinement/blender/run_worker.py -- \
   --source level-editor/work/derby-refinement/derby-refinement.blend \
   --job path/to/job.py --output-dir path/to/fresh-worker-directory
 ```

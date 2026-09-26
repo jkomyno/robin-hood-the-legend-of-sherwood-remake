@@ -291,7 +291,7 @@ sample showed 12.3% busy time, 14.9 MiB/s combined throughput and 3.68 ms averag
 read/write completion latency. Pause new launches below 6 GiB available memory
 or measured swapping/device latency causing sustained slowdowns; do not kill
 active work. Recheck with
-`python3 level-editor/blender/measure_blender_resources.py --seconds 10` on the
+`python3 level-editor/refinement/blender/measure_blender_resources.py --seconds 10` on the
 host, since sandbox process isolation hides other workers. Worker instructions
 and coordinator scheduling use the same provisional cap.
 

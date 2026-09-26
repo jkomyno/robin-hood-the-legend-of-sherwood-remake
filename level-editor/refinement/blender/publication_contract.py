@@ -1,10 +1,4 @@
 """Map-independent catalog coverage and staged scene naming checks."""
-import sys as _refinement_sys
-from pathlib import Path as _RefinementPath
-_refinement_legacy = str(_RefinementPath(__file__).resolve().parents[2] / 'blender')
-if _refinement_legacy not in _refinement_sys.path:
-    _refinement_sys.path.append(_refinement_legacy)
-
 from pathlib import Path
 import re
 from catalog_schema import source_for_part, parse_catalog

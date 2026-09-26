@@ -4,12 +4,6 @@ Direction is toward the sun in map world coordinates, not camera coordinates.
 The historical default is Derby's reviewed setting. Other maps must supply their
 own artwork-calibrated settings; this default is not evidence for their lighting.
 """
-import sys as _refinement_sys
-from pathlib import Path as _RefinementPath
-_refinement_legacy = str(_RefinementPath(__file__).resolve().parents[2] / 'blender')
-if _refinement_legacy not in _refinement_sys.path:
-    _refinement_sys.path.append(_refinement_legacy)
-
 from array import array
 from pathlib import Path
 

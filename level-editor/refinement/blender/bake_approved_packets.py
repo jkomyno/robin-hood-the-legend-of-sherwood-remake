@@ -4,12 +4,6 @@ Blender CLI: --python bake_approved_packets.py -- jobs.json
 Each job provides manifest, generated_image, output and optionally source_blend.
 Existing outputs are refused by the single-asset staging implementation.
 """
-import sys as _refinement_sys
-from pathlib import Path as _RefinementPath
-_refinement_legacy = str(_RefinementPath(__file__).resolve().parents[2] / 'blender')
-if _refinement_legacy not in _refinement_sys.path:
-    _refinement_sys.path.append(_refinement_legacy)
-
 import json
 from pathlib import Path
 import sys

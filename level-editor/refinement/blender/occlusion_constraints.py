@@ -25,12 +25,6 @@ A source_node plus projection_component assignment overrides the source_node
 assignment, which overrides its asset group assignment. Components require an
 explicit source_node; their names never match across unrelated canonical parts.
 Objects expose the same projection_component custom property. Labels absent
-import sys as _refinement_sys
-from pathlib import Path as _RefinementPath
-_refinement_legacy = str(_RefinementPath(__file__).resolve().parents[2] / 'blender')
-if _refinement_legacy not in _refinement_sys.path:
-    _refinement_sys.path.append(_refinement_legacy)
-
 from projections, and objects without an explicit
 assignment, remain unconstrained. A present label requires an exact source hash,
 nonempty state description and reviewed=true on EVERY assignment. State names

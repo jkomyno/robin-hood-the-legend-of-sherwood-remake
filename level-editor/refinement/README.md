@@ -1,14 +1,80 @@
 # Shared map refinement tooling
 
-Start with [PROCEDURE.md](PROCEDURE.md).
+Start with [PROCEDURE.md](PROCEDURE.md): it is the canonical workflow. This file
+is the index of where the Python lives and which entry points to run.
 
-- `blender/`: shared inventory, grouping, review, projection, texture baking,
-  publication and HTML gallery implementations.
-- `record_approval.py`: records an actual user decision and hashes its evidence.
-- `prepare_texture_packet.py`: copies an eligible, explicitly approved packet
-  without resizing its cameras or images; builds local source-protection masks.
-- `build_texture_gallery.py`: collects separately baked texture candidates whose
-  eight actual views have been inspected, using the shared gallery generator.
+## Layout
+
+| Path | Contents |
+|---|---|
+| `refinement/*.py` | Pure-Python tooling: approvals, texture packets, staging, promotion, library install, `render_slots`, `run_tests` |
+| `refinement/blender/*.py` | Everything that runs inside Blender (bpy): inventory, grouping, workspaces, review renders, projection, bakes, export, verification, plus their tests |
+| `refinement/recipes/<name>/` | Map-specific recipes that reuse the shared tooling (Derby shelter texture recovery) |
+| `refinement/plans/` | JSON staging plans for `blender/stage_approved_batch.py` |
+| `refinement/browser/` | Browser audit of staged publications (`verify_publication.mjs`) |
+| `../blender/<map>/` | Per-map pipeline scripts and recipes (Leicester, Lincoln, Nottingham, Sherwood); Derby recipes sit directly in `../blender/` |
+| `../pipeline/src/refinement/generate-textures.ts` | Two-image texture generation driver (Node dependencies) |
+
+Other docs: [reprojection.md](reprojection.md) (source reprojection and its limits),
+[refinement-workflow.md](refinement-workflow.md) (isolated worker workspaces),
+[CORNER_EDITOR.md](CORNER_EDITOR.md), [../docs/library-format.md](../docs/library-format.md),
+and each map's `../blender/<map>/README.md`.
+
+## Entry points
+
+Per-map pipeline, in order (each map has its own copy under `../blender/<map>/`):
+`setup_scene` → `group_scene` → `source_states` → `calibrate_source_sun` →
+`prepare_assets` → lane recipes (`refine_*`, run in Blender workers) →
+`build_gallery` → explicit approval → texture packets and bakes →
+`publish_stage` → `publish_export` → the shared verification and promotion below.
+
+| Step | Script | Notes |
+|---|---|---|
+| Inventory / grouping | `blender/refinement_inventory.py`, `blender/group_assets.py` | [PROCEDURE §13](PROCEDURE.md#13-reusable-scripts) |
+| Scene import, camera renders | `blender/setup_map.py`, `blender/render_views.py`, `blender/inspect_asset.py` | Derby-era helpers, still imported by map setup |
+| Isolated workers | `blender/refinement_workspace.py`, `blender/run_worker.py` | [refinement-workflow.md](refinement-workflow.md) |
+| Review renders and galleries | `blender/refinement_review.py`, `blender/render_multiview_asset.py`, `blender/build_review_gallery.py` | |
+| Source projection | `blender/source_projection_bake.py`, `blender/reproject_map.py`, `blender/projection_regions.py`, `blender/occlusion_constraints.py`, `blender/interior_layers.py` | [reprojection.md](reprojection.md) |
+| Approval records | `record_approval.py`, `texture_decisions.py`, `publication_authorization.py` | |
+| Texture packets | `prepare_texture_packet.py`, `prepare_planar_texture_packet.py`, `prepare_uv_atlas_texture_packet.py` | |
+| Texture bakes | `blender/bake_reviewed_asset.py`, `blender/bake_approved_packets.py`, `blender/bake_planar_texture.py`, `blender/bake_uv_atlas_texture.py`, `blender/project_reviewed_texture.py` | |
+| Texture gallery | `build_texture_gallery.py` | |
+| Staging | `blender/stage_approved_batch.py`, `blender/stage_reviewed_publication.py`, `blender/bind_patch_material_states.py`, `blender/export_editor.py` | |
+| Verification | `blender/verify_staged_handoffs.py`, `blender/verify_publication_assets.py`, `blender/verify_staged_patch_state.py`, `blender/render_staged_patch_state.py`, `publication_preflight.py` | |
+| Promotion | `prepare_publication_browser.py` → `browser/verify_publication.mjs` → `promote_staged_publication.py`, `apply_canonical_library.py` | [PROCEDURE](PROCEDURE.md#map-publication-format) |
+| Browser derivatives | `blender/lossy_assets.py` | |
+| Corner editor | `prepare_corner_editor.py`, `corner_editor.py`, `audit_corner_constraints.py` | [CORNER_EDITOR.md](CORNER_EDITOR.md) |
+
+Every script has a module docstring; `--help` lists its arguments.
+
+## Conventions
+
+- **Imports.** Blender scripts put their own directory on `sys.path` and import
+  shared helpers by bare module name. Map recipes that run in workers call
+  `freeze_tooling.select_tooling()` first: it pins a content-addressed copy of
+  `refinement/blender/*.py` (and the Derby recipes in `../blender/`) from
+  `work/<map>-refinement/tooling/<id>/`, so later edits to live helpers never
+  change an existing worker's implementation. Pure-Python modules in
+  `refinement/` are not part of those snapshots.
+- **Render slots.** `render_slots.acquire()` (in `refinement/`) takes one of
+  three machine-wide slots in `work/lincoln-refinement/render-slots/`; every map
+  and shared tool uses that one pool. Acquire before loading large scenes.
+- **Recipe provenance.** Gallery builders re-hash the `candidate.json` `"recipe"`
+  path on every rebuild. New packets should call
+  `evidence_io.record_recipe(workspace, __file__)` and store its workspace-relative
+  `recipe`, so the live script can later change or be deleted. Never edit a recipe
+  in place once its hash is bound in evidence; add a new one. Old recipes are
+  deleted rather than archived; git history (tag `python-cleanup-base`) and the
+  recorded `recipe_sha256` values keep them recoverable.
+- **Helpers.** `blender/evidence_io.py` has `sha`, `digest`, `read_json`,
+  `write_json` and `record_recipe`; use it instead of adding another copy.
+- **Tests.** `test_*.py` sits next to the module it tests. Run everything with
+  `python3 level-editor/refinement/run_tests.py` (plain tests in python3, tests
+  that import bpy in `blender --background --factory-startup`); `-k <text>`
+  filters, `--no-blender` skips Blender tests, `--selftests` adds the
+  `*_selftest.py` integration runs.
+
+## Notes on individual tools
 
 Collectors that produce a gallery ownership report can call
 `record_gallery_decision(gallery_path, records_path, asset_id, decision, exact_text)`
@@ -19,10 +85,10 @@ items hidden from the pending page remain addressable through gallery history.
 - `../pipeline/src/refinement/generate-textures.ts`: shared two-image generation
   driver; kept inside the pipeline package for its Node dependencies.
 
-Old `level-editor/blender/*.py` entry points forward to the implementations here
-so existing worker recipes and saved commands keep working. Remaining low-level
-Blender helpers are loaded from that directory. Map-specific recipes and output
-packets stay with their map; moving their coordinates would not make them generic.
+The former `level-editor/blender/*.py` compatibility forwarders and low-level
+helpers were folded into `refinement/blender/` on 2026-09-26; commands saved
+before then must use the new path. Map-specific recipes and output packets stay
+with their map; moving their coordinates would not make them generic.
 
 ```bash
 python3 level-editor/refinement/blender/build_review_gallery.py \

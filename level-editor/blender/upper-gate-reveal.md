@@ -55,7 +55,7 @@ reject changes; create a new review packet for the changed partition.
 Run the regression with:
 
 ```sh
-/usr/bin/blender --background --threads 2 --python-exit-code 1 --python level-editor/blender/test_reveal_components.py
+/usr/bin/blender --background --threads 2 --python-exit-code 1 --python level-editor/refinement/blender/test_reveal_components.py
 ```
 
 It tests the shared bake and preview, retained parapet occlusion, covered-source

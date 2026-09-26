@@ -182,7 +182,7 @@ def components(wood):
 def run(workspace):
     workspace=Path(workspace).resolve();config=json.loads((workspace/'workspace.json').read_text())
     if Path(bpy.data.filepath).resolve()!=workspace/'model.blend':raise ValueError('Open isolated model.blend')
-    sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+    sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'refinement/blender'))
     from refinement_workspace import validate
     validate(workspace)
     targets=[o for o in bpy.data.collections[config['collection_name']].all_objects

@@ -257,7 +257,7 @@ def refine_crown(obj,node,evidence):
 def run(workspace):
     workspace=Path(workspace).resolve();config=json.loads((workspace/'workspace.json').read_text())
     if Path(bpy.data.filepath).resolve()!=workspace/'model.blend':raise ValueError('Open isolated tree worker model')
-    sys.path.insert(0,str(Path(__file__).resolve().parents[1]));from refinement_workspace import validate
+    sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'refinement/blender'));from refinement_workspace import validate
     validate(workspace)
     objects=[o for o in bpy.data.collections[config['collection_name']].all_objects if o.type=='MESH' and o.get('asset_group')==config['asset_id']]
     crowns=[o for o in objects if o.get('projection_component')=='crown']

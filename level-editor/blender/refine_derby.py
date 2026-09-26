@@ -17,6 +17,7 @@ def stage(repository_root, output_dir, layers_manifest, include_watchtower=False
     if output.exists():
         raise FileExistsError("Use a fresh stage directory")
     scripts = root / "level-editor/blender"
+    shared = root / "level-editor/refinement/blender"
     manifest = Path(layers_manifest).resolve()
     source = manifest.parent / json.loads(manifest.read_text())["sources"]["exterior"]
     if not source.is_file():
@@ -27,8 +28,9 @@ def stage(repository_root, output_dir, layers_manifest, include_watchtower=False
     def load(name):
         previous_path = list(sys.path)
         try:
-            sys.path.insert(0, str(scripts))
-            return runpy.run_path(str(scripts / (name + ".py")))
+            sys.path[:0] = [str(scripts), str(shared)]
+            directory = scripts if (scripts / (name + ".py")).is_file() else shared
+            return runpy.run_path(str(directory / (name + ".py")))
         finally:
             sys.path[:] = previous_path
 
