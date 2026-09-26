@@ -8,6 +8,7 @@ import {
 } from "@rle/shared";
 import { isNotFound, readJson, subdir } from "./fs.ts";
 import { SceneAssetLoader } from "./scene-assets.ts";
+import { readReleaseModel, releaseApplies } from "./release-models.ts";
 import { disposeObjectResources } from "./resources.ts";
 
 async function libraryFile(root: FileSystemDirectoryHandle, path: string): Promise<File> {
@@ -46,7 +47,8 @@ export async function listProjectionAssets(root: FileSystemDirectoryHandle, map?
   catch (error) { if (isNotFound(error)) return []; throw error; }
   const entries = parseProjectionAssetIndex(index).filter(entry => (!map || entry.source_map.toLowerCase() === map.toLowerCase()))
     .map(entry => ({ ...entry, descriptor: `3d-assets/${entry.descriptor}`, model: `3d-assets/${entry.model}`,
-      ...(entry.preview_model ? { preview_model: `3d-assets/${entry.preview_model}` } : {}) }));
+      ...(entry.preview_model ? { preview_model: `3d-assets/${entry.preview_model}` } : {}),
+      ...(entry.release_model ? { release_model: `3d-assets/${entry.release_model}` } : {}) }));
   const expanded = await Promise.all(entries.map(async entry => {
     const descriptor = parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text()));
     if (descriptor.id !== entry.id || descriptor.source_map.toLowerCase() !== entry.source_map.toLowerCase()) throw new Error(`Asset catalog identity mismatch: ${entry.id}`);
@@ -58,12 +60,24 @@ export async function listProjectionAssets(root: FileSystemDirectoryHandle, map?
       const variant = variants[state];
       return variant ? [{ ...entry, id: assetVariantId(entry.id, state), name: `${entry.name} — ${variant.name} (static)`,
         state_variant: state, model: `${parent}/${variant.model}`, model_scene: variant.model_scene,
-        preview_model: variant.model === descriptor.model && variant.model_scene ? entry.preview_model : undefined }] : [];
+        preview_model: variant.model === descriptor.model && variant.model_scene ? entry.preview_model : undefined,
+        release_model: variant.model === descriptor.model ? entry.release_model : undefined }] : [];
     })];
   }));
   const flattened = expanded.flat();
   if (new Set(flattened.map(entry => entry.id)).size !== flattened.length) throw new Error("Duplicate static asset variant identity");
   return flattened;
+}
+
+/** Library model path -> release model path, both prefixed like saved references. */
+export async function listReleaseModels(root: FileSystemDirectoryHandle): Promise<Map<string, string>> {
+  const dir = await subdir(root, ["3d-assets"]);
+  if (!dir) return new Map();
+  let index: unknown;
+  try { index = await readJson(dir, "index.json"); }
+  catch (error) { if (isNotFound(error)) return new Map(); throw error; }
+  return new Map(parseProjectionAssetIndex(index).flatMap(entry =>
+    entry.release_model ? [[`3d-assets/${entry.model}`, `3d-assets/${entry.release_model}`] as const] : []));
 }
 
 export interface PreparedProjectionAsset {
@@ -76,7 +90,7 @@ export interface PreparedProjectionAsset {
 /** Owns resources until the caller adopts the result. Failed loads clean up. */
 export async function prepareProjectionAsset(
   root: FileSystemDirectoryHandle,
-  entry: Pick<ProjectionAssetEntry, "id" | "descriptor" | "model" | "state_variant" | "model_scene">,
+  entry: Pick<ProjectionAssetEntry, "id" | "descriptor" | "model" | "state_variant" | "model_scene" | "release_model">,
   _map: string,
   expected?: ExternalAssetSource,
   sharedLoader?: SceneAssetLoader,
@@ -98,9 +112,20 @@ export async function prepareProjectionAsset(
   if (entry.model_scene !== descriptor.model_scene) throw new Error(`Asset model scene mismatch: ${entry.id}`);
   if (expected && ["id", "descriptor", "model", "state_variant", "model_scene"].some(key => expected[key as keyof ExternalAssetSource] !== entry[key as keyof typeof entry])) throw new Error(`Asset saved reference mismatch: ${entry.id}`);
   if (modelPath !== entry.model) throw new Error(`Asset model path mismatch: ${entry.id}`);
-  const modelBytes = await (await libraryFile(root, entry.model)).arrayBuffer();
-  const modelHash = await hash(modelBytes);
-  if (expected && expected.model_sha256 !== modelHash) throw new Error(`Asset model changed: ${entry.id}`);
+  // A saved pin selects the release without reading the published model; a new insertion
+  // hashes the published model first so its reference pins the current revision.
+  const release = entry.release_model && releaseApplies(entry.model, descriptor.resources) ? entry.release_model : undefined;
+  const read = (path: string) => libraryFile(root, path);
+  let releaseBytes = release && expected ? await readReleaseModel(read, release, expected.model_sha256) : null;
+  let modelBytes: ArrayBuffer | null = null, modelHash: string;
+  if (releaseBytes) modelHash = expected!.model_sha256;
+  else {
+    modelBytes = await (await libraryFile(root, entry.model)).arrayBuffer();
+    modelHash = await hash(modelBytes);
+    if (expected && expected.model_sha256 !== modelHash) throw new Error(`Asset model changed: ${entry.id}`);
+    if (release && !expected) releaseBytes = await readReleaseModel(read, release, modelHash);
+  }
+  const displayBytes = (releaseBytes ?? modelBytes)!;
   const resourcePins = (resources: ExternalAssetSource["resources"]) =>
     (resources ?? []).map(resource => `${resource.path}:${resource.sha256}`).sort().join("\n");
   if (expected && resourcePins(expected.resources) !== resourcePins(descriptor.resources))
@@ -115,10 +140,10 @@ export async function prepareProjectionAsset(
   try {
     if (entry.model.endsWith(".gltf") || descriptor.resources !== undefined) {
       const loader = sharedLoader ?? new SceneAssetLoader(root);
-      try { asset = await loader.load({ ...reference, role: "objects", resources: descriptor.resources ?? [] }); }
+      try { asset = await loader.load({ ...reference, role: "objects", resources: descriptor.resources ?? [] }, releaseBytes ?? undefined); }
       finally { if (!sharedLoader) loader.dispose(); }
     } else {
-      const gltf = await new GLTFLoader().parseAsync(selectGlbScene(modelBytes, entry.model_scene), "");
+      const gltf = await new GLTFLoader().parseAsync(selectGlbScene(displayBytes, entry.model_scene), "");
       asset = gltf.scene;
       restoreNodeNames(gltf);
     }

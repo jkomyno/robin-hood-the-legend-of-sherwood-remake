@@ -602,6 +602,8 @@ export function parseProjectionAssetIndex(value: unknown): ProjectionAssetEntry[
     check(!/[\\/:\0]/.test(entry.id) && !ids.has(entry.id), "asset id", "invalid or duplicate identity");
     ids.add(entry.id);
     for (const key of ["descriptor", "model"]) check(safeLibraryPath(entry[key]), key, "expected safe library-relative path");
+    for (const key of ["preview_model", "release_model"])
+      if (entry[key] !== undefined) check(safeLibraryPath(entry[key]), key, "expected safe library-relative path");
   }
   return index.assets as ProjectionAssetEntry[];
 }

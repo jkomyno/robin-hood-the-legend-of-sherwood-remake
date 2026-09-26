@@ -53,3 +53,34 @@ test("map manifests reject old whole-map storage and unsafe asset references", (
     { ...reference, resources: [...reference.resources, ...reference.resources] }])
     assert.throws(() => parseLevel3D({ ...document, sceneAssets: [asset] }));
 });
+
+test("ground releases load in place of their pinned GLB only with a matching receipt", async t => {
+  const files = new Map<string, File>();
+  const root = (prefix = ""): FileSystemDirectoryHandle => ({
+    async getDirectoryHandle(name: string) { return root(prefix + name + "/"); },
+    async getFileHandle(name: string) {
+      if (!files.has(prefix + name)) throw new DOMException(prefix + name, "NotFoundError");
+      return { getFile: async () => files.get(prefix + name)! };
+    },
+  }) as unknown as FileSystemDirectoryHandle;
+  const published = new Uint8Array([1, 2, 3]), release = new Uint8Array([7]);
+  const reference: SceneAssetSource = { id: "terrain", role: "ground", model: "3d-assets/terrain/model.glb", model_sha256: hash(published), resources: [] };
+  files.set("3d-assets/terrain/release.glb", new File([release], "release.glb"));
+  files.set("3d-assets/terrain/release.glb.receipt.json", new File([JSON.stringify({ source: hash(published), output: hash(release) })], "r.json"));
+  const loaded: number[][] = [];
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async (bytes: ArrayBuffer) => { loaded.push([...new Uint8Array(bytes)]); return { scene: new THREE.Group() }; });
+  const loader = new SceneAssetLoader(root(), new Map([[reference.model, "3d-assets/terrain/release.glb"]]));
+  await loader.load(reference);
+  assert.deepEqual(loaded, [[7]]);
+  // Stale receipt: fall back to the published model (absent here, so the load fails on it).
+  t.mock.method(console, "warn", () => {});
+  files.set("3d-assets/terrain/release.glb.receipt.json", new File([JSON.stringify({ source: "c".repeat(64), output: hash(release) })], "r.json"));
+  await assert.rejects(loader.load(reference), /terrain\/model\.glb/);
+  files.set(reference.model, new File([published], "model.glb"));
+  await loader.load(reference);
+  assert.deepEqual(loaded.at(-1), [1, 2, 3]);
+  // Without a release entry the pinned model is used unchanged.
+  await new SceneAssetLoader(root()).load(reference);
+  assert.deepEqual(loaded.at(-1), [1, 2, 3]);
+  loader.dispose();
+});

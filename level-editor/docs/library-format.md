@@ -39,6 +39,13 @@ reconstruction atlases. GLBs that use these files reference ordinary relative
 `../../blobs/...` URIs; descriptors and saved references pin library-relative paths
 and SHA-256 hashes. Packaging preserves texture encoding and accessor bytes.
 Optional preview models are derived browser thumbnails, never map geometry.
+An optional `release_model` (for example `<source-map>/<asset-id>/release.glb`) is a
+derived display copy of `model`: same nodes, extras, scenes, materials and vertex
+attributes, one re-baked texture atlas (EXT_texture_avif) and quantized vertices
+(KHR_mesh_quantization). `<release_model>.receipt.json` records the SHA-256 of the
+`model` bytes it was built from (`source`) and of itself (`output`). Saved maps keep
+pinning `model`; the editor displays the release only while `source` equals that pin
+and falls back to `model` otherwise.
 
 ## Local assets and placed instances
 

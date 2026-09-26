@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "meshoptimizer";
 import { safeLibraryPath, selectGlbScene, selectGltfScene, resolveGltfResources, type SceneAssetSource } from "@rle/shared";
 import { subdir } from "./fs.ts";
+import { readReleaseModel, releaseApplies } from "./release-models.ts";
 
 async function read(root: FileSystemDirectoryHandle, path: string) {
   if (!safeLibraryPath(path)) throw new Error(`Unsafe scene asset path: ${path}`);
@@ -27,9 +28,19 @@ export class SceneAssetLoader {
   private materials = new Map<string, Promise<THREE.Material>>();
   private finalMaterials = new Map<string, THREE.Material>();
   private root: FileSystemDirectoryHandle;
-  constructor(root: FileSystemDirectoryHandle) { this.root = root; }
-  async load(reference: SceneAssetSource): Promise<THREE.Group> {
-    let bytes = await checked(await read(this.root, reference.model), reference.model_sha256);
+  private releases: ReadonlyMap<string, string>;
+  /** `releases` maps pinned model paths to derived release models (see release-models.ts). */
+  constructor(root: FileSystemDirectoryHandle, releases: ReadonlyMap<string, string> = new Map()) {
+    this.root = root; this.releases = releases;
+  }
+  releaseFor(model: string): string | undefined { return this.releases.get(model); }
+  /** `verifiedRelease`: release bytes the caller already bound to `reference.model_sha256`. */
+  async load(reference: SceneAssetSource, verifiedRelease?: ArrayBuffer): Promise<THREE.Group> {
+    const applies = releaseApplies(reference.model, reference.resources);
+    if (verifiedRelease && !applies) throw new Error(`Release model cannot replace a resource-backed model: ${reference.model}`);
+    const release = applies ? this.releases.get(reference.model) : undefined;
+    let bytes = verifiedRelease ?? (release ? await readReleaseModel(path => read(this.root, path), release, reference.model_sha256) : null)
+      ?? await checked(await read(this.root, reference.model), reference.model_sha256);
     if (reference.descriptor) await checked(await read(this.root, reference.descriptor), reference.descriptor_sha256!);
     if (reference.model.endsWith(".gltf")) bytes = new TextEncoder().encode(JSON.stringify(resolveGltfResources(reference.model, selectGltfScene(JSON.parse(new TextDecoder().decode(bytes)), reference.model_scene)))).buffer;
     else bytes = selectGlbScene(bytes, reference.model_scene, reference.resources.length ? reference.model : undefined);

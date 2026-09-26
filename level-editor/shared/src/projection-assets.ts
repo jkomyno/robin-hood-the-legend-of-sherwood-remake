@@ -47,6 +47,8 @@ export interface ProjectionAssetEntry {
   model_scene?: string;
   /** Optional lightweight model used only by the asset browser preview. */
   preview_model?: string;
+  /** Optional derived model for display, bound to `model` by `<release_model>.receipt.json`. */
+  release_model?: string;
 }
 
 /** Paths are relative to the granted library root; hashes pin saved instances. */

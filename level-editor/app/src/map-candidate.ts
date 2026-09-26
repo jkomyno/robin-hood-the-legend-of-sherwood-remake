@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { documentProvenance, parseLevel3D, snapFloatingParts } from "@rle/shared";
 import { readJson, subdir } from "./fs.ts";
 import { loadProtoLevel, type DatadirIndex } from "./datadir.ts";
-import { prepareProjectionAsset } from "./projection-library.ts";
+import { listReleaseModels, prepareProjectionAsset } from "./projection-library.ts";
 import { SceneAssetLoader } from "./scene-assets.ts";
 import { disposeObjectResources } from "./resources.ts";
 
@@ -10,7 +10,7 @@ import { disposeObjectResources } from "./resources.ts";
 export async function prepareMapCandidate(name: string, library: FileSystemDirectoryHandle, idx: DatadirIndex | null,
   onProgress?: (completed: number, total: number, phase: string) => void) {
   const asset = new THREE.Group();
-  const loader = new SceneAssetLoader(library);
+  const loader = new SceneAssetLoader(library, await listReleaseModels(library));
   try {
     const directory = await subdir(library, ["scenes"]);
     if (!directory) throw new Error("scenes/ missing");
@@ -49,7 +49,8 @@ export async function prepareMapCandidate(name: string, library: FileSystemDirec
         const index = next++;
         try {
           const reference = references[index]!;
-          const result = await prepareProjectionAsset(library, reference, document.map, reference, loader);
+          const release_model = loader.releaseFor(reference.model);
+          const result = await prepareProjectionAsset(library, { ...reference, release_model }, document.map, reference, loader);
           asset.add(result.asset);
           prepared[index] = result;
           onProgress?.(++completed, total, "Loading assets");
