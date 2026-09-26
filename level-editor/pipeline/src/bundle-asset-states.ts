@@ -73,6 +73,9 @@ export async function bundleStates(inputs: StateInput[], defaultScene: string): 
     expected.push({ name: input.scene, signature: (await signatures(source)).scene(selected) });
     // A state source may already contain other scenes. Retain only the selected scene.
     for (const scene of source.getRoot().listScenes()) if (scene !== selected) scene.dispose();
+    const reachable = new Set<ReturnType<Document['createNode']>>();
+    selected.traverse(node => reachable.add(node));
+    for (const node of source.getRoot().listNodes()) if (!reachable.has(node)) node.dispose();
     const map = mergeDocuments(target, source);
     (map.get(selected) as Scene).setName(input.scene);
   }

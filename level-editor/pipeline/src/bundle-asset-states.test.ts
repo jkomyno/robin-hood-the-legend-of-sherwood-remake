@@ -84,3 +84,13 @@ test('stateful detection includes external variants and embedded reveal/state tr
   assert.equal(isStateful({ components: [{ sight_patch_before_ids: ['p1'] }] }), true);
   assert.equal(isStateful({ components: [{}] }), false);
 });
+
+test('repacking existing scene bundles does not duplicate orphan scene nodes', async () => {
+  const a = await model(), b = await model(3);
+  const first = await bundleStates([{ scene: 'initial', bytes: a }, { scene: 'applied', bytes: b }], 'initial');
+  const second = await bundleStates([{ scene: 'initial', bytes: first.bytes, sourceScene: 'initial' }, { scene: 'applied', bytes: first.bytes, sourceScene: 'applied' }], 'initial');
+  assert.deepEqual(second.after, first.after);
+  const doc = await new NodeIO().readBinary(second.bytes);
+  assert.equal(doc.getRoot().listNodes().length, 2);
+  assert.deepEqual(second.bytes, first.bytes);
+});
