@@ -133,6 +133,12 @@ class LossyAssetsTest(unittest.TestCase):
         self.assertTrue(lossy_assets.receipt_current(self.root, 'derby/house/model.glb', lossy, self.args))
         self.assertFalse(lossy_assets.receipt_current(self.root, 'derby/house/model.glb', lossy,
                                                       lossy_assets.default_settings(quality=60)))
+        # Receipts written before --nearest-density existed lack that setting and re-derive.
+        receipt_path = self.root / (lossy + '.receipt.json')
+        receipt = json.loads(receipt_path.read_text())
+        receipt['settings'].pop('nearest_density')
+        receipt_path.write_text(json.dumps(receipt))
+        self.assertFalse(lossy_assets.receipt_current(self.root, 'derby/house/model.glb', lossy, self.args))
         (self.root / lossy).write_bytes(b'tampered')
         self.assertFalse(lossy_assets.receipt_current(self.root, 'derby/house/model.glb', lossy, self.args))
         self.assertIn('house: lossy model bytes differ from its receipt', lossy_assets.verify_derivatives(self.root))

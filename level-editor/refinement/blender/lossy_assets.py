@@ -916,8 +916,8 @@ def derive(asset_id, model_path, lossy_path, args, work):
     objects, records = build_objects(doc, binary, images, collection, 'published')
     require(objects, f'No textured meshes in {model_path}')
     area = np.concatenate([face_geometry(o, SOURCE_UV)[0] for o in objects])
-    source_axes = []
-    for obj in objects:
+    source_axes, nearest = [], []
+    for obj, record in zip(objects, records):
         slots = np.empty(len(obj.data.polygons), dtype=np.int32)
         obj.data.polygons.foreach_get('material_index', slots)
         axes = np.zeros((len(slots), 2))
@@ -926,9 +926,12 @@ def derive(asset_id, model_path, lossy_path, args, work):
             mask = slots == slot
             axes[mask] = face_axes(obj, SOURCE_UV, *image.size)[mask]
         source_axes.append(axes)
-    source_axes = np.concatenate(source_axes)
+        nearest.append(np.array([record['materials'][slot][1] == 'Closest' for slot in slots], dtype=bool))
+    source_axes, nearest = np.concatenate(source_axes), np.concatenate(nearest)
     # Per face: the requested density, but never more than the published texture itself holds.
-    targets = np.minimum(args.density, source_axes[:, 0])
+    # Nearest-filtered ("source pixel sampling") faces are baked at --nearest-density instead,
+    # so their source pixel blocks stay sharp after resampling.
+    targets = np.where(nearest, args.nearest_density, np.minimum(args.density, source_axes[:, 0]))
     uv_area = np.concatenate([face_geometry(o, SOURCE_UV)[1] for o in objects])
     reuse, out_of_range = texel_reuse(objects, records)
     # Keep the published layout when a unique-texel atlas cannot help: one image the UVs already
@@ -1015,7 +1018,8 @@ def derive(asset_id, model_path, lossy_path, args, work):
             'lossy_sqrt_area': stats(np.sqrt(new_axes[:, 0] * new_axes[:, 1]), area),
             'surface_fraction_lossy_weakest_below_target': float(
                 area[new_axes[:, 0] < targets - 1e-6].sum() / area.sum()),
-            'target': 'min(--density, source weakest axis) per face'},
+            'target': 'min(--density, source weakest axis) per face; --nearest-density on nearest-filtered faces',
+            'nearest_filtered_surface_fraction': float(area[nearest].sum() / area.sum())},
         'encoding': {'avifenc': avif_command, 'alpha': need_alpha},
         'normals': normals,
         'validation': None if differences is None else {
@@ -1026,6 +1030,7 @@ def derive(asset_id, model_path, lossy_path, args, work):
     receipt = {'source': report['source_sha256'], 'output': report['lossy_sha256'],
                **({'texture': {'path': texture_path.name, 'sha256': sha(texture_path)}} if args.texture_file else {}),
                'settings': settings(args),
+               'validation': None if differences is None else differences['overall'],
                'normals': {**normals, 'policy': 'kept (--keep-normals)' if args.keep_normals else
                            'dropped on unlit textured primitives: no lighting yet; lossy assets are rebuilt '
                            '(and shadows unbaked) when lighting is added. Published models keep their normals.'},
@@ -1153,7 +1158,7 @@ def main_derive(args):
     require(not failures, f'Failed assets: {failures}')
 
 
-SETTING_KEYS = ('density', 'multiple', 'min_size', 'max_size', 'quality', 'reencode_utilization', 'reuse_ratio', 'keep_normals',
+SETTING_KEYS = ('density', 'nearest_density', 'multiple', 'min_size', 'max_size', 'quality', 'reencode_utilization', 'reuse_ratio', 'keep_normals',
                 'texture_file', 'no_quantize', 'normal_bits', 'speed', 'angle_limit', 'pack_margin_px', 'bake_margin')
 
 
@@ -1538,6 +1543,8 @@ def main_refresh(args):
 
 def add_settings(parser):
     parser.add_argument('--density', type=float, default=1.0, help='Target weakest-axis texels per map pixel')
+    parser.add_argument('--nearest-density', type=float, default=2.0,
+                        help='Target texels per map pixel on nearest-filtered (source pixel sampling) materials')
     parser.add_argument('--multiple', type=int, default=16)
     parser.add_argument('--min-size', type=int, default=32)
     parser.add_argument('--max-size', type=int, default=4096)
