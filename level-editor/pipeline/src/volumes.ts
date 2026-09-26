@@ -246,7 +246,7 @@ async function main() {
   const document = initializeSceneDocument(doc, r.level, model.nodes.map((node: { name: string }) => node.name));
   document.map = name;
   const converted = await importScene(glbFile, path.dirname(outDir), document as unknown as Record<string, unknown>, map);
-  const documentFile = path.join(outDir, `${name}.level3d.json`);
+  const documentFile = path.join(outDir, `${name}.rhlos-map.json`);
   await fs.writeFile(documentFile, JSON.stringify(converted.document, null, 2) + "\n");
   console.log(`wrote ${documentFile} (${converted.report.verified_assets} library assets)`);
   const atlasOut = path.join(

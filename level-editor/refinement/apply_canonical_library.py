@@ -57,7 +57,7 @@ def graph(staged, previous):
             preview = '3d-assets/'+entry['preview_model']; include(preview)
             receipt = preview+'.receipt.json'
             if (staged/receipt).is_file() or (previous/receipt).is_file(): include(receipt)
-    maps = sorted((staged/'scenes').glob('*.level3d.json'))
+    maps = sorted((staged/'scenes').glob('*.rhlos-map.json'))
     for path in maps:
         value = document(str(path.relative_to(staged)))
         if any(not part['node'].startswith('asset:') for part in value['objects']):

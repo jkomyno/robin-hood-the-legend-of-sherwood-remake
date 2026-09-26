@@ -36,7 +36,7 @@ class HybridLibraryTests(unittest.TestCase):
                     (path.parent/'preview.glb.receipt.json').write_text('{"proof":"preserve"}')
                 references.append({**ref,'id':identity,'descriptor':'3d-assets/'+identity+'/asset.json','descriptor_sha256':digest(path.read_bytes())})
             (library/'3d-assets/index.json').write_text(json.dumps({'assets':entries}))
-            (library/'scenes/map.level3d.json').write_text(json.dumps({'sceneAssets':[],'assetSources':references,'objects':[]}))
+            (library/'scenes/map.rhlos-map.json').write_text(json.dumps({'sceneAssets':[],'assetSources':references,'objects':[]}))
             staged = root/'first/staged'; report = stage_hybrid(library, staged)
             self.assertEqual(report['self_contained'],1)
             self.assertEqual(report['shared_payloads'],1)

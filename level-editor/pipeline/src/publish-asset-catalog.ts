@@ -5,7 +5,7 @@ import { parseLevel3D, upgradeGeneratedAssetGroups, type AuthoredAssetCatalog } 
 import { sceneAssetNodes } from "./scene-assets.ts";
 
 const [documentArg, catalogArg] = process.argv.slice(2);
-if (!documentArg || !catalogArg) throw new Error("Usage: node publish-asset-catalog.ts <map.level3d.json> <reviewed-catalog.json>");
+if (!documentArg || !catalogArg) throw new Error("Usage: node publish-asset-catalog.ts <map.rhlos-map.json> <reviewed-catalog.json>");
 const output = resolve(documentArg);
 const previous = await readFile(output,"utf8");
 const document = parseLevel3D(JSON.parse(previous));

@@ -32,9 +32,9 @@ async function main() {
   renderer.setSize(1024, 768);
   const target = new THREE.WebGLRenderTarget(1024, 768);
   renderer.setRenderTarget(target);
-  const document = await (await fetch(staged + `scenes/${name}.level3d.json`)).json() as Level3D;
+  const document = await (await fetch(staged + `scenes/${name}.rhlos-map.json`)).json() as Level3D;
   const baselineDocument = query.has("baselineDocument")
-    ? await (await fetch(query.get("baselineDocument")! + `scenes/${name}.level3d.json`)).json() as Level3D : document;
+    ? await (await fetch(query.get("baselineDocument")! + `scenes/${name}.rhlos-map.json`)).json() as Level3D : document;
   const root = directory();
   result.textContent = "Loading baseline " + name;
   const baselineCandidate = await (async () => {

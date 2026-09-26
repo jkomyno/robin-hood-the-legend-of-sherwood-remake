@@ -68,7 +68,7 @@ From `level-editor/`, stage the supplemental Sherwood pack into a fresh director
     pnpm --filter pipeline exec node src/compose-wychford.ts
     pnpm --filter pipeline exec node src/populate-wychford.ts
 
-The generator writes Wychford.level3d.json, its terrain GLB and scene metadata to
+The generator writes Wychford.rhlos-map.json, its terrain GLB and scene metadata to
 library/scenes/. Reload the connected library and select **Wychford**. Pass
 `--overwrite` to regenerate an existing scene; this replaces local Wychford edits.
 

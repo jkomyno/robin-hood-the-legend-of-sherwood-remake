@@ -25,12 +25,12 @@ class FirstPublicationTest(unittest.TestCase):
                 (stage/'york.scene.glb').write_bytes(struct.pack('<III',0x46546c67,2,20+len(encoded))+struct.pack('<II',len(encoded),0x4e4f534a)+encoded)
                 document = {'size':[100,200], 'provenance':{}, 'groups':[{'id':'york-house'}], 'objects':[{'node':'building-000','group':'york-house'}]}
                 document, _ = import_document(stage/'york.scene.glb', stage/'map-assets', document)
-                (stage/'york.level3d.json').write_text(json.dumps(document))
+                (stage/'york.rhlos-map.json').write_text(json.dumps(document))
                 Path('document.json').write_text(json.dumps(document)); Path('scope.json').write_text('{"asset_ids":[],"already_published":[]}')
                 result = prepare(stage,'scope.json','audit/config.json',map_name='york',document_path='document.json')
                 self.assertEqual(result['groups'],1)
-                self.assertFalse((library/'scenes/york.level3d.json').exists())
-                self.assertTrue((stage/'york.level3d.json').exists())
+                self.assertFalse((library/'scenes/york.rhlos-map.json').exists())
+                self.assertTrue((stage/'york.rhlos-map.json').exists())
                 bad = dict(document,objects=[{'node':'building-000','group':'wrong'}]); Path('bad.json').write_text(json.dumps(bad))
                 with self.assertRaisesRegex(ValueError,'ownership differs'):
                     prepare(stage,'scope.json','audit/other.json',map_name='york',document_path='bad.json')

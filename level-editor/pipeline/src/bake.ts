@@ -1,6 +1,6 @@
 // Bake a 3D level document back into game files.
 //
-//   node src/bake.ts --map york [--doc library/scenes/york.level3d.json] [--out work/york-bake]
+//   node src/bake.ts --map york [--doc library/scenes/york.rhlos-map.json] [--out work/york-bake]
 //       [--fill proc|synth] [--ambiance Day]
 //
 // Reconstructs the map's volumes and textures exactly like volumes.ts (the
@@ -146,7 +146,7 @@ export async function bake(options: BakeOptions): Promise<void> {
     options.output ?? path.join(workDir, `${map.toLowerCase()}-bake`);
   const docPath =
     options.document ??
-    path.join(libraryDir, "scenes", `${map.toLowerCase()}.level3d.json`);
+    path.join(libraryDir, "scenes", `${map.toLowerCase()}.rhlos-map.json`);
   const input = await readDocument(docPath, options.document !== undefined);
   // Structural validation precedes expensive reconstruction; source-index
   // validation follows once the source level is available.

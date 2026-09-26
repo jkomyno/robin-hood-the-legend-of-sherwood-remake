@@ -57,7 +57,7 @@ def stage(library, output):
     index = read_json('3d-assets/index.json')
     entries = {entry['id']:copy.deepcopy(entry) for entry in index['assets']}
     descriptors, origins, references, proofs = {}, {}, {}, {}
-    documents = [(path, read_json(str(path.relative_to(library)))) for path in sorted((library/'scenes').glob('*.level3d.json'))]
+    documents = [(path, read_json(str(path.relative_to(library)))) for path in sorted((library/'scenes').glob('*.rhlos-map.json'))]
     for entry in index['assets']:
         identity = entry['id']; relative = '3d-assets/'+entry['descriptor']
         original = read_json(relative)

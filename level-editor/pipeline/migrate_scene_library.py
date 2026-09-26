@@ -38,7 +38,7 @@ def migrate(report_path, apply=False):
             for path_key, hash_key in [('glb', 'glb_sha256'), ('metadata', 'metadata_sha256'), ('document', 'previous_document_sha256')]:
                 if sha(Path(item[path_key])) != item[hash_key]:
                     raise ValueError('Live source changed: ' + item[path_key])
-            document_path = output / 'scenes' / (item['name'] + '.level3d.json')
+            document_path = output / 'scenes' / (item['name'] + '.rhlos-map.json')
             document = json.loads(document_path.read_text())
             if item['previous_document_sha256'] and normalized(json.loads(Path(item['document']).read_text())) != normalized(document):
                 raise ValueError('Conversion changed editor state: ' + item['name'])

@@ -22,9 +22,9 @@ class PublicationContractTests(unittest.TestCase):
                 {'parts': [{'obstacle': 1}]}, {'parts': [{'obstacle': 1}]}]}, 'X')
 
     def test_filename_is_map_specific_and_local(self):
-        self.assertEqual(scene_filename({'map_name': 'Derby'}), 'derby.level3d.json')
-        self.assertEqual(scene_filename({'map_name': 'Leicester'}), 'leicester.level3d.json')
-        self.assertEqual(scene_filename({'map_name': 'Leicester', 'scene_filename': 'candidate.level3d.json'}), 'candidate.level3d.json')
+        self.assertEqual(scene_filename({'map_name': 'Derby'}), 'derby.rhlos-map.json')
+        self.assertEqual(scene_filename({'map_name': 'Leicester'}), 'leicester.rhlos-map.json')
+        self.assertEqual(scene_filename({'map_name': 'Leicester', 'scene_filename': 'candidate.rhlos-map.json'}), 'candidate.rhlos-map.json')
         for invalid in ('../outside.glb', '/tmp/outside.glb', 'candidate.json'):
             with self.assertRaises(ValueError):
                 scene_filename({'map_name': 'Leicester', 'scene_filename': invalid})

@@ -15,7 +15,7 @@ import { libraryDir } from "./env.ts";
 const name = "Wychford", output = path.join(libraryDir, "scenes");
 const size: [number, number] = [3600, 2400];
 const camera = { kind: "oblique-orthographic" as const, elevation_deg: 35 };
-const filename = path.join(output, name + ".level3d.json");
+const filename = path.join(output, name + ".rhlos-map.json");
 try {
   await fs.access(filename);
   if (!process.argv.includes("--overwrite")) throw new Error("Wychford already exists; use --overwrite to replace it");

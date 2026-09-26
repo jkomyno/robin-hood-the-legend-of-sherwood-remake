@@ -36,5 +36,5 @@ async function prune(relative = '') {
 await prune();
 await fs.mkdir(path.join(destination, 'scenes'), {recursive:true});
 await fs.writeFile(path.join(destination, 'scenes/index.json'), JSON.stringify(catalog
-  .filter(name => /^scenes\/[^/]+\.level3d\.json$/.test(name)).map(name => name.slice('scenes/'.length)).sort())+'\n');
+  .filter(name => /^scenes\/[^/]+\.rhlos-map\.json$/.test(name)).map(name => name.slice('scenes/'.length)).sort())+'\n');
 console.log(`Prepared ${catalog.length} library files for static serving.`);

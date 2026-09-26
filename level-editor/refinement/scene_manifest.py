@@ -122,7 +122,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=False)
     document, report = import_document(args.glb, args.output / 'map-assets', json.loads(args.document.read_text()))
-    destination = args.output / (str(document['map']).lower() + '.level3d.json')
+    destination = args.output / (str(document['map']).lower() + '.rhlos-map.json')
     destination.write_text(json.dumps(document, indent=2)+'\n')
     (args.output / 'import-verification.json').write_text(json.dumps(report, indent=2)+'\n')
     print(destination)

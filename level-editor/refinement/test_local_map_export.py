@@ -32,7 +32,7 @@ class LocalMapExportTests(unittest.TestCase):
                                   'show_shadow_polygon': True, 'default_material': 0, 'material_indices': []})
             (root/'mesh.bin').write_bytes(struct.pack('<18f', *vertices))
             (root/'source.gltf').write_text(json.dumps(model))
-            result = export_document(root/'source.gltf', root/'fixture.level3d.json', 'Fixture',
+            result = export_document(root/'source.gltf', root/'fixture.rhlos-map.json', 'Fixture',
                                      {'sight_obstacles': obstacles}, size=[1024, 512])
             document = result['document']; library = Path(result['library'])
             self.assertEqual(document['sceneAssets'], [])

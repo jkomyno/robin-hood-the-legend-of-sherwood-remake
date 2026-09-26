@@ -92,6 +92,6 @@ export async function prepareDocument(scenePath: string, levelPath: string, glbP
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const args = process.argv.slice(2);
-  if (args.length !== 5) throw new Error("Usage: prepare-publication-document.ts scene.json level.json staged.glb reviewed-catalog.json new.level3d.json");
+  if (args.length !== 5) throw new Error("Usage: prepare-publication-document.ts scene.json level.json staged.glb reviewed-catalog.json new.rhlos-map.json");
   console.log(JSON.stringify(await prepareDocument(...args.map(arg => resolve(arg)) as [string, string, string, string, string])));
 }

@@ -658,7 +658,7 @@ hash logic. This keeps the same review contract across all maps.
 
 ### Map publication format
 
-Map exports use `<map>.level3d.json` and one reusable local catalog under
+Map exports use `<map>.rhlos-map.json` and one reusable local catalog under
 `map-assets/3d-assets/`. Both map instances and palette entries reference the same
 `<source-map>/<asset-id>/model.glb`, with lowercase source-map directories.
 Resolve descriptors and models through `3d-assets/index.json`; do not construct
@@ -672,7 +672,7 @@ to refresh the static links and map index used by the editor's HTTP library.
 The editor saves map copies in browser OPFS; use **Download** to export a map JSON
 for review or publication. It never writes assets or published maps over HTTP.
 
-`scene_filename` in publication plans must end in `.level3d.json`.
+`scene_filename` in publication plans must end in `.rhlos-map.json`.
 `export_editor(..., asset_id=None)` requires the source `level` and JSON output.
 It writes local catalog assets and placed instances directly. Temporary Blender
 geometry and raw standalone exports are conversion inputs, not published maps.
@@ -692,8 +692,8 @@ extension is part of the format.
 
 `verify_publication_assets.py` verifies pinned resources and authored coverage.
 `prepare_publication_browser.py` preserves editor poses when local export origins
-change, writes `browser-document.level3d.json`, and audits the runtime format.
-Use `--document <staged-map.level3d.json>` for a first publication.
+change, writes `browser-document.rhlos-map.json`, and audits the runtime format.
+Use `--document <staged-map.rhlos-map.json>` for a first publication.
 `promote_staged_publication.py` publishes the canonical map catalog and palette
 index with the existing lock, hash guards, backups and rollback behavior. Resources
 are installed before their manifests. Keep approval and independent handoff checks
@@ -704,7 +704,7 @@ editing their original files:
 
 ```bash
 python3 level-editor/refinement/scene_manifest.py \
-  <old-stage/map.scene.glb> <old-stage/map.level3d.json> <fresh-import-stage>
+  <old-stage/map.scene.glb> <old-stage/map.rhlos-map.json> <fresh-import-stage>
 ```
 
 Keep the frozen workers and approval evidence. Run the current staging and browser

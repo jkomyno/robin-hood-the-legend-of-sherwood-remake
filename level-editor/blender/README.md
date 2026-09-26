@@ -31,7 +31,7 @@ the south gate arch, and a recessed west-cottage doorway. Each script retains
 its hidden source mesh.
 Use `sync_asset_names` to refresh reviewed furniture labels without reparenting.
 
-The editor loads `library/scenes/derby.level3d.json` and the canonical local assets
+The editor loads `library/scenes/derby.rhlos-map.json` and the canonical local assets
 in `library/3d-assets/`. Reopen Derby after publication. Map instances use the same
 models as palette insertion; the map JSON retains placement and mission bindings.
 
@@ -43,7 +43,7 @@ Load a module without invoking it implicitly:
 path = ROOT / "level-editor/blender/export_editor.py"
 scope = {"__file__": str(path), "__name__": "export_editor"}
 exec(compile(path.read_text(), str(path), "exec"), scope)
-result = scope["export_editor"]("Derby", STAGING / "derby.level3d.json",
+result = scope["export_editor"]("Derby", STAGING / "derby.rhlos-map.json",
     level=level, map_settings={"size": None})
 ```
 

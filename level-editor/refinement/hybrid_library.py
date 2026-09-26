@@ -130,7 +130,7 @@ def stage_hybrid(library, output, min_savings=DEFAULT_MIN_SAVINGS):
         proofs[entry['id']] = {'scenes':len(model['scenes']), 'model_sha256':digest(raw)}
     (output/'3d-assets/index.json').write_bytes(encoded(index))
     (output/'scenes').mkdir()
-    for path in sorted((library/'scenes').glob('*.level3d.json')):
+    for path in sorted((library/'scenes').glob('*.rhlos-map.json')):
         relative = str(path.relative_to(library)); document = json.loads(read(relative))
         for ref in document['sceneAssets']+document.get('assetSources', []):
             if ref.get('descriptor') not in references: raise ValueError('Map reference is not in catalog')

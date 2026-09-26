@@ -1519,7 +1519,7 @@ Explicit foliage materials keep physical leaf coverage separate from source owne
 
 ### Map manifests and shared scene assets
 
-Mission maps are `.level3d.json` documents referencing pinned library assets through
+Mission maps are `.rhlos-map.json` documents referencing pinned library assets through
 `sceneAssets`. The editor requires the manifest; it no longer opens whole-map GLBs
 or reconstructs missing documents during loading. Each reference includes its role,
 model hash, and hashes for external geometry and image resources. Shared payloads

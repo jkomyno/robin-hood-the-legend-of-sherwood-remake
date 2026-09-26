@@ -37,7 +37,7 @@ root; evidence lives in `level-editor/work/lincoln-refinement/` (resume from `RE
       Freeze its tooling into the publication directory with `freeze_tooling.py --output`.
     - Then run `verify_publication_assets.py`, `verify_staged_handoffs.py` (with
       `effective-plan.json`), `pipeline/src/prepare-publication-document.ts` (first
-      `lincoln.level3d.json`), `prepare_publication_browser.py --document` with
+      `lincoln.rhlos-map.json`), `prepare_publication_browser.py --document` with
       `browser/verify_publication.mjs`, and finally `promote_staged_publication.py`.
     - A texture republish is a new plan whose imports name the approved baked workers.
 

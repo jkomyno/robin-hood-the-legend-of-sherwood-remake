@@ -13,7 +13,7 @@ import { libraryDir, repoRoot, workDir, loadEnvironment, requireEnv } from "./en
 import { openRouterBody, providerIdentity, validateOpenRouterCapabilities } from "./refinement/image-provider.ts";
 
 loadEnvironment();
-const scenePath=path.join(libraryDir,"scenes/Wychford.level3d.json");
+const scenePath=path.join(libraryDir,"scenes/Wychford.rhlos-map.json");
 const scene=parseLevel3D(JSON.parse(await fs.readFile(scenePath,"utf8")));
 const out=path.join(workDir,"wychford/ground-generation");
 await fs.mkdir(out,{recursive:true});

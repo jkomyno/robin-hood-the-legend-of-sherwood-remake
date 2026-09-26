@@ -1,6 +1,6 @@
 # Map and asset library format
 
-A published map is `library/scenes/<map>.level3d.json` plus references to the
+A published map is `library/scenes/<map>.rhlos-map.json` plus references to the
 same local assets offered by the editor palette. There is no separate map model,
 map-coordinate asset scene, or automatic whole-map GLB fallback.
 
@@ -8,7 +8,7 @@ map-coordinate asset scene, or automatic whole-map GLB fallback.
 
 ```
 library/
-  scenes/<map>.level3d.json
+  scenes/<map>.rhlos-map.json
   scenes/backups/...
   3d-assets/index.json
   3d-assets/<source-map>/<asset-id>/asset.json

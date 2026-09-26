@@ -16,7 +16,7 @@ def map_fixture(stage, name):
     data = json.dumps(model).encode(); data += b' ' * (-len(data) % 4)
     (stage / f'{name}.scene.glb').write_bytes(struct.pack('<III', 0x46546c67, 2, 20+len(data)) + struct.pack('<II',len(data),0x4e4f534a) + data)
     document, _ = import_document(stage / f'{name}.scene.glb', stage / 'map-assets', {'map': name})
-    (stage / f'{name}.level3d.json').write_text(json.dumps(document))
+    (stage / f'{name}.rhlos-map.json').write_text(json.dumps(document))
 
 
 class PromotionTests(unittest.TestCase):
@@ -36,7 +36,7 @@ class PromotionTests(unittest.TestCase):
         self.write_json(self.library / '3d-assets/index.json', {'assets': []})
         for name in ('asset-verification', 'handoff-verification', 'browser-result'):
             self.write_json(self.stage / f'{name}.json', {'status': 'PASS'})
-        for name in ('worker.blend', 'derby.scene.glb', 'derby.level3d.json', 'assets/bridge/raised.glb', 'assets/bridge/lowered.glb'):
+        for name in ('worker.blend', 'derby.scene.glb', 'derby.rhlos-map.json', 'assets/bridge/raised.glb', 'assets/bridge/lowered.glb'):
             (self.stage / name).write_bytes(('new:' + name).encode())
         map_fixture(self.stage, 'derby')
         self.main.write_bytes(b'old blend')
@@ -245,7 +245,7 @@ class FirstPublicationTests(unittest.TestCase):
             (self.stage / name).write_text('{"status":"PASS"}')
         (self.stage / 'assets/index.json').write_text('{"assets":[]}')
         (self.library / '3d-assets/index.json').write_text('{"assets":[{"id":"other-map"}]}')
-        for name in ['worker.blend', 'leicester.scene.glb', 'leicester.level3d.json']:
+        for name in ['worker.blend', 'leicester.scene.glb', 'leicester.rhlos-map.json']:
             (self.stage / name).write_text('staged ' + name)
         (self.library / 'scenes/leicester-volumes.scene.glb').write_text('old map')
         (self.library / 'scenes/leicester-volumes.scene.json').write_text('protected document')
@@ -261,7 +261,7 @@ class FirstPublicationTests(unittest.TestCase):
         report = json.loads((self.stage / 'promotion.json').read_text())
         self.assertEqual(report['status'], 'APPLIED')
         self.assertFalse(any(r['target'].endswith('-volumes.scene.glb') for r in report['files']))
-        document = json.loads((self.library / 'scenes/leicester.level3d.json').read_text())
+        document = json.loads((self.library / 'scenes/leicester.rhlos-map.json').read_text())
         self.assertNotIn('glb', document)
         self.assertEqual(len(document['sceneAssets']), 1)
 

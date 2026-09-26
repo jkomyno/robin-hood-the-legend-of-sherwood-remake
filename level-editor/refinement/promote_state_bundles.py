@@ -84,7 +84,7 @@ def prepare(library, stage, scenes):
                     raise ValueError('Unexpected obsolete source name')
                 removals.append({'path': str((dst / name).resolve()), 'before': f['sha256']})
     migrations = []
-    for p in sorted(scenes.glob('*.level3d.json')):
+    for p in sorted(scenes.glob('*.rhlos-map.json')):
         doc = json.loads(p.read_text())
         changed = []
         for ref in doc.get('assetSources', []):

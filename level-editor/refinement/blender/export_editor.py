@@ -330,8 +330,8 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
     output.parent.mkdir(parents=True, exist_ok=True)
     if output.exists():
         raise FileExistsError(output)
-    if asset_id is None and (not output.name.endswith('.level3d.json') or level is None):
-        raise ValueError('Map export requires a .level3d.json output and source level data')
+    if asset_id is None and (not output.name.endswith('.rhlos-map.json') or level is None):
+        raise ValueError('Map export requires a .rhlos-map.json output and source level data')
     export_directory = tempfile.TemporaryDirectory(prefix='map-export-') if asset_id is None else None
     export_path = Path(export_directory.name) / 'map.gltf' if export_directory else output
     previous_scene = bpy.context.window.scene

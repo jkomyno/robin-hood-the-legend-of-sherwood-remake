@@ -21,10 +21,10 @@ class CanonicalPublicationTests(unittest.TestCase):
         reference = {'id':'ground', 'role':'ground', 'model':'3d-assets/ground/model.gltf',
             'model_sha256':digest((staged/'3d-assets/ground/model.gltf').read_bytes()),
             'descriptor':'3d-assets/ground/asset.json', 'descriptor_sha256':digest((staged/'3d-assets/ground/asset.json').read_bytes()), 'resources':[]}
-        (staged/'scenes/fixture.level3d.json').write_text(json.dumps({'objects':[], 'sceneAssets':[reference]}))
+        (staged/'scenes/fixture.rhlos-map.json').write_text(json.dumps({'objects':[], 'sceneAssets':[reference]}))
         (live/'3d-assets/index.json').write_text('{"assets":[]}')
         (live/'3d-assets/obsolete.glb').write_bytes(b'old geometry')
-        (live/'scenes/fixture.level3d.json').write_text('{"old":true}')
+        (live/'scenes/fixture.rhlos-map.json').write_text('{"old":true}')
         sources = {str(path.relative_to(live)):digest(path.read_bytes()) for path in live.rglob('*') if path.is_file()}
         plan = root/'plan.json'; plan.write_text(json.dumps({'library':str(live), 'output':str(staged), 'sources':sources}))
         return live, staged, plan, sources
@@ -40,7 +40,7 @@ class CanonicalPublicationTests(unittest.TestCase):
             backup = Path(result['backup'])
             for relative, expected in sources.items(): self.assertEqual(digest((backup/relative).read_bytes()), expected)
             self.assertFalse((live/'3d-assets/obsolete.glb').exists())
-            self.assertEqual((live/'scenes/fixture.level3d.json').read_bytes(), (staged/'scenes/fixture.level3d.json').read_bytes())
+            self.assertEqual((live/'scenes/fixture.rhlos-map.json').read_bytes(), (staged/'scenes/fixture.rhlos-map.json').read_bytes())
 
     def test_failed_install_restores_every_previous_file(self):
         with tempfile.TemporaryDirectory() as temporary:

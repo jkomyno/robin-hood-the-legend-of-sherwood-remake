@@ -23,11 +23,11 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
     scope = json.loads(Path(scope_path).read_text())
     library = Path("level-editor/library").resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    live_document = library / f"scenes/{map_name}.level3d.json"
+    live_document = library / f"scenes/{map_name}.rhlos-map.json"
     source_document = Path(document_path).resolve(strict=True) if document_path is not None else live_document
     document = json.loads(source_document.read_text())
     asset_library = library if live else stage / 'map-assets'
-    staged_document = document if live else json.loads((stage / f"{map_name}.level3d.json").read_text())
+    staged_document = document if live else json.loads((stage / f"{map_name}.rhlos-map.json").read_text())
     model = scene_metadata(asset_library, staged_document)
     nodes = model["nodes"]
     map_node = next(node for node in nodes if node.get("name") == "map")
@@ -62,7 +62,7 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', dir=stage) as previous:
             json.dump(document, previous); previous.flush()
             document=json.loads(subprocess.check_output(['node', str(Path(__file__).resolve().parents[1]/'pipeline/src/rebase-map-assets.ts'),
-                previous.name, str(stage/f'{map_name}.level3d.json')], text=True))
+                previous.name, str(stage/f'{map_name}.rhlos-map.json')], text=True))
     def canonical(node): return node.split(':', 2)[-1] if node.startswith('asset:') else node
     if {canonical(obj["node"]) for obj in document["objects"]} != part_names:
         raise ValueError("Canonical part identities changed; explicit editor document migration required")
@@ -77,7 +77,7 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         document["sceneAssets"] = staged_document["sceneAssets"]
         document.pop("glb", None)
         document.setdefault("provenance", {}).pop("glb_sha256", None)
-        document_path = stage / "browser-document.level3d.json"
+        document_path = stage / "browser-document.rhlos-map.json"
         if document_path.exists():
             if json.loads(document_path.read_text()) != document:
                 raise ValueError("Existing staged document differs from current canonical editor state")
@@ -108,7 +108,7 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         if reference.get("descriptor"): add(reference["descriptor"], asset_library / reference["descriptor"])
         for resource in reference.get("resources", []):
             add(resource["path"], asset_library / resource["path"])
-    add(f"scenes/{map_name}.level3d.json", document_path)
+    add(f"scenes/{map_name}.rhlos-map.json", document_path)
     add("3d-assets/index.json", private_index)
     expanded = []
     for entry in entries:

@@ -112,9 +112,9 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
     merged=stage/'promotion-library-index.json'
     merged.write_text(json.dumps(current,indent=2)+'\n')
     asset_library = stage / 'map-assets'
-    document_path = stage / 'browser-document.level3d.json'
+    document_path = stage / 'browser-document.rhlos-map.json'
     if not document_path.exists():
-        document_path = stage / f'{map_name}.level3d.json'
+        document_path = stage / f'{map_name}.rhlos-map.json'
     document = json.loads(document_path.read_text())
     scene_metadata(asset_library, document)
     pairs=[(stage/'worker.blend',main_blend)]
@@ -132,7 +132,7 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
     for asset in selected['assets']:
         pairs.extend(asset_file_pairs(stage/'assets', library/'3d-assets', asset))
     # Install manifests only after all referenced assets exist.
-    pairs.extend([(document_path,library/f'scenes/{map_name}.level3d.json'),(merged,index_path)])
+    pairs.extend([(document_path,library/f'scenes/{map_name}.rhlos-map.json'),(merged,index_path)])
     records=[]
     targets={}
     for index,(source,target) in enumerate(pairs):

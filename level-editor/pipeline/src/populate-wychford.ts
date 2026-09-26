@@ -9,7 +9,7 @@ import { parseLevel3D, gameToScene, validatePopulation, type Population, type Po
 import { decodeSpritePixels } from "../../app/src/entity-projection.ts";
 import { libraryDir, datadirPath } from "./env.ts";
 
-const scenePath=path.join(libraryDir,"scenes/Wychford.level3d.json");
+const scenePath=path.join(libraryDir,"scenes/Wychford.rhlos-map.json");
 const document=parseLevel3D(JSON.parse(await fs.readFile(scenePath,"utf8")));
 const recipe=JSON.parse(await fs.readFile(new URL("../../maps/wychford/population.json",import.meta.url),"utf8"));
 const groundSource=document.sceneAssets.find(asset=>asset.role==="ground");

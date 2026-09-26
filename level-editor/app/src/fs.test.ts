@@ -22,7 +22,7 @@ test("malformed JSON carries filename instead of returning defaults", async () =
     }),
   } as unknown as FileSystemDirectoryHandle;
   await assert.rejects(
-    readJson(dir, "map.level3d.json"),
-    /Invalid JSON in map.level3d.json/,
+    readJson(dir, "map.rhlos-map.json"),
+    /Invalid JSON in map.rhlos-map.json/,
   );
 });

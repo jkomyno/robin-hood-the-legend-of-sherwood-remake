@@ -25,7 +25,7 @@ function fixture(saved: unknown = {}, map = "York", standalone = false) {
       new File([new Uint8Array([1, 2, 3])], "scene.glb"),
     ],
     [
-      "York.level3d.json",
+      "York.rhlos-map.json",
       new File(
         [
           JSON.stringify({
@@ -142,7 +142,7 @@ function authoredFixture(customName?: string) {
 
 test("manifest ownership is authoritative and never silently regrouped while loading", async t => {
   const f=authoredFixture();
-  const before=JSON.parse(await f.files.get("York.level3d.json")!.text());
+  const before=JSON.parse(await f.files.get("York.rhlos-map.json")!.text());
   t.mock.method(GLTFLoader.prototype,"parseAsync",async()=>({scene:f.asset}));
   const candidate=await prepareMapCandidate("York",f.directory,null);
   assert.deepEqual(candidate.document,before);
@@ -192,7 +192,7 @@ function parallelFixture(count: number) {
     return { id, model, descriptor, model_sha256:hash(bytes), descriptor_sha256:hash(descriptorBytes) };
   });
   const saved = {version:1,map:"York",size:[100,200],camera:{kind:"oblique-orthographic",elevation_deg:35},sceneAssets: [{ id:"base",role:"objects",model:"York-volumes.scene.glb",model_sha256:hash(new Uint8Array([1,2,3])),resources:[] }],groups:[],objects:[],assetSources:references};
-  f.files.set("York.level3d.json", new File([JSON.stringify(saved)], "document.json"));
+  f.files.set("York.rhlos-map.json", new File([JSON.stringify(saved)], "document.json"));
   const pending = new Map<number, {resolve():void; reject(error:Error):void}>();
   const retired: number[] = [];
   let active = 0, peak = 0;
@@ -259,10 +259,10 @@ test("failed parallel loads stop scheduling and retire late completions before r
 
 test("component exports restore scoped group ownership and reject missing footprints", async (t) => {
   const f=authoredFixture();
-  const document=JSON.parse(await f.files.get("York.level3d.json")!.text());
+  const document=JSON.parse(await f.files.get("York.rhlos-map.json")!.text());
   const name="building-000--component-west";
   document.objects[0].node=name;document.objects[0].id=name;document.objects[0].source.components=["west"];
-  f.files.set("York.level3d.json",new File([JSON.stringify(document)],"York.level3d.json"));
+  f.files.set("York.rhlos-map.json",new File([JSON.stringify(document)],"York.rhlos-map.json"));
   f.mesh.name=name;f.mesh.userData.source_components=["west"];f.mesh.userData.obstacle_local_game=document.objects[0].obstacle;
   t.mock.method(GLTFLoader.prototype,"parseAsync",async()=>({scene:f.asset}));
   const candidate=await prepareMapCandidate("York",f.directory,null);

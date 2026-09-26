@@ -6,12 +6,13 @@ insertion. Each part retains a local obstacle footprint and flags; part and grou
 transforms place it in the map. Mission-specific state belongs to the map.
 See [the library format](library-format.md) for files, resource sharing and bindings.
 
-**Save** stores `<map>.level3d.json` in the browser's Origin Private File System
+**Save** stores `<map>.rhlos-map.json` in the browser's Origin Private File System
 (OPFS), under `sherwood-level-editor/maps/`. Saving a library map switches to its
 local copy, labeled **(Modified)** in the map menu and document status. The original
 remains separately selectable under its plain name; both entries are available
 after reopening on the same browser and origin. Existing browser saves also appear
-as modified copies without changing their stored files.
+as modified copies. Browser saves using the previous extension are migrated to
+`.rhlos-map.json` automatically, retaining their document contents.
 Built-in maps have capitalized English display names (including Crossroads 1–3);
 their file and mission identifiers stay unchanged. **Download** exports the current
 document, including unsaved changes, as JSON with a local date and time to the second,
@@ -153,7 +154,7 @@ or new animation. The narrow exception preserves the older static-map bake
 workflow without turning the preview into a fake sight obstacle.
 
 ```
-pnpm bake --map york [--doc library/scenes/york.level3d.json] [--out work/york-bake] [--fill proc|synth]
+pnpm bake --map york [--doc library/scenes/york.rhlos-map.json] [--out work/york-bake] [--fill proc|synth]
 ```
 
 Reconstructs the map like `volumes.ts` (textures always come from the

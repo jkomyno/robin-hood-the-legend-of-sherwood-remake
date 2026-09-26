@@ -2,10 +2,10 @@
   const {stageUrl,documentUrl,expected} = window.__stageConfig;
   const {prepareMapCandidate} = await import('/src/map-candidate.ts');
   const {EditorViewport} = await import('/src/editor-viewport.ts');
-  const files=['derby-volumes.scene.json','derby-volumes.scene.glb','derby.level3d.json'];
+  const files=['derby-volumes.scene.json','derby-volumes.scene.glb','derby.rhlos-map.json'];
   const directory={async getDirectoryHandle(){return this;},async getFileHandle(name){
     if(!files.includes(name))throw new DOMException(name,'NotFoundError');
-    const url=name.endsWith('.glb')?stageUrl:name.endsWith('.level3d.json')?documentUrl:'/library/scenes/'+name;
+    const url=name.endsWith('.glb')?stageUrl:name.endsWith('.rhlos-map.json')?documentUrl:'/library/scenes/'+name;
     const response=await fetch(url+'?stage-check='+Date.now());
     if(!response.ok)throw Error('HTTP '+response.status+' '+url);
     const file=new File([await response.arrayBuffer()],name);

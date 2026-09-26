@@ -24,7 +24,7 @@ class PromotionTests(unittest.TestCase):
         self.oldindex = {'assets':[{'id':'a','tags':['keep'],'name':'custom','preview_extra':'keep'}, {'id':'foreign','model':'foreign.glb'}], 'extra':'retain'}
         (self.lib/'index.json').write_bytes(encoded(self.oldindex))
         self.doc = {'assetSources':[{'id':'a','descriptor':'3d-assets/a/asset.json','model':'3d-assets/a/model.glb','model_sha256':sha(self.lib/'a/model.glb'),'descriptor_sha256':sha(self.lib/'a/asset.json')}], 'instances':[{'transform':[1,2,3],'parts':['p']}], 'sceneAssets':[{'sha256':'unchanged'}]}
-        (self.scenes/'map.level3d.json').write_bytes(encoded(self.doc))
+        (self.scenes/'map.rhlos-map.json').write_bytes(encoded(self.doc))
         self.plan = prepare(self.lib,self.stage,self.scenes)
 
     def test_success_preserves_foreign_and_migrates_pins_only(self):
@@ -36,7 +36,7 @@ class PromotionTests(unittest.TestCase):
         self.assertEqual(index['assets'][0]['tags'],['keep'])
         self.assertEqual(index['assets'][1],self.oldindex['assets'][1])
         self.assertEqual(index['added'],'concurrent')
-        doc=json.loads((self.scenes/'map.level3d.json').read_text())
+        doc=json.loads((self.scenes/'map.rhlos-map.json').read_text())
         self.assertEqual(doc['instances'],self.doc['instances'])
         self.assertEqual(doc['sceneAssets'],self.doc['sceneAssets'])
         self.assertEqual(doc['assetSources'][0]['model_scene'],'initial')
@@ -48,7 +48,7 @@ class PromotionTests(unittest.TestCase):
         with self.assertRaises(RuntimeError): apply(self.plan,self.root/'backup',hook)
         self.assertEqual((self.lib/'a/model.glb').read_bytes(),b'old')
         self.assertTrue((self.lib/'a/model-applied.glb').exists())
-        self.assertEqual(json.loads((self.scenes/'map.level3d.json').read_text()),self.doc)
+        self.assertEqual(json.loads((self.scenes/'map.rhlos-map.json').read_text()),self.doc)
         self.assertEqual(json.loads((self.lib/'index.json').read_text()),self.oldindex)
 
     def test_index_race_keeps_foreign_writer(self):
@@ -69,7 +69,7 @@ class PromotionTests(unittest.TestCase):
 
     def test_stale_saved_pin_rejected(self):
         self.doc['assetSources'][0]['model_sha256']='wrong'
-        (self.scenes/'map.level3d.json').write_bytes(encoded(self.doc))
+        (self.scenes/'map.rhlos-map.json').write_bytes(encoded(self.doc))
         with self.assertRaises(ValueError): prepare(self.lib,self.stage,self.scenes)
 
     def test_stale_stage_rejected(self):

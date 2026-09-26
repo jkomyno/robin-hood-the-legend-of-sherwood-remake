@@ -94,7 +94,7 @@ export async function checkSharedLibrary() {
     files.set(`3d-assets/base/${name}.glb`, baseModel);
     const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", await baseModel.arrayBuffer())), byte => byte.toString(16).padStart(2,"0")).join("");
     json(`scenes/${name}-volumes.scene.json`, { version: 1, map: name, size: [400, 400], camera, placements: [] });
-    json(`scenes/${name}.level3d.json`, { version: 1, map: name, size: [400, 400], camera,
+    json(`scenes/${name}.rhlos-map.json`, { version: 1, map: name, size: [400, 400], camera,
       sceneAssets: [{ id: name, role: "objects", model: `3d-assets/base/${name}.glb`, model_sha256: digest, resources: [] }], groups: [], objects: [{
         id: "building-000", node: "building-000", kind: "building", source: { map: name, obstacle: 0 },
         obstacle, transform: { dx: 0, dy: 0, dz: 0, rot_deg: 0 },
@@ -114,7 +114,7 @@ export async function checkSharedLibrary() {
       source_origin_scene: [0, 0, 0], source_origin_game: [0, 0, 0],
       parts: [{ node: "building-000", name: entry.name, source_obstacle: 0, obstacle_local_game: obstacle }] });
   }
-  const publishedMaps = new Map([...files].filter(([name]) => name.startsWith('scenes/') && name.endsWith('.level3d.json')));
+  const publishedMaps = new Map([...files].filter(([name]) => name.startsWith('scenes/') && name.endsWith('.rhlos-map.json')));
   const handle = (prefix: string): FileSystemDirectoryHandle => ({
     name: "shared-library-fixture", kind: "directory",
     async getDirectoryHandle(name: string) {
@@ -124,7 +124,7 @@ export async function checkSharedLibrary() {
     },
     async getFileHandle(name: string, options?: { create?: boolean }) {
       const original = publishedMaps.get(prefix + name);
-      name = name.replace(' (Modified).level3d.json', '.level3d.json');
+      name = name.replace(' (Modified).rhlos-map.json', '.rhlos-map.json');
       const path = prefix + name;
       if (!files.has(path) && !options?.create) throw new DOMException(path, "NotFoundError");
       return {
@@ -146,7 +146,7 @@ export async function checkSharedLibrary() {
     documentMap: (name: string) => name.replace(' (Modified)', ''),
     savedMapName: (name: string) => ['York', 'Lincoln'].includes(name) ? name + ' (Modified)' : name,
     mapLabels: async () => new Map(["York", "Lincoln"].flatMap(name =>
-      [[name, name], ...(savedMaps.has(`${name}.level3d.json`) ? [[name + ' (Modified)', name + ' (Modified)']] : [])] as [string, string][])) };
+      [[name, name], ...(savedMaps.has(`${name}.rhlos-map.json`) ? [[name + ' (Modified)', name + ' (Modified)']] : [])] as [string, string][])) };
   const host = document.querySelector("#root") as HTMLElement;
   const previousDisplay = host.style.display;
   const previousDirection = host.style.flexDirection;
@@ -258,7 +258,7 @@ export async function checkSharedLibrary() {
     await until(() => ![...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Save *"));
     await until(() => document.querySelector('select[aria-label="Map"] option:checked')?.textContent === 'York (Modified)');
     assert(document.querySelector('.document-state')?.textContent?.includes('York (Modified)'), 'Document status must label the modified copy');
-    const saved = JSON.parse(await files.get("scenes/York.level3d.json")!.text());
+    const saved = JSON.parse(await files.get("scenes/York.rhlos-map.json")!.text());
     assert(saved.objects.some((part: { source: { map: string } }) => part.source.map === "Leicester"), "Cross-level source was lost");
     assert(saved.groups[0].transform.dx !== 200, "Drop used map center instead of cursor");
     click("Undo");
@@ -311,7 +311,7 @@ export async function checkSharedLibrary() {
     await until(() => document.querySelectorAll(".spline-list button").length === 1);
     click("Save *");
     await until(() => ![...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Save *"));
-    const riverSaved = JSON.parse(await files.get("scenes/York.level3d.json")!.text());
+    const riverSaved = JSON.parse(await files.get("scenes/York.rhlos-map.json")!.text());
     assert(riverSaved.splines[0].points.length === 3, "River control points were not saved");
     click("Undo");
     await until(() => document.querySelectorAll(".spline-list button").length === 0);
@@ -347,11 +347,11 @@ export async function checkSharedLibrary() {
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     click("Save *");
     await until(() => ![...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Save *"));
-    assert(JSON.parse(await files.get("scenes/York.level3d.json")!.text()).splines?.find((path: {kind:string}) => path.kind === "wall")?.flipCrossSection === true,
+    assert(JSON.parse(await files.get("scenes/York.rhlos-map.json")!.text()).splines?.find((path: {kind:string}) => path.kind === "wall")?.flipCrossSection === true,
       "Battlement-side choice was not saved");
-    assert(JSON.parse(await files.get("scenes/York.level3d.json")!.text()).lighting?.enabled === true,
+    assert(JSON.parse(await files.get("scenes/York.rhlos-map.json")!.text()).lighting?.enabled === true,
       "Sun settings were not saved");
-    const pathsSaved=JSON.parse(await files.get("scenes/York.level3d.json")!.text());
+    const pathsSaved=JSON.parse(await files.get("scenes/York.rhlos-map.json")!.text());
     assert(pathsSaved.splines.some((p:{kind:string;cornerAsset?:string})=>p.kind==="wall" && p.cornerAsset==="prop-0"),"Corner tower source was not saved");
     assert(pathsSaved.splines.some((p:{kind:string})=>p.kind==="road"),"Footpath was not saved");
     select("Map", "Lincoln");
@@ -375,7 +375,7 @@ export async function checkSharedLibrary() {
     click("Create map");
     await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "New forest");
     assert(document.querySelectorAll(".object-list li").length === 0, "New map inherited objects");
-    assert(JSON.parse(await files.get("scenes/New forest.level3d.json")!.text()).size === null, "New map acquired fixed bounds");
+    assert(JSON.parse(await files.get("scenes/New forest.rhlos-map.json")!.text()).size === null, "New map acquired fixed bounds");
     const initialElevation = elevation();
     click('Reset view');
     await new Promise(resolve => setTimeout(resolve, 900));
@@ -392,7 +392,7 @@ export async function checkSharedLibrary() {
     await new Promise(resolve => requestAnimationFrame(resolve));
     click("Save *");
     await until(() => ![...document.querySelectorAll("button")].some(b => b.textContent?.trim() === "Save *"));
-    const newSaved = JSON.parse(await files.get("scenes/New forest.level3d.json")!.text());
+    const newSaved = JSON.parse(await files.get("scenes/New forest.rhlos-map.json")!.text());
     assert(newSaved.size === null && newSaved.exportBounds[2] === 10, "Advisory crop changed canvas size or expanded to fit assets");
     select("Map", "York");
     await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York");
@@ -410,7 +410,7 @@ export async function checkSharedLibrary() {
     dropJson(JSON.stringify(imported));
     await until(() => (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement)?.value === '77');
     assert(document.querySelector('.document-state')?.textContent?.includes('Unsaved changes'), 'Imported map must be unsaved');
-    assert(JSON.parse(await files.get('scenes/New forest.level3d.json')!.text()).exportBounds[2] === 10, 'Dropping JSON wrote a map before Save');
+    assert(JSON.parse(await files.get('scenes/New forest.rhlos-map.json')!.text()).exportBounds[2] === 10, 'Dropping JSON wrote a map before Save');
     dropJson('{ invalid JSON');
     await until(() => errors.length > 0);
     errors.pop();

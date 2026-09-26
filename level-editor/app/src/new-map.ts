@@ -12,7 +12,7 @@ export function validateNewMap(name: string) {
 export async function createNewMap(library: FileSystemDirectoryHandle, rawName: string) {
   const name = validateNewMap(rawName);
   const directory = await library.getDirectoryHandle("scenes", { create: true });
-  const documentName = `${name}.level3d.json`;
+  const documentName = `${name}.rhlos-map.json`;
   const names = [documentName];
   const existing = new Set((await listFiles(directory)).map(file => file.toLowerCase()));
   if (names.some(file => existing.has(file.toLowerCase())))

@@ -61,8 +61,8 @@ async function main() {
     const metadataFile = path.join(sceneDir,`${name}-volumes.scene.json`);
     const metadataBytes = await fs.readFile(metadataFile);
     const scene = parseSceneDoc(JSON.parse(metadataBytes.toString()));
-    const documentFile = path.join(sceneDir,`${name}.level3d.json`);
-    const previous = files.includes(`${name}.level3d.json`) ? await fs.readFile(documentFile) : null;
+    const documentFile = path.join(sceneDir,`${name}.rhlos-map.json`);
+    const previous = files.includes(`${name}.rhlos-map.json`) ? await fs.readFile(documentFile) : null;
     let document: Record<string, unknown>;
     if (previous) document = JSON.parse(previous.toString());
     else {
@@ -76,7 +76,7 @@ async function main() {
     if (hash(await fs.readFile(source)) !== converted.report.source_sha256 || hash(await fs.readFile(metadataFile)) !== hash(metadataBytes) ||
         (previous && hash(await fs.readFile(documentFile)) !== hash(previous))) throw new Error(`Source changed during import: ${name}`);
     await fs.mkdir(path.join(output,"scenes"),{recursive:true});
-    await fs.writeFile(path.join(output,"scenes",`${name}.level3d.json`),JSON.stringify(converted.document,null,2)+"\n");
+    await fs.writeFile(path.join(output,"scenes",`${name}.rhlos-map.json`),JSON.stringify(converted.document,null,2)+"\n");
     reports.push({ name, glb:source, glb_sha256:converted.report.source_sha256, metadata:metadataFile,
       metadata_sha256:hash(metadataBytes), document:documentFile, previous_document_sha256:previous ? hash(previous) : null,
       objects:converted.document.objects.length, groups:converted.document.groups.length, assets:converted.report.verified_assets });

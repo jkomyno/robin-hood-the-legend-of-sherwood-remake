@@ -10,8 +10,8 @@ export async function checkHttpLibrary() {
   const originalPicker = window.showDirectoryPicker;
   const remote = new Map([
     ['/library/3d-assets/index.json', JSON.stringify({version:1, assets:[]})],
-    ['/library/scenes/index.json', JSON.stringify(['York.level3d.json'])],
-    ['/library/scenes/York.level3d.json', JSON.stringify({map:'York', revision:'published'})],
+    ['/library/scenes/index.json', JSON.stringify(['York.rhlos-map.json'])],
+    ['/library/scenes/York.rhlos-map.json', JSON.stringify({map:'York', revision:'published'})],
     ['/library/3d-assets/york/tower/model.glb', 'model bytes'],
   ]);
   const assert = (value: unknown, message: string) => { if (!value) throw new Error(message); };
@@ -22,27 +22,35 @@ export async function checkHttpLibrary() {
     return new Response(data ?? '', {status:data === undefined ? 404 : 200});
   };
   try {
+    const workspace = await storage.getDirectoryHandle('sherwood-level-editor', {create: true});
+    const storedMaps = await workspace.getDirectoryHandle('maps', {create: true});
+    await writeText(storedMaps, 'Old forest.level3d.json', JSON.stringify({map: 'Old forest', revision: 'legacy'}));
     let connection = await openHttpLibrary('/library/', storage);
     let library = connection.handle;
+    assert((await readJson<{revision:string}>(storedMaps, 'Old forest.rhlos-map.json')).revision === 'legacy', 'Existing browser save was not migrated');
+    assert(!(await listFiles(storedMaps)).includes('Old forest.level3d.json'), 'Migrated browser save retained its old filename');
+    await storedMaps.removeEntry('Old forest.rhlos-map.json');
     assert((await connection.mapLabels()).get('York') === 'York', 'Published map incorrectly marked modified');
     let maps = await library.getDirectoryHandle('scenes');
-    assert((await readJson<{revision:string}>(maps, 'York.level3d.json')).revision === 'published', 'Published map did not load');
-    await writeText(maps, 'York.level3d.json', JSON.stringify({map:'York', revision:'edited'}));
+    assert((await readJson<{revision:string}>(maps, 'York.rhlos-map.json')).revision === 'published', 'Published map did not load');
+    await writeText(maps, 'York.rhlos-map.json', JSON.stringify({map:'York', revision:'edited'}));
     assert((await connection.mapLabels()).get('York (Modified)') === 'York (Modified)', 'Saving did not expose the modified copy');
+    await writeText(storedMaps, 'York.level3d.json', JSON.stringify({map: 'York', revision: 'older save'}));
     connection = await openHttpLibrary('/library/', storage);
     library = connection.handle;
     assert((await connection.mapLabels()).get('York (Modified)') === 'York (Modified)', 'Modified label did not survive reopening');
     maps = await library.getDirectoryHandle('scenes');
-    assert((await readJson<{revision:string}>(maps, 'York (Modified).level3d.json')).revision === 'edited', 'Browser save did not survive reopening');
-    assert((await readJson<{revision:string}>(maps, 'York.level3d.json')).revision === 'published', 'Original is no longer independently loadable');
+    assert((await readJson<{revision:string}>(maps, 'York (Modified).rhlos-map.json')).revision === 'edited', 'Browser save did not survive reopening');
+    assert((await readJson<{revision:string}>(storedMaps, 'York.level3d.json')).revision === 'older save', 'Conflicting legacy save must remain recoverable');
+    assert((await readJson<{revision:string}>(maps, 'York.rhlos-map.json')).revision === 'published', 'Original is no longer independently loadable');
     assert(connection.documentMap('York (Modified)') === 'York', 'Modified map lost its document identity');
     assert(connection.savedMapName('York') === 'York (Modified)' && connection.savedMapName('York (Modified)') === 'York (Modified)', 'Repeated saves must use the same copy');
-    await writeText(maps, 'York (Modified).level3d.json', JSON.stringify({map:'York', revision:'edited again'}));
-    assert((await readJson<{revision:string}>(maps, 'York (Modified).level3d.json')).revision === 'edited again', 'Saving modified copy failed');
-    assert(JSON.parse(remote.get('/library/scenes/York.level3d.json')!).revision === 'published', 'Published map changed');
+    await writeText(maps, 'York (Modified).rhlos-map.json', JSON.stringify({map:'York', revision:'edited again'}));
+    assert((await readJson<{revision:string}>(maps, 'York (Modified).rhlos-map.json')).revision === 'edited again', 'Saving modified copy failed');
+    assert(JSON.parse(remote.get('/library/scenes/York.rhlos-map.json')!).revision === 'published', 'Published map changed');
     await createNewMap(library, 'New forest');
     assert(!(await connection.mapLabels()).has('New forest'), 'Custom map was given a published-map label');
-    assert((await listFiles(maps)).sort().join(',') === 'New forest.level3d.json,York (Modified).level3d.json,York.level3d.json', 'Original and modified maps must be separate entries');
+    assert((await listFiles(maps)).sort().join(',') === 'New forest.rhlos-map.json,York (Modified).rhlos-map.json,York.rhlos-map.json', 'Original and modified maps must be separate entries');
     let rejected = false;
     try { await createNewMap(library, 'York'); } catch { rejected = true; }
     assert(rejected, 'New map overwrote published map');
@@ -51,7 +59,7 @@ export async function checkHttpLibrary() {
     rejected = false;
     try { await assetDir.getFileHandle('model.glb', {create:true}); } catch { rejected = true; }
     assert(rejected, 'Asset write was allowed');
-    const document = await readJson(maps, 'New forest.level3d.json');
+    const document = await readJson(maps, 'New forest.rhlos-map.json');
     let exported: Promise<unknown> | undefined;
     const click = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = function () {

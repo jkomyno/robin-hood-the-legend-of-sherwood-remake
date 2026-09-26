@@ -24,7 +24,7 @@ levels (`level_loading_host.rs` already does).
 
 ## Scene document (source of truth)
 
-`<map>.level3d.json` next to the level plus a GLB with one node per
+`<map>.rhlos-map.json` next to the level plus a GLB with one node per
 obstacle (the export `volumes.ts` now writes: `map` → `ground`,
 `buildings/building-NNN`, `terraces/terrace-NNN`, shared atlas material).
 Per object: the footprint polygon with `z_bottom`/`z_top` per point (the

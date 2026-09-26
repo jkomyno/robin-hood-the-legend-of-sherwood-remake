@@ -12,7 +12,7 @@ const live = process.argv.includes('--live');
 const base = process.argv.slice(3).find(arg=>!arg.startsWith('--')) || 'http://localhost:5180';
 const expected = JSON.parse(await readFile(join(stage, 'asset-verification.json'), 'utf8'));
 const stageUrl = live ? '/library/scenes/derby-volumes.scene.glb' : '/@fs/' + stage + '/derby.scene.glb';
-let levelDocument = JSON.parse(await readFile(resolve('level-editor/library/scenes/derby.level3d.json'),'utf8'));
+let levelDocument = JSON.parse(await readFile(resolve('level-editor/library/scenes/derby.rhlos-map.json'),'utf8'));
 if(!live && (levelDocument.groups.length!==expected.groups || levelDocument.objects.length!==expected.parts)){
   const publication=JSON.parse(await readFile(join(stage,'stage.json'),'utf8'));
   const plan=JSON.parse(await readFile(publication.plan,'utf8'));
@@ -32,7 +32,7 @@ if(levelDocument.groups.length!==expected.groups || levelDocument.objects.length
   throw new Error('Document migration requires unchanged group/part counts');
 if(!live){
   levelDocument.provenance.glb_sha256=createHash('sha256').update(await readFile(join(stage,'derby.scene.glb'))).digest('hex');
-  await writeFile(join(stage,'derby.level3d.json'),JSON.stringify(levelDocument,null,2)+'\n');
+  await writeFile(join(stage,'derby.rhlos-map.json'),JSON.stringify(levelDocument,null,2)+'\n');
 }
 const profile = await mkdtemp(join(stage, 'browser-profile-'));
 // Avoid booting the normal app's viewport as well as the test viewport. Two
@@ -60,7 +60,7 @@ try {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   console.log('Loading staged map and validating runtime');
-  await evaluate(ws, ++id, `window.__stageConfig=${JSON.stringify({stageUrl,documentUrl:live?'/library/scenes/derby.level3d.json':'/@fs/'+stage+'/derby.level3d.json',expected})}`, {timeoutMs:30000});
+  await evaluate(ws, ++id, `window.__stageConfig=${JSON.stringify({stageUrl,documentUrl:live?'/library/scenes/derby.rhlos-map.json':'/@fs/'+stage+'/derby.rhlos-map.json',expected})}`, {timeoutMs:30000});
   const script = await readFile(new URL('./verify_staged_editor_browser.js', import.meta.url), 'utf8');
   await evaluate(ws, ++id, script, {timeoutMs:180000});
   let result;

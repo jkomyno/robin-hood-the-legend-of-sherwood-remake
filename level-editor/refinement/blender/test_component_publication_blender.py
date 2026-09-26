@@ -33,8 +33,8 @@ def check():
             uv=obj.data.uv_layers.new(name='UVMap')
             for loop in obj.data.loops:uv.data[loop.index].uv=(loop.vertex_index % 2, (loop.vertex_index // 2) % 2)
         export_asset_library('Fixture',root/'assets',level_path,catalog=catalog)
-        report=export_editor('Fixture',root/'fixture.level3d.json',catalog=catalog,level=level)
-        document=json.loads((root/'fixture.level3d.json').read_text())
+        report=export_editor('Fixture',root/'fixture.rhlos-map.json',catalog=catalog,level=level)
+        document=json.loads((root/'fixture.rhlos-map.json').read_text())
         assert 'glb' not in document and document['assetSources'] and not document['sceneAssets']
         assert not list(root.glob('*.glb'))
         assert not list((root/'map-assets/3d-assets/blobs').glob('*'))
@@ -66,7 +66,7 @@ def check():
         else:raise AssertionError('Accepted collision expansion outside exported component metadata')
         path.write_text(saved)
         bpy.data.objects['right']['projection_component']='base-left'
-        try:export_editor('Fixture',root/'bad.level3d.json',catalog=catalog,level=level)
+        try:export_editor('Fixture',root/'bad.rhlos-map.json',catalog=catalog,level=level)
         except ValueError:pass
         else:raise AssertionError('Accepted overlapping mesh selector')
     print('PASS split map/library mesh subsets, source provenance, component footprints, and tamper rejection')

@@ -12,7 +12,7 @@ Run from the repository root after `publish_stage.py` (never promotes anything):
 The worker is opened read-only; its `lincoln …` scene and collection are renamed in memory to
 the catalog's display map name so exported descriptors say `Lincoln`. Catalog-v2 component
 splits are exported as separate selectable parts (`building-NNN--component-<name>`) by the
-shared exporter. Writes `lincoln.scene.glb`, `assets/`, `publication-metadata.json`,
+shared exporter. Writes `lincoln.rhlos-map.json`, `assets/`, `publication-metadata.json`,
 `effective-plan.json` (for `verify_staged_handoffs.py`) and `stage.json` (for
 `verify_publication_assets.py`).
 """
@@ -180,7 +180,7 @@ def main(argv):
             'texture': 'approved source-projected materials; generated texture publication pending',
         })
 
-    map_report = export_editor(map_name, stage / (map_name.lower() + '.scene.glb'), catalog=catalog, level=level)
+    map_report = export_editor(map_name, stage / (map_name.lower() + '.rhlos-map.json'), catalog=catalog, level=level)
     asset_report = export_asset_library(map_name, stage / 'assets', str(args.level.resolve()),
                                         asset_ids=asset_ids, catalog=catalog)
     index = json.loads((stage / 'assets/index.json').read_text())

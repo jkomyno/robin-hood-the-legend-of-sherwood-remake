@@ -8,7 +8,7 @@ const map = query.get("map") ?? "Wychford";
 if (!/^[a-zA-Z0-9_-]+$/.test(map)) throw new Error("Invalid scene name");
 const root = "/library/";
 const result = document.querySelector("#result")!;
-const files = [map + ".level3d.json"];
+const files = [map + ".rhlos-map.json"];
 const directory = (prefix: string): FileSystemDirectoryHandle => ({
   name: "library", kind: "directory",
   async getDirectoryHandle(name: string) { return directory(prefix + name + "/"); },

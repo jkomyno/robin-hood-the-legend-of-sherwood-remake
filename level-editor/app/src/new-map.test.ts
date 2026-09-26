@@ -22,19 +22,19 @@ function fixture(fail?: string) {
 test("new maps persist unbounded documents without a required export frame", async t => {
   const { root, files } = fixture();
   assert.equal(await createNewMap(root, "  New forest  "), "New forest");
-  const doc = parseLevel3D(JSON.parse(String(files.get("New forest.level3d.json"))));
+  const doc = parseLevel3D(JSON.parse(String(files.get("New forest.rhlos-map.json"))));
   assert.equal(doc.size, null);
   assert.equal(doc.exportBounds, undefined);
   assert.deepEqual(doc.objects, []);
-  assert.deepEqual([...files.keys()], ["New forest.level3d.json"]);
+  assert.deepEqual([...files.keys()], ["New forest.rhlos-map.json"]);
 });
 
 test("new map creation rejects collisions without overwriting and rolls back failed writes", async t => {
   const existing = fixture();
-  existing.files.set("FOREST.level3d.json", "keep");
+  existing.files.set("FOREST.rhlos-map.json", "keep");
   await assert.rejects(createNewMap(existing.root, "forest"), /already exists/);
   assert.deepEqual([...existing.files.values()], ["keep"]);
-  const broken = fixture("Forest.level3d.json");
+  const broken = fixture("Forest.rhlos-map.json");
   await assert.rejects(createNewMap(broken.root, "Forest"), /Cannot write Forest/);
   assert.equal(broken.files.size, 0);
 });

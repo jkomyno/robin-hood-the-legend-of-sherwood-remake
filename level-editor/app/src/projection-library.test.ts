@@ -79,7 +79,7 @@ test("saved external models reload before document validation and retire with th
   const base: Level3D = { version: 1, map: "York", size: [100, 100], camera: { kind: "oblique-orthographic", elevation_deg: 35 },
     sceneAssets: [], groups: [], objects: [] };
   const inserted = insertProjectionAsset(base, prepared.descriptor, prepared.reference, [50, 50, 0]);
-  f.json("scenes/York.level3d.json", inserted.document);
+  f.json("scenes/York.rhlos-map.json", inserted.document);
   f.json("scenes/York-volumes.scene.json", { version: 1, map: "York", size: [100, 100], camera: base.camera, placements: [] });
   f.files.set("scenes/York-volumes.scene.glb", new File([new Uint8Array([7])], "map.glb"));
   let calls = 0;
@@ -161,7 +161,7 @@ test("manifest mission metadata preserves sources and saved deletions remain del
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
   const transform = { dx: 0, dy: 0, dz: 0, rot_deg: 0 };
   f.files.set("3d-assets/base.glb", new File([new Uint8Array([7])], "base.glb"));
-  f.json("scenes/Leicester.level3d.json", { version: 1, map: "Leicester", sourceMap: "Leicester", size: [100, 100],
+  f.json("scenes/Leicester.rhlos-map.json", { version: 1, map: "Leicester", sourceMap: "Leicester", size: [100, 100],
     camera: { kind: "oblique-orthographic", elevation_deg: 35 },
     sceneAssets: [{ id: "base", role: "objects", model: "3d-assets/base.glb",
       model_sha256: createHash("sha256").update(new Uint8Array([7])).digest("hex"), resources: [] }],
@@ -180,16 +180,16 @@ test("manifest mission metadata preserves sources and saved deletions remain del
   const part = candidate.document.objects.find(object => object.kind === "mission")!;
   assert.deepEqual(part.source, { map: "Leicester", mission_profile: "Derby - Pont_levis02" });
   assert.equal(part.group, "second-drawbridge");
-  f.json("scenes/Leicester.level3d.json", candidate.document);
+  f.json("scenes/Leicester.rhlos-map.json", candidate.document);
   const saved = await prepareMapCandidate("Leicester", f.directory, null);
   assert.equal(saved.document.objects.length, 2);
-  f.json("scenes/Leicester.level3d.json", { ...candidate.document, objects: candidate.document.objects.map(object =>
+  f.json("scenes/Leicester.rhlos-map.json", { ...candidate.document, objects: candidate.document.objects.map(object =>
     object.kind === "mission" ? { ...object, source: { map: "Leicester", mission_profile: "Wrong profile" } } : object) });
   await assert.rejects(prepareMapCandidate("Leicester", f.directory, null), /Mission source profile mismatch/);
-  f.json("scenes/Leicester.level3d.json", { ...candidate.document,
+  f.json("scenes/Leicester.rhlos-map.json", { ...candidate.document,
     objects: candidate.document.objects.filter(object => object.kind !== "mission") });
   assert.equal((await prepareMapCandidate("Leicester", f.directory, null)).document.objects.length, 1);
-  f.json("scenes/Leicester.level3d.json", candidate.document);
+  f.json("scenes/Leicester.rhlos-map.json", candidate.document);
   bridge.userData.source_obstacle = 267;
   await assert.rejects(prepareMapCandidate("Leicester", f.directory, null), /Source obstacle mismatch/);
 });

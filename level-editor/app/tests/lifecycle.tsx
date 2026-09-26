@@ -237,8 +237,8 @@ async function fixtures(names = ["a", "b"]) {
       ],
     };
     files.set(
-      `${name}.level3d.json`,
-      new File([JSON.stringify(doc)], "level3d.json"),
+      `${name}.rhlos-map.json`,
+      new File([JSON.stringify(doc)], "rhlos-map.json"),
     );
   }
   const originalFiles = new Map(files);

@@ -79,7 +79,7 @@
   selectionChecks.push({id:group.id,parts:group.parts.map(part=>part.id),groupAndPartsSelectable:true});
  }
  const scenes=await library.getDirectoryHandle('scenes');
- const saved=async()=>JSON.parse(await(await(await scenes.getFileHandle(config.map+'.level3d.json')).getFile()).text());
+ const saved=async()=>JSON.parse(await(await(await scenes.getFileHandle(config.map+'.rhlos-map.json')).getFile()).text());
  const save=async()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim().startsWith('Save'));if(!b.disabled)b.click();await wait(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Save'&&b.disabled),'save');return saved();};
  const transform=async(value)=>{const row=[...document.querySelectorAll('.object-detail .meta-row')].find(row=>row.querySelector('.meta-key')?.textContent==='dx');const input=row.querySelector('input');input.value=value;input.dispatchEvent(new Event('change',{bubbles:true}));await sleep(50);};
  const inserted=[],stateChecks=[];

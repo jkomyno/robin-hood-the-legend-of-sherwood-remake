@@ -163,8 +163,8 @@ export default function Editor3D(props: EditorProps) {
         const files = await listFiles(dir);
         const labels = await lib.mapLabels?.() ?? new Map<string, string>();
         const names = files
-          .filter((f) => f.endsWith(".level3d.json"))
-          .map((f) => f.slice(0, -".level3d.json".length))
+          .filter((f) => f.endsWith(".rhlos-map.json"))
+          .map((f) => f.slice(0, -".rhlos-map.json".length))
           .sort();
         if (disposed || props.library() !== lib) return;
         setMaps(names);
@@ -571,7 +571,7 @@ export default function Editor3D(props: EditorProps) {
     try {
       await writeText(
         snapshot.resources,
-        `${snapshot.name}.level3d.json`,
+        `${snapshot.name}.rhlos-map.json`,
         JSON.stringify(snapshot.document, null, 2),
       );
       const savedName = library?.savedMapName?.(snapshot.name) ?? snapshot.name;
