@@ -15,9 +15,9 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { NodeIO } from "@gltf-transform/core";
+import { NodeIO, PropertyType } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
-import { dequantize, meshopt, simplify, textureCompress, unpartition } from "@gltf-transform/functions";
+import { dequantize, meshopt, prune, simplify, textureCompress, unpartition } from "@gltf-transform/functions";
 import { MeshoptEncoder, MeshoptSimplifier } from "meshoptimizer";
 import sharp from "sharp";
 
@@ -71,6 +71,21 @@ export async function previewFingerprint(): Promise<string> {
 export async function generatePreview(input: string): Promise<{ bytes: Uint8Array; edge: number | null; texels: number }> {
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ "meshopt.encoder": MeshoptEncoder });
   const document = await io.read(input);
+  // Previews show the covered state. Nodes shown only while a patch is revealed (exported
+  // reveal_show_when_applied extras, e.g. revealed-interior copies) are dropped; the editor's
+  // PatchDisplay switches them on the full model only.
+  const revealOnly = document.getRoot().listNodes().filter((node) => {
+    const show = (node.getExtras() as Record<string, unknown>).reveal_show_when_applied;
+    return Array.isArray(show) && show.length > 0;
+  });
+  if (revealOnly.length) {
+    for (const node of revealOnly) node.dispose();
+    // Only drop resources the removed nodes owned; keep every (possibly empty) part node.
+    await document.transform(prune({
+      keepLeaves: true,
+      propertyTypes: [PropertyType.MESH, PropertyType.MATERIAL, PropertyType.TEXTURE, PropertyType.ACCESSOR],
+    }));
+  }
   const texels = document.getRoot().listTextures().reduce((sum, texture) => {
     const size = texture.getSize();
     if (!size) throw new Error(`Unknown texture size: ${texture.getName()}`);
