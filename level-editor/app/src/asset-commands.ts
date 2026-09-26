@@ -12,7 +12,7 @@ export function insertProjectionAsset(document: Level3D, descriptor: ProjectionA
     throw new Error("Asset identity mismatch");
   if (placement.length !== 3 || placement.some(value => !Number.isFinite(value))) throw new Error("Invalid asset placement");
   const existing = document.assetSources?.find(source => source.id === reference.id);
-  if (existing && (["descriptor", "model", "descriptor_sha256", "model_sha256"] as const).some(key => existing[key] !== reference[key])) throw new Error("A different revision of this asset is already in the document");
+  if (existing && (["descriptor", "model", "model_scene", "state_variant", "descriptor_sha256", "model_sha256"] as const).some(key => existing[key] !== reference[key])) throw new Error("A different revision of this asset is already in the document");
   const occupied = new Set([...document.groups.map(group => group.id), ...document.objects.map(part => part.id)]);
   let number = 1;
   let id: string;

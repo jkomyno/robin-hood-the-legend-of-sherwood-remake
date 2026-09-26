@@ -254,6 +254,9 @@ test("scene selectors are descriptor-bound and pinned in saved references", asyn
   });
   const prepared=await prepareProjectionAsset(f.directory,entries[2]!,"York");
   assert.equal(prepared.reference.model_scene,"open");
+  const blank:Level3D={version:1,map:"York",size:[100,100],camera:{kind:"oblique-orthographic",elevation_deg:35},sceneAssets:[],groups:[],objects:[]};
+  const document=insertProjectionAsset(blank,prepared.descriptor,prepared.reference,[0,0,0]).document;
+  assert.throws(()=>insertProjectionAsset(document,prepared.descriptor,{...prepared.reference,model_scene:"closed"},[0,0,0]),/different revision/);
   assert.deepEqual((await prepareProjectionAsset(f.directory,prepared.reference,"York",prepared.reference)).reference,prepared.reference);
   await assert.rejects(prepareProjectionAsset(f.directory,{...entries[2]!,model_scene:"closed"},"York"),/scene mismatch/);
   await assert.rejects(prepareProjectionAsset(f.directory,entries[2]!,"York",{...prepared.reference,model_scene:"closed"}),/saved reference mismatch/);
