@@ -442,17 +442,19 @@ export async function checkSharedLibrary() {
     await until(
       () => document.querySelector(".editor-status")?.textContent === "Added Stone House",
     );
-    const x = document.querySelector('input[aria-label="Offset X"]') as HTMLInputElement;
+    const x = document.querySelector('input[aria-label="X"]') as HTMLInputElement;
     const originalX = Number(x.value);
     const currentX = () =>
-      Number((document.querySelector('input[aria-label="Offset X"]') as HTMLInputElement).value);
+      Number((document.querySelector('input[aria-label="X"]') as HTMLInputElement).value);
     // Synthetic pointers cannot capture a native pointer; exercise the real component handlers and history.
-    const capture = x.setPointerCapture,
-      release = x.releasePointerCapture;
-    x.setPointerCapture = () => {};
-    x.releasePointerCapture = () => {};
+    const row = x.closest(".meta-row") as HTMLElement;
+    const label = row.querySelector(".meta-key")!;
+    const capture = row.setPointerCapture,
+      release = row.releasePointerCapture;
+    row.setPointerCapture = () => {};
+    row.releasePointerCapture = () => {};
     try {
-      x.dispatchEvent(
+      label.dispatchEvent(
         new PointerEvent("pointerdown", { bubbles: true, button: 0, pointerId: 1, clientX: 100 }),
       );
       x.dispatchEvent(
@@ -470,8 +472,8 @@ export async function checkSharedLibrary() {
         "Scrub created extra history entries or undid insertion",
       );
     } finally {
-      x.setPointerCapture = capture;
-      x.releasePointerCapture = release;
+      row.setPointerCapture = capture;
+      row.releasePointerCapture = release;
     }
     click("Save *");
     await until(

@@ -1564,41 +1564,25 @@ export default function Editor3D(props: EditorProps) {
                       </>
                     )}
                   </Show>
-                  <h3>
-                    Transform
-                    {selectedPart()?.group ? " (within the building)" : ""}
-                  </h3>
                   <For each={["dx", "dy", "dz", "rot_deg"] as const}>
                     {(f) => (
-                      <div class="meta-row">
-                        <span class="meta-key">
+                      <ScrubNumber
+                        label={
                           {
-                            {
-                              dx: "Offset X",
-                              dy: "Offset Y",
-                              dz: "Height offset",
-                              rot_deg: "Rotation (°)",
-                            }[f]
-                          }
-                        </span>
-                        <ScrubNumber
-                          label={
-                            {
-                              dx: "Offset X",
-                              dy: "Offset Y",
-                              dz: "Height offset",
-                              rot_deg: "Rotation (°)",
-                            }[f]
-                          }
-                          step={f === "rot_deg" ? 5 : 1}
-                          value={t()[f]}
-                          onPreview={(value) => previewTransformField(f, value)}
-                          onCommit={(value) => setTransformField(f, value)}
-                          onCancel={() => {
-                            if (!disposed && doc()) viewport.syncViews(doc()!, false);
-                          }}
-                        />
-                      </div>
+                            dx: "X",
+                            dy: "Y",
+                            dz: "Height",
+                            rot_deg: "Rotation (°)",
+                          }[f]
+                        }
+                        step={f === "rot_deg" ? 5 : 1}
+                        value={t()[f]}
+                        onPreview={(value) => previewTransformField(f, value)}
+                        onCommit={(value) => setTransformField(f, value)}
+                        onCancel={() => {
+                          if (!disposed && doc()) viewport.syncViews(doc()!, false);
+                        }}
+                      />
                     )}
                   </For>
                   <div class="row">

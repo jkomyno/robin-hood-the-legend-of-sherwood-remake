@@ -18,18 +18,10 @@ export default function ScrubNumber(props: {
   }
   onCleanup(cancel);
   return (
-    <input
-      class="scrub-number"
-      type="number"
-      aria-label={props.label}
-      step={props.step}
+    <div
+      class="meta-row scrub-number"
       onDragStart={(event) => event.preventDefault()}
       title="Drag left or right to adjust; hold Shift for finer control. Click to type."
-      value={preview() ?? props.value}
-      onChange={(event) => {
-        const value = event.currentTarget.valueAsNumber;
-        if (!gesture?.moved && Number.isFinite(value)) props.onCommit(value);
-      }}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         gesture = { x: event.clientX, value: props.value, current: props.value, moved: false };
@@ -68,6 +60,21 @@ export default function ScrubNumber(props: {
           cancel();
         }
       }}
-    />
+    >
+      <span class="meta-key" style={{ "user-select": "none" }}>
+        {props.label}
+      </span>
+      <input
+        class="scrub-number"
+        type="number"
+        aria-label={props.label}
+        step={props.step}
+        value={preview() ?? props.value}
+        onChange={(event) => {
+          const value = event.currentTarget.valueAsNumber;
+          if (!gesture?.moved && Number.isFinite(value)) props.onCommit(value);
+        }}
+      />
+    </div>
   );
 }
