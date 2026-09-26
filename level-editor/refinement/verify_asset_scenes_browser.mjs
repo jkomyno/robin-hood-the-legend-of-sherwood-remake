@@ -1,10 +1,10 @@
 /** Serial isolated asset loads avoid accumulating complete map texture sets. */
 import {spawn} from 'node:child_process';
-import {mkdir,mkdtemp,writeFile,rm} from 'node:fs/promises';
+import {mkdir,mkdtemp,writeFile,rm,readFile} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 import {chromeEndpoint,socketOpen} from '../app/tests/cdp.mjs';
 const library=resolve(process.argv[2]),output=resolve(process.argv[3]);
-const ids=process.argv.slice(4);
+const ids=process.argv[4]==='--all'?(JSON.parse(await readFile(join(library,'index.json'),'utf8')).assets.map(entry=>entry.id)):process.argv.slice(4);
 if(!ids.length)throw Error('Pass library root, output directory and exact asset IDs');
 await mkdir(output,{recursive:true});const profile=await mkdtemp(join(output,'browser-profile-'));
 const chrome=spawn('/usr/lib/chromium/chromium',['--headless','--no-sandbox','--disable-dev-shm-usage','--disable-background-networking','--window-size=920,760','--remote-debugging-port=0','--user-data-dir='+profile,'http://localhost:5180/tests/asset-scenes.html'],{stdio:['ignore','ignore','pipe']});
