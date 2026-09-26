@@ -263,33 +263,33 @@ test("scene selectors are descriptor-bound and pinned in saved references", asyn
   await assert.rejects(prepareProjectionAsset(f.directory,entries[2]!,"York",{...prepared.reference,model_sha256:"c".repeat(64)}),/model changed/);
 });
 
-test("release models replace pinned published models only while their receipt names that pin", async (t) => {
+test("lossy models replace pinned published models only while their receipt names that pin", async (t) => {
   const f = fixture();
   const sha = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
-  const published = new Uint8Array([3, 2, 1]), release = new Uint8Array([9, 9]);
-  f.json("3d-assets/index.json", { version: 1, assets: [{ ...f.entry, descriptor: "house/asset.json", model: "house/model.glb", release_model: "house/release.glb" }] });
-  f.files.set("3d-assets/house/release.glb", new File([release], "release.glb"));
-  f.json("3d-assets/house/release.glb.receipt.json", { source: sha(published), output: sha(release) });
+  const published = new Uint8Array([3, 2, 1]), lossy = new Uint8Array([9, 9]);
+  f.json("3d-assets/index.json", { version: 1, assets: [{ ...f.entry, descriptor: "house/asset.json", model: "house/model.glb", lossy_model: "house/lossy.glb" }] });
+  f.files.set("3d-assets/house/lossy.glb", new File([lossy], "lossy.glb"));
+  f.json("3d-assets/house/lossy.glb.receipt.json", { source: sha(published), output: sha(lossy) });
   const [entry] = await listProjectionAssets(f.directory);
-  assert.equal(entry!.release_model, "3d-assets/house/release.glb");
+  assert.equal(entry!.lossy_model, "3d-assets/house/lossy.glb");
   const loaded: number[][] = [];
   t.mock.method(GLTFLoader.prototype, "parseAsync", async (bytes: ArrayBuffer) => { loaded.push([...new Uint8Array(bytes)]); return { scene: f.asset }; });
-  // A new insertion pins the published hash and displays the release.
+  // A new insertion pins the published hash and displays the lossy model.
   const inserted = await prepareProjectionAsset(f.directory, entry!, "Leicester");
   assert.equal(inserted.reference.model_sha256, sha(published));
   assert.equal(inserted.reference.model, f.entry.model);
-  // A saved pin never reads the published model while its release is current.
+  // A saved pin never reads the published model while its lossy model is current.
   f.files.delete(f.entry.model);
   const reloaded = await prepareProjectionAsset(f.directory, entry!, "Leicester", inserted.reference);
   assert.deepEqual(reloaded.reference, inserted.reference);
   assert.deepEqual(loaded, [[9, 9], [9, 9]]);
-  // A stale release (built from another source revision) falls back to the published model.
+  // A stale lossy model (built from another source revision) falls back to the published model.
   f.files.set(f.entry.model, new File([published], "model.glb"));
-  f.json("3d-assets/house/release.glb.receipt.json", { source: "a".repeat(64), output: sha(release) });
+  f.json("3d-assets/house/lossy.glb.receipt.json", { source: "a".repeat(64), output: sha(lossy) });
   t.mock.method(console, "warn", () => {});
   await prepareProjectionAsset(f.directory, entry!, "Leicester", inserted.reference);
   assert.deepEqual(loaded.at(-1), [3, 2, 1]);
-  // Release bytes that differ from their receipt are a broken library, not a fallback.
-  f.json("3d-assets/house/release.glb.receipt.json", { source: sha(published), output: "b".repeat(64) });
+  // Lossy bytes that differ from their receipt are a broken library, not a fallback.
+  f.json("3d-assets/house/lossy.glb.receipt.json", { source: sha(published), output: "b".repeat(64) });
   await assert.rejects(prepareProjectionAsset(f.directory, entry!, "Leicester", inserted.reference), /does not match its receipt/);
 });

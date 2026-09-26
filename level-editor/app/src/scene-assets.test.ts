@@ -54,7 +54,7 @@ test("map manifests reject old whole-map storage and unsafe asset references", (
     assert.throws(() => parseLevel3D({ ...document, sceneAssets: [asset] }));
 });
 
-test("ground releases load in place of their pinned GLB only with a matching receipt", async t => {
+test("ground lossy models load in place of their pinned GLB only with a matching receipt", async t => {
   const files = new Map<string, File>();
   const root = (prefix = ""): FileSystemDirectoryHandle => ({
     async getDirectoryHandle(name: string) { return root(prefix + name + "/"); },
@@ -63,23 +63,23 @@ test("ground releases load in place of their pinned GLB only with a matching rec
       return { getFile: async () => files.get(prefix + name)! };
     },
   }) as unknown as FileSystemDirectoryHandle;
-  const published = new Uint8Array([1, 2, 3]), release = new Uint8Array([7]);
+  const published = new Uint8Array([1, 2, 3]), lossy = new Uint8Array([7]);
   const reference: SceneAssetSource = { id: "terrain", role: "ground", model: "3d-assets/terrain/model.glb", model_sha256: hash(published), resources: [] };
-  files.set("3d-assets/terrain/release.glb", new File([release], "release.glb"));
-  files.set("3d-assets/terrain/release.glb.receipt.json", new File([JSON.stringify({ source: hash(published), output: hash(release) })], "r.json"));
+  files.set("3d-assets/terrain/lossy.glb", new File([lossy], "lossy.glb"));
+  files.set("3d-assets/terrain/lossy.glb.receipt.json", new File([JSON.stringify({ source: hash(published), output: hash(lossy) })], "r.json"));
   const loaded: number[][] = [];
   t.mock.method(GLTFLoader.prototype, "parseAsync", async (bytes: ArrayBuffer) => { loaded.push([...new Uint8Array(bytes)]); return { scene: new THREE.Group() }; });
-  const loader = new SceneAssetLoader(root(), new Map([[reference.model, "3d-assets/terrain/release.glb"]]));
+  const loader = new SceneAssetLoader(root(), new Map([[reference.model, "3d-assets/terrain/lossy.glb"]]));
   await loader.load(reference);
   assert.deepEqual(loaded, [[7]]);
   // Stale receipt: fall back to the published model (absent here, so the load fails on it).
   t.mock.method(console, "warn", () => {});
-  files.set("3d-assets/terrain/release.glb.receipt.json", new File([JSON.stringify({ source: "c".repeat(64), output: hash(release) })], "r.json"));
+  files.set("3d-assets/terrain/lossy.glb.receipt.json", new File([JSON.stringify({ source: "c".repeat(64), output: hash(lossy) })], "r.json"));
   await assert.rejects(loader.load(reference), /terrain\/model\.glb/);
   files.set(reference.model, new File([published], "model.glb"));
   await loader.load(reference);
   assert.deepEqual(loaded.at(-1), [1, 2, 3]);
-  // Without a release entry the pinned model is used unchanged.
+  // Without a lossy model entry the pinned model is used unchanged.
   await new SceneAssetLoader(root()).load(reference);
   assert.deepEqual(loaded.at(-1), [1, 2, 3]);
   loader.dispose();
