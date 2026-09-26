@@ -178,6 +178,9 @@ importers:
       oxlint-tsgolint:
         specifier: 7.0.2003
         version: 7.0.2003
+      temporal-polyfill:
+        specifier: 1.0.5
+        version: 1.0.5
 
   app:
     dependencies:
@@ -196,6 +199,9 @@ importers:
       solid-js:
         specifier: 2.0.0-rc.9
         version: 2.0.0-rc.9
+      temporal-polyfill:
+        specifier: 1.0.5
+        version: 1.0.5
       three:
         specifier: ^0.186.0
         version: 0.186.0
@@ -248,6 +254,9 @@ importers:
       sharp:
         specifier: 0.35.4
         version: 0.35.4(@types/node@26.5.1)
+      temporal-polyfill:
+        specifier: 1.0.5
+        version: 1.0.5
     devDependencies:
       '@types/earcut':
         specifier: ^3.0.0
@@ -1667,6 +1676,15 @@ packages:
     resolution: {integrity: sha512-7OXrNWzy6CK+r7Ch9OLPBDTKfB6XlWHjX4P0RU5B3IgFuWPeYN0XtRtlexGRjgbQxpfaUve6jTAwBGWuGntz/w==}
     engines: {node: '>=18.20 || >=20'}
 
+  temporal-polyfill@1.0.5:
+    resolution: {integrity: sha512-+H/mmY74i6wXCMcjIhGuSnODcyZnc4eois2myhOyX0UqRAKNXQY5m9iB1en5jQ/n4SXtjLXo1ElBI5bmn8tZwQ==}
+
+  temporal-spec@1.0.1:
+    resolution: {integrity: sha512-wxVoanmDeavXie1vu2JaQ3WIc3JZnWAOYFBsJyATaVsXsycKYUflGsyBmrRSnoCpZJpwPyr38VpgSUlQ8CbFxg==}
+
+  temporal-utils@1.0.3:
+    resolution: {integrity: sha512-9jbTSX3HvkOWvDpNpFzwX/d1mkCrgQgwLmVTOEiuocZGKHsrQJtttGZFmybJ2zYP5zCSZuU5ZyeS8+eOEPABiQ==}
+
   three@0.186.0:
     resolution: {integrity: sha512-cr/fIM2ddMSVbYVgkfD4jLJv7Fh/8ZTjvo+7gQeSVGUZHxpx9FDwoL5iC7hUz/LiRA8wMbqfnb90xKfm1/HHkQ==}
 
@@ -2854,6 +2872,15 @@ snapshots:
   source-map-js@1.2.1: {}
 
   splaytree@3.2.3: {}
+
+  temporal-polyfill@1.0.5:
+    dependencies:
+      temporal-spec: 1.0.1
+      temporal-utils: 1.0.3
+
+  temporal-spec@1.0.1: {}
+
+  temporal-utils@1.0.3: {}
 
   three@0.186.0: {}
 

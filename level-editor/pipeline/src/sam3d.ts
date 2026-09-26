@@ -14,6 +14,7 @@ import path from "node:path";
 import { fal } from "@fal-ai/client";
 import type { Sam33dObjectsInput, Sam33dObjectsOutput } from "@fal-ai/client/endpoints";
 import type { ModelPose } from "@rle/shared";
+import { Temporal } from "temporal-polyfill";
 import { requireEnv, workDir } from "./env.ts";
 import {
   cacheDirectory,
@@ -237,7 +238,7 @@ export async function reconstruct3d(
         JSON.stringify(
           {
             endpoint: ENDPOINT,
-            requested_at: new Date().toISOString(),
+            requested_at: Temporal.Now.instant().toString({ fractionalSecondDigits: 3 }),
             params,
             request_id: requestId,
             response,

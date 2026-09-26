@@ -2,6 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
+import { Temporal } from "temporal-polyfill";
 import {
   loadAssetMap,
   parseStoredMap,
@@ -55,7 +56,7 @@ if (action === "--apply" && changes.length) {
   const backup = path.join(
     scenes,
     "backups",
-    `map-v2-${new Date().toISOString().replaceAll(/[:.]/g, "")}`,
+    `map-v2-${Temporal.Now.instant().toString({ fractionalSecondDigits: 3 }).replaceAll(/[:.]/g, "")}`,
   );
   await fs.mkdir(backup, { recursive: true });
   for (const item of changes)

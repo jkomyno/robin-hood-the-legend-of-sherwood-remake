@@ -43,7 +43,7 @@ try{
  let result,phase,lastProgress=0;
  for(let i=0;i<1200;i++){
   result=await evaluate(ws,++id,'window.__publicationResult');if(result)break;
-  if(Date.now()-lastProgress>15000){const progress=await evaluate(ws,++id,'window.__publicationProgress')??{phase:'app-startup'};console.log(JSON.stringify(progress));await writeFile(join(here,'progress.json'),JSON.stringify({status:'RUNNING',...progress}));lastProgress=Date.now();}
+  if(performance.now()-lastProgress>15000){const progress=await evaluate(ws,++id,'window.__publicationProgress')??{phase:'app-startup'};console.log(JSON.stringify(progress));await writeFile(join(here,'progress.json'),JSON.stringify({status:'RUNNING',...progress}));lastProgress=performance.now();}
   phase=await evaluate(ws,++id,'window.__publicationPhase');if(phase&&!phase.captured){await writeFile(join(here,'progress.json'),JSON.stringify({status:'RUNNING',phase:phase.phase+'-screenshot'}));await new Promise(r=>setTimeout(r,800));await screenshot(phase.phase==='map-ready'?'map-before-insertion':'map-revealed');await evaluate(ws,++id,'window.__publicationPhase.captured=true;window.__publicationContinue=true');}
   await new Promise(r=>setTimeout(r,200));
  }

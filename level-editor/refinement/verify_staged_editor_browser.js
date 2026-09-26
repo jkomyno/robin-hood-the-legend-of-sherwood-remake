@@ -6,7 +6,7 @@
   const directory={async getDirectoryHandle(){return this;},async getFileHandle(name){
     if(!files.includes(name))throw new DOMException(name,'NotFoundError');
     const url=name.endsWith('.glb')?stageUrl:name.endsWith('.rhlos-map.json')?documentUrl:'/library/scenes/'+name;
-    const response=await fetch(url+'?stage-check='+Date.now());
+    const response=await fetch(url+'?stage-check='+crypto.randomUUID());
     if(!response.ok)throw Error('HTTP '+response.status+' '+url);
     const file=new File([await response.arrayBuffer()],name);
     return {getFile:async()=>file};

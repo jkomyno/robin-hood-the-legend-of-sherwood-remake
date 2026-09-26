@@ -23,6 +23,7 @@
 // cannot protect known pixels. Needs OPENAI_API_KEY in level-editor/.env.
 import crypto from "node:crypto";
 import { pathToFileURL } from "node:url";
+import { Temporal } from "temporal-polyfill";
 import {
   cacheDirectory,
   contentKey,
@@ -198,7 +199,7 @@ export async function callOpenAI(
         );
       }
       form.append("mask", new Blob([new Uint8Array(maskPng)], { type: "image/png" }), "mask.png");
-      const t0 = Date.now();
+      const t0 = performance.now();
       const res = await (options.request ?? fetch)("https://api.openai.com/v1/images/edits", {
         method: "POST",
         headers: { Authorization: `Bearer ${key}` },
@@ -220,7 +221,7 @@ export async function callOpenAI(
       const b64 = json.data?.[0]?.b64_json;
       if (!b64) throw new Error(`no image in response: ${text.slice(0, 400)}`);
       const png = await sharp(Buffer.from(b64, "base64")).png().toBuffer();
-      const seconds = (Date.now() - t0) / 1000;
+      const seconds = (performance.now() - t0) / 1000;
       // gpt-image pricing: $5/M text in, $8/M image in, $30/M image out (per token)
       const u = json.usage;
       const cost = u
@@ -240,7 +241,7 @@ export async function callOpenAI(
             usage: u,
             cost,
             seconds,
-            requested_at: new Date().toISOString(),
+            requested_at: Temporal.Now.instant().toString({ fractionalSecondDigits: 3 }),
           },
           null,
           1,

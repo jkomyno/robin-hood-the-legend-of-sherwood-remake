@@ -1228,7 +1228,7 @@ export async function buildTextures(
     const jobs = fillOrder.filter(
       (f) => tiles[f]!.known >= 100 && Math.min(tiles[f]!.w, tiles[f]!.h) >= SYNTH_MIN_SIDE,
     );
-    const t0 = Date.now();
+    const t0 = performance.now();
     await pool(jobs, options.synthJobs, async (f) => {
       const t = tiles[f]!;
       if (await synthInpaint(t.rgba, t.w, t.h, synthDir, `face-${f}`, options.synthBinary)) {
@@ -1237,7 +1237,7 @@ export async function buildTextures(
       }
     });
     console.log(
-      `texture-synthesis: ${jobs.length} tiles in ${((Date.now() - t0) / 1000).toFixed(0)} s`,
+      `texture-synthesis: ${jobs.length} tiles in ${((performance.now() - t0) / 1000).toFixed(0)} s`,
     );
   }
   for (const f of fillOrder) {
@@ -1437,9 +1437,9 @@ export async function buildTextures(
     ground[i * 4 + 3] = own.owner[i]! < 0 ? 255 : 0;
   }
   if (fill === "synth") {
-    const t0 = Date.now();
+    const t0 = performance.now();
     await synthInpaint(ground, mapW, mapH, synthDir, "ground", options.synthBinary);
-    console.log(`texture-synthesis: ground in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+    console.log(`texture-synthesis: ground in ${((performance.now() - t0) / 1000).toFixed(0)} s`);
   }
   fillTile(ground, mapW, mapH, fill, true);
 

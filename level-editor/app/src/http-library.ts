@@ -1,5 +1,6 @@
 import { publishedMapLabel } from "./map-label.ts";
 import { isNotFound } from "./fs.ts";
+import { Temporal } from "temporal-polyfill";
 
 async function migrateBrowserMaps(maps: FileSystemDirectoryHandle) {
   const legacyExtension = ".level3d.json";
@@ -142,9 +143,9 @@ export async function openHttpLibrary(base = "/library/", storage?: FileSystemDi
 }
 
 export function downloadMap(name: string, document: unknown) {
-  const now = new Date();
+  const now = Temporal.Now.zonedDateTimeISO();
   const pad = (value: number) => String(value).padStart(2, "0");
-  const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  const timestamp = `${now.year}-${pad(now.month)}-${pad(now.day)}T${pad(now.hour)}-${pad(now.minute)}-${pad(now.second)}`;
   const url = URL.createObjectURL(
     new Blob([JSON.stringify(document, null, 2) + "\n"], { type: "application/json" }),
   );

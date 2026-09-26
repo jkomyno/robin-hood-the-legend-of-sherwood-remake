@@ -14,7 +14,15 @@
     "unicorn/prefer-add-event-listener": "off",
     "typescript/no-this-alias": "off",
     "typescript/restrict-template-expressions": "off",
-    "typescript/no-base-to-string": "off"
+    "typescript/no-base-to-string": "off",
+    "typescript/no-restricted-types": [
+      "error",
+      {
+        "types": {
+          "Date": "Use Temporal types such as Temporal.Instant, Temporal.PlainDate, or Temporal.ZonedDateTime."
+        }
+      }
+    ]
   },
   "overrides": [
     {

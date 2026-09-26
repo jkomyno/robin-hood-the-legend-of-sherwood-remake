@@ -31,7 +31,8 @@
     "gl-matrix": "^3.4.4",
     "meshoptimizer": "^1.3.0",
     "polygon-clipping": "^0.15.7",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.4",
+    "temporal-polyfill": "1.0.5"
   },
   "devDependencies": {
     "@types/earcut": "^3.0.0",

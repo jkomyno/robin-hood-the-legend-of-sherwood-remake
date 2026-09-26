@@ -17,7 +17,8 @@
   "devDependencies": {
     "oxfmt": "0.70.0",
     "oxlint": "1.85.0",
-    "oxlint-tsgolint": "7.0.2003"
+    "oxlint-tsgolint": "7.0.2003",
+    "temporal-polyfill": "1.0.5"
   },
   "packageManager": "pnpm@12.6.0"
 }

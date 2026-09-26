@@ -2,6 +2,7 @@
 import {spawn} from 'node:child_process';
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
 import {resolve, join} from 'node:path';
+import {Temporal} from 'temporal-polyfill';
 import {pathToFileURL} from 'node:url';
 import {chromeEndpoint, socketOpen, evaluate} from '../../app/tests/cdp.mjs';
 
@@ -9,7 +10,7 @@ const gallery = resolve(process.argv[2] || 'level-editor/work/nottingham-refinem
 const output = resolve(process.argv[3] || 'level-editor/work/nottingham-refinement/verification');
 await mkdir(output, {recursive:true});
 const evidence = JSON.parse(await readFile(join(gallery, 'evidence.json'), 'utf8'));
-const profile = join(output, 'browser-profile-' + Date.now());
+const profile = join(output, 'browser-profile-' + Temporal.Now.instant().epochMilliseconds);
 const chrome = spawn('/usr/lib/chromium/chromium', [
   '--headless', '--no-sandbox', '--disable-dev-shm-usage', '--disable-background-networking',
   '--window-size=1440,1600', '--remote-debugging-port=0', '--user-data-dir=' + profile,

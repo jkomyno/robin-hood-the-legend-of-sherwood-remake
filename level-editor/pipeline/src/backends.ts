@@ -6,6 +6,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { Temporal } from "temporal-polyfill";
 import { fal } from "@fal-ai/client";
 import { requireEnv, workDir } from "./env.ts";
 import {
@@ -150,19 +151,19 @@ export async function reconstructWith(
           type: "image/png",
         }),
       );
-      const t0 = Date.now();
+      const t0 = performance.now();
       const result = await fal.subscribe(spec.endpoint, {
         input: spec.input(imageUrl, seed),
         logs: false,
       });
-      seconds = (Date.now() - t0) / 1000;
+      seconds = (performance.now() - t0) / 1000;
       const data = result.data as Record<string, unknown>;
       await fs.writeFile(
         path.join(cacheDir, "response.json"),
         JSON.stringify({
           endpoint: spec.endpoint,
-          requested_at: new Date().toISOString(),
-          seconds: (Date.now() - t0) / 1000,
+          requested_at: Temporal.Now.instant().toString({ fractionalSecondDigits: 3 }),
+          seconds: (performance.now() - t0) / 1000,
           params,
           request_id: result.requestId,
           response: data,

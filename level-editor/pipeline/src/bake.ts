@@ -279,7 +279,7 @@ export async function bake(options: BakeOptions): Promise<void> {
     ],
   };
   const view = { ...mapView(cam, [0, 0, w, h], 1), unlit: true };
-  const t0 = Date.now();
+  const t0 = performance.now();
   const rgba = render(
     [
       { mesh: ground, positions: ground.positions },
@@ -288,7 +288,7 @@ export async function bake(options: BakeOptions): Promise<void> {
     view,
   );
   console.log(
-    `rendered ${view.width}x${view.height} in ${((Date.now() - t0) / 1000).toFixed(1)} s`,
+    `rendered ${view.width}x${view.height} in ${((performance.now() - t0) / 1000).toFixed(1)} s`,
   );
 
   const levelsDir = path.join(outDir, "Data", "Levels");

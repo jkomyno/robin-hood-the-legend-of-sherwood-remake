@@ -68,11 +68,14 @@ try {
   await socketOpen(socket, { signal: lifetime.signal, timeoutMs: 5000 });
   let id = 0;
   let outcome;
-  const deadline = Date.now() + Number(process.env.TEST_TIMEOUT ?? 60000);
-  while (Date.now() < deadline) {
+  const deadline = performance.now() + Number(process.env.TEST_TIMEOUT ?? 60000);
+  while (performance.now() < deadline) {
     outcome = await evaluate(socket, ++id, "document.querySelector('#result')?.textContent", {
       signal: lifetime.signal,
-      timeoutMs: Math.min(Number(process.env.TEST_EVALUATE_TIMEOUT ?? 5000), deadline - Date.now()),
+      timeoutMs: Math.min(
+        Number(process.env.TEST_EVALUATE_TIMEOUT ?? 5000),
+        deadline - performance.now(),
+      ),
     });
     if (outcome?.startsWith("PASS") || outcome?.startsWith("FAIL")) break;
     await new Promise((resolve) => setTimeout(resolve, 100));
