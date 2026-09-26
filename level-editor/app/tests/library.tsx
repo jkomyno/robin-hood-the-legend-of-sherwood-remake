@@ -400,7 +400,7 @@ export async function checkSharedLibrary() {
     await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "New forest");
     assert(document.querySelectorAll(".object-list li").length > 0, "New map assets were not restored");
     assert((document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).value === "10", "Export frame was not restored");
-    const dropJson = (text: string, filename = 'download_2026-09-26T16-30-12.level3d.json') => {
+    const dropJson = (text: string, filename = 'download_2026-09-26T16-30-12.rhlos-map.json') => {
       const transfer = new DataTransfer();
       transfer.items.add(new File([text], filename, {type: 'application/json'}));
       document.querySelector('.editor-canvas')!.dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: transfer}));

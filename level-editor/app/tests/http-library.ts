@@ -55,7 +55,7 @@ export async function checkHttpLibrary() {
     let exported: Promise<unknown> | undefined;
     const click = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = function () {
-      assert(/^New forest_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.level3d\.json$/.test(this.download), 'Download filename must include a local timestamp to the second');
+      assert(/^New forest_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.rhlos-map\.json$/.test(this.download), 'Download filename must include a local timestamp to the second and the .rhlos-map.json extension');
       exported = originalFetch(this.href).then(response => response.json());
     };
     try { downloadMap('New forest', document); } finally { HTMLAnchorElement.prototype.click = click; }
