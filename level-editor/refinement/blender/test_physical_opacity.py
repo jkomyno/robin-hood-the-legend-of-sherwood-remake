@@ -59,6 +59,31 @@ def check():
         default=solid_tree.ray_cast(origin,direction)
         bounded=solid_tree.ray_cast(origin,direction,1000)
         assert (default[0] is None)==(bounded[0] is None),(x,default,bounded)
-    print('PASS: front/back physical cutout holes reveal trunk or background; solid/shadow/source rays agree; ownership remains independent')
+    # Rays grazing a transparent card at map-scale coordinates must pass through
+    # it: float32 hits there round back onto the plane after each small step.
+    clear=bpy.data.images.new('clear mask',width=2,height=2);clear.pixels[:]=[.7,.6,.5,0]*4
+    glass=mat.copy();glass.name='transparent card'
+    glass.node_tree.nodes['Image Texture'].image=clear
+    centre=Vector((2561.7,-1179.6,432.7));size=40
+    card=bpy.data.meshes.new('grazed card')
+    card.from_pydata([centre+Vector(c) for c in ((-size,-size,0),(size,-size,0),(size,size,0),(-size,size,0))],[],[(0,1,2,3)])
+    card.materials.append(glass);uv=card.uv_layers.new(name='coverage')
+    for loop in card.loops:uv.data[loop.index].uv=((0,0),(1,0),(1,1),(0,1))[loop.vertex_index]
+    card_obj=bpy.data.objects.new('grazed card',card);bpy.context.scene.collection.objects.link(card_obj)
+    floor=bpy.data.meshes.new('opaque floor')
+    floor.from_pydata([centre+Vector(c) for c in ((-400,-400,-5),(400,-400,-5),(400,400,-5),(-400,400,-5))],[],[(0,1,2,3)])
+    floor_obj=bpy.data.objects.new('opaque floor',floor);bpy.context.scene.collection.objects.link(floor_obj)
+    bpy.context.view_layer.update()
+    grazed,*_=_surface([card_obj,floor_obj])
+    import math
+    for degrees in (.05,.1,.5,2):
+        angle=math.radians(degrees)
+        direction=Vector((math.cos(angle)*.7,math.cos(angle)*.7,-math.sin(angle))).normalized()
+        for k in range(60):
+            origin=centre+Vector((-30+k,-30,0))-direction*10000
+            hit=grazed.ray_cast(origin,direction)
+            # Only the opaque floor may stop the ray; the card is fully transparent.
+            assert hit[0] is None or abs(hit[0].z-(centre.z-5))<1e-2,(degrees,k,hit[0])
+    print('PASS: front/back physical cutout holes reveal trunk or background; solid/shadow/source rays agree; ownership remains independent; grazing rays pass transparent cards')
 
 if __name__=='__main__':check()

@@ -86,7 +86,12 @@ class PhysicalOpacityTree:
             raise ValueError('Physical opacity ray distance must be nonnegative or positive infinity')
         direction = direction.normalized()
         start = origin.copy()
-        for _ in range(len(self.records)+1):
+        # A ray grazing a transparent card can re-hit the same triangle just past
+        # each 0.001 step: float32 BVH hits at map-scale coordinates round back
+        # onto the plane. Double the step while the same triangle repeats, so the
+        # ray always leaves it; any other hit resets the step.
+        previous, step = None, .001
+        for _ in range(len(self.records)+64):
             remaining = distance-(start-origin).length
             if remaining <= 0:
                 return None, None, None, None
@@ -100,5 +105,7 @@ class PhysicalOpacityTree:
             record = self.records[index]
             if record is None or ((not record[-1] or normal.dot(direction) < 0) and _alpha(record, hit) >= .5):
                 return hit, normal, index, (hit-origin).length
-            start = hit + direction*.001
+            step = step*2 if index == previous else .001
+            previous = index
+            start = hit + direction*step
         raise ValueError('Physical alpha visibility ray did not progress')
