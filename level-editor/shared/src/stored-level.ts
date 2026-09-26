@@ -220,8 +220,8 @@ export function storeAssetMap(document: Level3D, descriptors: Descriptors): unkn
     throw new Error("Stored asset map requires descriptor-backed objects");
   const members = new Map(document.groups.map((group) => [group.id, [] as Level3DObject[]]));
   for (const part of document.objects) if (part.group) members.get(part.group)?.push(part);
+  const groups = new Map(document.groups.map((group) => [group.id, group]));
   const placements: Entry[] = [];
-  const generated: Level3DObject[] = [];
   const addPlacement = (group: Level3D["groups"][number] | null, parts: Level3DObject[]) => {
     const assets = [...new Set(parts.map((part) => assetId(part.node)!))];
     const id = group?.id ?? parts[0]!.id;
@@ -249,7 +249,6 @@ export function storeAssetMap(document: Level3D, descriptors: Descriptors): unkn
           continue;
         }
         remaining.splice(remaining.indexOf(actual), 1);
-        generated.push(actual);
         const delta = changes(actual, defaults);
         if (Object.keys(delta).length) overrides[partKey(node, assets)] = delta;
       }
@@ -261,7 +260,6 @@ export function storeAssetMap(document: Level3D, descriptors: Descriptors): unkn
       const definition = descriptor.parts.find((part) => part.node === partNode);
       if (!definition) throw new Error(`Missing pinned asset part: ${extra.node}`);
       const defaults = defaultObject(descriptor, definition, extra.id, group?.id);
-      generated.push(extra);
       copies.push({ node: partKey(extra.node, assets), id: extra.id, ...changes(extra, defaults) });
     }
     placements.push({
@@ -273,15 +271,16 @@ export function storeAssetMap(document: Level3D, descriptors: Descriptors): unkn
       ...(copies.length ? { copies } : {}),
     });
   };
-  for (const group of document.groups) addPlacement(group, members.get(group.id) ?? []);
-  for (const part of document.objects) if (!part.group) addPlacement(null, [part]);
-  const positions = new Map(generated.map((part, index) => [part.id, index]));
-  if (positions.size !== generated.length) throw new Error("Generated asset part IDs collide");
-  const order = document.objects.map((part) => {
-    const index = positions.get(part.id);
-    if (index === undefined) throw new Error(`Missing generated part ${part.id}`);
-    return index;
-  });
+  const placed = new Set<string>();
+  for (const part of document.objects) {
+    if (!part.group) {
+      addPlacement(null, [part]);
+    } else if (!placed.has(part.group)) {
+      addPlacement(groups.get(part.group)!, members.get(part.group)!);
+      placed.add(part.group);
+    }
+  }
+  for (const group of document.groups) if (!placed.has(group.id)) addPlacement(group, []);
   const { objects: _objects, groups: _groups, version: _version, ...rest } = document;
   const compact = compactAssetInstances(document, descriptors) as Level3D;
   return {
@@ -290,7 +289,6 @@ export function storeAssetMap(document: Level3D, descriptors: Descriptors): unkn
     ...(compact.sceneMetadata ? { sceneMetadata: compact.sceneMetadata } : {}),
     version: 2,
     placements: placements.map(compactPlacement),
-    ...(order.some((index, position) => index !== position) ? { order } : {}),
   };
 }
 
@@ -299,6 +297,7 @@ export function loadAssetMap(value: unknown, descriptors: Descriptors): Level3D 
   const saved = record(value, "document");
   if (saved.version !== 2 || !Array.isArray(saved.placements))
     throw new Error("Unsupported stored asset map");
+  if (Object.hasOwn(saved, "order")) throw new Error("Obsolete stored object order");
   const groups: Level3D["groups"] = [];
   const objects: Level3DObject[] = [];
   for (const raw of saved.placements) {
@@ -365,21 +364,7 @@ export function loadAssetMap(value: unknown, descriptors: Descriptors): Level3D 
     }
     objects.push(...pending.values(), ...copies);
   }
-  if (saved.order !== undefined) {
-    if (
-      !Array.isArray(saved.order) ||
-      saved.order.length !== objects.length ||
-      new Set(saved.order).size !== objects.length ||
-      saved.order.some(
-        (index: unknown) =>
-          !Number.isInteger(index) || (index as number) < 0 || (index as number) >= objects.length,
-      )
-    )
-      throw new Error("Invalid stored object order");
-    const ordered = (saved.order as number[]).map((index) => objects[index]!);
-    objects.splice(0, objects.length, ...ordered);
-  }
-  const { placements: _placements, order: _order, version: _version, ...rest } = saved;
+  const { placements: _placements, version: _version, ...rest } = saved;
   return parseLevel3D({ ...rest, version: 1, groups, objects });
 }
 

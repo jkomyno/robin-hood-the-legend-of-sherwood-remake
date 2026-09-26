@@ -154,6 +154,42 @@ test("version 2 stores placements and only exceptional part records", () => {
   );
 });
 
+test("placement sequence defines object order without a separate permutation", () => {
+  const { descriptor, reference, document } = assetFixture();
+  const first = insertProjectionAsset(document, descriptor, reference, [50, 40, 0]).document;
+  const second = insertProjectionAsset(first, descriptor, reference, [80, 20, 0]).document;
+  const [firstWall, firstRoof, secondWall, secondRoof] = second.objects;
+  const { group: _group, ...loosePart } = structuredClone(firstWall!);
+  const loose = { ...loosePart, id: "loose-wall" };
+  const interleaved = {
+    ...second,
+    objects: [firstWall!, loose, secondWall!, firstRoof!, secondRoof!],
+  };
+  const descriptors = new Map([[descriptor.id, descriptor]]);
+  const stored = serializeStoredMap(interleaved, descriptors) as {
+    order?: number[];
+    placements: { id: string }[];
+  };
+  assert.equal(stored.order, undefined);
+  assert.deepEqual(
+    stored.placements.map((placement) => placement.id),
+    [first.groups[0]!.id, loose.id, second.groups[1]!.id],
+  );
+  const restored = parseStoredMap(stored, descriptors);
+  assert.deepEqual(
+    restored.objects.map((part) => part.id),
+    [firstWall!.id, firstRoof!.id, loose.id, secondWall!.id, secondRoof!.id],
+  );
+  assert.deepEqual(
+    [...restored.objects].sort((a, b) => a.id.localeCompare(b.id)),
+    [...interleaved.objects].sort((a, b) => a.id.localeCompare(b.id)),
+  );
+  assert.throws(
+    () => parseStoredMap({ ...stored, order: [0, 1, 2, 3, 4] }, descriptors),
+    /Obsolete stored object order/,
+  );
+});
+
 test("saved maps retain reveal labels without legacy game state copies", () => {
   const { document } = assetFixture();
   document.sceneMetadata = {

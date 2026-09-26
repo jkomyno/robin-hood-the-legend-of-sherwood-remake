@@ -47,9 +47,26 @@ derived lossy display copy of `model`: same nodes, extras, scenes and materials,
 re-baked texture atlas (EXT_texture_avif), quantized vertices (KHR_mesh_quantization)
 and no normals on unlit primitives (nothing is lit yet).
 `<lossy_model>.receipt.json` records the SHA-256 of the `model` bytes it was built
-from (`source`) and of itself (`output`). Saved maps keep pinning `model`; the editor
-displays the lossy model only while `source` equals that pin and falls back to `model`
-otherwise.
+from (`source`) and of itself (`output`). Every asset-index writer uses
+`refinement/asset_index.py::write_asset_index`: it checks both hashes for every
+entry declaring `lossy_model`, then atomically replaces the index. Missing models,
+missing or malformed receipts, stale sources, and changed output bytes fail publication
+without replacing the existing index. Source-only entries need no receipt.
+
+Publication transactions validate proposed staged files together with unchanged live
+assets before installation, and validate again when writing the live index. Callers
+retain their existing locks and rollback backups. The TypeScript publisher calls the
+same Python implementation through `pipeline/src/asset-index.ts` (requires Python 3.11+).
+Historical transaction rollback restores the original files and index from backups.
+
+Saved maps keep pinning `model`; the editor loads the indexed lossy display copy
+directly, without fetching receipts. If no `lossy_model` is declared, it loads and
+checks the original model. Receipts remain build/publication metadata. To validate
+an existing library without writing anything, run from `level-editor/`:
+
+```sh
+python3 refinement/asset_index.py library/3d-assets --check < library/3d-assets/index.json
+```
 
 ## Local assets and placed instances
 
@@ -87,10 +104,11 @@ including patch bindings or an edited transform or collision shape. `removed`
 lists deleted descriptor parts; `copies` describes extra instances of a part.
 Mixed-asset placements use full `asset:<asset-id>:<part-node>` keys. `idMode`
 selects the existing object ID convention, and an exceptional object ID appears
-as a part override. An optional top-level `order` preserves object order when it
-differs from descriptor order. Separate `--state-*` asset source records are no
-longer accepted in version 2 maps. Old version 1 maps remain readable and expand
-into the same editor model. Run `node pipeline/src/migrate-map-v2.ts library` to check
+as a part override. The placement array defines scene order; parts within a
+placement follow descriptor order, with copies last. Separate `--state-*` asset
+source records are no longer accepted in version 2 maps. Old version 1 maps
+remain readable and expand into the same editor model. Run
+`node pipeline/src/migrate-map-v2.ts library` to check
 an existing library, then add `--apply` to save version 2 files with backups.
 
 Mission-specific reveal triggers belong in per-object `patchBindings`. Each node

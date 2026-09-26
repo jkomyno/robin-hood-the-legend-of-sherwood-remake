@@ -19,6 +19,7 @@ const scenes = path.join(library, "scenes");
 const names = (await fs.readdir(scenes)).filter((name) => name.endsWith(".rhlos-map.json")).sort();
 const comparable = (document: Level3D) => ({
   ...document,
+  objects: [...document.objects].sort((a, b) => a.id.localeCompare(b.id)),
   assetSources: document.assetSources
     ? [...document.assetSources].sort((a, b) => a.id.localeCompare(b.id))
     : undefined,
