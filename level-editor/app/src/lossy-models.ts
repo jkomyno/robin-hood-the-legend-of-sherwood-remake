@@ -26,7 +26,7 @@ export async function readLossyModel(read: (path: string) => Promise<File>, loss
   return bytes;
 }
 
-/** Only self-contained GLBs have lossy derivatives. */
-export function lossyApplies(model: string, resources: readonly unknown[] | undefined): boolean {
-  return model.endsWith(".glb") && !resources?.length;
+/** Lossy derivatives are self-contained GLBs (shared resources embedded); only GLB sources have them. */
+export function lossyApplies(model: string): boolean {
+  return model.endsWith(".glb");
 }

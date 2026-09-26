@@ -36,16 +36,18 @@ export class SceneAssetLoader {
   lossyFor(model: string): string | undefined { return this.lossyModels.get(model); }
   /** `verifiedLossy`: lossy bytes the caller already bound to `reference.model_sha256`. */
   async load(reference: SceneAssetSource, verifiedLossy?: ArrayBuffer): Promise<THREE.Group> {
-    const applies = lossyApplies(reference.model, reference.resources);
-    if (verifiedLossy && !applies) throw new Error(`Lossy model cannot replace a resource-backed model: ${reference.model}`);
+    const applies = lossyApplies(reference.model);
+    if (verifiedLossy && !applies) throw new Error(`Lossy model cannot replace a glTF JSON model: ${reference.model}`);
     const lossy = applies ? this.lossyModels.get(reference.model) : undefined;
-    let bytes = verifiedLossy ?? (lossy ? await readLossyModel(path => read(this.root, path), lossy, reference.model_sha256) : null)
-      ?? await checked(await read(this.root, reference.model), reference.model_sha256);
+    const lossyBytes = verifiedLossy ?? (lossy ? await readLossyModel(path => read(this.root, path), lossy, reference.model_sha256) : null);
+    let bytes = lossyBytes ?? await checked(await read(this.root, reference.model), reference.model_sha256);
+    // Lossy models embed everything, so the published model's shared resources are not fetched.
+    const resources = lossyBytes ? [] : reference.resources;
     if (reference.descriptor) await checked(await read(this.root, reference.descriptor), reference.descriptor_sha256!);
     if (reference.model.endsWith(".gltf")) bytes = new TextEncoder().encode(JSON.stringify(resolveGltfResources(reference.model, selectGltfScene(JSON.parse(new TextDecoder().decode(bytes)), reference.model_scene)))).buffer;
-    else bytes = selectGlbScene(bytes, reference.model_scene, reference.resources.length ? reference.model : undefined);
+    else bytes = selectGlbScene(bytes, reference.model_scene, resources.length ? reference.model : undefined);
     const urls = new Map<string, string>();
-    await Promise.all(reference.resources.map(async resource => {
+    await Promise.all(resources.map(async resource => {
       const key = `${resource.path}:${resource.sha256}`;
       let pending = this.resources.get(key);
       if (!pending) {

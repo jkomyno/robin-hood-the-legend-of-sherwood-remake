@@ -114,7 +114,7 @@ export async function prepareProjectionAsset(
   if (modelPath !== entry.model) throw new Error(`Asset model path mismatch: ${entry.id}`);
   // A saved pin selects the lossy model without reading the published model; a new insertion
   // hashes the published model first so its reference pins the current revision.
-  const lossy = entry.lossy_model && lossyApplies(entry.model, descriptor.resources) ? entry.lossy_model : undefined;
+  const lossy = entry.lossy_model && lossyApplies(entry.model) ? entry.lossy_model : undefined;
   const read = (path: string) => libraryFile(root, path);
   let lossyBytes = lossy && expected ? await readLossyModel(read, lossy, expected.model_sha256) : null;
   let modelBytes: ArrayBuffer | null = null, modelHash: string;

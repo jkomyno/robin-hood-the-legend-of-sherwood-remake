@@ -79,6 +79,13 @@ test("ground lossy models load in place of their pinned GLB only with a matching
   files.set(reference.model, new File([published], "model.glb"));
   await loader.load(reference);
   assert.deepEqual(loaded.at(-1), [1, 2, 3]);
+  // Resource-backed models: the self-contained lossy model replaces model and shared payloads.
+  const shared = { ...reference, id: "shared", model: "3d-assets/shared/model.glb",
+    resources: [{ path: "3d-assets/blobs/atlas.jpg", sha256: hash("atlas") }] };
+  files.set("3d-assets/shared/lossy.glb", new File([lossy], "lossy.glb"));
+  files.set("3d-assets/shared/lossy.glb.receipt.json", new File([JSON.stringify({ source: shared.model_sha256, output: hash(lossy) })], "r.json"));
+  await new SceneAssetLoader(root(), new Map([[shared.model, "3d-assets/shared/lossy.glb"]])).load(shared);
+  assert.deepEqual(loaded.at(-1), [7]);
   // Without a lossy model entry the pinned model is used unchanged.
   await new SceneAssetLoader(root()).load(reference);
   assert.deepEqual(loaded.at(-1), [1, 2, 3]);
