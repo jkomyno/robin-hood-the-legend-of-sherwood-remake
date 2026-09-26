@@ -61,6 +61,8 @@ export interface Level3DGroup {
 }
 
 export interface Level3D {
+  /** Optional output crop [x, y, width, height] in map pixels; never an editing boundary. */
+  exportBounds?: [number, number, number, number];
   /** Sun azimuth is clockwise from north; elevation is above the ground. */
   lighting?: { enabled: boolean; sunAzimuth: number; sunElevation: number; shadowOpacity: number };
   population?: import("./population.ts").Population;
@@ -70,8 +72,8 @@ export interface Level3D {
   provenance?: { source_sha256?: string; glb_sha256?: string };
   version: 1;
   map: string;
-  /** map size in pixels */
-  size: [number, number];
+  /** Fixed map size in pixels, or null for an unbounded authoring canvas. */
+  size: [number, number] | null;
   camera: MapCamera;
   /** reconstruction GLB (relative to the document) */
   glb: string;

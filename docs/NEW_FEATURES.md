@@ -1,5 +1,20 @@
 # Post-port Features
 
+- **Focused level-editor workspace.** A compact level picker replaces the map
+  button strip. Selection, drawing, and view settings have separate inspector
+  sections; the asset browser can be collapsed to expand the viewport. A status
+  bar tracks unsaved edits, and contextual help explains navigation shortcuts.
+  Unfinished paths keep drawing controls visible until finished or cancelled.
+  New maps need only a name and persist an unbounded canvas (`size: null`);
+  the adaptive workspace grid is an editor guide, not saved terrain or a boundary.
+  Assets added from the library are placed at the viewport center. Fixed image
+  extents are deferred to compilation. An optional, undoable export frame can
+  be set later in View, adjusted numerically, fitted to content on demand, or
+  removed. The frame is advisory in the viewport and does not clip editing;
+  compilation must honor the chosen crop even when assets cross its edges. TODO: the reconstruction-only game baker
+  still cannot compile authored maps, imported assets, or spline geometry; an
+  authored compiler must crop their actual placed geometry and rebase game data.
+
 - **Visible-surface editor picking.** Selection and drag rays cover the complete
   orthographic clipping range with reversed depth, skip transparent foliage and
   atlas pixels, and

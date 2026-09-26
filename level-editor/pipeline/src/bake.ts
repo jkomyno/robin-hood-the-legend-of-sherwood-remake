@@ -159,6 +159,10 @@ export async function bake(options: BakeOptions): Promise<void> {
     if (parsed.objects.length !== before)
       console.log(`Preserving ${before - parsed.objects.length} unchanged native initial patch preview(s); mission files remain unchanged. Static bake uses reconstructed volumes, not refined GLB meshes.`);
   }
+  if (parsed?.exportBounds)
+    throw new Error("Custom export frames require the authored-map compiler; reconstruction baking cannot safely rebase masks and mission coordinates. Save the editor document instead.");
+  if (parsed?.size === null)
+    throw new Error("Unbounded authored maps require compilation from their placed geometry with content-derived crop bounds; reconstruction baking requires a source map. Save the editor document instead.");
   assertReconstructedBakeSources(parsed);
   const r = await reconstruct(map, {
     textures: options.textures,

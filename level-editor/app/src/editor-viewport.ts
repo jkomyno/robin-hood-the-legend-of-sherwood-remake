@@ -6,6 +6,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { TransformControls } from "three/examples/jsm/controls/TransformControls.js";
 import {
   sceneToGame,
+  sceneToMap,
+  groundToScene,
   gameToScene,
   gameTransformMatrix,
   groupCentroid,
@@ -267,12 +269,20 @@ export class EditorViewport {
     ms: number;
   } | null = null;
 
+  private readonly exportFrame = new THREE.LineLoop(new THREE.BufferGeometry(),
+    new THREE.LineDashedMaterial({ color: 0xe2cb8e, dashSize: 32, gapSize: 16, depthTest: false }));
+  private readonly workspaceGrid = new THREE.GridHelper(10000, 100, 0x52655a, 0x34423b);
   private readonly bindings: ViewportBindings;
   constructor(bindings: ViewportBindings) {
     this.bindings = bindings;
     this.scene.background = new THREE.Color(0x1c1c1c);
     this.mapRoot.quaternion.set(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
     this.scene.add(this.mapRoot);
+    this.workspaceGrid.visible = false;
+    this.scene.add(this.workspaceGrid);
+    this.exportFrame.visible = false;
+    this.exportFrame.renderOrder = 1000;
+    this.mapRoot.add(this.exportFrame);
     this.mapRoot.add(this.objectsRoot, this.overlayRoot, this.splines.root, this.sunlight.root);
     this.selectionBox.visible = false;
     this.scene.add(this.selectionBox);
@@ -360,6 +370,7 @@ export class EditorViewport {
   }
   private retireMap() {
     this.splineMode = null;
+    this.exportFrame.visible = false;
     this.sunlight.setGround(null);
     this.sunlight.root.visible = false;
     this.splines.clear();
@@ -394,7 +405,7 @@ export class EditorViewport {
     this.retireMap();
     for (const control of this.controls.reverse()) control.dispose();
     this.controls = [];
-    disposeObjectResources([this.selectionBox]);
+    disposeObjectResources([this.selectionBox, this.workspaceGrid, this.exportFrame]);
     this.sunlight.dispose();
     this.renderer?.dispose();
     this.renderer?.forceContextLoss();
@@ -484,6 +495,13 @@ export class EditorViewport {
       if (this.flight) this.stepFlight();
       else this.orbit?.update();
       const camera = this.activeCamera();
+      this.workspaceGrid.visible = this.bindings.document()?.size === null;
+      if (this.workspaceGrid.visible && this.orbit) {
+        const spacing = 100 * 2 ** Math.floor(Math.log2(Math.max(1, this.frustum / this.camera.zoom) / 500));
+        this.workspaceGrid.scale.setScalar(spacing / 100);
+        this.workspaceGrid.position.set(Math.round(this.orbit.target.x / spacing) * spacing, -0.1,
+          Math.round(this.orbit.target.z / spacing) * spacing);
+      }
       this.entities?.update(camera, this.spriteOrientationLock);
       this.renderer.render(this.scene, camera);
     });
@@ -754,6 +772,9 @@ export class EditorViewport {
     if (this.groundNode) box.expandByObject(this.groundNode);
     box.expandByObject(this.objectsRoot);
     box.expandByObject(this.splines.root);
+    // Initial camera framing is a viewport preference, never an authored boundary.
+    if (box.isEmpty() && this.bindings.document()?.size === null)
+      box.set(new THREE.Vector3(-500, 0, -500), new THREE.Vector3(500, 0, 500));
     return box;
   }
 
@@ -784,7 +805,7 @@ export class EditorViewport {
     const to = this.lookState(
       center.clone().addScaledVector(forward, -size),
       center,
-      d ? d.size[1] / 2 : size * 0.35,
+      d?.size ? d.size[1] / 2 : size * 0.35,
     );
     if (instant) this.applyState(to);
     else this.flyTo(to);
@@ -822,7 +843,30 @@ export class EditorViewport {
     v.rot.matrixWorldNeedsUpdate = true;
   }
 
+  fitExportBounds(): [number, number, number, number] {
+    const document = this.bindings.document();
+    if (!document) throw new Error("Open a map before setting an export frame");
+    this.scene.updateMatrixWorld(true);
+    const box = this.contentBox();
+    if (box.isEmpty()) throw new Error("Add content before fitting an export frame");
+    const projected = new THREE.Box2();
+    for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+      const point = sceneToMap(document.camera, [x, -z, y]);
+      projected.expandByPoint(new THREE.Vector2(...point));
+    }
+    const x = Math.floor(projected.min.x), y = Math.floor(projected.min.y);
+    return [x, y, Math.max(1, Math.ceil(projected.max.x) - x), Math.max(1, Math.ceil(projected.max.y) - y)];
+  }
+
   syncViews(d: Level3D, rebuildFraming = true) {
+    this.exportFrame.visible = !!d.exportBounds;
+    if (d.exportBounds) {
+      const [x, y, w, h] = d.exportBounds;
+      this.exportFrame.geometry.dispose();
+      this.exportFrame.geometry = new THREE.BufferGeometry().setFromPoints(
+        [[x,y], [x+w,y], [x+w,y+h], [x,y+h]].map(([px,py]) => new THREE.Vector3(...groundToScene(d.camera, px!, py!))));
+      this.exportFrame.computeLineDistances();
+    }
     if (rebuildFraming) this.splines.sync(d.splines ?? [], d.camera, this.sourceNodes);
     const aliveGroups = new Set<string>();
     for (const g of d.groups) {

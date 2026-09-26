@@ -11,7 +11,7 @@ async function until(test: () => boolean) {
     if (test()) return;
     await new Promise(resolve => setTimeout(resolve, 40));
   }
-  throw new Error("Shared library acceptance timed out");
+  throw new Error("Shared library acceptance timed out; inspector: " + [...document.querySelectorAll(".inspector-tabs button")].map(b => b.outerHTML).join(" "));
 }
 
 export async function checkSharedLibrary() {
@@ -70,18 +70,19 @@ export async function checkSharedLibrary() {
       if (![...files.keys()].some(path => path.startsWith(next))) throw new DOMException(name, "NotFoundError");
       return handle(next);
     },
-    async getFileHandle(name: string) {
+    async getFileHandle(name: string, options?: { create?: boolean }) {
       const path = prefix + name;
-      if (!files.has(path)) throw new DOMException(path, "NotFoundError");
+      if (!files.has(path) && !options?.create) throw new DOMException(path, "NotFoundError");
       return {
         getFile: async () => files.get(path)!,
         createWritable: async () => {
-          let value = "";
-          return { write: async (text: string) => { value = text; },
+          let value: BlobPart = "";
+          return { write: async (text: BlobPart) => { value = text; },
             close: async () => { files.set(path, new File([value], name)); }, abort: async () => {} };
         },
       };
     },
+    async removeEntry(name: string) { files.delete(prefix + name); },
     async *entries() {
       for (const path of files.keys()) if (path.startsWith(prefix) && !path.slice(prefix.length).includes("/"))
         yield [path.slice(prefix.length), { kind: "file" }];
@@ -109,6 +110,18 @@ export async function checkSharedLibrary() {
   try {
     await until(() => document.querySelectorAll(".asset-card").length === 40);
     await until(() => !document.querySelector(".asset-card:first-child .preview-status"));
+    assert(!(document.querySelector(".spline-panel") as HTMLElement).checkVisibility(), "Drawing controls clutter the initial inspector");
+    assert(!(document.querySelector(".view-settings") as HTMLElement).checkVisibility(), "View controls clutter the initial inspector");
+    const originalWidth = document.querySelector(".editor-canvas")!.getBoundingClientRect().width;
+    click("Assets");
+    await until(() => !(document.querySelector(".shared-library") as HTMLElement).checkVisibility());
+    assert(document.querySelector(".editor-canvas")!.getBoundingClientRect().width > originalWidth, "Hiding assets did not expand the viewport");
+    click("Assets");
+    await until(() => (document.querySelector(".shared-library") as HTMLElement).checkVisibility());
+    click("Help");
+    await until(() => !!document.querySelector("#editor-help"));
+    click("Help");
+    await until(() => !document.querySelector("#editor-help"));
     const grid = document.querySelector(".asset-grid") as HTMLElement;
     const firstCard = grid.querySelector(".asset-card") as HTMLElement;
     const preview = firstCard.querySelector(".asset-preview") as HTMLElement;
@@ -133,8 +146,8 @@ export async function checkSharedLibrary() {
     await until(() => document.querySelectorAll(".asset-card").length === 0);
     select("Source level", "Leicester");
     await until(() => document.querySelectorAll(".asset-card").length === 1);
-    click("York");
-    await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "York");
+    select("Level", "York");
+    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "York");
     const card = document.querySelector(".asset-card")!;
     const transfer = new DataTransfer();
     card.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: transfer }));
@@ -153,10 +166,10 @@ export async function checkSharedLibrary() {
     await until(() => document.querySelectorAll(".object-list li").length === 1);
     click("Redo");
     await until(() => document.querySelectorAll(".object-list li").length > 1);
-    click("Lincoln");
-    await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "Lincoln");
-    click("York");
-    await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "York");
+    select("Level", "Lincoln");
+    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "Lincoln");
+    select("Level", "York");
+    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "York");
     assert(document.querySelectorAll(".object-list li").length > 1, "Saved cross-level asset failed to reload");
     // Exercise actual viewport path handling. Synthetic pointer events cannot
     // acquire native pointer capture, so the fixture supplies that browser API.
@@ -172,8 +185,11 @@ export async function checkSharedLibrary() {
       drawingCanvas.dispatchEvent(new PointerEvent("pointerup", init));
       await new Promise(resolve => requestAnimationFrame(resolve));
     };
+    click("Draw");
+    await until(() => (document.querySelector(".spline-panel") as HTMLElement).checkVisibility());
     click("Draw river");
     await until(() => !!document.querySelector('input[aria-label="Path name"]'));
+    await until(() => ([...document.querySelectorAll(".inspector-tabs button")].find(b => b.textContent === "Selection") as HTMLButtonElement).disabled);
     await drawPoint(0.25, 0.45);
     await drawPoint(0.5, 0.5);
     await drawPoint(0.75, 0.65);
@@ -210,6 +226,8 @@ export async function checkSharedLibrary() {
     await drawPoint(.2,.6);await drawPoint(.35,.55);
     click("Finish path");
     await until(()=>document.querySelectorAll(".spline-list button").length===3);
+    click("View");
+    await until(() => (document.querySelector('input[aria-label="Cast sun shadows"]') as HTMLElement).checkVisibility());
     const sun = document.querySelector('input[aria-label="Cast sun shadows"]') as HTMLInputElement;
     sun.checked=true;sun.dispatchEvent(new Event("change",{bubbles:true}));
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
@@ -222,17 +240,48 @@ export async function checkSharedLibrary() {
     const pathsSaved=JSON.parse(await files.get("scenes/York.level3d.json")!.text());
     assert(pathsSaved.splines.some((p:{kind:string;cornerAsset?:string})=>p.kind==="wall" && p.cornerAsset==="prop-0"),"Corner tower source was not saved");
     assert(pathsSaved.splines.some((p:{kind:string})=>p.kind==="road"),"Footpath was not saved");
-    click("Lincoln");
-    await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "Lincoln");
+    select("Level", "Lincoln");
+    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "Lincoln");
+    click("Draw");
     select("Wall preset","Battlement wall");
     await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
     click("Draw wall");
     await until(()=>!!document.querySelector('input[aria-label="Corner tower scale"]'));
     assert((document.querySelector('select[aria-label="Corner tower asset"]') as HTMLSelectElement).value==="prop-0","Preset did not restore its tower across levels");
     click("Cancel");
-    click("York");
-    await until(() => document.querySelector(".editor-bar button.selected")?.textContent === "York");
+    select("Level", "York");
+    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "York");
     assert(document.querySelectorAll(".spline-list button").length === 3, "River, wall and footpath failed to reload");
+    click("New map");
+    await until(() => (document.querySelector("dialog") as HTMLDialogElement).open);
+    assert(!document.querySelector('input[aria-label="Map width"]'), "Creating a map must not require size");
+    const name = document.querySelector('input[aria-label="Map name"]') as HTMLInputElement;
+    name.value = "New forest";
+    name.dispatchEvent(new Event("input", { bubbles: true }));
+    click("Create map");
+    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "New forest");
+    assert(document.querySelectorAll(".object-list li").length === 0, "New map inherited objects");
+    assert(JSON.parse(await files.get("scenes/New forest.level3d.json")!.text()).size === null, "New map acquired fixed bounds");
+    click("Add to scene");
+    await until(() => document.querySelectorAll(".object-list li").length > 0);
+    click("View");
+    await until(() => (document.querySelector(".export-settings") as HTMLElement).checkVisibility());
+    click("Set export frame");
+    await until(() => !!document.querySelector('input[aria-label="Export width"]'));
+    const cropWidth = document.querySelector('input[aria-label="Export width"]') as HTMLInputElement;
+    cropWidth.value = "10";
+    cropWidth.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    click("Save *");
+    await until(() => ![...document.querySelectorAll("button")].some(b => b.textContent?.trim() === "Save *"));
+    const newSaved = JSON.parse(await files.get("scenes/New forest.level3d.json")!.text());
+    assert(newSaved.size === null && newSaved.exportBounds[2] === 10, "Advisory crop changed canvas size or expanded to fit assets");
+    select("Level", "York");
+    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "York");
+    select("Level", "New forest");
+    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "New forest");
+    assert(document.querySelectorAll(".object-list li").length > 0, "New map assets were not restored");
+    assert((document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).value === "10", "Export frame was not restored");
     assert(errors.length === 0, errors.join("\n"));
   } catch (error) {
     throw new Error(`${error}; errors: ${errors.join("; ")}; UI: ${document.querySelector("#root")?.textContent}`);

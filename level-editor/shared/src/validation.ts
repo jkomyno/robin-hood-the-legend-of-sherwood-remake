@@ -160,12 +160,10 @@ function base(v: unknown, path: string) {
   const d = object(v, path);
   check(d.version === 1, path, `unsupported version ${d.version}`);
   text(d.map, `${path}.map`);
-  tuple(d.size, 2, `${path}.size`);
-  check(
-    d.size.every((x: number) => x > 0),
-    path,
-    "size must be positive",
-  );
+  if (d.size !== null) {
+    tuple(d.size, 2, `${path}.size`);
+    check(d.size.every((x: number) => x > 0), path, "size must be positive");
+  }
   camera(d.camera, `${path}.camera`);
   return d;
 }
@@ -309,6 +307,7 @@ export function parseProtoLevel(value: unknown): ProtoLevel {
 
 export function parseSceneDoc(value: unknown): SceneDoc {
   const d = base(value, "scene");
+  if (d.size === null) check(d.standalone === true, "scene.size", "unbounded scenes must be standalone");
   if (d.standalone !== undefined) check(typeof d.standalone === "boolean", "scene.standalone", "expected boolean");
   array(d.placements, "scene.placements").forEach((p, i) => {
     object(p, "placement");
@@ -358,10 +357,16 @@ export function parseLevel3D(
   context: DocumentContext = {},
 ): Level3D {
   const d = base(value, "level3d");
+  if (d.exportBounds !== undefined) {
+    tuple(d.exportBounds, 4, "level3d.exportBounds");
+    check(d.exportBounds.every(Number.isInteger) && d.exportBounds[2] > 0 && d.exportBounds[3] > 0,
+      "level3d.exportBounds", "expected integer origin and positive integer dimensions");
+  }
   if (context.scene) {
     check(
-      d.size[0] === context.scene.size[0] &&
-        d.size[1] === context.scene.size[1],
+      d.size === null || context.scene.size === null
+        ? d.size === context.scene.size
+        : d.size[0] === context.scene.size[0] && d.size[1] === context.scene.size[1],
       "level3d.size",
       "does not match source scene",
     );

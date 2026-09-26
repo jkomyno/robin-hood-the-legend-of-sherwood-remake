@@ -11,6 +11,7 @@ const chrome = spawn(
   process.env.CHROME ?? "google-chrome",
   [
     "--headless",
+    "--window-size=1440,900",
     "--no-sandbox",
     "--disable-dev-shm-usage",
     "--disable-background-networking",

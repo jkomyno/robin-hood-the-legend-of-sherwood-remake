@@ -301,6 +301,12 @@ async function fixtures(names = ["a", "b"]) {
   };
 }
 function button(label: string) {
+  const level = document.querySelector('select[aria-label="Level"]') as HTMLSelectElement | null;
+  if (level && [...level.options].some(option => option.value === label)) {
+    level.value = label;
+    level.dispatchEvent(new Event("change", { bubbles: true }));
+    return;
+  }
   const button = [...document.querySelectorAll("button")].find(
     (b) => b.textContent?.trim() === label,
   );
@@ -338,13 +344,11 @@ async function main() {
       document.querySelector("#root")!,
     );
     await until(() =>
-      [...document.querySelectorAll("button")].some(
-        (b) => b.textContent === "a",
-      ),
+      [...document.querySelectorAll('select[aria-label="Level"] option')].some(b => b.textContent === "a"),
     );
     if (mount === 0) {
       const selectedMap = () =>
-        document.querySelector(".editor-bar button.selected")?.textContent;
+        (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value;
       const rows = () => document.querySelectorAll(".object-list li").length;
       const pending = library.delayRead("a-volumes.scene.glb");
       button("a");
@@ -400,9 +404,7 @@ async function main() {
       await oldLibrary.entered;
       setActiveLibrary(replacement);
       await until(() =>
-        [...document.querySelectorAll("button")].some(
-          (b) => b.textContent === "c",
-        ),
+        [...document.querySelectorAll('select[aria-label="Level"] option')].some(b => b.textContent === "c"),
       );
       button("c");
       await until(() => selectedMap() === "c" && status === null);
@@ -416,9 +418,7 @@ async function main() {
       library.resetFiles();
       setActiveLibrary(library);
       await until(() =>
-        [...document.querySelectorAll("button")].some(
-          (b) => b.textContent === "a",
-        ),
+        [...document.querySelectorAll('select[aria-label="Level"] option')].some(b => b.textContent === "a"),
       );
       assert(errors.length === 0, errors.join("\n"));
     }
@@ -447,14 +447,14 @@ async function main() {
       button("Delete");
       await pause();
       for (const checkbox of document.querySelectorAll<HTMLInputElement>(
-        ".editor-bar input[type=checkbox]",
+        ".view-overlays input[type=checkbox]",
       )) {
         checkbox.checked = true;
         checkbox.dispatchEvent(new Event("change", { bubbles: true }));
       }
       await pause();
       for (const checkbox of document.querySelectorAll<HTMLInputElement>(
-        ".editor-bar input[type=checkbox]",
+        ".view-overlays input[type=checkbox]",
       )) {
         checkbox.checked = false;
         checkbox.dispatchEvent(new Event("change", { bubbles: true }));

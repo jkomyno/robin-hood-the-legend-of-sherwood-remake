@@ -14,6 +14,8 @@ export default function SplinePanel(props: {
   viewport: EditorViewport;
   commit(document: Level3D): void;
   onError(message: string): void;
+  active?: boolean;
+  onEditingChange?(editing: boolean): void;
 }) {
   const [active, setActive] = createSignal("");
   const [draft, setDraft] = createSignal<LevelSpline | null>(null);
@@ -28,6 +30,7 @@ export default function SplinePanel(props: {
   const path = () => draft() ?? props.document()?.splines?.find(path => path.id === active()) ?? null;
   const sources = () => props.entries().filter(entry => entry.editor_usage !== "map-background")
     .sort((a, b) => Number(assetType(b) === "Wall") - Number(assetType(a) === "Wall") || a.name.localeCompare(b.name));
+  createEffect(() => !!draft() || busy(), editing => { props.onEditingChange?.(editing); });
   function exit() {
     setActive(""); setDraft(null); setPoint(0); pendingSources = [];
     props.viewport.setSplineEdit(null);
@@ -189,7 +192,7 @@ export default function SplinePanel(props: {
   createEffect(() => props.document()?.map, map => {
     if(map !== editingMap) {editingMap=map;attempt++;exit();}
   });
-  createEffect(() => ({ current: path(), selected: point(), drawing: !!draft() }), ({ current, selected, drawing }) => {
+  createEffect(() => ({ current: props.active === false ? null : path(), selected: point(), drawing: !!draft() }), ({ current, selected, drawing }) => {
     props.viewport.setSplineEdit(current ? {
       path: current, point: selected, drawing,
       append(position) {
@@ -203,7 +206,7 @@ export default function SplinePanel(props: {
     } : null);
   });
   const onKey = (event: KeyboardEvent) => {
-    if (!path() || (event.target instanceof HTMLElement && (event.target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(event.target.tagName)))) return;
+    if (props.active === false || !path() || (event.target instanceof HTMLElement && (event.target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(event.target.tagName)))) return;
     if (event.key === "Escape") { event.stopImmediatePropagation(); event.preventDefault(); exit(); }
     else if (event.key === "Enter" && draft()) { event.stopImmediatePropagation(); event.preventDefault(); finish(); }
     else if (event.key === "Delete" || event.key === "Backspace") { event.stopImmediatePropagation(); event.preventDefault(); removePoint(); }

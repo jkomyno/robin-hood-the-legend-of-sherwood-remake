@@ -124,7 +124,7 @@ export default function App() {
   return (
     <div class="app editor-app">
       <header class="topbar">
-        <h1>RH Level Editor</h1>
+        <h1>Sherwood <span class="brand-subtitle">Level editor</span></h1>
         <Show
           when={index()}
           fallback={
@@ -133,14 +133,14 @@ export default function App() {
               onClick={needsReconnect() ? onReconnect : onPick}
             >
               {needsReconnect()
-                ? "Reconnect datadir"
-                : "Open hackable datadir…"}
+                ? "Reconnect game data"
+                : "Connect game data…"}
             </button>
           }
         >
           {(idx) => (
             <span class="connected">
-              datadir: {idx().maps.size} maps{" "}
+              Game data · {idx().maps.size} maps{" "}
               <button onClick={onPick}>change</button>
             </span>
           )}
@@ -160,7 +160,7 @@ export default function App() {
         >
           {(lib) => (
             <span class="connected">
-              library: {lib().handle.name}{" "}
+              Library · {lib().handle.name}{" "}
               <button onClick={onPickLibrary}>change</button>
             </span>
           )}
@@ -169,8 +169,8 @@ export default function App() {
         <Show when={status()}>{(s) => <span class="busy">{s()}</span>}</Show>
         <Show when={error()}>
           {(e) => (
-            <span class="error" onClick={() => setError(null)}>
-              {e()}
+            <span class="error" role="alert">
+              {e()} <button aria-label="Dismiss error" onClick={() => setError(null)}>×</button>
             </span>
           )}
         </Show>

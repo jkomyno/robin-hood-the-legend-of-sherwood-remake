@@ -34,6 +34,7 @@ import {
   patchGroup,
   type Selection,
 } from "./document-commands";
+import { createNewMap } from "./new-map";
 import SplinePanel from "./SplinePanel";
 import LightingPanel from "./LightingPanel";
 import AssetLibrary from "./AssetLibrary";
@@ -63,6 +64,15 @@ export interface EditorProps {
 }
 
 export default function Editor3D(props: EditorProps) {
+  let viewportElement!: HTMLDivElement;
+  let newMapDialog!: HTMLDialogElement;
+  const [newMapName, setNewMapName] = createSignal("Untitled map");
+  const [creatingMap, setCreatingMap] = createSignal(false);
+  const [newMapError, setNewMapError] = createSignal("");
+  const [panel, setPanel] = createSignal("Selection");
+  const [libraryOpen, setLibraryOpen] = createSignal(true);
+  const [helpOpen, setHelpOpen] = createSignal(false);
+  const [editingPath, setEditingPath] = createSignal(false);
   const [missionName, setMissionName] = createSignal("");
   const [missionInfo, setMissionInfo] = createSignal("");
   const [populationPlaying, setPopulationPlaying] = createSignal(true);
@@ -172,6 +182,11 @@ export default function Editor3D(props: EditorProps) {
     },
   );
 
+  function viewportElementCenter() {
+    const bounds = viewportElement.getBoundingClientRect();
+    return { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
+  }
+
   async function addAsset(entry: ProjectionAssetEntry, placement?: [number, number, number]) {
     const document = doc();
     const library = props.library();
@@ -182,8 +197,10 @@ export default function Editor3D(props: EditorProps) {
     try {
       prepared = await prepareProjectionAsset(library.handle, entry, document.map);
       if (disposed || attempt !== openAttempt || props.library() !== library || doc() !== document) return;
-      const result = insertProjectionAsset(document, prepared.descriptor, prepared.reference,
-        placement ?? [document.size[0] / 2, document.size[1] / 2, 0]);
+      const center = viewportElementCenter();
+      const position = placement ?? viewport.assetDropPosition(center.x, center.y);
+      if (!position) throw new Error("Point the camera toward the ground before adding an asset.");
+      const result = insertProjectionAsset(document, prepared.descriptor, prepared.reference, position);
       parseLevel3D(result.document, { level: level() ?? undefined });
       const adopted = viewport.adoptAsset(prepared.reference, prepared.asset, prepared.sources);
       if (!adopted) disposeObjectResources([prepared.asset]);
@@ -196,6 +213,30 @@ export default function Editor3D(props: EditorProps) {
     } finally {
       if (prepared) disposeObjectResources([prepared.asset]);
       if (!disposed) setAddingAsset(false);
+    }
+  }
+
+  async function createMap(name: string) {
+    const library = props.library();
+    if (!library || creatingMap()) return;
+    setCreatingMap(true);
+    setNewMapError("");
+    try {
+      if (dirty()) {
+        await save();
+        if (dirty()) throw new Error("Save the current map successfully before creating another map.");
+      }
+      if (disposed || props.library() !== library) return;
+      name = await createNewMap(library.handle, name);
+      if (disposed || props.library() !== library) return;
+      setMaps(current => [...new Set([...current, name])].sort());
+      newMapDialog.close();
+      setPanel("Selection");
+      await openMap(name);
+    } catch (error) {
+      if (!disposed) setNewMapError(error instanceof Error ? error.message : String(error));
+    } finally {
+      if (!disposed) setCreatingMap(false);
     }
   }
 
@@ -548,7 +589,26 @@ export default function Editor3D(props: EditorProps) {
 
   return (
     <div class="editor">
+      <dialog class="new-map-dialog" ref={element => { newMapDialog = element; }}
+        aria-labelledby="new-map-title" onCancel={event => { if (creatingMap()) event.preventDefault(); }}>
+        <form onSubmit={event => { event.preventDefault(); void createMap(String(new FormData(event.currentTarget).get("mapName"))); }}>
+          <h2 id="new-map-title">New map</h2>
+          <p>Start with an open canvas. Add assets, walls and paths in any direction.</p>
+          <fieldset disabled={creatingMap()}>
+            <label>Map name<input name="mapName" aria-label="Map name" autofocus required maxlength={64} value={newMapName()}
+              onInput={event => setNewMapName(event.currentTarget.value)} /></label>
+            <p class="hint">No size to choose now. Set an optional export frame later, when you know what to include.</p>
+            <p class="hint">Saved in the connected library.</p>
+            <Show when={dirty()}><p class="hint">Your current map will be saved before creating the new one.</p></Show>
+            <Show when={newMapError()}><p class="library-error" role="alert">{newMapError()}</p></Show>
+            <div class="dialog-actions"><button type="button" onClick={() => newMapDialog.close()}>Cancel</button>
+              <button type="submit" class="primary-action">{creatingMap() ? "Creating…" : "Create map"}</button></div>
+          </fieldset>
+        </form>
+      </dialog>
       <div class="editor-bar">
+        <button disabled={!props.library() || editingPath()} title={!props.library() ? "Open a library first" : "Create a blank map"}
+          onClick={() => { setNewMapError(""); newMapDialog.showModal(); }}>New map</button>
         <label class="mission-picker">Mission
           <select aria-label="Mission" value={missionName()} disabled={!props.index() || !props.library() || maps().length === 0}
             onChange={(e) => { const value = e.currentTarget.value; e.currentTarget.value = missionName(); if (value) void openMap("", value); else if (mapName()) void openMap(mapName()!); }}>
@@ -556,22 +616,13 @@ export default function Editor3D(props: EditorProps) {
             <For each={props.index()?.missions ?? []}>{(name) => <option value={name}>{name}</option>}</For>
           </select>
         </label>
-        <For each={maps()}>
-          {(m) => (
-            <button
-              class={mapName() === m ? "selected" : ""}
-              onClick={() => void openMap(m)}
-            >
-              {m}
-            </button>
-          )}
-        </For>
-        <Show when={maps().length === 0}>
-          <span class="hint">
-            No reconstructions in the library (run{" "}
-            <code>pnpm volumes --map &lt;map&gt;</code>).
-          </span>
-        </Show>
+        <label class="mission-picker">Level
+          <select aria-label="Level" value={mapName() ?? ""} disabled={!maps().length}
+            onChange={event => { const name = event.currentTarget.value; event.currentTarget.value = mapName() ?? ""; if (name) void openMap(name); }}>
+            <option value="" disabled>Choose a level…</option>
+            <For each={maps()}>{name => <option value={name}>{name}</option>}</For>
+          </select>
+        </label>
         <span class="spacer" />
         <button
           disabled={!doc()}
@@ -587,22 +638,6 @@ export default function Editor3D(props: EditorProps) {
         >
           Frame
         </button>
-        <label class="check inline">
-          <input
-            type="checkbox"
-            checked={showObstacles()}
-            onChange={(e) => setShowObstacles(e.currentTarget.checked)}
-          />{" "}
-          obstacles
-        </label>
-        <label class="check inline">
-          <input
-            type="checkbox"
-            checked={showElevation()}
-            onChange={(e) => setShowElevation(e.currentTarget.checked)}
-          />{" "}
-          elevation lines
-        </label>
         <button
           disabled={history().past.length === 0}
           onClick={undo}
@@ -617,12 +652,11 @@ export default function Editor3D(props: EditorProps) {
         >
           Redo
         </button>
-        <button disabled={!dirty()} onClick={() => void save()} title="ctrl+s">
+        <button class="primary-action" disabled={!dirty()} onClick={() => void save()} title="ctrl+s">
           Save{dirty() ? " *" : ""}
         </button>
-        <Show when={info()}>
-          {(s) => <span class="editor-status">{s()}</span>}
-        </Show>
+        <button aria-expanded={libraryOpen() ? "true" : "false"} aria-controls="asset-browser" onClick={() => setLibraryOpen(!libraryOpen())}>Assets</button>
+        <button aria-expanded={helpOpen() ? "true" : "false"} aria-controls="editor-help" onClick={() => setHelpOpen(!helpOpen())}>Help</button>
       </div>
       <Show when={mapLoadProgress()}>
         {(progress) => <div class="map-load-progress" role="status" aria-label={`Loading map: ${progress().phase}`}>
@@ -631,10 +665,12 @@ export default function Editor3D(props: EditorProps) {
         </div>}
       </Show>
       <div class="editor-body">
+        <div id="asset-browser" class="asset-browser" hidden={!libraryOpen()}>
         <AssetLibrary root={props.library()?.handle ?? null} entries={assetEntries()}
           loading={libraryLoading()} error={libraryError()} canInsert={!!doc() && !addingAsset()}
           onAdd={entry => void addAsset(entry)} onDragEnd={() => setDropActive(false)} />
-        <div class={`editor-canvas ${dropActive() ? "asset-drop-active" : ""}`} ref={(element) => viewport.setup(element)}
+        </div>
+        <div class={`editor-canvas ${dropActive() ? "asset-drop-active" : ""}`} ref={(element) => { viewportElement = element; viewport.setup(element); }}
           onDragOver={event => {
             if (!doc() || addingAsset() || !event.dataTransfer?.types.includes(ASSET_DRAG_TYPE)) return;
             event.preventDefault();
@@ -652,13 +688,52 @@ export default function Editor3D(props: EditorProps) {
             const entry = assetEntries().find(entry => entry.id === id);
             const placement = viewport.assetDropPosition(event.clientX, event.clientY);
             if (entry && placement) void addAsset(entry, placement);
-          }} />
-        <aside class="editor-panel">
+          }} >
+          <Show when={!doc() && !mapLoadProgress()}>
+            <div class="viewport-welcome"><span class="eyebrow">LEVEL WORKSPACE</span>
+              <h2>{props.library() ? "Choose a level to begin" : "Build your world"}</h2>
+              <p>{props.library() ? (maps().length ? "Choose a level above, or create a new map to start from scratch." : "This library has no levels yet. Use New map to create your first scene.") : "Open a library to load your levels and reusable assets. Connect game data to preview missions."}</p>
+              <div class="welcome-steps"><span>01 · Open library</span><span>02 · Choose level</span><span>03 · Edit scene</span></div>
+            </div>
+          </Show>
+          <Show when={helpOpen()}><div id="editor-help" class="viewport-help">
+            <div class="detail-head"><h2>Viewport controls</h2><button aria-label="Close help" onClick={() => setHelpOpen(false)}>×</button></div>
+            <dl><dt>Select / move</dt><dd>Click / drag object</dd><dt>Select a part</dt><dd>Alt-click or click again</dd><dt>Pan / orbit</dt><dd>Left / right drag</dd><dt>Zoom</dt><dd>Mouse wheel</dd><dt>Frame / game view</dt><dd>F / G</dd><dt>Rotate</dt><dd>Q / E</dd><dt>Duplicate / delete</dt><dd>D / Delete</dd><dt>Save / undo</dt><dd>Ctrl or ⌘ + S / Z</dd></dl>
+          </div></Show>
+        </div>
+        <aside class="editor-panel" aria-label="Inspector">
+          <nav class="inspector-tabs" aria-label="Inspector sections">
+            <For each={["Selection", "Draw", "View"]}>{name => <button aria-pressed={panel() === name ? "true" : "false"}
+              class={panel() === name ? "selected" : ""} disabled={editingPath() && name !== "Draw"}
+              title={editingPath() && name !== "Draw" ? "Finish or cancel the path before switching tools" : undefined}
+              onClick={() => setPanel(name)}>{name}</button>}</For>
+          </nav>
+          <div class="inspector-content" hidden={panel() !== "Draw"}>
+          <p class="panel-intro">Draw walls, rivers and paths directly in the scene. Finish or cancel a path before switching tools.</p>
           <SplinePanel document={doc} library={() => props.library()?.handle ?? null} entries={assetEntries}
-            viewport={viewport} commit={pushHistory} onError={props.onError} />
-          <LightingPanel document={doc} commit={pushHistory} />
+            viewport={viewport} commit={pushHistory} onError={props.onError} active={panel() === "Draw"} onEditingChange={setEditingPath} />
+          </div>
+          <div class="inspector-content" hidden={panel() !== "View"}>
           <section class="view-settings">
-            <h2>View</h2>
+            <h2>Camera &amp; display</h2>
+            <div class="view-overlays">
+              <label class="check">
+          <input
+            type="checkbox"
+            checked={showObstacles()}
+            onChange={(e) => setShowObstacles(e.currentTarget.checked)}
+          />{" "}
+          Obstacles
+        </label>
+        <label class="check">
+          <input
+            type="checkbox"
+            checked={showElevation()}
+            onChange={(e) => setShowElevation(e.currentTarget.checked)}
+          />{" "}
+          Elevation lines
+        </label>
+            </div>
             <label class="perspective-control">
               <span>Perspective <output>{perspective() === 0 ? "Orthographic" : `${perspective()}°`}</output></span>
               <input aria-label="Perspective" type="range" min="0" max="65" step="1" value={perspective()}
@@ -689,14 +764,41 @@ export default function Editor3D(props: EditorProps) {
               <p class="hint">Initial placements; mission scripts are not run. Green markers show spawn points. Magenta markers indicate missing sprite assets. Standing characters, prone bodies, pickups, and scenery use different depth profiles.</p>
             </Show>
           </section>
+          <LightingPanel document={doc} commit={pushHistory} />
+          <section class="view-settings export-settings">
+            <h2>Export frame</h2>
+            <p class="hint">An optional crop for compilation. Assets remain editable outside the frame, including parts you intend to crop.</p>
+            <div class="row">
+              <button disabled={!doc()} onClick={() => {
+                try { pushHistory({ ...doc()!, exportBounds: viewport.fitExportBounds() }); }
+                catch (error) { props.onError(String(error)); }
+              }}>{doc()?.exportBounds ? "Fit to content" : "Set export frame"}</button>
+              <Show when={doc()?.exportBounds}><button onClick={() => pushHistory({ ...doc()!, exportBounds: undefined })}>Remove frame</button></Show>
+            </div>
+            <Show when={doc()?.exportBounds}>{bounds => <div class="export-fields">
+              <For each={["Left", "Top", "Width", "Height"]}>{(label, index) => <label>{label}
+                <input type="number" aria-label={`Export ${label.toLowerCase()}`} step="1" min={index() > 1 ? 1 : undefined}
+                  value={bounds()[index()]} onChange={event => {
+                    const value = Number(event.currentTarget.value);
+                    if (!event.currentTarget.value || !Number.isInteger(value) || (index() > 1 && value < 1)) {
+                      event.currentTarget.value = String(bounds()[index()]); return;
+                    }
+                    const next = [...bounds()] as [number, number, number, number];
+                    next[index()] = value;
+                    pushHistory({ ...doc()!, exportBounds: next });
+                  }} />
+              </label>}</For>
+            </div>}</Show>
+            <Show when={!doc()?.exportBounds}><p class="hint">No custom crop set.</p></Show>
+          </section>
+          </div>
+          <div class="inspector-content" hidden={panel() !== "Selection"}>
+          <h2 class="panel-title">Selection</h2>
           <Show
             when={selectedTransform()}
             fallback={
               <p class="hint">
-                Click a building to select it, alt-click or click again for a
-                single part; drag the selection to move it along the ground.
-                Left drag elsewhere pans, right drag orbits around the point
-                under the cursor, wheel zooms to the cursor.
+                Select an object in the scene or the list below to edit its properties. Alt-click to select a single part.
               </p>
             }
           >
@@ -780,9 +882,10 @@ export default function Editor3D(props: EditorProps) {
                 <For each={["dx", "dy", "dz", "rot_deg"] as const}>
                   {(f) => (
                     <div class="meta-row">
-                      <span class="meta-key">{f}</span>
+                      <span class="meta-key">{{ dx: "Offset X", dy: "Offset Y", dz: "Height offset", rot_deg: "Rotation (°)" }[f]}</span>
                       <input
                         type="number"
+                        aria-label={{ dx: "Offset X", dy: "Offset Y", dz: "Height offset", rot_deg: "Rotation (°)" }[f]}
                         step={f === "rot_deg" ? 5 : 1}
                         value={t()[f]}
                         onChange={(e) =>
@@ -847,19 +950,24 @@ export default function Editor3D(props: EditorProps) {
             )}
           </Show>
           <section class="object-list">
+            <h3>Scene objects <span class="object-count">{doc()?.objects.length ?? 0}</span></h3>
             <div class="search-row">
               <input
                 class="search"
-                placeholder="filter buildings and parts"
+                aria-label="Find scene objects"
+                placeholder="Find objects…"
                 value={filter()}
                 onInput={(e) => setFilter(e.currentTarget.value)}
               />
             </div>
+            <Show when={doc() && !rows().length}><p class="hint">{filter() ? "No objects match your search." : "Your scene has no objects yet. Add one from Assets."}</p></Show>
             <ul>
               <For each={rows()}>
                 {(r) => (
                   <li
                     class={`${isSelected(r) ? "selected" : ""} ${r.hidden ? "hidden" : ""} depth-${r.depth}`}
+                    tabindex={0} role="button" aria-pressed={isSelected(r) ? "true" : "false"} title={r.label}
+                    onKeyDown={event => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); select({ kind: r.kind, id: r.id }); } }}
                     onClick={() => select({ kind: r.kind, id: r.id })}
                   >
                     <Show
@@ -900,8 +1008,14 @@ export default function Editor3D(props: EditorProps) {
               </For>
             </ul>
           </section>
+          </div>
         </aside>
       </div>
+      <footer class="editor-footer">
+        <span class="document-state">{mapName() ?? "No level open"}{doc() ? (dirty() ? " · Unsaved changes" : " · Saved") : ""}</span>
+        <span class="editor-status" role="status">{info()}</span>
+        <span class="footer-hint">Drag to pan · Right-drag to orbit · Scroll to zoom</span>
+      </footer>
     </div>
   );
 }

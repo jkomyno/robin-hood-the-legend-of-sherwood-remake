@@ -102,8 +102,8 @@ export interface SceneDoc {
   standalone?: boolean;
   /** source map name as in the datadir */
   map: string;
-  /** map size in pixels */
-  size: [number, number];
+  /** Fixed map size in pixels, or null for an unbounded authoring canvas. */
+  size: [number, number] | null;
   camera: MapCamera;
   ground?: SceneGround;
   placements: ScenePlacement[];

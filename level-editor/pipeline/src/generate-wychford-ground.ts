@@ -16,6 +16,7 @@ const scene=parseLevel3D(JSON.parse(await fs.readFile(scenePath,"utf8")));
 const out=path.join(workDir,"wychford/ground-generation");
 await fs.mkdir(out,{recursive:true});
 const sin=Math.sin(scene.camera.elevation_deg*Math.PI/180);
+if (!scene.size) throw new Error("Ground image generation requires compiled map bounds");
 const width=scene.size[0],height=scene.size[1]/sin;
 const points=(id:string)=>{
   const spline=scene.splines!.find(s=>s.id===id)!;
