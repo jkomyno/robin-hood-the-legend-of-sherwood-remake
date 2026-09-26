@@ -50,6 +50,9 @@ export type { Selection } from "./document-commands";
 /** the library directory handle, wrapped because handles are async-iterable and Solid 2 would iterate them */
 export interface LibraryRef {
   handle: FileSystemDirectoryHandle;
+  mapLabels?: () => Promise<ReadonlyMap<string, string>>;
+  documentMap?: (name: string) => string;
+  savedMapName?: (name: string) => string;
 }
 
 export interface EditorProps {
@@ -90,6 +93,8 @@ export default function Editor3D(props: EditorProps) {
   let loadedIndex: DatadirIndex | null = null;
   let loadedLibrary: LibraryRef | null = null;
   const [maps, setMaps] = createSignal<string[]>([]);
+  const [mapLabels, setMapLabels] = createSignal<ReadonlyMap<string, string>>(new Map());
+  const mapLabel = (name: string) => mapLabels().get(name) ?? name;
   const [assetEntries, setAssetEntries] = createSignal<ProjectionAssetEntry[]>([]);
   const [libraryLoading, setLibraryLoading] = createSignal(false);
   const [libraryError, setLibraryError] = createSignal("");
@@ -148,17 +153,20 @@ export default function Editor3D(props: EditorProps) {
       session.beginLoad();
       openAttempt++;
       setMaps([]);
+      setMapLabels(new Map());
       if (!lib) return;
       void (async () => {
         const dir = await subdir(lib.handle, ["scenes"]);
         if (!dir) return;
         const files = await listFiles(dir);
+        const labels = await lib.mapLabels?.() ?? new Map<string, string>();
         const names = files
           .filter((f) => f.endsWith(".level3d.json"))
           .map((f) => f.slice(0, -".level3d.json".length))
           .sort();
         if (disposed || props.library() !== lib) return;
         setMaps(names);
+        setMapLabels(labels);
         if (names.length === 1) void openMap(names[0]!);
       })().catch((error) => {
         if (!disposed && props.library() === lib) props.onError(String(error));
@@ -368,12 +376,12 @@ export default function Editor3D(props: EditorProps) {
     const current = () => !disposed && attempt === openAttempt && props.index() === idx && props.library() === lib;
     let preparedAsset: THREE.Object3D | null = null;
     let preparedEntities: SceneEntities | null = null;
-    props.onStatus(`loading ${requestedMission ?? name}…`);
+    props.onStatus(`loading ${requestedMission ?? mapLabel(name)}…`);
     setMapLoadProgress({ completed: 0, total: 1, phase: "Reading map" });
     try {
       const mission = requestedMission && idx ? await readMission(idx, requestedMission) : null;
       if (mission) {
-        const matching = doc()?.sourceMap?.toLowerCase() === mission.map.toLowerCase() ? mapName()
+        const matching = (doc()?.sourceMap ?? doc()?.map)?.toLowerCase() === mission.map.toLowerCase() ? mapName()
           : maps().find((m) => m.toLowerCase() === mission.map.toLowerCase());
         if (!matching) throw new Error(`No published map for ${mission.map} in this library`);
         name = matching;
@@ -401,7 +409,7 @@ export default function Editor3D(props: EditorProps) {
       }
       const candidate = await prepareMapCandidate(name, lib.handle, idx, (completed, total, phase) => {
         if (attempt === openAttempt) setMapLoadProgress({ completed, total, phase });
-      });
+      }, lib.documentMap?.(name) ?? name);
       preparedAsset = candidate.asset;
       if (mission && idx) {
         if (!candidate.level) throw new Error("Mission requires level data");
@@ -538,6 +546,7 @@ export default function Editor3D(props: EditorProps) {
   async function save() {
     if (!session.current || saving) return;
     const snapshot = session.captureSave();
+    const library = props.library();
     saving = true;
     try {
       await writeText(
@@ -545,9 +554,15 @@ export default function Editor3D(props: EditorProps) {
         `${snapshot.name}.level3d.json`,
         JSON.stringify(snapshot.document, null, 2),
       );
-      session.saved(snapshot);
+      const savedName = library?.savedMapName?.(snapshot.name) ?? snapshot.name;
+      const labels = await library?.mapLabels?.();
+      if (!disposed && props.library() === library) {
+        if (labels) setMapLabels(labels);
+        setMaps(names => [...new Set([...names, savedName])].sort());
+      }
+      session.saved(snapshot, savedName);
       if (!disposed && session.current === snapshot.session) {
-        props.onStatus(`Saved ${snapshot.name} in this browser`);
+        props.onStatus(`Saved ${mapLabel(savedName)} in this browser`);
       }
     } catch (e) {
       if (!disposed) props.onError(String(e));
@@ -700,14 +715,14 @@ export default function Editor3D(props: EditorProps) {
           <select aria-label="Map" value={mapName() ?? ""} disabled={!maps().length}
             onChange={event => { const name = event.currentTarget.value; event.currentTarget.value = mapName() ?? ""; if (name) void openMap(name); }}>
             <option value="" disabled>Choose a map…</option>
-            <For each={maps()}>{name => <option value={name}>{name}</option>}</For>
+            <For each={maps()}>{name => <option value={name}>{mapLabel(name)}</option>}</For>
           </select>
         </label>
         <label class="mission-picker">Mission
-          <select aria-label="Mission" value={missionName()} disabled={!props.index() || !mapName() || !missionsForMap(props.index(),doc()?.sourceMap??mapName()).length}
+          <select aria-label="Mission" value={missionName()} disabled={!props.index() || !mapName() || !missionsForMap(props.index(),doc()?.sourceMap??doc()?.map??mapName()).length}
             onChange={(e) => { const value = e.currentTarget.value; e.currentTarget.value = missionName(); if (value) void openMap("", value); else if (mapName()) void openMap(mapName()!); }}>
             <option value="">Map only</option>
-            <For each={missionsForMap(props.index(),doc()?.sourceMap??mapName())}>{mission => <option value={mission.id}>{mission.label}</option>}</For>
+            <For each={missionsForMap(props.index(),doc()?.sourceMap??doc()?.map??mapName())}>{mission => <option value={mission.id}>{mission.label}</option>}</For>
           </select>
         </label>
         <span class="spacer" />
@@ -735,7 +750,7 @@ export default function Editor3D(props: EditorProps) {
         <button class="primary-action" disabled={!dirty()} onClick={() => void save()} title="ctrl+s">
           Save{dirty() ? " *" : ""}
         </button>
-        <button disabled={!doc()} onClick={() => downloadMap(mapName()!,doc()!)}>Download</button>
+        <button disabled={!doc()} onClick={() => downloadMap(doc()!.map,doc()!)}>Download</button>
         <button aria-expanded={helpOpen() ? "true" : "false"} aria-controls="editor-help" onClick={() => setHelpOpen(!helpOpen())}>Help</button>
         {props.toolbarEnd?.()}
       </header>
@@ -1122,7 +1137,7 @@ export default function Editor3D(props: EditorProps) {
         </aside>
       </div>
       <footer class="editor-footer">
-        <span class="document-state">{mapName() ?? "No map open"}{doc() ? (dirty() ? " · Unsaved changes" : " · Saved") : ""}</span>
+        <span class="document-state">{mapName() ? mapLabel(mapName()!) : "No map open"}{doc() ? (dirty() ? " · Unsaved changes" : " · Saved") : ""}</span>
         <span class="editor-status" role="status">{info()}</span>
         <span class="footer-hint">Drag to pan · Right-drag to orbit · Scroll to zoom</span>
       </footer>

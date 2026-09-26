@@ -20,7 +20,11 @@ export class SplineLayer {
   private camera: MapCamera = { kind: "oblique-orthographic", elevation_deg: 35 };
   private sources = new Map<string, THREE.Object3D>();
   private mode: SplineEditMode | null = null;
-  constructor() { this.root.add(this.controls); }
+  constructor() {
+    // Keep editing overlays after transparent path surfaces as well as opaque geometry.
+    this.controls.renderOrder = 1000;
+    this.root.add(this.controls);
+  }
   private release(path: LevelSpline, object: THREE.Object3D) {
     object.removeFromParent();
     if (path.kind !== "wall") disposeObjectResources([object]);
@@ -73,13 +77,14 @@ export class SplineLayer {
     if (path.points.length >= 2) {
       const points = splineCurve(path, this.camera).getSpacedPoints(128).map(p => p.add(new THREE.Vector3(0, 0, 3)));
       const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),
-        new THREE.LineBasicMaterial({ color: 0x77e4e8, depthTest: false }));
+        new THREE.LineBasicMaterial({ color: 0x77e4e8, transparent: true, depthTest: false, depthWrite: false }));
       line.renderOrder = 100;
       this.controls.add(line);
     }
     path.points.forEach((point, index) => {
       const handle = new THREE.Mesh(new THREE.SphereGeometry(9, 10, 8),
-        new THREE.MeshBasicMaterial({ color: index === this.mode?.point ? 0xffcd59 : 0x77e4e8, depthTest: false }));
+        new THREE.MeshBasicMaterial({ color: index === this.mode?.point ? 0xffcd59 : 0x77e4e8,
+          transparent: true, depthTest: false, depthWrite: false }));
       handle.userData.noSunShadow = true;
       handle.position.set(...gameToScene(this.camera, ...point));
       handle.position.z += 4;

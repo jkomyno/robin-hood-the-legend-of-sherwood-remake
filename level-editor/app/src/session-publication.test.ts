@@ -62,3 +62,25 @@ test("completion after unmount cannot publish into the disposed reactive owner",
   assert.equal(session.publish(generation, "A", {}, "old-directory"), false);
   assert.equal(publications, 1);
 });
+
+test("saving as a modified copy switches identity while preserving history and later edits", () => {
+  const events: SessionSnapshot<object>[] = [];
+  const session = new SessionPublication<object, string>(snapshot => events.push(snapshot));
+  const original = {}, edited = {}, later = {};
+  session.publish(session.beginLoad(), "York", original, "maps");
+  session.edit(edited);
+  const save = session.captureSave();
+  session.edit(later);
+  session.saved(save, "York (Modified)");
+  assert.equal(events.at(-1)!.name, "York (Modified)");
+  assert.equal(events.at(-1)!.dirty, true);
+  session.undo();
+  assert.equal(events.at(-1)!.document, edited);
+  assert.equal(events.at(-1)!.dirty, false);
+  session.undo();
+  assert.equal(events.at(-1)!.document, original);
+  assert.equal(events.at(-1)!.name, "York (Modified)");
+  session.publish(session.beginLoad(), "Lincoln", {}, "maps");
+  session.saved(save, "York (Modified)");
+  assert.equal(events.at(-1)!.name, "Lincoln");
+});

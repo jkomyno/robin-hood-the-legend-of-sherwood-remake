@@ -5,8 +5,44 @@ import Editor3D from "../src/Editor3D";
 import { EditorViewport } from '../src/editor-viewport';
 import { ASSET_DRAG_TYPE } from "../src/asset-library";
 import { disposeObjectResources } from "../src/resources";
+import { SplineLayer } from "../src/spline-layer";
+import type { LevelSpline } from "@rle/shared";
 
 const assert = (value: unknown, message: string) => { if (!value) throw new Error(message); };
+
+function checkPathControlVisibility() {
+  const renderer = new THREE.WebGLRenderer();
+  const target = new THREE.WebGLRenderTarget(64, 64);
+  const layer = new SplineLayer();
+  const scene = new THREE.Scene();
+  scene.add(layer.root);
+  const camera = new THREE.OrthographicCamera(-40, 40, 40, -40, 1, 1000);
+  camera.position.z = 500;
+  camera.lookAt(0, 0, 0);
+  const path: LevelSpline = { id: "visibility", name: "Path", kind: "road",
+    points: [[-100, 0, 0], [0, 0, 0], [100, 0, 0]], width: 80, repeatLength: 100, closed: false };
+  try {
+    layer.sync([path], { kind: "oblique-orthographic", elevation_deg: 35 }, new Map());
+    layer.setMode({ path, drawing: false, point: 1, append() {}, move() {}, selectPoint() {} });
+    renderer.setRenderTarget(target);
+    const pixel = () => {
+      renderer.render(scene, camera);
+      const rgba = new Uint8Array(4);
+      renderer.readRenderTargetPixels(target, 32, 32, 1, 1, rgba);
+      return [...rgba];
+    };
+    const covered = pixel();
+    for (const child of layer.root.children) if (child !== layer.controls) child.visible = false;
+    const uncovered = pixel();
+    assert(uncovered[0]! > uncovered[2]!, "Visibility fixture must sample the selected yellow handle");
+    assert(covered.every((value, i) => value === uncovered[i]), "Transparent path surface obscured its control point");
+  } finally {
+    layer.clear();
+    target.dispose();
+    renderer.dispose();
+    renderer.forceContextLoss();
+  }
+}
 async function until(test: () => boolean) {
   for (let i = 0; i < 150; i++) {
     if (test()) return;
@@ -16,6 +52,7 @@ async function until(test: () => boolean) {
 }
 
 export async function checkSharedLibrary() {
+  checkPathControlVisibility();
   let viewport: EditorViewport | undefined;
   const setup = EditorViewport.prototype.setup;
   EditorViewport.prototype.setup = function(element) { viewport = this; setup.call(this, element); };
@@ -24,9 +61,12 @@ export async function checkSharedLibrary() {
     return THREE.MathUtils.radToDeg(Math.asin(-camera.getWorldDirection(new THREE.Vector3()).y));
   };
   const renderedGroups = () => (viewport as unknown as {objectsRoot: THREE.Group}).objectsRoot.children.length;
+  const panTarget = () => (viewport as unknown as {orbit: {target: THREE.Vector3}}).orbit.target.clone();
+  const pathPoints = () => (viewport as unknown as {splineMode: {path: LevelSpline}}).splineMode.path.points;
   const oldPresets=localStorage.getItem("rle.wallPresets");
   localStorage.removeItem("rle.wallPresets");
   const files = new Map<string, File>();
+  const savedMaps = new Set<string>();
   const json = (name: string, value: unknown) => files.set(name, new File([JSON.stringify(value)], name));
   const obstacle = { points: [{ x: 0, y: 0, z_bottom: 0, z_top: 30 }, { x: 30, y: 0, z_bottom: 0, z_top: 30 },
     { x: 0, y: 30, z_bottom: 0, z_top: 30 }], solid: true, opaque: true, mouse: true,
@@ -74,6 +114,7 @@ export async function checkSharedLibrary() {
       source_origin_scene: [0, 0, 0], source_origin_game: [0, 0, 0],
       parts: [{ node: "building-000", name: entry.name, source_obstacle: 0, obstacle_local_game: obstacle }] });
   }
+  const publishedMaps = new Map([...files].filter(([name]) => name.startsWith('scenes/') && name.endsWith('.level3d.json')));
   const handle = (prefix: string): FileSystemDirectoryHandle => ({
     name: "shared-library-fixture", kind: "directory",
     async getDirectoryHandle(name: string) {
@@ -82,14 +123,16 @@ export async function checkSharedLibrary() {
       return handle(next);
     },
     async getFileHandle(name: string, options?: { create?: boolean }) {
+      const original = publishedMaps.get(prefix + name);
+      name = name.replace(' (Modified).level3d.json', '.level3d.json');
       const path = prefix + name;
       if (!files.has(path) && !options?.create) throw new DOMException(path, "NotFoundError");
       return {
-        getFile: async () => files.get(path)!,
+        getFile: async () => original ?? files.get(path)!,
         createWritable: async () => {
           let value: BlobPart = "";
           return { write: async (text: BlobPart) => { value = text; },
-            close: async () => { files.set(path, new File([value], name)); }, abort: async () => {} };
+            close: async () => { files.set(path, new File([value], name)); savedMaps.add(name); }, abort: async () => {} };
         },
       };
     },
@@ -99,7 +142,11 @@ export async function checkSharedLibrary() {
         yield [path.slice(prefix.length), { kind: "file" }];
     },
   }) as unknown as FileSystemDirectoryHandle;
-  const library = { handle: handle("") };
+  const library = { handle: handle(""),
+    documentMap: (name: string) => name.replace(' (Modified)', ''),
+    savedMapName: (name: string) => ['York', 'Lincoln'].includes(name) ? name + ' (Modified)' : name,
+    mapLabels: async () => new Map(["York", "Lincoln"].flatMap(name =>
+      [[name, name], ...(savedMaps.has(`${name}.level3d.json`) ? [[name + ' (Modified)', name + ' (Modified)']] : [])] as [string, string][])) };
   const host = document.querySelector("#root") as HTMLElement;
   const previousDisplay = host.style.display;
   const previousDirection = host.style.flexDirection;
@@ -209,6 +256,8 @@ export async function checkSharedLibrary() {
     } finally { x.setPointerCapture = capture; x.releasePointerCapture = release; }
     click("Save *");
     await until(() => ![...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Save *"));
+    await until(() => document.querySelector('select[aria-label="Map"] option:checked')?.textContent === 'York (Modified)');
+    assert(document.querySelector('.document-state')?.textContent?.includes('York (Modified)'), 'Document status must label the modified copy');
     const saved = JSON.parse(await files.get("scenes/York.level3d.json")!.text());
     assert(saved.objects.some((part: { source: { map: string } }) => part.source.map === "Leicester"), "Cross-level source was lost");
     assert(saved.groups[0].transform.dx !== 200, "Drop used map center instead of cursor");
@@ -220,11 +269,15 @@ export async function checkSharedLibrary() {
     await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "Lincoln");
     select("Map", "York");
     await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York");
+    assert(document.querySelectorAll(".object-list li").length === 1, "Original map contains the saved edits");
+    select("Map", "York (Modified)");
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York (Modified)");
     assert(document.querySelectorAll(".object-list li").length > 1, "Saved cross-level asset failed to reload");
     // Exercise actual viewport path handling. Synthetic pointer events cannot
     // acquire native pointer capture, so the fixture supplies that browser API.
     const drawingCanvas = document.querySelector(".editor-canvas canvas") as HTMLCanvasElement;
     drawingCanvas.setPointerCapture = () => {};
+    drawingCanvas.releasePointerCapture = () => {};
     drawingCanvas.hasPointerCapture = () => false;
     const drawPoint = async (x: number, y: number) => {
       await new Promise(resolve => requestAnimationFrame(resolve));
@@ -240,6 +293,17 @@ export async function checkSharedLibrary() {
     click("Draw river");
     await until(() => !!document.querySelector('input[aria-label="Path name"]'));
     await until(() => ([...document.querySelectorAll(".inspector-tabs button")].find(b => b.textContent === "Selection") as HTMLButtonElement).disabled);
+    const panRect = drawingCanvas.getBoundingClientRect();
+    const panStart = panTarget();
+    const panEvent = { bubbles: true, cancelable: true, pointerId: 1, pointerType: "mouse", button: 0,
+      buttons: 1, clientX: panRect.left + panRect.width / 2, clientY: panRect.top + panRect.height / 2 };
+    drawingCanvas.dispatchEvent(new PointerEvent("pointerdown", panEvent));
+    drawingCanvas.dispatchEvent(new PointerEvent("pointermove", { ...panEvent, clientX: panEvent.clientX + 40 }));
+    assert(panTarget().distanceTo(panStart) > 0.01, "Dragging while drawing must pan the camera");
+    // Returning to the starting position still counts as a drag, not a click.
+    drawingCanvas.dispatchEvent(new PointerEvent("pointermove", panEvent));
+    drawingCanvas.dispatchEvent(new PointerEvent("pointerup", { ...panEvent, buttons: 0 }));
+    assert(pathPoints().length === 0, "Camera panning must not append a path point");
     await drawPoint(0.25, 0.45);
     await drawPoint(0.5, 0.5);
     await drawPoint(0.75, 0.65);
@@ -299,8 +363,8 @@ export async function checkSharedLibrary() {
     await until(()=>!!document.querySelector('input[aria-label="Corner tower scale"]'));
     assert((document.querySelector('select[aria-label="Corner tower asset"]') as HTMLSelectElement).value==="prop-0","Preset did not restore its tower across levels");
     click("Cancel");
-    select("Map", "York");
-    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York");
+    select("Map", "York (Modified)");
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York (Modified)");
     assert(document.querySelectorAll(".spline-list button").length === 3, "River, wall and footpath failed to reload");
     click("New map");
     await until(() => (document.querySelector("dialog") as HTMLDialogElement).open);

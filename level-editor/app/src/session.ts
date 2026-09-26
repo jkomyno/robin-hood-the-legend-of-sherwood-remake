@@ -65,8 +65,10 @@ export class MapSession<T, R> {
       resources: session.resources,
     };
   }
-  saved(snapshot: ReturnType<MapSession<T, R>["captureSave"]>) {
-    if (this.current === snapshot.session)
+  saved(snapshot: ReturnType<MapSession<T, R>["captureSave"]>, name = snapshot.name) {
+    if (this.current === snapshot.session) {
       snapshot.session.saved = snapshot.document;
+      snapshot.session.name = name;
+    }
   }
 }

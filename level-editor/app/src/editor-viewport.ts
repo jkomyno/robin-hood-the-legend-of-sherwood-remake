@@ -1020,23 +1020,30 @@ export class EditorViewport {
   }
 
   private setupSplineInteraction(canvas: HTMLCanvasElement) {
-    let gesture: { mode: SplineEditMode; index: number | null; point: Vec3; pointer: number } | null = null;
+    let gesture: { mode: SplineEditMode; index: number | null; point: Vec3; pointer: number;
+      x: number; y: number; moved: boolean } | null = null;
     const consume = (event: PointerEvent) => { event.preventDefault(); event.stopImmediatePropagation(); };
     canvas.addEventListener("pointerdown", event => {
       const mode = this.splineMode;
-      if (!mode || event.button !== 0) return;
+      if (!mode || event.button !== 0 || gesture) return;
       const point = this.assetDropPosition(event.clientX, event.clientY);
       if (!point) return;
       const index = this.splines.hitHandle(this.raycaster);
       if (!mode.drawing && index === null) return;
-      consume(event);
-      gesture = { mode, index, point, pointer: event.pointerId };
-      if (index !== null) mode.selectPoint(index);
-      canvas.setPointerCapture(event.pointerId);
-      if (this.orbit) this.orbit.enabled = false;
+      gesture = { mode, index, point, pointer: event.pointerId,
+        x: event.clientX, y: event.clientY, moved: false };
+      // Empty-space gestures remain available to camera panning; only a click adds a point.
+      if (index !== null) {
+        consume(event);
+        mode.selectPoint(index);
+        canvas.setPointerCapture(event.pointerId);
+        if (this.orbit) this.orbit.enabled = false;
+      }
     }, { capture: true, signal: this.listeners.signal });
     canvas.addEventListener("pointermove", event => {
       if (!gesture || gesture.pointer !== event.pointerId) return;
+      gesture.moved ||= Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 4;
+      if (gesture.index === null) return;
       consume(event);
       const point = this.assetDropPosition(event.clientX, event.clientY);
       if (!point) return;
@@ -1049,13 +1056,18 @@ export class EditorViewport {
     }, { capture: true, signal: this.listeners.signal });
     const finish = (event: PointerEvent) => {
       if (!gesture || gesture.pointer !== event.pointerId) return;
-      consume(event);
       const active = gesture;
       gesture = null;
-      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
-      if (this.orbit) this.orbit.enabled = true;
+      active.moved ||= Math.hypot(event.clientX - active.x, event.clientY - active.y) > 4;
+      if (active.index !== null) {
+        consume(event);
+        if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+        if (this.orbit) this.orbit.enabled = true;
+      }
       if (event.type === "pointerup" && this.splineMode?.path.id === active.mode.path.id) {
-        if (active.index === null) active.mode.append(active.point);
+        if (active.index === null) {
+          if (!active.moved && this.splineMode.drawing) active.mode.append(active.point);
+        }
         else active.mode.move(active.index, active.point);
       }
       this.splines.setMode(this.splineMode);

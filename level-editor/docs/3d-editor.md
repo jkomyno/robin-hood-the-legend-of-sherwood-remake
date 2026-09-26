@@ -7,8 +7,13 @@ transforms place it in the map. Mission-specific state belongs to the map.
 See [the library format](library-format.md) for files, resource sharing and bindings.
 
 **Save** stores `<map>.level3d.json` in the browser's Origin Private File System
-(OPFS), under `sherwood-level-editor/maps/`. Local copies override published maps
-when reopened on the same browser and origin. **Download** exports the current
+(OPFS), under `sherwood-level-editor/maps/`. Saving a library map switches to its
+local copy, labeled **(Modified)** in the map menu and document status. The original
+remains separately selectable under its plain name; both entries are available
+after reopening on the same browser and origin. Existing browser saves also appear
+as modified copies without changing their stored files.
+Built-in maps have capitalized English display names (including Crossroads 1–3);
+their file and mission identifiers stay unchanged. **Download** exports the current
 document, including unsaved changes, as JSON. Clearing site data removes local
 copies, so download maps you want to keep outside the browser. Saving and publishing
 are separate from the reconstruction-only game-file baker described below.
@@ -73,6 +78,9 @@ without refitting the lens as the map moves across the view.
 Right-drag orbit keeps a fixed distance to the point under the cursor. Wheel zoom
 moves the lens closer without refitting the whole map, so repeated zoom-in steps
 continue to magnify the scene.
+While drawing a path, click empty ground to add a point and left-drag empty ground
+to pan without adding points. Drag a control point to move it. Control points and
+the centerline stay visible above path surfaces, including transparent rivers.
 **Lock rotation to 16 angles** snaps horizontal camera rotation to 22.5° steps
 aligned with the sprite views. It snaps immediately when enabled and keeps tilt
 continuous in both orthographic and perspective modes. The option is off by default.

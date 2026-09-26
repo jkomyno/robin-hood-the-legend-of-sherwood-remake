@@ -58,8 +58,8 @@ export class SessionPublication<T, R> {
   captureSave() {
     return this.session.captureSave();
   }
-  saved(snapshot: ReturnType<MapSession<T, R>["captureSave"]>) {
-    this.session.saved(snapshot);
+  saved(snapshot: ReturnType<MapSession<T, R>["captureSave"]>, name = snapshot.name) {
+    this.session.saved(snapshot, name);
     if (this.current === snapshot.session) this.notify("saved");
   }
   private notify(reason: "load" | "revision" | "saved") {
