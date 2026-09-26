@@ -53,6 +53,7 @@ export async function openHttpLibrary(base = "/library/", storage?: FileSystemDi
     });
     if (result.status === 404) throw missing(path);
     if (!result.ok) throw new Error(`Cannot read ${path} (${result.status})`);
+    if (result.headers.get("content-type")?.includes("text/html")) throw missing(path);
     return new File([await result.arrayBuffer()], path.split("/").at(-1)!, {
       type: result.headers.get("content-type") ?? "",
     });
