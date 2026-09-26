@@ -45,5 +45,6 @@ def pack_atlas(paths):
         # No alpha mask: preserve semi-transparent shadow pixels and hidden RGB exactly.
         atlas.paste(image, (x, y))
     output = BytesIO()
-    atlas.save(output, format='PNG', optimize=True, compress_level=9)
+    # exact=True also preserves RGB under fully transparent pixels.
+    atlas.save(output, format='WEBP', lossless=True, exact=True, method=6)
     return output.getvalue(), {path: rects[i] for path, i in identities.items()}

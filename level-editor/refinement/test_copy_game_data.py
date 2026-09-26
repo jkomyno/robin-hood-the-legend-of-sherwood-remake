@@ -19,6 +19,7 @@ class CopyGameDataTests(unittest.TestCase):
             self.assertEqual(rectangles[a], rectangles[b])
             self.assertEqual(pack_atlas([a, b])[0], payload)
             with Image.open(BytesIO(payload)) as atlas:
+                self.assertEqual(atlas.format, 'WEBP')
                 self.assertEqual(atlas.size, (7, 9))
 
     def test_bonus_mapping_matches_preview(self):
@@ -115,7 +116,8 @@ class CopyGameDataTests(unittest.TestCase):
             self.assertEqual(copy_game_data(source, output), count)
             refreshed = json.loads((output / 'Data/Characters/Bank.rhs.d/manifest.json').read_text())
             self.assertEqual({r['action_id'] for r in refreshed['profiles'][0]['rows']}, {0, 3})
-            self.assertFalse(any(p.name == '00.png' for p in output.rglob('*.png')))
+            self.assertFalse(list(output.rglob('*.png')))
+            self.assertEqual(len(list(output.rglob('atlas.webp'))), 4)
 
 
 if __name__ == '__main__':

@@ -163,12 +163,12 @@ def copy_game_data(source, destination):
             kept.append(profile)
         manifest['profiles'] = kept
         atlas_bytes, rectangles = pack_atlas([path for _, path in frame_sources])
-        atlas_relative = (bank.relative_to(source) / 'atlas.png').as_posix()
+        atlas_relative = (bank.relative_to(source) / 'atlas.webp').as_posix()
         files.add(atlas_relative)
         atlases[atlas_relative] = atlas_bytes
-        manifest['atlas'] = 'atlas.png'
+        manifest['atlas'] = 'atlas.webp'
         for frame, path in frame_sources:
-            frame['file'] = 'atlas.png'
+            frame['file'] = 'atlas.webp'
             frame['rect'] = rectangles[path]
         relative = include(bank / 'manifest.json')
         generated[relative] = manifest

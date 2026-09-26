@@ -310,7 +310,7 @@ function button(label: string) {
 async function main() {
   await checkSpriteAtlas();
   if (location.search.includes("atlas-only")) {
-    result.textContent = "PASS sprite atlas PNG cropping, dimensions, and one fetch across poses";
+    result.textContent = "PASS sprite atlas WebP cropping, dimensions, and one fetch across poses";
     return;
   }
   await checkHttpLibrary();

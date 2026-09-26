@@ -34,12 +34,12 @@ test("mission atlas cache fetches and decodes once across poses, then releases t
     },
   } as unknown as FileSystemDirectoryHandle;
   const images = new SpriteAtlasImages();
-  const a = images.get(directory, "guard", "atlas.png");
-  const b = images.get(directory, "guard", "atlas.png");
+  const a = images.get(directory, "guard", "atlas.webp");
+  const b = images.get(directory, "guard", "atlas.webp");
   assert.equal(await a, await b);
   assert.equal(reads, 1);
   assert.equal(decodes, 1);
-  assert.throws(() => images.get(directory, "guard", "../atlas.png"), /Invalid sprite atlas path/);
+  assert.throws(() => images.get(directory, "guard", "../atlas.webp"), /Invalid sprite atlas path/);
   images.dispose();
   await Promise.resolve();
   assert.equal(closes, 1);

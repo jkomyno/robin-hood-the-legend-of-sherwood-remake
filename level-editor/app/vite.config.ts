@@ -11,6 +11,7 @@ const mime: Record<string, string> = {
   ".glb": "model/gltf-binary",
   ".bin": "application/octet-stream",
   ".png": "image/png",
+  ".webp": "image/webp",
   ".jpg": "image/jpeg",
   ".avif": "image/avif",
 };

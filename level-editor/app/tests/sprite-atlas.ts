@@ -2,15 +2,18 @@ import { MissionEntities } from "../src/mission";
 import type { ProtoLevel } from "@rle/shared";
 import * as THREE from "three";
 
-/** Real PNG decoding and canvas cropping, including all directional frame textures. */
+/** Real lossless WebP decoding and canvas cropping, including directional frame textures. */
 export async function checkSpriteAtlas() {
-  const atlas = new OffscreenCanvas(8, 4);
-  const context = atlas.getContext("2d")!;
-  context.fillStyle = "#ff0000";
-  context.fillRect(1, 1, 2, 2);
-  context.fillStyle = "#00ff00";
-  context.fillRect(5, 1, 2, 2);
-  const png = await atlas.convertToBlob({ type: "image/png" });
+  // Pillow lossless WebP: 8×4 transparent image with red/green 2×2 frames at (1,1)/(5,1).
+  const webp = new Blob(
+    [
+      Uint8Array.from(
+        atob("UklGRioAAABXRUJQVlA4TB0AAAAvB8AAEBcgEEjaH3qN+Y/5D2xBIJDiIIY4ov/BHQA="),
+        (c) => c.charCodeAt(0),
+      ),
+    ],
+    { type: "image/webp" },
+  );
   let atlasReads = 0;
   const files = new Map<string, Blob>([
     [
@@ -22,13 +25,13 @@ export async function checkSpriteAtlas() {
         }),
       ]),
     ],
-    ["Data/Characters/Guard.rhs.d/atlas.png", png],
+    ["Data/Characters/Guard.rhs.d/atlas.webp", webp],
     [
       "Data/Characters/Guard.rhs.d/manifest.json",
       new Blob([
         JSON.stringify({
           pixel_format: "rgba",
-          atlas: "atlas.png",
+          atlas: "atlas.webp",
           profiles: [
             {
               name: "Guard",
@@ -41,7 +44,7 @@ export async function checkSpriteAtlas() {
                   path: ".",
                   frames: [
                     {
-                      file: "atlas.png",
+                      file: "atlas.webp",
                       rect: [direction % 2 ? 5 : 1, 1, 2, 2],
                       offset_x: 0,
                       offset_y: 0,
@@ -68,7 +71,7 @@ export async function checkSpriteAtlas() {
         if (!blob) throw new DOMException(name, "NotFoundError");
         return {
           async getFile() {
-            if (name === "atlas.png") atlasReads++;
+            if (name === "atlas.webp") atlasReads++;
             return new File([blob], name, { type: blob.type });
           },
         };
