@@ -501,7 +501,7 @@ def unwrap(objects, args, targets):
         bpy.ops.mesh.select_all(action='SELECT')
         bpy.ops.uv.select_all(action='SELECT')
         bpy.ops.uv.pack_islands(udim_source='CLOSEST_UDIM', rotate=True, rotate_method='ANY', scale=True,
-                                margin_method='FRACTION', margin=margin, shape_method='CONCAVE')
+                                margin_method='FRACTION', margin=margin, shape_method=args.pack_shape)
         bpy.ops.object.mode_set(mode='OBJECT')
         area = np.concatenate([face_geometry(o, NEW_UV)[0] for o in objects])
         weakest = np.concatenate([face_axes(o, NEW_UV, 1, 1)[:, 0] for o in objects])
@@ -1158,7 +1158,7 @@ def main_derive(args):
     require(not failures, f'Failed assets: {failures}')
 
 
-SETTING_KEYS = ('density', 'nearest_density', 'multiple', 'min_size', 'max_size', 'quality', 'reencode_utilization', 'reuse_ratio', 'keep_normals',
+SETTING_KEYS = ('density', 'nearest_density', 'pack_shape', 'multiple', 'min_size', 'max_size', 'quality', 'reencode_utilization', 'reuse_ratio', 'keep_normals',
                 'texture_file', 'no_quantize', 'normal_bits', 'speed', 'angle_limit', 'pack_margin_px', 'bake_margin')
 
 
@@ -1552,6 +1552,8 @@ def add_settings(parser):
     parser.add_argument('--speed', type=int, default=6)
     parser.add_argument('--angle-limit', type=float, default=66.0)
     parser.add_argument('--pack-margin-px', type=float, default=2.0)
+    parser.add_argument('--pack-shape', choices=('AABB', 'CONVEX', 'CONCAVE'), default='AABB',
+                        help='Pack Islands shape; CONCAVE packs ~2%% tighter but takes ~30-100 s per pack')
     parser.add_argument('--bake-margin', type=int, default=8)
     parser.add_argument('--validate', action='store_true',
                         help='Also render published vs lossy from 8 views and report colour differences (evidence only)')
