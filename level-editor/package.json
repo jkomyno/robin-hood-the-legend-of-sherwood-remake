@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --filter app dev",
+    "library:game-data": "python3 refinement/copy_game_data.py",
     "library:index": "python3 refinement/asset_index.py",
     "editor:publish": "python3 refinement/publish_editor.py",
     "library:publish": "python3 refinement/publish_library.py",

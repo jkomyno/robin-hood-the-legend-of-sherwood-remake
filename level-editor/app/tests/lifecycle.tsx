@@ -4,7 +4,6 @@ import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { checkSharedLibrary } from "./library";
 import Editor3D from "../src/Editor3D";
-import { checkConnectionPersistence } from "./connections";
 import { checkHttpLibrary } from "./http-library";
 import "../src/styles.css";
 
@@ -308,7 +307,6 @@ function button(label: string) {
 }
 
 async function main() {
-  await checkConnectionPersistence();
   await checkHttpLibrary();
   await checkSharedLibrary();
   if (location.search.includes("library-only")) {

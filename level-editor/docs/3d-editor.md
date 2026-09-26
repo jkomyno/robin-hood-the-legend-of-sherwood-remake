@@ -29,6 +29,7 @@ imports of built-in maps use the modified copy and keep the original selectable.
 
 ```
 cd level-editor && pnpm install
+pnpm library:game-data           # copy converted game inputs into library/game-data
 pnpm --filter app dev            # http://localhost:5180
 ```
 
@@ -40,9 +41,13 @@ the real library with `pnpm --filter app preview` after building. A standalone
 deployment must serve the library at `/library/`; the editor build does not copy
 its large assets into the output.
 
-Optionally connect a hackable game datadir (read-only) for mission files, sprite
-banks, and reference terrain/elevation. It is not the asset library or a save
-destination. Pick a published **Map**, or use **New map** to
+Game inputs load automatically over HTTP from `library/game-data/`. Run
+`pnpm library:game-data` after updating the hackable export; it defaults to
+`../datadirs/fullgame_gog_hackable`, or accepts `--source <directory>` (also
+`HACKABLE_DATADIR`). The script copies level and mission JSON, sprite profiles,
+and each sprite pose’s first frame, retaining all preview directions. Its generated
+file index supports directory enumeration without a browser permission prompt.
+Serve this subdirectory alongside the rest of the library on standalone deployments. Pick a published **Map**, or use **New map** to
 start an unbounded canvas without choosing dimensions. Insert assets from the
 library and save the map under its own name. The optional export frame records a
 compile-time crop and does not restrict placement; it can intentionally clip assets.

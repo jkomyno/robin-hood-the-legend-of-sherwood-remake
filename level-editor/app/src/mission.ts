@@ -165,7 +165,7 @@ export class MissionEntities {
     camera: MapCamera,
     current: () => boolean,
   ) {
-    if (!index.root) throw new Error("Reconnect the datadir to load mission sprites");
+    if (!index.root) throw new Error("Game data root missing for mission sprites");
     const config = await subdir(index.root, ["Data", "Configuration"]);
     if (!config) throw new Error("Data/Configuration missing");
     const profiles = record(await readJson(config, "profile.cpf.json"), "profiles");

@@ -1,20 +1,13 @@
 // Published assets load over HTTP; map edits stay in browser storage.
 import { Show, createEffect, createSignal, onCleanup } from "solid-js";
-import {
-  getStoredDatadirHandle,
-  pickDatadir,
-  requestDatadirPermission,
-  restoreDatadir,
-} from "./fs";
-import { scanDatadir, type DatadirIndex } from "./datadir";
+import type { DatadirIndex } from "./datadir";
+import { openHttpGameData } from "./http-game-data.ts";
 import Editor3D, { type LibraryRef } from "./Editor3D";
 import { connectionAttempts, connectLatest } from "./connection-attempt";
 import { openHttpLibrary } from "./http-library.ts";
-import { loadMissionCatalog } from "./mission-catalog.ts";
 
 export default function App() {
   const [index, setIndex] = createSignal<DatadirIndex | null>(null);
-  const [needsReconnect, setNeedsReconnect] = createSignal(false);
   // wrapped: a directory handle is async-iterable, and Solid 2 flattens iterables returned by effect computes
   const [library, setLibrary] = createSignal<LibraryRef | null>(null);
   const [error, setError] = createSignal<string | null>(null);
@@ -25,16 +18,6 @@ export default function App() {
     datadirAttempts.dispose();
     libraryAttempts.dispose();
   });
-
-  async function openRoot(handle: FileSystemDirectoryHandle, current: () => boolean) {
-    if (!current()) return;
-    setStatus("scanning datadir…");
-    const next = await scanDatadir(handle);
-    next.missionEntries = await loadMissionCatalog(next);
-    if (!current()) return;
-    setIndex(next);
-    setNeedsReconnect(false);
-  }
 
   const connectDatadir = (operation: (current: () => boolean) => Promise<void>) =>
     connectLatest(
@@ -57,18 +40,13 @@ export default function App() {
       (error) => setError(String(error)),
     );
 
-  // Restore optional game data and connect the published library on startup.
+  // Load game data and published assets over HTTP on startup.
   createEffect(
     () => undefined,
     () => {
       void connectDatadir(async (current) => {
-        const restored = await restoreDatadir();
-        if (!current()) return;
-        if (restored) await openRoot(restored, current);
-        else {
-          const stored = await getStoredDatadirHandle();
-          if (current()) setNeedsReconnect(stored !== null);
-        }
+        const next = await openHttpGameData();
+        if (current()) setIndex(next);
       });
       void connectLibrary(async (current) => {
         const lib = await openHttpLibrary();
@@ -77,21 +55,6 @@ export default function App() {
       });
     },
   );
-
-  function onPick() {
-    return connectDatadir(async (current) => {
-      const handle = await pickDatadir(current);
-      if (current()) await openRoot(handle, current);
-    });
-  }
-  function onReconnect() {
-    return connectDatadir(async (current) => {
-      const handle = await getStoredDatadirHandle();
-      if (!current() || !handle) return;
-      const granted = await requestDatadirPermission(handle);
-      if (current() && granted) await openRoot(handle, current);
-    });
-  }
 
   return (
     <div class="app editor-app">
@@ -103,24 +66,6 @@ export default function App() {
         toolbarStart={() => <h1 title="Level editor">Sherwood</h1>}
         toolbarEnd={() => (
           <>
-            <Show
-              when={index()}
-              fallback={
-                <button
-                  class="connect"
-                  title="Optional, read-only game data for mission previews, sprites, and reference terrain"
-                  onClick={needsReconnect() ? onReconnect : onPick}
-                >
-                  {needsReconnect() ? "Reconnect game data" : "Connect game data…"}
-                </button>
-              }
-            >
-              {(idx) => (
-                <span class="connected">
-                  Game data · {idx().maps.size} maps <button onClick={onPick}>change</button>
-                </span>
-              )}
-            </Show>
             <Show when={status()}>{(s) => <span class="busy">{s()}</span>}</Show>
             <Show when={error()}>
               {(e) => (
