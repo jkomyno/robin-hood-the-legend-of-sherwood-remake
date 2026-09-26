@@ -32,14 +32,13 @@ cd level-editor && pnpm install
 pnpm --filter app dev            # http://localhost:5180
 ```
 
-The library loads automatically over HTTP and remains read-only. The development
-command prepares static links to the published files, excluding backups; Vite
-serves them normally, without custom middleware. `3d-assets/index.json` lists
-assets, and `scenes/index.json` lists map filenames. After publishing new files,
-run `pnpm --filter app prepare:library` and refresh the page. For a local production
-preview use `pnpm --filter app preview` after building. A standalone deployment
-must also serve those static library files at `/library/`; the editor build does
-not copy the large library into its output.
+The library loads automatically over HTTP and remains read-only. In development,
+Vite serves the real `library/` directory at `/library/`; the map list at
+`scenes/index.json` is generated from current filenames. Newly published assets
+are available after refreshing the page. A local production preview also serves
+the real library with `pnpm --filter app preview` after building. A standalone
+deployment must serve the library at `/library/`; the editor build does not copy
+its large assets into the output.
 
 Optionally connect a hackable game datadir (read-only) for mission files, sprite
 banks, and reference terrain/elevation. It is not the asset library or a save

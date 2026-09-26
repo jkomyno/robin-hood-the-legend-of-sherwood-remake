@@ -700,8 +700,8 @@ cross-asset payloads whose sharing saves at least 256 KiB. Named scenes are
 reusable appearances, never map-coordinate versions.
 See [the library format](../docs/library-format.md).
 
-After publication, run `pnpm --filter app prepare:library` from `level-editor/`
-to refresh the static links and map index used by the editor's HTTP library.
+After publication, refresh the editor page. Its local development and preview
+servers read the library directly and generate the map index on request.
 The editor saves map copies in browser OPFS; use **Download** to export a map JSON
 for review or publication. It never writes assets or published maps over HTTP.
 

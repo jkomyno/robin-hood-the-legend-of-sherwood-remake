@@ -4,9 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node prepare-library.mjs && vite",
-    "prepare:library": "node prepare-library.mjs",
-    "preview": "node prepare-library.mjs --preview && vite preview",
+    "dev": "vite",
+    "preview": "vite preview",
     "build": "vite build",
     "typecheck": "tsc --noEmit"
   },
