@@ -1,4 +1,6 @@
 import { stableOpaqueSort } from "./render-order.ts";
+import { bakeScene, contentBakeBounds, renderMapBake } from "./map-bake-render.ts";
+import { compileMap } from "./map-compile.ts";
 import { SunLighting } from "./sun-lighting.ts";
 import { SplineLayer, type SplineEditMode } from "./spline-layer.ts";
 import type { ExternalAssetSource } from "@rle/shared";
@@ -57,6 +59,31 @@ export interface ViewportBindings {
  * selection are borrowed from the session/UI, never copied into another model.
  * Editable clones share source resources; only source roots own their disposal. */
 export class EditorViewport {
+  bakeMap(document: Level3D) {
+    if (this.disposed || this.bindings.document() !== document)
+      throw new Error("The map changed before compilation started. Export the current map again.");
+    // Reapply committed transforms so an in-progress numeric preview cannot leak into export.
+    this.syncViews(document);
+    const root = bakeScene([
+      this.objectsRoot,
+      ...(this.ground ? [this.ground] : []),
+      ...this.splines.bakeObjects(),
+    ]);
+    const bounds =
+      document.exportBounds ??
+      (document.size
+        ? ([0, 0, ...document.size] as [number, number, number, number])
+        : contentBakeBounds(root, document.camera));
+    const compiled = compileMap(document, bounds);
+    const pixels = renderMapBake(
+      root,
+      document.camera,
+      compiled.bounds,
+      document.lighting,
+      this.ground,
+    );
+    return { compiled, pixels };
+  }
   private readonly patchDisplay = new PatchDisplay();
   setPatchRevealed(patch: string, revealed: boolean) {
     this.patchDisplay.set(patch, revealed);

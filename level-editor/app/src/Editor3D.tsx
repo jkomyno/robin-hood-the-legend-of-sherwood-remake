@@ -45,6 +45,7 @@ import { PopulationView, type SceneEntities } from "./population-view";
 import type { DatadirIndex } from "./datadir";
 import { missionsForMap } from "./mission-catalog.ts";
 import { downloadMap } from "./http-library.ts";
+import { packageCompiledMap } from "./map-compile.ts";
 
 export type { Selection } from "./document-commands";
 
@@ -127,6 +128,7 @@ export default function Editor3D(props: EditorProps) {
     if (reason === "revision") viewport.syncViews(snapshot.document, false);
   });
   let saving = false;
+  const [compiling, setCompiling] = createSignal(false);
   let disposed = false;
   const [selected, setSelected] = createSignal<Selection>(null);
   const [filter, setFilter] = createSignal("");
@@ -767,6 +769,39 @@ export default function Editor3D(props: EditorProps) {
     }
   }
 
+  async function exportMod() {
+    const document = doc();
+    if (!document || compiling()) return;
+    setCompiling(true);
+    props.onStatus("Compiling map and sprite occlusion…");
+    try {
+      // Let the busy state paint before borrowing the viewport's GPU resources.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const { compiled, pixels } = viewport.bakeMap(document);
+      props.onStatus("Packaging mod ZIP…");
+      const bytes = await packageCompiledMap(compiled, pixels);
+      if (disposed) return;
+      const url = URL.createObjectURL(
+        new Blob([new Uint8Array(bytes)], { type: "application/zip" }),
+      );
+      const link = window.document.createElement("a");
+      link.href = url;
+      link.download = `${compiled.name}.zip`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      props.onStatus(
+        `Exported ${compiled.name}.zip — map sandbox with ground-level navigation. Installation and limitations are in the ZIP's README.`,
+      );
+    } catch (error) {
+      if (!disposed) {
+        props.onStatus(null);
+        props.onError(`Map compilation failed: ${String(error)}`);
+      }
+    } finally {
+      if (!disposed) setCompiling(false);
+    }
+  }
+
   function onKey(e: KeyboardEvent) {
     if (["INPUT", "SELECT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) return;
     if (e.key === "z" && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
@@ -1030,6 +1065,13 @@ export default function Editor3D(props: EditorProps) {
         </button>
         <button disabled={!doc()} onClick={() => void download()}>
           Download
+        </button>
+        <button
+          disabled={!doc() || compiling() || editingPath() || addingAsset() || !!mapLoadProgress()}
+          onClick={() => void exportMod()}
+          title="Compile the map into a playable sandbox mod ZIP"
+        >
+          {compiling() ? "Compiling…" : "Export mod ZIP"}
         </button>
         <button
           aria-expanded={helpOpen() ? "true" : "false"}
@@ -1438,6 +1480,11 @@ export default function Editor3D(props: EditorProps) {
             <LightingPanel document={doc} commit={pushHistory} />
             <section class="view-settings export-settings">
               <h2>Export frame</h2>
+              <p class="hint">
+                Export mod ZIP compiles a playable map sandbox with ground-level navigation. Mission
+                scripts, preview population, raised walkways and interactive patch states are not
+                included. Scenery without obstacles and spline surfaces are visual only.
+              </p>
               <p class="hint">
                 An optional crop for compilation. Assets remain editable outside the frame,
                 including parts you intend to crop.

@@ -1,5 +1,13 @@
 # Post-port Features
 
+- **Level-editor mod compilation.** Export mod ZIP renders the current placed
+  scene into a hackable datadir archive with a map PNG, minimap, 16-bit sprite
+  occlusion depth, and a discoverable playable sandbox descriptor. Compilation
+  respects hidden placements, transforms and export crops, and finds an open
+  player spawn. Navigation currently uses one ground layer; mission scripts,
+  interactive patch transitions and preview population are not compiled.
+  See [map compilation](../level-editor/docs/map-compilation.md).
+
 - **Browser-local map authoring.** Published assets load automatically over HTTP
   from the existing library index, with source-map folders keeping the catalog
   organized. Save writes map copies to OPFS; Download exports the current JSON.

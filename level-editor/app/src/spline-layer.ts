@@ -13,6 +13,10 @@ export interface SplineEditMode {
 }
 
 export class SplineLayer {
+  bakeObjects(): THREE.Object3D[] {
+    if (this.mode) throw new Error("Finish editing the path before exporting the map.");
+    return [...this.views.values()].map((view) => view.object);
+  }
   readonly root = new THREE.Group();
   readonly controls = new THREE.Group();
   private views = new Map<string, { path: LevelSpline; object: THREE.Object3D }>();

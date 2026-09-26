@@ -101,6 +101,15 @@ try {
     throw new Error(
       outcome?.startsWith("FAIL") ? outcome : "Lifecycle acceptance timed out without a result",
     );
+  if (process.env.TEST_BAKE_ZIP) {
+    const bytes = await evaluate(socket, ++id, "window.__bakeZip", {
+      signal: lifetime.signal,
+      timeoutMs: 10000,
+    });
+    if (!Array.isArray(bytes) || !bytes.length)
+      throw new Error("No compiled mod ZIP produced by the fixture");
+    await writeFile(process.env.TEST_BAKE_ZIP, new Uint8Array(bytes));
+  }
   console.log(outcome);
 } catch (error) {
   console.error(error.stack ?? error);
