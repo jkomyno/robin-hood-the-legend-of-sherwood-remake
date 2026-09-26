@@ -130,11 +130,12 @@ def frozen_mask_origins(workspace, config):
 def inspect(workspace, asset):
     config = read(workspace / "workspace.json")
     require(config["asset_id"] == asset["id"], "Workspace asset ID mismatch")
+    from catalog_schema import source_for_part
     expected_parts = (['ground'] if asset.get('role') == 'terrain' else
-                      sorted(f"building-{p['obstacle']:03d}" for p in asset["parts"]))
+                      sorted(source_for_part(p) for p in asset["parts"]))
     require(config["part_ids"] == expected_parts,
             "Workspace parts differ from current catalog")
-    selectors = sorted((f"building-{part['obstacle']:03d}", component)
+    selectors = sorted((source_for_part(part), component)
                        for part in asset.get("parts", []) for component in part.get("components", []))
     if selectors:
         from workspace_components import validated_scope

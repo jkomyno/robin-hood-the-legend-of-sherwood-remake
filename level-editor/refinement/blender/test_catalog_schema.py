@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from catalog_schema import parse_catalog
+from catalog_schema import parse_catalog, part_kind, source_for_part
 
 
 def catalog(version=2):
@@ -33,6 +33,23 @@ class CatalogTests(unittest.TestCase):
         for bad in ({'obstacle':268},{'node':'building-268'},{'mission_profile':''},{'source_obstacle':268}):
             changed=copy.deepcopy(value);changed['groups'][-1]['parts'][0].update(bad)
             with self.assertRaisesRegex(ValueError,'supplemental mission'):
+                parse_catalog(changed)
+
+    def test_authored_scenery_part_has_no_obstacle_or_profile(self):
+        value=catalog()
+        value['groups'].append({'id':'oak','name':'Painted tree','parts':[
+            {'node':'foliage-north-oak','name':'Painted tree','foliage_domain_mask':454}]})
+        value['canonical_owners']['foliage-north-oak']='oak'
+        index=parse_catalog(value,{'ground','building-200','foliage-north-oak'})
+        self.assertEqual(index.owner_for('foliage-north-oak')[0]['id'],'oak')
+        part=value['groups'][-1]['parts'][0]
+        self.assertEqual((source_for_part(part),part_kind(part)),('foliage-north-oak','scenery'))
+        self.assertEqual(part_kind({'node':'scenery-pond-landing-stage','name':'Landing stage'}),'scenery')
+        self.assertEqual(part_kind({'obstacle':3,'name':'Wall'}),'obstacle')
+        for bad in ({'obstacle':268},{'source_obstacle':268},{'mission_profile':'Map - Tree'},
+                    {'components':['crown']},{'obstacle_local_game':{'points':[]}},{'node':'foliage-Bad_Slug'}):
+            changed=copy.deepcopy(value);changed['groups'][-1]['parts'][0].update(bad)
+            with self.assertRaisesRegex(ValueError,'scenery|supplemental mission'):
                 parse_catalog(changed)
 
     def test_partition_routes_components_and_retained_original(self):

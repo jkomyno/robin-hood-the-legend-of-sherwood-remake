@@ -2,7 +2,7 @@
 import hashlib
 import json
 from pathlib import Path
-from catalog_schema import parse_catalog
+from catalog_schema import parse_catalog, source_for_part
 
 
 def scope_for(index, asset_id):
@@ -34,7 +34,7 @@ def validated_scope(config, objects=None):
     scope = scope_for(index, config['asset_id'])
     if scope != config.get('component_ownership'):
         raise ValueError('Workspace component ownership differs from reviewed catalog')
-    expected = sorted(f"building-{part['obstacle']:03}" for part in index.groups[config['asset_id']]['parts'])
+    expected = sorted(source_for_part(part) for part in index.groups[config['asset_id']]['parts'])
     if config.get('part_ids') != expected:
         raise ValueError('Component workspace source parts differ from reviewed catalog')
     if objects is not None:

@@ -113,7 +113,8 @@ def _validated_projection(config):
         elif isinstance(value, list):
             for item in value:
                 assignments(item, trail, result)
-        elif isinstance(value, str) and value.startswith('building-') and value[9:].isdigit():
+        elif isinstance(value, str) and ((value.startswith('building-') and value[9:].isdigit())
+                                         or is_scenery_node(value)):
             result.setdefault(value, []).append((trail, value))
         return {node: sorted(records) for node, records in result.items()}
     before = assignments(frozen.get('projection_reviews', {}))
@@ -123,6 +124,7 @@ def _validated_projection(config):
     if changed_foreign:
         raise ValueError('Working projection reassigned outside-asset nodes: '+str(sorted(changed_foreign)))
     from workspace_components import validated_scope, owns_assignment
+    from catalog_schema import is_scenery_node
     scope = validated_scope(config)
     if scope:
         def scoped_records(value, trail=(), result=None):
@@ -506,7 +508,8 @@ def prepare(workspace_dir, *, asset_id, scene_name, collection_name, source_path
         config["component_ownership"] = scope_for(index, asset_id)
     targets, outside = _ownership(config)
     parts = sorted({o["source_node"] for o in targets})
-    if sorted(f"building-{p['obstacle']:03d}" for p in entry["parts"]) != parts:
+    from catalog_schema import source_for_part
+    if sorted(source_for_part(p) for p in entry["parts"]) != parts:
         raise ValueError("Current asset parts differ from the grouping review")
     workspace.mkdir(parents=True)
     reference = workspace / "reference"

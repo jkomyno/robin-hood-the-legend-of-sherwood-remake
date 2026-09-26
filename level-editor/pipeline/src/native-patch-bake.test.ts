@@ -99,7 +99,7 @@ test("edited, hidden, duplicated, deleted and external previews fail closed", as
       d.groups[0]!.hidden = true;
     },
     (d) => {
-      d.objects[0]!.obstacle.points[0]!.x = 2;
+      d.objects[0]!.obstacle!.points[0]!.x = 2;
     },
     (d) => {
       d.objects.push({ ...d.objects[0]!, id: "duplicate" });

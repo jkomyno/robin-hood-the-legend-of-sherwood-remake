@@ -16,7 +16,7 @@ from pathlib import Path
 import bpy
 from mathutils import Matrix, Vector
 from patch_material_export import export_states
-from catalog_schema import source_for_part
+from catalog_schema import is_scenery_node, source_for_part
 from publication_contract import publication_parts, validate_export_records
 
 
@@ -330,6 +330,11 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
                 source_for_part({'node':key,'mission_profile':source.get('mission_patch_profile')})
                 if source.get('source_obstacle') is not None:
                     raise ValueError('Mission part must not alias a sight obstacle: '+key)
+            elif is_scenery_node(key):
+                source_for_part({'node':key})
+                if (source.get('source_obstacle') is not None or source.get('mission_patch_profile') is not None
+                        or source.get('obstacle_local_game') is not None):
+                    raise ValueError('Scenery part must not claim an obstacle or mission profile: '+key)
             elif not original_key.startswith('building-') or not original_key[9:].isdigit():
                 raise ValueError('Invalid canonical editor source node: '+key)
             if any(not isinstance(source.get(field), str) or not source[field].strip()
@@ -406,6 +411,9 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
                     if asset_id is None and source.get('native_patch_preview'):
                         part['native_patch_preview']=source['native_patch_preview'].to_dict()
                     part['obstacle_local_game']=mission_editor_footprint([o for o in sources if o['source_node']==key],pivot)
+                elif is_scenery_node(key):
+                    # Visual only: the game has no obstacle, so none is exported.
+                    part['scenery']=True
                 else:
                     part["source_obstacle"] = int(original_key.split("-")[1])
                 part['source_node'] = original_key
@@ -496,7 +504,8 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
                            **({'mission_profile':obj['mission_patch_profile'],
                                'obstacle_local_game':obj['obstacle_local_game'].to_dict(),
                                'footprint_basis':'Editor bounds only; no sight-obstacle association or animation inferred.'}
-                              if key.startswith('mission-') else {'source_obstacle':obj['source_obstacle']}),
+                              if key.startswith('mission-') else {'scenery':True} if is_scenery_node(key)
+                              else {'source_obstacle':obj['source_obstacle']}),
                            **({'source_node':obj['source_node'], 'source_components':list(obj['source_components']),
                                'obstacle_local_game':obj['obstacle_local_game'].to_dict(),
                                'footprint_basis':obj['footprint_basis']} if obj.get('source_components') else {}),
@@ -546,6 +555,8 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
         if obj is None or obj.type != 'MESH' or not obj.get('asset_group'):
             raise ValueError('Requested inactive mesh lacks working-map asset ownership: '+name)
         key = obj.get('source_node')
+        if is_scenery_node(key):
+            continue
         if not isinstance(key, str) or not key.startswith('building-') or not key[9:].isdigit():
             raise ValueError('Requested inactive mesh lacks canonical source ownership: '+name)
         if int(key[9:]) >= len(level['sight_obstacles']):
@@ -589,6 +600,9 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
         for part in descriptor["parts"]:
             if 'mission_profile' in part or part.get('source_components'):
                 # export_editor has already applied the common variant pivot.
+                continue
+            elif part.get('scenery'):
+                # Authored scenery has no sight obstacle to localize.
                 continue
             else:
                 obstacle = json.loads(json.dumps(level["sight_obstacles"][part["source_obstacle"]]))

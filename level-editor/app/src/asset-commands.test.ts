@@ -4,6 +4,10 @@ import {
   IDENTITY_TRANSFORM,
   compactAssetInstances,
   hydrateAssetInstances,
+  parseLevel3D,
+  parseProjectionAssetDescriptor,
+  partPivot,
+  transformedObstacle,
   type Level3D,
   type ProjectionAssetDescriptor,
   type ExternalAssetSource,
@@ -135,6 +139,49 @@ test("saved maps retain reveal labels without legacy game state copies", () => {
     patches: [{ id: "patch-001", name: "Opened room", state_source_game: { active: true } }],
     mission_patches: [{ id: "mission-001", states: { initial: { frames: [1, 2] } } }],
   });
+});
+
+test("authored scenery parts insert, save and reload without a game obstacle", () => {
+  const { descriptor, reference, document } = assetFixture();
+  const scenery: ProjectionAssetDescriptor = {
+    ...descriptor,
+    parts: [descriptor.parts[0]!, { node: "foliage-oak", name: "Painted tree", scenery: true }],
+  };
+  const inserted = insertProjectionAsset(document, scenery, reference, [50, 40, 0]).document;
+  const tree = inserted.objects.find((part) => part.node === "asset:house:foliage-oak")!;
+  assert.equal(tree.kind, "scenery");
+  assert.deepEqual(tree.source, { map: "Leicester" });
+  assert.equal("obstacle" in tree, false);
+  assert.deepEqual(partPivot(tree), [0, 0]);
+  assert.throws(() => transformedObstacle(inserted, tree), /no game obstacle/);
+  const descriptors = new Map([[scenery.id, scenery]]);
+  const compact = compactAssetInstances(inserted, descriptors) as Level3D;
+  assert.equal(compact.objects[1]!.kind, undefined);
+  assert.deepEqual(hydrateAssetInstances(compact, descriptors), inserted);
+  assert.throws(
+    () =>
+      parseLevel3D({
+        ...inserted,
+        objects: [{ ...tree, obstacle: descriptor.parts[0]!.obstacle_local_game }],
+      }),
+    /no game obstacle/,
+  );
+  assert.throws(
+    () => parseLevel3D({ ...inserted, objects: [{ ...tree, kind: "building" }] }),
+    /scenery source requires scenery kind/,
+  );
+  for (const bad of [
+    { obstacle_local_game: descriptor.parts[0]!.obstacle_local_game },
+    { source_obstacle: 3 },
+    { mission_profile: "Map - Tree" },
+    { node: "building-009" },
+  ])
+    assert.throws(() =>
+      parseProjectionAssetDescriptor({
+        ...scenery,
+        parts: [{ ...scenery.parts[1]!, ...bad }],
+      }),
+    );
 });
 
 test("changed revisions and invalid placements fail without edits", () => {

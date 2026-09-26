@@ -66,6 +66,17 @@ local footprints and part/group transforms use the same representation as manual
 palette insertion. Group and object IDs, hidden state, collision flags, and
 native source obstacle IDs survive conversion.
 
+A descriptor part is an obstacle part (`source_obstacle` plus
+`obstacle_local_game`), a mission part (`mission_profile` plus editor-only
+`obstacle_local_game`), or authored scenery. Authored scenery is a `foliage-*` or
+`scenery-*` node with `scenery: true` and no obstacle, footprint or mission
+profile, for example `{"node": "foliage-oak", "name": "Painted tree",
+"scenery": true}`. Its GLB part node carries `scenery: true` in its extras. A
+placed scenery part has `kind: "scenery"`, `source: {map}` and no `obstacle`. It
+rotates about its asset-local origin, and its group pivot ignores it. The index
+entry is an ordinary asset entry. Game baking rejects scenery until the compiler
+can place its geometry.
+
 Saved maps omit asset-part fields that equal the pinned descriptor: name, kind,
 source provenance, collision footprint, local transform, and default visibility.
 The loader restores these fields before editing or validation. An instance keeps

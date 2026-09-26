@@ -70,8 +70,9 @@ def stage(plan_path, lossy=True):
     collection=bpy.data.collections[plan['collection_name']]
     canonical_before={o.get('source_node') for o in collection.all_objects
                       if o.type=='MESH' and o.get('source_node')!='ground'}
-    added_nodes={node for item in plan['imports'] if item.get('new_mission_part') for node in item['source_nodes']}
-    if added_nodes & canonical_before:raise ValueError('New mission node overlaps existing canonical part')
+    added_nodes={node for item in plan['imports'] if item.get('new_mission_part') or item.get('new_scenery_part')
+                 for node in item['source_nodes']}
+    if added_nodes & canonical_before:raise ValueError('New supplemental node overlaps existing canonical part')
     validate_coverage(canonical_before,expected-added_nodes)
     from refinement_workspace import _geometry
     from bake_reviewed_asset import _materials
@@ -97,6 +98,9 @@ def stage(plan_path, lossy=True):
         if item.get('new_mission_part'):
             from supplemental_parts import import_mission_part
             result=import_mission_part(item,collection.name)
+        elif item.get('new_scenery_part'):
+            from supplemental_parts import import_scenery_part
+            result=import_scenery_part(item,collection.name)
         else:
             result=import_asset_geometry(blend,asset_id=item['asset_id'],object_names=names,
                 collection_name=collection.name,source_nodes=item.get('source_nodes'),source_asset_id=item.get('source_asset_id'),

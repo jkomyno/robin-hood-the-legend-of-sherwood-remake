@@ -43,6 +43,30 @@ For each group:
 Run a catalog reconciliation after every split. It must report missing parts,
 duplicates, changed transforms, and source-node/component ownership.
 
+### Part kinds
+
+A catalog part is one of three kinds (`catalog_schema.source_for_part`):
+
+- **Obstacle part** `{"obstacle": N, "name": …}`: native sight obstacle
+  `building-NNN`, optionally split with `components`.
+- **Mission part** `{"node": "mission-<slug>", "mission_profile": …}`: a
+  mission-only model. It exports editor-only bounds, never a sight obstacle.
+- **Authored scenery** `{"node": "foliage-<slug>" | "scenery-<slug>", "name": …}`:
+  always-present visual scenery that the game has no obstacle for, such as
+  painted trees, bushes or a landing stage. It has no `obstacle`,
+  `source_obstacle`, `mission_profile`, `components` or `obstacle_local_game`.
+  Extra review fields such as `foliage_domain_mask` are allowed. Version 2
+  catalogs list it in `canonical_owners` like any other source.
+
+Scenery meshes carry `source_node`, `asset_group`, `asset_name` and
+`part_name`, and never `source_obstacle` or `mission_patch_profile`. Their pixels
+are owned through authored source masks assigned to the scenery node, like any
+other receiver. Workspaces, the gallery, export, staging and verification accept
+scenery parts. Staging imports a new one with `"new_scenery_part": true`
+(`supplemental_parts.import_scenery_part`). Export marks the part `scenery: true`
+and never fabricates a footprint or obstacle for it. Its standalone asset is
+anchored at the horizontal mesh bounds centre, because it has no footprint.
+
 ## 3. Create one workspace per asset group
 
 Each worker receives an isolated directory:

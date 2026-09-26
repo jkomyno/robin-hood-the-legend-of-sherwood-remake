@@ -118,7 +118,7 @@ test("local asset origin changes preserve rotated authored placements and flags"
   const expected = document.objects.map((part) => transformedObstacle(document, part));
   const revised = structuredClone(document);
   for (const part of revised.objects)
-    for (const point of part.obstacle.points) {
+    for (const point of part.obstacle!.points) {
       point.x -= 20;
       point.y -= 10 * Math.sin((35 * Math.PI) / 180);
     }

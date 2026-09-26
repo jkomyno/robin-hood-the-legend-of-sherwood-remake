@@ -1,5 +1,7 @@
 """Validated logical asset ownership, including explicitly partitioned sources.
 
+Parts are native sight obstacles (`obstacle`), mission-only models (`mission-*`
+with a `mission_profile`) or authored scenery (`foliage-*`/`scenery-*`).
 Version 1 owns whole source nodes. Version 2 may distribute a source's named
 projection components between assets; canonical_owners retains provenance and
 assigns hidden, componentless originals. Parsing never infers spatial ownership.
@@ -8,8 +10,31 @@ from dataclasses import dataclass
 import re
 
 
+SCENERY_NODE = re.compile(r'(?:foliage|scenery)-[a-z0-9]+(?:-[a-z0-9]+)*')
+
+
+def is_scenery_node(node):
+    """Authored always-present scenery: visual only, no obstacle and no mission profile."""
+    return isinstance(node, str) and SCENERY_NODE.fullmatch(node) is not None
+
+
+def part_kind(part):
+    """'obstacle', 'mission' or 'scenery'; validates the part like source_for_part."""
+    source = source_for_part(part)
+    return 'scenery' if is_scenery_node(source) else 'mission' if 'node' in part else 'obstacle'
+
+
 def source_for_part(part):
-    """Resolve ordinary obstacle ownership or an explicit mission-only part."""
+    """Resolve obstacle ownership, an explicit mission-only part or authored scenery.
+
+    Scenery parts (`foliage-*`, `scenery-*`) have no source obstacle, mission
+    profile or game footprint; their pixels are owned through authored masks.
+    """
+    if 'node' in part and is_scenery_node(part['node']):
+        if any(key in part for key in ('obstacle', 'source_obstacle', 'mission_profile', 'components')) \
+                or part.get('obstacle_local_game') is not None:
+            raise ValueError(f'Invalid authored scenery part: {part}')
+        return part['node']
     if 'node' in part:
         if ('obstacle' in part or 'source_obstacle' in part
                 or not isinstance(part['node'], str)

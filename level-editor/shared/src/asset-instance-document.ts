@@ -52,6 +52,27 @@ export function descriptorForSource(
     : original;
 }
 
+/** The document kind and source a placed descriptor part starts with. */
+export function assetPartOrigin(
+  descriptor: ProjectionAssetDescriptor,
+  part: ProjectionAssetDescriptor["parts"][number],
+): Pick<Level3DObject, "kind" | "source"> {
+  if (part.scenery) return { kind: "scenery", source: { map: descriptor.source_map } };
+  if (part.mission_profile !== undefined)
+    return {
+      kind: "mission",
+      source: { map: descriptor.source_map, mission_profile: part.mission_profile },
+    };
+  return {
+    kind: part.node.startsWith("terrace-") ? "terrace" : "building",
+    source: {
+      map: descriptor.source_map,
+      obstacle: part.source_obstacle,
+      ...(part.source_components ? { components: [...part.source_components] } : {}),
+    },
+  };
+}
+
 function defaultPart(object: Pick<Level3DObject, "node">, descriptors: Descriptors) {
   const match = /^asset:([^:]+):(.+)$/.exec(object.node);
   if (!match) return null;
@@ -61,20 +82,7 @@ function defaultPart(object: Pick<Level3DObject, "node">, descriptors: Descripto
   if (!part) throw new Error(`Missing pinned asset part: ${object.node}`);
   return {
     name: part.name,
-    kind:
-      part.mission_profile !== undefined
-        ? ("mission" as const)
-        : part.node.startsWith("terrace-")
-          ? ("terrace" as const)
-          : ("building" as const),
-    source:
-      part.mission_profile !== undefined
-        ? { map: descriptor.source_map, mission_profile: part.mission_profile }
-        : {
-            map: descriptor.source_map,
-            obstacle: part.source_obstacle,
-            ...(part.source_components ? { components: part.source_components } : {}),
-          },
+    ...assetPartOrigin(descriptor, part),
     obstacle: part.obstacle_local_game,
     transform: IDENTITY_TRANSFORM,
     hidden: part.default_hidden ? true : undefined,

@@ -14,6 +14,7 @@ import json
 import hashlib
 import re
 from pathlib import Path
+from catalog_schema import is_scenery_node
 
 # Reviewed interior geometry in the Derby catalog. Overlap alone is deliberately
 # not an assignment: exterior walls and furniture can occupy the same pixels.
@@ -174,7 +175,8 @@ def _authored_projection_reviews(manifest, reviews):
 
     def nodes(value, label, nonempty=False):
         if (not isinstance(value, list) or (nonempty and not value) or
-                any(not isinstance(n, str) or not re.fullmatch(r'building-\d{3,}', n) for n in value) or
+                any(not isinstance(n, str) or not (re.fullmatch(r'building-\d{3,}', n) or is_scenery_node(n))
+                    for n in value) or
                 len(value) != len(set(value))):
             raise ValueError('Invalid authored node list: '+label)
 

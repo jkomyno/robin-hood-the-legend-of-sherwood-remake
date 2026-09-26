@@ -141,6 +141,8 @@ export async function prepareMapCandidate(
         node.userData.mission_patch_profile !== part.source.mission_profile
       )
         throw new Error(`Mission source profile mismatch: ${part.node}`);
+      if ((part.kind === "scenery") !== (node.userData.scenery === true))
+        throw new Error(`Scenery source mismatch: ${part.node}`);
     }
     parseLevel3D(document, {
       map: documentMap,

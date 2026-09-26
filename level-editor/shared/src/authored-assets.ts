@@ -1,4 +1,4 @@
-import { componentIdentityMatches } from "./component-parts.ts";
+import { componentIdentityMatches, isSceneryNode } from "./component-parts.ts";
 import {
   IDENTITY_TRANSFORM,
   isIdentity,
@@ -23,6 +23,14 @@ export type AuthoredAssetPart = { name: string } & (
       node: string;
       mission_profile: string;
       obstacle_local_game?: SightObstacle;
+    }
+  | {
+      /** Authored scenery (`foliage-*`/`scenery-*`): no obstacle, profile or footprint. */
+      obstacle?: never;
+      components?: never;
+      node: string;
+      mission_profile?: never;
+      obstacle_local_game?: never;
     }
 );
 
@@ -151,15 +159,19 @@ export function authoredAssetGroups(
     groupIds.add(group.id);
     groupNames.add(group.name.toLowerCase());
     for (const part of group.parts) {
+      const scenery = part.obstacle === undefined && part.mission_profile === undefined;
       const scoped = part.mission_profile === undefined && part.components !== undefined;
       const key =
-        part.mission_profile !== undefined
+        part.mission_profile !== undefined || scenery
           ? part.node
           : scoped
             ? `obstacle:${part.obstacle}:component:${part.components!.join(",")}`
             : `obstacle:${part.obstacle}`;
-      const valid =
-        part.mission_profile !== undefined
+      const valid = scenery
+        ? isSceneryNode(part.node) &&
+          part.components === undefined &&
+          part.obstacle_local_game === undefined
+        : part.mission_profile !== undefined
           ? part.obstacle === undefined &&
             /^mission-[a-zA-Z0-9_-]+$/.test(part.node) &&
             !!part.mission_profile.trim()
@@ -172,7 +184,7 @@ export function authoredAssetGroups(
                   componentIdentityMatches(part.node, part.obstacle, part.components))));
       if (!valid || !part.name.trim() || parts.has(key))
         throw new Error(`${map} asset catalog has invalid or duplicate obstacle ownership`);
-      if (part.mission_profile === undefined) {
+      if (!scenery && part.mission_profile === undefined) {
         const claims = obstacleClaims.get(part.obstacle) ?? new Set<string>();
         const claim = scoped ? part.components![0]! : "*";
         if (claims.has(claim) || claims.has("*") || (claim === "*" && claims.size))
@@ -184,7 +196,7 @@ export function authoredAssetGroups(
     }
   }
   const objectKey = (object: Level3DObject) =>
-    object.kind === "mission"
+    object.kind === "mission" || object.kind === "scenery"
       ? object.node
       : object.source.components
         ? `obstacle:${object.source.obstacle}:component:${object.source.components.join(",")}`

@@ -37,6 +37,13 @@ class WorkspaceScopeTest(unittest.TestCase):
   with self.assertRaisesRegex(ValueError,'another asset assignment'):_validated_masks(self.config)
  def test_owned_component_mask_change_is_allowed(self):
   path,data=self.masks();data['projections']['exterior']['assignments'].append({'reviewed':True,'source_node':'building-000','projection_component':'left-part','mask_indices':[1]});path.write_text(json.dumps(data));self.assertIn('working_sha256',_validated_masks(self.config))
+ def test_scenery_workspace_scope_uses_node_identity(self):
+  catalog=copy.deepcopy(CATALOG);catalog['groups'].append({'id':'oak','name':'Painted tree','parts':[{'node':'foliage-oak','name':'Painted tree'}]})
+  catalog['canonical_owners']['foliage-oak']='oak';self.catalog.write_text(json.dumps(catalog))
+  config={'asset_id':'oak','part_ids':['foliage-oak'],'source_path':str(self.ref/'source.png'),'grouping_manifest_sha256':_sha(self.catalog),'component_ownership':scope_for(parse_catalog(catalog),'oak')}
+  self.assertEqual(validated_scope(config)['owned_components'],[])
+  self.assertTrue(owns_assignment(config,'source_node','foliage-oak'))
+  self.assertFalse(owns_assignment(config,'source_node','building-000'))
  def test_legacy_whole_node_assignment_unchanged(self):
   legacy=copy.deepcopy(CATALOG);legacy['version']=1;legacy.pop('canonical_owners');legacy['groups']=legacy['groups'][:1];legacy['groups'][0]['parts'][0].pop('components');self.catalog.write_text(json.dumps(legacy));self.config.pop('component_ownership');self.config['grouping_manifest_sha256']=_sha(self.catalog);self.assertTrue(owns_assignment(self.config,'source_node','building-000'))
 if __name__=='__main__':unittest.main()

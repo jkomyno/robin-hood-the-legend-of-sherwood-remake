@@ -11,7 +11,7 @@ export interface GameTransform {
   dx: number;
   dy: number;
   dz: number;
-  /** rotation about the pivot (the footprint centroid), degrees, counter-clockwise in map coordinates */
+  /** rotation about the pivot (the footprint centroid, or a scenery part's origin), degrees, counter-clockwise in map coordinates */
   rot_deg: number;
 }
 
@@ -25,16 +25,17 @@ export function isIdentity(t: GameTransform): boolean {
 export interface Level3DObject {
   /** unique in the document; the reconstruction node name for original parts ("building-042") */
   id: string;
-  kind: "building" | "terrace" | "mission";
+  kind: "building" | "terrace" | "mission" | "scenery";
   /** the reconstruction node this part draws with (its own for originals, the original's for duplicates) */
   node: string;
   /** map + obstacle index the geometry and the game data came from */
   source: { map: string } & (
     | { obstacle: number; components?: string[]; mission_profile?: never }
     | { obstacle?: never; components?: never; mission_profile: string }
+    | { obstacle?: never; components?: never; mission_profile?: never }
   );
-  /** the obstacle as the game sees it, before any transform */
-  obstacle: SightObstacle;
+  /** the obstacle as the game sees it, before any transform; absent exactly for scenery parts */
+  obstacle?: SightObstacle;
   /** transform relative to the group (or the world for ungrouped parts) */
   transform: GameTransform;
   /** the building this part belongs to */
@@ -336,9 +337,16 @@ export function obstacleCentroid(points: ObstaclePoint[]): [number, number] {
   return [x / points.length, y / points.length];
 }
 
-/** centroid of all parts of a group (before transforms) */
+/** a part's own rotation pivot: its footprint centroid, or its local origin for scenery */
+export function partPivot(o: Level3DObject): [number, number] {
+  if (o.obstacle) return obstacleCentroid(o.obstacle.points);
+  if (o.kind !== "scenery") throw new Error(`Part without an obstacle: ${o.id}`);
+  return [0, 0];
+}
+
+/** centroid of all obstacle parts of a group (before transforms); scenery has no footprint */
 export function groupCentroid(parts: Level3DObject[]): [number, number] {
-  const all = parts.flatMap((p) => p.obstacle.points);
+  const all = parts.flatMap((p) => p.obstacle?.points ?? []);
   return all.length ? obstacleCentroid(all) : [0, 0];
 }
 
@@ -377,12 +385,8 @@ export function groupParts(doc: Level3D, groupId: string): Level3DObject[] {
 
 /** the obstacle as the bake writes it: the part's own transform, then its group's */
 export function transformedObstacle(doc: Level3D, o: Level3DObject): SightObstacle {
-  let points = applyGame(
-    doc.camera,
-    o.obstacle.points,
-    o.transform,
-    obstacleCentroid(o.obstacle.points),
-  );
+  if (!o.obstacle) throw new Error(`Scenery part has no game obstacle: ${o.id}`);
+  let points = applyGame(doc.camera, o.obstacle.points, o.transform, partPivot(o));
   if (o.group) {
     const g = doc.groups.find((x) => x.id === o.group);
     if (g)
@@ -437,7 +441,7 @@ export function mulMatrix(a: number[], b: number[]): number[] {
 
 /** the part's matrix in the scene frame (own transform, then the group's) */
 export function partMatrix(cam: MapCamera, doc: Level3D, o: Level3DObject): number[] {
-  const own = gameTransformMatrix(cam, o.transform, obstacleCentroid(o.obstacle.points));
+  const own = gameTransformMatrix(cam, o.transform, partPivot(o));
   if (!o.group) return own;
   const g = doc.groups.find((x) => x.id === o.group);
   if (!g) return own;

@@ -13,7 +13,7 @@ import {
   gameTransformMatrix,
   groupCentroid,
   groupParts,
-  obstacleCentroid,
+  partPivot,
   transformedObstacle,
   type GameTransform,
   type Level3D,
@@ -929,10 +929,7 @@ export class EditorViewport {
       }
       const parent = (o.group ? this.groupViews.get(o.group)?.rot : undefined) ?? this.objectsRoot;
       if (v.wrapper.parent !== parent) parent.add(v.wrapper);
-      this.setAffine(
-        v,
-        gameTransformMatrix(d.camera, o.transform, obstacleCentroid(o.obstacle.points)),
-      );
+      this.setAffine(v, gameTransformMatrix(d.camera, o.transform, partPivot(o)));
       v.wrapper.visible = !o.hidden;
     }
     for (const [id, v] of this.partViews) {
@@ -987,7 +984,7 @@ export class EditorViewport {
     if (!d || !v || !t) return;
     const g = this.selectedGroup();
     const p = this.selectedPart();
-    const pivot = g ? groupCentroid(groupParts(d, g.id)) : obstacleCentroid(p!.obstacle.points);
+    const pivot = g ? groupCentroid(groupParts(d, g.id)) : partPivot(p!);
     const base = gameTransformMatrix(d.camera, { ...t, dx: 0, dy: 0, dz: 0 }, pivot);
     const pos = v.wrapper.position;
     const [dx, dy, dz] = sceneToGame(d.camera, [
@@ -1199,7 +1196,7 @@ export class EditorViewport {
       const pts: number[] = [];
       const hiddenGroups = new Set(d.groups.filter((g) => g.hidden).map((g) => g.id));
       for (const o of d.objects) {
-        if (o.hidden || (o.group && hiddenGroups.has(o.group))) continue;
+        if (o.hidden || (o.group && hiddenGroups.has(o.group)) || o.kind === "scenery") continue;
         const ob = transformedObstacle(d, o);
         const n = ob.points.length;
         for (let i = 0; i < n; i++) {

@@ -89,7 +89,12 @@ def export_document(gltf, output, map_name, level, *, size=None, camera=None, ex
         for part_index in group.get('children', []):
             part = nodes[part_index]; extra = part['extras']; name = part['name']
             source = {'map': map_name}
-            if 'mission_patch_profile' in extra:
+            if extra.get('scenery') is True:
+                # Authored scenery is visual only; the game has no obstacle for it.
+                if any(key in extra for key in ('source_obstacle', 'mission_patch_profile', 'obstacle_local_game')):
+                    raise ValueError('Scenery part claims game obstacle or mission metadata: ' + name)
+                kind = 'scenery'; obstacle = None
+            elif 'mission_patch_profile' in extra:
                 kind = 'mission'; source['mission_profile'] = extra['mission_patch_profile']
                 obstacle = extra['obstacle_local_game']
             else:
@@ -100,7 +105,9 @@ def export_document(gltf, output, map_name, level, *, size=None, camera=None, ex
                     source['components'] = extra['source_components']
                     obstacle = extra['obstacle_local_game']
             item = dict(id=name, node=name, name=extra['part_name'], kind=kind, group=group_id,
-                        transform=dict(identity), source=source, obstacle=obstacle)
+                        transform=dict(identity), source=source)
+            if obstacle is not None:
+                item['obstacle'] = obstacle
             if extra.get('default_hidden'):
                 item['hidden'] = True
             objects.append(item)

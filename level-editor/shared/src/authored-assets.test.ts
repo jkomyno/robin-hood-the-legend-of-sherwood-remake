@@ -188,7 +188,7 @@ test("exported catalogs upgrade pristine non-Derby documents without replacing e
 test("explicit mission publication adds one group/part while preserving all 270 existing parts", () => {
   const parts = objects();
   for (const part of parts)
-    part.obstacle.points = [
+    part.obstacle!.points = [
       { x: 0, y: 0, z_bottom: 0, z_top: 5 },
       { x: 10, y: 0, z_bottom: 0, z_top: 5 },
       { x: 0, y: 10, z_bottom: 0, z_top: 5 },

@@ -11,6 +11,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from stage_reviewed_publication import stage
+from catalog_schema import source_for_part
 
 
 def run(config_path):
@@ -38,7 +39,7 @@ def run(config_path):
             if not config.get('approved_texture_imports') or item.get('projection_kind')!='planar-atlas':
                 raise ValueError('Ground requires a validated planar texture handoff')
             continue
-        owned = {f"building-{part['obstacle']:03d}" for part in groups[item['asset_id']]['parts']}
+        owned = {source_for_part(part) for part in groups[item['asset_id']]['parts']}
         selected = item.get('source_nodes', sorted(owned))
         if not selected or set(selected) - owned:
             raise ValueError('Selected source nodes escape catalog ownership: ' + item['asset_id'])

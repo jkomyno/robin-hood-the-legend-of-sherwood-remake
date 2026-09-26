@@ -78,3 +78,30 @@ test("split publication parts use scoped metadata rather than complete source ob
   model[2]!.extras!.source_components = ["east"];
   assert.throws(() => catalogFromExport(model, reviewed), /identity mismatch/);
 });
+
+test("authored scenery parts publish without obstacle, footprint or mission profile", () => {
+  const reviewed: AuthoredAssetCatalog = {
+    map: "York",
+    groups: [{ id: "oak", name: "Oak", parts: [{ node: "foliage-oak", name: "Painted tree" }] }],
+  };
+  const model = () => [
+    { name: "map", children: [1] },
+    { name: "Oak", children: [2], extras: { asset_group: "oak" } },
+    {
+      name: "foliage-oak",
+      extras: { part_name: "Painted tree", scenery: true } as Record<string, unknown>,
+    },
+  ];
+  assert.deepEqual(catalogFromExport(model(), reviewed).groups[0]!.parts, [
+    { node: "foliage-oak", name: "Painted tree" },
+  ]);
+  for (const extra of [
+    { scenery: undefined },
+    { source_obstacle: 3 },
+    { obstacle_local_game: { points: [] } },
+  ]) {
+    const nodes = model();
+    Object.assign(nodes[2]!.extras!, extra);
+    assert.throws(() => catalogFromExport(nodes, reviewed), /authored scenery/);
+  }
+});

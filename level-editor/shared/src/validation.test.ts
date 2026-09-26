@@ -170,7 +170,7 @@ test("scene matrix placement agrees with game obstacle transform used by bake", 
   const pivot: [number, number] = [4, 13 / 3];
   const matrix = gameTransformMatrix(camera, o.transform, pivot);
   const expected = transformedObstacle(d, o);
-  o.obstacle.points.forEach((p, i) => {
+  o.obstacle!.points.forEach((p, i) => {
     const actual = sceneToGame(
       camera,
       applyAffineMatrix(matrix, gameToScene(camera, p.x, p.y, p.z_top)),

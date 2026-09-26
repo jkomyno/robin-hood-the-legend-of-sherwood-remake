@@ -1499,23 +1499,31 @@ export default function Editor3D(props: EditorProps) {
                           <span class="meta-key">source</span>
                           <span>
                             {p().source.map}{" "}
-                            {p().source.mission_profile ?? `#${p().source.obstacle}`}
+                            {p().kind === "scenery"
+                              ? "scenery"
+                              : (p().source.mission_profile ?? `#${p().source.obstacle}`)}
                           </span>
                         </div>
-                        <div class="meta-row">
-                          <span class="meta-key">flags</span>
-                          <span>
-                            {p().obstacle.opaque ? "opaque " : "clear "}
-                            {(p().obstacle as unknown as { solid?: boolean }).solid ? "solid" : ""}
-                          </span>
-                        </div>
-                        <div class="meta-row">
-                          <span class="meta-key">height</span>
-                          <span>
-                            {Math.round(Math.min(...p().obstacle.points.map((q) => q.z_bottom)))}–
-                            {Math.round(Math.max(...p().obstacle.points.map((q) => q.z_top)))}
-                          </span>
-                        </div>
+                        <Show when={p().obstacle}>
+                          {(ob) => (
+                            <>
+                              <div class="meta-row">
+                                <span class="meta-key">flags</span>
+                                <span>
+                                  {ob().opaque ? "opaque " : "clear "}
+                                  {(ob() as unknown as { solid?: boolean }).solid ? "solid" : ""}
+                                </span>
+                              </div>
+                              <div class="meta-row">
+                                <span class="meta-key">height</span>
+                                <span>
+                                  {Math.round(Math.min(...ob().points.map((q) => q.z_bottom)))}–
+                                  {Math.round(Math.max(...ob().points.map((q) => q.z_top)))}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </Show>
                         <Show when={p().group}>
                           {(g) => (
                             <button onClick={() => select({ kind: "group", id: g() })}>

@@ -4,7 +4,7 @@ import {
   groupCentroid,
   groupParts,
   isIdentity,
-  obstacleCentroid,
+  partPivot,
   partMatrix,
   type GameTransform,
   type Level3D,
@@ -150,7 +150,7 @@ export function mergeRefinedGroups(
     const inverse = mat4.invert(new Float64Array(16), matrix);
     if (!inverse) throw new Error(`Cannot preserve transform for ${part.id}`);
     const local = mat4.multiply(new Float64Array(16), inverse, world);
-    part.transform = transformAt(document, local, obstacleCentroid(part.obstacle.points));
+    part.transform = transformAt(document, local, partPivot(part));
   }
   const removed: string[] = [];
   document.groups = document.groups.filter((group) => {
@@ -252,7 +252,7 @@ export function rebaseLibraryRevision(
       if (!inverse) throw new Error(`Singular group transform: ${group.id}`);
       matrix = mat4.multiply(new Float64Array(16), inverse, matrix);
     }
-    part.transform = transformAt(document, matrix, obstacleCentroid(part.obstacle.points));
+    part.transform = transformAt(document, matrix, partPivot(part));
   }
   document.assetSources = structuredClone(staged.assetSources);
   document.sceneAssets = structuredClone(staged.sceneAssets);

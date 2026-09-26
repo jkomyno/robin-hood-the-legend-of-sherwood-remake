@@ -145,6 +145,17 @@ export function assertReconstructedBakeSources(document: unknown): void {
   if (
     document !== null &&
     typeof document === "object" &&
+    "objects" in document &&
+    Array.isArray(document.objects) &&
+    document.objects.some((part) => part?.kind === "scenery")
+  ) {
+    throw new Error(
+      "Game baking does not yet support authored scenery models; save the editor document instead.",
+    );
+  }
+  if (
+    document !== null &&
+    typeof document === "object" &&
     "assetSources" in document &&
     Array.isArray(document.assetSources) &&
     document.assetSources.length > 0

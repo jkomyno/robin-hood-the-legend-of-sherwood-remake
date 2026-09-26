@@ -1,4 +1,8 @@
-import { componentIdentityMatches, obstaclePartIdentity } from "./component-parts.ts";
+import {
+  componentIdentityMatches,
+  isSceneryNode,
+  obstaclePartIdentity,
+} from "./component-parts.ts";
 import { validatePopulation } from "./population.ts";
 import {
   safeLibraryPath,
@@ -464,24 +468,27 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
     check(!ids.has(o.id), o.id, "duplicate ID");
     ids.add(o.id);
     check(
-      o.kind === "building" || o.kind === "terrace" || o.kind === "mission",
+      o.kind === "building" || o.kind === "terrace" || o.kind === "mission" || o.kind === "scenery",
       o.id,
       "unsupported kind",
     );
     text(o.node, `${o.id}.node`);
     if (o.node.startsWith("asset:")) {
       const match =
-        /^asset:([^:]+):((?:building|terrace)-\d+(?:--component-[a-zA-Z0-9_-]+)?|mission-[a-zA-Z0-9_-]+)$/.exec(
+        /^asset:([^:]+):((?:building|terrace)-\d+(?:--component-[a-zA-Z0-9_-]+)?|(?:mission|foliage|scenery)-[a-zA-Z0-9_-]+)$/.exec(
           o.node,
         );
       check(!!match && assetIds.has(match[1]!), o.id, "dangling external asset source");
-      if (!match[2]!.startsWith("mission-"))
+      if (match[2]!.startsWith("mission-"))
+        check(o.kind === "mission", o.id, "mission source requires mission kind");
+      else if (isSceneryNode(match[2]!))
+        check(o.kind === "scenery", o.id, "scenery source requires scenery kind");
+      else
         check(
           componentIdentityMatches(match[2]!, o.source?.obstacle, o.source?.components),
           o.id,
           "external asset canonical obstacle mismatch",
         );
-      else check(o.kind === "mission", o.id, "mission source requires mission kind");
     }
     if (context.nodes) check(context.nodes.has(o.node), o.id, `missing source node ${o.node}`);
     object(o.source, `${o.id}.source`);
@@ -494,6 +501,15 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
         "mission parts cannot claim an obstacle index",
       );
       text(o.source.mission_profile, `${o.id}.source.mission_profile`);
+    } else if (o.kind === "scenery") {
+      check(
+        o.source.obstacle === undefined &&
+          o.source.components === undefined &&
+          o.source.mission_profile === undefined &&
+          isSceneryNode(o.node.replace(/^asset:[^:]+:/, "")),
+        o.id,
+        "scenery parts cannot claim an obstacle index or mission profile",
+      );
     } else {
       check(
         Number.isInteger(o.source.obstacle) &&
@@ -520,8 +536,12 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
     }
     if (o.group !== undefined) check(groups.has(o.group), o.id, `dangling group ${o.group}`);
     if (o.hidden !== undefined) check(typeof o.hidden === "boolean", o.id, "invalid hidden flag");
-    obstacle(o.obstacle, `${o.id}.obstacle`);
-    check(o.obstacle.points.length >= 3, o.id, "editable obstacle needs at least three points");
+    if (o.kind === "scenery")
+      check(o.obstacle === undefined, o.id, "scenery parts have no game obstacle");
+    else {
+      obstacle(o.obstacle, `${o.id}.obstacle`);
+      check(o.obstacle.points.length >= 3, o.id, "editable obstacle needs at least three points");
+    }
     transform(o.transform, o.id);
   }
   for (const group of d.groups)
@@ -812,7 +832,18 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     text(part.node, "asset part.node");
     text(part.name, "asset part.name");
     const identity = obstaclePartIdentity(part.node);
-    if (part.mission_profile !== undefined) {
+    if (part.scenery !== undefined) {
+      check(
+        part.scenery === true &&
+          isSceneryNode(part.node) &&
+          part.source_obstacle === undefined &&
+          part.source_components === undefined &&
+          part.mission_profile === undefined &&
+          part.obstacle_local_game === undefined,
+        part.node,
+        "scenery parts cannot claim an obstacle, footprint or mission profile",
+      );
+    } else if (part.mission_profile !== undefined) {
       text(part.mission_profile, "asset part.mission_profile");
       check(
         /^mission-[a-zA-Z0-9_-]+$/.test(part.node) && part.source_obstacle === undefined,
@@ -839,12 +870,14 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     nodes.add(part.node);
     if (part.default_hidden !== undefined)
       check(typeof part.default_hidden === "boolean", part.node, "invalid default_hidden");
-    obstacle(part.obstacle_local_game, part.node);
-    check(
-      part.obstacle_local_game.points.length >= 3,
-      part.node,
-      "editable obstacle needs three points",
-    );
+    if (part.scenery === undefined) {
+      obstacle(part.obstacle_local_game, part.node);
+      check(
+        part.obstacle_local_game.points.length >= 3,
+        part.node,
+        "editable obstacle needs three points",
+      );
+    }
   }
   if (d.states !== undefined)
     validateAssetStates(

@@ -1,5 +1,6 @@
 import {
   assetNodeKey,
+  assetPartOrigin,
   IDENTITY_TRANSFORM,
   parseExternalAssetSources,
   parseLevel3D,
@@ -51,21 +52,8 @@ export function insertProjectionAsset(
   const parts: Level3DObject[] = descriptor.parts.map((part) => ({
     id: `${id}:${part.node}`,
     node: assetNodeKey(descriptor.id, part.node),
-    kind:
-      part.mission_profile !== undefined
-        ? "mission"
-        : part.node.startsWith("terrace-")
-          ? "terrace"
-          : "building",
-    source:
-      part.mission_profile !== undefined
-        ? { map: descriptor.source_map, mission_profile: part.mission_profile }
-        : {
-            map: descriptor.source_map,
-            obstacle: part.source_obstacle,
-            ...(part.source_components ? { components: [...part.source_components] } : {}),
-          },
-    obstacle: structuredClone(part.obstacle_local_game),
+    ...assetPartOrigin(descriptor, part),
+    ...(part.obstacle_local_game ? { obstacle: structuredClone(part.obstacle_local_game) } : {}),
     transform: { ...IDENTITY_TRANSFORM },
     group: id,
     name: part.name,

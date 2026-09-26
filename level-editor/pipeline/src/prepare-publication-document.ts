@@ -13,6 +13,7 @@ import {
   parseLevel3D,
   obstaclePartIdentity,
   componentIdentityMatches,
+  isSceneryNode,
   type AuthoredAssetCatalog,
   type AuthoredAssetPart,
   type Level3D,
@@ -74,6 +75,17 @@ export function catalogFromExport(
               }
             : {}),
         });
+      } else if (isSceneryNode(name)) {
+        if (
+          expected.obstacle !== undefined ||
+          expected.mission_profile !== undefined ||
+          extras?.scenery !== true ||
+          extras.source_obstacle !== undefined ||
+          extras.mission_patch_profile !== undefined ||
+          extras.obstacle_local_game !== undefined
+        )
+          throw new Error("Invalid authored scenery metadata: " + name);
+        parts.push({ node: name, name: expected.name });
       } else {
         if (
           !/^mission-[a-zA-Z0-9_-]+$/.test(name) ||
@@ -137,6 +149,15 @@ export async function prepareDocument(
           name: part.name,
           source: { map: scene.map, mission_profile: part.mission_profile },
           obstacle: structuredClone(part.obstacle_local_game!),
+          transform: { ...IDENTITY_TRANSFORM },
+        });
+      } else if (part.obstacle === undefined) {
+        objects.push({
+          id: part.node,
+          node: part.node,
+          kind: "scenery",
+          name: part.name,
+          source: { map: scene.map },
           transform: { ...IDENTITY_TRANSFORM },
         });
       } else {

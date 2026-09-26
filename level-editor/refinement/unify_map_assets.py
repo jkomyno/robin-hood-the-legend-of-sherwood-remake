@@ -46,6 +46,25 @@ def local_descriptor(descriptor):
     return descriptor
 
 
+def scenery_origin(sources):
+    """Scenery has no footprint: anchor at its horizontal mesh bounds centre, integer like footprints."""
+    low, high = [math.inf, math.inf], [-math.inf, -math.inf]
+    for model, _, _, child in sources:
+        pending = [child]
+        while pending:
+            node = model['nodes'][pending.pop()]
+            pending.extend(node.get('children', []))
+            if any(key in node for key in ('matrix', 'translation', 'rotation', 'scale')):
+                raise ValueError('Expected baked scenery positions: ' + node.get('name', ''))
+            for primitive in model['meshes'][node['mesh']]['primitives'] if 'mesh' in node else []:
+                accessor = model['accessors'][primitive['attributes']['POSITION']]
+                for axis in range(2):
+                    low[axis] = min(low[axis], accessor['min'][axis]); high[axis] = max(high[axis], accessor['max'][axis])
+    if not math.isfinite(low[0]):
+        raise ValueError('Scenery group has no mesh geometry')
+    return [round((low[0] + high[0]) / 2), round((low[1] + high[1]) / 2), 0]
+
+
 def stage(library, output):
     library, output = Path(library).resolve(), Path(output).resolve()
     if library == output: raise ValueError('Use a separate staging directory')
@@ -141,10 +160,13 @@ def stage(library, output):
             identity=part_owners.get(parts[0]['node'], document['map'].lower()+'-'+group_id)
             if identity in entries:raise ValueError('Asset identity collision: '+identity)
             bundle=AssetBundle(output)
-            points=[p for part in parts for p in part['obstacle']['points']]
+            points=[p for part in parts for p in part.get('obstacle',{}).get('points',[])]
             angle=math.radians(document['camera']['elevation_deg'])
             # Integer anchors retain the precision of the stored float32 coordinates.
-            origin=[round(sum(p['x']for p in points)/len(points)),round(-sum(p['y']for p in points)/len(points)/math.sin(angle)),0]
+            if points:
+                origin=[round(sum(p['x']for p in points)/len(points)),round(-sum(p['y']for p in points)/len(points)/math.sin(angle)),0]
+            else:
+                origin=scenery_origin([source_nodes[part['node']] for part in parts])
             game_origin=[origin[0],-origin[1]*math.sin(angle),0];origins[identity]=origin
             descriptor={'version':1,'kind':'projection-mapped-asset','id':identity,'name':next((g.get('name',group_id)for g in document['groups']if g['id']==group_id),group_id),
                         'source_map':document['map'],'source_origin_scene':origin,
@@ -153,15 +175,19 @@ def stage(library, output):
                 if part_owners.get(part['node']) in entries:continue
                 model,binary,external,child=source_nodes[part['node']]
                 local, local_external = localize_positions(model,binary,external,origin)
-                obstacle=copy.deepcopy(part['obstacle'])
-                for p in obstacle['points']:
-                    p['x']-=game_origin[0];p['y']-=game_origin[1]
-                record={'node':part['node'],'name':part.get('name',part['node']),'obstacle_local_game':obstacle, **({'mission_profile':part['source']['mission_profile']} if part['kind']=='mission' else {'source_obstacle':part['source']['obstacle']})}
+                if part['kind']=='scenery':
+                    if 'obstacle' in part:raise ValueError('Scenery part claims a game obstacle: '+part['node'])
+                    record={'node':part['node'],'name':part.get('name',part['node']),'scenery':True}
+                else:
+                    obstacle=copy.deepcopy(part['obstacle'])
+                    for p in obstacle['points']:
+                        p['x']-=game_origin[0];p['y']-=game_origin[1]
+                    record={'node':part['node'],'name':part.get('name',part['node']),'obstacle_local_game':obstacle, **({'mission_profile':part['source']['mission_profile']} if part['kind']=='mission' else {'source_obstacle':part['source']['obstacle']})}
                 if part['source'].get('components'):record['source_components']=part['source']['components']
                 descriptor['parts'].append(record)
                 extra=local['nodes'][child].setdefault('extras',{})
                 if 'source_obstacle' in record:extra['source_obstacle']=record['source_obstacle']
-                if 'obstacle_local_game' in extra:extra['obstacle_local_game']=obstacle
+                if 'obstacle_local_game' in extra:extra['obstacle_local_game']=record['obstacle_local_game']
                 group=len(local['nodes']);local['nodes'].append({'name':descriptor['name'],'extras':{'asset_group':identity},'children':[child]})
                 root=len(local['nodes']);local['nodes'].append({'name':'map','rotation':[-math.sqrt(.5),0,0,math.sqrt(.5)],'children':[group]})
                 local['scenes']=[{'nodes':[root]}];local['scene']=0

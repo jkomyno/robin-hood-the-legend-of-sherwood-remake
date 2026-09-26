@@ -10,6 +10,12 @@ from canonical_assets import read_model
 
 class LocalMapExportTests(unittest.TestCase):
     def test_map_exports_local_catalog_instances_with_small_payloads_embedded(self):
+        self.export_fixture(scenery=False)
+
+    def test_authored_scenery_exports_without_a_game_obstacle(self):
+        self.export_fixture(scenery=True)
+
+    def export_fixture(self, scenery):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             model = {'asset': {'version': '2.0'}, 'scene': 0, 'scenes': [{'nodes': [0]}],
@@ -18,9 +24,11 @@ class LocalMapExportTests(unittest.TestCase):
                      'buffers': [{'uri': 'mesh.bin', 'byteLength': 72}]}
             obstacles, vertices = [], []
             for i, x in enumerate([100, 500]):
+                part = ({'name': 'foliage-oak', 'mesh': i, 'extras': {'scenery': True, 'part_name': 'Painted tree'}}
+                        if scenery and i == 1 else
+                        {'name': f'building-{i:03}', 'mesh': i, 'extras': {'source_obstacle': i, 'part_name': 'Wall'}})
                 model['nodes'].extend([
-                    {'name': f'House {i}', 'extras': {'asset_group': f'house-{i}'}, 'children': [2+i*2]},
-                    {'name': f'building-{i:03}', 'mesh': i, 'extras': {'source_obstacle': i, 'part_name': 'Wall'}}])
+                    {'name': f'House {i}', 'extras': {'asset_group': f'house-{i}'}, 'children': [2+i*2]}, part])
                 model['meshes'].append({'primitives': [{'attributes': {'POSITION': i}}]})
                 model['accessors'].append({'bufferView': i, 'componentType': 5126, 'count': 3,
                                           'type': 'VEC3', 'min': [x, 0, 0], 'max': [x+2, 2, 0]})
@@ -46,6 +54,11 @@ class LocalMapExportTests(unittest.TestCase):
                 descriptor = json.loads((library/ref['descriptor']).read_text())
                 self.assertEqual(len(descriptor['source_origin_scene']), 3)
                 self.assertNotIn('source_origin_game', descriptor)
+                if descriptor['parts'][0]['node'] == 'foliage-oak':
+                    self.assertEqual(descriptor['parts'], [{'node': 'foliage-oak', 'name': 'Painted tree', 'scenery': True}])
+                    # No footprint: anchored at the horizontal mesh bounds centre.
+                    self.assertEqual(descriptor['source_origin_scene'], [501, 1, 0])
+                    continue
                 local, binary, _ = read_model(library/ref['model'], library)
                 self.assertTrue(ref['model'].endswith('.glb'))
                 self.assertEqual(ref['resources'], [])
@@ -53,6 +66,9 @@ class LocalMapExportTests(unittest.TestCase):
                 self.assertEqual(len(binary), 36)
                 self.assertLess(max(abs(p['x']) for p in descriptor['parts'][0]['obstacle_local_game']['points']), 3)
             self.assertTrue(scene_metadata(library, document)['nodes'])
+            parts = [p for p in document['objects'] if p['node'].endswith(':foliage-oak')]
+            self.assertEqual(len(parts), int(scenery))
+            self.assertTrue(all('obstacle' not in p for p in parts))
 
 
 if __name__ == '__main__':

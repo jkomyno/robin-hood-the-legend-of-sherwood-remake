@@ -23,3 +23,8 @@ export function componentIdentityMatches(
     ? components === undefined
     : Array.isArray(components) && components.length === 1 && components[0] === identity.component;
 }
+
+/** Authored always-present scenery (painted trees, props): visual only, never a game obstacle. */
+export function isSceneryNode(node: string): boolean {
+  return /^(?:foliage|scenery)-[a-zA-Z0-9_-]+$/.test(node);
+}

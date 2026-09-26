@@ -10,7 +10,7 @@ import hashlib
 from pathlib import Path
 import struct
 import sys
-from catalog_schema import source_for_part
+from catalog_schema import is_scenery_node, source_for_part
 from publication_contract import publication_parts, validate_export_records
 from texture_state_roles import partition_texture_states, validate_texture_state_role_evidence
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -29,10 +29,21 @@ def gltf(path):
         return json.loads(handle.read(length))
 
 
+# Selectable part nodes: native obstacles, mission-only models and authored scenery.
+PART_PREFIXES = ('building-', 'mission-', 'foliage-', 'scenery-')
+
+
+def verify_scenery_part(node, metadata):
+    """Authored scenery stays visual only: no obstacle, footprint or mission profile."""
+    if (metadata.get('scenery') is not True or any(metadata.get(key) is not None for key in
+            ('source_obstacle', 'obstacle_local_game', 'mission_profile', 'mission_patch_profile'))):
+        raise ValueError('Scenery part claims game obstacle or mission metadata: ' + node)
+
+
 def verify_component_nodes(model, expected):
     """Reject duplicate part identities or meshes escaping their selector parent."""
     nodes=model['nodes']
-    named=[node['name'] for node in nodes if 'mesh' not in node and node.get('name','').startswith(('building-','mission-'))]
+    named=[node['name'] for node in nodes if 'mesh' not in node and node.get('name','').startswith(PART_PREFIXES)]
     if len(named)!=len(set(named)) or set(named)!=set(expected):
         raise ValueError('GLB selectable part identities overlap or differ from catalog')
     for node in nodes:
@@ -86,7 +97,7 @@ def verify_static_inventory(asset_id, descriptor, models, owned, imports, proof)
                 {p['node'] for p in variant['parts']} != exact or len(components) != record['meshes']):
             raise ValueError('Static descriptor differs from reviewed endpoint ownership: ' + asset_id + ' ' + state)
         model = models[state]
-        canonical = [n['name'] for n in model['nodes'] if 'mesh' not in n and n.get('name', '').startswith(('mission-', 'building-'))]
+        canonical = [n['name'] for n in model['nodes'] if 'mesh' not in n and n.get('name', '').startswith(PART_PREFIXES)]
         if len(canonical) != len(exact) or set(canonical) != exact:
             raise ValueError('Static GLB differs from exact reviewed endpoint ownership: ' + asset_id + ' ' + state)
         if len([n for n in model['nodes'] if 'mesh' in n]) != len(components):
@@ -149,6 +160,9 @@ def verify(directory,catalog_path):
                             not part.get('obstacle_local_game',{}).get('points') or
                             not part.get('footprint_basis','').startswith('Reviewed component mesh')):
                         raise ValueError('Split part lost exact provenance or scoped collision metadata')
+        for part in descriptor.get('parts', []):
+            if is_scenery_node(part['node']):
+                verify_scenery_part(part['node'], part)
         if asset['id'] in ground_ids and (descriptor.get('parts')!=[] or descriptor.get('editor_usage')!='map-background' or asset.get('editor_usage')!='map-background'):
             raise ValueError('Ground must declare map-background capability without obstacle parts')
         model=select_scene(gltf(directory/'assets'/asset['model']), descriptor.get('model_scene'))
@@ -200,10 +214,13 @@ def verify(directory,catalog_path):
     document = json.loads(Path(stage['map']['file']).read_text())
     model = scene_metadata(Path(stage['map']['library']), document)
     expected_map=set(declared)
-    actual_names=[n['name'] for n in model['nodes'] if 'mesh' not in n and n.get('name','').startswith(('building-','mission-'))]
+    actual_names=[n['name'] for n in model['nodes'] if 'mesh' not in n and n.get('name','').startswith(PART_PREFIXES)]
     if len(actual_names)!=len(set(actual_names)):
         raise ValueError('Full map contains duplicate selectable identities')
     actual_map=set(actual_names)
+    for node in model['nodes']:
+        if 'mesh' not in node and is_scenery_node(node.get('name')):
+            verify_scenery_part(node['name'], node.get('extras',{}))
     if actual_map!=expected_map:raise ValueError('Full map canonical coverage differs from publication catalog')
     if any(identity['source_components'] for identity in declared.values()):
         verify_component_nodes(model,declared)

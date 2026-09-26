@@ -267,8 +267,9 @@ export default function SplinePanel(props: {
           throw new Error("The scene already uses a different revision of this asset");
         reference = prepared.reference;
         const vertices = prepared.descriptor.parts
-          .flatMap((part) => part.obstacle_local_game.points)
+          .flatMap((part) => part.obstacle_local_game?.points ?? [])
           .map((p) => [p.x, -p.y / Math.sin((document.camera.elevation_deg * Math.PI) / 180)]);
+        if (!vertices.length) throw new Error("Wall assets need a collision footprint");
         const cx = vertices.reduce((sum, p) => sum + p[0]!, 0) / vertices.length;
         const cy = vertices.reduce((sum, p) => sum + p[1]!, 0) / vertices.length;
         let xx = 0,

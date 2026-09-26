@@ -10,7 +10,7 @@ import {
   gameTransformMatrix,
   groupCentroid,
   groupParts,
-  obstacleCentroid,
+  partPivot,
   partMatrix,
   transformedObstacle,
   parseLevel3D,
@@ -93,7 +93,9 @@ for (const item of plan.maps) {
       mat4.multiply(new Float64Array(16), partMatrix(old.camera, old, before), translate),
     );
     part.node = assetNodeKey(reference.id, node);
-    part.obstacle = structuredClone(definition.obstacle_local_game);
+    if (definition.obstacle_local_game)
+      part.obstacle = structuredClone(definition.obstacle_local_game);
+    else delete part.obstacle;
     if (item.bindings[before.node]) part.missionBindings = item.bindings[before.node];
   }
   for (const group of doc.groups) {
@@ -119,9 +121,17 @@ for (const item of plan.maps) {
       if (!inverse) throw new Error(`Singular placement: ${part.id}`);
       local = mat4.multiply(new Float64Array(16), inverse, local);
     }
-    part.transform = transformAt(doc, local, obstacleCentroid(part.obstacle.points));
+    part.transform = transformAt(doc, local, partPivot(part));
   }
   for (const part of doc.objects) {
+    if (part.kind === "scenery") {
+      // No footprint to compare: check the placed matrix itself.
+      const after = partMatrix(doc.camera, doc, part);
+      const expected = desired.get(part.id)!;
+      for (let i = 0; i < 16; i++)
+        maxError = Math.max(maxError, Math.abs(after[i]! - expected[i]!));
+      continue;
+    }
     const before = transformedObstacle(
       old,
       old.objects.find((p) => p.id === part.id)!,
