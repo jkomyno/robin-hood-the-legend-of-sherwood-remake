@@ -18,11 +18,13 @@ export interface ProjectionAssetDescriptor {
   name: string;
   source_map: string;
   model: string;
+  /** Exact named scene in a shared multi-state GLB. */
+  model_scene?: string;
   source_origin_scene: [number, number, number];
   source_origin_game: [number, number, number];
   states?: AssetStates;
   /** Independent static models sharing an origin; these do not imply animation. */
-  state_variants?: Partial<Record<AssetState, { name: string; model: string; parts?: ProjectionAssetDescriptor["parts"] }>>;
+  state_variants?: Partial<Record<AssetState, { name: string; model: string; model_scene?: string; parts?: ProjectionAssetDescriptor["parts"] }>>;
   /** Additional complete appearances; the primary model remains separately insertable. */
   standalone_variants?: ProjectionAssetDescriptor["state_variants"];
   parts: ({ node: string; name: string; default_hidden?: boolean; obstacle_local_game: SightObstacle } & (
@@ -41,6 +43,8 @@ export interface ProjectionAssetEntry {
   source_map: string;
   descriptor: string;
   model: string;
+  /** Exact named scene in a shared multi-state GLB. */
+  model_scene?: string;
   /** Optional lightweight model used only by the asset browser preview. */
   preview_model?: string;
 }
@@ -51,6 +55,8 @@ export interface ExternalAssetSource {
   id: string;
   descriptor: string;
   model: string;
+  /** Exact named scene in a shared multi-state GLB. */
+  model_scene?: string;
   descriptor_sha256: string;
   model_sha256: string;
 }

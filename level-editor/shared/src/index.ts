@@ -15,3 +15,5 @@ export * from "./splines.ts";
 export * from "./population.ts";
 
 export * from "./component-parts.ts";
+
+export * from "./glb-scene.ts";

@@ -3,7 +3,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "meshoptimizer";
 import {
   assetNodeKey, assetVariantId, parseExternalAssetSources, parseProjectionAssetDescriptor,
-  parseProjectionAssetIndex, safeLibraryPath,
+  parseProjectionAssetIndex, safeLibraryPath, selectGlbScene,
   type ExternalAssetSource, type ProjectionAssetDescriptor, type ProjectionAssetEntry,
 } from "@rle/shared";
 import { isNotFound, readJson, subdir } from "./fs.ts";
@@ -20,6 +20,16 @@ async function libraryFile(root: FileSystemDirectoryHandle, path: string): Promi
 
 async function hash(bytes: ArrayBuffer): Promise<string> {
   return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function restoreNodeNames(gltf: Awaited<ReturnType<GLTFLoader["parseAsync"]>>) {
+  gltf.scene.traverse(node => {
+    const index = gltf.parser?.associations.get(node)?.nodes;
+    if (index !== undefined) {
+      const name = gltf.parser.json.nodes[index]?.name;
+      if (typeof name === "string") node.name = name;
+    }
+  });
 }
 
 function previewLoader() {
@@ -39,13 +49,15 @@ export async function listProjectionAssets(root: FileSystemDirectoryHandle, map?
   const expanded = await Promise.all(entries.map(async entry => {
     const descriptor = parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text()));
     if (descriptor.id !== entry.id || descriptor.source_map.toLowerCase() !== entry.source_map.toLowerCase()) throw new Error(`Asset catalog identity mismatch: ${entry.id}`);
+    if (entry.model_scene !== descriptor.model_scene) throw new Error(`Asset catalog scene mismatch: ${entry.id}`);
     const variants = descriptor.state_variants ?? descriptor.standalone_variants;
     if (!variants) return [entry];
     const parent = entry.descriptor.split("/").slice(0, -1).join("/");
     return [...(descriptor.standalone_variants ? [entry] : []), ...(["initial", "applied"] as const).flatMap(state => {
       const variant = variants[state];
       return variant ? [{ ...entry, id: assetVariantId(entry.id, state), name: `${entry.name} — ${variant.name} (static)`,
-        state_variant: state, model: `${parent}/${variant.model}`, preview_model: undefined }] : [];
+        state_variant: state, model: `${parent}/${variant.model}`, model_scene: variant.model_scene,
+        preview_model: variant.model === descriptor.model && variant.model_scene ? entry.preview_model : undefined }] : [];
     })];
   }));
   const flattened = expanded.flat();
@@ -63,7 +75,7 @@ export interface PreparedProjectionAsset {
 /** Owns resources until the caller adopts the result. Failed loads clean up. */
 export async function prepareProjectionAsset(
   root: FileSystemDirectoryHandle,
-  entry: Pick<ProjectionAssetEntry, "id" | "descriptor" | "model" | "state_variant">,
+  entry: Pick<ProjectionAssetEntry, "id" | "descriptor" | "model" | "state_variant" | "model_scene">,
   _map: string,
   expected?: ExternalAssetSource,
 ): Promise<PreparedProjectionAsset> {
@@ -75,24 +87,28 @@ export async function prepareProjectionAsset(
   const variant = entry.state_variant ? (original.state_variants ?? original.standalone_variants)?.[entry.state_variant] : undefined;
   if (entry.state_variant && !variant) throw new Error(`Unknown static asset variant: ${entry.state_variant}`);
   const descriptor = variant ? { ...original, id: assetVariantId(original.id, entry.state_variant!),
-    name: `${original.name} — ${variant.name}`, model: variant.model, parts: variant.parts ?? original.parts, state_variants: undefined, standalone_variants: undefined } : original;
+    name: `${original.name} — ${variant.name}`, model: variant.model, model_scene: variant.model_scene, parts: variant.parts ?? original.parts, state_variants: undefined, standalone_variants: undefined } : original;
   if (descriptor.id !== entry.id)
     throw new Error(`Asset identity mismatch: ${entry.id}`);
   if (descriptor.editor_usage === "map-background") throw new Error("Map backgrounds are part of the map and cannot be inserted as objects");
   const parent = entry.descriptor.split("/").slice(0, -1).join("/");
   const modelPath = parent ? `${parent}/${descriptor.model}` : descriptor.model;
+  if (entry.model_scene !== descriptor.model_scene) throw new Error(`Asset model scene mismatch: ${entry.id}`);
+  if (expected && ["id", "descriptor", "model", "state_variant", "model_scene"].some(key => expected[key as keyof ExternalAssetSource] !== entry[key as keyof typeof entry])) throw new Error(`Asset saved reference mismatch: ${entry.id}`);
   if (modelPath !== entry.model) throw new Error(`Asset model path mismatch: ${entry.id}`);
   const modelBytes = await (await libraryFile(root, entry.model)).arrayBuffer();
   const modelHash = await hash(modelBytes);
   if (expected && expected.model_sha256 !== modelHash) throw new Error(`Asset model changed: ${entry.id}`);
   const reference = { id: entry.id, descriptor: entry.descriptor, model: entry.model,
     descriptor_sha256: descriptorHash, model_sha256: modelHash,
+    ...(entry.model_scene ? { model_scene: entry.model_scene } : {}),
     ...(entry.state_variant ? { state_variant: entry.state_variant } : {}) };
   parseExternalAssetSources([reference]);
   let asset: THREE.Object3D | null = null;
   try {
-    const gltf = await new GLTFLoader().parseAsync(modelBytes, "");
+    const gltf = await new GLTFLoader().parseAsync(selectGlbScene(modelBytes, entry.model_scene), "");
     asset = gltf.scene;
+    restoreNodeNames(gltf);
     const mapRoot = asset.children.find(child => child.name === "map");
     if (!mapRoot || mapRoot.children.length !== 1) throw new Error(`Standalone asset requires exactly one group: ${entry.id}`);
     const group = mapRoot.children[0]!;
@@ -128,13 +144,29 @@ export async function prepareProjectionAsset(
 export async function loadProjectionAssetPreview(root: FileSystemDirectoryHandle, entry: ProjectionAssetEntry): Promise<THREE.Object3D> {
   if (entry.editor_usage === "map-background") {
     const bytes = await (await libraryFile(root, entry.model)).arrayBuffer();
-    return (await new GLTFLoader().parseAsync(bytes, "")).scene;
+    return (await new GLTFLoader().parseAsync(selectGlbScene(bytes, entry.model_scene), "")).scene;
   }
   if (entry.preview_model) {
-    const preview = (await previewLoader().parseAsync(await (await libraryFile(root, entry.preview_model)).arrayBuffer(), "")).scene;
+    const original = parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text()));
+    const variant = entry.state_variant ? (original.state_variants ?? original.standalone_variants)?.[entry.state_variant] : undefined;
+    if (entry.state_variant && !variant) throw new Error(`Unknown static asset variant: ${entry.state_variant}`);
+    if (entry.model_scene !== (variant ? variant.model_scene : original.model_scene)) throw new Error(`Asset preview scene mismatch: ${entry.id}`);
+    const bytes = await (await libraryFile(root, entry.preview_model)).arrayBuffer();
+    let selected: ArrayBuffer;
+    try { selected = selectGlbScene(bytes, entry.model_scene); }
+    catch (error) {
+      // An older preview may predate the shared state file; use the exact full model.
+      if (!entry.model_scene) throw error;
+      const prepared = await prepareProjectionAsset(root, entry, entry.source_map);
+      for (const part of prepared.descriptor.parts) prepared.sources.get(assetNodeKey(prepared.descriptor.id, part.node))!.visible = !part.default_hidden;
+      return prepared.asset;
+    }
+    const gltf = await previewLoader().parseAsync(selected, "");
+    restoreNodeNames(gltf);
+    const preview = gltf.scene;
     const mapRoot = preview.children.find(child => child.name === "map");
     const group = mapRoot?.children[0];
-    if (group) for (const part of parseProjectionAssetDescriptor(JSON.parse(await (await libraryFile(root, entry.descriptor)).text())).parts) {
+    if (group) for (const part of variant?.parts ?? original.parts) {
       const node = group.children.find(child => child.name === part.node);
       if (node) node.visible = !part.default_hidden;
     }
