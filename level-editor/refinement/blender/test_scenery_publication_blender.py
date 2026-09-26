@@ -35,9 +35,11 @@ def check():
         assert descriptor['parts']==[{'node':'foliage-oak','name':'Painted tree','scenery':True,'default_hidden':False}],descriptor['parts']
         part_node=next(n for n in gltf(root/'assets'/entries['oak']['model'])['nodes'] if n.get('name')=='foliage-oak')
         assert part_node['extras'].get('scenery') is True and 'source_obstacle' not in part_node['extras']
-        document=json.loads((root/'fixture.rhlos-map.json').read_text())
+        sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+        from stored_map import expand_document
+        document=expand_document(Path(report['library']),json.loads((root/'fixture.rhlos-map.json').read_text()))
         tree=next(o for o in document['objects'] if o['node'].endswith(':foliage-oak'))
-        assert 'obstacle' not in tree and tree.get('kind','scenery')=='scenery',tree
+        assert 'obstacle' not in tree and tree['kind']=='scenery' and tree['source']=={'map':'Fixture'},tree
         # The descriptor cannot later acquire a fabricated footprint.
         path=root/'assets'/entries['oak']['descriptor'];saved=path.read_text()
         bad=json.loads(saved);bad['parts'][0]['obstacle_local_game']=obstacle;path.write_text(json.dumps(bad))
