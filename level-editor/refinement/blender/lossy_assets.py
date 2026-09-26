@@ -43,9 +43,10 @@ them). Vertices are quantized with KHR_mesh_quantization (`--no-quantize` keeps 
    provenance, not display data).
 4. avifenc (lossy, `--quality`) encodes the atlas; the GLB references it through a required
    EXT_texture_avif (three.js GLTFLoader decodes it natively; no fallback image).
-5. Validation renders the published and the lossy GLB (lossy texture decoded with avifdec)
-   from eight oblique orthographic views at `--render-scale` pixels per map pixel and reports
-   mean/p95/max colour differences, bytes and texture resolution vs on-map size.
+5. The written GLB is checked structurally (same meshes, primitives and triangle counts); the
+   receipts bind it by hash. `--validate` additionally renders the published and the lossy GLB
+   (lossy texture decoded with avifdec) from eight oblique orthographic views at
+   `--render-scale` pixels per map pixel and reports mean/p95/max colour differences.
 """
 import argparse
 import copy
@@ -963,16 +964,26 @@ def derive(asset_id, model_path, lossy_path, args, work):
                                        not args.keep_normals, args.texture_file,
                                        None if args.no_quantize else args.normal_bits, reencoded=reencoded)
 
-    # Validation: rebuild the lossy from its own bytes.
+    # Structural check from the written bytes: same meshes, primitives and triangle counts.
     lossy_doc, lossy_binary, _ = read_glb(lossy_path)
-    lossy_images = load_images(lossy_doc, lossy_binary, work / 'lossy-images', base=lossy_path.parent, decode_avif=True)
-    lossy_collection = bpy.data.collections.new('Lossy')
-    bpy.context.scene.collection.children.link(lossy_collection)
-    lossy_objects, _ = build_objects(lossy_doc, lossy_binary, lossy_images, lossy_collection, 'lossy')
-    require(len(lossy_objects) == len(objects), 'Lossy lost textured meshes')
-    for before, after in zip(objects, lossy_objects):
-        require(len(before.data.polygons) == len(after.data.polygons), f'Face count changed: {before.name}')
-    differences, render_scale, bounds, resolution = validate(objects, lossy_objects, work, args)
+    for mesh, lossy_mesh in zip(doc['meshes'], lossy_doc['meshes'], strict=True):
+        for primitive, lossy_primitive in zip(mesh['primitives'], lossy_mesh['primitives'], strict=True):
+            counts = [p_doc['accessors'][p['indices']]['count'] if 'indices' in p else p_doc['accessors'][p['attributes']['POSITION']]['count']
+                      for p_doc, p in ((doc, primitive), (lossy_doc, lossy_primitive))]
+            require(counts[0] == counts[1], f'Triangle count changed in mesh {mesh.get("name")}')
+    points = [o.matrix_world @ v.co for o in objects for v in o.data.vertices]
+    bounds = {'min': [min(p[i] for p in points) for i in range(3)], 'max': [max(p[i] for p in points) for i in range(3)]}
+    differences = render_scale = resolution = None
+    if args.validate:
+        # Optional evidence: render published vs lossy (decoded from its own bytes) from 8 views.
+        lossy_images = load_images(lossy_doc, lossy_binary, work / 'lossy-images', base=lossy_path.parent, decode_avif=True)
+        lossy_collection = bpy.data.collections.new('Lossy')
+        bpy.context.scene.collection.children.link(lossy_collection)
+        lossy_objects, _ = build_objects(lossy_doc, lossy_binary, lossy_images, lossy_collection, 'lossy')
+        require(len(lossy_objects) == len(objects), 'Lossy lost textured meshes')
+        for before, after in zip(objects, lossy_objects):
+            require(len(before.data.polygons) == len(after.data.polygons), f'Face count changed: {before.name}')
+        differences, render_scale, bounds, resolution = validate(objects, lossy_objects, work, args)
 
     source_images = [{'size': list(img.size), 'pixels': img.size[0] * img.size[1],
                       'bytes': ((model_path.parent / doc['images'][i]['uri']).stat().st_size if 'uri' in doc['images'][i]
@@ -1007,8 +1018,9 @@ def derive(asset_id, model_path, lossy_path, args, work):
             'target': 'min(--density, source weakest axis) per face'},
         'encoding': {'avifenc': avif_command, 'alpha': need_alpha},
         'normals': normals,
-        'validation': {'render_px_per_map_px': render_scale, 'resolution': resolution,
-                       'differences': differences, 'sheet': str(work / 'compare-sheet.png')},
+        'validation': None if differences is None else {
+            'render_px_per_map_px': render_scale, 'resolution': resolution,
+            'differences': differences, 'sheet': str(work / 'compare-sheet.png')},
     }
     texture_path = lossy_path.with_suffix('.avif')
     receipt = {'source': report['source_sha256'], 'output': report['lossy_sha256'],
@@ -1023,6 +1035,11 @@ def derive(asset_id, model_path, lossy_path, args, work):
     if atlas_png is not None:
         shutil.copyfile(atlas_png, work / 'atlas-preview.png')
         atlas_png.unlink()
+    if not args.validate:
+        # Without --validate only the report is kept; the receipts carry the binding hashes.
+        for child in work.iterdir():
+            if child.name != 'report.json':
+                shutil.rmtree(child) if child.is_dir() else child.unlink()
     return report
 
 
@@ -1146,7 +1163,8 @@ def settings(args):
 
 
 def summary_row(report):
-    d, b, t = report['validation']['differences']['overall'], report['bytes'], report['textures']
+    validation, b, t = report['validation'], report['bytes'], report['textures']
+    d = validation['differences']['overall'] if validation else None
     return {'asset': report['asset_id'], 'extent_map_px': [round(v) for v in report['on_map']['extent_map_px']],
             'faces': report['on_map']['faces'],
             'source_textures': [f'{s["size"][0]}x{s["size"][1]}' for s in t['source']],
@@ -1156,8 +1174,8 @@ def summary_row(report):
             'weakest_axis_median': round(report['density_texels_per_map_px']['lossy_weakest_axis']['area_weighted_median'], 3),
             'glb_bytes': [b['source_glb'], b['lossy_glb']], 'texture_bytes': [b['source_textures'], b['lossy_texture_avif']],
             'gpu_bytes': [t['gpu_rgba8_bytes']['source'], t['gpu_rgba8_bytes']['lossy']],
-            'diff_mean': round(d['mean_of_view_means'], 2), 'diff_p95_max': d['max_p95'], 'diff_max': d['max'],
-            'render_px_per_map_px': round(report['validation']['render_px_per_map_px'], 3)}
+            **({'diff_mean': round(d['mean_of_view_means'], 2), 'diff_p95_max': d['max_p95'], 'diff_max': d['max'],
+                'render_px_per_map_px': round(validation['render_px_per_map_px'], 3)} if validation else {})}
 
 
 def main_export_worker(args):
@@ -1528,6 +1546,8 @@ def add_settings(parser):
     parser.add_argument('--angle-limit', type=float, default=66.0)
     parser.add_argument('--pack-margin-px', type=float, default=2.0)
     parser.add_argument('--bake-margin', type=int, default=8)
+    parser.add_argument('--validate', action='store_true',
+                        help='Also render published vs lossy from 8 views and report colour differences (evidence only)')
     parser.add_argument('--render-scale', type=float, default=2.0, help='Validation pixels per map pixel')
     parser.add_argument('--render-max', type=int, default=1024, help='Validation tile size cap')
     parser.add_argument('--reencode-utilization', type=float, default=0.9,
