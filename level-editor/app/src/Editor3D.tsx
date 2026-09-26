@@ -1,5 +1,5 @@
 // Edit JSON maps assembled from pinned library assets, with game and orbit cameras.
-import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import type { JSX } from "@solidjs/web";
 import type * as THREE from "three";
 import {
@@ -115,10 +115,11 @@ export default function Editor3D(props: EditorProps) {
   const [addingAsset, setAddingAsset] = createSignal(false);
   let paletteAttempt = 0;
   const [revision, setRevision] = createSignal<SessionSnapshot<Level3D> | null>(null);
-  const mapName = () => revision()?.name ?? null;
-  const doc = () => revision()?.document ?? null;
-  const dirty = () => revision()?.dirty ?? false;
-  const history = () => revision() ?? { past: [], future: [] };
+  const mapName = createMemo(() => revision()?.name ?? null);
+  const doc = createMemo(() => revision()?.document ?? null);
+  const dirty = createMemo(() => revision()?.dirty ?? false);
+  const history = createMemo(() => revision() ?? { past: [], future: [] });
+  const canInsert = createMemo(() => !!doc() && !addingAsset());
   const session = new SessionPublication<Level3D, FileSystemDirectoryHandle>((snapshot, reason) => {
     setRevision(snapshot);
     if (reason === "revision") viewport.syncViews(snapshot.document, false);
@@ -1057,7 +1058,7 @@ export default function Editor3D(props: EditorProps) {
             onDragReturn={hideAssetDrag}
             loading={libraryLoading()}
             error={libraryError()}
-            canInsert={!!doc() && !addingAsset()}
+            canInsert={canInsert()}
             onAdd={(entry) => void addAsset(entry)}
             onDragEnd={() => {
               if (!assetDrag?.dropped) cancelAssetDrag();

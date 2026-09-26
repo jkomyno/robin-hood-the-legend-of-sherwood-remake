@@ -200,6 +200,9 @@ importers:
         specifier: ^0.186.0
         version: 0.186.0
     devDependencies:
+      '@solidjs/vite-plugin':
+        specifier: 3.0.0-next.30
+        version: 3.0.0-next.30(@solidjs/web@2.0.0-rc.9(solid-js@2.0.0-rc.9))(solid-js@2.0.0-rc.9)(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12))
       '@types/three':
         specifier: ^0.186.0
         version: 0.186.0
@@ -209,9 +212,6 @@ importers:
       vite:
         specifier: ^8.3.0
         version: 8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)
-      vite-plugin-solid:
-        specifier: 3.0.0-next.27
-        version: 3.0.0-next.27(@solidjs/web@2.0.0-rc.9(solid-js@2.0.0-rc.9))(solid-js@2.0.0-rc.9)(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12))
 
   pipeline:
     dependencies:
@@ -1709,9 +1709,6 @@ packages:
   validate-html-nesting@1.2.4:
     resolution: {integrity: sha512-doQi7e8EJ2OWneSG1aZpJluS6A49aZM0+EICXWKm1i6WvqTLmq0tpUcImc4KTWG50mORO0C4YDBtOCSYvElftw==}
 
-  vite-plugin-solid@3.0.0-next.27:
-    resolution: {integrity: sha512-bDzjIIplkSDH73BiGP9pbPR3ZnjeUA18SAYugLhqDCy4u0bl3qdrETstxrXuo2vHXLB0VD9rvOr0iesZBBul4Q==}
-
   vite@8.3.0:
     resolution: {integrity: sha512-lhZBVvEHefgE+HQZC9O7EBJgCU/nVzFNl7vkS4RE0APtWLP02/8QVIkQtzBxPquh7lq5/78NHipTj7ODQ6XuyQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -2914,16 +2911,6 @@ snapshots:
       picocolors: 1.1.1
 
   validate-html-nesting@1.2.4: {}
-
-  vite-plugin-solid@3.0.0-next.27(@solidjs/web@2.0.0-rc.9(solid-js@2.0.0-rc.9))(solid-js@2.0.0-rc.9)(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12)):
-    dependencies:
-      '@solidjs/vite-plugin': 3.0.0-next.30(@solidjs/web@2.0.0-rc.9(solid-js@2.0.0-rc.9))(solid-js@2.0.0-rc.9)(vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12))
-    transitivePeerDependencies:
-      - '@solidjs/web'
-      - '@testing-library/jest-dom'
-      - solid-js
-      - supports-color
-      - vite
 
   vite@8.3.0(@types/node@24.13.3)(esbuild@0.28.2)(tsx@4.23.12):
     dependencies:

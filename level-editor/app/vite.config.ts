@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import solid from "vite-plugin-solid";
+import solid from "@solidjs/vite-plugin";
 import { fileURLToPath } from "node:url";
 import { createReadStream } from "node:fs";
 import { readdir, realpath, stat } from "node:fs/promises";
@@ -78,7 +78,9 @@ function serveLibrary() {
 }
 
 export default defineConfig({
-  plugins: [solid(), serveLibrary()],
+  // Solid 2 RC's JSX compiler emits $$click, but @solidjs/web rc.9 looks for _$$click.
+  // Use direct listeners until the compiler and runtime agree on delegated event keys.
+  plugins: [solid({ solid: { delegateEvents: false } }), serveLibrary()],
   publicDir: false,
   server: { port: 5180, fs: { allow: [fileURLToPath(new URL("../../", import.meta.url))] } },
   build: { target: "esnext", copyPublicDir: false },
