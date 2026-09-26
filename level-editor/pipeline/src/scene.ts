@@ -17,12 +17,7 @@ import sharp from "sharp";
 import { Document, NodeIO, type Node } from "@gltf-transform/core";
 import { ALL_EXTENSIONS, KHRMaterialsUnlit } from "@gltf-transform/extensions";
 import { mergeDocuments, textureCompress, unpartition } from "@gltf-transform/functions";
-import type {
-  AssetDescriptor,
-  MapCamera,
-  SceneDoc,
-  ScenePlacement,
-} from "@rle/shared";
+import type { AssetDescriptor, MapCamera, SceneDoc, ScenePlacement } from "@rle/shared";
 import { groundToScene } from "@rle/shared";
 import { libraryDir, workDir } from "./env.ts";
 import { readAssetDescriptor, readLibraryIndex } from "./library.ts";
@@ -47,8 +42,7 @@ async function collectAssets(map: string, exclude: Set<string>, minIou: number) 
   // a block (merged detection) replaces its members when it fits at least
   // as well as they do on average: silhouette IoU plus colour agreement
   const byId = new Map(descs.map((d) => [d.id, d]));
-  const fitScore = (d: AssetDescriptor) =>
-    d.model!.fit_iou + (d.model!.fit_appearance ?? 0);
+  const fitScore = (d: AssetDescriptor) => d.model!.fit_iou + (d.model!.fit_appearance ?? 0);
   const inBlock = new Map<string, string>();
   const losingBlocks = new Set<string>();
   for (const d of descs) {
@@ -146,7 +140,11 @@ async function exportGlb(
     const src = await io.read(path.join(libraryDir, a.id, a.model!.glb));
     if (textureSize) {
       await src.transform(
-        textureCompress({ encoder: sharp, resize: [textureSize, textureSize], targetFormat: "jpeg" }),
+        textureCompress({
+          encoder: sharp,
+          resize: [textureSize, textureSize],
+          targetFormat: "jpeg",
+        }),
       );
     }
     const map = mergeDocuments(doc, src);
@@ -198,7 +196,12 @@ async function litmusRender(
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
-  const c = [groundToScene(cam, 0, 0), groundToScene(cam, w, 0), groundToScene(cam, w, h), groundToScene(cam, 0, h)];
+  const c = [
+    groundToScene(cam, 0, 0),
+    groundToScene(cam, w, 0),
+    groundToScene(cam, w, h),
+    groundToScene(cam, 0, h),
+  ];
   const ground: MeshData = {
     positions: Float32Array.from(c.flat()),
     indices: Uint32Array.from([0, 2, 1, 0, 3, 2]),
@@ -214,7 +217,9 @@ async function litmusRender(
   view.unlit = true;
   console.log(`rendering ${instances.length - 1} models + ground at ${view.width}x${view.height}`);
   const rgba = render(instances, view);
-  const rendered = await sharp(rgba, { raw: { width: view.width, height: view.height, channels: 4 } })
+  const rendered = await sharp(rgba, {
+    raw: { width: view.width, height: view.height, channels: 4 },
+  })
     .flatten({ background: "#000" })
     .png()
     .toBuffer();
@@ -262,7 +267,8 @@ async function main() {
     return i >= 0 ? argv[i + 1] : undefined;
   };
   const map = get("map");
-  if (!map) throw new Error("usage: --map <name> [--out dir] [--exclude a,b] [--min-iou x] [--render]");
+  if (!map)
+    throw new Error("usage: --map <name> [--out dir] [--exclude a,b] [--min-iou x] [--render]");
   const outDir = get("out") ?? path.join(libraryDir, "scenes");
   const exclude = new Set((get("exclude") ?? "").split(",").filter(Boolean));
   const minIou = Number(get("min-iou") ?? 0.5);
@@ -276,10 +282,13 @@ async function main() {
   if (!dayPath) throw new Error(`no Day map for ${map}`);
   const mapPng = await sharp(dayPath).png().toBuffer();
   const meta = await sharp(mapPng).metadata();
-  const size: [number, number] = [meta.width!, meta.height!];
+  const size: [number, number] = [meta.width, meta.height];
 
   const { assets, skipped } = await collectAssets(map, exclude, minIou);
-  console.log(`${map}: ${assets.length} reconstructed assets` + (skipped.length ? `; skipped ${skipped.join(", ")}` : ""));
+  console.log(
+    `${map}: ${assets.length} reconstructed assets` +
+      (skipped.length ? `; skipped ${skipped.join(", ")}` : ""),
+  );
   if (assets.length === 0) throw new Error(`no reconstructed assets for ${map} in the library`);
 
   await fs.mkdir(outDir, { recursive: true });

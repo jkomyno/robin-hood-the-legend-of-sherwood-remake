@@ -10,10 +10,7 @@ test("only missing optional directories are absence", async () => {
       },
     }) as unknown as FileSystemDirectoryHandle;
   assert.equal(await subdir(root("NotFoundError"), ["scenes"]), null);
-  await assert.rejects(
-    subdir(root("NotAllowedError"), ["scenes"]),
-    /Cannot open directory scenes/,
-  );
+  await assert.rejects(subdir(root("NotAllowedError"), ["scenes"]), /Cannot open directory scenes/);
 });
 test("malformed JSON carries filename instead of returning defaults", async () => {
   const dir = {
@@ -21,8 +18,5 @@ test("malformed JSON carries filename instead of returning defaults", async () =
       getFile: async () => ({ text: async () => "{" }),
     }),
   } as unknown as FileSystemDirectoryHandle;
-  await assert.rejects(
-    readJson(dir, "map.rhlos-map.json"),
-    /Invalid JSON in map.rhlos-map.json/,
-  );
+  await assert.rejects(readJson(dir, "map.rhlos-map.json"), /Invalid JSON in map.rhlos-map.json/);
 });

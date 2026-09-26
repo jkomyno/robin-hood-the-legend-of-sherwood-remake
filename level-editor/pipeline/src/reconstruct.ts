@@ -30,7 +30,6 @@ import { quat, vec3 } from "gl-matrix";
 import {
   CAMERA_CONVENTIONS,
   cameraToSceneMatrix,
-  type AssetDescriptor,
   type AssetModel,
   type CameraConvention,
   type MapCamera,
@@ -129,7 +128,7 @@ const QUATERNION_ORDERS: QuaternionOrder[] = ["xyzw", "wxyz"];
  */
 export type LocalSwap = "none" | "zup";
 const LOCAL_SWAPS: LocalSwap[] = ["none", "zup"];
-const ZUP_SWAP: Quat = mat3ToQuat([-1, 0, 0, 0, 0, 1, 0, 1, 0].map((v) => v) as number[]);
+const ZUP_SWAP: Quat = mat3ToQuat([-1, 0, 0, 0, 0, 1, 0, 1, 0].map((v) => v));
 /** glTF Y-up -> scene Z-up: (x, y, z) -> (x, -z, y), i.e. +90° about X */
 const YUP_TO_ZUP: Quat = [Math.SQRT1_2, 0, 0, Math.SQRT1_2];
 
@@ -388,7 +387,10 @@ export function fitPlacement(
     console.log(
       `${assetId}: pose interpretations by pre-snap tilt\n  ` +
         rows
-          .map((c) => `${describe(c)}: tilt ${c.tilt_deg.toFixed(0)}° IoU ${c.iou.toFixed(3)} aniso ${c.anisotropy.toFixed(2)}`)
+          .map(
+            (c) =>
+              `${describe(c)}: tilt ${c.tilt_deg.toFixed(0)}° IoU ${c.iou.toFixed(3)} aniso ${c.anisotropy.toFixed(2)}`,
+          )
           .join("\n  "),
     );
   }
@@ -453,9 +455,15 @@ async function reviewSheet(
     [215, 30],
     [305, 30],
   ].map(([yaw, pitch]) =>
-    sharp(render([{ mesh, positions: fit.positions }], orbitView(center, yaw!, pitch!, size, size, ppu)), {
-      raw: { width: size, height: size, channels: 4 },
-    })
+    sharp(
+      render(
+        [{ mesh, positions: fit.positions }],
+        orbitView(center, yaw!, pitch!, size, size, ppu),
+      ),
+      {
+        raw: { width: size, height: size, channels: 4 },
+      },
+    )
       .flatten({ background: "#303030" })
       .png()
       .toBuffer(),
@@ -506,8 +514,8 @@ export async function reconstructAsset(
   const src = await mapImageSource(map, "Day", opts.applyPatches, level);
   if (!src) throw new Error(`no Day map for ${map}`);
   const meta = await sharp(src).metadata();
-  const mapW = meta.width!;
-  const mapH = meta.height!;
+  const mapW = meta.width;
+  const mapH = meta.height;
 
   const pad = opts.pad ?? Math.max(48, Math.round(0.35 * Math.max(aw, ah)));
   const cx = Math.max(0, ax - pad);
@@ -515,7 +523,10 @@ export async function reconstructAsset(
   const cw = Math.min(mapW - cx, aw + 2 * pad + Math.min(0, ax - pad));
   const ch = Math.min(mapH - cy, ah + 2 * pad + Math.min(0, ay - pad));
   const cropRect: Bbox = [cx, cy, cw, ch];
-  const cropPng = await sharp(src).extract({ left: cx, top: cy, width: cw, height: ch }).png().toBuffer();
+  const cropPng = await sharp(src)
+    .extract({ left: cx, top: cy, width: cw, height: ch })
+    .png()
+    .toBuffer();
 
   // mask as an RGB PNG at crop size
   const maskRgb = Buffer.alloc(cw * ch * 3);
@@ -627,7 +638,9 @@ export async function reconstructAsset(
     const cutoutPng = await sharp(rgba, { raw: { width: ow, height: oh, channels: 4 } })
       .png()
       .toBuffer();
-    console.log(`${assetId}: ${opts.backend} on ${ow}x${oh} ${opts.cutout} cutout of ${map} @ ${ox},${oy}`);
+    console.log(
+      `${assetId}: ${opts.backend} on ${ow}x${oh} ${opts.cutout} cutout of ${map} @ ${ox},${oy}`,
+    );
     const res = await reconstructWith(opts.backend, cutoutPng, opts.seed);
     mesh = await loadGlb(res.glb);
     console.log(
@@ -660,9 +673,20 @@ export async function reconstructAsset(
   };
   const altKey = `${opts.backend}${opts.cutout === "mask" ? "" : `-${opts.cutout}`}`;
   const suffix = opts.backend === "sam3d" ? "" : `-${altKey}`;
-  const fit = fitPlacement(assetId, mesh, fitInput, cam, desc.source.bbox, mask, reference, opts.diag);
+  const fit = fitPlacement(
+    assetId,
+    mesh,
+    fitInput,
+    cam,
+    desc.source.bbox,
+    mask,
+    reference,
+    opts.diag,
+  );
   if (fit.iou < 0.5) {
-    console.warn(`${assetId}: WARNING low silhouette IoU ${fit.iou.toFixed(3)} — check work/${assetId}/fit${suffix}.png`);
+    console.warn(
+      `${assetId}: WARNING low silhouette IoU ${fit.iou.toFixed(3)} — check work/${assetId}/fit${suffix}.png`,
+    );
   }
 
   const glbName = `model${suffix}.glb`;
@@ -685,7 +709,7 @@ export async function reconstructAsset(
     extraction,
   };
   if (opts.backend === "sam3d") desc.model = model;
-  else desc.alt_models = { ...(desc.alt_models ?? {}), [altKey]: model };
+  else desc.alt_models = { ...desc.alt_models, [altKey]: model };
   if (!desc.tags.includes("3d")) desc.tags.push("3d");
   await fs.writeFile(path.join(dir, "asset.json"), JSON.stringify(desc, null, 2));
 
@@ -723,22 +747,38 @@ export function parseDetections(value: unknown): DetectionsFile {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("invalid detections document: expected object");
   const doc = value as Record<string, unknown>;
-  if (typeof doc.map !== "string" || typeof doc.apply_patches !== "boolean" || !Array.isArray(doc.detections))
+  if (
+    typeof doc.map !== "string" ||
+    typeof doc.apply_patches !== "boolean" ||
+    !Array.isArray(doc.detections)
+  )
     throw new Error("invalid detections document header");
   pathComponent(doc.map, "detection map");
   const ids = new Set<string>();
   for (const d of doc.detections) {
-    if (!d || typeof d.id !== "string" || typeof d.name !== "string" || typeof d.prompt !== "string" ||
-        typeof d.mask !== "string" || !d.mask ||
-        !(d.score === null || (typeof d.score === "number" && Number.isFinite(d.score))) ||
-        !Array.isArray(d.bbox) || d.bbox.length !== 4 || !d.bbox.every(Number.isFinite) ||
-        d.bbox[2] <= 0 || d.bbox[3] <= 0)
+    if (
+      !d ||
+      typeof d.id !== "string" ||
+      typeof d.name !== "string" ||
+      typeof d.prompt !== "string" ||
+      typeof d.mask !== "string" ||
+      !d.mask ||
+      !(d.score === null || (typeof d.score === "number" && Number.isFinite(d.score))) ||
+      !Array.isArray(d.bbox) ||
+      d.bbox.length !== 4 ||
+      !d.bbox.every(Number.isFinite) ||
+      d.bbox[2] <= 0 ||
+      d.bbox[3] <= 0
+    )
       throw new Error("invalid detection entry");
     pathComponent(d.id, "detection ID");
     if (ids.has(d.id)) throw new Error(`duplicate detection ID ${d.id}`);
     ids.add(d.id);
     for (const key of ["tags", "members"]) {
-      if (d[key] !== undefined && (!Array.isArray(d[key]) || !d[key].every((v: unknown) => typeof v === "string")))
+      if (
+        d[key] !== undefined &&
+        (!Array.isArray(d[key]) || !d[key].every((v: unknown) => typeof v === "string"))
+      )
         throw new Error(`invalid detection ${d.id}.${key}`);
     }
   }
@@ -806,7 +846,10 @@ async function reconstructDetections(
             JSON.stringify(desc, null, 2),
           );
         }
-        const { model } = await reconstructAsset(d.id, { ...opts, applyPatches: det.apply_patches });
+        const { model } = await reconstructAsset(d.id, {
+          ...opts,
+          applyPatches: det.apply_patches,
+        });
         results.push({ id: d.id, iou: model.fit_iou });
       } catch (e) {
         console.error(`FAILED ${d.id}: ${e}`);
@@ -844,7 +887,7 @@ async function main() {
   };
   const has = (flag: string) => argv.includes(`--${flag}`);
   const backend = (get("backend") ?? "sam3d") as Backend;
-  if (backend !== "sam3d" && !ALT_BACKENDS.includes(backend as (typeof ALT_BACKENDS)[number])) {
+  if (backend !== "sam3d" && !ALT_BACKENDS.includes(backend)) {
     throw new Error(`unknown --backend ${backend} (sam3d, ${ALT_BACKENDS.join(", ")})`);
   }
   const cutout = (get("cutout") ?? "mask") as CutoutMode;
@@ -904,7 +947,9 @@ async function main() {
       dedupeIou: 1.01, // never dedupe an explicitly requested asset
     });
     if (summary.written.length === 0) {
-      throw new Error(`2D extraction wrote nothing: ${summary.skipped.map((s) => s.reason).join("; ")}`);
+      throw new Error(
+        `2D extraction wrote nothing: ${summary.skipped.map((s) => s.reason).join("; ")}`,
+      );
     }
   }
   await reconstructAsset(assetId, opts);

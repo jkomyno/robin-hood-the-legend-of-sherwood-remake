@@ -27,8 +27,7 @@ function parseArgs(argv: string[]): ExtractOptions {
     tags: get("tags")?.split(",") ?? [],
     pad: Number(get("pad") ?? EXTRACT_DEFAULTS.pad),
     maxMasks: Number(get("max-masks") ?? EXTRACT_DEFAULTS.maxMasks),
-    pick:
-      get("pick") === undefined ? "best" : get("pick") === "all" ? "all" : Number(get("pick")),
+    pick: get("pick") === undefined ? "best" : get("pick") === "all" ? "all" : Number(get("pick")),
     scaleClass: (get("scale-class") as ExtractOptions["scaleClass"]) ?? EXTRACT_DEFAULTS.scaleClass,
     variantGroup: get("variant-group"),
     minScore: Number(get("min-score") ?? EXTRACT_DEFAULTS.minScore),

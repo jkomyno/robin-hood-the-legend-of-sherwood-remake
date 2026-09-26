@@ -16,20 +16,14 @@ export class AssetLibrary {
     this.directory = path.resolve(directory);
   }
 
-  writeAsset(
-    desc: AssetDescriptor,
-    images: Record<string, Buffer>,
-  ): Promise<string> {
+  writeAsset(desc: AssetDescriptor, images: Record<string, Buffer>): Promise<string> {
     const run = this.pending.then(() => this.publish(desc, images));
     // Keep same-owner calls ordered even when a previous publication failed.
     this.pending = run.catch(() => undefined);
     return run;
   }
 
-  private async publish(
-    desc: AssetDescriptor,
-    images: Record<string, Buffer>,
-  ): Promise<string> {
+  private async publish(desc: AssetDescriptor, images: Record<string, Buffer>): Promise<string> {
     const next = indexEntry(desc);
     validateIndex([next]);
     for (const name of Object.keys(images)) requireFilename(name, "image name");
@@ -63,14 +57,9 @@ export class AssetLibrary {
       await fs.mkdir(dir, { recursive: true });
       for (const [name, bytes] of Object.entries(images))
         await fs.writeFile(path.join(dir, name), bytes);
-      await fs.writeFile(
-        path.join(dir, "asset.json"),
-        JSON.stringify(desc, null, 2),
-      );
+      await fs.writeFile(path.join(dir, "asset.json"), JSON.stringify(desc, null, 2));
 
-      const staging = await fs.mkdtemp(
-        path.join(this.directory, ".index-publish-"),
-      );
+      const staging = await fs.mkdtemp(path.join(this.directory, ".index-publish-"));
       try {
         const temporaryIndex = path.join(staging, "index.json");
         await fs.writeFile(temporaryIndex, JSON.stringify(entries, null, 2), {
@@ -104,8 +93,14 @@ function requireFilename(value: string, label: string): void {
 }
 
 export async function readAssetDescriptor(file: string): Promise<AssetDescriptor>;
-export async function readAssetDescriptor(file: string, required: false): Promise<AssetDescriptor | undefined>;
-export async function readAssetDescriptor(file: string, required = true): Promise<AssetDescriptor | undefined> {
+export async function readAssetDescriptor(
+  file: string,
+  required: false,
+): Promise<AssetDescriptor | undefined>;
+export async function readAssetDescriptor(
+  file: string,
+  required = true,
+): Promise<AssetDescriptor | undefined> {
   const value = await readDocument(file, required);
   if (value === undefined) return undefined;
   try {
@@ -127,8 +122,7 @@ function indexEntry(desc: AssetDescriptor): LibraryIndexEntry {
 }
 
 function validateIndex(value: unknown): asserts value is LibraryIndexEntry[] {
-  if (!Array.isArray(value))
-    throw new Error("expected an array of library entries");
+  if (!Array.isArray(value)) throw new Error("expected an array of library entries");
   const ids = new Set<string>();
   for (const [position, entry] of value.entries()) {
     if (
@@ -139,20 +133,15 @@ function validateIndex(value: unknown): asserts value is LibraryIndexEntry[] {
       typeof entry.name !== "string" ||
       !Array.isArray(entry.tags) ||
       !entry.tags.every((tag: unknown) => typeof tag === "string") ||
-      !["unique", "variant", "spline-segment", "texture"].includes(
-        entry.scale_class,
-      ) ||
+      !["unique", "variant", "spline-segment", "texture"].includes(entry.scale_class) ||
       typeof entry.source_map !== "string" ||
       !Array.isArray(entry.bbox) ||
       entry.bbox.length !== 4 ||
-      !entry.bbox.every(
-        (v: unknown) => typeof v === "number" && Number.isFinite(v),
-      )
+      !entry.bbox.every((v: unknown) => typeof v === "number" && Number.isFinite(v))
     )
       throw new Error(`invalid library entry at index ${position}`);
     requireFilename(entry.id, "asset ID");
-    if (ids.has(entry.id))
-      throw new Error(`duplicate library asset ID ${entry.id}`);
+    if (ids.has(entry.id)) throw new Error(`duplicate library asset ID ${entry.id}`);
     ids.add(entry.id);
   }
 }

@@ -2,12 +2,7 @@
 import path from "node:path";
 import sharp from "sharp";
 import type { Point, ProtoLevel } from "@rle/shared";
-import {
-  renderTerrainCore,
-  type SwatchData,
-  type SwatchRole,
-  type TerrainSpec,
-} from "@rle/shared";
+import { renderTerrainCore, type SwatchData, type SwatchRole, type TerrainSpec } from "@rle/shared";
 import { libraryDir } from "./env.ts";
 import { readOptionalImage } from "./inputs.ts";
 
@@ -18,8 +13,11 @@ export async function loadSwatch(id: string, directory = libraryDir): Promise<Sw
   const bytes = await readOptionalImage(file);
   if (bytes === undefined) return null;
   try {
-    const { data, info } = await sharp(bytes).removeAlpha().toColourspace("srgb")
-      .raw().toBuffer({ resolveWithObject: true });
+    const { data, info } = await sharp(bytes)
+      .removeAlpha()
+      .toColourspace("srgb")
+      .raw()
+      .toBuffer({ resolveWithObject: true });
     return {
       data: new Uint8Array(data),
       width: info.width,

@@ -8,12 +8,7 @@ import { snapFloatingParts, type MapCamera, type SceneDoc } from "@rle/shared";
 import { libraryDir, workDir, loadEnvironment } from "./env.ts";
 import { findMapPng, loadProtoLevel, mapImageSource } from "./asset-writer.ts";
 import { fitMapCamera } from "./map-camera.ts";
-import {
-  buildGeometry,
-  footprintArea,
-  TERRACE_AREA,
-  type Geometry,
-} from "./volume-geometry.ts";
+import { buildGeometry, footprintArea, TERRACE_AREA, type Geometry } from "./volume-geometry.ts";
 import { rasterOwners, type Owners } from "./volume-raster.ts";
 import {
   buildTextures,
@@ -60,9 +55,7 @@ export interface ReconstructOptions {
 }
 
 /** the synth fill if the texture-synthesis CLI is installed, else proc */
-export async function defaultFill(
-  binary = synthesisOptions().synthBinary,
-): Promise<Fill> {
+export async function defaultFill(binary = synthesisOptions().synthBinary): Promise<Fill> {
   try {
     await fs.access(binary, constants.X_OK);
     return "synth";
@@ -81,24 +74,20 @@ export async function reconstruct(
   const textures = synthesisOptions(opts.textures);
   const synthBinary = textures.synthBinary;
   let fill: Fill = opts.fill ?? "synth";
-  if (!["proc", "synth", "smear", "none"].includes(fill))
-    throw new Error(`unknown fill ${fill}`);
+  if (!["proc", "synth", "smear", "none"].includes(fill)) throw new Error(`unknown fill ${fill}`);
   if (fill === "synth" && (await defaultFill(synthBinary)) !== "synth") {
     if (opts.fallbackFill === false)
       throw new Error(
         `--fill synth needs the texture-synthesis CLI at ${synthBinary} (cargo install --locked texture-synthesis-cli)`,
       );
-    console.warn(
-      `texture-synthesis CLI not found at ${synthBinary}: falling back to --fill proc`,
-    );
+    console.warn(`texture-synthesis CLI not found at ${synthBinary}: falling back to --fill proc`);
     fill = "proc";
   }
   const raw = await loadProtoLevel(map);
   // repair parts stored displaced along the view ray (see snapFloatingParts)
   const terracesForSnap = new Set<number>();
   raw.sight_obstacles.forEach((o, i) => {
-    if (o.points.length >= 3 && footprintArea(o.points) > TERRACE_AREA)
-      terracesForSnap.add(i);
+    if (o.points.length >= 3 && footprintArea(o.points) > TERRACE_AREA) terracesForSnap.add(i);
   });
   // the detector cannot tell an overhang or a cornice gap from a displaced piece, so
   // snapping is opt-in here; the editor lists the suspects and snaps per part on request
@@ -129,25 +118,16 @@ export async function reconstruct(
   const fit = fitMapCamera(level);
   const cam: MapCamera = { kind: fit.kind, elevation_deg: fit.elevation_deg };
   console.log(`${map}: camera elevation ${fit.elevation_deg.toFixed(2)}°`);
-  const src =
-    (await mapImageSource(map, "Day", true, level)) ??
-    (await findMapPng("Day", map));
+  const src = (await mapImageSource(map, "Day", true, level)) ?? (await findMapPng("Day", map));
   if (!src) throw new Error(`no Day map for ${map}`);
   const mapPng = await sharp(src).png().toBuffer();
   const meta = await sharp(mapPng).metadata();
-  const size: [number, number] = [meta.width!, meta.height!];
+  const size: [number, number] = [meta.width, meta.height];
   const mapRgb = await sharp(mapPng).removeAlpha().raw().toBuffer();
 
-  const g = buildGeometry(
-    level,
-    cam,
-    opts.opaqueOnly ?? false,
-    opts.flat ?? false,
-  );
+  const g = buildGeometry(level, cam, opts.opaqueOnly ?? false, opts.flat ?? false);
   console.log(
-    `${g.obstacles} obstacles (${g.terraceIds.size} terraces: ${[
-      ...g.terraceIds,
-    ]
+    `${g.obstacles} obstacles (${g.terraceIds.size} terraces: ${[...g.terraceIds]
       .map(
         (i) =>
           `#${i} h${Math.round(Math.max(...level.sight_obstacles[i]!.points.map((p) => p.z_top)))}`,
@@ -155,31 +135,14 @@ export async function reconstruct(
       .join(", ")}) -> ${g.faces.length} faces, ${g.tris.length / 3} triangles`,
   );
   const own = rasterOwners(g, cam, size[0], size[1]);
-  const sceneWork = path.join(
-    textures.workDirectory,
-    `${map.toLowerCase()}-scene`,
-  );
+  const sceneWork = path.join(textures.workDirectory, `${map.toLowerCase()}-scene`);
   if (fill === "synth") await fs.mkdir(sceneWork, { recursive: true });
-  const synthDir =
-    fill === "synth"
-      ? await fs.mkdtemp(path.join(sceneWork, "synth-"))
-      : sceneWork;
+  const synthDir = fill === "synth" ? await fs.mkdtemp(path.join(sceneWork, "synth-")) : sceneWork;
   let tex: Textured;
   try {
-    tex = await buildTextures(
-      g,
-      own,
-      cam,
-      mapRgb,
-      size[0],
-      size[1],
-      fill,
-      synthDir,
-      textures,
-    );
+    tex = await buildTextures(g, own, cam, mapRgb, size[0], size[1], fill, synthDir, textures);
   } finally {
-    if (fill === "synth")
-      await fs.rm(synthDir, { recursive: true, force: true });
+    if (fill === "synth") await fs.rm(synthDir, { recursive: true, force: true });
   }
   const s = tex.stats;
   console.log(
@@ -212,9 +175,7 @@ async function main() {
     throw new Error(`unknown --fill ${fillArg}`);
   const r = await reconstruct(map, {
     textures: {
-      ...(process.env.TEXTURE_SYNTHESIS
-        ? { synthBinary: process.env.TEXTURE_SYNTHESIS }
-        : {}),
+      ...(process.env.TEXTURE_SYNTHESIS ? { synthBinary: process.env.TEXTURE_SYNTHESIS } : {}),
       debug: !!process.env.VOLUMES_DEBUG,
       dump: process.env.VOLUMES_DUMP,
       idAtlas: !!process.env.VOLUMES_ID_ATLAS,
@@ -243,9 +204,18 @@ async function main() {
   const bytes = await fs.readFile(glbFile);
   const model = JSON.parse(bytes.toString("utf8", 20, 20 + bytes.readUInt32LE(12)));
   const name = map.toLowerCase();
-  const document = initializeSceneDocument(doc, r.level, model.nodes.map((node: { name: string }) => node.name));
+  const document = initializeSceneDocument(
+    doc,
+    r.level,
+    model.nodes.map((node: { name: string }) => node.name),
+  );
   document.map = name;
-  const converted = await importScene(glbFile, path.dirname(outDir), document as unknown as Record<string, unknown>, map);
+  const converted = await importScene(
+    glbFile,
+    path.dirname(outDir),
+    document as unknown as Record<string, unknown>,
+    map,
+  );
   const documentFile = path.join(outDir, `${name}.rhlos-map.json`);
   await fs.writeFile(documentFile, JSON.stringify(converted.document, null, 2) + "\n");
   console.log(`wrote ${documentFile} (${converted.report.verified_assets} library assets)`);
@@ -267,49 +237,20 @@ async function main() {
     .filter(Boolean)
     .map((p) => p.split(",").map(Number) as [number, number]);
   if (argv.includes("--render")) {
-    await renders(
-      map,
-      g,
-      tex,
-      cam,
-      size,
-      mapPng,
-      stem.slice(map.length + 1),
-      closeups,
-      false,
-      {
-        closeupSpan: get("closeup-span")
-          ? Number(get("closeup-span"))
-          : undefined,
-        closeupYaws: get("closeup-yaws")?.split(",").map(Number),
-      },
-    );
+    await renders(map, g, tex, cam, size, mapPng, stem.slice(map.length + 1), closeups, false, {
+      closeupSpan: get("closeup-span") ? Number(get("closeup-span")) : undefined,
+      closeupYaws: get("closeup-yaws")?.split(",").map(Number),
+    });
     // --debug-fill: the close-ups again with every face in its fill-category colour
     if (argv.includes("--debug-fill"))
-      await renders(
-        map,
-        g,
-        tex,
-        cam,
-        size,
-        mapPng,
-        stem.slice(map.length + 1),
-        closeups,
-        true,
-        {
-          closeupSpan: get("closeup-span")
-            ? Number(get("closeup-span"))
-            : undefined,
-          closeupYaws: get("closeup-yaws")?.split(",").map(Number),
-        },
-      );
+      await renders(map, g, tex, cam, size, mapPng, stem.slice(map.length + 1), closeups, true, {
+        closeupSpan: get("closeup-span") ? Number(get("closeup-span")) : undefined,
+        closeupYaws: get("closeup-yaws")?.split(",").map(Number),
+      });
   }
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((e) => {
     console.error(e);
     process.exit(1);

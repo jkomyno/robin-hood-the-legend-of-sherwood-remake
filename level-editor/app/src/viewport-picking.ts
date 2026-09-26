@@ -2,7 +2,11 @@ import * as THREE from "three";
 import { isEffectivelyVisible } from "./patch-display.ts";
 
 /** Start orthographic picking at the visible near plane, including signed ranges. */
-export function setViewportRay(raycaster: THREE.Raycaster, ndc: THREE.Vector2, camera: THREE.Camera) {
+export function setViewportRay(
+  raycaster: THREE.Raycaster,
+  ndc: THREE.Vector2,
+  camera: THREE.Camera,
+) {
   camera.updateMatrixWorld(true);
   raycaster.setFromCamera(ndc, camera);
   if (camera instanceof THREE.OrthographicCamera) {
@@ -20,27 +24,53 @@ export function setViewportRay(raycaster: THREE.Raycaster, ndc: THREE.Vector2, c
   }
 }
 
-type Pixels = { version: number; width: number; height: number; data: Uint8Array | Uint8ClampedArray; channels: number };
+type Pixels = {
+  version: number;
+  width: number;
+  height: number;
+  data: Uint8Array | Uint8ClampedArray;
+  channels: number;
+};
 const cachedPixels = new WeakMap<THREE.Texture["source"], Pixels | null>();
 function pixels(texture: THREE.Texture): Pixels | null {
   const cached = cachedPixels.get(texture.source);
   if (cached === null || cached?.version === texture.source.version) return cached ?? null;
-  const source = texture.image as { data?: unknown; width: number; height: number; naturalWidth?: number; naturalHeight?: number } | undefined;
+  const source = texture.image as
+    | {
+        data?: unknown;
+        width: number;
+        height: number;
+        naturalWidth?: number;
+        naturalHeight?: number;
+      }
+    | undefined;
   if (!source) return null;
   let result: Pixels;
   if (source.data instanceof Uint8Array || source.data instanceof Uint8ClampedArray) {
-    result = { version: texture.source.version, width: source.width, height: source.height,
-      data: source.data, channels: source.data.length / (source.width * source.height) };
+    result = {
+      version: texture.source.version,
+      width: source.width,
+      height: source.height,
+      data: source.data,
+      channels: source.data.length / (source.width * source.height),
+    };
   } else {
     try {
-      const width = source.naturalWidth ?? source.width, height = source.naturalHeight ?? source.height;
+      const width = source.naturalWidth ?? source.width,
+        height = source.naturalHeight ?? source.height;
       const canvas = document.createElement("canvas");
-      canvas.width = width; canvas.height = height;
+      canvas.width = width;
+      canvas.height = height;
       const context = canvas.getContext("2d", { willReadFrequently: true });
       if (!context) throw new Error("Cannot read picking texture");
       context.drawImage(source as CanvasImageSource, 0, 0);
-      result = { version: texture.source.version, width, height,
-        data: context.getImageData(0, 0, width, height).data, channels: 4 };
+      result = {
+        version: texture.source.version,
+        width,
+        height,
+        data: context.getImageData(0, 0, width, height).data,
+        channels: 4,
+      };
     } catch (error) {
       console.warn("Texture alpha unavailable for picking; using geometry", error);
       cachedPixels.set(texture.source, null);
@@ -67,15 +97,17 @@ export function visibleSurface(hit: THREE.Intersection): boolean {
   if (!isEffectivelyVisible(hit.object)) return false;
   const mesh = hit.object as THREE.Mesh;
   if (!mesh.isMesh) return true;
-  const material = (Array.isArray(mesh.material)
-    ? mesh.material[hit.face?.materialIndex ?? 0] : mesh.material) as THREE.MeshBasicMaterial | undefined;
+  const material = (
+    Array.isArray(mesh.material) ? mesh.material[hit.face?.materialIndex ?? 0] : mesh.material
+  ) as THREE.MeshBasicMaterial | undefined;
   if (!material || !material.visible) return false;
   if (!material.transparent && material.alphaTest <= 0) return true;
   let alpha = material.opacity;
   // Synthesized building atlases use alpha as provenance; the display shader
   // renders those surfaces opaque. Foliage retains physical texture coverage.
-  const physicalAlpha = material.userData.source_ownership_fill !== "synthesized"
-    || material.userData.foliage_physical_opacity === true;
+  const physicalAlpha =
+    material.userData.source_ownership_fill !== "synthesized" ||
+    material.userData.foliage_physical_opacity === true;
   if (material.map && physicalAlpha) alpha *= channel(material.map, hit, 3);
   if (material.alphaMap) alpha *= channel(material.alphaMap, hit, 1);
   return alpha >= material.alphaTest && (!material.transparent || alpha > 0.01);

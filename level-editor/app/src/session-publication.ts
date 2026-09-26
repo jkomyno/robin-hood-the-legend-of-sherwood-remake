@@ -12,15 +12,9 @@ export interface SessionSnapshot<T> {
 export class SessionPublication<T, R> {
   private session = new MapSession<T, R>();
   private disposed = false;
-  private changed: (
-    snapshot: SessionSnapshot<T>,
-    reason: "load" | "revision" | "saved",
-  ) => void;
+  private changed: (snapshot: SessionSnapshot<T>, reason: "load" | "revision" | "saved") => void;
   constructor(
-    changed: (
-      snapshot: SessionSnapshot<T>,
-      reason: "load" | "revision" | "saved",
-    ) => void,
+    changed: (snapshot: SessionSnapshot<T>, reason: "load" | "revision" | "saved") => void,
   ) {
     this.changed = changed;
   }

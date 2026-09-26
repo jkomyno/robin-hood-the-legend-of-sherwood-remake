@@ -12,10 +12,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fal } from "@fal-ai/client";
-import type {
-  Sam33dObjectsInput,
-  Sam33dObjectsOutput,
-} from "@fal-ai/client/endpoints";
+import type { Sam33dObjectsInput, Sam33dObjectsOutput } from "@fal-ai/client/endpoints";
 import type { ModelPose } from "@rle/shared";
 import { requireEnv, workDir } from "./env.ts";
 import {
@@ -79,28 +76,19 @@ function poseOf(meta: Sam33dObjectsOutput["metadata"][number]): ModelPose {
   // the typed schema declares nested arrays (batch dimension); accept both
   // [[x,y,z,w]] and [x,y,z,w]
   const flat = (v: unknown, n: number, what: string): number[] => {
-    const arr =
-      Array.isArray(v) && Array.isArray(v[0])
-        ? (v as number[][])[0]
-        : (v as number[]);
+    const arr = Array.isArray(v) && Array.isArray(v[0]) ? (v as number[][])[0] : (v as number[]);
     if (
       !Array.isArray(arr) ||
       arr.length !== n ||
       arr.some((x) => typeof x !== "number" || !Number.isFinite(x))
     ) {
-      throw new Error(
-        `unexpected ${what} in SAM 3D metadata: ${JSON.stringify(v)}`,
-      );
+      throw new Error(`unexpected ${what} in SAM 3D metadata: ${JSON.stringify(v)}`);
     }
     return arr;
   };
   return {
     rotation: flat(meta.rotation, 4, "rotation") as ModelPose["rotation"],
-    translation: flat(
-      meta.translation,
-      3,
-      "translation",
-    ) as ModelPose["translation"],
+    translation: flat(meta.translation, 3, "translation") as ModelPose["translation"],
     scale: flat(meta.scale, 3, "scale") as ModelPose["scale"],
     camera_pose: meta.camera_pose,
   };
@@ -110,8 +98,7 @@ export async function reconstruct3d(
   req: Sam3dRequest,
   options: CacheOptions = {},
 ): Promise<Sam3dResult> {
-  if (!req.maskPngs.length)
-    throw new Error("SAM 3D requires at least one mask");
+  if (!req.maskPngs.length) throw new Error("SAM 3D requires at least one mask");
   const params = {
     seed: req.seed ?? 42,
     export_textured_glb: req.textured ?? true,
@@ -123,27 +110,17 @@ export async function reconstruct3d(
   const key = hash.digest("hex").slice(0, 24);
   const directory = await cacheDirectory(
     path.join(options.workDirectory ?? workDir, "sam3d-cache"),
-    contentKey([
-      ENDPOINT,
-      req.imagePng,
-      ...req.maskPngs,
-      JSON.stringify(params),
-    ]),
+    contentKey([ENDPOINT, req.imagePng, ...req.maskPngs, JSON.stringify(params)]),
     key,
   );
   const assemble = async (
     cacheDir: string,
     response: Sam33dObjectsOutput,
     requestId: string,
-    fetchInto: (
-      ref: FileRef | undefined,
-      name: string,
-    ) => Promise<string | null>,
+    fetchInto: (ref: FileRef | undefined, name: string) => Promise<string | null>,
   ): Promise<Sam3dResult> => {
-    const perObjectGlbs =
-      (response.individual_glbs as FileRef[] | undefined) ?? [];
-    const perObjectSplats =
-      (response.individual_splats as FileRef[] | undefined) ?? [];
+    const perObjectGlbs = response.individual_glbs ?? [];
+    const perObjectSplats = response.individual_splats ?? [];
     const multi = perObjectGlbs.length > 0;
     if (!multi && req.maskPngs.length > 1) {
       throw new Error(
@@ -158,14 +135,10 @@ export async function reconstruct3d(
 
     const objects: Sam3dObject[] = [];
     for (let i = 0; i < req.maskPngs.length; i++) {
-      const glbRef = multi
-        ? perObjectGlbs[i]
-        : (response.model_glb as FileRef | undefined);
+      const glbRef = multi ? perObjectGlbs[i] : response.model_glb;
       const glb = await fetchInto(glbRef, `object-${i}.glb`);
       if (!glb) throw new Error(`SAM 3D returned no GLB for object ${i}`);
-      const splatRef = multi
-        ? perObjectSplats[i]
-        : (response.gaussian_splat as FileRef);
+      const splatRef = multi ? perObjectSplats[i] : (response.gaussian_splat as FileRef);
       const splat = await fetchInto(splatRef, `object-${i}.ply`);
       objects.push({
         index: i,
@@ -179,23 +152,14 @@ export async function reconstruct3d(
       requestId,
       cacheDir,
       objects,
-      sceneGlb: multi
-        ? await fetchInto(
-            response.model_glb as FileRef | undefined,
-            "scene.glb",
-          )
-        : null,
-      sceneSplat: multi
-        ? await fetchInto(response.gaussian_splat as FileRef, "scene.ply")
-        : null,
+      sceneGlb: multi ? await fetchInto(response.model_glb, "scene.glb") : null,
+      sceneSplat: multi ? await fetchInto(response.gaussian_splat, "scene.ply") : null,
     };
   };
   return cachedArtifacts(
     directory,
     async (cacheDir) => {
-      const cached = JSON.parse(
-        await fs.readFile(path.join(cacheDir, "response.json"), "utf8"),
-      );
+      const cached = JSON.parse(await fs.readFile(path.join(cacheDir, "response.json"), "utf8"));
       if (
         cached.endpoint !== ENDPOINT ||
         typeof cached.request_id !== "string" ||
@@ -203,34 +167,26 @@ export async function reconstruct3d(
       ) {
         throw new Error("invalid SAM 3D response metadata");
       }
-      return assemble(
-        cacheDir,
-        cached.response,
-        cached.request_id,
-        async (ref, name) => {
-          if (!ref?.url) return null;
-          const file = path.join(cacheDir, name);
-          if (name.endsWith(".glb")) await validateGlb(file);
-          else {
-            const bytes = await fs.readFile(file);
-            if (
-              !bytes.toString("ascii", 0, 4).startsWith("ply") ||
-              !bytes.includes(Buffer.from("end_header"))
-            )
-              throw new Error(`invalid PLY: ${file}`);
-          }
-          return file;
-        },
-      );
+      return assemble(cacheDir, cached.response, cached.request_id, async (ref, name) => {
+        if (!ref?.url) return null;
+        const file = path.join(cacheDir, name);
+        if (name.endsWith(".glb")) await validateGlb(file);
+        else {
+          const bytes = await fs.readFile(file);
+          if (
+            !bytes.toString("ascii", 0, 4).startsWith("ply") ||
+            !bytes.includes(Buffer.from("end_header"))
+          )
+            throw new Error(`invalid PLY: ${file}`);
+        }
+        return file;
+      });
     },
     async (cacheDir) => {
       ensureConfigured();
       await fs.writeFile(path.join(cacheDir, "input.png"), req.imagePng);
       for (let i = 0; i < req.maskPngs.length; i++) {
-        await fs.writeFile(
-          path.join(cacheDir, `mask-${i}.png`),
-          req.maskPngs[i]!,
-        );
+        await fs.writeFile(path.join(cacheDir, `mask-${i}.png`), req.maskPngs[i]!);
       }
       const describeError = (e: unknown): string => {
         const err = e as { status?: number; body?: unknown; message?: string };
@@ -239,23 +195,17 @@ export async function reconstruct3d(
       };
       // uploads and the request itself are retried on rate limits / transient
       // server errors; anything else fails the asset
-      const withRetry = async <T>(
-        what: string,
-        fn: () => Promise<T>,
-      ): Promise<T> => {
+      const withRetry = async <T>(what: string, fn: () => Promise<T>): Promise<T> => {
         let delay = 5000;
         for (let attempt = 1; ; attempt++) {
           try {
             return await fn();
           } catch (e) {
             const status = (e as { status?: number }).status;
-            const retryable =
-              status === 429 || (status !== undefined && status >= 500);
+            const retryable = status === 429 || (status !== undefined && status >= 500);
             if (!retryable || attempt >= 6)
-              throw new Error(`${what}: ${describeError(e)}`);
-            console.warn(
-              `${what}: ${describeError(e)} — retry ${attempt} in ${delay / 1000}s`,
-            );
+              throw new Error(`${what}: ${describeError(e)}`, { cause: e });
+            console.warn(`${what}: ${describeError(e)} — retry ${attempt} in ${delay / 1000}s`);
             await new Promise((r) => setTimeout(r, delay));
             delay = Math.min(delay * 2, 60000);
           }

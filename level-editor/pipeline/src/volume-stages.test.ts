@@ -40,36 +40,13 @@ test("geometry, ownership and fill stages are deterministic on an asymmetric sma
   const own = rasterOwners(g, cam, 32, 32);
   assert.deepEqual(own, rasterOwners(g, cam, 32, 32));
   assert.ok(own.owner.some((id) => id >= 0));
-  const pixels = Buffer.from(
-    Array.from({ length: 32 * 32 * 3 }, (_, i) => i % 251),
-  );
-  const textures = await buildTextures(
-    g,
-    own,
-    cam,
-    pixels,
-    32,
-    32,
-    "none",
-    dir,
-  );
-  assert.deepEqual(
-    textures,
-    await buildTextures(g, own, cam, pixels, 32, 32, "none", dir),
-  );
+  const pixels = Buffer.from(Array.from({ length: 32 * 32 * 3 }, (_, i) => i % 251));
+  const textures = await buildTextures(g, own, cam, pixels, 32, 32, "none", dir);
+  assert.deepEqual(textures, await buildTextures(g, own, cam, pixels, 32, 32, "none", dir));
   const exportNames = async (opaqueOnly: boolean) => {
     const geometry = buildGeometry(level, cam, opaqueOnly, false);
     const owners = rasterOwners(geometry, cam, 32, 32);
-    const tex = await buildTextures(
-      geometry,
-      owners,
-      cam,
-      pixels,
-      32,
-      32,
-      "none",
-      dir,
-    );
+    const tex = await buildTextures(geometry, owners, cam, pixels, 32, 32, "none", dir);
     const file = path.join(dir, `${opaqueOnly}.glb`);
     await exportGlb(file, geometry, tex, cam, [32, 32], "none");
     return (await new NodeIO().registerExtensions(ALL_EXTENSIONS).read(file))
@@ -85,6 +62,5 @@ test("geometry, ownership and fill stages are deterministic on an asymmetric sma
   assert.ok(opaque.includes("building-001"));
 });
 test("invalid synthesis concurrency fails before launching subprocesses", () => {
-  for (const synthJobs of [0, -1, NaN, 1.5])
-    assert.throws(() => synthesisOptions({ synthJobs }));
+  for (const synthJobs of [0, -1, NaN, 1.5]) assert.throws(() => synthesisOptions({ synthJobs }));
 });

@@ -23,7 +23,10 @@ test("optional swatches reject broken files and read errors, and decode RGB", as
   await fs.mkdir(file);
   await assert.rejects(loadSwatch("grass", dir), /cannot read image/);
   await fs.rmdir(file);
-  await sharp({ create: { width: 2, height: 3, channels: 3, background: "white" } }).greyscale().png().toFile(file);
+  await sharp({ create: { width: 2, height: 3, channels: 3, background: "white" } })
+    .greyscale()
+    .png()
+    .toFile(file);
   const swatch = await loadSwatch("grass", dir);
   assert.equal(swatch?.data.length, 2 * 3 * 3);
 });
@@ -84,11 +87,24 @@ test("terrain defaults require genuine absence, never JSON null or invalid struc
 
 test("authored validators preserve extras and reject invalid transform input", () => {
   assert.deepEqual(parseTerrainSpec({ future: 1 }), { future: 1 });
-  for (const value of [null, [], { roads: "bad" }, { roads: [{ points: [], width: -1 }] }, { walls: [{ asset: "wall", points: [], spacing: 0 }] }])
+  for (const value of [
+    null,
+    [],
+    { roads: "bad" },
+    { roads: [{ points: [], width: -1 }] },
+    { walls: [{ asset: "wall", points: [], spacing: 0 }] },
+  ])
     assert.throws(() => parseTerrainSpec(value));
   assert.throws(() => parseAssetDescriptor({ id: "asset", source: {} }));
   assert.throws(() => parseDetections({ map: "York", apply_patches: true, detections: [{}] }));
-  const detection = { id: "house", name: "House", prompt: "house", score: null, bbox: [0, 0, 1, 1], mask: "mask.png" };
+  const detection = {
+    id: "house",
+    name: "House",
+    prompt: "house",
+    score: null,
+    bbox: [0, 0, 1, 1],
+    mask: "mask.png",
+  };
   const doc = { map: "York", apply_patches: false, detections: [detection], future: 1 };
   assert.equal(parseDetections(doc), doc);
   assert.throws(() => parseDetections({ ...doc, detections: [detection, detection] }), /duplicate/);
@@ -96,13 +112,37 @@ test("authored validators preserve extras and reject invalid transform input", (
 
 test("asset validation accepts real transform shapes without stripping unknown metadata", () => {
   const desc = {
-    id: "fixture", name: "Fixture", tags: [], scale_class: "unique",
+    id: "fixture",
+    name: "Fixture",
+    tags: [],
+    scale_class: "unique",
     source: { map: "York", ambiance: "Day", bbox: [0, 0, 10, 20], extraction: { tool: "test" } },
-    origin: [0, 0], anchor: [5, 20], images: { day: "day.png", mask: "mask.png" },
-    volumes: { sight_obstacles: [{ opaque: true, solid: true, points: [{ x: 0, y: 1, z_bottom: 0, z_top: 2 }] }] },
-    motion: { obstacles: [{ layer: 0, polygon: { points: [[1, 2], [3, 4]] } }], walkable: [] },
+    origin: [0, 0],
+    anchor: [5, 20],
+    images: { day: "day.png", mask: "mask.png" },
+    volumes: {
+      sight_obstacles: [
+        { opaque: true, solid: true, points: [{ x: 0, y: 1, z_bottom: 0, z_top: 2 }] },
+      ],
+    },
+    motion: {
+      obstacles: [
+        {
+          layer: 0,
+          polygon: {
+            points: [
+              [1, 2],
+              [3, 4],
+            ],
+          },
+        },
+      ],
+      walkable: [],
+    },
     model: {
-      glb: "model.glb", textured: true, fit_iou: 0.8,
+      glb: "model.glb",
+      textured: true,
+      fit_iou: 0.8,
       bounds_local: { min: [0, 0, 0], max: [1, 1, 1] },
       placement: { asset: "fixture", position: [0, 0, 0], rotation: [0, 0, 0, 1], scale: 2 },
       pose_l2c: { rotation: [0, 0, 0, 1], translation: [0, 0, 0], scale: [1, 1, 1] },
@@ -112,9 +152,12 @@ test("asset validation accepts real transform shapes without stripping unknown m
   };
   assert.equal(parseAssetDescriptor(desc), desc);
   for (const mutation of [
-    { origin: [0] }, { source: { ...desc.source, bbox: [0, 0, 0, 20] } },
-    { images: { mask: "mask.png" } }, { motion: { obstacles: null } },
+    { origin: [0] },
+    { source: { ...desc.source, bbox: [0, 0, 0, 20] } },
+    { images: { mask: "mask.png" } },
+    { motion: { obstacles: null } },
     { model: { ...desc.model, placement: { ...desc.model.placement, scale: 0 } } },
     { model: { ...desc.model, pose_l2c: { rotation: [] } } },
-  ]) assert.throws(() => parseAssetDescriptor({ ...desc, ...mutation }));
+  ])
+    assert.throws(() => parseAssetDescriptor({ ...desc, ...mutation }));
 });

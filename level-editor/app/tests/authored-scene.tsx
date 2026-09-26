@@ -9,28 +9,45 @@ if (!/^[a-zA-Z0-9_-]+$/.test(map)) throw new Error("Invalid scene name");
 const root = "/library/";
 const result = document.querySelector("#result")!;
 const files = [map + ".rhlos-map.json"];
-const directory = (prefix: string): FileSystemDirectoryHandle => ({
-  name: "library", kind: "directory",
-  async getDirectoryHandle(name: string) { return directory(prefix + name + "/"); },
-  async getFileHandle(name: string) {
-    const response = await fetch(root + prefix + name);
-    if (!response.ok) throw new Error("Failed to read " + prefix + name + ": " + response.status);
-    const file = new File([await response.arrayBuffer()], name);
-    return { getFile: async () => file };
-  },
-  async *entries() {
-    if (prefix === "scenes/") for (const file of files) yield [file, { kind: "file" }];
-  },
-}) as unknown as FileSystemDirectoryHandle;
+const directory = (prefix: string): FileSystemDirectoryHandle =>
+  ({
+    name: "library",
+    kind: "directory",
+    async getDirectoryHandle(name: string) {
+      return directory(prefix + name + "/");
+    },
+    async getFileHandle(name: string) {
+      const response = await fetch(root + prefix + name);
+      if (!response.ok) throw new Error("Failed to read " + prefix + name + ": " + response.status);
+      const file = new File([await response.arrayBuffer()], name);
+      return { getFile: async () => file };
+    },
+    async *entries() {
+      if (prefix === "scenes/") for (const file of files) yield [file, { kind: "file" }];
+    },
+  }) as unknown as FileSystemDirectoryHandle;
 if (query.has("view")) {
   const style = document.createElement("style");
   style.textContent = ".shared-library,.editor-panel,.editor-bar,#result{display:none!important}";
   document.head.appendChild(style);
 }
 const library = { handle: directory("") };
-render(() => <Editor3D index={() => null} library={() => library}
-  onError={error => { result.textContent = "FAIL " + error; }}
-  onStatus={status => {
-    if (status === null) setTimeout(() => { if (!result.textContent?.startsWith("FAIL")) result.textContent = "READY"; }, 1800);
-    else result.textContent = status;
-  }} />, document.querySelector("#root")!);
+render(
+  () => (
+    <Editor3D
+      index={() => null}
+      library={() => library}
+      onError={(error) => {
+        result.textContent = "FAIL " + error;
+      }}
+      onStatus={(status) => {
+        if (status === null)
+          setTimeout(() => {
+            if (!result.textContent?.startsWith("FAIL")) result.textContent = "READY";
+          }, 1800);
+        else result.textContent = status;
+      }}
+    />
+  ),
+  document.querySelector("#root")!,
+);

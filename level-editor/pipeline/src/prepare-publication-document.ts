@@ -4,13 +4,27 @@ import { dirname } from "node:path";
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { authoredAssetGroups, documentProvenance, IDENTITY_TRANSFORM, parseProtoLevel,
-  parseSceneDoc, parseLevel3D, obstaclePartIdentity, componentIdentityMatches, type AuthoredAssetCatalog, type AuthoredAssetPart,
-  type Level3D, type Level3DObject } from "@rle/shared";
+import {
+  authoredAssetGroups,
+  documentProvenance,
+  IDENTITY_TRANSFORM,
+  parseProtoLevel,
+  parseSceneDoc,
+  parseLevel3D,
+  obstaclePartIdentity,
+  componentIdentityMatches,
+  type AuthoredAssetCatalog,
+  type AuthoredAssetPart,
+  type Level3D,
+  type Level3DObject,
+} from "@rle/shared";
 
 type Node = { name?: string; children?: number[]; extras?: Record<string, unknown> };
-export function catalogFromExport(nodes: Node[], reviewed: AuthoredAssetCatalog): AuthoredAssetCatalog {
-  const roots = nodes.filter(node => node.name === "map");
+export function catalogFromExport(
+  nodes: Node[],
+  reviewed: AuthoredAssetCatalog,
+): AuthoredAssetCatalog {
+  const roots = nodes.filter((node) => node.name === "map");
   if (roots.length !== 1) throw new Error("Expected exactly one map root");
   const seen = new Set<string>();
   const catalog: AuthoredAssetCatalog = { map: reviewed.map, groups: [] };
@@ -19,79 +33,184 @@ export function catalogFromExport(nodes: Node[], reviewed: AuthoredAssetCatalog)
     if (!group) throw new Error("Missing export group node");
     if (group.name === "ground") continue;
     const id = group.extras?.asset_group;
-    if (typeof id !== "string" || !id || !group.name) throw new Error("Missing export group identity");
-    const authority = reviewed.groups.find(entry => entry.id === id);
-    if (!authority || authority.name !== group.name) throw new Error("Export group differs from reviewed catalog: " + id);
+    if (typeof id !== "string" || !id || !group.name)
+      throw new Error("Missing export group identity");
+    const authority = reviewed.groups.find((entry) => entry.id === id);
+    if (!authority || authority.name !== group.name)
+      throw new Error("Export group differs from reviewed catalog: " + id);
     const parts: AuthoredAssetPart[] = [];
     for (const child of group.children ?? []) {
-      const part = nodes[child], name = part?.name, extras = part?.extras;
+      const part = nodes[child],
+        name = part?.name,
+        extras = part?.extras;
       if (!name || seen.has(name)) throw new Error("Missing or duplicated export part");
       seen.add(name);
       const identity = obstaclePartIdentity(name);
-      const expected = authority.parts.find(entry => identity ? entry.obstacle === identity.obstacle &&
-        (identity.component ? entry.components?.includes(identity.component) : entry.components === undefined) : entry.node === name);
-      if (!expected || extras?.part_name !== expected.name) throw new Error("Export part differs from reviewed ownership: " + name);
+      const expected = authority.parts.find((entry) =>
+        identity
+          ? entry.obstacle === identity.obstacle &&
+            (identity.component
+              ? entry.components?.includes(identity.component)
+              : entry.components === undefined)
+          : entry.node === name,
+      );
+      if (!expected || extras?.part_name !== expected.name)
+        throw new Error("Export part differs from reviewed ownership: " + name);
       if (identity) {
-        if (!componentIdentityMatches(name, extras?.source_obstacle, extras?.source_components)) throw new Error("Export obstacle identity mismatch: " + name);
-        if (identity.component && !extras?.obstacle_local_game) throw new Error("Missing component footprint: " + name);
-        parts.push({ obstacle: identity.obstacle, name: expected.name, ...(identity.component ? { node: name, components: [identity.component], obstacle_local_game: extras!.obstacle_local_game as NonNullable<AuthoredAssetPart["obstacle_local_game"]> } : {}) });
+        if (!componentIdentityMatches(name, extras?.source_obstacle, extras?.source_components))
+          throw new Error("Export obstacle identity mismatch: " + name);
+        if (identity.component && !extras?.obstacle_local_game)
+          throw new Error("Missing component footprint: " + name);
+        parts.push({
+          obstacle: identity.obstacle,
+          name: expected.name,
+          ...(identity.component
+            ? {
+                node: name,
+                components: [identity.component],
+                obstacle_local_game: extras.obstacle_local_game as NonNullable<
+                  AuthoredAssetPart["obstacle_local_game"]
+                >,
+              }
+            : {}),
+        });
       } else {
-        if (!/^mission-[a-zA-Z0-9_-]+$/.test(name) || expected.mission_profile !== extras?.mission_patch_profile ||
-            !extras?.obstacle_local_game || extras.source_obstacle !== undefined)
+        if (
+          !/^mission-[a-zA-Z0-9_-]+$/.test(name) ||
+          expected.mission_profile !== extras?.mission_patch_profile ||
+          !extras?.obstacle_local_game ||
+          extras.source_obstacle !== undefined
+        )
           throw new Error("Invalid supplemental mission metadata: " + name);
-        parts.push({ node: name, name: expected.name, mission_profile: expected.mission_profile!,
-          obstacle_local_game: extras.obstacle_local_game as NonNullable<AuthoredAssetPart["obstacle_local_game"]> });
+        parts.push({
+          node: name,
+          name: expected.name,
+          mission_profile: expected.mission_profile!,
+          obstacle_local_game: extras.obstacle_local_game as NonNullable<
+            AuthoredAssetPart["obstacle_local_game"]
+          >,
+        });
       }
     }
-    if (parts.length !== authority.parts.reduce((total, part) => total + (part.components?.length ?? 1), 0)) throw new Error("Missing reviewed group parts: " + id);
+    if (
+      parts.length !==
+      authority.parts.reduce((total, part) => total + (part.components?.length ?? 1), 0)
+    )
+      throw new Error("Missing reviewed group parts: " + id);
     catalog.groups.push({ id, name: authority.name, parts });
   }
-  if (catalog.groups.length !== reviewed.groups.length || new Set(catalog.groups.map(group => group.id)).size !== reviewed.groups.length)
+  if (
+    catalog.groups.length !== reviewed.groups.length ||
+    new Set(catalog.groups.map((group) => group.id)).size !== reviewed.groups.length
+  )
     throw new Error("Export group coverage differs from reviewed catalog");
   return catalog;
 }
 
-export async function prepareDocument(scenePath: string, levelPath: string, glbPath: string, catalogPath: string, output: string) {
+export async function prepareDocument(
+  scenePath: string,
+  levelPath: string,
+  glbPath: string,
+  catalogPath: string,
+  output: string,
+) {
   const scene = parseSceneDoc(JSON.parse(await readFile(scenePath, "utf8")));
   const level = parseProtoLevel(JSON.parse(await readFile(levelPath, "utf8")));
   const bytes = await readFile(glbPath);
-  if (bytes.toString("ascii", 0, 4) !== "glTF" || bytes.readUInt32LE(16) !== 0x4e4f534a) throw new Error("Expected GLB JSON chunk");
-  const model = JSON.parse(bytes.toString("utf8", 20, 20 + bytes.readUInt32LE(12))) as { nodes: Node[] };
+  if (bytes.toString("ascii", 0, 4) !== "glTF" || bytes.readUInt32LE(16) !== 0x4e4f534a)
+    throw new Error("Expected GLB JSON chunk");
+  const model = JSON.parse(bytes.toString("utf8", 20, 20 + bytes.readUInt32LE(12))) as {
+    nodes: Node[];
+  };
   const reviewed = JSON.parse(await readFile(catalogPath, "utf8")) as AuthoredAssetCatalog;
-  if (reviewed.map.toLowerCase() !== scene.map.toLowerCase()) throw new Error("Catalog map mismatch");
+  if (reviewed.map.toLowerCase() !== scene.map.toLowerCase())
+    throw new Error("Catalog map mismatch");
   const catalog = catalogFromExport(model.nodes, reviewed);
   const objects: Level3DObject[] = [];
-  for (const group of catalog.groups) for (const part of group.parts) {
-    if (part.mission_profile !== undefined) {
-      objects.push({ id: part.node, node: part.node, kind: "mission", name: part.name,
-        source: { map: scene.map, mission_profile: part.mission_profile },
-        obstacle: structuredClone(part.obstacle_local_game!), transform: { ...IDENTITY_TRANSFORM } });
-    } else {
-      const node = model.nodes.find(node => node.extras?.source_obstacle === part.obstacle && componentIdentityMatches(node.name ?? "", part.obstacle, part.components) &&
-        (part.node === undefined || node.name === part.node))!;
-      const obstacle = part.components ? part.obstacle_local_game : level.sight_obstacles[part.obstacle];
-      if (!obstacle) throw new Error("Missing source obstacle " + part.obstacle);
-      objects.push({ id: node.name!, node: node.name!, kind: node.name!.startsWith("terrace-") ? "terrace" : "building",
-        source: { map: scene.map, obstacle: part.obstacle, ...(part.components ? { components: [...part.components] } : {}) }, obstacle, transform: { ...IDENTITY_TRANSFORM } });
+  for (const group of catalog.groups)
+    for (const part of group.parts) {
+      if (part.mission_profile !== undefined) {
+        objects.push({
+          id: part.node,
+          node: part.node,
+          kind: "mission",
+          name: part.name,
+          source: { map: scene.map, mission_profile: part.mission_profile },
+          obstacle: structuredClone(part.obstacle_local_game!),
+          transform: { ...IDENTITY_TRANSFORM },
+        });
+      } else {
+        const node = model.nodes.find(
+          (node) =>
+            node.extras?.source_obstacle === part.obstacle &&
+            componentIdentityMatches(node.name ?? "", part.obstacle, part.components) &&
+            (part.node === undefined || node.name === part.node),
+        )!;
+        const obstacle = part.components
+          ? part.obstacle_local_game
+          : level.sight_obstacles[part.obstacle];
+        if (!obstacle) throw new Error("Missing source obstacle " + part.obstacle);
+        objects.push({
+          id: node.name!,
+          node: node.name!,
+          kind: node.name!.startsWith("terrace-") ? "terrace" : "building",
+          source: {
+            map: scene.map,
+            obstacle: part.obstacle,
+            ...(part.components ? { components: [...part.components] } : {}),
+          },
+          obstacle,
+          transform: { ...IDENTITY_TRANSFORM },
+        });
+      }
     }
-  }
   for (const object of objects) {
-    const hidden = model.nodes.find(node => node.name === object.node)?.extras?.default_hidden;
-    if (hidden !== undefined && typeof hidden !== "boolean") throw new Error("Invalid exported visibility: " + object.node);
+    const hidden = model.nodes.find((node) => node.name === object.node)?.extras?.default_hidden;
+    if (hidden !== undefined && typeof hidden !== "boolean")
+      throw new Error("Invalid exported visibility: " + object.node);
     if (hidden === true) object.hidden = true;
   }
   const groups = authoredAssetGroups(scene.map, objects, catalog)!;
   const provenance = await documentProvenance(level);
-  const document: Level3D = { version: 1, map: scene.map, size: scene.size, camera: scene.camera,
-    sceneAssets: [], sourceMap: scene.standalone ? undefined : scene.map, groups, objects, provenance };
-  parseLevel3D(document, { scene, level, nodes: new Set(objects.map(object => object.node)),
-    sourceSha256: provenance.source_sha256 });
-  const imported = await importScene(glbPath, (dirname(resolve(output)).endsWith("/scenes") ? dirname(dirname(resolve(output))) : resolve(dirname(output), "map-assets")), document as unknown as Record<string,unknown>, document.sourceMap);
+  const document: Level3D = {
+    version: 1,
+    map: scene.map,
+    size: scene.size,
+    camera: scene.camera,
+    sceneAssets: [],
+    sourceMap: scene.standalone ? undefined : scene.map,
+    groups,
+    objects,
+    provenance,
+  };
+  parseLevel3D(document, {
+    scene,
+    level,
+    nodes: new Set(objects.map((object) => object.node)),
+    sourceSha256: provenance.source_sha256,
+  });
+  const imported = await importScene(
+    glbPath,
+    dirname(resolve(output)).endsWith("/scenes")
+      ? dirname(dirname(resolve(output)))
+      : resolve(dirname(output), "map-assets"),
+    document as unknown as Record<string, unknown>,
+    document.sourceMap,
+  );
   await writeFile(output, JSON.stringify(imported.document, null, 2) + "\n", { flag: "wx" });
   return { file: output, groups: groups.length, parts: objects.length, provenance };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const args = process.argv.slice(2);
-  if (args.length !== 5) throw new Error("Usage: prepare-publication-document.ts scene.json level.json staged.glb reviewed-catalog.json new.rhlos-map.json");
-  console.log(JSON.stringify(await prepareDocument(...args.map(arg => resolve(arg)) as [string, string, string, string, string])));
+  if (args.length !== 5)
+    throw new Error(
+      "Usage: prepare-publication-document.ts scene.json level.json staged.glb reviewed-catalog.json new.rhlos-map.json",
+    );
+  console.log(
+    JSON.stringify(
+      await prepareDocument(
+        ...(args.map((arg) => resolve(arg)) as [string, string, string, string, string]),
+      ),
+    ),
+  );
 }

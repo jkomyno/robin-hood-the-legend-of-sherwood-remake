@@ -13,10 +13,7 @@ function bounded(label, { signal, timeoutMs = 5000 }, subscribe) {
       else resolve(value);
     };
     const abort = () => finish(signal.reason ?? new Error(`${label} aborted`));
-    const timer = setTimeout(
-      () => finish(new Error(`${label} timed out`)),
-      timeoutMs,
-    );
+    const timer = setTimeout(() => finish(new Error(`${label} timed out`)), timeoutMs);
     if (signal?.aborted) {
       abort();
       return;

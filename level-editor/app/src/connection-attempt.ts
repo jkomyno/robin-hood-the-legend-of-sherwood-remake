@@ -27,11 +27,7 @@ export async function connectLatest(
   try {
     await operation(current);
   } catch (error) {
-    if (
-      current() &&
-      !(error instanceof DOMException && error.name === "AbortError")
-    )
-      failed(error);
+    if (current() && !(error instanceof DOMException && error.name === "AbortError")) failed(error);
   } finally {
     if (current()) finished();
   }

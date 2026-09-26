@@ -62,15 +62,18 @@ async function main() {
     const meta = await sharp(lv.src).metadata();
     const cx = Math.max(0, ax - pad);
     const cy = Math.max(0, ay - pad);
-    const cw = Math.min(meta.width! - cx, aw + 2 * pad);
-    const ch = Math.min(meta.height! - cy, ah + 2 * pad);
+    const cw = Math.min(meta.width - cx, aw + 2 * pad);
+    const ch = Math.min(meta.height - cy, ah + 2 * pad);
     const rect: Bbox = [cx, cy, cw, ch];
-    const cropPng = await sharp(lv.src).extract({ left: cx, top: cy, width: cw, height: ch }).png().toBuffer();
+    const cropPng = await sharp(lv.src)
+      .extract({ left: cx, top: cy, width: cw, height: ch })
+      .png()
+      .toBuffer();
     const fitCell = (buf: Buffer) =>
       sharp(buf).resize(cell, cell, { fit: "contain", background: "#202020" }).png().toBuffer();
 
     const tiles: OverlayOptions[] = [{ input: await fitCell(cropPng), left: 0, top: 0 }];
-    const labels: string[] = [`${id}`];
+    const labels: string[] = [id];
     const table: string[] = [];
     let col = 1;
     for (const [backend, m] of models) {
@@ -100,7 +103,8 @@ async function main() {
       tiles.push({ input: orbit, left: col * cell, top: cell });
       const tris = mesh.indices.length / 3;
       const secs = m.extraction.seconds !== undefined ? `${m.extraction.seconds.toFixed(0)}s` : "";
-      const price = m.extraction.price_usd !== undefined ? `$${m.extraction.price_usd.toFixed(2)}` : "";
+      const price =
+        m.extraction.price_usd !== undefined ? `$${m.extraction.price_usd.toFixed(2)}` : "";
       labels.push(
         `${backend}: IoU ${m.fit_iou.toFixed(2)} app ${m.fit_appearance?.toFixed(2) ?? "-"} ${Math.round(tris / 1000)}k tris ${secs} ${price}`,
       );
@@ -125,7 +129,9 @@ async function main() {
   svg += "</svg>";
   composites.push({ input: Buffer.from(svg), left: 0, top: 0 });
   const out = path.join(workDir, `${map.toLowerCase()}-scene`, get("out") ?? "backends.png");
-  await sharp({ create: { width: cols * cell, height: rows.length * rowH, channels: 3, background: "#181818" } })
+  await sharp({
+    create: { width: cols * cell, height: rows.length * rowH, channels: 3, background: "#181818" },
+  })
     .composite(composites)
     .png()
     .toFile(out);

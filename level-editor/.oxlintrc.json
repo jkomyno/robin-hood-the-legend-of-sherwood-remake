@@ -1,0 +1,40 @@
+{
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error"
+  },
+  "rules": {
+    "typescript/no-unsafe-type-assertion": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/no-array-reverse": "off",
+    "eslint/no-underscore-dangle": "off",
+    "eslint/no-shadow": "off",
+    "unicorn/no-new-array": "off",
+    "unicorn/prefer-add-event-listener": "off",
+    "typescript/no-this-alias": "off",
+    "typescript/restrict-template-expressions": "off",
+    "typescript/no-base-to-string": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/*.test.mjs"],
+      "rules": {
+        "typescript/no-floating-promises": "off",
+        "typescript/unbound-method": "off",
+        "typescript/consistent-return": "off"
+      }
+    },
+    {
+      "files": ["app/tests/**"],
+      "rules": {
+        "typescript/unbound-method": "off",
+        "typescript/consistent-return": "off"
+      }
+    }
+  ],
+  "options": {
+    "typeAware": true,
+    "maxWarnings": 0
+  }
+}

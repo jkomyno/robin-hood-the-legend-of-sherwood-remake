@@ -1,7 +1,13 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "meshoptimizer";
-import { safeLibraryPath, selectGlbScene, selectGltfScene, resolveGltfResources, type SceneAssetSource } from "@rle/shared";
+import {
+  safeLibraryPath,
+  selectGlbScene,
+  selectGltfScene,
+  resolveGltfResources,
+  type SceneAssetSource,
+} from "@rle/shared";
 import { subdir } from "./fs.ts";
 import { readLossyModel, lossyApplies } from "./lossy-models.ts";
 
@@ -15,7 +21,9 @@ async function read(root: FileSystemDirectoryHandle, path: string) {
 }
 async function checked(file: File, expected: string) {
   const bytes = await file.arrayBuffer();
-  const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), byte => byte.toString(16).padStart(2, "0")).join("");
+  const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
   if (hash !== expected) throw new Error(`Scene asset changed: ${file.name}`);
   return bytes;
 }
@@ -30,39 +38,69 @@ export class SceneAssetLoader {
   private root: FileSystemDirectoryHandle;
   private lossyModels: ReadonlyMap<string, string>;
   /** `lossyModels` maps pinned model paths to derived lossy models (see lossy-models.ts). */
-  constructor(root: FileSystemDirectoryHandle, lossyModels: ReadonlyMap<string, string> = new Map()) {
-    this.root = root; this.lossyModels = lossyModels;
+  constructor(
+    root: FileSystemDirectoryHandle,
+    lossyModels: ReadonlyMap<string, string> = new Map(),
+  ) {
+    this.root = root;
+    this.lossyModels = lossyModels;
   }
-  lossyFor(model: string): string | undefined { return this.lossyModels.get(model); }
+  lossyFor(model: string): string | undefined {
+    return this.lossyModels.get(model);
+  }
   /** `verifiedLossy`: lossy bytes the caller already bound to `reference.model_sha256`. */
   async load(reference: SceneAssetSource, verifiedLossy?: ArrayBuffer): Promise<THREE.Group> {
     const applies = lossyApplies(reference.model);
-    if (verifiedLossy && !applies) throw new Error(`Lossy model cannot replace a glTF JSON model: ${reference.model}`);
+    if (verifiedLossy && !applies)
+      throw new Error(`Lossy model cannot replace a glTF JSON model: ${reference.model}`);
     const lossy = applies ? this.lossyModels.get(reference.model) : undefined;
-    const lossyBytes = verifiedLossy ?? (lossy ? await readLossyModel(path => read(this.root, path), lossy, reference.model_sha256) : null);
-    let bytes = lossyBytes ?? await checked(await read(this.root, reference.model), reference.model_sha256);
+    const lossyBytes =
+      verifiedLossy ??
+      (lossy
+        ? await readLossyModel((path) => read(this.root, path), lossy, reference.model_sha256)
+        : null);
+    let bytes =
+      lossyBytes ?? (await checked(await read(this.root, reference.model), reference.model_sha256));
     // Lossy models embed everything, so the published model's shared resources are not fetched.
     const resources = lossyBytes ? [] : reference.resources;
-    if (reference.descriptor) await checked(await read(this.root, reference.descriptor), reference.descriptor_sha256!);
-    if (reference.model.endsWith(".gltf")) bytes = new TextEncoder().encode(JSON.stringify(resolveGltfResources(reference.model, selectGltfScene(JSON.parse(new TextDecoder().decode(bytes)), reference.model_scene)))).buffer;
-    else bytes = selectGlbScene(bytes, reference.model_scene, resources.length ? reference.model : undefined);
+    if (reference.descriptor)
+      await checked(await read(this.root, reference.descriptor), reference.descriptor_sha256!);
+    if (reference.model.endsWith(".gltf"))
+      bytes = new TextEncoder().encode(
+        JSON.stringify(
+          resolveGltfResources(
+            reference.model,
+            selectGltfScene(JSON.parse(new TextDecoder().decode(bytes)), reference.model_scene),
+          ),
+        ),
+      ).buffer;
+    else
+      bytes = selectGlbScene(
+        bytes,
+        reference.model_scene,
+        resources.length ? reference.model : undefined,
+      );
     const urls = new Map<string, string>();
-    await Promise.all(resources.map(async resource => {
-      const key = `${resource.path}:${resource.sha256}`;
-      let pending = this.resources.get(key);
-      if (!pending) {
-        pending = (async () => {
-          const file = await read(this.root, resource.path);
-          const url = URL.createObjectURL(new Blob([await checked(file, resource.sha256)], { type: file.type }));
-          this.urls.push(url);
-          return url;
-        })();
-        this.resources.set(key, pending);
-      }
-      urls.set(resource.path, await pending);
-    }));
+    await Promise.all(
+      resources.map(async (resource) => {
+        const key = `${resource.path}:${resource.sha256}`;
+        let pending = this.resources.get(key);
+        if (!pending) {
+          pending = (async () => {
+            const file = await read(this.root, resource.path);
+            const url = URL.createObjectURL(
+              new Blob([await checked(file, resource.sha256)], { type: file.type }),
+            );
+            this.urls.push(url);
+            return url;
+          })();
+          this.resources.set(key, pending);
+        }
+        urls.set(resource.path, await pending);
+      }),
+    );
     const manager = new THREE.LoadingManager();
-    manager.setURLModifier(url => {
+    manager.setURLModifier((url) => {
       const mapped = urls.get(url);
       if (mapped) return mapped;
       // Embedded GLB image URLs are allocated by GLTFLoader itself.
@@ -70,45 +108,72 @@ export class SceneAssetLoader {
       throw new Error(`Scene asset requested an unpinned resource: ${url}`);
     });
     const loader = new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder);
-    loader.register(parser => {
+    loader.register((parser) => {
       // GLTFLoader creates geometry-specific material variants in a per-parser
       // cache. Share those variants too, so split meshes retain depth sorting.
       const assign = parser.assignFinalMaterial.bind(parser);
-      parser.assignFinalMaterial = mesh => {
-        const value = mesh as THREE.Mesh;
+      parser.assignFinalMaterial = (mesh) => {
+        const value = mesh;
         const material = value.material as THREE.Material;
         const attributes = value.geometry.attributes;
-        const key = [value.type, material.uuid, !!attributes.tangent, !!attributes.color, !!attributes.normal].join(":");
+        const key = [
+          value.type,
+          material.uuid,
+          !!attributes.tangent,
+          !!attributes.color,
+          !!attributes.normal,
+        ].join(":");
         const shared = this.finalMaterials.get(key);
         if (shared) value.material = shared;
-        else { assign(mesh); this.finalMaterials.set(key, value.material as THREE.Material); }
+        else {
+          assign(mesh);
+          this.finalMaterials.set(key, value.material as THREE.Material);
+        }
       };
       const textureKey = (index: number) => {
         const texture = parser.json.textures[index];
-        return JSON.stringify({ scope: parser.json.images[texture.source]?.uri ? undefined : reference.model_sha256, ...texture, source: parser.json.images[texture.source], sampler: parser.json.samplers?.[texture.sampler] });
+        return JSON.stringify({
+          scope: parser.json.images[texture.source]?.uri ? undefined : reference.model_sha256,
+          ...texture,
+          source: parser.json.images[texture.source],
+          sampler: parser.json.samplers?.[texture.sampler],
+        });
       };
-      return { name: "RLE_shared_asset_resources",
+      return {
+        name: "RLE_shared_asset_resources",
         loadTexture: (index: number) => {
           const key = textureKey(index);
           let result = this.textures.get(key);
-          if (!result) { result = parser.loadTexture(index); this.textures.set(key, result); }
+          if (!result) {
+            result = parser.loadTexture(index);
+            this.textures.set(key, result);
+          }
           return result;
         },
         loadMaterial: (index: number) => {
           const value = structuredClone(parser.json.materials[index]);
-          for (const parent of [value, value.pbrMetallicRoughness ?? {}]) for (const [key, texture] of Object.entries(parent)) {
-            if (key.endsWith("Texture") && texture && typeof texture === "object" && "index" in texture)
-              texture.index = textureKey(texture.index as number);
-          }
+          for (const parent of [value, value.pbrMetallicRoughness ?? {}])
+            for (const [key, texture] of Object.entries(parent)) {
+              if (
+                key.endsWith("Texture") &&
+                texture &&
+                typeof texture === "object" &&
+                "index" in texture
+              )
+                texture.index = textureKey(texture.index as number);
+            }
           const key = JSON.stringify(value);
           let result = this.materials.get(key);
-          if (!result) { result = parser.loadMaterial(index); this.materials.set(key, result); }
+          if (!result) {
+            result = parser.loadMaterial(index);
+            this.materials.set(key, result);
+          }
           return result;
         },
       };
     });
     const result = await loader.parseAsync(bytes, "");
-    result.scene.traverse(node => {
+    result.scene.traverse((node) => {
       const index = result.parser?.associations.get(node)?.nodes;
       const name = index === undefined ? undefined : result.parser.json.nodes[index]?.name;
       if (typeof name === "string") node.name = name;

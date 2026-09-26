@@ -33,9 +33,7 @@ async function restoreDir(
   return null; // needs a user gesture; App offers a "reconnect" button
 }
 
-export async function pickDatadir(
-  current: () => boolean,
-): Promise<FileSystemDirectoryHandle> {
+export async function pickDatadir(current: () => boolean): Promise<FileSystemDirectoryHandle> {
   return pickDir(DATADIR_KEY, "hackable-datadir", current);
 }
 
@@ -96,10 +94,7 @@ export function isNotFound(error: unknown): boolean {
   return error instanceof DOMException && error.name === "NotFoundError";
 }
 
-export async function readJson<T>(
-  dir: FileSystemDirectoryHandle,
-  name: string,
-): Promise<T> {
+export async function readJson<T>(dir: FileSystemDirectoryHandle, name: string): Promise<T> {
   const fh = await dir.getFileHandle(name);
   const file = await fh.getFile();
   try {
@@ -109,9 +104,7 @@ export async function readJson<T>(
   }
 }
 
-export async function listFiles(
-  dir: FileSystemDirectoryHandle,
-): Promise<string[]> {
+export async function listFiles(dir: FileSystemDirectoryHandle): Promise<string[]> {
   const names: string[] = [];
   for await (const [name, entry] of dir.entries()) {
     if (entry.kind === "file") names.push(name);

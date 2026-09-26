@@ -9,8 +9,8 @@ import {
 import { scanDatadir, type DatadirIndex } from "./datadir";
 import Editor3D, { type LibraryRef } from "./Editor3D";
 import { connectionAttempts, connectLatest } from "./connection-attempt";
-import { openHttpLibrary } from './http-library.ts';
-import { loadMissionCatalog } from './mission-catalog.ts';
+import { openHttpLibrary } from "./http-library.ts";
+import { loadMissionCatalog } from "./mission-catalog.ts";
 
 export default function App() {
   const [index, setIndex] = createSignal<DatadirIndex | null>(null);
@@ -26,10 +26,7 @@ export default function App() {
     libraryAttempts.dispose();
   });
 
-  async function openRoot(
-    handle: FileSystemDirectoryHandle,
-    current: () => boolean,
-  ) {
+  async function openRoot(handle: FileSystemDirectoryHandle, current: () => boolean) {
     if (!current()) return;
     setStatus("scanning datadir…");
     const next = await scanDatadir(handle);
@@ -104,37 +101,39 @@ export default function App() {
         onError={setError}
         onStatus={setStatus}
         toolbarStart={() => <h1 title="Level editor">Sherwood</h1>}
-        toolbarEnd={() => <>
-          <Show
-            when={index()}
-            fallback={
-              <button
-                class="connect"
-                title="Optional, read-only game data for mission previews, sprites, and reference terrain"
-                onClick={needsReconnect() ? onReconnect : onPick}
-              >
-                {needsReconnect()
-                  ? "Reconnect game data"
-                  : "Connect game data…"}
-              </button>
-            }
-          >
-            {(idx) => (
-              <span class="connected">
-                Game data · {idx().maps.size} maps{" "}
-                <button onClick={onPick}>change</button>
-              </span>
-            )}
-          </Show>
-          <Show when={status()}>{(s) => <span class="busy">{s()}</span>}</Show>
-          <Show when={error()}>
-            {(e) => (
-              <span class="error" role="alert">
-                {e()} <button aria-label="Dismiss error" onClick={() => setError(null)}>×</button>
-              </span>
-            )}
-          </Show>
-        </>}
+        toolbarEnd={() => (
+          <>
+            <Show
+              when={index()}
+              fallback={
+                <button
+                  class="connect"
+                  title="Optional, read-only game data for mission previews, sprites, and reference terrain"
+                  onClick={needsReconnect() ? onReconnect : onPick}
+                >
+                  {needsReconnect() ? "Reconnect game data" : "Connect game data…"}
+                </button>
+              }
+            >
+              {(idx) => (
+                <span class="connected">
+                  Game data · {idx().maps.size} maps <button onClick={onPick}>change</button>
+                </span>
+              )}
+            </Show>
+            <Show when={status()}>{(s) => <span class="busy">{s()}</span>}</Show>
+            <Show when={error()}>
+              {(e) => (
+                <span class="error" role="alert">
+                  {e()}{" "}
+                  <button aria-label="Dismiss error" onClick={() => setError(null)}>
+                    ×
+                  </button>
+                </span>
+              )}
+            </Show>
+          </>
+        )}
       />
     </div>
   );

@@ -4,11 +4,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import {
-  parseProtoLevel,
-  type AssetDescriptor,
-  type ProtoLevel,
-} from "@rle/shared";
+import { parseProtoLevel, type AssetDescriptor, type ProtoLevel } from "@rle/shared";
 import { isMissing } from "./provider-cache.ts";
 import { datadirPath } from "./env.ts";
 import { clipLevel, type Bbox } from "./clip.ts";
@@ -19,16 +15,11 @@ export function levelsDirPath(): string {
   return path.join(datadirPath(), "Data", "Levels");
 }
 
-export async function findMapPng(
-  ambiance: string,
-  map: string,
-): Promise<string | null> {
+export async function findMapPng(ambiance: string, map: string): Promise<string | null> {
   const dir = path.join(levelsDirPath(), ambiance);
   try {
     const files = await fs.readdir(dir);
-    const hit = files.find(
-      (f) => f.toLowerCase() === `${map.toLowerCase()}.map.png`,
-    );
+    const hit = files.find((f) => f.toLowerCase() === `${map.toLowerCase()}.map.png`);
     return hit ? path.join(dir, hit) : null;
   } catch (error) {
     if (isMissing(error)) return null;
@@ -39,13 +30,9 @@ export async function findMapPng(
 export async function loadProtoLevel(map: string): Promise<ProtoLevel> {
   const dir = levelsDirPath();
   const files = await fs.readdir(dir);
-  const hit = files.find(
-    (f) => f.toLowerCase() === `${map.toLowerCase()}.rhp.json`,
-  );
+  const hit = files.find((f) => f.toLowerCase() === `${map.toLowerCase()}.rhp.json`);
   if (!hit) throw new Error(`no ${map}.rhp.json under ${dir}`);
-  return parseProtoLevel(
-    JSON.parse(await fs.readFile(path.join(dir, hit), "utf8")),
-  );
+  return parseProtoLevel(JSON.parse(await fs.readFile(path.join(dir, hit), "utf8")));
 }
 
 // full-map images with the non-integrated patch sprites (roof closers)
@@ -88,9 +75,7 @@ export async function mapImageSource(
 ): Promise<string | Buffer | null> {
   const mapPath = await findMapPng(ambiance, map);
   if (!mapPath) return null;
-  return applyPatches
-    ? patchedMapImage(map, ambiance, mapPath, level)
-    : mapPath;
+  return applyPatches ? patchedMapImage(map, ambiance, mapPath, level) : mapPath;
 }
 
 export interface MaskedAssetSpec {
@@ -110,14 +95,10 @@ export interface MaskedAssetSpec {
 }
 
 /** cut all ambiances with the mask, clip level metadata, write library/<id>/ */
-export async function writeMaskedAsset(
-  spec: MaskedAssetSpec,
-): Promise<AssetDescriptor> {
+export async function writeMaskedAsset(spec: MaskedAssetSpec): Promise<AssetDescriptor> {
   const [ax, ay, aw, ah] = spec.bbox;
   if (spec.mask.length !== aw * ah) {
-    throw new Error(
-      `${spec.id}: mask size ${spec.mask.length} != bbox area ${aw * ah}`,
-    );
+    throw new Error(`${spec.id}: mask size ${spec.mask.length} != bbox area ${aw * ah}`);
   }
   const maskPng = await sharp(Buffer.from(spec.mask), {
     raw: { width: aw, height: ah, channels: 1 },
@@ -128,12 +109,7 @@ export async function writeMaskedAsset(
   const images: Record<string, Buffer> = { "mask.png": maskPng };
   const cutouts: Partial<Record<"day" | "fog" | "night", string>> = {};
   for (const amb of ["Day", "Fog", "Night"] as const) {
-    const src = await mapImageSource(
-      spec.map,
-      amb,
-      spec.applyPatches,
-      spec.level,
-    );
+    const src = await mapImageSource(spec.map, amb, spec.applyPatches, spec.level);
     if (!src) continue;
     const rgb = await sharp(src)
       .extract({ left: ax, top: ay, width: aw, height: ah })

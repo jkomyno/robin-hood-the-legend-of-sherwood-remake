@@ -15,7 +15,6 @@ import { datadirPath, editorRoot, libraryDir, workDir } from "./env.ts";
 import { renderTerrain } from "./terrain.ts";
 import { expandWallRun, expandWallRunDirectional, type WallSegmentSpec } from "@rle/shared";
 
-
 async function main() {
   const map = process.argv[2];
   if (!map) throw new Error("usage: node src/recreate.ts <MapName>");
@@ -24,9 +23,7 @@ async function main() {
   const assets: AssetDescriptor[] = [];
   for (const e of index) {
     if (e.source_map !== map) continue;
-    assets.push(
-      await readAssetDescriptor(path.join(libraryDir, e.id, "asset.json")),
-    );
+    assets.push(await readAssetDescriptor(path.join(libraryDir, e.id, "asset.json")));
   }
   if (assets.length === 0) throw new Error(`no assets from map ${map} in the library`);
 
@@ -39,8 +36,8 @@ async function main() {
   if (!dayFile) throw new Error(`no Day map png for ${map}`);
   const origPath = path.join(dayDir, dayFile);
   const meta = await sharp(origPath).metadata();
-  const W = meta.width!;
-  const H = meta.height!;
+  const W = meta.width;
+  const H = meta.height;
 
   const terrainFile = path.join(editorRoot, "drafts", `${map.toLowerCase()}-terrain.json`);
   const spec = await readTerrainSpec(terrainFile);
@@ -173,12 +170,9 @@ async function main() {
       if (bytes === undefined) continue;
       for (const width of [88, 116, 148]) {
         try {
-          const png = await sharp(bytes)
-            .resize({ width })
-            .png()
-            .toBuffer();
+          const png = await sharp(bytes).resize({ width }).png().toBuffer();
           const m = await sharp(png).metadata();
-          variants.push({ png, w: m.width!, h: m.height! });
+          variants.push({ png, w: m.width, h: m.height });
         } catch (error) {
           throw new Error(`cannot decode scatter image ${file}`, { cause: error });
         }

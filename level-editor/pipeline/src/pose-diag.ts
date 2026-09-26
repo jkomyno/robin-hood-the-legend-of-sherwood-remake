@@ -33,14 +33,7 @@ async function main() {
     const mask = new Uint8Array(
       await sharp(path.join(dir, desc.images.mask)).extractChannel(0).raw().toBuffer(),
     );
-    const cands = fitAll(
-      e.id,
-      mesh,
-      { pose: desc.model.pose_l2c },
-      cam,
-      desc.source.bbox,
-      mask,
-    );
+    const cands = fitAll(e.id, mesh, { pose: desc.model.pose_l2c }, cam, desc.source.bbox, mask);
     const best = cands.reduce((a, b) => (b.tilt_deg < a.tilt_deg ? b : a));
     for (const c of cands) {
       const key = describe(c);
@@ -64,7 +57,9 @@ async function main() {
     };
   });
   rows.sort((a, b) => a.mean - b.mean);
-  console.log(`${n} assets; per interpretation: mean tilt / median / <20° count / most-upright wins / mean IoU`);
+  console.log(
+    `${n} assets; per interpretation: mean tilt / median / <20° count / most-upright wins / mean IoU`,
+  );
   for (const r of rows) {
     console.log(
       `${r.key.padEnd(26)} ${r.mean.toFixed(1).padStart(6)}° ${r.median.toFixed(0).padStart(4)}° ${String(r.under20).padStart(4)} ${String(r.wins).padStart(4)}  ${r.iou.toFixed(3)}`,

@@ -1,14 +1,6 @@
 import earcut from "earcut";
-import polygonClipping, {
-  type MultiPolygon,
-  type Ring,
-} from "polygon-clipping";
-import {
-  gameToScene,
-  signedPolygonArea,
-  type MapCamera,
-  type ProtoLevel,
-} from "@rle/shared";
+import polygonClipping, { type MultiPolygon, type Ring } from "polygon-clipping";
+import { gameToScene, signedPolygonArea, type MapCamera, type ProtoLevel } from "@rle/shared";
 export const TERRACE_AREA = 100000;
 const MIN_HEIGHT = 2;
 export interface Face {
@@ -126,10 +118,7 @@ function canonicalFrame(n: V3, p: V3): PlaneFrame {
     Math.round(n[2] * 1000) / 1000,
   ]);
   const dq = Math.round(v3dot(nc, p) / PLANE_OFFSET) * PLANE_OFFSET;
-  const e1 =
-    Math.abs(nc[2]) > 0.9999
-      ? ([1, 0, 0] as V3)
-      : v3norm(v3cross([0, 0, 1], nc));
+  const e1 = Math.abs(nc[2]) > 0.9999 ? ([1, 0, 0] as V3) : v3norm(v3cross([0, 0, 1], nc));
   const e2 = v3cross(nc, e1);
   return {
     key: `t${nc.map((v) => v.toFixed(3)).join(",")}:${dq}`,
@@ -160,8 +149,7 @@ function ringArea(r: Ring): number {
 function polysArea(m: MultiPolygon): number {
   let a = 0;
   for (const poly of m)
-    for (const [k, ring] of poly.entries())
-      a += k === 0 ? ringArea(ring) : -ringArea(ring);
+    for (const [k, ring] of poly.entries()) a += k === 0 ? ringArea(ring) : -ringArea(ring);
   return a;
 }
 
@@ -192,10 +180,7 @@ function ringLength(r: Ring): number {
 function cleanPolys(m: MultiPolygon): MultiPolygon {
   return m.filter((poly) => {
     const a = ringArea(poly[0]!);
-    return (
-      a >= MIN_FACE_AREA &&
-      a / Math.max(1, ringLength(poly[0]!)) >= MIN_FACE_WIDTH / 2
-    );
+    return a >= MIN_FACE_AREA && a / Math.max(1, ringLength(poly[0]!)) >= MIN_FACE_WIDTH / 2;
   });
 }
 
@@ -217,8 +202,7 @@ export function buildGeometry(
 ): Geometry {
   const terraceIds = new Set<number>();
   level.sight_obstacles.forEach((o, i) => {
-    if (o.points.length >= 3 && footprintArea(o.points) > TERRACE_AREA)
-      terraceIds.add(i);
+    if (o.points.length >= 3 && footprintArea(o.points) > TERRACE_AREA) terraceIds.add(i);
   });
   const planar: Planar[] = [];
   const toUV = (fr: PlaneFrame, p: V3): [number, number] => {
@@ -231,30 +215,24 @@ export function buildGeometry(
     if (opaqueOnly && !o.opaque) continue;
     const n = o.points.length;
     if (n < 3) continue;
-    if (Math.max(...o.points.map((p) => p.z_top - p.z_bottom)) < MIN_HEIGHT)
-      continue;
+    if (Math.max(...o.points.map((p) => p.z_top - p.z_bottom)) < MIN_HEIGHT) continue;
     if (noTerraces && terraceIds.has(oi)) continue;
     obstacles++;
     const priority = terraceIds.has(oi) ? 3 : o.opaque ? 2 : 1;
-    const bottom = o.points.map(
-      (p) => gameToScene(cam, p.x, p.y, p.z_bottom) as V3,
-    );
-    const top = o.points.map((p) => gameToScene(cam, p.x, p.y, p.z_top) as V3);
+    const bottom = o.points.map((p) => gameToScene(cam, p.x, p.y, p.z_bottom));
+    const top = o.points.map((p) => gameToScene(cam, p.x, p.y, p.z_top));
     // winding of the footprint in the scene frame (Y is flipped vs. game y)
     const ccw = signedPolygonArea(bottom.map((p) => [p[0], p[1]])) > 0;
 
     // sides: one quad per footprint edge
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n;
-      if (top[i]![2] - bottom[i]![2] < 0.5 && top[j]![2] - bottom[j]![2] < 0.5)
-        continue;
+      if (top[i]![2] - bottom[i]![2] < 0.5 && top[j]![2] - bottom[j]![2] < 0.5) continue;
       const ex = bottom[j]![0] - bottom[i]![0];
       const ey = bottom[j]![1] - bottom[i]![1];
       const outward = v3norm(ccw ? [ey, -ex, 0] : [-ey, ex, 0]);
       const frame = canonicalFrame(outward, bottom[i]!);
-      const ring: Ring = [bottom[i]!, bottom[j]!, top[j]!, top[i]!].map((p) =>
-        toUV(frame, p),
-      );
+      const ring: Ring = [bottom[i]!, bottom[j]!, top[j]!, top[i]!].map((p) => toUV(frame, p));
       ring.push(ring[0]!);
       planar.push({
         obstacle: oi,
@@ -283,8 +261,7 @@ export function buildGeometry(
       normals.push(v3norm(nrm[2] < 0 ? v3scale(nrm, -1) : nrm));
     }
     const part = Array.from({ length: triCount }, (_, k) => k);
-    const find = (k: number): number =>
-      part[k] === k ? k : (part[k] = find(part[k]!));
+    const find = (k: number): number => (part[k] === k ? k : (part[k] = find(part[k]!)));
     const edgeOwner = new Map<string, number>();
     for (let k = 0; k < triCount; k++) {
       for (let e = 0; e < 3; e++) {
@@ -296,8 +273,7 @@ export function buildGeometry(
           edgeOwner.set(key, k);
           continue;
         }
-        if (v3dot(normals[k]!, normals[other]!) > 0.995)
-          part[find(k)] = find(other);
+        if (v3dot(normals[k]!, normals[other]!) > 0.995) part[find(k)] = find(other);
       }
     }
     const parts = new Map<number, number[]>();
@@ -325,9 +301,7 @@ export function buildGeometry(
       const normal = v3norm(nsum);
       const frame = canonicalFrame(normal, top[ears[triIds[0]! * 3]!]!);
       const tris: MultiPolygon = triIds.map((k) => {
-        const ring: Ring = [0, 1, 2].map((e) =>
-          toUV(frame, top[ears[k * 3 + e]!]!),
-        );
+        const ring: Ring = [0, 1, 2].map((e) => toUV(frame, top[ears[k * 3 + e]!]!));
         ring.push(ring[0]!);
         return [ring];
       });
@@ -366,8 +340,7 @@ export function buildGeometry(
   });
   let clippedSame = 0;
   let clippedOpposite = 0;
-  const boxesOverlap = (a: Box, b: Box) =>
-    a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+  const boxesOverlap = (a: Box, b: Box) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
   for (const ids of groups.values()) {
     if (ids.length < 2) continue;
     const order = [...ids].sort(
@@ -399,14 +372,8 @@ export function buildGeometry(
       const a = planar[order[x]!]!;
       for (let y = x + 1; y < order.length; y++) {
         const b = planar[order[y]!]!;
-        if (
-          a.polys.length === 0 ||
-          b.polys.length === 0 ||
-          a.frame.flip === b.frame.flip
-        )
-          continue;
-        if (!boxesOverlap(boxes.get(order[x]!)!, boxes.get(order[y]!)!))
-          continue;
+        if (a.polys.length === 0 || b.polys.length === 0 || a.frame.flip === b.frame.flip) continue;
+        if (!boxesOverlap(boxes.get(order[x]!)!, boxes.get(order[y]!)!)) continue;
         const ov = cleanPolys(polygonClipping.intersection(a.polys, b.polys));
         if (ov.length === 0) continue;
         a.polys = cleanPolys(polygonClipping.difference(a.polys, ov));
@@ -425,13 +392,7 @@ export function buildGeometry(
     positions.push(p[0], p[1], p[2]);
     return positions.length / 3 - 1;
   };
-  const addTri = (
-    face: number,
-    a: number,
-    b: number,
-    c: number,
-    outward: V3,
-  ) => {
+  const addTri = (face: number, a: number, b: number, c: number, outward: V3) => {
     const pa = positions.slice(a * 3, a * 3 + 3) as V3;
     const pb = positions.slice(b * 3, b * 3 + 3) as V3;
     const pc = positions.slice(c * 3, c * 3 + 3) as V3;
@@ -471,10 +432,7 @@ export function buildGeometry(
         for (const [u, v] of pts) {
           flat.push(u, v);
           const id = addVertex(
-            v3add(
-              frame.origin,
-              v3add(v3scale(frame.e1, u), v3scale(frame.e2, v)),
-            ),
+            v3add(frame.origin, v3add(v3scale(frame.e1, u), v3scale(frame.e2, v))),
           );
           ids.push(id);
           faces[face]!.verts.push(id);
@@ -482,22 +440,12 @@ export function buildGeometry(
       }
       const ears = earcut(flat, holes.length ? holes : undefined);
       for (let k = 0; k < ears.length; k += 3)
-        addTri(
-          face,
-          ids[ears[k]!]!,
-          ids[ears[k + 1]!]!,
-          ids[ears[k + 2]!]!,
-          outward,
-        );
+        addTri(face, ids[ears[k]!]!, ids[ears[k + 1]!]!, ids[ears[k + 2]!]!, outward);
     }
   }
   // ridge mates and ridge-aligned roof frames (u along the ridge from its
   // lower-x end, v away from the ridge), so both slopes of a gable line up
-  const P = (v: number): V3 => [
-    positions[v * 3]!,
-    positions[v * 3 + 1]!,
-    positions[v * 3 + 2]!,
-  ];
+  const P = (v: number): V3 => [positions[v * 3]!, positions[v * 3 + 1]!, positions[v * 3 + 2]!];
   for (const [pi, p] of planar.entries()) {
     const f = faceOfPlanar[pi]!;
     if (f < 0 || p.ridgeMate < 0) continue;
@@ -507,8 +455,7 @@ export function buildGeometry(
     const shared: V3[] = [];
     for (const a of faces[f]!.verts) {
       const pa = P(a);
-      if (faces[m]!.verts.some((b) => Math.hypot(...v3sub(P(b), pa)) < 0.5))
-        shared.push(pa);
+      if (faces[m]!.verts.some((b) => Math.hypot(...v3sub(P(b), pa)) < 0.5)) shared.push(pa);
     }
     if (shared.length < 2) continue;
     let r0 = shared[0]!,
@@ -523,8 +470,7 @@ export function buildGeometry(
         }
       }
     }
-    if (r0[0] > r1[0] || (r0[0] === r1[0] && r0[1] > r1[1]))
-      [r0, r1] = [r1, r0];
+    if (r0[0] > r1[0] || (r0[0] === r1[0] && r0[1] > r1[1])) [r0, r1] = [r1, r0];
     const e1 = v3norm(v3sub(r1, r0));
     const outward = faces[f]!.kind === "top" ? p.frame.n : p.frame.n;
     let e2 = v3cross(outward, e1);

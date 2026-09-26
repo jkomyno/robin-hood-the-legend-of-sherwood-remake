@@ -2,12 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import {
-  gameToScene,
-  parseLevel3D,
-  type GameTransform,
-  type Level3D,
-} from "@rle/shared";
+import { gameToScene, parseLevel3D, type GameTransform, type Level3D } from "@rle/shared";
 import type { Selection } from "./document-commands.ts";
 import { EditorViewport } from "./editor-viewport.ts";
 
@@ -40,10 +35,7 @@ function fixture() {
 test("map replacement owns retirement and releases detached ground exactly once", () => {
   const { viewport } = fixture();
   const asset = new THREE.Group();
-  const ground = new THREE.Mesh(
-    new THREE.BoxGeometry(),
-    new THREE.MeshBasicMaterial(),
-  );
+  const ground = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
   asset.add(ground);
   let disposals = 0;
   ground.geometry.addEventListener("dispose", () => disposals++);
@@ -57,10 +49,7 @@ test("map replacement owns retirement and releases detached ground exactly once"
   viewport.dispose();
   viewport.dispose();
   assert.equal(disposals, 1);
-  assert.throws(
-    () => viewport.replaceMap(new THREE.Group(), null, new Map()),
-    /Disposed/,
-  );
+  assert.throws(() => viewport.replaceMap(new THREE.Group(), null, new Map()), /Disposed/);
 });
 
 function documentFixture() {
@@ -70,9 +59,7 @@ function documentFixture() {
     sceneAssets: [],
     size: [100, 200],
     camera: { kind: "oblique-orthographic", elevation_deg: 35 },
-    groups: [
-      { id: "house", transform: { dx: 10, dy: 20, dz: 0, rot_deg: 15 } },
-    ],
+    groups: [{ id: "house", transform: { dx: 10, dy: 20, dz: 0, rot_deg: 15 } }],
     objects: [
       {
         id: "part",
@@ -100,34 +87,50 @@ function documentFixture() {
   });
 }
 
-test('repeated normal clicks retain group selection; only Alt-click selects a part', () => {
-  const {viewport, publish, selection} = fixture();
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(10,10,10), new THREE.MeshBasicMaterial());
-  const source = new THREE.Group(); source.add(mesh);
-  viewport.replaceMap(source, null, new Map([['building-000',mesh]]));
+test("repeated normal clicks retain group selection; only Alt-click selects a part", () => {
+  const { viewport, publish, selection } = fixture();
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(10, 10, 10), new THREE.MeshBasicMaterial());
+  const source = new THREE.Group();
+  source.add(mesh);
+  viewport.replaceMap(source, null, new Map([["building-000", mesh]]));
   publish(documentFixture());
-  const root = (viewport as unknown as {objectsRoot:THREE.Group}).objectsRoot;
-  root.updateWorldMatrix(true,true);
+  const root = (viewport as unknown as { objectsRoot: THREE.Group }).objectsRoot;
+  root.updateWorldMatrix(true, true);
   const center = new THREE.Box3().setFromObject(root).getCenter(new THREE.Vector3());
-  const camera = new THREE.OrthographicCamera(-100,100,100,-100,-10000,10000);
-  camera.position.copy(center).add(new THREE.Vector3(0,100,100)); camera.lookAt(center);
-  Object.assign(viewport, {camera, orbit:{target:center}, renderer:{domElement:{getBoundingClientRect:()=>({left:0,top:0,width:200,height:200})}}});
-  const pick = (alt:boolean) => (viewport as unknown as {pick:(event:unknown,alt:boolean)=>void}).pick({clientX:100,clientY:100},alt);
+  const camera = new THREE.OrthographicCamera(-100, 100, 100, -100, -10000, 10000);
+  camera.position.copy(center).add(new THREE.Vector3(0, 100, 100));
+  camera.lookAt(center);
+  Object.assign(viewport, {
+    camera,
+    orbit: { target: center },
+    renderer: {
+      domElement: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 200, height: 200 }) },
+    },
+  });
+  const pick = (alt: boolean) =>
+    (viewport as unknown as { pick: (event: unknown, alt: boolean) => void }).pick(
+      { clientX: 100, clientY: 100 },
+      alt,
+    );
   try {
-    pick(false); assert.deepEqual(selection(), {kind:'group',id:'house'});
-    pick(false); assert.deepEqual(selection(), {kind:'group',id:'house'});
-    pick(true); assert.deepEqual(selection(), {kind:'part',id:'part'});
-    pick(false); assert.deepEqual(selection(), {kind:'group',id:'house'});
-  } finally { Object.assign(viewport, {renderer:null}); viewport.dispose(); }
+    pick(false);
+    assert.deepEqual(selection(), { kind: "group", id: "house" });
+    pick(false);
+    assert.deepEqual(selection(), { kind: "group", id: "house" });
+    pick(true);
+    assert.deepEqual(selection(), { kind: "part", id: "part" });
+    pick(false);
+    assert.deepEqual(selection(), { kind: "group", id: "house" });
+  } finally {
+    Object.assign(viewport, { renderer: null });
+    viewport.dispose();
+  }
 });
 
 test("scene revisions retire selection without disposing shared reconstruction resources", () => {
   const { viewport, publish, selection } = fixture();
   const document = documentFixture();
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(),
-    new THREE.MeshBasicMaterial(),
-  );
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
   const asset = new THREE.Group();
   asset.add(mesh);
   let geometryDisposals = 0;
@@ -164,10 +167,7 @@ test("scene revisions retire selection without disposing shared reconstruction r
 test("missing reconstruction nodes fail at the scene projection boundary", () => {
   const { viewport, publish } = fixture();
   viewport.replaceMap(new THREE.Group(), null, new Map());
-  assert.throws(
-    () => publish(documentFixture()),
-    /Missing source node building-000/,
-  );
+  assert.throws(() => publish(documentFixture()), /Missing source node building-000/);
   viewport.dispose();
 });
 
@@ -208,14 +208,9 @@ test("gizmo binding commits through the document owner and picking resolves the 
   });
   const callbacks = viewport as unknown as {
     commitGizmo(): void;
-    partOfHit(hit: {
-      object: THREE.Object3D;
-    }): Level3D["objects"][number] | null;
+    partOfHit(hit: { object: THREE.Object3D }): Level3D["objects"][number] | null;
   };
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(),
-    new THREE.MeshBasicMaterial(),
-  );
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
   const asset = new THREE.Group();
   asset.add(mesh);
   viewport.replaceMap(asset, null, new Map([["building-000", mesh]]));
@@ -223,7 +218,7 @@ test("gizmo binding commits through the document owner and picking resolves the 
   viewport.select({ kind: "part", id: "part" });
   assert.ok(attached);
   const wrapper = attached as THREE.Object3D;
-  const picked = wrapper.children[0]!.children[0]!;
+  const picked = wrapper.children[0].children[0];
   assert.equal(callbacks.partOfHit({ object: picked }), document.objects[0]);
   const delta = gameToScene(document.camera, 7, -3, 2);
   wrapper.position.add(new THREE.Vector3(...delta));
@@ -231,11 +226,7 @@ test("gizmo binding commits through the document owner and picking resolves the 
   assert.deepEqual(commits, [{ dx: 8, dy: -1, dz: 2, rot_deg: 0 }]);
   assert.equal(callbacks.partOfHit({ object: picked }), document.objects[0]);
   callbacks.commitGizmo();
-  assert.equal(
-    commits.length,
-    1,
-    "unchanged gizmo must not append another history revision",
-  );
+  assert.equal(commits.length, 1, "unchanged gizmo must not append another history revision");
   viewport.dispose();
   assert.equal(attached, null);
 });
@@ -246,7 +237,12 @@ test("perspective preserves target-plane framing, scales by distance, and return
   camera.position.set(0, 0, 1000);
   camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();
-  Object.assign(viewport, { camera, frustum: 100, container: { clientWidth: 800, clientHeight: 400 }, orbit: { target: new THREE.Vector3() } });
+  Object.assign(viewport, {
+    camera,
+    frustum: 100,
+    container: { clientWidth: 800, clientHeight: 400 },
+    orbit: { target: new THREE.Vector3() },
+  });
   const access = viewport as unknown as { activeCamera(): THREE.Camera };
   const before = new THREE.Vector3(40, 20, 0).project(camera);
   viewport.setPerspective(45);
@@ -259,7 +255,10 @@ test("perspective preserves target-plane framing, scales by distance, and return
   assert.ok(near.x > far.x);
   const ray = new THREE.Raycaster();
   ray.setFromCamera(new THREE.Vector2(after.x, after.y), perspective);
-  const hit = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Vector3());
+  const hit = ray.ray.intersectPlane(
+    new THREE.Plane(new THREE.Vector3(0, 0, 1), 0),
+    new THREE.Vector3(),
+  );
   assert.ok(hit!.distanceTo(new THREE.Vector3(40, 20, 0)) < 1e-6);
   viewport.setPerspective(0);
   assert.equal(access.activeCamera(), camera);
@@ -273,16 +272,28 @@ test("perspective keeps a deep map's apparent size across lens angles and zoom l
   camera.position.set(0, 0, 10000);
   camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();
-  const bounds = new THREE.Box3(new THREE.Vector3(-800, -900, -1500), new THREE.Vector3(800, 900, 1500));
-  Object.assign(viewport, { camera, frustum: 1000, container: { clientWidth: 800, clientHeight: 400 }, orbit: { target: new THREE.Vector3() }, framingBounds: bounds });
+  const bounds = new THREE.Box3(
+    new THREE.Vector3(-800, -900, -1500),
+    new THREE.Vector3(800, 900, 1500),
+  );
+  Object.assign(viewport, {
+    camera,
+    frustum: 1000,
+    container: { clientWidth: 800, clientHeight: 400 },
+    orbit: { target: new THREE.Vector3() },
+    framingBounds: bounds,
+  });
   const access = viewport as unknown as { activeCamera(): THREE.PerspectiveCamera };
   for (const zoom of [0.5, 1, 4]) {
     camera.zoom = zoom;
     camera.updateProjectionMatrix();
-    const size = (lens: THREE.Camera) => Math.sqrt([-1500, 1500].reduce((sum, z) => {
-      const p = new THREE.Vector3(800, 900, z).project(lens);
-      return sum + p.x ** 2 + p.y ** 2;
-    }, 0) / 2);
+    const size = (lens: THREE.Camera) =>
+      Math.sqrt(
+        [-1500, 1500].reduce((sum, z) => {
+          const p = new THREE.Vector3(800, 900, z).project(lens);
+          return sum + p.x ** 2 + p.y ** 2;
+        }, 0) / 2,
+      );
     const expected = size(camera);
     for (const fov of [1, 15, 30, 45, 65]) {
       viewport.setPerspective(fov);
@@ -301,7 +312,16 @@ test("perspective pan translates camera and target along the floor without refit
   camera.updateMatrixWorld();
   const orbit = new OrbitControls(camera);
   Object.assign(orbit, { domElement: { clientWidth: 800, clientHeight: 400 } });
-  Object.assign(viewport, { camera, orbit, frustum: 1000, container: { clientWidth: 800, clientHeight: 400 }, framingBounds: new THREE.Box3(new THREE.Vector3(-800, -900, -1500), new THREE.Vector3(800, 900, 1500)) });
+  Object.assign(viewport, {
+    camera,
+    orbit,
+    frustum: 1000,
+    container: { clientWidth: 800, clientHeight: 400 },
+    framingBounds: new THREE.Box3(
+      new THREE.Vector3(-800, -900, -1500),
+      new THREE.Vector3(800, 900, 1500),
+    ),
+  });
   const access = viewport as unknown as { activeCamera(): THREE.Camera };
   for (const fov of [1, 15, 45, 65]) {
     viewport.setPerspective(fov);
@@ -309,8 +329,12 @@ test("perspective pan translates camera and target along the floor without refit
     const initial = lens.position.clone();
     const target = orbit.target.clone();
     const controlHeight = camera.position.y;
-    for (const [dx, dy] of [[50, 80], [-120, 40], [20, -170]]) {
-      orbit.pan(dx!, dy!);
+    for (const [dx, dy] of [
+      [50, 80],
+      [-120, 40],
+      [20, -170],
+    ]) {
+      orbit.pan(dx, dy);
       const translated = access.activeCamera().position.clone();
       assert.ok(Math.abs(translated.y - initial.y) < 1e-8);
       assert.ok(Math.abs(camera.position.y - controlHeight) < 1e-8);
@@ -332,58 +356,104 @@ test("free and 16-angle orbit preserve the cursor pivot and camera distance", ()
   camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();
   const orbit = new OrbitControls(camera);
-  Object.assign(viewport, { camera, orbit, frustum: 1000, container: { clientWidth: 800, clientHeight: 400 }, framingBounds: new THREE.Box3(new THREE.Vector3(-1800, -200, -500), new THREE.Vector3(1800, 900, 500)) });
+  Object.assign(viewport, {
+    camera,
+    orbit,
+    frustum: 1000,
+    container: { clientWidth: 800, clientHeight: 400 },
+    framingBounds: new THREE.Box3(
+      new THREE.Vector3(-1800, -200, -500),
+      new THREE.Vector3(1800, 900, 500),
+    ),
+  });
   const access = viewport as unknown as {
     activeCamera(): THREE.Camera;
     setupCursorOrbit(el: HTMLCanvasElement): void;
     objectsRoot: THREE.Group;
   };
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(20000, 20000), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(20000, 20000),
+    new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }),
+  );
   access.objectsRoot.add(floor);
   floor.updateWorldMatrix(true, false);
   const element = Object.assign(new EventTarget(), {
     getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 400 }),
-    setPointerCapture() {}, releasePointerCapture() {}, hasPointerCapture: () => false,
+    setPointerCapture() {},
+    releasePointerCapture() {},
+    hasPointerCapture: () => false,
   });
   access.setupCursorOrbit(element as unknown as HTMLCanvasElement);
-  const pointer = (type: string, x: number, y: number) => element.dispatchEvent(Object.assign(new Event(type), { button: 2, pointerId: 1, clientX: x, clientY: y }));
-  for (const snap of [true, false]) for (const fov of [0, 1, 15, 45, 65]) {
-    viewport.setPerspective(fov);
-    viewport.setRotationSnap(snap);
-    const initialRotation = access.activeCamera().quaternion.clone();
-    if (snap) {
-      const back = new THREE.Vector3(0, 0, 1).applyQuaternion(initialRotation);
-      const sector = Math.atan2(back.x, back.z) / (Math.PI / 8);
-      assert.ok(Math.abs(sector - Math.round(sector)) < 1e-8, "enabling snaps immediately");
-    }
-    const ray = new THREE.Raycaster();
-    ray.setFromCamera(new THREE.Vector2(0.25, -0.1), access.activeCamera());
-    const pivot = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), new THREE.Vector3())!;
-    assert.ok(pivot);
-    const initialDistance = access.activeCamera().position.distanceTo(pivot);
-    pointer("pointerdown", 500, 220);
-    for (const [x, y] of [[510, 220], [520, 220], [526, 220], [600, 220], [680, 160], [440, 260], [500, 220]]) {
-      pointer("pointermove", x!, y!);
-      const lens = access.activeCamera();
+  const pointer = (type: string, x: number, y: number) =>
+    element.dispatchEvent(
+      Object.assign(new Event(type), { button: 2, pointerId: 1, clientX: x, clientY: y }),
+    );
+  for (const snap of [true, false])
+    for (const fov of [0, 1, 15, 45, 65]) {
+      viewport.setPerspective(fov);
+      viewport.setRotationSnap(snap);
+      const initialRotation = access.activeCamera().quaternion.clone();
       if (snap) {
-        const back = new THREE.Vector3(0, 0, 1).applyQuaternion(lens.quaternion);
+        const back = new THREE.Vector3(0, 0, 1).applyQuaternion(initialRotation);
         const sector = Math.atan2(back.x, back.z) / (Math.PI / 8);
-        assert.ok(Math.abs(sector - Math.round(sector)) < 1e-8);
-        if (x === 510 || x === 520) assert.ok(lens.quaternion.angleTo(initialRotation) < 1e-7, "hold angle until crossing sector boundary");
-        if (x === 526) assert.ok(Math.abs(lens.quaternion.angleTo(initialRotation) - Math.PI / 8) < 1e-7, "jump exactly one sprite angle");
-      } else if (x === 510) {
-        assert.ok(lens.quaternion.angleTo(initialRotation) > 0.01, "disabling restores continuous rotation");
+        assert.ok(Math.abs(sector - Math.round(sector)) < 1e-8, "enabling snaps immediately");
       }
-      assert.ok(Math.abs(lens.position.distanceTo(pivot) - initialDistance) < 1e-7, `orbit distance at ${fov} degrees`);
-      const projected = pivot.clone().project(lens);
-      assert.ok(Math.abs(projected.x - 0.25) < 1e-8);
-      assert.ok(Math.abs(projected.y + 0.1) < 1e-8);
+      const ray = new THREE.Raycaster();
+      ray.setFromCamera(new THREE.Vector2(0.25, -0.1), access.activeCamera());
+      const pivot = ray.ray.intersectPlane(
+        new THREE.Plane(new THREE.Vector3(0, 1, 0), 0),
+        new THREE.Vector3(),
+      )!;
+      assert.ok(pivot);
+      const initialDistance = access.activeCamera().position.distanceTo(pivot);
+      pointer("pointerdown", 500, 220);
+      for (const [x, y] of [
+        [510, 220],
+        [520, 220],
+        [526, 220],
+        [600, 220],
+        [680, 160],
+        [440, 260],
+        [500, 220],
+      ]) {
+        pointer("pointermove", x, y);
+        const lens = access.activeCamera();
+        if (snap) {
+          const back = new THREE.Vector3(0, 0, 1).applyQuaternion(lens.quaternion);
+          const sector = Math.atan2(back.x, back.z) / (Math.PI / 8);
+          assert.ok(Math.abs(sector - Math.round(sector)) < 1e-8);
+          if (x === 510 || x === 520)
+            assert.ok(
+              lens.quaternion.angleTo(initialRotation) < 1e-7,
+              "hold angle until crossing sector boundary",
+            );
+          if (x === 526)
+            assert.ok(
+              Math.abs(lens.quaternion.angleTo(initialRotation) - Math.PI / 8) < 1e-7,
+              "jump exactly one sprite angle",
+            );
+        } else if (x === 510) {
+          assert.ok(
+            lens.quaternion.angleTo(initialRotation) > 0.01,
+            "disabling restores continuous rotation",
+          );
+        }
+        assert.ok(
+          Math.abs(lens.position.distanceTo(pivot) - initialDistance) < 1e-7,
+          `orbit distance at ${fov} degrees`,
+        );
+        const projected = pivot.clone().project(lens);
+        assert.ok(Math.abs(projected.x - 0.25) < 1e-8);
+        assert.ok(Math.abs(projected.y + 0.1) < 1e-8);
+      }
+      pointer("pointerup", 500, 220);
+      assert.ok(
+        Math.abs(access.activeCamera().position.distanceTo(pivot) - initialDistance) < 1e-7,
+      );
     }
-    pointer("pointerup", 500, 220);
-    assert.ok(Math.abs(access.activeCamera().position.distanceTo(pivot) - initialDistance) < 1e-7);
-  }
   viewport.dispose();
-  floor.geometry.dispose(); floor.material.dispose();
+  floor.geometry.dispose();
+  floor.material.dispose();
 });
 
 test("repeated perspective wheel zoom keeps approaching the ground and enlarging objects", () => {
@@ -394,7 +464,16 @@ test("repeated perspective wheel zoom keeps approaching the ground and enlarging
     camera.lookAt(0, 0, 0);
     camera.updateMatrixWorld();
     const orbit = new OrbitControls(camera);
-    Object.assign(viewport, { camera, orbit, frustum: 1000, container: { clientWidth: 800, clientHeight: 400 }, framingBounds: new THREE.Box3(new THREE.Vector3(-1800, 0, -1500), new THREE.Vector3(1800, 900, 1500)) });
+    Object.assign(viewport, {
+      camera,
+      orbit,
+      frustum: 1000,
+      container: { clientWidth: 800, clientHeight: 400 },
+      framingBounds: new THREE.Box3(
+        new THREE.Vector3(-1800, 0, -1500),
+        new THREE.Vector3(1800, 900, 1500),
+      ),
+    });
     const access = viewport as unknown as { activeCamera(): THREE.Camera };
     viewport.setPerspective(fov);
     const initialHeight = access.activeCamera().position.y;
@@ -404,9 +483,15 @@ test("repeated perspective wheel zoom keeps approaching the ground and enlarging
       const lens = access.activeCamera();
       assert.ok(Math.abs(lens.position.y - initialHeight / 2 ** step) < 1e-7);
       const size = new THREE.Vector3(1, 0, 0).project(lens).x;
-      assert.ok(Math.abs(size / initialSize - 2 ** step) < 1e-6, `continued magnification at ${fov} degrees, step ${step}`);
+      assert.ok(
+        Math.abs(size / initialSize - 2 ** step) < 1e-6,
+        `continued magnification at ${fov} degrees, step ${step}`,
+      );
     }
-    for (let step = 0; step < 8; step++) { orbit.dollyOut(0.5); access.activeCamera(); }
+    for (let step = 0; step < 8; step++) {
+      orbit.dollyOut(0.5);
+      access.activeCamera();
+    }
     assert.ok(Math.abs(access.activeCamera().position.y - initialHeight) < 1e-7);
     viewport.dispose();
   }
@@ -415,16 +500,28 @@ test("repeated perspective wheel zoom keeps approaching the ground and enlarging
 test("narrow perspective uses tight scene bounds instead of losing depth precision", () => {
   const { viewport } = fixture();
   const camera = new THREE.OrthographicCamera(-2000, 2000, 1000, -1000);
-  camera.position.set(0, 0, 10000); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
-  Object.assign(viewport, { camera, frustum: 1000, container: { clientWidth: 800, clientHeight: 400 }, orbit: { target: new THREE.Vector3() }, projectionBounds: new THREE.Sphere(new THREE.Vector3(), 3000) });
+  camera.position.set(0, 0, 10000);
+  camera.lookAt(0, 0, 0);
+  camera.updateMatrixWorld();
+  Object.assign(viewport, {
+    camera,
+    frustum: 1000,
+    container: { clientWidth: 800, clientHeight: 400 },
+    orbit: { target: new THREE.Vector3() },
+    projectionBounds: new THREE.Sphere(new THREE.Vector3(), 3000),
+  });
   const access = viewport as unknown as { activeCamera(): THREE.PerspectiveCamera };
   for (const fov of [1, 2, 5, 10, 20, 30]) {
     viewport.setPerspective(fov);
     const lens = access.activeCamera();
-    for (const z of [-3000, 3000]) assert.ok(Math.abs(new THREE.Vector3(0, 0, z).project(lens).z) < 1);
+    for (const z of [-3000, 3000])
+      assert.ok(Math.abs(new THREE.Vector3(0, 0, z).project(lens).z) < 1);
     const a = new THREE.Vector3(0, 0, 0).project(lens).z;
     const b = new THREE.Vector3(0, 0, 0.1).project(lens).z;
-    assert.ok(Math.abs(a - b) * (2 ** 24) / 2 > 10, `0.1-unit surfaces need distinct depth values at ${fov} degrees`);
+    assert.ok(
+      (Math.abs(a - b) * 2 ** 24) / 2 > 10,
+      `0.1-unit surfaces need distinct depth values at ${fov} degrees`,
+    );
   }
   viewport.dispose();
 });
@@ -435,19 +532,36 @@ test("slider preserves average scale smoothly through the old silhouette switch 
   camera.position.set(0, 0, 10000);
   camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();
-  const points = [new THREE.Vector3(-600, -900, 350), new THREE.Vector3(800, 1000, -410), new THREE.Vector3(600, -600, 100)];
-  Object.assign(viewport, { camera, frustum: 1000, container: { clientWidth: 800, clientHeight: 400 }, orbit: { target: new THREE.Vector3() }, framingBounds: new THREE.Box3().setFromPoints(points), framingPoints: points });
-  const extent = (lens: THREE.Camera) => Math.sqrt(points.reduce((sum, p) => {
-    const projected = p.clone().project(lens);
-    return sum + projected.x ** 2 + projected.y ** 2;
-  }, 0) / points.length);
+  const points = [
+    new THREE.Vector3(-600, -900, 350),
+    new THREE.Vector3(800, 1000, -410),
+    new THREE.Vector3(600, -600, 100),
+  ];
+  Object.assign(viewport, {
+    camera,
+    frustum: 1000,
+    container: { clientWidth: 800, clientHeight: 400 },
+    orbit: { target: new THREE.Vector3() },
+    framingBounds: new THREE.Box3().setFromPoints(points),
+    framingPoints: points,
+  });
+  const extent = (lens: THREE.Camera) =>
+    Math.sqrt(
+      points.reduce((sum, p) => {
+        const projected = p.clone().project(lens);
+        return sum + projected.x ** 2 + projected.y ** 2;
+      }, 0) / points.length,
+    );
   const expected = extent(camera);
   const access = viewport as unknown as { activeCamera(): THREE.Camera };
   for (const fov of [0, 0.01, ...Array.from({ length: 65 }, (_, i) => i + 1), 15, 0]) {
     viewport.setPerspective(fov);
-    assert.ok(Math.abs(extent(access.activeCamera()) - expected) < 1e-8, `apparent extent at ${fov} degrees`);
+    assert.ok(
+      Math.abs(extent(access.activeCamera()) - expected) < 1e-8,
+      `apparent extent at ${fov} degrees`,
+    );
   }
-  const transition = 2 * Math.atan(1000 / 7600) * 180 / Math.PI;
+  const transition = (2 * Math.atan(1000 / 7600) * 180) / Math.PI;
   const scale = (fov: number) => {
     viewport.setPerspective(fov);
     return new THREE.Vector3(0, 100, 0).project(access.activeCamera()).y;
@@ -456,7 +570,10 @@ test("slider preserves average scale smoothly through the old silhouette switch 
   const middle = scale(transition);
   const before = (middle - scale(transition - epsilon)) / epsilon;
   const after = (scale(transition + epsilon) - middle) / epsilon;
-  assert.ok(Math.abs(before - after) < 1e-6, "no sudden change in zoom response when silhouette vertices exchange dominance");
+  assert.ok(
+    Math.abs(before - after) < 1e-6,
+    "no sudden change in zoom response when silhouette vertices exchange dominance",
+  );
   viewport.dispose();
 });
 
@@ -466,8 +583,19 @@ test("both cameras retain separation of nearby surfaces while zooming out", () =
   camera.position.set(0, 0, 10000);
   camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();
-  Object.assign(viewport, { camera, frustum: 1000, container: { clientWidth: 800, clientHeight: 400 }, orbit: { target: new THREE.Vector3() }, framingBounds: new THREE.Box3(new THREE.Vector3(-800, -900, -1500), new THREE.Vector3(800, 900, 1500)) });
-  const access = viewport as unknown as { activeCamera(): THREE.PerspectiveCamera | THREE.OrthographicCamera };
+  Object.assign(viewport, {
+    camera,
+    frustum: 1000,
+    container: { clientWidth: 800, clientHeight: 400 },
+    orbit: { target: new THREE.Vector3() },
+    framingBounds: new THREE.Box3(
+      new THREE.Vector3(-800, -900, -1500),
+      new THREE.Vector3(800, 900, 1500),
+    ),
+  });
+  const access = viewport as unknown as {
+    activeCamera(): THREE.PerspectiveCamera | THREE.OrthographicCamera;
+  };
   for (const zoom of [0.1, 0.25, 0.5, 1, 4]) {
     camera.zoom = zoom;
     for (const fov of [0, 1, 15, 30, 65]) {
@@ -476,7 +604,10 @@ test("both cameras retain separation of nearby surfaces while zooming out", () =
       assert.ok(lens.far - lens.near <= 3256.001);
       const a = new THREE.Vector3(0, 0, 1500).project(lens).z;
       const b = new THREE.Vector3(0, 0, 1500.01).project(lens).z;
-      assert.ok(Math.abs(a - b) * (2 ** 24) / 2 > 10, `0.01-unit separation at zoom ${zoom}, lens ${fov}`);
+      assert.ok(
+        (Math.abs(a - b) * 2 ** 24) / 2 > 10,
+        `0.01-unit separation at zoom ${zoom}, lens ${fov}`,
+      );
     }
   }
   viewport.dispose();
@@ -488,15 +619,30 @@ test("standalone resources survive undo-style instance removal and retire exactl
   const model = new THREE.Group();
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
   model.add(mesh);
-  let disposed = 0; mesh.geometry.addEventListener("dispose", () => disposed++);
-  const reference = { id: "house", descriptor: "3d-assets/house/asset.json", model: "3d-assets/house/model.glb", descriptor_sha256: "a".repeat(64), model_sha256: "b".repeat(64) };
+  let disposed = 0;
+  mesh.geometry.addEventListener("dispose", () => disposed++);
+  const reference = {
+    id: "house",
+    descriptor: "3d-assets/house/asset.json",
+    model: "3d-assets/house/model.glb",
+    descriptor_sha256: "a".repeat(64),
+    model_sha256: "b".repeat(64),
+  };
   const sources = new Map([["asset:house:building-000", mesh]]);
   assert.equal(viewport.adoptAsset(reference, model, sources), true);
   assert.equal(viewport.adoptAsset(reference, new THREE.Group(), sources), false);
-  assert.throws(() => viewport.adoptAsset({ ...reference, model_sha256: "c".repeat(64) }, new THREE.Group(), sources), /changed during/);
+  assert.throws(
+    () =>
+      viewport.adoptAsset(
+        { ...reference, model_sha256: "c".repeat(64) },
+        new THREE.Group(),
+        sources,
+      ),
+    /changed during/,
+  );
   const document = documentFixture();
   document.assetSources = [reference];
-  document.objects[0]!.node = "asset:house:building-000";
+  document.objects[0].node = "asset:house:building-000";
   publish(document);
   publish({ ...document, objects: [], groups: [] });
   assert.equal(disposed, 0);
@@ -517,16 +663,21 @@ test("asset drops convert the cursor's world ground hit to game coordinates", ()
   camera.lookAt(target);
   camera.updateMatrixWorld();
   Object.assign(viewport, {
-    camera, frustum: 100,
+    camera,
+    frustum: 100,
     container: { clientWidth: 400, clientHeight: 400 },
     orbit: { target, update() {} },
-    renderer: { domElement: { getBoundingClientRect: () => ({ left: 20, top: 40, width: 400, height: 400 }) } },
+    renderer: {
+      domElement: { getBoundingClientRect: () => ({ left: 20, top: 40, width: 400, height: 400 }) },
+    },
   });
   for (const angle of [0, 45]) {
     viewport.setPerspective(angle);
     const position = viewport.assetDropPosition(220, 240)!;
     assert.ok(Math.abs(position[0] - 30) < 1e-6);
-    assert.ok(Math.abs(position[1] - 40 * Math.sin(document.camera.elevation_deg * Math.PI / 180)) < 1e-6);
+    assert.ok(
+      Math.abs(position[1] - 40 * Math.sin((document.camera.elevation_deg * Math.PI) / 180)) < 1e-6,
+    );
     assert.ok(Math.abs(position[2]) < 1e-6);
   }
   Object.assign(viewport, { renderer: null, orbit: null });
@@ -539,33 +690,54 @@ test("orthographic ground picking includes visible points behind the ray origin"
   publish({ ...document, objects: [], groups: [] });
   const camera = new THREE.OrthographicCamera(-100, 100, 100, -100, -10000, 10000);
   camera.position.set(0, 10, 10);
-  camera.lookAt(0,0,0);
+  camera.lookAt(0, 0, 0);
   camera.updateMatrixWorld();
-  Object.assign(viewport, { camera, orbit: { target: new THREE.Vector3() }, renderer: { domElement: {
-    getBoundingClientRect: () => ({ left: 0, top: 0, width: 200, height: 200 }),
-  } } });
+  Object.assign(viewport, {
+    camera,
+    orbit: { target: new THREE.Vector3() },
+    renderer: {
+      domElement: {
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 200, height: 200 }),
+      },
+    },
+  });
   const position = viewport.assetDropPosition(100, 190);
-  assert.ok(position && position.every(Number.isFinite), "lower-screen visible ground must be pickable");
+  assert.ok(
+    position && position.every(Number.isFinite),
+    "lower-screen visible ground must be pickable",
+  );
   Object.assign(viewport, { renderer: null, orbit: null });
   viewport.dispose();
 });
 
 test("source node names cannot redirect a hit to another asset's wrapper", () => {
-  const {viewport, publish}=fixture();
-  const document=documentFixture();
-  document.objects.push({...structuredClone(document.objects[0]!),id:"other",node:"other-source"});
-  const source=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial());
-  source.name="other";
-  const other=source.clone();
-  const asset=new THREE.Group();asset.add(source,other);
-  viewport.replaceMap(asset,null,new Map([["building-000",source],["other-source",other]]));
+  const { viewport, publish } = fixture();
+  const document = documentFixture();
+  document.objects.push({
+    ...structuredClone(document.objects[0]),
+    id: "other",
+    node: "other-source",
+  });
+  const source = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  source.name = "other";
+  const other = source.clone();
+  const asset = new THREE.Group();
+  asset.add(source, other);
+  viewport.replaceMap(
+    asset,
+    null,
+    new Map([
+      ["building-000", source],
+      ["other-source", other],
+    ]),
+  );
   publish(document);
-  const internals=viewport as unknown as {
-    partViews:Map<string,{wrapper:THREE.Group;meshes:THREE.Mesh[]}>;
-    partOfHit(hit:{object:THREE.Object3D}):Level3D["objects"][number]|null;
+  const internals = viewport as unknown as {
+    partViews: Map<string, { wrapper: THREE.Group; meshes: THREE.Mesh[] }>;
+    partOfHit(hit: { object: THREE.Object3D }): Level3D["objects"][number] | null;
   };
-  const clicked=internals.partViews.get("part")!.meshes[0]!;
-  assert.equal(clicked.name,"other");
-  assert.equal(internals.partOfHit({object:clicked})?.id,"part");
+  const clicked = internals.partViews.get("part")!.meshes[0];
+  assert.equal(clicked.name, "other");
+  assert.equal(internals.partOfHit({ object: clicked })?.id, "part");
   viewport.dispose();
 });

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 export function isEffectivelyVisible(object: THREE.Object3D) {
-  for (let node: THREE.Object3D | null = object; node; node=node.parent)
+  for (let node: THREE.Object3D | null = object; node; node = node.parent)
     if (!node.visible) return false;
   return true;
 }
@@ -11,13 +11,23 @@ export class PatchDisplay {
   private readonly revealed = new Set<string>();
   set(patch: string, revealed: boolean) {
     if (!patch) throw new Error("Patch ID is required");
-    if (revealed) this.revealed.add(patch); else this.revealed.delete(patch);
+    if (revealed) this.revealed.add(patch);
+    else this.revealed.delete(patch);
   }
-  clear() { this.revealed.clear(); }
-  isRevealed(patch: string) { return this.revealed.has(patch); }
+  clear() {
+    this.revealed.clear();
+  }
+  isRevealed(patch: string) {
+    return this.revealed.has(patch);
+  }
   apply(root: THREE.Object3D) {
-    root.traverse(object => {
-      const {reveal_material_patch: patch, reveal_material_state: state, reveal_hide_when_applied: hide, reveal_show_when_applied: show} = object.userData;
+    root.traverse((object) => {
+      const {
+        reveal_material_patch: patch,
+        reveal_material_state: state,
+        reveal_hide_when_applied: hide,
+        reveal_show_when_applied: show,
+      } = object.userData;
       let visible = true;
       let controlled = false;
       if (patch !== undefined || state !== undefined) {
@@ -27,15 +37,19 @@ export class PatchDisplay {
         controlled = true;
       }
       if (hide !== undefined) {
-        if (!Array.isArray(hide) || hide.some(id => typeof id !== "string" || !id))
+        if (!Array.isArray(hide) || hide.some((id) => typeof id !== "string" || !id))
           throw new Error("Invalid reviewed patch cover IDs");
-        visible &&= !hide.some(id => this.revealed.has(id));
+        visible &&= !hide.some((id) => this.revealed.has(id));
         controlled = true;
       }
       if (show !== undefined) {
-        if (!Array.isArray(show) || !show.length || show.some(id => typeof id !== "string" || !id))
+        if (
+          !Array.isArray(show) ||
+          !show.length ||
+          show.some((id) => typeof id !== "string" || !id)
+        )
           throw new Error("Invalid reviewed patch receiver IDs");
-        visible &&= show.some(id => this.revealed.has(id));
+        visible &&= show.some((id) => this.revealed.has(id));
         controlled = true;
       }
       if (controlled) object.visible = visible;

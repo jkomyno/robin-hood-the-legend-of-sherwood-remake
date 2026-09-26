@@ -29,7 +29,10 @@ export interface Level3DObject {
   /** the reconstruction node this part draws with (its own for originals, the original's for duplicates) */
   node: string;
   /** map + obstacle index the geometry and the game data came from */
-  source: { map: string } & ({ obstacle: number; components?: string[]; mission_profile?: never } | { obstacle?: never; components?: never; mission_profile: string });
+  source: { map: string } & (
+    | { obstacle: number; components?: string[]; mission_profile?: never }
+    | { obstacle?: never; components?: never; mission_profile: string }
+  );
   /** the obstacle as the game sees it, before any transform */
   obstacle: SightObstacle;
   /** transform relative to the group (or the world for ungrouped parts) */
@@ -102,7 +105,7 @@ function footprintArea(points: ObstaclePoint[]): number {
 
 function toPolygon(points: ObstaclePoint[]): Polygon {
   const ring = points.map((p) => [p.x, p.y] as [number, number]);
-  ring.push(ring[0]!);
+  ring.push(ring[0]);
   return [ring];
 }
 
@@ -111,8 +114,9 @@ function polysArea(m: ReturnType<typeof polygonClipping.intersection>): number {
   for (const poly of m) {
     for (const [k, ring] of poly.entries()) {
       let r = 0;
-      for (let i = 0; i < ring.length - 1; i++) r += ring[i]![0] * ring[i + 1]![1] - ring[i + 1]![0] * ring[i]![1];
-      a += (k === 0 ? 1 : -1) * Math.abs(r) / 2;
+      for (let i = 0; i < ring.length - 1; i++)
+        r += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+      a += ((k === 0 ? 1 : -1) * Math.abs(r)) / 2;
     }
   }
   return a;
@@ -125,7 +129,10 @@ function polysArea(m: ReturnType<typeof polygonClipping.intersection>): number {
  * group id (smallest member index) per obstacle index; singletons are
  * their own group.
  */
-export function groupObstacles(obstacles: SightObstacle[], exclude: Set<number>): Map<number, number> {
+export function groupObstacles(
+  obstacles: SightObstacle[],
+  exclude: Set<number>,
+): Map<number, number> {
   const parent = new Map<number, number>();
   const find = (i: number): number => {
     let r = i;
@@ -167,10 +174,11 @@ export function groupObstacles(obstacles: SightObstacle[], exclude: Set<number>)
     });
   });
   for (let a = 0; a < items.length; a++) {
-    const A = items[a]!;
+    const A = items[a];
     for (let b = a + 1; b < items.length; b++) {
-      const B = items[b]!;
-      if (A.box[2] < B.box[0] || B.box[2] < A.box[0] || A.box[3] < B.box[1] || B.box[3] < A.box[1]) continue;
+      const B = items[b];
+      if (A.box[2] < B.box[0] || B.box[2] < A.box[0] || A.box[3] < B.box[1] || B.box[3] < A.box[1])
+        continue;
       if (A.z0 > B.z1 + GROUP_Z_GAP || B.z0 > A.z1 + GROUP_Z_GAP) continue;
       const smaller = Math.min(A.area, B.area);
       if (smaller < 1) continue;
@@ -219,7 +227,11 @@ export function snapFloatingParts(
   obstacles: SightObstacle[],
   exclude: Set<number>,
   opts: { includeOpaque?: boolean } = {},
-): { obstacles: SightObstacle[]; snapped: { index: number; support: number; delta: number }[]; suspects: { index: number; support: number; delta: number }[] } {
+): {
+  obstacles: SightObstacle[];
+  snapped: { index: number; support: number; delta: number }[];
+  suspects: { index: number; support: number; delta: number }[];
+} {
   interface Item {
     i: number;
     box: [number, number, number, number];
@@ -251,7 +263,7 @@ export function snapFloatingParts(
   };
   const shiftedPoly = (o: SightObstacle, d: number): Polygon => {
     const ring = o.points.map((p) => [p.x, p.y - d] as [number, number]);
-    ring.push(ring[0]!);
+    ring.push(ring[0]);
     return [ring];
   };
   const out = obstacles.map((o) => o);
@@ -259,7 +271,7 @@ export function snapFloatingParts(
   const suspects: { index: number; support: number; delta: number }[] = [];
   for (const it of items) {
     if (exclude.has(it.i) || it.zb <= SNAP_TOLERANCE || it.area < 1) continue;
-    const o = obstacles[it.i]!;
+    const o = obstacles[it.i];
     // supported where it is?
     let supported = false;
     let best: { support: number; delta: number; cover: number } | null = null;
@@ -268,7 +280,13 @@ export function snapFloatingParts(
       const delta = it.zb - s.zt;
       if (delta < -SNAP_TOLERANCE || delta > SNAP_MAX) continue;
       // the support must also stand on the ground or be lower: never snap onto something above
-      if (s.box[2] < it.box[0] - delta - 1 || s.box[0] > it.box[2] + 1 || s.box[3] < it.box[1] - delta - 1 || s.box[1] > it.box[3] + 1) continue;
+      if (
+        s.box[2] < it.box[0] - delta - 1 ||
+        s.box[0] > it.box[2] + 1 ||
+        s.box[3] < it.box[1] - delta - 1 ||
+        s.box[1] > it.box[3] + 1
+      )
+        continue;
       if (Math.abs(delta) <= SNAP_TOLERANCE) {
         if (overlap(it.poly, s.poly) >= SNAP_SUPPORTED * it.area) {
           supported = true;
@@ -279,7 +297,11 @@ export function snapFloatingParts(
       // a roof lands on a body at least as big as itself, never on a smaller thing
       if (delta < SNAP_MIN || s.area < it.area) continue;
       const cover = overlap(shiftedPoly(o, delta), s.poly) / it.area;
-      if (cover >= SNAP_OVERLAP && (!best || cover > best.cover || (cover === best.cover && delta < best.delta))) best = { support: s.i, delta, cover };
+      if (
+        cover >= SNAP_OVERLAP &&
+        (!best || cover > best.cover || (cover === best.cover && delta < best.delta))
+      )
+        best = { support: s.i, delta, cover };
     }
     if (supported || !best) continue;
     if (o.opaque && !opts.includeOpaque) {
@@ -287,7 +309,15 @@ export function snapFloatingParts(
       continue;
     }
     const d = best.delta;
-    out[it.i] = { ...o, points: o.points.map((p) => ({ ...p, y: p.y - d, z_bottom: p.z_bottom - d, z_top: p.z_top - d })) };
+    out[it.i] = {
+      ...o,
+      points: o.points.map((p) => ({
+        ...p,
+        y: p.y - d,
+        z_bottom: p.z_bottom - d,
+        z_top: p.z_top - d,
+      })),
+    };
     snapped.push({ index: it.i, support: best.support, delta: d });
   }
   return { obstacles: out, snapped, suspects };
@@ -347,10 +377,16 @@ export function groupParts(doc: Level3D, groupId: string): Level3DObject[] {
 
 /** the obstacle as the bake writes it: the part's own transform, then its group's */
 export function transformedObstacle(doc: Level3D, o: Level3DObject): SightObstacle {
-  let points = applyGame(doc.camera, o.obstacle.points, o.transform, obstacleCentroid(o.obstacle.points));
+  let points = applyGame(
+    doc.camera,
+    o.obstacle.points,
+    o.transform,
+    obstacleCentroid(o.obstacle.points),
+  );
   if (o.group) {
     const g = doc.groups.find((x) => x.id === o.group);
-    if (g) points = applyGame(doc.camera, points, g.transform, groupCentroid(groupParts(doc, o.group)));
+    if (g)
+      points = applyGame(doc.camera, points, g.transform, groupCentroid(groupParts(doc, o.group)));
   }
   return points === o.obstacle.points ? o.obstacle : { ...o.obstacle, points };
 }
@@ -361,7 +397,11 @@ export function transformedObstacle(doc: Level3D, o: Level3DObject): SightObstac
  * ground plane, so the turn is a rigid rotation there; only the map-pixel
  * translation needs the 1/sin(elevation) stretch on Y.
  */
-export function gameTransformMatrix(cam: MapCamera, t: GameTransform, pivot: [number, number]): number[] {
+export function gameTransformMatrix(
+  cam: MapCamera,
+  t: GameTransform,
+  pivot: [number, number],
+): number[] {
   const sinT = Math.sin((cam.elevation_deg * Math.PI) / 180);
   const cosT = Math.cos((cam.elevation_deg * Math.PI) / 180);
   const a = (t.rot_deg * Math.PI) / 180;
@@ -388,7 +428,7 @@ export function mulMatrix(a: number[], b: number[]): number[] {
   for (let col = 0; col < 4; col++) {
     for (let row = 0; row < 4; row++) {
       let v = 0;
-      for (let k = 0; k < 4; k++) v += a[k * 4 + row]! * b[col * 4 + k]!;
+      for (let k = 0; k < 4; k++) v += a[k * 4 + row] * b[col * 4 + k];
       out[col * 4 + row] = v;
     }
   }
@@ -401,5 +441,8 @@ export function partMatrix(cam: MapCamera, doc: Level3D, o: Level3DObject): numb
   if (!o.group) return own;
   const g = doc.groups.find((x) => x.id === o.group);
   if (!g) return own;
-  return mulMatrix(gameTransformMatrix(cam, g.transform, groupCentroid(groupParts(doc, o.group))), own);
+  return mulMatrix(
+    gameTransformMatrix(cam, g.transform, groupCentroid(groupParts(doc, o.group))),
+    own,
+  );
 }

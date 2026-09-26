@@ -15,13 +15,7 @@ export class MapSession<T, R> {
   isCurrent(generation: number) {
     return this.generation === generation;
   }
-  publish(
-    generation: number,
-    name: string,
-    document: T,
-    resources: R,
-    saved = true,
-  ) {
+  publish(generation: number, name: string, document: T, resources: R, saved = true) {
     if (!this.isCurrent(generation)) return false;
     this.current = {
       name,

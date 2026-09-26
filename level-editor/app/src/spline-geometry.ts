@@ -2,23 +2,33 @@ import * as THREE from "three";
 import { gameToScene, type LevelSpline, type MapCamera } from "@rle/shared";
 
 export function splineCurve(path: LevelSpline, camera: MapCamera) {
-  const curve = new THREE.CatmullRomCurve3(path.points.map(point => new THREE.Vector3(...gameToScene(camera, ...point))),
-    path.closed, "centripetal");
+  const curve = new THREE.CatmullRomCurve3(
+    path.points.map((point) => new THREE.Vector3(...gameToScene(camera, ...point))),
+    path.closed,
+    "centripetal",
+  );
   curve.arcLengthDivisions = Math.max(256, path.points.length * 40);
   curve.updateArcLengths();
   return curve;
 }
 
 export function riverGeometry(path: LevelSpline, camera: MapCamera) {
-  const curve = splineCurve(path, camera), length = curve.getLength();
+  const curve = splineCurve(path, camera),
+    length = curve.getLength();
   const count = Math.min(4096, Math.max(8, Math.ceil(length / 12)));
-  const positions: number[] = [], uvs: number[] = [], indices: number[] = [];
+  const positions: number[] = [],
+    uvs: number[] = [],
+    indices: number[] = [];
   for (let i = 0; i <= count; i++) {
-    const t = i / count, p = curve.getPointAt(t), tangent = curve.getTangentAt(t);
-    const normal = new THREE.Vector3(-tangent.y, tangent.x, 0).normalize().multiplyScalar(path.width / 2);
+    const t = i / count,
+      p = curve.getPointAt(t),
+      tangent = curve.getTangentAt(t);
+    const normal = new THREE.Vector3(-tangent.y, tangent.x, 0)
+      .normalize()
+      .multiplyScalar(path.width / 2);
     for (const sign of [-1, 1]) {
       positions.push(p.x + sign * normal.x, p.y + sign * normal.y, p.z + 0.8);
-      uvs.push((sign + 1) / 2, t * length / path.repeatLength);
+      uvs.push((sign + 1) / 2, (t * length) / path.repeatLength);
     }
     if (i < count) {
       const a = i * 2;
@@ -35,37 +45,53 @@ export function riverGeometry(path: LevelSpline, camera: MapCamera) {
 
 /** A small seamless river tile; custom semi-tileable art can replace it. */
 export function defaultRiverTexture(road = false) {
-  const width = 128, height = 256, data = new Uint8Array(width * height * 4);
-  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-    const u = x / (width - 1), v = y / height;
-    const bank = Math.pow(Math.abs(u * 2 - 1), 10);
-    const wave = Math.sin(v * Math.PI * 14 + Math.sin(u * 17) * 2) *
-      Math.sin(v * Math.PI * 6 + u * 24);
-    const foam = Math.pow(Math.max(0, Math.sin(v * Math.PI * 22 + u * 15)), 20) * (1 - bank);
-    const i = (y * width + x) * 4;
-    data[i] = 63 + bank * 58 + wave * 5 + foam * 12;
-    data[i + 1] = 94 + bank * 19 + wave * 7 + foam * 15;
-    data[i + 2] = 91 - bank * 21 + wave * 7 + foam * 15;
-    if (road) { const grain=Math.sin(x*73.1+y*91.7)*7;
-      data[i]=139+grain;data[i+1]=121+grain;data[i+2]=84+grain;
+  const width = 128,
+    height = 256,
+    data = new Uint8Array(width * height * 4);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const u = x / (width - 1),
+        v = y / height;
+      const bank = Math.pow(Math.abs(u * 2 - 1), 10);
+      const wave =
+        Math.sin(v * Math.PI * 14 + Math.sin(u * 17) * 2) * Math.sin(v * Math.PI * 6 + u * 24);
+      const foam = Math.pow(Math.max(0, Math.sin(v * Math.PI * 22 + u * 15)), 20) * (1 - bank);
+      const i = (y * width + x) * 4;
+      data[i] = 63 + bank * 58 + wave * 5 + foam * 12;
+      data[i + 1] = 94 + bank * 19 + wave * 7 + foam * 15;
+      data[i + 2] = 91 - bank * 21 + wave * 7 + foam * 15;
+      if (road) {
+        const grain = Math.sin(x * 73.1 + y * 91.7) * 7;
+        data[i] = 139 + grain;
+        data[i + 1] = 121 + grain;
+        data[i + 2] = 84 + grain;
+      }
+      data[i + 3] = Math.min(255, Math.min(u, 1 - u) * (road ? 2200 : 12800));
     }
-    data[i + 3] = Math.min(255, Math.min(u, 1 - u) * (road ? 2200 : 12800));
-  }
   const texture = new THREE.DataTexture(data, width, height);
   texture.needsUpdate = true;
   return texture;
 }
 
 export function riverMesh(path: LevelSpline, camera: MapCamera) {
-  const texture = path.texture ? new THREE.TextureLoader().load(path.texture) : defaultRiverTexture(path.kind === "road");
+  const texture = path.texture
+    ? new THREE.TextureLoader().load(path.texture)
+    : defaultRiverTexture(path.kind === "road");
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.magFilter = THREE.LinearFilter;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.generateMipmaps = true;
-  const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide,
-    transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    side: THREE.DoubleSide,
+    transparent: true,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+  });
   const mesh = new THREE.Mesh(riverGeometry(path, camera), material);
   mesh.renderOrder = 1;
   mesh.userData.noSunShadow = true;
@@ -74,13 +100,17 @@ export function riverMesh(path: LevelSpline, camera: MapCamera) {
 
 type Vertex = Record<string, number[]>;
 function interpolate(a: Vertex, b: Vertex, t: number): Vertex {
-  return Object.fromEntries(Object.keys(a).map(key => [key, a[key]!.map((v, i) => v + (b[key]![i]! - v) * t)]));
+  return Object.fromEntries(
+    Object.keys(a).map((key) => [key, a[key]!.map((v, i) => v + (b[key]![i]! - v) * t)]),
+  );
 }
 function clip(polygon: Vertex[], axis: number, boundary: number, above: boolean) {
   const result: Vertex[] = [];
   for (let i = 0; i < polygon.length; i++) {
-    const a = polygon[i]!, b = polygon[(i + 1) % polygon.length]!;
-    const av = a.position![axis]!, bv = b.position![axis]!;
+    const a = polygon[i]!,
+      b = polygon[(i + 1) % polygon.length]!;
+    const av = a.position![axis]!,
+      bv = b.position![axis]!;
     const insideA = above ? av >= boundary : av <= boundary;
     const insideB = above ? bv >= boundary : bv <= boundary;
     if (insideA) result.push(a);
@@ -96,37 +126,48 @@ export interface WallSectionProfile {
 }
 
 /** Measure cross-sections, excluding the source's longitudinal bend from thickness. */
-export function wallSectionProfile(source: THREE.Object3D, bounds: THREE.Box3, path: LevelSpline): WallSectionProfile {
-  const axis = path.axis === "y" ? 1 : 0, cross = 1 - axis;
+export function wallSectionProfile(
+  source: THREE.Object3D,
+  bounds: THREE.Box3,
+  path: LevelSpline,
+): WallSectionProfile {
+  const axis = path.axis === "y" ? 1 : 0,
+    cross = 1 - axis;
   const full = bounds.max.getComponent(axis) - bounds.min.getComponent(axis);
   const start = bounds.min.getComponent(axis) + full * (path.sourceStart ?? 0);
   const end = bounds.min.getComponent(axis) + full * (path.sourceEnd ?? 1);
   const count = 64;
   const spans = Array.from({ length: count + 1 }, () => ({ min: Infinity, max: -Infinity }));
-  source.traverse(node => {
+  source.traverse((node) => {
     if (!(node instanceof THREE.Mesh)) return;
-    const geometry = node.geometry, positions = geometry.getAttribute("position");
+    const geometry = node.geometry,
+      positions = geometry.getAttribute("position");
     const vertices = Array.from({ length: positions.count }, (_, index) =>
-      new THREE.Vector3().fromBufferAttribute(positions, index).applyMatrix4(node.matrixWorld));
+      new THREE.Vector3().fromBufferAttribute(positions, index).applyMatrix4(node.matrixWorld),
+    );
     const indices = geometry.index;
     for (let i = 0; i < (indices?.count ?? positions.count); i += 3) {
-      const triangle = [0, 1, 2].map(k => vertices[indices ? indices.getX(i + k) : i + k]!);
-      const low = Math.min(...triangle.map(p => p.getComponent(axis)));
-      const high = Math.max(...triangle.map(p => p.getComponent(axis)));
-      const first = Math.max(0, Math.ceil((low - start) / (end - start) * count));
-      const last = Math.min(count, Math.floor((high - start) / (end - start) * count));
+      const triangle = [0, 1, 2].map((k) => vertices[indices ? indices.getX(i + k) : i + k]!);
+      const low = Math.min(...triangle.map((p) => p.getComponent(axis)));
+      const high = Math.max(...triangle.map((p) => p.getComponent(axis)));
+      const first = Math.max(0, Math.ceil(((low - start) / (end - start)) * count));
+      const last = Math.min(count, Math.floor(((high - start) / (end - start)) * count));
       for (let station = first; station <= last; station++) {
-        const coordinate = start + (end - start) * station / count;
+        const coordinate = start + ((end - start) * station) / count;
         const span = spans[station]!;
         for (let edge = 0; edge < 3; edge++) {
-          const a = triangle[edge]!, b = triangle[(edge + 1) % 3]!;
-          const av = a.getComponent(axis), bv = b.getComponent(axis);
+          const a = triangle[edge]!,
+            b = triangle[(edge + 1) % 3]!;
+          const av = a.getComponent(axis),
+            bv = b.getComponent(axis);
           if (Math.abs(av - coordinate) < 1e-6) {
             span.min = Math.min(span.min, a.getComponent(cross));
             span.max = Math.max(span.max, a.getComponent(cross));
           }
           if ((av < coordinate && bv > coordinate) || (av > coordinate && bv < coordinate)) {
-            const value = a.getComponent(cross) + (b.getComponent(cross) - a.getComponent(cross)) * (coordinate - av) / (bv - av);
+            const value =
+              a.getComponent(cross) +
+              ((b.getComponent(cross) - a.getComponent(cross)) * (coordinate - av)) / (bv - av);
             span.min = Math.min(span.min, value);
             span.max = Math.max(span.max, value);
           }
@@ -134,13 +175,17 @@ export function wallSectionProfile(source: THREE.Object3D, bounds: THREE.Box3, p
       }
     }
   });
-  const valid = spans.map((span, index) => ({ ...span, index })).filter(span => span.max - span.min > 0.001);
+  const valid = spans
+    .map((span, index) => ({ ...span, index }))
+    .filter((span) => span.max - span.min > 0.001);
   if (!valid.length) throw new Error("Wall source has no measurable cross-section");
   const sections = spans.map((span, index) => {
-    if (span.max - span.min > 0.001) return { center: (span.min + span.max) / 2, width: span.max - span.min };
+    if (span.max - span.min > 0.001)
+      return { center: (span.min + span.max) / 2, width: span.max - span.min };
     // A tapered end can reduce to a single vertex. Use the adjacent section
     // at that endpoint so repetitions join with the requested thickness.
-    if (index !== 0 && index !== count) throw new Error("Wall source has a gap; trim to a continuous section");
+    if (index !== 0 && index !== count)
+      throw new Error("Wall source has a gap; trim to a continuous section");
     const adjacent = index === 0 ? valid[0]! : valid.at(-1)!;
     return { center: (adjacent.min + adjacent.max) / 2, width: adjacent.max - adjacent.min };
   });
@@ -148,55 +193,82 @@ export function wallSectionProfile(source: THREE.Object3D, bounds: THREE.Box3, p
 }
 
 /** Subdivide longitudinally before bending; UVs interpolate across every cut. */
-export function wallGeometry(source: THREE.BufferGeometry, matrix: THREE.Matrix4, path: LevelSpline,
-  camera: MapCamera, bounds: THREE.Box3, repeat: number, profile?: WallSectionProfile) {
-  const axis = path.axis === "y" ? 1 : 0, cross = 1 - axis;
+export function wallGeometry(
+  source: THREE.BufferGeometry,
+  matrix: THREE.Matrix4,
+  path: LevelSpline,
+  camera: MapCamera,
+  bounds: THREE.Box3,
+  repeat: number,
+  profile?: WallSectionProfile,
+) {
+  const axis = path.axis === "y" ? 1 : 0,
+    cross = 1 - axis;
   const full = bounds.max.getComponent(axis) - bounds.min.getComponent(axis);
   const start = bounds.min.getComponent(axis) + full * (path.sourceStart ?? 0);
   const end = bounds.min.getComponent(axis) + full * (path.sourceEnd ?? 1);
   if (end - start <= 0.001) throw new Error("Wall source has no length along the selected axis");
-  const curve = splineCurve(path, camera), length = curve.getLength();
+  const curve = splineCurve(path, camera),
+    length = curve.getLength();
   const sourceWidth = bounds.max.getComponent(cross) - bounds.min.getComponent(cross);
   if (sourceWidth <= 0.001) throw new Error("Wall source has no thickness");
   const center = (bounds.max.getComponent(cross) + bounds.min.getComponent(cross)) / 2;
-  const attributes = Object.entries(source.attributes).filter(([key]) => key !== "normal" && key !== "tangent");
+  const attributes = Object.entries(source.attributes).filter(
+    ([key]) => key !== "normal" && key !== "tangent",
+  );
   const output: Record<string, number[]> = Object.fromEntries(attributes.map(([key]) => [key, []]));
   const read = (index: number): Vertex => {
     const vertex: Vertex = {};
     for (const [key, attribute] of attributes) {
-      vertex[key] = Array.from({ length: attribute.itemSize }, (_, k) => attribute.getComponent(index, k));
+      vertex[key] = Array.from({ length: attribute.itemSize }, (_, k) =>
+        attribute.getComponent(index, k),
+      );
     }
-    const p = new THREE.Vector3(...vertex.position! as [number, number, number]).applyMatrix4(matrix);
+    const p = new THREE.Vector3(...(vertex.position! as [number, number, number])).applyMatrix4(
+      matrix,
+    );
     vertex.position = p.toArray();
     return vertex;
   };
   const push = (vertex: Vertex) => {
-    const p = vertex.position!, along = (p[axis]! - start) / (end - start);
+    const p = vertex.position!,
+      along = (p[axis]! - start) / (end - start);
     const distance = (repeat + along) * path.repeatLength;
     const t = Math.min(1, Math.max(0, distance / length));
-    const point = curve.getPointAt(t), tangent = curve.getTangentAt(t);
-    let sectionCenter = center, sectionWidth = sourceWidth;
+    const point = curve.getPointAt(t),
+      tangent = curve.getTangentAt(t);
+    let sectionCenter = center,
+      sectionWidth = sourceWidth;
     if (profile) {
       const sample = Math.min(1, Math.max(0, along)) * (profile.sections.length - 1);
-      const first = Math.floor(sample), fraction = sample - first;
-      const a = profile.sections[first]!, b = profile.sections[Math.min(first + 1, profile.sections.length - 1)]!;
+      const first = Math.floor(sample),
+        fraction = sample - first;
+      const a = profile.sections[first]!,
+        b = profile.sections[Math.min(first + 1, profile.sections.length - 1)]!;
       sectionCenter = a.center + (b.center - a.center) * fraction;
       sectionWidth = a.width + (b.width - a.width) * fraction;
     }
-    const lateral = (p[cross]! - sectionCenter) * path.width / sectionWidth * (axis === 1 ? -1 : 1) * (path.flipCrossSection ? -1 : 1);
+    const lateral =
+      (((p[cross]! - sectionCenter) * path.width) / sectionWidth) *
+      (axis === 1 ? -1 : 1) *
+      (path.flipCrossSection ? -1 : 1);
     const normal = new THREE.Vector3(-tangent.y, tangent.x, 0).normalize();
-    output.position!.push(point.x + normal.x * lateral, point.y + normal.y * lateral, point.z + p[2]! - bounds.min.z);
+    output.position!.push(
+      point.x + normal.x * lateral,
+      point.y + normal.y * lateral,
+      point.z + p[2]! - bounds.min.z,
+    );
     for (const [key] of attributes) if (key !== "position") output[key]!.push(...vertex[key]!);
   };
   const count = source.index?.count ?? source.getAttribute("position").count;
   const bands = 12;
   const lastFraction = Math.min(1, length / path.repeatLength - repeat);
   for (let i = 0; i < count; i += 3) {
-    const triangle = [0,1,2].map(k => read(source.index ? source.index.getX(i + k) : i + k));
-    const low = Math.min(...triangle.map(v => v.position![axis]!));
-    const high = Math.max(...triangle.map(v => v.position![axis]!));
+    const triangle = [0, 1, 2].map((k) => read(source.index ? source.index.getX(i + k) : i + k));
+    const low = Math.min(...triangle.map((v) => v.position![axis]!));
+    const high = Math.max(...triangle.map((v) => v.position![axis]!));
     for (let band = 0; band < bands; band++) {
-      const a = start + (end - start) * band / bands;
+      const a = start + ((end - start) * band) / bands;
       const b = start + (end - start) * Math.min((band + 1) / bands, lastFraction);
       if (b <= a || low > b || high < a) continue;
       const polygon = clip(clip(triangle, axis, a, true), axis, b, false);
@@ -208,7 +280,8 @@ export function wallGeometry(source: THREE.BufferGeometry, matrix: THREE.Matrix4
     }
   }
   const geometry = new THREE.BufferGeometry();
-  for (const [key, attribute] of attributes) geometry.setAttribute(key, new THREE.Float32BufferAttribute(output[key]!, attribute.itemSize));
+  for (const [key, attribute] of attributes)
+    geometry.setAttribute(key, new THREE.Float32BufferAttribute(output[key]!, attribute.itemSize));
   geometry.computeVertexNormals();
   geometry.computeBoundingSphere();
   return geometry;
@@ -217,62 +290,117 @@ export function wallGeometry(source: THREE.BufferGeometry, matrix: THREE.Matrix4
 /** Turns are measured in the ground plane, including the seam of closed walls. */
 export function wallCorners(path: LevelSpline, camera: MapCamera) {
   if (!path.cornerAsset) return [];
-  const points=path.points.map(p=>new THREE.Vector3(...gameToScene(camera,...p)));
-  return points.flatMap((p,i)=>{
-    if ((!path.closed && (i===0 || i===points.length-1)) || path.cornerDisabled?.includes(i)) return [];
-    const incoming=p.clone().sub(points[(i+points.length-1)%points.length]!);incoming.z=0;incoming.normalize();
-    const outgoing=points[(i+1)%points.length]!.clone().sub(p);outgoing.z=0;outgoing.normalize();
-    const angle=THREE.MathUtils.radToDeg(incoming.angleTo(outgoing));
-    if(angle<(path.cornerMinAngle ?? 35)) return [];
-    const direction=incoming.add(outgoing).normalize();
-    return [{index:i,position:p,rotation:Math.atan2(direction.y,direction.x)+THREE.MathUtils.degToRad(path.cornerRotation ?? 0)}];
+  const points = path.points.map((p) => new THREE.Vector3(...gameToScene(camera, ...p)));
+  return points.flatMap((p, i) => {
+    if ((!path.closed && (i === 0 || i === points.length - 1)) || path.cornerDisabled?.includes(i))
+      return [];
+    const incoming = p.clone().sub(points[(i + points.length - 1) % points.length]!);
+    incoming.z = 0;
+    incoming.normalize();
+    const outgoing = points[(i + 1) % points.length]!.clone().sub(p);
+    outgoing.z = 0;
+    outgoing.normalize();
+    const angle = THREE.MathUtils.radToDeg(incoming.angleTo(outgoing));
+    if (angle < (path.cornerMinAngle ?? 35)) return [];
+    const direction = incoming.add(outgoing).normalize();
+    return [
+      {
+        index: i,
+        position: p,
+        rotation:
+          Math.atan2(direction.y, direction.x) + THREE.MathUtils.degToRad(path.cornerRotation ?? 0),
+      },
+    ];
   });
 }
 
-function towerWall(path: LevelSpline, camera: MapCamera, sources: Map<string,THREE.Object3D>): THREE.Group {
-  const corners=wallCorners(path,camera), result=new THREE.Group();
-  if(!corners.length) return wallMesh({...path,cornerAsset:undefined},camera,sources);
-  const tower=new THREE.Group();
-  for(const [key,node] of sources) if(key.startsWith("asset:"+path.cornerAsset+":")) tower.add(node.clone(true));
-  if(!tower.children.length) throw new Error("Missing corner tower source: "+path.cornerAsset);
-  tower.updateWorldMatrix(true,true);
-  const bounds=new THREE.Box3().setFromObject(tower), center=bounds.getCenter(new THREE.Vector3());
-  const anchor=new THREE.Vector3(center.x,center.y,bounds.min.z);
+function towerWall(
+  path: LevelSpline,
+  camera: MapCamera,
+  sources: Map<string, THREE.Object3D>,
+): THREE.Group {
+  const corners = wallCorners(path, camera),
+    result = new THREE.Group();
+  if (!corners.length) return wallMesh({ ...path, cornerAsset: undefined }, camera, sources);
+  const tower = new THREE.Group();
+  for (const [key, node] of sources)
+    if (key.startsWith("asset:" + path.cornerAsset + ":")) tower.add(node.clone(true));
+  if (!tower.children.length) throw new Error("Missing corner tower source: " + path.cornerAsset);
+  tower.updateWorldMatrix(true, true);
+  const bounds = new THREE.Box3().setFromObject(tower),
+    center = bounds.getCenter(new THREE.Vector3());
+  const anchor = new THREE.Vector3(center.x, center.y, bounds.min.z);
   try {
     // Each tower terminates adjoining spans, avoiding a rounded curtain bulge
     // underneath a sharp corner. Gentle intermediate controls stay curved.
-    const breaks=corners.map(c=>c.index);
-    const runs:number[][]=[];
-    if(path.closed) for(let j=0;j<breaks.length;j++) {
-      const run=[breaks[j]!],end=breaks[(j+1)%breaks.length]!;
-      let i=(breaks[j]!+1)%path.points.length;
-      while(i!==end){run.push(i);i=(i+1)%path.points.length;}
-      run.push(end);runs.push(run);
-    } else {
-      const stops=[0,...breaks,path.points.length-1];
-      for(let j=0;j<stops.length-1;j++) runs.push(Array.from({length:stops[j+1]!-stops[j]!+1},(_,k)=>stops[j]!+k));
+    const breaks = corners.map((c) => c.index);
+    const runs: number[][] = [];
+    if (path.closed)
+      for (let j = 0; j < breaks.length; j++) {
+        const run = [breaks[j]!],
+          end = breaks[(j + 1) % breaks.length]!;
+        let i = (breaks[j]! + 1) % path.points.length;
+        while (i !== end) {
+          run.push(i);
+          i = (i + 1) % path.points.length;
+        }
+        run.push(end);
+        runs.push(run);
+      }
+    else {
+      const stops = [0, ...breaks, path.points.length - 1];
+      for (let j = 0; j < stops.length - 1; j++)
+        runs.push(Array.from({ length: stops[j + 1]! - stops[j]! + 1 }, (_, k) => stops[j]! + k));
     }
-    for(const run of runs) result.add(wallMesh({...path,cornerAsset:undefined,closed:false,points:run.map(i=>path.points[i]!)},camera,sources));
-    for(const corner of corners) {
-      const instance=tower.clone(true);
-      instance.traverse(node=>{if(node instanceof THREE.Mesh)node.geometry=node.geometry.clone();});
-      const offset=new THREE.Group();offset.add(instance);instance.position.sub(anchor);
-      const scale=path.cornerScale ?? 1, widthScale=path.cornerWidthScale ?? 1;
-      offset.scale.set(scale*widthScale,scale*widthScale,scale);offset.rotation.z=corner.rotation;offset.position.copy(corner.position);
-      offset.userData.cornerPoint=corner.index;result.add(offset);
+    for (const run of runs)
+      result.add(
+        wallMesh(
+          {
+            ...path,
+            cornerAsset: undefined,
+            closed: false,
+            points: run.map((i) => path.points[i]!),
+          },
+          camera,
+          sources,
+        ),
+      );
+    for (const corner of corners) {
+      const instance = tower.clone(true);
+      instance.traverse((node) => {
+        if (node instanceof THREE.Mesh) node.geometry = node.geometry.clone();
+      });
+      const offset = new THREE.Group();
+      offset.add(instance);
+      instance.position.sub(anchor);
+      const scale = path.cornerScale ?? 1,
+        widthScale = path.cornerWidthScale ?? 1;
+      offset.scale.set(scale * widthScale, scale * widthScale, scale);
+      offset.rotation.z = corner.rotation;
+      offset.position.copy(corner.position);
+      offset.userData.cornerPoint = corner.index;
+      result.add(offset);
     }
     return result;
-  } catch(error) {
-    result.traverse(node=>{if(node instanceof THREE.Mesh)node.geometry.dispose();});throw error;
+  } catch (error) {
+    result.traverse((node) => {
+      if (node instanceof THREE.Mesh) node.geometry.dispose();
+    });
+    throw error;
   }
 }
 
-export function wallMesh(path: LevelSpline, camera: MapCamera, sources: Map<string, THREE.Object3D>): THREE.Group {
-  if(path.cornerAsset) return towerWall(path,camera,sources);
+export function wallMesh(
+  path: LevelSpline,
+  camera: MapCamera,
+  sources: Map<string, THREE.Object3D>,
+): THREE.Group {
+  if (path.cornerAsset) return towerWall(path, camera, sources);
   const source = new THREE.Group();
-  for (const [key, node] of sources) if (key.startsWith("asset:" + path.asset + ":")) source.add(node.clone(true));
+  for (const [key, node] of sources)
+    if (key.startsWith("asset:" + path.asset + ":")) source.add(node.clone(true));
   if (!source.children.length) throw new Error("Missing wall source: " + path.asset);
-  source.rotation.z = -(path.sourceAngle ?? 0) * Math.PI / 180;
+  source.rotation.z = (-(path.sourceAngle ?? 0) * Math.PI) / 180;
   source.updateWorldMatrix(true, true);
   const bounds = new THREE.Box3().setFromObject(source);
   const profile = wallSectionProfile(source, bounds, path);
@@ -281,26 +409,43 @@ export function wallMesh(path: LevelSpline, camera: MapCamera, sources: Map<stri
   if (repeats > 512) throw new Error("Wall path would exceed 512 repeats; increase repeat length");
   const result = new THREE.Group();
   try {
-    source.traverse(node => {
+    source.traverse((node) => {
       if (!(node instanceof THREE.Mesh)) return;
       const materials = Array.isArray(node.material) ? node.material : [node.material];
-      const groups = Array.isArray(node.material) ? node.geometry.groups : [{ start: 0,
-        count: node.geometry.index?.count ?? node.geometry.getAttribute("position").count, materialIndex: 0 }];
+      const groups = Array.isArray(node.material)
+        ? node.geometry.groups
+        : [
+            {
+              start: 0,
+              count: node.geometry.index?.count ?? node.geometry.getAttribute("position").count,
+              materialIndex: 0,
+            },
+          ];
       for (const group of groups) {
         const geometry = node.geometry.clone();
         geometry.clearGroups();
         const indices = Array.from({ length: group.count }, (_, index) =>
-          node.geometry.index ? node.geometry.index.getX(group.start + index) : group.start + index);
+          node.geometry.index ? node.geometry.index.getX(group.start + index) : group.start + index,
+        );
         geometry.setIndex(indices);
         try {
-          for (let i = 0; i < repeats; i++) result.add(new THREE.Mesh(
-            wallGeometry(geometry, node.matrixWorld, path, camera, bounds, i, profile), materials[group.materialIndex ?? 0]!));
-        } finally { geometry.dispose(); }
+          for (let i = 0; i < repeats; i++)
+            result.add(
+              new THREE.Mesh(
+                wallGeometry(geometry, node.matrixWorld, path, camera, bounds, i, profile),
+                materials[group.materialIndex ?? 0],
+              ),
+            );
+        } finally {
+          geometry.dispose();
+        }
       }
     });
     return result;
   } catch (error) {
-    result.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
+    result.traverse((node) => {
+      if (node instanceof THREE.Mesh) node.geometry.dispose();
+    });
     throw error;
   }
 }

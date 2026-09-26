@@ -38,12 +38,7 @@ import { libraryDir, workDir, datadirPath, loadEnvironment } from "./env.ts";
 import type { MeshData } from "./mesh.ts";
 import { mapView, render } from "./render.ts";
 import { groundToScene } from "@rle/shared";
-import {
-  reconstruct,
-  type Fill,
-  type Geometry,
-  type ReconstructOptions,
-} from "./volumes.ts";
+import { reconstruct, type Fill, type Geometry, type ReconstructOptions } from "./volumes.ts";
 
 /** the document's objects as one placed mesh (positions transformed, tiles shared) */
 function placeObjects(
@@ -61,12 +56,11 @@ function placeObjects(
   const pos: number[] = [];
   const uv: number[] = [];
   const idx: number[] = [];
-  const hiddenGroups = new Set(
-    doc.groups.filter((g) => g.hidden).map((g) => g.id),
-  );
+  const hiddenGroups = new Set(doc.groups.filter((g) => g.hidden).map((g) => g.id));
   for (const o of doc.objects) {
     if (o.hidden || (o.group && hiddenGroups.has(o.group))) continue;
-    if (o.source.obstacle === undefined) throw new Error("Mission assets cannot be baked into static obstacle geometry");
+    if (o.source.obstacle === undefined)
+      throw new Error("Mission assets cannot be baked into static obstacle geometry");
     const faces = facesOf.get(o.source.obstacle);
     if (!faces)
       throw new Error(
@@ -113,17 +107,40 @@ export interface BakeOptions {
 
 /** Obstacle reconstruction cannot reproduce independently imported GLB meshes. */
 export function assertReconstructedBakeSources(document: unknown): void {
-  if (document !== null && typeof document === "object" && "objects" in document &&
-      Array.isArray(document.objects) && document.objects.some(part => part?.source?.components !== undefined || part?.node?.includes("--component-")))
-    throw new Error("Game baking does not yet support split obstacle components; save the editor document instead.");
+  if (
+    document !== null &&
+    typeof document === "object" &&
+    "objects" in document &&
+    Array.isArray(document.objects) &&
+    document.objects.some(
+      (part) => part?.source?.components !== undefined || part?.node?.includes("--component-"),
+    )
+  )
+    throw new Error(
+      "Game baking does not yet support split obstacle components; save the editor document instead.",
+    );
 
-  if (document !== null && typeof document === "object" && "splines" in document &&
-      Array.isArray(document.splines) && document.splines.length)
-    throw new Error("Game baking does not yet support spline geometry; save the editor document instead.");
+  if (
+    document !== null &&
+    typeof document === "object" &&
+    "splines" in document &&
+    Array.isArray(document.splines) &&
+    document.splines.length
+  )
+    throw new Error(
+      "Game baking does not yet support spline geometry; save the editor document instead.",
+    );
 
-  if (document !== null && typeof document === "object" && "objects" in document &&
-      Array.isArray(document.objects) && document.objects.some(part => part?.kind === "mission")) {
-    throw new Error("Game baking does not yet support supplemental mission models; save the editor document instead.");
+  if (
+    document !== null &&
+    typeof document === "object" &&
+    "objects" in document &&
+    Array.isArray(document.objects) &&
+    document.objects.some((part) => part?.kind === "mission")
+  ) {
+    throw new Error(
+      "Game baking does not yet support supplemental mission models; save the editor document instead.",
+    );
   }
   if (
     document !== null &&
@@ -142,23 +159,28 @@ export function assertReconstructedBakeSources(document: unknown): void {
 export async function bake(options: BakeOptions): Promise<void> {
   const map = pathComponent(options.map, "map");
   const ambiance = pathComponent(options.ambiance ?? "Day", "ambiance");
-  const outDir =
-    options.output ?? path.join(workDir, `${map.toLowerCase()}-bake`);
+  const outDir = options.output ?? path.join(workDir, `${map.toLowerCase()}-bake`);
   const docPath =
-    options.document ??
-    path.join(libraryDir, "scenes", `${map.toLowerCase()}.rhlos-map.json`);
+    options.document ?? path.join(libraryDir, "scenes", `${map.toLowerCase()}.rhlos-map.json`);
   const input = await readDocument(docPath, options.document !== undefined);
   // Structural validation precedes expensive reconstruction; source-index
   // validation follows once the source level is available.
   let parsed = input === undefined ? undefined : parseLevel3D(input, { map });
-  if (parsed?.objects.some(part => part.kind === "mission")) {
-    parsed = await preserveNativePatchPreviews(parsed, await sceneAssetNodes(path.resolve(path.dirname(docPath), ".."), parsed),
-      mission => fs.readFile(path.join(datadirPath(), "Data", "Levels", `${mission}.rhm.json`)));
+  if (parsed?.objects.some((part) => part.kind === "mission")) {
+    parsed = await preserveNativePatchPreviews(
+      parsed,
+      await sceneAssetNodes(path.resolve(path.dirname(docPath), ".."), parsed),
+      (mission) => fs.readFile(path.join(datadirPath(), "Data", "Levels", `${mission}.rhm.json`)),
+    );
   }
   if (parsed?.exportBounds)
-    throw new Error("Custom export frames require the authored-map compiler; reconstruction baking cannot safely rebase masks and mission coordinates. Save the editor document instead.");
+    throw new Error(
+      "Custom export frames require the authored-map compiler; reconstruction baking cannot safely rebase masks and mission coordinates. Save the editor document instead.",
+    );
   if (parsed?.size === null)
-    throw new Error("Unbounded authored maps require compilation from their placed geometry with content-derived crop bounds; reconstruction baking requires a source map. Save the editor document instead.");
+    throw new Error(
+      "Unbounded authored maps require compilation from their placed geometry with content-derived crop bounds; reconstruction baking requires a source map. Save the editor document instead.",
+    );
   assertReconstructedBakeSources(parsed);
   const r = await reconstruct(map, {
     textures: options.textures,
@@ -169,10 +191,7 @@ export async function bake(options: BakeOptions): Promise<void> {
 
   let doc: Level3D;
   if (parsed !== undefined) {
-    const sourceSha256 = crypto
-      .createHash("sha256")
-      .update(JSON.stringify(level))
-      .digest("hex");
+    const sourceSha256 = crypto.createHash("sha256").update(JSON.stringify(level)).digest("hex");
     doc = parseLevel3D(parsed, {
       map,
       level,
@@ -195,16 +214,12 @@ export async function bake(options: BakeOptions): Promise<void> {
         .sort((a, b) => a - b)
         .map((i) => ({
           id: `${g.terraceIds.has(i) ? "terrace" : "building"}-${String(i).padStart(3, "0")}`,
-          kind: g.terraceIds.has(i)
-            ? ("terrace" as const)
-            : ("building" as const),
+          kind: g.terraceIds.has(i) ? ("terrace" as const) : ("building" as const),
           node: `${g.terraceIds.has(i) ? "terrace" : "building"}-${String(i).padStart(3, "0")}`,
           source: { map, obstacle: i },
           obstacle: level.sight_obstacles[i]!,
           transform: { dx: 0, dy: 0, dz: 0, rot_deg: 0 },
-          group: groupOf.has(i)
-            ? `group-${String(groupOf.get(i)!).padStart(3, "0")}`
-            : undefined,
+          group: groupOf.has(i) ? `group-${String(groupOf.get(i)!).padStart(3, "0")}` : undefined,
         })),
       groups: [...new Set(groupOf.values())].map((r) => ({
         id: `group-${String(r).padStart(3, "0")}`,
@@ -289,9 +304,7 @@ export async function bake(options: BakeOptions): Promise<void> {
     const meta = await sharp(orig).metadata();
     if (meta.width && meta.height) minSize = [meta.width, meta.height];
   } catch (error) {
-    console.warn(
-      `original minimap unavailable; using ${minSize.join("x")}: ${String(error)}`,
-    );
+    console.warn(`original minimap unavailable; using ${minSize.join("x")}: ${String(error)}`);
   }
   await sharp(mapPngOut)
     .resize(minSize[0], minSize[1], { fit: "fill" })
@@ -302,14 +315,13 @@ export async function bake(options: BakeOptions): Promise<void> {
   const obstacles: SightObstacle[] = level.sight_obstacles.map((o) => ({
     ...o,
   }));
-  const hiddenGroups = new Set(
-    doc.groups.filter((g) => g.hidden).map((g) => g.id),
-  );
+  const hiddenGroups = new Set(doc.groups.filter((g) => g.hidden).map((g) => g.id));
   const seen = new Set<number>();
   const extra: SightObstacle[] = [];
   for (const o of doc.objects) {
     if (o.hidden || (o.group && hiddenGroups.has(o.group))) continue;
-    if (o.source.obstacle === undefined) throw new Error("Mission assets cannot be baked into static obstacles");
+    if (o.source.obstacle === undefined)
+      throw new Error("Mission assets cannot be baked into static obstacles");
     const t = transformedObstacle(doc, o);
     if (!seen.has(o.source.obstacle)) {
       seen.add(o.source.obstacle);
@@ -322,10 +334,7 @@ export async function bake(options: BakeOptions): Promise<void> {
       obstacles[i] = { ...obstacles[i]!, points: [] };
   }
   const out = { ...level, sight_obstacles: [...obstacles, ...extra] };
-  await fs.writeFile(
-    path.join(levelsDir, `${map.toLowerCase()}.rhp.json`),
-    JSON.stringify(out),
-  );
+  await fs.writeFile(path.join(levelsDir, `${map.toLowerCase()}.rhp.json`), JSON.stringify(out));
   console.log(
     `wrote ${mapPngOut}, ${map.toLowerCase()}.min.png (${minSize.join("x")}) and ${map.toLowerCase()}.rhp.json (${obstacles.length} + ${extra.length} obstacles) under ${outDir}`,
   );
@@ -344,9 +353,7 @@ async function main() {
     },
   });
   if (!values.map)
-    throw new Error(
-      "usage: --map <name> [--doc file] [--out dir] [--fill proc|synth|smear|none]",
-    );
+    throw new Error("usage: --map <name> [--doc file] [--out dir] [--fill proc|synth|smear|none]");
   if (values.fill && !["proc", "synth", "smear", "none"].includes(values.fill))
     throw new Error(`unknown fill ${values.fill}`);
   await bake({
@@ -360,10 +367,7 @@ async function main() {
     ambiance: values.ambiance,
   });
 }
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((error) => {
     console.error(error);
     process.exitCode = 1;

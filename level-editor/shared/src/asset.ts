@@ -9,15 +9,7 @@
 // asset-local coordinates (world minus origin) so placing an asset at P just
 // adds P back.
 
-import type {
-  ObstaclePoint,
-  Point,
-  Polygon,
-  JumpZone,
-  JumpLinePair,
-  Lift,
-  Mask,
-} from "./level.ts";
+import type { ObstaclePoint, Point, Polygon, JumpZone, JumpLinePair, Lift, Mask } from "./level.ts";
 import type { AssetModel } from "./scene.ts";
 
 export type ScaleClass = "unique" | "variant" | "spline-segment" | "texture";

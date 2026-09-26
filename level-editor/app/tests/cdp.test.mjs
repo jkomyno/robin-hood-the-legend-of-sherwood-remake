@@ -81,15 +81,13 @@ test("CDP requests reject failure and always remove response subscriptions", asy
       timeoutMs: 20,
     });
     if (action === "abort") controller.abort(new Error("browser exited"));
-    if (action === "close" || action === "error")
-      socket.dispatchEvent(new Event(action));
+    if (action === "close" || action === "error") socket.dispatchEvent(new Event(action));
     if (["protocol", "exception", "success"].includes(action))
       socket.dispatchEvent(
         new MessageEvent("message", {
           data: JSON.stringify({
             id: 42,
-            error:
-              action === "protocol" ? { message: "bad request" } : undefined,
+            error: action === "protocol" ? { message: "bad request" } : undefined,
             result:
               action === "exception"
                 ? { exceptionDetails: { text: "failed" } }

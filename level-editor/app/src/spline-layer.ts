@@ -28,19 +28,25 @@ export class SplineLayer {
   private release(path: LevelSpline, object: THREE.Object3D) {
     object.removeFromParent();
     if (path.kind !== "wall") disposeObjectResources([object]);
-    else object.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
+    else
+      object.traverse((node) => {
+        if (node instanceof THREE.Mesh) node.geometry.dispose();
+      });
   }
   private build(path: LevelSpline) {
-    return path.kind === "wall" ? wallMesh(path, this.camera, this.sources) : riverMesh(path, this.camera);
+    return path.kind === "wall"
+      ? wallMesh(path, this.camera, this.sources)
+      : riverMesh(path, this.camera);
   }
   sync(paths: LevelSpline[], camera: MapCamera, sources: Map<string, THREE.Object3D>) {
     this.camera = camera;
     this.sources = sources;
-    const ids = new Set(paths.map(path => path.id));
-    for (const [id, view] of this.views) if (!ids.has(id)) {
-      this.release(view.path, view.object);
-      this.views.delete(id);
-    }
+    const ids = new Set(paths.map((path) => path.id));
+    for (const [id, view] of this.views)
+      if (!ids.has(id)) {
+        this.release(view.path, view.object);
+        this.views.delete(id);
+      }
     for (const path of paths) {
       const previous = this.views.get(path.id);
       if (previous?.path === path) continue;
@@ -75,16 +81,31 @@ export class SplineLayer {
     this.controls.clear();
     if (!path) return;
     if (path.points.length >= 2) {
-      const points = splineCurve(path, this.camera).getSpacedPoints(128).map(p => p.add(new THREE.Vector3(0, 0, 3)));
-      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),
-        new THREE.LineBasicMaterial({ color: 0x77e4e8, transparent: true, depthTest: false, depthWrite: false }));
+      const points = splineCurve(path, this.camera)
+        .getSpacedPoints(128)
+        .map((p) => p.add(new THREE.Vector3(0, 0, 3)));
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(points),
+        new THREE.LineBasicMaterial({
+          color: 0x77e4e8,
+          transparent: true,
+          depthTest: false,
+          depthWrite: false,
+        }),
+      );
       line.renderOrder = 100;
       this.controls.add(line);
     }
     path.points.forEach((point, index) => {
-      const handle = new THREE.Mesh(new THREE.SphereGeometry(9, 10, 8),
-        new THREE.MeshBasicMaterial({ color: index === this.mode?.point ? 0xffcd59 : 0x77e4e8,
-          transparent: true, depthTest: false, depthWrite: false }));
+      const handle = new THREE.Mesh(
+        new THREE.SphereGeometry(9, 10, 8),
+        new THREE.MeshBasicMaterial({
+          color: index === this.mode?.point ? 0xffcd59 : 0x77e4e8,
+          transparent: true,
+          depthTest: false,
+          depthWrite: false,
+        }),
+      );
       handle.userData.noSunShadow = true;
       handle.position.set(...gameToScene(this.camera, ...point));
       handle.position.z += 4;
@@ -96,7 +117,9 @@ export class SplineLayer {
   }
   hitHandle(ray: THREE.Raycaster): number | null {
     this.root.updateWorldMatrix(true, true);
-    const hit = ray.intersectObjects(this.controls.children).find(hit => typeof hit.object.userData.splinePoint === "number");
+    const hit = ray
+      .intersectObjects(this.controls.children)
+      .find((hit) => typeof hit.object.userData.splinePoint === "number");
     return hit ? hit.object.userData.splinePoint : null;
   }
   clear() {

@@ -9,12 +9,7 @@ export interface Owners {
   py: Float32Array;
 }
 
-export function rasterOwners(
-  g: Geometry,
-  cam: MapCamera,
-  mapW: number,
-  mapH: number,
-): Owners {
+export function rasterOwners(g: Geometry, cam: MapCamera, mapW: number, mapH: number): Owners {
   const t = (cam.elevation_deg * Math.PI) / 180;
   const forward = [0, Math.cos(t), -Math.sin(t)];
   const nV = g.positions.length / 3;
@@ -40,30 +35,15 @@ export function rasterOwners(
     const ia = g.tris[tIdx * 3]!,
       ib = g.tris[tIdx * 3 + 1]!,
       ic = g.tris[tIdx * 3 + 2]!;
-    const pa = [
-      g.positions[ia * 3]!,
-      g.positions[ia * 3 + 1]!,
-      g.positions[ia * 3 + 2]!,
-    ];
-    const pb = [
-      g.positions[ib * 3]!,
-      g.positions[ib * 3 + 1]!,
-      g.positions[ib * 3 + 2]!,
-    ];
-    const pc = [
-      g.positions[ic * 3]!,
-      g.positions[ic * 3 + 1]!,
-      g.positions[ic * 3 + 2]!,
-    ];
+    const pa = [g.positions[ia * 3]!, g.positions[ia * 3 + 1]!, g.positions[ia * 3 + 2]!];
+    const pb = [g.positions[ib * 3]!, g.positions[ib * 3 + 1]!, g.positions[ib * 3 + 2]!];
+    const pc = [g.positions[ic * 3]!, g.positions[ic * 3 + 1]!, g.positions[ic * 3 + 2]!];
     const nrm = cross(
       [pb[0]! - pa[0]!, pb[1]! - pa[1]!, pb[2]! - pa[2]!],
       [pc[0]! - pa[0]!, pc[1]! - pa[1]!, pc[2]! - pa[2]!],
     );
     const face = g.faceOfTri[tIdx]!;
-    if (
-      nrm[0]! * forward[0]! + nrm[1]! * forward[1]! + nrm[2]! * forward[2]! >=
-      0
-    ) {
+    if (nrm[0]! * forward[0]! + nrm[1]! * forward[1]! + nrm[2]! * forward[2]! >= 0) {
       backfacing[face] = 1;
       continue;
     }

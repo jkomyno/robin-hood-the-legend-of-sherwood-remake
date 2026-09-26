@@ -1,9 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  SessionPublication,
-  type SessionSnapshot,
-} from "./session-publication.ts";
+import { SessionPublication, type SessionSnapshot } from "./session-publication.ts";
 
 test("one publication carries revision identity, dirty and immutable history snapshots", () => {
   const events: { snapshot: SessionSnapshot<object>; reason: string }[] = [];
@@ -22,7 +19,7 @@ test("one publication carries revision identity, dirty and immutable history sna
   session.undo();
   assert.equal(events.at(-1)!.snapshot.document, second);
   assert.equal(events.at(-1)!.snapshot.dirty, false);
-  assert.deepEqual(events[2]!.snapshot.past, [first, second]);
+  assert.deepEqual(events[2].snapshot.past, [first, second]);
   session.redo();
   assert.equal(events.at(-1)!.snapshot.document, third);
   assert.equal(events.at(-1)!.snapshot.dirty, true);
@@ -34,9 +31,7 @@ test("one publication carries revision identity, dirty and immutable history sna
 
 test("stale load/save completion emits no reactive update for its successor", () => {
   const events: SessionSnapshot<object>[] = [];
-  const session = new SessionPublication<object, string>((snapshot) =>
-    events.push(snapshot),
-  );
+  const session = new SessionPublication<object, string>((snapshot) => events.push(snapshot));
   const a = session.beginLoad();
   session.publish(a, "A", {}, "A-directory");
   const save = session.captureSave();
@@ -65,8 +60,10 @@ test("completion after unmount cannot publish into the disposed reactive owner",
 
 test("saving as a modified copy switches identity while preserving history and later edits", () => {
   const events: SessionSnapshot<object>[] = [];
-  const session = new SessionPublication<object, string>(snapshot => events.push(snapshot));
-  const original = {}, edited = {}, later = {};
+  const session = new SessionPublication<object, string>((snapshot) => events.push(snapshot));
+  const original = {},
+    edited = {},
+    later = {};
   session.publish(session.beginLoad(), "York", original, "maps");
   session.edit(edited);
   const save = session.captureSave();

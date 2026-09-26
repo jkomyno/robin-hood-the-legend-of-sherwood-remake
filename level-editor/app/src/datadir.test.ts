@@ -5,11 +5,7 @@ import { loadProtoLevel, scanDatadir } from "./datadir.ts";
 test("connection indexes map names without reading unused missions or ambiance directories", async () => {
   const levels = {
     async *entries() {
-      for (const name of [
-        "York.rhp.json",
-        "leicester.rhp.json",
-        "broken.rhm.json",
-      ])
+      for (const name of ["York.rhp.json", "leicester.rhp.json", "broken.rhm.json"])
         yield [name, { kind: "file" }];
       yield ["InaccessibleDay", { kind: "directory" }];
     },
@@ -17,9 +13,7 @@ test("connection indexes map names without reading unused missions or ambiance d
       throw new Error("must not inspect ambiance directories");
     },
     getFileHandle: async () => {
-      throw new Error(
-        "must not read unused mission headers or unopened levels",
-      );
+      throw new Error("must not read unused mission headers or unopened levels");
     },
   } as unknown as FileSystemDirectoryHandle;
   const data = {

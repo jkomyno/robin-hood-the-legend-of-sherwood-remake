@@ -4,12 +4,7 @@ import { ALL_EXTENSIONS, KHRMaterialsUnlit } from "@gltf-transform/extensions";
 import { groundToScene, type MapCamera } from "@rle/shared";
 import type { Geometry } from "./volume-geometry.ts";
 import type { Textured, Fill } from "./volume-fill.ts";
-const ZUP_TO_YUP: [number, number, number, number] = [
-  -Math.SQRT1_2,
-  0,
-  0,
-  Math.SQRT1_2,
-];
+const ZUP_TO_YUP: [number, number, number, number] = [-Math.SQRT1_2, 0, 0, Math.SQRT1_2];
 export async function encode(
   tex: { width: number; height: number; rgba: Buffer },
   fill: Fill,
@@ -45,10 +40,7 @@ export async function exportGlb(
   scene.addChild(root);
 
   const mkMat = (name: string, img: { data: Buffer; mime: string }) => {
-    const texture = doc
-      .createTexture(name)
-      .setImage(img.data)
-      .setMimeType(img.mime);
+    const texture = doc.createTexture(name).setImage(img.data).setMimeType(img.mime);
     const m = doc
       .createMaterial(name)
       .setBaseColorTexture(texture)
@@ -71,9 +63,7 @@ export async function exportGlb(
     list.push(f);
     facesOf.set(face.obstacle, list);
   });
-  for (const [obstacle, faceIds] of [...facesOf.entries()].sort(
-    (a, b) => a[0] - b[0],
-  )) {
+  for (const [obstacle, faceIds] of [...facesOf.entries()].sort((a, b) => a[0] - b[0])) {
     const remap = new Map<number, number>();
     const pos: number[] = [];
     const uvs: number[] = [];
@@ -86,11 +76,7 @@ export async function exportGlb(
           if (local === undefined) {
             local = remap.size;
             remap.set(v, local);
-            pos.push(
-              g.positions[v * 3]!,
-              g.positions[v * 3 + 1]!,
-              g.positions[v * 3 + 2]!,
-            );
+            pos.push(g.positions[v * 3]!, g.positions[v * 3 + 1]!, g.positions[v * 3 + 2]!);
             uvs.push(tex.uvs[v * 2]!, tex.uvs[v * 2 + 1]!);
           }
           idx.push(local);
@@ -113,9 +99,7 @@ export async function exportGlb(
     const indices = doc
       .createAccessor(`${name}-indices`)
       .setType("SCALAR")
-      .setArray(
-        remap.size > 65535 ? new Uint32Array(idx) : new Uint16Array(idx),
-      )
+      .setArray(remap.size > 65535 ? new Uint32Array(idx) : new Uint16Array(idx))
       .setBuffer(buffer);
     const mesh = doc
       .createMesh(name)
@@ -127,9 +111,7 @@ export async function exportGlb(
           .setIndices(indices)
           .setMaterial(atlasMat),
       );
-    (isTerrace ? terraces : buildings).addChild(
-      doc.createNode(name).setMesh(mesh),
-    );
+    (isTerrace ? terraces : buildings).addChild(doc.createNode(name).setMesh(mesh));
   }
 
   const [w, h] = size;

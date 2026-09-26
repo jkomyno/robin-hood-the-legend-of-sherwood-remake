@@ -28,9 +28,7 @@ function descriptor(id: string): AssetDescriptor {
 }
 
 async function fixture(t: TestContext) {
-  const directory = await fs.mkdtemp(
-    path.join(os.tmpdir(), "library-publication-"),
-  );
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "library-publication-"));
   t.after(() => fs.rm(directory, { recursive: true, force: true }));
   const library = new AssetLibrary(directory);
   const index = path.join(directory, "index.json");
@@ -44,9 +42,7 @@ async function fixture(t: TestContext) {
 
 test("same-owner parallel publications preserve sorted entries and opaque existing metadata", async (t) => {
   const { directory, library, index, read } = await fixture(t);
-  await Promise.all(
-    ["z", "a", "m"].map((id) => library.writeAsset(descriptor(id), {})),
-  );
+  await Promise.all(["z", "a", "m"].map((id) => library.writeAsset(descriptor(id), {})));
   const entries = await read();
   assert.deepEqual(
     entries.map((e) => e.id),
@@ -56,16 +52,8 @@ test("same-owner parallel publications preserve sorted entries and opaque existi
   await fs.writeFile(index, JSON.stringify(entries));
   await library.writeAsset(descriptor("m"), { "day.png": Buffer.from("new") });
   assert.deepEqual((await read())[0]!.extension, { retained: true });
-  assert.equal(
-    await fs.readFile(path.join(directory, "m", "day.png"), "utf8"),
-    "new",
-  );
-  assert.deepEqual((await fs.readdir(directory)).sort(), [
-    "a",
-    "index.json",
-    "m",
-    "z",
-  ]);
+  assert.equal(await fs.readFile(path.join(directory, "m", "day.png"), "utf8"), "new");
+  assert.deepEqual((await fs.readdir(directory)).sort(), ["a", "index.json", "m", "z"]);
 });
 
 test("malformed or structurally invalid existing index never becomes an empty library", async (t) => {
@@ -89,10 +77,7 @@ test("malformed or structurally invalid existing index never becomes an empty li
       /Invalid library index/,
     );
     assert.equal(await fs.readFile(index, "utf8"), broken);
-    assert.equal(
-      await fs.readFile(path.join(directory, "old", "day.png"), "utf8"),
-      "old bytes",
-    );
+    assert.equal(await fs.readFile(path.join(directory, "old", "day.png"), "utf8"), "old bytes");
     assert.equal((await fs.readdir(directory)).includes(".index.lock"), false);
   }
   await fs.writeFile(index, original);
@@ -104,19 +89,11 @@ test("index read errors fail before asset modification and release the acquired 
   await library.writeAsset(descriptor("old"), {});
   const original = await fs.readFile(index, "utf8");
   const readFile = fs.readFile;
-  const mocked = t.mock.method(
-    fs,
-    "readFile",
-    async (...args: Parameters<typeof fs.readFile>) => {
-      if (args[0] === index)
-        throw Object.assign(new Error("permission denied"), { code: "EACCES" });
-      return readFile(...args);
-    },
-  );
-  await assert.rejects(
-    library.writeAsset(descriptor("new"), {}),
-    /Cannot read library index/,
-  );
+  const mocked = t.mock.method(fs, "readFile", async (...args: Parameters<typeof fs.readFile>) => {
+    if (args[0] === index) throw Object.assign(new Error("permission denied"), { code: "EACCES" });
+    return readFile(...args);
+  });
+  await assert.rejects(library.writeAsset(descriptor("new"), {}), /Cannot read library index/);
   mocked.mock.restore();
   assert.equal(await fs.readFile(index, "utf8"), original);
   assert.deepEqual((await fs.readdir(directory)).sort(), ["index.json", "old"]);
@@ -130,34 +107,23 @@ for (const failure of ["write", "rename"] as const) {
     const writeFile = fs.writeFile;
     const rename = fs.rename;
     if (failure === "write") {
-      t.mock.method(
-        fs,
-        "writeFile",
-        async (...args: Parameters<typeof fs.writeFile>) => {
-          if (String(args[0]).includes(".index-publish-"))
-            throw Object.assign(new Error("index write failed"), {
-              code: "ENOSPC",
-            });
-          return writeFile(...args);
-        },
-      );
+      t.mock.method(fs, "writeFile", async (...args: Parameters<typeof fs.writeFile>) => {
+        if (String(args[0]).includes(".index-publish-"))
+          throw Object.assign(new Error("index write failed"), {
+            code: "ENOSPC",
+          });
+        return writeFile(...args);
+      });
     } else {
-      t.mock.method(
-        fs,
-        "rename",
-        async (...args: Parameters<typeof fs.rename>) => {
-          if (args[1] === index)
-            throw Object.assign(new Error("index rename failed"), {
-              code: "EIO",
-            });
-          return rename(...args);
-        },
-      );
+      t.mock.method(fs, "rename", async (...args: Parameters<typeof fs.rename>) => {
+        if (args[1] === index)
+          throw Object.assign(new Error("index rename failed"), {
+            code: "EIO",
+          });
+        return rename(...args);
+      });
     }
-    await assert.rejects(
-      library.writeAsset(descriptor("new"), {}),
-      /index .* failed/,
-    );
+    await assert.rejects(library.writeAsset(descriptor("new"), {}), /index .* failed/);
     assert.equal(await fs.readFile(index, "utf8"), original);
     assert.equal(
       (await fs.readdir(directory)).some((name) => name.startsWith(".index")),
@@ -184,16 +150,8 @@ test("a crash-left lease gives actionable recovery guidance and is never stolen"
 
 test("asset and image names cannot escape or replace publication metadata", async (t) => {
   const { directory, library } = await fixture(t);
-  for (const id of [
-    "../outside",
-    ".index.lock",
-    "index.json",
-    ".index-publish-reserved",
-  ])
-    await assert.rejects(
-      library.writeAsset(descriptor(id), {}),
-      /Invalid asset ID/,
-    );
+  for (const id of ["../outside", ".index.lock", "index.json", ".index-publish-reserved"])
+    await assert.rejects(library.writeAsset(descriptor(id), {}), /Invalid asset ID/);
   await assert.rejects(
     library.writeAsset(descriptor("safe"), {
       "../index.json": Buffer.from("overwrite"),
@@ -226,11 +184,9 @@ test(
         await new AssetLibrary(${JSON.stringify(directory)}).writeAsset(${JSON.stringify(descriptor(id))}, {});
       } catch (error) { process.stdout.write(error.message); process.exitCode = 2; }
     `;
-      const child = spawn(
-        process.execPath,
-        ["--input-type=module", "-e", source],
-        { stdio: ["pipe", "pipe", "pipe"] },
-      );
+      const child = spawn(process.execPath, ["--input-type=module", "-e", source], {
+        stdio: ["pipe", "pipe", "pipe"],
+      });
       let stdout = "";
       let stderr = "";
       child.stdout.on("data", (bytes) => {
@@ -256,12 +212,7 @@ test(
       };
       first.child.stdout.on("data", received);
       first.done.then(
-        () =>
-          reject(
-            new Error(
-              `writer exited before acquiring lease: ${first.stderr()}`,
-            ),
-          ),
+        () => reject(new Error(`writer exited before acquiring lease: ${first.stderr()}`)),
         reject,
       );
     });

@@ -55,12 +55,19 @@ async function main() {
   composites.push({ input: Buffer.from(svg), left: 0, top: 0 });
   const out = path.join(workDir, `${map.toLowerCase()}-scene`, "contact.png");
   await sharp({
-    create: { width: cols * cell, height: rows * (cell + label), channels: 3, background: "#181818" },
+    create: {
+      width: cols * cell,
+      height: rows * (cell + label),
+      channels: 3,
+      background: "#181818",
+    },
   })
     .composite(composites)
     .png()
     .toFile(out);
-  console.log(`wrote ${out} (${items.length} assets, ${items.filter((i) => i.iou < 0.5).length} with IoU < 0.5)`);
+  console.log(
+    `wrote ${out} (${items.length} assets, ${items.filter((i) => i.iou < 0.5).length} with IoU < 0.5)`,
+  );
 }
 
 main().catch((e) => {

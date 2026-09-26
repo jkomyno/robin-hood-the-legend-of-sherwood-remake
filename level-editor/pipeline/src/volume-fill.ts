@@ -115,13 +115,6 @@ function mirrorMod(x: number, L: number): number {
   return m < L ? m : 2 * L - m;
 }
 
-/** mirror-repeat index into a run of length L: 0,1,…,L-1,L-1,…,1,0,0,1,… */
-function pingpong(k: number, L: number): number {
-  if (L <= 1) return 0;
-  const m = k % (2 * L);
-  return m < L ? m : 2 * L - 1 - m;
-}
-
 /**
  * Fill alpha-0 pixels by reflecting the image across the visibility
  * boundary: every unknown pixel takes the known pixel mirrored through its
@@ -478,13 +471,7 @@ function featherSeams(rgba: Buffer, w: number, h: number, source: Int32Array) {
 }
 
 /** fill a tile's unknown pixels according to the mode; returns how many stayed unknown */
-function fillTile(
-  rgba: Buffer,
-  w: number,
-  h: number,
-  fill: Fill,
-  groundLike: boolean,
-): number {
+function fillTile(rgba: Buffer, w: number, h: number, fill: Fill, groundLike: boolean): number {
   if (fill === "none") {
     let unknown = 0;
     for (let i = 0; i < w * h; i++) if (rgba[i * 4 + 3] === 0) unknown++;
@@ -506,9 +493,7 @@ export interface TextureOptions {
   idAtlas: boolean;
   workDirectory: string;
 }
-export function synthesisOptions(
-  options: Partial<TextureOptions> = {},
-): TextureOptions {
+export function synthesisOptions(options: Partial<TextureOptions> = {}): TextureOptions {
   const result = {
     synthBinary: path.join(os.homedir(), ".cargo", "bin", "texture-synthesis"),
     synthJobs: Math.max(1, Math.min(12, os.cpus().length - 2)),
@@ -564,24 +549,12 @@ async function synthInpaint(
   try {
     await execFileP(
       binary,
-      [
-        "--out",
-        out,
-        "--out-size",
-        `${w}x${h}`,
-        "--inpaint",
-        mk,
-        "generate",
-        ex,
-      ],
+      ["--out", out, "--out-size", `${w}x${h}`, "--inpaint", mk, "generate", ex],
       {
         maxBuffer: 1 << 24,
       },
     );
-    const res = await sharp(out)
-      .removeAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
+    const res = await sharp(out).removeAlpha().raw().toBuffer({ resolveWithObject: true });
     if (res.info.width !== w || res.info.height !== h)
       throw new Error("synthesizer output dimensions do not match input");
     for (let i = 0; i < n; i++) {
@@ -603,18 +576,11 @@ async function synthInpaint(
 }
 
 /** run jobs with limited concurrency */
-async function pool<T>(
-  items: T[],
-  limit: number,
-  job: (item: T) => Promise<void>,
-): Promise<void> {
+async function pool<T>(items: T[], limit: number, job: (item: T) => Promise<void>): Promise<void> {
   let next = 0;
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      while (next < items.length) await job(items[next++]!);
-    },
-  );
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) await job(items[next++]!);
+  });
   await Promise.all(workers);
 }
 
@@ -622,20 +588,9 @@ async function pool<T>(
 type Affine = [number, number, number, number, number, number];
 
 /** the affine map sending three points p to three points q (map-pixel coordinates) */
-function affineFrom3(
-  p: [number, number][],
-  q: [number, number][],
-): Affine | null {
-  const [p0, p1, p2] = p as [
-    [number, number],
-    [number, number],
-    [number, number],
-  ];
-  const [q0, q1, q2] = q as [
-    [number, number],
-    [number, number],
-    [number, number],
-  ];
+function affineFrom3(p: [number, number][], q: [number, number][]): Affine | null {
+  const [p0, p1, p2] = p as [[number, number], [number, number], [number, number]];
+  const [q0, q1, q2] = q as [[number, number], [number, number], [number, number]];
   const ux = p1[0] - p0[0],
     uy = p1[1] - p0[1],
     vx = p2[0] - p0[0],
@@ -651,14 +606,7 @@ function affineFrom3(
   const b = (sx * ux - rx * vx) / det;
   const d = (ry * vy - sy * uy) / det;
   const e = (sy * ux - ry * vx) / det;
-  return [
-    a,
-    b,
-    q0[0] - a * p0[0] - b * p0[1],
-    d,
-    e,
-    q0[1] - d * p0[0] - e * p0[1],
-  ];
+  return [a, b, q0[0] - a * p0[0] - b * p0[1], d, e, q0[1] - d * p0[0] - e * p0[1]];
 }
 
 /**
@@ -688,13 +636,7 @@ interface Frame {
  * local origin (u reversed for a mirrored wall), mirror-repeating the donor
  * where the recipient is larger. Returns pixels copied.
  */
-function sampleDonorFrame(
-  dst: Tile,
-  src: Tile,
-  rf: Frame,
-  df: Frame,
-  mirrored: boolean,
-): number {
+function sampleDonorFrame(dst: Tile, src: Tile, rf: Frame, df: Frame, mirrored: boolean): number {
   const dw = df.ru1 - df.ru0;
   const dh = df.rv1 - df.rv0;
   if (dw < 1 || dh < 1) return 0;
@@ -707,17 +649,12 @@ function sampleDonorFrame(
       const tx = x + dst.x0 + 0.5;
       const ty = y + dst.y0 + 0.5;
       let u = rf.toLocal[0] * tx + rf.toLocal[1] * ty + rf.toLocal[2] - rf.ru0;
-      const v =
-        rf.toLocal[3] * tx + rf.toLocal[4] * ty + rf.toLocal[5] - rf.rv0;
+      const v = rf.toLocal[3] * tx + rf.toLocal[4] * ty + rf.toLocal[5] - rf.rv0;
       if (mirrored) u = dw - u;
       const su = df.ru0 + mirrorMod(u, dw);
       const sv = df.rv0 + mirrorMod(v, dh);
-      const sx = Math.floor(
-        df.fromLocal[0] * su + df.fromLocal[1] * sv + df.fromLocal[2] - src.x0,
-      );
-      const sy = Math.floor(
-        df.fromLocal[3] * su + df.fromLocal[4] * sv + df.fromLocal[5] - src.y0,
-      );
+      const sx = Math.floor(df.fromLocal[0] * su + df.fromLocal[1] * sv + df.fromLocal[2] - src.x0);
+      const sy = Math.floor(df.fromLocal[3] * su + df.fromLocal[4] * sv + df.fromLocal[5] - src.y0);
       if (sx < 0 || sy < 0 || sx >= src.w || sy >= src.h) continue;
       const sk = sy * src.w + sx;
       if (src.valid && !src.valid[sk]) continue;
@@ -745,34 +682,21 @@ function inscribedRect(tris: [number, number][][], box: Box): Box {
   const su = (u1 - u0) / W;
   const sv = (v1 - v0) / H;
   const inside = new Uint8Array(W * H);
-  for (const [a, b, c] of tris as [
-    [number, number],
-    [number, number],
-    [number, number],
-  ][]) {
+  for (const [a, b, c] of tris as [[number, number], [number, number], [number, number]][]) {
     const area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
     if (Math.abs(area) < 1e-9) continue;
     const inv = 1 / area;
     const cx0 = Math.max(0, Math.floor((Math.min(a[0], b[0], c[0]) - u0) / su));
-    const cx1 = Math.min(
-      W - 1,
-      Math.ceil((Math.max(a[0], b[0], c[0]) - u0) / su),
-    );
+    const cx1 = Math.min(W - 1, Math.ceil((Math.max(a[0], b[0], c[0]) - u0) / su));
     const cy0 = Math.max(0, Math.floor((Math.min(a[1], b[1], c[1]) - v0) / sv));
-    const cy1 = Math.min(
-      H - 1,
-      Math.ceil((Math.max(a[1], b[1], c[1]) - v0) / sv),
-    );
+    const cy1 = Math.min(H - 1, Math.ceil((Math.max(a[1], b[1], c[1]) - v0) / sv));
     for (let cy = cy0; cy <= cy1; cy++) {
       const py = v0 + (cy + 0.5) * sv;
       for (let cx = cx0; cx <= cx1; cx++) {
         const px = u0 + (cx + 0.5) * su;
-        const l0 =
-          ((b[0] - px) * (c[1] - py) - (c[0] - px) * (b[1] - py)) * inv;
-        const l1 =
-          ((c[0] - px) * (a[1] - py) - (a[0] - px) * (c[1] - py)) * inv;
-        if (l0 >= -1e-6 && l1 >= -1e-6 && 1 - l0 - l1 >= -1e-6)
-          inside[cy * W + cx] = 1;
+        const l0 = ((b[0] - px) * (c[1] - py) - (c[0] - px) * (b[1] - py)) * inv;
+        const l1 = ((c[0] - px) * (a[1] - py) - (a[0] - px) * (c[1] - py)) * inv;
+        if (l0 >= -1e-6 && l1 >= -1e-6 && 1 - l0 - l1 >= -1e-6) inside[cy * W + cx] = 1;
       }
     }
   }
@@ -782,8 +706,7 @@ function inscribedRect(tris: [number, number][][], box: Box): Box {
   let rect: Box = [u0, v0, u0, v0];
   const stack: number[] = [];
   for (let cy = 0; cy < H; cy++) {
-    for (let cx = 0; cx < W; cx++)
-      heights[cx] = inside[cy * W + cx] ? heights[cx]! + 1 : 0;
+    for (let cx = 0; cx < W; cx++) heights[cx] = inside[cy * W + cx] ? heights[cx]! + 1 : 0;
     stack.length = 0;
     for (let cx = 0; cx <= W; cx++) {
       const hgt = cx < W ? heights[cx]! : 0;
@@ -794,12 +717,7 @@ function inscribedRect(tris: [number, number][][], box: Box): Box {
         const area = hh * (cx - left);
         if (area > best) {
           best = area;
-          rect = [
-            u0 + left * su,
-            v0 + (cy + 1 - hh) * sv,
-            u0 + cx * su,
-            v0 + (cy + 1) * sv,
-          ];
+          rect = [u0 + left * su, v0 + (cy + 1 - hh) * sv, u0 + cx * su, v0 + (cy + 1) * sv];
         }
       }
       stack.push(cx);
@@ -919,11 +837,7 @@ export async function buildTextures(
     ];
   };
   /** scene point of local (u, v) on face f */
-  const localToScene = (
-    f: number,
-    u: number,
-    v: number,
-  ): [number, number, number] => {
+  const localToScene = (f: number, u: number, v: number): [number, number, number] => {
     const { origin, e1, e2 } = faces[f]!.plane;
     return [
       origin[0] + u * e1[0] + v * e2[0],
@@ -950,10 +864,7 @@ export async function buildTextures(
     const t = tiles[f];
     if (!t?.local) return [own.px[v]!, own.py[v]!];
     const [u, vv] = localCoords(f, v);
-    return [
-      (u - t.local.u0) * t.local.scale,
-      (t.local.v1 - vv) * t.local.scale,
-    ];
+    return [(u - t.local.u0) * t.local.scale, (t.local.v1 - vv) * t.local.scale];
   };
   /** tile frame <-> local frame of a face with a tile, through three spread vertices (memoized) */
   const frameCache = new Map<number, Frame | null>();
@@ -999,9 +910,7 @@ export async function buildTextures(
     if (!toLocal || !fromLocal) return null;
     const box = localBox(f);
     const tris = faces[f]!.tris.map((t) =>
-      [g.tris[t * 3]!, g.tris[t * 3 + 1]!, g.tris[t * 3 + 2]!].map((v) =>
-        localCoords(f, v),
-      ),
+      [g.tris[t * 3]!, g.tris[t * 3 + 1]!, g.tris[t * 3 + 2]!].map((v) => localCoords(f, v)),
     );
     const [ru0, rv0, ru1, rv1] = inscribedRect(tris, box);
     return {
@@ -1021,16 +930,11 @@ export async function buildTextures(
   const insideMask = (f: number, t: Tile): Uint8Array => {
     const m = new Uint8Array(t.w * t.h);
     for (const tri of faces[f]!.tris) {
-      const [a, b, c] = [
-        g.tris[tri * 3]!,
-        g.tris[tri * 3 + 1]!,
-        g.tris[tri * 3 + 2]!,
-      ].map((v) => {
+      const [a, b, c] = [g.tris[tri * 3]!, g.tris[tri * 3 + 1]!, g.tris[tri * 3 + 2]!].map((v) => {
         const [x, y] = tileCoords(f, v);
         return [x - t.x0, y - t.y0] as [number, number];
       }) as [[number, number], [number, number], [number, number]];
-      const area =
-        (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
+      const area = (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]);
       if (Math.abs(area) < 1e-9) continue;
       const inv = 1 / area;
       const x0 = Math.max(0, Math.floor(Math.min(a[0], b[0], c[0])));
@@ -1041,13 +945,10 @@ export async function buildTextures(
         const py = y + 0.5;
         for (let x = x0; x <= x1; x++) {
           const px = x + 0.5;
-          const l0 =
-            ((b[0] - px) * (c[1] - py) - (c[0] - px) * (b[1] - py)) * inv;
-          const l1 =
-            ((c[0] - px) * (a[1] - py) - (a[0] - px) * (c[1] - py)) * inv;
+          const l0 = ((b[0] - px) * (c[1] - py) - (c[0] - px) * (b[1] - py)) * inv;
+          const l1 = ((c[0] - px) * (a[1] - py) - (a[0] - px) * (c[1] - py)) * inv;
           // a little slack so edge pixels count as inside
-          if (l0 >= -0.05 && l1 >= -0.05 && 1 - l0 - l1 >= -0.05)
-            m[y * t.w + x] = 1;
+          if (l0 >= -0.05 && l1 >= -0.05 && 1 - l0 - l1 >= -0.05) m[y * t.w + x] = 1;
         }
       }
     }
@@ -1057,8 +958,7 @@ export async function buildTextures(
   const finishOwnTile = (f: number, t: Tile) => {
     tiles[f] = t; // tileCoords reads tiles[f].local
     const valid = new Uint8Array(t.w * t.h);
-    for (let k = 0; k < t.w * t.h; k++)
-      if (t.rgba[k * 4 + 3]! > 0) valid[k] = 1;
+    for (let k = 0; k < t.w * t.h; k++) if (t.rgba[k * 4 + 3]! > 0) valid[k] = 1;
     t.valid = valid;
     t.inside = insideMask(f, t);
     let insideCount = 0;
@@ -1067,11 +967,7 @@ export async function buildTextures(
     unknownPx += insideCount - Math.min(insideCount, t.known);
   };
   /** a tile in the face's local frame at the given texel density, with its own pixels if sample */
-  const makeLocalTile = (
-    f: number,
-    scale: number,
-    sample: boolean,
-  ): Tile | null => {
+  const makeLocalTile = (f: number, scale: number, sample: boolean): Tile | null => {
     frameCache.delete(f);
     const [u0, v0, u1, v1] = localBox(f);
     if (u1 - u0 < 1 || v1 - v0 < 1) return null;
@@ -1231,19 +1127,9 @@ export async function buildTextures(
   const roofTiles: number[] = [];
   const wallTiles: number[] = [];
   const isDonor = (d: number) => {
-    if (
-      !tiles[d] ||
-      tiles[d]!.local ||
-      frac[d]! < MIN_DONOR_FRAC ||
-      filled[d] !== 1
-    )
-      return false;
+    if (!tiles[d] || tiles[d].local || frac[d]! < MIN_DONOR_FRAC || filled[d] !== 1) return false;
     const fr = frame(d);
-    return (
-      !!fr &&
-      fr.ru1 - fr.ru0 >= MIN_DONOR_RECT &&
-      fr.rv1 - fr.rv0 >= MIN_DONOR_RECT
-    );
+    return !!fr && fr.ru1 - fr.ru0 >= MIN_DONOR_RECT && fr.rv1 - fr.rv0 >= MIN_DONOR_RECT;
   };
   for (let f = 0; f < faces.length; f++) {
     if (!tiles[f] || tiles[f]!.local || frac[f]! < MIN_DONOR_FRAC) continue;
@@ -1305,7 +1191,7 @@ export async function buildTextures(
       }
     }
     if (best >= 0) return { d: best, mirrored: false };
-    const [x0, y0, x1, y1] = faceBox[f]!;
+    const [x0, y0, x1, y1] = faceBox[f];
     const grow = 0.25 * Math.max(x1 - x0, y1 - y0, 4);
     const box: Box = [x0 - grow, y0 - grow, x1 + grow, y1 + grow];
     let bestOverlap = 0;
@@ -1335,30 +1221,17 @@ export async function buildTextures(
   // projection visible is completed from a donor before its own pixels are
   // mirrored into whatever is still unknown
   let donorFilled = 0;
-  const fillOrder = tiles
-    .flatMap((t, f) => (t ? [f] : []))
-    .sort((a, b) => frac[b]! - frac[a]!);
+  const fillOrder = tiles.flatMap((t, f) => (t ? [f] : [])).sort((a, b) => frac[b]! - frac[a]!);
   const synthDone = new Uint8Array(faces.length);
   if (fill === "synth") {
     // every face with own pixels is inpainted from them by the synthesizer
     const jobs = fillOrder.filter(
-      (f) =>
-        tiles[f]!.known >= 100 &&
-        Math.min(tiles[f]!.w, tiles[f]!.h) >= SYNTH_MIN_SIDE,
+      (f) => tiles[f]!.known >= 100 && Math.min(tiles[f]!.w, tiles[f]!.h) >= SYNTH_MIN_SIDE,
     );
     const t0 = Date.now();
     await pool(jobs, options.synthJobs, async (f) => {
       const t = tiles[f]!;
-      if (
-        await synthInpaint(
-          t.rgba,
-          t.w,
-          t.h,
-          synthDir,
-          `face-${f}`,
-          options.synthBinary,
-        )
-      ) {
+      if (await synthInpaint(t.rgba, t.w, t.h, synthDir, `face-${f}`, options.synthBinary)) {
         t.valid!.fill(1);
         synthDone[f] = 1;
       }
@@ -1375,8 +1248,7 @@ export async function buildTextures(
       // what is seen; deeper unknown pixels come from a donor at 1:1 scale
       reflectFill(t.rgba, t.w, t.h, false, 512, t.valid);
       let left = 0;
-      for (let k = 0; k < t.w * t.h; k++)
-        if (t.inside![k] && t.rgba[k * 4 + 3] === 0) left++;
+      for (let k = 0; k < t.w * t.h; k++) if (t.inside![k] && t.rgba[k * 4 + 3] === 0) left++;
       let copied = 0;
       if (left > 0) {
         const donor = findDonor(f);
@@ -1384,14 +1256,7 @@ export async function buildTextures(
           donorOf[f] = donor.d;
           const rf = frame(f);
           const df = frame(donor.d);
-          if (rf && df)
-            copied = sampleDonorFrame(
-              t,
-              tiles[donor.d]!,
-              rf,
-              df,
-              donor.mirrored,
-            );
+          if (rf && df) copied = sampleDonorFrame(t, tiles[donor.d]!, rf, df, donor.mirrored);
         }
       }
       if (copied > 0) donorFilled++;
@@ -1422,10 +1287,7 @@ export async function buildTextures(
         tiles[f] = t;
         t.valid = new Uint8Array(t.w * t.h);
         const rf = frame(f);
-        if (
-          rf &&
-          sampleDonorFrame(t, tiles[donor.d]!, rf, df, donor.mirrored) > 0
-        ) {
+        if (rf && sampleDonorFrame(t, tiles[donor.d]!, rf, df, donor.mirrored) > 0) {
           leftPx += fillTile(t.rgba, t.w, t.h, fill, false);
           if (face.kind === "side") borrowedWalls++;
           else borrowedRoofs++;
@@ -1453,16 +1315,8 @@ export async function buildTextures(
           bx1 = Math.max(bx1, b[2]);
           by1 = Math.max(by1, b[3]);
         }
-        for (
-          let y = Math.max(0, Math.floor(by0));
-          y <= Math.min(mapH - 1, Math.ceil(by1));
-          y++
-        ) {
-          for (
-            let x = Math.max(0, Math.floor(bx0));
-            x <= Math.min(mapW - 1, Math.ceil(bx1));
-            x++
-          ) {
+        for (let y = Math.max(0, Math.floor(by0)); y <= Math.min(mapH - 1, Math.ceil(by1)); y++) {
+          for (let x = Math.max(0, Math.floor(bx0)); x <= Math.min(mapW - 1, Math.ceil(bx1)); x++) {
             const i = y * mapW + x;
             acc[0] += mapRgb[i * 3]!;
             acc[1] += mapRgb[i * 3 + 1]!;
@@ -1541,22 +1395,12 @@ export async function buildTextures(
     }
     if (placed) break;
   }
-  if (!placed)
-    throw new Error(
-      `texture atlas exceeds ${MAX_ATLAS}²; tiles cover ${area} px`,
-    );
-  console.log(
-    `atlas ${side}²: ${packed.length} tiles covering ${(area / 1e6).toFixed(1)} Mpx`,
-  );
+  if (!placed) throw new Error(`texture atlas exceeds ${MAX_ATLAS}²; tiles cover ${area} px`);
+  console.log(`atlas ${side}²: ${packed.length} tiles covering ${(area / 1e6).toFixed(1)} Mpx`);
   const atlas = Buffer.alloc(side * side * 4);
   for (const t of packed) {
     for (let y = 0; y < t.h; y++) {
-      t.rgba.copy(
-        atlas,
-        ((t.ay + y) * side + t.ax) * 4,
-        y * t.w * 4,
-        (y + 1) * t.w * 4,
-      );
+      t.rgba.copy(atlas, ((t.ay + y) * side + t.ax) * 4, y * t.w * 4, (y + 1) * t.w * 4);
     }
   }
 
@@ -1594,17 +1438,8 @@ export async function buildTextures(
   }
   if (fill === "synth") {
     const t0 = Date.now();
-    await synthInpaint(
-      ground,
-      mapW,
-      mapH,
-      synthDir,
-      "ground",
-      options.synthBinary,
-    );
-    console.log(
-      `texture-synthesis: ground in ${((Date.now() - t0) / 1000).toFixed(0)} s`,
-    );
+    await synthInpaint(ground, mapW, mapH, synthDir, "ground", options.synthBinary);
+    console.log(`texture-synthesis: ground in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
   }
   fillTile(ground, mapW, mapH, fill, true);
 

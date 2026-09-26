@@ -76,9 +76,7 @@ for (const kind of [
   };
 }
 const gpuCounts = () =>
-  Object.fromEntries(
-    [...gpu].map(([kind, resources]) => [kind, resources.size]),
-  );
+  Object.fromEntries([...gpu].map(([kind, resources]) => [kind, resources.size]));
 const frames = new Set<number>();
 const requestFrame = window.requestAnimationFrame.bind(window);
 const cancelFrame = window.cancelAnimationFrame.bind(window);
@@ -128,10 +126,7 @@ EventTarget.prototype.addEventListener = function (type, callback, options) {
     if (
       ![...listeners].some(
         (l) =>
-          l.target === this &&
-          l.type === type &&
-          l.callback === callback &&
-          l.capture === capture,
+          l.target === this && l.type === type && l.callback === callback && l.capture === capture,
       )
     ) {
       const entry = { target: this, type, callback, capture };
@@ -147,12 +142,7 @@ EventTarget.prototype.addEventListener = function (type, callback, options) {
 EventTarget.prototype.removeEventListener = function (type, callback, options) {
   const capture = typeof options === "boolean" ? options : !!options?.capture;
   for (const l of listeners)
-    if (
-      l.target === this &&
-      l.type === type &&
-      l.callback === callback &&
-      l.capture === capture
-    )
+    if (l.target === this && l.type === type && l.callback === callback && l.capture === capture)
       listeners.delete(l);
   return remove.call(this, type, callback, options);
 };
@@ -188,10 +178,7 @@ async function fixtures(names = ["a", "b"]) {
     buildings.add(mesh);
     const glb = await new GLTFExporter().parseAsync(root, { binary: true });
     assert(glb instanceof ArrayBuffer, "fixture GLB export");
-    files.set(
-      `${name}-volumes.scene.glb`,
-      new File([glb as ArrayBuffer], "scene.glb"),
-    );
+    files.set(`${name}-volumes.scene.glb`, new File([glb as ArrayBuffer], "scene.glb"));
     mesh.geometry.dispose();
     material.dispose();
     texture.dispose();
@@ -203,14 +190,21 @@ async function fixtures(names = ["a", "b"]) {
       camera,
       placements: [],
     };
-    files.set(
-      `${name}-volumes.scene.json`,
-      new File([JSON.stringify(scene)], "scene.json"),
-    );
+    files.set(`${name}-volumes.scene.json`, new File([JSON.stringify(scene)], "scene.json"));
     const doc = {
       ...scene,
-      sceneAssets: [{ id: name, role: "objects", model: `scenes/${name}-volumes.scene.glb`,
-        model_sha256: Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", glb as ArrayBuffer)), byte => byte.toString(16).padStart(2,"0")).join(""), resources: [] }],
+      sceneAssets: [
+        {
+          id: name,
+          role: "objects",
+          model: `scenes/${name}-volumes.scene.glb`,
+          model_sha256: Array.from(
+            new Uint8Array(await crypto.subtle.digest("SHA-256", glb as ArrayBuffer)),
+            (byte) => byte.toString(16).padStart(2, "0"),
+          ).join(""),
+          resources: [],
+        },
+      ],
       groups: [],
       objects: [
         {
@@ -236,10 +230,7 @@ async function fixtures(names = ["a", "b"]) {
         },
       ],
     };
-    files.set(
-      `${name}.rhlos-map.json`,
-      new File([JSON.stringify(doc)], "rhlos-map.json"),
-    );
+    files.set(`${name}.rhlos-map.json`, new File([JSON.stringify(doc)], "rhlos-map.json"));
   }
   const originalFiles = new Map(files);
   const directory = {
@@ -304,7 +295,7 @@ async function fixtures(names = ["a", "b"]) {
 }
 function button(label: string) {
   const level = document.querySelector('select[aria-label="Map"]') as HTMLSelectElement | null;
-  if (level && [...level.options].some(option => option.value === label)) {
+  if (level && [...level.options].some((option) => option.value === label)) {
     level.value = label;
     level.dispatchEvent(new Event("change", { bubbles: true }));
     return;
@@ -321,9 +312,13 @@ async function main() {
   await checkHttpLibrary();
   await checkSharedLibrary();
   if (location.search.includes("library-only")) {
-    assert([...gpu.values()].every(resources => resources.size === 0), "Spline/library GPU resources retained");
+    assert(
+      [...gpu.values()].every((resources) => resources.size === 0),
+      "Spline/library GPU resources retained",
+    );
     assert(frames.size === 0 && observers === 0, "Spline/library frame or observer retained");
-    result.textContent = "PASS shared library and 3D spline drawing, undo/redo, save/reload and GPU cleanup";
+    result.textContent =
+      "PASS shared library and 3D spline drawing, undo/redo, save/reload and GPU cleanup";
     return;
   }
   const initialContextLosses = contextLosses;
@@ -347,7 +342,9 @@ async function main() {
       document.querySelector("#root")!,
     );
     await until(() =>
-      [...document.querySelectorAll('select[aria-label="Map"] option')].some(b => b.textContent === "a"),
+      [...document.querySelectorAll('select[aria-label="Map"] option')].some(
+        (b) => b.textContent === "a",
+      ),
     );
     if (mount === 0) {
       const selectedMap = () =>
@@ -361,10 +358,7 @@ async function main() {
       pending.release();
       await pause();
       await pause();
-      assert(
-        selectedMap() === "b",
-        "stale map load replaced its successor scene",
-      );
+      assert(selectedMap() === "b", "stale map load replaced its successor scene");
 
       (document.querySelector(".object-list li") as HTMLElement).click();
       await pause();
@@ -407,21 +401,22 @@ async function main() {
       await oldLibrary.entered;
       setActiveLibrary(replacement);
       await until(() =>
-        [...document.querySelectorAll('select[aria-label="Map"] option')].some(b => b.textContent === "c"),
+        [...document.querySelectorAll('select[aria-label="Map"] option')].some(
+          (b) => b.textContent === "c",
+        ),
       );
       button("c");
       await until(() => selectedMap() === "c" && status === null);
       oldLibrary.release();
       await pause();
       await pause();
-      assert(
-        selectedMap() === "c",
-        "retired library published into the replacement viewport",
-      );
+      assert(selectedMap() === "c", "retired library published into the replacement viewport");
       library.resetFiles();
       setActiveLibrary(library);
       await until(() =>
-        [...document.querySelectorAll('select[aria-label="Map"] option')].some(b => b.textContent === "a"),
+        [...document.querySelectorAll('select[aria-label="Map"] option')].some(
+          (b) => b.textContent === "a",
+        ),
       );
       assert(errors.length === 0, errors.join("\n"));
     }
@@ -431,10 +426,7 @@ async function main() {
       try {
         await until(() => {
           assert(errors.length === 0, errors.join("\n"));
-          return (
-            status === null &&
-            document.querySelectorAll(".object-list li").length === 1
-          );
+          return status === null && document.querySelectorAll(".object-list li").length === 1;
         });
       } catch (error) {
         throw new Error(
@@ -492,8 +484,7 @@ async function main() {
         frames: frames.size,
       });
     }
-    const unmountedLoad =
-      mount === 3 ? library.delayRead("a-volumes.scene.glb") : null;
+    const unmountedLoad = mount === 3 ? library.delayRead("a-volumes.scene.glb") : null;
     if (unmountedLoad) {
       button("a");
       await unmountedLoad.entered;

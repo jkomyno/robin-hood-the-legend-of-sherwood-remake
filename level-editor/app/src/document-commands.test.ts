@@ -1,12 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseLevel3D } from "@rle/shared";
-import {
-  deleteSelection,
-  duplicateSelection,
-  patchGroup,
-  patchPart,
-} from "./document-commands.ts";
+import { deleteSelection, duplicateSelection, patchGroup, patchPart } from "./document-commands.ts";
 
 function fixture() {
   return parseLevel3D({
@@ -15,9 +10,7 @@ function fixture() {
     sceneAssets: [],
     size: [100, 200],
     camera: { kind: "oblique-orthographic", elevation_deg: 35 },
-    groups: [
-      { id: "house", transform: { dx: 10, dy: 20, dz: 0, rot_deg: 15 } },
-    ],
+    groups: [{ id: "house", transform: { dx: 10, dy: 20, dz: 0, rot_deg: 15 } }],
     objects: [
       {
         id: "part",
@@ -49,22 +42,16 @@ test("group duplicate preserves source/local transforms and allocates collision-
   const original = fixture();
   const before = structuredClone(original);
   original.objects.push({
-    ...original.objects[0]!,
+    ...original.objects[0],
     id: "part-house-copy1",
     group: undefined,
   });
   const result = duplicateSelection(original, { kind: "group", id: "house" });
   assert.equal(result.selection.id, "house-copy1");
-  assert.equal(result.document.objects[2]!.id, "part-house-copy1-copy1");
-  assert.equal(
-    result.document.objects[2]!.transform,
-    original.objects[0]!.transform,
-  );
-  assert.equal(
-    result.document.objects[2]!.obstacle,
-    original.objects[0]!.obstacle,
-  );
-  assert.deepEqual(result.document.groups[1]!.transform, {
+  assert.equal(result.document.objects[2].id, "part-house-copy1-copy1");
+  assert.equal(result.document.objects[2].transform, original.objects[0].transform);
+  assert.equal(result.document.objects[2].obstacle, original.objects[0].obstacle);
+  assert.deepEqual(result.document.groups[1].transform, {
     dx: 50,
     dy: 40,
     dz: 0,
@@ -83,8 +70,8 @@ test("part duplicate offsets locally and preserves membership; delete group remo
     id: "part",
   });
   assert.equal(second.selection.id, "part-copy2");
-  assert.equal(second.document.objects[2]!.group, "house");
-  assert.deepEqual(second.document.objects[2]!.transform, {
+  assert.equal(second.document.objects[2].group, "house");
+  assert.deepEqual(second.document.objects[2].transform, {
     dx: 41,
     dy: 22,
     dz: 0,
@@ -108,18 +95,15 @@ test("transform and visibility edits leave earlier revisions unchanged and rejec
   const next = patchGroup(patchPart(original, "part", { transform }), "house", {
     hidden: true,
   });
-  assert.equal(next.objects[0]!.transform, transform);
-  assert.equal(next.groups[0]!.hidden, true);
-  assert.equal(original.groups[0]!.hidden, undefined);
-  assert.equal(original.objects[0]!.transform.dx, 1);
+  assert.equal(next.objects[0].transform, transform);
+  assert.equal(next.groups[0].hidden, true);
+  assert.equal(original.groups[0].hidden, undefined);
+  assert.equal(original.objects[0].transform.dx, 1);
   assert.throws(() => patchPart(original, "missing", {}), /Unknown part/);
   assert.throws(() => patchGroup(original, "missing", {}), /Unknown group/);
   assert.throws(
     () => duplicateSelection(original, { kind: "part", id: "missing" }),
     /Unknown part/,
   );
-  assert.throws(
-    () => deleteSelection(original, { kind: "group", id: "missing" }),
-    /Unknown group/,
-  );
+  assert.throws(() => deleteSelection(original, { kind: "group", id: "missing" }), /Unknown group/);
 });

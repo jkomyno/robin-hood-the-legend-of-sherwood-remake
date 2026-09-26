@@ -59,8 +59,8 @@ async function main() {
     }
     const png = await loadKeyedFxPng(fx.framePath);
     const meta = await sharp(png).metadata();
-    const w = meta.width!;
-    const h = meta.height!;
+    const w = meta.width;
+    const h = meta.height;
     const [left, top] = fxTopLeft(fx, item.x, item.y, item.elevation);
 
     // mask = alpha channel of the sprite

@@ -20,10 +20,20 @@ export const GAME_ASPECT_RATIO = 0.573576436351046;
  * run as a sanity check and only wins when a map is clearly built with a
  * different camera (more than 0.01 away in sin).
  */
-export function fitMapCamera(level: ProtoLevel): MapCamera & { fit_cos: number; quads: number; fit_sin: number } {
+export function fitMapCamera(
+  level: ProtoLevel,
+): MapCamera & { fit_cos: number; quads: number; fit_sin: number } {
   const fit = fitElevationFromFootprints(level);
-  if (Math.abs(fit.s - GAME_ASPECT_RATIO) <= 0.01) return { ...cameraFromFit(GAME_ASPECT_RATIO), fit_cos: fit.err, quads: fit.quads, fit_sin: fit.s };
-  console.warn(`map camera: footprint fit sin ${fit.s.toFixed(4)} differs from the game constant ${GAME_ASPECT_RATIO.toFixed(4)}; using the fit`);
+  if (Math.abs(fit.s - GAME_ASPECT_RATIO) <= 0.01)
+    return {
+      ...cameraFromFit(GAME_ASPECT_RATIO),
+      fit_cos: fit.err,
+      quads: fit.quads,
+      fit_sin: fit.s,
+    };
+  console.warn(
+    `map camera: footprint fit sin ${fit.s.toFixed(4)} differs from the game constant ${GAME_ASPECT_RATIO.toFixed(4)}; using the fit`,
+  );
   return { ...cameraFromFit(fit.s), fit_cos: fit.err, quads: fit.quads, fit_sin: fit.s };
 }
 

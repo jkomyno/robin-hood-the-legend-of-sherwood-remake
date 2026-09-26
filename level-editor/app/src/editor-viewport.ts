@@ -62,19 +62,22 @@ export class EditorViewport {
   patchPreviews() {
     const patches = new Set<string>();
     const labels = new Map<string, string>();
-    this.sourceAsset?.traverse(object => {
+    this.sourceAsset?.traverse((object) => {
       for (const patch of object.userData.reveal?.patches ?? []) labels.set(patch.id, patch.name);
     });
-    this.objectsRoot.traverse(object => {
+    this.objectsRoot.traverse((object) => {
       const id = object.userData.reveal_material_patch;
       if (typeof id === "string") patches.add(id);
       for (const key of ["reveal_hide_when_applied", "reveal_show_when_applied"])
         for (const trigger of object.userData[key] ?? [])
           if (typeof trigger === "string") patches.add(trigger);
-      for (const patch of object.userData.reveal?.patches ?? [])
-        labels.set(patch.id, patch.name);
+      for (const patch of object.userData.reveal?.patches ?? []) labels.set(patch.id, patch.name);
     });
-    return [...patches].map(id => ({id, name: labels.get(id) ?? id, revealed: this.patchDisplay.isRevealed(id)}));
+    return [...patches].map((id) => ({
+      id,
+      name: labels.get(id) ?? id,
+      revealed: this.patchDisplay.isRevealed(id),
+    }));
   }
   private readonly textureDisplay = new TextureDisplay();
   setTextureDisplay(smooth: boolean, synthesized: boolean) {
@@ -123,8 +126,12 @@ export class EditorViewport {
     this.entities = entities;
     if (entities) this.scene.add(entities.root);
   }
-  setPopulationPlaying(value: boolean) { this.entities?.setPlaying?.(value); }
-  setPopulationRoutesVisible(value: boolean) { this.entities?.setRoutesVisible?.(value); }
+  setPopulationPlaying(value: boolean) {
+    this.entities?.setPlaying?.(value);
+  }
+  setPopulationRoutesVisible(value: boolean) {
+    this.entities?.setRoutesVisible?.(value);
+  }
   setEntitiesVisible(visible: boolean) {
     if (this.entities) this.entities.root.visible = visible;
   }
@@ -198,11 +205,15 @@ export class EditorViewport {
       const samples: { weight: number; depth: number }[] = [];
       let totalWeight = 0;
       let nearestDepth = -Infinity;
-      const points = this.framingPoints.length ? this.framingPoints : [
-        ...[this.framingBounds.min.x, this.framingBounds.max.x].flatMap(x =>
-          [this.framingBounds.min.y, this.framingBounds.max.y].flatMap(y =>
-            [this.framingBounds.min.z, this.framingBounds.max.z].map(z => new THREE.Vector3(x, y, z)))),
-      ];
+      const points = this.framingPoints.length
+        ? this.framingPoints
+        : [this.framingBounds.min.x, this.framingBounds.max.x].flatMap((x) =>
+            [this.framingBounds.min.y, this.framingBounds.max.y].flatMap((y) =>
+              [this.framingBounds.min.z, this.framingBounds.max.z].map(
+                (z) => new THREE.Vector3(x, y, z),
+              ),
+            ),
+          );
       for (const source of points) {
         const point = source.clone().sub(camera.position).applyQuaternion(inverse);
         const weight = (point.x / aspect) ** 2 + point.y ** 2;
@@ -256,14 +267,8 @@ export class EditorViewport {
   private readonly groupViews = new Map<string, View>();
   private readonly sourceNodes = new Map<string, THREE.Object3D>();
   private readonly raycaster = new THREE.Raycaster();
-  private readonly selectionBox = new THREE.Box3Helper(
-    new THREE.Box3(),
-    0xffcc40,
-  );
-  private readonly tinted = new Map<
-    THREE.Mesh,
-    THREE.Material | THREE.Material[]
-  >();
+  private readonly selectionBox = new THREE.Box3Helper(new THREE.Box3(), 0xffcc40);
+  private readonly tinted = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
   private dragging = false;
   private cancelPointerGesture: (() => void) | null = null;
   private flight: {
@@ -273,8 +278,10 @@ export class EditorViewport {
     ms: number;
   } | null = null;
 
-  private readonly exportFrame = new THREE.LineLoop(new THREE.BufferGeometry(),
-    new THREE.LineDashedMaterial({ color: 0xe2cb8e, dashSize: 32, gapSize: 16, depthTest: false }));
+  private readonly exportFrame = new THREE.LineLoop(
+    new THREE.BufferGeometry(),
+    new THREE.LineDashedMaterial({ color: 0xe2cb8e, dashSize: 32, gapSize: 16, depthTest: false }),
+  );
   private readonly workspaceGrid = new THREE.GridHelper(10000, 100, 0x52655a, 0x34423b);
   private readonly bindings: ViewportBindings;
   constructor(bindings: ViewportBindings) {
@@ -332,22 +339,31 @@ export class EditorViewport {
     if (ground) this.mapRoot.add(ground);
     this.sunlight.setGround(ground);
     for (const [key, value] of sources) this.sourceNodes.set(key, value);
-    for (const ref of references) this.externalAssetHashes.set(ref.id, ref.descriptor_sha256 + ref.model_sha256);
+    for (const ref of references)
+      this.externalAssetHashes.set(ref.id, ref.descriptor_sha256 + ref.model_sha256);
     this.refreshTextureDisplay();
   }
 
   /** Register immutable standalone geometry before document insertion.
    * Returns false when the caller should dispose a redundant prepared asset.
    */
-  adoptAsset(reference: ExternalAssetSource, asset: THREE.Object3D, sources: ReadonlyMap<string, THREE.Object3D>): boolean {
+  adoptAsset(
+    reference: ExternalAssetSource,
+    asset: THREE.Object3D,
+    sources: ReadonlyMap<string, THREE.Object3D>,
+  ): boolean {
     if (this.disposed || !this.sourceAsset) throw new Error("No active map for asset insertion");
     const hash = reference.descriptor_sha256 + reference.model_sha256;
     const existing = this.externalAssetHashes.get(reference.id);
     if (existing !== undefined) {
-      if (existing !== hash) throw new Error("This asset changed during the editing session; reload the map before importing its new revision");
+      if (existing !== hash)
+        throw new Error(
+          "This asset changed during the editing session; reload the map before importing its new revision",
+        );
       return false;
     }
-    for (const key of sources.keys()) if (this.sourceNodes.has(key)) throw new Error(`Asset node collision: ${key}`);
+    for (const key of sources.keys())
+      if (this.sourceNodes.has(key)) throw new Error(`Asset node collision: ${key}`);
     this.sourceAsset.add(asset);
     for (const [key, node] of sources) this.sourceNodes.set(key, node);
     this.externalAssetHashes.set(reference.id, hash);
@@ -423,8 +439,7 @@ export class EditorViewport {
     this.scene.clear();
   }
   setup(el: HTMLDivElement) {
-    if (this.disposed || this.renderer)
-      throw new Error("Viewport can only mount once");
+    if (this.disposed || this.renderer) throw new Error("Viewport can only mount once");
     this.container = el;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, reversedDepthBuffer: true });
     this.renderer.setOpaqueSort(stableOpaqueSort);
@@ -434,11 +449,11 @@ export class EditorViewport {
     this.refreshTextureDisplay();
     el.appendChild(this.renderer.domElement);
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -100000, 100000);
-    const elevation = THREE.MathUtils.degToRad(this.bindings.document()?.camera.elevation_deg ?? 35);
-    this.camera.position.set(0, Math.sin(elevation), Math.cos(elevation)).multiplyScalar(3600);
-    this.orbit = this.ownControl(
-      new OrbitControls(this.camera, this.renderer.domElement),
+    const elevation = THREE.MathUtils.degToRad(
+      this.bindings.document()?.camera.elevation_deg ?? 35,
     );
+    this.camera.position.set(0, Math.sin(elevation), Math.cos(elevation)).multiplyScalar(3600);
+    this.orbit = this.ownControl(new OrbitControls(this.camera, this.renderer.domElement));
     this.orbit.enableDamping = true;
     this.orbit.zoomToCursor = true;
     // left drag pans (or moves the selection, handler below), right drag
@@ -447,18 +462,16 @@ export class EditorViewport {
     this.orbit.mouseButtons = {
       LEFT: THREE.MOUSE.PAN,
       MIDDLE: THREE.MOUSE.DOLLY,
-      RIGHT: null as unknown as THREE.MOUSE,
+      RIGHT: null,
     };
     this.setupCursorOrbit(this.renderer.domElement);
     this.setupSplineInteraction(this.renderer.domElement);
-    this.gizmo = this.ownControl(
-      new TransformControls(this.camera, this.renderer.domElement),
-    );
+    this.gizmo = this.ownControl(new TransformControls(this.camera, this.renderer.domElement));
     this.gizmo.setMode("translate");
     this.gizmo.showY = false;
     this.scene.add(this.gizmo.getHelper());
     this.gizmo.addEventListener("dragging-changed", (e) => {
-      this.dragging = !!(e as unknown as { value: boolean }).value;
+      this.dragging = (e as unknown as { value: boolean }).value;
       if (this.orbit) this.orbit.enabled = !this.dragging;
       if (!this.dragging) this.commitGizmo();
     });
@@ -503,10 +516,14 @@ export class EditorViewport {
       const camera = this.activeCamera();
       this.workspaceGrid.visible = this.bindings.document()?.size === null;
       if (this.workspaceGrid.visible && this.orbit) {
-        const spacing = 100 * 2 ** Math.floor(Math.log2(Math.max(1, this.frustum / this.camera.zoom) / 500));
+        const spacing =
+          100 * 2 ** Math.floor(Math.log2(Math.max(1, this.frustum / this.camera.zoom) / 500));
         this.workspaceGrid.scale.setScalar(spacing / 100);
-        this.workspaceGrid.position.set(Math.round(this.orbit.target.x / spacing) * spacing, -0.1,
-          Math.round(this.orbit.target.z / spacing) * spacing);
+        this.workspaceGrid.position.set(
+          Math.round(this.orbit.target.x / spacing) * spacing,
+          -0.1,
+          Math.round(this.orbit.target.z / spacing) * spacing,
+        );
       }
       this.entities?.update(camera, this.spriteOrientationLock);
       this.renderer.render(this.scene, camera);
@@ -536,10 +553,7 @@ export class EditorViewport {
 
   private stepFlight() {
     if (!this.flight || !this.camera || !this.orbit) return;
-    const raw = Math.min(
-      1,
-      (performance.now() - this.flight.start) / this.flight.ms,
-    );
+    const raw = Math.min(1, (performance.now() - this.flight.start) / this.flight.ms);
     const t = raw < 0.5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2; // ease in-out
     const { from, to } = this.flight;
     this.camera.position.lerpVectors(from.position, to.position, t);
@@ -578,8 +592,7 @@ export class EditorViewport {
     let node: THREE.Object3D | null = h.object;
     while (node && this.partViews.get(node.name)?.wrapper !== node) node = node.parent;
     return node
-      ? (this.bindings.document()?.objects.find((o) => o.id === node!.name) ??
-          null)
+      ? (this.bindings.document()?.objects.find((o) => o.id === node.name) ?? null)
       : null;
   }
 
@@ -629,18 +642,12 @@ export class EditorViewport {
       "pointerdown",
       (e) => {
         // the gizmo takes precedence when the cursor is on one of its handles
-        if (
-          !this.camera ||
-          !this.orbit ||
-          this.gizmo?.axis ||
-          (e.button !== 0 && e.button !== 2)
-        )
+        if (!this.camera || !this.orbit || this.gizmo?.axis || (e.button !== 0 && e.button !== 2))
           return;
         setRay(e);
-        const hits = this.raycaster.intersectObjects(
-          [this.objectsRoot, ...(this.groundNode ? [this.groundNode] : [])],
-          true,
-        ).filter(visibleSurface);
+        const hits = this.raycaster
+          .intersectObjects([this.objectsRoot, ...(this.groundNode ? [this.groundNode] : [])], true)
+          .filter(visibleSurface);
         if (e.button === 0) {
           // a left drag that starts on the selection moves it along the ground plane
           const s = this.bindings.selection();
@@ -675,9 +682,7 @@ export class EditorViewport {
           position: this.camera.position.clone(),
           quaternion: this.camera.quaternion.clone(),
           target: this.orbit.target.clone(),
-          right: new THREE.Vector3(1, 0, 0).applyQuaternion(
-            this.camera.quaternion,
-          ),
+          right: new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion),
           polar: Math.acos(THREE.MathUtils.clamp(offset.normalize().y, -1, 1)),
           azimuth: Math.atan2(offset.x, offset.z),
         };
@@ -714,16 +719,10 @@ export class EditorViewport {
         let pitch = (-(e.clientY - active.startY) / rect.height) * Math.PI;
         // keep the camera between straight down and just above the horizon
         pitch =
-          THREE.MathUtils.clamp(
-            active.polar + pitch,
-            0.02,
-            Math.PI / 2 - 0.02,
-          ) - active.polar;
+          THREE.MathUtils.clamp(active.polar + pitch, 0.02, Math.PI / 2 - 0.02) - active.polar;
         const q = new THREE.Quaternion()
           .setFromAxisAngle(up, yaw)
-          .multiply(
-            new THREE.Quaternion().setFromAxisAngle(active.right, pitch),
-          );
+          .multiply(new THREE.Quaternion().setFromAxisAngle(active.right, pitch));
         this.camera.position
           .copy(active.position)
           .sub(active.pivot)
@@ -764,8 +763,7 @@ export class EditorViewport {
 
   private applyFrustum() {
     if (!this.camera || !this.container) return;
-    const aspect =
-      this.container.clientWidth / Math.max(1, this.container.clientHeight);
+    const aspect = this.container.clientWidth / Math.max(1, this.container.clientHeight);
     this.camera.left = -this.frustum * aspect;
     this.camera.right = this.frustum * aspect;
     this.camera.top = this.frustum;
@@ -842,7 +840,7 @@ export class EditorViewport {
   }
 
   private setAffine(v: View, m: number[]) {
-    v.wrapper.position.set(m[12]!, m[13]!, m[14]!);
+    v.wrapper.position.set(m[12]!, m[13]!, m[14]);
     const rest = new THREE.Matrix4().fromArray(m);
     rest.setPosition(0, 0, 0);
     v.rot.matrix.copy(rest);
@@ -856,12 +854,20 @@ export class EditorViewport {
     const box = this.contentBox();
     if (box.isEmpty()) throw new Error("Add content before fitting an export frame");
     const projected = new THREE.Box2();
-    for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
-      const point = sceneToMap(document.camera, [x, -z, y]);
-      projected.expandByPoint(new THREE.Vector2(...point));
-    }
-    const x = Math.floor(projected.min.x), y = Math.floor(projected.min.y);
-    return [x, y, Math.max(1, Math.ceil(projected.max.x) - x), Math.max(1, Math.ceil(projected.max.y) - y)];
+    for (const x of [box.min.x, box.max.x])
+      for (const y of [box.min.y, box.max.y])
+        for (const z of [box.min.z, box.max.z]) {
+          const point = sceneToMap(document.camera, [x, -z, y]);
+          projected.expandByPoint(new THREE.Vector2(...point));
+        }
+    const x = Math.floor(projected.min.x),
+      y = Math.floor(projected.min.y);
+    return [
+      x,
+      y,
+      Math.max(1, Math.ceil(projected.max.x) - x),
+      Math.max(1, Math.ceil(projected.max.y) - y),
+    ];
   }
 
   syncViews(d: Level3D, rebuildFraming = true) {
@@ -870,7 +876,13 @@ export class EditorViewport {
       const [x, y, w, h] = d.exportBounds;
       this.exportFrame.geometry.dispose();
       this.exportFrame.geometry = new THREE.BufferGeometry().setFromPoints(
-        [[x,y], [x+w,y], [x+w,y+h], [x,y+h]].map(([px,py]) => new THREE.Vector3(...groundToScene(d.camera, px!, py!))));
+        [
+          [x, y],
+          [x + w, y],
+          [x + w, y + h],
+          [x, y + h],
+        ].map(([px, py]) => new THREE.Vector3(...groundToScene(d.camera, px!, py!))),
+      );
       this.exportFrame.computeLineDistances();
     }
     if (rebuildFraming) this.splines.sync(d.splines ?? [], d.camera, this.sourceNodes);
@@ -885,11 +897,7 @@ export class EditorViewport {
       }
       this.setAffine(
         v,
-        gameTransformMatrix(
-          d.camera,
-          g.transform,
-          groupCentroid(groupParts(d, g.id)),
-        ),
+        gameTransformMatrix(d.camera, g.transform, groupCentroid(groupParts(d, g.id))),
       );
       v.wrapper.visible = !g.hidden;
     }
@@ -907,10 +915,11 @@ export class EditorViewport {
         if (!src) throw new Error(`Missing source node ${o.node} for ${o.id}`);
         v = this.makeView(o.id);
         const node = src.clone(true);
-        if (o.missionBindings) node.traverse(child => {
-          const binding = o.missionBindings![child.name];
-          if (binding) Object.assign(child.userData, structuredClone(binding));
-        });
+        if (o.missionBindings)
+          node.traverse((child) => {
+            const binding = o.missionBindings![child.name];
+            if (binding) Object.assign(child.userData, structuredClone(binding));
+          });
         node.traverse((c) => {
           const m = c as THREE.Mesh;
           if (m.isMesh) v!.meshes.push(m);
@@ -918,17 +927,11 @@ export class EditorViewport {
         v.rot.add(node);
         this.partViews.set(o.id, v);
       }
-      const parent =
-        (o.group ? this.groupViews.get(o.group)?.rot : undefined) ??
-        this.objectsRoot;
+      const parent = (o.group ? this.groupViews.get(o.group)?.rot : undefined) ?? this.objectsRoot;
       if (v.wrapper.parent !== parent) parent.add(v.wrapper);
       this.setAffine(
         v,
-        gameTransformMatrix(
-          d.camera,
-          o.transform,
-          obstacleCentroid(o.obstacle.points),
-        ),
+        gameTransformMatrix(d.camera, o.transform, obstacleCentroid(o.obstacle.points)),
       );
       v.wrapper.visible = !o.hidden;
     }
@@ -946,8 +949,7 @@ export class EditorViewport {
     }
     this.patchDisplay.apply(this.objectsRoot);
     const s = this.bindings.selection();
-    if (s && !(s.kind === "group" ? aliveGroups : aliveParts).has(s.id))
-      this.select(null);
+    if (s && !(s.kind === "group" ? aliveGroups : aliveParts).has(s.id)) this.select(null);
     else this.refreshSelectionBox();
     const bounds = this.contentBox();
     this.refreshSunLighting(bounds);
@@ -958,12 +960,14 @@ export class EditorViewport {
     // must not influence lens compensation as the viewing angle changes.
     for (const root of [this.objectsRoot, ...(this.groundNode ? [this.groundNode] : [])]) {
       root.updateWorldMatrix(true, true);
-      root.traverseVisible(node => {
+      root.traverseVisible((node) => {
         if (!(node instanceof THREE.Mesh)) return;
         const positions = node.geometry.getAttribute("position");
         if (!positions) return;
         for (let i = 0; i < positions.count; i++)
-          this.framingPoints.push(new THREE.Vector3().fromBufferAttribute(positions, i).applyMatrix4(node.matrixWorld));
+          this.framingPoints.push(
+            new THREE.Vector3().fromBufferAttribute(positions, i).applyMatrix4(node.matrixWorld),
+          );
       });
     }
     if (!bounds.isEmpty()) bounds.getBoundingSphere(this.projectionBounds);
@@ -973,9 +977,7 @@ export class EditorViewport {
   private selectedView(): View | null {
     const s = this.bindings.selection();
     if (!s) return null;
-    return (
-      (s.kind === "group" ? this.groupViews : this.partViews).get(s.id) ?? null
-    );
+    return (s.kind === "group" ? this.groupViews : this.partViews).get(s.id) ?? null;
   }
 
   private commitGizmo() {
@@ -985,14 +987,8 @@ export class EditorViewport {
     if (!d || !v || !t) return;
     const g = this.selectedGroup();
     const p = this.selectedPart();
-    const pivot = g
-      ? groupCentroid(groupParts(d, g.id))
-      : obstacleCentroid(p!.obstacle.points);
-    const base = gameTransformMatrix(
-      d.camera,
-      { ...t, dx: 0, dy: 0, dz: 0 },
-      pivot,
-    );
+    const pivot = g ? groupCentroid(groupParts(d, g.id)) : obstacleCentroid(p!.obstacle.points);
+    const base = gameTransformMatrix(d.camera, { ...t, dx: 0, dy: 0, dz: 0 }, pivot);
     const pos = v.wrapper.position;
     const [dx, dy, dz] = sceneToGame(d.camera, [
       pos.x - base[12]!,
@@ -1004,8 +1000,8 @@ export class EditorViewport {
   }
 
   private refreshSunLighting(bounds = this.contentBox()) {
-    const settings=this.bindings.document()?.lighting;
-    this.sunlight.sync(settings,[this.objectsRoot,this.splines.root],bounds);
+    const settings = this.bindings.document()?.lighting;
+    this.sunlight.sync(settings, [this.objectsRoot, this.splines.root], bounds);
     if (this.renderer) {
       this.renderer.shadowMap.enabled = !!settings?.enabled;
       this.renderer.shadowMap.needsUpdate = true;
@@ -1020,40 +1016,65 @@ export class EditorViewport {
   }
 
   private setupSplineInteraction(canvas: HTMLCanvasElement) {
-    let gesture: { mode: SplineEditMode; index: number | null; point: Vec3; pointer: number;
-      x: number; y: number; moved: boolean } | null = null;
-    const consume = (event: PointerEvent) => { event.preventDefault(); event.stopImmediatePropagation(); };
-    canvas.addEventListener("pointerdown", event => {
-      const mode = this.splineMode;
-      if (!mode || event.button !== 0 || gesture) return;
-      const point = this.assetDropPosition(event.clientX, event.clientY);
-      if (!point) return;
-      const index = this.splines.hitHandle(this.raycaster);
-      if (!mode.drawing && index === null) return;
-      gesture = { mode, index, point, pointer: event.pointerId,
-        x: event.clientX, y: event.clientY, moved: false };
-      // Empty-space gestures remain available to camera panning; only a click adds a point.
-      if (index !== null) {
+    let gesture: {
+      mode: SplineEditMode;
+      index: number | null;
+      point: Vec3;
+      pointer: number;
+      x: number;
+      y: number;
+      moved: boolean;
+    } | null = null;
+    const consume = (event: PointerEvent) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+    canvas.addEventListener(
+      "pointerdown",
+      (event) => {
+        const mode = this.splineMode;
+        if (!mode || event.button !== 0 || gesture) return;
+        const point = this.assetDropPosition(event.clientX, event.clientY);
+        if (!point) return;
+        const index = this.splines.hitHandle(this.raycaster);
+        if (!mode.drawing && index === null) return;
+        gesture = {
+          mode,
+          index,
+          point,
+          pointer: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          moved: false,
+        };
+        // Empty-space gestures remain available to camera panning; only a click adds a point.
+        if (index !== null) {
+          consume(event);
+          mode.selectPoint(index);
+          canvas.setPointerCapture(event.pointerId);
+          if (this.orbit) this.orbit.enabled = false;
+        }
+      },
+      { capture: true, signal: this.listeners.signal },
+    );
+    canvas.addEventListener(
+      "pointermove",
+      (event) => {
+        if (!gesture || gesture.pointer !== event.pointerId) return;
+        gesture.moved ||= Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 4;
+        if (gesture.index === null) return;
         consume(event);
-        mode.selectPoint(index);
-        canvas.setPointerCapture(event.pointerId);
-        if (this.orbit) this.orbit.enabled = false;
-      }
-    }, { capture: true, signal: this.listeners.signal });
-    canvas.addEventListener("pointermove", event => {
-      if (!gesture || gesture.pointer !== event.pointerId) return;
-      gesture.moved ||= Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 4;
-      if (gesture.index === null) return;
-      consume(event);
-      const point = this.assetDropPosition(event.clientX, event.clientY);
-      if (!point) return;
-      gesture.point = point;
-      if (gesture.index !== null) {
-        const points = gesture.mode.path.points.map((p, i) => i === gesture!.index ? point : p);
-        this.splines.showPreview({ ...gesture.mode.path, points });
-        this.refreshSunLighting();
-      }
-    }, { capture: true, signal: this.listeners.signal });
+        const point = this.assetDropPosition(event.clientX, event.clientY);
+        if (!point) return;
+        gesture.point = point;
+        if (gesture.index !== null) {
+          const points = gesture.mode.path.points.map((p, i) => (i === gesture!.index ? point : p));
+          this.splines.showPreview({ ...gesture.mode.path, points });
+          this.refreshSunLighting();
+        }
+      },
+      { capture: true, signal: this.listeners.signal },
+    );
     const finish = (event: PointerEvent) => {
       if (!gesture || gesture.pointer !== event.pointerId) return;
       const active = gesture;
@@ -1061,19 +1082,22 @@ export class EditorViewport {
       active.moved ||= Math.hypot(event.clientX - active.x, event.clientY - active.y) > 4;
       if (active.index !== null) {
         consume(event);
-        if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+        if (canvas.hasPointerCapture(event.pointerId))
+          canvas.releasePointerCapture(event.pointerId);
         if (this.orbit) this.orbit.enabled = true;
       }
       if (event.type === "pointerup" && this.splineMode?.path.id === active.mode.path.id) {
         if (active.index === null) {
           if (!active.moved && this.splineMode.drawing) active.mode.append(active.point);
-        }
-        else active.mode.move(active.index, active.point);
+        } else active.mode.move(active.index, active.point);
       }
       this.splines.setMode(this.splineMode);
     };
     canvas.addEventListener("pointerup", finish, { capture: true, signal: this.listeners.signal });
-    canvas.addEventListener("pointercancel", finish, { capture: true, signal: this.listeners.signal });
+    canvas.addEventListener("pointercancel", finish, {
+      capture: true,
+      signal: this.listeners.signal,
+    });
   }
 
   /** Locate the drop on visible terrain, falling back to the map ground plane. */
@@ -1082,8 +1106,8 @@ export class EditorViewport {
     if (!document || !this.camera || !this.renderer) return null;
     const rect = this.renderer.domElement.getBoundingClientRect();
     const ndc = new THREE.Vector2(
-      (clientX - rect.left) / rect.width * 2 - 1,
-      -(clientY - rect.top) / rect.height * 2 + 1,
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      (-(clientY - rect.top) / rect.height) * 2 + 1,
     );
     this.scene.updateMatrixWorld(true);
     setViewportRay(this.raycaster, ndc, this.activeCamera());
@@ -1116,8 +1140,7 @@ export class EditorViewport {
     for (const h of hits) {
       const part = this.partOfHit(h);
       if (!part) continue;
-      if (part.group && !partOnly)
-        this.select({ kind: "group", id: part.group });
+      if (part.group && !partOnly) this.select({ kind: "group", id: part.group });
       else this.select({ kind: "part", id: part.id });
       return;
     }
@@ -1126,25 +1149,20 @@ export class EditorViewport {
 
   select(s: Selection) {
     for (const [m, mat] of this.tinted) {
-      for (const owned of Array.isArray(m.material) ? m.material : [m.material])
-        owned.dispose();
+      for (const owned of Array.isArray(m.material) ? m.material : [m.material]) owned.dispose();
       m.material = mat;
     }
     this.tinted.clear();
     this.bindings.onSelection(s);
     const d = this.bindings.document();
-    const v = s
-      ? (s.kind === "group" ? this.groupViews : this.partViews).get(s.id)
-      : null;
+    const v = s ? (s.kind === "group" ? this.groupViews : this.partViews).get(s.id) : null;
     if (this.gizmo) {
       if (v) this.gizmo.attach(v.wrapper);
       else this.gizmo.detach();
     }
     if (s && d) {
       const parts =
-        s.kind === "group"
-          ? groupParts(d, s.id)
-          : d.objects.filter((o) => o.id === s.id);
+        s.kind === "group" ? groupParts(d, s.id) : d.objects.filter((o) => o.id === s.id);
       for (const p of parts) {
         for (const m of this.partViews.get(p.id)?.meshes ?? []) {
           this.tinted.set(m, m.material);
@@ -1154,9 +1172,7 @@ export class EditorViewport {
             if (mat.color) mat.color.set(0xffd27a);
             return mat;
           };
-          m.material = Array.isArray(m.material)
-            ? m.material.map(tint)
-            : tint(m.material);
+          m.material = Array.isArray(m.material) ? m.material.map(tint) : tint(m.material);
         }
       }
     }
@@ -1181,9 +1197,7 @@ export class EditorViewport {
     if (!d) return;
     if (this.bindings.showObstacles()) {
       const pts: number[] = [];
-      const hiddenGroups = new Set(
-        d.groups.filter((g) => g.hidden).map((g) => g.id),
-      );
+      const hiddenGroups = new Set(d.groups.filter((g) => g.hidden).map((g) => g.id));
       for (const o of d.objects) {
         if (o.hidden || (o.group && hiddenGroups.has(o.group))) continue;
         const ob = transformedObstacle(d, o);
@@ -1192,17 +1206,10 @@ export class EditorViewport {
           const a = ob.points[i]!;
           const b = ob.points[(i + 1) % n]!;
           const segs: [Vec3, Vec3][] = [
-            [
-              gameToScene(d.camera, a.x, a.y, a.z_top),
-              gameToScene(d.camera, b.x, b.y, b.z_top),
-            ],
-            [
-              gameToScene(d.camera, a.x, a.y, a.z_bottom),
-              gameToScene(d.camera, a.x, a.y, a.z_top),
-            ],
+            [gameToScene(d.camera, a.x, a.y, a.z_top), gameToScene(d.camera, b.x, b.y, b.z_top)],
+            [gameToScene(d.camera, a.x, a.y, a.z_bottom), gameToScene(d.camera, a.x, a.y, a.z_top)],
           ];
-          for (const [p, q] of segs)
-            pts.push(p[0], p[1], p[2], q[0], q[1], q[2]);
+          for (const [p, q] of segs) pts.push(p[0], p[1], p[2], q[0], q[1], q[2]);
         }
       }
       const geo = new THREE.BufferGeometry();

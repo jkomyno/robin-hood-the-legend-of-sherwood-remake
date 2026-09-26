@@ -12,17 +12,9 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fal } from "@fal-ai/client";
-import type {
-  Sam3ImageRleInput,
-  SAM3RLEOutput,
-} from "@fal-ai/client/endpoints";
+import type { Sam3ImageRleInput, SAM3RLEOutput } from "@fal-ai/client/endpoints";
 import { requireEnv, workDir } from "./env.ts";
-import {
-  contentKey,
-  cachedArtifacts,
-  isMissing,
-  type CacheOptions,
-} from "./provider-cache.ts";
+import { contentKey, cachedArtifacts, isMissing, type CacheOptions } from "./provider-cache.ts";
 
 let configured = false;
 function ensureConfigured() {
@@ -68,12 +60,7 @@ export function decodeRle(
   width: number,
   height: number,
 ): { data: Uint8Array; width: number; height: number } {
-  if (
-    !Number.isSafeInteger(width) ||
-    !Number.isSafeInteger(height) ||
-    width <= 0 ||
-    height <= 0
-  )
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0)
     throw new Error("invalid mask dimensions");
   const nums = rleStr.trim() ? rleStr.trim().split(/\s+/).map(Number) : [];
   if (nums.length % 2 !== 0 || nums.some((n) => !Number.isSafeInteger(n))) {
@@ -86,9 +73,7 @@ export function decodeRle(
     const start = nums[i]! - 1; // 1-indexed
     const len = nums[i + 1]!;
     if (start < 0 || len < 0 || start + len > data.length) {
-      throw new Error(
-        `rle run out of range: start ${start} len ${len} for ${width}x${height}`,
-      );
+      throw new Error(`rle run out of range: start ${start} len ${len} for ${width}x${height}`);
     }
     data.fill(255, start, start + len);
   }
@@ -120,8 +105,7 @@ async function cachedSubscribe(
       throw new Error("invalid SAM cache response");
     const data = record.response;
     const rles = Array.isArray(data.rle) ? data.rle : [data.rle];
-    if (rles.some((r) => typeof r !== "string"))
-      throw new Error("invalid SAM RLE response");
+    if (rles.some((r) => typeof r !== "string")) throw new Error("invalid SAM RLE response");
     for (const rle of rles) decodeRle(rle, req.width, req.height);
     return data;
   };
@@ -134,21 +118,16 @@ async function cachedSubscribe(
   }
   if (legacy !== undefined) return validate(JSON.parse(legacy));
   return cachedArtifacts(
-    path.join(
-      cacheDir,
-      contentKey(["fal-ai/sam-3/image-rle", imagePng, JSON.stringify(params)]),
-    ),
+    path.join(cacheDir, contentKey(["fal-ai/sam-3/image-rle", imagePng, JSON.stringify(params)])),
     async (dir) => {
-      return validate(
-        JSON.parse(await fs.readFile(path.join(dir, "response.json"), "utf8")),
-      );
+      return validate(JSON.parse(await fs.readFile(path.join(dir, "response.json"), "utf8")));
     },
     async (dir) => {
       ensureConfigured();
       const image_url = await fal.storage.upload(
         new Blob([new Uint8Array(imagePng)], {
           type: "image/png",
-        }) as unknown as File,
+        }),
       );
       let response: SAM3RLEOutput;
       let requestId: string | undefined;
@@ -165,9 +144,8 @@ async function cachedSubscribe(
           typeof err.body?.detail === "string"
             ? err.body.detail
             : JSON.stringify(err.body?.detail ?? "");
-        if (err.status !== 422 || !detail.includes("No masks generated"))
-          throw error;
-        response = { rle: [] } as unknown as SAM3RLEOutput;
+        if (err.status !== 422 || !detail.includes("No masks generated")) throw error;
+        response = { rle: [] };
       }
       await fs.writeFile(path.join(dir, "input.png"), imagePng);
       await fs.writeFile(
@@ -184,10 +162,7 @@ async function cachedSubscribe(
   );
 }
 
-export async function segment(
-  req: SamRequest,
-  options: CacheOptions = {},
-): Promise<SamMask[]> {
+export async function segment(req: SamRequest, options: CacheOptions = {}): Promise<SamMask[]> {
   if (
     !Number.isSafeInteger(req.width) ||
     !Number.isSafeInteger(req.height) ||
@@ -228,8 +203,7 @@ export async function segment(
     score: data.scores?.[i] ?? data.metadata?.[i]?.score ?? null,
     box:
       (data.boxes?.[i] as [number, number, number, number] | undefined) ??
-      (data.metadata?.[i]?.box as
-        [number, number, number, number] | undefined) ??
+      (data.metadata?.[i]?.box as [number, number, number, number] | undefined) ??
       null,
   }));
 }

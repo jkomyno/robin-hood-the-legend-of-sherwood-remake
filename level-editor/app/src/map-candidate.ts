@@ -7,14 +7,23 @@ import { SceneAssetLoader } from "./scene-assets.ts";
 import { disposeObjectResources } from "./resources.ts";
 
 /** Load a complete JSON manifest. Publication happens only after every pinned asset validates. */
-export async function prepareMapCandidate(name: string, library: FileSystemDirectoryHandle, idx: DatadirIndex | null,
-  onProgress?: (completed: number, total: number, phase: string) => void, documentMap = name, importedDocument?: unknown) {
+export async function prepareMapCandidate(
+  name: string,
+  library: FileSystemDirectoryHandle,
+  idx: DatadirIndex | null,
+  onProgress?: (completed: number, total: number, phase: string) => void,
+  documentMap = name,
+  importedDocument?: unknown,
+) {
   const asset = new THREE.Group();
   const loader = new SceneAssetLoader(library, await listLossyModels(library));
   try {
     const directory = await subdir(library, ["scenes"]);
     if (!directory) throw new Error("scenes/ missing");
-    const document = parseLevel3D(importedDocument ?? await readJson(directory, `${name}.rhlos-map.json`), { map: documentMap });
+    const document = parseLevel3D(
+      importedDocument ?? (await readJson(directory, `${name}.rhlos-map.json`)),
+      { map: documentMap },
+    );
     asset.userData = structuredClone(document.sceneMetadata ?? {});
     const level = idx && document.sourceMap ? await loadProtoLevel(idx, document.sourceMap) : null;
     const sources = new Map<string, THREE.Object3D>();
@@ -30,31 +39,44 @@ export async function prepareMapCandidate(name: string, library: FileSystemDirec
     for (const reference of document.sceneAssets) {
       const loaded = await loader.load(reference);
       asset.add(loaded);
-      const root = loaded.children.find(node => node.name === "map") ?? loaded;
+      const root = loaded.children.find((node) => node.name === "map") ?? loaded;
       if (reference.role === "ground") {
         if (root.children.length !== 1 || root.children[0]!.name !== "ground")
           throw new Error(`Ground asset must contain exactly one ground node: ${reference.id}`);
         ground = root.children[0]!;
       } else {
-        for (const group of root.children) for (const node of group.children) addSource(node.name, node);
+        for (const group of root.children)
+          for (const node of group.children) addSource(node.name, node);
       }
       onProgress?.(++completed, total, "Loading assets");
     }
     const references = document.assetSources ?? [];
-    let next = 0, failure: unknown;
+    let next = 0,
+      failure: unknown;
     let failed = false;
-    const prepared = new Array<Awaited<ReturnType<typeof prepareProjectionAsset>>>(references.length);
+    const prepared = new Array<Awaited<ReturnType<typeof prepareProjectionAsset>>>(
+      references.length,
+    );
     const worker = async () => {
       while (!failed && next < references.length) {
         const index = next++;
         try {
           const reference = references[index]!;
           const lossy_model = loader.lossyFor(reference.model);
-          const result = await prepareProjectionAsset(library, { ...reference, lossy_model }, document.map, reference, loader);
+          const result = await prepareProjectionAsset(
+            library,
+            { ...reference, lossy_model },
+            document.map,
+            reference,
+            loader,
+          );
           asset.add(result.asset);
           prepared[index] = result;
           onProgress?.(++completed, total, "Loading assets");
-        } catch (error) { failed = true; failure = error; }
+        } catch (error) {
+          failed = true;
+          failure = error;
+        }
       }
     };
     await Promise.all(Array.from({ length: Math.min(4, references.length) }, worker));
@@ -67,20 +89,34 @@ export async function prepareMapCandidate(name: string, library: FileSystemDirec
       if (part.node.startsWith("asset:")) continue;
       const node = sources.get(part.node);
       if (!node) throw new Error(`Missing scene source node ${part.node}`);
-      if (node.userData.source_obstacle !== undefined && node.userData.source_obstacle !== part.source.obstacle)
+      if (
+        node.userData.source_obstacle !== undefined &&
+        node.userData.source_obstacle !== part.source.obstacle
+      )
         throw new Error(`Source obstacle mismatch: ${part.node}`);
       if (part.source.components && !node.userData.obstacle_local_game)
         throw new Error(`Missing component footprint: ${part.node}`);
-      if (part.kind === "mission" && node.userData.mission_patch_profile !== part.source.mission_profile)
+      if (
+        part.kind === "mission" &&
+        node.userData.mission_patch_profile !== part.source.mission_profile
+      )
         throw new Error(`Mission source profile mismatch: ${part.node}`);
     }
-    parseLevel3D(document, { map: documentMap, level: level ?? undefined, nodes: new Set(sources.keys()),
-      sourceSha256: (await documentProvenance(level)).source_sha256 });
+    parseLevel3D(document, {
+      map: documentMap,
+      level: level ?? undefined,
+      nodes: new Set(sources.keys()),
+      sourceSha256: (await documentProvenance(level)).source_sha256,
+    });
     const suspects = new Map<number, { delta: number; support: number }>();
     if (level) {
-      const terraces = new Set(document.objects.filter(part => part.kind === "terrace")
-        .flatMap(part => part.source.obstacle === undefined ? [] : [part.source.obstacle]));
-      for (const item of snapFloatingParts(level.sight_obstacles, terraces, { includeOpaque: true }).snapped)
+      const terraces = new Set(
+        document.objects
+          .filter((part) => part.kind === "terrace")
+          .flatMap((part) => (part.source.obstacle === undefined ? [] : [part.source.obstacle])),
+      );
+      for (const item of snapFloatingParts(level.sight_obstacles, terraces, { includeOpaque: true })
+        .snapped)
         suspects.set(item.index, { delta: item.delta, support: item.support });
     }
     onProgress?.(total, total, "Finalizing map");
@@ -88,5 +124,7 @@ export async function prepareMapCandidate(name: string, library: FileSystemDirec
   } catch (error) {
     disposeObjectResources([asset]);
     throw error;
-  } finally { loader.dispose(); }
+  } finally {
+    loader.dispose();
+  }
 }

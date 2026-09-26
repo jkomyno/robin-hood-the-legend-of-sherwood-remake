@@ -62,10 +62,7 @@ export async function prepare(tilePng: Buffer): Promise<Prepared> {
     .toBuffer({ resolveWithObject: true });
   const w = info.width;
   const h = info.height;
-  const scale = Math.min(
-    MAX_UPSCALE,
-    Math.floor((CANVAS / Math.max(w, h)) * 100) / 100,
-  );
+  const scale = Math.min(MAX_UPSCALE, Math.floor((CANVAS / Math.max(w, h)) * 100) / 100);
   const sw = Math.round(w * scale);
   const sh = Math.round(h * scale);
   const ox = Math.floor((CANVAS - sw) / 2);
@@ -167,14 +164,10 @@ export async function callOpenAI(
     directory,
     async (dir) => {
       const png = await fs.readFile(path.join(dir, "out.png"));
-      const { info } = await sharp(png)
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+      const { info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
       if (info.width !== CANVAS || info.height !== CANVAS)
         throw new Error("invalid cached AI image dimensions");
-      const meta = JSON.parse(
-        await fs.readFile(path.join(dir, "meta.json"), "utf8"),
-      );
+      const meta = JSON.parse(await fs.readFile(path.join(dir, "meta.json"), "utf8"));
       if (meta.model !== MODEL || !Number.isFinite(meta.seconds))
         throw new Error("invalid AI cache metadata");
       return {
@@ -204,23 +197,15 @@ export async function callOpenAI(
           "context.png",
         );
       }
-      form.append(
-        "mask",
-        new Blob([new Uint8Array(maskPng)], { type: "image/png" }),
-        "mask.png",
-      );
+      form.append("mask", new Blob([new Uint8Array(maskPng)], { type: "image/png" }), "mask.png");
       const t0 = Date.now();
-      const res = await (options.request ?? fetch)(
-        "https://api.openai.com/v1/images/edits",
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${key}` },
-          body: form,
-        },
-      );
+      const res = await (options.request ?? fetch)("https://api.openai.com/v1/images/edits", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}` },
+        body: form,
+      });
       const text = await res.text();
-      if (!res.ok)
-        throw new Error(`openai ${res.status}: ${text.slice(0, 600)}`);
+      if (!res.ok) throw new Error(`openai ${res.status}: ${text.slice(0, 600)}`);
       const json = JSON.parse(text) as {
         data?: { b64_json?: string }[];
         usage?: {
@@ -337,7 +322,7 @@ async function main() {
     const png = await sharp(src).png().toBuffer();
     const meta = await sharp(png).metadata();
     mapImg = sharp(png);
-    mapSize = [meta.width!, meta.height!];
+    mapSize = [meta.width, meta.height];
   }
   const contextCrop = async (k: number): Promise<Buffer | null> => {
     const box = contexts[k];
@@ -397,10 +382,7 @@ async function main() {
   console.log(`total cost $${total.toFixed(3)}`);
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((e) => {
     console.error(e);
     process.exitCode = 1;

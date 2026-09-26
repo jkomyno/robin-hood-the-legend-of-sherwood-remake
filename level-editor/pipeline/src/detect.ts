@@ -91,8 +91,8 @@ async function main() {
   if (!src) throw new Error(`no Day map for ${map}`);
   const mapPng = await sharp(src).png().toBuffer();
   const meta = await sharp(mapPng).metadata();
-  const mapW = meta.width!;
-  const mapH = meta.height!;
+  const mapW = meta.width;
+  const mapH = meta.height;
 
   const stride = tile - overlap;
   const xs: number[] = [];

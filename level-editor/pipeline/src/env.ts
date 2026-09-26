@@ -15,10 +15,7 @@ export function loadEnvironment(): void {
 
 export function datadirPath(): string {
   loadEnvironment();
-  return (
-    process.env.HACKABLE_DATADIR ??
-    path.join(repoRoot, "datadirs", "fullgame_gog_hackable")
-  );
+  return process.env.HACKABLE_DATADIR ?? path.join(repoRoot, "datadirs", "fullgame_gog_hackable");
 }
 
 export function requireEnv(name: string): string {

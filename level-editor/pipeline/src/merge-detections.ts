@@ -83,7 +83,10 @@ async function main() {
   const det = parseDetections(await readDocument(file, true));
   const items: Loaded[] = [];
   for (const d of det.detections) {
-    const { data } = await sharp(path.join(dir, d.mask)).extractChannel(0).raw().toBuffer({ resolveWithObject: true });
+    const { data } = await sharp(path.join(dir, d.mask))
+      .extractChannel(0)
+      .raw()
+      .toBuffer({ resolveWithObject: true });
     items.push({ ...d, data: new Uint8Array(data) });
   }
   const byId = new Map(items.map((d) => [d.id, d]));
@@ -137,7 +140,9 @@ async function main() {
   const roots = [...new Set(items.map((d) => find(d.id)))];
   const blocks = roots.map((r) => members(r)).filter((m) => m.length > 1);
   blocks.sort((a, b) => unionBbox(a)[1] + unionBbox(a)[3] - (unionBbox(b)[1] + unionBbox(b)[3]));
-  console.log(`${blocks.length} blocks from ${blocks.reduce((n, b) => n + b.length, 0)} detections`);
+  console.log(
+    `${blocks.length} blocks from ${blocks.reduce((n, b) => n + b.length, 0)} detections`,
+  );
 
   const merged: Detection[] = [];
   const pad = String(blocks.length).length;
@@ -148,7 +153,8 @@ async function main() {
     for (const d of group) {
       for (let y = 0; y < d.bbox[3]; y++) {
         for (let x = 0; x < d.bbox[2]; x++) {
-          if (d.data[y * d.bbox[2] + x]) mask[(y + d.bbox[1] - by) * bw + (x + d.bbox[0] - bx)] = 255;
+          if (d.data[y * d.bbox[2] + x])
+            mask[(y + d.bbox[1] - by) * bw + (x + d.bbox[0] - bx)] = 255;
         }
       }
     }
@@ -170,7 +176,11 @@ async function main() {
     });
     console.log(`${id}: ${ids.join(" + ")} -> ${bw}x${bh}`);
   }
-  const out: DetectionsFile = { map: det.map, apply_patches: det.apply_patches, detections: merged };
+  const out: DetectionsFile = {
+    map: det.map,
+    apply_patches: det.apply_patches,
+    detections: merged,
+  };
   const outFile = path.join(dir, "detections-merged.json");
   await fs.writeFile(outFile, JSON.stringify(out, null, 1));
 
@@ -179,8 +189,8 @@ async function main() {
   if (dayPath) {
     const meta = await sharp(dayPath).metadata();
     const scale = 0.5;
-    const ow = Math.round(meta.width! * scale);
-    const oh = Math.round(meta.height! * scale);
+    const ow = Math.round(meta.width * scale);
+    const oh = Math.round(meta.height * scale);
     let svg = `<svg width="${ow}" height="${oh}" xmlns="http://www.w3.org/2000/svg">`;
     for (const m of merged) {
       const [bx, by, bw, bh] = m.bbox;

@@ -25,10 +25,7 @@ export async function readOptionalImage(file: string): Promise<Buffer | undefine
 
 /** Only an absent optional default means no document. Explicit paths, bad JSON,
  * and permission/I/O failures must stop before reconstruction or export. */
-export async function readDocument(
-  file: string,
-  required: boolean,
-): Promise<unknown | undefined> {
+export async function readDocument(file: string, required: boolean): Promise<unknown> {
   let text: string;
   try {
     text = await fs.readFile(file, "utf8");
@@ -44,7 +41,6 @@ export async function readDocument(
 }
 
 export function pathComponent(value: string, label: string): string {
-  if (!/^[a-zA-Z0-9_-]+$/.test(value))
-    throw new Error(`invalid ${label}: ${value}`);
+  if (!/^[a-zA-Z0-9_-]+$/.test(value)) throw new Error(`invalid ${label}: ${value}`);
   return value;
 }

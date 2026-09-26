@@ -43,10 +43,7 @@ export async function renders(
 ) {
   const [w, h] = size;
   const scale = 0.5;
-  const atlasTex = await downscale(
-    debugFill ? tex.debugAtlas : tex.atlas,
-    8192,
-  );
+  const atlasTex = await downscale(debugFill ? tex.debugAtlas : tex.atlas, 8192);
   const groundTex = await downscale(tex.ground, 4096);
   const volumes: MeshData = {
     positions: g.positions,
@@ -74,10 +71,7 @@ export async function renders(
     { mesh: ground, positions: ground.positions },
     { mesh: volumes, positions: volumes.positions },
   ];
-  const outDir = path.join(
-    options.workDirectory ?? workDir,
-    `${map.toLowerCase()}-scene`,
-  );
+  const outDir = path.join(options.workDirectory ?? workDir, `${map.toLowerCase()}-scene`);
   await fs.mkdir(outDir, { recursive: true });
 
   const view = { ...mapView(cam, [0, 0, w, h], scale), unlit: true };
@@ -87,10 +81,7 @@ export async function renders(
     .flatten({ background: "#000" })
     .png()
     .toBuffer();
-  const original = await sharp(mapPng)
-    .resize(view.width, view.height)
-    .png()
-    .toBuffer();
+  const original = await sharp(mapPng).resize(view.width, view.height).png().toBuffer();
   await sharp({
     create: {
       width: view.width * 2,
@@ -143,14 +134,7 @@ export async function renders(
       const c = groundToScene(cam, x, y);
       for (const [j, yaw] of yaws.entries()) {
         const v = {
-          ...orbitView(
-            c,
-            yaw,
-            yaw === 0 ? cam.elevation_deg : 30,
-            vw,
-            vh,
-            vw / span,
-          ),
+          ...orbitView(c, yaw, yaw === 0 ? cam.elevation_deg : 30, vw, vh, vw / span),
           unlit: true,
         };
         composites.push({
@@ -178,11 +162,7 @@ export async function renders(
     })
       .composite(composites)
       .png()
-      .toFile(
-        path.join(outDir, `${stem}-closeups${debugFill ? "-fill" : ""}.png`),
-      );
-    console.log(
-      `wrote ${outDir}/${stem}-closeups${debugFill ? "-fill" : ""}.png`,
-    );
+      .toFile(path.join(outDir, `${stem}-closeups${debugFill ? "-fill" : ""}.png`));
+    console.log(`wrote ${outDir}/${stem}-closeups${debugFill ? "-fill" : ""}.png`);
   }
 }

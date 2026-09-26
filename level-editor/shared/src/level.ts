@@ -217,7 +217,7 @@ export interface Civilian {
 }
 
 export interface HikingPath {
-  waypoints: { position?: Point; [k: string]: unknown }[] | unknown;
+  waypoints: unknown;
 }
 
 /** `<Mission>.rhm.json` */

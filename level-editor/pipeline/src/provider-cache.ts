@@ -45,12 +45,11 @@ export function contentKey(parts: readonly (string | Uint8Array)[]): string {
 
 async function inventory(directory: string): Promise<Record<string, string>> {
   const result: Record<string, string> = {};
-  for (const entry of (
-    await fs.readdir(directory, { withFileTypes: true })
-  ).sort((a, b) => a.name.localeCompare(b.name))) {
+  for (const entry of (await fs.readdir(directory, { withFileTypes: true })).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  )) {
     if (entry.name === manifestName) continue;
-    if (!entry.isFile())
-      throw new Error(`unexpected non-file cache artifact: ${entry.name}`);
+    if (!entry.isFile()) throw new Error(`unexpected non-file cache artifact: ${entry.name}`);
     result[entry.name] = crypto
       .createHash("sha256")
       .update(await fs.readFile(path.join(directory, entry.name)))
@@ -88,8 +87,7 @@ export async function inspectCache<T>(
       const parsed = JSON.parse(manifest);
       if (
         parsed.version !== 1 ||
-        JSON.stringify(parsed.files) !==
-          JSON.stringify(await inventory(directory))
+        JSON.stringify(parsed.files) !== JSON.stringify(await inventory(directory))
       ) {
         throw new Error("cache completion manifest does not match artifacts");
       }
@@ -113,8 +111,7 @@ export async function cachedArtifacts<T>(
   directory = path.resolve(directory);
   const offline = options.offline ?? process.env.PIPELINE_OFFLINE === "1";
   // Offline callers inspect independently so they cannot join live remote work.
-  if (!offline && pending.has(directory))
-    return pending.get(directory) as Promise<T>;
+  if (!offline && pending.has(directory)) return pending.get(directory) as Promise<T>;
   const run = async () => {
     const state = await inspectCache(directory, validate);
     if (state.state === "complete") return state.value;
@@ -183,20 +180,15 @@ export async function validateGlb(file: string): Promise<void> {
   let offset = 12;
   let jsonSeen = false;
   while (offset < bytes.length) {
-    if (offset + 8 > bytes.length)
-      throw new Error(`truncated GLB chunk: ${file}`);
+    if (offset + 8 > bytes.length) throw new Error(`truncated GLB chunk: ${file}`);
     const length = bytes.readUInt32LE(offset);
     const kind = bytes.readUInt32LE(offset + 4);
     if (length % 4 !== 0 || offset + 8 + length > bytes.length)
       throw new Error(`invalid GLB chunk length: ${file}`);
     if (offset === 12) {
-      if (kind !== 0x4e4f534a)
-        throw new Error(`GLB missing JSON chunk: ${file}`);
-      const document = JSON.parse(
-        bytes.toString("utf8", offset + 8, offset + 8 + length),
-      );
-      if (document.asset?.version !== "2.0")
-        throw new Error(`invalid GLB asset: ${file}`);
+      if (kind !== 0x4e4f534a) throw new Error(`GLB missing JSON chunk: ${file}`);
+      const document = JSON.parse(bytes.toString("utf8", offset + 8, offset + 8 + length));
+      if (document.asset?.version !== "2.0") throw new Error(`invalid GLB asset: ${file}`);
       jsonSeen = true;
     }
     offset += 8 + length;

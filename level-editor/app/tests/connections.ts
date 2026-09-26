@@ -15,12 +15,13 @@ export async function checkConnectionPersistence() {
       throw new Error(`Stale connection replaced ${key}`);
   };
   try {
-    for (const [key, pick] of [
-      ["datadir-handle", pickDatadir],
-    ] as const) {
+    for (const [key, pick] of [["datadir-handle", pickDatadir]] as const) {
       const attempts = connectionAttempts();
       let finishOld!: (handle: FileSystemDirectoryHandle) => void;
-      window.showDirectoryPicker = () => new Promise((resolve) => { finishOld = resolve; });
+      window.showDirectoryPicker = () =>
+        new Promise((resolve) => {
+          finishOld = resolve;
+        });
       const first = pick(attempts.begin());
       window.showDirectoryPicker = async () => latest;
       await pick(attempts.begin());
@@ -29,7 +30,10 @@ export async function checkConnectionPersistence() {
       await assertStored(key, latest);
 
       // Retire after the picker resolves, but before the IndexedDB updater runs.
-      window.showDirectoryPicker = () => new Promise((resolve) => { finishOld = resolve; });
+      window.showDirectoryPicker = () =>
+        new Promise((resolve) => {
+          finishOld = resolve;
+        });
       const queued = pick(attempts.begin());
       finishOld(old);
       await Promise.resolve();

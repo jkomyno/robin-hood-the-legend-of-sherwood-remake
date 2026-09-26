@@ -10,27 +10,44 @@ export class TextureDisplay {
     if (this.configured.has(material)) return;
     const foliage = material.userData.foliage_physical_opacity === true;
     if (foliage) {
-      if (material.userData.opacity_semantics !== "physical-coverage" ||
-          material.userData.source_ownership_semantics !== "separate-mask" ||
-          material.userData.source_ownership_channel !== "vertex-color-r")
-        throw new Error("Foliage requires explicit physical opacity and separate vertex ownership metadata");
+      if (
+        material.userData.opacity_semantics !== "physical-coverage" ||
+        material.userData.source_ownership_semantics !== "separate-mask" ||
+        material.userData.source_ownership_channel !== "vertex-color-r"
+      )
+        throw new Error(
+          "Foliage requires explicit physical opacity and separate vertex ownership metadata",
+        );
       const colored = material as THREE.MeshBasicMaterial;
-      if (!colored.vertexColors || !colored.map || material.alphaTest !== 0.5 || material.transparent || material.side !== (material.userData.foliage_card_sides === "paired-one-sided" ? THREE.FrontSide : THREE.DoubleSide))
-        throw new Error("Foliage requires COLOR_0 ownership, a base color map, MASK cutoff 0.5 and its declared card-sidedness");
+      if (
+        !colored.vertexColors ||
+        !colored.map ||
+        material.alphaTest !== 0.5 ||
+        material.transparent ||
+        material.side !==
+          (material.userData.foliage_card_sides === "paired-one-sided"
+            ? THREE.FrontSide
+            : THREE.DoubleSide)
+      )
+        throw new Error(
+          "Foliage requires COLOR_0 ownership, a base color map, MASK cutoff 0.5 and its declared card-sidedness",
+        );
     } else if (material.userData.source_ownership_fill !== "synthesized") return;
     this.configured.add(material);
-    const previous = material.onBeforeCompile;
+    const previous = material.onBeforeCompile.bind(material);
     material.onBeforeCompile = (shader, renderer) => {
-      previous.call(material, shader, renderer);
+      previous(shader, renderer);
       shader.uniforms.showSynthesized = this.synthesized;
       shader.fragmentShader = "uniform bool showSynthesized;\n" + shader.fragmentShader;
       if (foliage) {
         // COLOR_0 carries provenance only. Its alpha must not multiply coverage,
         // and its RGB must not tint the physical base-color texture.
-        shader.fragmentShader = shader.fragmentShader.replace("#include <color_fragment>",
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "#include <color_fragment>",
           `float sourceOwnership = ${material.userData.source_ownership_backface === "inferred" ? "(gl_FrontFacing ? clamp(vColor.r, 0.0, 1.0) : 0.0)" : "clamp(vColor.r, 0.0, 1.0)"};
            if (!showSynthesized) diffuseColor.rgb = mix(vec3(0.24), diffuseColor.rgb, sourceOwnership);
-           ${material.userData.foliage_backface_fill === "neutral" ? "if (!gl_FrontFacing) diffuseColor.rgb = vec3(0.24);" : ""}`);
+           ${material.userData.foliage_backface_fill === "neutral" ? "if (!gl_FrontFacing) diffuseColor.rgb = vec3(0.24);" : ""}`,
+        );
         return;
       }
       shader.fragmentShader = shader.fragmentShader.replace(
@@ -40,7 +57,7 @@ export class TextureDisplay {
           // Alpha encodes source ownership, not surface transparency. The shade
           // is linear, matching the neutral source-only projection material.
           "if (!showSynthesized) sampledDiffuseColor.rgb = mix(vec3(0.24), sampledDiffuseColor.rgb, sampledDiffuseColor.a);\n" +
-          "sampledDiffuseColor.a = 1.0;\ndiffuseColor *= sampledDiffuseColor;",
+            "sampledDiffuseColor.a = 1.0;\ndiffuseColor *= sampledDiffuseColor;",
         ),
       );
     };
@@ -59,7 +76,7 @@ export class TextureDisplay {
       object.userData.reveal_component_role === "interior-floor" &&
       /^patch-\d+-room-floor$/.test(object.userData.projection_component ?? "");
     const unrelated = new Set<THREE.Material>();
-    root.traverse(object => {
+    root.traverse((object) => {
       if (!(object instanceof THREE.Mesh) || roomFloor(object)) return;
       for (const material of Array.isArray(object.material) ? object.material : [object.material])
         unrelated.add(material);
@@ -75,11 +92,18 @@ export class TextureDisplay {
           target.polygonOffsetUnits = -2;
           return target;
         };
-        object.material = Array.isArray(object.material) ? object.material.map(offset) : offset(object.material);
+        object.material = Array.isArray(object.material)
+          ? object.material.map(offset)
+          : offset(object.material);
       }
       for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-        if (material.userData.foliage_physical_opacity === true && !object.geometry.getAttribute("color"))
-          throw new Error(`Foliage mesh ${object.name} is missing its separate ownership COLOR_0 attribute`);
+        if (
+          material.userData.foliage_physical_opacity === true &&
+          !object.geometry.getAttribute("color")
+        )
+          throw new Error(
+            `Foliage mesh ${object.name} is missing its separate ownership COLOR_0 attribute`,
+          );
         this.material(material);
         for (const value of Object.values(material)) {
           if (value instanceof THREE.Texture) textures.add(value);
@@ -90,7 +114,12 @@ export class TextureDisplay {
       const mag = this.smooth ? THREE.LinearFilter : THREE.NearestFilter;
       const min = this.smooth ? THREE.LinearMipmapLinearFilter : THREE.NearestFilter;
       const anisotropy = this.smooth ? maxAnisotropy : 1;
-      if (texture.magFilter === mag && texture.minFilter === min && texture.anisotropy === anisotropy) continue;
+      if (
+        texture.magFilter === mag &&
+        texture.minFilter === min &&
+        texture.anisotropy === anisotropy
+      )
+        continue;
       texture.magFilter = mag;
       texture.minFilter = min;
       texture.generateMipmaps = this.smooth;

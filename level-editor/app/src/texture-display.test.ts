@@ -7,7 +7,10 @@ test("smooth and pixel modes apply to all imported material textures", () => {
   const map = new THREE.Texture();
   map.magFilter = THREE.NearestFilter;
   const normalMap = new THREE.Texture();
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial({ map, normalMap }));
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(),
+    new THREE.MeshStandardMaterial({ map, normalMap }),
+  );
   const display = new TextureDisplay();
   display.apply(mesh, 8);
   for (const texture of [map, normalMap]) {
@@ -31,11 +34,18 @@ test("ownership shader preserves opaque geometry and toggles through a shared un
   const selected = material.clone();
   display.material(selected);
   for (const candidate of [material, selected]) {
-    const shader = { uniforms: {}, vertexShader: "", fragmentShader: "#include <map_fragment>" } as THREE.WebGLProgramParametersWithUniforms;
+    const shader = {
+      uniforms: {},
+      vertexShader: "",
+      fragmentShader: "#include <map_fragment>",
+    } as THREE.WebGLProgramParametersWithUniforms;
     candidate.onBeforeCompile(shader, {} as THREE.WebGLRenderer);
     assert.equal(shader.uniforms.showSynthesized, display.synthesized);
     assert.match(shader.fragmentShader, /sampledDiffuseColor\.a = 1\.0/);
-    assert.match(shader.fragmentShader, /mix\(vec3\(0\.24\), sampledDiffuseColor\.rgb, sampledDiffuseColor\.a\)/);
+    assert.match(
+      shader.fragmentShader,
+      /mix\(vec3\(0\.24\), sampledDiffuseColor\.rgb, sampledDiffuseColor\.a\)/,
+    );
     assert.equal(candidate.transparent, false);
   }
   display.synthesized.value = false;
@@ -46,12 +56,21 @@ test("ownership shader preserves opaque geometry and toggles through a shared un
 });
 
 function foliageMaterial(paired = false) {
-  const material = new THREE.MeshBasicMaterial({ map: new THREE.Texture(), vertexColors: true,
-    alphaTest: 0.5, side: paired ? THREE.FrontSide : THREE.DoubleSide });
-  material.userData = { foliage_physical_opacity: true, opacity_semantics: "physical-coverage",
-    source_ownership_semantics: "separate-mask", source_ownership_channel: "vertex-color-r",
-    source_ownership_backface: "inferred", foliage_backface_fill: "neutral",
-    ...(paired ? { foliage_card_sides: "paired-one-sided" } : {}) };
+  const material = new THREE.MeshBasicMaterial({
+    map: new THREE.Texture(),
+    vertexColors: true,
+    alphaTest: 0.5,
+    side: paired ? THREE.FrontSide : THREE.DoubleSide,
+  });
+  material.userData = {
+    foliage_physical_opacity: true,
+    opacity_semantics: "physical-coverage",
+    source_ownership_semantics: "separate-mask",
+    source_ownership_channel: "vertex-color-r",
+    source_ownership_backface: "inferred",
+    foliage_backface_fill: "neutral",
+    ...(paired ? { foliage_card_sides: "paired-one-sided" } : {}),
+  };
   return material;
 }
 
@@ -59,9 +78,15 @@ test("foliage source-only shading keeps physical alpha and bypasses provenance t
   const display = new TextureDisplay();
   for (const material of [foliageMaterial(), foliageMaterial(true)]) {
     display.material(material);
-    const clone = material.clone(); display.material(clone);
+    const clone = material.clone();
+    display.material(clone);
     for (const candidate of [material, clone]) {
-      const shader = { uniforms: {}, vertexShader: "", fragmentShader: "#include <map_fragment>\n#include <color_fragment>\n#include <alphatest_fragment>" } as THREE.WebGLProgramParametersWithUniforms;
+      const shader = {
+        uniforms: {},
+        vertexShader: "",
+        fragmentShader:
+          "#include <map_fragment>\n#include <color_fragment>\n#include <alphatest_fragment>",
+      } as THREE.WebGLProgramParametersWithUniforms;
       candidate.onBeforeCompile(shader, {} as THREE.WebGLRenderer);
       assert.match(shader.fragmentShader, /#include <map_fragment>/);
       assert.match(shader.fragmentShader, /#include <alphatest_fragment>/);
@@ -79,12 +104,21 @@ test("foliage source-only shading keeps physical alpha and bypasses provenance t
 test("foliage fails closed without independent evidence or correct physical alpha settings", () => {
   const display = new TextureDisplay();
   for (const alter of [
-    (m: THREE.MeshBasicMaterial) => { delete m.userData.source_ownership_channel; },
-    (m: THREE.MeshBasicMaterial) => { m.alphaTest = 0; },
-    (m: THREE.MeshBasicMaterial) => { m.transparent = true; },
-    (m: THREE.MeshBasicMaterial) => { m.vertexColors = false; },
+    (m: THREE.MeshBasicMaterial) => {
+      delete m.userData.source_ownership_channel;
+    },
+    (m: THREE.MeshBasicMaterial) => {
+      m.alphaTest = 0;
+    },
+    (m: THREE.MeshBasicMaterial) => {
+      m.transparent = true;
+    },
+    (m: THREE.MeshBasicMaterial) => {
+      m.vertexColors = false;
+    },
   ]) {
-    const material = foliageMaterial(); alter(material);
+    const material = foliageMaterial();
+    alter(material);
     assert.throws(() => display.material(material), /Foliage requires/);
   }
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(), foliageMaterial());
@@ -93,26 +127,35 @@ test("foliage fails closed without independent evidence or correct physical alph
 
 test("foliage shader variants do not share a program when reverse evidence differs", () => {
   const display = new TextureDisplay();
-  const neutral = foliageMaterial(), generated = foliageMaterial();
+  const neutral = foliageMaterial(),
+    generated = foliageMaterial();
   delete generated.userData.foliage_backface_fill;
-  display.material(neutral); display.material(generated);
+  display.material(neutral);
+  display.material(generated);
   assert.notEqual(neutral.customProgramCacheKey(), generated.customProgramCacheKey());
 });
-
 
 test("authored room floors keep depth priority without changing shared wall materials", () => {
   const texture = new THREE.Texture();
   const original = new THREE.MeshBasicMaterial({ map: texture });
   const geometry = new THREE.PlaneGeometry();
   const floor = new THREE.Mesh(geometry, original);
-  floor.userData = { reveal_component_role: "interior-floor", projection_component: "patch-006-room-floor" };
+  floor.userData = {
+    reveal_component_role: "interior-floor",
+    projection_component: "patch-006-room-floor",
+  };
   const wall = new THREE.Mesh(geometry, original);
   const walkway = new THREE.Mesh(geometry, original);
   walkway.userData = { reveal_component_role: "interior-floor", projection_component: "walkway" };
   const mislabeled = new THREE.Mesh(geometry, original);
-  mislabeled.userData = { reveal_component_role: "retained-shell", projection_component: "patch-005-room-floor" };
-  const root = new THREE.Group(); root.add(floor, wall, walkway, mislabeled);
-  const display = new TextureDisplay(); display.apply(root);
+  mislabeled.userData = {
+    reveal_component_role: "retained-shell",
+    projection_component: "patch-005-room-floor",
+  };
+  const root = new THREE.Group();
+  root.add(floor, wall, walkway, mislabeled);
+  const display = new TextureDisplay();
+  display.apply(root);
   assert.notEqual(floor.material, original);
   assert.equal(floor.material.polygonOffset, true);
   assert.equal(floor.material.polygonOffsetFactor, -2);

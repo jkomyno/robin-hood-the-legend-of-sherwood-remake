@@ -8,7 +8,16 @@
     "test:browser": "node app/tests/run-lifecycle.mjs",
     "build:browser": "pnpm --filter app exec vite build --config vite.lifecycle.config.ts",
     "serve:browser": "pnpm --filter app exec vite preview --config vite.lifecycle.config.ts --host 127.0.0.1 --strictPort",
-    "verify": "pnpm test && pnpm --filter pipeline test && pnpm --filter app typecheck && pnpm --filter pipeline typecheck && pnpm build"
+    "lint": "oxlint app/src app/tests app/*.ts app/*.mjs pipeline/src shared/src",
+    "lint:fix": "oxlint --fix app/src app/tests app/*.ts app/*.mjs pipeline/src shared/src",
+    "fmt": "oxfmt 'app/**/*.{js,jsx,mjs,cjs,ts,tsx}' 'pipeline/**/*.{js,jsx,mjs,cjs,ts,tsx}' 'shared/**/*.{js,jsx,mjs,cjs,ts,tsx}' package.json .oxlintrc.json .oxfmtrc.json",
+    "fmt:check": "oxfmt --check 'app/**/*.{js,jsx,mjs,cjs,ts,tsx}' 'pipeline/**/*.{js,jsx,mjs,cjs,ts,tsx}' 'shared/**/*.{js,jsx,mjs,cjs,ts,tsx}' package.json .oxlintrc.json .oxfmtrc.json",
+    "verify": "pnpm fmt:check && pnpm lint && pnpm test && pnpm --filter pipeline test && pnpm --filter app typecheck && pnpm --filter pipeline typecheck && pnpm build"
   },
-  "packageManager": "pnpm@12.3.4"
+  "devDependencies": {
+    "oxfmt": "0.70.0",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2003"
+  },
+  "packageManager": "pnpm@12.6.0"
 }

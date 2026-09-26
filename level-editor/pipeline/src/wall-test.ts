@@ -27,16 +27,50 @@ async function main() {
       anchor: a.anchor,
       directionDeg: a.wall_direction_deg ?? 0,
     });
-    imgs.set(id, { path: p, w: m.width!, h: m.height! });
+    imgs.set(id, { path: p, w: m.width, h: m.height });
   }
 
-  const W = 2000, H = 1500;
+  const W = 2000,
+    H = 1500;
   const runs: { label: string; points: [number, number][] }[] = [
-    { label: "horizontal", points: [[100, 250], [900, 250]] },
-    { label: "down-right 35", points: [[1100, 150], [1800, 640]] },
-    { label: "up-right -35", points: [[100, 900], [800, 410]] },
-    { label: "up-right -51", points: [[1100, 1450], [1500, 950]] },
-    { label: "zigzag", points: [[100, 1400], [500, 1150], [900, 1400], [1300, 1420], [1600, 1200]] },
+    {
+      label: "horizontal",
+      points: [
+        [100, 250],
+        [900, 250],
+      ],
+    },
+    {
+      label: "down-right 35",
+      points: [
+        [1100, 150],
+        [1800, 640],
+      ],
+    },
+    {
+      label: "up-right -35",
+      points: [
+        [100, 900],
+        [800, 410],
+      ],
+    },
+    {
+      label: "up-right -51",
+      points: [
+        [1100, 1450],
+        [1500, 950],
+      ],
+    },
+    {
+      label: "zigzag",
+      points: [
+        [100, 1400],
+        [500, 1150],
+        [900, 1400],
+        [1300, 1420],
+        [1600, 1200],
+      ],
+    },
   ];
   const comps: OverlayOptions[] = [];
   let svg = `<svg width="${W}" height="${H}">`;

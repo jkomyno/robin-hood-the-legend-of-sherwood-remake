@@ -22,11 +22,7 @@ const options: ExtractOptions = {
   id: "fixture",
   tags: [],
 };
-const entry = (
-  id: string,
-  tags: string[] = [],
-  source_map = "York",
-): LibraryIndexEntry => ({
+const entry = (id: string, tags: string[] = [], source_map = "York"): LibraryIndexEntry => ({
   id,
   name: id,
   tags,
@@ -100,19 +96,10 @@ async function fixture(t: TestContext) {
 }
 
 test("invalid existing indexes fail extraction before level loading or provider work", async (t) => {
-  const { runtime, index, writes, providerCalls, levelReads } =
-    await fixture(t);
-  for (const invalid of [
-    "{broken",
-    "{}",
-    "[null]",
-    JSON.stringify([{ id: "bad" }]),
-  ]) {
+  const { runtime, index, writes, providerCalls, levelReads } = await fixture(t);
+  for (const invalid of ["{broken", "{}", "[null]", JSON.stringify([{ id: "bad" }])]) {
     await fs.writeFile(index, invalid);
-    await assert.rejects(
-      runExtraction(options, runtime),
-      /Invalid library index/,
-    );
+    await assert.rejects(runExtraction(options, runtime), /Invalid library index/);
     assert.equal(providerCalls(), 0);
     assert.equal(levelReads(), 0);
     assert.deepEqual(writes, []);
@@ -123,10 +110,7 @@ test("invalid existing indexes fail extraction before level loading or provider 
 test("read failures are not mistaken for an absent index", async (t) => {
   const { runtime, index, providerCalls } = await fixture(t);
   await fs.mkdir(index); // Deterministic I/O failure even when tests run as root.
-  await assert.rejects(
-    runExtraction(options, runtime),
-    /Cannot read library index/,
-  );
+  await assert.rejects(runExtraction(options, runtime), /Cannot read library index/);
   assert.equal(providerCalls(), 0);
 });
 
@@ -159,21 +143,14 @@ test("deduplication rereads the validated index after provider work without hold
   const { runtime, index, writes } = await fixture(t);
   const segment = runtime.segment;
   runtime.segment = async (...args) => {
-    await assert.rejects(
-      fs.stat(path.join(runtime.libraryDirectory, ".index.lock")),
-      { code: "ENOENT" },
-    );
-    await fs.writeFile(
-      index,
-      JSON.stringify([entry("published-during-provider")]),
-    );
+    await assert.rejects(fs.stat(path.join(runtime.libraryDirectory, ".index.lock")), {
+      code: "ENOENT",
+    });
+    await fs.writeFile(index, JSON.stringify([entry("published-during-provider")]));
     return segment(...args);
   };
   const result = await runExtraction(options, runtime);
-  assert.match(
-    result.skipped[0]!.reason,
-    /duplicate of published-during-provider/,
-  );
+  assert.match(result.skipped[0]!.reason, /duplicate of published-during-provider/);
   assert.deepEqual(writes, []);
 });
 
@@ -184,9 +161,6 @@ test("an index corrupted during provider work rejects before publishing any asse
     await fs.writeFile(index, "{invalidated");
     return segment(...args);
   };
-  await assert.rejects(
-    runExtraction(options, runtime),
-    /Invalid library index/,
-  );
+  await assert.rejects(runExtraction(options, runtime), /Invalid library index/);
   assert.deepEqual(writes, []);
 });

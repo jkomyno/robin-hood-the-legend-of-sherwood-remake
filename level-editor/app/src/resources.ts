@@ -11,19 +11,14 @@ export function disposeObjectResources(roots: Iterable<THREE.Object3D>) {
       const mesh = node as THREE.Mesh;
       if (mesh.geometry) geometries.add(mesh.geometry);
       if (mesh.material)
-        for (const material of Array.isArray(mesh.material)
-          ? mesh.material
-          : [mesh.material])
+        for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material])
           materials.add(material);
     });
   for (const material of materials)
     for (const value of Object.values(material))
       if (value instanceof THREE.Texture) textures.add(value);
   for (const texture of textures) {
-    if (
-      typeof ImageBitmap !== "undefined" &&
-      texture.source.data instanceof ImageBitmap
-    )
+    if (typeof ImageBitmap !== "undefined" && texture.source.data instanceof ImageBitmap)
       bitmaps.add(texture.source.data);
     texture.dispose();
   }

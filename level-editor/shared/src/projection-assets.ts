@@ -24,12 +24,27 @@ export interface ProjectionAssetDescriptor {
   resources?: { path: string; sha256: string }[];
   states?: AssetStates;
   /** Independent static models sharing an origin; these do not imply animation. */
-  state_variants?: Partial<Record<AssetState, { name: string; model: string; model_scene?: string; parts?: ProjectionAssetDescriptor["parts"] }>>;
+  state_variants?: Partial<
+    Record<
+      AssetState,
+      {
+        name: string;
+        model: string;
+        model_scene?: string;
+        parts?: ProjectionAssetDescriptor["parts"];
+      }
+    >
+  >;
   /** Additional complete appearances; the primary model remains separately insertable. */
   standalone_variants?: ProjectionAssetDescriptor["state_variants"];
-  parts: ({ node: string; name: string; default_hidden?: boolean; obstacle_local_game: SightObstacle } & (
-    { source_obstacle: number; source_components?: string[]; mission_profile?: never } |
-    { source_obstacle?: never; source_components?: never; mission_profile: string }
+  parts: ({
+    node: string;
+    name: string;
+    default_hidden?: boolean;
+    obstacle_local_game: SightObstacle;
+  } & (
+    | { source_obstacle: number; source_components?: string[]; mission_profile?: never }
+    | { source_obstacle?: never; source_components?: never; mission_profile: string }
   ))[];
 }
 
@@ -73,7 +88,10 @@ export function assetNodeKey(id: string, node: string): string {
 }
 
 export function safeLibraryPath(value: unknown): value is string {
-  return typeof value === "string" && value.length > 0 &&
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
     !/[\\\0:#?%]/.test(value) &&
-    value.split("/").every(part => part !== "" && part !== "." && part !== "..");
+    value.split("/").every((part) => part !== "" && part !== "." && part !== "..")
+  );
 }

@@ -34,8 +34,7 @@ chrome.on("error", (error) => lifetime.abort(error));
 chrome.on("exit", (code, signal) =>
   lifetime.abort(new Error(`Chromium exited (${code ?? signal})`)),
 );
-const interrupted = () =>
-  lifetime.abort(new Error("Lifecycle runner interrupted"));
+const interrupted = () => lifetime.abort(new Error("Lifecycle runner interrupted"));
 process.on("SIGTERM", interrupted);
 process.on("SIGINT", interrupted);
 let socket;
@@ -61,8 +60,7 @@ try {
   const response = await fetch(`http://${address.host}/json/list`, {
     signal: AbortSignal.any([lifetime.signal, AbortSignal.timeout(5000)]),
   });
-  if (!response.ok)
-    throw new Error(`CDP page discovery returned HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`CDP page discovery returned HTTP ${response.status}`);
   const pages = await response.json();
   const page = pages.find((page) => page.type === "page");
   if (!page) throw new Error("Chromium exposed no page target");
@@ -72,33 +70,33 @@ try {
   let outcome;
   const deadline = Date.now() + Number(process.env.TEST_TIMEOUT ?? 60000);
   while (Date.now() < deadline) {
-    outcome = await evaluate(
-      socket,
-      ++id,
-      "document.querySelector('#result')?.textContent",
-      {
-        signal: lifetime.signal,
-        timeoutMs: Math.min(Number(process.env.TEST_EVALUATE_TIMEOUT ?? 5000), deadline - Date.now()),
-      },
-    );
+    outcome = await evaluate(socket, ++id, "document.querySelector('#result')?.textContent", {
+      signal: lifetime.signal,
+      timeoutMs: Math.min(Number(process.env.TEST_EVALUATE_TIMEOUT ?? 5000), deadline - Date.now()),
+    });
     if (outcome?.startsWith("PASS") || outcome?.startsWith("FAIL")) break;
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   if (process.env.TEST_ARTIFACT_DIR) {
-    const images = await evaluate(socket, ++id, "window.__migrationImages", { signal:lifetime.signal, timeoutMs:10000 });
+    const images = await evaluate(socket, ++id, "window.__migrationImages", {
+      signal: lifetime.signal,
+      timeoutMs: 10000,
+    });
     if (images) {
-      await mkdir(process.env.TEST_ARTIFACT_DIR, { recursive:true });
+      await mkdir(process.env.TEST_ARTIFACT_DIR, { recursive: true });
       for (const [name, data] of Object.entries(images)) {
-        if (!["before", "after", "difference"].includes(name)) throw new Error("Unexpected migration artifact");
-        await writeFile(join(process.env.TEST_ARTIFACT_DIR, name+".png"), Buffer.from(data.split(",")[1], "base64"));
+        if (!["before", "after", "difference"].includes(name))
+          throw new Error("Unexpected migration artifact");
+        await writeFile(
+          join(process.env.TEST_ARTIFACT_DIR, name + ".png"),
+          Buffer.from(data.split(",")[1], "base64"),
+        );
       }
     }
   }
   if (!outcome?.startsWith("PASS"))
     throw new Error(
-      outcome?.startsWith("FAIL")
-        ? outcome
-        : "Lifecycle acceptance timed out without a result",
+      outcome?.startsWith("FAIL") ? outcome : "Lifecycle acceptance timed out without a result",
     );
   console.log(outcome);
 } catch (error) {
@@ -110,15 +108,12 @@ try {
   if (!(await waitForChild(3000))) {
     chrome.kill("SIGKILL");
     if (!(await waitForChild(3000))) {
-      console.error(
-        `Chromium did not exit; retaining its temporary profile ${profile}`,
-      );
+      console.error(`Chromium did not exit; retaining its temporary profile ${profile}`);
       process.exitCode = 1;
     }
   }
   // Never remove a live browser's profile or any path not allocated above.
-  if (closed)
-    await rm(profile, { recursive: true, force: true, maxRetries: 3 });
+  if (closed) await rm(profile, { recursive: true, force: true, maxRetries: 3 });
   process.removeListener("SIGTERM", interrupted);
   process.removeListener("SIGINT", interrupted);
 }

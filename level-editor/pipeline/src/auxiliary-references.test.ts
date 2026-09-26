@@ -7,27 +7,54 @@ import crypto from "node:crypto";
 import sharp from "sharp";
 import { auxiliaryReferences } from "./refinement/auxiliary-references.ts";
 
-const sha=(bytes:Buffer)=>crypto.createHash("sha256").update(bytes).digest("hex");
-test("Auxiliary crop evidence binds exact approved pixels and rejects altered artwork",async()=>{
-  const directory=await fs.mkdtemp(path.join(os.tmpdir(),"texture-auxiliary-"));
+const sha = (bytes: Buffer) => crypto.createHash("sha256").update(bytes).digest("hex");
+test("Auxiliary crop evidence binds exact approved pixels and rejects altered artwork", async () => {
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), "texture-auxiliary-"));
   try {
-    const input=await sharp({create:{width:8,height:8,channels:4,background:{r:123,g:45,b:67,alpha:1}}}).png().toBuffer();
-    const crop={left:2,top:3,width:4,height:2};
-    const reference=await sharp(input).extract(crop).resize(12,6,{kernel:"nearest"}).png().toBuffer();
-    const manifest={input_sha256:sha(input),lighting_sha256:sha(input),references:[{file:"crop.png",sha256:sha(reference),source:"lighting",crop,scale:3}]};
-    const file=path.join(directory,"references.json");
-    await fs.writeFile(path.join(directory,"crop.png"),reference);await fs.writeFile(file,JSON.stringify(manifest));
-    const loaded=await auxiliaryReferences(file,input,input);
-    assert.equal(loaded.images.length,1);assert.equal(loaded.evidence?.references[0]?.sha256,sha(reference));
-    assert.equal(loaded.evidence?.manifest_sha256,sha(await fs.readFile(file)));
-    assert.match(loaded.instructions,/Image 3.*3x.*second.*\(2,3,4,2\)/);
-    await assert.rejects(auxiliaryReferences(file,Buffer.from("changed"),input),/bind/);
-    await assert.rejects(auxiliaryReferences(file,input,null),/lighting/);
-    const altered=await sharp({create:{width:12,height:6,channels:4,background:"red"}}).png().toBuffer();
-    await fs.writeFile(path.join(directory,"crop.png"),altered);
-    await assert.rejects(auxiliaryReferences(file,input,input),/hash changed/);
-    manifest.references[0]!.sha256=sha(altered);await fs.writeFile(file,JSON.stringify(manifest));
-    await assert.rejects(auxiliaryReferences(file,input,input),/exact magnified approved crop/);
-    assert.deepEqual(await auxiliaryReferences(null,input,null),{images:[],evidence:null,instructions:""});
-  } finally {await fs.rm(directory,{recursive:true,force:true});}
+    const input = await sharp({
+      create: { width: 8, height: 8, channels: 4, background: { r: 123, g: 45, b: 67, alpha: 1 } },
+    })
+      .png()
+      .toBuffer();
+    const crop = { left: 2, top: 3, width: 4, height: 2 };
+    const reference = await sharp(input)
+      .extract(crop)
+      .resize(12, 6, { kernel: "nearest" })
+      .png()
+      .toBuffer();
+    const manifest = {
+      input_sha256: sha(input),
+      lighting_sha256: sha(input),
+      references: [
+        { file: "crop.png", sha256: sha(reference), source: "lighting", crop, scale: 3 },
+      ],
+    };
+    const file = path.join(directory, "references.json");
+    await fs.writeFile(path.join(directory, "crop.png"), reference);
+    await fs.writeFile(file, JSON.stringify(manifest));
+    const loaded = await auxiliaryReferences(file, input, input);
+    assert.equal(loaded.images.length, 1);
+    assert.equal(loaded.evidence?.references[0]?.sha256, sha(reference));
+    assert.equal(loaded.evidence?.manifest_sha256, sha(await fs.readFile(file)));
+    assert.match(loaded.instructions, /Image 3.*3x.*second.*\(2,3,4,2\)/);
+    await assert.rejects(auxiliaryReferences(file, Buffer.from("changed"), input), /bind/);
+    await assert.rejects(auxiliaryReferences(file, input, null), /lighting/);
+    const altered = await sharp({
+      create: { width: 12, height: 6, channels: 4, background: "red" },
+    })
+      .png()
+      .toBuffer();
+    await fs.writeFile(path.join(directory, "crop.png"), altered);
+    await assert.rejects(auxiliaryReferences(file, input, input), /hash changed/);
+    manifest.references[0]!.sha256 = sha(altered);
+    await fs.writeFile(file, JSON.stringify(manifest));
+    await assert.rejects(auxiliaryReferences(file, input, input), /exact magnified approved crop/);
+    assert.deepEqual(await auxiliaryReferences(null, input, null), {
+      images: [],
+      evidence: null,
+      instructions: "",
+    });
+  } finally {
+    await fs.rm(directory, { recursive: true, force: true });
+  }
 });

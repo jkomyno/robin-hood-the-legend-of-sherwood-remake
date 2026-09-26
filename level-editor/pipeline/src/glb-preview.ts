@@ -38,7 +38,10 @@ async function main() {
   const extent = Math.max(bz.max[0] - bz.min[0], bz.max[1] - bz.min[1], bz.max[2] - bz.min[2]);
   const tiles: OverlayOptions[] = [];
   for (const [i, yaw] of [0, 90, 180, 270].entries()) {
-    const img = render([{ mesh, positions: zup }], orbitView(center, yaw, 30, size, size, (size * 0.8) / extent));
+    const img = render(
+      [{ mesh, positions: zup }],
+      orbitView(center, yaw, 30, size, size, (size * 0.8) / extent),
+    );
     tiles.push({
       input: await sharp(img, { raw: { width: size, height: size, channels: 4 } })
         .flatten({ background: "#303030" })

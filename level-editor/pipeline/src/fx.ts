@@ -25,7 +25,7 @@ export async function loadKeyedFxPng(framePath: string): Promise<Buffer> {
   for (let i = 0; i < raw.length; i += 4) {
     if (raw[i] === 0 && raw[i + 1] === 251 && raw[i + 2] === 0) raw[i + 3] = 0;
   }
-  return sharp(raw, { raw: { width: width!, height: height!, channels: 4 } })
+  return sharp(raw, { raw: { width: width, height: height, channels: 4 } })
     .png()
     .toBuffer();
 }
@@ -76,19 +76,36 @@ async function loadManifest(ambiance: string, bank: string): Promise<Manifest | 
   const directory = path.join(dir, hit);
   const file = path.join(directory, "manifest.json");
   const value = await readDocument(file, true);
-  if (!value || typeof value !== "object" || !("profiles" in value) || !Array.isArray(value.profiles))
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !("profiles" in value) ||
+    !Array.isArray(value.profiles)
+  )
     throw new Error(`invalid sprite manifest ${file}: expected profiles array`);
   for (const p of value.profiles) {
-    if (!p || typeof p.name !== "string" || !Array.isArray(p.rows) ||
-        ![p.center_x, p.center_y, p.width, p.height].every(Number.isFinite))
+    if (
+      !p ||
+      typeof p.name !== "string" ||
+      !Array.isArray(p.rows) ||
+      ![p.center_x, p.center_y, p.width, p.height].every(Number.isFinite)
+    )
       throw new Error(`invalid sprite profile in ${file}`);
     for (const row of p.rows) {
-      if (!row || typeof row.action !== "string" || typeof row.path !== "string" ||
-          ![row.hotspot_x, row.hotspot_y].every(Number.isFinite) || !Array.isArray(row.frames))
+      if (
+        !row ||
+        typeof row.action !== "string" ||
+        typeof row.path !== "string" ||
+        ![row.hotspot_x, row.hotspot_y].every(Number.isFinite) ||
+        !Array.isArray(row.frames)
+      )
         throw new Error(`invalid sprite row in ${file}`);
       for (const frame of row.frames) {
-        if (!frame || typeof frame.file !== "string" ||
-            ![frame.offset_x, frame.offset_y].every(Number.isFinite))
+        if (
+          !frame ||
+          typeof frame.file !== "string" ||
+          ![frame.offset_x, frame.offset_y].every(Number.isFinite)
+        )
           throw new Error(`invalid sprite frame in ${file}`);
       }
     }
@@ -132,7 +149,8 @@ export async function loadFxSprite(
   try {
     await fs.access(framePath);
   } catch (error) {
-    if (!isMissing(error)) throw new Error(`cannot access sprite frame ${framePath}`, { cause: error });
+    if (!isMissing(error))
+      throw new Error(`cannot access sprite frame ${framePath}`, { cause: error });
     framePath = path.join(dir, row.path, frame.file);
     await fs.access(framePath);
   }

@@ -21,9 +21,7 @@ export interface ExtractionRuntime {
   loadProtoLevel: typeof loadProtoLevel;
   mapImageSource: typeof mapImageSource;
   segment: typeof segment;
-  writeMaskedAsset: (
-    ...args: Parameters<typeof writeMaskedAsset>
-  ) => Promise<unknown>;
+  writeMaskedAsset: (...args: Parameters<typeof writeMaskedAsset>) => Promise<unknown>;
   libraryDirectory: string;
   workDirectory: string;
 }
@@ -162,17 +160,12 @@ export async function runExtraction(
   // another process may publish while that long-running operation is in flight.
   await readLibraryIndex(runtime.libraryDirectory);
   const level: ProtoLevel = await runtime.loadProtoLevel(opts.map);
-  const daySrc = await runtime.mapImageSource(
-    opts.map,
-    "Day",
-    opts.applyPatches ?? false,
-    level,
-  );
+  const daySrc = await runtime.mapImageSource(opts.map, "Day", opts.applyPatches ?? false, level);
   if (!daySrc) throw new Error(`no Day/${opts.map}.map.png in the datadir`);
 
   const meta = await sharp(daySrc).metadata();
-  const mapW = meta.width!;
-  const mapH = meta.height!;
+  const mapW = meta.width;
+  const mapH = meta.height;
 
   // padded crop around the requested bbox, clamped to the map
   const [bx, by, bw, bh] = opts.bbox;
@@ -258,8 +251,7 @@ export async function runExtraction(
       let fg = 0;
       for (const v of cropMask.data) if (v) fg++;
       if (fg < opts.minArea) return { skip: `fragment (${fg}px < ${opts.minArea})` };
-      const touchesEdge =
-        b.minX === 0 || b.minY === 0 || b.maxX === cw - 1 || b.maxY === ch - 1;
+      const touchesEdge = b.minX === 0 || b.minY === 0 || b.maxX === cw - 1 || b.maxY === ch - 1;
       if (touchesEdge && opts.scaleClass !== "spline-segment") {
         return { skip: "truncated at crop edge" };
       }
@@ -273,7 +265,10 @@ export async function runExtraction(
 
     const assetMask = new Uint8Array(aw * ah);
     for (let y = 0; y < ah; y++) {
-      assetMask.set(cropMask.data.subarray((b.minY + y) * cw + b.minX, (b.minY + y) * cw + b.minX + aw), y * aw);
+      assetMask.set(
+        cropMask.data.subarray((b.minY + y) * cw + b.minX, (b.minY + y) * cw + b.minX + aw),
+        y * aw,
+      );
     }
     await runtime.writeMaskedAsset({
       map: opts.map,

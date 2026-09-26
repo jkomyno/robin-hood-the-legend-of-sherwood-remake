@@ -18,17 +18,41 @@ function gltf(groups: Record<string, string[]>): AuthoredGltf {
   return { nodes };
 }
 function fixture(): Level3D {
-  return { version: 1, map: "test", size: [100, 100], sceneAssets: [],
+  return {
+    version: 1,
+    map: "test",
+    size: [100, 100],
+    sceneAssets: [],
     camera: { kind: "oblique-orthographic", elevation_deg: 35 },
-    groups: ["hall", "stairs", "yard", "custom"].map(id => ({ id, name: id, transform: identity() })),
-    objects: ["a", "b", "c", "d", "e"].map((node, i) => ({ id: node, node, kind: "building",
-      source: { map: "test", obstacle: i }, name: `Name ${node}`,
-      group: ["hall", "stairs", "stairs", "yard", "custom"][i], transform: identity(),
-      obstacle: { points: [{ x: i * 10, y: i * 20, z_bottom: 0, z_top: 10 },
-        { x: i * 10 + 4, y: i * 20, z_bottom: 0, z_top: 10 },
-        { x: i * 10, y: i * 20 + 4, z_bottom: 0, z_top: 10 }],
-        projection_area: null, opaque: true, solid: true, mouse: true, show_shadow_polygon: true,
-        default_material: 0, material_indices: [] } })) };
+    groups: ["hall", "stairs", "yard", "custom"].map((id) => ({
+      id,
+      name: id,
+      transform: identity(),
+    })),
+    objects: ["a", "b", "c", "d", "e"].map((node, i) => ({
+      id: node,
+      node,
+      kind: "building",
+      source: { map: "test", obstacle: i },
+      name: `Name ${node}`,
+      group: ["hall", "stairs", "stairs", "yard", "custom"][i],
+      transform: identity(),
+      obstacle: {
+        points: [
+          { x: i * 10, y: i * 20, z_bottom: 0, z_top: 10 },
+          { x: i * 10 + 4, y: i * 20, z_bottom: 0, z_top: 10 },
+          { x: i * 10, y: i * 20 + 4, z_bottom: 0, z_top: 10 },
+        ],
+        projection_area: null,
+        opaque: true,
+        solid: true,
+        mouse: true,
+        show_shadow_polygon: true,
+        default_material: 0,
+        material_indices: [],
+      },
+    })),
+  };
 }
 const previous = () => gltf({ hall: ["a"], stairs: ["b", "c"], yard: ["d", "e"] });
 const refined = () => gltf({ hall: ["a", "b", "c"], trough: ["d", "e"] });
@@ -53,17 +77,28 @@ test("reparenting keeps all world transforms when both groups rotate and pivots 
   document.groups[0]!.transform = { dx: 19, dy: -3, dz: 12, rot_deg: 43 };
   document.groups[1]!.transform = { dx: -13, dy: 31, dz: 5, rot_deg: -28 };
   document.objects[2]!.transform = { dx: 11, dy: 7, dz: 2, rot_deg: 14 };
-  const matrices = document.objects.map(part => partMatrix(document.camera, document, part));
+  const matrices = document.objects.map((part) => partMatrix(document.camera, document, part));
   mergeRefinedGroups(document, previous(), refined());
-  document.objects.forEach((part, i) => partMatrix(document.camera, document, part).forEach((value, j) =>
-    assert.ok(Math.abs(value - matrices[i]![j]!) < 1e-8, `${part.id} matrix component ${j}`)));
-  assert.ok(document.groups.some(group => group.id === "stairs"), "edited empty groups are retained");
+  document.objects.forEach((part, i) =>
+    partMatrix(document.camera, document, part).forEach((value, j) =>
+      assert.ok(Math.abs(value - matrices[i]![j]!) < 1e-8, `${part.id} matrix component ${j}`),
+    ),
+  );
+  assert.ok(
+    document.groups.some((group) => group.id === "stairs"),
+    "edited empty groups are retained",
+  );
 });
 
 test("new groups accept multiple parts, while hidden or colliding custom groups are preserved", () => {
   const document = fixture();
   document.objects[4]!.group = "yard";
-  assert.deepEqual(mergeRefinedGroups(document, previous(), refined()).migratedParts, ["b", "c", "d", "e"]);
+  assert.deepEqual(mergeRefinedGroups(document, previous(), refined()).migratedParts, [
+    "b",
+    "c",
+    "d",
+    "e",
+  ]);
   const hidden = fixture();
   hidden.groups[0]!.hidden = true;
   hidden.groups.push({ id: "trough", name: "Custom trough", transform: identity() });
@@ -74,23 +109,28 @@ test("local asset origin changes preserve rotated authored placements and flags"
   const { rebaseLibraryRevision } = await import("./refined-map-groups.ts");
   const { transformedObstacle } = await import("@rle/shared");
   const document = fixture();
-  document.sceneMetadata = { assetOrigins: { hall:[100,200,0] } };
-  document.objects.forEach(part => { part.node = `asset:hall:${part.node}`; });
+  document.sceneMetadata = { assetOrigins: { hall: [100, 200, 0] } };
+  document.objects.forEach((part) => {
+    part.node = `asset:hall:${part.node}`;
+  });
   document.groups[0]!.transform = { dx: 100, dy: 24, dz: 3, rot_deg: 35 };
   document.objects[0]!.transform = { dx: 2, dy: 5, dz: 1, rot_deg: 18 };
   document.objects[0]!.hidden = true;
-  const expected = document.objects.map(part => transformedObstacle(document, part));
+  const expected = document.objects.map((part) => transformedObstacle(document, part));
   const revised = structuredClone(document);
-  revised.sceneMetadata = { assetOrigins: { hall:[120,190,0] } };
-  for (const part of revised.objects) for (const point of part.obstacle.points) {
-    point.x -= 20;
-    point.y -= 10 * Math.sin(35*Math.PI/180);
-  }
+  revised.sceneMetadata = { assetOrigins: { hall: [120, 190, 0] } };
+  for (const part of revised.objects)
+    for (const point of part.obstacle.points) {
+      point.x -= 20;
+      point.y -= 10 * Math.sin((35 * Math.PI) / 180);
+    }
   rebaseLibraryRevision(document, revised);
   assert.equal(document.objects[0]!.hidden, true);
-  for (let i=0;i<document.objects.length;i++) {
+  for (let i = 0; i < document.objects.length; i++) {
     const actual = transformedObstacle(document, document.objects[i]!);
-    actual.points.forEach((p,j) => { for (const k of ["x","y","z_bottom","z_top"] as const)
-      assert.ok(Math.abs(p[k]-expected[i]!.points[j]![k]) < 1e-8, `${i}/${j}/${k}`); });
+    actual.points.forEach((p, j) => {
+      for (const k of ["x", "y", "z_bottom", "z_top"] as const)
+        assert.ok(Math.abs(p[k] - expected[i]!.points[j]![k]) < 1e-8, `${i}/${j}/${k}`);
+    });
   }
 });

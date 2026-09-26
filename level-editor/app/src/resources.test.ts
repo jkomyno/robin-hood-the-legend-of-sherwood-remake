@@ -14,7 +14,7 @@ test("shared source geometry, materials and all texture slots dispose once", () 
   const clone = original.clone();
   const counts = [0, 0, 0];
   [geometry, material, texture].forEach((resource, i) =>
-    resource.addEventListener("dispose", () => counts[i]!++),
+    resource.addEventListener("dispose", () => counts[i]++),
   );
   disposeObjectResources([original, clone]);
   assert.deepEqual(counts, [1, 1, 1]);

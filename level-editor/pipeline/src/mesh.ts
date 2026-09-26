@@ -58,7 +58,7 @@ export async function loadGlb(file: string): Promise<MeshData> {
 
   const nodes: { world: mat4; node: ReturnType<typeof root.listNodes>[number] }[] = [];
   scene.traverse((node) => {
-    nodes.push({ world: node.getWorldMatrix() as unknown as mat4, node });
+    nodes.push({ world: node.getWorldMatrix(), node });
   });
 
   for (const { world, node } of nodes) {
@@ -423,8 +423,14 @@ export function rasterizeAppearance(
         if (tex && uvs) {
           const u = l0 * uvs[ia * 2]! + l1 * uvs[ib * 2]! + l2 * uvs[ic * 2]!;
           const v = l0 * uvs[ia * 2 + 1]! + l1 * uvs[ib * 2 + 1]! + l2 * uvs[ic * 2 + 1]!;
-          const tx = Math.min(tex.width - 1, Math.max(0, Math.floor((u - Math.floor(u)) * tex.width)));
-          const ty = Math.min(tex.height - 1, Math.max(0, Math.floor((v - Math.floor(v)) * tex.height)));
+          const tx = Math.min(
+            tex.width - 1,
+            Math.max(0, Math.floor((u - Math.floor(u)) * tex.width)),
+          );
+          const ty = Math.min(
+            tex.height - 1,
+            Math.max(0, Math.floor((v - Math.floor(v)) * tex.height)),
+          );
           const o = (ty * tex.width + tx) * 4;
           r = tex.data[o]!;
           g = tex.data[o + 1]!;

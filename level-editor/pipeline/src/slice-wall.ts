@@ -18,29 +18,29 @@ async function main() {
   const desc = await readAssetDescriptor(path.join(srcDir, "asset.json"));
   const day = sharp(path.join(srcDir, desc.images.day));
   const { width: W, height: H } = await day.metadata();
-  const sliceW = Number(process.argv[3] ?? Math.round(W! / 3));
+  const sliceW = Number(process.argv[3] ?? Math.round(W / 3));
   // optional 4th arg: left edge of the slice (px); default centered
-  const x0 = process.argv[4] !== undefined ? Number(process.argv[4]) : Math.round((W! - sliceW) / 2);
+  const x0 = process.argv[4] !== undefined ? Number(process.argv[4]) : Math.round((W - sliceW) / 2);
 
   const images: Record<string, Buffer> = {};
   for (const key of ["day", "fog", "night"] as const) {
     const file = desc.images[key];
     if (!file) continue;
     images[`${key}.png`] = await sharp(path.join(srcDir, file))
-      .extract({ left: x0, top: 0, width: sliceW, height: H! })
+      .extract({ left: x0, top: 0, width: sliceW, height: H })
       .png()
       .toBuffer();
   }
   images["mask.png"] = await sharp(path.join(srcDir, desc.images.mask))
-    .extract({ left: x0, top: 0, width: sliceW, height: H! })
+    .extract({ left: x0, top: 0, width: sliceW, height: H })
     .png()
     .toBuffer();
 
   // trim empty rows and find the baseline (lowest fg row)
-  const maskRaw = await sharp(images["mask.png"]!).extractChannel(0).raw().toBuffer();
-  let top = H!,
+  const maskRaw = await sharp(images["mask.png"]).extractChannel(0).raw().toBuffer();
+  let top = H,
     bottom = -1;
-  for (let y = 0; y < H!; y++) {
+  for (let y = 0; y < H; y++) {
     for (let x = 0; x < sliceW; x++) {
       if (maskRaw[y * sliceW + x]! > 127) {
         top = Math.min(top, y);
@@ -52,7 +52,7 @@ async function main() {
   if (bottom < 0) throw new Error("slice mask is empty");
   const h = bottom - top + 1;
   for (const name of Object.keys(images)) {
-    images[name] = await sharp(images[name]!)
+    images[name] = await sharp(images[name])
       .extract({ left: 0, top, width: sliceW, height: h })
       .png()
       .toBuffer();
@@ -60,7 +60,7 @@ async function main() {
 
   // measure the art's true slope from the mask baseline (per-column bottom
   // fg row, least-squares fit) — hand-guessed directions cause joint gaps
-  const sliceMask = await sharp(images["mask.png"]!).extractChannel(0).raw().toBuffer();
+  const sliceMask = await sharp(images["mask.png"]).extractChannel(0).raw().toBuffer();
   const cols: { x: number; b: number }[] = [];
   for (let x = 0; x < sliceW; x++) {
     for (let y = h - 1; y >= 0; y--) {
@@ -78,7 +78,7 @@ async function main() {
     const num = cols.reduce((s, c) => s + (c.x - mx) * (c.b - mb), 0);
     const den = cols.reduce((s, c) => s + (c.x - mx) ** 2, 0);
     const slope = den === 0 ? 0 : num / den;
-    directionDeg = Math.round((Math.atan2(slope, 1) * 180) / Math.PI * 10) / 10;
+    directionDeg = Math.round(((Math.atan2(slope, 1) * 180) / Math.PI) * 10) / 10;
   }
 
   const sliceId = `${id}-slice`;

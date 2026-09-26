@@ -1,14 +1,7 @@
 // Clip proto-level metadata to an extraction region and translate it to
 // asset-local coordinates (world minus origin).
 import pc from "polygon-clipping";
-import type {
-  AssetMotion,
-  AssetVolumes,
-  Mask,
-  Point,
-  Polygon,
-  ProtoLevel,
-} from "@rle/shared";
+import type { AssetMotion, AssetVolumes, Mask, Point, Polygon, ProtoLevel } from "@rle/shared";
 
 export type Bbox = [number, number, number, number]; // x, y, w, h
 
@@ -44,7 +37,7 @@ function clipPolyToBbox(pts: readonly Point[], bbox: Bbox): Point[][] {
     return result.flat().map((ring) => ring.slice(0, -1) as Point[]);
   } catch {
     // degenerate polygon — fall back to including it whole
-    return [pts.slice() as Point[]];
+    return [pts.slice()];
   }
 }
 
@@ -63,7 +56,12 @@ export function clipLevel(level: ProtoLevel, bbox: Bbox): ClippedLevel {
 
   const volumes: AssetVolumes = {
     sight_obstacles: level.sight_obstacles
-      .filter((so) => bboxOverlapsPoly(bbox, so.points.map((p) => [p.x, p.y] as Point)))
+      .filter((so) =>
+        bboxOverlapsPoly(
+          bbox,
+          so.points.map((p) => [p.x, p.y] as Point),
+        ),
+      )
       .map((so) => ({
         points: so.points.map((p) => ({ ...p, x: p.x - ox, y: p.y - oy })),
         opaque: so.opaque,

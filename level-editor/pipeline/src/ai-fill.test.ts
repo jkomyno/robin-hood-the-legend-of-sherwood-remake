@@ -7,9 +7,7 @@ import sharp from "sharp";
 import { prepare, callOpenAI, composite } from "./ai-fill.ts";
 
 test("AI fill uses injected provider once, then validates cache without resolving credentials", async (t) => {
-  const workDirectory = await fs.mkdtemp(
-    path.join(os.tmpdir(), "ai-fill-test-"),
-  );
+  const workDirectory = await fs.mkdtemp(path.join(os.tmpdir(), "ai-fill-test-"));
   t.after(() => fs.rm(workDirectory, { recursive: true, force: true }));
   const original = Buffer.from([11, 22, 33, 255, 0, 0, 0, 0]);
   const tile = await sharp(original, {
@@ -31,10 +29,9 @@ test("AI fill uses injected provider once, then validates cache without resolvin
   let calls = 0;
   const request: typeof fetch = async () => {
     calls++;
-    return new Response(
-      JSON.stringify({ data: [{ b64_json: png.toString("base64") }] }),
-      { status: 200 },
-    );
+    return new Response(JSON.stringify({ data: [{ b64_json: png.toString("base64") }] }), {
+      status: 200,
+    });
   };
   const first = await callOpenAI(prep, "low", "default", null, {
     workDirectory,

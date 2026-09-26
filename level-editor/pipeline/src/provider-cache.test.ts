@@ -4,12 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
-import {
-  cachedArtifacts,
-  contentKey,
-  inspectCache,
-  validateGlb,
-} from "./provider-cache.ts";
+import { cachedArtifacts, contentKey, inspectCache, validateGlb } from "./provider-cache.ts";
 import { reconstructWith } from "./backends.ts";
 import { decodeRle, segment } from "./sam.ts";
 import { reconstruct3d } from "./sam3d.ts";
@@ -20,18 +15,13 @@ async function temp(t: { after(fn: () => Promise<void>): void }) {
   return dir;
 }
 const validate = async (dir: string) => {
-  const record = JSON.parse(
-    await fs.readFile(path.join(dir, "response.json"), "utf8"),
-  );
+  const record = JSON.parse(await fs.readFile(path.join(dir, "response.json"), "utf8"));
   if (record.value !== 42) throw new Error("bad response");
   return record.value as number;
 };
 test("content keys frame boundaries and include all parameters", () => {
   assert.notEqual(contentKey(["ab", "c"]), contentKey(["a", "bc"]));
-  assert.notEqual(
-    contentKey(["endpoint1", "image"]),
-    contentKey(["endpoint2", "image"]),
-  );
+  assert.notEqual(contentKey(["endpoint1", "image"]), contentKey(["endpoint2", "image"]));
 });
 test("concurrent requests share one provider; complete cache is usable offline", async (t) => {
   const dir = path.join(await temp(t), "key");
@@ -39,15 +29,10 @@ test("concurrent requests share one provider; complete cache is usable offline",
   const provider = async (staging: string) => {
     calls++;
     assert.equal((await inspectCache(dir, validate)).state, "miss");
-    await fs.writeFile(
-      path.join(staging, "response.json"),
-      JSON.stringify({ value: 42 }),
-    );
+    await fs.writeFile(path.join(staging, "response.json"), JSON.stringify({ value: 42 }));
   };
   assert.deepEqual(
-    await Promise.all(
-      Array.from({ length: 8 }, () => cachedArtifacts(dir, validate, provider)),
-    ),
+    await Promise.all(Array.from({ length: 8 }, () => cachedArtifacts(dir, validate, provider))),
     Array(8).fill(42),
   );
   assert.equal(calls, 1);
@@ -62,10 +47,7 @@ test("concurrent requests share one provider; complete cache is usable offline",
     ),
     42,
   );
-  await fs.writeFile(
-    path.join(dir, "response.json"),
-    JSON.stringify({ value: 42, changed: true }),
-  );
+  await fs.writeFile(path.join(dir, "response.json"), JSON.stringify({ value: 42, changed: true }));
   assert.equal((await inspectCache(dir, validate)).state, "corrupt");
   await assert.rejects(cachedArtifacts(dir, validate, provider), /corrupt/);
   assert.equal(calls, 1);
@@ -83,18 +65,11 @@ test("offline misses and interrupted downloads never become remote retries", asy
     /offline.*miss/,
   );
   assert.equal(calls, 0);
-  await assert.rejects(
-    cachedArtifacts(dir, validate, provider),
-    /download failed/,
-  );
+  await assert.rejects(cachedArtifacts(dir, validate, provider), /download failed/);
   assert.equal((await inspectCache(dir, validate)).state, "corrupt");
   await assert.rejects(cachedArtifacts(dir, validate, provider), /corrupt/);
   assert.equal(calls, 1);
-  assert.equal(
-    JSON.parse(await fs.readFile(path.join(dir, "response.json"), "utf8"))
-      .value,
-    42,
-  );
+  assert.equal(JSON.parse(await fs.readFile(path.join(dir, "response.json"), "utf8")).value, 42);
 });
 test("invalid provider artifacts fail before atomic publication", async (t) => {
   const dir = path.join(await temp(t), "key");
@@ -207,20 +182,14 @@ test("production SAM and 3D adapters reuse legacy caches without credentials", a
       request_id: "fixture",
       response: {
         model_glb: { url: "https://example.invalid/model.glb" },
-        metadata: [
-          { rotation: [0, 0, 0, 1], translation: [0, 0, 0], scale: [1, 1, 1] },
-        ],
+        metadata: [{ rotation: [0, 0, 0, 1], translation: [0, 0, 0], scale: [1, 1, 1] }],
       },
     }),
   );
   await fs.writeFile(path.join(samDir, "object-0.glb"), glb());
   assert.equal(
-    (
-      await reconstruct3d(
-        { imagePng: image, maskPngs: [mask] },
-        { workDirectory, offline: true },
-      )
-    ).objects.length,
+    (await reconstruct3d({ imagePng: image, maskPngs: [mask] }, { workDirectory, offline: true }))
+      .objects.length,
     1,
   );
 });

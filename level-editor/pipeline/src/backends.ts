@@ -17,11 +17,7 @@ import {
 } from "./provider-cache.ts";
 
 export type Backend = "sam3d" | "trellis2" | "tripo" | "hunyuan";
-export const ALT_BACKENDS: Exclude<Backend, "sam3d">[] = [
-  "trellis2",
-  "tripo",
-  "hunyuan",
-];
+export const ALT_BACKENDS: Exclude<Backend, "sam3d">[] = ["trellis2", "tripo", "hunyuan"];
 
 interface BackendSpec {
   endpoint: string;
@@ -127,9 +123,7 @@ export async function reconstructWith(
   return cachedArtifacts(
     directory,
     async (cacheDir) => {
-      const cached = JSON.parse(
-        await fs.readFile(path.join(cacheDir, "response.json"), "utf8"),
-      );
+      const cached = JSON.parse(await fs.readFile(path.join(cacheDir, "response.json"), "utf8"));
       if (
         cached.endpoint !== spec.endpoint ||
         typeof cached.request_id !== "string" ||
@@ -154,7 +148,7 @@ export async function reconstructWith(
       const imageUrl = await fal.storage.upload(
         new Blob([new Uint8Array(cutoutPng)], {
           type: "image/png",
-        }) as unknown as File,
+        }),
       );
       const t0 = Date.now();
       const result = await fal.subscribe(spec.endpoint, {
@@ -178,10 +172,7 @@ export async function reconstructWith(
       if (!ref?.url) throw new Error(`${spec.endpoint}: no GLB in response`);
       const res = await fetch(ref.url);
       if (!res.ok) throw new Error(`download ${ref.url}: HTTP ${res.status}`);
-      await fs.writeFile(
-        path.join(cacheDir, "model.glb"),
-        Buffer.from(await res.arrayBuffer()),
-      );
+      await fs.writeFile(path.join(cacheDir, "model.glb"), Buffer.from(await res.arrayBuffer()));
     },
     options,
   );
