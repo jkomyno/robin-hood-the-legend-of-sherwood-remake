@@ -743,11 +743,12 @@ def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, te
             primitive['indices'] = emit(None, indices, {'componentType': 5123 if indices.dtype == np.uint16 else 5125,
                                                         'type': 'SCALAR'})
     textured = {record_material for record in records for *_, record_material in record['materials']}
-    samplers = {json.dumps(sampler, sort_keys=True) for record in records
-                for *_, material_index in record['materials']
-                for _, _, sampler in [display_texture(doc, {'material': material_index})]}
-    require(len(samplers) <= 1, f'Textured materials use different samplers: {samplers}')
-    sampler = json.loads(samplers.pop()) if samplers else {}
+    # One texture per distinct source sampler, all on the one atlas image: materials keep their
+    # filtering (e.g. nearest-neighbour source sampling) and wrap modes.
+    material_sampler = {material_index: json.dumps(sampler, sort_keys=True) for record in records
+                        for *_, material_index in record['materials']
+                        for _, _, sampler in [display_texture(doc, {'material': material_index})]}
+    samplers = sorted(set(material_sampler.values()))
     if texture_file:
         # Sibling file (same stem), referenced relative to the GLB.
         texture_path = output.with_suffix('.avif')
@@ -755,15 +756,16 @@ def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, te
         out['images'] = [{'uri': texture_path.name, 'mimeType': 'image/avif', 'name': 'lossy atlas'}]
     else:
         out['images'] = [{'bufferView': builder.view(atlas_bytes), 'mimeType': 'image/avif', 'name': 'lossy atlas'}]
-    out['samplers'] = [sampler]
-    out['textures'] = [{'sampler': 0, 'extensions': {'EXT_texture_avif': {'source': 0}}}]
+    out['samplers'] = [json.loads(sampler) for sampler in samplers]
+    out['textures'] = [{'sampler': i, 'extensions': {'EXT_texture_avif': {'source': 0}}} for i in range(len(samplers))]
     for index, material in enumerate(out.get('materials', [])):
         pbr = material.get('pbrMetallicRoughness', {})
         if index in textured:
+            texture = samplers.index(material_sampler[index])
             if 'baseColorTexture' in pbr:
-                pbr['baseColorTexture'] = {'index': 0}
+                pbr['baseColorTexture'] = {'index': texture}
             if 'emissiveTexture' in material:
-                material['emissiveTexture'] = {'index': 0}
+                material['emissiveTexture'] = {'index': texture}
         else:
             require('baseColorTexture' not in pbr and 'emissiveTexture' not in material,
                     f'Textured material {index} is not used by any rebuilt primitive')
