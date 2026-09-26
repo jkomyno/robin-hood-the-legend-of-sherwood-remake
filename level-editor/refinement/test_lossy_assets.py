@@ -51,6 +51,8 @@ class LossyAssetsTest(unittest.TestCase):
         (self.root / 'derby/house/model.glb').write_bytes(glb(UNLIT))
         self.index = {'version': 1, 'assets': [{'id': 'house', 'model': 'derby/house/model.glb',
                                                  'descriptor': 'derby/house/asset.json', 'label': 'kept'}]}
+        (self.root / 'derby/house/asset.json').write_text(json.dumps({
+            'id': 'house', 'name': 'House', 'source_map': 'Derby', 'model': 'model.glb', 'tags': ['kept']}))
         (self.root / 'index.json').write_text(json.dumps(self.index))
         self.args = lossy_assets.default_settings()
 
@@ -105,7 +107,7 @@ class LossyAssetsTest(unittest.TestCase):
         report = self.refresh()
         index = json.loads((self.root / 'index.json').read_text())
         self.assertEqual(index['assets'][0]['lossy_model'], 'derby/house/lossy.glb')
-        self.assertEqual(index['assets'][0]['label'], 'kept')
+        self.assertEqual(index['assets'][0]['tags'], ['kept'])
         self.assertEqual((len(report['derived']), self.derived), (1, ['house']))
         self.assertEqual(lossy_assets.verify_derivatives(self.root), [])
         self.assertEqual(self.refresh()['current'], ['house'])
@@ -121,8 +123,11 @@ class LossyAssetsTest(unittest.TestCase):
         self.refresh()
         index_path = self.root/'index.json'
         index = json.loads(index_path.read_text())
-        index['assets'].append({'id': 'other', 'model': 'other/model.glb',
-                                'lossy_model': 'other/lossy.glb'})
+        (self.root/'other').mkdir()
+        (self.root/'other/model.glb').write_bytes(b'original')
+        (self.root/'other/lossy.glb').write_bytes(b'stale')
+        (self.root/'other/asset.json').write_text(json.dumps({
+            'id': 'other', 'name': 'Other', 'source_map': 'Derby', 'model': 'model.glb'}))
         index_path.write_text(json.dumps(index))
         before = index_path.read_bytes()
         with self.assertRaisesRegex((ValueError, RuntimeError), 'other: lossy model or receipt missing'):
@@ -133,6 +138,8 @@ class LossyAssetsTest(unittest.TestCase):
         self.refresh()
         report = self.refresh(lossy=False)
         self.assertEqual(report['removed'], ['house'])
+        self.assertFalse((self.root/'derby/house/lossy.glb').exists())
+        self.assertFalse((self.root/'derby/house/lossy.glb.receipt.json').exists())
         self.assertNotIn('lossy_model', json.loads((self.root / 'index.json').read_text())['assets'][0])
         (self.root / 'derby/house/model.glb').write_bytes(glb(dict(UNLIT, occlusionTexture={'index': 0})))
         report = self.refresh()

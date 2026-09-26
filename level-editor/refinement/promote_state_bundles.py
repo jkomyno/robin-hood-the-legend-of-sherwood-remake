@@ -1,10 +1,9 @@
 """Publish verified lossless state bundles, preserving concurrent library edits."""
 import argparse
-import copy
 import fcntl
 import hashlib
 import json
-from asset_index import validate_asset_index, write_asset_index
+from asset_index import generate_asset_index, write_asset_index
 import os
 from pathlib import Path
 import shutil
@@ -54,7 +53,7 @@ def prepare(library, stage, scenes):
     ids = [local(r['asset_id']) for r in receipts]
     if len(set(ids)) != len(ids):
         raise ValueError('Duplicate bundle IDs')
-    staged_index = json.loads((stage / 'index.json').read_text())['assets']
+    staged_index = generate_asset_index(stage)['assets']
     if sorted(e['id'] for e in staged_index) != sorted(ids):
         raise ValueError('Stage index differs from receipts')
     files, removals, assets = [], [], {}
@@ -106,26 +105,6 @@ def prepare(library, stage, scenes):
             'model_bytes_after': sum(r['output']['bytes'] for r in receipts)}
 
 
-def merge_index(index, entries):
-    result = copy.deepcopy(index)
-    updates = {e['id']: e for e in entries}
-    found = set()
-    for entry in result['assets']:
-        if entry['id'] in updates:
-            if entry['id'] in found:
-                raise ValueError('Duplicate live index ID')
-            found.add(entry['id'])
-            # Retain live names, tags and any unrelated metadata.
-            for key in ('model', 'descriptor', 'model_scene', 'preview_model'):
-                entry[key] = updates[entry['id']][key]
-            # New model bytes: a lossy model bound to the old bytes would be stale. The next
-            # publication staging or `lossy_assets.py -- library` run derives it again.
-            entry.pop('lossy_model', None)
-    if found != set(updates):
-        raise ValueError('Missing live index asset')
-    return result
-
-
 def apply(plan, backup, hook=lambda phase, n: None):
     """Index is installed last. Rollback never overwrites a foreign file change."""
     library, backup = Path(plan['library']), Path(backup)
@@ -140,9 +119,9 @@ def apply(plan, backup, hook=lambda phase, n: None):
         index_path = library / 'index.json'
         initial_index = index_path.read_bytes()
         index_sha = hashlib.sha256(initial_index).hexdigest()
-        new_index = encoded(merge_index(json.loads(initial_index), plan['entries']))
         prospective = {str(Path(f['path']).relative_to(library)): Path(f['source']) for f in plan['files']}
-        validate_asset_index(library, new_index, files=prospective)
+        prospective.update({str(Path(f['path']).relative_to(library)): None for f in plan['removals']})
+        new_index = encoded(generate_asset_index(library, files=prospective))
         jobs = []
         for f in plan['files']:
             check(f['source'], f['after'])
@@ -180,7 +159,7 @@ def apply(plan, backup, hook=lambda phase, n: None):
                     if hashlib.sha256(data).hexdigest() != j['after']:
                         raise ValueError('Stage changed during publication')
                     if j.get('index'):
-                        write_asset_index(library, data)
+                        write_asset_index(library)
                     else:
                         atomic(p, data)
                 op['status'] = 'installed'

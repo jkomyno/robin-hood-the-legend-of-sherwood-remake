@@ -11,6 +11,9 @@ export interface AssetStates {
 
 /** A standalone model exported from a reviewed map, with local obstacles. */
 export interface ProjectionAssetDescriptor {
+  /** Catalog metadata is authored here; index.json is generated from descriptors. */
+  asset_type?: string;
+  tags?: string[];
   editor_usage?: "map-background";
   version: 1;
   kind: "projection-mapped-asset";

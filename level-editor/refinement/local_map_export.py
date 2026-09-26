@@ -1,6 +1,6 @@
 """Create one local catalog used by both map placements and library insertion."""
 import json
-from asset_index import write_asset_index
+from asset_index import write_asset_index, generate_asset_index
 import os
 from pathlib import Path
 import shutil
@@ -16,7 +16,7 @@ def export_local_map(gltf, output, document):
     library = output.parent / 'map-assets'
     if library.exists(): raise FileExistsError(library)
     source_assets = output.parent / 'assets'
-    selected = json.loads((source_assets/'index.json').read_text()) if source_assets.exists() else {'version':1,'assets':[]}
+    selected = generate_asset_index(source_assets) if source_assets.exists() else {'version':1,'assets':[]}
     with tempfile.TemporaryDirectory(prefix='local-map-export-', dir=output.parent) as temporary:
         root = Path(temporary); source = root/'input'
         report = _splitter.split_gltf(gltf, source)
@@ -27,7 +27,7 @@ def export_local_map(gltf, output, document):
         for entry in selected['assets']:
             folder = Path(entry['descriptor']).parent
             shutil.copytree(source_assets/folder, source/'3d-assets'/folder, copy_function=os.link)
-        write_asset_index(source/'3d-assets', selected)
+        write_asset_index(source/'3d-assets')
         placement_file = source_assets.with_name(source_assets.name+'-placements.json')
         legacy_placements = json.loads(placement_file.read_text()) if placement_file.exists() else {}
         for entry in selected['assets']:
@@ -66,6 +66,6 @@ def export_local_map(gltf, output, document):
             folder = Path(entry['descriptor']).parent
             shutil.copytree(library/'3d-assets'/folder, source_assets/folder, copy_function=os.link)
         (source_assets/'blobs').symlink_to(Path('../map-assets/3d-assets/blobs'),target_is_directory=True)
-        write_asset_index(source_assets, selected)
+        write_asset_index(source_assets)
     return {'library':str(library), 'document':result,
             'report':{'verified_assets':conversion['assets']}}

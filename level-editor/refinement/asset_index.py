@@ -1,4 +1,4 @@
-"""The publication boundary for 3D asset indexes, usable without Blender.
+"""Generate the 3D asset catalog from directory descriptors, without Blender.
 
 Callers keep their existing publication locks and install payloads before the index.
 Prospective file mappings allow transaction preflight and staged merged catalogs to
@@ -34,6 +34,8 @@ def lossy_problems(root, index, *, files=None):
 
     def resolve(name):
         name = _relative(name)
+        if name in files and files[name] is None:
+            raise FileNotFoundError(f'Asset file removed: {name}')
         return Path(files[name]) if name in files else root / name
 
     def sha(name):
@@ -88,15 +90,114 @@ def validate_asset_index(root, index, *, files=None):
         raise ValueError('Asset index has non-current lossy assets:\n' + '\n'.join(problems))
 
 
-def write_asset_index(root, index, *, target=None, files=None):
-    """Validate the entire proposed catalog, then atomically replace its index.
+def encoded(index):
+    return (json.dumps(index, indent=2, ensure_ascii=False) + '\n').encode()
 
-    Byte/string inputs retain their exact encoding for publication hash guards.
-    `target` is only needed for a staged merged index outside the asset root.
+
+def discover_asset_index(root, *, files=None, descriptors=None):
+    """Build a catalog from asset.json files, never from the previous index.
+
+    Hidden, backup, and shared-blob directories are not asset directories. File
+    overrides represent an upcoming transaction; None represents a removed file.
+    `descriptors` restricts private audit catalogs to their explicit scope.
+    Discovery can inspect stale derivatives so the derivation tool can repair them;
+    generation/publication always validates them.
     """
+    root = Path(root)
+    files = files or {}
+    if not root.is_dir() and not files:
+        raise FileNotFoundError(f'Asset root is not a directory: {root}')
+    ignored = {'backups', 'backup', 'blobs', 'node_modules'}
+    def visible(name):
+        return not any(part.startswith('.') or part in ignored for part in Path(name).parts[:-1])
+    names = set()
+    def walk_error(error):
+        raise error
+    if root.exists():
+        for folder, dirs, leaves in os.walk(root, onerror=walk_error):
+            dirs[:] = sorted(d for d in dirs if not d.startswith('.') and d not in ignored
+                             and not (Path(folder)/d).is_symlink())
+            if 'asset.json' in leaves:
+                names.add((Path(folder)/'asset.json').relative_to(root).as_posix())
+    for name, source in files.items():
+        _relative(name)
+        if Path(name).name == 'asset.json' and visible(name):
+            if source is None: names.discard(name)
+            else: names.add(name)
+    if descriptors is not None:
+        selected = {_relative(name) for name in descriptors}
+        missing = selected - names
+        if missing:
+            raise ValueError('Missing asset descriptors: ' + ', '.join(sorted(missing)))
+        names = selected
+
+    def resolve(name):
+        source = files.get(name, root/name)
+        return Path(source) if source is not None else None
+
+    def exists(name):
+        source = resolve(name)
+        return source is not None and source.is_file()
+
+    entries = []
+    for name in sorted(names):
+        source = resolve(name)
+        if source is None:
+            continue
+        descriptor = json.loads(source.read_bytes())
+        if not isinstance(descriptor, dict):
+            raise ValueError(f'{name}: descriptor must be an object')
+        for key in ('id', 'name', 'source_map', 'model'):
+            if not isinstance(descriptor.get(key), str) or not descriptor[key].strip():
+                raise ValueError(f'{name}: descriptor requires {key}')
+        if any(char in descriptor['id'] for char in '/\\:\0'):
+            raise ValueError(f'{name}: invalid asset ID')
+        for field in ('model_scene', 'asset_type'):
+            if field in descriptor and (not isinstance(descriptor[field], str) or not descriptor[field].strip()):
+                raise ValueError(f'{name}: invalid {field}')
+        if 'tags' in descriptor and (not isinstance(descriptor['tags'], list)
+                                    or any(not isinstance(tag, str) for tag in descriptor['tags'])):
+            raise ValueError(f'{name}: tags must be an array of strings')
+        if 'editor_usage' in descriptor and descriptor['editor_usage'] != 'map-background':
+            raise ValueError(f'{name}: invalid editor_usage')
+        parent = Path(name).parent
+        def local(value):
+            return (parent / _relative(value)).as_posix()
+        model = local(descriptor['model'])
+        if not exists(model):
+            raise ValueError(f'{name}: source model missing: {model}')
+        entry = {key: descriptor[key] for key in ('id', 'name', 'source_map')}
+        entry.update(descriptor=name, model=model)
+        for key in ('model_scene', 'editor_usage', 'asset_type', 'tags'):
+            if key in descriptor: entry[key] = descriptor[key]
+        for kind in ('lossy', 'preview'):
+            field = kind + '_model'
+            model_name = Path(descriptor['model'])
+            basename = kind + '.glb' if model_name.name == 'model.glb' else model_name.stem + '.' + kind + '.glb'
+            candidates = list(dict.fromkeys([local(model_name.with_name(basename).as_posix()),
+                                            local(model_name.with_name(kind + '.glb').as_posix())]))
+            found = [path for path in candidates if exists(path) or exists(path + '.receipt.json')]
+            if len(found) > 1:
+                raise ValueError(f'{name}: ambiguous {field}: {found}')
+            if not found: continue
+            candidate = found[0]
+            if kind == 'preview' and not exists(candidate):
+                raise ValueError(f'{name}: preview model missing: {candidate}')
+            entry[field] = candidate
+        entries.append(entry)
+    return {'version': 1, 'assets': sorted(entries, key=lambda entry: entry['id'])}
+
+
+def generate_asset_index(root, *, files=None, descriptors=None):
+    index = discover_asset_index(root, files=files, descriptors=descriptors)
     validate_asset_index(root, index, files=files)
-    data = (index if isinstance(index, bytes) else index.encode() if isinstance(index, str)
-            else (json.dumps(index, indent=2, ensure_ascii=False) + '\n').encode())
+    return index
+
+
+def write_asset_index(root, *, target=None, files=None, descriptors=None):
+    """Generate from directories, validate, and atomically replace the disposable index."""
+    index = generate_asset_index(root, files=files, descriptors=descriptors)
+    data = encoded(index)
     target = Path(target) if target is not None else Path(root) / 'index.json'
     mode = target.stat().st_mode & 0o777 if target.exists() else 0o644
     fd, temporary = tempfile.mkstemp(prefix='.' + target.name + '-', suffix='.tmp', dir=target.parent)
@@ -109,17 +210,21 @@ def write_asset_index(root, index, *, target=None, files=None):
         os.replace(temporary, target)
     finally:
         Path(temporary).unlink(missing_ok=True)
+    return index
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('root', type=Path, help='3d-assets directory')
-    parser.add_argument('--check', action='store_true', help='Validate without writing')
+    parser.add_argument('root', type=Path, nargs='?', default=Path(__file__).resolve().parents[1]/'library/3d-assets',
+                        help='3d-assets directory (defaults to the editor library)')
+    parser.add_argument('--check', action='store_true', help='Generate and validate without writing')
+    parser.add_argument('--print', dest='print_index', action='store_true', help='Print the generated catalog')
     parser.add_argument('--files', type=json.loads, help='JSON mapping of prospective relative paths to staged files')
     args = parser.parse_args()
-    data = sys.stdin.buffer.read()
-    files = args.files
-    if args.check:
-        validate_asset_index(args.root, data, files=files)
+    index = (generate_asset_index(args.root, files=args.files) if args.check
+             else write_asset_index(args.root, files=args.files))
+    if args.print_index:
+        sys.stdout.buffer.write(encoded(index))
     else:
-        write_asset_index(args.root, data, files=files)
+        action = 'Validated' if args.check else 'Generated'
+        print(f"{action} {len(index['assets'])} assets from {args.root}")

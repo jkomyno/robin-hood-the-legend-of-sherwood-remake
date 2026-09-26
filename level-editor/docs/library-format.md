@@ -18,6 +18,18 @@ library/
   3d-assets/blobs/<sha256>.jpg
 ```
 
+`3d-assets/index.json` is a generated cache. The source of truth is the recursive
+set of `asset.json` files and their neighboring models, not the previous index.
+Descriptors supply IDs, names, source maps, scene names, tags, asset types, and
+editor usage. The generator sorts entries by ID and discovers `lossy.glb` and
+`preview.glb` (or `<model-stem>.lossy.glb` / `<model-stem>.preview.glb` for named
+models). Duplicate IDs, incomplete descriptors, and missing models are errors.
+Hidden, backup, shared-blob, and symlinked directories are excluded.
+
+Add or remove an asset directory, then run `pnpm library:index` from `level-editor/`
+to regenerate the catalog. Publication scripts regenerate it automatically after
+installing payloads. Editing the generated index does not change the assets;
+regeneration also works when the previous index is missing or corrupt.
 The index identifies assets and their descriptors, including their relative paths.
 Source-map directories use lowercase names (for example `derby/`); asset IDs remain
 stable. Consumers resolve the index paths instead of constructing paths from IDs.
@@ -48,15 +60,15 @@ re-baked texture atlas (EXT_texture_avif), quantized vertices (KHR_mesh_quantiza
 and no normals on unlit primitives (nothing is lit yet).
 `<lossy_model>.receipt.json` records the SHA-256 of the `model` bytes it was built
 from (`source`) and of itself (`output`). Every asset-index writer uses
-`refinement/asset_index.py::write_asset_index`: it checks both hashes for every
-entry declaring `lossy_model`, then atomically replaces the index. Missing models,
+`refinement/asset_index.py::write_asset_index`: it generates entries from directories,
+checks both hashes for every discovered lossy model, then atomically replaces the
+index. Missing models,
 missing or malformed receipts, stale sources, and changed output bytes fail publication
 without replacing the existing index. Source-only entries need no receipt.
 
 Publication transactions validate proposed staged files together with unchanged live
 assets before installation, and validate again when writing the live index. Callers
-retain their existing locks and rollback backups. The TypeScript publisher calls the
-same Python implementation through `pipeline/src/asset-index.ts` (requires Python 3.11+).
+retain their existing locks and rollback backups. The generator requires Python 3.11+.
 Historical transaction rollback restores the original files and index from backups.
 
 Saved maps keep pinning `model`; the editor loads the indexed lossy display copy
@@ -65,7 +77,7 @@ checks the original model. Receipts remain build/publication metadata. To valida
 an existing library without writing anything, run from `level-editor/`:
 
 ```sh
-python3 refinement/asset_index.py library/3d-assets --check < library/3d-assets/index.json
+pnpm library:index --check
 ```
 
 ## Local assets and placed instances

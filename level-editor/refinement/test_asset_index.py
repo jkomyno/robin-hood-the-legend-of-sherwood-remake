@@ -1,11 +1,12 @@
-"""Publication rejects stale derivatives without replacing a previously valid catalog."""
+"""The catalog is a disposable, validated projection of asset directories."""
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 from unittest.mock import patch
-from asset_index import validate_asset_index, write_asset_index
+from asset_index import generate_asset_index, write_asset_index
 
 
 class AssetIndexTest(unittest.TestCase):
@@ -13,33 +14,56 @@ class AssetIndexTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.index = {'version': 1, 'assets': [
-            {'id': 'house', 'model': 'model.glb', 'lossy_model': 'lossy.glb'}]}
-        (self.root/'model.glb').write_bytes(b'original')
-        (self.root/'lossy.glb').write_bytes(b'optimized')
-        self.receipt = {key: hashlib.sha256((self.root/name).read_bytes()).hexdigest()
+        self.asset = self.root/'derby/house'; self.asset.mkdir(parents=True)
+        self.descriptor = {'id': 'house', 'name': 'House', 'source_map': 'Derby', 'model': 'model.glb',
+                           'model_scene': 'default', 'tags': ['building'], 'asset_type': 'house'}
+        (self.asset/'asset.json').write_text(json.dumps(self.descriptor))
+        (self.asset/'model.glb').write_bytes(b'original')
+        (self.asset/'lossy.glb').write_bytes(b'optimized')
+        self.receipt = {key: hashlib.sha256((self.asset/name).read_bytes()).hexdigest()
                         for key, name in [('source', 'model.glb'), ('output', 'lossy.glb')]}
-        (self.root/'lossy.glb.receipt.json').write_text(json.dumps(self.receipt))
-        write_asset_index(self.root, self.index)
+        (self.asset/'lossy.glb.receipt.json').write_text(json.dumps(self.receipt))
+        write_asset_index(self.root)
         self.previous = (self.root/'index.json').read_bytes()
 
     def reject(self, pattern):
         with self.assertRaisesRegex(ValueError, pattern):
-            write_asset_index(self.root, self.index)
+            write_asset_index(self.root)
         self.assertEqual((self.root/'index.json').read_bytes(), self.previous)
         self.assertEqual(list(self.root.glob('.index.json-*.tmp')), [])
 
-    def test_source_change_rejects_entire_index_including_unchanged_entries(self):
-        (self.root/'model.glb').write_bytes(b'republished')
-        self.index['assets'].append({'id': 'new', 'model': 'new.glb'})
+    def test_generation_never_reads_previous_index_and_is_deterministic(self):
+        (self.root/'index.json').write_bytes(b'not even JSON')
+        write_asset_index(self.root)
+        self.assertEqual((self.root/'index.json').read_bytes(), self.previous)
+        (self.root/'index.json').unlink()
+        index = write_asset_index(self.root)
+        self.assertEqual(index['assets'][0]['tags'], ['building'])
+        self.assertEqual(index['assets'][0]['model_scene'], 'default')
+        self.assertEqual(index['assets'][0]['asset_type'], 'house')
+        self.assertEqual((self.root/'index.json').read_bytes(), self.previous)
+
+    def test_directory_addition_removal_and_descriptor_edits_change_catalog(self):
+        other = self.root/'another'; shutil.copytree(self.asset, other)
+        descriptor = {**self.descriptor, 'id': 'another', 'name': 'Renamed'}
+        (other/'asset.json').write_text(json.dumps(descriptor))
+        index = write_asset_index(self.root)
+        self.assertEqual([e['id'] for e in index['assets']], ['another', 'house'])
+        self.assertEqual(index['assets'][0]['name'], 'Renamed')
+        shutil.rmtree(self.asset)
+        index = write_asset_index(self.root)
+        self.assertEqual([e['id'] for e in index['assets']], ['another'])
+
+    def test_source_change_rejects_even_with_a_missing_cached_index_entry(self):
+        (self.asset/'model.glb').write_bytes(b'republished')
         self.reject('house: lossy receipt does not bind the current model')
 
     def test_corrupt_output_is_rejected(self):
-        (self.root/'lossy.glb').write_bytes(b'corrupt')
+        (self.asset/'lossy.glb').write_bytes(b'corrupt')
         self.reject('house: lossy model bytes differ')
 
     def test_missing_and_malformed_receipts_are_rejected(self):
-        receipt = self.root/'lossy.glb.receipt.json'
+        receipt = self.asset/'lossy.glb.receipt.json'
         for raw in ['[]', '{', '{}', '{"source": 1, "output": null}']:
             with self.subTest(raw=raw):
                 receipt.write_text(raw)
@@ -47,49 +71,57 @@ class AssetIndexTest(unittest.TestCase):
         receipt.unlink()
         self.reject('house: lossy model or receipt missing')
 
-    def test_missing_models_are_rejected(self):
-        (self.root/'lossy.glb').unlink()
+    def test_orphan_receipt_and_missing_source_are_errors(self):
+        (self.asset/'lossy.glb').unlink()
         self.reject('house: lossy model or receipt missing')
-        (self.root/'lossy.glb').write_bytes(b'optimized')
-        (self.root/'model.glb').unlink()
-        self.reject('house: cannot validate lossy asset')
+        (self.asset/'model.glb').unlink()
+        self.reject('source model missing')
 
-    def test_preflight_validates_staged_payloads_and_unchanged_live_assets(self):
-        stage = self.root/'stage'; stage.mkdir()
-        (stage/'model.glb').write_bytes(b'new source')
-        (stage/'lossy.glb').write_bytes(b'new output')
-        (stage/'receipt.json').write_text(json.dumps({
-            'source': hashlib.sha256(b'new source').hexdigest(),
-            'output': hashlib.sha256(b'new output').hexdigest()}))
-        files = {'model.glb': stage/'model.glb', 'lossy.glb': stage/'lossy.glb',
-                 'lossy.glb.receipt.json': stage/'receipt.json'}
-        validate_asset_index(self.root, self.index, files=files)
-        del files['model.glb']
-        with self.assertRaisesRegex(ValueError, 'house: lossy receipt does not bind'):
-            validate_asset_index(self.root, self.index, files=files)
+    def test_preflight_discovers_staged_descriptors_and_prospective_removals(self):
+        stage = self.root/'.stage'; shutil.copytree(self.asset, stage)
+        descriptor = {**self.descriptor, 'id': 'new', 'name': 'New'}
+        (stage/'asset.json').write_text(json.dumps(descriptor))
+        files = {'new/'+p.name: p for p in stage.iterdir()}
+        files['derby/house/asset.json'] = None
+        index = generate_asset_index(self.root, files=files)
+        self.assertEqual([e['id'] for e in index['assets']], ['new'])
+        (stage/'model.glb').write_bytes(b'changed')
+        with self.assertRaisesRegex(ValueError, 'new: lossy receipt does not bind'):
+            generate_asset_index(self.root, files=files)
         self.assertEqual((self.root/'index.json').read_bytes(), self.previous)
 
-    def test_raw_bytes_are_preserved_and_no_lossy_model_is_required(self):
-        data = b'{"version":1,"assets":[{"id":"source-only","model":"model.glb"}]}\n'
-        write_asset_index(self.root, data)
-        self.assertEqual((self.root/'index.json').read_bytes(), data)
+    def test_hidden_backups_blobs_and_symlink_directories_are_not_assets(self):
+        for name in ('.stage', 'backups', 'backup', 'blobs'):
+            shutil.copytree(self.asset, self.root/name/'duplicate')
+        (self.root/'linked').symlink_to(self.asset, target_is_directory=True)
+        self.assertEqual(generate_asset_index(self.root)['assets'], json.loads(self.previous)['assets'])
+
+    def test_no_derivative_is_required_and_previews_are_discovered(self):
+        (self.asset/'lossy.glb').unlink(); (self.asset/'lossy.glb.receipt.json').unlink()
+        (self.asset/'preview.glb').write_bytes(b'preview')
+        entry = write_asset_index(self.root)['assets'][0]
+        self.assertNotIn('lossy_model', entry)
+        self.assertEqual(entry['preview_model'], 'derby/house/preview.glb')
 
     def test_failed_replace_preserves_index_and_cleans_temporary(self):
         with patch('asset_index.os.replace', side_effect=OSError('injected')):
-            with self.assertRaisesRegex(OSError, 'injected'):
-                write_asset_index(self.root, {'assets': []})
+            with self.assertRaisesRegex(OSError, 'injected'): write_asset_index(self.root)
         self.assertEqual((self.root/'index.json').read_bytes(), self.previous)
         self.assertEqual(list(self.root.glob('.index.json-*.tmp')), [])
 
     def test_duplicate_ids_and_unsafe_paths_are_rejected(self):
-        self.index['assets'].append(dict(self.index['assets'][0]))
+        other = self.root/'another'; shutil.copytree(self.asset, other)
         self.reject('Duplicate asset index ID')
-        self.index['assets'].pop()
-        for value in ['../escape.glb', '/absolute.glb', 'a//b.glb', '', None]:
-            with self.subTest(value=value):
-                self.index['assets'][0]['lossy_model'] = value
-                self.reject('Unsafe asset index path')
+        shutil.rmtree(other)
+        for value in ['../escape.glb', '/absolute.glb', 'a//b.glb']:
+            (self.asset/'asset.json').write_text(json.dumps({**self.descriptor, 'model': value}))
+            self.reject('Unsafe asset index path')
+
+    def test_missing_descriptor_metadata_is_not_filled_from_old_index(self):
+        for field in ('id', 'name', 'source_map', 'model'):
+            descriptor = dict(self.descriptor); descriptor.pop(field)
+            (self.asset/'asset.json').write_text(json.dumps(descriptor))
+            self.reject('descriptor requires ' + field)
 
 
-if __name__ == '__main__':
-    unittest.main()
+if __name__ == '__main__': unittest.main()

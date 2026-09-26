@@ -2,7 +2,7 @@
 import argparse
 import copy
 import json
-from asset_index import write_asset_index
+from asset_index import write_asset_index, generate_asset_index
 from pathlib import Path
 import struct
 from collections import defaultdict
@@ -71,7 +71,8 @@ def stage_hybrid(library, output, min_savings=DEFAULT_MIN_SAVINGS):
     sources = {}
     def read(relative):
         raw = (library/relative).read_bytes(); sources[relative] = digest(raw); return raw
-    index = json.loads(read('3d-assets/index.json'))
+    if (library/'3d-assets/index.json').exists(): read('3d-assets/index.json')  # concurrent-publication guard
+    index = generate_asset_index(library/'3d-assets')
     records, owners, payloads = [], defaultdict(set), {}
     for entry in index['assets']:
         relative = '3d-assets/'+entry['descriptor']; descriptor = json.loads(read(relative))
@@ -131,7 +132,7 @@ def stage_hybrid(library, output, min_savings=DEFAULT_MIN_SAVINGS):
             'descriptor_sha256':digest(encoded(descriptor)), 'resources':resources}
         external_paths.update(resource['path'] for resource in resources)
         proofs[entry['id']] = {'scenes':len(model['scenes']), 'model_sha256':digest(raw)}
-    write_asset_index(output/'3d-assets', index)
+    write_asset_index(output/'3d-assets')
     (output/'scenes').mkdir()
     for path in sorted((library/'scenes').glob('*.rhlos-map.json')):
         relative = str(path.relative_to(library)); document = json.loads(read(relative))

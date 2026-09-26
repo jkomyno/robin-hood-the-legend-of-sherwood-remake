@@ -2,7 +2,7 @@
 import argparse
 import copy
 import json
-from asset_index import write_asset_index
+from asset_index import write_asset_index, generate_asset_index
 import math
 from pathlib import Path
 from canonical_assets import AssetBundle, read_model, digest, encoded, localize_positions
@@ -74,7 +74,9 @@ def stage(library, output):
     def read_json(relative):
         data = (library/relative).read_bytes(); sources[relative] = digest(data)
         return json.loads(data)
-    index = read_json('3d-assets/index.json')
+    if (library/'3d-assets/index.json').exists():
+        sources['3d-assets/index.json'] = digest((library/'3d-assets/index.json').read_bytes())
+    index = generate_asset_index(library/'3d-assets')
     entries = {entry['id']:copy.deepcopy(entry) for entry in index['assets']}
     descriptors, origins, references, proofs = {}, {}, {}, {}
     from stored_map import expand_document
@@ -203,7 +205,7 @@ def stage(library, output):
     for identity,descriptor in descriptors.items():
         path=output/'3d-assets'/entries[identity]['descriptor'];path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(encoded(descriptor))
         references[identity].update(descriptor='3d-assets/'+entries[identity]['descriptor'],descriptor_sha256=digest(path.read_bytes()))
-    index['assets']=sorted(entries.values(),key=lambda entry:entry['id']);write_asset_index(output/'3d-assets', index)
+    write_asset_index(output/'3d-assets')
     plan={'library':str(library),'output':str(output),'sources':sources,'maps':maps,'origins':origins,'references':references,'proofs':proofs}
     (output.parent/'plan.json').write_text(json.dumps(plan,indent=2)+'\n')
     return {'assets':len(descriptors),'maps':len(maps),'verified_scenes':sum(len(v)for v in proofs.values())}

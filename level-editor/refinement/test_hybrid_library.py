@@ -27,9 +27,9 @@ class HybridLibraryTests(unittest.TestCase):
                 bundle.add('default',model,b'',external)
                 if identity=='c': bundle.add('applied',model,b'',external)
                 ref = bundle.write(identity)
-                descriptor = {'id':identity,'model':'model.gltf','model_scene':'default','resources':ref['resources']}
+                descriptor = {'id':identity, 'name':identity, 'source_map':'Derby','model':'model.gltf','model_scene':'default','resources':ref['resources']}
                 path = library/'3d-assets'/identity/'asset.json'; path.write_text(json.dumps(descriptor))
-                entries.append({'id':identity,'source_map':'Derby','descriptor':identity+'/asset.json','model':identity+'/model.gltf'})
+                entries.append({'id':identity, 'name':identity,'source_map':'Derby','descriptor':identity+'/asset.json','model':identity+'/model.gltf'})
                 if identity == 'c':
                     entries[-1]['lossy_model'] = identity+'/lossy.glb'
                     entries[-1]['preview_model'] = identity+'/preview.glb'
@@ -42,7 +42,7 @@ class HybridLibraryTests(unittest.TestCase):
                              'model_scene': scene, 'resources': ref['resources']}
                             for state, scene in [('base', 'default'), ('applied', 'applied')]]})
                 else:
-                    references.append({**ref,'id':identity,'descriptor':'3d-assets/'+identity+'/asset.json','descriptor_sha256':digest(path.read_bytes())})
+                    references.append({**ref,'id':identity, 'name':identity,'descriptor':'3d-assets/'+identity+'/asset.json','descriptor_sha256':digest(path.read_bytes())})
             (library/'3d-assets/index.json').write_text(json.dumps({'assets':entries}))
             (library/'scenes/map.rhlos-map.json').write_text(json.dumps({'sceneAssets':[],'assetSources':references,'objects':[]}))
             staged = root/'first/staged'; report = stage_hybrid(library, staged)

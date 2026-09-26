@@ -13,7 +13,7 @@ class CanonicalPublicationTests(unittest.TestCase):
         for folder in (live/'3d-assets', live/'scenes', staged/'3d-assets/ground', staged/'scenes'):
             folder.mkdir(parents=True)
         index = {'assets':[{'id':'ground', 'descriptor':'ground/asset.json', 'model':'ground/model.gltf'}]}
-        descriptor = {'id':'ground', 'model':'model.gltf', 'model_scene':'default', 'resources':[]}
+        descriptor = {'id':'ground', 'name':'Ground', 'source_map':'Fixture', 'model':'model.gltf', 'model_scene':'default', 'resources':[]}
         model = {'asset':{'version':'2.0'}, 'scene':0, 'scenes':[{'name':'default', 'nodes':[]}], 'nodes':[]}
         for name, value in [('3d-assets/index.json', index), ('3d-assets/ground/asset.json', descriptor),
                             ('3d-assets/ground/model.gltf', model)]:
@@ -41,6 +41,15 @@ class CanonicalPublicationTests(unittest.TestCase):
             for relative, expected in sources.items(): self.assertEqual(digest((backup/relative).read_bytes()), expected)
             self.assertFalse((live/'3d-assets/obsolete.glb').exists())
             self.assertEqual((live/'scenes/fixture.rhlos-map.json').read_bytes(), (staged/'scenes/fixture.rhlos-map.json').read_bytes())
+
+    def test_publication_discovers_staged_assets_without_reading_the_cached_index(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            live, staged, plan, _ = self.fixture(Path(temporary))
+            (staged/'3d-assets/index.json').write_text('obsolete cache')
+            publish(plan, True)
+            index = json.loads((live/'3d-assets/index.json').read_text())
+            self.assertEqual([entry['id'] for entry in index['assets']], ['ground'])
+            self.assertEqual(index['assets'][0]['name'], 'Ground')
 
     def test_lossy_models_are_carried_only_while_bound_to_the_model(self):
         from apply_canonical_library import graph

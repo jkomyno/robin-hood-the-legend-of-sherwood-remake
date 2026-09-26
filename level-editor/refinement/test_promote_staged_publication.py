@@ -31,7 +31,7 @@ class PromotionTests(unittest.TestCase):
         (self.library / '3d-assets/bridge').mkdir(parents=True)
         (self.library / 'scenes').mkdir()
         self.entry = {'id': 'bridge', 'descriptor': 'bridge/asset.json', 'model': 'bridge/raised.glb'}
-        self.descriptor = {'id': 'bridge', 'model': 'raised.glb'}
+        self.descriptor = {'id': 'bridge', 'name': 'Bridge', 'source_map': 'Derby', 'model': 'raised.glb'}
         self.write_json(self.stage / 'assets/index.json', {'assets': [self.entry]})
         self.write_json(self.library / '3d-assets/index.json', {'assets': []})
         for name in ('asset-verification', 'handoff-verification', 'browser-result'):
@@ -116,26 +116,30 @@ class PromotionTests(unittest.TestCase):
             promotion.apply(self.stage / 'promotion.json')
         self.assertEqual(self.main.read_bytes(), b'old blend')
 
-    def test_latest_other_map_entries_are_merged_and_backed_up(self):
+    def test_latest_other_map_directories_are_discovered_and_index_is_backed_up(self):
         self.prepare()
         index=self.library/'3d-assets/index.json'
         latest={'assets':[{'id':'other-map-new','model':'new.glb'}], 'metadata':'retained'}
         self.write_json(index, latest)
+        other = self.library/'3d-assets/other-map-new'; other.mkdir()
+        (other/'model.glb').write_bytes(b'new asset')
+        self.write_json(other/'asset.json', {'id':'other-map-new', 'name':'New', 'source_map':'York', 'model':'model.glb'})
         previous=index.read_bytes()
         promotion.apply(self.stage/'promotion.json')
         merged=json.loads(index.read_text())
-        self.assertEqual(merged['metadata'],'retained')
+        self.assertNotIn('metadata', merged)
         self.assertEqual({a['id'] for a in merged['assets']},{'bridge','other-map-new'})
         manifest=json.loads((self.stage/'promotion.json').read_text())
         self.assertEqual(manifest['files'][-1]['target'],str(index))
         self.assertEqual(Path(manifest['files'][-1]['backup']).read_bytes(),previous)
 
-    def test_staged_index_change_is_rejected_before_writes(self):
+    def test_staged_index_is_disposable_and_does_not_control_publication(self):
         self.prepare()
-        self.write_json(self.stage/'assets/index.json',{'assets':[]})
-        with self.assertRaisesRegex(ValueError,'Staged asset index changed'):
-            promotion.apply(self.stage/'promotion.json')
-        self.assertEqual(self.main.read_bytes(),b'old blend')
+        (self.stage/'assets/index.json').write_text('not valid JSON')
+        promotion.apply(self.stage/'promotion.json')
+        index = json.loads((self.library/'3d-assets/index.json').read_text())
+        self.assertEqual([entry['id'] for entry in index['assets']], ['bridge'])
+
 
     def test_external_index_race_preserves_new_index_and_rolls_back_assets(self):
         self.prepare()
@@ -280,6 +284,9 @@ class FirstPublicationTests(unittest.TestCase):
             (self.stage / name).write_text('{"status":"PASS"}')
         (self.stage / 'assets/index.json').write_text('{"assets":[]}')
         (self.library / '3d-assets/index.json').write_text('{"assets":[{"id":"other-map"}]}')
+        other = self.library/'3d-assets/other-map'; other.mkdir()
+        (other/'model.glb').write_bytes(b'other')
+        (other/'asset.json').write_text(json.dumps({'id':'other-map', 'name':'Other', 'source_map':'York', 'model':'model.glb'}))
         for name in ['worker.blend', 'leicester.scene.glb', 'leicester.rhlos-map.json']:
             (self.stage / name).write_text('staged ' + name)
         (self.library / 'scenes/leicester-volumes.scene.glb').write_text('old map')
@@ -291,7 +298,7 @@ class FirstPublicationTests(unittest.TestCase):
         promotion.apply(self.stage / 'promotion.json')
         self.assertEqual(self.main.read_text(), 'staged worker.blend')
         index = json.loads((self.library / '3d-assets/index.json').read_text())
-        self.assertEqual(index['assets'], [{'id': 'other-map'}])
+        self.assertEqual([entry['id'] for entry in index['assets']], ['other-map'])
         self.assertEqual((self.library / 'scenes/leicester-volumes.scene.json').read_text(), 'protected document')
         report = json.loads((self.stage / 'promotion.json').read_text())
         self.assertEqual(report['status'], 'APPLIED')

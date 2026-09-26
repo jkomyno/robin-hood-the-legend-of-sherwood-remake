@@ -507,11 +507,14 @@ another map's plan.
 
 Staging also derives lossy browser models by default: once the staged catalog's
 model bytes are final it writes `<asset dir>/lossy.glb` (+ `lossy.glb.receipt.json`),
-sets `lossy_model`, and rebuilds `preview.glb` from it
+rebuilds `preview.glb` from it, and regenerates the asset index
 (`refinement/blender/lossy_assets.py`). Pass `--no-lossy` (or plan `"lossy": false`)
 to skip it. All asset-index publication goes through
-`refinement/asset_index.py::write_asset_index`, which rejects any declared lossy
-asset whose source/output receipt hashes are not current before replacing the index.
+`refinement/asset_index.py::write_asset_index`, which discovers `asset.json` files
+and neighboring derivatives, rejects stale lossy source/output receipt hashes, and
+atomically replaces the generated index. Author catalog metadata in `asset.json`;
+never edit `index.json` to add, remove, or rename assets. `pnpm library:index`
+regenerates the live catalog from directories; `--check` validates without writing.
 `verify_publication_assets.py` also checks preview derivatives, and
 `promote_staged_publication.py` installs them with the models. The editor loads
 indexed lossy models directly and does not fetch receipts. Backfill an existing

@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --filter app dev",
+    "library:index": "python3 refinement/asset_index.py",
     "build": "pnpm --filter app build",
     "test": "pnpm --filter pipeline exec node --test ../shared/src/*.test.ts ../app/src/*.test.ts ../app/tests/*.test.mjs",
     "test:browser": "node app/tests/run-lifecycle.mjs",

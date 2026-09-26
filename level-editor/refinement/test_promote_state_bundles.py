@@ -14,7 +14,7 @@ class PromotionTests(unittest.TestCase):
         for p in (self.lib / 'a', self.stage / 'a', self.scenes): p.mkdir(parents=True)
         for name, content in [('model.glb', b'old'), ('model-applied.glb', b'applied'), ('asset.json', b'{}')]:
             (self.lib / 'a' / name).write_bytes(content)
-        for name, content in [('model.glb', b'new'), ('asset.json', encoded({'id':'a','model':'model.glb','model_scene':'initial'})), ('preview.glb', b'preview'), ('preview.glb.receipt.json', b'{}')]:
+        for name, content in [('model.glb', b'new'), ('asset.json', encoded({'id':'a','name':'custom','tags':['keep'],'source_map':'Derby','model':'model.glb','model_scene':'initial'})), ('preview.glb', b'preview'), ('preview.glb.receipt.json', b'{}')]:
             (self.stage / 'a' / name).write_bytes(content)
         self.entry = {'id':'a','descriptor':'a/asset.json','model':'a/model.glb','model_scene':'initial','preview_model':'a/preview.glb'}
         self.receipt = {'asset_id':'a','source_descriptor_sha256':sha(self.lib/'a/asset.json'), 'source_files':[{'path':n,'sha256':sha(self.lib/'a'/n),'bytes':(self.lib/'a'/n).stat().st_size} for n in ('model.glb','model-applied.glb')], 'output':{'sha256':sha(self.stage/'a/model.glb'),'bytes':3}, 'output_descriptor_sha256':sha(self.stage/'a/asset.json'), 'states':[{'scene':'initial','source_file':'model.glb','source_sha256':sha(self.lib/'a/model.glb'),'source_scene':None,'semantic_sha256':'proof'}]}
@@ -25,6 +25,10 @@ class PromotionTests(unittest.TestCase):
         (self.lib/'index.json').write_bytes(encoded(self.oldindex))
         self.doc = {'assetSources':[{'id':'a','descriptor':'3d-assets/a/asset.json','model':'3d-assets/a/model.glb','model_sha256':sha(self.lib/'a/model.glb'),'descriptor_sha256':sha(self.lib/'a/asset.json')}], 'instances':[{'transform':[1,2,3],'parts':['p']}], 'sceneAssets':[{'sha256':'unchanged'}]}
         (self.scenes/'map.rhlos-map.json').write_bytes(encoded(self.doc))
+        (self.lib/'foreign').mkdir()
+        (self.lib/'foreign/model.glb').write_bytes(b'foreign model')
+        (self.lib/'foreign/asset.json').write_bytes(encoded({
+            'id':'foreign', 'name':'Foreign', 'source_map':'York', 'model':'model.glb'}))
         self.plan = prepare(self.lib,self.stage,self.scenes)
 
     def test_success_preserves_foreign_and_migrates_pins_only(self):
@@ -34,15 +38,16 @@ class PromotionTests(unittest.TestCase):
         self.assertEqual(result['status'],'published')
         index=json.loads((self.lib/'index.json').read_text())
         self.assertEqual(index['assets'][0]['tags'],['keep'])
-        self.assertEqual(index['assets'][1],self.oldindex['assets'][1])
-        self.assertEqual(index['added'],'concurrent')
+        self.assertEqual(index['assets'][1]['id'], 'foreign')
+        self.assertEqual(index['assets'][1]['name'], 'Foreign')
+        self.assertNotIn('added', index)
         doc=json.loads((self.scenes/'map.rhlos-map.json').read_text())
         self.assertEqual(doc['instances'],self.doc['instances'])
         self.assertEqual(doc['sceneAssets'],self.doc['sceneAssets'])
         self.assertEqual(doc['assetSources'][0]['model_scene'],'initial')
         self.assertFalse((self.lib/'a/model-applied.glb').exists())
 
-    def test_rebuilt_models_drop_their_stale_lossy_model(self):
+    def test_index_only_lossy_entries_do_not_declare_assets(self):
         live = json.loads((self.lib/'index.json').read_text())
         live['assets'][0]['lossy_model'] = 'a/lossy.glb'
         (self.lib/'index.json').write_bytes(encoded(live))
@@ -53,7 +58,7 @@ class PromotionTests(unittest.TestCase):
 
     def test_stale_unchanged_asset_blocks_before_payload_installation(self):
         live = json.loads((self.lib/'index.json').read_text())
-        live['assets'][1]['lossy_model'] = 'foreign.lossy.glb'
+        (self.lib/'foreign/lossy.glb').write_bytes(b'no receipt')
         (self.lib/'index.json').write_bytes(encoded(live))
         before = (self.lib/'index.json').read_bytes()
         with self.assertRaisesRegex(ValueError, 'foreign: lossy model or receipt missing'):

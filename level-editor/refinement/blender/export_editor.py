@@ -581,11 +581,6 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
         raise ValueError("No named assets to export")
     if any((output_dir / key / "model.glb").exists() for key in ids):
         raise FileExistsError("Asset output exists; use a fresh staging directory")
-    index_path = output_dir / "index.json"
-    index = json.loads(index_path.read_text()) if index_path.exists() else {"version": 1, "assets": []}
-    if index["version"] != 1:
-        raise ValueError("Unsupported asset index version")
-    entries = {entry["id"]: entry for entry in index["assets"]}
     for key in ids:
         report = export_editor(map_name, output_dir / key / "model.glb", asset_id=key,
             standalone_pivot=pivots.get(key),
@@ -610,13 +605,8 @@ def export_asset_library(map_name, output_dir, level_path, *, standalone_pivots=
                 point["z_top"] -= pz * cos
             part["obstacle_local_game"] = obstacle
         (output_dir / key / "asset.json").write_text(json.dumps(descriptor, indent=2) + "\n")
-        entries[key] = {"id": key, "name": descriptor["name"], "source_map": map_name,
-                        "descriptor": key + "/asset.json", "model": key + "/model.glb"}
-        if descriptor.get('editor_usage'):
-            entries[key]['editor_usage'] = descriptor['editor_usage']
-    index["assets"] = sorted(entries.values(), key=lambda entry: entry["id"])
-    write_asset_index(output_dir, index)
-    return {"assets": len(ids), "index": str(index_path)}
+    write_asset_index(output_dir)
+    return {"assets": len(ids), "index": str(output_dir / "index.json")}
 
 
 def exported_pivot(directory, asset_id):

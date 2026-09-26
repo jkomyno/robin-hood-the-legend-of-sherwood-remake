@@ -6,7 +6,7 @@ The scope lists asset_ids, already_published, and optional required_patches.
 import argparse
 import hashlib
 import json
-from asset_index import write_asset_index
+from asset_index import write_asset_index, discover_asset_index
 import subprocess
 import tempfile
 from pathlib import Path
@@ -90,10 +90,10 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         else:
             document_path.write_text(json.dumps(stored, indent=2) + "\n")
     sources = {entry["id"]: (entry, library / "3d-assets") for entry in
-               json.loads((library / "3d-assets/index.json").read_text())["assets"]}
+               discover_asset_index(library / "3d-assets")["assets"]}
     if not live:
         sources.update({entry["id"]: (entry, stage / "assets") for entry in
-                        json.loads((stage / "assets/index.json").read_text())["assets"]})
+                        discover_asset_index(stage / "assets")["assets"]})
     expected_ids = set(scope["asset_ids"]) | set(scope["already_published"])
     if not expected_ids <= sources.keys():
         raise ValueError("Missing expected assets: " + repr(sorted(expected_ids - sources.keys())))
@@ -102,13 +102,13 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
     prospective = {}
     for entry in entries:
         source = sources[entry["id"]][1]
-        for key in ("model", "lossy_model"):
+        for key in ("descriptor", "model", "lossy_model", "preview_model"):
             if entry.get(key): prospective[entry[key]] = source / entry[key]
         if entry.get("lossy_model"):
             receipt = entry["lossy_model"] + ".receipt.json"
             prospective[receipt] = source / receipt
-    write_asset_index(library / "3d-assets", {"version": 1, "assets": entries},
-                      target=private_index, files=prospective)
+    write_asset_index(library / "3d-assets", target=private_index, files=prospective,
+                      descriptors=[entry["descriptor"] for entry in entries])
     files, seen = [], set()
 
     def add(path, source):

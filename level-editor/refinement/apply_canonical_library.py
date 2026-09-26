@@ -2,7 +2,7 @@
 import argparse
 from datetime import datetime, timezone
 import json
-from asset_index import validate_asset_index, write_asset_index
+from asset_index import validate_asset_index, write_asset_index, generate_asset_index, encoded
 from pathlib import Path
 import shutil
 from urllib.parse import unquote
@@ -23,7 +23,12 @@ def graph(staged, previous):
         files[relative] = {'source':str(source), 'sha256':value}
         return source
     def document(relative): return json.loads(include(relative).read_text())
-    index = document('3d-assets/index.json')
+    fallback = {path.relative_to(previous/'3d-assets').as_posix(): path
+                for path in (previous/'3d-assets').rglob('*')
+                if path.is_file() and path.name != 'asset.json'
+                and not (staged/'3d-assets'/path.relative_to(previous/'3d-assets')).exists()}
+    index = generate_asset_index(staged/'3d-assets', files=fallback)
+    files['3d-assets/index.json'] = {'sha256': digest(encoded(index)), 'generated': True}
     entries = {entry['id']:entry for entry in index['assets']}
     if len(entries) != len(index['assets']): raise ValueError('Duplicate catalog identity')
     models = {}
@@ -80,7 +85,7 @@ def graph(staged, previous):
             for resource in reference['resources']: include(resource['path'], resource['sha256'])
     validate_asset_index(staged/'3d-assets', index, files={
         relative.removeprefix('3d-assets/'): record['source']
-        for relative, record in files.items() if relative.startswith('3d-assets/')})
+        for relative, record in files.items() if relative.startswith('3d-assets/') and 'source' in record})
     return files, len(entries), len(maps)
 
 
@@ -115,7 +120,7 @@ def publish(plan_path, apply=False):
                 target = library/relative; target.parent.mkdir(parents=True, exist_ok=True)
                 installed.append(target)
                 if relative == '3d-assets/index.json':
-                    write_asset_index(target.parent, Path(files[relative]['source']).read_bytes())
+                    write_asset_index(target.parent)
                 else:
                     shutil.copy2(files[relative]['source'], target)
             graph(library, library)

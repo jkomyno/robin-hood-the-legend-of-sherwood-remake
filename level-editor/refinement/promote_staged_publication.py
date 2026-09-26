@@ -8,7 +8,7 @@ from contextlib import contextmanager
 import fcntl
 import hashlib
 import json
-from asset_index import write_asset_index
+from asset_index import write_asset_index, discover_asset_index
 from pathlib import Path
 import shutil
 import sys
@@ -23,15 +23,6 @@ def library_lock(library):
     with (Path(library)/'.publication.lock').open('a+') as handle:
         fcntl.flock(handle, fcntl.LOCK_EX)
         yield
-
-
-def merge_index(current, staged):
-    selected = {asset['id'] for asset in staged['assets']}
-    if len(selected) != len(staged['assets']):
-        raise ValueError('Duplicate staged asset identity')
-    current['assets'] = [a for a in current['assets'] if a['id'] not in selected] + staged['assets']
-    current['assets'].sort(key=lambda a: a['id'])
-    return current
 
 
 def sha(path):
@@ -113,11 +104,9 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
         if json.loads((stage/name).read_text())['status'] != 'PASS':
             raise ValueError('Missing successful verification: ' + name)
     index_path=library/'3d-assets/index.json'
-    current=json.loads(index_path.read_text())
-    staged_index = stage/'map-assets/3d-assets/index.json'
-    if not staged_index.exists(): staged_index = stage/'assets/index.json'
-    staged=json.loads(staged_index.read_text())
-    current=merge_index(current, staged)
+    staged_root = stage/'map-assets/3d-assets'
+    if not any(staged_root.rglob('asset.json')): staged_root = stage/'assets'
+    staged = discover_asset_index(staged_root)
     merged=stage/'promotion-library-index.json'
     asset_library = stage / 'map-assets'
     document_path = stage / 'browser-document.rhlos-map.json'
@@ -137,25 +126,24 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
         if catalog.get('map', '').lower() != map_name.lower() or not isinstance(catalog.get('groups'), list):
             raise ValueError('Catalog source does not match the published map')
         pairs.append((catalog_source, catalog_target))
-    selected=json.loads((stage/'assets/index.json').read_text())
+    selected=discover_asset_index(stage/'assets')
     for asset in selected['assets']:
         pairs.extend(asset_file_pairs(stage/'assets', library/'3d-assets', asset))
-    # Lossy models, previews and their receipts come from the catalog whose index is merged;
-    # the merged entries keep lossy_model/preview_model, so republishing retains them.
-    problems = verify_derivatives(staged_index.parent)
+    # Discover derivatives from the staged directories, then carry their receipts with them.
+    problems = verify_derivatives(staged_root)
     if problems:
         raise ValueError('Stale staged derivatives: ' + '; '.join(problems[:5]))
     for asset in staged['assets']:
         for key in ('lossy_model', 'preview_model'):
             if asset.get(key):
                 for relative in (safe_relative(asset[key]), safe_relative(asset[key] + '.receipt.json')):
-                    pairs.append((contained_path(staged_index.parent, relative, required=True),
+                    pairs.append((contained_path(staged_root, relative, required=True),
                                   contained_path(library/'3d-assets', relative)))
     # Install manifests only after all referenced assets exist.
     asset_root = (library/'3d-assets').resolve()
     prospective = {str(target.resolve().relative_to(asset_root)): source for source, target in pairs
                    if target.resolve().is_relative_to(asset_root)}
-    write_asset_index(asset_root, current, target=merged, files=prospective)
+    write_asset_index(asset_root, target=merged, files=prospective)
     pairs.extend([(document_path,library/f'scenes/{map_name}.rhlos-map.json'),(merged,index_path)])
     records=[]
     targets={}
@@ -175,10 +163,7 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
     manifest={'status':'PREPARED_NOT_APPLIED','stage':str(stage),'files':records,'protected_files':protected,
               'browser_check': ({'status': 'WAIVED', 'reason': browser_waiver} if browser_waiver is not None
                                 else {'status': 'PASS'}),
-              'library':str(library.resolve()), 'index_merge':{
-                  'staged_index':str(staged_index.resolve()),
-                  'staged_index_sha256':sha(staged_index),
-                  'target':str(index_path.resolve())}}
+              'library':str(library.resolve()), 'index_generation':{'target':str(index_path.resolve())}}
     path=stage/'promotion.json'
     if path.exists():
         raise FileExistsError(path)
@@ -198,22 +183,18 @@ def _apply(path):
     manifest=json.loads(path.read_text())
     if manifest['status']!='PREPARED_NOT_APPLIED':
         raise ValueError('Promotion manifest already applied')
-    merge=manifest.get('index_merge')
+    merge=manifest.get('index_generation')
     if merge:
-        staged_path=Path(merge['staged_index'])
-        if sha(staged_path)!=merge['staged_index_sha256']:
-            raise ValueError('Staged asset index changed')
         item=next(item for item in manifest['files'] if item['target']==merge['target'])
         target=Path(item['target'])
         previous=sha(target)
-        merged=merge_index(json.loads(target.read_text()),json.loads(staged_path.read_text()))
         if sha(target)!=previous:
             raise ValueError('Library index changed during merge')
         asset_root = target.parent.resolve()
         prospective = {str(Path(record['target']).resolve().relative_to(asset_root)): Path(record['source'])
                        for record in manifest['files']
                        if Path(record['target']).resolve().is_relative_to(asset_root)}
-        write_asset_index(asset_root, merged, target=Path(item['source']), files=prospective)
+        write_asset_index(asset_root, target=Path(item['source']), files=prospective)
         item['source_sha256']=sha(Path(item['source']))
         item['previous_sha256']=previous
         # Install the index last, after every file it references exists.
@@ -240,7 +221,7 @@ def _apply(path):
             temporary=target.with_name(target.name+'.publication-tmp')
             if temporary.exists():raise FileExistsError(temporary)
             if target.resolve() == (Path(manifest['library'])/'3d-assets/index.json').resolve():
-                write_asset_index(target.parent, Path(item['source']).read_bytes())
+                write_asset_index(target.parent)
             else:
                 shutil.copy2(item['source'],temporary)
                 temporary.replace(target)
