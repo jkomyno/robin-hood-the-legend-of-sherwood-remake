@@ -39,6 +39,7 @@ def projection_metadata(source):
 
 
 def reveal_metadata(working, sources, include_all=False):
+    """Export only labels needed by the editor's reveal preview controls."""
     path = working.get("reveal_manifest_path")
     if not path:
         return None
@@ -50,43 +51,8 @@ def reveal_metadata(working, sources, include_all=False):
         associations.update(patch["sight_before"] + patch["sight_after"])
         if not include_all and not nodes.intersection(associations):
             continue
-        graphic = patch["graphic"]
-        portable_graphic = {"bbox_source_pixels": graphic["bbox"]} if graphic else None
-        patches.append({"id": patch["id"], "name": patch["name"],
-                        "state_source_game": patch["state"],
-                        "sight_before": patch["sight_before"], "sight_after": patch["sight_after"],
-                        "graphic": portable_graphic,
-                        "associated_source_nodes": sorted(nodes.intersection(associations))})
-    mission_patches = []
-    for patch in manifest.get("mission_patches", []):
-        associations = set(patch["sight_before"] + patch["sight_after"])
-        associations.update(patch.get("associated_source_nodes", []))
-        associations.update(source['source_node'] for source in sources
-                            if patch['id'] in json.loads(source.get('mission_patch_ids', '[]')))
-        if not include_all and not nodes.intersection(associations):
-            continue
-        record = json.loads(json.dumps(patch))
-        # Full-map composites are review inputs; the portable asset carries
-        # original state frames and baked mesh textures instead.
-        record.pop('projection_sources', None)
-        # Retain frame timing and offsets without embedding review artwork.
-        # The published assets already carry the textures used for previews.
-        def portable(value):
-            if isinstance(value, dict):
-                value.pop("image", None)
-                for child in value.values():
-                    portable(child)
-            elif isinstance(value, list):
-                for child in value:
-                    portable(child)
-        portable(record)
-        record["associated_source_nodes"] = sorted(nodes.intersection(associations))
-        mission_patches.append(record)
-    return {"version": 1, "source_map": manifest["map"], "patches": patches,
-            "mission_patches": mission_patches,
-            "scope": "complete map patch records" if include_all else "associated patches only; unrelated and unassigned source patches omitted",
-            "coordinates": "Mission-state coordinates are stored in the map document.",
-            "visibility": "Sight obstacle state does not imply removal of rendered geometry; overlap is candidate association only."}
+        patches.append({"id": patch["id"], "name": patch["name"]})
+    return {"patches": patches} if patches else None
 
 
 def compact_texture_coordinates(doc):

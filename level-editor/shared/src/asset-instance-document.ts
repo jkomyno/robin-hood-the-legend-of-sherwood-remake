@@ -81,11 +81,64 @@ function defaultPart(object: Pick<Level3DObject, "node">, descriptors: Descripto
   };
 }
 
-/** Stored asset instances omit fields identical to their pinned descriptor part. */
+const legacyRevealKeys = new Set([
+  "version",
+  "source_map",
+  "patches",
+  "mission_patches",
+  "scope",
+  "coordinates",
+  "visibility",
+]);
+const legacyPatchKeys = new Set([
+  "id",
+  "name",
+  "state_source_game",
+  "sight_before",
+  "sight_after",
+  "graphic",
+  "associated_source_nodes",
+]);
+
+function storedMetadata(metadata: Level3D["sceneMetadata"]): Level3D["sceneMetadata"] {
+  const reveal = metadata?.reveal;
+  if (!reveal || typeof reveal !== "object" || Array.isArray(reveal)) return metadata;
+  const record = reveal as Record<string, unknown>;
+  if (
+    !Object.keys(record).every((key) => legacyRevealKeys.has(key)) ||
+    !Array.isArray(record.patches)
+  )
+    return metadata;
+  const patches = record.patches as unknown[];
+  if (
+    !patches.every(
+      (patch) =>
+        patch &&
+        typeof patch === "object" &&
+        !Array.isArray(patch) &&
+        Object.keys(patch).every((key) => legacyPatchKeys.has(key)) &&
+        typeof (patch as Record<string, unknown>).id === "string" &&
+        typeof (patch as Record<string, unknown>).name === "string",
+    )
+  )
+    return metadata;
+  return {
+    ...metadata,
+    reveal: {
+      patches: patches.map((patch) => ({
+        id: (patch as Record<string, string>).id,
+        name: (patch as Record<string, string>).name,
+      })),
+    },
+  };
+}
+
+/** Saved maps omit descriptor defaults and obsolete reveal provenance. */
 export function compactAssetInstances(document: Level3D, descriptors: Descriptors): unknown {
   parseLevel3D(document);
   return {
     ...document,
+    ...(document.sceneMetadata ? { sceneMetadata: storedMetadata(document.sceneMetadata) } : {}),
     objects: document.objects.map((object) => {
       const defaults = defaultPart(object, descriptors);
       if (!defaults) return object;

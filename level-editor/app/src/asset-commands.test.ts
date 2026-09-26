@@ -113,6 +113,30 @@ test("saved asset instances inherit unchanged subparts and retain edited overrid
   assert.throws(() => hydrateAssetInstances(compact, new Map()), /Missing pinned asset descriptor/);
 });
 
+test("saved maps retain reveal labels without legacy game state copies", () => {
+  const { document } = assetFixture();
+  document.sceneMetadata = {
+    assetOrigins: { house: [10, 20, 0] },
+    reveal: {
+      version: 1,
+      source_map: "Derby",
+      patches: [{ id: "patch-001", name: "Opened room", state_source_game: { active: true } }],
+      mission_patches: [{ id: "mission-001", states: { initial: { frames: [1, 2] } } }],
+    },
+  };
+  const saved = compactAssetInstances(document, new Map()) as Level3D;
+  assert.deepEqual(saved.sceneMetadata, {
+    assetOrigins: { house: [10, 20, 0] },
+    reveal: { patches: [{ id: "patch-001", name: "Opened room" }] },
+  });
+  assert.deepEqual(document.sceneMetadata?.reveal, {
+    version: 1,
+    source_map: "Derby",
+    patches: [{ id: "patch-001", name: "Opened room", state_source_game: { active: true } }],
+    mission_patches: [{ id: "mission-001", states: { initial: { frames: [1, 2] } } }],
+  });
+});
+
 test("changed revisions and invalid placements fail without edits", () => {
   const { descriptor, reference, document } = assetFixture();
 

@@ -70,10 +70,12 @@ The loader restores these fields before editing or validation. An instance keeps
 any field it changes, so edited collision shapes and other per-part overrides
 remain in the map. Mission bindings and group placement remain map data.
 
-Mission-specific reveal triggers, drawbridge bindings and initial-state evidence
-belong in per-object `missionBindings` and map `sceneMetadata`. Bindings are applied
-to the placed clone, so inserting the same library asset elsewhere does not attach
-it to the original mission. `sceneMetadata.assetOrigins` is map-only refinement
+Mission-specific reveal triggers and drawbridge bindings belong in per-object
+`missionBindings`. Bindings are applied to the placed clone, so inserting the same
+library asset elsewhere does not attach it to the original mission. The map keeps
+only reveal patch IDs and names in `sceneMetadata.reveal.patches` for editor labels;
+game patch states and review frames stay in their source manifests.
+`sceneMetadata.assetOrigins` is map-only refinement
 provenance: it lets publication compensate for an exporter choosing a different
 local origin while retaining the author's edits. It is not needed to render an
 asset or insert it manually. Terrain is a pinned background catalog asset in
