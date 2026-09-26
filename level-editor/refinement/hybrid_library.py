@@ -11,7 +11,7 @@ from scene_manifest import _splitter
 DEFAULT_MIN_SAVINGS = 256 * 1024
 
 
-def pack(model, binary, external, shared):
+def pack(model, binary, external, shared, blob_prefix='../blobs/'):
     """Repack bytes without changing any accessor, texture encoding, or scene."""
     result = copy.deepcopy(model)
     data = bytearray()
@@ -29,7 +29,7 @@ def pack(model, binary, external, shared):
         if key not in shared: return None
         relative = '3d-assets/blobs/'+key+suffix
         pins[relative] = key
-        return '../blobs/'+key+suffix
+        return blob_prefix+key+suffix
     mapping = {}
     for i, buffer in enumerate(model.get('buffers', [])):
         raw = external(buffer['uri']) if 'uri' in buffer else binary[:buffer['byteLength']]
@@ -92,20 +92,39 @@ def stage_hybrid(library, output, min_savings=DEFAULT_MIN_SAVINGS):
     references, proofs, external_paths = {}, {}, set()
     for entry, relative, descriptor, temporary in records:
         model, binary, external = read_model(output/temporary['model'], output)
-        raw, packed, packed_binary, resources = pack(model, binary, external, shared)
+        source_map = entry.get('source_map', descriptor.get('source_map'))
+        if not isinstance(source_map, str) or not source_map or any(c in source_map for c in '/\\.'):
+            raise ValueError('Asset requires a source map: '+entry['id'])
+        target = Path('3d-assets')/source_map.lower()/entry['id']
+        model_path = str(target/'model.glb')
+        (output/target).mkdir(parents=True, exist_ok=True)
+        raw, packed, packed_binary, resources = pack(model, binary, external, shared, '../../blobs/')
+        packed_external = lambda uri: (output/target/uri).read_bytes()
         for scene in model['scenes']:
             before = _splitter.canonical(model, binary, scene['nodes'], external)
-            after = _splitter.canonical(packed, packed_binary, scene['nodes'], external)
+            after = _splitter.canonical(packed, packed_binary, scene['nodes'], packed_external)
             if before != after: raise ValueError('Hybrid packing changed scene: '+entry['id']+'/'+scene['name'])
-        model_path = str(Path(relative).parent/'model.glb')
         (output/model_path).write_bytes(raw)
         (output/temporary['model']).unlink()
         descriptor.update(model='model.glb', resources=resources)
         for field in ('state_variants', 'standalone_variants'):
             for variant in descriptor.get(field, {}).values(): variant['model'] = 'model.glb'
-        (output/relative).write_bytes(encoded(descriptor))
-        entry['model'] = str(Path(entry['descriptor']).parent/'model.glb')
-        references[relative] = {'model':model_path, 'model_sha256':digest(raw),
+        if descriptor.get('preview_model'):
+            preview = descriptor['preview_model']
+            (output/target/preview).write_bytes(read(str(Path(relative).parent/preview)))
+        if entry.get('preview_model'):
+            preview = Path(entry['preview_model'])
+            destination_preview = target/preview.name
+            (output/destination_preview).write_bytes(read(str(Path('3d-assets')/preview)))
+            receipt = Path('3d-assets')/Path(str(preview)+'.receipt.json')
+            if (library/receipt).is_file():
+                (output/Path(str(destination_preview)+'.receipt.json')).write_bytes(read(str(receipt)))
+            entry['preview_model'] = str(destination_preview.relative_to('3d-assets'))
+        destination = str(target/'asset.json')
+        (output/destination).write_bytes(encoded(descriptor))
+        entry['descriptor'] = str((target/'asset.json').relative_to('3d-assets'))
+        entry['model'] = str((target/'model.glb').relative_to('3d-assets'))
+        references[relative] = {'descriptor':destination, 'model':model_path, 'model_sha256':digest(raw),
             'descriptor_sha256':digest(encoded(descriptor)), 'resources':resources}
         external_paths.update(resource['path'] for resource in resources)
         proofs[entry['id']] = {'scenes':len(model['scenes']), 'model_sha256':digest(raw)}

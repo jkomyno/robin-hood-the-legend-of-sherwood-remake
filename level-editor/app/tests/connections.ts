@@ -1,5 +1,5 @@
-import { get, set, del } from "idb-keyval";
-import { pickDatadir, pickLibrary } from "../src/fs";
+import { get, del } from "idb-keyval";
+import { pickDatadir } from "../src/fs";
 import { connectionAttempts } from "../src/connection-attempt";
 
 /** Real IndexedDB transactions and cloneable OPFS handles, with only the native
@@ -17,7 +17,6 @@ export async function checkConnectionPersistence() {
   try {
     for (const [key, pick] of [
       ["datadir-handle", pickDatadir],
-      ["library-handle", pickLibrary],
     ] as const) {
       const attempts = connectionAttempts();
       let finishOld!: (handle: FileSystemDirectoryHandle) => void;
@@ -38,12 +37,8 @@ export async function checkConnectionPersistence() {
       await queued;
       await assertStored(key, latest);
     }
-    // Writes made by unrelated slots must not supersede one another.
-    await set("datadir-handle", old);
-    await assertStored("library-handle", latest);
   } finally {
     window.showDirectoryPicker = original;
     await del("datadir-handle");
-    await del("library-handle");
   }
 }

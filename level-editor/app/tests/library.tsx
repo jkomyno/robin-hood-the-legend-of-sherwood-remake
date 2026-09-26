@@ -148,8 +148,8 @@ export async function checkSharedLibrary() {
     await until(() => document.querySelectorAll(".asset-card").length === 0);
     select("Source level", "Leicester");
     await until(() => document.querySelectorAll(".asset-card").length === 1);
-    select("Level", "York");
-    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "York");
+    select("Map", "York");
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York");
     const card = document.querySelector(".asset-card")!;
     const transfer = new DataTransfer();
     card.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: transfer }));
@@ -168,10 +168,10 @@ export async function checkSharedLibrary() {
     await until(() => document.querySelectorAll(".object-list li").length === 1);
     click("Redo");
     await until(() => document.querySelectorAll(".object-list li").length > 1);
-    select("Level", "Lincoln");
-    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "Lincoln");
-    select("Level", "York");
-    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "York");
+    select("Map", "Lincoln");
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "Lincoln");
+    select("Map", "York");
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York");
     assert(document.querySelectorAll(".object-list li").length > 1, "Saved cross-level asset failed to reload");
     // Exercise actual viewport path handling. Synthetic pointer events cannot
     // acquire native pointer capture, so the fixture supplies that browser API.
@@ -242,8 +242,8 @@ export async function checkSharedLibrary() {
     const pathsSaved=JSON.parse(await files.get("scenes/York.level3d.json")!.text());
     assert(pathsSaved.splines.some((p:{kind:string;cornerAsset?:string})=>p.kind==="wall" && p.cornerAsset==="prop-0"),"Corner tower source was not saved");
     assert(pathsSaved.splines.some((p:{kind:string})=>p.kind==="road"),"Footpath was not saved");
-    select("Level", "Lincoln");
-    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "Lincoln");
+    select("Map", "Lincoln");
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "Lincoln");
     click("Draw");
     select("Wall preset","Battlement wall");
     await new Promise<void>(resolve=>requestAnimationFrame(()=>resolve()));
@@ -251,8 +251,8 @@ export async function checkSharedLibrary() {
     await until(()=>!!document.querySelector('input[aria-label="Corner tower scale"]'));
     assert((document.querySelector('select[aria-label="Corner tower asset"]') as HTMLSelectElement).value==="prop-0","Preset did not restore its tower across levels");
     click("Cancel");
-    select("Level", "York");
-    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "York");
+    select("Map", "York");
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York");
     assert(document.querySelectorAll(".spline-list button").length === 3, "River, wall and footpath failed to reload");
     click("New map");
     await until(() => (document.querySelector("dialog") as HTMLDialogElement).open);
@@ -261,7 +261,7 @@ export async function checkSharedLibrary() {
     name.value = "New forest";
     name.dispatchEvent(new Event("input", { bubbles: true }));
     click("Create map");
-    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "New forest");
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "New forest");
     assert(document.querySelectorAll(".object-list li").length === 0, "New map inherited objects");
     assert(JSON.parse(await files.get("scenes/New forest.level3d.json")!.text()).size === null, "New map acquired fixed bounds");
     click("Add to scene");
@@ -278,10 +278,10 @@ export async function checkSharedLibrary() {
     await until(() => ![...document.querySelectorAll("button")].some(b => b.textContent?.trim() === "Save *"));
     const newSaved = JSON.parse(await files.get("scenes/New forest.level3d.json")!.text());
     assert(newSaved.size === null && newSaved.exportBounds[2] === 10, "Advisory crop changed canvas size or expanded to fit assets");
-    select("Level", "York");
-    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "York");
-    select("Level", "New forest");
-    await until(() => (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value === "New forest");
+    select("Map", "York");
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York");
+    select("Map", "New forest");
+    await until(() => (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "New forest");
     assert(document.querySelectorAll(".object-list li").length > 0, "New map assets were not restored");
     assert((document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).value === "10", "Export frame was not restored");
     assert(errors.length === 0, errors.join("\n"));

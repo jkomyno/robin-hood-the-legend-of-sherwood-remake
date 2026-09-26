@@ -34,7 +34,7 @@ export default function AssetLibrary(props: {
       </select></label>
     </div>
     <p class="library-summary" aria-live="polite">{filtered().length} of {props.entries.length} assets · Hover to rotate</p>
-    <Show when={!props.root}><p class="hint">Open your shared library to browse assets.</p></Show>
+    <Show when={!props.root}><p class="hint">Waiting for assets…</p></Show>
     <Show when={props.loading}><p class="hint">Loading shared library…</p></Show>
     <Show when={props.error}><p class="library-error" role="alert">{props.error}</p></Show>
     <Show when={!props.loading && props.root && !props.error && !filtered().length}>

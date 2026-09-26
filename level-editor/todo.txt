@@ -1,0 +1,9 @@
+- [x] Remove "Frame" button; rename "Game camera" to "Reset view".
+
+- [x] Group library assets by source map (library/3d-assets/derby/xxx).
+- [x] Load the read-only library over HTTP; save maps in OPFS and offer Download.
+- [x] Label the map selector "Map"; show Mission to its right with highscore names, filtered by map.
+Questions:
+- What is the game data dir used for? When selecting it in the level editor i mean with file system access api.
+  Optional read-only mission files, sprites, and reference terrain/elevation.
+  Assets come from the HTTP library; map saves go to browser storage.

@@ -4,7 +4,6 @@
 import { get, update } from "idb-keyval";
 
 const DATADIR_KEY = "datadir-handle";
-const LIBRARY_KEY = "library-handle";
 
 async function pickDir(
   key: string,
@@ -46,21 +45,6 @@ export async function restoreDatadir(): Promise<FileSystemDirectoryHandle | null
 
 export async function getStoredDatadirHandle(): Promise<FileSystemDirectoryHandle | null> {
   return (await get<FileSystemDirectoryHandle>(DATADIR_KEY)) ?? null;
-}
-
-/** the library is where the editor saves its documents, so it needs write access */
-export async function pickLibrary(
-  current: () => boolean,
-): Promise<FileSystemDirectoryHandle> {
-  return pickDir(LIBRARY_KEY, "asset-library", current, "readwrite");
-}
-
-export async function restoreLibrary(): Promise<FileSystemDirectoryHandle | null> {
-  return restoreDir(LIBRARY_KEY, "readwrite");
-}
-
-export async function getStoredLibraryHandle(): Promise<FileSystemDirectoryHandle | null> {
-  return (await get<FileSystemDirectoryHandle>(LIBRARY_KEY)) ?? null;
 }
 
 export async function requestDatadirPermission(

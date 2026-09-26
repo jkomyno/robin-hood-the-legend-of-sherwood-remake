@@ -55,8 +55,8 @@ def graph(staged, previous):
         if requested != set(pins): raise ValueError('Descriptor resources do not match model')
         if entry.get('preview_model'):
             preview = '3d-assets/'+entry['preview_model']; include(preview)
-            receipt = str(Path(preview).with_suffix('.receipt.json'))
-            if (previous/receipt).is_file(): include(receipt)
+            receipt = preview+'.receipt.json'
+            if (staged/receipt).is_file() or (previous/receipt).is_file(): include(receipt)
     maps = sorted((staged/'scenes').glob('*.level3d.json'))
     for path in maps:
         value = document(str(path.relative_to(staged)))

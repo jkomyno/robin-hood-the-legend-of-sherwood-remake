@@ -1,26 +1,22 @@
-// App shell: connect the hackable datadir (game data, read) and the
-// library (reconstructions and level documents, read/write), then hand
-// over to the 3D editor.
+// Published assets load over HTTP; map edits stay in browser storage.
 import { Show, createEffect, createSignal, onCleanup } from "solid-js";
 import {
   getStoredDatadirHandle,
-  getStoredLibraryHandle,
   pickDatadir,
-  pickLibrary,
   requestDatadirPermission,
   restoreDatadir,
-  restoreLibrary,
 } from "./fs";
 import { scanDatadir, type DatadirIndex } from "./datadir";
 import Editor3D, { type LibraryRef } from "./Editor3D";
 import { connectionAttempts, connectLatest } from "./connection-attempt";
+import { openHttpLibrary } from './http-library.ts';
+import { loadMissionCatalog } from './mission-catalog.ts';
 
 export default function App() {
   const [index, setIndex] = createSignal<DatadirIndex | null>(null);
   const [needsReconnect, setNeedsReconnect] = createSignal(false);
   // wrapped: a directory handle is async-iterable, and Solid 2 flattens iterables returned by effect computes
   const [library, setLibrary] = createSignal<LibraryRef | null>(null);
-  const [libraryNeedsReconnect, setLibraryNeedsReconnect] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
   const [status, setStatus] = createSignal<string | null>(null);
   const datadirAttempts = connectionAttempts();
@@ -37,6 +33,7 @@ export default function App() {
     if (!current()) return;
     setStatus("scanning datadir…");
     const next = await scanDatadir(handle);
+    next.missionEntries = await loadMissionCatalog(next);
     if (!current()) return;
     setIndex(next);
     setNeedsReconnect(false);
@@ -63,7 +60,7 @@ export default function App() {
       (error) => setError(String(error)),
     );
 
-  // one-shot startup: restore previously granted handles
+  // Restore optional game data and connect the published library on startup.
   createEffect(
     () => undefined,
     () => {
@@ -77,13 +74,9 @@ export default function App() {
         }
       });
       void connectLibrary(async (current) => {
-        const lib = await restoreLibrary();
+        const lib = await openHttpLibrary();
         if (!current()) return;
-        if (lib) setLibrary({ handle: lib });
-        else {
-          const stored = await getStoredLibraryHandle();
-          if (current()) setLibraryNeedsReconnect(stored !== null);
-        }
+        setLibrary(lib);
       });
     },
   );
@@ -102,24 +95,6 @@ export default function App() {
       if (current() && granted) await openRoot(handle, current);
     });
   }
-  function onPickLibrary() {
-    return connectLibrary(async (current) => {
-      const handle = await pickLibrary(current);
-      if (!current()) return;
-      setLibrary({ handle });
-      setLibraryNeedsReconnect(false);
-    });
-  }
-  function onReconnectLibrary() {
-    return connectLibrary(async (current) => {
-      const handle = await getStoredLibraryHandle();
-      if (!current() || !handle) return;
-      const granted = await requestDatadirPermission(handle, "readwrite");
-      if (!current() || !granted) return;
-      setLibrary({ handle });
-      setLibraryNeedsReconnect(false);
-    });
-  }
 
   return (
     <div class="app editor-app">
@@ -130,6 +105,7 @@ export default function App() {
           fallback={
             <button
               class="connect"
+              title="Optional, read-only game data for mission previews, sprites, and reference terrain"
               onClick={needsReconnect() ? onReconnect : onPick}
             >
               {needsReconnect()
@@ -142,26 +118,6 @@ export default function App() {
             <span class="connected">
               Game data · {idx().maps.size} maps{" "}
               <button onClick={onPick}>change</button>
-            </span>
-          )}
-        </Show>
-        <Show
-          when={library()}
-          fallback={
-            <button
-              class="connect"
-              onClick={
-                libraryNeedsReconnect() ? onReconnectLibrary : onPickLibrary
-              }
-            >
-              {libraryNeedsReconnect() ? "Reconnect library" : "Open library…"}
-            </button>
-          }
-        >
-          {(lib) => (
-            <span class="connected">
-              Library · {lib().handle.name}{" "}
-              <button onClick={onPickLibrary}>change</button>
             </span>
           )}
         </Show>

@@ -209,7 +209,9 @@ def verify_static_variants(plan, stage):
         # Re-export the verified endpoint worker, rather than trusting a model
         # hash emitted by the staging code as proof of its actual contents.
         from export_editor import export_asset_library, exported_pivot
-        descriptor = json.loads((Path(plan['output']) / 'assets' / asset_id / 'asset.json').read_text())
+        assets_root = Path(plan['output']) / 'assets'
+        entry = next(entry for entry in json.loads((assets_root/'index.json').read_text())['assets'] if entry['id'] == asset_id)
+        descriptor = json.loads((assets_root / entry['descriptor']).read_text())
         variant = (descriptor.get('standalone_variants') or descriptor.get('state_variants') or {}).get(state)
         if (asset_id, state) in appearances:
             if not variant or Path(report['model']).name != variant['model'] or scene_identity(variant) == scene_identity(descriptor):

@@ -1,6 +1,13 @@
 # Post-port Features
 
-- **Focused level-editor workspace.** A compact level picker replaces the map
+- **Browser-local map authoring.** Published assets load automatically over HTTP
+  from the existing library index, with source-map folders keeping the catalog
+  organized. Save writes map copies to OPFS; Download exports the current JSON.
+  The Map selector is followed by readable, map-filtered mission choices. Reset
+  view restores the map camera, and framing remains available through `f`.
+  See [editor storage and controls](../level-editor/docs/3d-editor.md).
+
+- **Focused level-editor workspace.** A compact map picker replaces the map
   button strip. Selection, drawing, and view settings have separate inspector
   sections; the asset browser can be collapsed to expand the viewport. A status
   bar tracks unsaved edits, and contextual help explains navigation shortcuts.

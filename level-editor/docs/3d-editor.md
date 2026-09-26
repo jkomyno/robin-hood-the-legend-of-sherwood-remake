@@ -6,7 +6,11 @@ insertion. Each part retains a local obstacle footprint and flags; part and grou
 transforms place it in the map. Mission-specific state belongs to the map.
 See [the library format](library-format.md) for files, resource sharing and bindings.
 
-The document is saved as `library/scenes/<map>.level3d.json`. Saving and publishing
+**Save** stores `<map>.level3d.json` in the browser's Origin Private File System
+(OPFS), under `sherwood-level-editor/maps/`. Local copies override published maps
+when reopened on the same browser and origin. **Download** exports the current
+document, including unsaved changes, as JSON. Clearing site data removes local
+copies, so download maps you want to keep outside the browser. Saving and publishing
 are separate from the reconstruction-only game-file baker described below.
 
 ## Running
@@ -16,14 +20,25 @@ cd level-editor && pnpm install
 pnpm --filter app dev            # http://localhost:5180
 ```
 
-Open the hackable datadir (read) and the library folder (read/write; it
-holds `scenes/` and `3d-assets/`). Pick a published map, or use **New map** to
+The library loads automatically over HTTP and remains read-only. The development
+command prepares static links to the published files, excluding backups; Vite
+serves them normally, without custom middleware. `3d-assets/index.json` lists
+assets, and `scenes/index.json` lists map filenames. After publishing new files,
+run `pnpm --filter app prepare:library` and refresh the page. For a local production
+preview use `pnpm --filter app preview` after building. A standalone deployment
+must also serve those static library files at `/library/`; the editor build does
+not copy the large library into its output.
+
+Optionally connect a hackable game datadir (read-only) for mission files, sprite
+banks, and reference terrain/elevation. It is not the asset library or a save
+destination. Pick a published **Map**, or use **New map** to
 start an unbounded canvas without choosing dimensions. Insert assets from the
 library and save the map under its own name. The optional export frame records a
 compile-time crop and does not restrict placement; it can intentionally clip assets.
 There is no automatic reconstruction fallback for missing map manifests.
 
-Choose a mission from the **Mission** menu to open its map and preview its initial
+The **Mission** menu to the right of **Map** shows only missions for that map,
+using the same readable names as the highscore list. Choose one to preview its initial
 placements. The map must have a published JSON manifest in the connected library. Soldiers,
 civilians, and rescue characters use their configured sprite profile and initial
 pose, with all 16 directions selected relative to the camera. Missing initial poses
@@ -76,7 +91,7 @@ Failed or superseded loads retain the current scene and release candidate resour
 | action | how |
 |---|---|
 | pan / orbit around the point under the cursor / zoom to cursor | left drag / right drag / wheel |
-| game camera (the map's own view) | `g` or the button |
+| reset to the map's own view | `g` or **Reset view** |
 | frame everything | `f` |
 | select building / single part | click / alt-click (or click again inside the selected building); `Esc` clears |
 | move | drag the selected building/part along the ground, or the gizmo (tick "lift" for height), or type dx/dy/dz |

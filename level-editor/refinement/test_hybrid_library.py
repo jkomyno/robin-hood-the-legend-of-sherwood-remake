@@ -29,7 +29,11 @@ class HybridLibraryTests(unittest.TestCase):
                 ref = bundle.write(identity)
                 descriptor = {'id':identity,'model':'model.gltf','model_scene':'default','resources':ref['resources']}
                 path = library/'3d-assets'/identity/'asset.json'; path.write_text(json.dumps(descriptor))
-                entries.append({'id':identity,'descriptor':identity+'/asset.json','model':identity+'/model.gltf'})
+                entries.append({'id':identity,'source_map':'Derby','descriptor':identity+'/asset.json','model':identity+'/model.gltf'})
+                if identity == 'c':
+                    entries[-1]['preview_model'] = identity+'/preview.glb'
+                    (path.parent/'preview.glb').write_bytes(b'preview')
+                    (path.parent/'preview.glb.receipt.json').write_text('{"proof":"preserve"}')
                 references.append({**ref,'id':identity,'descriptor':'3d-assets/'+identity+'/asset.json','descriptor_sha256':digest(path.read_bytes())})
             (library/'3d-assets/index.json').write_text(json.dumps({'assets':entries}))
             (library/'scenes/map.level3d.json').write_text(json.dumps({'sceneAssets':[],'assetSources':references,'objects':[]}))
@@ -39,8 +43,10 @@ class HybridLibraryTests(unittest.TestCase):
             self.assertEqual(report['verified_scenes'],4)
             self.assertEqual(len(list((staged/'3d-assets/blobs').iterdir())),1)
             self.assertEqual(graph(staged,library)[1:],(3,1))
+            self.assertEqual((staged/'3d-assets/derby/c/preview.glb').read_bytes(), b'preview')
+            self.assertEqual(json.loads((staged/'3d-assets/derby/c/preview.glb.receipt.json').read_text()), {'proof':'preserve'})
             for identity in ('a','b','c'):
-                model,binary,external = read_model(staged/'3d-assets'/identity/'model.glb',staged)
+                model,binary,external = read_model(staged/'3d-assets/derby'/identity/'model.glb',staged)
                 self.assertNotIn('uri',model['buffers'][0])
                 self.assertEqual(struct.unpack_from('<9f',binary),struct.unpack('<9f',vertices))
                 if identity=='c': self.assertNotIn('uri',model['images'][0])

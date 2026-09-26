@@ -7,6 +7,7 @@ export interface DatadirIndex {
   /** Original-case map basenames; level data is validated only when opened. */
   maps: Set<string>;
   missions?: string[];
+  missionEntries?: import('./mission-catalog.ts').MissionEntry[];
   root?: FileSystemDirectoryHandle;
   levelsDir: FileSystemDirectoryHandle;
 }

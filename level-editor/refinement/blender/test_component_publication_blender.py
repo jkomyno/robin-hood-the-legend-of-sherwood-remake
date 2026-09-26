@@ -40,8 +40,9 @@ def check():
         assert not list((root/'map-assets/3d-assets/blobs').glob('*'))
         (root/'stage.json').write_text(json.dumps({'map':report,'generated_materials':{}}))
         verify(root,catalog_path)
+        entries = {entry['id']: entry for entry in json.loads((root/'assets/index.json').read_text())['assets']}
         for name in ['left','right']:
-            descriptor=json.loads((root/'assets'/name/'asset.json').read_text());part=descriptor['parts'][0]
+            descriptor=json.loads((root/'assets'/entries[name]['descriptor']).read_text());part=descriptor['parts'][0]
             assert part['node']=='building-001--component-base-'+name
             assert part['source_node']=='building-001'and part['source_components']==['base-'+name]
             assert part['source_obstacle']==1 and part['obstacle_local_game']['solid']is True
@@ -49,12 +50,12 @@ def check():
             assert len(descriptor['components'])==1
             assert 'source_origin_scene' not in descriptor
             assert descriptor['model']=='model.glb' and not descriptor['resources']
-            nodes=gltf(root/'assets'/name/descriptor['model'])['nodes']
+            nodes=gltf(root/'assets'/entries[name]['model'])['nodes']
             assert len([n for n in nodes if 'mesh'in n])==1
             mesh_node=next(n for n in nodes if 'mesh'in n)
             assert mesh_node['extras']['source_node']=='building-001'
         # A standalone collision scope cannot silently lose its component provenance.
-        path=root/'assets/left/asset.json';saved=path.read_text();bad=json.loads(saved);bad['parts'][0]['source_components']=['base-right'];path.write_text(json.dumps(bad))
+        path=root/'assets'/entries['left']['descriptor'];saved=path.read_text();bad=json.loads(saved);bad['parts'][0]['source_components']=['base-right'];path.write_text(json.dumps(bad))
         try:verify(root,catalog_path)
         except ValueError:pass
         else:raise AssertionError('Accepted mismatched component collision provenance')

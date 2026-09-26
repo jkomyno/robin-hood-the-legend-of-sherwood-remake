@@ -4,6 +4,7 @@ import * as THREE from "three";
 import type { ProtoLevel } from "@rle/shared";
 import { MissionEntities, readMission } from "./mission.ts";
 import { projectSpritePixel } from "./sprite-profiles.ts";
+import { loadMissionCatalog, missionsForMap } from './mission-catalog.ts';
 
 function directory(files: Record<string, unknown>, prefix = ""): FileSystemDirectoryHandle {
   return {
@@ -28,6 +29,20 @@ function directory(files: Record<string, unknown>, prefix = ""): FileSystemDirec
   } as unknown as FileSystemDirectoryHandle;
 }
 const camera = { kind: "oblique-orthographic" as const, elevation_deg: 35 };
+test('mission choices use leaderboard titles and actual header maps', async () => {
+  const levelsDir = directory({
+    'H01_Lin_VL.rhm.json': {header:{map_filename:'Lincoln'}},
+    'Dem_Lei_MP.rhm.json': {header:{map_filename:'Leicester'}},
+    'Custom_York.rhm.json': {header:{map_filename:'Lincoln'}},
+  });
+  const index = {levelsDir, maps:new Set(['Lincoln','Leicester']), missions:['H01_Lin_VL','Dem_Lei_MP','Custom_York']};
+  const missionEntries = await loadMissionCatalog(index);
+  const lincoln = missionsForMap({...index,missionEntries}, 'lincoln');
+  assert.equal(lincoln.length, 2);
+  assert.match(lincoln.find(entry => entry.id === 'H01_Lin_VL')!.label, /Finding Godwin/);
+  assert.match(missionsForMap({...index,missionEntries}, 'Leicester')[0]!.label, /Scarlet Night/);
+  assert.deepEqual(missionsForMap({...index,missionEntries}, 'York'), []);
+});
 const level = { sight_obstacles: [{ points: [
   { x: 0, y: 0, z_top: 100 }, { x: 100, y: 0, z_top: 100 }, { x: 100, y: 100, z_top: 100 },
 ] }] } as ProtoLevel;

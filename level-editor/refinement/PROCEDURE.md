@@ -660,10 +660,17 @@ hash logic. This keeps the same review contract across all maps.
 
 Map exports use `<map>.level3d.json` and one reusable local catalog under
 `map-assets/3d-assets/`. Both map instances and palette entries reference the same
-`<asset-id>/model.glb`. Private payloads are embedded; `blobs/` contains only
+`<source-map>/<asset-id>/model.glb`, with lowercase source-map directories.
+Resolve descriptors and models through `3d-assets/index.json`; do not construct
+paths from the asset ID alone. Private payloads are embedded; `blobs/` contains only
 cross-asset payloads whose sharing saves at least 256 KiB. Named scenes are
 reusable appearances, never map-coordinate versions.
 See [the library format](../docs/library-format.md).
+
+After publication, run `pnpm --filter app prepare:library` from `level-editor/`
+to refresh the static links and map index used by the editor's HTTP library.
+The editor saves map copies in browser OPFS; use **Download** to export a map JSON
+for review or publication. It never writes assets or published maps over HTTP.
 
 `scene_filename` in publication plans must end in `.level3d.json`.
 `export_editor(..., asset_id=None)` requires the source `level` and JSON output.

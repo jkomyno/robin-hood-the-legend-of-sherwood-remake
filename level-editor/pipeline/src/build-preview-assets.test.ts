@@ -74,6 +74,17 @@ test("changed source during generation rejects publication", async (t) => {
   await assert.rejects(fs.stat(path.join(root, "house/preview.glb")), { code: "ENOENT" });
 });
 
+test('previews stay beside models in source-map folders', async (t) => {
+  const root = await fixture(t);
+  await fs.mkdir(path.join(root, 'derby'));
+  await fs.rename(path.join(root, 'house'), path.join(root, 'derby/house'));
+  await fs.writeFile(path.join(root, 'index.json'), JSON.stringify({version:1,assets:[{id:'house',model:'derby/house/model.glb'}]}));
+  await buildPreviews(root, {fingerprint:'a',generate:async()=>Buffer.from('preview')});
+  const index = JSON.parse(await fs.readFile(path.join(root, 'index.json'), 'utf8'));
+  assert.equal(index.assets[0].preview_model, 'derby/house/preview.glb');
+  assert.equal(await fs.readFile(path.join(root, 'derby/house/preview.glb'), 'utf8'), 'preview');
+});
+
 test("failed generator preserves last published preview", async (t) => {
   const root = await fixture(t);
   await buildPreviews(root, { fingerprint: "a", generate: async () => Buffer.from("good") });

@@ -66,7 +66,7 @@ export async function buildPreviews(root: string, options: {
     if (!/^[a-zA-Z0-9_-]+$/.test(id)) throw new Error(`Invalid asset ID: ${id}`);
     const source = path.resolve(root, model);
     if (!source.startsWith(path.resolve(root) + path.sep)) throw new Error(`Model outside library: ${model}`);
-    const previewModel = `${id}/preview.glb`, preview = path.join(root, previewModel);
+    const previewModel = path.posix.join(path.posix.dirname(model), 'preview.glb'), preview = path.join(root, previewModel);
     const receiptPath = `${preview}.receipt.json`;
     const sourceBytes = await fs.readFile(source), sourceHash = digest(sourceBytes);
     const previousOutput = await readOptional(preview);

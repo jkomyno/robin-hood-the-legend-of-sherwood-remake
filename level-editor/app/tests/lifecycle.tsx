@@ -5,6 +5,7 @@ import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import { checkSharedLibrary } from "./library";
 import Editor3D from "../src/Editor3D";
 import { checkConnectionPersistence } from "./connections";
+import { checkHttpLibrary } from "./http-library";
 import "../src/styles.css";
 
 // Browser acceptance fixture: no directory picker, disk writes or game data.
@@ -302,7 +303,7 @@ async function fixtures(names = ["a", "b"]) {
   };
 }
 function button(label: string) {
-  const level = document.querySelector('select[aria-label="Level"]') as HTMLSelectElement | null;
+  const level = document.querySelector('select[aria-label="Map"]') as HTMLSelectElement | null;
   if (level && [...level.options].some(option => option.value === label)) {
     level.value = label;
     level.dispatchEvent(new Event("change", { bubbles: true }));
@@ -317,6 +318,7 @@ function button(label: string) {
 
 async function main() {
   await checkConnectionPersistence();
+  await checkHttpLibrary();
   await checkSharedLibrary();
   if (location.search.includes("library-only")) {
     assert([...gpu.values()].every(resources => resources.size === 0), "Spline/library GPU resources retained");
@@ -345,11 +347,11 @@ async function main() {
       document.querySelector("#root")!,
     );
     await until(() =>
-      [...document.querySelectorAll('select[aria-label="Level"] option')].some(b => b.textContent === "a"),
+      [...document.querySelectorAll('select[aria-label="Map"] option')].some(b => b.textContent === "a"),
     );
     if (mount === 0) {
       const selectedMap = () =>
-        (document.querySelector('select[aria-label="Level"]') as HTMLSelectElement)?.value;
+        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value;
       const rows = () => document.querySelectorAll(".object-list li").length;
       const pending = library.delayRead("a-volumes.scene.glb");
       button("a");
@@ -382,7 +384,7 @@ async function main() {
       button("Duplicate");
       await until(() => rows() === 3);
       saving.release();
-      await until(() => status === "saved b.level3d.json");
+      await until(() => status === "Saved b in this browser");
       assert(
         [...document.querySelectorAll("button")].some(
           (b) => b.textContent?.trim() === "Save *" && !b.disabled,
@@ -405,7 +407,7 @@ async function main() {
       await oldLibrary.entered;
       setActiveLibrary(replacement);
       await until(() =>
-        [...document.querySelectorAll('select[aria-label="Level"] option')].some(b => b.textContent === "c"),
+        [...document.querySelectorAll('select[aria-label="Map"] option')].some(b => b.textContent === "c"),
       );
       button("c");
       await until(() => selectedMap() === "c" && status === null);
@@ -419,7 +421,7 @@ async function main() {
       library.resetFiles();
       setActiveLibrary(library);
       await until(() =>
-        [...document.querySelectorAll('select[aria-label="Level"] option')].some(b => b.textContent === "a"),
+        [...document.querySelectorAll('select[aria-label="Map"] option')].some(b => b.textContent === "a"),
       );
       assert(errors.length === 0, errors.join("\n"));
     }

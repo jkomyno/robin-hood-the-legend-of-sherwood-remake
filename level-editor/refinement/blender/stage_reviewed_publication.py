@@ -199,11 +199,13 @@ def stage(plan_path):
     report['map']=export_editor(plan['map_name'],output/scene_file,catalog=catalog,
         level=json.loads(Path(plan['hackable_map']).read_text()), include_hidden_objects=inactive_names, map_settings=map_settings)
     # Final map and palette references select the same canonical local models.
+    catalog_entries = {entry['id']: entry for entry in json.loads((output/'assets/index.json').read_text())['assets']}
     for row in report.get('static_variants', []):
-        descriptor=json.loads((output/'assets'/row['asset_id']/'asset.json').read_text())
+        descriptor_path = output/'assets'/catalog_entries[row['asset_id']]['descriptor']
+        descriptor=json.loads(descriptor_path.read_text())
         variant=(descriptor.get('state_variants') or descriptor['standalone_variants'])[row['state']]
-        row.update(model=str(output/'assets'/row['asset_id']/variant['model']),
-                   model_sha256=hashlib.sha256((output/'assets'/row['asset_id']/variant['model']).read_bytes()).hexdigest(),
+        row.update(model=str(descriptor_path.parent/variant['model']),
+                   model_sha256=hashlib.sha256((descriptor_path.parent/variant['model']).read_bytes()).hexdigest(),
                    model_scene=variant['model_scene'], canonical_model=True)
     (output/'stage.json').write_text(json.dumps(report,indent=2)+'\n')
     collection = bpy.data.collections[plan['collection_name']]

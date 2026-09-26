@@ -40,6 +40,8 @@ import { listFiles, subdir, writeText } from "./fs";
 import { MissionEntities, readMission } from "./mission";
 import { PopulationView, type SceneEntities } from "./population-view";
 import type { DatadirIndex } from "./datadir";
+import { missionsForMap } from './mission-catalog.ts';
+import { downloadMap } from './http-library.ts';
 
 export type { Selection } from "./document-commands";
 
@@ -288,8 +290,9 @@ export default function Editor3D(props: EditorProps) {
     try {
       const mission = requestedMission && idx ? await readMission(idx, requestedMission) : null;
       if (mission) {
-        const matching = maps().find((m) => m.toLowerCase() === mission.map.toLowerCase());
-        if (!matching) throw new Error(`No reconstruction for ${mission.map} in this library`);
+        const matching = doc()?.sourceMap?.toLowerCase() === mission.map.toLowerCase() ? mapName()
+          : maps().find((m) => m.toLowerCase() === mission.map.toLowerCase());
+        if (!matching) throw new Error(`No published map for ${mission.map} in this library`);
         name = matching;
       }
       if (disposed || attempt !== openAttempt) return;
@@ -454,7 +457,7 @@ export default function Editor3D(props: EditorProps) {
       );
       session.saved(snapshot);
       if (!disposed && session.current === snapshot.session) {
-        props.onStatus(`saved ${snapshot.name}.level3d.json`);
+        props.onStatus(`Saved ${snapshot.name} in this browser`);
       }
     } catch (e) {
       if (!disposed) props.onError(String(e));
@@ -590,7 +593,7 @@ export default function Editor3D(props: EditorProps) {
             <label>Map name<input name="mapName" aria-label="Map name" autofocus required maxlength={64} value={newMapName()}
               onInput={event => setNewMapName(event.currentTarget.value)} /></label>
             <p class="hint">No size to choose now. Set an optional export frame later, when you know what to include.</p>
-            <p class="hint">Saved in the connected library.</p>
+            <p class="hint">Saved in this browser. Use Download to export the map JSON.</p>
             <Show when={dirty()}><p class="hint">Your current map will be saved before creating the new one.</p></Show>
             <Show when={newMapError()}><p class="library-error" role="alert">{newMapError()}</p></Show>
             <div class="dialog-actions"><button type="button" onClick={() => newMapDialog.close()}>Cancel</button>
@@ -599,20 +602,20 @@ export default function Editor3D(props: EditorProps) {
         </form>
       </dialog>
       <div class="editor-bar">
-        <button disabled={!props.library() || editingPath()} title={!props.library() ? "Open a library first" : "Create a blank map"}
+        <button disabled={!props.library() || editingPath()} title={!props.library() ? "Waiting for assets" : "Create a blank map"}
           onClick={() => { setNewMapError(""); newMapDialog.showModal(); }}>New map</button>
-        <label class="mission-picker">Mission
-          <select aria-label="Mission" value={missionName()} disabled={!props.index() || !props.library() || maps().length === 0}
-            onChange={(e) => { const value = e.currentTarget.value; e.currentTarget.value = missionName(); if (value) void openMap("", value); else if (mapName()) void openMap(mapName()!); }}>
-            <option value="">Map only</option>
-            <For each={props.index()?.missions ?? []}>{(name) => <option value={name}>{name}</option>}</For>
+        <label class="mission-picker">Map
+          <select aria-label="Map" value={mapName() ?? ""} disabled={!maps().length}
+            onChange={event => { const name = event.currentTarget.value; event.currentTarget.value = mapName() ?? ""; if (name) void openMap(name); }}>
+            <option value="" disabled>Choose a map…</option>
+            <For each={maps()}>{name => <option value={name}>{name}</option>}</For>
           </select>
         </label>
-        <label class="mission-picker">Level
-          <select aria-label="Level" value={mapName() ?? ""} disabled={!maps().length}
-            onChange={event => { const name = event.currentTarget.value; event.currentTarget.value = mapName() ?? ""; if (name) void openMap(name); }}>
-            <option value="" disabled>Choose a level…</option>
-            <For each={maps()}>{name => <option value={name}>{name}</option>}</For>
+        <label class="mission-picker">Mission
+          <select aria-label="Mission" value={missionName()} disabled={!props.index() || !mapName() || !missionsForMap(props.index(),doc()?.sourceMap??mapName()).length}
+            onChange={(e) => { const value = e.currentTarget.value; e.currentTarget.value = missionName(); if (value) void openMap("", value); else if (mapName()) void openMap(mapName()!); }}>
+            <option value="">Map only</option>
+            <For each={missionsForMap(props.index(),doc()?.sourceMap??mapName())}>{mission => <option value={mission.id}>{mission.label}</option>}</For>
           </select>
         </label>
         <span class="spacer" />
@@ -621,14 +624,7 @@ export default function Editor3D(props: EditorProps) {
           onClick={() => viewport.gameCamera()}
           title="g"
         >
-          Game camera
-        </button>
-        <button
-          disabled={!doc()}
-          onClick={() => viewport.frameContent()}
-          title="f"
-        >
-          Frame
+          Reset view
         </button>
         <button
           disabled={history().past.length === 0}
@@ -647,6 +643,7 @@ export default function Editor3D(props: EditorProps) {
         <button class="primary-action" disabled={!dirty()} onClick={() => void save()} title="ctrl+s">
           Save{dirty() ? " *" : ""}
         </button>
+        <button disabled={!doc()} onClick={() => downloadMap(mapName()!,doc()!)}>Download</button>
         <button aria-expanded={libraryOpen() ? "true" : "false"} aria-controls="asset-browser" onClick={() => setLibraryOpen(!libraryOpen())}>Assets</button>
         <button aria-expanded={helpOpen() ? "true" : "false"} aria-controls="editor-help" onClick={() => setHelpOpen(!helpOpen())}>Help</button>
       </div>
@@ -682,10 +679,10 @@ export default function Editor3D(props: EditorProps) {
             if (entry && placement) void addAsset(entry, placement);
           }} >
           <Show when={!doc() && !mapLoadProgress()}>
-            <div class="viewport-welcome"><span class="eyebrow">LEVEL WORKSPACE</span>
-              <h2>{props.library() ? "Choose a level to begin" : "Build your world"}</h2>
-              <p>{props.library() ? (maps().length ? "Choose a level above, or create a new map to start from scratch." : "This library has no levels yet. Use New map to create your first scene.") : "Open a library to load your levels and reusable assets. Connect game data to preview missions."}</p>
-              <div class="welcome-steps"><span>01 · Open library</span><span>02 · Choose level</span><span>03 · Edit scene</span></div>
+            <div class="viewport-welcome"><span class="eyebrow">MAP WORKSPACE</span>
+              <h2>{props.library() ? "Choose a map to begin" : "Build your world"}</h2>
+              <p>{props.library() ? (maps().length ? "Choose a map above, or create a new map to start from scratch." : "This library has no maps yet. Use New map to create your first scene.") : "Loading maps and reusable assets… Game data is optional for mission previews."}</p>
+              <div class="welcome-steps"><span>01 · Choose a map or create one</span><span>02 · Place assets</span><span>03 · Save or download</span></div>
             </div>
           </Show>
           <Show when={helpOpen()}><div id="editor-help" class="viewport-help">
@@ -1004,7 +1001,7 @@ export default function Editor3D(props: EditorProps) {
         </aside>
       </div>
       <footer class="editor-footer">
-        <span class="document-state">{mapName() ?? "No level open"}{doc() ? (dirty() ? " · Unsaved changes" : " · Saved") : ""}</span>
+        <span class="document-state">{mapName() ?? "No map open"}{doc() ? (dirty() ? " · Unsaved changes" : " · Saved") : ""}</span>
         <span class="editor-status" role="status">{info()}</span>
         <span class="footer-hint">Drag to pan · Right-drag to orbit · Scroll to zoom</span>
       </footer>

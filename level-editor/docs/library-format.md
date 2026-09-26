@@ -11,14 +11,17 @@ library/
   scenes/<map>.level3d.json
   scenes/backups/...
   3d-assets/index.json
-  3d-assets/<asset-id>/asset.json
-  3d-assets/<asset-id>/model.glb
+  3d-assets/<source-map>/<asset-id>/asset.json
+  3d-assets/<source-map>/<asset-id>/model.glb
   3d-assets/blobs/<sha256>.bin
   3d-assets/blobs/<sha256>.png
   3d-assets/blobs/<sha256>.jpg
 ```
 
-The index identifies assets and their descriptors. A descriptor records local
+The index identifies assets and their descriptors, including their relative paths.
+Source-map directories use lowercase names (for example `derby/`); asset IDs remain
+stable. Consumers resolve the index paths instead of constructing paths from IDs.
+A descriptor records local
 collision footprints, stable part names, the model, and its pinned resources.
 `model_scene` selects a named reusable appearance in a multi-scene model.
 `state_variants` and `standalone_variants` retain their existing initial/applied
@@ -33,7 +36,7 @@ requires an external file. Models with `resources: []` are self-contained.
 
 `blobs/` holds only the worthwhile shared buffers and textures, such as the large
 reconstruction atlases. GLBs that use these files reference ordinary relative
-`../blobs/...` URIs; descriptors and saved references pin library-relative paths
+`../../blobs/...` URIs; descriptors and saved references pin library-relative paths
 and SHA-256 hashes. Packaging preserves texture encoding and accessor bytes.
 Optional preview models are derived browser thumbnails, never map geometry.
 
@@ -104,6 +107,12 @@ To repack an existing local catalog using the hybrid policy, run
 report and rendered comparisons, then run
 `python3 refinement/apply_canonical_library.py work/hybrid/plan.json --apply`.
 The packer also accepts an existing hybrid catalog and rediscovers sharing from
-embedded payloads. `--min-savings` sets the byte threshold. The refinement map
+embedded payloads, placing every asset under its source-map directory and updating
+map pins. `--min-savings` sets the byte threshold. The refinement map
 exporter runs this packing step automatically across its staged catalog;
 library-wide repacking can additionally find sharing across separate publications.
+
+The editor reads published files over HTTP, using `3d-assets/index.json` for the
+palette. Its static serving preparation generates `scenes/index.json` (an array
+of map JSON filenames) and excludes backups. Browser saves are OPFS copies, never
+writes to this library; **Download** exports the current map JSON for external use.
