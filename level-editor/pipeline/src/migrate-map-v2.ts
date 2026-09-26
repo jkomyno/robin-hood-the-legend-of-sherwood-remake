@@ -2,7 +2,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { parseStoredMap, serializeStoredMap } from "@rle/shared";
+import {
+  loadAssetMap,
+  parseStoredMap,
+  serializeStoredMap,
+  type ExternalAssetSource,
+  type Level3D,
+} from "@rle/shared";
 import { pinnedDescriptors, readStoredMap } from "./stored-map.ts";
 
 const [library, action] = process.argv.slice(2);
@@ -10,15 +16,31 @@ if (!library || (action !== undefined && action !== "--apply"))
   throw new Error("Usage: migrate-map-v2.ts <library> [--apply]");
 const scenes = path.join(library, "scenes");
 const names = (await fs.readdir(scenes)).filter((name) => name.endsWith(".rhlos-map.json")).sort();
+const comparable = (document: Level3D) => ({
+  ...document,
+  assetSources: document.assetSources
+    ? [...document.assetSources].sort((a, b) => a.id.localeCompare(b.id))
+    : undefined,
+});
 const changes: { file: string; before: string; after: string }[] = [];
 for (const name of names) {
   const file = path.join(scenes, name);
   const before = await fs.readFile(file, "utf8");
-  const document = await readStoredMap(file, library);
+  const raw = JSON.parse(before) as {
+    version?: number;
+    assetSources?: ExternalAssetSource[];
+  };
+  // This migration command alone reads the former separate appearance records.
+  const hasSeparateAppearances =
+    raw.version === 2 &&
+    raw.assetSources?.some((source) => /--state-(initial|applied)$/.test(source.id));
+  const document: Level3D = hasSeparateAppearances
+    ? loadAssetMap(raw, await pinnedDescriptors(library, raw.assetSources ?? []))
+    : await readStoredMap(file, library);
   const descriptors = await pinnedDescriptors(library, document.assetSources ?? []);
   const stored = serializeStoredMap(document, descriptors);
   const restored = parseStoredMap(stored, descriptors);
-  if (!isDeepStrictEqual(restored, document))
+  if (!isDeepStrictEqual(comparable(restored), comparable(document)))
     throw new Error(`Map changed during serialization: ${name}`);
   const after = JSON.stringify(stored, null, 2) + "\n";
   if (after !== before) changes.push({ file, before, after });
