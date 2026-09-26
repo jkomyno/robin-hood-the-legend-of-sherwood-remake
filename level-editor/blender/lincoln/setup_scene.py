@@ -72,7 +72,7 @@ def illustrate():
 
 def setup():
     import bpy
-    sys.path.insert(0, str(ROOT / 'level-editor/blender'))
+    sys.path.insert(0, str(ROOT / 'level-editor/refinement/blender'))
     from setup_map import setup_map
     from refinement_inventory import inventory
     baseline = OUT / 'baseline'
