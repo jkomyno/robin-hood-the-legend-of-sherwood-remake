@@ -61,30 +61,10 @@ Their baked source colors remain unchanged.
 
 ## Build and open
 
-From `level-editor/`, stage the supplemental Sherwood pack into a fresh directory:
-
-    blender --background work/sherwood-refinement/sherwood-refinement.blend --python blender/export-wychford-sherwood.py -- --output work/wychford/sherwood-pack
-    pnpm --filter pipeline exec node src/publish-model-assets.ts ../work/wychford/sherwood-pack ../library/3d-assets
-    pnpm --filter pipeline exec node src/compose-wychford.ts
-    pnpm --filter pipeline exec node src/populate-wychford.ts
-
-The generator writes Wychford.rhlos-map.json, its terrain GLB and scene metadata to
-library/scenes/. Reload the connected library and select **Wychford**. Pass
-`--overwrite` to regenerate an existing scene; this replaces local Wychford edits.
-
-To regenerate the ground with the configured `OPENROUTER_API_KEY`:
-
-    pnpm --filter pipeline exec node src/generate-wychford-ground.ts --generate --refine
-
-Inspect the resulting PNG before publishing it. The script prints its cache path;
-requests are cached to avoid paying for repeat generations. To publish a reviewed
-result without making another API request:
-
-    pnpm --filter pipeline exec node src/generate-wychford-ground.ts --apply --texture /path/to/terrain-5120.png
-
-Publication updates the embedded texture and its provenance, retaining the current
-geometry and population. Runtime art uses quality-95 JPEG with full chroma detail
-at the original 5120 resolution; the lossless generated patches stay in the cache.
+Wychford is already published to `library/scenes/Wychford.rhlos-map.json`. Reload
+the connected library and select **Wychford**. The one-shot generators that
+composed, populated and textured it (and published the supplemental Sherwood
+pack) have been removed; edit the published map in the editor instead.
 
 The source Blender workspace and published library models are local assets. The
 committed recipe, layout and ground materials reproduce the scene with that library.

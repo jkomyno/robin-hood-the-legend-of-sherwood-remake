@@ -119,9 +119,7 @@ selects the existing object ID convention, and an exceptional object ID appears
 as a part override. The placement array defines scene order; parts within a
 placement follow descriptor order, with copies last. Separate `--state-*` asset
 source records are no longer accepted in version 2 maps. Old version 1 maps
-remain readable and expand into the same editor model. Run
-`node pipeline/src/migrate-map-v2.ts library` to check
-an existing library, then add `--apply` to save version 2 files with backups.
+remain readable and expand into the same editor model.
 
 Mission-specific reveal triggers belong in per-object `patchBindings`. Each node
 stores only `hide`, `show`, or a `material` patch ID and state when that placement

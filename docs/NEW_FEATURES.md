@@ -1533,7 +1533,6 @@ The refinement exporter produces map JSON and `map-assets/` directly from Blende
 separate glTF resources. Individual palette assets may still be GLBs. Staging,
 material/ownership verification, browser audits, and guarded promotion consume the
 manifest and install referenced resources before replacing the map document.
-`pipeline/src/import-scene.ts` explicitly converts older published snapshots;
-`pipeline/migrate_scene_library.py` verifies and installs a staged conversion while
-retaining the old snapshots under `library/scenes/backups/`. No mesh quantization,
-texture recompression, or collision regrouping occurs during conversion.
+`pipeline/src/import-scene.ts` explicitly converts older published snapshots.
+No mesh quantization, texture recompression, or collision regrouping occurs during
+conversion.

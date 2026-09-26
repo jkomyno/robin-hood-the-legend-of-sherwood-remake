@@ -1,74 +1,12 @@
-# 3D reconstruction track
+# 3D reconstruction
 
-Goal: a full 3D reconstruction of a map with every building as a separate
-library asset, built from the pre-rendered map images with SAM 3 (instance
-masks) and SAM 3D Objects (mesh + texture per mask), both via fal.ai.
-York is the pilot: mostly free-standing, simple buildings.
+The level's 3D scene is rebuilt from the game's own sight-obstacle volumes,
+textured by reverse projection from the painted map (`volumes.ts`, below).
 
-## Pipeline (all in `pipeline/`)
-
-```
-pnpm detect      --map york                       # SAM 3 sweep -> work/york-scene/detections.json + overlay.png
-pnpm reconstruct --detections ../work/york-scene/detections.json [--only id,id] [--limit N] [--skip-existing] [--parallel 4]
-pnpm merge-detections --detections ../work/york-scene/detections.json --auto [--groups 012+013,040+041]  # -> detections-merged.json (blocks)
-pnpm reconstruct --detections ../work/york-scene/detections-merged.json
-pnpm reconstruct --map york --bbox x,y,w,h --prompt "..." --name "..."   # one ad-hoc building
-pnpm reconstruct --asset <id>                     # re-fit / re-run an existing asset (cached)
-pnpm scene       --map york --render              # library/scenes/york.scene.{json,glb} + work/york-scene/{compare,view-1,view-2}.png
-pnpm contact-sheet --map york                     # work/york-scene/contact.png: every fit, weakest first
-pnpm pose-diag   --map york                       # tilt table of all 24 pose readings over the map's assets
-```
-
-Every fal response and downloaded artifact is cached under `work/sam-cache/`
-(SAM 3) and `work/sam3d-cache/<hash>/` (SAM 3D: response.json, input.png,
-mask-N.png, object-N.glb/.ply), keyed by image + masks + params. Re-running
-any step with the same inputs is free.
-
-Costs: SAM 3 image-rle $0.005/request, SAM 3D objects $0.02/request. A
-York sweep is 24 tiles × 4 prompts ≈ $0.50; ~100 buildings ≈ $2.
-
-### 1. Detection (`detect.ts`)
-
-The Day map (roof-closer patches composited) is swept in 1024px tiles with
-512px overlap; each concept prompt (`house, tower, church, building`) runs on
-each tile with `max_masks: 32` (endpoint maximum). Masks are merged across
-tiles and prompts: complete instances beat ones truncated at a tile edge,
-higher score wins among duplicates (mask IoU > 0.5), masks ≥80% inside an
-already kept mask are dropped as fragments. `overlay.png` shows every kept
-mask numbered (suffix `T` = truncated at a tile edge) for review; edit
-`detections.json` by hand to drop or rename entries before reconstructing.
-
-### 1b. Blocks (`merge-detections.ts`)
-
-Houses built against each other are reconstructed better as one model than
-as separately masked halves. `--auto` unions masks whose outlines touch
-(≥ `--min-contact` px in a `--gap` px band, strongest contacts first, at most
-`--max-members` per block, bbox ≤ `--max-side`); `--groups` adds explicit
-blocks. Touching in the projection does not prove two buildings are
-attached (a house in front overlaps the one behind), so on York almost
-everything groups; the decision is left to the fit: a block asset carries
-`merged_from`, and scene assembly uses the block instead of its members only
-when its fit score (IoU + colour agreement) is at least the members' average.
-
-### 2. Reconstruction (`reconstruct.ts`)
-
-For each detection the 2D asset is written first (same cut-outs and clipped
-level metadata as the 2D track, via `asset-writer.ts`), then the map is
-cropped around the mask with ~35% context and sent with the mask to
-`fal-ai/sam-3/3d-objects` (`export_textured_glb: true`, seed 42). The
-returned local-frame GLB is stored as `library/<id>/model.glb` and its
-placement is fitted into the map's scene frame (`asset.json.model`).
-
-### 3. Scene assembly (`scene.ts`)
-
-All assets of the map with a `model` are placed by their fitted placement
-into `library/scenes/<map>.scene.json` (`SceneDoc`, our format) and merged
-into one Y-up `<map>.scene.glb` together with a ground quad textured with
-the downscaled map. `--render` rasterizes the assembled scene from the
-map's own camera next to the original (`work/<map>-scene/compare.png`) — the
-litmus test for placement — plus two orbit views (`view-1/2.png`). The app's
-3D mode views the GLB with an orthographic camera; "Map view" reproduces the
-original camera from the scene document.
+The earlier SAM 3D track (fal.ai SAM 3 detection plus SAM 3D Objects meshes
+per building, piloted on York) is retired and its tools (`detect`,
+`reconstruct`, `merge-detections`, `scene`, `contact-sheet`, `pose-diag`) have
+been removed; see git history before 4482f1f36 if it is ever needed again.
 
 ## Scene frame and camera (`shared/src/scene.ts`)
 
@@ -86,52 +24,6 @@ keeps the fit as a sanity check; every map so far matches it.
 Scene frame: right-handed, Z up, map-pixel units. `X = map x`,
 `Y = -map y / sin θ` (away from the camera), `Z = z / cos θ`. GLB export
 rotates the whole scene to glTF Y-up.
-
-## Fitting a SAM 3D model (`reconstruct.ts: fitPlacement`)
-
-SAM 3D returns the mesh in a canonical local frame (Y up, upright) plus a
-local→camera pose (quaternion, translation, uniform scale). The endpoint
-documents the quaternion as `[x, y, z, w]` and says nothing about the camera
-frame; the model code is pytorch3d-based. The reading that leaves buildings
-upright is hardcoded as `CANONICAL_INTERPRETATION`: quaternion `[w, x, y, z]`,
-pytorch3d camera frame (x left, y up, z forward), and the model's local frame
-Z-up relative to the exported GLB (the reference code's `(x, y, z) → (-x, z, y)`
-remap). Verified on the York thatched hut: 4° residual tilt, every other of
-the 24 readings ≥ 24°. `--diag` tabulates all readings by pre-snap tilt and
-silhouette IoU for checking a new map or model version.
-
-The model assumes a perspective camera the painted map does not have, so
-translation and absolute scale are discarded and the pose only supplies the
-orientation:
-
-1. Gravity snap: the residual tilt of the model's local up axis is removed
-   (buildings stand upright); tilts > 45° are warned about.
-2. Yaw search: the pose's yaw is wrong by 90°/180° on about a third of the
-   buildings, so yaw offsets over a full turn (10° steps, then ±6° refinement)
-   are each placed as below and scored by silhouette IoU plus colour
-   agreement between an unlit map-camera render of the textured model and
-   the map crop (`appearance`, 0..1). The texture is baked from the crop, so
-   only the right yaw reproduces it.
-3. Uniform scale so the projected bbox area matches the mask bbox
-   (`anisotropy` in the log is how far the x/y ratios disagree).
-4. Lowest point on the ground plane (Z = 0), projected bbox aligned to the
-   mask bbox → scene position.
-5. Silhouette IoU of the placed model against the mask (`fit_iou`);
-   < 0.5 is flagged and `scene.ts --min-iou` drops such assets. Low IoU
-   with a good-looking model almost always means a partial or merged
-   detection mask, not a bad placement.
-
-`work/<id>/fit.png` shows crop | model over the crop from the map camera |
-four orbit views.
-
-## York status (2026-09-02)
-
-120 detections; 42 reconstructed before the fal balance ran out (HTTP 403
-"Exhausted balance"), 78 pending — `pnpm reconstruct --detections
-../work/york-scene/detections.json --skip-existing` resumes after a top-up.
-Of the 42, 28 pass the IoU 0.5 gate; the weak fits are mostly masks that
-include neighbours, truncated map-edge buildings, and the two castle-wall
-segments the sweep picked up (b024, b032).
 
 ## Volumes track: the game's own geometry (`volumes.ts`)
 
@@ -259,18 +151,3 @@ vertical cliffs; the procedural fill repeats and mirrors, it does not
 invent — see `texture-synthesis-survey.md` (quilting, graph cut, PatchMatch,
 Wang tiles) and `ai-texture-completion.md` (inpainting models, view-based
 texturing) for the next steps.
-
-## Known gaps / next
-
-- Lean-tos and annexes are often outside the SAM 3 mask and thus missing
-  from the mesh; box/point prompts or a second mask per building would fix
-  that.
-- Translation and absolute scale from SAM 3D are discarded; relative scale
-  between buildings comes purely from the mask bboxes, so a building
-  partially hidden behind another is fitted too small.
-- Elevated buildings (on walls, platforms) are placed with their lowest
-  point on Z = 0; the sight-obstacle `z_bottom` could lift them.
-- Walls, bridges and the river are not reconstructed; the ground quad shows
-  the flat map artwork instead.
-- The app's 3D mode (`Scene3D.tsx`) only views `library/scenes/*.scene.glb`;
-  no per-building editing yet.

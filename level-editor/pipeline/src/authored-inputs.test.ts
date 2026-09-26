@@ -3,33 +3,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import sharp from "sharp";
-import { loadSwatch } from "./terrain.ts";
 import { loadFxSprite } from "./fx.ts";
 import { readAssetDescriptor, readLibraryIndex } from "./library.ts";
 import { readTerrainSpec } from "./inputs.ts";
-import { parseDetections } from "./reconstruct.ts";
 import { parseTerrainSpec, parseAssetDescriptor } from "@rle/shared";
-
-test("optional swatches reject broken files and read errors, and decode RGB", async (t) => {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "swatch-input-"));
-  t.after(() => fs.rm(dir, { recursive: true, force: true }));
-  assert.equal(await loadSwatch("grass", dir), null);
-  await fs.mkdir(path.join(dir, "grass"));
-  const file = path.join(dir, "grass", "day.png");
-  await fs.writeFile(file, "broken image");
-  await assert.rejects(loadSwatch("grass", dir), /cannot decode terrain swatch/);
-  await fs.rm(file);
-  await fs.mkdir(file);
-  await assert.rejects(loadSwatch("grass", dir), /cannot read image/);
-  await fs.rmdir(file);
-  await sharp({ create: { width: 2, height: 3, channels: 3, background: "white" } })
-    .greyscale()
-    .png()
-    .toFile(file);
-  const swatch = await loadSwatch("grass", dir);
-  assert.equal(swatch?.data.length, 2 * 3 * 3);
-});
 
 test("FX absence is not cached and malformed or unreadable manifests fail", async (t) => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "fx-input-"));
@@ -96,18 +73,6 @@ test("authored validators preserve extras and reject invalid transform input", (
   ])
     assert.throws(() => parseTerrainSpec(value));
   assert.throws(() => parseAssetDescriptor({ id: "asset", source: {} }));
-  assert.throws(() => parseDetections({ map: "York", apply_patches: true, detections: [{}] }));
-  const detection = {
-    id: "house",
-    name: "House",
-    prompt: "house",
-    score: null,
-    bbox: [0, 0, 1, 1],
-    mask: "mask.png",
-  };
-  const doc = { map: "York", apply_patches: false, detections: [detection], future: 1 };
-  assert.equal(parseDetections(doc), doc);
-  assert.throws(() => parseDetections({ ...doc, detections: [detection, detection] }), /duplicate/);
 });
 
 test("asset validation accepts real transform shapes without stripping unknown metadata", () => {
