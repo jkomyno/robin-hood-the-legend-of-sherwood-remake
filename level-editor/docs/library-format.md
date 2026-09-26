@@ -112,7 +112,7 @@ can place its geometry.
 
 Only changed parts appear in a placement's `parts` object, keyed by descriptor
 part node. Each entry stores fields that differ from the descriptor defaults,
-including patch bindings or an edited transform or collision shape. `removed`
+including an edited transform or collision shape. `removed`
 lists deleted descriptor parts; `copies` describes extra instances of a part.
 Mixed-asset placements use full `asset:<asset-id>:<part-node>` keys. `idMode`
 selects the existing object ID convention, and an exceptional object ID appears
@@ -121,10 +121,13 @@ placement follow descriptor order, with copies last. Separate `--state-*` asset
 source records are no longer accepted in version 2 maps. Old version 1 maps
 remain readable and expand into the same editor model.
 
-Mission-specific reveal triggers belong in per-object `patchBindings`. Each node
-stores only `hide`, `show`, or a `material` patch ID and state when that placement
-needs them. The editor applies these rules to the placed clone. Asset component
-roles and publication evidence stay with their source data. The map keeps
+Placement `patches` maps asset-local appearance IDs to mission patch IDs. For
+example, `{ "derby-keep-main-hall": { "appearance-1": "patch-000" } }` binds
+all nodes controlled by that asset appearance without repeating their names.
+For static initial/applied asset scenes, the local `state` slot controls parts
+unique to each endpoint; shared parts remain visible. The editor applies the
+mapping to placed clones. Asset component roles and publication evidence stay
+with their source data. The map keeps
 only reveal patch IDs and names in `sceneMetadata.reveal.patches` for editor labels;
 game patch states and review frames stay in their source manifests. The map
 does not need export origins for editing or rendering; publication reads those

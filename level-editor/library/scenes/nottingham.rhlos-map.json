@@ -1,0 +1,2822 @@
+{
+  "map": "nottingham",
+  "size": [
+    2304,
+    3520
+  ],
+  "camera": {
+    "kind": "oblique-orthographic",
+    "elevation_deg": 35
+  },
+  "provenance": {
+    "source_sha256": "4cc13900f93aa140567181ef99afcc10318b66d04617a5e6dee5da9c55a6cdf6"
+  },
+  "sourceMap": "nottingham",
+  "sceneAssets": [
+    {
+      "id": "nottingham-terrain",
+      "role": "ground",
+      "model": "3d-assets/nottingham/nottingham-terrain/model.glb",
+      "model_sha256": "807037fefeee1e9cc3b22defab6215efba1c4d410a695cbe2c75cad3d4215c41",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/36500f3b65a04f9ed68c379f8a37b5422f7a3db08b4b72000c0a7326006253d8.png",
+          "sha256": "36500f3b65a04f9ed68c379f8a37b5422f7a3db08b4b72000c0a7326006253d8"
+        }
+      ],
+      "model_scene": "default",
+      "descriptor": "3d-assets/nottingham/nottingham-terrain/asset.json",
+      "descriptor_sha256": "7f4aa6a9858c54e56e822c7b2926c743184f18df3cca114c4a5fb1f807749b68"
+    }
+  ],
+  "assetSources": [
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-approach-ramp/model.glb",
+      "model_sha256": "2579dea40fc6e56b5479a272e946f1e8c1e574c4387874a334af0ba1ca53a545",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-approach-ramp/asset.json",
+      "descriptor_sha256": "0a0109b4de4942846f8b27fc6aa0b888c55c3bf6de02e5ab0d3ef61c32948206",
+      "id": "nottingham-castle-approach-ramp",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-east-courtyard-wall/model.glb",
+      "model_sha256": "fa485f25f7c20cb83e1563ffd5a159f67471cd32ad6da7d3813c6a3197ecc70e",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-east-courtyard-wall/asset.json",
+      "descriptor_sha256": "f161d08592befb1198396c4a9bd64aa12ccfccb97774a025887d8e502e1fd546",
+      "id": "nottingham-castle-east-courtyard-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-east-round-tower/model.glb",
+      "model_sha256": "93f4bbe1d9106590c222700d8b536d3a50b78aa7346b727fb1b593193f3a6e37",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-east-round-tower/asset.json",
+      "descriptor_sha256": "58ea38db588528aab59f434e0818a118662b2e380fce41a466e86ed5526767d3",
+      "id": "nottingham-castle-east-round-tower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-yard-mission-props/model.glb",
+      "model_sha256": "96875794e91717187950f7f4cbbc11c864e6d9d971b817792aa17d35ead03d0e",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-yard-mission-props/asset.json",
+      "descriptor_sha256": "ea0e729ecd78c12980374f551e14de2d29a80057d4cddea11d3af208e42c7a78",
+      "id": "nottingham-castle-yard-mission-props",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-west-courtyard-wall/model.glb",
+      "model_sha256": "886fb81d680ea111eaf51c3bf52faf4f8192df8fa3b97a677943e6d9d7427298",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-west-courtyard-wall/asset.json",
+      "descriptor_sha256": "78f6ad0b7144f6b76f83de6ee5aab1d1158bf5fc46b3e603b66cb2af8b4e3139",
+      "id": "nottingham-castle-west-courtyard-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-courtyard-shelter/model.glb",
+      "model_sha256": "82ce1feadae0b66300af5694ed719f0a08fd15257b1ff8188d1ce18297815dee",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-courtyard-shelter/asset.json",
+      "descriptor_sha256": "5be22a97e57ef93f305e520ffdb5976561b725d55cc388c2dbdb7c111d223794",
+      "id": "nottingham-castle-courtyard-shelter",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-upper-stair/model.glb",
+      "model_sha256": "a7bea4b21f9c7c550a4a0f15c7def319e577aa5cfff22a6fc8c5f31389b299ba",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-upper-stair/asset.json",
+      "descriptor_sha256": "b3c778c86c5bb0e636edf6240a8193a4720efeb665c5a9da4338fe3fbbea312c",
+      "id": "nottingham-castle-upper-stair",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-upper-wall/model.glb",
+      "model_sha256": "79e70d5339eced7fdc23387e7fbd4de257383a72670a3d51d9ba6f0be3bf0bf0",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-upper-wall/asset.json",
+      "descriptor_sha256": "e115d30d309bc26e91b2788cc540cc5c584923fa25bda6bd98aa4d3fb9f1da9a",
+      "id": "nottingham-castle-upper-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-west-annex/model.glb",
+      "model_sha256": "510fb9a1229f0ec789c27e564d3abda75a0ce6b45e06a0a0aec9c73d12a89db8",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-west-annex/asset.json",
+      "descriptor_sha256": "93c329455007973d3a39af966a14bf8cf594a6bf0442548ac7a28a60a1f42766",
+      "id": "nottingham-castle-west-annex",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-west-stair/model.glb",
+      "model_sha256": "9d613e010802b14ebba8ff659cf21e045d18b23363000a40d3b60466f6f0de95",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-west-stair/asset.json",
+      "descriptor_sha256": "32b3380bfe41de9d6c3d61e172f560710f597ec5fa1378398e8aeca893094486",
+      "id": "nottingham-castle-west-stair",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-northwest-roof-return/model.glb",
+      "model_sha256": "6ff090fc4a54c637b0683357cbca1340626f601ba4075b2a23c2a66d0d875f4c",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-northwest-roof-return/asset.json",
+      "descriptor_sha256": "2a94cbdf2c7989c17332b316a322dd455b1f4134e3c14144ec8419eb1dd0da3a",
+      "id": "nottingham-northwest-roof-return",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-east-attached-house/model.glb",
+      "model_sha256": "550b3efe3e7eaaac9d59f8b6948943dfe9273d3a697dcb933ac48d19ec788c91",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-east-attached-house/asset.json",
+      "descriptor_sha256": "c73d209ebcc0b81117f9c573bcfceb7a78d3892c030194727b01f1517d431f55",
+      "id": "nottingham-castle-east-attached-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-entry-steps/model.glb",
+      "model_sha256": "4d952dc22efacc733f1e1b8ccf76e27eaf9ed4148315976f6e29177d90d6f8f1",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-entry-steps/asset.json",
+      "descriptor_sha256": "553f38c5a052977e49d972c990b8cce213f5d799e307a2a05665e22277cc2f0f",
+      "id": "nottingham-castle-entry-steps",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-gate-arch/model.glb",
+      "model_sha256": "802aaab88345a1ea1f9485bec327e6a95474a1e1c45c5a7073a04ebb587e24dd",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-gate-arch/asset.json",
+      "descriptor_sha256": "2ba150a638db9667a4c30273aa4b605565eec4d01e566002cc602919508e5303",
+      "id": "nottingham-castle-gate-arch",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-gate-east-tower/model.glb",
+      "model_sha256": "49875bdff69279f2f56ad3db8cf1d54d227a641655a90d86904507f77658a8f3",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-gate-east-tower/asset.json",
+      "descriptor_sha256": "8c3e3ad0a8138ed644f7dba3932a1b0c90d28ff59d0d64c668454489e330b9cd",
+      "id": "nottingham-castle-gate-east-tower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-gate-west-tower/model.glb",
+      "model_sha256": "a0165a5594b06316edf6ac49827a89871360a391484f88704926e64b4a5d0196",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-gate-west-tower/asset.json",
+      "descriptor_sha256": "488b8f518085b5609c20a5510dd85d28b95d7ee8f43adfc6f35f24cfcf08adf2",
+      "id": "nottingham-castle-gate-west-tower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-northeast-spire/model.glb",
+      "model_sha256": "ab3daee6d02552c4ce6614eb2a7fb6f09f1c8503363f2aa403a974ac0e79e72d",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-northeast-spire/asset.json",
+      "descriptor_sha256": "1cac1149bb790a8080d8360ec01195ea88c7b4b14a615fb48b01e2fd3166e4e1",
+      "id": "nottingham-castle-northeast-spire",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-northwest-spire/model.glb",
+      "model_sha256": "89d1ace7b19c34d9683712b4f2d22ab216a6671c18179ae734f9343069633692",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-northwest-spire/asset.json",
+      "descriptor_sha256": "5ade3011c446599c8d61f3af4169437b839bac27307aa58102bbcacac061ffbd",
+      "id": "nottingham-castle-northwest-spire",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-southeast-spire/model.glb",
+      "model_sha256": "47d802f46090de441049f066556946194c778a0d8eac8be5f30bd30cf347d202",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-southeast-spire/asset.json",
+      "descriptor_sha256": "699f78ab16473a0f0aa5d24271f42019051413d94f355cc02f15f94eb307b86d",
+      "id": "nottingham-castle-southeast-spire",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-southwest-spire/model.glb",
+      "model_sha256": "21d634ddef1637e6d71314b4326f4bdabe104c2362d3988293b5e41e4c7b4bc8",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-southwest-spire/asset.json",
+      "descriptor_sha256": "7789b0b0e5d78608a14b2e9487e37351eeedaeb468d4943a6080be39f20ad76c",
+      "id": "nottingham-castle-southwest-spire",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-watchtower/model.glb",
+      "model_sha256": "b0b32d94def60af0f66aa6faf3c1a2505b2b9f21adb4cc17f01384a047c774d8",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-watchtower/asset.json",
+      "descriptor_sha256": "f2354157eae820c0f32543483088a9fe7ed0bc635d098f6260a467c37e0a9d24",
+      "id": "nottingham-castle-watchtower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-main-hall/model.glb",
+      "model_sha256": "ca39d2ceac313badf7e7e4980e390e48e33d69a017ce56fa6db2348f25c58709",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-main-hall/asset.json",
+      "descriptor_sha256": "755e51ab7778392d271012f50ecc40fcdd8f6beccbfd372a9118f81ccfd1bdd1",
+      "id": "nottingham-castle-main-hall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-courtyard-ground/model.glb",
+      "model_sha256": "e512fca1003420f5501feebde7dbf65bd169b2978374bfbf628c4748bde5843a",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-courtyard-ground/asset.json",
+      "descriptor_sha256": "99c974c6ddd481568415342ffb319bf77d97fde16047f6b48f66a036f48561c6",
+      "id": "nottingham-castle-courtyard-ground",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-ramp-road-props/model.glb",
+      "model_sha256": "23fdfbdafb5c60ad84d01a6ab570f5314452f11d06c6135cfde30c5eeecb4e76",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-ramp-road-props/asset.json",
+      "descriptor_sha256": "92b63ffae992a320dadb6a65adcc050c728cef39cd354fe2725da79e1bdc9593",
+      "id": "nottingham-ramp-road-props",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-ramp-house/model.glb",
+      "model_sha256": "1b04ef1b6a4b4e1a376674d22ae704fcdd9f4aeb2805e603488a205c7c304217",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-ramp-house/asset.json",
+      "descriptor_sha256": "80f1f71ad19cfa2c2de1a1d1fd2f73f9031bdc44d0751bb6e4d9cd0866663b58",
+      "id": "nottingham-castle-ramp-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-west-conical-tower/model.glb",
+      "model_sha256": "10c8cce6eb4c2899e6e67b09b4e4a130689c317c14279d34884fdcf6ef08c38f",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-west-conical-tower/asset.json",
+      "descriptor_sha256": "3e25265f4ab41eb651a3b3ad17e597a5509dd6e9b5656f53b6bc8d333a3e468d",
+      "id": "nottingham-castle-west-conical-tower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-west-rocks/model.glb",
+      "model_sha256": "eac2ffd25406f5f67cba10fe0117afc281fefb82028b364a10a2c6cecc10ce3d",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-west-rocks/asset.json",
+      "descriptor_sha256": "0f2e40573f883bde599a62e1673871f83807258d159ffec8478af74626060086",
+      "id": "nottingham-castle-west-rocks",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-castle-west-stair-tower/model.glb",
+      "model_sha256": "ab0afa6a98b6d2bf8ce3215b821c7e99492ce827129abd1e942a5ba9660c3e32",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-castle-west-stair-tower/asset.json",
+      "descriptor_sha256": "f3a11017718f197816486ee67cb7f50edd64b33c5355bf14ba9860aca1582478",
+      "id": "nottingham-castle-west-stair-tower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-church/model.glb",
+      "model_sha256": "347ff00e6e7060840a86a7e3a92003b0a292769265df687daa485d6add8cd56e",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-church/asset.json",
+      "descriptor_sha256": "ae314813cbb5df1a4512bd84b09686f01ffb7eb047191dca152ce91cb7eb4e00",
+      "id": "nottingham-church",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-church-north-house/model.glb",
+      "model_sha256": "802d1cafd3741e1f039e813b7b353e3bfb306abedff314fc14ccbd867d1c901b",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-church-north-house/asset.json",
+      "descriptor_sha256": "2d6df5d7277d54c62c5c73e8960bf4d1a61d9c1cb3cd64c4c78e7eb1d19c4252",
+      "id": "nottingham-church-north-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-church-west-house/model.glb",
+      "model_sha256": "60fa41aef05dc693ee26d16dc0edfd481629fc2661c2160985c3b4189d7f29fb",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-church-west-house/asset.json",
+      "descriptor_sha256": "703fba5d62e60837e3ce0f088d2ac30770b11848e01206850568420113806087",
+      "id": "nottingham-church-west-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-churchyard-wall/model.glb",
+      "model_sha256": "1dfb8cf1c114dd97877ff2f0094158178afb242a8ae5e0cd4349ee88c6844bab",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-churchyard-wall/asset.json",
+      "descriptor_sha256": "fda226854861c1655e2dd287b98b7dad268f94daf797c0a897e9d634e6dcacc7",
+      "id": "nottingham-churchyard-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-churchyard-graves/model.glb",
+      "model_sha256": "a9472b19a3074079e0fa951836a44246a122e1be73fe2e416a9fe342b68610c6",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-churchyard-graves/asset.json",
+      "descriptor_sha256": "2bc29705d44c20fbec4e8e65666e2b6b0c266aaadd0580d2e3061c05e25fa8de",
+      "id": "nottingham-churchyard-graves",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-east-blue-house/model.glb",
+      "model_sha256": "dc263878bef6999b57220f21ad549ac0104ca629ed1d88dfe2a41854f8632eeb",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-east-blue-house/asset.json",
+      "descriptor_sha256": "9c40bc01b04563bc880ae7b69ba6a3fa35d3b094ed5a019fb73aa40b3f619610",
+      "id": "nottingham-east-blue-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-east-boarded-house/model.glb",
+      "model_sha256": "33e9c73e54bef752509f75c4ab74654726b418460fc8a76e597a00ff61b4f2e4",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-east-boarded-house/asset.json",
+      "descriptor_sha256": "60d654cfa575f9315a10574d430c705ca8cfe1a7edfb7272a176a28b54e08cae",
+      "id": "nottingham-east-boarded-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-east-front-fence/model.glb",
+      "model_sha256": "258d2a2b15935f1a9a20b549828c8b3fc8aa1ea22f9acb068d1ad0d991fa097c",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-east-front-fence/asset.json",
+      "descriptor_sha256": "d9e951095ad20288ee1551c3739bd4b3ee83e186a224441fa3002b3741c901c0",
+      "id": "nottingham-village-east-front-fence",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-east-yard-props/model.glb",
+      "model_sha256": "7873da491b2c021c3a50f79c21f541faef540d6effc08ec533a05f7fe2bf9a3a",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-east-yard-props/asset.json",
+      "descriptor_sha256": "70c473937b4f79b041e7e09a5ea9032ce7c7895a20e7a167732ca4621d79d54f",
+      "id": "nottingham-village-east-yard-props",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-east-yard-fence/model.glb",
+      "model_sha256": "4ba0b6a304980b9e6161cf6dbcddf1ab6267c168b22b1542a432c6e6d2e7845f",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-east-yard-fence/asset.json",
+      "descriptor_sha256": "7919bd9d356e669365a46466d1e5924709d5d7769b80ffe329210a12fc222ae1",
+      "id": "nottingham-village-east-yard-fence",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-east-garden-wall/model.glb",
+      "model_sha256": "cc1f2956875672a33cc96b99506ed9daea992b6f20c63b91cfa364d0d6512fb7",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-east-garden-wall/asset.json",
+      "descriptor_sha256": "adb6f3fd778c314f74f0c035b7a3dd308cf8266e238e896bdc33a085eef22609",
+      "id": "nottingham-east-garden-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-east-round-house/model.glb",
+      "model_sha256": "d26e13737d5f1b9ef5aa44a9afe60d4fdb7c92cf0e70fa149080f92cad4cb791",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-east-round-house/asset.json",
+      "descriptor_sha256": "291a1aa1e14da56e630aecd89e24dc95b78b8ce01372b750d0f9b04b8fa945ad",
+      "id": "nottingham-east-round-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-market-front-brown/model.glb",
+      "model_sha256": "fe28b9b8243a5c043d7b55eb8dfb3ba00c39c219e2ea22cea6fee9d6c5df9c7f",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-market-front-brown/asset.json",
+      "descriptor_sha256": "d862787b27f493a15bf0480b614dfd482f4c58e21241b16df76bae9645aa23df",
+      "id": "nottingham-market-front-brown",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-market-front-east-green/model.glb",
+      "model_sha256": "1180f1e0010a90fcbb531ef9f76c5a0bcbe0bc187a66ea5511aa9f57f291d607",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-market-front-east-green/asset.json",
+      "descriptor_sha256": "a144d6d5e04fd4e0530c7d9515dd9ab2baa7c672711e17f429822ab8b0dc3d6d",
+      "id": "nottingham-market-front-east-green",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-market-front-red/model.glb",
+      "model_sha256": "4a7bd8c38f34b966961195204c72c7a1dfb9e887d3cb5e061c163885411c442d",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-market-front-red/asset.json",
+      "descriptor_sha256": "ff86531792a1f812e091093a6a7afc7801c5cb29bfcb37e8316ae74fa6148cb9",
+      "id": "nottingham-market-front-red",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-market-front-west-green/model.glb",
+      "model_sha256": "b9b522b5d5ed62a7ece96bd307282b53be2134917c36e9d0f9e9019850d190af",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-market-front-west-green/asset.json",
+      "descriptor_sha256": "ec0608aa028517ec175cbff0d85173dc1df349974bfd2c6340236897f5b22666",
+      "id": "nottingham-market-front-west-green",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-market-rear-central-tiled/model.glb",
+      "model_sha256": "12b4bafaaf1857457e8f78ca0ed06dcaccc110e55255424cb8d50c6c06d0c6ba",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-market-rear-central-tiled/asset.json",
+      "descriptor_sha256": "6860be1a18578f9ebeb62e69fc7d4600753a75a17939b562a96befcee0356860",
+      "id": "nottingham-market-rear-central-tiled",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-market-rear-east-lean-roof/model.glb",
+      "model_sha256": "1cad2f04b443730559c4ffbf5796792d65db3b0ec2f2a0b78d8dbf50040fb681",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-market-rear-east-lean-roof/asset.json",
+      "descriptor_sha256": "ec2dd11d78b249517ba294ef8161cad620f86956e93251f81081045ad428aa9e",
+      "id": "nottingham-market-rear-east-lean-roof",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-market-rear-west-shingle/model.glb",
+      "model_sha256": "c09dedb86b62565f30823e7ea2e647a657fa4b3c1896c7cbc38100ccfcb7a65b",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-market-rear-west-shingle/asset.json",
+      "descriptor_sha256": "923a09d4927f8fb6d90f7a8efc4aefc86a1a5520c9dbdb3bef7bc7636a8087f6",
+      "id": "nottingham-market-rear-west-shingle",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-northeast-timber-house/model.glb",
+      "model_sha256": "73688ecc2f828914166092653aa3ab4208d64591421c88bec81851b98df684d9",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-northeast-timber-house/asset.json",
+      "descriptor_sha256": "eb9f30ec9ea7b7377aa322c035e26916bc5cb1bcf0c8d293b4d5cc337a05bbf3",
+      "id": "nottingham-northeast-timber-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-northeast-round-tower/model.glb",
+      "model_sha256": "5706c4823eb6d7d4978e1944b49845cfce7c014dc73a0dd6a2bb44e7f76aac99",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-northeast-round-tower/asset.json",
+      "descriptor_sha256": "786884d90b9f4a0268ae47d35c0f80f6e303235fb4a791aa9d0b09b523855b8c",
+      "id": "nottingham-northeast-round-tower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-forest-wood-stack/model.glb",
+      "model_sha256": "743b14eb1c6a6746e3b639d9689f2c252881643e6e03e2aaaff2b283421ac7bd",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-forest-wood-stack/asset.json",
+      "descriptor_sha256": "7a59834a505d76452ae0f14bae4377388aa7b1a93767d0c3c3f5208f9f3cd7eb",
+      "id": "nottingham-forest-wood-stack",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-north-curtain-wall/model.glb",
+      "model_sha256": "8b57af7cf8235e6c4a008ca4635f07fee3bc53df1423e7f9dbfbcbba0ad687da",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-north-curtain-wall/asset.json",
+      "descriptor_sha256": "33ece49b09817a0244fdd8d96e70655dfcc4f021174e7bcd712709106bccdae9",
+      "id": "nottingham-north-curtain-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-north-dormer-house/model.glb",
+      "model_sha256": "96cd7559bb29fe6a028bf8abfd059aa74f91d0737eb37b4ef655452fe4fec918",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-north-dormer-house/asset.json",
+      "descriptor_sha256": "89e1928d387b181ec509f289115524617da53dd572d1a014e61fbe471448aa28",
+      "id": "nottingham-north-dormer-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-forest-east-stump/model.glb",
+      "model_sha256": "dc964d11d42f098b24d613597b48fddf4830592cf7330beb44085e58827011e8",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-forest-east-stump/asset.json",
+      "descriptor_sha256": "50bfcc17dbd76d6c988b531d8526adcd7cdd96e309470e77db407fbe15ee449a",
+      "id": "nottingham-forest-east-stump",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-forest-rock-outcrop/model.glb",
+      "model_sha256": "18f60615e6e0efbc07b75230277f12734ea3ef70f4fe85fa11ab0eaf290253d4",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-forest-rock-outcrop/asset.json",
+      "descriptor_sha256": "3e82420ce1b7e766684e6d4f3cfee7207255afe5368fbdf9293617285a6b5d15",
+      "id": "nottingham-forest-rock-outcrop",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-north-gate-gallery/model.glb",
+      "model_sha256": "03d672656e9944598c3f7f9dc3b4ec3cddf476a4dafea78afa5dc2c4fbcad777",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-north-gate-gallery/asset.json",
+      "descriptor_sha256": "46bdcc148efe26ddc3881bbd19fa864fbea7213030c6965cc60204e06d404c2b",
+      "id": "nottingham-north-gate-gallery",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-north-stone-house/model.glb",
+      "model_sha256": "2c98374ffed78b104d15b19a1b1e0957fffe2c49a6a1a72ad0ef22ae9c1ef4ca",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-north-stone-house/asset.json",
+      "descriptor_sha256": "6ed6b6634b9be3991f503ed55018df07f1fbbf60122a8315f7735ad2799c4947",
+      "id": "nottingham-north-stone-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-north-gate-tower/model.glb",
+      "model_sha256": "17387fda62f600d60fecddb014cb57dfb8c588b546315342e8ad0691b97143f4",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-north-gate-tower/asset.json",
+      "descriptor_sha256": "4f5a753bef303083d05fb49d13f47cd10b65a5d4d8def341f8bcfb3c3950707f",
+      "id": "nottingham-north-gate-tower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-north-street-roof-edge-slab/model.glb",
+      "model_sha256": "9a6fef90c9ab4fb52d57b249bcecb6c4606d2ce8e1f9ccaecffe681493861031",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-north-street-roof-edge-slab/asset.json",
+      "descriptor_sha256": "742d371aa655e9dd741ba41cf1bc02db864ee95a46fcd58d50eadc1f03f1b3af",
+      "id": "nottingham-north-street-roof-edge-slab",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-forest-tall-trunk/model.glb",
+      "model_sha256": "efbf7241483068c97e5a59f71e53d5989a89940bc93d25fb4fb02e5d2ed47662",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-forest-tall-trunk/asset.json",
+      "descriptor_sha256": "b40217368f2a81b0fc2b5a2838b05e0bde616c05cb41e5151674320a36f5cf23",
+      "id": "nottingham-forest-tall-trunk",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-forest-bundled-tree/model.glb",
+      "model_sha256": "8a323e1da8481c499eb7980ca5be55f93c78d46492ae00b3e1d1c98c82df72cb",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-forest-bundled-tree/asset.json",
+      "descriptor_sha256": "ba297b229eb63264e8d87de87e9cc5baf4964e610bd3312220227243d95d136e",
+      "id": "nottingham-forest-bundled-tree",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-north-wall-stair/model.glb",
+      "model_sha256": "d8fa182db82ead5424ee1bf16cb7085106bd0f3462f221bd3ec5319bc87ae1b6",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-north-wall-stair/asset.json",
+      "descriptor_sha256": "10a3fd3145a0a357837b3140782c4bb71382fd9359c22185cba27451512b85f3",
+      "id": "nottingham-north-wall-stair",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-northwest-timber-house/model.glb",
+      "model_sha256": "257e561e0b876cbe058d9f6b534914ce78f1ef7024bd0011c09e9ded8dd3695b",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-northwest-timber-house/asset.json",
+      "descriptor_sha256": "a2a3843455d62b18660af16bc1ee039c3f716bbb3c7be20716e52baf91e95c47",
+      "id": "nottingham-northwest-timber-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-forest-west-stump/model.glb",
+      "model_sha256": "724c238d062d7ce568b38f9e7502677325fba8914ea0312c82da1096c75e73fe",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-forest-west-stump/asset.json",
+      "descriptor_sha256": "2de4615ea9d02e0070f483d4acfe4d0c25a52eb8c5692860b2d8bf9225f8088d",
+      "id": "nottingham-forest-west-stump",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-northwest-curtain-wall/model.glb",
+      "model_sha256": "5bb2b88f59653ab60908feba3d4ae96d45f00b171aa5b255b6075f0eaad2fa72",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-northwest-curtain-wall/asset.json",
+      "descriptor_sha256": "647b5b83b29e248101069cf94514f0e690b7f8db74b61b8c5f7f72dc0626c863",
+      "id": "nottingham-northwest-curtain-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-northwest-round-tower/model.glb",
+      "model_sha256": "b7de3bef06b0bedc26c8a8a00be6da43eaa534168fc179f0ace89eee67bdfa0f",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-northwest-round-tower/asset.json",
+      "descriptor_sha256": "9889bba1a19deb521b792cf7fbb35beca268709e64bc5261d9a9bfd51c4eb9ad",
+      "id": "nottingham-northwest-round-tower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southeast-road-props/model.glb",
+      "model_sha256": "a540801e2f71e3bfc6fc541e13c2f505177bc60571d15d04e74d9504828ed719",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southeast-road-props/asset.json",
+      "descriptor_sha256": "82d48eaf43db497fc3e2e2c60a3ab08182f270c5688eebfbf2d8c875097857b2",
+      "id": "nottingham-southeast-road-props",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southeast-shutter-wall/model.glb",
+      "model_sha256": "353bd10da9a9352445c48e0ab89ed196221cf8c3d7faf5dd88fb013cf2d10750",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southeast-shutter-wall/asset.json",
+      "descriptor_sha256": "c0d69f004dd39b3fd7c779a5a06efc5f82497f094e1d90956603bdd581938055",
+      "id": "nottingham-southeast-shutter-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-south-gate-east-tower/model.glb",
+      "model_sha256": "a48be4ba1afe633ffdf3f49509d92edd3f3ba8c46d631388d3e2b96d84c9b63b",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-south-gate-east-tower/asset.json",
+      "descriptor_sha256": "94bc23a00271eff0abc579ff47fd30bf19d5b7d6ff8c4d7fe0b81e489def678b",
+      "id": "nottingham-south-gate-east-tower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-south-gate-west-tower/model.glb",
+      "model_sha256": "27cac016842c29dbf793fadbd7e5c97589b04719b27442867ac1ab5457e52dae",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-south-gate-west-tower/asset.json",
+      "descriptor_sha256": "c0477421fa2c15931b3d7646d9480008cc2d8c196c2de2471f26ecf9c1024ea8",
+      "id": "nottingham-south-gate-west-tower",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-south-gate-house/model.glb",
+      "model_sha256": "e40847a982508b30a05205f4f4663ffbcacd764815fe1ba54b2b1541aecf519a",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-south-gate-house/asset.json",
+      "descriptor_sha256": "de143901d7f0288b7a97cc16646fe87705971d11db055ed9734d862454c0bdd8",
+      "id": "nottingham-south-gate-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southeast-green-house/model.glb",
+      "model_sha256": "c672e31f4e225bf96d3c5dc7fb4963a53548fc2834f2a873b0e2069b18cd9323",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southeast-green-house/asset.json",
+      "descriptor_sha256": "6d728f850ac8ffe2b9d3e22ceaba4a370c5079155d11095a5aa3610fc625ca7f",
+      "id": "nottingham-southeast-green-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southeast-shutter-house/model.glb",
+      "model_sha256": "c45d6957d891d3f30702fbc011c28c6504f17cbf6291440a804faba75cdb92d5",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southeast-shutter-house/asset.json",
+      "descriptor_sha256": "1269a8af1f5d088605c9aa9cb981517b836d12169e4eb6eb0c537bb76fd8d8d2",
+      "id": "nottingham-southeast-shutter-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southeast-stone-annex/model.glb",
+      "model_sha256": "723a63c4dafe1678d79dc81b5ab03dceb5bdc7b1d21e1dd7fa8e5df91b3e65ae",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southeast-stone-annex/asset.json",
+      "descriptor_sha256": "d7689d2af0f56a9c27cdc3a4e8cdc70a6f51534b07132d2d7b8af838d64d7f1f",
+      "id": "nottingham-southeast-stone-annex",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-south-curtain-wall-1/model.glb",
+      "model_sha256": "3bff92d96f16419e882fd452d5beb46baec1f6997d30b52a536833667110aec0",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-south-curtain-wall-1/asset.json",
+      "descriptor_sha256": "88a6076d75f148e426bdd16c52694715edb2d5c2d96d662cd7d71e3817ad7d30",
+      "id": "nottingham-south-curtain-wall-1",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-south-curtain-wall-2/model.glb",
+      "model_sha256": "32273e75daf17ae76f7da46e6d990a7a591310cfe3845d620333655c62d15759",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-south-curtain-wall-2/asset.json",
+      "descriptor_sha256": "81e9c72a3a3e6a36e002618156689b4a50f835adfde3f293ddca6a2416897221",
+      "id": "nottingham-south-curtain-wall-2",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-south-curtain-wall-3/model.glb",
+      "model_sha256": "39c5efbbb0c7bd47b648df82da228b8399247f2417a430d257adac8a128cb71e",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-south-curtain-wall-3/asset.json",
+      "descriptor_sha256": "c7dd7dbbb48faa057439113427592af04ee2d11c4175a5d832c86636e695f4c4",
+      "id": "nottingham-south-curtain-wall-3",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-south-curtain-wall-4/model.glb",
+      "model_sha256": "6922186b2f95cf77d7b0577673a79f0260b78e977eb97b31bed460f17b964161",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-south-curtain-wall-4/asset.json",
+      "descriptor_sha256": "7531fdce8e4203d3c3100a4001cfc0794a48ae89cc9bbc12f7ca847e9efc7911",
+      "id": "nottingham-south-curtain-wall-4",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-south-gate-arch/model.glb",
+      "model_sha256": "214b09cf3441aa626feb4602fe748a164a9a09c32c3a180b627cc91b84285df0",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-south-gate-arch/asset.json",
+      "descriptor_sha256": "43b0af1c81a1fb38aa504fb8157df25db0507b590b6175ee3cd628a5292084f4",
+      "id": "nottingham-south-gate-arch",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-south-stair-house/model.glb",
+      "model_sha256": "76d4437142f88365a2a3505df3561e0a21c9e50775a61f7e3ac97fd37e4f11d3",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-south-stair-house/asset.json",
+      "descriptor_sha256": "403624579efcfb2a01a6b5a2a0ad9724e8c28a5ad42e5ab26b94b4991247970b",
+      "id": "nottingham-south-stair-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southwest-curtain-wall-north/model.glb",
+      "model_sha256": "f4d10e9823592a104f46794762c8fb9e18aaa032ad3cf318a57d28c0e42742be",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southwest-curtain-wall-north/asset.json",
+      "descriptor_sha256": "b57e5ab7ca884084e61871d5899d9af5874c3542881f955ea893a4a16cee1078",
+      "id": "nottingham-southwest-curtain-wall-north",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southwest-curtain-wall-south/model.glb",
+      "model_sha256": "e460baa3f7cc6a59babdd1165659dca4030ad4737f525a19eda8860452f42b01",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southwest-curtain-wall-south/asset.json",
+      "descriptor_sha256": "4c0b9e63ebd414ddd73add8f9587456a143f9099deaf55b83f9785d3cf76687c",
+      "id": "nottingham-southwest-curtain-wall-south",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southwest-wall-stair/model.glb",
+      "model_sha256": "22168d9212165dee3d70f18588c447ede2a95c739927f07ddd8648ad197dea69",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southwest-wall-stair/asset.json",
+      "descriptor_sha256": "9f9a373a8ad8e423ff1401836e1e430f65ed9c59ca3817d851012dbe27141cab",
+      "id": "nottingham-southwest-wall-stair",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southwest-prison/model.glb",
+      "model_sha256": "89769e13ed23187b85b8291285e5270e05a5434f67721b18c26aba653ac22b12",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southwest-prison/asset.json",
+      "descriptor_sha256": "945d7c0ff767000f6e35d1975d5aab58569363ed064a886370f3b240f26e073f",
+      "id": "nottingham-southwest-prison",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southwest-prison-road-props/model.glb",
+      "model_sha256": "cb0c5c0c77984d397a0814f9af7482f52d861df3b0e196a1d83096db71133e24",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southwest-prison-road-props/asset.json",
+      "descriptor_sha256": "a61734a171add3a2c9f48393a58bc715fc04438c0f2b61fdb716396d5ca2b174",
+      "id": "nottingham-southwest-prison-road-props",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-southwest-wall-house/model.glb",
+      "model_sha256": "12c7533cba22854c67b7a06cab95c02b5bb97be41971d034b3b38c0662f40587",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-southwest-wall-house/asset.json",
+      "descriptor_sha256": "aaa507564db0672f9a56e9b05b243b49dc29dcb43c0190d3d391c5b4c36a99f5",
+      "id": "nottingham-southwest-wall-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-stream-trough/model.glb",
+      "model_sha256": "95d79195c10bde7e796c4e1b542dcc4a8511f55b4bf2026c9503623222d9126f",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-stream-trough/asset.json",
+      "descriptor_sha256": "4ae48b4ac534089e9265de54fc21e5ce5a51938461832288f08c5d34028c515e",
+      "id": "nottingham-village-stream-trough",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-upper-prison/model.glb",
+      "model_sha256": "3ce87e80da48a06d49635ebe49af1c081a5fb76bd4f68cde6a321f24fb4ff809",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-upper-prison/asset.json",
+      "descriptor_sha256": "fcc5420737dc26863c5c75f90dd7193a03b5d9a17625fc7177f67bea745fcc02",
+      "id": "nottingham-upper-prison",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-upper-green-house/model.glb",
+      "model_sha256": "f03f7daa4c4a7fd8beddfa6adaca6cf24d810469149be42d7093709ae610a7f8",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-upper-green-house/asset.json",
+      "descriptor_sha256": "a865b8495421c1f95457b85673cda4ab2e814dbc18fae51deace188d307cb6b2",
+      "id": "nottingham-upper-green-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-upper-street-turret/model.glb",
+      "model_sha256": "435a3201a1de8e1c5cb430fc9abaa7bfc87280d1aee7597c5942d7f58eb31d3e",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-upper-street-turret/asset.json",
+      "descriptor_sha256": "a8e28b6bd3920cd3e791d68951f05166be420423581f280f51f556e055a4ff7f",
+      "id": "nottingham-upper-street-turret",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-upper-red-house/model.glb",
+      "model_sha256": "192b436ba2a3ca03d8ece8df00be240555ee9f95b4b56ebda438b53606730f17",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-upper-red-house/asset.json",
+      "descriptor_sha256": "1a99d1e34bb6821d3b5d88d2601571fd30f33f51ea8772dda1255531a68b1c32",
+      "id": "nottingham-upper-red-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-upper-west-lean-to/model.glb",
+      "model_sha256": "c1453f52744a9c45a0f5ea2c825c0cfc4ea67090f2795200db8093c62c4c16a3",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-upper-west-lean-to/asset.json",
+      "descriptor_sha256": "191646239be80dcc8ba06c5ef0ba1c7dc12b2e65246c08ff93af1d5c7be0a343",
+      "id": "nottingham-upper-west-lean-to",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-upper-west-house/model.glb",
+      "model_sha256": "e189f988402293df86e00060e08d899ff02fd90d8c04643abee87259decfd48b",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-upper-west-house/asset.json",
+      "descriptor_sha256": "a244c0aa4fe51d7976a5653ab85803fad826d4c8478958a7764111329fedf20d",
+      "id": "nottingham-upper-west-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-barn-yard/model.glb",
+      "model_sha256": "ac81a0f8bea977a28e9766428f8e09c7308cc11ac3a5461adc5e863fb0437009",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-barn-yard/asset.json",
+      "descriptor_sha256": "f8ca35ffea9fb836b19a12776e9c9ded24c35fd74f74218f9b301868af02b070",
+      "id": "nottingham-village-barn-yard",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-bridge-trough/model.glb",
+      "model_sha256": "8539d423661e54de935548008b79a03db1837f0468ef4b3359ec9b9512b21b06",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-bridge-trough/asset.json",
+      "descriptor_sha256": "94a2d4194c5d9ccdcfb4b19c7c1eced01c8212b3c9cfea9392b0222e46c2af9d",
+      "id": "nottingham-village-bridge-trough",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-central-field-wall/model.glb",
+      "model_sha256": "64b16023c51738ee041a4ffe18e0952e9d62f0c4d23f0b8cd49b5fedc60cfd3c",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-central-field-wall/asset.json",
+      "descriptor_sha256": "aca6d6c77f52d4e0fe098cbd89fe9c6540919a8b92735affeec5d8c0eb464b87",
+      "id": "nottingham-village-central-field-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-courtyard-wall/model.glb",
+      "model_sha256": "08414840a6ea595e4e6facfe23cba3cd4154bcd96b756afe47c64dc0f77ea933",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-courtyard-wall/asset.json",
+      "descriptor_sha256": "063df3c96bbd2d310c563e417489acbe0a220d72df248b55431974080a72cdc2",
+      "id": "nottingham-village-courtyard-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-courtyard-well/model.glb",
+      "model_sha256": "30c8c3a3ba69627eeffe4039b0e7bf61f18c705964ad121f10512fdd61fa14c1",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-courtyard-well/asset.json",
+      "descriptor_sha256": "172d2efc8c14eeed21e6874849fce21ec4752824311a6610a08d45a9de9ac23b",
+      "id": "nottingham-village-courtyard-well",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-dovecote-yard-supplies/model.glb",
+      "model_sha256": "0ca7aba4314736a753b6cc9cf36a6807055e7f8fff25c1d7a4deef7484078dea",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-dovecote-yard-supplies/asset.json",
+      "descriptor_sha256": "fe176ee3adda6aaac4deaa631f75613819e7a8bcaab05dbebecc96a1105fea84",
+      "id": "nottingham-village-dovecote-yard-supplies",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-east-boulders/model.glb",
+      "model_sha256": "40b0df133a62678d71990002ed09952e9843fcf4b436b3705a0db9456f2077d5",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-east-boulders/asset.json",
+      "descriptor_sha256": "5658835ec5a7e97ee4f78a5c85ca71534ea72b26f0dfeb80678f06ff1baf6ddc",
+      "id": "nottingham-village-east-boulders",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-east-cottage/model.glb",
+      "model_sha256": "c635df4478ad9ff727700262b3f6737d6f3491b57d6cf6205be8317b0df6ebbd",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-east-cottage/asset.json",
+      "descriptor_sha256": "a41007dc5acfea84d61422f45ab66e49afdfd9b81f6e23012d0abb6ac84efde0",
+      "id": "nottingham-village-east-cottage",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-east-boundary/model.glb",
+      "model_sha256": "42279756c7e73b1012f0dc2f7c1cf6f0448247907fa782bc68ff0cbe8eed0f93",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-east-boundary/asset.json",
+      "descriptor_sha256": "fbecb6fd27efcebb1f7ac49297ab54973f376161c53c22705c25022bafa53aa7",
+      "id": "nottingham-village-east-boundary",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-low-barn/model.glb",
+      "model_sha256": "ee8252e005fd9ea21e05224e886438280a932a284b81db53b4254ec924c12530",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-low-barn/asset.json",
+      "descriptor_sha256": "636ab4ed91265c5e1e88b54e933ad2ed4a355a91481002a030c02d2312ba4621",
+      "id": "nottingham-village-low-barn",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-middle-cottage/model.glb",
+      "model_sha256": "dda0aed1f5a587ca7e95003c02fd92c8977117b6fea1f50451cfcc81db70f575",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-middle-cottage/asset.json",
+      "descriptor_sha256": "81b2df852ce6484bdf99e7d7bfed70b5cb055b5ab06b03aad2152e350dd29a99",
+      "id": "nottingham-village-middle-cottage",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-field-wall/model.glb",
+      "model_sha256": "e2bcddcdc385a43abfa0933347803c3b29fb61d3c5f49789c6dcde026f3451f3",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-field-wall/asset.json",
+      "descriptor_sha256": "c79a307366135a09d4e2b4e6eb93ab138d8e6bc3d94c064b0cb6500933a3afe5",
+      "id": "nottingham-village-field-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-dovecote/model.glb",
+      "model_sha256": "f618d95980e3b901b7cce66eb86142cf2a9dfc5ac17492854ee9d2d9d114eaea",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-dovecote/asset.json",
+      "descriptor_sha256": "3d45637654955a8f4f5aefb2ff232a109be891d689b0a9c5d7dc8908d2792c46",
+      "id": "nottingham-village-dovecote",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-small-hut-prop/model.glb",
+      "model_sha256": "9a144b9e0ff21bcb17d717d795679dc2c28b6f4e97e624ddad8eb8930fff6145",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-small-hut-prop/asset.json",
+      "descriptor_sha256": "f10029c49cfdd16c48af5af7960b4aac28fe3eab9a78657ddc5e0a034dcee237",
+      "id": "nottingham-village-small-hut-prop",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-small-hut/model.glb",
+      "model_sha256": "88e916fa58f366f3dc24c9ab2a7a00e66ca07b8da9b4cd0bf5b06d83125fa68f",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-small-hut/asset.json",
+      "descriptor_sha256": "db7a126f4a48e3b00a396944d038a796580bb9002fe41e9abe8c9dc30a22b255",
+      "id": "nottingham-village-small-hut",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-southeast-cottage/model.glb",
+      "model_sha256": "bc137d87e7f0d8097349c515f6eb2d3e2af64a28305cfc80ab34c06950043afb",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-southeast-cottage/asset.json",
+      "descriptor_sha256": "369aa32eead27b2a341c0f734b7b92ec1adb507a7929d454148ef2bafe22323f",
+      "id": "nottingham-village-southeast-cottage",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-southeast-yard-supplies/model.glb",
+      "model_sha256": "9905e6a5465b171efb1a82053205ce61b53feaf5c796f0433173817f3e2655fb",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-southeast-yard-supplies/asset.json",
+      "descriptor_sha256": "1729bc878414ce26c51cd801e532b80ae5bc7f7894a0ba8175a5a655e4653d84",
+      "id": "nottingham-village-southeast-yard-supplies",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-south-road-prop/model.glb",
+      "model_sha256": "7181603e72f30e2a71c7c20592cdf40702dcc5585256eb907ad11e58bd987882",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-south-road-prop/asset.json",
+      "descriptor_sha256": "872d721d36f2baeb5fc89db02e48eedf6520e1abe4f7974f65867172657f653e",
+      "id": "nottingham-village-south-road-prop",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-south-field-wall/model.glb",
+      "model_sha256": "b351e7315bff38ea8b7a03174476afa5cf91f3927427d9ce44348d56a11bc78a",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-south-field-wall/asset.json",
+      "descriptor_sha256": "0b5c2f5ce02425bf3348b432b37e49f4f3b8fd6b4166df31b5c9abb8705aa606",
+      "id": "nottingham-village-south-field-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-stone-bridge/model.glb",
+      "model_sha256": "72bc43aeca02d51e5e4456811ff85148449bc38915877ba71ff9e39eea99072c",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-stone-bridge/asset.json",
+      "descriptor_sha256": "c8a2d46ea5b29b5f33d58c530e4626f2d4bdca5807307c6423ca38aca4c091e1",
+      "id": "nottingham-village-stone-bridge",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-southwest-cottage/model.glb",
+      "model_sha256": "ba795501d28f7f07fb06809c2e6fc5283f215c91bd91dbab87f15df60a53b6ee",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-southwest-cottage/asset.json",
+      "descriptor_sha256": "94109fe12b54f2f7a5f96b07f2d40e6cf2a218b4812ba9a571638ca4a9f27485",
+      "id": "nottingham-village-southwest-cottage",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-stream-rocks/model.glb",
+      "model_sha256": "cd8994551a9483a313eb0fa8889efb38ed7f1a3fd674197f7a420a46c9d66db1",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-stream-rocks/asset.json",
+      "descriptor_sha256": "7f86642b8b64e9ea790365b14cdb366f14ae5bbd1b7e4a17853a9230d03dd370",
+      "id": "nottingham-village-stream-rocks",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-mill-fence/model.glb",
+      "model_sha256": "ac9fc1c9c20867c517efd18cd9c9f66f058664f225cf7f9e24ea54fb673b1f9a",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-mill-fence/asset.json",
+      "descriptor_sha256": "884e255fe4001bc7c107cb347d4aa11ecc0171858313d6a8657091ee6d2004a3",
+      "id": "nottingham-village-mill-fence",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-mill/model.glb",
+      "model_sha256": "ac7069b88a77c29c8ae6f24621e1d9b8434318022650865522897f78c96adfbc",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-mill/asset.json",
+      "descriptor_sha256": "bc82c86a9b5114f75e0ad9f8217df1d9b2bc0047eec597ff48b375185d9fcd7a",
+      "id": "nottingham-village-mill",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-mill-shed/model.glb",
+      "model_sha256": "4de1be4df03220b26fe9beb5bd8f92c91cf82716b45a209c00b4e900e1abdd2a",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-mill-shed/asset.json",
+      "descriptor_sha256": "7195720900f5c35b5c78a5f16022d81f144a3a8716d08b971affdd2a41f87914",
+      "id": "nottingham-village-mill-shed",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-mill-yard-props/model.glb",
+      "model_sha256": "3a078fbd78412b7901699562f6f9619f5056c55ab395bd93f59e37de95efd0be",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-mill-yard-props/asset.json",
+      "descriptor_sha256": "086fb54ee1e8ac9edc073a69206228bd62cb7f42521a2be9ace85ba32a4ccf84",
+      "id": "nottingham-village-mill-yard-props",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-west-boundary-supplies/model.glb",
+      "model_sha256": "40a3e0e5677140d98343872768278e503c7cb94bc89378a846785ada68fd30fa",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-west-boundary-supplies/asset.json",
+      "descriptor_sha256": "af2cb647ce5b30cd3e5f555e1b491f14210f620b25c3c4cff9a76d3ce6433310",
+      "id": "nottingham-village-west-boundary-supplies",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-west-cottage/model.glb",
+      "model_sha256": "2b04724abda74b165d949e4a6a45b55d691870260a4ff84d54dacb899b86ff8b",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-west-cottage/asset.json",
+      "descriptor_sha256": "54209dd40027d33ea72b1a7a611972af399fb17b6ba2ee3d9697eefa827064ee",
+      "id": "nottingham-village-west-cottage",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-west-field-wall/model.glb",
+      "model_sha256": "faa06ee52b6776330963ff0353feda544fae9178801639d209a6620db15fafdc",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-west-field-wall/asset.json",
+      "descriptor_sha256": "ca2ecc4de112b67fcf8de0b98b384ca1d955f586eed16888bec87f33b81b402d",
+      "id": "nottingham-village-west-field-wall",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-west-rocks/model.glb",
+      "model_sha256": "7d5385ac4c301ee809c0ce32b7106423a174e875b49b51d1f66082383a1dfe76",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-west-rocks/asset.json",
+      "descriptor_sha256": "15ef582a5b173cb6db632802f8e324f5740cf264a085c358a9750b07555dfb7d",
+      "id": "nottingham-village-west-rocks",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-west-green-shop/model.glb",
+      "model_sha256": "3e7d905c352405face77b7eb63b1c87f1ca00af9b66026d52655206ffa955a44",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-west-green-shop/asset.json",
+      "descriptor_sha256": "3b191c68fd6218f1ec423bfa639b6d424d1d0d04f6b5c7ec0c6307448923ac7d",
+      "id": "nottingham-west-green-shop",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-west-red-house/model.glb",
+      "model_sha256": "5794171246b5b9213c76acdc4d8e904208c4af08abbcd99865997851d25660d8",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-west-red-house/asset.json",
+      "descriptor_sha256": "4cc007c58da64a5408a4990afa19a4d2568d46aaf872caa163431f0ee27fefc5",
+      "id": "nottingham-west-red-house",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/nottingham/nottingham-village-stream-wall/model.glb",
+      "model_sha256": "ee4c9a1264ef22f7377f60e04098b4b0aee5ca8ae71bb104bcedc8b816bd4dd3",
+      "resources": [],
+      "descriptor": "3d-assets/nottingham/nottingham-village-stream-wall/asset.json",
+      "descriptor_sha256": "4eac4aa1190b9612c7530a54136f92ca24a32a4fc8ffb14e7963597c97105e8f",
+      "id": "nottingham-village-stream-wall",
+      "model_scene": "default"
+    }
+  ],
+  "sceneMetadata": {
+    "default_hidden_source_nodes": [
+      "building-476"
+    ]
+  },
+  "version": 2,
+  "placements": [
+    {
+      "id": "nottingham-castle-approach-ramp",
+      "name": "Castle approach ramp and parapets",
+      "transform": {
+        "dx": 1052.0352783203125,
+        "dy": 1705.611873075913,
+        "dz": -2.8290499051914395e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-approach-ramp"
+      ]
+    },
+    {
+      "id": "nottingham-castle-east-courtyard-wall",
+      "name": "Castle courtyard eastern curtain wall",
+      "transform": {
+        "dx": 1082.5673828125,
+        "dy": 1267.6147069006554,
+        "dz": -0.00010716472529347668,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-east-courtyard-wall"
+      ]
+    },
+    {
+      "id": "nottingham-castle-east-round-tower",
+      "name": "Castle courtyard eastern round roofed tower",
+      "transform": {
+        "dx": 1348.1500244140625,
+        "dy": 1284.7050721776238,
+        "dz": -1.793157981475585e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-east-round-tower"
+      ]
+    },
+    {
+      "id": "nottingham-castle-yard-mission-props",
+      "name": "Castle courtyard mission-state props",
+      "transform": {
+        "dx": 704.3055419921875,
+        "dy": 1322.9926996371528,
+        "dz": 99.77124658059888,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-yard-mission-props"
+      ]
+    },
+    {
+      "id": "nottingham-castle-west-courtyard-wall",
+      "name": "Castle courtyard southwestern curtain wall",
+      "transform": {
+        "dx": 487.93402099609375,
+        "dy": 1546.4626163187531,
+        "dz": -4.776391307951864e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-west-courtyard-wall"
+      ]
+    },
+    {
+      "id": "nottingham-castle-courtyard-shelter",
+      "name": "Castle courtyard timber shelter",
+      "transform": {
+        "dx": 1164.3154296875,
+        "dy": 1300.80722238835,
+        "dz": 0.00025611281683653506,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-courtyard-shelter"
+      ]
+    },
+    {
+      "id": "nottingham-castle-upper-stair",
+      "name": "Castle courtyard upper stair",
+      "transform": {
+        "dx": 813.246337890625,
+        "dy": 1175.7084652071471,
+        "dz": 0.0002181207992930483,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-upper-stair"
+      ]
+    },
+    {
+      "id": "nottingham-castle-upper-wall",
+      "name": "Castle courtyard upper wall and landing",
+      "transform": {
+        "dx": 880.1148681640625,
+        "dy": 1182.3460440848423,
+        "dz": 100.0009893807401,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-upper-wall"
+      ]
+    },
+    {
+      "id": "nottingham-castle-west-annex",
+      "name": "Castle courtyard western roofed annex",
+      "transform": {
+        "dx": 310.52459716796875,
+        "dy": 1404.2223817025572,
+        "dz": 99.99998318964565,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-west-annex"
+      ]
+    },
+    {
+      "id": "nottingham-castle-west-stair",
+      "name": "Castle courtyard western stair",
+      "transform": {
+        "dx": 296.5,
+        "dy": 1448.1359874108264,
+        "dz": 99.99998943927977,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-west-stair"
+      ]
+    },
+    {
+      "id": "nottingham-northwest-roof-return",
+      "name": "Castle east annex grass bank",
+      "transform": {
+        "dx": 1380.018798828125,
+        "dy": 1221.8355774411489,
+        "dz": 0.00022456354116395273,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-northwest-roof-return"
+      ]
+    },
+    {
+      "id": "nottingham-castle-east-attached-house",
+      "name": "Castle eastern blue timber annex",
+      "transform": {
+        "dx": 1376.179931640625,
+        "dy": 1154.7344161201786,
+        "dz": -2.016864958672605e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-east-attached-house"
+      ]
+    },
+    {
+      "id": "nottingham-castle-entry-steps",
+      "name": "Castle entry steps and rails",
+      "transform": {
+        "dx": 601.9520263671875,
+        "dy": 1297.8914488146925,
+        "dz": 99.99998943927977,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-entry-steps"
+      ]
+    },
+    {
+      "id": "nottingham-castle-gate-arch",
+      "name": "Castle gate arch and parapet",
+      "transform": {
+        "dx": 936.6759033203125,
+        "dy": 1589.9611632972017,
+        "dz": 94.02798905877519,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-gate-arch"
+      ],
+      "patches": {
+        "nottingham-castle-gate-arch": {
+          "appearance-1": "patch-003"
+        }
+      }
+    },
+    {
+      "id": "nottingham-castle-gate-east-tower",
+      "name": "Castle gate eastern battlement tower",
+      "transform": {
+        "dx": 1042.680908203125,
+        "dy": 1555.1336188859634,
+        "dz": -1.4829077423909e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-gate-east-tower"
+      ],
+      "patches": {
+        "nottingham-castle-gate-east-tower": {
+          "appearance-1": "patch-005"
+        }
+      }
+    },
+    {
+      "id": "nottingham-castle-gate-west-tower",
+      "name": "Castle gate western battlement tower",
+      "transform": {
+        "dx": 811.1276245117188,
+        "dy": 1613.5661582059877,
+        "dz": -1.554393368343398e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-gate-west-tower"
+      ]
+    },
+    {
+      "id": "nottingham-castle-northeast-spire",
+      "name": "Castle hall northeastern spire",
+      "transform": {
+        "dx": 505.41876220703125,
+        "dy": 1029.2833351318811,
+        "dz": 590.0000095625431,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-northeast-spire"
+      ]
+    },
+    {
+      "id": "nottingham-castle-northwest-spire",
+      "name": "Castle hall northwestern spire",
+      "transform": {
+        "dx": 271,
+        "dy": 1106.8333619194543,
+        "dz": 479.999999305616,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-northwest-spire"
+      ]
+    },
+    {
+      "id": "nottingham-castle-southeast-spire",
+      "name": "Castle hall southeastern spire",
+      "transform": {
+        "dx": 723.1192626953125,
+        "dy": 1240.8536412588421,
+        "dz": 443.35804443973433,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-southeast-spire"
+      ]
+    },
+    {
+      "id": "nottingham-castle-southwest-spire",
+      "name": "Castle hall southwestern spire",
+      "transform": {
+        "dx": 488.45947265625,
+        "dy": 1309.191716804004,
+        "dz": 432.1430010032938,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-southwest-spire"
+      ]
+    },
+    {
+      "id": "nottingham-castle-watchtower",
+      "name": "Castle high square watchtower",
+      "transform": {
+        "dx": 680.6947021484375,
+        "dy": 1110.163914156313,
+        "dz": -2.5718280062121877e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-watchtower"
+      ]
+    },
+    {
+      "id": "nottingham-castle-main-hall",
+      "name": "Castle main hall and revealed interior",
+      "transform": {
+        "dx": 371.3194885253906,
+        "dy": 681.0244149500369,
+        "dz": -4.8604646979540265e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-main-hall"
+      ],
+      "patches": {
+        "nottingham-castle-main-hall": {
+          "appearance-1": "patch-008"
+        }
+      }
+    },
+    {
+      "id": "nottingham-castle-courtyard-ground",
+      "name": "Castle raised courtyard pavement",
+      "transform": {
+        "dx": 769.5218505859375,
+        "dy": 1382.392028927042,
+        "dz": 0.00021556534014819314,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-courtyard-ground"
+      ]
+    },
+    {
+      "id": "nottingham-ramp-road-props",
+      "name": "Castle ramp roadside barrel and crates",
+      "transform": {
+        "dx": 979.4969482421875,
+        "dy": 1832.2493162636163,
+        "dz": -5.809133906609081e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-ramp-road-props"
+      ]
+    },
+    {
+      "id": "nottingham-castle-ramp-house",
+      "name": "Castle ramp yellow timber house",
+      "transform": {
+        "dx": 856.4090576171875,
+        "dy": 1704.2602715711132,
+        "dz": 0.00031572746607633304,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-ramp-house"
+      ]
+    },
+    {
+      "id": "nottingham-castle-west-conical-tower",
+      "name": "Castle western conical tower",
+      "transform": {
+        "dx": 177.56369018554688,
+        "dy": 1257.2386587550734,
+        "dz": -1.9180033299583085e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-west-conical-tower"
+      ]
+    },
+    {
+      "id": "nottingham-castle-west-rocks",
+      "name": "Castle western rock ledges",
+      "transform": {
+        "dx": 429,
+        "dy": 2200.9980503476386,
+        "dz": -2.8838424395008032e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-west-rocks"
+      ]
+    },
+    {
+      "id": "nottingham-castle-west-stair-tower",
+      "name": "Castle western stair tower",
+      "transform": {
+        "dx": 236.8092041015625,
+        "dy": 1353.140750939616,
+        "dz": -1.8962560603255358e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-castle-west-stair-tower"
+      ]
+    },
+    {
+      "id": "nottingham-church",
+      "name": "Church and revealed interior",
+      "transform": {
+        "dx": 1966.3701171875,
+        "dy": 990.3689885949867,
+        "dz": -1.0000523913194643,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-church"
+      ],
+      "patches": {
+        "nottingham-church": {
+          "appearance-1": "patch-000"
+        }
+      }
+    },
+    {
+      "id": "nottingham-church-north-house",
+      "name": "Church northern timber house",
+      "transform": {
+        "dx": 1940.149169921875,
+        "dy": 632.0049147050902,
+        "dz": 0.00010112418394037503,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-church-north-house"
+      ]
+    },
+    {
+      "id": "nottingham-church-west-house",
+      "name": "Church western narrow timber house",
+      "transform": {
+        "dx": 1858.2681884765625,
+        "dy": 752.7129274620287,
+        "dz": 0.0001389598080517296,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-church-west-house"
+      ]
+    },
+    {
+      "id": "nottingham-churchyard-wall",
+      "name": "Churchyard boundary wall",
+      "transform": {
+        "dx": 2130.19873046875,
+        "dy": 926.5745038315788,
+        "dz": -2.373374038616696e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-churchyard-wall"
+      ]
+    },
+    {
+      "id": "nottingham-churchyard-graves",
+      "name": "Churchyard stone grave markers",
+      "transform": {
+        "dx": 2255.5517578125,
+        "dy": 917.7953955493141,
+        "dz": -2.9373833495438647e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-churchyard-graves"
+      ]
+    },
+    {
+      "id": "nottingham-east-blue-house",
+      "name": "Eastern blue timber house",
+      "transform": {
+        "dx": 2148.89111328125,
+        "dy": 1549.4484065472388,
+        "dz": -1.3551753139339069e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-east-blue-house"
+      ]
+    },
+    {
+      "id": "nottingham-east-boarded-house",
+      "name": "Eastern boarded timber house",
+      "transform": {
+        "dx": 2185.1103515625,
+        "dy": 1409.430780621903,
+        "dz": -2.1817050665676717e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-east-boarded-house"
+      ]
+    },
+    {
+      "id": "nottingham-village-east-front-fence",
+      "name": "Eastern cottage front fence",
+      "transform": {
+        "dx": 2054.741455078125,
+        "dy": 2645.9568324791358,
+        "dz": -1.1971345058626364e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-east-front-fence"
+      ]
+    },
+    {
+      "id": "nottingham-village-east-yard-props",
+      "name": "Eastern cottage yard barrel and crates",
+      "transform": {
+        "dx": 2140.996826171875,
+        "dy": 2535.000319306713,
+        "dz": -8.315982349007319e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-east-yard-props"
+      ]
+    },
+    {
+      "id": "nottingham-village-east-yard-fence",
+      "name": "Eastern cottage yard fence",
+      "transform": {
+        "dx": 2125.5146484375,
+        "dy": 2523.3755941389286,
+        "dz": -1.4632274408321917e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-east-yard-fence"
+      ]
+    },
+    {
+      "id": "nottingham-east-garden-wall",
+      "name": "Eastern garden boundary wall",
+      "transform": {
+        "dx": 2231.19140625,
+        "dy": 1364.240911329429,
+        "dz": 0.0002529161446199379,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-east-garden-wall"
+      ]
+    },
+    {
+      "id": "nottingham-east-round-house",
+      "name": "Eastern round-roof stone house",
+      "transform": {
+        "dx": 2224.7060546875,
+        "dy": 1636.7041420270707,
+        "dz": -2.1368230124011975e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-east-round-house"
+      ]
+    },
+    {
+      "id": "nottingham-market-front-brown",
+      "name": "Market Front Brown",
+      "transform": {
+        "dx": 1686.715087890625,
+        "dy": 1519.7616249667824,
+        "dz": 0.00029925220473645935,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-market-front-brown"
+      ]
+    },
+    {
+      "id": "nottingham-market-front-east-green",
+      "name": "Market Front East Green",
+      "transform": {
+        "dx": 1935.8525390625,
+        "dy": 1574.9236863397903,
+        "dz": 0.00028764192347808333,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-market-front-east-green"
+      ]
+    },
+    {
+      "id": "nottingham-market-front-red",
+      "name": "Market Front Red",
+      "transform": {
+        "dx": 1804.43701171875,
+        "dy": 1541.8179915040823,
+        "dz": 0.0002902574844281832,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-market-front-red"
+      ]
+    },
+    {
+      "id": "nottingham-market-front-west-green",
+      "name": "Market Front West Green",
+      "transform": {
+        "dx": 1562.404296875,
+        "dy": 1534.1116784070925,
+        "dz": 0.00029646737650463104,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-market-front-west-green"
+      ]
+    },
+    {
+      "id": "nottingham-market-rear-central-tiled",
+      "name": "Market Rear Central Tiled",
+      "transform": {
+        "dx": 1791.513671875,
+        "dy": 1452.9884216570265,
+        "dz": 0.0006146034444785731,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-market-rear-central-tiled"
+      ]
+    },
+    {
+      "id": "nottingham-market-rear-east-lean-roof",
+      "name": "Market Rear East Lean Roof",
+      "transform": {
+        "dx": 1919.1875,
+        "dy": 1453.7383000302345,
+        "dz": 0.0006132766750753687,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-market-rear-east-lean-roof"
+      ]
+    },
+    {
+      "id": "nottingham-market-rear-west-shingle",
+      "name": "Market Rear West Shingle",
+      "transform": {
+        "dx": 1618.264892578125,
+        "dy": 1426.760322791764,
+        "dz": 0.0003079390254752253,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-market-rear-west-shingle"
+      ]
+    },
+    {
+      "id": "nottingham-northeast-timber-house",
+      "name": "Northeastern corner timber house",
+      "transform": {
+        "dx": 2263.475341796875,
+        "dy": 629.1222590091663,
+        "dz": 0.00011320867583267509,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-northeast-timber-house"
+      ]
+    },
+    {
+      "id": "nottingham-northeast-round-tower",
+      "name": "Northeastern round wall tower",
+      "transform": {
+        "dx": 2146.9931640625,
+        "dy": 510.82288919496614,
+        "dz": -1.5890079314453092e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-northeast-round-tower"
+      ]
+    },
+    {
+      "id": "nottingham-forest-wood-stack",
+      "name": "Northern conical wood stack",
+      "transform": {
+        "dx": 1832.685546875,
+        "dy": 139.8490608288372,
+        "dz": -1.1839839085520458,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-forest-wood-stack"
+      ]
+    },
+    {
+      "id": "nottingham-north-curtain-wall",
+      "name": "Northern curtain wall",
+      "transform": {
+        "dx": 1931.1961669921875,
+        "dy": 475.28103487117244,
+        "dz": -1.6664828775178394e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-north-curtain-wall"
+      ]
+    },
+    {
+      "id": "nottingham-north-dormer-house",
+      "name": "Northern dormer timber house",
+      "transform": {
+        "dx": 1731.80859375,
+        "dy": 527.4112350568179,
+        "dz": -1.4356714425806675e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-north-dormer-house"
+      ]
+    },
+    {
+      "id": "nottingham-forest-east-stump",
+      "name": "Northern eastern cut stump",
+      "transform": {
+        "dx": 1663.5,
+        "dy": 136.49999793885834,
+        "dz": -4.797106285570715e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-forest-east-stump"
+      ]
+    },
+    {
+      "id": "nottingham-forest-rock-outcrop",
+      "name": "Northern forest rock outcrop",
+      "transform": {
+        "dx": 1077,
+        "dy": 204.3527092806706,
+        "dz": -1.7166935729952047e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-forest-rock-outcrop"
+      ]
+    },
+    {
+      "id": "nottingham-north-gate-gallery",
+      "name": "Northern gate timber gallery",
+      "transform": {
+        "dx": 1369.111328125,
+        "dy": 476.19426210009414,
+        "dz": -1.0143323977230274e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-north-gate-gallery"
+      ]
+    },
+    {
+      "id": "nottingham-north-stone-house",
+      "name": "Northern pale stone gabled house",
+      "transform": {
+        "dx": 1668.256103515625,
+        "dy": 657.2405274881655,
+        "dz": -1.83451403128042e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-north-stone-house"
+      ]
+    },
+    {
+      "id": "nottingham-north-gate-tower",
+      "name": "Northern square gate tower",
+      "transform": {
+        "dx": 1474.495849609375,
+        "dy": 435.36755066988235,
+        "dz": 7.43230343237421e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-north-gate-tower"
+      ]
+    },
+    {
+      "id": "nottingham-north-street-roof-edge-slab",
+      "name": "Northern street roof-edge slab",
+      "transform": {
+        "dx": 1587.28076171875,
+        "dy": 651.572749296493,
+        "dz": 116.00114643173168,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-north-street-roof-edge-slab"
+      ]
+    },
+    {
+      "id": "nottingham-forest-tall-trunk",
+      "name": "Northern tall tree trunk",
+      "transform": {
+        "dx": 1593.5,
+        "dy": 60.999997540076144,
+        "dz": -9.977984411651798e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-forest-tall-trunk"
+      ]
+    },
+    {
+      "id": "nottingham-forest-bundled-tree",
+      "name": "Northern tree with bundled branches",
+      "transform": {
+        "dx": 1831.311279296875,
+        "dy": 123.16919444704335,
+        "dz": -0.3240672097372211,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-forest-bundled-tree"
+      ]
+    },
+    {
+      "id": "nottingham-north-wall-stair",
+      "name": "Northern wall stair",
+      "transform": {
+        "dx": 1827.10693359375,
+        "dy": 496.7091419647007,
+        "dz": -1.6346206957786814e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-north-wall-stair"
+      ]
+    },
+    {
+      "id": "nottingham-northwest-timber-house",
+      "name": "Northern west timber house",
+      "transform": {
+        "dx": 1584.724365234375,
+        "dy": 567.8765905314624,
+        "dz": -8.913019044264417e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-northwest-timber-house"
+      ]
+    },
+    {
+      "id": "nottingham-forest-west-stump",
+      "name": "Northern western cut stump",
+      "transform": {
+        "dx": 1867.5,
+        "dy": 153.29999539617333,
+        "dz": -1.918844302262952e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-forest-west-stump"
+      ]
+    },
+    {
+      "id": "nottingham-northwest-curtain-wall",
+      "name": "Northwestern curtain wall",
+      "transform": {
+        "dx": 1110.1700439453125,
+        "dy": 631.1013497745348,
+        "dz": -4.153581881016945e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-northwest-curtain-wall"
+      ]
+    },
+    {
+      "id": "nottingham-northwest-round-tower",
+      "name": "Northwestern round wall tower",
+      "transform": {
+        "dx": 1257.29833984375,
+        "dy": 489.87208563740046,
+        "dz": -1.6860392086730282e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-northwest-round-tower"
+      ]
+    },
+    {
+      "id": "nottingham-southeast-road-props",
+      "name": "Pillory",
+      "transform": {
+        "dx": 1677.134521484375,
+        "dy": 1673.2791621095064,
+        "dz": -0.761707458055167,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southeast-road-props"
+      ]
+    },
+    {
+      "id": "nottingham-southeast-shutter-wall",
+      "name": "Shuttered house garden wall",
+      "transform": {
+        "dx": 1935.50537109375,
+        "dy": 2109.2594285257887,
+        "dz": 0.00037831232698214525,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southeast-shutter-wall"
+      ]
+    },
+    {
+      "id": "nottingham-south-gate-east-tower",
+      "name": "South gate eastern turret and return",
+      "transform": {
+        "dx": 1473.2847900390625,
+        "dy": 2232.819639733801,
+        "dz": -7.434219013513208e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-south-gate-east-tower"
+      ]
+    },
+    {
+      "id": "nottingham-south-gate-west-tower",
+      "name": "South gate western roofed tower",
+      "transform": {
+        "dx": 1194.21875,
+        "dy": 2246.820310066519,
+        "dz": -1.4053523347583934e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-south-gate-west-tower"
+      ]
+    },
+    {
+      "id": "nottingham-south-gate-house",
+      "name": "South gate white timber house",
+      "transform": {
+        "dx": 1541.097900390625,
+        "dy": 1999.7143110813893,
+        "dz": -2.0365547964161997e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-south-gate-house"
+      ]
+    },
+    {
+      "id": "nottingham-southeast-green-house",
+      "name": "Southeastern green gabled house",
+      "transform": {
+        "dx": 2102.520751953125,
+        "dy": 1939.83858847205,
+        "dz": 0.00036067751324104515,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southeast-green-house"
+      ]
+    },
+    {
+      "id": "nottingham-southeast-shutter-house",
+      "name": "Southeastern shuttered house",
+      "transform": {
+        "dx": 1904.2515869140625,
+        "dy": 1933.3897744957712,
+        "dz": 0.0003580681031301968,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southeast-shutter-house"
+      ]
+    },
+    {
+      "id": "nottingham-southeast-stone-annex",
+      "name": "Southeastern stone annex",
+      "transform": {
+        "dx": 2270.4443359375,
+        "dy": 1958.9007627822853,
+        "dz": 0.000367326069822254,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southeast-stone-annex"
+      ]
+    },
+    {
+      "id": "nottingham-south-curtain-wall-1",
+      "name": "Southern curtain wall section 1",
+      "transform": {
+        "dx": 1451.1016845703125,
+        "dy": 2273.9318790824013,
+        "dz": -1.571811210037877e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-south-curtain-wall-1"
+      ]
+    },
+    {
+      "id": "nottingham-south-curtain-wall-2",
+      "name": "Southern curtain wall section 2",
+      "transform": {
+        "dx": 1615.440185546875,
+        "dy": 2246.5011741538133,
+        "dz": -0.06197756060548591,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-south-curtain-wall-2"
+      ]
+    },
+    {
+      "id": "nottingham-south-curtain-wall-3",
+      "name": "Southern curtain wall section 3",
+      "transform": {
+        "dx": 1879,
+        "dy": 2242.1691036862944,
+        "dz": 0.00045016237824006594,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-south-curtain-wall-3"
+      ]
+    },
+    {
+      "id": "nottingham-south-curtain-wall-4",
+      "name": "Southern curtain wall section 4",
+      "transform": {
+        "dx": 2175.23583984375,
+        "dy": 2176.647938198173,
+        "dz": 0.000422889127870415,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-south-curtain-wall-4"
+      ]
+    },
+    {
+      "id": "nottingham-south-gate-arch",
+      "name": "Southern gate arch and parapet",
+      "transform": {
+        "dx": 1338.8460693359375,
+        "dy": 2236.4242371576565,
+        "dz": -1.6411297379750065e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-south-gate-arch"
+      ]
+    },
+    {
+      "id": "nottingham-south-stair-house",
+      "name": "Southern red stair-front house",
+      "transform": {
+        "dx": 1747.43603515625,
+        "dy": 1945.9468414392456,
+        "dz": -0.940161366276534,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-south-stair-house"
+      ]
+    },
+    {
+      "id": "nottingham-southwest-curtain-wall-north",
+      "name": "Southwestern curtain wall north run",
+      "transform": {
+        "dx": 735.397705078125,
+        "dy": 1875.9192640130839,
+        "dz": 0.000273906193491829,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southwest-curtain-wall-north"
+      ]
+    },
+    {
+      "id": "nottingham-southwest-curtain-wall-south",
+      "name": "Southwestern curtain wall south run",
+      "transform": {
+        "dx": 962.0962524414062,
+        "dy": 2165.8509499237653,
+        "dz": 0.0003982471493154639,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southwest-curtain-wall-south"
+      ]
+    },
+    {
+      "id": "nottingham-southwest-wall-stair",
+      "name": "Southwestern curtain wall stair",
+      "transform": {
+        "dx": 728.4302978515625,
+        "dy": 1731.608076780385,
+        "dz": -2.229970082322493e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southwest-wall-stair"
+      ]
+    },
+    {
+      "id": "nottingham-southwest-prison",
+      "name": "Southwestern prison and revealed interior",
+      "transform": {
+        "dx": 462.603271484375,
+        "dy": 2124.935737441851,
+        "dz": -2.0000336930507343,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southwest-prison"
+      ],
+      "patches": {
+        "nottingham-southwest-prison": {
+          "appearance-1": "patch-007"
+        }
+      }
+    },
+    {
+      "id": "nottingham-southwest-prison-road-props",
+      "name": "Southwestern prison wooden platform and stair",
+      "transform": {
+        "dx": 672.4268798828125,
+        "dy": 2313.9015866575182,
+        "dz": -0.7421155386208779,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southwest-prison-road-props"
+      ]
+    },
+    {
+      "id": "nottingham-southwest-wall-house",
+      "name": "Southwestern wall-side timber house",
+      "transform": {
+        "dx": 1049.154541015625,
+        "dy": 2097.8014830298043,
+        "dz": 0.0003914607471817263,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-southwest-wall-house"
+      ]
+    },
+    {
+      "id": "nottingham-village-stream-trough",
+      "name": "Streamside low rock fins",
+      "transform": {
+        "dx": 2135.5,
+        "dy": 2485.7716092971405,
+        "dz": -4.457233981520638,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-stream-trough"
+      ]
+    },
+    {
+      "id": "nottingham-upper-prison",
+      "name": "Upper prison tower and entrance",
+      "transform": {
+        "dx": 1004.9457397460938,
+        "dy": 1033.3106931175882,
+        "dz": -3.263157305600025e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-upper-prison"
+      ],
+      "patches": {
+        "nottingham-upper-prison": {
+          "appearance-1": "patch-002"
+        }
+      }
+    },
+    {
+      "id": "nottingham-upper-green-house",
+      "name": "Upper town green timber house",
+      "transform": {
+        "dx": 1379.953369140625,
+        "dy": 724.2221703793444,
+        "dz": 0.0001312903551975383,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-upper-green-house"
+      ]
+    },
+    {
+      "id": "nottingham-upper-street-turret",
+      "name": "Upper town pointed street turret",
+      "transform": {
+        "dx": 1344.08447265625,
+        "dy": 764.1063176022616,
+        "dz": -8.823998758352586e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-upper-street-turret"
+      ]
+    },
+    {
+      "id": "nottingham-upper-red-house",
+      "name": "Upper town red timber house",
+      "transform": {
+        "dx": 1488.87841796875,
+        "dy": 830.9779643287056,
+        "dz": -4.346163942768814e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-upper-red-house"
+      ]
+    },
+    {
+      "id": "nottingham-upper-west-lean-to",
+      "name": "Upper town western lean-to",
+      "transform": {
+        "dx": 1151.5946044921875,
+        "dy": 829.2309087574371,
+        "dz": -1.2363437220449863e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-upper-west-lean-to"
+      ]
+    },
+    {
+      "id": "nottingham-upper-west-house",
+      "name": "Upper town western red timber house",
+      "transform": {
+        "dx": 1221.8150634765625,
+        "dy": 981.7640817499341,
+        "dz": -1.3909133588177128e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-upper-west-house"
+      ]
+    },
+    {
+      "id": "nottingham-village-barn-yard",
+      "name": "Village barn yard rail and supplies",
+      "transform": {
+        "dx": 1002.8950805664062,
+        "dy": 3051.0743175804705,
+        "dz": -8.387122288257695e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-barn-yard"
+      ]
+    },
+    {
+      "id": "nottingham-village-bridge-trough",
+      "name": "Village bridge approach wooden handcart",
+      "transform": {
+        "dx": 1871.0047607421875,
+        "dy": 3486.839492833121,
+        "dz": -0.059819611987344666,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-bridge-trough"
+      ]
+    },
+    {
+      "id": "nottingham-village-central-field-wall",
+      "name": "Village central curved field wall",
+      "transform": {
+        "dx": 877.409912109375,
+        "dy": 3239.4233200671033,
+        "dz": -6.985865744907886e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-central-field-wall"
+      ]
+    },
+    {
+      "id": "nottingham-village-courtyard-wall",
+      "name": "Village courtyard curved stone wall",
+      "transform": {
+        "dx": 651.500732421875,
+        "dy": 2768.8923550927725,
+        "dz": -1.0857137216533335e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-courtyard-wall"
+      ]
+    },
+    {
+      "id": "nottingham-village-courtyard-well",
+      "name": "Village courtyard thatched shelter",
+      "transform": {
+        "dx": 661,
+        "dy": 2828.999972862902,
+        "dz": -8.08430073719929e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-courtyard-well"
+      ]
+    },
+    {
+      "id": "nottingham-village-dovecote-yard-supplies",
+      "name": "Village dovecote yard supplies",
+      "transform": {
+        "dx": 2121.5,
+        "dy": 2802.74316716916,
+        "dz": -2.1270937197711444e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-dovecote-yard-supplies"
+      ]
+    },
+    {
+      "id": "nottingham-village-east-boulders",
+      "name": "Village eastern boulders",
+      "transform": {
+        "dx": 1563.5,
+        "dy": 2397.0358617675543,
+        "dz": -7.106984829146362e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-east-boulders"
+      ]
+    },
+    {
+      "id": "nottingham-village-east-cottage",
+      "name": "Village eastern long thatched cottage",
+      "transform": {
+        "dx": 1964.89892578125,
+        "dy": 2549.29884048907,
+        "dz": -1.7215293127497952e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-east-cottage"
+      ]
+    },
+    {
+      "id": "nottingham-village-east-boundary",
+      "name": "Village eastern rock and fence boundary",
+      "transform": {
+        "dx": 2150.94140625,
+        "dy": 3412.931592396391,
+        "dz": -9.222258447751174e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-east-boundary"
+      ]
+    },
+    {
+      "id": "nottingham-village-low-barn",
+      "name": "Village low stone barn",
+      "transform": {
+        "dx": 958.125,
+        "dy": 2991.140901247553,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-low-barn"
+      ]
+    },
+    {
+      "id": "nottingham-village-middle-cottage",
+      "name": "Village middle courtyard cottage",
+      "transform": {
+        "dx": 644.765869140625,
+        "dy": 2576.7851386415914,
+        "dz": -2.565138372514582e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-middle-cottage"
+      ]
+    },
+    {
+      "id": "nottingham-village-field-wall",
+      "name": "Village northern field boundary",
+      "transform": {
+        "dx": 1243.447998046875,
+        "dy": 2979.008695365575,
+        "dz": -2.6981013983816063e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-field-wall"
+      ]
+    },
+    {
+      "id": "nottingham-village-dovecote",
+      "name": "Village round thatched dovecote",
+      "transform": {
+        "dx": 2116.39990234375,
+        "dy": 3102.431533896815,
+        "dz": -2.2293216217502376e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-dovecote"
+      ]
+    },
+    {
+      "id": "nottingham-village-small-hut-prop",
+      "name": "Village small hut roadside supply",
+      "transform": {
+        "dx": 442.9149169921875,
+        "dy": 2903.076473404458,
+        "dz": -7.813949895678086e-07,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-small-hut-prop"
+      ]
+    },
+    {
+      "id": "nottingham-village-small-hut",
+      "name": "Village small thatched hut",
+      "transform": {
+        "dx": 403.99444580078125,
+        "dy": 2870.8503277866994,
+        "dz": -6.509286113624996,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-small-hut"
+      ]
+    },
+    {
+      "id": "nottingham-village-southeast-cottage",
+      "name": "Village southeastern streamside cottage",
+      "transform": {
+        "dx": 1704.28955078125,
+        "dy": 3371.5170211322434,
+        "dz": -1.9781575842198868e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-southeast-cottage"
+      ]
+    },
+    {
+      "id": "nottingham-village-southeast-yard-supplies",
+      "name": "Village southeastern yard supplies",
+      "transform": {
+        "dx": 1573,
+        "dy": 3452.4879216414033,
+        "dz": -1.868567747508717e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-southeast-yard-supplies"
+      ]
+    },
+    {
+      "id": "nottingham-village-south-road-prop",
+      "name": "Village southern edge roadside supply",
+      "transform": {
+        "dx": 1693.029541015625,
+        "dy": 3519.03707165571,
+        "dz": -4.254044396768997e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-south-road-prop"
+      ]
+    },
+    {
+      "id": "nottingham-village-south-field-wall",
+      "name": "Village southern field enclosure",
+      "transform": {
+        "dx": 1187.435302734375,
+        "dy": 3198.1336585151685,
+        "dz": -5.229524589231348e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-south-field-wall"
+      ]
+    },
+    {
+      "id": "nottingham-village-stone-bridge",
+      "name": "Village southern stone bridge",
+      "transform": {
+        "dx": 1492.7913818359375,
+        "dy": 3125.855465736215,
+        "dz": -86.83011669463313,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-stone-bridge"
+      ]
+    },
+    {
+      "id": "nottingham-village-southwest-cottage",
+      "name": "Village southwestern tall cottage",
+      "transform": {
+        "dx": 196.43821716308594,
+        "dy": 2955.753923764239,
+        "dz": -2.6858330965256265e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-southwest-cottage"
+      ]
+    },
+    {
+      "id": "nottingham-village-stream-rocks",
+      "name": "Village stream rock ledges",
+      "transform": {
+        "dx": 2308.93359375,
+        "dy": 2468.689225918822,
+        "dz": -3.342127644665008e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-stream-rocks"
+      ]
+    },
+    {
+      "id": "nottingham-village-mill-fence",
+      "name": "Village watermill boundary fence",
+      "transform": {
+        "dx": 1862.10986328125,
+        "dy": 2762.3079888727466,
+        "dz": -8.24641588026315e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-mill-fence"
+      ]
+    },
+    {
+      "id": "nottingham-village-mill",
+      "name": "Village watermill cottage",
+      "transform": {
+        "dx": 1636.3489990234375,
+        "dy": 2696.436600077175,
+        "dz": -2.481305771180794e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-mill"
+      ]
+    },
+    {
+      "id": "nottingham-village-mill-shed",
+      "name": "Village watermill timber shed",
+      "transform": {
+        "dx": 1806.123779296875,
+        "dy": 2647.5966225352076,
+        "dz": -3.6556344908882996e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-mill-shed"
+      ]
+    },
+    {
+      "id": "nottingham-village-mill-yard-props",
+      "name": "Village watermill yard barrels",
+      "transform": {
+        "dx": 1635.3472900390625,
+        "dy": 2703.0400108273147,
+        "dz": -3.06416692760469e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-mill-yard-props"
+      ]
+    },
+    {
+      "id": "nottingham-village-west-boundary-supplies",
+      "name": "Village western boundary debris",
+      "transform": {
+        "dx": 10.634317398071289,
+        "dy": 2844.4095183240693,
+        "dz": -8.392319509020626e-06,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-west-boundary-supplies"
+      ]
+    },
+    {
+      "id": "nottingham-village-west-cottage",
+      "name": "Village western courtyard cottage",
+      "transform": {
+        "dx": 1013.1982421875,
+        "dy": 2608.290392781241,
+        "dz": -1.6369958018268782e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-west-cottage"
+      ]
+    },
+    {
+      "id": "nottingham-village-west-field-wall",
+      "name": "Village western field boundary",
+      "transform": {
+        "dx": 139.8973388671875,
+        "dy": 3192.7334139615937,
+        "dz": -1.908643564492592e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-west-field-wall"
+      ]
+    },
+    {
+      "id": "nottingham-village-west-rocks",
+      "name": "Village western rock outcrops",
+      "transform": {
+        "dx": 209.98333740234375,
+        "dy": 2588.142960321172,
+        "dz": -3.1023212033340136e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-west-rocks"
+      ]
+    },
+    {
+      "id": "nottingham-west-green-shop",
+      "name": "Western green shop with porch",
+      "transform": {
+        "dx": 1196.275634765625,
+        "dy": 1570.2811620247644,
+        "dz": -1.6697144521711197e-05,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-west-green-shop"
+      ]
+    },
+    {
+      "id": "nottingham-west-red-house",
+      "name": "Western red cross-braced house",
+      "transform": {
+        "dx": 1375.458984375,
+        "dy": 1497.9840647490075,
+        "dz": 0.0002724483015464406,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-west-red-house"
+      ]
+    },
+    {
+      "id": "nottingham-village-stream-wall",
+      "name": "Western stream bridge and approach walls",
+      "transform": {
+        "dx": 507.58514404296875,
+        "dy": 2998.680014572814,
+        "dz": -69.83613657513813,
+        "rot_deg": 0
+      },
+      "assets": [
+        "nottingham-village-stream-wall"
+      ]
+    }
+  ]
+}

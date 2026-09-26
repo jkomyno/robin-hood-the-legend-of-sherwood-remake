@@ -48,15 +48,31 @@ def scene_metadata(library, document):
         model = select_scene(model, asset.get('model_scene'))
         if asset in document.get('assetSources', []):
             parts = {obj['node'].split(':', 2)[-1]:obj for obj in document['objects'] if obj['node'].startswith('asset:'+asset['id']+':')}
+            groups = {group['id']:group for group in document['groups']}
+            descriptor = json.loads((Path(library) / asset['descriptor']).read_text())
+            available = {'asset:'+descriptor['id']+':'+part['node'] for part in descriptor['parts']}
+            for state, variant in descriptor.get('state_variants', {}).items():
+                available.update('asset:'+descriptor['id']+'--state-'+state+':'+part['node']
+                                 for part in variant.get('parts', descriptor['parts']))
             for node in model['nodes']:
                 for part in parts.values():
-                    binding = part.get('patchBindings', {}).get(node.get('name'), {})
                     extras = node.setdefault('extras', {})
-                    if 'hide' in binding: extras['reveal_hide_when_applied'] = copy.deepcopy(binding['hide'])
-                    if 'show' in binding: extras['reveal_show_when_applied'] = copy.deepcopy(binding['show'])
-                    if 'material' in binding:
-                        extras['reveal_material_patch'] = binding['material']['patch']
-                        extras['reveal_material_state'] = binding['material']['state']
+                    placement = groups[part['group']] if part.get('group') else part
+                    mapping = placement.get('patches', {}).get(asset['id'], {})
+                    for key in ('reveal_hide_when_applied', 'reveal_show_when_applied'):
+                        if key in extras: extras[key] = [mapping.get(value, value) for value in extras[key]]
+                    if 'reveal_material_patch' in extras:
+                        extras['reveal_material_patch'] = mapping.get(extras['reveal_material_patch'], extras['reveal_material_patch'])
+                    if node.get('name') == part['node'].split(':', 2)[-1] and part.get('group'):
+                        group = groups[part['group']]
+                        for base, mapping in group.get('patches', {}).items():
+                            patch = mapping.get('state')
+                            if not patch: continue
+                            initial, applied = 'asset:'+base+':', 'asset:'+base+'--state-applied:'
+                            if part['node'].startswith(initial) and applied+part['node'][len(initial):] not in available:
+                                extras['reveal_hide_when_applied'] = [patch]
+                            if part['node'].startswith(applied) and initial+part['node'][len(applied):] not in available:
+                                extras['reveal_show_when_applied'] = [patch]
             root = model['nodes'][model['scenes'][0]['nodes'][0]]
             for group_index in root.get('children', []):
                 group = model['nodes'][group_index]

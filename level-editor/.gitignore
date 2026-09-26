@@ -2,7 +2,10 @@ node_modules/
 dist/
 app/.library-public/
 .env
-# extracted asset library — large derived data, distribution handled separately
-library/
+# Map documents are small enough to version; asset payloads remain separate.
+library/*
+!library/scenes/
+library/scenes/*
+!library/scenes/*.rhlos-map.json
 # pipeline work products (tiles, masks, fal responses)
 work/

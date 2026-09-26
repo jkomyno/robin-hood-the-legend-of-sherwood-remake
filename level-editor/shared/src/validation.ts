@@ -444,6 +444,20 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
 
   if (d.assetSources !== undefined) parseExternalAssetSources(d.assetSources);
   const assetIds = new Set((d.assetSources ?? []).map((entry: ExternalAssetSource) => entry.id));
+  const appearancePatches = (value: unknown, label: string) => {
+    if (value === undefined) return;
+    const assets = object(value, label);
+    check(Object.keys(assets).length > 0, label, "empty appearance patches");
+    for (const [asset, raw] of Object.entries(assets)) {
+      check(assetIds.has(asset), label, `unknown patch asset ${asset}`);
+      const mapping = object(raw, `${label}.${asset}`);
+      check(Object.keys(mapping).length > 0, label, "empty asset patch mapping");
+      for (const [local, mission] of Object.entries(mapping)) {
+        text(local, `${label}.${asset} local appearance`);
+        text(mission, `${label}.${asset}.${local}`);
+      }
+    }
+  };
   const ids = new Set<string>();
   const groups = new Set<string>();
   for (const g of array(d.groups, "level3d.groups")) {
@@ -454,42 +468,16 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
     groups.add(g.id);
     transform(g.transform, g.id);
     if (g.hidden !== undefined) check(typeof g.hidden === "boolean", g.id, "invalid hidden flag");
+    appearancePatches(g.patches, `${g.id}.patches`);
   }
   for (const o of array(d.objects, "level3d.objects")) {
     object(o, "level3d.objects[]");
     text(o.id, "object.id");
     check(!Object.hasOwn(o, "missionBindings"), o.id, "obsolete missionBindings");
-    if (o.patchBindings !== undefined) {
-      object(o.patchBindings, "patchBindings");
-      check(Object.keys(o.patchBindings).length > 0, o.id, "empty patchBindings");
-      for (const [name, raw] of Object.entries(o.patchBindings)) {
-        text(name, "patch binding node");
-        const binding = object(raw, "patch binding");
-        check(Object.keys(binding).length > 0, name, "empty patch binding");
-        for (const key of Object.keys(binding))
-          check(["hide", "show", "material"].includes(key), name, `unknown patch binding ${key}`);
-        for (const key of ["hide", "show"] as const) {
-          const patches = binding[key];
-          if (patches === undefined) continue;
-          check(Array.isArray(patches) && patches.length > 0, name, `invalid ${key} patches`);
-          for (const patch of patches as unknown[]) text(patch, `${name}.${key}`);
-        }
-        if (binding.material !== undefined) {
-          const material = object(binding.material, "patch material");
-          check(
-            Object.keys(material).every((key) => ["patch", "state"].includes(key)),
-            name,
-            "unknown patch material field",
-          );
-          text(material.patch, `${name}.material.patch`);
-          check(
-            material.state === "covered" || material.state === "revealed",
-            name,
-            "invalid patch material state",
-          );
-        }
-      }
-    }
+    check(!Object.hasOwn(o, "patchBindings"), o.id, "obsolete patchBindings");
+    appearancePatches(o.patches, `${o.id}.patches`);
+    check(!o.group || o.patches === undefined, o.id, "grouped patches belong on the placement");
+    check(!Object.hasOwn(o, "patchOverride"), o.id, "obsolete patch override");
     check(!ids.has(o.id), o.id, "duplicate ID");
     ids.add(o.id);
     check(
@@ -800,6 +788,12 @@ export function parseProjectionAssetIndex(value: unknown): ProjectionAssetEntry[
     ids.add(entry.id);
     for (const key of ["descriptor", "model"])
       check(safeLibraryPath(entry[key]), key, "expected safe library-relative path");
+    if (entry.model_sha256 !== undefined)
+      check(
+        typeof entry.model_sha256 === "string" && /^[a-f0-9]{64}$/.test(entry.model_sha256),
+        "model_sha256",
+        "invalid catalog model hash",
+      );
     for (const key of ["preview_model", "lossy_model"])
       if (entry[key] !== undefined)
         check(safeLibraryPath(entry[key]), key, "expected safe library-relative path");

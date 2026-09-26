@@ -15,14 +15,32 @@ import {
   transformedObstacle,
   parseLevel3D,
   patchBindingsFromMetadata,
+  deriveAppearancePatches,
+  assertPatchMappingEquivalent,
+  modelPartPatchNodes,
+  endpointPatchRule,
   type Level3D,
   type ProjectionAssetDescriptor,
   type ExternalAssetSource,
+  type PatchBindings,
 } from "@rle/shared";
 import { transformAt } from "./refined-map-groups.ts";
 
 const plan = JSON.parse(await fs.readFile(process.argv[2]!, "utf8"));
 const descriptors = new Map<string, ProjectionAssetDescriptor>();
+const models = new Map<string, any>();
+async function partNodes(reference: ExternalAssetSource, root: string) {
+  let model = models.get(reference.model);
+  if (!model) {
+    model = JSON.parse(await fs.readFile(path.join(plan.output, reference.model), "utf8"));
+    models.set(reference.model, model);
+  }
+  const scene = reference.model_scene
+    ? model.scenes.findIndex((item: { name?: string }) => item.name === reference.model_scene)
+    : (model.scene ?? 0);
+  if (scene < 0) throw new Error(`Missing asset scene ${reference.model_scene}`);
+  return modelPartPatchNodes({ ...model, scene }, root);
+}
 async function descriptor(id: string) {
   if (!descriptors.has(id))
     descriptors.set(
@@ -51,6 +69,16 @@ for (const item of plan.maps) {
   }
   const origins = new Map<string, number[]>();
   const desired = new Map<string, mat4>();
+  const reviewed: {
+    part: Level3D["objects"][number];
+    bindings: PatchBindings;
+    nodes: Map<string, Record<string, unknown>>;
+  }[] = [];
+  const endpoints: {
+    part: Level3D["objects"][number];
+    patch: string;
+    state: "initial" | "applied";
+  }[] = [];
   for (const part of doc.objects) {
     const before = old.objects.find((p) => p.id === part.id)!;
     const external = before.node.startsWith("asset:");
@@ -97,7 +125,67 @@ for (const item of plan.maps) {
     if (definition.obstacle_local_game)
       part.obstacle = structuredClone(definition.obstacle_local_game);
     else delete part.obstacle;
-    part.patchBindings = patchBindingsFromMetadata(item.bindings[before.node]);
+    const bindings = patchBindingsFromMetadata(item.bindings[before.node]);
+    if (bindings) {
+      const nodes = await partNodes(reference, node);
+      const placement = part.group ? doc.groups.find((group) => group.id === part.group)! : part;
+      const mapping = ((placement.patches ??= {})[reference.id] ??= {});
+      const root = bindings[node];
+      const endpointState = reference.state_variant === "applied" ? "applied" : "initial";
+      const endpointRule =
+        root &&
+        Object.keys(bindings).length === 1 &&
+        Object.keys(root).length === 1 &&
+        (endpointState === "initial" ? root.hide?.length === 1 : root.show?.length === 1) &&
+        !nodes.get(node)?.[
+          endpointState === "initial" ? "reveal_hide_when_applied" : "reveal_show_when_applied"
+        ];
+      if (endpointRule) {
+        if (!part.group) throw new Error(`Static patch endpoint is not grouped: ${part.id}`);
+        endpoints.push({
+          part,
+          patch: (endpointState === "initial" ? root.hide : root.show)![0]!,
+          state: endpointState,
+        });
+      } else deriveAppearancePatches(bindings, nodes, mapping);
+      reviewed.push({ part, bindings, nodes });
+    }
+  }
+  for (const endpoint of endpoints) {
+    const base = endpoint.part.node.split(":")[1]!.replace(/--state-applied$/, "");
+    const mate = endpoints.find(
+      (other) =>
+        other !== endpoint &&
+        other.part.group === endpoint.part.group &&
+        other.part.node.split(":")[1]!.replace(/--state-applied$/, "") === base &&
+        other.state !== endpoint.state &&
+        other.patch === endpoint.patch,
+    );
+    if (!mate) throw new Error(`Unpaired static patch endpoint: ${endpoint.part.id}`);
+    const group = doc.groups.find((item) => item.id === endpoint.part.group)!;
+    (group.patches ??= {})[base] ??= {};
+    const mapping = group.patches[base];
+    if (mapping.state !== undefined && mapping.state !== endpoint.patch)
+      throw new Error(`Conflicting endpoint patch: ${base}`);
+    mapping.state = endpoint.patch;
+  }
+  const availableNodes = new Set<string>();
+  for (const [id, asset] of descriptors) {
+    for (const definition of asset.parts) availableNodes.add(`asset:${id}:${definition.node}`);
+    for (const [state, variant] of Object.entries(asset.state_variants ?? {}))
+      for (const definition of variant.parts ?? asset.parts)
+        availableNodes.add(`asset:${id}--state-${state}:${definition.node}`);
+  }
+  for (const part of doc.objects) {
+    const assetId = part.node.split(":")[1]!;
+    const reference = references.get(assetId)!;
+    const root = part.node.split(":").slice(2).join(":");
+    const placement = part.group ? doc.groups.find((group) => group.id === part.group)! : part;
+    const mapping = placement.patches?.[assetId] ?? {};
+    const endpoint = endpointPatchRule(part.node, availableNodes, placement.patches);
+    const reviewedPart = reviewed.find((item) => item.part === part);
+    const nodes = reviewedPart?.nodes ?? (await partNodes(reference, root));
+    assertPatchMappingEquivalent(reviewedPart?.bindings, nodes, mapping, root, endpoint);
   }
   for (const group of doc.groups) {
     const before = old.groups.find((g) => g.id === group.id)!;

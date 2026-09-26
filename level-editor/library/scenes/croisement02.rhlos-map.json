@@ -1,0 +1,4339 @@
+{
+  "map": "Croisement02",
+  "size": [
+    1792,
+    1152
+  ],
+  "camera": {
+    "kind": "oblique-orthographic",
+    "elevation_deg": 35
+  },
+  "sourceMap": "Croisement02",
+  "sceneAssets": [
+    {
+      "id": "croisement02-terrain",
+      "role": "ground",
+      "model": "3d-assets/croisement02/croisement02-terrain/model.glb",
+      "model_sha256": "401fd0422bffc07e302ca6cdee79dc9169b8715fa6afaaf76ffb6ca7cd5f3edb",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        }
+      ],
+      "model_scene": "default",
+      "descriptor": "3d-assets/croisement02/croisement02-terrain/asset.json",
+      "descriptor_sha256": "c5af34e7ae47ef38e6176a2ab3b14128f95a485b88216d84da5ad8143abd0562"
+    }
+  ],
+  "provenance": {
+    "source_sha256": "466e1e1e1501be6af09e793c9fb2d902e0b136bc9ea8cb6ff03f48645d34669e"
+  },
+  "assetSources": [
+    {
+      "model": "3d-assets/croisement02/croisement02-group-001/model.glb",
+      "model_sha256": "f086661527bd1ccbe86741eecc2d61682a3ca7e718fc39271af247de7e7c8388",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-001/asset.json",
+      "descriptor_sha256": "7f8c0164ea9f3256a87cc16e8712369d215aa0b2399a01957cbd11e3b20115b3",
+      "id": "croisement02-group-001",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-002/model.glb",
+      "model_sha256": "68d4fe21b10509524c598b1329ed3f5724b45a32251c4722037a682584746553",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-002/asset.json",
+      "descriptor_sha256": "14e9d5d45ae626345c8cbcb84ac0999ac47a8e2752704a7bd8593bfe52e1d4d3",
+      "id": "croisement02-group-002",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-003/model.glb",
+      "model_sha256": "4ade4545ec6677b722865474c35022a06b9d96872de99bc37401f9ff564d8024",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-003/asset.json",
+      "descriptor_sha256": "3344bd971d9bb8029829ea0a8bcad6e7889e15c7930b277d601106636e2f4a96",
+      "id": "croisement02-group-003",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-004/model.glb",
+      "model_sha256": "7da47aa7749955a3a8e8d01ccda88f5eb4794e1cd0485e50ba1eea09e26983cc",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-004/asset.json",
+      "descriptor_sha256": "960778d65663fd8809610a34b5306301be6807e4ae9510ffc79c3c4b56c04c8e",
+      "id": "croisement02-group-004",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-005/model.glb",
+      "model_sha256": "855d7e7fda93a4b36681a01af6aef946f49f787c7c999291bf1e27516c13c20b",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-005/asset.json",
+      "descriptor_sha256": "440e183ed2c0dacd94d12defc0d9a0dda13a0ddab32ef28ec60ab16590a971b9",
+      "id": "croisement02-group-005",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-006/model.glb",
+      "model_sha256": "9097d40fd822bb8f6a8a5a40e7842ddbfecaee087dd8b3f641d5c6e185235de0",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-006/asset.json",
+      "descriptor_sha256": "1de97ddac0d7963bd2eb0a0373e2e8d8bfacb88c98877c952ea20b8875bdcc1c",
+      "id": "croisement02-group-006",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-007/model.glb",
+      "model_sha256": "face3d48e14b394d3c0fcec389331ff724884b54bdedb3b9bd469ebb27df2954",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-007/asset.json",
+      "descriptor_sha256": "d7172c948fc761eb0f937dbfae4ccd2dc018a47a700603b3175154ee4d7a3cac",
+      "id": "croisement02-group-007",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-008/model.glb",
+      "model_sha256": "4a51b9fab0737164d4eb586700a9a89ae5654f5015ae8d16b94380df6c2de371",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-008/asset.json",
+      "descriptor_sha256": "6c880179c5b74ee23bfb8f8c9c6a76d357741ba441b475d15a38906c4a0a6301",
+      "id": "croisement02-group-008",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-009/model.glb",
+      "model_sha256": "880a495375a320f32bf77beefc28c8beaf9b91b4e235ce35d5af219ab2fc0532",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-009/asset.json",
+      "descriptor_sha256": "c2e7e3d741f8794f7218b8cd33e1122de352cf29a3d4d95c28d991487c7b4f4f",
+      "id": "croisement02-group-009",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-010/model.glb",
+      "model_sha256": "ff9e0db6885d9e954bbf24e52b2eb32b1c83207022913c3fd647dfa942e88291",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-010/asset.json",
+      "descriptor_sha256": "d284d1d19fdee9b9600decdf20170c16ce59ea08e82686b1034ba7a38d819179",
+      "id": "croisement02-group-010",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-011/model.glb",
+      "model_sha256": "4968857268f198c4bde539bb7e1594eac6fedf7068b61e322753516e94e6b594",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-011/asset.json",
+      "descriptor_sha256": "c5b1f1d92fbf439bc526a547e7a0aecfe7c47635e9786b67a0428f17202b2029",
+      "id": "croisement02-group-011",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-012/model.glb",
+      "model_sha256": "f95587020c07e73e5402178d73da280e71d9c83588f7459ce1ad30374432ffdd",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-012/asset.json",
+      "descriptor_sha256": "93310481285e2657cbf6c4c09fd7f4750563017d84f1faa61cb4bd1779d42b9c",
+      "id": "croisement02-group-012",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-013/model.glb",
+      "model_sha256": "c17c66f32c96ab5fd579f6b1c2eeb27e73b8138f4d0cdaad0c8ffba74ae4902d",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-013/asset.json",
+      "descriptor_sha256": "8ae74f59165ea892c351beca860f027327023da209f334e8276e574ef5f4f161",
+      "id": "croisement02-group-013",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-014/model.glb",
+      "model_sha256": "592095d98189a8ab96af7b060404a6aac581d832f134ad3e42c1ab85866bcd5f",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-014/asset.json",
+      "descriptor_sha256": "4cf92216a26ba545ac246b3beb1de7140d418ea3b9aca629ecb3414ef9b6a958",
+      "id": "croisement02-group-014",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-015/model.glb",
+      "model_sha256": "22c9395238ae6e8aceb28c6aa82c6af8845e411ef4925d07f38e38d1fd7eacbe",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-015/asset.json",
+      "descriptor_sha256": "15d1f5ad323c670f7738d16f8586c5e8f9374a4d48a2f74a18a5bec7e5b05250",
+      "id": "croisement02-group-015",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-016/model.glb",
+      "model_sha256": "8283701d5699a3c071a2178104487dc1a1bf1ca8783b9c16b297a98b9c86ea18",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-016/asset.json",
+      "descriptor_sha256": "22928e15b247a12196bdb4afc235fcf88d9340478a61e246d0f7de69aa092897",
+      "id": "croisement02-group-016",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-017/model.glb",
+      "model_sha256": "165e1cf3d4b3a74c2b57f55b1fe629613c4a6deb637f3b482e5adab39d461533",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-017/asset.json",
+      "descriptor_sha256": "d7e2ce0d0191c5693b7495ec6bb9315a455d7992e04aa7a4bde0daa2688ef9fb",
+      "id": "croisement02-group-017",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-018/model.glb",
+      "model_sha256": "bcfc1b5fcb015f816f9da7f4f7e6716620dcebbe2ab1a85a00f2f8dd6fdbc40f",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-018/asset.json",
+      "descriptor_sha256": "3b644165ce9cf9b02f0d36954a911c267693d403890389b41e0c1cfd7f8b24df",
+      "id": "croisement02-group-018",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-019/model.glb",
+      "model_sha256": "1d88a3bfd1ccc2fd9514bf2cee942dd3f1df1de45d7b524e173dee7e612529d9",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-019/asset.json",
+      "descriptor_sha256": "0ef3381a6b42beef02748852309dfd8b216841fe6cd705a1ed0b95becc9aabec",
+      "id": "croisement02-group-019",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-020/model.glb",
+      "model_sha256": "b8ac42cda356e9399170c797faafc4f45a04288cc18bb5b534a33eef2aa8c0fa",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-020/asset.json",
+      "descriptor_sha256": "39657f159ed3e829577b1ade67577d010c34414d8b7b8d3d202d73f0bf0c1dc2",
+      "id": "croisement02-group-020",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-021/model.glb",
+      "model_sha256": "d05b953a287827686417a21123e9125158926bb2ed9b4bac46f87eb66757a6ee",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-021/asset.json",
+      "descriptor_sha256": "aaae108aeeabc2e130775322faad6812c0e1fab71d19f79b66c81655cb1aed45",
+      "id": "croisement02-group-021",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-022/model.glb",
+      "model_sha256": "71cc81a1e1d37659a74a5e36f0d8886e0d496736238d17f68780775c6a75c531",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-022/asset.json",
+      "descriptor_sha256": "74241a5a811a0e9638015de944e93b38c265b66c9df3b5718c697b19760da9c7",
+      "id": "croisement02-group-022",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-023/model.glb",
+      "model_sha256": "0be3cb6e8cdbae06fdf71309654022b66ce8a6d99a08c4c1229b92395e12d98a",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-023/asset.json",
+      "descriptor_sha256": "b25d7a1e4bc79a504d176a7d4651de852499847c5077912e933e851ca525af91",
+      "id": "croisement02-group-023",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-024/model.glb",
+      "model_sha256": "7cb3397a4e3f07504f9b6ae97c95fc9ecef9d13dcfe00d838e2439c0bb6f739b",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-024/asset.json",
+      "descriptor_sha256": "b0a1d863e66862222dd0b91fac9b05a775b1f951adc4639c0c376b257fd37765",
+      "id": "croisement02-group-024",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-025/model.glb",
+      "model_sha256": "788d47f33ebb894474a4211ba7f1bbd568fa73d9f2e557e76544bf5d0543f184",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-025/asset.json",
+      "descriptor_sha256": "26554e05a2da55fd55871694413289abd7111f878028c5d0f8fc04a364baca9b",
+      "id": "croisement02-group-025",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-026/model.glb",
+      "model_sha256": "343082a3ee8cdf7185a27677cfbf6dbbbc3637bf69ddc80ae6121e1941834f15",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-026/asset.json",
+      "descriptor_sha256": "c1bd142b8aa7ce1c621aae0686b59a4b35ae7bda522d6bf027f44b8c7d884047",
+      "id": "croisement02-group-026",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-027/model.glb",
+      "model_sha256": "e5fe01b1641a2b9e42a267e413e01ee0eae9ecef6eca7bbba873fc413017d743",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-027/asset.json",
+      "descriptor_sha256": "fec54ea76ed8b50d286bb4f00d37ca3b46aed019e30d61798e5f2a8ec9fafa1d",
+      "id": "croisement02-group-027",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-028/model.glb",
+      "model_sha256": "78f31cf14a42dc5bf499cd744d1a31e48fcf1c77ad930241586feeadc1cd27f3",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-028/asset.json",
+      "descriptor_sha256": "c497dce1739adfc038d24db1431bb6e90d13d59f3bdaaee3d0309f4092360866",
+      "id": "croisement02-group-028",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-029/model.glb",
+      "model_sha256": "e0f80941d5d9168308c76c8cf4f675a7bbe731fae89c6777b1a6c5845c9fe76d",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-029/asset.json",
+      "descriptor_sha256": "34884778938d1b7ab6eeaba1f2d5ef0e3ae30e4a04d7d803d2328d40b6c2ce92",
+      "id": "croisement02-group-029",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-030/model.glb",
+      "model_sha256": "ae9a7d5baa6469feb43b68f2db28d1cd2a9e8232ec03479def82253269c17c73",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-030/asset.json",
+      "descriptor_sha256": "bf5ef69f5312e1e457821e30837180921005e5f316454e8463d2838fef8e24f9",
+      "id": "croisement02-group-030",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-031/model.glb",
+      "model_sha256": "0e57db86bff455b83145cfccac374b37fdd78d9f4ac2cda5c61dd555f017b638",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-031/asset.json",
+      "descriptor_sha256": "b3314c4be72ecbae9fd80d5b995a68adfbe919420f08661f9e0a284c9d4b969d",
+      "id": "croisement02-group-031",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-032/model.glb",
+      "model_sha256": "8f9f3d0e6b458a5586ced1060dd307151c6037853df01613ef0507dde71e42c3",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-032/asset.json",
+      "descriptor_sha256": "7c8e84716862cf46d29f297dd22745821525a743ba78ad9574c03fc7960894d5",
+      "id": "croisement02-group-032",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-033/model.glb",
+      "model_sha256": "0c389358285f258bdbf543ed70099c542c53b1488f936f79fe2f5866a445e894",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-033/asset.json",
+      "descriptor_sha256": "31d0b19a979161186194597803f5bfa8c2bb8bc6dc482d0088ad331f951cff40",
+      "id": "croisement02-group-033",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-034/model.glb",
+      "model_sha256": "928d80c565cf95c7a6b0a9933747b2e5f8ccd85e63bd2b268f13efb81c79734f",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-034/asset.json",
+      "descriptor_sha256": "c8a99554a9f04ba980953420ed111f19fca8e858174af99e618cc8c7429ab8b2",
+      "id": "croisement02-group-034",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-035/model.glb",
+      "model_sha256": "15a52a072b1aeddd513def9ca7de74fc850ebbe6e1be604795cfb449f0fed4d3",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-035/asset.json",
+      "descriptor_sha256": "345dee0aa0c1343b5acf44b061bd8ea9e071e41dad23ac163e23a46a2168e1ec",
+      "id": "croisement02-group-035",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-036/model.glb",
+      "model_sha256": "9707e52781cf218eda63c687ff3bf907c90e03c29e1d14383d63aabc080899ea",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-036/asset.json",
+      "descriptor_sha256": "1dc5a3d21be89ca13e955f2fbee77d9af426098039da3958919caa5beb057990",
+      "id": "croisement02-group-036",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-038/model.glb",
+      "model_sha256": "2e39a1101c402060947a4840f2465f7d0cc5c9ce98ca4db532ed4796394ff3b0",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-038/asset.json",
+      "descriptor_sha256": "1d46405cc744d3be0d8231741deea1a8ce23e3c2ce5cc10594c58b6125c45241",
+      "id": "croisement02-group-038",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-039/model.glb",
+      "model_sha256": "5a9757dbcc2d67c1dbe55ae944c45dab097119273bdd25b9179ffec3798aa30e",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-039/asset.json",
+      "descriptor_sha256": "00cb9292d05afb2e8dde46a5aca9decd483128e633bb3f8eaf84346309754e2e",
+      "id": "croisement02-group-039",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-040/model.glb",
+      "model_sha256": "bc544dd462c81db0ed6e704d55ff6220f45b088c99051fdd6056a4504c2cb535",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-040/asset.json",
+      "descriptor_sha256": "866932a79d2ba800d8bc4f867d914c6d32da46aebec4adbafe2344c106a23aab",
+      "id": "croisement02-group-040",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-041/model.glb",
+      "model_sha256": "690c4660d10005c1a08a40c7208267662de6079698d5b148f61748e0fa725db3",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-041/asset.json",
+      "descriptor_sha256": "e2d4eb7c07fb4707146663292f7149f84efdc9f9ceff433fdcca6f8cf41d419a",
+      "id": "croisement02-group-041",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-042/model.glb",
+      "model_sha256": "22b4e63ca3136d60515a6cb08511ea92d97cf6e39af8a240d2316e232efeee22",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-042/asset.json",
+      "descriptor_sha256": "5d6ac7a46eaf483fadfc3bb79e988b8212e62952d0e72ed81e46c9abf18a1bd8",
+      "id": "croisement02-group-042",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-043/model.glb",
+      "model_sha256": "034c0b51d0e97f4b68a9230fe627c362870f091eec08070cd00ff30424cb4829",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-043/asset.json",
+      "descriptor_sha256": "3b83eebc56ae22a486c63717835e21bf45ec5d61ead9c6216c653496280f7acd",
+      "id": "croisement02-group-043",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-044/model.glb",
+      "model_sha256": "cb52226acf6ef34b0381d5122780169db666df39b9635eec403a1b25d8b7323f",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-044/asset.json",
+      "descriptor_sha256": "db65020387ca4dc32911e94ecbfb3c9480fe0913e1a7db18096afc61816c9446",
+      "id": "croisement02-group-044",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-045/model.glb",
+      "model_sha256": "caa4ca6425c73987e45c727136c85d46fae76778d3ac22db56adc2cb792cd546",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-045/asset.json",
+      "descriptor_sha256": "888a31b43a94bd5ca711e36de4582ae043e94e1463c95112eb368bdd5d0f932f",
+      "id": "croisement02-group-045",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-046/model.glb",
+      "model_sha256": "dc7ece2d797b45c778b01e5f7fd86d639654b8933b10d2c228b9064fef7926b6",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-046/asset.json",
+      "descriptor_sha256": "dc28215ab18e36baf41a0e1b4eea2a32e9a05624aa88adf53f451bff8e0e2d35",
+      "id": "croisement02-group-046",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-047/model.glb",
+      "model_sha256": "1fe4bdcd59dde342e01dd5cf0f49582c11d7c863fe435b7a9f2cc8d00cc105bd",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-047/asset.json",
+      "descriptor_sha256": "72a746a29d6210e9fed2aed3208992fd4f2c32af0ed7e89eee30f13254694c6d",
+      "id": "croisement02-group-047",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-048/model.glb",
+      "model_sha256": "c054204c18fcc8dc9a0b02184d96d53894ee698d742cc1dbe26ecd703f9545b4",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-048/asset.json",
+      "descriptor_sha256": "ee974717af6a68d4f0975981a2f4ba72d63f7af078e8a4b4185ebb4332555b06",
+      "id": "croisement02-group-048",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-049/model.glb",
+      "model_sha256": "d89787acf7287dee0e76991b89627e030bfece84d863c28a5ff900db66c5f34f",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-049/asset.json",
+      "descriptor_sha256": "39cb0dc7ddf74ad2c5ff223a46bfd801f2edd4bc07a799ec200144a7ea4f5d31",
+      "id": "croisement02-group-049",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-050/model.glb",
+      "model_sha256": "4a654aaf982de0fa4c0d27fc329b0acb815329345f4ae24e072e588444c2ff4b",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-050/asset.json",
+      "descriptor_sha256": "401550dac607476d5d2ef7c3069fb6ee7847bc4415e9925d812ac17b8807a2b7",
+      "id": "croisement02-group-050",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-051/model.glb",
+      "model_sha256": "fb8a1a83b9407387ab9533e035d33f975aaea2e92343debce2411e5afd637ab5",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-051/asset.json",
+      "descriptor_sha256": "491c5b027b1ed573ebaafb8c8dccfb17157a08a0441b4e048cce024df75a8476",
+      "id": "croisement02-group-051",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-052/model.glb",
+      "model_sha256": "da1d1b678482a87a55787c09c3133c1ed4a10f0766dfdb0368f4e98d0da884ea",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-052/asset.json",
+      "descriptor_sha256": "7c77c820681dc8730cfad1106ad18e859f46e234ce76837a8a7e428e720250f4",
+      "id": "croisement02-group-052",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-053/model.glb",
+      "model_sha256": "42b8fc27eeae93716bb2411684382f68e5e288dc2b97563be8b75d72f3a44bd2",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-053/asset.json",
+      "descriptor_sha256": "dccd300557de6eeac60d3d310501a9dd7d8cfcd5b6e7b0ee3a43bdc76972e2a3",
+      "id": "croisement02-group-053",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-054/model.glb",
+      "model_sha256": "b00095267353de8b9a4960b2f6889167006c58c8ebd77152979c3416ba6675b7",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-054/asset.json",
+      "descriptor_sha256": "1928a84076c9acced72cc29dfbbc8322135c9f401eb051175f8957aebdfcad53",
+      "id": "croisement02-group-054",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-055/model.glb",
+      "model_sha256": "1f4e8d99c840733e38ad176af3edce37f2565e486d2d44f39f47f1a3d35e4a35",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-055/asset.json",
+      "descriptor_sha256": "1fd0dfd366cba53289dec24f7e46c52b205aacff5e0f2719396e65f7f4ef4163",
+      "id": "croisement02-group-055",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-056/model.glb",
+      "model_sha256": "44694503d0b4dd04712d4bddd97ccce55ea755a7217bc7e420e9a0750ed7a714",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-056/asset.json",
+      "descriptor_sha256": "b3ad624525ab26ac4406283e7c7965dbb9da6f6f201262428036d379d4b9b0c3",
+      "id": "croisement02-group-056",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-057/model.glb",
+      "model_sha256": "22310a572059985b728ae9bfe8b4c833af91c232db0533601bba77258610c96b",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-057/asset.json",
+      "descriptor_sha256": "20a244130e43e1c06f1c31b0d74c219736602b4cde3516d3dc0e34b9636d3e0f",
+      "id": "croisement02-group-057",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-058/model.glb",
+      "model_sha256": "0b149764f2bbe136da91c551b720dccbd850cbd80d782cb264759ac85fc54a99",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-058/asset.json",
+      "descriptor_sha256": "fac2f2e742043a7faf52196af24b07a6762af2f57bc16ba17d6d7ed9404df73b",
+      "id": "croisement02-group-058",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-059/model.glb",
+      "model_sha256": "cf546d59a6c372e302692b322d46b220a313e7cbdb01fa5b56174c8c032d8c62",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-059/asset.json",
+      "descriptor_sha256": "ebc35b9a0e253664616628ac251fd0b0e5cb6112fe515ebc1a63d01b52259ba9",
+      "id": "croisement02-group-059",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-060/model.glb",
+      "model_sha256": "c1bf7aff42b853dc8ec4e58c8b5c8333c4e2bd142e00dce4a7fff12d85038311",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-060/asset.json",
+      "descriptor_sha256": "50dc1ba6deb19c7d3df23dd0c00b4b174f39361e3a2da86287e42f89fe5f774b",
+      "id": "croisement02-group-060",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-061/model.glb",
+      "model_sha256": "64eb2885ecc6d2bf3e720d699d430c6126eb8c9bc9633f62b8ecd605285fe798",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-061/asset.json",
+      "descriptor_sha256": "d97b2659affa276317ac7ceb29c1ac1e3ff625acfdceb3745481305459edeff7",
+      "id": "croisement02-group-061",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-062/model.glb",
+      "model_sha256": "6f48f1e674643b0277e777b0fe3ea94127ddcb4935dcae1843ae64fb06c2cc08",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-062/asset.json",
+      "descriptor_sha256": "8d58011a0e1d38c0ba2e22537de98d98331aa2657b20a6b46d277597e8366a2f",
+      "id": "croisement02-group-062",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-063/model.glb",
+      "model_sha256": "45080d686dfccaabf1494472f4e274920642d90357bf764790a98d371ac50e1d",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-063/asset.json",
+      "descriptor_sha256": "9c553eb92ba22b7383c376fde4cb7d22de47535b5b07f68e7735a5560966063c",
+      "id": "croisement02-group-063",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-064/model.glb",
+      "model_sha256": "daa1cecd8dd9e963b9887b4e60a43f665be9c71bfef6ed2304e0429f65ff9773",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-064/asset.json",
+      "descriptor_sha256": "ac8758697631cb2827eedabd224b1450e3e895199daa0d3ed39665da431a22cc",
+      "id": "croisement02-group-064",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-065/model.glb",
+      "model_sha256": "c764b464a73470e2a56b7a4ad3c350beb7ccb35ace599443829f42826ad66084",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-065/asset.json",
+      "descriptor_sha256": "8e85449c847c8e7c4ef02b8bf2c07474dfb13d1e4b9ea32ebb9b48ab7ccd13b9",
+      "id": "croisement02-group-065",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-066/model.glb",
+      "model_sha256": "3605562fe2ce9ceb1d8461d28df09cbfc325196f35f94a1146faeb9673d47427",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-066/asset.json",
+      "descriptor_sha256": "13daeec8005cfb32fd75d2c8a93dfb8b91c28f936eec13a5de7282b261c20ea3",
+      "id": "croisement02-group-066",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-067/model.glb",
+      "model_sha256": "abe5e3a8dfce2dff9020e11fe9a1284aed35eb563885a6b67c59e4769be52b06",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-067/asset.json",
+      "descriptor_sha256": "e1578d51e3ef0453ef8a9dcdf39c05fa662cd42f58234bf2495676b9ab92a942",
+      "id": "croisement02-group-067",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-069/model.glb",
+      "model_sha256": "6cd4023843cdff413be1d93d38ffb25eb93a0b10ebb93063c639dcc7ad603a88",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-069/asset.json",
+      "descriptor_sha256": "23627ff1fba6945aef4ef26838b44ae563dfbd3158146e4174b2dcc4136683e1",
+      "id": "croisement02-group-069",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-070/model.glb",
+      "model_sha256": "56c280812d99245d3015c685ebaa1619f995117f7f5ff37517ae23abbd218285",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-070/asset.json",
+      "descriptor_sha256": "04e4ecb2b8c93db766039387e78ada4681ff33c8f45554819909e8b7a5150a75",
+      "id": "croisement02-group-070",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-071/model.glb",
+      "model_sha256": "0b0a89f561aedac3d5ea9bca3ba0130373769a30b36b73a239565ab015fd013a",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-071/asset.json",
+      "descriptor_sha256": "74dfb48be9328889242a4e51e4ee4df805f4d946556599ad45917dc4c8ce4ac1",
+      "id": "croisement02-group-071",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-072/model.glb",
+      "model_sha256": "f11453ce66e148f74d1da12e8a73be0bb01fa3f185def794e545b8eb3f11f5d9",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-072/asset.json",
+      "descriptor_sha256": "253f1496fdbb15860dfc0d4916ec058da90f6155d6b3c969a6f1105432c893bd",
+      "id": "croisement02-group-072",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-073/model.glb",
+      "model_sha256": "547f09141b05f27aadde4312f25c1963f7b3555b8e0d8de664b640bb3f00197e",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-073/asset.json",
+      "descriptor_sha256": "e8705ec193923fd73355a9eb4204341f67132e877cff5a7f1dc33f7ab1eba0fe",
+      "id": "croisement02-group-073",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-074/model.glb",
+      "model_sha256": "a748638b3455a4dec67cefadece47018a0b9935cbfe75f614046b6d675dd6c13",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-074/asset.json",
+      "descriptor_sha256": "229f9e85162dd855cd65d4d994e20aaff6135986c86770c42744ac2bc847d41f",
+      "id": "croisement02-group-074",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-075/model.glb",
+      "model_sha256": "a44621d2452f2c15a22aaa60144ed6de31e794db9003e5fdb2aef2023e89784e",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-075/asset.json",
+      "descriptor_sha256": "c73a41139273d4fd85d44b7400cbc74fa6d02588a056af2181fb7b7e0691f062",
+      "id": "croisement02-group-075",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-076/model.glb",
+      "model_sha256": "bb832dd3e5ffa16ca57e1b8201c3f8a064c715123d3aaea400fe4717ca504204",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-076/asset.json",
+      "descriptor_sha256": "399fd9516438b7d945cc0897eb66c23c7795c942f14c52a862a716453803d8e7",
+      "id": "croisement02-group-076",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-077/model.glb",
+      "model_sha256": "7d28c17cc669ed74e94748ff74511758e7c0511e95351353b2e031c2a6878456",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-077/asset.json",
+      "descriptor_sha256": "5777b895f48e394b4067efa79330789fcfe1f384e4c0575d16f48ce96d7b04e6",
+      "id": "croisement02-group-077",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-079/model.glb",
+      "model_sha256": "83dffd2dec05e9c29ddf0dd4c0a7eb3b898bbbe5431349a740eeab73d8ce0b6f",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-079/asset.json",
+      "descriptor_sha256": "85dead34b044acb43b6d713877bf0fa81221323960f69a5eb34671f7224a80eb",
+      "id": "croisement02-group-079",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-080/model.glb",
+      "model_sha256": "f8be23c50850fdc79de1342c91c23e4c37649a847a5acb89501368051bc57057",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-080/asset.json",
+      "descriptor_sha256": "1a37d771ad9c12c4799aae4e14eeb4099825e3f04b93eaab3e4ce10fb1351f76",
+      "id": "croisement02-group-080",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-081/model.glb",
+      "model_sha256": "578c7e893493e2e4a3699844c20190b03cd01a891b83da35d1e9d58a8e557255",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-081/asset.json",
+      "descriptor_sha256": "0332df13e56e1ad1ce607b6245bc95cb7a0edf7dee56e0e4d6d424e30c1764ec",
+      "id": "croisement02-group-081",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-082/model.glb",
+      "model_sha256": "5a9691e0e07f0c834c24dbd2c4395005d2ba2cb6bdd2ceb80a8a06379f5846a8",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-082/asset.json",
+      "descriptor_sha256": "b7b21d102a92774921416dfa3d3ba1f52b435c5851f12d8af9fb3a6adb1cd627",
+      "id": "croisement02-group-082",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-083/model.glb",
+      "model_sha256": "1b68dfbef733f20c319cc29658d9fda7595d66f6ef921cdd19a537b19b30ff3f",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-083/asset.json",
+      "descriptor_sha256": "f15622624bd4c4b8a0b9fc21f048ec278ab1f8ec7687d5ca22bd9edb824271b9",
+      "id": "croisement02-group-083",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-084/model.glb",
+      "model_sha256": "0a7173766716d853e32eb39f496d97d2c2f78b2a03abc2826d39f45f68516c41",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-084/asset.json",
+      "descriptor_sha256": "1b5e902255834ae212bffaedd9e1b4ab5db4d57eb41a0833f7de2fc166fa277a",
+      "id": "croisement02-group-084",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-085/model.glb",
+      "model_sha256": "685fa8e111506f23f0be01dd62112822c569a6d1b8bde2cda97ccbb0e5afedae",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-085/asset.json",
+      "descriptor_sha256": "2a79888b08f85be3e8b04c3bfc9357c8585a68ee015b0fd6fc91be5b6d253763",
+      "id": "croisement02-group-085",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-086/model.glb",
+      "model_sha256": "ab8f2572e7e4047da122656f26564945d3b91168d42573bb590d9f1d2d079b22",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-086/asset.json",
+      "descriptor_sha256": "1e33063e1e8b76848ca9753b5b1e9d62a8eb4e245f501a382115befd6f7f1a78",
+      "id": "croisement02-group-086",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-088/model.glb",
+      "model_sha256": "180b0bf66e42ce26e7f4063491275366d67a76ced86a61ff8bc64129adb488aa",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-088/asset.json",
+      "descriptor_sha256": "73cd9992b5a1f5155ea049ea28bfdd27c9f8e2b2a960c922f0f51b8210417acb",
+      "id": "croisement02-group-088",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-089/model.glb",
+      "model_sha256": "cd74c99d61771163fc33152b5ffcbc245a971ff080156e0159328e64a571d951",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-089/asset.json",
+      "descriptor_sha256": "1a75f52a996ec6e68257b8d4996e6006900d53d5124c61e9a4a11f8494a2a077",
+      "id": "croisement02-group-089",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-090/model.glb",
+      "model_sha256": "54e1fa4effd80e8ad3c10b7d0b5174d4dec0407203f19d791e30beda25a3d1c3",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-090/asset.json",
+      "descriptor_sha256": "25c3ae208a8526650d8c401b06e2a773d75d2bfbe692014b65643904fb3b3b9c",
+      "id": "croisement02-group-090",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-091/model.glb",
+      "model_sha256": "52b59fbf4de02124ab8872d3622b88d51ae32ff8f4bb47fe9380c6cf13a5c545",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-091/asset.json",
+      "descriptor_sha256": "ddd26b7b7779c70687f85be81703af49cf4e1f1fd7532b086b61ece1b320d564",
+      "id": "croisement02-group-091",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-092/model.glb",
+      "model_sha256": "5cbb5b7ce4e049c202d359326eb28ba730b2f9096565e2a17b11c7d4b016b653",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-092/asset.json",
+      "descriptor_sha256": "976ddbc7bf8c834b8b59c162af5506bf4559d50751a27d2f9b73695c25ede549",
+      "id": "croisement02-group-092",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-093/model.glb",
+      "model_sha256": "e3aaaf02ab717a117b7e6082ba539c88f9601d6dffa1911e5cf68dac219a712d",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-093/asset.json",
+      "descriptor_sha256": "a04ca425343b6641302a2d0e45655941e831c08d6c5355d8799d384a4ed9a500",
+      "id": "croisement02-group-093",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-094/model.glb",
+      "model_sha256": "edf1da336f7d87f65546e2d1a73d6066a98600fab8d05520a70aebb73dcfd9ed",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-094/asset.json",
+      "descriptor_sha256": "446db3936e9651511178529c9a40034e39e63787b665088d532d6a8521fd1eca",
+      "id": "croisement02-group-094",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-095/model.glb",
+      "model_sha256": "7f1230b8892ee3472f5ccb23adbefff3565a9ddf8ee5baa81d23168131e57d8b",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-095/asset.json",
+      "descriptor_sha256": "6fd8f6e5952d384cc858444a03708781a9642f95259ad550e489259910ae7663",
+      "id": "croisement02-group-095",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-096/model.glb",
+      "model_sha256": "222c698f1cc8d4ec3f86b62424c430b8cef8f442d6be17a72ee0d0220a874e76",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-096/asset.json",
+      "descriptor_sha256": "a577b3358b2959cfe92a5543fdf4f4093cc119d4d83a86830a6fb3adb53157ea",
+      "id": "croisement02-group-096",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-097/model.glb",
+      "model_sha256": "b4fb3273a03db65a381a35737fdc9b12988a14b03f748e83437f54f6d197d7c8",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-097/asset.json",
+      "descriptor_sha256": "3aaec3ffa0693225e3b5d547e013a1ee98c09dc8fab683ce7f3cd7b7f6586624",
+      "id": "croisement02-group-097",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-098/model.glb",
+      "model_sha256": "cdeb3538796b5ef3fe0886796cf938bed182926a44935160e8df4ef43d744c2d",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-098/asset.json",
+      "descriptor_sha256": "67b82bca5ff75af1156f9c602368558702616609cdec92b8c4317cd7679ada72",
+      "id": "croisement02-group-098",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-099/model.glb",
+      "model_sha256": "be6e9097cb16dfba1587e3b4e73c760e894ac80f13ad738b6bb4d5a29d2ace42",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-099/asset.json",
+      "descriptor_sha256": "d2ccb359ce208b9e245a7e04b99b996ae3db4f89af16fd78fe0678663ad70c54",
+      "id": "croisement02-group-099",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-100/model.glb",
+      "model_sha256": "eb4ea8f3dda3b83283c15841a99d04e3f51542489460c9475c38c60a539feca1",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-100/asset.json",
+      "descriptor_sha256": "9d68410f0df2200d0e82110013ea6952ae38cdd7757b31d2f3f7eb96279890ff",
+      "id": "croisement02-group-100",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-101/model.glb",
+      "model_sha256": "916e6f2b46057abb10701b03c67caf8187f070bc4512ee714ba0dc170b96cd2d",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-101/asset.json",
+      "descriptor_sha256": "ec7f2afaf9d37446fcc66d2b1ef3f7c5c229116ac01f4dfd048be98faa22e611",
+      "id": "croisement02-group-101",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-102/model.glb",
+      "model_sha256": "d6165f3b140abc14cd15199ff0c299ee2e9738056079887796695daa6455a758",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-102/asset.json",
+      "descriptor_sha256": "ac47786f614c193fc8708afe90f1c7fe60a9615fd640792028b27333de397db9",
+      "id": "croisement02-group-102",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-103/model.glb",
+      "model_sha256": "25a762dcfb9afe05607ed619983a1c20539504e4ba55313c4b15b6e78659d1fb",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-103/asset.json",
+      "descriptor_sha256": "c8f56422f01cd1ea3a801e5f6044fc9bd85b4d358c78d3418b8e146b0784ba39",
+      "id": "croisement02-group-103",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-104/model.glb",
+      "model_sha256": "3e15be4434cdac89fccb2a56854185c750f37fa72820ad41cd513d0b87e1e782",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-104/asset.json",
+      "descriptor_sha256": "064130bef19a2aae465a36ba85a54d24267b2bb78b40f19af38c90ea7708e63b",
+      "id": "croisement02-group-104",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-105/model.glb",
+      "model_sha256": "d907a6e1f04ad205b20d540302442277095428db12b54bfe3a4c9679a4e42700",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-105/asset.json",
+      "descriptor_sha256": "932949a36a07bd05dbf3a9b4be782103b88fa54b16028b5da6548a10fefad07b",
+      "id": "croisement02-group-105",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-106/model.glb",
+      "model_sha256": "46126c7841518e3dbc6fb4291bf39434519655210900bf25676460a8504b708f",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-106/asset.json",
+      "descriptor_sha256": "4f20d700a4da3829bf9fcc7884a8f5b81a288fa3be4a888ff348773430bc0d90",
+      "id": "croisement02-group-106",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-107/model.glb",
+      "model_sha256": "97a390232a124a308563bb9b9bd83cdf4f2248ff3f59efb53836adf2f03b7988",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-107/asset.json",
+      "descriptor_sha256": "d30b49a601ee336a0a1d9e01d14748d9ac43c59dfa14d29742787abf05e837c0",
+      "id": "croisement02-group-107",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-108/model.glb",
+      "model_sha256": "cfa7145860e277f349a75c4952b0984f43da1b68442bc37da349319d36a2838a",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-108/asset.json",
+      "descriptor_sha256": "1cb18796d375c01ea4906a5fcd1a1f397d62e94436025084b2e3852017de2268",
+      "id": "croisement02-group-108",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-110/model.glb",
+      "model_sha256": "b7cbad09402b9cb22f3c44df4a2553a33d6d5d46823461591bec6034cf58b6db",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-110/asset.json",
+      "descriptor_sha256": "206b0add4dfcf7d63e348adc52781cf9f087d3cd5f34b6f3c725a13048c43247",
+      "id": "croisement02-group-110",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-111/model.glb",
+      "model_sha256": "584fde6562516dd310baab2fbddd5e9edcb474107c2b1ebf8bc04166958f91f3",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-111/asset.json",
+      "descriptor_sha256": "7a44ac5c998b52b4b5ecbdadcadde0a005400604bd45df5e3471c01fc64bf977",
+      "id": "croisement02-group-111",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-112/model.glb",
+      "model_sha256": "18679e961913f9f7ad41b50ca162495d5be47167bf7b9c675ee5741655f0c13f",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-112/asset.json",
+      "descriptor_sha256": "a90331ba345c575150af37949b600a4d7edc8432e98743d66e05807dc6ea4dbf",
+      "id": "croisement02-group-112",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-113/model.glb",
+      "model_sha256": "e34b5f804328ff7db94a3039913cfbc692a9287402750ee6b07f0346b21fa548",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-113/asset.json",
+      "descriptor_sha256": "aab6d7315579dc6f16f10f454e54f88399a563dae3e281cc79feb552956fecb5",
+      "id": "croisement02-group-113",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-114/model.glb",
+      "model_sha256": "bb492cababb140a75cc61854361b680fe9893159c58eba4d0dd369aaf8996488",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-114/asset.json",
+      "descriptor_sha256": "5a0f9e6f3ef0e34898bb939778eae6b749e25492aee0eed91e94bd5532424bfa",
+      "id": "croisement02-group-114",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-115/model.glb",
+      "model_sha256": "1d97158f0dcd67e6c8b5f420428f14a2d70c8a609a2465ecb7af3b54a89ef253",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-115/asset.json",
+      "descriptor_sha256": "3b783f6c3a94d4d7468982a13bb27e06cc316e103548a1374f4f9fd752c07578",
+      "id": "croisement02-group-115",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-116/model.glb",
+      "model_sha256": "36af53e1bb435449604de847a68587af5d1211cc164ef7704b775ca6a66ad6f8",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-116/asset.json",
+      "descriptor_sha256": "358792a746f3243c08ae7ad873a72c864c5aea8b8cc80dc3c300f2c149c4023b",
+      "id": "croisement02-group-116",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-117/model.glb",
+      "model_sha256": "9a916aa4cff29f7f804e6bcb1396b69ce637f409a5b0a01290e6b47a924be4f2",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-117/asset.json",
+      "descriptor_sha256": "e50f784ef4a92805b5595fef956f14ef1710b8c7ddc322e983d8db885b0e4fe3",
+      "id": "croisement02-group-117",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-118/model.glb",
+      "model_sha256": "e3e1282b8bdd429d66ca47e0f39786858b800a7898ecd2bd56390a1a82b02275",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-118/asset.json",
+      "descriptor_sha256": "55668db90e8216f0be43106f683c64e5ff5553ace15ce0d4c8dd3c43bb13455d",
+      "id": "croisement02-group-118",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-119/model.glb",
+      "model_sha256": "3997ea30434a39d3d11ed39ba124f978341257eef07d03af9c143f5c44a1b239",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-119/asset.json",
+      "descriptor_sha256": "674f16dff5ae05f558f8f3e116349b27adff1b6dad0c7c6980729efdcd88d475",
+      "id": "croisement02-group-119",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-120/model.glb",
+      "model_sha256": "ded1d487f3972badc9e8f7f8cf4dec497396d91e6a39dd75767615a59e0e0e14",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-120/asset.json",
+      "descriptor_sha256": "509ad5c16fcab9e10c03715b21efeb63bfe6a99efbadaee9fe3efc207984dbcd",
+      "id": "croisement02-group-120",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-121/model.glb",
+      "model_sha256": "d28f7da7e8a4cd7714a4a19fe2e6c90852759e9f1b05a7ce4fca7ca2fa5405df",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-121/asset.json",
+      "descriptor_sha256": "33492e378c79660fb8275228925ef39f812f052d4b13c37026482035ca524c9a",
+      "id": "croisement02-group-121",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-122/model.glb",
+      "model_sha256": "3800c2f459ded31f14dee07c424bb2e3801108b988b9b0b537d6347e5c919791",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-122/asset.json",
+      "descriptor_sha256": "48959eea46276baca36857e90a2489021ad20aa944d113d6838ecccc1c742e7f",
+      "id": "croisement02-group-122",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-123/model.glb",
+      "model_sha256": "0434f9ef620e73ce32e5ce7367b89dd4a009c44c42e1402af51ecf5ddb613ca4",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-123/asset.json",
+      "descriptor_sha256": "2bc37dac30e4f4f2e041b62d561d672c5c1911bd9701fca78e203cbbfd81b5fc",
+      "id": "croisement02-group-123",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-124/model.glb",
+      "model_sha256": "78337b55ce7350efe9071cc34282c75c269fd5ceac986c41792ed7c181ffc958",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-124/asset.json",
+      "descriptor_sha256": "4553177561d6f6285aaf6f01f246f2a493d8e4d31f0a66fccad531d80ad15b3e",
+      "id": "croisement02-group-124",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-125/model.glb",
+      "model_sha256": "3a70917afd080920c250a47201162818ce90d987614d4563e9d69a6d7b2dcd6b",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-125/asset.json",
+      "descriptor_sha256": "4628b1e2735f8e2304fcdd479d72c913ad3689fe307cd9fe04c76d073276da03",
+      "id": "croisement02-group-125",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-127/model.glb",
+      "model_sha256": "920e0e9f53c106656cd5d46bfe71ec2513177d1d0a48dce8191bf113ff4be204",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-127/asset.json",
+      "descriptor_sha256": "95793594f352d91d0ef0c2d30af7205f1718467ecba6e2b3991d7b605d180301",
+      "id": "croisement02-group-127",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-128/model.glb",
+      "model_sha256": "b0963fdf10ddf4c5b9145afcd88fbd3266248bb1e1cd77ea23c719a8831b5bf4",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-128/asset.json",
+      "descriptor_sha256": "40e48d2fd7cf9580ef4557a09a4d8725f927c3b3167472729febe99519d7355f",
+      "id": "croisement02-group-128",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-129/model.glb",
+      "model_sha256": "db4f568a27d6925acad306625746720039c3de9d49cfc8a9a4635a087ba6da91",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-129/asset.json",
+      "descriptor_sha256": "f82bc54463ac1f90299b7a058dcd58afa7ecb3c31823d4b8b2ea70c39cab7207",
+      "id": "croisement02-group-129",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-130/model.glb",
+      "model_sha256": "28e488c567c8cc858e82b585b6f338f67a6d4abfc5ba02648ffba6e802805305",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-130/asset.json",
+      "descriptor_sha256": "320ede9995941f6762c8706c19b6f60f07ca3a7a4fced747fc7acb14d2ab2d56",
+      "id": "croisement02-group-130",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-131/model.glb",
+      "model_sha256": "167d995e41e4f69a0e2102595539d2c785e276dd290327fe8448f9982fbff417",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-131/asset.json",
+      "descriptor_sha256": "8bf34502996f0b21defe4b9f2ac4c021e6b464f8942555dbed12fc5e663c1c1d",
+      "id": "croisement02-group-131",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-132/model.glb",
+      "model_sha256": "b9f914fe571b04bd358de5b2a0750391aaec1dd7c75b1b2b3a019053a74a9b45",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-132/asset.json",
+      "descriptor_sha256": "660f210329f4ae2475baf41791a7f0b7438354f79b765ba8b19e86f0cfac9dea",
+      "id": "croisement02-group-132",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-133/model.glb",
+      "model_sha256": "31c9fa95b5fd7bb67174e76a8b82a0e2d71b9c1ad045ae7c35dae3a971d8f7b2",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-133/asset.json",
+      "descriptor_sha256": "491c086aa780ac83925e02e54eb866468afa738813a91f16141fd7d963a24ac2",
+      "id": "croisement02-group-133",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-134/model.glb",
+      "model_sha256": "ba521bdb14ed29cad778db13d6c8a2494ff61d98e449dd3da70d9ef159a21927",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-134/asset.json",
+      "descriptor_sha256": "7ad1707183aadb5082f8758a4644dbb323bdec29d6800dee17f5182cab2e2653",
+      "id": "croisement02-group-134",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-135/model.glb",
+      "model_sha256": "79c57b7585075181ba7037d05e8c57260f79519fb61438e43b7fc8d87d0b7cb0",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-135/asset.json",
+      "descriptor_sha256": "b2a9645d5f694e396347b971e8c1eff49cd0b01be16e192a7b85039bd806c2a3",
+      "id": "croisement02-group-135",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-136/model.glb",
+      "model_sha256": "412e5aba881fc51affdaf25e7bebd7bc4bdfc3d8027f6f607d71d01eec7aae5a",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-136/asset.json",
+      "descriptor_sha256": "2499c6231806456da044c23b1e95182d1da0d6d5be0fe561645403a0e475ee15",
+      "id": "croisement02-group-136",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-137/model.glb",
+      "model_sha256": "485f8d57d0318d97006c23b446f6d09cdf785e6346437bccb389b20784033441",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-137/asset.json",
+      "descriptor_sha256": "cf6f9db59be594329867dfe3d68162d0c23b3bd4072efc0f53a85bccc0f1bff7",
+      "id": "croisement02-group-137",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-138/model.glb",
+      "model_sha256": "68bf24358f782ee10a483bc19b116937d9dbac8c012b6df79f75bcac3af5b2ab",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-138/asset.json",
+      "descriptor_sha256": "77a3cccc01b77dbf6dbd5a1e59ca7b0ea02985869613478b729a34aa6da7836d",
+      "id": "croisement02-group-138",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-139/model.glb",
+      "model_sha256": "2d1c70153e2bfde97d2e26fb6323007e372abeb27c72cf22c58a8513540b4f91",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-139/asset.json",
+      "descriptor_sha256": "b468b81e00aae21b0c7bbcbaf1f66d591e9d11f177ccb2382e857306208e7452",
+      "id": "croisement02-group-139",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-140/model.glb",
+      "model_sha256": "257d3da5acba9de490b9ad57cb39ae5e976adecaca4652d79c2435919e765e75",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-140/asset.json",
+      "descriptor_sha256": "11feda078d0fac7c2dcb68c44bb24c128b5eb0ef3ad625e2968728b57952b441",
+      "id": "croisement02-group-140",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-141/model.glb",
+      "model_sha256": "abf1421040bf46d41439ff16faf22e49919f77ffc67f976e0147ed1a9e782b9d",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-141/asset.json",
+      "descriptor_sha256": "249f3d043dd47f234a3219bb74242e82f24704019f4524e8682a5599135bc088",
+      "id": "croisement02-group-141",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-142/model.glb",
+      "model_sha256": "f08e0321a050742af6bd5e180d32b000b72ee8395513dc3406a5bff1ec26929f",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-142/asset.json",
+      "descriptor_sha256": "d6809302bf173bd4e9749bdff9932f0139808262a0e347b752828c6300de71f8",
+      "id": "croisement02-group-142",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-143/model.glb",
+      "model_sha256": "1cc72220dff19b7aff24af23550fc19f7706466cf64ce82b9e236147ce584a4e",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-143/asset.json",
+      "descriptor_sha256": "04211b2e24273c91e2118aca84e1cac099aec2590c87abbe1eae37690e55c8ae",
+      "id": "croisement02-group-143",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-145/model.glb",
+      "model_sha256": "7296eb23fbacc7091fba865f12eacc0a7cee5c020c43a35ffd9a76287e8cade9",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-145/asset.json",
+      "descriptor_sha256": "1287777b846cae7878f36b5b9f366a4766813938be8397d43e8746c8a350d99f",
+      "id": "croisement02-group-145",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-146/model.glb",
+      "model_sha256": "8acacf490109e303599afb26ac8a7ca6c6cf331d32792529d6faab7c12b14716",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-146/asset.json",
+      "descriptor_sha256": "6ef27a5b75ea6dff1c5ae13b2045985ab475cb782325525e2a924866be3de5ef",
+      "id": "croisement02-group-146",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-147/model.glb",
+      "model_sha256": "a3c122db67105cd80a8456d89dc8e1e4d3e3483474e3b5077d1eddf6a79ac733",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-147/asset.json",
+      "descriptor_sha256": "aa6a5f2b6d98395d7115ca62ff1346d1aed5e39a3388ec1485255c5b3757f9c4",
+      "id": "croisement02-group-147",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-148/model.glb",
+      "model_sha256": "29d74fa63fc4560e675a5832be107b175263e002f909c44eaba28c093f15f47e",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-148/asset.json",
+      "descriptor_sha256": "a487898c7f39720047b0ef68e012aa9fa1444c5fe8cdaee549aacc200666d0ce",
+      "id": "croisement02-group-148",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-group-149/model.glb",
+      "model_sha256": "b5911fac2d52efec3c52e591232da7358f013643ca1c6060423211d7f038c994",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-group-149/asset.json",
+      "descriptor_sha256": "a5513317efa30222940816af9d5856bf532de5c20c6ae3dfd481e035d055809f",
+      "id": "croisement02-group-149",
+      "model_scene": "default"
+    },
+    {
+      "model": "3d-assets/croisement02/croisement02-terrace-000/model.glb",
+      "model_sha256": "e83ed5dc89b81b66b4fce0d0d41664ea9173cbebabfa5954c3d73f00d1f5a1c9",
+      "resources": [
+        {
+          "path": "3d-assets/blobs/61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216.bin",
+          "sha256": "61041ce2b1706a79f6fac85d49cb91320d4091fb54c00485337e10dd693d4216"
+        },
+        {
+          "path": "3d-assets/blobs/8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0.jpg",
+          "sha256": "8465638aa8bb52f43e99c37862934c77ee5dc6c5dafb0b37311981388d9b0da0"
+        }
+      ],
+      "descriptor": "3d-assets/croisement02/croisement02-terrace-000/asset.json",
+      "descriptor_sha256": "a9158a341d47bd18a502b45286c06d7489f4c597e79d0a2c9327a5a627c1ad8e",
+      "id": "croisement02-terrace-000",
+      "model_scene": "default"
+    }
+  ],
+  "sceneMetadata": {},
+  "version": 2,
+  "placements": [
+    {
+      "id": "group-001",
+      "transform": {
+        "dx": 924,
+        "dy": 402.65065831843435,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-001"
+      ]
+    },
+    {
+      "id": "group-002",
+      "transform": {
+        "dx": 242,
+        "dy": 371.67753075547785,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-002"
+      ]
+    },
+    {
+      "id": "group-003",
+      "transform": {
+        "dx": 1317,
+        "dy": 99.80229992508201,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-003"
+      ]
+    },
+    {
+      "id": "group-004",
+      "transform": {
+        "dx": 944,
+        "dy": 363.07388421021216,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-004"
+      ]
+    },
+    {
+      "id": "group-005",
+      "transform": {
+        "dx": 1773,
+        "dy": 950.9897314700344,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-005"
+      ]
+    },
+    {
+      "id": "group-006",
+      "transform": {
+        "dx": 1743,
+        "dy": 944.1068142338218,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-006"
+      ]
+    },
+    {
+      "id": "group-007",
+      "transform": {
+        "dx": 1625,
+        "dy": 913.7072631072164,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-007"
+      ]
+    },
+    {
+      "id": "group-008",
+      "transform": {
+        "dx": 1668,
+        "dy": 925.1787918342372,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-008"
+      ]
+    },
+    {
+      "id": "group-009",
+      "transform": {
+        "dx": 1581,
+        "dy": 899.9414286347912,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-009"
+      ]
+    },
+    {
+      "id": "group-010",
+      "transform": {
+        "dx": 1543,
+        "dy": 890.7642056531745,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-010"
+      ]
+    },
+    {
+      "id": "group-011",
+      "transform": {
+        "dx": 1495,
+        "dy": 878.7191004898026,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-011"
+      ]
+    },
+    {
+      "id": "group-012",
+      "transform": {
+        "dx": 1630,
+        "dy": 1063.4107129948393,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-012"
+      ]
+    },
+    {
+      "id": "group-013",
+      "transform": {
+        "dx": 1592,
+        "dy": 1040.4676555407975,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-013"
+      ]
+    },
+    {
+      "id": "group-014",
+      "transform": {
+        "dx": 1572,
+        "dy": 1034.158314740936,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-014"
+      ]
+    },
+    {
+      "id": "group-015",
+      "transform": {
+        "dx": 1555,
+        "dy": 1030.1432796864788,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-015"
+      ]
+    },
+    {
+      "id": "group-016",
+      "transform": {
+        "dx": 1526,
+        "dy": 1022.6867860139151,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-016"
+      ]
+    },
+    {
+      "id": "group-017",
+      "transform": {
+        "dx": 1470,
+        "dy": 1007.7737986687879,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-017"
+      ]
+    },
+    {
+      "id": "group-018",
+      "transform": {
+        "dx": 1396,
+        "dy": 986.5514705237993,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-018"
+      ]
+    },
+    {
+      "id": "group-019",
+      "transform": {
+        "dx": 1200,
+        "dy": 925.7523682705884,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-019"
+      ]
+    },
+    {
+      "id": "group-020",
+      "transform": {
+        "dx": 909,
+        "dy": 834.553714890772,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-020"
+      ]
+    },
+    {
+      "id": "group-021",
+      "transform": {
+        "dx": 685,
+        "dy": 872.9833361262921,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-021"
+      ]
+    },
+    {
+      "id": "group-022",
+      "transform": {
+        "dx": 410,
+        "dy": 1133.387038229667,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-022"
+      ]
+    },
+    {
+      "id": "group-023",
+      "transform": {
+        "dx": 520,
+        "dy": 1066.2785951765945,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-023"
+      ]
+    },
+    {
+      "id": "group-024",
+      "transform": {
+        "dx": 1743,
+        "dy": 1091.5159583760405,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-024"
+      ]
+    },
+    {
+      "id": "group-025",
+      "transform": {
+        "dx": 1394,
+        "dy": 221.40050443150378,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-025"
+      ]
+    },
+    {
+      "id": "group-026",
+      "transform": {
+        "dx": 1346,
+        "dy": 353.32308479224434,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-026"
+      ]
+    },
+    {
+      "id": "group-027",
+      "transform": {
+        "dx": 1306,
+        "dy": 384.29621235520085,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-027"
+      ]
+    },
+    {
+      "id": "group-028",
+      "transform": {
+        "dx": 1367,
+        "dy": 320.0556514838837,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-028"
+      ]
+    },
+    {
+      "id": "group-029",
+      "transform": {
+        "dx": 1492,
+        "dy": 233.44560959487575,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-029"
+      ]
+    },
+    {
+      "id": "group-030",
+      "transform": {
+        "dx": 1518,
+        "dy": 230.00415097676947,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-030"
+      ]
+    },
+    {
+      "id": "group-031",
+      "transform": {
+        "dx": 1607,
+        "dy": 225.4155394859611,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-031"
+      ]
+    },
+    {
+      "id": "group-032",
+      "transform": {
+        "dx": 1618,
+        "dy": 231.15130384947156,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-032"
+      ]
+    },
+    {
+      "id": "group-033",
+      "transform": {
+        "dx": 1425,
+        "dy": 182.39730675963264,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-033"
+      ]
+    },
+    {
+      "id": "group-034",
+      "transform": {
+        "dx": 618,
+        "dy": 72.84420741658285,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-034"
+      ]
+    },
+    {
+      "id": "group-035",
+      "transform": {
+        "dx": 46,
+        "dy": 130.20185105168744,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-035"
+      ]
+    },
+    {
+      "id": "group-036",
+      "transform": {
+        "dx": 60,
+        "dy": 183.54445963233474,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-036"
+      ]
+    },
+    {
+      "id": "group-038",
+      "transform": {
+        "dx": 207,
+        "dy": 395.1941646458707,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-038"
+      ]
+    },
+    {
+      "id": "group-039",
+      "transform": {
+        "dx": 157,
+        "dy": 402.0770818820833,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-039"
+      ]
+    },
+    {
+      "id": "group-040",
+      "transform": {
+        "dx": 85,
+        "dy": 389.4584002823603,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-040"
+      ]
+    },
+    {
+      "id": "group-041",
+      "transform": {
+        "dx": 47,
+        "dy": 387.7376709733071,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-041"
+      ]
+    },
+    {
+      "id": "group-042",
+      "transform": {
+        "dx": 101,
+        "dy": 396.91489395492385,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-042"
+      ]
+    },
+    {
+      "id": "group-043",
+      "transform": {
+        "dx": 378,
+        "dy": 909.692228052759,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-043"
+      ]
+    },
+    {
+      "id": "group-044",
+      "transform": {
+        "dx": 208,
+        "dy": 234.01918603122678,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-044"
+      ]
+    },
+    {
+      "id": "group-045",
+      "transform": {
+        "dx": 200,
+        "dy": 258.68297279432176,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-045"
+      ]
+    },
+    {
+      "id": "group-046",
+      "transform": {
+        "dx": 244,
+        "dy": 286.788218175523,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-046"
+      ]
+    },
+    {
+      "id": "group-047",
+      "transform": {
+        "dx": 235,
+        "dy": 294.24471184808664,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-047"
+      ]
+    },
+    {
+      "id": "group-048",
+      "transform": {
+        "dx": 283,
+        "dy": 282.19960668471464,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-048"
+      ]
+    },
+    {
+      "id": "group-049",
+      "transform": {
+        "dx": 314,
+        "dy": 304.56908770240545,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-049"
+      ]
+    },
+    {
+      "id": "group-050",
+      "transform": {
+        "dx": 358,
+        "dy": 366.5153428283184,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-050"
+      ]
+    },
+    {
+      "id": "group-051",
+      "transform": {
+        "dx": 382,
+        "dy": 388.31124740965816,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-051"
+      ]
+    },
+    {
+      "id": "group-052",
+      "transform": {
+        "dx": 410,
+        "dy": 430.7559036996356,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-052"
+      ]
+    },
+    {
+      "id": "group-053",
+      "transform": {
+        "dx": 459,
+        "dy": 419.85795140896573,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-053"
+      ]
+    },
+    {
+      "id": "group-054",
+      "transform": {
+        "dx": 551,
+        "dy": 532.2789329337708,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-054"
+      ]
+    },
+    {
+      "id": "group-055",
+      "transform": {
+        "dx": 652,
+        "dy": 559.8106018786209,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-055"
+      ]
+    },
+    {
+      "id": "group-056",
+      "transform": {
+        "dx": 678,
+        "dy": 553.5012610787594,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-056"
+      ]
+    },
+    {
+      "id": "group-057",
+      "transform": {
+        "dx": 661,
+        "dy": 576.4443185328013,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-057"
+      ]
+    },
+    {
+      "id": "group-058",
+      "transform": {
+        "dx": 761,
+        "dy": 554.6484139514615,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-058"
+      ]
+    },
+    {
+      "id": "group-059",
+      "transform": {
+        "dx": 831,
+        "dy": 488.1135473347402,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-059"
+      ]
+    },
+    {
+      "id": "group-060",
+      "transform": {
+        "dx": 788,
+        "dy": 567.8406719875356,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-060"
+      ]
+    },
+    {
+      "id": "group-061",
+      "transform": {
+        "dx": 740,
+        "dy": 567.8406719875356,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-061"
+      ]
+    },
+    {
+      "id": "group-062",
+      "transform": {
+        "dx": 771,
+        "dy": 570.1349777329398,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-062"
+      ]
+    },
+    {
+      "id": "group-063",
+      "transform": {
+        "dx": 902,
+        "dy": 301.1276290842992,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-063"
+      ]
+    },
+    {
+      "id": "group-064",
+      "transform": {
+        "dx": 251,
+        "dy": 279.90530093931045,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-064"
+      ]
+    },
+    {
+      "id": "group-065",
+      "transform": {
+        "dx": 915,
+        "dy": 302.27478195700127,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-065"
+      ]
+    },
+    {
+      "id": "group-066",
+      "transform": {
+        "dx": 866,
+        "dy": 308.0105463205117,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-066"
+      ]
+    },
+    {
+      "id": "group-067",
+      "transform": {
+        "dx": 994,
+        "dy": 248.35859694000294,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-067"
+      ]
+    },
+    {
+      "id": "group-069",
+      "transform": {
+        "dx": 1033,
+        "dy": 246.6378676309498,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-069"
+      ]
+    },
+    {
+      "id": "group-070",
+      "transform": {
+        "dx": 1081,
+        "dy": 229.4305745404184,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-070"
+      ]
+    },
+    {
+      "id": "group-071",
+      "transform": {
+        "dx": 1102,
+        "dy": 244.91713832189666,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-071"
+      ]
+    },
+    {
+      "id": "group-072",
+      "transform": {
+        "dx": 1098,
+        "dy": 248.35859694000294,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-072"
+      ]
+    },
+    {
+      "id": "group-073",
+      "transform": {
+        "dx": 1121,
+        "dy": 235.16633890392887,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-073"
+      ]
+    },
+    {
+      "id": "group-074",
+      "transform": {
+        "dx": 1148,
+        "dy": 243.19640901284353,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-074"
+      ]
+    },
+    {
+      "id": "group-075",
+      "transform": {
+        "dx": 1216,
+        "dy": 130.7754274880385,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-075"
+      ]
+    },
+    {
+      "id": "group-076",
+      "transform": {
+        "dx": 1189,
+        "dy": 122.74535737912386,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-076"
+      ]
+    },
+    {
+      "id": "group-077",
+      "transform": {
+        "dx": 958,
+        "dy": 649.8621023857352,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-077"
+      ]
+    },
+    {
+      "id": "group-079",
+      "transform": {
+        "dx": 911,
+        "dy": 650.4356788220862,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-079"
+      ]
+    },
+    {
+      "id": "group-080",
+      "transform": {
+        "dx": 1084,
+        "dy": 744.5022143836578,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-080"
+      ]
+    },
+    {
+      "id": "group-081",
+      "transform": {
+        "dx": 1100,
+        "dy": 731.8835327839348,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-081"
+      ]
+    },
+    {
+      "id": "group-082",
+      "transform": {
+        "dx": 1063,
+        "dy": 750.2379787471682,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-082"
+      ]
+    },
+    {
+      "id": "group-083",
+      "transform": {
+        "dx": 1151,
+        "dy": 667.6429719126176,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-083"
+      ]
+    },
+    {
+      "id": "group-084",
+      "transform": {
+        "dx": 1233,
+        "dy": 755.4001666743277,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-084"
+      ]
+    },
+    {
+      "id": "group-085",
+      "transform": {
+        "dx": 1308,
+        "dy": 664.7750897308624,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-085"
+      ]
+    },
+    {
+      "id": "group-086",
+      "transform": {
+        "dx": 1325,
+        "dy": 666.4958190399155,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-086"
+      ]
+    },
+    {
+      "id": "group-088",
+      "transform": {
+        "dx": 1368,
+        "dy": 735.8985678383921,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-088"
+      ]
+    },
+    {
+      "id": "group-089",
+      "transform": {
+        "dx": 1377,
+        "dy": 742.2079086382536,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-089"
+      ]
+    },
+    {
+      "id": "group-090",
+      "transform": {
+        "dx": 1402,
+        "dy": 819.6407275456448,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-090"
+      ]
+    },
+    {
+      "id": "group-091",
+      "transform": {
+        "dx": 1386,
+        "dy": 806.4484695095707,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-091"
+      ]
+    },
+    {
+      "id": "group-092",
+      "transform": {
+        "dx": 1501,
+        "dy": 735.3249914020411,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-092"
+      ]
+    },
+    {
+      "id": "group-093",
+      "transform": {
+        "dx": 1489,
+        "dy": 729.0156506021796,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-093"
+      ]
+    },
+    {
+      "id": "group-094",
+      "transform": {
+        "dx": 1584,
+        "dy": 702.6311345300314,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-094"
+      ]
+    },
+    {
+      "id": "group-095",
+      "transform": {
+        "dx": 1699,
+        "dy": 642.9791851495227,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-095"
+      ]
+    },
+    {
+      "id": "group-096",
+      "transform": {
+        "dx": 1686,
+        "dy": 630.9340799861507,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-096"
+      ]
+    },
+    {
+      "id": "group-097",
+      "transform": {
+        "dx": 1710,
+        "dy": 636.09626791331,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-097"
+      ]
+    },
+    {
+      "id": "group-098",
+      "transform": {
+        "dx": 1754,
+        "dy": 585.047965078067,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-098"
+      ]
+    },
+    {
+      "id": "group-099",
+      "transform": {
+        "dx": 1521,
+        "dy": 206.48751708637658,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-099"
+      ]
+    },
+    {
+      "id": "group-100",
+      "transform": {
+        "dx": 1504,
+        "dy": 212.22328144988703,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-100"
+      ]
+    },
+    {
+      "id": "group-101",
+      "transform": {
+        "dx": 1631,
+        "dy": 224.84196304961006,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-101"
+      ]
+    },
+    {
+      "id": "group-102",
+      "transform": {
+        "dx": 1542,
+        "dy": 200.17817628651508,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-102"
+      ]
+    },
+    {
+      "id": "group-103",
+      "transform": {
+        "dx": 1519,
+        "dy": 137.65834472425104,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-103"
+      ]
+    },
+    {
+      "id": "group-104",
+      "transform": {
+        "dx": 1503,
+        "dy": 145.6884148331657,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-104"
+      ]
+    },
+    {
+      "id": "group-105",
+      "transform": {
+        "dx": 1540,
+        "dy": 200.17817628651508,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-105"
+      ]
+    },
+    {
+      "id": "group-106",
+      "transform": {
+        "dx": 1704,
+        "dy": 87.18361832535899,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-106"
+      ]
+    },
+    {
+      "id": "group-107",
+      "transform": {
+        "dx": 1719,
+        "dy": 82.59500683455063,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-107"
+      ]
+    },
+    {
+      "id": "group-108",
+      "transform": {
+        "dx": 1368,
+        "dy": 1089.2216526306365,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-108"
+      ]
+    },
+    {
+      "id": "group-110",
+      "transform": {
+        "dx": 1263,
+        "dy": 1135.10776753872,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-110"
+      ]
+    },
+    {
+      "id": "group-111",
+      "transform": {
+        "dx": 1285,
+        "dy": 1138.5492261568263,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-111"
+      ]
+    },
+    {
+      "id": "group-112",
+      "transform": {
+        "dx": 1298,
+        "dy": 1052.5127607041695,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-112"
+      ]
+    },
+    {
+      "id": "group-113",
+      "transform": {
+        "dx": 1314,
+        "dy": 1062.2635601221373,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-113"
+      ]
+    },
+    {
+      "id": "group-114",
+      "transform": {
+        "dx": 801,
+        "dy": 965.9027188151615,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-114"
+      ]
+    },
+    {
+      "id": "group-115",
+      "transform": {
+        "dx": 787,
+        "dy": 956.7254958335448,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-115"
+      ]
+    },
+    {
+      "id": "group-116",
+      "transform": {
+        "dx": 495,
+        "dy": 785.2261413645821,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-116"
+      ]
+    },
+    {
+      "id": "group-117",
+      "transform": {
+        "dx": 372,
+        "dy": 797.8448229643051,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-117"
+      ]
+    },
+    {
+      "id": "group-118",
+      "transform": {
+        "dx": 249,
+        "dy": 833.980138454421,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-118"
+      ]
+    },
+    {
+      "id": "group-119",
+      "transform": {
+        "dx": 209,
+        "dy": 817.9199982365917,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-119"
+      ]
+    },
+    {
+      "id": "group-120",
+      "transform": {
+        "dx": 138,
+        "dy": 956.7254958335448,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-120"
+      ]
+    },
+    {
+      "id": "group-121",
+      "transform": {
+        "dx": 67,
+        "dy": 858.0703487811649,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-121"
+      ]
+    },
+    {
+      "id": "group-122",
+      "transform": {
+        "dx": 196,
+        "dy": 899.3678521984402,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-122"
+      ]
+    },
+    {
+      "id": "group-123",
+      "transform": {
+        "dx": 279,
+        "dy": 981.3892825966398,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-123"
+      ]
+    },
+    {
+      "id": "group-124",
+      "transform": {
+        "dx": 0,
+        "dy": 948.1218492882791,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-124"
+      ]
+    },
+    {
+      "id": "group-125",
+      "transform": {
+        "dx": 1604,
+        "dy": 150.8506027603251,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-125"
+      ]
+    },
+    {
+      "id": "group-127",
+      "transform": {
+        "dx": 1762,
+        "dy": 264.99231359418326,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-127"
+      ]
+    },
+    {
+      "id": "group-128",
+      "transform": {
+        "dx": 1774,
+        "dy": 263.8451607214812,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-128"
+      ]
+    },
+    {
+      "id": "group-129",
+      "transform": {
+        "dx": 167,
+        "dy": 1001.4644578689264,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-129"
+      ]
+    },
+    {
+      "id": "group-130",
+      "transform": {
+        "dx": 72,
+        "dy": 1119.6212037572418,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-130"
+      ]
+    },
+    {
+      "id": "group-131",
+      "transform": {
+        "dx": 310,
+        "dy": 934.356014815854,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-131"
+      ]
+    },
+    {
+      "id": "group-132",
+      "transform": {
+        "dx": 805,
+        "dy": 104.39091141589039,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-132"
+      ]
+    },
+    {
+      "id": "group-133",
+      "transform": {
+        "dx": 13,
+        "dy": 244.34356188554563,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-133"
+      ]
+    },
+    {
+      "id": "group-134",
+      "transform": {
+        "dx": 126,
+        "dy": 1088.0744997579343,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-134"
+      ]
+    },
+    {
+      "id": "group-135",
+      "transform": {
+        "dx": 187,
+        "dy": 1077.1765474672645,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-135"
+      ]
+    },
+    {
+      "id": "group-136",
+      "transform": {
+        "dx": 429,
+        "dy": 889.0434763441214,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-136"
+      ]
+    },
+    {
+      "id": "group-137",
+      "transform": {
+        "dx": 461,
+        "dy": 888.4698999077704,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-137"
+      ]
+    },
+    {
+      "id": "group-138",
+      "transform": {
+        "dx": 1714,
+        "dy": 220.82692799515272,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-138"
+      ]
+    },
+    {
+      "id": "group-139",
+      "transform": {
+        "dx": 1698,
+        "dy": 256.38866704891757,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-139"
+      ]
+    },
+    {
+      "id": "group-140",
+      "transform": {
+        "dx": 943,
+        "dy": 1041.0412319771485,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-140"
+      ]
+    },
+    {
+      "id": "group-141",
+      "transform": {
+        "dx": 986,
+        "dy": 1018.6717509594578,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-141"
+      ]
+    },
+    {
+      "id": "group-142",
+      "transform": {
+        "dx": 559,
+        "dy": 573.576436351046,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-142"
+      ]
+    },
+    {
+      "id": "group-143",
+      "transform": {
+        "dx": 581,
+        "dy": 554.0748375151105,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-143"
+      ]
+    },
+    {
+      "id": "group-145",
+      "transform": {
+        "dx": 1074,
+        "dy": 912.5601102345142,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-145"
+      ]
+    },
+    {
+      "id": "group-146",
+      "transform": {
+        "dx": 1319,
+        "dy": 311.452004938618,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-146"
+      ]
+    },
+    {
+      "id": "group-147",
+      "transform": {
+        "dx": 1267,
+        "dy": 324.070686538341,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-147"
+      ]
+    },
+    {
+      "id": "group-148",
+      "transform": {
+        "dx": 1298,
+        "dy": 284.4939124301188,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-148"
+      ]
+    },
+    {
+      "id": "group-149",
+      "transform": {
+        "dx": 1442,
+        "dy": 344.14586181062765,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-group-149"
+      ]
+    },
+    {
+      "id": "terrace-000",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement02-terrace-000"
+      ],
+      "parts": {
+        "terrace-000": {
+          "transform": {
+            "dx": 543,
+            "dy": 340.1308267561703,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    }
+  ]
+}

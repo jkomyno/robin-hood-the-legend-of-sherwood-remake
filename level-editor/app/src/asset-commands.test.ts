@@ -134,7 +134,7 @@ test("version 2 stores placements and only exceptional part records", () => {
   assert.deepEqual(parseStoredMap(simple, descriptors), placed);
 
   const edited = structuredClone(placed);
-  edited.objects[0]!.patchBindings = { Wall: { hide: ["patch-001"] } };
+  edited.groups[0]!.patches = { house: { "appearance-1": "patch-001" } };
   edited.objects[0]!.transform = { ...IDENTITY_TRANSFORM, dx: 7 };
   edited.objects.splice(1, 1);
   const copied = duplicateSelection(edited, { kind: "part", id: edited.objects[0]!.id }).document;

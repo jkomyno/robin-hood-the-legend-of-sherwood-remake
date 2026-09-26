@@ -223,9 +223,10 @@ export function rebaseLibraryRevision(
     part.node = next.node;
     part.obstacle = structuredClone(next.obstacle);
     part.source = structuredClone(next.source);
-    part.patchBindings = structuredClone(next.patchBindings);
+    part.patches = structuredClone(next.patches);
   }
   for (const group of document.groups) {
+    group.patches = structuredClone(staged.groups.find((item) => item.id === group.id)?.patches);
     const members = groupParts(document, group.id);
     const delta = members.length
       ? offsets.get(members[0]!.id)!

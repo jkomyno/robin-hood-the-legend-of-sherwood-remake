@@ -56,7 +56,7 @@ function defaultObject(
 function changes(actual: Level3DObject, defaults: Level3DObject): Entry {
   const result: Entry = {};
   for (const key of new Set([...Object.keys(actual), ...Object.keys(defaults)])) {
-    if (key === "node" || key === "group") continue;
+    if (key === "node" || key === "group" || key === "patches") continue;
     const value = (actual as unknown as Entry)[key],
       baseline = (defaults as unknown as Entry)[key];
     if (equal(value, baseline)) continue;
@@ -263,7 +263,12 @@ export function storeAssetMap(document: Level3D, descriptors: Descriptors): unkn
       copies.push({ node: partKey(extra.node, assets), id: extra.id, ...changes(extra, defaults) });
     }
     placements.push({
-      ...(group ?? { id, transform: { ...IDENTITY_TRANSFORM }, ungrouped: true }),
+      ...(group ?? {
+        id,
+        transform: { ...IDENTITY_TRANSFORM },
+        ungrouped: true,
+        ...(parts[0]!.patches ? { patches: parts[0]!.patches } : {}),
+      }),
       assets,
       ...(groupMode ? { idMode } : {}),
       ...(Object.keys(overrides).length ? { parts: overrides } : {}),
@@ -312,13 +317,25 @@ export function loadAssetMap(value: unknown, descriptors: Descriptors): Level3D 
     const {
       assets,
       idMode,
+      patches,
       parts,
       removed,
       copies: savedCopies,
       ungrouped: _ungrouped,
       ...group
     } = placement;
-    if (!ungrouped) groups.push(group as unknown as Level3D["groups"][number]);
+    if (patches) {
+      for (const [asset, rawMapping] of Object.entries(record(patches, "placement patches"))) {
+        const mapping = record(rawMapping, `patches.${asset}`);
+        if (mapping.state && !descriptors.get(asset)?.state_variants?.applied)
+          throw new Error(`State patch requires initial/applied asset scenes: ${asset}`);
+      }
+    }
+    if (!ungrouped)
+      groups.push({
+        ...group,
+        ...(patches ? { patches } : {}),
+      } as unknown as Level3D["groups"][number]);
     const pending = new Map<string, Level3DObject>();
     const base = new Map<string, Level3DObject>();
     for (const id of assets as string[]) {
@@ -362,7 +379,11 @@ export function loadAssetMap(value: unknown, descriptors: Descriptors): Level3D 
       if (!defaults) throw new Error(`Unknown copied asset part: ${key}`);
       copies.push(patched(defaults, copy));
     }
-    objects.push(...pending.values(), ...copies);
+    const placedParts = [...pending.values(), ...copies];
+    if (ungrouped && patches)
+      for (const part of placedParts)
+        part.patches = structuredClone(patches) as Level3DObject["patches"];
+    objects.push(...placedParts);
   }
   const { placements: _placements, version: _version, ...rest } = saved;
   return parseLevel3D({ ...rest, version: 1, groups, objects });

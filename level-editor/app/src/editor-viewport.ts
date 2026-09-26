@@ -15,6 +15,8 @@ import {
   groupParts,
   partPivot,
   patchBindingExtras,
+  endpointPatchRule,
+  remapPatchExtras,
   transformedObstacle,
   type GameTransform,
   type Level3D,
@@ -908,6 +910,7 @@ export class EditorViewport {
       this.groupViews.delete(id);
     }
     const aliveParts = new Set<string>();
+    const availableNodes = new Set(this.sourceNodes.keys());
     for (const o of d.objects) {
       aliveParts.add(o.id);
       let v = this.partViews.get(o.id);
@@ -916,12 +919,19 @@ export class EditorViewport {
         if (!src) throw new Error(`Missing source node ${o.node} for ${o.id}`);
         v = this.makeView(o.id);
         const node = src.clone(true);
-        if (o.patchBindings)
+        const asset = o.node.split(":")[1]!;
+        const patches = o.group
+          ? d.groups.find((group) => group.id === o.group)?.patches?.[asset]
+          : o.patches?.[asset];
+        if (patches)
           node.traverse((child) => {
-            const binding = o.patchBindings![child.name];
-            if (binding)
-              Object.assign(child.userData, structuredClone(patchBindingExtras(binding)));
+            child.userData = remapPatchExtras(child.userData, patches);
           });
+        if (o.group) {
+          const group = d.groups.find((item) => item.id === o.group);
+          const rule = endpointPatchRule(o.node, availableNodes, group?.patches);
+          if (rule) Object.assign(node.userData, patchBindingExtras(rule));
+        }
         node.traverse((c) => {
           const m = c as THREE.Mesh;
           if (m.isMesh) v!.meshes.push(m);

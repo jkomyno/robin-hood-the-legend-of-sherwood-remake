@@ -9,6 +9,8 @@ import {
   selectGltfScene,
   resolveGltfResources,
   patchBindingExtras,
+  endpointPatchRule,
+  remapPatchExtras,
   type SceneAssetSource,
   type Level3D,
 } from "@rle/shared";
@@ -72,6 +74,25 @@ export async function loadSceneModel(library: string, reference: SceneAssetSourc
 /** Assemble only node metadata for ownership and native patch verification. */
 export async function sceneAssetNodes(library: string, document: Level3D) {
   const verified = new Set<string>();
+  const availableNodes = new Set<string>();
+  const descriptors = new Set<string>();
+  for (const source of document.assetSources ?? []) {
+    if (!source.descriptor || descriptors.has(source.descriptor)) continue;
+    if (!safeLibraryPath(source.descriptor))
+      throw new Error(`Unsafe asset path: ${source.descriptor}`);
+    const bytes = await fs.readFile(path.join(library, source.descriptor));
+    if (createHash("sha256").update(bytes).digest("hex") !== source.descriptor_sha256)
+      throw new Error(`Asset descriptor changed: ${source.id}`);
+    const descriptor = JSON.parse(bytes.toString());
+    for (const part of descriptor.parts ?? [])
+      availableNodes.add(`asset:${descriptor.id}:${part.node}`);
+    for (const [state, variant] of Object.entries(descriptor.state_variants ?? {}) as Array<
+      [string, { parts?: { node: string }[] }]
+    >)
+      for (const part of variant.parts ?? descriptor.parts ?? [])
+        availableNodes.add(`asset:${descriptor.id}--state-${state}:${part.node}`);
+    descriptors.add(source.descriptor);
+  }
   const nodes: any[] = [
     { name: "map", children: [], extras: structuredClone(document.sceneMetadata ?? {}) },
   ];
@@ -93,8 +114,15 @@ export async function sceneAssetNodes(library: string, document: Level3D) {
       )) {
         const name = part.node.slice(`asset:${reference.id}:`.length);
         for (const node of json.nodes ?? []) {
-          if (part.patchBindings?.[node.name])
-            node.extras = { ...node.extras, ...patchBindingExtras(part.patchBindings[node.name]!) };
+          const patches = part.group
+            ? document.groups.find((group) => group.id === part.group)?.patches?.[reference.id]
+            : part.patches?.[reference.id];
+          if (patches) node.extras = remapPatchExtras(node.extras ?? {}, patches);
+          if (node.name === name && part.group) {
+            const group = document.groups.find((item) => item.id === part.group);
+            const rule = endpointPatchRule(part.node, availableNodes, group?.patches);
+            if (rule) node.extras = { ...node.extras, ...patchBindingExtras(rule) };
+          }
           if (node.name === name) node.name = part.node;
         }
       }
