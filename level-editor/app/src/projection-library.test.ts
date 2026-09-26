@@ -7,7 +7,7 @@ import { listProjectionAssets, prepareProjectionAsset } from "./projection-libra
 import { disposeObjectResources } from "./resources.ts";
 import { insertProjectionAsset } from "./asset-commands.ts";
 import { prepareMapCandidate } from "./map-candidate.ts";
-import type { Level3D } from "@rle/shared";
+import { compactAssetInstances, type Level3D } from "@rle/shared";
 
 function fixture() {
   const obstacle = {
@@ -147,7 +147,7 @@ test("changed files reject before model publication; bad model cleanup is owned"
   assert.equal(bad.disposed(), 1);
 });
 
-test("saved external models reload before document validation and retire with their map", async (t) => {
+test("saved compact asset parts reload before document validation and retire with their map", async (t) => {
   const f = fixture();
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
   const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
@@ -166,7 +166,12 @@ test("saved external models reload before document validation and retire with th
     prepared.reference,
     [50, 50, 0],
   );
-  f.json("scenes/York.rhlos-map.json", inserted.document);
+  inserted.document.objects[0]!.obstacle.points[0]!.x = 1;
+  const compact = compactAssetInstances(
+    inserted.document,
+    new Map([[prepared.descriptor.id, prepared.descriptor]]),
+  );
+  f.json("scenes/York.rhlos-map.json", compact);
   f.json("scenes/York-volumes.scene.json", {
     version: 1,
     map: "York",
@@ -184,6 +189,7 @@ test("saved external models reload before document validation and retire with th
   assert.equal(calls, 1);
   assert.equal(candidate.sources.get("asset:house:building-000"), f.mesh);
   assert.equal(candidate.document.groups[0].transform.dx, 50);
+  assert.equal(candidate.document.objects[0]!.obstacle.points[0]!.x, 1);
   assert.deepEqual(candidate.document.assetSources, [prepared.reference]);
   disposeObjectResources([candidate.asset]);
   assert.equal(f.disposed(), 1);

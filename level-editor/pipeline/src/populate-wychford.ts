@@ -1,5 +1,6 @@
 /** Populate the authored town and pack only the directional sprites it uses. */
 import { loadSceneModel } from "./scene-assets.ts";
+import { compactStoredMap, readStoredMap } from "./stored-map.ts";
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
@@ -16,7 +17,7 @@ import { decodeSpritePixels } from "../../app/src/entity-projection.ts";
 import { libraryDir, datadirPath } from "./env.ts";
 
 const scenePath = path.join(libraryDir, "scenes/Wychford.rhlos-map.json");
-const document = parseLevel3D(JSON.parse(await fs.readFile(scenePath, "utf8")));
+const document = await readStoredMap(scenePath, libraryDir);
 const recipe = JSON.parse(
   await fs.readFile(new URL("../../maps/wychford/population.json", import.meta.url), "utf8"),
 );
@@ -201,7 +202,10 @@ document.population = population;
 document.notes =
   "The Tollkeeper’s Ledger. Fortified riverside market town with authored population and patrol previews. Playable mission export, navigation and scripting remain pending.";
 parseLevel3D(document);
-await fs.writeFile(scenePath, JSON.stringify(document, null, 2) + "\n");
+await fs.writeFile(
+  scenePath,
+  JSON.stringify(await compactStoredMap(document, libraryDir), null, 2) + "\n",
+);
 console.log(
   JSON.stringify({
     actors: population.actors.length,

@@ -5,6 +5,8 @@ import { mat4 } from "gl-matrix";
 import {
   assetNodeKey,
   assetVariantId,
+  compactAssetInstances,
+  descriptorForSource,
   gameTransformMatrix,
   groupCentroid,
   groupParts,
@@ -156,7 +158,19 @@ for (const item of plan.maps) {
   parseLevel3D(doc);
   const destination = path.join(plan.output, item.file);
   await fs.mkdir(path.dirname(destination), { recursive: true });
-  await fs.writeFile(destination, JSON.stringify(doc, null, 2) + "\n");
+  const instanceDescriptors = new Map<string, ProjectionAssetDescriptor>();
+  for (const reference of references.values())
+    instanceDescriptors.set(
+      reference.id,
+      descriptorForSource(
+        reference,
+        await descriptor(reference.id.replace(/--state-(initial|applied)$/, "")),
+      ),
+    );
+  await fs.writeFile(
+    destination,
+    JSON.stringify(compactAssetInstances(doc, instanceDescriptors), null, 2) + "\n",
+  );
   const result = {
     map: doc.map,
     parts: doc.objects.length,

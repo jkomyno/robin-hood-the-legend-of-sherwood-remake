@@ -21,6 +21,7 @@
       "files": ["**/*.test.ts", "**/*.test.tsx", "**/*.test.mjs"],
       "rules": {
         "typescript/no-floating-promises": "off",
+        "typescript/no-unnecessary-type-assertion": "off",
         "typescript/unbound-method": "off",
         "typescript/consistent-return": "off"
       }

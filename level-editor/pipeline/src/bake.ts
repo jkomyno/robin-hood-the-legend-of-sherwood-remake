@@ -163,6 +163,7 @@ export async function bake(options: BakeOptions): Promise<void> {
   const docPath =
     options.document ?? path.join(libraryDir, "scenes", `${map.toLowerCase()}.rhlos-map.json`);
   const input = await readDocument(docPath, options.document !== undefined);
+  assertReconstructedBakeSources(input);
   // Structural validation precedes expensive reconstruction; source-index
   // validation follows once the source level is available.
   let parsed = input === undefined ? undefined : parseLevel3D(input, { map });
@@ -181,7 +182,6 @@ export async function bake(options: BakeOptions): Promise<void> {
     throw new Error(
       "Unbounded authored maps require compilation from their placed geometry with content-derived crop bounds; reconstruction baking requires a source map. Save the editor document instead.",
     );
-  assertReconstructedBakeSources(parsed);
   const r = await reconstruct(map, {
     textures: options.textures,
     fill: options.fill,

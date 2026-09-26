@@ -1,5 +1,6 @@
 import { loadSceneModel } from "./scene-assets.ts";
 import { importScene } from "./import-scene.ts";
+import { compactStoredMap, readStoredMap } from "./stored-map.ts";
 /** Generate terrain from the saved layout and game-art references via OpenRouter. */
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -7,7 +8,6 @@ import crypto from "node:crypto";
 import sharp from "sharp";
 import { NodeIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
-import { parseLevel3D } from "@rle/shared";
 import { splineCurve } from "../../app/src/spline-geometry.ts";
 import { libraryDir, repoRoot, workDir, loadEnvironment, requireEnv } from "./env.ts";
 import {
@@ -18,7 +18,7 @@ import {
 
 loadEnvironment();
 const scenePath = path.join(libraryDir, "scenes/Wychford.rhlos-map.json");
-const scene = parseLevel3D(JSON.parse(await fs.readFile(scenePath, "utf8")));
+const scene = await readStoredMap(scenePath, libraryDir);
 const out = path.join(workDir, "wychford/ground-generation");
 await fs.mkdir(out, { recursive: true });
 const sin = Math.sin((scene.camera.elevation_deg * Math.PI) / 180);
@@ -378,7 +378,7 @@ if (process.argv.includes("--apply")) {
     .setMimeType("image/jpeg");
   await io.write(glbPath, gltf);
   // Re-read the live document so unrelated scene edits made during generation survive.
-  const current = parseLevel3D(JSON.parse(await fs.readFile(scenePath, "utf8")));
+  const current = await readStoredMap(scenePath, libraryDir);
   const imported = await importScene(
     glbPath,
     libraryDir,
@@ -389,7 +389,10 @@ if (process.argv.includes("--apply")) {
       ? imported.document.sceneAssets.find((asset) => asset.role === "ground")!
       : asset,
   );
-  await fs.writeFile(scenePath, JSON.stringify(current, null, 2) + "\n");
+  await fs.writeFile(
+    scenePath,
+    JSON.stringify(await compactStoredMap(current, libraryDir), null, 2) + "\n",
+  );
   await fs.writeFile(path.join(libraryDir, "scenes/Wychford-ground.jpg"), texture);
   await fs.writeFile(new URL("../../maps/wychford/terrain.jpg", import.meta.url), texture);
   const evidence = JSON.parse(await fs.readFile(metadataPath, "utf8"));

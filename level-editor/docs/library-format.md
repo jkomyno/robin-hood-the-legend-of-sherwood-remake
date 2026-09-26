@@ -64,6 +64,12 @@ local footprints and part/group transforms use the same representation as manual
 palette insertion. Group and object IDs, hidden state, collision flags, and
 native source obstacle IDs survive conversion.
 
+Saved maps omit asset-part fields that equal the pinned descriptor: name, kind,
+source provenance, collision footprint, local transform, and default visibility.
+The loader restores these fields before editing or validation. An instance keeps
+any field it changes, so edited collision shapes and other per-part overrides
+remain in the map. Mission bindings and group placement remain map data.
+
 Mission-specific reveal triggers, drawbridge bindings and initial-state evidence
 belong in per-object `missionBindings` and map `sceneMetadata`. Bindings are applied
 to the placed clone, so inserting the same library asset elsewhere does not attach

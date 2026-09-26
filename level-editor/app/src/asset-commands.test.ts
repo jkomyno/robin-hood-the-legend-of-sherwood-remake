@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   IDENTITY_TRANSFORM,
+  compactAssetInstances,
+  hydrateAssetInstances,
   type Level3D,
   type ProjectionAssetDescriptor,
   type ExternalAssetSource,
@@ -82,6 +84,33 @@ test("standalone insertion creates a complete independent group and preserves de
   const duplicate = duplicateSelection(moved, one.selection);
   assert.equal(duplicate.document.objects.length, 4);
   assert.equal(deleteSelection(duplicate.document, duplicate.selection).objects.length, 2);
+});
+
+test("saved asset instances inherit unchanged subparts and retain edited overrides", () => {
+  const { descriptor, reference, document } = assetFixture();
+  const inserted = insertProjectionAsset(document, descriptor, reference, [50, 40, 0]).document;
+  const descriptors = new Map([[descriptor.id, descriptor]]);
+  const compact = compactAssetInstances(inserted, descriptors) as Level3D;
+  assert.equal(compact.objects[0]!.obstacle, undefined);
+  assert.equal(compact.objects[0]!.source, undefined);
+  assert.equal(compact.objects[0]!.name, undefined);
+  assert.equal(compact.objects[1]!.hidden, undefined);
+  assert.deepEqual(hydrateAssetInstances(compact, descriptors), inserted);
+
+  const edited = structuredClone(inserted);
+  edited.objects[0]!.obstacle.points[0]!.x = 99;
+  edited.objects[0]!.name = "My wall";
+  edited.objects[1]!.hidden = false;
+  const saved = compactAssetInstances(edited, descriptors) as Level3D;
+  assert.deepEqual(saved.objects[0]!.obstacle, edited.objects[0]!.obstacle);
+  assert.equal(saved.objects[0]!.name, "My wall");
+  assert.equal(saved.objects[1]!.hidden, false);
+  assert.deepEqual(hydrateAssetInstances(saved, descriptors), edited);
+  delete edited.objects[0]!.name;
+  delete edited.objects[1]!.hidden;
+  const cleared = compactAssetInstances(edited, descriptors);
+  assert.deepEqual(hydrateAssetInstances(cleared, descriptors), edited);
+  assert.throws(() => hydrateAssetInstances(compact, new Map()), /Missing pinned asset descriptor/);
 });
 
 test("changed revisions and invalid placements fail without edits", () => {

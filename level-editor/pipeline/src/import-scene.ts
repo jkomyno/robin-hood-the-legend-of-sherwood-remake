@@ -7,6 +7,7 @@ import { promisify } from "node:util";
 import { createHash } from "node:crypto";
 import {
   groupObstacles,
+  hydrateAssetInstances,
   IDENTITY_TRANSFORM,
   parseLevel3D,
   parseProtoLevel,
@@ -17,6 +18,7 @@ import {
   type SceneDoc,
   type SceneAssetSource,
 } from "@rle/shared";
+import { pinnedDescriptors } from "./stored-map.ts";
 
 const execute = promisify(execFile);
 const hash = (data: string | Buffer) => createHash("sha256").update(data).digest("hex");
@@ -71,6 +73,24 @@ export async function importScene(
   document: Record<string, unknown>,
   sourceMap?: string,
 ) {
+  if (
+    Array.isArray(document.objects) &&
+    document.objects.some(
+      (object: any) =>
+        object?.node?.startsWith("asset:") &&
+        (object.obstacle === undefined ||
+          object.source === undefined ||
+          object.kind === undefined ||
+          object.transform === undefined),
+    )
+  )
+    document = hydrateAssetInstances(
+      document,
+      await pinnedDescriptors(
+        outputLibrary,
+        (document.assetSources ?? []) as import("@rle/shared").ExternalAssetSource[],
+      ),
+    ) as unknown as Record<string, unknown>;
   const reportFile = path.join(outputLibrary, "import-reports", `${String(document.map)}.json`);
   await execute(
     "python3",

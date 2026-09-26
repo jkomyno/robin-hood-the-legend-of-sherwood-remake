@@ -4,6 +4,7 @@ import { MeshoptDecoder } from "meshoptimizer";
 import {
   assetNodeKey,
   assetVariantId,
+  descriptorForSource,
   parseExternalAssetSources,
   parseProjectionAssetDescriptor,
   parseProjectionAssetIndex,
@@ -146,6 +147,27 @@ export interface PreparedProjectionAsset {
 }
 
 /** Owns resources until the caller adopts the result. Failed loads clean up. */
+export async function readPinnedAssetDescriptors(
+  root: FileSystemDirectoryHandle,
+  references: ExternalAssetSource[],
+): Promise<Map<string, ProjectionAssetDescriptor>> {
+  parseExternalAssetSources(references);
+  return new Map(
+    await Promise.all(
+      references.map(async (reference) => {
+        const bytes = await (await libraryFile(root, reference.descriptor)).arrayBuffer();
+        if ((await hash(bytes)) !== reference.descriptor_sha256)
+          throw new Error(`Asset descriptor changed: ${reference.id}`);
+        const descriptor = descriptorForSource(
+          reference,
+          JSON.parse(new TextDecoder().decode(bytes)),
+        );
+        return [reference.id, descriptor] as const;
+      }),
+    ),
+  );
+}
+
 export async function prepareProjectionAsset(
   root: FileSystemDirectoryHandle,
   entry: Pick<

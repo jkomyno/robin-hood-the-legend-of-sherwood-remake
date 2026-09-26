@@ -4,6 +4,7 @@ import type { JSX } from "@solidjs/web";
 import type * as THREE from "three";
 import {
   IDENTITY_TRANSFORM,
+  compactAssetInstances,
   parseLevel3D,
   groupParts,
   isIdentity,
@@ -31,7 +32,11 @@ import AssetLibrary from "./AssetLibrary";
 import ScrubNumber from "./ScrubNumber";
 import { ASSET_DRAG_TYPE } from "./asset-library";
 import { insertProjectionAsset } from "./asset-commands";
-import { listProjectionAssets, prepareProjectionAsset } from "./projection-library";
+import {
+  listProjectionAssets,
+  prepareProjectionAsset,
+  readPinnedAssetDescriptors,
+} from "./projection-library";
 import { prepareMapCandidate } from "./map-candidate";
 import { EditorViewport } from "./editor-viewport";
 import { disposeObjectResources } from "./resources";
@@ -720,10 +725,13 @@ export default function Editor3D(props: EditorProps) {
     const library = props.library();
     saving = true;
     try {
+      const descriptors = snapshot.document.assetSources?.length
+        ? await readPinnedAssetDescriptors(library!.handle, snapshot.document.assetSources)
+        : new Map();
       await writeText(
         snapshot.resources,
         `${snapshot.name}.rhlos-map.json`,
-        JSON.stringify(snapshot.document, null, 2),
+        JSON.stringify(compactAssetInstances(snapshot.document, descriptors), null, 2),
       );
       const savedName = library?.savedMapName?.(snapshot.name) ?? snapshot.name;
       if (transientMapName === snapshot.name) transientMapName = null;
@@ -740,6 +748,19 @@ export default function Editor3D(props: EditorProps) {
       if (!disposed) props.onError(String(e));
     } finally {
       saving = false;
+    }
+  }
+
+  async function download() {
+    const document = doc();
+    if (!document) return;
+    try {
+      const descriptors = document.assetSources?.length
+        ? await readPinnedAssetDescriptors(props.library()!.handle, document.assetSources)
+        : new Map();
+      downloadMap(document.map, compactAssetInstances(document, descriptors));
+    } catch (error) {
+      props.onError(String(error));
     }
   }
 
@@ -987,7 +1008,7 @@ export default function Editor3D(props: EditorProps) {
         >
           Save{dirty() ? " *" : ""}
         </button>
-        <button disabled={!doc()} onClick={() => downloadMap(doc()!.map, doc()!)}>
+        <button disabled={!doc()} onClick={() => void download()}>
           Download
         </button>
         <button
