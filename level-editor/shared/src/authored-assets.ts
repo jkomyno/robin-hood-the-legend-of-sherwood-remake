@@ -1,5 +1,4 @@
 import { componentIdentityMatches } from "./component-parts.ts";
-import derby from "../assets/derby.json" with { type: "json" };
 import {
   IDENTITY_TRANSFORM,
   isIdentity,
@@ -99,36 +98,6 @@ export function appendSupplementalMissionParts(
   return next;
 }
 
-/** An older reconstruction can predate explicit supplemental mission previews.
- * Only the embedded fallback catalog may omit those absent supplemental nodes;
- * an explicit exported catalog must still match every part exactly.
- */
-export function catalogForLegacyReconstruction(
-  catalog: AuthoredAssetCatalog,
-  objects: Level3DObject[],
-): AuthoredAssetCatalog {
-  const nodes = new Set(objects.map((object) => object.node));
-  return {
-    ...catalog,
-    groups: catalog.groups.flatMap((group) => {
-      if (!group.parts.length || !group.id.trim() || !group.name.trim()) return [group];
-      const parts = group.parts.filter(
-        (part) =>
-          !(
-            part.obstacle === undefined &&
-            !!part.name.trim() &&
-            typeof part.mission_profile === "string" &&
-            part.mission_profile.trim() &&
-            typeof part.node === "string" &&
-            /^mission-[a-zA-Z0-9_-]+$/.test(part.node) &&
-            !nodes.has(part.node)
-          ),
-      );
-      return parts.length ? [{ ...group, parts }] : [];
-    }),
-  };
-}
-
 /** Upgrade only untouched generated groups; saved user edits keep their ownership. */
 export function upgradeGeneratedAssetGroups(
   document: Level3D,
@@ -152,19 +121,14 @@ export function upgradeGeneratedAssetGroups(
 }
 
 /** Authored ownership is independent of touching/overlapping collision volumes.
- * Explicit export metadata takes precedence; older Derby exports retain their
- * embedded catalog. Validate the complete assignment before changing any part.
+ * Validate an explicitly supplied catalog before changing any part.
  */
 export function authoredAssetGroups(
   map: string,
   objects: Level3DObject[],
   supplied?: AuthoredAssetCatalog,
 ): Level3DGroup[] | null {
-  const catalog: AuthoredAssetCatalog | null =
-    supplied ??
-    (map.toLowerCase() === derby.map.toLowerCase()
-      ? catalogForLegacyReconstruction(derby, objects)
-      : null);
+  const catalog = supplied;
   if (!catalog) return null;
   if (catalog.map.toLowerCase() !== map.toLowerCase())
     throw new Error("Asset catalog belongs to a different map");

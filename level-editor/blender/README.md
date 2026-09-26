@@ -15,7 +15,7 @@ generated textures are excluded from the evidence used to refine geometry.
 
 `work/derby-refinement/derby-refinement.blend` contains a hidden imported baseline,
 the working map, 30 named asset parents and reference/oblique/detail cameras.
-The 270 source obstacles have complete ownership in `shared/assets/derby.json`.
+The 270 source obstacles have complete ownership in `refinement/catalogs/derby.json`.
 The Great Keep, East Hall, freestanding watchtower, cottages and curtain walls
 select independently; roofs and supporting walls belong to the same asset.
 

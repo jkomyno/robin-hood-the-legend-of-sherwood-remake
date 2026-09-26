@@ -320,7 +320,7 @@ def refine_round_turret():
 def audit():
     """Record every catalog component, including unresolved source mesh defects."""
     bpy.context.view_layer.update()
-    catalog = json.loads((Path(__file__).parent.parent / 'shared/assets/derby.json').read_text())
+    catalog = json.loads((Path(__file__).parent.parent / 'refinement/catalogs/derby.json').read_text())
     group = next(g for g in catalog['groups'] if g['id'] == ASSET)
     working = bpy.data.collections['Derby Working']
     parts = []

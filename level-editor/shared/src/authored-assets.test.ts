@@ -1,21 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import derby from "../assets/derby.json" with { type: "json" };
+import derby from "../../refinement/catalogs/derby.json" with { type: "json" };
 import {
   appendSupplementalMissionParts,
   authoredAssetGroups,
-  catalogForLegacyReconstruction,
   upgradeGeneratedAssetGroups,
   type AuthoredAssetCatalog,
 } from "./authored-assets.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "./level3d.ts";
 
-// Keep the legacy canonical fixture explicit when the shipped catalog adds
-// supplemental mission previews that older generated GLBs do not contain.
-const embeddedCatalog: AuthoredAssetCatalog = derby;
+// The reviewed authoring catalog includes a mission preview absent from older exports.
+const reviewedCatalog: AuthoredAssetCatalog = derby;
 const legacyCatalog: AuthoredAssetCatalog = {
-  ...embeddedCatalog,
-  groups: embeddedCatalog.groups.flatMap((group) => {
+  ...reviewedCatalog,
+  groups: reviewedCatalog.groups.flatMap((group) => {
     const parts = group.parts.filter((part) => part.obstacle !== undefined);
     return parts.length ? [{ ...group, parts }] : [];
   }),
@@ -46,7 +44,7 @@ function objects(): Level3DObject[] {
 test("Derby assigns every exported obstacle to exactly one named logical asset", () => {
   const parts = objects();
   const before = structuredClone(parts);
-  const groups = authoredAssetGroups("Derby", parts)!;
+  const groups = authoredAssetGroups("Derby", parts, legacyCatalog)!;
   const members = legacyCatalog.groups.flatMap((group) => group.parts.map((part) => part.obstacle));
   assert.equal(members.length, 270);
   assert.equal(new Set(members).size, 270);
@@ -76,11 +74,12 @@ test("Derby assigns every exported obstacle to exactly one named logical asset",
   assert.notEqual(owner(49), owner(55)); // Neighboring houses stay independent.
 });
 
-test("catalog mismatch fails before mutating a document; other maps retain inferred grouping", () => {
+test("explicit catalog mismatch fails before mutating a document", () => {
   const parts = objects().slice(1);
   const before = structuredClone(parts);
-  assert.throws(() => authoredAssetGroups("Derby", parts), /obstacle set/);
+  assert.throws(() => authoredAssetGroups("Derby", parts, legacyCatalog), /obstacle set/);
   assert.deepEqual(parts, before);
+  assert.equal(authoredAssetGroups("Derby", parts), null);
   assert.equal(authoredAssetGroups("York", parts), null);
   assert.deepEqual(parts, before);
 });
@@ -101,7 +100,8 @@ test("untouched saved groups upgrade once, but saved transforms and custom owner
   const snapshot = structuredClone(edited);
   assert.equal(upgradeGeneratedAssetGroups(edited), false);
   assert.deepEqual(edited, snapshot);
-  assert.equal(upgradeGeneratedAssetGroups(document), true);
+  assert.equal(upgradeGeneratedAssetGroups(document), false);
+  assert.equal(upgradeGeneratedAssetGroups(document, legacyCatalog), true);
   assert.equal(document.groups.length, 39);
   assert.equal(upgradeGeneratedAssetGroups(document), false);
 });
@@ -200,7 +200,7 @@ test("explicit mission publication adds one group/part while preserving all 270 
     size: [1920, 2752],
     camera: { kind: "oblique-orthographic", elevation_deg: 35 },
     objects: parts,
-    groups: authoredAssetGroups("Derby", parts)!,
+    groups: authoredAssetGroups("Derby", parts, legacyCatalog)!,
   };
   document.objects[0]!.transform.dx = 17;
   document.objects[1]!.hidden = true;
@@ -247,41 +247,6 @@ test("explicit mission publication adds one group/part while preserving all 270 
       ]),
     /duplicate/,
   );
-});
-
-test("legacy fallback skips absent explicit mission previews but never missing canonical parts", () => {
-  const supplemental = {
-    node: "mission-second-drawbridge",
-    name: "Drawbridge endpoint",
-    mission_profile: "Derby - Pont_levis02",
-  };
-  const catalog: AuthoredAssetCatalog = {
-    ...legacyCatalog,
-    groups: [
-      ...legacyCatalog.groups,
-      { id: "derby-second-drawbridge", name: "Second Courtyard Drawbridge", parts: [supplemental] },
-    ],
-  };
-  const old = objects();
-  const fallback = catalogForLegacyReconstruction(catalog, old);
-  assert.equal(fallback.groups.length, 39);
-  assert.equal(authoredAssetGroups("Derby", old, fallback)!.length, 39);
-  assert.throws(() => authoredAssetGroups("Derby", objects(), catalog), /obstacle set/);
-  const missing = objects().slice(1);
-  assert.throws(
-    () => authoredAssetGroups("Derby", missing, catalogForLegacyReconstruction(catalog, missing)),
-    /obstacle set/,
-  );
-  const mission: Level3DObject = {
-    ...objects()[0]!,
-    id: supplemental.node,
-    node: supplemental.node,
-    kind: "mission",
-    source: { map: "Derby", mission_profile: supplemental.mission_profile },
-  };
-  const current = [...objects(), mission];
-  assert.equal(catalogForLegacyReconstruction(catalog, current).groups.length, 40);
-  assert.equal(authoredAssetGroups("Derby", current, catalog)!.length, 40);
 });
 
 test("scoped components of one obstacle retain independent reviewed groups", () => {

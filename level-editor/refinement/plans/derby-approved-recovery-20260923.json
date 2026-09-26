@@ -6,7 +6,7 @@
   "scene_name": "Derby Refinement",
   "collection_name": "Derby Working",
   "reference_camera": "Derby reference",
-  "catalog": "level-editor/shared/assets/derby.json",
+  "catalog": "level-editor/refinement/catalogs/derby.json",
   "hackable_map": "datadirs/fullgame_gog_hackable/Data/Levels/Derby.rhp.json",
   "status_note": "14 validated recovery imports across 54 disjoint canonical source nodes. Requires staged content, asset and browser checks before root review/promotion.",
   "imports": [

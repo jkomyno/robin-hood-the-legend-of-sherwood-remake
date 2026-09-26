@@ -6,8 +6,6 @@ if _refinement_legacy not in _refinement_sys.path:
     _refinement_sys.path.append(_refinement_legacy)
 
 from contextlib import contextmanager
-import base64
-import hashlib
 import json
 import math
 import struct
@@ -53,17 +51,13 @@ def reveal_metadata(working, sources, include_all=False):
         if not include_all and not nodes.intersection(associations):
             continue
         graphic = patch["graphic"]
-        portable_graphic = None
-        if graphic:
-            image_bytes = (Path(path).parent / graphic["image"]).read_bytes()
-            portable_graphic = {"bbox_source_pixels": graphic["bbox"],
-                                "image_data_uri": "data:image/png;base64," + base64.b64encode(image_bytes).decode("ascii")}
+        portable_graphic = {"bbox_source_pixels": graphic["bbox"]} if graphic else None
         patches.append({"id": patch["id"], "name": patch["name"],
                         "state_source_game": patch["state"],
                         "sight_before": patch["sight_before"], "sight_after": patch["sight_after"],
                         "graphic": portable_graphic,
                         "associated_source_nodes": sorted(nodes.intersection(associations))})
-    mission_patches, graphics = [], {}
+    mission_patches = []
     for patch in manifest.get("mission_patches", []):
         associations = set(patch["sight_before"] + patch["sight_after"])
         associations.update(patch.get("associated_source_nodes", []))
@@ -75,15 +69,11 @@ def reveal_metadata(working, sources, include_all=False):
         # Full-map composites are review inputs; the portable asset carries
         # original state frames and baked mesh textures instead.
         record.pop('projection_sources', None)
-        # Deduplicate animation frames across missions while retaining timing,
-        # offsets and each mission's distinct trigger/state records.
+        # Retain frame timing and offsets without embedding review artwork.
+        # The published assets already carry the textures used for previews.
         def portable(value):
             if isinstance(value, dict):
-                if "image" in value:
-                    data = (Path(path).parent / value.pop("image")).read_bytes()
-                    key = hashlib.sha256(data).hexdigest()
-                    graphics.setdefault(key, "data:image/png;base64," + base64.b64encode(data).decode("ascii"))
-                    value["image_resource"] = key
+                value.pop("image", None)
                 for child in value.values():
                     portable(child)
             elif isinstance(value, list):
@@ -93,7 +83,7 @@ def reveal_metadata(working, sources, include_all=False):
         record["associated_source_nodes"] = sorted(nodes.intersection(associations))
         mission_patches.append(record)
     return {"version": 1, "source_map": manifest["map"], "patches": patches,
-            "mission_patches": mission_patches, "mission_graphics": graphics,
+            "mission_patches": mission_patches,
             "scope": "complete map patch records" if include_all else "associated patches only; unrelated and unassigned source patches omitted",
             "coordinates": "Mission-state coordinates are stored in the map document.",
             "visibility": "Sight obstacle state does not imply removal of rendered geometry; overlap is candidate association only."}

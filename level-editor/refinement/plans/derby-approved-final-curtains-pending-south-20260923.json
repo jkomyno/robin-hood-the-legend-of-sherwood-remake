@@ -5,7 +5,7 @@
   "scene_name": "Derby Refinement",
   "collection_name": "Derby Working",
   "reference_camera": "Derby reference",
-  "catalog": "level-editor/shared/assets/derby.json",
+  "catalog": "level-editor/refinement/catalogs/derby.json",
   "hackable_map": "datadirs/fullgame_gog_hackable/Data/Levels/Derby.rhp.json",
   "status_note": "Approved South geometry; OpenRouter same-model texture retry. Scoped bake imports only nodes 023 and 042; preserve north wall and continuous walk.",
   "imports": [

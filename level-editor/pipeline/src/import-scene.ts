@@ -6,7 +6,6 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createHash } from "node:crypto";
 import {
-  authoredAssetGroups,
   groupObstacles,
   IDENTITY_TRANSFORM,
   parseLevel3D,
@@ -62,7 +61,7 @@ export function initializeSceneDocument(
     sourceMap: scene.map,
     sceneAssets: [],
     objects,
-    groups: authoredAssetGroups(scene.map, objects) ?? groups,
+    groups,
   };
 }
 
