@@ -97,7 +97,7 @@ test("untouched saved groups upgrade once, but saved transforms and custom owner
   };
   for (const part of document.objects) part.group = "group-000";
   const edited = structuredClone(document);
-  edited.groups[0].transform.dx = 10;
+  edited.groups[0]!.transform.dx = 10;
   const snapshot = structuredClone(edited);
   assert.equal(upgradeGeneratedAssetGroups(edited), false);
   assert.deepEqual(edited, snapshot);
@@ -128,18 +128,18 @@ test("explicit catalogs support another map and reject ambiguous ownership atomi
     () =>
       authoredAssetGroups("Leicester", parts, {
         ...catalog,
-        groups: [catalog.groups[0], catalog.groups[0]],
+        groups: [catalog.groups[0]!, catalog.groups[0]!],
       }),
     /duplicate group/,
   );
   assert.deepEqual(parts, before);
   const duplicatePart = structuredClone(catalog);
-  duplicatePart.groups[0].parts.push({ obstacle: 0, name: "Second owner" });
+  duplicatePart.groups[0]!.parts.push({ obstacle: 0, name: "Second owner" });
   assert.throws(() => authoredAssetGroups("Leicester", parts, duplicatePart), /duplicate obstacle/);
   assert.deepEqual(parts, before);
   assert.throws(() => authoredAssetGroups("York", parts, catalog), /different map/);
   const groups = authoredAssetGroups("leicester", parts, catalog)!;
-  assert.equal(groups[0].name, "Leicester House");
+  assert.equal(groups[0]!.name, "Leicester House");
   assert.deepEqual(
     parts.map((part) => [part.group, part.name]),
     [
@@ -176,12 +176,12 @@ test("exported catalogs upgrade pristine non-Derby documents without replacing e
     groups: [{ id: "group-000", transform: { ...IDENTITY_TRANSFORM } }],
   };
   const edited = structuredClone(document);
-  edited.objects[0].name = "My edited wall";
+  edited.objects[0]!.name = "My edited wall";
   const before = structuredClone(edited);
   assert.equal(upgradeGeneratedAssetGroups(edited, catalog), false);
   assert.deepEqual(edited, before);
   assert.equal(upgradeGeneratedAssetGroups(document, catalog), true);
-  assert.equal(document.groups[0].id, "house");
+  assert.equal(document.groups[0]!.id, "house");
   assert.equal(upgradeGeneratedAssetGroups(document, catalog), false);
 });
 
@@ -202,14 +202,14 @@ test("explicit mission publication adds one group/part while preserving all 270 
     objects: parts,
     groups: authoredAssetGroups("Derby", parts)!,
   };
-  document.objects[0].transform.dx = 17;
-  document.objects[1].hidden = true;
+  document.objects[0]!.transform.dx = 17;
+  document.objects[1]!.hidden = true;
   const before = structuredClone(document);
   const supplemental = {
     node: "mission-second-drawbridge",
     name: "Raised bridge",
     mission_profile: "Derby - Pont_levis02",
-    obstacle_local_game: structuredClone(parts[0].obstacle),
+    obstacle_local_game: structuredClone(parts[0]!.obstacle),
   };
   const group = {
     id: "derby-second-drawbridge",
@@ -223,7 +223,7 @@ test("explicit mission publication adds one group/part while preserving all 270 
   assert.deepEqual(next.objects.slice(0, 270), before.objects);
   assert.deepEqual(next.groups.slice(0, 39), before.groups);
   assert.deepEqual(document, before);
-  assert.deepEqual(next.objects[270].source, {
+  assert.deepEqual(next.objects[270]!.source, {
     map: "Derby",
     mission_profile: supplemental.mission_profile,
   });
@@ -273,7 +273,7 @@ test("legacy fallback skips absent explicit mission previews but never missing c
     /obstacle set/,
   );
   const mission: Level3DObject = {
-    ...objects()[0],
+    ...objects()[0]!,
     id: supplemental.node,
     node: supplemental.node,
     kind: "mission",
@@ -294,7 +294,7 @@ test("scoped components of one obstacle retain independent reviewed groups", () 
     })),
   };
   const parts = ["west", "east"].map((component) => ({
-    ...objects()[0],
+    ...objects()[0]!,
     node: `building-000--component-${component}`,
     id: component,
     source: { map: "Derby", obstacle: 0, components: [component] },
@@ -305,8 +305,8 @@ test("scoped components of one obstacle retain independent reviewed groups", () 
     ["west", "east"],
   );
   const overlap = structuredClone(catalog);
-  overlap.groups[1].parts[0] = { obstacle: 0, name: "Whole wall" };
+  overlap.groups[1]!.parts[0] = { obstacle: 0, name: "Whole wall" };
   assert.throws(() => authoredAssetGroups("Derby", parts, overlap), /overlapping/);
-  parts[1].source.components = ["west"];
+  parts[1]!.source.components = ["west"];
   assert.throws(() => authoredAssetGroups("Derby", parts, catalog), /obstacle set/);
 });

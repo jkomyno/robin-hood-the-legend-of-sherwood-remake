@@ -59,16 +59,16 @@ export function expandWallRunDirectional(
   // steps (slice extent in screen X, or Y for steep art), chaining from the
   // previous stamp so joints stay seamless even when the path slope differs
   // from the art slope.
-  let cx = points[0][0];
-  let cy = points[0][1];
+  let cx = points[0]![0];
+  let cy = points[0]![1];
   for (let i = 0; i + 1 < points.length; i++) {
-    const [tx, ty] = points[i + 1];
+    const [tx, ty] = points[i + 1]!;
     const pdx = tx - cx;
     const pdy = ty - cy;
     const plen = Math.hypot(pdx, pdy);
     if (plen < 4) continue;
     const angle = (Math.atan2(pdy, pdx) * 180) / Math.PI;
-    let best = segments[0];
+    let best = segments[0]!;
     for (const s of segments) {
       if (angularDist(s.directionDeg, angle) < angularDist(best.directionDeg, angle)) best = s;
     }
@@ -98,11 +98,11 @@ export function expandWallRunDirectional(
       });
       cx += ux * step;
       cy += uy * step;
-      progress = (cx - points[i][0]) * pux + (cy - points[i][1]) * puy;
+      progress = (cx - points[i]![0]) * pux + (cy - points[i]![1]) * puy;
       // bounded drift correction toward the guide line, perpendicular to the
       // butt-joint axis (y for shallow art, x for steep) so joints stay exact
-      const gx = points[i][0] + pux * progress;
-      const gy = points[i][1] + puy * progress;
+      const gx = points[i]![0] + pux * progress;
+      const gy = points[i]![1] + puy * progress;
       const cap = 3;
       if (steep) {
         cx += Math.max(-cap, Math.min(cap, gx - cx));
@@ -115,7 +115,7 @@ export function expandWallRunDirectional(
   const lastSeg = segments[0];
   if (lastSeg) {
     stamps.push({
-      asset: stamps.length ? stamps[stamps.length - 1].asset : lastSeg.id,
+      asset: stamps.length ? stamps[stamps.length - 1]!.asset : lastSeg.id,
       pos: [
         Math.round(cx - (segments.find((s) => s.id === stamps.at(-1)?.asset) ?? lastSeg).anchor[0]),
         Math.round(cy - (segments.find((s) => s.id === stamps.at(-1)?.asset) ?? lastSeg).anchor[1]),
@@ -139,8 +139,8 @@ export function expandWallRun(
 
   let carry = 0;
   for (let i = 0; i + 1 < points.length; i++) {
-    const [x1, y1] = points[i];
-    const [x2, y2] = points[i + 1];
+    const [x1, y1] = points[i]!;
+    const [x2, y2] = points[i + 1]!;
     const dx = x2 - x1;
     const dy = y2 - y1;
     const len = Math.hypot(dx, dy);
@@ -158,7 +158,7 @@ export function expandWallRun(
     carry = t - len;
   }
   // ensure the run reaches the final point
-  const last = points[points.length - 1];
+  const last = points[points.length - 1]!;
   stamps.push({
     pos: [Math.round(last[0] - anchor[0]), Math.round(last[1] - anchor[1])],
     sortY: last[1],

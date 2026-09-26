@@ -178,7 +178,7 @@ test("static variants require safe model paths and validated endpoint parts", ()
 });
 
 test("mission descriptor parts require explicit profile provenance and prohibit obstacle ownership", () => {
-  const { source_obstacle: _source_obstacle, ...base } = descriptor.parts[0];
+  const { source_obstacle: _source_obstacle, ...base } = descriptor.parts[0]!;
   const mission = {
     ...base,
     node: "mission-second-drawbridge",
@@ -240,7 +240,7 @@ test("split obstacle descriptors require scoped identity and disjoint ownership"
     ],
   };
   assert.doesNotThrow(() => parseLevel3D(document));
-  document.objects[0].source.components = ["east"];
+  document.objects[0]!.source.components = ["east"];
   assert.throws(() => parseLevel3D(document), /canonical/);
 });
 

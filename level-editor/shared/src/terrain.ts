@@ -81,8 +81,8 @@ export function fillPolyMask(mask: Float32Array, W: number, H: number, poly: Poi
   for (let y = Math.max(0, Math.ceil(minY)); y <= Math.min(H - 1, Math.floor(maxY)); y++) {
     const xs: number[] = [];
     for (let i = 0; i < poly.length; i++) {
-      const [x1, y1] = poly[i];
-      const [x2, y2] = poly[(i + 1) % poly.length];
+      const [x1, y1] = poly[i]!;
+      const [x2, y2] = poly[(i + 1) % poly.length]!;
       if (y1 === y2) continue;
       if ((y >= y1 && y < y2) || (y >= y2 && y < y1)) {
         xs.push(x1 + ((y - y1) / (y2 - y1)) * (x2 - x1));
@@ -90,8 +90,8 @@ export function fillPolyMask(mask: Float32Array, W: number, H: number, poly: Poi
     }
     xs.sort((a, b) => a - b);
     for (let k = 0; k + 1 < xs.length; k += 2) {
-      const x0 = Math.max(0, Math.ceil(xs[k]));
-      const x1 = Math.min(W, Math.floor(xs[k + 1]) + 1);
+      const x0 = Math.max(0, Math.ceil(xs[k]!));
+      const x1 = Math.min(W, Math.floor(xs[k + 1]!) + 1);
       if (x1 > x0) mask.fill(1, y * W + x0, y * W + x1);
     }
   }
@@ -105,18 +105,18 @@ export function boxBlur(mask: Float32Array, W: number, H: number, r: number, pas
     for (let y = 0; y < H; y++) {
       let sum = 0;
       const row = y * W;
-      for (let x = -r; x <= r; x++) sum += mask[row + Math.min(W - 1, Math.max(0, x))];
+      for (let x = -r; x <= r; x++) sum += mask[row + Math.min(W - 1, Math.max(0, x))]!;
       for (let x = 0; x < W; x++) {
         tmp[row + x] = sum / (2 * r + 1);
-        sum += mask[row + Math.min(W - 1, x + r + 1)] - mask[row + Math.max(0, x - r)];
+        sum += mask[row + Math.min(W - 1, x + r + 1)]! - mask[row + Math.max(0, x - r)]!;
       }
     }
     for (let x = 0; x < W; x++) {
       let sum = 0;
-      for (let y = -r; y <= r; y++) sum += tmp[Math.min(H - 1, Math.max(0, y)) * W + x];
+      for (let y = -r; y <= r; y++) sum += tmp[Math.min(H - 1, Math.max(0, y)) * W + x]!;
       for (let y = 0; y < H; y++) {
         mask[y * W + x] = sum / (2 * r + 1);
-        sum += tmp[Math.min(H - 1, y + r + 1) * W + x] - tmp[Math.max(0, y - r) * W + x];
+        sum += tmp[Math.min(H - 1, y + r + 1) * W + x]! - tmp[Math.max(0, y - r) * W + x]!;
       }
     }
   }
@@ -136,8 +136,8 @@ function segDist(px: number, py: number, x1: number, y1: number, x2: number, y2:
 export function strokeRoad(mask: Float32Array, W: number, H: number, road: Road) {
   const feather = 10;
   for (let i = 0; i + 1 < road.points.length; i++) {
-    const [x1, y1] = road.points[i];
-    const [x2, y2] = road.points[i + 1];
+    const [x1, y1] = road.points[i]!;
+    const [x2, y2] = road.points[i + 1]!;
     const pad = road.width / 2 + feather + 14;
     const minX = Math.max(0, Math.floor(Math.min(x1, x2) - pad));
     const maxX = Math.min(W - 1, Math.ceil(Math.max(x1, x2) + pad));
@@ -151,7 +151,7 @@ export function strokeRoad(mask: Float32Array, W: number, H: number, road: Road)
         if (d >= half + feather) continue;
         const a = d <= half ? 1 : 1 - (d - half) / feather;
         const idx = y * W + x;
-        if (a > mask[idx]) mask[idx] = a;
+        if (a > mask[idx]!) mask[idx] = a;
       }
     }
   }
@@ -166,9 +166,9 @@ export function sampleSwatch(sw: SwatchData, x: number, y: number): [number, num
   const i2 = (m(y + 311, sw.height) * sw.width + m(x + 173, sw.width)) * 3;
   const t = smooth(Math.min(1, Math.max(0, noise(x, y, 210) * 1.6 - 0.3)));
   return [
-    sw.data[i1] + (sw.data[i2] - sw.data[i1]) * t,
-    sw.data[i1 + 1] + (sw.data[i2 + 1] - sw.data[i1 + 1]) * t,
-    sw.data[i1 + 2] + (sw.data[i2 + 2] - sw.data[i1 + 2]) * t,
+    sw.data[i1]! + (sw.data[i2]! - sw.data[i1]!) * t,
+    sw.data[i1 + 1]! + (sw.data[i2 + 1]! - sw.data[i1 + 1]!) * t,
+    sw.data[i1 + 2]! + (sw.data[i2 + 2]! - sw.data[i1 + 2]!) * t,
   ];
 }
 
@@ -183,14 +183,14 @@ function blendLayer(
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const idx = y * W + x;
-      const a = alpha[idx];
+      const a = alpha[idx]!;
       if (a <= 0.003) continue;
       const [r, g, b] = sampleSwatch(sw, x, y);
       const [sr, sg, sb] = shade ? shade(x, y, idx) : [1, 1, 1];
       const di = idx * 3;
-      canvas[di] = canvas[di] + (r * sr - canvas[di]) * a;
-      canvas[di + 1] = canvas[di + 1] + (g * sg - canvas[di + 1]) * a;
-      canvas[di + 2] = canvas[di + 2] + (b * sb - canvas[di + 2]) * a;
+      canvas[di] = canvas[di]! + (r * sr - canvas[di]!) * a;
+      canvas[di + 1] = canvas[di + 1]! + (g * sg - canvas[di + 1]!) * a;
+      canvas[di + 2] = canvas[di + 2]! + (b * sb - canvas[di + 2]!) * a;
     }
   }
 }
@@ -287,8 +287,8 @@ export function renderTerrainCore(opts: TerrainCoreOptions): TerrainCoreResult |
     for (let y = 0; y < H; y += step) {
       for (let x = 0; x < W; x += step) {
         const v = displaced[y * W + x];
-        const inside = v >= 0.85;
-        const edge = v > 0.25 && v < 0.85;
+        const inside = v! >= 0.85;
+        const edge = v! > 0.25 && v! < 0.85;
         if ((inside && hash2(x, y) < 0.8) || (edge && hash2(x, y) < 0.55)) {
           scatterPoints.push([
             (x + Math.round((hash2(x + 7, y) - 0.5) * r(80))) * s,
@@ -308,7 +308,7 @@ export function renderTerrainCore(opts: TerrainCoreOptions): TerrainCoreResult |
     const interior = Float32Array.from(mask);
     boxBlur(interior, W, H, r(22));
     blendLayer(canvas, W, H, mask, water, (x, y, idx) => {
-      const depth = Math.min(1, interior[idx]);
+      const depth = Math.min(1, interior[idx]!);
       const sh = (0.66 + 0.3 * depth) * (0.96 + 0.08 * noise(x, y, r(120)));
       return [sh * 0.88, sh * 0.97, sh * 1.12];
     });

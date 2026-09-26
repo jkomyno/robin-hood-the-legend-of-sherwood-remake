@@ -97,8 +97,8 @@ export function validatePopulation(value: unknown): asserts value is Population 
       if (
         i &&
         Math.hypot(
-          pt.position[0] - r.points[i - 1].position[0],
-          pt.position[1] - r.points[i - 1].position[1],
+          pt.position[0] - r.points[i - 1]!.position[0],
+          pt.position[1] - r.points[i - 1]!.position[1],
         ) < 0.01
       )
         fail("duplicate route point");

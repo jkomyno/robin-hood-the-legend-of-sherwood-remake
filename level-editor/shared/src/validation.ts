@@ -474,10 +474,10 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
         /^asset:([^:]+):((?:building|terrace)-\d+(?:--component-[a-zA-Z0-9_-]+)?|mission-[a-zA-Z0-9_-]+)$/.exec(
           o.node,
         );
-      check(!!match && assetIds.has(match[1]), o.id, "dangling external asset source");
-      if (!match[2].startsWith("mission-"))
+      check(!!match && assetIds.has(match[1]!), o.id, "dangling external asset source");
+      if (!match[2]!.startsWith("mission-"))
         check(
-          componentIdentityMatches(match[2], o.source?.obstacle, o.source?.components),
+          componentIdentityMatches(match[2]!, o.source?.obstacle, o.source?.components),
           o.id,
           "external asset canonical obstacle mismatch",
         );

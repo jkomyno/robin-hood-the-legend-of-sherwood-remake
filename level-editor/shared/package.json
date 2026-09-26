@@ -8,5 +8,8 @@
   },
   "dependencies": {
     "polygon-clipping": "^0.15.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.5.1"
   }
 }

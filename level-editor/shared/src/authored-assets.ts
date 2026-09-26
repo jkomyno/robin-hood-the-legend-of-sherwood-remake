@@ -203,14 +203,14 @@ export function authoredAssetGroups(
             part.obstacle >= 0 &&
             (!scoped ||
               (part.components!.length === 1 &&
-                /^[a-zA-Z0-9_-]+$/.test(part.components![0]) &&
+                /^[a-zA-Z0-9_-]+$/.test(part.components![0]!) &&
                 (part.node === undefined ||
                   componentIdentityMatches(part.node, part.obstacle, part.components))));
       if (!valid || !part.name.trim() || parts.has(key))
         throw new Error(`${map} asset catalog has invalid or duplicate obstacle ownership`);
       if (part.mission_profile === undefined) {
         const claims = obstacleClaims.get(part.obstacle) ?? new Set<string>();
-        const claim = scoped ? part.components![0] : "*";
+        const claim = scoped ? part.components![0]! : "*";
         if (claims.has(claim) || claims.has("*") || (claim === "*" && claims.size))
           throw new Error(`${map} asset catalog has overlapping obstacle ownership`);
         claims.add(claim);

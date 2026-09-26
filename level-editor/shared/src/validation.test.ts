@@ -16,7 +16,7 @@ function level() {
   return {
     format: "Fullgame",
     misc: {},
-    sight_obstacles: [document().objects[0].obstacle],
+    sight_obstacles: [document().objects[0]!.obstacle],
     patches: [],
     animations: [],
     material_sectors: [],
@@ -153,7 +153,7 @@ test("invalid schemas and dangling or mismatched sources fail", () => {
 test("asymmetric coordinates invert and preserve signed winding", () => {
   const game: [number, number, number] = [13, -27, 41];
   const scene = gameToScene(camera, ...game);
-  sceneToGame(camera, scene).forEach((v, i) => assert.ok(Math.abs(v - game[i]) < 1e-10));
+  sceneToGame(camera, scene).forEach((v, i) => assert.ok(Math.abs(v - game[i]!) < 1e-10));
   assert.deepEqual(gltfToScene(sceneToGltf(scene)), scene);
   const points: [number, number][] = [
     [1, 2],
@@ -165,7 +165,7 @@ test("asymmetric coordinates invert and preserve signed winding", () => {
 });
 test("scene matrix placement agrees with game obstacle transform used by bake", () => {
   const d = parseLevel3D(document());
-  const o = d.objects[0];
+  const o = d.objects[0]!;
   o.transform = { dx: 13, dy: -5, dz: 7, rot_deg: 33 };
   const pivot: [number, number] = [4, 13 / 3];
   const matrix = gameTransformMatrix(camera, o.transform, pivot);
@@ -175,7 +175,7 @@ test("scene matrix placement agrees with game obstacle transform used by bake", 
       camera,
       applyAffineMatrix(matrix, gameToScene(camera, p.x, p.y, p.z_top)),
     );
-    const q = expected.points[i];
-    actual.forEach((v, k) => assert.ok(Math.abs(v - [q.x, q.y, q.z_top][k]) < 1e-9));
+    const q = expected.points[i]!;
+    actual.forEach((v, k) => assert.ok(Math.abs(v - [q.x, q.y, q.z_top][k]!) < 1e-9));
   });
 });

@@ -105,7 +105,7 @@ function footprintArea(points: ObstaclePoint[]): number {
 
 function toPolygon(points: ObstaclePoint[]): Polygon {
   const ring = points.map((p) => [p.x, p.y] as [number, number]);
-  ring.push(ring[0]);
+  ring.push(ring[0]!);
   return [ring];
 }
 
@@ -115,7 +115,7 @@ function polysArea(m: ReturnType<typeof polygonClipping.intersection>): number {
     for (const [k, ring] of poly.entries()) {
       let r = 0;
       for (let i = 0; i < ring.length - 1; i++)
-        r += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+        r += ring[i]![0] * ring[i + 1]![1] - ring[i + 1]![0] * ring[i]![1];
       a += ((k === 0 ? 1 : -1) * Math.abs(r)) / 2;
     }
   }
@@ -174,9 +174,9 @@ export function groupObstacles(
     });
   });
   for (let a = 0; a < items.length; a++) {
-    const A = items[a];
+    const A = items[a]!;
     for (let b = a + 1; b < items.length; b++) {
-      const B = items[b];
+      const B = items[b]!;
       if (A.box[2] < B.box[0] || B.box[2] < A.box[0] || A.box[3] < B.box[1] || B.box[3] < A.box[1])
         continue;
       if (A.z0 > B.z1 + GROUP_Z_GAP || B.z0 > A.z1 + GROUP_Z_GAP) continue;
@@ -263,7 +263,7 @@ export function snapFloatingParts(
   };
   const shiftedPoly = (o: SightObstacle, d: number): Polygon => {
     const ring = o.points.map((p) => [p.x, p.y - d] as [number, number]);
-    ring.push(ring[0]);
+    ring.push(ring[0]!);
     return [ring];
   };
   const out = obstacles.map((o) => o);
@@ -271,7 +271,7 @@ export function snapFloatingParts(
   const suspects: { index: number; support: number; delta: number }[] = [];
   for (const it of items) {
     if (exclude.has(it.i) || it.zb <= SNAP_TOLERANCE || it.area < 1) continue;
-    const o = obstacles[it.i];
+    const o = obstacles[it.i]!;
     // supported where it is?
     let supported = false;
     let best: { support: number; delta: number; cover: number } | null = null;
@@ -428,7 +428,7 @@ export function mulMatrix(a: number[], b: number[]): number[] {
   for (let col = 0; col < 4; col++) {
     for (let row = 0; row < 4; row++) {
       let v = 0;
-      for (let k = 0; k < 4; k++) v += a[k * 4 + row] * b[col * 4 + k];
+      for (let k = 0; k < 4; k++) v += a[k * 4 + row]! * b[col * 4 + k]!;
       out[col * 4 + row] = v;
     }
   }
