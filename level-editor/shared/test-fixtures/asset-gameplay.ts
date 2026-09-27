@@ -512,6 +512,22 @@ export function liftAssetCompilerFixture() {
   return fixture;
 }
 
+export function multiPlaneRegionCompilerFixture() {
+  const fixture = compoundLiftCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  const lower = gameplay.surfaces.find((s) => s.id === gameplay.lifts![0]!.surface)!;
+  const upper = structuredClone(fixture.upper.gameplay!.surfaces[0]!);
+  upper.id = "upper-roof";
+  lower.navigationRegion = upper.navigationRegion = "roof";
+  gameplay.surfaces = [lower, upper];
+  gameplay.collision = "none";
+  gameplay.lifts = [];
+  gameplay.doors = [];
+  fixture.document.objects = fixture.document.objects.filter((p) => p.group !== "upper");
+  fixture.document.map = "Multi-plane navigation fixture";
+  return fixture;
+}
+
 export function compoundLiftCompilerFixture() {
   const fixture = liftAssetCompilerFixture();
   const g = fixture.hut.gameplay!;

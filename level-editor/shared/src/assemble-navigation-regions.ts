@@ -1,0 +1,90 @@
+import clipping, { type Polygon } from "polygon-clipping";
+import type { Point } from "./level.ts";
+import type { HeightPlane } from "./gameplay-plane.ts";
+import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
+import { simplifyMotionRing } from "./motion-quantization.ts";
+
+export interface NavigationPiece {
+  plane: HeightPlane;
+  layer: number;
+  lift?: string;
+  navigationRegion?: string;
+  polygon: Point[];
+  blockers: Point[][];
+}
+export interface NavigationRegion {
+  layer: number;
+  lift?: string;
+  polygon: Point[];
+  blockers: Point[][];
+  pieces: NavigationPiece[];
+}
+const shape = (p: NavigationPiece): Polygon => [p.polygon, ...p.blockers];
+function movementRing(points: Point[]): Point[] {
+  const ring = simplifyMotionRing(points);
+  const area = ring.reduce((sum, p, i) => {
+    const q = ring[(i + 1) % ring.length]!;
+    return sum + p[0] * q[1] - q[0] * p[1];
+  }, 0);
+  if (ring.length < 3 || Math.abs(area) < 1)
+    throw new Error("Joined navigation region has a degenerate contour");
+  // Movement obstacles use the same winding as outer movement boundaries.
+  if (area < 0) ring.reverse();
+  return ring;
+}
+
+/** Explicit local regions share navigation topology while retaining every receiving plane. */
+export function assembleNavigationRegions(
+  pieces: NavigationPiece[],
+  warnings: string[],
+): NavigationRegion[] {
+  const groups = new Map<string, NavigationPiece[]>();
+  for (const [i, piece] of pieces.entries()) {
+    const key = piece.lift
+      ? `lift:${piece.lift}`
+      : piece.navigationRegion
+        ? `region:${piece.navigationRegion}`
+        : `piece:${i}`;
+    const group = groups.get(key) ?? [];
+    group.push(piece);
+    groups.set(key, group);
+  }
+  return [...groups.values()]
+    .flatMap((members): NavigationRegion[] => {
+      const first = members[0]!;
+      const layer = Math.min(...members.map((p) => p.layer));
+      if (members.length === 1)
+        return [
+          {
+            layer,
+            lift: first.lift,
+            polygon: first.polygon,
+            blockers: first.blockers,
+            pieces: members,
+          },
+        ];
+      const merged = normalizeGeneratedMotion(
+        clipping.union(shape(first), ...members.slice(1).map(shape)),
+        "Joined navigation region",
+        warnings,
+      );
+      if (first.lift && merged.length !== 1)
+        throw new Error(
+          `Lift ${first.lift}: joined surfaces must form one connected traversal area`,
+        );
+      return merged.map((region) => ({
+        layer,
+        lift: first.lift,
+        polygon: movementRing(region[0]!),
+        blockers: region.slice(1).map(movementRing),
+        pieces: members.flatMap((member) =>
+          clipping.intersection(shape(member), region).map((part) => ({
+            ...member,
+            polygon: movementRing(part[0]!),
+            blockers: part.slice(1).map(movementRing),
+          })),
+        ),
+      }));
+    })
+    .sort((a, b) => a.layer - b.layer);
+}

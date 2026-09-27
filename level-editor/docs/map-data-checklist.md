@@ -14,7 +14,7 @@ intended construction, not functionality available today.
 | Background image and minimap | Render placed models/textures; downsample the minimap. | Working |
 | Character occlusion | Bake a 16-bit depth PNG from scene geometry. | Working for static scenes |
 | Projectile/view/obstacle masks and masking polylines | Generate typed masks and links from asset geometry and states. A depth PNG alone does **not** replace all these semantics. | Planned |
-| Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions and assign fresh sectors/layers. | Partial: flat/sloped surfaces and holes; shared ordinary movement areas spanning multiple planes and full connectivity unfinished |
+| Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions or explicit local regions spanning several planes, then assign fresh sectors/layers. | Partial: flat/sloped surfaces, holes and ordinary multi-plane regions tested; cross-asset multi-plane joins and full-map connectivity unfinished |
 | Movement blockers | Transform explicit asset-local movement contours on their height plane; otherwise intersect collision volumes with walkable surfaces. Sight geometry stays independent. | Working in synthetic tests; recovered ownership still needs review |
 | Openings in movement collision | Asset-local clearances remove only the owning asset's derived collision on the matching plane; sight geometry and other assets remain intact. | Working in compiler/runtime tests; recovery geometry failures remain explicit gaps |
 | Navigation graph and fast-find grid | Engine constructs routing and spatial lookup structures from compiled geometry. No copied grids or graph bytes. | Working on synthetic maps |
@@ -109,6 +109,11 @@ The passing static diagnostics also include their recovered jump definitions.
 Croisement03's door topology now survives recovery: asset-local navigation-region
 labels preserve separate coplanar areas, including when their boundaries touch.
 Labels are scoped to each placement; unlabelled surfaces retain normal merging.
+One local region can now span multiple height planes while compiling to one
+ordinary movement area. Each projection plane retains its height, and a native
+engine fixture verifies walking across the shared boundary without a gate or lift.
+Recovery preserves this relationship when all supports have one unambiguous asset
+owner. Ordinary regions spanning different assets still need explicit join authoring.
 Ground recovery reports per-region differences as well as overall coverage.
 Nottingham's hidden prison part remains a blocker. York's compound lift now has
 asset-local segment connections; its static check advances to an unresolved

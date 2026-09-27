@@ -19,6 +19,7 @@ import {
   jumpAssetCompilerFixture,
   navigationRegionCompilerFixture,
   compoundLiftCompilerFixture,
+  multiPlaneRegionCompilerFixture,
   nonrenderingVolumeCompilerFixture,
   crossAssetJumpCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
@@ -44,6 +45,20 @@ test("non-rendering gameplay export matches the native collision fixture", async
     await readFile(
       new URL(
         "../../../crates/robin_engine/tests/fixtures/asset-nonrendering-volume.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("ordinary multi-plane export matches the native traversal fixture", async () => {
+  const { document, assets } = multiPlaneRegionCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-multi-plane-region.level.json",
         import.meta.url,
       ),
       "utf8",

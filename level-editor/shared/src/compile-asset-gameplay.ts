@@ -1,5 +1,6 @@
 import polygonClipping, { type Polygon } from "polygon-clipping";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
+import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
 import { assembleJumpSegments, type PlacedJumpSegment } from "./assemble-jump-segments.ts";
 import { assembleLiftSegments, type PlacedLiftSegment } from "./assemble-lift-segments.ts";
 import { partMatrix, transformedObstacle, type Level3D, type Level3DObject } from "./level3d.ts";
@@ -487,6 +488,7 @@ export function compileAssetGameplay(
       plane,
       layer,
       lift: undefined as string | undefined,
+      navigationRegion: region,
       surfaces: matching.filter((s) => s.navigationRegion === region),
     }));
   });
@@ -495,6 +497,7 @@ export function compileAssetGameplay(
       plane: surface.plane,
       layer: layers.length - 1,
       lift: surface.lift,
+      navigationRegion: undefined,
       surfaces: [surface],
     });
   const areas: {
@@ -506,9 +509,8 @@ export function compileAssetGameplay(
     blockers: Point[][];
   }[] = [];
   let sector = 0;
-  const liftPieces: { lift: string; plane: HeightPlane; polygon: Point[]; blockers: Point[][] }[] =
-    [];
-  for (const { layer, plane, lift, surfaces: group } of groups) {
+  const navigationPieces: NavigationPiece[] = [];
+  for (const { layer, plane, lift, navigationRegion, surfaces: group } of groups) {
     const input = group.map((s): Polygon => [
       polygon(s.polygon)[0]!,
       ...s.holes.map((h) => polygon(h)[0]!),
@@ -575,7 +577,6 @@ export function compileAssetGameplay(
         if (regions.length) merged = polygonClipping.difference(merged, regions);
       }
     }
-    const output = layers[layer]!;
     for (const poly of merged.flatMap((region) =>
       normalizeGeneratedMotion([region], `Movement layer ${layer}`, warnings),
     )) {
@@ -590,61 +591,53 @@ export function compileAssetGameplay(
       const blockers = quantized
         .slice(1)
         .map((r) => ring(r, `Merged movement hole on layer ${layer}`));
-      if (lift) {
-        if (
-          compileTransitionObstacles(boundary, blockers, plane, transitionBlockers, warnings).pairs
-            .size
-        )
-          throw new Error(
-            `Lift ${lift}: changing traversal surfaces require lift state compilation support`,
-          );
-        liftPieces.push({ lift, plane, polygon: boundary, blockers });
-        continue;
-      }
-      const changing = compileTransitionObstacles(
-        boundary,
-        blockers,
-        plane,
-        transitionBlockers,
-        warnings,
+      navigationPieces.push({ layer, plane, lift, navigationRegion, polygon: boundary, blockers });
+    }
+  }
+  for (const region of assembleNavigationRegions(navigationPieces, warnings)) {
+    const { layer, lift, polygon: boundary, blockers, pieces } = region;
+    const plane = pieces[0]!.plane;
+    const changing = compileTransitionObstacles(
+      boundary,
+      blockers,
+      plane,
+      transitionBlockers,
+      warnings,
+      pieces.length > 1 ? pieces : undefined,
+    );
+    if (lift && changing.pairs.size)
+      throw new Error(
+        `Lift ${lift}: changing traversal surfaces require lift state compilation support`,
       );
-      for (const [id, pair] of changing.pairs)
-        transitions
-          .find((t) => t.id === id)!
-          .changes.push({
-            layer,
-            sector,
-            changing_obstacle: pair,
-          });
-      const area = {
-        plane,
-        lift,
-        sector,
-        layer,
-        polygon: boundary,
-        blockers: [...blockers, ...changing.initial],
-      };
-      areas.push(area);
-      sector += 1 + blockers.length + changing.obstacles.length;
-      output.push({
-        is_lift: !!lift,
-        state_id: 0,
-        polygon: { points: boundary },
-        skeleton_segments: [],
-        flags: 0,
-        obstacles: [
-          ...blockers.map((points) => ({ state_id: 0, polygon: { points } })),
-          ...changing.obstacles,
-        ],
-      });
-      // Projection surfaces provide layer-aware elevation and picking.
-      if (lift || plane.some((n) => Math.abs(n) > 1e-7))
+    for (const [id, pair] of changing.pairs)
+      transitions
+        .find((t) => t.id === id)!
+        .changes.push({
+          layer,
+          sector,
+          changing_obstacle: pair,
+        });
+    layers[layer]!.push({
+      is_lift: !!lift,
+      state_id: 0,
+      polygon: { points: boundary },
+      skeleton_segments: [],
+      flags: 0,
+      obstacles: [
+        ...blockers.map((points) => ({ state_id: 0, polygon: { points } })),
+        ...changing.obstacles,
+      ],
+    });
+    // Projection surfaces provide layer-aware elevation and picking.
+    for (const piece of pieces) {
+      areas.push({ ...piece, sector, layer, blockers: [...piece.blockers, ...changing.initial] });
+      if (lift || piece.plane.some((n) => Math.abs(n) > 1e-7))
         sight.push({
-          points: boundary.map(([x, y]) => {
-            const height = planeHeight(plane, [x, y]);
+          points: piece.polygon.map(([x, y]) => {
+            const height = planeHeight(piece.plane, [x, y]);
             return { x, y: y + height, z_bottom: height, z_top: height };
           }),
-          projection_area: [area.sector, layer],
+          projection_area: [sector, layer],
           opaque: false,
           solid: false,
           mouse: true,
@@ -653,46 +646,7 @@ export function compileAssetGameplay(
           material_indices: [],
         });
     }
-  }
-  for (const lift of lifts) {
-    const pieces = liftPieces.filter((p) => p.lift === lift.id);
-    if (!pieces.length) throw new Error(`Missing lift motion area ${lift.id}`);
-    const merged = polygonClipping.union(
-      ...(pieces.map((p): Polygon => [
-        polygon(p.polygon)[0]!,
-        ...p.blockers.map((b) => polygon(b)[0]!),
-      ]) as [Polygon, ...Polygon[]]),
-    );
-    if (merged.length !== 1)
-      throw new Error(`Lift ${lift.id}: joined surfaces must form one connected traversal area`);
-    const boundary = ring(merged[0]![0]!, `Lift ${lift.id}`);
-    const blockers = merged[0]!.slice(1).map((r) => ring(r, `Lift ${lift.id} hole`));
-    const layer = layers.length - 1;
-    layers[layer]!.push({
-      is_lift: true,
-      state_id: 0,
-      polygon: { points: boundary },
-      skeleton_segments: [],
-      flags: 0,
-      obstacles: blockers.map((points) => ({ state_id: 0, polygon: { points } })),
-    });
-    for (const piece of pieces) {
-      areas.push({ ...piece, sector, layer });
-      sight.push({
-        points: piece.polygon.map(([x, y]) => {
-          const z = planeHeight(piece.plane, [x, y]);
-          return { x, y: y + z, z_bottom: z, z_top: z };
-        }),
-        projection_area: [sector, layer],
-        opaque: false,
-        solid: false,
-        mouse: true,
-        show_shadow_polygon: false,
-        default_material: 0,
-        material_indices: [],
-      });
-    }
-    sector += 1 + blockers.length;
+    sector += 1 + blockers.length + changing.obstacles.length;
   }
   const resolve = (point: Vec3, label: string, lift?: string) => {
     const matches = areas.filter(

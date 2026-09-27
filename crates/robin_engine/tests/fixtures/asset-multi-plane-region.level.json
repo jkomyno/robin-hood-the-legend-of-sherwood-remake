@@ -1,0 +1,149 @@
+{
+  "title": "Multi-plane navigation fixture",
+  "map_filename": "editor-multi-plane-navigation-fixture",
+  "spawn_player": false,
+  "walkable_polygon": [
+    [
+      0,
+      0
+    ],
+    [
+      1999,
+      0
+    ],
+    [
+      1999,
+      1999
+    ],
+    [
+      0,
+      1999
+    ]
+  ],
+  "volumes": [],
+  "asset_geometry": {
+    "motion_data": {
+      "layers": [
+        [
+          {
+            "is_lift": false,
+            "state_id": 0,
+            "polygon": {
+              "points": [
+                [
+                  390,
+                  300
+                ],
+                [
+                  400,
+                  260
+                ],
+                [
+                  410,
+                  200
+                ],
+                [
+                  410,
+                  300
+                ],
+                [
+                  400,
+                  360
+                ],
+                [
+                  390,
+                  400
+                ]
+              ]
+            },
+            "skeleton_segments": [],
+            "flags": 0,
+            "obstacles": []
+          }
+        ],
+        [],
+        []
+      ],
+      "graph_bytes": []
+    },
+    "sight_obstacles": [
+      {
+        "points": [
+          {
+            "x": 400,
+            "y": 300,
+            "z_bottom": 40,
+            "z_top": 40
+          },
+          {
+            "x": 410,
+            "y": 300,
+            "z_bottom": 100,
+            "z_top": 100
+          },
+          {
+            "x": 410,
+            "y": 400,
+            "z_bottom": 100,
+            "z_top": 100
+          },
+          {
+            "x": 400,
+            "y": 400,
+            "z_bottom": 40,
+            "z_top": 40
+          }
+        ],
+        "projection_area": [
+          0,
+          0
+        ],
+        "opaque": false,
+        "solid": false,
+        "mouse": true,
+        "show_shadow_polygon": false,
+        "default_material": 0,
+        "material_indices": []
+      },
+      {
+        "points": [
+          {
+            "x": 390,
+            "y": 300,
+            "z_bottom": 0,
+            "z_top": 0
+          },
+          {
+            "x": 400,
+            "y": 300,
+            "z_bottom": 40,
+            "z_top": 40
+          },
+          {
+            "x": 400,
+            "y": 400,
+            "z_bottom": 40,
+            "z_top": 40
+          },
+          {
+            "x": 390,
+            "y": 400,
+            "z_bottom": 0,
+            "z_top": 0
+          }
+        ],
+        "projection_area": [
+          0,
+          0
+        ],
+        "opaque": false,
+        "solid": false,
+        "mouse": true,
+        "show_shadow_polygon": false,
+        "default_material": 0,
+        "material_indices": []
+      }
+    ],
+    "doors": []
+  }
+}

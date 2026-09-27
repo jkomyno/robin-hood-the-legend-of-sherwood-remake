@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import type { NavigationPiece } from "./assemble-navigation-regions.ts";
 import {
   compileTransitionObstacles,
   type PlacedTransitionBlocker,
@@ -30,6 +31,52 @@ const blocker: PlacedTransitionBlocker = {
     ],
   ],
 };
+test("one transition shares state bits across receiving planes and clips to each receiver", () => {
+  const receivers: NavigationPiece[] = [
+    {
+      plane: [0, 0, 0],
+      layer: 0,
+      polygon: [
+        [0, 0],
+        [50, 0],
+        [50, 100],
+        [0, 100],
+      ],
+      blockers: [],
+    },
+    {
+      plane: [1, 0, -50],
+      layer: 1,
+      polygon: [
+        [50, 0],
+        [100, 0],
+        [100, 100],
+        [50, 100],
+      ],
+      blockers: [],
+    },
+  ];
+  const result = compileTransitionObstacles(
+    boundary,
+    [],
+    [0, 0, 0],
+    [
+      { ...blocker, holes: [] },
+      { ...blocker, holes: [], plane: [1, 0, -50], applied: true },
+      { ...blocker, holes: [], plane: [0, 0, 999], transition: "unrelated" },
+    ],
+    [],
+    receivers,
+  );
+  assert.deepEqual([...result.pairs], [["gate", 0]]);
+  assert.deepEqual(
+    result.obstacles.map((o) => o.state_id),
+    [1, 2],
+  );
+  assert.ok(result.obstacles[0]!.polygon.points.every(([x]) => x <= 50));
+  assert.ok(result.obstacles[1]!.polygon.points.every(([x]) => x >= 50));
+  assert.equal(result.initial.length, 1);
+});
 test("state blocker holes survive as nonoverlapping triangles", () => {
   const result = compileTransitionObstacles(boundary, [], [0, 0, 0], [blocker], []);
   const area = result.obstacles.reduce(

@@ -19,6 +19,26 @@ fn nonrendering_asset_volume_constructs_navigation_and_sight() {
 }
 
 #[test]
+fn ordinary_region_crosses_projection_planes_without_a_gate() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-multi-plane-region.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    assert!(grid.level.door_projection_infos.is_empty());
+    assert!(engine.presentation_view().doors().is_empty());
+    assert!(grid.level.sectors.iter().all(|s| !s.sector_type.is_lift()));
+    let planes = &assets.environment.static_sight_obstacles;
+    assert_eq!(planes.len(), 2);
+    assert!((planes[1].compute_top_z_from_projection(395., 330.) - 20.).abs() < 0.001);
+    assert!((planes[0].compute_top_z_from_projection(405., 280.) - 70.).abs() < 0.001);
+    use robin_engine::coordinates::MapPoint;
+    let layer = grid.level.sectors[0].layer;
+    assert!(grid.is_reachable_thin(MapPoint::new(395., 330.), MapPoint::new(405., 280.), layer));
+}
+
+#[test]
 fn compound_lift_keeps_one_native_sector_and_each_projection_plane() {
     let mut assets = LevelAssets::new();
     let engine = construct(

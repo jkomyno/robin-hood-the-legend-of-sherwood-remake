@@ -10,7 +10,7 @@ export interface AssetWalkableSurface {
   height: number | number[];
   /** Holes lie on the same plane, in the same local XY frame. */
   holes?: Point[][];
-  /** Asset-local navigation partition; distinct partitions never merge across a gate. */
+  /** Asset-local navigation region, optionally spanning height planes; distinct regions never merge. */
   navigationRegion?: string;
 }
 export interface AssetDoor {

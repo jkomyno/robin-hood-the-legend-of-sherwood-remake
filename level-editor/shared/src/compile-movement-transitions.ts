@@ -1,5 +1,6 @@
 import earcut, { flatten } from "earcut";
-import polygonClipping from "polygon-clipping";
+import polygonClipping, { type MultiPolygon } from "polygon-clipping";
+import type { NavigationPiece } from "./assemble-navigation-regions.ts";
 import type { Point } from "./level.ts";
 import type { HeightPlane } from "./gameplay-plane.ts";
 import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-quantization.ts";
@@ -19,16 +20,32 @@ export function compileTransitionObstacles(
   plane: HeightPlane,
   blockers: PlacedTransitionBlocker[],
   warnings: string[],
+  receivers?: NavigationPiece[],
 ) {
   const pairs = new Map<string, number>();
   const obstacles: { state_id: number; polygon: { points: Point[] } }[] = [];
   const initial: Point[][] = [];
   for (const blocker of blockers) {
-    if (!plane.every((n, i) => Math.abs(n - blocker.plane[i]!) < 1e-7)) continue;
-    const clipped = polygonClipping.intersection(
-      [boundary, ...holes],
-      [blocker.polygon, ...blocker.holes],
-    );
+    const samePlane = (plane: HeightPlane) =>
+      plane.every((n, i) => Math.abs(n - blocker.plane[i]!) < 1e-7);
+    if (!receivers && !samePlane(plane)) continue;
+    let clipped: MultiPolygon;
+    if (receivers) {
+      const fragments = receivers
+        .filter((r) => samePlane(r.plane))
+        .flatMap((r) =>
+          polygonClipping.intersection(
+            [r.polygon, ...r.blockers],
+            [boundary, ...holes],
+            [blocker.polygon, ...blocker.holes],
+          ),
+        );
+      clipped = fragments.length ? polygonClipping.union(fragments[0]!, ...fragments.slice(1)) : [];
+    } else
+      clipped = polygonClipping.intersection(
+        [boundary, ...holes],
+        [blocker.polygon, ...blocker.holes],
+      );
     for (const region of clipped) {
       const rounded = quantizeGeneratedMotionPolygon(
         region,

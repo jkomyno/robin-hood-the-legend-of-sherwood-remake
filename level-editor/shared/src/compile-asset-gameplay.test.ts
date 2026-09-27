@@ -13,6 +13,7 @@ import {
   lightAssetCompilerFixture,
   jumpAssetCompilerFixture,
   compoundLiftCompilerFixture,
+  multiPlaneRegionCompilerFixture,
   crossAssetJumpCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
@@ -102,6 +103,36 @@ test("non-rendering asset volumes preserve collision and sight without a mesh pa
   Object.assign(hut.gameplay!.volumes[0]!.shape, { projection_area: [123, 1] });
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid gameplay volume/);
 });
+test("ordinary local navigation regions join height planes without lift behavior", () => {
+  const { document, assets, hut } = multiPlaneRegionCompilerFixture();
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.motion_data.layers.flat().length, 1);
+  const projections = compiled.sight_obstacles.filter((s) => Array.isArray(s.projection_area));
+  assert.equal(projections.length, 2);
+  assert.deepEqual(projections[0]!.projection_area, projections[1]!.projection_area);
+  assert.equal(compiled.lifts?.length ?? 0, 0);
+  hut.gameplay!.surfaces[1]!.navigationRegion = "separate";
+  assert.equal(compileAssetGameplay(document, assets, bounds).motion_data.layers.flat().length, 2);
+});
+
+test("multi-plane regions retain independent sectors after rotation and duplication", () => {
+  const { document, assets } = multiPlaneRegionCompilerFixture();
+  const part = document.objects.find((p) => p.group)!;
+  document.groups.push({
+    id: "roof-copy",
+    transform: { ...IDENTITY_TRANSFORM, dx: 1000, rot_deg: 90 },
+  });
+  document.objects.push({ ...structuredClone(part), id: "roof-copy-part", group: "roof-copy" });
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.motion_data.layers.flat().length, 2);
+  const regions = new Map<string, number>();
+  for (const surface of compiled.sight_obstacles) {
+    const key = JSON.stringify(surface.projection_area);
+    regions.set(key, (regions.get(key) ?? 0) + 1);
+  }
+  assert.deepEqual([...regions.values()], [2, 2]);
+});
+
 test("joined lift assets retain multiple height planes in one traversal sector", () => {
   const { document, assets, upper } = compoundLiftCompilerFixture();
   const compiled = compileAssetGameplay(document, assets, bounds);

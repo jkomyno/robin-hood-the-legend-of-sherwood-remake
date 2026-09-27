@@ -295,6 +295,16 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
     }
     let recoveredArea = 0;
     let quantizationDifferenceArea = 0;
+    // Preserve a continuous local walking region independently of its height planes.
+    // Multi-asset ownership needs explicit joins; a shared label cannot cross placements.
+    const supportOwners = supports.map(({ index }) => locals.get(index) ?? []);
+    const soleOwner = supportOwners[0]?.[0]?.asset;
+    const regionIsLocal =
+      !motion.is_lift &&
+      supports.length > 1 &&
+      soleOwner !== undefined &&
+      supportOwners.every((owners) => owners.length === 1 && owners[0]!.asset === soleOwner);
+    const navigationRegion = regionIsLocal ? `walk-region-${identity}` : undefined;
     const partition = partitionRecoverySurfaces(
       close(motion.polygon.points),
       motion.obstacles.map((o) => close(o.polygon.points)),
@@ -406,6 +416,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
           packet(owner.asset).surfaces.push({
             id: `${owner.collisionId ?? owner.node}-walk-${regionIndex}`,
             node: owner.node,
+            navigationRegion,
             vertices,
             kind: motion.is_lift ? "lift" : "walkable",
             holes: region
