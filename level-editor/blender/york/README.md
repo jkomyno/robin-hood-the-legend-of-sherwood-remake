@@ -138,7 +138,8 @@ previous grounding directory before rerunning it.
 
 The first model preview uses the game camera: orthographic, 0° yaw and 35°
 elevation, fitted to the asset. The second uses an east oblique view (40° yaw
-and elevation).
+and elevation). Previews use a per-pixel depth buffer: sorting whole triangles
+by their centers can incorrectly show hidden faces across roofs and walls.
 
 ## Grouping review controls
 
@@ -156,6 +157,10 @@ python3 level-editor/blender/york/build_grouping_review.py
 
 Matching approved groupings disappear from the pending gallery. Changed revisions
 remain pending, and previous galleries/evidence remain in `review/history/`.
+A solid-preview-only correction preserves an explicit grouping approval only
+when the name, notes, ownership/model/geometry report, validation and all source
+images still match. `review/grouping-preview-updates.json` records those links
+to the exact original approval; edits to assets or source evidence invalidate it.
 Grouping decisions never authorize texture synthesis or final geometry publication.
 The later geometry review still requires the procedure's complete eight-view
 solid/source-textured packets. Browser control verification is available with

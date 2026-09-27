@@ -12,6 +12,23 @@ ROOT=Path(__file__).resolve().parents[3]
 OUT=ROOT/'level-editor/work/york-refinement'
 
 
+def preview_only_update(before, after):
+    """Carry grouping approval across a solid-preview fix, never an asset edit."""
+    for key in ('id','name','approval_scope','technical_eligible','notes'):
+        if before.get(key) != after.get(key):return False
+    if before.get('approval_scope') != 'grouping-only':return False
+    # Ownership binds the model, descriptor, geometry and source assignments.
+    for key in ('ownership','validation'):
+        a=before.get('reports',{}).get(key,{}).get('sha256')
+        b=after.get('reports',{}).get(key,{}).get('sha256')
+        if not a or a != b:return False
+    def source_images(item):
+        return {k:v['sha256'] for k,v in item.get('images',{}).items()
+                if k not in ('solid','east_solid')}
+    sources=source_images(before)
+    return bool(sources) and sources == source_images(after)
+
+
 def record(text, gallery, destination):
     gallery,destination=Path(gallery),Path(destination)
     evidence=json.loads((gallery/'evidence.json').read_text())

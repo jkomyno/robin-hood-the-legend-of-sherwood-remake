@@ -5,6 +5,7 @@ import json
 import math
 from pathlib import Path
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT=Path(__file__).resolve().parents[3]
@@ -26,26 +27,37 @@ def projected(point,yaw=0,elevation=35):
 
 
 def solid(record,yaw,elevation):
-    tris=list(triangles(record))
-    transformed=[[projected(p,yaw,elevation) for p in tri] for tri in tris]
-    pts=[p for tri in transformed for p in tri]
-    lo=[min(p[i] for p in pts) for i in range(2)]
-    hi=[max(p[i] for p in pts) for i in range(2)]
+    """Render orthographic solids with per-pixel visibility, including crossings."""
+    tris=np.array(list(triangles(record)))
+    projected_tris=np.array([[projected(p,yaw,elevation) for p in tri] for tri in tris])
+    lo=projected_tris[:,:,:2].min(axis=(0,1))
+    hi=projected_tris[:,:,:2].max(axis=(0,1))
     scale=min(360/max(hi[0]-lo[0],1),270/max(hi[1]-lo[1],1))
-    image=Image.new('RGB',(400,300),'#20262d')
-    draw=ImageDraw.Draw(image)
-    order=sorted(range(len(tris)),key=lambda i:sum(p[2] for p in transformed[i]))
-    for i in order:
-        tri=tris[i]
-        u=[tri[1][j]-tri[0][j] for j in range(3)]
-        v=[tri[2][j]-tri[0][j] for j in range(3)]
-        n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]]
-        length=math.hypot(*n)
-        shade=.5+.5*abs(sum(a*b for a,b in zip(n,[-.35,-.45,.82]))/max(length,1e-10))
-        color=tuple(int(c*shade) for c in (174,202,214))
-        xy=[(200+(p[0]-(lo[0]+hi[0])/2)*scale,150+(p[1]-(lo[1]+hi[1])/2)*scale) for p in transformed[i]]
-        draw.polygon(xy,fill=color)
-    return image
+    projected_tris[:,:,:2]=[200,150]+(projected_tris[:,:,:2]-(lo+hi)/2)*scale
+    pixels=np.empty((300,400,3),dtype=np.uint8)
+    pixels[:]=[32,38,45]
+    depth=np.full((300,400),-np.inf)
+    for tri,xyz in zip(tris,projected_tris):
+        normal=np.cross(tri[1]-tri[0],tri[2]-tri[0])
+        shade=.5+.5*abs(np.dot(normal,[-.35,-.45,.82])/max(np.linalg.norm(normal),1e-10))
+        color=np.array([174,202,214])*shade
+        x0,y0=np.maximum(np.floor(xyz[:,:2].min(axis=0)),[0,0]).astype(int)
+        x1,y1=np.minimum(np.ceil(xyz[:,:2].max(axis=0)),[399,299]).astype(int)
+        if x0>x1 or y0>y1:continue
+        a,b,c=xyz
+        denominator=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1])
+        if abs(denominator)<1e-9:continue
+        yy,xx=np.mgrid[y0:y1+1,x0:x1+1]
+        xx=xx+.5;yy=yy+.5
+        u=((b[1]-c[1])*(xx-c[0])+(c[0]-b[0])*(yy-c[1]))/denominator
+        v=((c[1]-a[1])*(xx-c[0])+(a[0]-c[0])*(yy-c[1]))/denominator
+        w=1-u-v
+        z=u*a[2]+v*b[2]+w*c[2]
+        buffer=depth[y0:y1+1,x0:x1+1]
+        visible=(u>=-1e-7)&(v>=-1e-7)&(w>=-1e-7)&(z>buffer)
+        buffer[visible]=z[visible]
+        pixels[y0:y1+1,x0:x1+1][visible]=color
+    return Image.fromarray(pixels)
 
 
 def main():

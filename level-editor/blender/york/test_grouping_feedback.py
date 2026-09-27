@@ -2,10 +2,27 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from record_grouping_feedback import record
+from record_grouping_feedback import record, preview_only_update
+from copy import deepcopy
 
 
 class GroupingFeedbackTests(unittest.TestCase):
+    def test_only_solid_preview_changes_preserve_grouping_approval(self):
+        old={'id':'york-wall','name':'Wall','approval_scope':'grouping-only',
+             'technical_eligible':True,'notes':'Wall grouping',
+             'reports':{'ownership':{'sha256':'model-and-geometry'},'validation':{'sha256':'validated'}},
+             'images':{'context':{'sha256':'source'},'solid':{'sha256':'old-render'}}}
+        new=deepcopy(old);new['images']['solid']['sha256']='corrected-render'
+        self.assertTrue(preview_only_update(old,new))
+        for field in ('ownership','validation'):
+            changed=deepcopy(new);changed['reports'][field]['sha256']='changed'
+            self.assertFalse(preview_only_update(old,changed))
+        changed=deepcopy(new);changed['images']['context']['sha256']='new-source'
+        self.assertFalse(preview_only_update(old,changed))
+        changed=deepcopy(new);changed['name']='Different wall'
+        self.assertFalse(preview_only_update(old,changed))
+        self.assertFalse(preview_only_update({},new))
+
     def test_explicit_feedback_is_scoped_to_the_displayed_revision(self):
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary);revision='a'*64

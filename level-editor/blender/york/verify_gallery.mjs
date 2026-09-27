@@ -6,6 +6,8 @@ import {chromeEndpoint, socketOpen, evaluate} from '../../app/tests/cdp.mjs';
 
 const out=resolve('level-editor/work/york-refinement/review');
 const evidence=JSON.parse(await readFile(join(out,'evidence.json'),'utf8'));
+const target=evidence.items.find(item=>item.id==='york-cathedral-nave-and-aisles')??evidence.items[0];
+if(!target)throw Error('No pending asset to exercise review controls');
 const profile=await mkdtemp('/home/phire/.cache/york-gallery-test-');
 const url=pathToFileURL(join(out,'index.html')).href;
 const chrome=spawn('/usr/lib/chromium/chromium',['--headless','--no-sandbox','--disable-gpu',
@@ -27,7 +29,7 @@ try {
   const checks=await evaluate(socket,++id,`(() => {
     const assert=(v,m)=>{if(!v)throw Error(m)};
     assert(document.querySelectorAll('article').length===${evidence.items.length},'Card count');
-    const card=document.querySelector('#york-castle-courtyard-lodge-stairs');
+    const card=document.querySelector('#${target.id}');
     card.querySelector('[data-decision="approved"]').click();
     assert(card.querySelector('.decision').value==='approved','Approve button');
     assert(card.querySelector('[data-decision="approved"]').getAttribute('aria-pressed')==='true','Selected button');
@@ -35,29 +37,29 @@ try {
     const note=card.querySelector('.review-note');note.value='Automated browser test';note.dispatchEvent(new Event('input',{bubbles:true}));
     assert(document.querySelector('#review-export').value.includes(card.id+': needs refinement — Automated browser test'),'Request changes export');
     assert(!document.querySelector('#copy-reviews').disabled,'Copy enabled');
-    const search=document.querySelector('#asset-search');search.value='courtyard rear curtain wall';search.dispatchEvent(new Event('input'));
+    const search=document.querySelector('#asset-search');search.value='${target.id}';search.dispatchEvent(new Event('input'));
     assert([...document.querySelectorAll('article')].filter(c=>!c.hidden).length===1,'Search');
     return {status:'PASS',cards:${evidence.items.length},buttons:true,feedback_export:true,search:true};
   })()`);
   await evaluate(socket,++id,'location.reload();');
   await new Promise(resolve=>setTimeout(resolve,500));await ready();
   const restored=await evaluate(socket,++id,`(() => {
-    const card=document.querySelector('#york-castle-courtyard-lodge-stairs');
+    const card=document.querySelector('#${target.id}');
     if(card.querySelector('.decision').value!=='needs refinement'||card.querySelector('.review-note').value!=='Automated browser test')throw Error('Review persistence failed');
     document.querySelector('#clear-reviews').click();
     if(document.querySelector('#review-export').value)throw Error('Clear failed');
-    const search=document.querySelector('#asset-search');search.value='castle courtyard lodge stairs';search.dispatchEvent(new Event('input'));
+    const search=document.querySelector('#asset-search');search.value='${target.id}';search.dispatchEvent(new Event('input'));
     card.scrollIntoView();return true;
   })()`);
   checks.persistence=restored;checks.clear=true;
   await evaluate(socket,++id,`(() => {
-    const images=[...document.querySelectorAll('#york-castle-courtyard-lodge-stairs img')];
+    const images=[...document.querySelectorAll('#${target.id} img')];
     if(images.length!==4)throw Error('Expected four review images');
     for(const image of images)image.loading='eager';
   })()`);
   checks.images=false;
   for(let i=0;i<200&&!checks.images;i++){
-    checks.images=await evaluate(socket,++id,`[...document.querySelectorAll('#york-castle-courtyard-lodge-stairs img')].every(image=>image.complete&&image.naturalWidth>0)`);
+    checks.images=await evaluate(socket,++id,`[...document.querySelectorAll('#${target.id} img')].every(image=>image.complete&&image.naturalWidth>0)`);
     if(!checks.images)await new Promise(resolve=>setTimeout(resolve,100));
   }
   if(!checks.images)throw Error('Review images did not load');

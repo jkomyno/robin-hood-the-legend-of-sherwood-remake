@@ -73,9 +73,26 @@ def build():
     shared_build(path,review,pending_only=True)
     decisions=OUT/'grouping-decisions.json'
     if decisions.exists():
-        latest={(row['asset_id'],row['review_revision']):row for row in json.loads(decisions.read_text())['decisions']}
+        from record_grouping_feedback import preview_only_update
+        latest={row['asset_id']:row for row in json.loads(decisions.read_text())['decisions']}
         displayed=json.loads((review/'evidence.json').read_text())['items']
-        approved={row['id'] for row in displayed if latest.get((row['id'],row['review_revision']),{}).get('decision')=='approved'}
+        archived={}
+        for evidence in sorted((review/'history').glob('*/evidence.json')):
+            for row in json.loads(evidence.read_text())['items']:
+                archived[(row['id'],row['review_revision'])]=row
+        approved=set();transfers=[]
+        for row in displayed:
+            decision=latest.get(row['id'],{})
+            if decision.get('decision')!='approved':continue
+            previous=decision['review_revision']
+            if previous==row['review_revision']:
+                approved.add(row['id'])
+            elif preview_only_update(archived.get((row['id'],previous),{}),row):
+                approved.add(row['id'])
+                transfers.append({'asset_id':row['id'],'approved_review_revision':previous,
+                    'display_review_revision':row['review_revision'],
+                    'basis':'Only solid previews changed; ownership, model, geometry, validation, source images and notes match the explicit grouping approval.'})
+        (review/'grouping-preview-updates.json').write_text(json.dumps(transfers,indent=2)+'\n')
         if approved:
             data=json.loads(path.read_text())
             for item in data['items']:
