@@ -14,6 +14,7 @@ import {
 } from "@rle/shared";
 import { recoverEndpointElevation, distanceToPolygon } from "./recovery-elevation.ts";
 import { readStoredMap } from "./stored-map.ts";
+import { recoverGroundGameplay, polygonArea } from "./recover-ground-gameplay.ts";
 
 const { values } = parseArgs({
   options: {
@@ -45,6 +46,7 @@ const packets = new Map<
     status: "needs-review";
     asset: string;
     surfaces: unknown[];
+    movementBlockers: unknown[];
     connections: unknown[];
     issues: string[];
   }
@@ -52,7 +54,15 @@ const packets = new Map<
 const packet = (asset: string) => {
   let p = packets.get(asset);
   if (!p) {
-    p = { version: 1, status: "needs-review", asset, surfaces: [], connections: [], issues: [] };
+    p = {
+      version: 1,
+      status: "needs-review",
+      asset,
+      surfaces: [],
+      movementBlockers: [],
+      connections: [],
+      issues: [],
+    };
     packets.set(asset, p);
   }
   return p;
@@ -68,13 +78,6 @@ const localize = (part: Level3DObject, point: Vec3): Vec3 => {
   return sceneToGame(document.camera, local);
 };
 const close = (points: Point[]): Polygon => [[...points, points[0]!]];
-const area = (points: Point[]) =>
-  Math.abs(
-    points.reduce((s, a, i) => {
-      const b = points[(i + 1) % points.length]!;
-      return s + a[0] * b[1] - b[0] * a[1];
-    }, 0),
-  ) / 2;
 const planeHeight = (
   points: ProtoLevel["sight_obstacles"][number]["points"],
   x: number,
@@ -95,11 +98,20 @@ const planeHeight = (
 };
 const unresolved: unknown[] = [];
 const coverage: unknown[] = [];
+const groundAreas: ProtoLevel["motion_data"]["layers"][number] = [];
 let sector = 0;
 for (const [layer, areas] of proto.motion_data.layers.entries())
   for (const motion of areas) {
     const identity = sector;
     sector += 1 + motion.obstacles.length;
+    if (motion.state_id !== 0 || motion.obstacles.some((o) => o.state_id !== 0))
+      unresolved.push({
+        kind: "movement-states",
+        sector: identity,
+        layer,
+        reason:
+          "State-dependent movement exclusions require asset state ownership; static drafts are incomplete",
+      });
     const supports = proto.sight_obstacles.flatMap((obstacle, index) =>
       Array.isArray(obstacle.projection_area) &&
       obstacle.projection_area[0] === identity &&
@@ -107,7 +119,24 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         ? [{ obstacle, index }]
         : [],
     );
+    if (layer === 0 && supports.length)
+      unresolved.push({
+        kind: "terrain-projection-remainder",
+        sector: identity,
+        layer,
+        reason:
+          "Recover the ground outside elevated projection footprints separately from those surfaces",
+      });
     if (!supports.length) {
+      if (
+        layer === 0 &&
+        !motion.is_lift &&
+        motion.state_id === 0 &&
+        motion.obstacles.every((o) => o.state_id === 0)
+      ) {
+        groundAreas.push(motion);
+        continue;
+      }
       unresolved.push({
         kind: "terrain-motion",
         sector: identity,
@@ -131,13 +160,18 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         continue;
       }
       const owner = owners[0]!;
-      const regions = polygonClipping.intersection(
+      let regions = polygonClipping.intersection(
         close(motion.polygon.points),
         close(obstacle.points.map((p) => [p.x, p.y - p.z_top])),
       );
+      if (motion.obstacles.length)
+        regions = polygonClipping.difference(
+          regions,
+          ...motion.obstacles.map((o) => close(o.polygon.points)),
+        );
       for (const [regionIndex, region] of regions.entries()) {
         const points = region[0]!.slice(0, -1).map(([x, y]) => [x, y] as Point);
-        recoveredArea += area(points);
+        recoveredArea += polygonArea([region]);
         const vertices = points.map(([x, y]) =>
           localize(owner.part, [
             x,
@@ -173,10 +207,71 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
     coverage.push({
       sector: identity,
       layer,
-      sourceArea: area(motion.polygon.points),
+      sourceArea: polygonArea(
+        motion.obstacles.length
+          ? polygonClipping.difference(
+              close(motion.polygon.points),
+              ...motion.obstacles.map((o) => close(o.polygon.points)),
+            )
+          : [close(motion.polygon.points)],
+      ),
       recoveredArea,
     });
   }
+if (groundAreas.length) {
+  const grounds = document.sceneAssets.filter((s) => s.role === "ground");
+  if (grounds.length !== 1) {
+    unresolved.push({ kind: "terrain-owner", candidates: grounds.map((s) => s.id) });
+  } else {
+    const owners = [...locals].flatMap(([index, candidates]) => {
+      const obstacle = proto.sight_obstacles[index];
+      if (
+        candidates.length !== 1 ||
+        !obstacle?.solid ||
+        !obstacle.points.every((p) => p.z_bottom <= 0 && p.z_top > 0)
+      )
+        return [];
+      return [{ ...candidates[0]!, footprint: obstacle.points.map((p): Point => [p.x, p.y]) }];
+    });
+    const ground = recoverGroundGameplay(groundAreas, owners);
+    const terrain = packet(grounds[0]!.id);
+    for (const [index, region] of ground.terrain.entries())
+      terrain.surfaces.push({
+        id: `ground-${index}`,
+        node: "$root",
+        kind: "walkable",
+        vertices: region[0]!.slice(0, -1).map(([x, y]) => [x, y, 0]),
+        holes: region.slice(1).map((hole) => hole.slice(0, -1).map(([x, y]) => [x, y, 0])),
+      });
+    for (const [index, blocker] of ground.blockers.entries()) {
+      const owner = owners.find((o) => o.asset === blocker.asset && o.node === blocker.node)!;
+      for (const [regionIndex, region] of blocker.regions.entries()) {
+        const local = (ring: Point[]) =>
+          ring.slice(0, -1).map(([x, y]) => localize(owner.part, [x, y, 0]));
+        packet(owner.asset).movementBlockers.push({
+          id: `${owner.node}-ground-blocker-${index}-${regionIndex}`,
+          node: owner.node,
+          vertices: local(region[0]!),
+          holes: region.slice(1).map(local),
+        });
+      }
+      packet(owner.asset).issues.push(
+        "Review movement contour ownership: footprint intersections can split exclusions shared by adjacent assets",
+      );
+    }
+    terrain.issues.push(
+      "Review residual terrain exclusions and asset coverage; geometric round-trip equality does not establish ownership",
+    );
+    coverage.push({
+      kind: "ground-decomposition",
+      sourceArea: ground.sourceArea,
+      recoveredArea: ground.reconstructedArea,
+      differenceArea: ground.differenceArea,
+      coordinateGrid: ground.coordinateGrid,
+      blockerOwners: ground.blockers.length,
+    });
+  }
+}
 // Recover lifts only where their surface has a unique owner. Neighbour endpoints
 // remain geometric queries; no source sector or layer indices enter asset packets.
 const heightAt = (sector: number, layer: number, point: Point) => {
@@ -393,6 +488,7 @@ const report = {
   files: [...packets.keys()].sort().map((asset) => `${asset}.gameplay-authoring.json`),
   surfaces: [...packets.values()].reduce((sum, p) => sum + p.surfaces.length, 0),
   connections: [...packets.values()].reduce((sum, p) => sum + p.connections.length, 0),
+  movementBlockers: [...packets.values()].reduce((sum, p) => sum + p.movementBlockers.length, 0),
   coverage,
   unresolved,
   pending,

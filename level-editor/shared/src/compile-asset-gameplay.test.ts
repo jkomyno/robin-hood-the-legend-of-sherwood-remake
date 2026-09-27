@@ -13,6 +13,72 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("authored movement contours follow an asset independently of sight and terrain", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  hut.gameplay!.doors = [];
+  hut.gameplay!.surfaces = [];
+  hut.gameplay!.movementBlockers = [
+    {
+      id: "clearance",
+      node: "building-999",
+      polygon: [
+        [35, 35],
+        [55, 35],
+        [55, 55],
+        [35, 55],
+      ],
+      height: 0,
+    },
+  ];
+  const marker = assets.get("spawn")!.gameplay!;
+  marker.surfaces = [
+    {
+      id: "terrain",
+      node: "scenery-marker",
+      polygon: [
+        [0, 0],
+        [300, 0],
+        [300, 200],
+        [0, 200],
+      ],
+      height: 0,
+    },
+  ];
+  const before = compileAssetGameplay(document, assets, bounds);
+  const sortedPoints = (points: [number, number][]) =>
+    [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  assert.deepEqual(sortedPoints(before.motion_data.layers[0]![0]!.obstacles[0]!.polygon.points), [
+    [335, 335],
+    [335, 355],
+    [355, 335],
+    [355, 355],
+  ]);
+  assert.equal(before.sight_obstacles[0]!.points[0]!.x, 340);
+  document.objects[0]!.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    moved.motion_data.layers[0]![0]!.polygon,
+    before.motion_data.layers[0]![0]!.polygon,
+  );
+  assert.deepEqual(sortedPoints(moved.motion_data.layers[0]![0]!.obstacles[0]!.polygon.points), [
+    [435, 335],
+    [435, 355],
+    [455, 335],
+    [455, 355],
+  ]);
+  // The old building site becomes walkable; the moved blocker rejects a spawn.
+  marker.spawns[0]!.position = [45, 45, 0];
+  compileAssetGameplay(document, assets, bounds);
+  marker.spawns[0]!.position = [145, 45, 0];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /found 0/);
+  // A plane-specific blocker no longer blocks ground when raised above it.
+  document.objects[0]!.transform.dz = 100;
+  assert.equal(
+    compileAssetGameplay(document, assets, bounds).motion_data.layers[0]![0]!.obstacles.length,
+    0,
+  );
+});
+
 test("asset-only compilation constructs motion areas, fresh references and doors", () => {
   const { document, assets } = assetCompilerFixture();
   const result = compileAssetGameplay(document, assets, bounds);
@@ -33,6 +99,38 @@ test("asset-only compilation constructs motion areas, fresh references and doors
   document.objects[0]!.source = { map: "other", obstacle: 0 };
   document.objects[0]!.obstacle = undefined;
   assert.deepEqual(compileAssetGameplay(document, assets, bounds), result);
+});
+test("movement blocker holes preserve walkable islands and invalid contours fail", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  hut.gameplay!.doors = [];
+  hut.gameplay!.movementBlockers = [
+    {
+      id: "courtyard-wall",
+      node: "building-999",
+      polygon: [
+        [10, 10],
+        [80, 10],
+        [80, 80],
+        [10, 80],
+      ],
+      height: 0,
+      holes: [
+        [
+          [15, 15],
+          [70, 15],
+          [70, 70],
+          [15, 70],
+        ],
+      ],
+    },
+  ];
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.motion_data.layers[0]!.length, 3);
+  assert.deepEqual(compiled.spawn.position, [320, 320]);
+  assets.get("spawn")!.gameplay!.spawns[0]!.position = [12, 12, 0];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /found 0/);
+  hut.gameplay!.movementBlockers[0]!.height = [0, 0, 1, 0];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /must be planar/);
 });
 test("moving, rotating and duplicating assets rebuilds their geometry and connections", () => {
   const { document, assets } = assetCompilerFixture();

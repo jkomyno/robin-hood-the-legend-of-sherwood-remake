@@ -15,7 +15,7 @@ intended construction, not functionality available today.
 | Character occlusion | Bake a 16-bit depth PNG from scene geometry. | Working for static scenes |
 | Projectile/view/obstacle masks and masking polylines | Generate typed masks and links from asset geometry and states. A depth PNG alone does **not** replace all these semantics. | Planned |
 | Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions and assign fresh sectors/layers. | Partial: flat/sloped surfaces and holes; full connectivity unfinished |
-| Movement blockers | Intersect asset collision volumes with walkable surfaces. | Working |
+| Movement blockers | Transform explicit asset-local movement contours on their height plane; otherwise intersect collision volumes with walkable surfaces. Sight geometry stays independent. | Working in synthetic tests; recovered ownership still needs review |
 | Navigation graph and fast-find grid | Engine constructs routing and spatial lookup structures from compiled geometry. No copied grids or graph bytes. | Working on synthetic maps |
 | Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. | Working for static geometry |
 | Projection surfaces / elevation | Generate height planes linked to the new movement areas. | Partial: planar surfaces; elevation-boundary links unfinished |
@@ -44,3 +44,9 @@ The ZIP additionally includes `editor/<map>.rhlos-map.json`, preserving unsaved
 scene edits for reopening with the pinned asset library. This is editor source,
 not an original game data type. **Full extracted-map gameplay parity is not yet
 verified.**
+
+The offline recovery report includes ground reconstruction area differences on
+the engine's integer coordinate grid. Terrain drafts fill placed-object cutouts
+and move the exclusions into asset-local movement blockers. A zero area difference
+alone does not prove correct ownership; adjacent assets, remaining terrain holes,
+state-dependent exclusions and elevated ground still require review.

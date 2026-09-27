@@ -51,6 +51,8 @@ export interface AssetGameplay {
   version: 1;
   /** Reuse asset-local part obstacles, or explicitly declare a visual-only asset. */
   collision: "parts" | "none";
+  /** Omit to derive movement from sight solids; an explicit list replaces that derivation. */
+  movementBlockers?: AssetWalkableSurface[];
   surfaces: AssetWalkableSurface[];
   doors: AssetDoor[];
   spawns: AssetSpawn[];
@@ -133,7 +135,9 @@ export function validateAssetGameplay(
   };
   if (![data.surfaces, data.doors, data.spawns].every(Array.isArray))
     fail("surfaces, doors and spawns must be explicitly declared");
-  for (const surface of data.surfaces) {
+  if (data.movementBlockers !== undefined && !Array.isArray(data.movementBlockers))
+    fail("invalid movement blockers");
+  for (const surface of [...data.surfaces, ...(data.movementBlockers ?? [])]) {
     feature(surface);
     polygon(surface.polygon);
     if (

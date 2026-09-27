@@ -147,6 +147,8 @@ export function compileAssetGameplay(
     );
   const project = (p: Vec3): Point => [quantize(p[0]), quantize(p[1] - p[2])];
   const surfaces: { polygon: Point[]; holes: Point[][]; plane: HeightPlane; lift?: string }[] = [];
+  const movementBlockers: typeof surfaces = [];
+  const movementSolids: SightObstacle[] = [];
   const lifts: { id: string; type: number; direction: number }[] = [];
   const interiors: string[] = [];
   const doors: {
@@ -199,8 +201,9 @@ export function compileAssetGameplay(
           projection_area: null,
           material_indices: [],
         });
+        if (gameplay.movementBlockers === undefined) movementSolids.push(sight.at(-1)!);
       }
-    for (const surface of gameplay.surfaces) {
+    for (const surface of [...gameplay.surfaces, ...(gameplay.movementBlockers ?? [])]) {
       const local = surface.polygon.map((p, i): Vec3 => [
         p[0],
         p[1],
@@ -210,7 +213,8 @@ export function compileAssetGameplay(
       const points = local.map((p) => transform(surface.node, p));
       // Fit before integer quantization so height remains exact after placement.
       const plane = heightPlane(points.map(([x, y, z]) => [x, y - z, z]));
-      surfaces.push({
+      const target = gameplay.movementBlockers?.includes(surface) ? movementBlockers : surfaces;
+      target.push({
         polygon: ring(points.map(project)),
         plane,
         ...(gameplay.lifts?.find((l) => l.surface === surface.id)
@@ -308,7 +312,16 @@ export function compileAssetGameplay(
       polygon(s.polygon)[0]!,
       ...s.holes.map((h) => polygon(h)[0]!),
     ]);
-    const merged = polygonClipping.union(input[0]!, ...input.slice(1));
+    let merged = polygonClipping.union(input[0]!, ...input.slice(1));
+    // Authored movement exclusions belong to a plane and follow their asset placement.
+    // Subtract whole polygons so holes in blockers remain walkable islands.
+    for (const blocker of movementBlockers) {
+      if (!plane.every((n, i) => Math.abs(n - blocker.plane[i]!) < 1e-7)) continue;
+      merged = polygonClipping.difference(merged, [
+        polygon(blocker.polygon)[0]!,
+        ...blocker.holes.map((h) => polygon(h)[0]!),
+      ]);
+    }
     const output = layers[layer]!;
     for (const poly of merged) {
       const boundary = ring(poly[0]!.map((p) => [quantize(p[0]), quantize(p[1])]));
@@ -323,7 +336,7 @@ export function compileAssetGameplay(
           return [x, y + z, z];
         }),
       );
-      for (const obstacle of sight) {
+      for (const obstacle of movementSolids) {
         if (!obstacle.solid) continue;
         const footprint = obstacle.points.map((p): Point => [p.x, p.y]);
         const top = heightPlane(
