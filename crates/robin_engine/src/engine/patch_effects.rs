@@ -841,11 +841,10 @@ mod tests {
             "static-geometry-only-not-gameplay-parity"
         );
         let mut checked = 0;
+        assert_ne!(manifest["complete"], false, "incomplete diagnostic batch");
         for result in manifest["results"].as_array().unwrap() {
-            let Some(file) = result["file"].as_str() else {
-                continue;
-            };
-            assert!(result["error"].is_null());
+            assert!(result["error"].is_null(), "failed diagnostic: {result}");
+            let file = result["file"].as_str().expect("missing diagnostic file");
             let bytes = std::fs::read(directory.join(file)).unwrap();
             let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
             let transitions: Vec<crate::level_data::CompiledMovementTransition> =

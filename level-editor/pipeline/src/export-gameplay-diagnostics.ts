@@ -18,12 +18,23 @@ const { values } = parseArgs({
 if (!values.recovery || !values.out)
   throw new Error("Usage: --library <assets> --recovery <drafts> --out <diagnostics>");
 await fs.mkdir(values.out, { recursive: true });
+// Invalidate the previous batch before any recovery work can fail or be interrupted.
+await fs.writeFile(
+  path.join(values.out, "diagnostics.json"),
+  JSON.stringify({
+    scope: "static-geometry-only-not-gameplay-parity",
+    results: [],
+    complete: false,
+  }) + "\n",
+);
 const results: { map: string; file?: string; error?: string; pending?: unknown }[] = [];
 for (const map of (await fs.readdir(values.recovery, { withFileTypes: true }))
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
   .sort()) {
   const result: (typeof results)[number] = { map };
+  const file = `${map}.level.json`;
+  await fs.rm(path.join(values.out, file), { force: true });
   try {
     const report = JSON.parse(
       await fs.readFile(path.join(values.recovery, map, "recovery-report.json"), "utf8"),
@@ -70,8 +81,8 @@ for (const map of (await fs.readdir(values.recovery, { withFileTypes: true }))
       volumes: [],
       asset_geometry: geometry,
     };
-    result.file = `${map}.level.json`;
-    await fs.writeFile(path.join(values.out, result.file), JSON.stringify(descriptor) + "\n");
+    await fs.writeFile(path.join(values.out, file), JSON.stringify(descriptor) + "\n");
+    result.file = file;
   } catch (error) {
     result.error = String(error);
   }
@@ -83,9 +94,11 @@ await fs.writeFile(
   JSON.stringify(
     {
       scope: "static-geometry-only-not-gameplay-parity",
+      complete: results.length > 0 && results.every((result) => result.file && !result.error),
       results,
     },
     null,
     2,
   ) + "\n",
 );
+if (!results.length || results.some((result) => result.error)) process.exitCode = 1;

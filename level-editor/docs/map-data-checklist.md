@@ -306,6 +306,13 @@ anchors, or otherwise their endpoints, against unblocked surfaces. Jump landing
 anchors likewise require an unblocked receiving position.
 The ignored `recovered_asset_transitions_apply_and_reset_native_geometry` test uses
 `ROBIN_ASSET_MAP_DIAGNOSTICS` to load the generated transition-bearing probes.
+Diagnostic batches fail if any map fails or no maps are exported. Each run invalidates
+the previous manifest and removes each map's stale output before attempting recovery;
+native checks reject failed entries instead of silently skipping them. A successful
+batch still proves only the explicitly checked static geometry and state behavior.
+Croisement03's remaining elevated navigation-only change has approximately 24.49
+square pixels inside its movement area but outside every receiving surface. This
+requires explicit asset authoring; recovery must not silently invent a receiving height.
 `omittedMovementTransitions` makes missing transition definitions explicit
 in the static diagnostic and prevents it from certifying full compilation.
 Ground recovery uses fixed-point polygon operations and reports reconstruction
