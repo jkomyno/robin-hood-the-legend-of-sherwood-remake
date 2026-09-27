@@ -159,6 +159,15 @@ their front envelope. The bitmap audit also verifies all 5,166 nonempty source
 polylines across the nine maps are reproduced point-for-point. This verifies the
 boundary representation only, not their receiving elevation or asset ownership.
 
+`recover-occlusion-mask.ts` combines verified coverage with explicitly supplied
+boundary heights, a receiving anchor and local obstacle ownership. It emits an
+asset-local definition without source layer/obstacle indices or bitmap data.
+Character heights lift projected points; projectile heights preserve world XY.
+Tests recompile every supported flag combination unchanged and verify movement,
+elevation and independent authoring data. Missing height/ownership evidence is
+rejected. The batch migration still needs reviewed inputs for existing masks;
+this authoring function does not certify their recovery or state links.
+
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.
 Receiving footprints retain material across blocked portions omitted from walking

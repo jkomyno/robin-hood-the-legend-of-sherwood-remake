@@ -66,6 +66,9 @@
   rasterizer; transparent materials require explicit texture coverage extraction.
   Character and projectile boundaries can independently use open polylines,
   preserving concavities and endpoint steps without adding a closing segment.
+  One-time rule recovery combines verified coverage, explicit boundary heights
+  and local obstacle ownership into a complete asset mask definition. Its output
+  recompiles independently of source maps; existing-map migration remains pending.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits
