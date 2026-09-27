@@ -56,7 +56,12 @@ python3 refinement/walls/publish_segments.py
 ```
 
 Publication rejects stale model hashes, changed preset parameters and changed
-original source assets. It installs only the dedicated copies, rebuilds the
+original source assets. It runs Blender's standard derivative refresh before
+installation, generating `lossy.glb`, `preview.glb` and their hash receipts.
+Missing/refused optimized models block installation, so the installed assets are
+ready for `pnpm library:publish`. Use `--blender` to select the executable.
+Rebuilding a changed strip invalidates only its staged derivatives; unchanged
+strips retain theirs. It installs only the dedicated copies, rebuilds the
 catalog, and generates `app/src/assets/wall-presets.json`. Generated library
 models and review images remain in the repository's existing ignored output
 directories; the recipes and tools are versioned.
