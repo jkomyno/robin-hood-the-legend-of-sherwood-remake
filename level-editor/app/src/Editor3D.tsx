@@ -1512,6 +1512,14 @@ export default function Editor3D(props: EditorProps) {
                 onCommit={setCoordinateRotation}
                 onCancel={() => viewport.setCoordinateRotation(coordinateRotation())}
               />
+              <label class="check">
+                <input
+                  type="checkbox"
+                  checked={gizmoVertical()}
+                  onChange={(event) => setGizmoVertical(event.currentTarget.checked)}
+                />{" "}
+                Show vertical gizmo handle
+              </label>
               <div class="view-overlays">
                 <label class="check">
                   <input
@@ -1903,7 +1911,7 @@ export default function Editor3D(props: EditorProps) {
                     )}
                   </Show>
                   <div class="transform-fields">
-                    <For each={["dx", "dy", "dz", "rot_deg"] as const}>
+                    <For each={["dx", "dy", "rot_deg", "dz"] as const}>
                       {(f) => (
                         <ScrubNumber
                           label={
@@ -1914,23 +1922,6 @@ export default function Editor3D(props: EditorProps) {
                               rot_deg: "Rotation (°)",
                             }[f]
                           }
-                          labelExtra={() => (
-                            <Show when={f === "dz"}>
-                              <label
-                                class="check inline"
-                                title="Move vertically with the gizmo"
-                                onPointerDown={(event) => event.stopPropagation()}
-                                onPointerUp={(event) => event.stopPropagation()}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={gizmoVertical()}
-                                  onChange={(event) => setGizmoVertical(event.currentTarget.checked)}
-                                />{" "}
-                                lift
-                              </label>
-                            </Show>
-                          )}
                           step={f === "rot_deg" ? 5 : 1}
                           value={t()[f]}
                           onPreview={(value) => previewTransformField(f, value)}

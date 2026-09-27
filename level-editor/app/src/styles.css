@@ -829,8 +829,7 @@ select, input.search { background: #171c22; border-color: var(--border); min-hei
 .panel-intro { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
 .object-detail { display: flex; flex-direction: column; gap: 10px; }
 .transform-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.transform-fields > :nth-child(n+3) { grid-column: 1 / -1; }
-.transform-fields > :nth-child(-n+2) .meta-key { width: auto; }
+.transform-fields .meta-key { width: auto; }
 .asset-action { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; }
 .asset-action-delete { color: #f08080; }
 .asset-action[aria-pressed="true"] { background: #34473e; border-color: #739882; }

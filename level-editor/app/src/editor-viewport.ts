@@ -1099,6 +1099,7 @@ export class EditorViewport {
       // projection point cache below walks every vertex in every imported mesh;
       // doing that for each 15° button press makes a large map appear frozen.
       this.refreshSelectionBox();
+      if (this.bindings.showObstacles()) this.buildOverlays(d);
       return;
     }
     this.patchDisplay.apply(this.objectsRoot);
@@ -1125,7 +1126,7 @@ export class EditorViewport {
       });
     }
     if (!bounds.isEmpty()) bounds.getBoundingSphere(this.projectionBounds);
-    if (this.bindings.showObstacles()) this.buildOverlays();
+    if (this.bindings.showObstacles()) this.buildOverlays(d);
   }
 
   private selectedView(): View | null {
@@ -1351,10 +1352,9 @@ export class EditorViewport {
     this.selectionBox.visible = true;
   }
 
-  buildOverlays() {
+  buildOverlays(d = this.bindings.document()) {
     disposeObjectResources([this.overlayRoot]);
     this.overlayRoot.clear();
-    const d = this.bindings.document();
     if (!d) return;
     if (this.bindings.showObstacles()) {
       const pts: number[] = [];

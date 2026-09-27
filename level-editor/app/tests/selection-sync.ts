@@ -3,7 +3,7 @@ import { render } from "@solidjs/web";
 import * as THREE from "three";
 import { EditorViewport } from "../src/editor-viewport";
 import type { Selection } from "../src/document-commands";
-import type { Level3D } from "@rle/shared";
+import { parseLevel3D, type Level3D } from "@rle/shared";
 
 const result = document.querySelector("#result")!;
 function assert(condition: boolean, message: string) {
@@ -111,8 +111,65 @@ async function main() {
   );
   dispose();
   viewport.dispose();
+  const original = parseLevel3D({
+    version: 1,
+    map: "York",
+    sceneAssets: [],
+    size: [100, 200],
+    camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+    groups: [],
+    objects: [
+      {
+        id: "part",
+        node: "building-000",
+        kind: "building",
+        source: { map: "York", obstacle: 0 },
+        transform: { dx: 0, dy: 0, dz: 0, rot_deg: 0 },
+        obstacle: {
+          points: [
+            { x: 1, y: 2, z_bottom: 0, z_top: 4 },
+            { x: 8, y: 2, z_bottom: 0, z_top: 4 },
+            { x: 3, y: 9, z_bottom: 0, z_top: 4 },
+          ],
+          opaque: true,
+          solid: true,
+          mouse: false,
+          show_shadow_polygon: false,
+          default_material: 0,
+          material_indices: [],
+          projection_area: {},
+        },
+      },
+    ],
+  });
+  const obstacleViewport = new EditorViewport({
+    document: () => original, // Deliberately stale until reactive publication.
+    selection: () => null,
+    onSelection: () => {},
+    level: () => null,
+    showObstacles: () => true,
+    showElevation: () => false,
+    commitTransform: () => {},
+  });
+  const source = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  obstacleViewport.replaceMap(source, null, new Map([["building-000", source]]));
+  const overlay = (obstacleViewport as unknown as { overlayRoot: THREE.Group }).overlayRoot;
+  const overlayX = () =>
+    (overlay.children[0] as THREE.LineSegments).geometry.getAttribute("position").getX(0);
+  obstacleViewport.syncViews(original, false);
+  const initialX = overlayX();
+  const moved = structuredClone(original);
+  moved.objects[0]!.transform.dx = 125;
+  obstacleViewport.syncViews(moved, false);
+  assert(
+    Math.abs(overlayX() - initialX - 125) < 1e-5,
+    "Obstacle overlay must follow the committed transform, not stale state",
+  );
+  obstacleViewport.syncViews(original, false);
+  assert(overlayX() === initialX, "Undo must restore the obstacle overlay");
+  obstacleViewport.dispose();
   result.textContent =
-    "PASS reactive selection keeps highlight, bounds and transform origin synchronized";
+    "PASS selection, gizmo dragging and committed obstacle overlays stay synchronized";
 }
 void main().catch((error) => {
   result.textContent = "FAIL " + String(error);
