@@ -58,6 +58,9 @@
   coverage after merging pixels into nonoverlapping rectangles. These remain
   intermediate screen-space authoring data until mapped onto an owning asset's
   surfaces; the runtime compiler does not read the source maps.
+  Surface lifting can intersect that coverage with explicitly supplied owner
+  triangles, resolve overlapping depths and produce local geometry while
+  rejecting uncovered pixels. Batch ownership and migration remain unfinished.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits

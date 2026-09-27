@@ -132,6 +132,14 @@ The rectangles are intermediate authoring data, not asset geometry: ownership,
 intersection with actual asset surfaces, local 3D coordinates, masking boundaries
 and state bindings still need recovery before publication.
 
+Surface lifting now clips this intermediate coverage against explicitly supplied
+owner mesh triangles, splits overlaps where their depth order changes, and
+stores only the frontmost surface in asset-local coordinates. It rejects coverage
+outside the mesh instead of extrapolating height. Tests cover sloped faces,
+cutouts, crossing surfaces, duplicate faces and foreground islands. This helper
+is not yet connected to source-mask ownership or the batch asset migration;
+no existing-map mask is certified recovered by these tests.
+
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.
 Receiving footprints retain material across blocked portions omitted from walking
