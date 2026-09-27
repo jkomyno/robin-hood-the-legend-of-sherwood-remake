@@ -30,6 +30,7 @@ import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry
 import { terrainOwnsJump } from "./terrain-jump-ownership.ts";
 import { jumpEdgeOwners } from "./jump-edge-ownership.ts";
 import { recoverMotionStates } from "./recover-motion-states.ts";
+import { recoverMovementTransition } from "./recover-movement-transition.ts";
 import { recoverLiftJoins } from "./recover-lift-joins.ts";
 import {
   nonrenderingGameplayOwners,
@@ -220,13 +221,6 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
     );
     if (transitions.length) {
       movementStateInventory.push({ sector: identity, layer, transitions });
-      unresolved.push({
-        kind: "movement-states",
-        sector: identity,
-        layer,
-        reason:
-          "Stable terrain recovered separately; changing exclusions in movementStateInventory still require asset-local transition ownership",
-      });
     }
     const supports = proto.sight_obstacles.flatMap((obstacle, index) =>
       Array.isArray(obstacle.projection_area) &&
@@ -602,6 +596,88 @@ const localEndpoint = (
   const z = heightAt(sector, layer, point, projectionPoint);
   return localize(part, [point[0], point[1] + z, z]);
 };
+const movementTransitionRecovery: {
+  sector: number;
+  layer: number;
+  pair: number;
+  asset: string;
+  transition: string;
+}[] = [];
+for (const area of movementStateInventory)
+  for (const change of area.transitions) {
+    try {
+      if (change.patches.length !== 1)
+        throw new Error("Changing contours need one explicit patch owner");
+      const source = proto.patches[change.patches[0]!]!;
+      const refs = [...source.old_sight_obstacles, ...source.new_sight_obstacles];
+      if (!refs.length) throw new Error("No sight ownership; explicit asset authoring is required");
+      const owners = refs.map((ref) => {
+        const matches = locals.get(ref) ?? [];
+        if (matches.length !== 1) throw new Error(`Missing or ambiguous sight owner ${ref}`);
+        return matches[0]!;
+      });
+      const owner = owners[0]!;
+      if (owners.some((entry) => entry.asset !== owner.asset))
+        throw new Error("Changing sight geometry spans assets; author independent local states");
+      const p = packet(owner.asset);
+      const descriptor = descriptors.get(owner.asset)!;
+      const localRef = (index: number) => {
+        const entry = locals.get(index)![0]!;
+        return entry.collisionId ?? entry.node;
+      };
+      const initialSight = source.old_sight_obstacles.map(localRef);
+      const appliedSight = source.new_sight_obstacles.map(localRef);
+      const controlled = new Set([...initialSight, ...appliedSight]);
+      if (
+        p.movementBlockers === undefined &&
+        (descriptor.parts.some(
+          (part) => part.obstacle_local_game?.solid && !controlled.has(part.node),
+        ) ||
+          p.volumes?.some((volume) => volume.shape.solid && !controlled.has(volume.id)))
+      )
+        throw new Error("Unchanged collision parts need explicit stable movement contours");
+      const definition = recoverMovementTransition({
+        id: `movement-change-${change.patches[0]}`,
+        node: owner.node,
+        patch: source,
+        initial: change.initial,
+        applied: change.applied,
+        initialSight,
+        appliedSight,
+        receivers: proto.sight_obstacles.filter(
+          (obstacle) =>
+            Array.isArray(obstacle.projection_area) &&
+            obstacle.projection_area[0] === area.sector &&
+            obstacle.projection_area[1] === area.layer,
+        ),
+        groundLayer: area.layer === 0,
+        waypointHeight: heightAt(source.sector, source.layer, source.waypoint),
+        localize: (point) => localize(owner.part, point),
+      });
+      // Existing stable contours remain independent of the changing exclusions.
+      // With no unchanged solids, an empty list disables both endpoint colliders.
+      p.movementBlockers ??= [];
+      (p.movementTransitions ??= []).push(definition);
+      p.issues.push(
+        "Movement/sight states recovered; visual states, effects and door bindings still need separate authoring",
+      );
+      movementTransitionRecovery.push({
+        sector: area.sector,
+        layer: area.layer,
+        pair: change.pair,
+        asset: owner.asset,
+        transition: definition.id,
+      });
+    } catch (error) {
+      unresolved.push({
+        kind: "movement-states",
+        sector: area.sector,
+        layer: area.layer,
+        pair: change.pair,
+        reason: String(error),
+      });
+    }
+  }
 for (const [index, lift] of proto.lifts.entries()) {
   const supports = proto.sight_obstacles.flatMap((obstacle, support) =>
     Array.isArray(obstacle.projection_area) &&
@@ -1079,10 +1155,9 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
   }
 }
 const pending = {
-  movementTransitions: movementStateInventory.reduce(
-    (sum, area) => sum + area.transitions.length,
-    0,
-  ),
+  movementTransitions:
+    movementStateInventory.reduce((sum, area) => sum + area.transitions.length, 0) -
+    movementTransitionRecovery.length,
   buildingEntries: proto.buildings.length - recoveredBuildings,
   maskRecords: proto.masks.length,
   patches: proto.patches.length,
@@ -1130,6 +1205,7 @@ const report = {
   ),
   definitionValidation,
   movementStateInventory,
+  movementTransitionRecovery,
   candidateCompilation: diagnostics.compilation,
   staticGeometryDiagnostic: diagnostics.staticGeometry,
   coverage,

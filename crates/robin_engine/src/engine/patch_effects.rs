@@ -734,7 +734,10 @@ mod tests {
         );
     }
 
-    fn check_compiled_transition(bytes: &[u8], sight: bool) {
+    fn load_compiled_transition(
+        bytes: &[u8],
+        bg_pixel_dims: (f32, f32),
+    ) -> (EngineInner, LevelAssets) {
         let loaded = crate::level_data::LoadedLevel::hackable_from_json(bytes).unwrap();
         assert!(loaded.mission.beam_mes.is_empty());
         assert!(loaded.mission.soldiers.is_empty());
@@ -753,7 +756,7 @@ mod tests {
                 level_directory: "",
                 progress: &mut |_| {},
                 loaded,
-                bg_pixel_dims: (2000., 2000.),
+                bg_pixel_dims,
             },
             ground_mark_sprite: None,
             titbit_row_frame_counts: vec![],
@@ -770,6 +773,130 @@ mod tests {
             crate::engine::snapshot::decode_native_engine_inner(&engine.encode_native_snapshot())
                 .unwrap();
         engine.world.fast_grid_mut().attach_level_grid(level_grid);
+        (engine, assets)
+    }
+
+    #[test]
+    #[ignore = "requires recovered diagnostics via ROBIN_ASSET_MAP_DIAGNOSTICS"]
+    fn recovered_asset_transitions_apply_and_reset_native_geometry() {
+        let directory = std::path::PathBuf::from(
+            std::env::var("ROBIN_ASSET_MAP_DIAGNOSTICS").expect("diagnostic directory"),
+        );
+        let manifest: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(directory.join("diagnostics.json")).unwrap())
+                .unwrap();
+        assert_eq!(
+            manifest["scope"],
+            "static-geometry-only-not-gameplay-parity"
+        );
+        let mut checked = 0;
+        for result in manifest["results"].as_array().unwrap() {
+            let Some(file) = result["file"].as_str() else {
+                continue;
+            };
+            assert!(result["error"].is_null());
+            let bytes = std::fs::read(directory.join(file)).unwrap();
+            let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            let transitions: Vec<crate::level_data::CompiledMovementTransition> =
+                serde_json::from_value(
+                    descriptor["asset_geometry"]["movement_transitions"].clone(),
+                )
+                .unwrap();
+            let dims = &descriptor["walkable_polygon"][2];
+            let (mut engine, assets) = load_compiled_transition(
+                &bytes,
+                (
+                    dims[0].as_f64().unwrap() as f32 + 1.,
+                    dims[1].as_f64().unwrap() as f32 + 1.,
+                ),
+            );
+            assert_eq!(
+                engine.script_domains.interactables.patches.len(),
+                transitions.len()
+            );
+            let sim = crate::sim_rng::test_context();
+            for (index, transition) in transitions.iter().enumerate() {
+                let before_states = engine.world.pathfinder.states.clone();
+                let before_sight = engine.world.static_sight_obstacle_active.clone();
+                let before_sectors = engine.world.fast_grid.sector_active.clone();
+                let mut expected_states = before_states.clone();
+                for change in &transition.motion_changes {
+                    let area = engine
+                        .world
+                        .pathfinder
+                        .try_convert_sector(
+                            assets.navigation.pathfinder_graph.as_ref(),
+                            change.sector,
+                        )
+                        .unwrap();
+                    let state = &mut expected_states[change.layer as usize][area as usize];
+                    let initial = 1u32 << (2 * change.changing_obstacle);
+                    assert_ne!(*state & initial, 0, "{file}: {}", transition.id);
+                    *state = (*state & !(initial * 3)) | (initial * 2);
+                }
+                for &sight in &transition.initial_sight {
+                    assert!(before_sight[sight as usize]);
+                }
+                for &sight in &transition.applied_sight {
+                    assert!(!before_sight[sight as usize]);
+                }
+                let patch = crate::patch::PatchIndex::new(index as u32).unwrap();
+                engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+                assert_eq!(
+                    engine.world.pathfinder.states, expected_states,
+                    "{file}: {}",
+                    transition.id
+                );
+                for &sight in &transition.initial_sight {
+                    assert!(!engine.world.static_sight_obstacle_active[sight as usize]);
+                }
+                for &sight in &transition.applied_sight {
+                    assert!(engine.world.static_sight_obstacle_active[sight as usize]);
+                }
+                for (layer, areas) in assets
+                    .navigation
+                    .pathfinder_graph
+                    .static_data
+                    .move_layers
+                    .iter()
+                    .enumerate()
+                {
+                    for (area, motion) in areas.iter().enumerate() {
+                        for obstacle in &motion.motion_obstacles {
+                            let active = expected_states[layer][area] & obstacle.state_id
+                                == obstacle.state_id;
+                            if let Some(sector) = obstacle.grid_sector_index {
+                                assert_eq!(
+                                    engine.world.fast_grid.sector_active[sector.get() as usize],
+                                    active,
+                                    "{file}"
+                                );
+                            }
+                        }
+                    }
+                }
+                engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+                assert_eq!(engine.world.pathfinder.states, before_states, "{file}");
+                assert_eq!(
+                    engine.world.static_sight_obstacle_active, before_sight,
+                    "{file}"
+                );
+                assert_eq!(
+                    engine.world.fast_grid.sector_active, before_sectors,
+                    "{file}"
+                );
+                checked += 1;
+            }
+            println!(
+                "{file}: applied and reset {} recovered transitions",
+                transitions.len()
+            );
+        }
+        assert!(checked > 0, "No recovered transitions were tested");
+    }
+
+    fn check_compiled_transition(bytes: &[u8], sight: bool) {
+        let (mut engine, assets) = load_compiled_transition(bytes, (2000., 2000.));
         let western_route = |e: &EngineInner| {
             e.world.fast_grid.is_reachable_thin(
                 MapPoint::new(330., 320.),
