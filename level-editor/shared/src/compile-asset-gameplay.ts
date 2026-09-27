@@ -1,4 +1,5 @@
 import polygonClipping, { type Polygon } from "polygon-clipping";
+import { assembleLiftSegments, type PlacedLiftSegment } from "./assemble-lift-segments.ts";
 import { partMatrix, transformedObstacle, type Level3D, type Level3DObject } from "./level3d.ts";
 import { gameToScene, type Vec3 } from "./scene.ts";
 import { sceneToGame } from "./geometry.ts";
@@ -160,7 +161,7 @@ export function compileAssetGameplay(
     noApplyPolygon: Point[];
     changes: { layer: number; sector: number; changing_obstacle: number }[];
   }[] = [];
-  const lifts: { id: string; type: number; direction: number }[] = [];
+  let lifts: PlacedLiftSegment[] = [];
   const interiors: string[] = [];
   const doors: {
     name: string;
@@ -405,7 +406,12 @@ export function compileAssetGameplay(
       const origin = transform(lift.node, [0, 0, 0]);
       const direction = transform(lift.node, [...lift.direction, 0]);
       const angle = Math.atan2(direction[0] - origin[0], origin[1] - direction[1]);
-      lifts.push({ id, type: lift.type, direction: (Math.round((angle * 8) / Math.PI) + 16) % 16 });
+      lifts.push({
+        id,
+        type: lift.type,
+        direction: (Math.round((angle * 8) / Math.PI) + 16) % 16,
+        joins: (lift.joins ?? []).map((p) => transform(lift.node, p)),
+      });
       for (const door of lift.doors) placeDoor(door, id);
     }
     for (const interior of gameplay.interiors ?? []) {
@@ -414,6 +420,11 @@ export function compileAssetGameplay(
       for (const door of interior.doors) placeDoor(door, undefined, id);
     }
   }
+  const assembledLifts = assembleLiftSegments(lifts);
+  lifts = assembledLifts.lifts;
+  for (const surface of surfaces)
+    if (surface.lift) surface.lift = assembledLifts.identities.get(surface.lift)!;
+  for (const door of doors) if (door.lift) door.lift = assembledLifts.identities.get(door.lift)!;
   if (!surfaces.length)
     throw new Error(
       "Assets define no walkable surfaces; a map rectangle is not a substitute for authored ground",
@@ -462,6 +473,8 @@ export function compileAssetGameplay(
     blockers: Point[][];
   }[] = [];
   let sector = 0;
+  const liftPieces: { lift: string; plane: HeightPlane; polygon: Point[]; blockers: Point[][] }[] =
+    [];
   for (const { layer, plane, lift, surfaces: group } of groups) {
     const input = group.map((s): Polygon => [
       polygon(s.polygon)[0]!,
@@ -544,6 +557,17 @@ export function compileAssetGameplay(
       const blockers = quantized
         .slice(1)
         .map((r) => ring(r, `Merged movement hole on layer ${layer}`));
+      if (lift) {
+        if (
+          compileTransitionObstacles(boundary, blockers, plane, transitionBlockers, warnings).pairs
+            .size
+        )
+          throw new Error(
+            `Lift ${lift}: changing traversal surfaces require lift state compilation support`,
+          );
+        liftPieces.push({ lift, plane, polygon: boundary, blockers });
+        continue;
+      }
       const changing = compileTransitionObstacles(
         boundary,
         blockers,
@@ -597,6 +621,46 @@ export function compileAssetGameplay(
         });
     }
   }
+  for (const lift of lifts) {
+    const pieces = liftPieces.filter((p) => p.lift === lift.id);
+    if (!pieces.length) throw new Error(`Missing lift motion area ${lift.id}`);
+    const merged = polygonClipping.union(
+      ...(pieces.map((p): Polygon => [
+        polygon(p.polygon)[0]!,
+        ...p.blockers.map((b) => polygon(b)[0]!),
+      ]) as [Polygon, ...Polygon[]]),
+    );
+    if (merged.length !== 1)
+      throw new Error(`Lift ${lift.id}: joined surfaces must form one connected traversal area`);
+    const boundary = ring(merged[0]![0]!, `Lift ${lift.id}`);
+    const blockers = merged[0]!.slice(1).map((r) => ring(r, `Lift ${lift.id} hole`));
+    const layer = layers.length - 1;
+    layers[layer]!.push({
+      is_lift: true,
+      state_id: 0,
+      polygon: { points: boundary },
+      skeleton_segments: [],
+      flags: 0,
+      obstacles: blockers.map((points) => ({ state_id: 0, polygon: { points } })),
+    });
+    for (const piece of pieces) {
+      areas.push({ ...piece, sector, layer });
+      sight.push({
+        points: piece.polygon.map(([x, y]) => {
+          const z = planeHeight(piece.plane, [x, y]);
+          return { x, y: y + z, z_bottom: z, z_top: z };
+        }),
+        projection_area: [sector, layer],
+        opaque: false,
+        solid: false,
+        mouse: true,
+        show_shadow_polygon: false,
+        default_material: 0,
+        material_indices: [],
+      });
+    }
+    sector += 1 + blockers.length;
+  }
   const resolve = (point: Vec3, label: string, lift?: string) => {
     const matches = areas.filter(
       (a) =>
@@ -605,7 +669,7 @@ export function compileAssetGameplay(
         inside(project(point), a.polygon) &&
         !a.blockers.some((b) => inside(project(point), b)),
     );
-    if (matches.length !== 1) {
+    if (new Set(matches.map((a) => a.sector)).size !== 1) {
       const containing = areas.filter((a) => inside(project(point), a.polygon));
       const details = containing.slice(0, 8).map((a) => ({
         sector: a.sector,
@@ -757,6 +821,10 @@ export function compileAssetGameplay(
             const area = areas.find((a) => a.lift === lift.id);
             if (!area) throw new Error(`Missing lift motion area ${lift.id}`);
             const endpoints = compiledDoors.filter((_, i) => doors[i]!.lift === lift.id);
+            if (endpoints.length < 2 || !endpoints.some((d) => d.door_type === 5))
+              throw new Error(
+                `Lift ${lift.id} needs at least two traversal doors including a low door`,
+              );
             if (new Set(endpoints.map((d) => d.point_out[1])).size < 2)
               throw new Error(
                 `Lift ${lift.id} needs distinct projected endpoint heights after placement`,

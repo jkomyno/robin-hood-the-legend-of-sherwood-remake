@@ -18,8 +18,23 @@ import {
   lightAssetCompilerFixture,
   jumpAssetCompilerFixture,
   navigationRegionCompilerFixture,
+  compoundLiftCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("compound lift export matches the native multi-plane traversal fixture", async () => {
+  const { document, assets } = compoundLiftCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-compound-lift.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("navigation partition export matches the native gate fixture", async () => {
   const { document, assets } = navigationRegionCompilerFixture();

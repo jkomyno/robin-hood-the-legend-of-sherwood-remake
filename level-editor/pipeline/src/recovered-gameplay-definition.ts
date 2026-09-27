@@ -38,6 +38,7 @@ export interface RecoveredConnection {
   kind: "lift" | "building-interior" | "passage";
   type?: number;
   direction?: Point;
+  joins?: Vec3[];
   endpoints: RecoveredDoor[];
 }
 export interface RecoveredGameplayPacket {
@@ -182,6 +183,7 @@ export function recoveredGameplayDefinition(
         surface: candidates[0]!.id,
         type: connection.type as 1 | 2 | 3,
         direction: connection.direction!,
+        ...(connection.joins ? { joins: structuredClone(connection.joins) } : {}),
         doors,
       });
     }

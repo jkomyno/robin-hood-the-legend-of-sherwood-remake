@@ -12,11 +12,60 @@ import {
   movementTransitionCompilerFixture,
   lightAssetCompilerFixture,
   jumpAssetCompilerFixture,
+  compoundLiftCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("joined lift assets retain multiple height planes in one traversal sector", () => {
+  const { document, assets, upper } = compoundLiftCompilerFixture();
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.lifts!.length, 1);
+  const lift = compiled.lifts![0]!;
+  assert.equal(lift.doors.length, 2);
+  assert.equal(compiled.motion_data.layers.at(-1)!.length, 1);
+  const projections = compiled.sight_obstacles.filter(
+    (s) => Array.isArray(s.projection_area) && s.projection_area[0] === lift.motion_area_index,
+  );
+  assert.equal(projections.length, 2);
+  assert.deepEqual(
+    lift.doors.map((d) => d.sector_in),
+    [lift.motion_area_index, lift.motion_area_index],
+  );
+  document.groups.find((g) => g.id === "upper")!.transform.dx = 10;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /join must match/);
+  document.groups.find((g) => g.id === "upper")!.transform.dx = 0;
+  upper.gameplay!.lifts![0]!.type = 2;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /type and direction disagree/,
+  );
+});
+test("compound lifts rotate and duplicate with independent geometric joins", () => {
+  const { document, assets } = compoundLiftCompilerFixture();
+  const groups = [...document.groups];
+  const parts = [...document.objects];
+  for (const group of groups) {
+    document.groups.push({
+      id: `${group.id}-copy`,
+      transform: { ...IDENTITY_TRANSFORM, dx: 1000, dy: 100, rot_deg: 90 },
+    });
+  }
+  for (const part of parts.filter((p) => p.group)) {
+    document.objects.push({
+      ...structuredClone(part),
+      id: `${part.id}-copy`,
+      group: `${part.group}-copy`,
+    });
+  }
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.lifts!.length, 2);
+  assert.notEqual(compiled.lifts![0]!.motion_area_index, compiled.lifts![1]!.motion_area_index);
+  assert.equal(compiled.lifts![1]!.doors.length, 2);
+  assert.notEqual(compiled.lifts![0]!.direction, compiled.lifts![1]!.direction);
+});
+
 test("asset-local navigation regions preserve gates between touching coplanar rooms", () => {
   const { hut, document, assets } = assetCompilerFixture();
   const [west, east] = hut.gameplay!.surfaces;

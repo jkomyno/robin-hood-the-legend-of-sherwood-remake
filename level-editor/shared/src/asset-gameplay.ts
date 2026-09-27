@@ -40,6 +40,8 @@ export interface AssetLift {
   node: string;
   /** Asset-local surface ID; no runtime sector or layer number. */
   surface: string;
+  /** Local 3D sockets joining another lift segment after placement. Every socket must match. */
+  joins?: [number, number, number][];
   type: 1 | 2 | 3;
   /** Local ground-plane direction; transformed with the owning part. */
   direction: Point;
@@ -457,9 +459,13 @@ export function validateAssetGameplay(
     )
       fail(`invalid lift type or direction: ${lift.id}`);
     if (
+      lift.joins !== undefined &&
+      (!Array.isArray(lift.joins) || !lift.joins.length || !lift.joins.every((p) => point(p, 3)))
+    )
+      fail(`invalid lift joins: ${lift.id}`);
+    if (
       !Array.isArray(lift.doors) ||
-      lift.doors.length < 2 ||
-      !lift.doors.some((d) => d.type === 5)
+      (!lift.joins && (lift.doors.length < 2 || !lift.doors.some((d) => d.type === 5)))
     )
       fail(`lift ${lift.id} needs at least two traversal doors including a low door`);
     for (const door of lift.doors) {

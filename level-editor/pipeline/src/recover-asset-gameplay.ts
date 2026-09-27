@@ -28,6 +28,7 @@ import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-sourc
 import { recoverLightPlane, recoverLightRegion } from "./recover-light-region.ts";
 import { recoverJumpGeometry } from "./recover-jump-geometry.ts";
 import { recoverMotionStates } from "./recover-motion-states.ts";
+import { recoverLiftJoins } from "./recover-lift-joins.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
@@ -521,61 +522,95 @@ const localEndpoint = (
   return localize(part, [point[0], point[1] + z, z]);
 };
 for (const [index, lift] of proto.lifts.entries()) {
-  const support = proto.sight_obstacles.findIndex(
-    (o) => Array.isArray(o.projection_area) && o.projection_area[0] === lift.motion_area_index,
+  const supports = proto.sight_obstacles.flatMap((obstacle, support) =>
+    Array.isArray(obstacle.projection_area) &&
+    obstacle.projection_area[0] === lift.motion_area_index
+      ? [{ obstacle, owners: locals.get(support) ?? [] }]
+      : [],
   );
-  const owners = locals.get(support) ?? [];
-  if (owners.length !== 1) {
-    unresolved.push({ kind: "lift-owner", lift: index, candidates: owners.map((o) => o.asset) });
+  if (!supports.length || supports.some((s) => s.owners.length !== 1)) {
+    unresolved.push({
+      kind: "lift-owner",
+      lift: index,
+      candidates: supports.flatMap((s) => s.owners.map((o) => o.asset)),
+    });
     continue;
   }
-  const owner = owners[0]!;
   try {
-    const doors = (lift.doors as SourceDoor[]).map((door, i) => ({
-      id: `${owner.node}-endpoint-${i}`,
-      node: owner.node,
-      polygon: door.door_sector.points.map((point) => {
-        const z = heightAt(door.sector_out, door.layer_out, door.point_out);
-        const local = localize(owner.part, [point[0], point[1] + z, z]);
-        return [local[0], local[1]] as Point;
-      }),
-      inside: localEndpoint(owner.part, door.point_in, door.sector_in, door.layer_in),
-      outside: localEndpoint(owner.part, door.point_out, door.sector_out, door.layer_out),
-      // A transition midpoint can sit just outside its projection polygon.
-      // Keep the plane selected by the actual inside endpoint.
-      middle: localEndpoint(
-        owner.part,
-        door.point_mid,
-        door.sector_in,
-        door.layer_in,
-        door.point_in,
-      ),
-      type: door.door_type,
-      locked: door.locked_pc,
-      unlockable: door.unlockable,
-      active: door.active,
-      lockedVillains: door.locked_npc_villain,
-      lockedCivilians: door.locked_npc_civilian,
-      afterTransition: {
-        player: door.locked_pc_after_patch,
-        unlockable: door.unlockable_after_patch,
-        villains: door.locked_npc_villain_after_patch,
-        civilians: door.locked_npc_civilian_after_patch,
-      },
-    }));
-    packet(owner.asset).connections.push({
-      id: `${owner.node}-lift`,
-      node: owner.node,
-      kind: "lift",
-      type: lift.lift_type,
-      direction: (() => {
-        const angle = (lift.direction * Math.PI) / 8;
-        const origin = localize(owner.part, [0, 0, 0]);
-        const tip = localize(owner.part, [Math.sin(angle), -Math.cos(angle), 0]);
-        return [tip[0] - origin[0], tip[1] - origin[1]] as Point;
-      })(),
-      endpoints: doors,
+    const joins = recoverLiftJoins(
+      supports.map((s) => s.obstacle.points.map((p): Vec3 => [p.x, p.y, p.z_top])),
+    );
+    const endpointOwners = (lift.doors as SourceDoor[]).map((door) => {
+      const matches = supports
+        .map((s, i) => ({
+          i,
+          distance: distanceToPolygon(
+            door.point_in,
+            s.obstacle.points.map((p): Point => [p.x, p.y - p.z_top]),
+          ),
+        }))
+        .filter((p) => p.distance === 0);
+      if (matches.length !== 1)
+        throw new Error("Lift endpoint does not have one supporting segment");
+      return matches[0]!.i;
     });
+    for (const [supportIndex, support] of supports.entries()) {
+      const owner = support.owners[0]!;
+      const doors = (lift.doors as SourceDoor[]).flatMap((door, i) =>
+        endpointOwners[i] !== supportIndex
+          ? []
+          : [
+              {
+                id: `${owner.node}-endpoint-${i}`,
+                node: owner.node,
+                polygon: door.door_sector.points.map((point) => {
+                  const z = heightAt(door.sector_out, door.layer_out, door.point_out);
+                  const local = localize(owner.part, [point[0], point[1] + z, z]);
+                  return [local[0], local[1]] as Point;
+                }),
+                inside: localEndpoint(owner.part, door.point_in, door.sector_in, door.layer_in),
+                outside: localEndpoint(owner.part, door.point_out, door.sector_out, door.layer_out),
+                // A transition midpoint can sit just outside its projection polygon.
+                // Keep the plane selected by the actual inside endpoint.
+                middle: localEndpoint(
+                  owner.part,
+                  door.point_mid,
+                  door.sector_in,
+                  door.layer_in,
+                  door.point_in,
+                ),
+                type: door.door_type,
+                locked: door.locked_pc,
+                unlockable: door.unlockable,
+                active: door.active,
+                lockedVillains: door.locked_npc_villain,
+                lockedCivilians: door.locked_npc_civilian,
+                afterTransition: {
+                  player: door.locked_pc_after_patch,
+                  unlockable: door.unlockable_after_patch,
+                  villains: door.locked_npc_villain_after_patch,
+                  civilians: door.locked_npc_civilian_after_patch,
+                },
+              },
+            ],
+      );
+      packet(owner.asset).connections.push({
+        id: `${owner.node}-lift`,
+        node: owner.node,
+        kind: "lift",
+        type: lift.lift_type,
+        direction: (() => {
+          const angle = (lift.direction * Math.PI) / 8;
+          const origin = localize(owner.part, [0, 0, 0]);
+          const tip = localize(owner.part, [Math.sin(angle), -Math.cos(angle), 0]);
+          return [tip[0] - origin[0], tip[1] - origin[1]] as Point;
+        })(),
+        ...(joins[supportIndex]!.length
+          ? { joins: joins[supportIndex]!.map((p) => localize(owner.part, p)) }
+          : {}),
+        endpoints: doors,
+      });
+    }
   } catch (error) {
     unresolved.push({ kind: "lift-endpoint", lift: index, reason: String(error) });
   }

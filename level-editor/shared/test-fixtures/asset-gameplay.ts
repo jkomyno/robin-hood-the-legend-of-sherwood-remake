@@ -4,6 +4,7 @@ import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "../src/lev
 export function navigationRegionCompilerFixture() {
   const fixture = assetCompilerFixture();
   const [west, east] = fixture.hut.gameplay!.surfaces;
+  if (!west || !east) throw new Error("Navigation fixture needs two rooms");
   west.polygon = [
     [0, 0],
     [100, 0],
@@ -446,6 +447,57 @@ export function liftAssetCompilerFixture() {
   ];
   fixture.document.map = "Lift asset fixture";
   return fixture;
+}
+
+export function compoundLiftCompilerFixture() {
+  const fixture = liftAssetCompilerFixture();
+  const g = fixture.hut.gameplay!;
+  const lift = g.lifts?.[0];
+  if (!lift) throw new Error("Compound fixture needs a lift");
+  const surface = g.surfaces.find((s) => s.id === lift.surface)!;
+  const [lowDoor, sourceHighDoor] = lift.doors;
+  const sourceAsset = fixture.document.assetSources?.[0];
+  const sourcePart = fixture.document.objects[0];
+  if (!lowDoor || !sourceHighDoor || !sourceAsset || !sourcePart)
+    throw new Error("Compound fixture needs both doors and a placed asset");
+  const highDoor = structuredClone(sourceHighDoor);
+  highDoor.inside[2] = 88;
+  const upper = structuredClone(fixture.hut);
+  upper.id = "upper-stairs";
+  upper.gameplay!.collision = "none";
+  upper.gameplay!.surfaces = [
+    {
+      ...structuredClone(surface),
+      polygon: [
+        [100, 0],
+        [110, 0],
+        [110, 100],
+        [100, 100],
+      ],
+      height: [40, 100, 100, 40],
+    },
+  ];
+  upper.gameplay!.lifts = [{ ...structuredClone(lift), joins: [[100, 50, 40]], doors: [highDoor] }];
+  surface.polygon = [
+    [90, 0],
+    [100, 0],
+    [100, 100],
+    [90, 100],
+  ];
+  surface.height = [0, 40, 40, 0];
+  lift.joins = [[100, 50, 40]];
+  lift.doors = [lowDoor];
+  lowDoor.inside[2] = 8;
+  fixture.assets.set(upper.id, upper);
+  fixture.document.assetSources!.push({ ...sourceAsset, id: upper.id });
+  const part = structuredClone(sourcePart);
+  part.id = "upper-body";
+  part.group = "upper";
+  part.node = `asset:${upper.id}:building-999`;
+  fixture.document.objects.push(part);
+  fixture.document.groups.push({ id: "upper", transform: { ...IDENTITY_TRANSFORM } });
+  fixture.document.map = "Compound lift fixture";
+  return { ...fixture, upper };
 }
 
 export function interiorAssetCompilerFixture() {

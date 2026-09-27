@@ -22,7 +22,7 @@ intended construction, not functionality available today.
 | Projection surfaces / elevation | Generate height planes linked to the new movement areas. | Partial: planar surfaces; elevation-boundary links unfinished |
 | Doors, gates and lock rules | Transform local endpoints and optional click polygons; resolve neighbours geometrically and retain initial/alternate actor lock rules. | Partial: rules preserved; state-transition triggers still missing |
 | Building interiors | Asset-local interior definitions and entrances; generate virtual interior sectors and links. | Working for empty interiors; occupants remain planned |
-| Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints. | Working in synthetic compiler/runtime tests; recovered metadata not yet published |
+| Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. | Partial: native zones/gates and duplicated assets tested; cross-asset pairing and unresolved recovery ownership remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild the ground lookup subset and per-obstacle references independently. | Partial: ground/obstacle regions and terrain defaults tested in the engine; elevated-surface links unfinished |
 | Light/shadow regions | Transform asset-local planar contours, resolve the receiving navigation layer and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering and interior links; multi-plane regions and ambiguous ownership remain recovery gaps |
@@ -110,7 +110,10 @@ Croisement03's door topology now survives recovery: asset-local navigation-regio
 labels preserve separate coplanar areas, including when their boundaries touch.
 Labels are scoped to each placement; unlabelled surfaces retain normal merging.
 Ground recovery reports per-region differences as well as overall coverage.
-Nottingham's hidden prison part and York's compound lift remain blockers.
+Nottingham's hidden prison part remains a blocker. York's compound lift now has
+asset-local segment connections; its static check advances to a solid/surface
+polygon-intersection failure elsewhere in the map. Lift recovery matches shared
+edges once and stores local sockets, never runtime references between assets.
 
 Stable terrain is recovered even when its movement area has changing obstacles.
 The recovery inventory preserves all 27 changing-obstacle groups, their initial

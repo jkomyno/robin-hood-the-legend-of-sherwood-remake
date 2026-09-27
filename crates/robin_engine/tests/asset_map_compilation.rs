@@ -4,6 +4,41 @@ use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimCo
 use robin_engine::level_data::LoadedLevel;
 
 #[test]
+fn compound_lift_keeps_one_native_sector_and_each_projection_plane() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-compound-lift.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    let lifts: Vec<_> = grid
+        .level
+        .sectors
+        .iter()
+        .filter(|s| s.sector_type.is_lift())
+        .collect();
+    assert_eq!(lifts.len(), 1);
+    assert_eq!(lifts[0].gate_indices.len(), 2);
+    assert_eq!(grid.level.door_projection_infos.len(), 2);
+    let planes = &assets.environment.static_sight_obstacles;
+    let low = &planes[planes.len() - 2];
+    let high = &planes[planes.len() - 1];
+    assert!((low.compute_top_z_from_projection(395., 330.) - 20.).abs() < 0.001);
+    assert!((high.compute_top_z_from_projection(405., 280.) - 70.).abs() < 0.001);
+    let view = engine.presentation_view();
+    assert_eq!(view.doors()[0].sector_in, view.doors()[1].sector_in);
+    use robin_engine::coordinates::MapPoint;
+    let layer = grid
+        .level
+        .sectors
+        .iter()
+        .find(|s| s.sector_type.is_lift())
+        .unwrap()
+        .layer;
+    assert!(grid.is_reachable_thin(MapPoint::new(395., 330.), MapPoint::new(405., 280.), layer));
+}
+
+#[test]
 fn touching_navigation_regions_keep_native_boundaries_and_gate_links() {
     let mut assets = LevelAssets::new();
     let engine = construct(
