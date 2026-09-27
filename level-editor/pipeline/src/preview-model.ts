@@ -75,7 +75,7 @@ export async function generatePreview(input: string): Promise<{ bytes: Uint8Arra
   // reveal_show_when_applied extras, e.g. revealed-interior copies) are dropped; the editor's
   // PatchDisplay switches them on the full model only.
   const revealOnly = document.getRoot().listNodes().filter((node) => {
-    const show = (node.getExtras() as Record<string, unknown>).reveal_show_when_applied;
+    const show = node.getExtras().reveal_show_when_applied;
     return Array.isArray(show) && show.length > 0;
   });
   if (revealOnly.length) {
