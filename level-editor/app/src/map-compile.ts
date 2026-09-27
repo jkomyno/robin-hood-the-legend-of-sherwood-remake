@@ -161,7 +161,8 @@ export function compileMap(document: Level3D, requestedBounds: BakeBounds) {
     description: "Compiled level-editor map sandbox",
     hackable_missions: [name],
   };
-  return { name, bounds, descriptor, details, warnings };
+  const editorDocument = structuredClone(document);
+  return { name, bounds, descriptor, details, warnings, editorDocument };
 }
 
 export type CompiledMap = ReturnType<typeof compileMap>;
@@ -204,6 +205,7 @@ export async function packageCompiledMap(
   const prefix = `Data/Levels/Day/${name}`;
   const files = {
     "details.json": json(compiled.details),
+    [`editor/${name}.rhlos-map.json`]: json(compiled.editorDocument),
     [`Data/Levels/${name}.level.json`]: json(compiled.descriptor),
     [`${prefix}.map.png`]: encode({ width, height, data: pixels.color, channels: 4, depth: 8 }),
     [`${prefix}.min.png`]: encode({
@@ -220,9 +222,13 @@ export async function packageCompiledMap(
       channels: 1,
       depth: 16,
     }),
-    "compile-report.json": json({ bounds: compiled.bounds, warnings: compiled.warnings }),
+    "compile-report.json": json({
+      bounds: compiled.bounds,
+      warnings: compiled.warnings,
+      editor_document: `editor/${name}.rhlos-map.json`,
+    }),
     "README.txt": strToU8(
-      `Install this ZIP in the game's configured mods directory and select ${compiled.details.title} from Custom Missions. The base game datadir supplies characters and other shared resources.\n\n${compiled.warnings.join("\n")}\n`,
+      `Install this ZIP in the game's configured mods directory and select ${compiled.details.title} from Custom Missions. The base game datadir supplies characters and other shared resources.\n\nReopen editor/${name}.rhlos-map.json in the level editor with the referenced pinned asset library. This is the editable scene at export time, including unsaved edits; the ZIP does not duplicate the library models and textures.\n\n${compiled.warnings.join("\n")}\n`,
     ),
   };
   return new Promise((resolve, reject) =>

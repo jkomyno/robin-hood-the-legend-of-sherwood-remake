@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { decode } from "fast-png";
 import { unzipSync, strFromU8 } from "fflate";
 import * as THREE from "three";
-import { type Level3D, gameToScene } from "@rle/shared";
+import { type Level3D, gameToScene, parseStoredMap } from "@rle/shared";
 import {
   compileMap,
   findBakeSpawn,
@@ -123,7 +123,12 @@ test("bake snapshot resets patch previews without changing editor objects", () =
 });
 
 test("mod ZIP has root metadata, a playable descriptor and lossless 16-bit depth", async () => {
-  const compiled = compileMap(bakeFixture(), [0, 0, 128, 128]);
+  const document = bakeFixture();
+  document.notes = "Unsaved authoring notes";
+  document.exportBounds = [-10, -20, 128, 128];
+  const expectedDocument = structuredClone(document);
+  const compiled = compileMap(document, [0, 0, 128, 128]);
+  document.notes = "Edited after compilation";
   const color = new Uint8Array(128 * 128 * 4).fill(255);
   const depth = Uint16Array.from({ length: 128 * 128 }, (_, i) => i * 4);
   const bytes = await packageCompiledMap(compiled, { color, depth });
@@ -136,6 +141,8 @@ test("mod ZIP has root metadata, a playable descriptor and lossless 16-bit depth
     JSON.parse(strFromU8(files[`Data/Levels/${compiled.name}.level.json`]!)),
     compiled.descriptor,
   );
+  const editable = JSON.parse(strFromU8(files[`editor/${compiled.name}.rhlos-map.json`]!));
+  assert.deepEqual(parseStoredMap(editable, new Map()), expectedDocument);
   const decoded = decode(files[`${prefix}.occlusion-depth.png`]!);
   assert.equal(decoded.depth, 16);
   assert.equal(decoded.channels, 1);

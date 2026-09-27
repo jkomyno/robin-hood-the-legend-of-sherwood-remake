@@ -15,6 +15,7 @@ The output contains:
 
 ```text
 details.json
+editor/editor-<map>.rhlos-map.json
 Data/Levels/editor-<map>.level.json
 Data/Levels/Day/editor-<map>.map.png
 Data/Levels/Day/editor-<map>.min.png
@@ -25,7 +26,10 @@ README.txt
 
 Names are normalized and prefixed with `editor-` to avoid replacing base maps.
 Two maps whose names normalize to the same name must not be installed together.
-The descriptor remains editable JSON, including the automatically selected spawn.
+The runtime descriptor remains editable JSON. `editor/editor-<map>.rhlos-map.json`
+is a separate snapshot of the editable scene, including unsaved changes. Extract
+that file and open it in the editor with the referenced pinned asset library;
+the ZIP does not duplicate library models and textures.
 
 ## Rendering and coordinates
 
