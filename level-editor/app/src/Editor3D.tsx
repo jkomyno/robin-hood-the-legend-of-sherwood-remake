@@ -1729,7 +1729,7 @@ export default function Editor3D(props: EditorProps) {
               </Show>
             </section>
           </div>
-          <div class="inspector-content" hidden={panel() !== "Selection"}>
+          <div class="inspector-content selection-inspector" hidden={panel() !== "Selection"}>
             <Show
               when={selectedTransform()}
               fallback={

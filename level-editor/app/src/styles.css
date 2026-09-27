@@ -841,6 +841,13 @@ select, input.search { background: #171c22; border-color: var(--border); min-hei
 .object-count { float: right; color: #d6e4db; }
 .object-list { margin-top: 22px; padding-top: 2px; border-top: 1px solid var(--border); }
 .object-list ul { max-height: none; }
+.selection-inspector { overflow: hidden; }
+.selection-inspector:not([hidden]) { display: flex; flex-direction: column; }
+.selection-inspector > .object-detail { flex: none; max-height: 65%; overflow-y: auto; }
+.selection-inspector > .hint { flex: none; }
+.selection-inspector > .object-list { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.selection-inspector .object-list > :not(ul) { flex: none; }
+.selection-inspector .object-list ul { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .object-list li { padding: 8px 6px; font-size: 12px; border-radius: 4px; }
 .object-list li.selected { background: #34473e; }
 .object-list .kind, .object-list .chev-btn { color: #b5c8b7; }
