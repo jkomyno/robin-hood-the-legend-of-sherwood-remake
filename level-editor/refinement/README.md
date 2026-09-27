@@ -41,8 +41,10 @@ Per-map pipeline, in order (each map has its own copy under `../blender/<map>/`)
 | Texture gallery | `build_texture_gallery.py` | |
 | Staging | `blender/stage_approved_batch.py`, `blender/stage_reviewed_publication.py`, `blender/bind_patch_material_states.py`, `blender/export_editor.py` | |
 | Verification | `blender/verify_staged_handoffs.py`, `blender/verify_publication_assets.py`, `blender/verify_staged_patch_state.py`, `blender/render_staged_patch_state.py`, `publication_preflight.py` | |
-| Promotion | `prepare_publication_browser.py` → `browser/verify_publication.mjs` → `promote_staged_publication.py`, `apply_canonical_library.py` | [PROCEDURE](PROCEDURE.md#map-publication-format) |
-| Browser derivatives | `blender/lossy_assets.py` | |
+| Promotion | `prepare_publication_browser.py` → `browser/verify_publication.mjs` → `promote_staged_publication.py` (`--waive-browser-check "<reason>"` only on the user's explicit decision), `apply_canonical_library.py` | [PROCEDURE](PROCEDURE.md#map-publication-format) |
+| Separate state endpoints | `bundle_publication_states.py`, `promote_state_bundles.py` (not for state objects baked into a model) | [PROCEDURE §10](PROCEDURE.md#revealed-states-inside-per-asset-models) |
+| Browser derivatives | `blender/lossy_assets.py` (`refresh`, `library`, `rollback`), `../pipeline/src/preview-model.ts` | [PROCEDURE](PROCEDURE.md#browser-derivatives-lossy-models-and-previews) |
+| Publication-level texture completion | `../blender/lincoln/global_reproject.py`, `texture_combine.py`, `texture_unseen_fill.py`, `stage_combined_worker.py`, `revealed_state_bake.py` (Lincoln recipes) | [PROCEDURE](PROCEDURE.md#publication-level-texture-completion) |
 | Corner editor | `prepare_corner_editor.py`, `corner_editor.py`, `audit_corner_constraints.py` | [CORNER_EDITOR.md](CORNER_EDITOR.md) |
 
 Every script has a module docstring; `--help` lists its arguments.
@@ -57,8 +59,9 @@ Every script has a module docstring; `--help` lists its arguments.
   change an existing worker's implementation. Pure-Python modules in
   `refinement/` are not part of those snapshots.
 - **Render slots.** `render_slots.acquire()` (in `refinement/`) takes one of
-  four machine-wide slots in `work/lincoln-refinement/render-slots/`; every map
-  and shared tool uses that one pool. Acquire before loading large scenes.
+  four machine-wide slots in `work/lincoln-refinement/render-slots/` (FIFO); every
+  map, worker and lossy derivation uses that one pool. Acquire before loading
+  large scenes.
 - **Recipe provenance.** Gallery builders re-hash the `candidate.json` `"recipe"`
   path on every rebuild. New packets should call
   `evidence_io.record_recipe(workspace, __file__)` and store its workspace-relative

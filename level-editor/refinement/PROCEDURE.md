@@ -66,6 +66,10 @@ scenery parts. Staging imports a new one with `"new_scenery_part": true`
 (`supplemental_parts.import_scenery_part`). Export marks the part `scenery: true`
 and never fabricates a footprint or obstacle for it. Its standalone asset is
 anchored at the horizontal mesh bounds centre, because it has no footprint.
+Placed scenery pivots about its local origin. Game baking rejects scenery parts
+until the map compiler can place their geometry. When painted foliage sits over
+terrain, give each scenery part an authored domain mask and scope its occlusion
+(see [foliage over terrain](#foliage-over-terrain)).
 
 ## 3. Create one workspace per asset group
 
@@ -121,6 +125,35 @@ must not be projected onto the reviewed asset.
 Validation must report accepted pixels, rejected pixels, foreign ownership,
 duplicate ownership, outside-object preservation, source RGB preservation, and
 geometry/UV/transform changes.
+
+### Foliage over terrain
+
+Painted trees and bushes that become separate scenery assets must leave the
+terrain receivers, and their inferred geometry must not hide painted ground.
+Both are mask-manifest changes (`blender/occlusion_constraints.py` schema):
+
+- each scenery asset gets one authored domain mask, assigned to its node;
+- every terrain row whose accepted mask overlaps a domain adds it to
+  `exclude_mask_indices`, with `exclusions_reviewed: true` and an
+  `exclusion_reason`; add only domains that actually overlap, so no exclusion
+  is a no-op;
+- `projection.occluder_constraints` gets one entry per scenery node:
+  `reviewed`, `source_node`, `receiver_nodes` (all other receiver nodes),
+  `mask_indices` (its domain), `reason` and optional `review_evidence`. Foreign
+  receivers are then blocked by that foliage only inside its painted domain;
+  own geometry and unlisted occluders always block. This follows the Nottingham
+  hall-foreground precedent.
+
+The workspace mask guard freezes the mask inventory, so a manifest revision
+needs fresh workspaces for the affected receivers, reviewed again. Keep geometry
+identical to the approved workspace and compare the known-pixel domain view by
+view against the previous packet. Lincoln examples: `trees_catalog.py` (domains,
+exclusions, occluder constraints), `refold_terrain_masks.py` (ground workspace)
+and `terrain_foldin_geometry.py`/`terrain_foldin_finalize.py` (other terrain
+assets). Source rays pass through transparent cutouts of foliage cards
+(`blender/physical_opacity.py`); the tree coverage audit is alpha-aware, and
+where crowns share pixels, the front plant owns them by first hit, listed for
+review.
 
 ## 5. Refine geometry from source evidence
 
@@ -203,6 +236,14 @@ projection/export script to generate the complete `modified/` packet:
 Inspect every modified view. A clean solid silhouette does not prove that the
 projected texture is aligned.
 
+Near-grazing faces smear one source pixel into long streaks that then count as
+protected source. Set the object property `projection_min_cosine` (default and
+floor 0.05) on the affected meshes to make faces below that source-facing
+cosine unknown so texture generation fills them. The source bake, review
+renders, export and global reprojection honour it. It is a property-only
+change: back up the old packet, prove geometry is byte-identical, regenerate the
+modified packet and inspect all eight views (`blender/lincoln/turret_facing_cutoff.py`).
+
 ### Check source coverage, not just sampled colors
 
 Exact RGB checks prove that accepted texture pixels retain their colors; they
@@ -258,6 +299,14 @@ Build a review gallery from the candidate manifest. It must show:
 - known limitations and state assumptions;
 - explicit status: refinement in progress, ready for approval, approved, or
   rejected.
+
+Before approving terrain or any large integrated area, check oblique views of
+the whole staged scene for voids that the source camera cannot see: holes to
+the ground and recesses behind neighbouring assets. Render several azimuths
+(for example eight views at 20–45° elevation), cluster the empty or recessed
+pixels, and attribute each cluster to its surface and occluding asset. Lincoln
+did this with a scratch scan (`work/lincoln-refinement/scratch/reproject/scan_gaps.py`,
+evidence in `gap-scan/`); it is not a reusable tool yet.
 
 Hide approved items from the pending gallery, but retain their archived review
 evidence. Do not infer approval from a positive comment such as “pretty good”;
@@ -505,21 +554,8 @@ another map's plan.
   --python level-editor/refinement/blender/stage_reviewed_publication.py -- <publication-plan.json>
 ```
 
-Staging also derives lossy browser models by default: once the staged catalog's
-model bytes are final it writes `<asset dir>/lossy.glb` (+ `lossy.glb.receipt.json`),
-rebuilds `preview.glb` from it, and regenerates the asset index
-(`refinement/blender/lossy_assets.py`). Pass `--no-lossy` (or plan `"lossy": false`)
-to skip it. All asset-index publication goes through
-`refinement/asset_index.py::write_asset_index`, which discovers `asset.json` files
-and neighboring derivatives, rejects stale lossy source/output receipt hashes, and
-atomically replaces the generated index. Author catalog metadata in `asset.json`;
-never edit `index.json` to add, remove, or rename assets. `pnpm library:index`
-regenerates the live catalog from directories; `--check` validates without writing.
-`verify_publication_assets.py` also checks preview derivatives, and
-`promote_staged_publication.py` installs them with the models. The editor loads
-indexed lossy models directly and does not fetch receipts. Backfill an existing
-library with `lossy_assets.py -- library --root level-editor/library/3d-assets
---run <dir> [--apply]` (dry run without `--apply`; `-- rollback --run <dir>` undoes it).
+Staging also derives the lossy browser models and previews (on by default; see
+[browser derivatives](#browser-derivatives-lossy-models-and-previews)).
 
 This stages geometry/material imports and exports a map plus standalone assets.
 Staging is not live integration: validate canonical membership, grouping,
@@ -527,6 +563,144 @@ transforms, materials, states and the generated library, then promote the staged
 files to the editor paths with rollback evidence. Check the map and asset picker
 in the running editor. Track separately: geometry approved, texture generated,
 texture baked, publication staged, and live editor integration verified.
+
+### Publication-level texture completion
+
+Per-asset bakes project against the neighbours of their time. On the final
+staged scene, Lincoln completes textures in three chained passes. Each writes a
+new stage or worker, never promotes, and changes only texels that still hold the
+bake's neutral "unknown" shade. Geometry, UVs, material graphs, slots and every
+other texel are verified unchanged. Scripts are in `blender/lincoln/`; they are
+map recipes, not shared tools.
+
+1. **Global first-hit reprojection** (`global_reproject.py apply --stage-in
+   <stage> --source <covered.png> --output <new stage>`). Every neutral texel of
+   a first-hit source-visible surface receives its source RGB. Masks are
+   deliberately not applied: the source view must show no gray. Faces below the
+   grazing cutoff (`--grazing-cosine`, default 0.18, or a mesh's
+   `projection_min_cosine`) are reset to neutral. Per-object fill masks go to
+   `<stage>/global-reprojection/`. `global_reproject.py audit` counts gray
+   pixels of any worker from the source camera; `verify_global_reprojection.py`
+   proves only unknown texels changed.
+2. **Combine reviewed generated sheets** (`texture_combine.py --worker-in
+   <stage>/worker.blend --output <dir>`). Remaining neutral texels take colour
+   from each asset's ready texture candidate, through its best-facing first-hit
+   review camera. The asset silhouette must first match the approved solid
+   sheet. `verify_texture_combine.py` checks the output;
+   `stage_combined_worker.py --stage-in … --worker … --report … --output <new
+   stage>` stages it with a `texture_combine` record (earlier ones move to
+   `texture_combine_chain`).
+3. **Unseen-texel AI fill** (`texture_unseen_fill.py`) for texels no source
+   camera sees and no reviewed packet covers: revealed-state caps, back walls,
+   faces changed by later geometry rounds. See below.
+
+#### Unseen-texel AI fill
+
+Targets live in `work/<map>-refinement/textures/unseen/targets.json`: `id`,
+`assets` (displayed groups), `patches` (applied patch set; `[]` = covered),
+`receivers` (objects that motivated the target) and optional `prompt_suffix`,
+`context_assets` (displayed for visibility and framing, never written) and
+`region` (`x`/`y` bounds limiting terrain triangles and texels). Every displayed
+object of the target's own assets receives. Unknown means the neutral shade on
+ownership atlases, or alpha 0 on the terrain source atlas. An object is displayed when every patch in its `reveal_show_when_applied` is
+applied and none in its `reveal_hide_when_applied` is.
+
+```bash
+blender --background --threads 2 --python-exit-code 1 \
+  --python level-editor/blender/lincoln/texture_unseen_fill.py -- survey --worker W --output OUT.json
+#   survey-visible: only neutral texels a covered-state map viewer can see
+blender ... -- prepare --worker W --target ID [--target ID ...]
+python3 level-editor/blender/lincoln/texture_unseen_fill.py generate ID... [--prompt-suffix TEXT]
+blender ... -- fill --worker-in W --output DIR [--target ID ...] [--include-unapproved] [--no-render]
+python3 level-editor/blender/lincoln/texture_unseen_fill.py review DIR
+```
+
+`prepare` renders eight orthographic views from the worker, chosen from 48
+candidates to maximize each unknown texel's best facing, in the two-image
+Sunburst format. Unknown surfaces take the pure-gray shading and are editable.
+`views.json` binds each displayed object's geometry/UV/slot digest. `fill`
+refuses a worker whose displayed objects differ, so a target must be prepared
+again after any geometry change. `fill` writes only still-unknown
+texels of the receivers, from their best-facing first-hit view, inside the
+silhouette and editable mask. Its `combine.json` follows the combine schema, so
+`verify_texture_combine.py` checks it. `review` writes each target's
+`texture-review.json` (`ready-for-user`) and a pending-only texture gallery at
+`textures/unseen/gallery/`. Without `--include-unapproved`, `fill` writes only
+targets approved in `textures/unseen/decisions.json`: entries with `asset_id`,
+`scope: "texture"`, `decision: "approved"` and `evidence_sha256` binding
+`generated_preserved_sha256` and `views_sha256`. Record decisions only from
+the user's explicit texture approval in the gallery. Stage the approved fill
+with `stage_combined_worker.py`.
+
+### Frozen approvals snapshot
+
+A staged export normally reads the live `approvals.json`. When newer approvals
+must not ship yet, for example terrain re-approvals that only fit a pending
+tree publication, point the plan's `approvals` at a frozen snapshot stored in
+the stage (`<stage>/approvals-snapshot.json`). It uses the same `version`,
+`approvals` and `history` records, plus a `snapshot` object: `purpose`, `source`
+and `source_sha256` of the live file, the restored or unchanged records, and
+who decided (`decided_by`). Keep the plan otherwise identical to the stage it
+follows and state the reason in its `note`. Record `approvals_snapshot`
+(`path`, `sha256`, `reason`) in `integration.json`. The snapshot is only for
+holding back approvals the user already gave. It must not add new ones. Lincoln
+example: `publication-2/stage-v7`.
+
+### Browser derivatives (lossy models and previews)
+
+`refinement/blender/lossy_assets.py` derives browser display copies from the
+exact published GLB bytes; it never edits the originals.
+`stage_reviewed_publication.py` runs it by default once the staged catalog's
+model bytes are final (`--lossy`). Pass `--no-lossy` or plan `"lossy": false`
+to skip it. For each asset, it writes `<dir>/lossy.glb` with
+`lossy.glb.receipt.json`, then `<dir>/preview.glb` with its receipt, and
+regenerates the asset index. Models refused by the static check keep no lossy
+model and are reported.
+
+- **Atlas.** Smart UV islands are packed with `--pack-shape AABB` by default.
+  `CONCAVE` is about 2% tighter but takes 30–100 s per pack. The atlas is sized
+  so the area-weighted median weakest-axis density reaches `--density` (1
+  texel per map pixel), never above what the published texture holds.
+  Nearest-filtered ("source pixel sampling") materials are baked at
+  `--nearest-density` (2) so their pixel blocks stay sharp. Per-material
+  samplers are kept.
+- **Keep-layout mode.** The published UVs and images are only re-encoded to AVIF
+  when one image is already at least `--reencode-utilization` (0.9) full, such
+  as map background planes, or when faces reuse texels more than `--reuse-ratio`
+  (1.25) times, such as tiled textures or foliage cards.
+- **Validation renders** are opt-in with `--validate`. They render the published
+  and lossy GLBs from eight oblique views and report colour differences, as
+  evidence only. The structural check (same meshes, primitives and triangles)
+  always runs.
+- **Previews** are built from the lossy model (or the model when there is none)
+  by `pipeline/src/preview-model.ts`: simplified, meshopt-compressed geometry
+  and one AVIF texture. The texture edge follows the source texel count:
+  `ceil(sqrt(texels)/8)` rounded up to a multiple of 16 and clamped to 32–512,
+  about one texel per 8 map pixels. Previews show the covered state: nodes with
+  `reveal_show_when_applied` extras are dropped.
+- **Receipts.** The lossy receipt binds `source` (model SHA-256), `output`,
+  settings, normals policy and tool versions. The preview receipt binds
+  `source`, `source_model`, the settings/tool `fingerprint`, `output` and
+  `texture_edge`. A stale receipt triggers a rebuild on the next refresh. All
+  asset-index writers use `refinement/asset_index.py::write_asset_index`, which
+  rejects stale lossy receipts and replaces the index atomically. Author
+  metadata in `asset.json`; never edit `index.json`. `pnpm library:index`
+  regenerates the live catalog, and `--check` validates it.
+  `verify_publication_assets.py` checks the derivatives, and
+  `promote_staged_publication.py` installs them with the models. The editor
+  loads indexed lossy models directly and never fetches receipts.
+
+Other commands (`blender --background --threads 2 --python-exit-code 1 --python
+level-editor/refinement/blender/lossy_assets.py -- <command>`):
+
+- `library --root level-editor/library/3d-assets --run <work dir> [--maps …]
+  [--assets …] [--apply] [--force]` backfills a live library. Without `--apply`
+  it is a dry-run plan. With `--apply` it writes under the library's
+  `.publication.lock` and records backups in the run directory. It is resumable.
+- `rollback --run <work dir>` restores that run's backups.
+- `refresh --root <staged 3d-assets> --work <dir> [--no-lossy] [--no-previews]`
+  is the step publication runs.
+- `derive` and `export-worker` write scratch comparison outputs only.
 
 ## 9. Lighting review
 
@@ -554,6 +728,42 @@ states, their masks, occluders, collision geometry, and texture projection.
 For buildings with interiors, validate covered and revealed states separately.
 The revealed render must match the interior source artwork on the actual
 interior receivers, not merely pass a pixel-ownership check.
+
+### Revealed states inside per-asset models
+
+Approved state geometry can ship inside the asset's own model instead of as
+separate endpoint GLBs. Lincoln's run:
+
+1. `blender/lincoln/revealed_state_bake.py --stage-in <stage> --output <dir>`
+   rebuilds each approved state spec as state-only objects in the staged
+   worker, which must match the approved state-model digests. Each gets its own
+   material and image. For each single-patch state, texels that are first-hit
+   visible from the source camera, inside the state's change region and inside
+   the reviewed state mask receive the revealed source RGB. Faces no state source
+   sees stay neutral for the unseen-texel fill. An approved object that would
+   receive revealed texels is never edited. An appearance copy takes them and is
+   shown for the state, and the original gets that patch in
+   `reveal_hide_when_applied`. Every stage-in object and image must stay
+   byte-identical.
+2. State objects carry `state_recipe` and `reveal_show_when_applied` extras.
+   The exporter writes them as ordinary visible geometry. The editor
+   (`app/src/patch-display.ts`) shows an object only while one of its
+   `reveal_show_when_applied` patches is revealed and none of its
+   `reveal_hide_when_applied` patches is. `stage_reviewed_publication.py`
+   hides them in its full-map reference render, and previews drop them.
+3. When two states write the same object, the copy of the later patch in native
+   patch order is shown when both apply, because the game composites that patch
+   on top. Each overlap is reported. `revealed_state_bake_order_fix.py` re-applies
+   this rule to an older bake by changing properties only.
+4. Chain the bake onto the stage with `stage_combined_worker.py`, like a texture
+   combine. Record a `revealed_states` entry (report, hash, semantics) in
+   `integration.json`. Then export with `publish_export.py` and promote with the
+   normal `promote_staged_publication.py`.
+
+`promote_state_bundles.py` is only for the other representation: separate
+lossless endpoint GLBs bundled by `bundle_publication_states.py`. Do not use it
+for state objects baked into the model. Evidence: `publication-2/states-bake-v2`
+→ `stage-v7`.
 
 ## 11. Export and editor integration
 
@@ -627,6 +837,12 @@ bakes, exports, and publication staging. MCP is the interactive review path;
 the scripts are the reproducible handoff path. Record the `.blend` file, script,
 arguments, and output hashes for every accepted change.
 
+Every background render or bake takes a lease from one machine-wide pool of
+four slots: `refinement/render_slots.py`, locks in
+`work/lincoln-refinement/render-slots/`, FIFO waiters. All maps, workers and
+lossy derivation share that pool, so call `render_slots.acquire()` before
+loading a large scene and never start a private pool.
+
 The following scripts form the reusable core. They should accept a map config,
 asset ID, source image, collection, camera set, and output directory rather
 than embedding Derby names or paths.
@@ -649,6 +865,7 @@ than embedding Derby names or paths.
 | `blender/stage_reviewed_publication.py` | Stage guarded publication changes and rollback evidence. |
 | `blender/bake_approved_packets.py` | Bake approved texture packets while retaining raw/protected outputs. |
 | `blender/verify_publication_assets.py` | Verify hashes, group counts, materials, meshes, and standalone assets. |
+| `blender/lossy_assets.py` | Derive lossy browser models and previews; backfill or roll back a library. |
 
 The previous generic `--config` examples were illustrative, not implemented
 interfaces, and have been removed. Use the actual command parsers and Python
@@ -738,6 +955,20 @@ Use `--document <staged-map.rhlos-map.json>` for a first publication.
 index with the existing lock, hash guards, backups and rollback behavior. Resources
 are installed before their manifests. Keep approval and independent handoff checks
 in the existing workflow; conversion is not a new approval.
+
+The browser check drives the current editor through its HTTP library:
+`node refinement/browser/verify_publication.mjs <config.json> [editor URL]` (default
+`http://127.0.0.1:5180`) intercepts `/library/` at document start and serves only
+the hash-pinned files from the `prepare_publication_browser.py` config, which
+include lossy models and their receipts. It opens the map through the Map chooser,
+checks group and part selection, inserts each group and checks that it pins its own
+catalog asset, and reloads the saved copy. Promotion requires a passing
+`<stage>/browser-result.json`. If the check cannot run, the user may explicitly
+waive it for a named stage. Only then prepare with
+`promote_staged_publication.py … --waive-browser-check "<reason>"`. The reason
+should name who waived it, when and why, and it is recorded as
+`browser_check: {status: WAIVED, reason}` in `promotion.json`. Never waive on your
+own judgement or carry a waiver to another stage without the user's decision.
 
 Frozen handoffs created before this format must be imported explicitly, without
 editing their original files:

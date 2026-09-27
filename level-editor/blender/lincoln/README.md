@@ -30,6 +30,14 @@ root; evidence lives in `level-editor/work/lincoln-refinement/` (resume from `RE
       pixels; `verify_global_reprojection.py` proves only unknown texels changed. Fill masks in
       `<stage>/global-reprojection/` tell generated-texture bakes which texels are now source-known.
       `stage_combined_worker.py` stages a texture-combined worker on top.
+    - `texture_combine.py` fills remaining neutral texels from ready generated sheets;
+      `texture_unseen_fill.py` generates and fills texels no source camera sees (targets in
+      `textures/unseen/targets.json`, approvals in `textures/unseen/decisions.json`);
+      `revealed_state_bake.py` bakes approved revealed states onto state-only objects.
+      Each output is staged with `stage_combined_worker.py`. See the procedure's
+      publication-level texture completion and revealed-state sections.
+    - A plan may point `approvals` at a frozen `approvals-snapshot.json` in the stage when newer
+      approvals must wait (see `publication-2/stage-v7`).
     - `verify_publication_scene.py` checks every approved model against the staged worker (after a
       global reprojection only `materials` may differ; run it on the unmodified stage-in as well).
     - `publish_export.py` exports the full map (component splits become
@@ -41,8 +49,8 @@ root; evidence lives in `level-editor/work/lincoln-refinement/` (resume from `RE
       `browser/verify_publication.mjs`, and finally `promote_staged_publication.py`.
     - A texture republish is a new plan whose imports name the approved baked workers.
 
-`freeze_tooling.py` pins shared helpers in `tooling/<id>`, and `render_slots.py` limits
-concurrent Blender renders to three.
+`freeze_tooling.py` pins shared helpers in `tooling/<id>`. `render_slots.py` takes a lease
+from the shared machine-wide pool of four slots (same lock files as `refinement/render_slots.py`).
 
 Map-wide finding: native obstacles extrude from z = 0, but the castle plateau is at native
 z = 220. Every castle object must be reseated on its real ground contact.
