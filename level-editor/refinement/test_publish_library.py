@@ -24,6 +24,8 @@ class PublishLibraryTest(unittest.TestCase):
         self.asset = self.library/'3d-assets/house'
         self.asset.mkdir(parents=True)
         (self.library/'scenes').mkdir()
+        (self.library/'game-data').mkdir()
+        (self.library/'game-data/index.json').write_text(json.dumps({'version': 1, 'files': []}))
         (self.asset/'asset.json').write_text(json.dumps(
             {'id': 'house', 'name': 'House', 'source_map': 'Derby', 'model': 'model.glb'}))
         (self.asset/'model.glb').write_bytes(b'original')
@@ -42,7 +44,7 @@ class PublishLibraryTest(unittest.TestCase):
     def test_allowlist_and_source_identity(self):
         report = self.stage()
         self.assertEqual(set(report['payloads']), {'3d-assets/house/lossy.glb',
-            '3d-assets/index.json', 'scenes/index.json'})
+            '3d-assets/index.json', 'scenes/index.json', 'game-data/index.json'})
         site = self.root/'deploy/site/editor/library'
         index = json.loads((site/'3d-assets/index.json').read_bytes())
         entry = index['assets'][0]
@@ -65,6 +67,51 @@ class PublishLibraryTest(unittest.TestCase):
         self.assertIn('scenes/test.webp', report['payloads'])
         self.assertNotIn('scenes/unrelated.webp', report['payloads'])
         self.assertEqual((self.root/'deploy/site/editor/library/scenes/test.webp').read_bytes(), b'thumbnail')
+
+    def test_indexed_game_data_is_shipped(self):
+        game_data = self.library/'game-data'
+        files = {'Data/Levels/Mission.rhm.json': b'{"mission":1}',
+                 'Data/Characters/Guard.rhs.d/atlas.webp': b'atlas'}
+        for relative, data in files.items():
+            path = game_data/relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        (game_data/'notes.txt').write_text('not runtime data')
+        (game_data/'index.json').write_text(json.dumps({'version': 1, 'files': list(files)}))
+        report = self.stage()
+        site = self.root/'deploy/site/editor/library/game-data'
+        for relative, data in {**files, 'index.json': (game_data/'index.json').read_bytes()}.items():
+            self.assertEqual((site/relative).read_bytes(), data)
+            self.assertEqual(report['payloads']['game-data/'+relative], {
+                'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()})
+        self.assertFalse((site/'notes.txt').exists())
+
+    def test_missing_game_data_index_rejected(self):
+        (self.library/'game-data/index.json').unlink()
+        with self.assertRaisesRegex(ValueError, 'run pnpm library:game-data'):
+            self.stage()
+
+    def test_invalid_game_data_index_rejected(self):
+        (self.library/'game-data/index.json').write_text('{"version":2,"files":[]}')
+        with self.assertRaisesRegex(ValueError, 'Invalid game data index'):
+            self.stage()
+
+    def test_missing_indexed_game_data_rejected(self):
+        (self.library/'game-data/index.json').write_text(json.dumps({'version': 1, 'files': ['missing']}))
+        with self.assertRaises(FileNotFoundError):
+            self.stage()
+
+    def test_game_data_path_escape_rejected(self):
+        (self.library/'game-data/index.json').write_text(json.dumps({
+            'version': 1, 'files': ['../3d-assets/house/model.glb']}))
+        with self.assertRaisesRegex(ValueError, 'Unsafe runtime library path'):
+            self.stage()
+
+    def test_game_data_symlink_escape_rejected(self):
+        (self.library/'game-data/secret').symlink_to(self.asset/'model.glb')
+        (self.library/'game-data/index.json').write_text(json.dumps({'version': 1, 'files': ['secret']}))
+        with self.assertRaisesRegex(ValueError, 'escapes its root'):
+            self.stage()
 
     def test_stale_source_rejected(self):
         (self.asset/'model.glb').write_bytes(b'changed')

@@ -3,6 +3,7 @@
 From `level-editor/`, run:
 
 ```sh
+pnpm library:game-data
 pnpm library:publish
 pnpm editor:publish
 ```
@@ -36,13 +37,14 @@ pnpm --dir ../wasm-www exec wrangler deploy --config /absolute/path/to/deploy/wr
 ```
 
 Library publication regenerates the catalog from directory descriptors and
-fails for missing or stale lossy models, external runtime GLB resources, stale
+fails for missing game data, missing or stale lossy models, external runtime GLB resources, stale
 map pins, or files exceeding Cloudflare's static asset limits. It uploads only:
 
 - Optimized models and palette previews.
 - A generated asset catalog containing the editor fields, descriptor hashes, and verified original-model hashes.
 - Published maps and their generated listing.
 - Population sprite catalogs filtered to referenced sprites, and those images.
+- The game-data index and every file it lists (mission previews, profiles, and sprite atlases).
 
 Original models, asset descriptors, receipts, source textures/buffers, backups,
 blobs, and authoring files are excluded. Original paths and hashes remain
