@@ -50,17 +50,53 @@ Installation uses the shared library lock, source-hash guards, backups and
 rollback. It changes the local editor library; it does not deploy a website.
 This is an import of the existing reconstruction, not a new geometry approval.
 
-After this normal publication, `reproject_textures.py` performs the requested
-full reset from original artwork. It uses the bare Day layer for opaque
-geometry, the original Arbre frames for foliage, and fresh ground visibility
-plus the audited cleanup mask for terrain. Old synthesized RGB is discarded.
-Physical leaf alpha and source ownership remain separate. The source-only
-worker and per-texel ownership masks are hash-bound in `reprojection.json`.
+After this initial publication, the approved grouping pass consolidates the scene
+into 80 selectable assets plus terrain. Source assignment and synthesis use the
+approved grouped worker. Follow [the source ownership procedure](TEXTURE_OWNERSHIP.md)
+for exact native-mask assignments, inspected authored domains, separate original
+canopy layers, full reprojection, and independent source verification. Old
+synthesized RGB is discarded; physical leaf alpha and source ownership stay
+separate. The hash-bound source authorization receipt is required before synthesis.
+
 `texture_packets.py` prepares source-textured and solid view sheets, invokes
 the shared Sunburst driver, and bakes candidates while checking source RGB,
 physical alpha, geometry and UV preservation. Ground is prepared in six
 regions. Generated candidates retain a pending texture-review status until
 the resulting materials and coverage have been reviewed.
+
+For model review before further texture generation, run:
+
+```sh
+python3 blender/sherwood/build_model_review.py \
+  --packets work/sherwood-refinement/textures/sunburst \
+  --output work/sherwood-refinement/model-review
+```
+
+This uses the normal gallery with solid and original-art sheets, plus full-scene
+context. Missing packets stay listed as rendering. An entry becomes ready only
+when `inspections.json` records an actual eight-view visual check bound to its
+`views.json` hash. That readiness is separate from the user's approval. Rebuilds
+retain stable asset/revision feedback keys.
+
+The Sherwood generation wrapper forwards `--provider openrouter` to the
+existing shared Sunburst driver by default; `--provider openai` also remains
+available. Generation receipts retain their provider-specific directories.
+
+`render_texture_worker.py` renders the source-only and candidate workers from
+the original camera and two oblique cameras. `texture_packets.py --review`
+renders each baked asset in its eight preparation cameras. After inspecting
+those actual sheets, record their SHA-256 hashes and notes in an inspections
+JSON file; `build_texture_review.py` checks those receipts and builds the normal
+interactive texture gallery. The gallery includes original-art inputs, solid
+references, generated sheets, baked results, remaining-coverage counts and
+full-scene comparisons. Its feedback controls use the clean asset IDs. Six
+terrain regions appear together under the terrain asset's review.
+
+For disjoint bake batches, keep all terrain regions in the same batch and merge
+with `merge_texture_candidates.py`. Run `verify_texture_candidate.py` on the
+saved combined worker before building the gallery. The gallery requires this
+independent preservation receipt and inspections of the exact baked sheets;
+generation inspection alone does not mark a model ready for texture review.
 
 ## Inspection
 

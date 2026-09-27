@@ -159,7 +159,11 @@ def main(output):
     for src,node in selected:
         asset=owners[node];d=descriptors[asset]
         label=NAMES[int(asset.rsplit('-',1)[-1])] if 'sherwood-group-' in asset else d['name']
+        world=src.matrix_world.copy()
         obj=src.copy();obj.data=src.data.copy();working.objects.link(obj);obj.hide_set(False);obj.hide_viewport=False
+        # The imported glTF coordinate conversion can live on a comparison
+        # scene parent. Keep the reusable worker independent of that parent.
+        obj.parent=None;obj.matrix_world=world
         obj['source_node']=node;obj['asset_group']=asset;obj['asset_name']=label
         obj['part_name']=PART_NAMES.get(int(node[9:]),label) if node.startswith('building-') else label
         if node.startswith('building-'):obj['source_obstacle']=int(node[9:])
