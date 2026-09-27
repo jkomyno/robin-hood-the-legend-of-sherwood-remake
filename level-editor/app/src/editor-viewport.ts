@@ -1174,8 +1174,9 @@ export class EditorViewport {
       // Pointer moves can retry the same invalid draft many times per second.
       if (message !== this.splinePreviewError) {
         this.splinePreviewError = message;
-        const report = this.bindings.onError ?? console.error;
-        report(`Could not preview path: ${message}`);
+        const description = `Could not preview path: ${message}`;
+        if (this.bindings.onError) this.bindings.onError(description);
+        else console.error(description);
       }
     }
   }
