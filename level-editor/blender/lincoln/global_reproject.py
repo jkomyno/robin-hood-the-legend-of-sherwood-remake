@@ -31,6 +31,9 @@ scene only:
    RGB to any still-neutral, non-grazing texel of its bilinear footprint, so the source view
    samples no neutral texel even on silhouettes. Only grazing faces may remain gray there.
 
+Revealed-state copies and patch-only objects (see `covered_state_mesh`) are excluded as occluders and
+receivers: they are render-visible in staged workers but absent from the covered artwork.
+
 Masks are deliberately not applied: the requirement is that the source view shows no gray, and
 the first-hit surface is what the viewer sees. Non-neutral texels on non-grazing faces (accepted
 source, corrections) are byte-preserved; unseen texels stay neutral for synthesis. Geometry, UVs,
@@ -81,14 +84,28 @@ def load_source(path):
     return image  # top-origin rows
 
 
+STATE_ONLY_KEYS = ('state_recipe', 'state_variant_of', 'reveal_show_when_applied')
+
+
+def covered_state_mesh(properties):
+    """True for geometry present in the covered (source) state.
+
+    Revealed-state copies (`state_recipe`, `state_variant_of`) and objects shown only when a patch is
+    applied (`reveal_show_when_applied`) stay render-visible in staged workers for the exporter, but
+    are absent from the covered artwork: they must neither occlude nor receive in this pass.
+    """
+    return not any(properties.get(key) for key in STATE_ONLY_KEYS)
+
+
 class Scene:
-    """Visible working meshes as flat triangle arrays with per-slot material bindings."""
+    """Covered-state working meshes as flat triangle arrays with per-slot material bindings."""
 
     def __init__(self):
         import bpy
         working = bpy.data.collections[COLLECTION]
-        self.objects = sorted((o for o in working.all_objects if o.type == 'MESH' and not o.hide_render),
-                              key=lambda o: o.name)
+        visible = [o for o in working.all_objects if o.type == 'MESH' and not o.hide_render]
+        self.objects = sorted((o for o in visible if covered_state_mesh(o)), key=lambda o: o.name)
+        self.state_only = sorted(o.name for o in visible if not covered_state_mesh(o))
         if any(m.show_render or m.show_viewport for o in self.objects for m in o.modifiers):
             raise ValueError('Apply modifiers before global reprojection')
         points, tri_obj, tri_local = [], [], []
@@ -615,6 +632,7 @@ def main(argv):
                          'min_cosine_overrides': MIN_COSINE_OVERRIDES,
                          'asset_scope': sorted(ASSET_SCOPE) if ASSET_SCOPE else None},
               'counts': pixel_counts(gray, kind, cosine, pass_.width, pass_.height),
+              'state_only_objects_excluded': pass_.scene.state_only,
               'objects': rows, 'evidence': str(evidence)}
     if args.mode == 'apply':
         after = Scene()
