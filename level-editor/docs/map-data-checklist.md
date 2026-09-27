@@ -205,6 +205,25 @@ Across the nine diagnostics, 358 of 397 non-lift doors now compile; all 358 matc
 source endpoints, click polygons, door types, active flags and initial/alternate
 permissions. The remaining 39 still need ownership or endpoint recovery. Inferred
 physical grouping remains marked for review before publication.
+`compare-door-geometry.ts SOURCE_JSON COMPILED_LEVEL_JSON` independently compares
+non-lift door geometry/rules, shared-room membership and door-linked patch rules.
+It accepts regenerated indices and equivalent polygon winding, but fails on missing
+or extra records, regrouped rooms, changed permissions or mismatched trigger direction.
+It does not certify receiving-area connectivity, lift behavior, sight changes or visuals.
+Current compiled/source counts (no unexpected records in any map):
+
+| Map | Non-lift doors | Shared rooms | Door-linked patches |
+| --- | ---: | ---: | ---: |
+| Croisement01 | 3/3 | 0/0 | 0/0 |
+| Croisement02 | 1/1 | 1/1 | 0/0 |
+| Croisement03 | 5/5 | 0/0 | 1/1 |
+| Derby | 42/42 | 14/14 | 1/1 |
+| Leicester | 56/59 | 16/16 | 2/5 |
+| Lincoln | 51/59 | 17/19 | 6/9 |
+| Nottingham | 84/100 | 40/45 | 7/7 |
+| Sherwood | 3/5 | 3/5 | 0/0 |
+| York | 113/123 | 66/74 | 5/5 |
+
 The twenty-one recovered movement-changing transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.
 Transition reference points may lie inside static blockers; they must still resolve
