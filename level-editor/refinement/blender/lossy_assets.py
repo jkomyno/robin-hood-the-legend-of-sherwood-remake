@@ -828,6 +828,8 @@ def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, te
     if reencoded is None:
         out['samplers'] = [json.loads(sampler) for sampler in samplers]
         out['textures'] = [{'sampler': i, 'extensions': {'EXT_texture_avif': {'source': 0}}} for i in range(len(samplers))]
+    used_materials = {primitive['material'] for mesh in doc['meshes'] for primitive in mesh['primitives']
+                      if 'material' in primitive}
     for index, material in enumerate(out.get('materials', []) if reencoded is None else []):
         pbr = material.get('pbrMetallicRoughness', {})
         if index in textured:
@@ -836,9 +838,13 @@ def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, te
                 pbr['baseColorTexture'] = {'index': texture}
             if 'emissiveTexture' in material:
                 material['emissiveTexture'] = {'index': texture}
-        else:
-            require('baseColorTexture' not in pbr and 'emissiveTexture' not in material,
-                    f'Textured material {index} is not used by any rebuilt primitive')
+        elif 'baseColorTexture' in pbr or 'emissiveTexture' in material:
+            # A textured material no primitive references is legal glTF (e.g. left over by the
+            # spline tool). Its images are not part of the atlas, so it stays, untextured.
+            require(index not in used_materials, f'Textured material {index} is used by a primitive that was not rebuilt')
+            pbr.pop('baseColorTexture', None)
+            material.pop('emissiveTexture', None)
+            material.pop('emissiveFactor', None)
     for key in ('extensionsUsed', 'extensionsRequired'):
         out[key] = sorted(set(out.get(key, [])) | {'EXT_texture_avif'})
     if quantizer:

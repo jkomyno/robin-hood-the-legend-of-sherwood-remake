@@ -18,8 +18,8 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def glb(material):
-    """One textured triangle; `material` is the glTF material JSON."""
+def glb(material, extra_materials=()):
+    """One textured triangle; `material` is the glTF material JSON (extras are unreferenced)."""
     positions = struct.pack('<9f', 0, 0, 0, 1, 0, 0, 0, 1, 0)
     uvs = struct.pack('<6f', 0, 0, 1, 0, 0, 1)
     indices = struct.pack('<3H', 0, 1, 2) + b'\0\0'
@@ -29,7 +29,7 @@ def glb(material):
     doc = {'asset': {'version': '2.0'}, 'scene': 0, 'scenes': [{'name': 'default', 'nodes': [0]}],
            'nodes': [{'name': 'part', 'mesh': 0}],
            'meshes': [{'primitives': [{'attributes': {'POSITION': 0, 'TEXCOORD_0': 1}, 'indices': 2, 'material': 0}]}],
-           'materials': [material], 'textures': [{'source': 0}], 'images': [{'bufferView': 3, 'mimeType': 'image/png'}],
+           'materials': [material, *extra_materials], 'textures': [{'source': 0}], 'images': [{'bufferView': 3, 'mimeType': 'image/png'}],
            'accessors': [{'bufferView': 0, 'componentType': 5126, 'count': 3, 'type': 'VEC3', 'min': [0, 0, 0], 'max': [1, 1, 0]},
                          {'bufferView': 1, 'componentType': 5126, 'count': 3, 'type': 'VEC2'},
                          {'bufferView': 2, 'componentType': 5123, 'count': 3, 'type': 'SCALAR'}],
@@ -235,6 +235,27 @@ class LossyAssetsTest(unittest.TestCase):
         self.refresh(previews=True, lossy=False)
         self.assertEqual(self.previews, ['derby/house/model.glb'])
         self.assertEqual(lossy_assets.verify_derivatives(self.root), [])
+
+    def test_unreferenced_textured_materials_are_kept_untextured(self):
+        from types import SimpleNamespace
+        model = self.root / 'derby/house/model.glb'
+        model.write_bytes(glb(UNLIT, extra_materials=[dict(UNLIT, name='spline leftover')]))
+        self.assertEqual(lossy_assets.static_check(self.root, 'derby/house/model.glb'), [])
+        doc, binary, _ = lossy_assets.read_glb(model)
+
+        class FakeUV:  # The new atlas UVs Blender would hold for the one triangle.
+            def __len__(self): return 3
+            def foreach_get(self, _name, values): values[:] = [0, 0, 1, 0, 0, 1]
+        obj = SimpleNamespace(data=SimpleNamespace(uv_layers={lossy_assets.NEW_UV: SimpleNamespace(uv=FakeUV())}))
+        record = {'object': obj, 'mesh': 0, 'corners': [[(0, 0), (0, 1), (0, 2)]],
+                  'materials': [(None, 'Linear', 'REPEAT', 0)]}
+        output = self.root / 'derby/house/lossy.glb'
+        lossy_assets.write_lossy(doc, binary, [record], b'avif', output)
+        written, _, _ = lossy_assets.read_glb(output)
+        self.assertEqual(written['materials'][0]['pbrMetallicRoughness']['baseColorTexture'], {'index': 0})
+        self.assertNotIn('baseColorTexture', written['materials'][1]['pbrMetallicRoughness'])
+        self.assertEqual(written['materials'][1]['name'], 'spline leftover')
+        self.assertEqual(len(written['textures']), 1)
 
     def test_preview_receipts_must_bind_the_lossy_model(self):
         self.refresh()
