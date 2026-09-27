@@ -1,6 +1,20 @@
 {
   "version": 1,
   "map": "Derby",
+  "door_sources": [
+    {
+      "doors": [31, 32, 33, 34, 35, 36],
+      "owner": "derby-upper-gatehouse",
+      "node": "building-249",
+      "reason": "The two rows of passage endpoints cross the lower arch opening between the gatehouse flanking towers; empty passage space lies beyond the wall-distance ownership cutoff."
+    },
+    {
+      "doors": [39, 40, 41],
+      "owner": "derby-south-gatehouse",
+      "node": "building-000",
+      "reason": "These parallel passages cross the opening framed by the three gate-passage masonry sections and share the gatehouse permission transition."
+    }
+  ],
   "groups": [
     {
       "id": "derby-lower-east-cottage-barrel",

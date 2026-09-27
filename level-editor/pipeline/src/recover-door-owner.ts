@@ -1,6 +1,28 @@
 import type { Patch, Point, SightObstacle, Vec3 } from "@rle/shared";
 import { clipHeight, heightPlane } from "../../shared/src/gameplay-plane.ts";
 import polygonClipping from "polygon-clipping";
+import type { GameplayOwnershipCatalog } from "./nonrendering-gameplay-owners.ts";
+
+/** Validate one-time authoring declarations before producing asset-local endpoints. */
+export function declaredDoorOwners<T>(
+  entries: NonNullable<GameplayOwnershipCatalog["door_sources"]>,
+  doorCount: number,
+  frames: (asset: string, node: string) => T[],
+): Map<number, T> {
+  const result = new Map<number, T>();
+  for (const entry of entries) {
+    if (!entry.doors.length || !entry.reason.trim())
+      throw new Error("Door ownership needs endpoints and rationale");
+    const matches = frames(entry.owner, entry.node);
+    if (matches.length !== 1) throw new Error("Declared door owner needs one pinned asset frame");
+    for (const door of entry.doors) {
+      if (!Number.isInteger(door) || door < 0 || door >= doorCount || result.has(door))
+        throw new Error(`Invalid or duplicate declared door ownership ${door}`);
+      result.set(door, matches[0]!);
+    }
+  }
+  return result;
+}
 
 /** Restrict ownership evidence to geometry above the landing and within reach of it. */
 export function doorOwnershipFootprint(obstacle: SightObstacle, height: number): Point[][] {

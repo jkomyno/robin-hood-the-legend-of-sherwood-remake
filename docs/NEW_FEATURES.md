@@ -6,7 +6,9 @@
   transitions require no mission content. Recovery retains unresolved ownership
   and state geometry as explicit authoring gaps. Unambiguous linked state geometry
   provides recorded ownership evidence. Ordinary passages can meet stair/lift
-  surfaces without being converted into lift doors.
+  surfaces without being converted into lift doors. Offline door ownership
+  declarations can attach empty gate passages to validated asset frames; source
+  indices are replaced by local endpoint definitions before compilation.
 
 - **Terrain beneath changing obstacles.** Offline recovery separates permanent
   ground from state-dependent exclusions and retains every changing contour and

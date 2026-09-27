@@ -1,7 +1,33 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { doorOwnershipFootprint, recoverDoorStateOwner } from "./recover-door-owner.ts";
+import {
+  declaredDoorOwners,
+  doorOwnershipFootprint,
+  recoverDoorStateOwner,
+} from "./recover-door-owner.ts";
 import type { SightObstacle, Point } from "@rle/shared";
+
+test("declared door ownership requires unique endpoints and one pinned frame", () => {
+  const frame = { asset: "gate", node: "arch" };
+  const entries = [{ doors: [1, 2], owner: "gate", node: "arch", reason: "Gate passage" }];
+  const frames = (asset: string, node: string) =>
+    asset === frame.asset && node === frame.node ? [frame] : [];
+  assert.deepEqual(
+    [...declaredDoorOwners(entries, 3, frames)],
+    [
+      [1, frame],
+      [2, frame],
+    ],
+  );
+  assert.throws(() => declaredDoorOwners([...entries, ...entries], 3, frames), /duplicate/);
+  assert.throws(() => declaredDoorOwners(entries, 2, frames), /Invalid/);
+  assert.throws(
+    () => declaredDoorOwners([{ ...entries[0]!, node: "missing" }], 3, frames),
+    /pinned/,
+  );
+  assert.throws(() => declaredDoorOwners(entries, 3, () => [frame, frame]), /pinned/);
+  assert.throws(() => declaredDoorOwners([{ ...entries[0]!, reason: "" }], 3, frames), /rationale/);
+});
 
 test("door ownership excludes supporting terrain and preserves disconnected sloped slices", () => {
   const outline: Point[] = [

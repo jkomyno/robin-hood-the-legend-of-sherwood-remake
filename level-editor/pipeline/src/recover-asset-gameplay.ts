@@ -37,7 +37,11 @@ import {
   type GameplayOwnershipCatalog,
 } from "./nonrendering-gameplay-owners.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
-import { doorOwnershipFootprint, recoverDoorStateOwner } from "./recover-door-owner.ts";
+import {
+  declaredDoorOwners,
+  doorOwnershipFootprint,
+  recoverDoorStateOwner,
+} from "./recover-door-owner.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
 import { recoverSurfaceOwners } from "./recovery-surface-owners.ts";
@@ -820,6 +824,26 @@ const recoveredDoors = new Map<
   { asset: string; id: string; node: string; part: Level3DObject }
 >();
 let doorOffset = 0;
+const declaredDoors = declaredDoorOwners(
+  ownership?.door_sources ?? [],
+  proto.buildings.reduce<number>(
+    (sum, entry) =>
+      sum +
+      recoveryDoorGroups(
+        entry as {
+          Building?: { doors: SourceDoor[] };
+          StandaloneDoors?: { doors: SourceDoor[] };
+        },
+      ).reduce((count, group) => count + group.doors.length, 0),
+    0,
+  ),
+  (asset, node) =>
+    descriptors.get(asset)?.parts.some((part) => part.node === node)
+      ? document.objects
+          .filter((part) => part.node === `asset:${asset}:${node}`)
+          .map((part) => ({ asset, node, part }))
+      : [],
+);
 for (const [index, entry] of proto.buildings.entries()) {
   const building = entry as {
     Building?: { doors: SourceDoor[] };
@@ -842,6 +866,10 @@ for (const [index, entry] of proto.buildings.entries()) {
     const { doors, sourceDoor } = connection;
     const isInterior = connection.kind === "building-interior";
     try {
+      const declared = doors.map((door) => declaredDoors.get(doorIndices.get(door)!));
+      const explicitOwner = declared.find((owner) => owner !== undefined);
+      if (explicitOwner && declared.some((owner) => owner?.asset !== explicitOwner.asset))
+        throw new Error("Interior door ownership must cover the whole room with one asset");
       const candidates = new Map<
         string,
         { owner: { asset: string; node: string; part: Level3DObject }; distance: number }
@@ -891,7 +919,7 @@ for (const [index, entry] of proto.buildings.entries()) {
         proto.patches,
         locals,
       );
-      if (!stateOwner && !spatialOwner) {
+      if (!explicitOwner && !stateOwner && !spatialOwner) {
         unresolved.push({
           kind: "building-owner",
           building: index,
@@ -902,8 +930,10 @@ for (const [index, entry] of proto.buildings.entries()) {
         });
         continue;
       }
-      const owner = stateOwner ?? spatialOwner!;
-      if (!stateOwner && !choose(ranked))
+      if (explicitOwner && stateOwner && explicitOwner.asset !== stateOwner.asset)
+        throw new Error("Declared door owner conflicts with linked state geometry");
+      const owner = explicitOwner ?? stateOwner ?? spatialOwner!;
+      if (!explicitOwner && !stateOwner && !choose(ranked))
         packet(owner.asset).issues.push(
           "Door ownership resolved from geometry above its landing; review the physical doorway before publication",
         );
@@ -1370,6 +1400,11 @@ const report = {
   movementTransitionRecovery,
   doorTransitionRecovery,
   doorStateOwnershipRecovery,
+  declaredDoorOwnershipRecovery: [...declaredDoors].map(([door, owner]) => ({
+    door,
+    asset: owner.asset,
+    node: owner.node,
+  })),
   candidateCompilation: diagnostics.compilation,
   staticGeometryDiagnostic: diagnostics.staticGeometry,
   coverage,

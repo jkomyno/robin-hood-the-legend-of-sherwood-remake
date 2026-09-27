@@ -172,31 +172,38 @@ for each placement, including duplicates. Native fixture tests verify both link
 directions, permission changes and restoration on reset. Door-only transitions
 are supported without adding navigation or sight changes. Offline recovery maps
 source door indices into local endpoint IDs and reports missing owners, cross-asset
-links and unrecovered geometry in `pending.doorTransitionBindings`. Twenty-one of the
+links and unrecovered geometry in `pending.doorTransitionBindings`. Twenty-two of the
 28 door-linked patches across the nine extracted maps now recover: seven in
-Nottingham, six in Lincoln, five in York, two in Leicester and one in Croisement03.
-The remaining seven are in Derby (one), Leicester (three) and Lincoln (three).
+Nottingham, six in Lincoln, five in York, two in Leicester, one in Croisement03 and one in Derby.
+The remaining six are in Leicester (three) and Lincoln (three).
+Explicit `door_sources` authoring declarations cover gate passages whose empty
+openings lie beyond nearby wall geometry. They require unique source door indices,
+a rationale and one pinned asset frame, and reject conflicting state ownership.
+The compiler receives only local endpoints. Derby's two gatehouse declarations
+restore its remaining five doors: all 42 non-lift doors and the three-door permission
+transition now match source geometry and rules. `declaredDoorOwnershipRecovery`
+records the one-time mapping.
 Linked changing geometry can establish a door owner only when every obstacle has
 one owner and all belong to the same asset. `doorStateOwnershipRecovery` records
 this evidence for physical-grouping review; conflicting or missing geometry cannot
 select an owner. Recovery also supports sight changes without navigation
 changes when every referenced obstacle and door belongs to the same asset.
 The 42 changing sight shapes match source coordinates at native float32 precision
-and preserve their flags. All eight initial/alternate permission fields match the source for the thirty-nine
+and preserve their flags. All eight initial/alternate permission fields match the source for the forty-two
 linked doors, and each binding retains its trigger direction.
 Ordinary passages can connect to stair/lift surfaces in either direction without
 becoming lift doors. This restores Lincoln's hall passages onto traversal surfaces.
 All nine extracted map diagnostics compile and load; the native round-trip harness
-applies/resets their 41 recovered transitions. It checks both
+applies/resets their 42 recovered transitions. It checks both
 halves of door permissions as well as movement and sight state, including the
 door-to-patch links for door-triggered transitions.
 This does not establish complete door-transition coverage or publish those drafts.
 Spatial ownership ties can be resolved by slicing solid geometry above the landing,
 excluding supporting terrain and preserving disconnected concave pieces. This
 restores 84 connection records without dropping previously recovered doors.
-Across the nine diagnostics, 353 of 397 non-lift doors now compile; all 353 match
+Across the nine diagnostics, 358 of 397 non-lift doors now compile; all 358 match
 source endpoints, click polygons, door types, active flags and initial/alternate
-permissions. The remaining 44 still need ownership or endpoint recovery. Inferred
+permissions. The remaining 39 still need ownership or endpoint recovery. Inferred
 physical grouping remains marked for review before publication.
 The twenty-one recovered movement-changing transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.
