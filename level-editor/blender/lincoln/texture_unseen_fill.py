@@ -14,6 +14,7 @@ Commands (from the repository root; Blender ones take a Lincoln render slot):
   python3 level-editor/blender/lincoln/texture_unseen_fill.py generate ID... [--prompt-suffix TEXT]
   blender ... -- fill --worker-in W --output DIR [--target ID ...] [--include-unapproved]
   python3 level-editor/blender/lincoln/texture_unseen_fill.py review DIR    # texture-review + gallery
+  python3 level-editor/blender/lincoln/texture_unseen_fill.py record-decisions textures/unseen/decisions/batch-N.txt
 
 Targets live in textures/unseen/targets.json: `id`, `assets` (asset groups displayed),
 `patches` (applied patch names; [] = covered state), `receivers` (the objects that motivated
@@ -994,6 +995,49 @@ def review(fill_output):
     print(json.dumps({'gallery': str(UNSEEN / 'gallery/index.html'), 'items': len(items)}))
 
 
+def record_decisions(batch):
+    """Record the user's gallery decisions (`<id>: <decision text> [review <prefix>]` lines).
+
+    Only lines whose decision text starts with "approved" become texture approvals; each is
+    bound to the displayed card's review revision and to the generated sheet and views hashes of
+    its validation.json, which must still match the experiment files.
+    """
+    import re
+    batch = Path(batch).resolve(strict=True)
+    evidence = read(UNSEEN / 'gallery/evidence.json')
+    cards = {item['id']: item for item in evidence['items']}
+    records = read(DECISIONS)['decisions'] if DECISIONS.exists() else []
+    rows = []
+    for line in batch.read_text().splitlines():
+        match = re.fullmatch(r'(\S+): (.+) \[review ([0-9a-f]{16})\]', line.strip())
+        if not match:
+            continue
+        target_id, text, prefix = match.groups()
+        card = cards.get(target_id)
+        require(card and card['review_revision'].startswith(prefix),
+                f'{target_id}: decision does not bind the displayed card revision {prefix}')
+        if not text.startswith('approved'):
+            rows.append({'asset_id': target_id, 'decision': 'not approved', 'text': text})
+            continue
+        validation = read(card['validation'])
+        experiment = UNSEEN / target_id
+        bound = {'generated_preserved_sha256': sha(experiment / GENERATION / 'generated-preserved.png'),
+                 'views_sha256': sha(experiment / 'views.json'),
+                 'actual_sheet_sha256': sha(card['textured'])}
+        require(all(validation[k] == v for k, v in bound.items()),
+                target_id + ': experiment files changed since the reviewed fill')
+        if any(r['asset_id'] == target_id and r['review_revision'] == card['review_revision'] for r in records):
+            continue
+        records.append({'asset_id': target_id, 'scope': 'texture', 'decision': 'approved',
+                        'review_revision': card['review_revision'],
+                        'exact_user_text': f'{target_id}: {text} [review {prefix}]',
+                        'source': {'path': str(batch), 'sha256': sha(batch)},
+                        'evidence_sha256': bound})
+        rows.append({'asset_id': target_id, 'decision': 'approved'})
+    write(DECISIONS, {'version': 1, 'decisions': records})
+    print(json.dumps(rows, indent=1))
+
+
 def main():
     in_blender = '--' in sys.argv
     argv = sys.argv[sys.argv.index('--') + 1:] if in_blender else sys.argv[1:]
@@ -1019,6 +1063,8 @@ def main():
     command.add_argument('--no-render', action='store_true')
     command = sub.add_parser('review')
     command.add_argument('fill_output', type=Path)
+    command = sub.add_parser('record-decisions')
+    command.add_argument('batch', type=Path)
     args = parser.parse_args(argv)
     if args.command in ('survey', 'survey-visible', 'prepare', 'fill') and not in_blender:
         raise SystemExit(args.command + ' must run inside Blender')
@@ -1032,6 +1078,8 @@ def main():
         generate(args.ids, args.prompt_suffix)
     elif args.command == 'fill':
         fill(args.worker_in, args.output, args.target, args.include_unapproved, not args.no_render)
+    elif args.command == 'record-decisions':
+        record_decisions(args.batch)
     else:
         review(args.fill_output)
 
