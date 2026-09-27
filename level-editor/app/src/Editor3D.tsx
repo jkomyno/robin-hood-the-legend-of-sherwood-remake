@@ -68,7 +68,7 @@ export interface EditorProps {
   index: () => DatadirIndex | null;
   library: () => LibraryRef | null;
   onError: (msg: string) => void;
-  onStatus: (msg: string | null) => void;
+  onStatus: (msg: string | null, busy?: boolean) => void;
   toolbarStart?: () => JSX.Element;
   toolbarEnd?: () => JSX.Element;
 }
@@ -876,10 +876,10 @@ export default function Editor3D(props: EditorProps) {
     const document = doc();
     if (!document || compiling()) return;
     setCompiling(true);
-    props.onStatus("Compiling map and sprite occlusion…");
+    props.onStatus("Compiling map and sprite occlusion…", true);
     try {
       // Let the busy state paint before borrowing the viewport's GPU resources.
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
       const library = props.library();
       if (!library) throw new Error("Connect the asset library before compiling.");
       const assets = await readPinnedAssetDescriptors(
@@ -888,7 +888,7 @@ export default function Editor3D(props: EditorProps) {
         document.sceneAssets,
       );
       const { compiled, pixels } = viewport.bakeMap(document, assets);
-      props.onStatus("Packaging mod ZIP…");
+      props.onStatus("Packaging mod ZIP…", true);
       const bytes = await packageCompiledMap(compiled, pixels);
       if (disposed) return;
       const url = URL.createObjectURL(
@@ -913,6 +913,7 @@ export default function Editor3D(props: EditorProps) {
   }
 
   function onKey(e: KeyboardEvent) {
+    if (window.document.querySelector("dialog[open]")) return;
     if (["INPUT", "SELECT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) return;
     if (e.key === "z" && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
       e.preventDefault();

@@ -2,6 +2,7 @@
 import { Show, createEffect, createSignal, onCleanup } from "solid-js";
 import type { DatadirIndex } from "./datadir";
 import { openHttpGameData } from "./http-game-data.ts";
+import StatusDialog from "./StatusDialog";
 import ErrorDialog from "./ErrorDialog";
 import RobinMascot from "./RobinMascot";
 import Editor3D, { type LibraryRef } from "./Editor3D";
@@ -14,6 +15,11 @@ export default function App() {
   const [library, setLibrary] = createSignal<LibraryRef | null>(null);
   const [error, setError] = createSignal<string | null>(null);
   const [status, setStatus] = createSignal<string | null>(null);
+  const [statusBusy, setStatusBusy] = createSignal(false);
+  const onStatus = (message: string | null, busy = false) => {
+    setStatusBusy(busy);
+    setStatus(message);
+  };
   const datadirAttempts = connectionAttempts();
   const libraryAttempts = connectionAttempts();
   onCleanup(() => {
@@ -63,20 +69,23 @@ export default function App() {
       <Editor3D
         index={index}
         library={library}
-        onError={setError}
-        onStatus={setStatus}
+        onError={(message) => {
+          setStatus(null);
+          setError(message);
+        }}
+        onStatus={onStatus}
         toolbarStart={() => (
           <>
             <RobinMascot />
             <h1 title="Robin Hood Map Editor">Robin Hood Map Editor</h1>
           </>
         )}
-        toolbarEnd={() => (
-          <>
-            <Show when={status()}>{(s) => <span class="busy">{s()}</span>}</Show>
-          </>
-        )}
       />
+      <Show when={status()}>
+        {(message) => (
+          <StatusDialog message={message()} busy={statusBusy()} onClose={() => setStatus(null)} />
+        )}
+      </Show>
       <Show when={error()}>
         {(message) => <ErrorDialog message={message()} onClose={() => setError(null)} />}
       </Show>

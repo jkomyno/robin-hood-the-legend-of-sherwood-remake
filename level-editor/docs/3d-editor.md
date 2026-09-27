@@ -30,7 +30,8 @@ imports of built-in maps use the modified copy and keep the original selectable.
 Close a map with **×** in the upper-right corner to return to **Select Map**.
 Unsaved edits (including unfinished paths) prompt before closing, replacing a map,
 or leaving the browser page. Loading uses a centered, cancellable modal; errors use
-a centered, dismissible modal. Neither shifts the workspace.
+a centered, dismissible modal. Compiling, ZIP packaging, and completion messages
+also use a centered status modal. These messages never add rows to the header.
 Local map cards have rename and delete controls; built-in cards do not.
 
 Saving also captures a 480×300 thumbnail using native browser encoding at quality 0.6:

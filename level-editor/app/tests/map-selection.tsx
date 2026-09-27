@@ -1,4 +1,5 @@
 import { Show, createSignal } from "solid-js";
+import StatusDialog from "../src/StatusDialog";
 import ErrorDialog from "../src/ErrorDialog";
 import { render } from "@solidjs/web";
 import RobinMascot from "../src/RobinMascot";
@@ -72,6 +73,7 @@ async function main() {
   const library = await openHttpLibrary("/fixture/", storage);
   const errors: string[] = [];
   const [errorMessage, setErrorMessage] = createSignal<string | null>(null);
+  const [status, setStatus] = createSignal<{ message: string; busy: boolean } | null>(null);
   const dispose = render(
     () => (
       <>
@@ -88,8 +90,17 @@ async function main() {
             errors.push(error);
             setErrorMessage(error);
           }}
-          onStatus={() => {}}
+          onStatus={(message, busy = false) => setStatus(message ? { message, busy } : null)}
         />
+        <Show when={status()}>
+          {(current) => (
+            <StatusDialog
+              message={current().message}
+              busy={current().busy}
+              onClose={() => setStatus(null)}
+            />
+          )}
+        </Show>
         <Show when={errorMessage()}>
           {(message) => <ErrorDialog message={message()} onClose={() => setErrorMessage(null)} />}
         </Show>
@@ -117,6 +128,37 @@ async function main() {
     assert(!document.querySelector('select[aria-label="Map"]'), "Header map selector remains");
     assert(!document.querySelector('[aria-label="Delete York"]'), "Built-in delete button shown");
     assert(!warns(), "Clean screen warns on unload");
+    const headerHeight = document.querySelector("header")!.getBoundingClientRect().height;
+    setStatus({ message: "Compiling map and sprite occlusion…", busy: true });
+    await until(() => !!document.querySelector(".status-dialog:modal"));
+    assert(
+      !document.querySelector("header")!.textContent?.includes("Compiling"),
+      "Progress appeared in header",
+    );
+    assert(
+      document.querySelector("header")!.getBoundingClientRect().height === headerHeight,
+      "Progress resized header",
+    );
+    const operationDialog = document.querySelector<HTMLDialogElement>(".status-dialog")!;
+    const bounds = operationDialog.getBoundingClientRect();
+    assert(
+      Math.abs(bounds.left + bounds.width / 2 - document.documentElement.clientWidth / 2) < 1 &&
+        Math.abs(bounds.top + bounds.height / 2 - document.documentElement.clientHeight / 2) < 1,
+      "Progress modal is not centered",
+    );
+    const cancel = new Event("cancel", { cancelable: true });
+    operationDialog.dispatchEvent(cancel);
+    assert(
+      cancel.defaultPrevented && operationDialog.open,
+      "Busy operation dismissed without cancellation support",
+    );
+    setStatus({ message: "Packaging mod ZIP…", busy: true });
+    await until(() => operationDialog.textContent.includes("Packaging"));
+    setStatus({ message: "Exported map.zip", busy: false });
+    await until(() => !!operationDialog.querySelector("button"));
+    operationDialog.querySelector("button")!.click();
+    await until(() => !document.querySelector(".status-dialog"));
+
     let release!: () => void;
     blockedRead = new Promise<void>((resolve) => {
       release = resolve;
@@ -206,6 +248,9 @@ async function main() {
     assert(current() === "York (Modified)" && confirmations === 1, "Cancel discarded dirty map");
     click("Save *");
     await until(() => !warns());
+    await until(() => !!document.querySelector(".status-dialog button"));
+    document.querySelector<HTMLButtonElement>(".status-dialog button")!.click();
+    await until(() => !document.querySelector(".status-dialog"));
     click("Close map");
     await until(() => !current());
     await until(() => !!document.querySelector('[data-map="York (Modified)"] img'));

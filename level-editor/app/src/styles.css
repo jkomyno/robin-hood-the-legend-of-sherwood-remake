@@ -908,13 +908,13 @@ select, input.search { background: #171c22; border-color: var(--border); min-hei
 .map-card:focus-within { border-color: #d0dfaa; }
 .map-selection-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; max-width: 1500px; }
 .map-selection-heading button { padding: 10px 18px; background: #526544; border-color: #839774; color: #f3f6ec; }
-.map-load-dialog, .error-dialog { margin: auto; width: min(420px, calc(100vw - 48px)); padding: 28px; border: 1px solid #59665e; border-radius: 12px; background: #252e32; color: #edf1e9; box-shadow: 0 24px 100px #0009; }
-.map-load-dialog::backdrop, .error-dialog::backdrop { background: #101619bb; backdrop-filter: blur(3px); }
-.map-load-dialog h2, .error-dialog h2 { margin: 0 0 24px; font-size: 21px; }
+.map-load-dialog, .error-dialog, .status-dialog { margin: auto; width: min(420px, calc(100vw - 48px)); padding: 28px; border: 1px solid #59665e; border-radius: 12px; background: #252e32; color: #edf1e9; box-shadow: 0 24px 100px #0009; }
+.map-load-dialog::backdrop, .error-dialog::backdrop, .status-dialog::backdrop { background: #101619bb; backdrop-filter: blur(3px); }
+.map-load-dialog h2, .error-dialog h2, .status-dialog h2 { margin: 0 0 24px; font-size: 21px; }
 .map-load-dialog .map-load-progress { padding: 0; border: 0; background: transparent; margin-bottom: 24px; }
 .map-load-dialog .map-load-progress-label { font-size: 13px; margin-bottom: 10px; }
 .map-load-dialog progress { height: 8px; }
-.map-load-dialog > button, .error-dialog > button { display: block; margin-left: auto; }
+.map-load-dialog > button, .error-dialog > button, .status-dialog > button { display: block; margin-left: auto; }
 /* Reserve width only. Every pose shares the exported sprite hotspot. */
 .robin-mascot { position: relative; display: inline-block; flex: 0 0 60px; width: 60px; height: 28px; align-self: flex-end; z-index: 4; cursor: default; border-radius: 6px; }
 .robin-frame { position: absolute; max-width: none; pointer-events: none; }
@@ -922,3 +922,6 @@ select, input.search { background: #171c22; border-color: var(--border); min-hei
 
 .error-dialog { width: min(520px, calc(100vw - 48px)); }
 .error-dialog p { margin-bottom: 24px; max-height: 50vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; color: #f0c5bc; }
+
+.status-dialog p { margin-bottom: 24px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.status-dialog progress { display: block; width: 100%; height: 8px; accent-color: #76aeca; }
