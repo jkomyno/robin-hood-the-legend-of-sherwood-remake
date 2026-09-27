@@ -56,6 +56,14 @@ def effective_rule(candidate, reason=None):
     for index in candidate['mask_indices'] + candidate.get('exclude_mask_indices', []):
         if inspected.get(str(index)) != sha(NATIVE.parent/native[index]['png']):
             raise ValueError('Inspected native bitmap changed or is unbound: '+str(index))
+    authored = candidate.get('authored_mask')
+    if authored:
+        if sha(authored['path']) != authored['sha256']:
+            raise ValueError('Authored mask changed: '+node)
+        if sha(authored['card']) != authored['card_sha256']:
+            raise ValueError('Authored mask inspection changed: '+node)
+        if authored.get('visually_inspected') is not True:
+            raise ValueError('Authored mask has not been inspected: '+node)
     return {**candidate, 'ownership_status': 'reviewed'}
 
 
@@ -107,11 +115,35 @@ def main(recipe_path, grouping, output, models=None):
     for node in nodes:
         candidate = by_node.get(node, {'source_node': node})
         reason = recipe['unresolved'].get(node)
-        if node == 'ground':
+        if node == 'ground' and candidate.get('reviewed') is not True:
             reason = 'Ground requires a separate terrain-domain and foreground-exclusion audit'
-        if node == 'foliage-foreground-oak':
+        if node == 'foliage-foreground-oak' and candidate.get('reviewed') is not True:
             reason = 'Canopy is a separate original animation layer, not Day artwork'
         assignments.append(effective_rule(candidate, reason))
+    seen_components=set()
+    for candidate in recipe.get('component_assignments',[]):
+        key=(candidate['source_node'],candidate['projection_component'])
+        if key in seen_components:raise ValueError('Duplicate component mask: '+str(key))
+        seen_components.add(key)
+        if not any(r['source']==key[0] and r['name']==key[1] for r in geometry):
+            raise ValueError('Component does not exist in approved models: '+str(key))
+        rule=effective_rule(candidate)
+        rule['projection_component']=candidate['projection_component']
+        assignments.append(rule)
+    for index, rule in enumerate(assignments, 20000):
+        if rule['ownership_status'] != 'reviewed' or not rule.get('authored_mask'):
+            continue
+        authored = rule['authored_mask']
+        image = Image.open(authored['path'])
+        if image.size != Image.open(SOURCE).size:
+            raise ValueError('Authored source domain must use map coordinates')
+        filename = f'authored-{index}.png'
+        shutil.copy2(authored['path'], output/filename)
+        inventory['masks'].append(dict(index=index,box_top_left=[0,0],box_size=list(image.size),png=filename))
+        rule['native_mask_indices'] = rule['mask_indices']
+        rule['mask_indices'] = [index]
+        rule.pop('exclude_mask_indices',None)
+    write(output/'inventory.json', inventory)
     manifest = dict(version=1, mask_inventory='inventory.json', projections={
         'exterior': dict(source_sha256=sha(SOURCE), state=recipe['state'], assignments=assignments)})
     write(output/'source-masks.json', manifest)
@@ -123,7 +155,8 @@ def main(recipe_path, grouping, output, models=None):
     verify_coverage(constraints, receivers)
     unknown = {r['source_node']: r['reason'] for r in assignments if r['ownership_status'] == 'unresolved'}
     counts = {node: sum(r['source'] == node for r in geometry) for node in nodes}
-    report = dict(status='PARTIAL_AUDIT' if unknown else 'MASK_ASSIGNMENTS_COMPLETE', synthesis_ready=not unknown,
+    report = dict(status='PARTIAL_AUDIT' if unknown else 'DAY_MASK_ASSIGNMENTS_COMPLETE', synthesis_ready=False,
+        scope='Day source assignments; separate canopy-layer validation is required before synthesis',
         source_sha256=sha(SOURCE), recipe_sha256=sha(recipe_path), grouping_approval_sha256=sha(grouping/'grouping-approval.json'),
         grouped_worker_sha256=sha(grouping/'grouped-source-only.blend'), worker=str(worker),
         worker_sha256=sha(worker), constrained_receivers=len(receivers),
@@ -136,6 +169,10 @@ def main(recipe_path, grouping, output, models=None):
         if rule['ownership_status'] == 'reviewed':
             card = (EDITOR/rule['inspection']['card']).resolve()
             report['evidence'][str(card)] = sha(card)
+            if rule.get('authored_mask'):
+                for key in ('path','card'):
+                    path=rule['authored_mask'][key]
+                    report['evidence'][str(path)]=sha(path)
     write(output/'coverage.json', report)
     print(json.dumps({k:v for k,v in report.items() if k not in {'unresolved', 'evidence'}}, indent=2))
 

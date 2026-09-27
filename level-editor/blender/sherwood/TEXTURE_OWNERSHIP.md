@@ -113,3 +113,45 @@ directory. The compiler validates the model receipt and freezes a recipe copy;
 the Day audit opens the exact approved worker named in that coverage report.
 This model approval does not resolve the remaining source masks or approve
 future synthesized textures.
+
+## Completed Day assignments and layered reprojection
+
+`source-domain-partitions.json` records hand-traced polygons and ladder strokes in
+original-art coordinates. `author_source_domains.py` renders their source cutouts;
+`accept_source_domains.py <inspected-domain-ids>` freezes the inspected images and
+bitmaps by content hash. Native silhouettes constrain most domains. Explicit
+`clip_native: false` domains recover visible paint outside the native occlusion
+mask, including the river bluff and driftwood. They require their own original-art
+inspection; they are not inferred from a receiver's bounding box.
+
+The complete Day compilation has 124 source-node rules and 56 exact component
+overrides: 34 ladder-oak components and 22 central-house access components.
+`verify_source_assignments.py <compiled-directory>` checks component selection,
+source evidence hashes and zero ladder-paint overlap with the oak's bark domain.
+Foreground foliage and ambiguous seams remain explicitly unknown. A completed
+assignment list does not mean every visible source pixel fits the approved mesh.
+
+The ground domain excludes native opaque props and foreground plants (14–165),
+plus inspected authored extensions. It does **not** subtract animated crown masks
+0–13 from Day: their original pixels live in separate sprite layers. Day contains
+bare ground beneath the foreground Arbre05 oak. That oak's inferred wooden
+skeleton therefore has an explicit empty Day domain, while its leaf meshes have
+an original canopy source. Do not project grass onto that skeleton.
+
+`prepare_canopy_sources.py --output <new-directory>` freezes all six original
+frame-zero canvases, their alpha masks and the 36 explicit receiver names.
+`reproject_canopy_layers.py --day <complete-Day-pass> --layers <canopy-directory>
+--output <new-worker>` projects those layers through alpha-aware visibility in
+each original tree family. It retains all approved geometry, UVs and physical
+leaf opacity. Source eligibility and unknown-texel flags remain separate from
+physical opacity.
+
+`verify_full_source.py` reopens the combined worker and checks source RGB,
+Day/alpha-mask membership, physical opacity, geometry/UVs and independent UV-to-
+source coordinate samples. Scene renders and the source-visible gaps must still
+be inspected before a final `source_ownership_validation` receipt authorizes
+synthesis. Day assignment completion alone never opens that gate.
+
+Fresh synthesis packets use `texture_packets.py --root <new-packet-directory>`;
+the default is `textures/sunburst-masked`. The earlier unmasked packets and their
+four generated candidates remain historical evidence and are not reused.

@@ -496,12 +496,15 @@ def review(candidate, only=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--source')
+    parser.add_argument('--root', default=str(WORK/'sunburst-masked'))
     parser.add_argument('--asset',action='append')
     parser.add_argument('--generate',action='store_true')
     parser.add_argument('--provider',choices=['openai','openrouter'],default='openrouter')
     parser.add_argument('--fill',metavar='OUTPUT')
     parser.add_argument('--review',metavar='CANDIDATE')
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else sys.argv[1:])
+    ROOT=Path(args.root).resolve()
+    uf.UNSEEN=ROOT
     PROVIDER=args.provider
     GENERATION='generation-short-no-mask-with-lighting'+('-openrouter' if PROVIDER=='openrouter' else '')
     if args.generate:
