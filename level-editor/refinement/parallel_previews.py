@@ -9,10 +9,13 @@ import argparse
 import json
 import os
 from pathlib import Path
+import queue
 import shutil
 import signal
 import subprocess
 import tempfile
+import threading
+import time
 
 EDITOR = Path(__file__).resolve().parents[1]
 
@@ -34,6 +37,50 @@ def stop(workers):
         except subprocess.TimeoutExpired:
             os.killpg(process.pid, signal.SIGKILL)
             process.wait()
+
+
+def capture_output(process, identity, path, events):
+    """Drain each pipe continuously, retaining the complete Blender output."""
+    try:
+        with path.open("w", buffering=1) as log:
+            for line in process.stdout:
+                log.write(line)
+                events.put((identity, line.rstrip()))
+    except Exception as error:
+        events.put((identity, f"Output capture failed: {error}"))
+    finally:
+        process.stdout.close()
+        events.put((identity, None))
+
+
+def monitor(workers, events):
+    finished, closed = set(), set()
+    completed = [0] * len(workers)
+    started = last_update = time.monotonic()
+    while len(finished) < len(workers) or len(closed) < len(workers):
+        try:
+            identity, line = events.get(timeout=1)
+            if line is None:
+                closed.add(identity)
+            elif line.startswith(("PLAN ", "LOSSY ", "REFUSED ", "Render slot ",
+                                  "Waiting for render slot", "Output capture failed:")):
+                if line.startswith("LOSSY ") and not line.startswith("LOSSY FAILED "):
+                    completed[identity] += 1
+                print(f"[worker {identity}] {line}", flush=True)
+        except queue.Empty:
+            pass
+        for identity, process in enumerate(workers):
+            if identity not in finished and identity in closed and process.poll() is not None:
+                finished.add(identity)
+                print(f"[worker {identity}] exited {process.returncode}; "
+                      f"{completed[identity]} assets rebuilt", flush=True)
+        now = time.monotonic()
+        if now - last_update >= 30:
+            active = ", ".join(str(i) for i in range(len(workers)) if i not in finished)
+            print(f"[{int(now-started)}s] {sum(completed)} assets rebuilt; "
+                  f"active workers: {active or 'none'} (full details in logs)", flush=True)
+            last_update = now
+    return [process.wait() for process in workers]
 
 
 def main():
@@ -65,6 +112,8 @@ def main():
            Path(tempfile.mkdtemp(prefix="preview-parallel-", dir=EDITOR / "work")))
     batches = [ids[i::args.workers] for i in range(args.workers)]
     workers = []
+    readers = []
+    events = queue.Queue()
     try:
         for i, batch in enumerate(batches):
             if not batch:
@@ -79,10 +128,18 @@ def main():
                 import shlex
                 print(shlex.join(command))
                 continue
-            with (run / f"worker-{i}.log").open("w") as log:
-                workers.append(subprocess.Popen(command, cwd=EDITOR.parent,
-                    stdout=log, stderr=subprocess.STDOUT, start_new_session=True))
-        codes = [process.wait() for process in workers]
+            process = subprocess.Popen(command, cwd=EDITOR.parent,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, errors="replace", bufsize=1, start_new_session=True,
+                env={**os.environ, "PYTHONUNBUFFERED": "1"})
+            workers.append(process)
+            reader = threading.Thread(target=capture_output,
+                args=(process, i, run / f"worker-{i}.log", events), daemon=True)
+            readers.append(reader)
+            reader.start()
+        codes = monitor(workers, events)
+        for reader in readers:
+            reader.join()
     except KeyboardInterrupt:
         stop(workers)
         print("Stopped workers. Completed derivatives are retained and skipped on rerun.")
