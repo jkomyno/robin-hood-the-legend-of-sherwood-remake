@@ -1,5 +1,6 @@
 """Audit the complete retained York scene against the terrain and prior geometry."""
 import json
+import argparse
 import math
 import sys
 from pathlib import Path
@@ -24,8 +25,10 @@ def height_inside(x,y,tri):
 
 
 def main():
-    # The immediately preceding delivered gallery is frozen before grounding.
-    before=json.loads((OUT/'review-v4/geometry.json').read_text())
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--before',type=Path,default=OUT/'review-v4/geometry.json')
+    args=parser.parse_args()
+    before=json.loads(args.before.read_text())
     after=json.loads((OUT/'review/geometry.json').read_text())
     report=json.loads((OUT/'grounding/report.json').read_text())
     changed={(r['source_node'],r['component']) for r in report['changes']}

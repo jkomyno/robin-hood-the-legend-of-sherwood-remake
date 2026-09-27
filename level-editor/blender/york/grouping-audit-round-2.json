@@ -1,0 +1,449 @@
+{
+  "scope": "Grouping only; no geometry or texture approval",
+  "submitted_review_count": 95,
+  "audited_remaining_assets": [
+    "york-central-south-golden-timber-house",
+    "york-north-river-lane-northern-timber-house",
+    "york-north-river-lane-northwest-house",
+    "york-north-river-lane-rear-timber-house",
+    "york-north-river-lane-round-tower",
+    "york-north-river-lane-stone-house",
+    "york-north-river-lane-storage-chest",
+    "york-north-river-lane-wall-shelf",
+    "york-north-river-lane-west-low-house",
+    "york-outer-east-conical-watchtower",
+    "york-outer-east-lower-round-bastion",
+    "york-outer-east-middle-round-bastion",
+    "york-outer-east-upper-curtain-wall",
+    "york-outer-east-wall-stair-passage",
+    "york-outer-southeast-round-bastion",
+    "york-outer-southeast-wall-stair",
+    "york-precinct-causeway-ivy-covered-house",
+    "york-precinct-causeway-stone-annex",
+    "york-precinct-east-curtain-wall",
+    "york-precinct-east-gate-passage",
+    "york-precinct-east-roofed-gatehouse",
+    "york-precinct-east-tall-square-tower",
+    "york-precinct-east-timber-crowned-watchtower",
+    "york-precinct-east-wall-stair",
+    "york-precinct-hall-east-tower",
+    "york-precinct-hall-west-tower",
+    "york-precinct-north-connecting-gateway",
+    "york-precinct-north-hall",
+    "york-precinct-south-curtain-wall",
+    "york-precinct-southeast-bastion",
+    "york-precinct-southwest-curtain-wall",
+    "york-precinct-southwest-round-bastion",
+    "york-precinct-southwest-wall-turret",
+    "york-precinct-stone-causeway",
+    "york-precinct-west-great-hall",
+    "york-precinct-west-suspended-footbridge",
+    "york-precinct-west-terrace-parapet",
+    "york-river-east-moored-boat",
+    "york-river-north-bank-beached-boat",
+    "york-river-timber-jetty",
+    "york-river-west-moored-boat",
+    "york-riverbank-stone-landing-steps",
+    "york-riverbank-wooden-landing-steps",
+    "york-riverside-loose-planks",
+    "york-riverside-stone-storehouse",
+    "york-riverside-storehouse-timber-shed",
+    "york-riverside-timber-stack",
+    "york-south-city-east-gate-tower",
+    "york-south-city-gate-bridge",
+    "york-south-city-gate-east-wall",
+    "york-south-city-gatehouse",
+    "york-south-city-wall-eastern-curtain",
+    "york-south-city-wall-eastern-roofed-tower",
+    "york-south-city-wall-long-central-curtain",
+    "york-south-city-wall-western-curtain",
+    "york-south-city-wall-western-roofed-tower",
+    "york-south-city-west-gate-tower",
+    "york-south-gate-lane-conical-tower",
+    "york-south-gate-lane-courtyard-boundary-wall",
+    "york-south-gate-lane-front-timber-house",
+    "york-south-gate-lane-link-roof",
+    "york-south-gate-lane-rear-house",
+    "york-south-gate-lane-rear-timber-house",
+    "york-south-gate-lane-round-tower",
+    "york-south-gate-lane-stone-house",
+    "york-south-gate-lane-tall-timber-house",
+    "york-south-gate-lane-terrace-stairs",
+    "york-south-riverbank-retaining-wall",
+    "york-south-terrace-dark-timber-house",
+    "york-south-terrace-east-low-timber-house",
+    "york-south-terrace-pale-timber-shop",
+    "york-south-terrace-retaining-wall-and-stairs",
+    "york-south-terrace-riverside-wall",
+    "york-south-terrace-thatched-round-turret",
+    "york-south-terrace-west-low-timber-house",
+    "york-south-town-raised-terrace",
+    "york-south-wall-lane-north-house",
+    "york-south-wall-lane-rear-stone-house",
+    "york-south-wall-lane-square-stone-tower",
+    "york-south-wall-lane-stone-tower",
+    "york-south-wall-lane-timber-house",
+    "york-southeast-lane-eastern-timber-house",
+    "york-southeast-lane-western-timber-house",
+    "york-southeast-riverside-raised-terrace",
+    "york-southeast-wall-lane-front-house",
+    "york-southeast-wall-lane-gable-house",
+    "york-southeast-wall-lane-rear-gable-house",
+    "york-southeast-wall-lane-roofed-arch",
+    "york-southwest-east-gatehouse",
+    "york-southwest-ivy-covered-square-tower",
+    "york-southwest-lane-east-timber-house",
+    "york-southwest-lane-north-courtyard-house",
+    "york-southwest-lane-west-jettied-house",
+    "york-southwest-market-corner-house",
+    "york-southwest-market-north-house",
+    "york-southwest-market-northwest-house",
+    "york-southwest-market-square-tower",
+    "york-southwest-market-west-low-house",
+    "york-southwest-square-corner-house",
+    "york-southwest-square-east-timber-house",
+    "york-southwest-square-narrow-gable-house",
+    "york-southwest-square-rear-house",
+    "york-southwest-square-west-house",
+    "york-southwest-west-gatehouse",
+    "york-stone-river-bridge-and-approach-stairs",
+    "york-terrain",
+    "york-west-bridge-approach-gatehouse",
+    "york-west-bridge-approach-round-tower",
+    "york-west-bridge-approach-stone-shop",
+    "york-west-bridge-approach-tall-timber-house",
+    "york-west-bridge-street-arcade-house",
+    "york-west-bridge-street-east-gallery-house",
+    "york-west-bridge-street-rear-gable-house",
+    "york-west-bridge-street-tall-timber-house",
+    "york-west-city-wall-and-access-stair",
+    "york-west-city-wall-roofed-stair-turret",
+    "york-west-lane-access-steps",
+    "york-west-market-frontage-corner-shop",
+    "york-west-market-frontage-dormer-house",
+    "york-west-market-frontage-gabled-house",
+    "york-west-market-frontage-north-end-house",
+    "york-west-market-frontage-red-roof-house",
+    "york-west-riverbank-retaining-wall",
+    "york-west-town-lane-broad-timber-house",
+    "york-west-town-lane-central-timber-house",
+    "york-west-town-lane-courtyard-boundary",
+    "york-west-town-lane-narrow-timber-house",
+    "york-west-town-lane-rear-timber-house",
+    "york-west-town-lane-stone-tower",
+    "york-west-town-raised-lane",
+    "york-west-town-raised-terrain"
+  ],
+  "changes": [
+    {
+      "source": "building-670",
+      "from": "york-east-bridge-street-stair-side-timber-house",
+      "to": "york-east-bridge-street-courtyard-wall",
+      "reason": "Separate the curved courtyard boundary from the stair-side house."
+    },
+    {
+      "source": "building-968",
+      "from": "york-east-bridge-street-trestle-stall",
+      "to": "york-central-south-green-timber-house",
+      "reason": "Trestle display is attached to this house in the artwork; its previous east-bridge name was misplaced."
+    },
+    {
+      "source": "building-700",
+      "from": "york-east-quay-front-timber-house",
+      "to": "york-east-quay-rear-timber-house",
+      "reason": "The front roof slope and lower walls meet source 701 at the same ridge. Restore the rear house and remove the second building from the front-house group."
+    },
+    {
+      "source": "building-688",
+      "from": "york-east-riverside-corner-house",
+      "to": "york-east-riverside-rear-house",
+      "reason": "Lower storey belongs below rear roof 689/692, not the corner house."
+    },
+    {
+      "source": "building-270",
+      "from": "york-east-riverside-round-watchtower",
+      "to": "york-east-riverside-roofed-gatehouse",
+      "reason": "Explicit user request to combine the attached round watchtower and gatehouse."
+    },
+    {
+      "source": "building-271",
+      "from": "york-east-riverside-round-watchtower",
+      "to": "york-east-riverside-roofed-gatehouse",
+      "reason": "Explicit user request to combine the attached round watchtower and gatehouse."
+    },
+    {
+      "source": "building-272",
+      "from": "york-east-riverside-round-watchtower",
+      "to": "york-east-riverside-roofed-gatehouse",
+      "reason": "Explicit user request to combine the attached round watchtower and gatehouse."
+    },
+    {
+      "source": "building-273",
+      "from": "york-east-riverside-round-watchtower",
+      "to": "york-east-riverside-roofed-gatehouse",
+      "reason": "Explicit user request to combine the attached round watchtower and gatehouse."
+    },
+    {
+      "source": "building-281",
+      "from": "york-east-riverside-round-watchtower",
+      "to": "york-east-riverside-roofed-gatehouse",
+      "reason": "Explicit user request to combine the attached round watchtower and gatehouse."
+    },
+    {
+      "source": "building-815",
+      "from": "york-east-riverside-northern-wall-stair",
+      "to": "york-east-riverside-northern-boundary-wall",
+      "reason": "Separate the high wall behind the northern stair."
+    },
+    {
+      "source": "building-311",
+      "from": "york-market-southeast-tall-narrow-house",
+      "to": "york-southwest-square-west-house",
+      "reason": "Narrow rear roof strip completes the adjoining house roof, rather than the tall market-front house."
+    },
+    {
+      "source": "building-949",
+      "from": "york-market-southeast-tall-narrow-house",
+      "to": "york-market-southeast-green-canopy-stall",
+      "reason": "Separate the canopy and produce display from the tall narrow house."
+    },
+    {
+      "source": "building-962",
+      "from": "york-market-southeast-tall-narrow-house",
+      "to": "york-market-southeast-green-canopy-stall",
+      "reason": "Separate the canopy and produce display from the tall narrow house."
+    },
+    {
+      "source": "building-031",
+      "from": "york-market-produce-table",
+      "to": "york-market-southeast-green-canopy-stall",
+      "reason": "Nearby produce crates form the same small market display."
+    },
+    {
+      "source": "building-487",
+      "from": "york-market-southwest-connecting-stairs",
+      "to": "york-market-southwest-stair-landing-turret",
+      "reason": "Separate the front battlemented landing body from the connecting stair flights."
+    },
+    {
+      "source": "building-479",
+      "from": "york-market-southwest-rear-gable-house",
+      "to": "york-market-southwest-rear-square-tower",
+      "reason": "The narrow rear roof ridge completes the square tower behind the gable house."
+    },
+    {
+      "source": "building-055",
+      "from": "york-north-garden-rear-wall",
+      "components": {
+        "wall": "york-north-garden-rear-wall",
+        "tower": "york-north-garden-square-watchtower"
+      },
+      "reason": "Cut the shared lower volume at the tower side, between native junctions (2855,150) and (2889,128)."
+    },
+    {
+      "source": "building-259",
+      "from": "york-east-riverside-curtain-wall",
+      "components": {
+        "bastion": "york-east-water-gate-south-bastion",
+        "wall": "york-east-riverside-curtain-wall"
+      },
+      "reason": "Assign the terminal landing and lower volume to the south water-gate bastion, splitting at the walkway neck."
+    },
+    {
+      "source": "building-282",
+      "from": "york-east-riverside-southern-wall-stair",
+      "components": {
+        "gatehouse": "york-east-riverside-roofed-gatehouse",
+        "wall-stair": "york-east-riverside-southern-wall-stair",
+        "bastion": "york-east-water-gate-north-bastion"
+      },
+      "reason": "Divide the continuous wall deck at its gatehouse and north-bastion necks; keep the connecting stair between them."
+    },
+    {
+      "source": "building-254",
+      "from": "york-inner-southeast-curtain-wall",
+      "components": {
+        "inner-east-walkway": "york-inner-east-curtain-wall-and-stair",
+        "southeast-wall": "york-inner-southeast-curtain-wall"
+      },
+      "reason": "Return the northward walkway continuation to the inner-east wall, at the structural bend beside its landing."
+    },
+    {
+      "source": "building-730",
+      "from": "york-north-river-lane-stone-house",
+      "to": "york-north-river-lane-rear-timber-house",
+      "reason": "Lower storey footprint coincides with upper storey 731; it was assigned to the foreground stone house."
+    },
+    {
+      "source": "building-721",
+      "from": "york-north-river-lane-round-tower",
+      "to": "york-north-river-lane-stone-house",
+      "reason": "This is the stone-house chimney behind the conical tower roof."
+    },
+    {
+      "source": "building-741",
+      "from": "york-north-river-lane-wall-shelf",
+      "to": "york-north-river-lane-shelf-and-chest",
+      "reason": "Two adjacent storage props at the same wall form one useful selection."
+    },
+    {
+      "source": "building-742",
+      "from": "york-north-river-lane-storage-chest",
+      "to": "york-north-river-lane-shelf-and-chest",
+      "reason": "Two adjacent storage props at the same wall form one useful selection."
+    },
+    {
+      "source": "building-249",
+      "from": "york-outer-east-lower-round-bastion",
+      "to": "york-outer-southeast-round-bastion",
+      "reason": "Small lower buttress belongs to the bastion at (2680,2200), not a separate lower tower."
+    },
+    {
+      "source": "building-251",
+      "from": "york-outer-east-lower-round-bastion",
+      "to": "york-outer-southeast-wall-stair",
+      "reason": "This is the inner parapet of the same stair and landing, not an independent bastion."
+    },
+    {
+      "source": "building-235",
+      "from": "york-outer-southeast-wall-stair",
+      "components": {
+        "wall-stair": "york-outer-southeast-wall-stair",
+        "bastion": "york-outer-southeast-round-bastion"
+      },
+      "reason": "Split the shared wall foundation at the round-bastion neck so its cap and lower body stay together."
+    },
+    {
+      "source": "building-244",
+      "from": "york-outer-east-upper-curtain-wall",
+      "components": {
+        "curtain-wall": "york-outer-east-upper-curtain-wall",
+        "bastion": "york-outer-east-middle-round-bastion"
+      },
+      "reason": "Split the shared wall foundation at the middle-bastion landing, restoring its lower body."
+    },
+    {
+      "source": "building-435",
+      "from": "york-south-gate-lane-terrace-stairs",
+      "to": "york-south-gate-lane-conical-tower",
+      "reason": "This volume is the front half of the conical tower, not the terrace stair."
+    },
+    {
+      "source": "building-459",
+      "from": "york-south-gate-lane-conical-tower",
+      "to": "york-south-gate-lane-stone-house",
+      "reason": "Doorstep belongs to the stone house doorway beside the tower."
+    },
+    {
+      "source": "building-581",
+      "from": "york-west-town-lane-stone-tower",
+      "to": "york-west-town-lane-narrow-timber-house",
+      "reason": "Pitched roof belongs above timber-house bodies 582/583; remove it from the stone tower."
+    },
+    {
+      "source": "building-108",
+      "from": "york-precinct-southwest-wall-turret",
+      "to": "york-precinct-southwest-round-bastion",
+      "reason": "The apparent separate turret is the lower ring/deck of the same round bastion 878."
+    },
+    {
+      "source": "building-877",
+      "from": "york-precinct-southwest-curtain-wall",
+      "to": "york-precinct-southwest-wall-ramp",
+      "reason": "The sloping connection is a ramp between the precinct wall and bastion."
+    },
+    {
+      "source": "building-109",
+      "from": "york-precinct-southwest-wall-turret",
+      "to": "york-precinct-southwest-wall-ramp",
+      "reason": "The sloping connection is a ramp between the precinct wall and bastion."
+    },
+    {
+      "source": "building-867",
+      "from": "york-precinct-east-roofed-gatehouse",
+      "to": "york-precinct-east-gate-boundary-wall",
+      "reason": "Separate the long adjoining gate boundary wall from the roofed gatehouse."
+    },
+    {
+      "source": "building-930",
+      "from": "york-market-tavern-table-and-stools",
+      "to": "york-market-tavern-outdoor-furniture",
+      "reason": "Table, stools and adjacent barrel form one compact furniture group."
+    },
+    {
+      "source": "building-931",
+      "from": "york-market-tavern-table-and-stools",
+      "to": "york-market-tavern-outdoor-furniture",
+      "reason": "Table, stools and adjacent barrel form one compact furniture group."
+    },
+    {
+      "source": "building-932",
+      "from": "york-market-tavern-barrel",
+      "to": "york-market-tavern-outdoor-furniture",
+      "reason": "Table, stools and adjacent barrel form one compact furniture group."
+    },
+    {
+      "source": "building-933",
+      "from": "york-market-tavern-side-stool",
+      "to": "york-market-tavern-outdoor-furniture",
+      "reason": "Table, stools and adjacent barrel form one compact furniture group."
+    },
+    {
+      "source": "building-041",
+      "from": "york-market-east-display-table",
+      "to": "york-market-north-display-tables",
+      "reason": "Merge the two adjoining display tables along the north market frontage."
+    },
+    {
+      "source": "building-937",
+      "from": "york-market-north-display-stand",
+      "to": "york-market-north-display-tables",
+      "reason": "Merge the two adjoining display tables along the north market frontage."
+    },
+    {
+      "source": "building-046",
+      "from": "york-market-stacked-barrels",
+      "to": "york-market-timber-house-striped-awning",
+      "reason": "Stacked barrels sit beside this awning and its display table."
+    },
+    {
+      "source": "building-587",
+      "from": "york-west-town-lane-broad-timber-house",
+      "to": "york-west-town-lane-narrow-timber-house",
+      "reason": "Rear roof slope meets source 581 at the identical ridge; keep both slopes with their house."
+    },
+    {
+      "source": "building-213",
+      "from": "york-west-bridge-street-east-gallery-house",
+      "components": {
+        "arcade": "york-west-bridge-street-arcade-house",
+        "gallery": "york-west-bridge-street-east-gallery-house"
+      },
+      "reason": "Split shared lower wall between neighboring buildings."
+    },
+    {
+      "source": "building-876",
+      "from": "york-precinct-southwest-curtain-wall",
+      "components": {
+        "wall": "york-precinct-southwest-curtain-wall",
+        "bastion": "york-precinct-south-central-round-bastion"
+      },
+      "reason": "Separate curved bastion at the curtain-wall junction."
+    },
+    {
+      "source": "building-971",
+      "from": "york-market-southeast-tall-narrow-house",
+      "to": "york-market-southeast-green-canopy-stall",
+      "reason": "This lower block exactly follows canopy 962, not the house footprint; keep it with the stall."
+    }
+  ],
+  "limitations": [
+    "Coarse proxy shapes and missing surfaces that have no independently owned source piece remain geometry-refinement work.",
+    "The precinct southwest bastion meets raised terrain; its lower retaining surface remains part of that terrain.",
+    "Partition seams follow visible structural necks; continuation through hidden surfaces is inferred."
+  ],
+  "asset_notes": {
+    "york-market-southeast-tall-narrow-house": "The lower storey is absent from the frozen reconstruction. Source 971 follows the neighboring canopy footprint, so it belongs to the stall. This card groups the existing house surfaces; adding the missing walls requires geometry refinement.",
+    "york-precinct-southwest-round-bastion": "The lower retaining surface belongs to the raised precinct terrain. This asset owns the separate bastion ring and parapet surfaces."
+  }
+}

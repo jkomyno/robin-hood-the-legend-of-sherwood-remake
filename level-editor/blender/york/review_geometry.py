@@ -17,6 +17,8 @@ def main():
     sys.path.insert(0,str(ROOT/'level-editor/refinement/blender'))
     parser=argparse.ArgumentParser()
     parser.add_argument('--grounded',action='store_true')
+    parser.add_argument('--geometry-only',action='store_true')
+    parser.add_argument('--output',type=Path,default=OUT/'review')
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
     source=OUT/('grounding/york-grounded.blend' if args.grounded else 'grouped/york-grouped.blend')
     bpy.ops.wm.open_mainfile(filepath=str(source))
@@ -35,11 +37,14 @@ def main():
              'triangles':[list(t.vertices) for t in obj.data.loop_triangles]})
         color=hashlib.sha256(group.encode()).digest()
         obj.color=tuple(.18+.65*c/255 for c in color[:3])+(1,)
-    output=OUT/'review'
+    output=args.output
     output.mkdir(exist_ok=True)
     (output/'scene.json').write_text(json.dumps({'source':str(source),'sha256':hashlib.sha256(source.read_bytes()).hexdigest(),
         'grounded':args.grounded},indent=2)+'\n')
     (output/'geometry.json').write_text(json.dumps(records,separators=(',',':'))+'\n')
+    if args.geometry_only:
+        print(json.dumps({'groups':len(records),'geometry':str(output/'geometry.json')}))
+        return
     scene.render.engine='BLENDER_WORKBENCH'
     scene.display.shading.color_type='OBJECT'
     scene.display.shading.light='STUDIO'

@@ -3,7 +3,7 @@
 This is the first refinement step: freeze source evidence, inspect the whole map,
 and assign the reconstructed surfaces to named logical assets. The reviewed
 catalog is `../../refinement/catalogs/york.json`; `ownership.txt` is its editable
-recipe. It replaces 460 proximity groups with 251 named groups plus background
+recipe. It replaces 460 proximity groups with 248 named groups plus background
 terrain. All 972 visible source records and nine records without meshes are
 accounted for. Distinct adjoining buildings are separate assets, including attached towers
 and gatehouses. Cathedral towers and the north precinct hall are separate from
@@ -52,6 +52,36 @@ the northeast square watchtower ledge; it is owned by that tower.
 The north precinct boundary includes clipped low boundary proxies 870–871.
 These decisions assign ownership without pretending to repair their shape.
 
+### Second partial review and remaining-map audit
+
+`grouping-audit-round-2.json` records the 131 remaining assets inspected and 46 source ownership
+corrections following the 95 submitted decisions. The resulting catalog has
+248 named assets plus terrain: 40 existing assets changed, ten were added, and
+13 obsolete groups were retired. All 199 other geometry records remain identical.
+The attached east-riverside round tower is merged with its gatehouse as explicitly
+requested in this review; the general independent-tower policy still applies elsewhere.
+
+Corrections restore misplaced house bodies and roof halves, separate courtyard
+and gate walls, attach walkway landings to their bastions, and combine nearby
+market displays and tavern furniture. `review-partitions.json` adds eight shared
+surface cuts at structural boundaries. Together with the three earlier sources,
+eleven partitioned sources retain their complete surface union and UV mapping.
+The market southeast narrow house has no lower-storey source mesh: volume 971
+follows canopy 962 and belongs to the stall. Its review card explicitly identifies
+this remaining geometry limitation.
+
+The previous delivered gallery is frozen in `review-v8/`; its grouped scene,
+grounded scene, library and catalog are under `review-round-2/before/`.
+`verify_regrouping.py --before level-editor/work/york-refinement/review-v8/geometry.json`
+checks unchanged assets and every unsplit moved component.
+The floor audit uses the newly grouped baseline:
+`audit_grounding.py --before level-editor/work/york-refinement/review-round-2/ungrounded/geometry.json`.
+Generate that baseline with `review_geometry.py -- --geometry-only --output
+level-editor/work/york-refinement/review-round-2/ungrounded` before grounding.
+Changed groupings return to the pending gallery; submitted approvals remain
+valid only for matching asset evidence.
+
+
 Base patches and Fog mission doors are inventoried separately. Door receiver
 ownership and interior/exterior projection receivers still require authored
 review before layered projection. No geometry or texture approval is implied by
@@ -61,7 +91,7 @@ the static grouping review.
 
 `ground_assets.py` reads the frozen grouped scene and subtracts the volumes below
 the reviewed terrain, ramp and raised-lane surfaces from each asset. It trims
-472 component meshes across 172 assets. All 251 named assets and terrain remain.
+476 component meshes across 174 assets. All 248 named assets and terrain remain.
 Cuts follow both the support footprint and its sloping height, preserving exposed
 lower walls at terrace edges. Bridge decks and roofs are not solid-ground cutters.
 The eleven support sources are listed explicitly in the recipe and its report.
@@ -69,7 +99,7 @@ The eleven support sources are listed explicitly in the recipe and its report.
 Terrain footprints often stop at a building frontage instead of continuing
 under its foundation. Footprint-only clipping therefore missed the courtyard
 lodges and left partial foundations under the stairs and other edge assets.
-`floor-contacts.json` records 24 reviewed floor continuations, with the adjoining
+`floor-contacts.json` records 25 reviewed floor continuations, with the adjoining
 support, game height and source-artwork rationale for each. `floor_contacts.py`
 applies each continuation only to its named asset. Lower streets, exposed
 retaining walls, bridges and buildings with visible lower facades retain their

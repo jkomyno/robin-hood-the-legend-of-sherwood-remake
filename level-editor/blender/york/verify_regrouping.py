@@ -1,0 +1,67 @@
+"""Check a review-driven regroup against the preceding delivered geometry."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[3]
+OUT = ROOT / 'level-editor/work/york-refinement'
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--before', type=Path, required=True)
+    args = parser.parse_args()
+    current = OUT / 'review/geometry.json'
+    before = json.loads(args.before.read_text())
+    after = json.loads(current.read_text())
+    audit = json.loads(Path(__file__).with_name('grouping-audit-round-2.json').read_text())
+    affected = set()
+    for change in audit['changes']:
+        affected.add(change['from'])
+        if 'to' in change:
+            affected.add(change['to'])
+        affected.update(change.get('components', {}).values())
+    unchanged = sorted(set(before) - affected)
+    for identity in unchanged:
+        if before[identity] != after.get(identity):
+            raise ValueError('Unexpected geometry/name change outside review corrections: '+identity)
+    removed = sorted(set(before) - set(after))
+    added = sorted(set(after) - set(before))
+    assert set(removed+added) <= affected
+    # Whole-source moves must preserve the preceding grounded triangles and
+    # positions, allowing only float32 pivot roundoff. Partitioned sources have
+    # separate area, retained-surface and UV proofs.
+    def parts(doc):
+        return {(p['source_node'], p['component']): p for g in doc.values() for p in g['parts']}
+    old, new = parts(before), parts(after)
+    errors = []
+    checked = 0
+    max_drift = 0
+    for key in old.keys() & new.keys():
+        a, b = old[key], new[key]
+        if a['triangles'] != b['triangles'] or len(a['positions']) != len(b['positions']):
+            errors.append({'part': key, 'reason': 'Topology changed'})
+            continue
+        drift = max((abs(x-y) for p,q in zip(a['positions'], b['positions']) for x,y in zip(p,q)), default=0)
+        if drift > .003:
+            errors.append({'part': key, 'reason': 'Positions changed', 'drift': drift})
+        max_drift = max(max_drift, drift)
+        checked += 1
+    result = {'status': 'FAIL' if errors else 'PASS', 'before_sha256': sha(args.before),
+              'after_sha256': sha(current), 'unchanged_assets': unchanged,
+              'changed_existing_assets': sorted(set(after) & affected & set(before)),
+              'added_assets': added, 'retired_assets': removed,
+              'preserved_components': checked, 'max_position_drift': max_drift, 'errors': errors}
+    (OUT/'review-round-2/preservation.json').write_text(json.dumps(result, indent=2)+'\n')
+    print(json.dumps({k:len(v) if isinstance(v,list) and k!='errors' else v for k,v in result.items()}))
+    if errors:
+        raise ValueError('Regrouping changed pre-existing grounded surfaces')
+
+
+if __name__ == '__main__':
+    main()

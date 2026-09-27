@@ -63,6 +63,14 @@ def solid(record,yaw,elevation):
 def main():
     records=json.loads((OUT/'review/geometry.json').read_text())
     catalog=json.loads((ROOT/'level-editor/refinement/catalogs/york.json').read_text())
+    audit=json.loads(Path(__file__).with_name('grouping-audit-round-2.json').read_text())
+    updates={}
+    for change in audit['changes']:
+        identities={change['from'],*change.get('components',{}).values()}
+        if 'to' in change:identities.add(change['to'])
+        for identity in identities:
+            reasons=updates.setdefault(identity,[])
+            if change['reason'] not in reasons:reasons.append(change['reason'])
     scene=json.loads((OUT/'review/scene.json').read_text())
     grounding=json.loads((OUT/'grounding/report.json').read_text()) if scene['grounded'] else None
     source=Image.open(OUT/'baseline/covered.png').convert('RGB')
@@ -101,6 +109,10 @@ def main():
         note='Shared surface partitioned at the building junction; hidden continuations are inferred.' if any(p.get('component') for p in record['parts']) else ''
         if grounding and key in grounding['anchors']:
             note+=' Buried surfaces trimmed against raised terrain; exposed terrace-edge walls retained.'
+        if key in updates:
+            note+=' Grouping update: '+' '.join(updates[key])
+        if key in audit.get('asset_notes',{}):
+            note+=' '+audit['asset_notes'][key]
         cards.append(f'''<article id="{key}" data-search="{html.escape(record['name'].lower()+' '+' '.join(names))}">
 <h2>{number:03} · {html.escape(record['name'])}</h2><div class="images">
 <a href="assets/{key}-source.jpg"><img loading="lazy" src="assets/{key}-source.jpg" alt="Source artwork with selected geometry tinted cyan"></a>

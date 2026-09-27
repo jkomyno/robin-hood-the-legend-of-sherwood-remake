@@ -71,6 +71,7 @@ def main():
             'coordinate': 'game_y + 0.305 * game_x', 'axis_coefficients': [0.305,1.0],
             'boundaries': [1838.5], 'components_ascending': ['hall','tower'],
             'rationale': 'Shared lower volume and east wall span the hall and tower. Split along the hall end-wall direction through its native junction; hidden continuation is inferred. Preserve all surfaces and UVs without adding caps.'})
+    catalog['partitions'].extend(json.loads(Path(__file__).with_name('review-partitions.json').read_text()))
     CATALOG.write_text(json.dumps(catalog, indent=2)+'\n')
     layers = json.loads((OUT / 'source-states-complete/layers.json').read_text())
     states = []

@@ -121,6 +121,11 @@
       "support_source": "building-087",
       "floor_game_z": 160.00101,
       "reason": "The wall stair begins on the upper precinct floor; its support volume is behind the terrace rim."
+    },
+    "york-east-bridge-street-courtyard-wall": {
+      "support_source": "building-093",
+      "floor_game_z": 50.00101,
+      "reason": "The separated courtyard wall retains the same reviewed street-floor contact as its former house group."
     }
   }
 }

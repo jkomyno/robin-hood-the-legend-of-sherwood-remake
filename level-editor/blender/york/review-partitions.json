@@ -1,0 +1,132 @@
+[
+  {
+    "source_node": "building-055",
+    "axis_coefficients": [
+      0.65,
+      1
+    ],
+    "coordinate": "0.65 * game_x + 1 * game_y",
+    "boundaries": [
+      2005.5
+    ],
+    "components_ascending": [
+      "wall",
+      "tower"
+    ],
+    "rationale": "Cut the shared lower volume at the tower side, between native junctions (2855,150) and (2889,128). Hidden continuation of each seam is inferred; retain all existing surfaces and UVs without caps."
+  },
+  {
+    "source_node": "building-259",
+    "axis_coefficients": [
+      -0.46,
+      1
+    ],
+    "coordinate": "-0.46 * game_x + 1 * game_y",
+    "boundaries": [
+      460
+    ],
+    "components_ascending": [
+      "bastion",
+      "wall"
+    ],
+    "rationale": "Assign the terminal landing and lower volume to the south water-gate bastion, splitting at the walkway neck. Hidden continuation of each seam is inferred; retain all existing surfaces and UVs without caps."
+  },
+  {
+    "source_node": "building-282",
+    "axis_coefficients": [
+      -0.47,
+      1
+    ],
+    "coordinate": "-0.47 * game_x + 1 * game_y",
+    "boundaries": [
+      -170,
+      139
+    ],
+    "components_ascending": [
+      "gatehouse",
+      "wall-stair",
+      "bastion"
+    ],
+    "rationale": "Divide the continuous wall deck at its gatehouse and north-bastion necks; keep the connecting stair between them. Hidden continuation of each seam is inferred; retain all existing surfaces and UVs without caps."
+  },
+  {
+    "source_node": "building-254",
+    "axis_coefficients": [
+      -0.3,
+      1
+    ],
+    "coordinate": "-0.3 * game_x + 1 * game_y",
+    "boundaries": [
+      1466.5
+    ],
+    "components_ascending": [
+      "inner-east-walkway",
+      "southeast-wall"
+    ],
+    "rationale": "Return the northward walkway continuation to the inner-east wall, at the structural bend beside its landing. Hidden continuation of each seam is inferred; retain all existing surfaces and UVs without caps."
+  },
+  {
+    "source_node": "building-235",
+    "axis_coefficients": [
+      1,
+      -0.5714
+    ],
+    "coordinate": "1 * game_x + -0.5714 * game_y",
+    "boundaries": [
+      1319.2
+    ],
+    "components_ascending": [
+      "wall-stair",
+      "bastion"
+    ],
+    "rationale": "Split the shared wall foundation at the round-bastion neck so its cap and lower body stay together. Hidden continuation of each seam is inferred; retain all existing surfaces and UVs without caps."
+  },
+  {
+    "source_node": "building-244",
+    "axis_coefficients": [
+      -0.2,
+      1
+    ],
+    "coordinate": "-0.2 * game_x + 1 * game_y",
+    "boundaries": [
+      1441
+    ],
+    "components_ascending": [
+      "curtain-wall",
+      "bastion"
+    ],
+    "rationale": "Split the shared wall foundation at the middle-bastion landing, restoring its lower body. Hidden continuation of each seam is inferred; retain all existing surfaces and UVs without caps."
+  },
+  {
+    "source_node": "building-213",
+    "axis_coefficients": [
+      1,
+      0.4
+    ],
+    "coordinate": "game_x + 0.4 * game_y",
+    "boundaries": [
+      1425
+    ],
+    "components_ascending": [
+      "arcade",
+      "gallery"
+    ],
+    "rationale": "Shared lower wall crosses the arcade-house and east-gallery-house boundary. Split along the arcade side wall; hidden continuation is inferred and surfaces/UVs retained."
+  },
+  {
+    "source_node": "building-876",
+    "axis_coefficients": [
+      0.5,
+      1
+    ],
+    "coordinate": "0.5 * game_x + game_y",
+    "boundaries": [
+      1447
+    ],
+    "components_ascending": [
+      "wall",
+      "bastion"
+    ],
+    "rationale": "Separate the curved central bastion from its long western curtain at the change in wall direction; retain all surfaces and UVs."
+  }
+]
