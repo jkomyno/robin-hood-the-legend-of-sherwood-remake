@@ -368,6 +368,64 @@ test("static model variants load one endpoint, retain endpoint obstacles, and co
   );
 });
 
+for (const variants of ["state_variants", "standalone_variants"] as const)
+  for (const state of ["initial", "applied"] as const)
+    test(`saved ${variants} ${state} reloads with the model's base group identity`, async (t) => {
+      const f = fixture();
+      f.json(f.entry.descriptor, {
+        ...f.descriptor,
+        [variants]: {
+          [state]: {
+            name: "Endpoint",
+            model: "model.glb",
+            parts: [
+              {
+                ...f.descriptor.parts[0],
+                obstacle_local_game: {
+                  ...f.descriptor.parts[0].obstacle_local_game,
+                  solid: false,
+                },
+              },
+            ],
+          },
+        },
+      });
+      t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+      const [catalog] = await listProjectionAssets(f.directory, "Leicester");
+      const entries = await listProjectionAppearances(f.directory, catalog);
+      const entry = entries.find((entry) => entry.state_variant === state)!;
+      const prepared = await prepareProjectionAsset(f.directory, entry, "Leicester");
+      const blank: Level3D = {
+        version: 1,
+        map: "Leicester",
+        size: [100, 100],
+        camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+        sceneAssets: [],
+        groups: [],
+        objects: [],
+      };
+      const { document } = insertProjectionAsset(
+        blank,
+        prepared.descriptor,
+        prepared.reference,
+        [50, 50, 0],
+      );
+      f.json(
+        "scenes/Leicester.rhlos-map.json",
+        serializeStoredMap(document, new Map([[entry.id, prepared.descriptor]])),
+      );
+      const candidate = await prepareMapCandidate("Leicester", f.directory, null);
+      assert.deepEqual(candidate.document, document);
+      assert.equal(candidate.sources.get(`asset:${entry.id}:building-000`), f.mesh);
+      assert.equal(candidate.document.objects[0].obstacle.solid, false);
+      // A different asset's group must still be rejected by the pinned loading path.
+      f.group.userData.asset_group = "other-house";
+      await assert.rejects(
+        prepareMapCandidate("Leicester", f.directory, null),
+        /Standalone group mismatch/,
+      );
+    });
+
 test("supplemental mission models retain profile provenance without inventing an obstacle index", async (t) => {
   const f = fixture();
   const { source_obstacle: _source_obstacle, ...part } = f.descriptor.parts[0];

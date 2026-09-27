@@ -300,7 +300,12 @@ export async function prepareProjectionAsset(
     if (!mapRoot || mapRoot.children.length !== 1)
       throw new Error(`Standalone asset requires exactly one group: ${entry.id}`);
     const group = mapRoot.children[0]!;
-    if (group.userData.asset_group !== original.id)
+    // Pinned descriptors already carry the appearance ID, but model groups
+    // retain the base asset ID for every state.
+    const groupId = entry.state_variant
+      ? descriptor.id.replace(/--state-(initial|applied)$/, "")
+      : descriptor.id;
+    if (group.userData.asset_group !== groupId)
       throw new Error(`Standalone group mismatch: ${entry.id}`);
     // Children below the map wrapper are Z-up. Their transforms must match the
     // local collision frame; the exporter bakes all parent transforms in meshes.
