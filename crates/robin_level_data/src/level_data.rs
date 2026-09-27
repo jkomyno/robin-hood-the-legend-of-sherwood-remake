@@ -2144,6 +2144,8 @@ pub struct CompiledAssetGeometry {
     pub buildings: Vec<RawBuildingEntry>,
     pub sight_obstacles: Vec<RawSightObstacle>,
     #[serde(default)]
+    pub masks: Vec<RawMask>,
+    #[serde(default)]
     pub material_sectors: Vec<RawMaterialSector>,
     #[serde(default)]
     pub sight_material_indices: Vec<u16>,
@@ -2178,6 +2180,11 @@ pub struct CompiledMovementTransition {
     pub initial_sight: Vec<u16>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub applied_sight: Vec<u16>,
+    /// Indices into the compiled mask array; converted to native per-layer references.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub initial_masks: Vec<u16>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub applied_masks: Vec<u16>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub door_links: Option<CompiledTransitionDoors>,
 }
@@ -2707,6 +2714,12 @@ impl LoadedLevel {
                 }
             }
             let mut transition_ids = std::collections::BTreeSet::new();
+            let mask_refs = crate::compiled_masks::validate_compiled_masks(
+                &geometry.masks,
+                &geometry.motion_data,
+                geometry.sight_obstacles.len(),
+            )?;
+            let mut transition_masks = std::collections::BTreeSet::new();
             let mut transition_sight = std::collections::BTreeSet::new();
             let mut transition_pairs = std::collections::BTreeMap::<(u16, u16), u32>::new();
             let non_lift_door_count = geometry.doors.len()
@@ -2726,12 +2739,23 @@ impl LoadedLevel {
                     || (transition.motion_changes.is_empty()
                         && transition.initial_sight.is_empty()
                         && transition.applied_sight.is_empty()
+                        && transition.initial_masks.is_empty()
+                        && transition.applied_masks.is_empty()
                         && transition.door_links.is_none())
                     || [&transition.apply_polygon, &transition.no_apply_polygon]
                         .iter()
                         .any(|p| !p.points.is_empty() && p.points.len() < 3)
                 {
                     return Err("invalid compiled movement transition".into());
+                }
+                for index in transition
+                    .initial_masks
+                    .iter()
+                    .chain(&transition.applied_masks)
+                {
+                    if usize::from(*index) >= mask_refs.len() || !transition_masks.insert(*index) {
+                        return Err("invalid or multiply assigned transition mask binding".into());
+                    }
                 }
                 if let Some(links) = &transition.door_links {
                     let mut seen = std::collections::BTreeSet::new();
@@ -2966,8 +2990,16 @@ impl LoadedLevel {
                         layer: transition.layer,
                         final_layer: transition.layer,
                         integrate_in_background: false,
-                        old_masks: Vec::new(),
-                        new_masks: Vec::new(),
+                        old_masks: transition
+                            .initial_masks
+                            .iter()
+                            .map(|&index| mask_refs[usize::from(index)])
+                            .collect(),
+                        new_masks: transition
+                            .applied_masks
+                            .iter()
+                            .map(|&index| mask_refs[usize::from(index)])
+                            .collect(),
                         old_sight_obstacles: transition.initial_sight,
                         new_sight_obstacles: transition.applied_sight,
                         old_mouse_sector: SectorPolygon { points: Vec::new() },
@@ -3039,6 +3071,7 @@ impl LoadedLevel {
             level.proto.sight_material_indices = geometry.sight_material_indices;
             level.proto.motion_data = Some(geometry.motion_data);
             level.proto.sight_obstacles = geometry.sight_obstacles;
+            level.proto.masks = geometry.masks;
             level.proto.buildings = geometry.buildings;
             // Asset interiors currently describe empty rooms. The runtime needs
             // one explicit occupant record per room, including unoccupied ones.

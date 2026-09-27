@@ -735,6 +735,74 @@ mod tests {
     }
 
     #[test]
+    fn compiled_mask_only_transition_resolves_layer_indices_and_resets() {
+        let mut descriptor: serde_json::Value =
+            serde_json::from_slice(include_bytes!("../../tests/fixtures/asset-lift.level.json"))
+                .unwrap();
+        let mask = serde_json::json!({
+            "layer": 0, "mask_type": 1,
+            "character_polyline": [[300, 320], [308, 320]],
+            "projectile_polyline": null,
+            "box_top_left": [300, 300], "box_size": [8, 1],
+            "mask_data": [2, 129, 255], "obstacle_indices": []
+        });
+        let mut upper = mask.clone();
+        upper["layer"] = 1.into();
+        descriptor["asset_geometry"]["masks"] = serde_json::json!([mask, upper, mask]);
+        descriptor["asset_geometry"]["movement_transitions"] = serde_json::json!([{
+            "id": "mask-state", "waypoint": [300, 300], "sector": 0, "layer": 0,
+            "active": true, "definitive": false,
+            "apply_polygon": {"points": []}, "no_apply_polygon": {"points": []},
+            "motion_changes": [], "initial_masks": [2], "applied_masks": [0]
+        }]);
+        let (mut engine, assets) =
+            load_compiled_transition(&serde_json::to_vec(&descriptor).unwrap(), (2000., 2000.));
+        let patch = crate::patch::PatchIndex::new(0).unwrap();
+        let index = |i| crate::mask::MaskIndex::new(i).unwrap();
+        let state = |engine: &EngineInner| {
+            (0..3)
+                .map(|i| engine.world.fast_grid.is_mask_active(index(i)))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(state(&engine), [false, true, true]);
+        let binding = &engine.script_domains.interactables.patches[0];
+        assert_eq!(binding.old_mask_indices, [index(2)]);
+        assert_eq!(binding.new_mask_indices, [index(0)]);
+        let sim = crate::sim_rng::test_context();
+        engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+        assert_eq!(state(&engine), [true, true, false]);
+        engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+        assert_eq!(state(&engine), [false, true, true]);
+
+        for (initial, applied) in [(vec![3], vec![]), (vec![0], vec![0]), (vec![2, 2], vec![0])] {
+            let mut bad = descriptor.clone();
+            bad["asset_geometry"]["movement_transitions"][0]["initial_masks"] =
+                serde_json::json!(initial);
+            bad["asset_geometry"]["movement_transitions"][0]["applied_masks"] =
+                serde_json::json!(applied);
+            assert!(
+                crate::level_data::LoadedLevel::hackable_from_json(
+                    &serde_json::to_vec(&bad).unwrap()
+                )
+                .is_err()
+            );
+        }
+        let mut duplicate = descriptor.clone();
+        let mut second = duplicate["asset_geometry"]["movement_transitions"][0].clone();
+        second["id"] = "second-controller".into();
+        duplicate["asset_geometry"]["movement_transitions"]
+            .as_array_mut()
+            .unwrap()
+            .push(second);
+        assert!(
+            crate::level_data::LoadedLevel::hackable_from_json(
+                &serde_json::to_vec(&duplicate).unwrap()
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
     fn editor_compiled_door_links_wire_both_directions_and_restore_rights() {
         let (mut engine, assets) = load_compiled_transition(
             include_bytes!("../../tests/fixtures/asset-door-transition.level.json"),

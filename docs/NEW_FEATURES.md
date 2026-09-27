@@ -43,6 +43,14 @@
   receiving-footprint notches. Recovery reports ambiguous ownership and regions spanning
   multiple receiving planes; these remain authoring gaps.
 
+- **Compiled map mask interchange.** Native map descriptors accept typed mask
+  bitmaps, character/projectile polylines and sight-obstacle links. Mask-only
+  transitions rebuild per-layer references and switch initial/applied masks.
+  Invalid bitmap rows and conflicting state ownership fail before construction.
+  The editor has a binary-silhouette encoder verified against the native decoder;
+  asset mask authoring, raster bake integration and visual-state export remain
+  unfinished.
+
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits
   to each instance. Blocker holes, trigger polygons and local sight-obstacle

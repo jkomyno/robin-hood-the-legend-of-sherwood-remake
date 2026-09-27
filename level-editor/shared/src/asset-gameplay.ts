@@ -204,6 +204,8 @@ export interface CompiledAssetGeometry {
     graph_bytes: never[];
   };
   sight_obstacles: SightObstacle[];
+  /** Baked typed masks; obstacle references use this compilation's sight array. */
+  masks?: import("./level.ts").Mask[];
   material_sectors?: MaterialSector[];
   sight_material_indices?: number[];
   map_settings?: { forest_level: boolean; default_material: number };
@@ -240,6 +242,9 @@ export interface CompiledAssetGeometry {
     motion_changes: { layer: number; sector: number; changing_obstacle: number }[];
     initial_sight?: number[];
     applied_sight?: number[];
+    /** Indices into this compilation's mask array, not native per-layer indices. */
+    initial_masks?: number[];
+    applied_masks?: number[];
     door_links?: { mode: "trigger-transition" | "swap-rights"; indices: number[] };
   }[];
   doors: {

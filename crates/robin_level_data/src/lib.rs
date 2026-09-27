@@ -1,5 +1,6 @@
 //! Static profiles and level content decoded before simulation construction.
 
+mod compiled_masks;
 pub mod content_patch;
 pub mod level_data;
 pub mod profiles;

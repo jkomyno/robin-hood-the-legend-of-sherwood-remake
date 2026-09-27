@@ -3,6 +3,151 @@
 use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimConfig};
 use robin_engine::level_data::LoadedLevel;
 
+fn descriptor_with_compiled_masks() -> serde_json::Value {
+    let mut descriptor: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-lift.level.json")).unwrap();
+    let mask = serde_json::json!({
+        "layer": 0, "mask_type": 1,
+        "character_polyline": [[300, 320], [309, 320]],
+        "projectile_polyline": null,
+        "box_top_left": [300, 300], "box_size": [9, 2],
+        "mask_data": [3, 2, 170, 128, 0], "obstacle_indices": []
+    });
+    let mut upper = mask.clone();
+    upper["layer"] = 1.into();
+    upper["mask_type"] = 4.into();
+    upper["character_polyline"] = serde_json::Value::Null;
+    let mut projectile = mask.clone();
+    projectile["mask_type"] = 18.into();
+    projectile["character_polyline"] = serde_json::Value::Null;
+    projectile["projectile_polyline"] = serde_json::json!([]);
+    projectile["obstacle_indices"] = serde_json::json!([0]);
+    descriptor["asset_geometry"]["masks"] = serde_json::json!([mask, upper, projectile]);
+    descriptor
+}
+
+#[test]
+fn editor_encoded_mask_bitmaps_decode_to_the_complete_baked_silhouette() {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    struct Case {
+        width: u16,
+        height: u16,
+        pixels: String,
+        encoded: Vec<u8>,
+    }
+    let cases: Vec<Case> =
+        serde_json::from_slice(include_bytes!("fixtures/compiled-mask-bitmaps.json")).unwrap();
+    for case in cases {
+        let expected = case
+            .pixels
+            .bytes()
+            .map(|pixel| pixel - b'0')
+            .collect::<Vec<_>>();
+        assert_eq!(
+            robin_engine::mask::decode_mask_bitmap(&case.encoded, case.width, case.height),
+            expected
+        );
+    }
+}
+
+#[test]
+fn compiled_masks_construct_typed_bitmaps_and_per_layer_indices() {
+    use robin_engine::coordinates::{MapPoint, WorldPoint3D};
+    let descriptor = descriptor_with_compiled_masks();
+    let mut assets = LevelAssets::new();
+    let engine = construct(&serde_json::to_vec(&descriptor).unwrap(), &mut assets);
+    let grid = engine.fast_grid();
+    assert_eq!(grid.level.masks.len(), 3);
+    assert_eq!(
+        grid.level.layers[0]
+            .mask_indices
+            .iter()
+            .map(|&i| usize::from(i))
+            .collect::<Vec<_>>(),
+        [0, 2]
+    );
+    assert_eq!(
+        grid.level.layers[1]
+            .mask_indices
+            .iter()
+            .map(|&i| usize::from(i))
+            .collect::<Vec<_>>(),
+        [1]
+    );
+    let character = &grid.level.masks[0];
+    assert_eq!(
+        character.bitmap,
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    );
+    assert!(character.is_applied_to_point_character(MapPoint::new(304., 319.)));
+    assert!(!character.is_applied_to_point_character(MapPoint::new(304., 320.)));
+    assert_eq!(
+        grid.level.masks[1].mask_type,
+        robin_engine::level_data::MASK_VIEW
+    );
+    let obstacle = &assets.environment.static_sight_obstacles[0];
+    let x = obstacle.obstacle_points.iter().map(|p| p.x).sum::<f32>()
+        / obstacle.obstacle_points.len() as f32;
+    let y = obstacle.obstacle_points.iter().map(|p| p.y).sum::<f32>()
+        / obstacle.obstacle_points.len() as f32;
+    let obstacles = robin_engine::sight_obstacle::ObstacleList::from_slice_all_active(
+        &assets.environment.static_sight_obstacles,
+    );
+    let mask = &grid.level.masks[2];
+    assert!(mask.is_applied_to_point_3d(
+        WorldPoint3D {
+            x,
+            y,
+            z: obstacle.compute_top_z(x, y) - 1.
+        },
+        false,
+        obstacles
+    ));
+    assert!(!mask.is_applied_to_point_3d(
+        WorldPoint3D {
+            x,
+            y,
+            z: obstacle.compute_top_z(x, y) + 1.
+        },
+        false,
+        obstacles
+    ));
+}
+
+#[test]
+fn compiled_masks_reject_unresolved_links_invalid_types_and_malformed_bitmaps() {
+    let descriptor = descriptor_with_compiled_masks();
+    for (field, value) in [
+        ("layer", serde_json::json!(99)),
+        ("mask_type", serde_json::json!(0)),
+        ("mask_type", serde_json::json!(8)),
+        ("mask_type", serde_json::json!(16)),
+        ("character_polyline", serde_json::json!(null)),
+        (
+            "character_polyline",
+            serde_json::json!([[309, 320], [300, 320]]),
+        ),
+        ("box_size", serde_json::json!([0, 2])),
+        ("box_top_left", serde_json::json!([32760, 300])),
+        ("mask_data", serde_json::json!([3, 2, 170])),
+        ("mask_data", serde_json::json!([2, 131, 255, 0])),
+        ("obstacle_indices", serde_json::json!([999])),
+    ] {
+        let mut bad = descriptor.clone();
+        bad["asset_geometry"]["masks"][0][field] = value;
+        let error = LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+            .err()
+            .unwrap();
+        assert!(error.contains("mask"), "{field}: {error}");
+    }
+    let mut missing_obstacle = descriptor.clone();
+    missing_obstacle["asset_geometry"]["masks"][2]["obstacle_indices"] = serde_json::json!([999]);
+    let error = LoadedLevel::hackable_from_json(&serde_json::to_vec(&missing_obstacle).unwrap())
+        .err()
+        .unwrap();
+    assert!(error.contains("obstacle links"), "{error}");
+}
+
 #[test]
 #[ignore = "requires static diagnostic exports via ROBIN_ASSET_MAP_DIAGNOSTICS"]
 fn recovered_static_exports_construct_native_geometry() {

@@ -13,7 +13,7 @@ intended construction, not functionality available today.
 |---|---|---|
 | Background image and minimap | Render placed models/textures; downsample the minimap. | Working |
 | Character occlusion | Bake a 16-bit depth PNG from scene geometry. | Working for static scenes |
-| Projectile/view/obstacle masks and masking polylines | Generate typed masks and links from asset geometry and states. A depth PNG alone does **not** replace all these semantics. | Planned |
+| Projectile/view/obstacle masks and masking polylines | Generate typed masks and links from asset geometry and states. A depth PNG alone does **not** replace all these semantics. | Partial: native interchange, bitmap encoding and mask-state links implemented; asset authoring and raster bake integration remain unfinished |
 | Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions or explicit local regions spanning several planes, then assign fresh sectors/layers. | Partial: flat/sloped surfaces, holes and ordinary multi-plane regions tested; cross-asset multi-plane joins and full-map connectivity unfinished |
 | Movement blockers | Transform explicit asset-local movement contours; optionally select permanent part/volume solids and intersect them with walkable surfaces. Sight states stay independent. | Working in synthetic tests; recovered ownership still needs review |
 | Openings in movement collision | Asset-local clearances remove only the owning asset's derived collision on the matching plane; sight geometry and other assets remain intact. | Working in compiler/runtime tests; recovery geometry failures remain explicit gaps |
@@ -90,6 +90,21 @@ These are unpublished drafts, not completed map exports or in-game round-trip
 parity results. All nine recovered maps have now passed static construction;
 no map has yet been certified at full parity, and authored maps still require
 published gameplay definitions for their assets.
+
+The native compiler interchange accepts typed mask bitmaps with character and
+projectile polylines, view flags and regenerated sight-obstacle references.
+Mask-state transitions reference the compiled array; loading rebuilds the native
+per-layer mask references, including interleaved input layers. Mask-only transitions
+can initialize, apply and reset without mission actors. Invalid type combinations,
+missing layers/obstacles, malformed bitmap rows and multiply controlled masks are
+rejected before loading can skip a mask and shift the references. The editor's
+binary-silhouette encoder has shared fixtures checked by the native decoder,
+including partial bytes, transparent rows and runs longer than one control byte
+can represent. Incompressible rows exceeding the format's byte limit require
+narrower bake tiles and fail explicitly. This establishes the interchange and
+encoding, not mask recovery or completed mask export: asset-local masking rules,
+raster generation from placed geometry, state-dependent visuals and renderer
+integration still need implementation and placement/parity verification.
 
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.
