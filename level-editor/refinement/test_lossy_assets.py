@@ -8,6 +8,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).resolve().parent / 'blender'))
 import lossy_assets  # noqa: E402
 
@@ -161,6 +163,63 @@ class LossyAssetsTest(unittest.TestCase):
         (self.root / lossy).write_bytes(b'tampered')
         self.assertFalse(lossy_assets.receipt_current(self.root, 'derby/house/model.glb', lossy, self.args))
         self.assertIn('house: lossy model bytes differ from its receipt', lossy_assets.verify_derivatives(self.root))
+
+    def test_algorithm_revision_invalidates_previous_receipts(self):
+        self.refresh()
+        path = self.root / 'derby/house/lossy.glb.receipt.json'
+        receipt = json.loads(path.read_text())
+        receipt['settings'].pop('algorithm_version')
+        path.write_text(json.dumps(receipt))
+        self.assertFalse(lossy_assets.receipt_current(
+            self.root, 'derby/house/model.glb', 'derby/house/lossy.glb', self.args))
+
+    def test_size_preserves_detail_across_surface_instead_of_only_median(self):
+        # Half the asset was previously allowed to lose up to 4x its target density.
+        size, required = lossy_assets.choose_size(
+            self.args, np.ones(3), np.array([.01, .005, .0025]), np.array([51, 40, 9]))
+        self.assertEqual((size, required), (400, 400))
+
+    def test_quantization_keeps_thin_geometry_and_uv_triangles_as_floats(self):
+        doc, buffers, _ = lossy_assets.read_glb(self.root / 'derby/house/model.glb')
+        # A long triangle only 1e-6 wide collapses on the asset's uint16 grid.
+        positions = np.array([[0, 0, 0], [1, 0, 0], [1, 1e-6, 0]], dtype=np.float32)
+        body = bytearray(buffers[0])
+        body[:36] = positions.tobytes()
+        buffers = [bytes(body)]
+        quantizer = lossy_assets.Quantizer(doc, buffers, 8)
+        self.assertFalse(quantizer.quantize_positions)
+        output = self.root / 'thin.glb'
+        lossy_assets.write_lossy(doc, buffers, None, b'', output,
+                                 normal_bits=8, reencoded={0: b'fake avif'})
+        written, binary, _ = lossy_assets.read_glb(output)
+        index = written['meshes'][0]['primitives'][0]['attributes']['POSITION']
+        self.assertEqual(written['accessors'][index]['componentType'], 5126)
+        self.assertNotIn('scale', written['nodes'][0])
+        np.testing.assert_array_equal(lossy_assets.accessor_array(written, binary, index), positions)
+        uv = positions[:, :2]
+        _, template = quantizer.convert('TEXCOORD_0', uv, {'componentType': 5126}, [0, 1, 2])
+        self.assertEqual(template['componentType'], 5126)
+        uv = np.array([[0, 0], [1, 0], [0, 1]], dtype=np.float32)
+        _, template = quantizer.convert('TEXCOORD_0', uv, {'componentType': 5126}, [0, 1, 2])
+        self.assertEqual(template['componentType'], 5123)
+
+    def test_triangle_precision_rejects_flips_and_preserves_safe_rounding(self):
+        triangle = np.array([[0., 0.], [1., 0.], [0., 1.]])
+        self.assertFalse(lossy_assets.triangle_precision_safe(triangle, triangle[[0, 2, 1]], [0, 1, 2]))
+        self.assertTrue(lossy_assets.triangle_precision_safe(triangle, triangle + 1e-6, [0, 1, 2]))
+
+    def test_safe_geometry_still_quantizes_and_roundtrips(self):
+        doc, buffers, _ = lossy_assets.read_glb(self.root / 'derby/house/model.glb')
+        output = self.root / 'safe.glb'
+        lossy_assets.write_lossy(doc, buffers, None, b'', output,
+                                 normal_bits=8, reencoded={0: b'fake avif'})
+        written, binary, _ = lossy_assets.read_glb(output)
+        index = written['meshes'][0]['primitives'][0]['attributes']['POSITION']
+        self.assertEqual(written['accessors'][index]['componentType'], 5123)
+        positions = lossy_assets.accessor_array(written, binary, index, dequantize=True)
+        node = written['nodes'][0]
+        np.testing.assert_allclose(positions * node['scale'] + node['translation'],
+                                   lossy_assets.accessor_array(doc, buffers, 0), atol=1 / 65535)
 
     def test_previews_follow_the_lossy_model_and_rebuild_when_it_changes(self):
         self.refresh(previews=True)

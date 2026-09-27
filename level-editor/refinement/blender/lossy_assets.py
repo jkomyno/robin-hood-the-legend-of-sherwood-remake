@@ -30,10 +30,10 @@ them). Vertices are quantized with KHR_mesh_quantization (`--no-quantize` keeps 
 
 1. Every textured glTF mesh becomes a Blender mesh (positions welded for topology only, each loop
    still maps to its glTF vertex). Smart UV Project (66 degrees) finds islands over all meshes;
-   its island borders become seams and each island is re-flattened (angle based), then packed.
-2. The atlas is square, a multiple of `--multiple` texels, sized so the area-weighted median of
-   each face's weakest-direction density reaches its target: `--density` texels per map pixel
-   (the source artwork scale), but never more than the published texture holds on that face.
+   islands are normalized to a common surface density, then packed without relaxing them.
+2. The atlas is square, a multiple of `--multiple` texels, sized so `--density-coverage` (95%)
+   of the surface meets its weakest-direction target: `--density` texels per map pixel
+   (the source artwork scale), capped by the source's strongest direction to retain its detail.
    It is clamped to [`--min-size`, `--max-size`]; clamping is reported. An asset whose single
    image is already filled by its published UVs (map background planes) keeps that layout and
    resolution and is only re-encoded.
@@ -476,8 +476,9 @@ def build_objects(doc, binary, images, collection, label):
 # --- unwrap, bake, encode ----------------------------------------------------------------------
 
 def choose_size(args, targets, weakest, area):
-    """Smallest size whose area-weighted median of (target / achieved) per face reaches 1."""
-    required = weighted_quantile(targets / np.maximum(weakest, 1e-12), area, .5)
+    """Size meeting target density over the requested fraction of surface area."""
+    require(0 < args.density_coverage <= 1, 'density coverage must be in (0, 1]')
+    required = weighted_quantile(targets / np.maximum(weakest, 1e-12), area, args.density_coverage)
     size = max(args.min_size, args.multiple * math.ceil(required / args.multiple))
     return min(size, args.max_size), required
 
@@ -495,9 +496,9 @@ def unwrap(objects, args, targets):
     bpy.ops.uv.select_all(action='SELECT')
     bpy.ops.uv.smart_project(angle_limit=math.radians(args.angle_limit), island_margin=0.003,
                              area_weight=1.0, correct_aspect=True, scale_to_bounds=False)
-    bpy.ops.mesh.mark_seam(clear=True)
-    bpy.ops.uv.seams_from_islands(mark_seams=True, mark_sharp=False)
-    bpy.ops.uv.unwrap(method='ANGLE_BASED', fill_holes=True, correct_aspect=True, margin_method='FRACTION', margin=0.003)
+    # Relaxing the projected charts can fold/collapse finely tessellated curved roofs.
+    # Keep the projection and normalize island scale before packing.
+    bpy.ops.uv.average_islands_scale()
     margin, history = 0.003, []
     for _ in range(8):
         bpy.ops.object.mode_set(mode='EDIT')
@@ -552,7 +553,10 @@ def bake(objects, size, need_alpha, args, work):
         if len(joined) > 1:
             bpy.ops.object.join()
         baked = bpy.context.view_layer.objects.active
-        bpy.ops.object.bake(type='EMIT', margin=args.bake_margin, margin_type='ADJACENT_FACES',
+        # Published charts can have discontinuous UVs/materials across a mesh edge.
+        # Extend actual baked edge texels; adjacent-face sampling can pull atlas background
+        # into the gutter and produce dark seams on otherwise continuous roofs.
+        bpy.ops.object.bake(type='EMIT', margin=args.bake_margin, margin_type='EXTEND',
                             use_clear=True, target='IMAGE_TEXTURES', uv_layer=NEW_UV)
         mesh = baked.data
         bpy.data.objects.remove(baked, do_unlink=True)
@@ -623,13 +627,30 @@ class BufferBuilder:
         return len(self.accessors) - 1
 
 
+def triangle_precision_safe(before, after, triangles):
+    """Reject collapsed/flipped triangles or >10% area error, including tiny details."""
+    triangles = np.asarray(triangles).reshape(-1, 3)
+    def normals(values):
+        points = values.astype(np.float64)[triangles]
+        edges = points[:, 1:] - points[:, :1]
+        if values.shape[1] == 2:
+            return (edges[:, 0, 0] * edges[:, 1, 1] - edges[:, 0, 1] * edges[:, 1, 0])[:, None]
+        return np.cross(edges[:, 0], edges[:, 1])
+    original, rounded = normals(before), normals(after)
+    squared = np.sum(original * original, axis=1)
+    valid = squared > 0
+    # Vector error also catches orientation changes that area alone would miss.
+    return bool(np.all(np.sum((rounded[valid] - original[valid]) ** 2, axis=1) <= .01 * squared[valid]))
+
+
 class Quantizer:
     """KHR_mesh_quantization for every mesh of the document.
 
     Positions become normalized uint16 on one asset-wide grid (identical source positions stay
     identical across meshes) dequantized by a uniform scale + translation on each mesh node, so
     normals transform unchanged. Normals become normalized int8/int16; lossy UVs normalized
-    uint16. Only float source attributes are quantized; anything else is copied as-is.
+    uint16. If rounding damages a triangle's area or orientation, positions stay float across
+    the asset, or UVs stay float for that accessor. Only float source attributes are quantized.
     """
     def __init__(self, doc, binary, normal_bits):
         positions = [accessor_array(doc, binary, p['attributes']['POSITION'])
@@ -639,16 +660,33 @@ class Quantizer:
         self.offset = low
         self.scale = float(max((high - low).max(), 1e-6))
         self.normal_type = {8: (np.int8, 5120), 16: (np.int16, 5122)}[normal_bits]
+        self.quantize_positions = True
+        self.source_triangles = {}
+        for mesh in doc['meshes']:
+            for primitive in mesh['primitives']:
+                attributes = primitive['attributes']
+                positions = accessor_array(doc, binary, attributes['POSITION'], dequantize=True)
+                indices = (accessor_array(doc, binary, primitive['indices']) if 'indices' in primitive
+                           else np.arange(len(positions)))
+                for name, index in attributes.items():
+                    if name.startswith('TEXCOORD_'):
+                        self.source_triangles.setdefault(index, []).extend(indices.reshape(-1, 3))
+                rounded = np.round((positions - self.offset) / self.scale * 65535) / 65535 * self.scale + self.offset
+                if not triangle_precision_safe(positions, rounded, indices):
+                    # One common policy preserves shared boundaries between meshes.
+                    self.quantize_positions = False
         for node in doc['nodes']:
             if 'mesh' in node:
                 require(not any(k in node for k in ('matrix', 'translation', 'rotation', 'scale')),
                         f'Quantization needs untransformed mesh nodes: {node.get("name")}')
 
-    def convert(self, name, array, template):
+    def convert(self, name, array, template, triangles=None):
         if template.get('componentType') != 5126 or template.get('normalized'):
             return array, template
         record = {k: v for k, v in template.items() if k not in ('componentType', 'normalized', 'min', 'max')}
         if name == 'POSITION':
+            if not self.quantize_positions:
+                return array, template
             values = np.round((array.astype(np.float64) - self.offset) / self.scale * 65535)
             require(values.min() >= 0 and values.max() <= 65535, 'Position outside the quantization grid')
             return values.astype(np.uint16), {**record, 'componentType': 5123, 'normalized': True, '_position': True}
@@ -658,13 +696,16 @@ class Quantizer:
             return (np.round(np.clip(array, -1, 1) * limit).astype(dtype),
                     {**record, 'componentType': component, 'normalized': True})
         if name.startswith('TEXCOORD_') and array.min() >= 0 and array.max() <= 1:
-            return (np.round(array.astype(np.float64) * 65535).astype(np.uint16),
+            rounded = np.round(array.astype(np.float64) * 65535)
+            if triangles is None or not triangle_precision_safe(array, rounded / 65535, triangles):
+                return array, template
+            return (rounded.astype(np.uint16),
                     {**record, 'componentType': 5123, 'normalized': True})
         return array, template
 
     def apply_nodes(self, out):
         for node in out['nodes']:
-            if 'mesh' in node:
+            if 'mesh' in node and self.quantize_positions:
                 node['translation'] = self.offset.tolist()
                 node['scale'] = [self.scale] * 3
         for key in ('extensionsUsed', 'extensionsRequired'):
@@ -684,14 +725,15 @@ def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, te
     quantizer = Quantizer(doc, binary, normal_bits) if normal_bits else None
     remap = {}
 
-    def emit(name, array, template):
+    def emit(name, array, template, triangles=None):
         if quantizer and name:
-            array, template = quantizer.convert(name, array, template)
+            array, template = quantizer.convert(name, array, template, triangles)
         return builder.accessor(array, template, 34962 if name else 34963)
 
     def copy_accessor(index, name):
         if (index, name) not in remap:
-            remap[(index, name)] = emit(name, accessor_array(doc, binary, index), dict(doc['accessors'][index]))
+            remap[(index, name)] = emit(name, accessor_array(doc, binary, index), dict(doc['accessors'][index]),
+                                        quantizer.source_triangles.get(index) if quantizer else None)
         return remap[(index, name)]
 
     rebuilt = {}
@@ -750,7 +792,7 @@ def write_lossy(doc, binary, records, atlas_bytes, output, drop_normals=True, te
                     template['_position'] = True
                 attributes[name] = emit(name, arrays[name][order], template)
             texcoords = np.array([(key[1], key[2]) for key in unique], dtype=np.float32)
-            attributes['TEXCOORD_0'] = emit('TEXCOORD_0', texcoords, {'componentType': 5126, 'type': 'VEC2'})
+            attributes['TEXCOORD_0'] = emit('TEXCOORD_0', texcoords, {'componentType': 5126, 'type': 'VEC2'}, index_list)
             primitive['attributes'] = attributes
             indices = np.array(index_list, dtype=np.uint16 if len(unique) < 65536 else np.uint32)
             primitive['indices'] = emit(None, indices, {'componentType': 5123 if indices.dtype == np.uint16 else 5125,
@@ -931,10 +973,11 @@ def derive(asset_id, model_path, lossy_path, args, work):
         source_axes.append(axes)
         nearest.append(np.array([record['materials'][slot][1] == 'Closest' for slot in slots], dtype=bool))
     source_axes, nearest = np.concatenate(source_axes), np.concatenate(nearest)
-    # Per face: the requested density, but never more than the published texture itself holds.
+    # Preserve the source's detailed direction, rather than propagating its blurriest axis
+    # into every direction of the new atlas.
     # Nearest-filtered ("source pixel sampling") faces are baked at --nearest-density instead,
     # so their source pixel blocks stay sharp after resampling.
-    targets = np.where(nearest, args.nearest_density, np.minimum(args.density, source_axes[:, 0]))
+    targets = np.where(nearest, args.nearest_density, np.minimum(args.density, source_axes[:, 1]))
     uv_area = np.concatenate([face_geometry(o, SOURCE_UV)[1] for o in objects])
     reuse, out_of_range = texel_reuse(objects, records)
     # Keep the published layout when a unique-texel atlas cannot help: one image the UVs already
@@ -1010,7 +1053,7 @@ def derive(asset_id, model_path, lossy_path, args, work):
                      'lossy_channels': 4 if need_alpha else 3,
                      'gpu_rgba8_bytes': {'source': sum(i['pixels'] for i in source_images) * 4,
                                          'lossy': lossy_pixels * 4}},
-        'atlas_size': {'mode': 're-encode published layout' if reencode else 'smart-uv + angle-based relax',
+        'atlas_size': {'mode': 're-encode published layout' if reencode else 'smart-uv + normalized island scale',
                        'texel_reuse': reuse, 'uv_out_of_range': out_of_range,
                        'size': size, 'required': required, 'multiple': args.multiple, 'min': args.min_size,
                        'max': args.max_size, 'clamped': None if required is None else 'max' if required > args.max_size
@@ -1021,7 +1064,7 @@ def derive(asset_id, model_path, lossy_path, args, work):
             'lossy_sqrt_area': stats(np.sqrt(new_axes[:, 0] * new_axes[:, 1]), area),
             'surface_fraction_lossy_weakest_below_target': float(
                 area[new_axes[:, 0] < targets - 1e-6].sum() / area.sum()),
-            'target': 'min(--density, source weakest axis) per face; --nearest-density on nearest-filtered faces',
+            'target': 'min(--density, source strongest axis) per face; --nearest-density on nearest-filtered faces',
             'nearest_filtered_surface_fraction': float(area[nearest].sum() / area.sum())},
         'encoding': {'avifenc': avif_command, 'alpha': need_alpha},
         'normals': normals,
@@ -1161,13 +1204,15 @@ def main_derive(args):
     require(not failures, f'Failed assets: {failures}')
 
 
-SETTING_KEYS = ('density', 'nearest_density', 'pack_shape', 'multiple', 'min_size', 'max_size', 'quality', 'reencode_utilization', 'reuse_ratio', 'keep_normals',
+ALGORITHM_VERSION = 2
+
+SETTING_KEYS = ('density_coverage', 'density', 'nearest_density', 'pack_shape', 'multiple', 'min_size', 'max_size', 'quality', 'reencode_utilization', 'reuse_ratio', 'keep_normals',
                 'texture_file', 'no_quantize', 'normal_bits', 'speed', 'angle_limit', 'pack_margin_px', 'bake_margin')
 
 
 def settings(args):
     """Derivation settings recorded in receipts; a receipt with other settings is out of date."""
-    return {key: getattr(args, key) for key in SETTING_KEYS}
+    return {'algorithm_version': ALGORITHM_VERSION, **{key: getattr(args, key) for key in SETTING_KEYS}}
 
 
 def summary_row(report):
@@ -1543,6 +1588,8 @@ def main_refresh(args):
 
 
 def add_settings(parser):
+    parser.add_argument('--density-coverage', type=float, default=0.95,
+                        help='Fraction of surface area that should meet the texture density target (0 < value <= 1)')
     parser.add_argument('--density', type=float, default=1.0, help='Target weakest-axis texels per map pixel')
     parser.add_argument('--nearest-density', type=float, default=2.0,
                         help='Target texels per map pixel on nearest-filtered (source pixel sampling) materials')
@@ -1552,7 +1599,7 @@ def add_settings(parser):
     parser.add_argument('--quality', type=int, default=80)
     parser.add_argument('--speed', type=int, default=6)
     parser.add_argument('--angle-limit', type=float, default=66.0)
-    parser.add_argument('--pack-margin-px', type=float, default=2.0)
+    parser.add_argument('--pack-margin-px', type=float, default=8.0)
     parser.add_argument('--pack-shape', choices=('AABB', 'CONVEX', 'CONCAVE'), default='AABB',
                         help='Pack Islands shape; CONCAVE packs ~2%% tighter but takes ~30-100 s per pack')
     parser.add_argument('--bake-margin', type=int, default=8)
