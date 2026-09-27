@@ -10,9 +10,10 @@ const here=dirname(configPath),config=JSON.parse(await readFile(configPath,'utf8
 const base=process.argv[3]??'http://127.0.0.1:5180';
 const verifyLive=async()=>{for(const [path,hash]of Object.entries(config.protected_live_files??{})){if(createHash('sha256').update(await readFile(path)).digest('hex')!==hash)throw Error('Live file changed during read-only browser test '+path);}};
 await writeFile(join(here,'result.json'),JSON.stringify({status:'RUNNING',phase:'verifying-live-input-hashes'}));
-await verifyLive();
+try{await verifyLive();}catch(error){await writeFile(join(here,'result.json'),JSON.stringify({status:'FAIL',phase:'verifying-live-input-hashes',error:String(error)},null,2));throw error;}
 console.log('Live hashes verified; starting Chromium');
-const temporaryRoot='/home/phire/.cache/sccache/leicester-browser';await mkdir(temporaryRoot,{recursive:true});
+// Profile root: config.browser_profile_root, else TMPDIR (sandboxed runs), else the historical cache path.
+const temporaryRoot=config.browser_profile_root??(process.env.TMPDIR?join(process.env.TMPDIR,'publication-browser'):'/home/phire/.cache/sccache/leicester-browser');await mkdir(temporaryRoot,{recursive:true});
 const profile=await mkdtemp(join(temporaryRoot,'p-'));
 const chrome=spawn('/usr/lib/chromium/chromium',['--headless','--window-size='+(config.viewport?.width??1500)+','+(config.viewport?.height??1200),'--no-sandbox','--disable-dev-shm-usage','--disable-background-networking','--enable-unsafe-swiftshader','--use-angle=swiftshader','--remote-debugging-port=0','--user-data-dir='+profile,base],{stdio:['ignore','ignore','pipe'],env:{...process.env,TMPDIR:temporaryRoot}});
 chrome.stderr.on('data',data=>process.stderr.write(data));
