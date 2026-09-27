@@ -55,6 +55,8 @@ export interface AssetInterior {
   node: string;
   /** Entrances share one virtual interior; occupants are authored separately. */
   doors: AssetDoor[];
+  /** Optional passage sockets; coincident opposing sockets connect rooms after placement. */
+  joins?: { point: [number, number, number]; direction: Point }[];
 }
 export interface AssetMaterialRegion {
   id: string;
@@ -619,8 +621,21 @@ export function validateAssetGameplay(
   if (data.interiors !== undefined && !Array.isArray(data.interiors)) fail("invalid interiors");
   for (const interior of data.interiors ?? []) {
     feature(interior);
-    if (!Array.isArray(interior.doors) || !interior.doors.length)
-      fail(`interior ${interior.id} has no entrance`);
+    if (
+      interior.joins !== undefined &&
+      (!Array.isArray(interior.joins) ||
+        !interior.joins.length ||
+        interior.joins.some(
+          (join) =>
+            !join ||
+            !point(join.point, 3) ||
+            !point(join.direction, 2) ||
+            Math.hypot(...join.direction) < 1e-6,
+        ))
+    )
+      fail(`invalid interior joins: ${interior.id}`);
+    if (!Array.isArray(interior.doors) || (!interior.doors.length && !interior.joins?.length))
+      fail(`interior ${interior.id} has no entrance or passage socket`);
     for (const door of interior.doors) {
       if (door.node !== interior.node)
         fail(`interior ${interior.id} door must use its owning node`);

@@ -21,7 +21,7 @@ intended construction, not functionality available today.
 | Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. Explicit transition references select initial/applied obstacles. | Static geometry working; sight transitions verified through native initialization, apply and reset; recovered state ownership still incomplete |
 | Projection surfaces / elevation | Generate height planes linked to the new movement areas. | Partial: planar surfaces; elevation-boundary links unfinished |
 | Doors, gates and lock rules | Transform local endpoints and optional click polygons; resolve neighbours geometrically and retain initial/alternate actor lock rules. Asset-local transition links either trigger state changes from doors or swap door permissions. | Compiler/native links implemented; recovered ownership and coverage incomplete |
-| Building interiors | Asset-local interior definitions and entrances; generate virtual interior sectors and links. | Working for empty interiors; occupants remain planned |
+| Building interiors | Asset-local interior definitions and entrances; matching positioned sockets with opposing directions join independent assets into shared virtual rooms. | Working in compiler/native tests, including separating, rotating and duplicating assemblies; recovered cross-asset rooms remain unfinished; occupants are mission-owned |
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild the ground lookup subset and per-obstacle references independently. | Partial: ground/obstacle regions and terrain defaults tested in the engine; elevated-surface links unfinished |
@@ -248,9 +248,9 @@ restores 84 connection records without dropping previously recovered doors.
 Across the nine diagnostics, 393 of 397 non-lift doors now compile; all 393 match
 source endpoints, click polygons, door types, active flags and initial/alternate
 permissions. The remaining four in York belong to two shared interiors spanning
-independent buildings. They need asset-local interior connections that resolve
-after placement; assigning both buildings' doors to one movable asset would leave
-the other building's entrance behind. Inferred
+independent buildings. The compiler now supports asset-local interior sockets that
+resolve after placement, but these two rooms still need authored socket locations
+and recovery into their separate assets. Inferred
 physical grouping remains marked for review before publication.
 `compare-door-geometry.ts SOURCE_JSON COMPILED_LEVEL_JSON` independently compares
 non-lift door geometry/rules, shared-room membership and door-linked patch rules.
@@ -279,6 +279,13 @@ pairs and five door-linked patches still match, and native geometry construction
 and transition apply/reset pass. The two remaining rooms connect the paired castle
 lodges and the market corner shop with its adjoining gabled house. The catalog keeps
 those buildings independently editable, so shared-room links must preserve that.
+Optional interior sockets retain a local 3D point and a facing direction. Opposing
+sockets within the placement tolerance join rooms; unmatched sockets leave rooms
+independent and ambiguous matches fail. Doorless connector assets participate in
+joins but create no runtime room without an entrance. Compiler/export fixtures
+and native engine tests cover joined and separated room registrations; rotated
+and duplicated assemblies retain independent connections and door-transition links.
+The recovery packet format preserves these definitions without global identifiers.
 
 The twenty-one recovered movement-changing transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.

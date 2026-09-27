@@ -3,6 +3,7 @@ import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
 import { assembleJumpSegments, type PlacedJumpSegment } from "./assemble-jump-segments.ts";
 import { assembleLiftSegments, type PlacedLiftSegment } from "./assemble-lift-segments.ts";
+import { assembleInteriors, type PlacedInterior } from "./assemble-interiors.ts";
 import { partMatrix, transformedObstacle, type Level3D, type Level3DObject } from "./level3d.ts";
 import { gameToScene, type Vec3 } from "./scene.ts";
 import { sceneToGame } from "./geometry.ts";
@@ -185,7 +186,7 @@ export function compileAssetGameplay(
     doorLinks?: { mode: "trigger-transition" | "swap-rights"; ids: string[] };
   }[] = [];
   let lifts: PlacedLiftSegment[] = [];
-  const interiors: string[] = [];
+  const placedInteriors: PlacedInterior[] = [];
   const doors: {
     name: string;
     lift?: string;
@@ -500,10 +501,27 @@ export function compileAssetGameplay(
     }
     for (const interior of gameplay.interiors ?? []) {
       const id = `${placement.id}/${interior.id}`;
-      interiors.push(id);
+      const origin = transform(interior.node, [0, 0, 0]);
+      placedInteriors.push({
+        id,
+        joins: (interior.joins ?? []).map((join) => {
+          const direction = transform(interior.node, [...join.direction, 0]);
+          return {
+            point: transform(interior.node, join.point),
+            direction: [direction[0] - origin[0], direction[1] - origin[1]],
+          };
+        }),
+      });
       for (const door of interior.doors) placeDoor(door, undefined, id);
     }
   }
+  const interiorIdentities = assembleInteriors(placedInteriors);
+  for (const door of doors)
+    if (door.interior) door.interior = interiorIdentities.get(door.interior)!;
+  // A disconnected passage with no entrance needs no runtime room.
+  const interiors = [...new Set(interiorIdentities.values())].filter((id) =>
+    doors.some((door) => door.interior === id),
+  );
   const assembledLifts = assembleLiftSegments(lifts);
   jumpPairs.push(...assembleJumpSegments(jumpSegments));
   lifts = assembledLifts.lifts;

@@ -1,5 +1,13 @@
 # Post-port Features
 
+- **Asset-local interior connections.** Independently placed buildings can share
+  a virtual room through matching passage sockets. Sockets carry local positions
+  and opposing directions; moving a building or connector away separates the
+  rooms. Doorless passage assets can connect several entrances, and disconnected
+  passages create no empty runtime building. Export rebuilds door registrations
+  and transition references after joining, including rotated and duplicated
+  assemblies. No occupants or mission content are introduced.
+
 - **Asset-local door state links.** Map transitions can change ordinary/interior
   door permissions or be activated by a door. Export regenerates native door
   indices for each placement and rejects missing or conflicting links. Door-only

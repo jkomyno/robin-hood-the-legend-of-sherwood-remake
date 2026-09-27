@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   liftAssetCompilerFixture,
   interiorAssetCompilerFixture,
+  joinedInteriorCompilerFixture,
   movementTransitionCompilerFixture,
   doorTransitionCompilerFixture,
   doorAnchorCompilerFixture,
@@ -56,6 +57,7 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
         id: room.id,
         node: room.node,
         kind: "building-interior" as const,
+        interiorJoins: room.joins,
         endpoints: room.doors.map((d) => ({
           ...door(d),
           polygon: d.polygon.map(([x, y]): [number, number, number] => [x, y, d.outside[2]]),
@@ -179,6 +181,24 @@ for (const fixture of [
     assert.deepEqual(compileAssetGameplay(document, assets, [0, 0, 2000, 2000]), expected);
     assert.ok(!JSON.stringify(hut.gameplay).includes("sourceMap"));
   });
+
+test("interior passage sockets survive authoring conversion without sharing draft data", () => {
+  const { document, assets, hut, annex, passage } = joinedInteriorCompilerFixture();
+  for (const descriptor of [hut, annex]) descriptor.gameplay!.movementBlockers = [];
+  for (const group of document.groups) group.transform.dx += 100;
+  const expected = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  for (const descriptor of [hut, annex]) {
+    const packet = packetFromFixture(descriptor.gameplay!);
+    packet.asset = descriptor.id;
+    descriptor.gameplay = recoveredGameplayDefinition(packet, descriptor);
+    assert.notEqual(descriptor.gameplay.interiors![0]!.joins, packet.connections[0]!.interiorJoins);
+  }
+  assert.deepEqual(compileAssetGameplay(document, assets, [0, 0, 2000, 2000]), expected);
+  const packet = packetFromFixture(passage.gameplay!);
+  packet.asset = passage.id;
+  const converted = recoveredGameplayDefinition(packet, passage);
+  assert.deepEqual(converted.interiors, passage.gameplay!.interiors);
+});
 
 test("draft conversion preserves alternate locks and rejects lost traversal or off-plane holes", () => {
   const { hut } = liftAssetCompilerFixture();

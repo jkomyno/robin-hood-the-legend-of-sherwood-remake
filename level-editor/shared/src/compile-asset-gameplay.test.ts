@@ -8,6 +8,7 @@ import {
   slopedAssetCompilerFixture,
   liftAssetCompilerFixture,
   interiorAssetCompilerFixture,
+  joinedInteriorCompilerFixture,
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
   sightTransitionCompilerFixture,
@@ -23,6 +24,89 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("independent interiors join through a placed passage and separate when it moves", () => {
+  const { document, assets, passage } = joinedInteriorCompilerFixture();
+  const joined = compileAssetGameplay(document, assets, bounds);
+  assert.equal(joined.buildings!.length, 1);
+  const doors = joined.buildings![0]!.Building.doors;
+  assert.equal(doors.length, 2);
+  assert.equal(doors[0]!.sector_in, doors[1]!.sector_in);
+  assert.notEqual(doors[0]!.locked_pc, doors[1]!.locked_pc);
+  const part = document.objects.find((p) => p.id === "connector-body")!;
+  part.transform.dx += 1;
+  const separated = compileAssetGameplay(document, assets, bounds);
+  assert.equal(separated.buildings!.length, 2);
+  assert.ok(separated.buildings!.every((b) => b.Building.doors.length === 1));
+  assert.notEqual(
+    separated.buildings![0]!.Building.doors[0]!.sector_in,
+    separated.buildings![1]!.Building.doors[0]!.sector_in,
+  );
+  part.transform.dx -= 1;
+  part.transform.rot_deg = 90;
+  assert.equal(compileAssetGameplay(document, assets, bounds).buildings!.length, 2);
+  part.transform.rot_deg = 0;
+  document.objects.find((p) => p.id === "annex-body")!.transform.dx += 100;
+  const relocated = compileAssetGameplay(document, assets, bounds);
+  assert.equal(relocated.buildings!.length, 2);
+  assert.ok(
+    relocated.buildings!.some((building) =>
+      building.Building.doors.some((door) => door.point_out[0] === 780 && door.point_in[0] === 780),
+    ),
+  );
+  passage.gameplay!.interiors![0]!.joins![0]!.direction = [0, 0];
+  assert.throws(() => validateAssetGameplay(passage.gameplay, passage), /invalid interior joins/);
+});
+
+test("joined interior assemblies rotate and duplicate without sharing rooms between copies", () => {
+  const { document, assets } = joinedInteriorCompilerFixture();
+  const copies = document.objects
+    .filter((p) => p.kind === "building")
+    .map((part) => {
+      const copy = structuredClone(part);
+      copy.id += "-copy";
+      copy.group = "assembly-copy";
+      return copy;
+    });
+  document.groups.push({
+    id: "assembly-copy",
+    transform: {
+      dx: 1000,
+      dy: 0,
+      dz: 40,
+      rot_deg: 90,
+    },
+  });
+  document.objects.push(...copies);
+  const result = compileAssetGameplay(document, assets, bounds);
+  assert.equal(result.buildings!.length, 2);
+  assert.ok(result.buildings!.every((b) => b.Building.doors.length === 2));
+  const first = result.buildings![0]!.Building.doors;
+  const second = result.buildings![1]!.Building.doors;
+  assert.notEqual(first[0]!.sector_in, second[0]!.sector_in);
+  assert.equal(second[0]!.sector_in, second[1]!.sector_in);
+});
+
+test("joined rooms retain each asset's door-transition binding", () => {
+  const { document, assets, annex } = joinedInteriorCompilerFixture();
+  const transition = structuredClone(
+    doorTransitionCompilerFixture().hut.gameplay!.movementTransitions![1]!,
+  );
+  transition.doorLinks!.ids = [annex.gameplay!.interiors![0]!.doors[0]!.id];
+  annex.gameplay!.movementTransitions = [transition];
+  const joined = compileAssetGameplay(document, assets, bounds);
+  const linkedDoor = (result: typeof joined) => {
+    const link = result.movement_transitions![0]!.door_links!;
+    assert.equal(link.mode, "swap-rights");
+    assert.equal(link.indices.length, 1);
+    return result.buildings!.flatMap((b) => b.Building.doors)[link.indices[0]!]!;
+  };
+  assert.deepEqual(linkedDoor(joined).point_out, [680, 380]);
+  document.objects.find((p) => p.id === "connector-body")!.transform.dx += 1;
+  const separated = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(linkedDoor(separated).point_out, [680, 380]);
+  assert.equal(separated.buildings!.length, 2);
+});
+
 test("transition receiving anchors preserve reference points outside their linked surfaces", () => {
   const { document, assets, hut } = doorTransitionCompilerFixture();
   const transition = hut.gameplay!.movementTransitions![0]!;

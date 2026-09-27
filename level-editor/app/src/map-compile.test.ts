@@ -11,6 +11,7 @@ import {
   slopedAssetCompilerFixture,
   liftAssetCompilerFixture,
   interiorAssetCompilerFixture,
+  joinedInteriorCompilerFixture,
   clearanceAssetCompilerFixture,
   materialAssetCompilerFixture,
   soundAssetCompilerFixture,
@@ -417,4 +418,22 @@ test("interior asset export matches the native building fixture", async () => {
     ),
   );
   assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("joined and separated asset interiors match native fixtures", async () => {
+  const { document, assets } = joinedInteriorCompilerFixture();
+  for (const state of ["joined", "separated"]) {
+    if (state === "separated")
+      document.objects.find((p) => p.id === "connector-body")!.transform.dx += 1;
+    const fixture = JSON.parse(
+      await readFile(
+        new URL(
+          `../../../crates/robin_engine/tests/fixtures/asset-interior-${state}.level.json`,
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+  }
 });

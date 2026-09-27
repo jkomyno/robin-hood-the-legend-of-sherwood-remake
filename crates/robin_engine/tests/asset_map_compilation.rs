@@ -855,6 +855,37 @@ fn compiled_interior_registers_a_shared_building_sector() {
 }
 
 #[test]
+fn compiled_interior_connections_follow_independent_asset_placement() {
+    for (bytes, expected_rooms, expected_entrances) in [
+        (
+            include_bytes!("fixtures/asset-interior-joined.level.json").as_slice(),
+            1,
+            2,
+        ),
+        (
+            include_bytes!("fixtures/asset-interior-separated.level.json").as_slice(),
+            2,
+            1,
+        ),
+    ] {
+        let mut assets = LevelAssets::new();
+        let engine = construct(bytes, &mut assets);
+        let grid = engine.fast_grid();
+        let buildings: Vec<_> = grid
+            .level
+            .sectors
+            .iter()
+            .filter(|sector| sector.sector_type.is_building())
+            .collect();
+        assert_eq!(buildings.len(), expected_rooms);
+        for building in buildings {
+            assert_eq!(building.gate_indices.len(), expected_entrances);
+        }
+        assert_eq!(grid.level.door_projection_infos.len(), 2);
+    }
+}
+
+#[test]
 fn compiled_interior_rejects_invalid_entrance_identity() {
     let mut bad: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-interior.level.json")).unwrap();

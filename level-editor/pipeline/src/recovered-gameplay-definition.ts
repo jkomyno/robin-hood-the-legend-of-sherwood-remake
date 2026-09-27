@@ -41,6 +41,7 @@ export interface RecoveredConnection {
   type?: number;
   direction?: Point;
   joins?: Vec3[];
+  interiorJoins?: NonNullable<AssetGameplay["interiors"]>[number]["joins"];
   endpoints: RecoveredDoor[];
 }
 export interface RecoveredGameplayPacket {
@@ -177,7 +178,12 @@ export function recoveredGameplayDefinition(
     const doors = connection.endpoints.map((d) => door(connection, d));
     if (connection.kind === "passage") gameplay.doors.push(...doors);
     else if (connection.kind === "building-interior")
-      gameplay.interiors!.push({ id: connection.id, node: connection.node, doors });
+      gameplay.interiors!.push({
+        id: connection.id,
+        node: connection.node,
+        doors,
+        ...(connection.interiorJoins ? { joins: structuredClone(connection.interiorJoins) } : {}),
+      });
     else {
       const candidates = packet.surfaces.filter(
         (s) => s.node === connection.node && s.kind === "lift",

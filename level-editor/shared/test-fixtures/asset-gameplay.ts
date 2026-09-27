@@ -636,6 +636,62 @@ export function interiorAssetCompilerFixture() {
   return fixture;
 }
 
+export function joinedInteriorCompilerFixture() {
+  const fixture = interiorAssetCompilerFixture();
+  const room = fixture.hut.gameplay!.interiors![0]!;
+  const secondDoor = room.doors.pop()!;
+  fixture.hut.gameplay!.doors = [];
+  room.joins = [{ point: [100, 120, 0], direction: [1, 0] }];
+  const annex = structuredClone(fixture.hut);
+  annex.id = "annex";
+  annex.gameplay!.interiors = [
+    {
+      id: "room",
+      node: "building-999",
+      doors: [secondDoor],
+      joins: [{ point: [-100, 120, 0], direction: [-1, 0] }],
+    },
+  ];
+  const passage = structuredClone(fixture.hut);
+  passage.id = "connector";
+  passage.gameplay = {
+    version: 1,
+    collision: "none",
+    surfaces: [],
+    doors: [],
+    interiors: [
+      {
+        id: "passage",
+        node: "building-999",
+        doors: [],
+        joins: [
+          { point: [-50, 120, 0], direction: [-1, 0] },
+          { point: [50, 120, 0], direction: [1, 0] },
+        ],
+      },
+    ],
+  };
+  for (const [descriptor, dx] of [
+    [annex, 600],
+    [passage, 450],
+  ] as const) {
+    fixture.assets.set(descriptor.id, descriptor);
+    const part = structuredClone(fixture.document.objects[0]!);
+    part.id = `${descriptor.id}-body`;
+    part.node = `asset:${descriptor.id}:building-999`;
+    part.group = descriptor.id;
+    part.transform.dx = dx;
+    fixture.document.objects.push(part);
+    fixture.document.groups.push({ id: descriptor.id, transform: { ...IDENTITY_TRANSFORM } });
+    fixture.document.assetSources!.push({
+      ...fixture.document.assetSources![0]!,
+      id: descriptor.id,
+      descriptor: `${descriptor.id}.json`,
+    });
+  }
+  return { ...fixture, annex, passage };
+}
+
 export function doorTransitionCompilerFixture() {
   const fixture = interiorAssetCompilerFixture();
   const gameplay = fixture.hut.gameplay!;
