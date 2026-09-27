@@ -65,3 +65,35 @@ from the preview worker.
 Keep the current grouping gallery and submitted decisions stable while the user
 reviews it. The corrected mask-constrained texture preview will be a separate
 revision; it must not overwrite or silently rebind existing grouping evidence.
+
+## Executable audit and synthesis guard
+
+`prepare_mask_audit.py` renders all 166 native masks beside the original Day
+artwork. `source-mask-candidates.json` records explicit semantic associations,
+inspected comparison-image hashes, referenced bitmap hashes and unresolved
+boundaries. `build_mask_review.py` renders those associations and their proposed
+foreground exclusions; it does not approve them.
+
+`compile_source_masks.py --output <new-audit-directory>` compiles only inspected
+rules. Every unresolved or absent assignment gets an explicit black bitmap;
+the coverage check rejects any receiver that would reach the shared API's
+unconstrained fallback. The compiler's `synthesis_ready` field remains false
+while source nodes, canopy layers or the terrain domain are unresolved.
+
+`reproject_masked_preview.py` is an **audit-only** Day pass. It opens the approved
+grouped worker, resets RGB, projects through reviewed masks and first-hit depth
+into the existing UV atlases, and retains physical opacity. It does not promote
+unresolved regions to hidden surfaces or synthesize them. `verify_masked_preview.py`
+reopens the saved worker and checks the packed RGB, source pixel coordinates,
+mask membership, geometry/UV fingerprint and complete receiver coverage.
+The `reproject-v3-audit` artifact uses the first 44 inspected Day assignments;
+subsequent mask inspections are separate from that frozen bake.
+
+`texture_packets.py` now requires a `source_ownership_validation` binding with
+an immutable receipt path and SHA-256 before preparing, generating or baking.
+The receipt must say `status: PASS`, bind the exact `worker_sha256`, report zero
+`unresolved_source_nodes` and `unconstrained_receivers`, and include nonempty
+hashed `evidence`. This final receipt also requires the visual and independent
+domain checks in step 5 above; the partial audit verifier cannot produce it.
+Previously prepared packets and the four old OpenRouter outputs cannot bypass
+this guard. Rebuild them after the full source audit passes.
