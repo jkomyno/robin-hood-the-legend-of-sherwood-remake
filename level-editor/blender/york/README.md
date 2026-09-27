@@ -268,3 +268,40 @@ Grouping decisions never authorize texture synthesis or final geometry publicati
 The later geometry review still requires the procedure's complete eight-view
 solid/source-textured packets. Browser control verification is available with
 `node level-editor/blender/york/verify_gallery.mjs` (using an isolated profile).
+
+## Installing the approved grouping milestone
+
+The completed grouping review covers 252 named assets plus terrain. Installation
+is a separate, explicitly requested library update; it does not mark geometry,
+textures or missing state receivers fully refined. `publication-grouping-01/`
+holds the frozen reviewed exports, browser derivatives, audit and rollback data.
+The map retains the existing camera, bounds, provenance and mission metadata.
+The stage was installed after the complete editor audit passed: 252 group and
+988 part selections, all 252 insertable palette assets, duplication, undo/redo,
+save and full-page reload. `installation.json` records the installed bytes and
+backup; `post-install-verification.json` records index and outside-file checks.
+York remains WIP: choose **York** or **All levels** in the palette's source filter.
+
+Generate browser derivatives with `refinement/blender/lossy_assets.py refresh`
+against the publication stage's `map-assets/3d-assets`, then prepare a private
+editor audit with `prepare_publication_browser.py --map york --document
+<stage>/york.rhlos-map.json`. The explicit staged document is appropriate only
+after checking that live York still matches the frozen placement baseline.
+Run the full `browser/verify_publication.mjs` audit, inspect its screenshots and
+retain its config and result under `<stage>/browser/`.
+York's 988 part-selection checks need an extended `audit_timeout_ms` budget;
+the publication audit selects **All levels** so WIP assets remain testable.
+
+`publish_grouping.py verify <stage> --browser` binds all 253 models and
+descriptors to the approved gallery evidence, validates derivative receipts,
+checks map metadata and placement preservation, and rejects changed live York
+inputs or references from another map to retiring assets. `install <stage>`
+repeats these checks under the shared publication lock, backs up York's old
+directory and map, installs the new directory/resources, and rebuilds the index.
+Failures restore the old assets, map and index. Other maps remain in place.
+
+For an installed stage, `publish_grouping.py rollback <stage>` restores the
+backup only if York has not changed since installation. It rebuilds the index
+so subsequent updates to other maps survive. The installer retains the approved
+authoring models and creates separate optimized display copies; no web deployment
+is part of this operation.

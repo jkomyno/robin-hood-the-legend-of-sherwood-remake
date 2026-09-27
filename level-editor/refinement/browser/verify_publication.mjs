@@ -56,7 +56,7 @@ try{
  await evaluate(ws,++id,'window.__publicationConfig='+JSON.stringify(config));
  await evaluate(ws,++id,await readFile(new URL('./publication-check.js',import.meta.url),'utf8'));
  let result,phase,lastProgress=0;
- for(let i=0;i<1200;i++){
+ for(let i=0;i<Math.ceil((config.audit_timeout_ms??240000)/200);i++){
   result=await evaluate(ws,++id,'window.__publicationResult');if(result)break;
   if(performance.now()-lastProgress>15000){const progress=await evaluate(ws,++id,'window.__publicationProgress')??{phase:'app-startup'};console.log(JSON.stringify(progress));await writeFile(join(here,'progress.json'),JSON.stringify({status:'RUNNING',...progress}));lastProgress=performance.now();}
   phase=await evaluate(ws,++id,'window.__publicationPhase');if(phase&&!phase.captured){await writeFile(join(here,'progress.json'),JSON.stringify({status:'RUNNING',phase:phase.phase+'-screenshot'}));await new Promise(r=>setTimeout(r,800));await screenshot(phase.phase==='map-ready'?'map-before-insertion':'map-revealed');await evaluate(ws,++id,'window.__publicationPhase.captured=true;window.__publicationContinue=true');}
@@ -75,7 +75,7 @@ try{
  const reopen=`(()=>{const card=[...document.querySelectorAll('.map-card-open')].find(button=>button.dataset.map===${JSON.stringify(config.map+' (Modified)')});if(!card||card.disabled)return false;card.click();return true;})()`;
  let reopened=false;for(let i=0;i<300&&!reopened;i++){try{reopened=await evaluate(ws,++id,reopen);}catch(error){if(!/Cannot find default execution context|Execution context was destroyed/.test(String(error)))throw error;}if(!reopened)await new Promise(r=>setTimeout(r,200));}
  if(!reopened)throw Error('Saved publication map copy is not offered after reload');
- let restored=false;for(let i=0;i<Math.ceil((config.reload_timeout_ms??60000)/200);i++){if(await evaluate(ws,++id,`document.querySelectorAll('.object-list li.depth-0').length===${result.savedGroups} && document.querySelectorAll('.shared-library .asset-card button[aria-label^="Add "]').length===${config.expected.assets.length}`)){restored=true;break;}await new Promise(r=>setTimeout(r,200));}
+ let restored=false;for(let i=0;i<Math.ceil((config.reload_timeout_ms??60000)/200);i++){if(await evaluate(ws,++id,`(()=>{const filter=document.querySelector('.shared-library select[aria-label="Source level"]');if(filter&&filter.value!==''){filter.value='';filter.dispatchEvent(new Event('change',{bubbles:true}));}return document.querySelectorAll('.object-list li.depth-0').length===${result.savedGroups} && document.querySelectorAll('.shared-library .asset-card button[aria-label^="Add "]').length===${config.expected.assets.length};})()`)){restored=true;break;}await new Promise(r=>setTimeout(r,200));}
  if(!restored){await screenshot('reload-failure');throw Error('Full browser reload did not restore saved publication instances: '+await evaluate(ws,++id,'document.body.innerText'));}
  result.checks.push('full page reload restores saved groups, pinned external models and all palette entries');
  await screenshot('map-after-reload');
