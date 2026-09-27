@@ -12,11 +12,11 @@ export function diagnoseGameplayCandidates(
     (document.size
       ? ([0, 0, document.size[0], document.size[1]] as [number, number, number, number])
       : undefined);
-  const probe = (scene: Level3D): { ready: boolean; error?: string } => {
+  const probe = (scene: Level3D): { ready: boolean; error?: string; warnings?: string[] } => {
     try {
       if (!bounds) throw new Error("Map has no export bounds or size");
-      compileAssetGameplay(scene, candidates, bounds);
-      return { ready: true };
+      const geometry = compileAssetGameplay(scene, candidates, bounds);
+      return { ready: true, ...(geometry.warnings ? { warnings: geometry.warnings } : {}) };
     } catch (error) {
       return { ready: false, error: String(error) };
     }

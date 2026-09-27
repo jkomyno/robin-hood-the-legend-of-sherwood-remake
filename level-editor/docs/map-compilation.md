@@ -101,6 +101,12 @@ references are assigned after placement; missing or ambiguous endpoints fail.
 The engine builds the actual fast-find grid, collision lines, door links and
 visibility-route graph from the generated descriptor.
 
+Movement coordinates use the engine's integer grid. Boolean cuts can produce
+subpixel fragments that collapse when rounded; these generated regions or holes
+are omitted with a compilation warning. Authored surfaces that collapse still
+fail validation. Offline recovery also records the area changed by rounding in
+its coverage report; successful quantization alone does not establish parity.
+
 Optional `lifts` name an asset-local `surface`, a `node`, a traversal `type`
 (`1` stairs, `2` ladder, `3` wall), a local XY `direction` vector and `doors`.
 Lift door types are `4` high, `5` low and `6` high crenellation; their `inside`

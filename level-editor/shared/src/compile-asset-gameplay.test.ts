@@ -13,6 +13,20 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("authored subpixel surfaces remain errors rather than being silently omitted", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  hut.gameplay!.surfaces[0]!.polygon = [
+    [0, 0],
+    [0.1, 0],
+    [0.1, 100],
+    [0, 100],
+  ];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /collapses after coordinate quantization/,
+  );
+});
+
 test("authored movement contours follow an asset independently of sight and terrain", () => {
   const { document, assets, hut } = assetCompilerFixture();
   hut.gameplay!.doors = [];

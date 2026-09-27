@@ -23,6 +23,7 @@ import {
 import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
+import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 
 const { values } = parseArgs({
   options: {
@@ -167,6 +168,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
       continue;
     }
     let recoveredArea = 0;
+    let quantizationDifferenceArea = 0;
     for (const { obstacle, index } of supports) {
       const owners = locals.get(index) ?? [];
       if (owners.length !== 1) {
@@ -189,7 +191,17 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
           regions,
           ...motion.obstacles.map((o) => close(o.polygon.points)),
         );
-      for (const [regionIndex, region] of regions.entries()) {
+      for (const [regionIndex, generated] of regions.entries()) {
+        const region = quantizeGeneratedMotionPolygon(
+          generated,
+          Math.round,
+          `${owner.node}-walk-${regionIndex}`,
+          packet(owner.asset).issues,
+        );
+        quantizationDifferenceArea += region
+          ? polygonArea(polygonClipping.xor(generated, region))
+          : polygonArea([generated]);
+        if (!region) continue;
         const points = region[0]!.slice(0, -1).map(([x, y]) => [x, y] as Point);
         recoveredArea += polygonArea([region]);
         const vertices = points.map(([x, y]) =>
@@ -236,6 +248,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
           : [close(motion.polygon.points)],
       ),
       recoveredArea,
+      quantizationDifferenceArea,
     });
   }
 if (groundAreas.length) {

@@ -70,6 +70,8 @@ export type GameplayAssetDescriptor = ProjectionAssetDescriptor & { gameplay?: A
 
 /** A generated interchange schema; indices are assigned afresh on each compilation. */
 export interface CompiledAssetGeometry {
+  /** Authoring diagnostics, also surfaced in the export summary. */
+  warnings?: string[];
   motion_data: {
     layers: {
       is_lift: boolean;

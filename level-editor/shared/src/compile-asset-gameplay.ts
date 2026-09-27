@@ -12,6 +12,7 @@ import {
 } from "./asset-gameplay.ts";
 
 import { heightPlane, planeHeight, clipHeight, type HeightPlane } from "./gameplay-plane.ts";
+import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-quantization.ts";
 
 type Instance = {
   id: string;
@@ -25,31 +26,13 @@ const signedArea = (ring: Point[]) =>
     return sum + a[0] * b[1] - b[0] * a[1];
   }, 0) / 2;
 function ring(points: Point[], label = "Gameplay polygon"): Point[] {
-  const result = points.map((p) => [...p] as Point);
-  if (
-    result.length > 1 &&
-    result[0]![0] === result.at(-1)![0] &&
-    result[0]![1] === result.at(-1)![1]
-  )
-    result.pop();
   // Plane construction in the runtime uses the first three vertices.
   // Remove straight-edge vertices introduced by polygon unions and clipping.
-  let changed = true;
-  while (changed && result.length >= 3) {
-    changed = false;
-    for (let i = 0; i < result.length; i++) {
-      const a = result[(i + result.length - 1) % result.length]!,
-        b = result[i]!,
-        c = result[(i + 1) % result.length]!;
-      if (Math.abs((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])) < 1e-8) {
-        result.splice(i, 1);
-        changed = true;
-        break;
-      }
-    }
-  }
+  const result = simplifyMotionRing(points);
   if (result.length < 3 || Math.abs(signedArea(result)) < 0.5)
-    throw new Error(`${label} collapses after coordinate quantization`);
+    throw new Error(
+      `${label} collapses after coordinate quantization (${JSON.stringify(points.slice(0, 8))})`,
+    );
   // Consistent winding is required by movement edge authorization.
   if (signedArea(result) < 0) result.reverse();
   return result;
@@ -146,6 +129,7 @@ export function compileAssetGameplay(
       "Asset state transitions need gameplay compilation support before this map can be exported",
     );
   const project = (p: Vec3): Point => [quantize(p[0]), quantize(p[1] - p[2])];
+  const warnings: string[] = [];
   const surfaces: { polygon: Point[]; holes: Point[][]; plane: HeightPlane; lift?: string }[] = [];
   const movementBlockers: typeof surfaces = [];
   const movementSolids: SightObstacle[] = [];
@@ -328,16 +312,17 @@ export function compileAssetGameplay(
     }
     const output = layers[layer]!;
     for (const poly of merged) {
-      const boundary = ring(
-        poly[0]!.map((p) => [quantize(p[0]), quantize(p[1])]),
-        `Merged movement boundary on layer ${layer}`,
+      const quantized = quantizeGeneratedMotionPolygon(
+        poly,
+        quantize,
+        `Movement layer ${layer}`,
+        warnings,
       );
-      const blockers = poly.slice(1).map((r) =>
-        ring(
-          r.map((p) => [quantize(p[0]), quantize(p[1])]),
-          `Merged movement hole on layer ${layer}`,
-        ),
-      );
+      if (!quantized) continue;
+      const boundary = ring(quantized[0]!, `Merged movement boundary on layer ${layer}`);
+      const blockers = quantized
+        .slice(1)
+        .map((r) => ring(r, `Merged movement hole on layer ${layer}`));
       // Intersect solids with this surface's plane in world XY, then project
       // the resulting slice. Bounding-box clipping also handles concave solids.
       const worldPlane = heightPlane(
@@ -475,6 +460,7 @@ export function compileAssetGameplay(
       o.projection_area[1] === spawnArea.layer,
   );
   return {
+    ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
     sight_obstacles: sight,
     doors: compiledDoors.filter((_, i) => !doors[i]!.lift && !doors[i]!.interior),

@@ -141,6 +141,7 @@ export function compileMap(
   const volumes = assetGeometry ? [] : compileVolumes(document, bounds);
   const warnings = assetGeometry
     ? [
+        ...(assetGeometry.warnings ?? []),
         "Compiled from asset-local surfaces, sight geometry, doors and spawn points. Navigation grids and route graphs are constructed by the engine.",
         "Mission scripts, dynamic patch states, occupants and jumps are not yet supported by the asset compiler. This export is not a full gameplay-parity certification.",
       ]
