@@ -98,6 +98,17 @@ saved combined worker before building the gallery. The gallery requires this
 independent preservation receipt and inspections of the exact baked sheets;
 generation inspection alone does not mark a model ready for texture review.
 
+For an explicitly requested partial texture publication, `stage_texture_candidate.py`
+stages completed assets whose reviewed grouping is unchanged, plus terrain only
+when all six regions have baked. It requires independent saved-worker verification,
+retains every other live model byte, and checks exported world geometry. Prepare
+the normal publication browser audit against this stage, then use
+`partial_texture_publication.py <stage> --install`. Installation verifies the
+browser's pinned files and current live inputs under the shared library lock,
+backs up the changed assets, and rolls back on failure. The publication receipt
+records the user's install request; texture review remains pending. Regrouped
+assemblies require their complete ownership migration instead of this partial path.
+
 ## Inspection
 
 In **Sherwood Refinement**, frames 1–9 select the reference camera, east orbit,
