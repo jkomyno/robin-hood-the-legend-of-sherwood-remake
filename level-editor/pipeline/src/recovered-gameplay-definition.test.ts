@@ -7,9 +7,11 @@ import {
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import {
   recoveredGameplayDefinition,
+  descriptorGameplayPacket,
   type RecoveredGameplayPacket,
 } from "./recovered-gameplay-definition.ts";
 import type { AssetGameplay, AssetDoor } from "../../shared/src/asset-gameplay.ts";
+import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
 
 function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
   const door = (d: AssetDoor) => ({
@@ -65,6 +67,50 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
     ],
   };
 }
+
+test("geometry-only assets retain derived movement collision unless explicitly replaced", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const expected = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  const seed = descriptorGameplayPacket(hut);
+  assert.equal(seed.movementBlockers, undefined);
+  const packet = packetFromFixture(hut.gameplay!);
+  delete packet.movementBlockers;
+  hut.gameplay = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(compileAssetGameplay(document, assets, [0, 0, 2000, 2000]), expected);
+  assert.equal(hut.gameplay.movementBlockers, undefined);
+  assert.equal(
+    recoveredGameplayDefinition(
+      descriptorGameplayPacket(assets.get("spawn")!),
+      assets.get("spawn")!,
+    ).collision,
+    "none",
+  );
+});
+
+test("mission surface recovery uses local geometry without retaining projection references", () => {
+  const { hut } = assetCompilerFixture();
+  const shape = structuredClone(hut.parts[0]!.obstacle_local_game!);
+  shape.projection_area = [123, 45];
+  hut.parts = [
+    {
+      node: "bridge",
+      name: "Bridge",
+      mission_profile: "unused-authoring-reference",
+      obstacle_local_game: shape,
+    },
+  ];
+  const gameplay = recoveredGameplayDefinition(descriptorGameplayPacket(hut), hut);
+  assert.deepEqual(gameplay.surfaces[0]!.height, [30, 30, 30, 30]);
+  assert.deepEqual(gameplay.surfaces[0]!.polygon, [
+    [40, 40],
+    [50, 40],
+    [50, 50],
+    [40, 50],
+  ]);
+  assert.ok(!JSON.stringify(gameplay).includes("projection_area"));
+  hut.editor_usage = "map-background";
+  assert.throws(() => descriptorGameplayPacket(hut), /terrain needs authored movement boundaries/);
+});
 
 for (const fixture of [liftAssetCompilerFixture, interiorAssetCompilerFixture])
   test(`recovered ${fixture.name} produces equivalent compiled connections after placement`, () => {

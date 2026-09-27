@@ -78,6 +78,7 @@ for (const file of (await fs.readdir(path.join(library, "scenes")))
     validDefinitions: report.definitionValidation.filter((v: { valid: boolean }) => v.valid).length,
     invalidDefinitions: report.definitionValidation.filter((v: { valid: boolean }) => !v.valid),
     candidateCompilation: report.candidateCompilation,
+    staticGeometryDiagnostic: report.staticGeometryDiagnostic,
   });
   console.log(
     `${file}: ${report.assets} asset drafts; ${report.definitionValidation.filter((v: { valid: boolean }) => v.valid).length} schema-valid; ${report.unresolved.length} unresolved ownership/terrain records`,

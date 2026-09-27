@@ -55,3 +55,11 @@ Each recovered draft now includes a compiler-schema candidate when validation
 passes. `definitionValidation` lists per-asset failures. Schema validity does not
 mean all gameplay was recovered or that the assembled map compiles; drafts stay
 separate from the published asset library until their missing information is resolved.
+
+Recovery includes geometry-only assets: local collision shapes remain active
+unless explicitly replaced by authored movement contours. Mission-authored
+surface geometry is retained without map-wide projection references. Standalone
+passages are assigned independently; an interior's entrances remain grouped.
+`staticGeometryDiagnostic` checks a disposable copy of the current visible
+geometry without state/population behaviours. Its success does not authorize
+export or establish gameplay parity; `candidateCompilation` checks the full scene.

@@ -42,8 +42,37 @@ export interface RecoveredConnection {
 export interface RecoveredGameplayPacket {
   asset: string;
   surfaces: RecoveredSurface[];
-  movementBlockers: RecoveredSurface[];
+  /** Omitted means derive collision from parts; an empty list explicitly disables that derivation. */
+  movementBlockers?: RecoveredSurface[];
   connections: RecoveredConnection[];
+}
+
+/** Seed geometry that is already authored in the asset, before recovering additional gameplay. */
+export function descriptorGameplayPacket(
+  descriptor: ProjectionAssetDescriptor,
+): RecoveredGameplayPacket {
+  if (descriptor.editor_usage === "map-background")
+    throw new Error(`${descriptor.id}: terrain needs authored movement boundaries`);
+  if (!descriptor.parts.length)
+    throw new Error(`${descriptor.id}: asset has no geometry definitions`);
+  const surfaces: RecoveredSurface[] = [];
+  for (const part of descriptor.parts) {
+    const node = part.node;
+    if (part.scenery) continue;
+    if (!part.obstacle_local_game)
+      throw new Error(`${descriptor.id}/${node}: missing local collision shape`);
+    // Mission-authored surfaces have no extracted obstacle identity. Their
+    // local geometry is authoritative; map-wide projection indices are discarded.
+    if (part.mission_profile && part.obstacle_local_game.projection_area !== null)
+      surfaces.push({
+        id: `${part.node}-surface`,
+        node: part.node,
+        kind: "walkable",
+        vertices: part.obstacle_local_game.points.map((p) => [p.x, p.y, p.z_top]),
+        holes: [],
+      });
+  }
+  return { asset: descriptor.id, surfaces, connections: [] };
 }
 
 /** Convert authoring drafts to the compiler schema. This does not certify recovery completeness. */
@@ -101,9 +130,11 @@ export function recoveredGameplayDefinition(
   };
   const gameplay: AssetGameplay = {
     version: 1,
-    collision: "parts",
+    collision: descriptor.parts.some((p) => p.obstacle_local_game) ? "parts" : "none",
     surfaces: packet.surfaces.map(surface),
-    movementBlockers: packet.movementBlockers.map(surface),
+    ...(packet.movementBlockers !== undefined
+      ? { movementBlockers: packet.movementBlockers.map(surface) }
+      : {}),
     doors: [],
     spawns: [],
     lifts: [],

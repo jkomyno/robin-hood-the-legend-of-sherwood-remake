@@ -24,7 +24,7 @@ const signedArea = (ring: Point[]) =>
     const b = ring[(i + 1) % ring.length]!;
     return sum + a[0] * b[1] - b[0] * a[1];
   }, 0) / 2;
-function ring(points: Point[]): Point[] {
+function ring(points: Point[], label = "Gameplay polygon"): Point[] {
   const result = points.map((p) => [...p] as Point);
   if (
     result.length > 1 &&
@@ -49,7 +49,7 @@ function ring(points: Point[]): Point[] {
     }
   }
   if (result.length < 3 || Math.abs(signedArea(result)) < 0.5)
-    throw new Error("Gameplay polygon collapses after coordinate quantization");
+    throw new Error(`${label} collapses after coordinate quantization`);
   // Consistent winding is required by movement edge authorization.
   if (signedArea(result) < 0) result.reverse();
   return result;
@@ -215,7 +215,7 @@ export function compileAssetGameplay(
       const plane = heightPlane(points.map(([x, y, z]) => [x, y - z, z]));
       const target = gameplay.movementBlockers?.includes(surface) ? movementBlockers : surfaces;
       target.push({
-        polygon: ring(points.map(project)),
+        polygon: ring(points.map(project), `${placement.id}/${surface.id}`),
         plane,
         ...(gameplay.lifts?.find((l) => l.surface === surface.id)
           ? { lift: `${placement.id}/${gameplay.lifts.find((l) => l.surface === surface.id)!.id}` }
@@ -225,6 +225,7 @@ export function compileAssetGameplay(
             hole.map((p) =>
               project(transform(surface.node, [p[0], p[1], planeHeight(localPlane, p)])),
             ),
+            `${placement.id}/${surface.id} hole`,
           ),
         ),
       });
@@ -239,7 +240,10 @@ export function compileAssetGameplay(
         inside: transform(door.node, door.inside),
         middle: project(transform(door.node, door.middle)),
         polygon: door.polygon.length
-          ? ring(door.polygon.map((p) => project(transform(door.node, [...p, door.outside[2]]))))
+          ? ring(
+              door.polygon.map((p) => project(transform(door.node, [...p, door.outside[2]]))),
+              `${placement.id}/${door.id} click polygon`,
+            )
           : [],
       });
     for (const door of gameplay.doors) placeDoor(door);
@@ -324,10 +328,16 @@ export function compileAssetGameplay(
     }
     const output = layers[layer]!;
     for (const poly of merged) {
-      const boundary = ring(poly[0]!.map((p) => [quantize(p[0]), quantize(p[1])]));
-      const blockers = poly
-        .slice(1)
-        .map((r) => ring(r.map((p) => [quantize(p[0]), quantize(p[1])])));
+      const boundary = ring(
+        poly[0]!.map((p) => [quantize(p[0]), quantize(p[1])]),
+        `Merged movement boundary on layer ${layer}`,
+      );
+      const blockers = poly.slice(1).map((r) =>
+        ring(
+          r.map((p) => [quantize(p[0]), quantize(p[1])]),
+          `Merged movement hole on layer ${layer}`,
+        ),
+      );
       // Intersect solids with this surface's plane in world XY, then project
       // the resulting slice. Bounding-box clipping also handles concave solids.
       const worldPlane = heightPlane(

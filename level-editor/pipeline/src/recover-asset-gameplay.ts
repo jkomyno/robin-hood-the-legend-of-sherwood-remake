@@ -17,10 +17,12 @@ import { readStoredMap, pinnedDescriptors } from "./stored-map.ts";
 import { recoverGroundGameplay, polygonArea } from "./recover-ground-gameplay.ts";
 import {
   recoveredGameplayDefinition,
+  descriptorGameplayPacket,
   type RecoveredGameplayPacket,
 } from "./recovered-gameplay-definition.ts";
 import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
-import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
+import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
+import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 
 const { values } = parseArgs({
   options: {
@@ -67,7 +69,6 @@ const packet = (asset: string) => {
       status: "needs-review",
       asset,
       surfaces: [],
-      movementBlockers: [],
       connections: [],
       issues: [],
     };
@@ -75,6 +76,17 @@ const packet = (asset: string) => {
   }
   return p;
 };
+for (const descriptor of descriptors.values()) {
+  if (descriptor.editor_usage === "map-background") continue;
+  Object.assign(packet(descriptor.id), descriptorGameplayPacket(descriptor));
+  packet(descriptor.id).issues.push(
+    "Geometry seeded from asset parts; verify recovered movement clearances and feature coverage before publication",
+  );
+  if (descriptor.parts.some((p) => p.mission_profile))
+    packet(descriptor.id).issues.push(
+      "Mission-authored geometry retained; recover associated state transitions and behaviours separately",
+    );
+}
 const localize = (part: Level3DObject, point: Vec3): Vec3 => {
   const m = partMatrix(document.camera, document, part),
     p = gameToScene(document.camera, ...point);
@@ -256,7 +268,7 @@ if (groundAreas.length) {
       for (const [regionIndex, region] of blocker.regions.entries()) {
         const local = (ring: Point[]) =>
           ring.slice(0, -1).map(([x, y]) => localize(owner.part, [x, y, 0]));
-        packet(owner.asset).movementBlockers.push({
+        (packet(owner.asset).movementBlockers ??= []).push({
           id: `${owner.node}-ground-blocker-${index}-${regionIndex}`,
           node: owner.node,
           vertices: local(region[0]!),
@@ -398,85 +410,105 @@ for (const [index, entry] of proto.buildings.entries()) {
     Building?: { doors: SourceDoor[] };
     StandaloneDoors?: { doors: SourceDoor[] };
   };
-  const doors = building.Building?.doors ?? building.StandaloneDoors?.doors;
-  if (!doors?.length) {
+  const groups = recoveryDoorGroups(building);
+  if (!groups.length) {
+    recoveredBuildings++;
+    continue;
+  }
+  if (groups.some((g) => !g.doors.length)) {
     unresolved.push({ kind: "building-empty", building: index });
     continue;
   }
-  try {
-    const candidates = new Map<
-      string,
-      { owner: { asset: string; node: string; part: Level3DObject }; distance: number }
-    >();
-    const first = doors[0]!,
-      z = heightAt(first.sector_out, first.layer_out, first.point_out);
-    for (const [obstacleIndex, owners] of locals) {
-      if (owners.length !== 1) continue;
-      const obstacle = proto.sight_obstacles[obstacleIndex]!;
-      if (!obstacle.solid) continue;
-      if (Math.min(...obstacle.points.map((p) => p.z_bottom)) > z + 24) continue;
-      const distance = distanceToPolygon(
-        [first.point_in[0], first.point_in[1] + z],
-        obstacle.points.map((p) => [p.x, p.y]),
-      );
-      const owner = owners[0]!,
-        previous = candidates.get(owner.asset);
-      if (!previous || distance < previous.distance)
-        candidates.set(owner.asset, { owner, distance });
-    }
-    const ranked = [...candidates.values()].sort((a, b) => a.distance - b.distance);
-    if (
-      !ranked[0] ||
-      ranked[0].distance > 24 ||
-      (ranked[1] && ranked[1].distance - ranked[0].distance < 8)
-    ) {
-      unresolved.push({
-        kind: "building-owner",
-        building: index,
-        candidates: ranked.slice(0, 4).map((c) => ({ asset: c.owner.asset, distance: c.distance })),
+  let recovered = 0;
+  for (const connection of groups) {
+    const { doors, sourceDoor } = connection;
+    const isInterior = connection.kind === "building-interior";
+    try {
+      const candidates = new Map<
+        string,
+        { owner: { asset: string; node: string; part: Level3DObject }; distance: number }
+      >();
+      const first = doors[0]!,
+        z = isInterior
+          ? heightAt(first.sector_out, first.layer_out, first.point_out)
+          : heightAt(first.sector_in, first.layer_in, first.point_in);
+      for (const [obstacleIndex, owners] of locals) {
+        if (owners.length !== 1) continue;
+        const obstacle = proto.sight_obstacles[obstacleIndex]!;
+        if (!obstacle.solid) continue;
+        if (Math.min(...obstacle.points.map((p) => p.z_bottom)) > z + 24) continue;
+        const distance = distanceToPolygon(
+          [first.point_in[0], first.point_in[1] + z],
+          obstacle.points.map((p) => [p.x, p.y]),
+        );
+        const owner = owners[0]!,
+          previous = candidates.get(owner.asset);
+        if (!previous || distance < previous.distance)
+          candidates.set(owner.asset, { owner, distance });
+      }
+      const ranked = [...candidates.values()].sort((a, b) => a.distance - b.distance);
+      if (
+        !ranked[0] ||
+        ranked[0].distance > 24 ||
+        (ranked[1] && ranked[1].distance - ranked[0].distance < 8)
+      ) {
+        unresolved.push({
+          kind: "building-owner",
+          building: index,
+          sourceDoor,
+          candidates: ranked
+            .slice(0, 4)
+            .map((c) => ({ asset: c.owner.asset, distance: c.distance })),
+        });
+        continue;
+      }
+      const owner = ranked[0].owner;
+      const endpoints = doors.map((door, i) => {
+        const elevation = heightAt(door.sector_out, door.layer_out, door.point_out);
+        const local = (point: Point) =>
+          localize(owner.part, [point[0], point[1] + elevation, elevation]);
+        return {
+          id: `door-${i}`,
+          node: owner.node,
+          polygon: door.door_sector.points.map(local),
+          outside: local(door.point_out),
+          inside: isInterior
+            ? local(door.point_in)
+            : localEndpoint(owner.part, door.point_in, door.sector_in, door.layer_in),
+          middle: local(door.point_mid),
+          type: door.door_type,
+          active: door.active,
+          locks: {
+            player: door.locked_pc,
+            unlockable: door.unlockable,
+            villains: door.locked_npc_villain,
+            civilians: door.locked_npc_civilian,
+          },
+          afterTransition: {
+            player: door.locked_pc_after_patch,
+            unlockable: door.unlockable_after_patch,
+            villains: door.locked_npc_villain_after_patch,
+            civilians: door.locked_npc_civilian_after_patch,
+          },
+        };
       });
-      continue;
-    }
-    const owner = ranked[0].owner;
-    const endpoints = doors.map((door, i) => {
-      const elevation = heightAt(door.sector_out, door.layer_out, door.point_out);
-      const local = (point: Point) =>
-        localize(owner.part, [point[0], point[1] + elevation, elevation]);
-      return {
-        id: `door-${i}`,
+      packet(owner.asset).connections.push({
+        id: `${isInterior ? "interior" : "passage"}-${packet(owner.asset).connections.length}`,
         node: owner.node,
-        polygon: door.door_sector.points.map(local),
-        outside: local(door.point_out),
-        inside: building.Building
-          ? local(door.point_in)
-          : localEndpoint(owner.part, door.point_in, door.sector_in, door.layer_in),
-        middle: local(door.point_mid),
-        type: door.door_type,
-        active: door.active,
-        locks: {
-          player: door.locked_pc,
-          unlockable: door.unlockable,
-          villains: door.locked_npc_villain,
-          civilians: door.locked_npc_civilian,
-        },
-        afterTransition: {
-          player: door.locked_pc_after_patch,
-          unlockable: door.unlockable_after_patch,
-          villains: door.locked_npc_villain_after_patch,
-          civilians: door.locked_npc_civilian_after_patch,
-        },
-      };
-    });
-    packet(owner.asset).connections.push({
-      id: `interior-${packet(owner.asset).connections.length}`,
-      node: owner.node,
-      kind: building.Building ? "building-interior" : "passage",
-      endpoints,
-    });
-    recoveredBuildings++;
-  } catch (error) {
-    unresolved.push({ kind: "building-endpoint", building: index, reason: String(error) });
+        kind: connection.kind,
+        endpoints,
+      });
+      recovered++;
+    } catch (error) {
+      unresolved.push({
+        kind: "building-endpoint",
+        building: index,
+        sourceDoor,
+        reason: String(error),
+      });
+    }
   }
+  if (recovered === groups.length) recoveredBuildings++;
 }
 const pending = {
   buildingEntries: proto.buildings.length - recoveredBuildings,
@@ -505,33 +537,25 @@ for (const [asset, p] of packets) {
 }
 // Probe the assembled scene using only the candidate asset definitions. Keep
 // this diagnostic separate from publication and from recovery coverage.
-let candidateCompilation: { ready: boolean; error?: string };
-try {
-  const candidates = new Map<string, GameplayAssetDescriptor>(descriptors);
-  for (const [id, descriptor] of candidates) {
-    const gameplay = packets.get(id)?.gameplayCandidate;
-    if (gameplay) candidates.set(id, { ...descriptor, gameplay });
-  }
-  const bounds =
-    document.exportBounds ??
-    (document.size
-      ? ([0, 0, document.size[0], document.size[1]] as [number, number, number, number])
-      : undefined);
-  if (!bounds) throw new Error("Map has no export bounds or size");
-  compileAssetGameplay(document, candidates, bounds);
-  candidateCompilation = { ready: true };
-} catch (error) {
-  candidateCompilation = { ready: false, error: String(error) };
+const candidates = new Map<string, GameplayAssetDescriptor>(descriptors);
+for (const [id, descriptor] of candidates) {
+  const gameplay = packets.get(id)?.gameplayCandidate;
+  if (gameplay) candidates.set(id, { ...descriptor, gameplay });
 }
+const diagnostics = diagnoseGameplayCandidates(document, candidates);
 const report = {
   status: "incomplete-authoring-recovery",
   assets: packets.size,
   files: [...packets.keys()].sort().map((asset) => `${asset}.gameplay-authoring.json`),
   surfaces: [...packets.values()].reduce((sum, p) => sum + p.surfaces.length, 0),
   connections: [...packets.values()].reduce((sum, p) => sum + p.connections.length, 0),
-  movementBlockers: [...packets.values()].reduce((sum, p) => sum + p.movementBlockers.length, 0),
+  movementBlockers: [...packets.values()].reduce(
+    (sum, p) => sum + (p.movementBlockers?.length ?? 0),
+    0,
+  ),
   definitionValidation,
-  candidateCompilation,
+  candidateCompilation: diagnostics.compilation,
+  staticGeometryDiagnostic: diagnostics.staticGeometry,
   coverage,
   unresolved,
   pending,

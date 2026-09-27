@@ -17,7 +17,10 @@
   movement grid and keeps unresolved ownership visible. Recovery drafts are
   checked against the asset schema; passage connections can omit click polygons,
   and doors retain alternate lock rules. Lift endpoints are selected spatially,
-  including lifts whose two doors use the same action type. Missing metadata stops export;
+  including lifts whose two doors use the same action type. Geometry-only assets
+  retain part-derived collision during recovery; standalone passages receive
+  independent ownership. Separate full-scene and static-geometry diagnostics
+  expose remaining authoring gaps. Missing metadata stops export;
   the compiler has no source-level input. Runtime tests construct navigation and
   door links without mounting a game datadir. Full extracted-map parity remains
   unfinished. Every ZIP also contains the editable level JSON, including unsaved
