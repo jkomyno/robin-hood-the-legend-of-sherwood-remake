@@ -120,6 +120,11 @@ def stage_library(library, output, *, worker_name='robinhood-editor-library'):
                   if path.is_file() and path.name.endswith('.rhlos-map.json') and not path.name.startswith('.'))
     for name in maps:
         document = json.loads(copy('scenes/'+name))
+        stem = name.removesuffix('.rhlos-map.json')
+        for extension in ('.avif', '.webp', '.png'):
+            thumbnail = 'scenes/' + stem + extension
+            if (library / thumbnail).is_file():
+                copy(thumbnail)
         if document.get('version') not in (1, 2) or 'glb' in document:
             raise ValueError(f'Map must use catalog assets: {name}')
         for reference in document.get('sceneAssets', []) + list(asset_source_references(document)):

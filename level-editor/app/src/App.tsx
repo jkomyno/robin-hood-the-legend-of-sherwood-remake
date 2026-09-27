@@ -2,6 +2,8 @@
 import { Show, createEffect, createSignal, onCleanup } from "solid-js";
 import type { DatadirIndex } from "./datadir";
 import { openHttpGameData } from "./http-game-data.ts";
+import ErrorDialog from "./ErrorDialog";
+import RobinMascot from "./RobinMascot";
 import Editor3D, { type LibraryRef } from "./Editor3D";
 import { connectionAttempts, connectLatest } from "./connection-attempt";
 import { openHttpLibrary } from "./http-library.ts";
@@ -63,23 +65,21 @@ export default function App() {
         library={library}
         onError={setError}
         onStatus={setStatus}
-        toolbarStart={() => <h1 title="Level editor">Sherwood</h1>}
+        toolbarStart={() => (
+          <>
+            <RobinMascot />
+            <h1 title="Robin Hood Map Editor">Robin Hood Map Editor</h1>
+          </>
+        )}
         toolbarEnd={() => (
           <>
             <Show when={status()}>{(s) => <span class="busy">{s()}</span>}</Show>
-            <Show when={error()}>
-              {(e) => (
-                <span class="error" role="alert">
-                  {e()}{" "}
-                  <button aria-label="Dismiss error" onClick={() => setError(null)}>
-                    ×
-                  </button>
-                </span>
-              )}
-            </Show>
           </>
         )}
       />
+      <Show when={error()}>
+        {(message) => <ErrorDialog message={message()} onClose={() => setError(null)} />}
+      </Show>
     </div>
   );
 }

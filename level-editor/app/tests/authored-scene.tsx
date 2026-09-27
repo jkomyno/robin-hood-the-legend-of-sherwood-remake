@@ -1,5 +1,7 @@
 // Read-only local review of generated library scenes; served by the Vite dev server.
 import { render } from "@solidjs/web";
+import { EditorViewport } from "../src/editor-viewport";
+import { encodeMapThumbnail } from "../src/map-thumbnail";
 import Editor3D from "../src/Editor3D";
 import "../src/styles.css";
 
@@ -18,6 +20,7 @@ const directory = (prefix: string): FileSystemDirectoryHandle =>
     },
     async getFileHandle(name: string) {
       const response = await fetch(root + prefix + name);
+      if (response.status === 404) throw new DOMException("Missing thumbnail", "NotFoundError");
       if (!response.ok) throw new Error("Failed to read " + prefix + name + ": " + response.status);
       const file = new File([await response.arrayBuffer()], name);
       return { getFile: async () => file };
@@ -28,9 +31,21 @@ const directory = (prefix: string): FileSystemDirectoryHandle =>
   }) as unknown as FileSystemDirectoryHandle;
 if (query.has("view")) {
   const style = document.createElement("style");
-  style.textContent = ".shared-library,.editor-panel,.editor-bar,#result{display:none!important}";
+  style.textContent =
+    ".asset-browser,.shared-library,.editor-panel,.editor-bar,#result{display:none!important}";
   document.head.appendChild(style);
 }
+const setup = EditorViewport.prototype.setup;
+EditorViewport.prototype.setup = function (element) {
+  setup.call(this, element);
+  const viewport = this;
+  Object.assign(window, {
+    async captureMapThumbnail() {
+      const blob = await encodeMapThumbnail(viewport.captureThumbnail());
+      return { type: blob.type, bytes: Array.from(new Uint8Array(await blob.arrayBuffer())) };
+    },
+  });
+};
 const library = { handle: directory("") };
 render(
   () => (
@@ -43,7 +58,12 @@ render(
       onStatus={(status) => {
         if (status === null)
           setTimeout(() => {
-            if (!result.textContent?.startsWith("FAIL")) result.textContent = "READY";
+            if (
+              !result.textContent?.startsWith("FAIL") &&
+              document.querySelector("[data-map-name]") &&
+              !document.querySelector(".map-load-dialog")
+            )
+              result.textContent = "READY";
           }, 1800);
         else result.textContent = status;
       }}
@@ -51,3 +71,12 @@ render(
   ),
   document.querySelector("#root")!,
 );
+
+// This review fixture explicitly opens its requested map; the editor starts at Select Map.
+const openRequested = setInterval(() => {
+  const card = document.querySelector<HTMLButtonElement>(".map-card-open");
+  if (card) {
+    clearInterval(openRequested);
+    card.click();
+  }
+}, 50);

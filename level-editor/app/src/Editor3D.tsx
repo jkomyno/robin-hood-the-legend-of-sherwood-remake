@@ -25,6 +25,8 @@ import {
   type Selection,
 } from "./document-commands";
 import { createNewMap } from "./new-map";
+import MapCard from "./MapCard";
+import { encodeMapThumbnail, writeMapThumbnail } from "./map-thumbnail";
 import SplinePanel from "./SplinePanel";
 import LightingPanel from "./LightingPanel";
 import AssetLibrary from "./AssetLibrary";
@@ -55,6 +57,11 @@ export interface LibraryRef {
   mapLabels?: () => Promise<ReadonlyMap<string, string>>;
   documentMap?: (name: string) => string;
   savedMapName?: (name: string) => string;
+  availableMapName?: (name: string) => Promise<string>;
+  saveMap?: (name: string, document: unknown, thumbnail: Blob) => Promise<string>;
+  isBuiltIn?: (name: string) => boolean;
+  deleteMap?: (name: string) => Promise<void>;
+  renameMap?: (name: string, next: string) => Promise<string>;
 }
 
 export interface EditorProps {
@@ -181,7 +188,6 @@ export default function Editor3D(props: EditorProps) {
         if (disposed || props.library() !== lib) return;
         setMaps(names);
         setMapLabels(labels);
-        if (names.length === 1) void openMap(names[0]!);
       })().catch((error) => {
         if (!disposed && props.library() === lib) props.onError(String(error));
       });
@@ -395,6 +401,7 @@ export default function Editor3D(props: EditorProps) {
     setNewMapError("");
     try {
       if (dirty()) {
+        if (!window.confirm("Save your unsaved changes before creating a new map?")) return;
         await save();
         if (dirty())
           throw new Error("Save the current map successfully before creating another map.");
@@ -451,6 +458,75 @@ export default function Editor3D(props: EditorProps) {
     else if (p) updatePart(p.id, { transform: t });
   }
 
+  const [managingMap, setManagingMap] = createSignal<string | null>(null);
+  async function manageMap(name: string, action: "delete" | "rename") {
+    const library = props.library();
+    if (!library || managingMap() || library.isBuiltIn?.(name)) return;
+    const next = action === "rename" ? window.prompt("Rename map", mapLabel(name)) : null;
+    if (action === "rename" && (next === null || next === mapLabel(name))) return;
+    if (
+      action === "delete" &&
+      !window.confirm(`Delete “${mapLabel(name)}”? This cannot be undone.`)
+    )
+      return;
+    setManagingMap(name);
+    try {
+      if (action === "delete") await library.deleteMap!(name);
+      else await library.renameMap!(name, next!);
+      const directory = await subdir(library.handle, ["scenes"]);
+      if (!directory) throw new Error("scenes/ missing");
+      const files = await listFiles(directory);
+      if (disposed || props.library() !== library) return;
+      setMaps(
+        files
+          .filter((file) => file.endsWith(".rhlos-map.json"))
+          .map((file) => file.slice(0, -".rhlos-map.json".length))
+          .sort(),
+      );
+      setMapLabels((await library.mapLabels?.()) ?? new Map());
+    } catch (error) {
+      if (!disposed) props.onError(String(error));
+    } finally {
+      if (!disposed) setManagingMap(null);
+    }
+  }
+
+  function cancelMapLoad() {
+    openAttempt++;
+    session.beginLoad();
+    setMapLoadProgress(null);
+    props.onStatus(null);
+  }
+
+  function confirmDiscard() {
+    return (
+      (!dirty() && !editingPath()) ||
+      window.confirm("This map has unsaved changes. Discard them and continue?")
+    );
+  }
+
+  function closeMap() {
+    if (!confirmDiscard()) return;
+    cancelAssetDrag();
+    openAttempt++;
+    session.close();
+    setRevision(null);
+    setTransformBaseline(null);
+    viewport.clearMap();
+    setLevel(null);
+    setEditingPath(false);
+    setMissionName("");
+    setMissionInfo("");
+    setInfo(null);
+    setMapLoadProgress(null);
+    props.onStatus(null);
+    if (transientMapName) {
+      const previous = transientMapName;
+      setMaps((names) => names.filter((name) => name !== previous));
+      transientMapName = null;
+    }
+  }
+
   async function openMap(name: string, requestedMission?: string, importedFile?: File) {
     cancelAssetDrag();
     const lib = props.library();
@@ -462,7 +538,7 @@ export default function Editor3D(props: EditorProps) {
       !disposed && attempt === openAttempt && props.index() === idx && props.library() === lib;
     let preparedAsset: THREE.Object3D | null = null;
     let preparedEntities: SceneEntities | null = null;
-    props.onStatus(`loading ${requestedMission ?? mapLabel(name)}…`);
+    props.onStatus(null);
     setMapLoadProgress({ completed: 0, total: 1, phase: "Reading map" });
     try {
       let importedDocument: unknown;
@@ -471,7 +547,9 @@ export default function Editor3D(props: EditorProps) {
         const id = (importedDocument as { map?: unknown }).map;
         if (typeof id !== "string" || !id || id === "." || id === ".." || /[\\/\0]/.test(id))
           throw new Error("Invalid map name in dropped JSON");
-        name = lib.savedMapName?.(id) ?? id;
+        name = lib.availableMapName
+          ? await lib.availableMapName(id)
+          : (lib.savedMapName?.(id) ?? id);
       }
       const mission = requestedMission && idx ? await readMission(idx, requestedMission) : null;
       if (mission) {
@@ -531,6 +609,12 @@ export default function Editor3D(props: EditorProps) {
         setMapLoadProgress(null);
         return;
       }
+      if (!confirmDiscard()) {
+        props.onStatus(null);
+        setMapLoadProgress(null);
+        return;
+      }
+      const approvedDocument = doc();
       const candidate = await prepareMapCandidate(
         name,
         lib.handle,
@@ -580,6 +664,13 @@ export default function Editor3D(props: EditorProps) {
         preparedAsset = null;
         return;
       }
+      if (doc() !== approvedDocument && !confirmDiscard()) {
+        preparedEntities?.dispose();
+        if (preparedAsset) disposeObjectResources([preparedAsset]);
+        props.onStatus(null);
+        setMapLoadProgress(null);
+        return;
+      }
       // All asynchronous reads and validation precede publication.
       viewport.replaceMap(preparedAsset, nextGround, nextSources, d.assetSources);
       preparedAsset = null;
@@ -605,7 +696,10 @@ export default function Editor3D(props: EditorProps) {
         const sourceName = lib.documentMap?.(name) ?? name;
         if (sourceName !== name)
           setMapLabels((labels) =>
-            new Map(labels).set(name, `${labels.get(sourceName) ?? sourceName} (Modified)`),
+            new Map(labels).set(
+              name,
+              `${labels.get(sourceName) ?? sourceName}${name.slice(sourceName.length)}`,
+            ),
           );
       }
       session.publish(generation, name, d, dir, candidate.saved && !importedFile);
@@ -730,15 +824,24 @@ export default function Editor3D(props: EditorProps) {
     const library = props.library();
     saving = true;
     try {
+      const thumbnail = viewport.captureThumbnail();
+      const encodedThumbnail = await encodeMapThumbnail(thumbnail);
       const descriptors = snapshot.document.assetSources?.length
         ? await readPinnedAssetDescriptors(library!.handle, snapshot.document.assetSources)
         : new Map();
-      await writeText(
-        snapshot.resources,
-        `${snapshot.name}.rhlos-map.json`,
-        JSON.stringify(serializeStoredMap(snapshot.document, descriptors), null, 2),
-      );
-      const savedName = library?.savedMapName?.(snapshot.name) ?? snapshot.name;
+      const stored = serializeStoredMap(snapshot.document, descriptors);
+      let savedName: string;
+      if (library?.saveMap) {
+        savedName = await library.saveMap(snapshot.name, stored, encodedThumbnail);
+      } else {
+        await writeText(
+          snapshot.resources,
+          `${snapshot.name}.rhlos-map.json`,
+          JSON.stringify(stored, null, 2),
+        );
+        await writeMapThumbnail(snapshot.resources, snapshot.name, encodedThumbnail);
+        savedName = library?.savedMapName?.(snapshot.name) ?? snapshot.name;
+      }
       if (transientMapName === snapshot.name) transientMapName = null;
       const labels = await library?.mapLabels?.();
       if (!disposed && props.library() === library) {
@@ -834,6 +937,19 @@ export default function Editor3D(props: EditorProps) {
   window.addEventListener("keydown", onKey, {
     signal: viewport.listeners.signal,
   });
+  const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+    if (!dirty() && !editingPath()) return;
+    event.preventDefault();
+    event.returnValue = "";
+  };
+  createEffect(
+    () => dirty() || editingPath(),
+    (unsaved) => {
+      window.removeEventListener("beforeunload", warnBeforeUnload);
+      if (unsaved) window.addEventListener("beforeunload", warnBeforeUnload);
+    },
+  );
+  onCleanup(() => window.removeEventListener("beforeunload", warnBeforeUnload));
   onCleanup(() => {
     cancelAssetDrag();
     disposed = true;
@@ -1001,34 +1117,11 @@ export default function Editor3D(props: EditorProps) {
       </dialog>
       <header class="topbar editor-bar">
         {props.toolbarStart?.()}
-        <button
-          disabled={!props.library() || editingPath()}
-          title={!props.library() ? "Waiting for assets" : "Create a blank map"}
-          onClick={() => {
-            setNewMapError("");
-            newMapDialog.showModal();
-          }}
-        >
-          New map
-        </button>
-        <label class="mission-picker">
-          Map
-          <select
-            aria-label="Map"
-            value={mapName() ?? ""}
-            disabled={!maps().length}
-            onChange={(event) => {
-              const name = event.currentTarget.value;
-              event.currentTarget.value = mapName() ?? "";
-              if (name) void openMap(name);
-            }}
-          >
-            <option value="" disabled>
-              Choose a map…
-            </option>
-            <For each={maps()}>{(name) => <option value={name}>{mapLabel(name)}</option>}</For>
-          </select>
-        </label>
+        <Show when={mapName()}>
+          <span class="active-map-name" data-map-name={mapName()}>
+            {mapLabel(mapName()!)}
+          </span>
+        </Show>
         <label class="mission-picker">
           Mission
           <select
@@ -1064,7 +1157,7 @@ export default function Editor3D(props: EditorProps) {
         </button>
         <button
           class="primary-action"
-          disabled={!dirty()}
+          disabled={!dirty() || editingPath()}
           onClick={() => void save()}
           title="ctrl+s"
         >
@@ -1088,25 +1181,44 @@ export default function Editor3D(props: EditorProps) {
           Help
         </button>
         {props.toolbarEnd?.()}
+        <Show when={doc()}>
+          <button class="close-map" aria-label="Close map" title="Close map" onClick={closeMap}>
+            ×
+          </button>
+        </Show>
       </header>
       <Show when={mapLoadProgress()}>
         {(progress) => (
-          <div
-            class="map-load-progress"
-            role="status"
-            aria-label={`Loading map: ${progress().phase}`}
+          <dialog
+            class="map-load-dialog"
+            aria-label="Loading map"
+            ref={(dialog) =>
+              queueMicrotask(() => {
+                if (dialog.isConnected) dialog.showModal();
+              })
+            }
+            onCancel={(event) => {
+              event.preventDefault();
+              cancelMapLoad();
+            }}
           >
-            <div class="map-load-progress-label">
-              <span>{progress().phase}</span>
-              <span>
-                {progress().total > 1 ? `${progress().completed} / ${progress().total} assets` : ""}
-              </span>
+            <h2>Loading map</h2>
+            <div class="map-load-progress" role="status" aria-live="polite">
+              <div class="map-load-progress-label">
+                <span>{progress().phase}</span>
+                <span>
+                  {progress().total > 1
+                    ? `${progress().completed} / ${progress().total} assets`
+                    : ""}
+                </span>
+              </div>
+              <progress max={Math.max(1, progress().total)} value={progress().completed} />
             </div>
-            <progress max={progress().total} value={progress().completed} />
-          </div>
+            <button onClick={cancelMapLoad}>Cancel</button>
+          </dialog>
         )}
       </Show>
-      <div class="editor-body">
+      <div class={`editor-body${doc() ? "" : " selecting-map"}`}>
         <div
           id="asset-browser"
           class={`asset-browser${libraryOpen() ? "" : " collapsed"}`}
@@ -1231,23 +1343,53 @@ export default function Editor3D(props: EditorProps) {
             } else if (entry && placement) void addAsset(entry, placement);
           }}
         >
-          <Show when={!doc() && !mapLoadProgress()}>
-            <div class="viewport-welcome">
+          <Show when={!doc()}>
+            <section class="map-selection" aria-label="Select Map">
               <span class="eyebrow">MAP WORKSPACE</span>
-              <h2>{props.library() ? "Choose a map to begin" : "Build your world"}</h2>
-              <p>
-                {props.library()
-                  ? maps().length
-                    ? "Choose a map above, or create a new map to start from scratch."
-                    : "This library has no maps yet. Use New map to create your first scene."
-                  : "Loading maps and reusable assets… Game data is optional for mission previews."}
-              </p>
-              <div class="welcome-steps">
-                <span>01 · Choose a map or create one</span>
-                <span>02 · Place assets</span>
-                <span>03 · Save or download</span>
+              <div class="map-selection-heading">
+                <h2>Select Map</h2>
+                <button
+                  disabled={!props.library() || editingPath()}
+                  title={!props.library() ? "Waiting for assets" : "Create a blank map"}
+                  onClick={() => {
+                    setNewMapError("");
+                    newMapDialog.showModal();
+                  }}
+                >
+                  New map
+                </button>
               </div>
-            </div>
+              <p>
+                {!props.library()
+                  ? "Loading maps…"
+                  : maps().length
+                    ? "Choose a map to open, or create a new map."
+                    : "No maps yet. Create a new map to begin."}
+              </p>
+              <div class="map-grid">
+                <For each={maps()}>
+                  {(name) => (
+                    <MapCard
+                      name={name}
+                      label={mapLabel(name)}
+                      library={props.library()!}
+                      onOpen={() => void openMap(name)}
+                      disabled={!!managingMap()}
+                      onDelete={
+                        props.library()?.deleteMap && !props.library()?.isBuiltIn?.(name)
+                          ? () => void manageMap(name, "delete")
+                          : undefined
+                      }
+                      onRename={
+                        props.library()?.renameMap && !props.library()?.isBuiltIn?.(name)
+                          ? () => void manageMap(name, "rename")
+                          : undefined
+                      }
+                    />
+                  )}
+                </For>
+              </div>
+            </section>
           </Show>
           <Show when={helpOpen()}>
             <div id="editor-help" class="viewport-help">

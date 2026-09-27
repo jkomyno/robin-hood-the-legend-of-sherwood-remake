@@ -57,6 +57,15 @@ class PublishLibraryTest(unittest.TestCase):
             'robinhood.phiresky.xyz/editor/library', 'robinhood.phiresky.xyz/editor/library/*'])
         self.assertFalse(config['workers_dev'])
 
+    def test_map_thumbnails_are_shipped_beside_maps(self):
+        (self.library/'scenes/test.rhlos-map.json').write_text(json.dumps({'version': 1}))
+        (self.library/'scenes/test.webp').write_bytes(b'thumbnail')
+        (self.library/'scenes/unrelated.webp').write_bytes(b'not a map preview')
+        report = self.stage()
+        self.assertIn('scenes/test.webp', report['payloads'])
+        self.assertNotIn('scenes/unrelated.webp', report['payloads'])
+        self.assertEqual((self.root/'deploy/site/editor/library/scenes/test.webp').read_bytes(), b'thumbnail')
+
     def test_stale_source_rejected(self):
         (self.asset/'model.glb').write_bytes(b'changed')
         with self.assertRaisesRegex(ValueError, 'receipt'):

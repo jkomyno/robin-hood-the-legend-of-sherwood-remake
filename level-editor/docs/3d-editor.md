@@ -8,7 +8,9 @@ See [the library format](library-format.md) for files, resource sharing and bind
 
 **Save** stores `<map>.rhlos-map.json` in the browser's Origin Private File System
 (OPFS), under `sherwood-level-editor/maps/`. Saving a library map switches to its
-local copy, labeled **(Modified)** in the map menu and document status. The original
+local copy, labeled **(Modified)** on the Select Map screen and in the document status.
+Saving the built-in map again creates **(Modified 2)**, **(Modified 3)**, and so on;
+saving an already-open local copy updates that copy. The original
 remains separately selectable under its plain name; both entries are available
 after reopening on the same browser and origin. Existing browser saves also appear
 as modified copies. Browser saves using the previous extension are migrated to
@@ -24,6 +26,25 @@ Drop one map JSON file onto the viewport to load it, including a timestamped dow
 The document's map name determines its identity. Referenced assets must exist in
 the connected library and pass validation. Imports remain unsaved until **Save**;
 imports of built-in maps use the modified copy and keep the original selectable.
+
+Close a map with **×** in the upper-right corner to return to **Select Map**.
+Unsaved edits (including unfinished paths) prompt before closing, replacing a map,
+or leaving the browser page. Loading uses a centered, cancellable modal; errors use
+a centered, dismissible modal. Neither shifts the workspace.
+Local map cards have rename and delete controls; built-in cards do not.
+
+Saving also captures a 480×300 thumbnail using native browser encoding at quality 0.6:
+AVIF when supported, otherwise WebP (PNG on browsers without either encoder).
+Built-in previews are shipped as `<map>.webp` beside the map JSON in `library/scenes/`;
+local previews are stored beside their local map JSON. Regenerate bundled previews with
+`node app/tests/generate-map-thumbnails.mjs http://localhost:5180` against the dev server.
+The generator uses shipped map artwork if an existing map manifest cannot load.
+
+Robin's header animations are transparent AVIFs with shadows. Hover or keyboard focus
+plays the standing transition and camp dance; leaving plays the inverse transition.
+Occasional bored-random gestures use the game's random-start probability. Sprite row
+hotspots and frame offsets determine alignment at one shared scale. Regenerate the
+assets from the hackable datadir with `python3 refinement/build_robin_mascot.py`.
 
 ## Running
 
@@ -53,13 +74,14 @@ rectangles; the preview fetches and decodes each atlas once per mission load. Ch
 and scenery ambiance fallbacks match the preview loader. Unused generated files
 from the previous copy are removed on refresh. Its generated
 file index supports directory enumeration without a browser permission prompt.
-Serve this subdirectory alongside the rest of the library on standalone deployments. Pick a published **Map**, or use **New map** to
+Serve this subdirectory alongside the rest of the library on standalone deployments.
+Pick a thumbnail on **Select Map**, or use **New map** on that screen to
 start an unbounded canvas without choosing dimensions. Insert assets from the
 library and save the map under its own name. The optional export frame records a
 compile-time crop and does not restrict placement; it can intentionally clip assets.
 There is no automatic reconstruction fallback for missing map manifests.
 
-The **Mission** menu to the right of **Map** shows only missions for that map,
+The **Mission** menu beside the open map name shows only missions for that map,
 using the same readable names as the highscore list. Choose one to preview its initial
 placements. The map must have a published JSON manifest in the connected library. Soldiers,
 civilians, and rescue characters use their configured sprite profile and initial

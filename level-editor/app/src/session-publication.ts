@@ -25,6 +25,10 @@ export class SessionPublication<T, R> {
     this.disposed = true;
     this.session.beginLoad();
   }
+  close() {
+    this.session.beginLoad();
+    this.session.current = null;
+  }
   beginLoad() {
     return this.session.beginLoad();
   }

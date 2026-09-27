@@ -421,6 +421,86 @@ export class EditorViewport {
     };
     tick();
   }
+  clearMap() {
+    this.retireMap();
+    this.patchDisplay.clear();
+  }
+
+  /** Capture synchronously so saving during later edits keeps the matching preview. */
+  captureThumbnail(): HTMLCanvasElement {
+    if (!this.renderer || !this.camera) throw new Error("Viewport is not ready");
+    const canvas = document.createElement("canvas");
+    canvas.width = 480;
+    canvas.height = 300;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Cannot create thumbnail canvas");
+    const helpers = [
+      this.selectionBox,
+      this.overlayRoot,
+      this.splines.controls,
+      this.exportFrame,
+      this.workspaceGrid,
+      this.gizmo?.getHelper(),
+    ].filter((node) => node !== undefined);
+    const visibility = helpers.map((node) => node.visible);
+    const renderSize = this.renderer.getSize(new THREE.Vector2());
+    const pixelRatio = this.renderer.getPixelRatio();
+    const camera = this.activeCamera().clone();
+    if (camera instanceof THREE.OrthographicCamera && this.framingPoints.length) {
+      camera.updateMatrixWorld();
+      const bounds = new THREE.Box2();
+      const point = new THREE.Vector3();
+      const projected = new THREE.Vector2();
+      for (const source of this.framingPoints) {
+        point.copy(source).applyMatrix4(camera.matrixWorldInverse);
+        bounds.expandByPoint(projected.set(point.x, point.y));
+      }
+      const center = bounds.getCenter(new THREE.Vector2());
+      const size = bounds.getSize(new THREE.Vector2());
+      const halfHeight = Math.max(size.y, (size.x * canvas.height) / canvas.width, 1) * 0.53;
+      const halfWidth = (halfHeight * canvas.width) / canvas.height;
+      camera.left = center.x - halfWidth;
+      camera.right = center.x + halfWidth;
+      camera.top = center.y + halfHeight;
+      camera.bottom = center.y - halfHeight;
+      camera.zoom = 1;
+      camera.updateProjectionMatrix();
+    } else if (camera instanceof THREE.PerspectiveCamera) {
+      camera.aspect = canvas.width / canvas.height;
+      camera.updateProjectionMatrix();
+    }
+    const materials = [...this.tinted].map(([mesh, original]) => {
+      const tinted = mesh.material;
+      mesh.material = original;
+      return { mesh, tinted };
+    });
+    try {
+      for (const node of helpers) node.visible = false;
+      this.renderer.setPixelRatio(1);
+      this.renderer.setSize(canvas.width, canvas.height, false);
+      this.renderer.render(this.scene, camera);
+      const source = this.renderer.domElement;
+      const scale = Math.min(canvas.width / source.width, canvas.height / source.height);
+      context.fillStyle = "#1c1c1c";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(
+        source,
+        (canvas.width - source.width * scale) / 2,
+        (canvas.height - source.height * scale) / 2,
+        source.width * scale,
+        source.height * scale,
+      );
+      return canvas;
+    } finally {
+      this.renderer.setPixelRatio(pixelRatio);
+      this.renderer.setSize(renderSize.x, renderSize.y, false);
+      for (const { mesh, tinted } of materials) mesh.material = tinted;
+      helpers.forEach((node, index) => {
+        node.visible = visibility[index]!;
+      });
+    }
+  }
+
   private retireMap() {
     this.splineMode = null;
     this.exportFrame.visible = false;

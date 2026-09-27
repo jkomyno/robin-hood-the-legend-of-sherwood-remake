@@ -240,9 +240,12 @@ async function fixtures(names = ["a", "b"]) {
       if (name !== "scenes") throw new DOMException("missing", "NotFoundError");
       return this;
     },
-    async getFileHandle(name: string) {
+    async removeEntry(name: string) {
+      if (!files.delete(name)) throw new DOMException(name, "NotFoundError");
+    },
+    async getFileHandle(name: string, options?: FileSystemGetFileOptions) {
       const file = files.get(name);
-      if (!file) throw new DOMException(name, "NotFoundError");
+      if (!file && !options?.create) throw new DOMException(name, "NotFoundError");
       return {
         getFile: async () => {
           if (readGate?.name === name) {
@@ -254,9 +257,9 @@ async function fixtures(names = ["a", "b"]) {
           return file;
         },
         createWritable: async () => {
-          let text = "";
+          let text: BlobPart = "";
           return {
-            write: async (value: string) => {
+            write: async (value: BlobPart) => {
               text = value;
               if (writeGate) {
                 const pending = writeGate;
@@ -293,11 +296,11 @@ async function fixtures(names = ["a", "b"]) {
     },
   };
 }
-function button(label: string) {
-  const level = document.querySelector('select[aria-label="Map"]') as HTMLSelectElement | null;
-  if (level && [...level.options].some((option) => option.value === label)) {
-    level.value = label;
-    level.dispatchEvent(new Event("change", { bubbles: true }));
+async function button(label: string) {
+  if (["a", "b", "c", "d"].includes(label)) {
+    document.querySelector<HTMLButtonElement>('[aria-label="Close map"]')?.click();
+    await until(() => !!document.querySelector(`[data-map="${label}"]`));
+    document.querySelector<HTMLButtonElement>(`[data-map="${label}"]`)!.click();
     return;
   }
   const button = [...document.querySelectorAll("button")].find(
@@ -308,6 +311,7 @@ function button(label: string) {
 }
 
 async function main() {
+  window.confirm = () => true;
   await checkSpriteAtlas();
   if (location.search.includes("atlas-only")) {
     result.textContent = "PASS sprite atlas WebP cropping, dimensions, and one fetch across poses";
@@ -346,18 +350,16 @@ async function main() {
       document.querySelector("#root")!,
     );
     await until(() =>
-      [...document.querySelectorAll('select[aria-label="Map"] option')].some(
-        (b) => b.textContent === "a",
-      ),
+      [...document.querySelectorAll(".map-card-name")].some((b) => b.textContent === "a"),
     );
     if (mount === 0) {
       const selectedMap = () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value;
+        document.querySelector("[data-map-name]")?.getAttribute("data-map-name");
       const rows = () => document.querySelectorAll(".object-list li").length;
       const pending = library.delayRead("a-volumes.scene.glb");
-      button("a");
+      await button("a");
       await pending.entered;
-      button("b");
+      await button("b");
       await until(() => selectedMap() === "b" && status === null);
       pending.release();
       await pause();
@@ -366,20 +368,20 @@ async function main() {
 
       (document.querySelector(".object-list li") as HTMLElement).click();
       await pause();
-      button("Duplicate");
+      await button("Duplicate");
       await until(() => rows() === 2);
-      button("Undo");
+      await button("Undo");
       await until(() => rows() === 1);
-      button("Redo");
+      await button("Redo");
       await until(() => rows() === 2);
       // Undo removed the selected duplicate; redo restores its document node,
       // not an obsolete selection binding. Select the restored row explicitly.
       (document.querySelectorAll(".object-list li")[1] as HTMLElement).click();
       await pause();
       const saving = library.delayWrite();
-      button("Save *");
+      await button("Save *");
       await saving.entered;
-      button("Duplicate");
+      await button("Duplicate");
       await until(() => rows() === 3);
       saving.release();
       await until(() => status === "Saved b in this browser");
@@ -389,7 +391,7 @@ async function main() {
         ),
         "save completion cleared newer edits",
       );
-      button("Undo");
+      await button("Undo");
       await until(() => rows() === 2);
       assert(
         [...document.querySelectorAll("button")].some(
@@ -397,36 +399,34 @@ async function main() {
         ),
         "undo did not return to the saved revision",
       );
-      button("Redo");
+      await button("Redo");
       await until(() => rows() === 3);
 
       const oldLibrary = library.delayRead("a-volumes.scene.glb");
-      button("a");
+      await button("a");
       await oldLibrary.entered;
+      document.querySelector<HTMLButtonElement>('[aria-label="Close map"]')?.click();
       setActiveLibrary(replacement);
       await until(() =>
-        [...document.querySelectorAll('select[aria-label="Map"] option')].some(
-          (b) => b.textContent === "c",
-        ),
+        [...document.querySelectorAll(".map-card-name")].some((b) => b.textContent === "c"),
       );
-      button("c");
+      await button("c");
       await until(() => selectedMap() === "c" && status === null);
       oldLibrary.release();
       await pause();
       await pause();
       assert(selectedMap() === "c", "retired library published into the replacement viewport");
       library.resetFiles();
+      document.querySelector<HTMLButtonElement>('[aria-label="Close map"]')?.click();
       setActiveLibrary(library);
       await until(() =>
-        [...document.querySelectorAll('select[aria-label="Map"] option')].some(
-          (b) => b.textContent === "a",
-        ),
+        [...document.querySelectorAll(".map-card-name")].some((b) => b.textContent === "a"),
       );
       assert(errors.length === 0, errors.join("\n"));
     }
     let stable: string | null = null;
     for (let cycle = 0; cycle < 8; cycle++) {
-      button(cycle % 2 ? "b" : "a");
+      await button(cycle % 2 ? "b" : "a");
       try {
         await until(() => {
           assert(errors.length === 0, errors.join("\n"));
@@ -441,9 +441,9 @@ async function main() {
       assert(errors.length === 0, errors.join("\n"));
       (document.querySelector(".object-list li") as HTMLElement).click();
       await pause();
-      button("Duplicate");
+      await button("Duplicate");
       await pause();
-      button("Delete");
+      await button("Delete");
       await pause();
       for (const checkbox of document.querySelectorAll<HTMLInputElement>(
         ".view-overlays input[type=checkbox]",
@@ -490,7 +490,7 @@ async function main() {
     }
     const unmountedLoad = mount === 3 ? library.delayRead("a-volumes.scene.glb") : null;
     if (unmountedLoad) {
-      button("a");
+      await button("a");
       await unmountedLoad.entered;
     }
     dispose();

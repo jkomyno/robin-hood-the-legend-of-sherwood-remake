@@ -1,0 +1,13 @@
+{
+  "robin-bored": 1560,
+  "robin-bored-random": 3320,
+  "robin-to-dance": 280,
+  "robin-from-dance": 680,
+  "robin-dancing": 33120,
+  "canvas": {
+    "width": 86,
+    "height": 102,
+    "anchorX": 38,
+    "anchorY": 72
+  }
+}

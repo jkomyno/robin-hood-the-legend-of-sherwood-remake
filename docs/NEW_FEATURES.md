@@ -1,5 +1,13 @@
 # Post-port Features
 
+- **Map selection and safe editing.** The editor opens on thumbnail cards, with
+  New map on that screen and a close control in the workspace. Unsaved edits warn
+  before leaving; loading uses a cancellable modal. Local copies can be renamed
+  or deleted, and saves from built-in maps allocate distinct modified copies.
+  Native browser thumbnails accompany saves. The header features Robin's original
+  transparent animations, aligned by sprite hotspots, with idle gestures and
+  transitions into and out of his hover dance.
+
 - **Asset-local gameplay compilation.** The editor builds planar walkable regions with slopes and holes,
   collision/sight geometry, passage/gate connections, lifts, empty building
   interiors and a spawn from pinned
@@ -20,7 +28,7 @@
 - **Browser-local map authoring.** Published assets load automatically over HTTP
   from the existing library index, with source-map folders keeping the catalog
   organized. Save writes map copies to OPFS; Download exports the current JSON.
-  The Map selector is followed by readable, map-filtered mission choices. Reset
+  The open map name is followed by readable, map-filtered mission choices. Reset
   view restores the map camera, and framing remains available through `f`.
   See [editor storage and controls](../level-editor/docs/3d-editor.md).
 

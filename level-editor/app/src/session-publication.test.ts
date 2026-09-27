@@ -81,3 +81,19 @@ test("saving as a modified copy switches identity while preserving history and l
   session.saved(save, "York (Modified)");
   assert.equal(events.at(-1)!.name, "Lincoln");
 });
+
+test("closing retires history and rejects outstanding map loads and saves", () => {
+  let publications = 0;
+  const session = new SessionPublication<object, string>(() => publications++);
+  session.publish(session.beginLoad(), "A", {}, "maps");
+  session.edit({});
+  const save = session.captureSave();
+  const pending = session.beginLoad();
+  session.close();
+  assert.equal(session.current, null);
+  assert.equal(session.publish(pending, "B", {}, "maps"), false);
+  session.saved(save);
+  assert.equal(publications, 2);
+  session.publish(session.beginLoad(), "C", {}, "maps");
+  assert.deepEqual(session.current?.past, []);
+});

@@ -1,3 +1,4 @@
+import { listFiles } from "../src/fs";
 import { render } from "@solidjs/web";
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
@@ -300,7 +301,13 @@ export async function checkSharedLibrary() {
     assert(button && !button.disabled, `Missing enabled button: ${label}`);
     button!.click();
   };
-  const select = (label: string, value: string) => {
+  const select = async (label: string, value: string) => {
+    if (label === "Map") {
+      document.querySelector<HTMLButtonElement>('[aria-label="Close map"]')?.click();
+      await until(() => !!document.querySelector(`[data-map="${value}"]`));
+      document.querySelector<HTMLButtonElement>(`[data-map="${value}"]`)!.click();
+      return;
+    }
     const element = document.querySelector(`select[aria-label="${label}"]`) as HTMLSelectElement;
     element.value = value;
     element.dispatchEvent(new Event("change", { bubbles: true }));
@@ -311,6 +318,8 @@ export async function checkSharedLibrary() {
       "Initial camera differs from the default map elevation",
     );
     await until(() => document.querySelectorAll(".asset-card").length === 40);
+    await select("Map", "York");
+    await until(() => !!document.querySelector("[data-map-name]"));
     await until(() => !document.querySelector(".asset-card:first-child .preview-status"));
     assert(
       !(document.querySelector(".spline-panel") as HTMLElement).checkVisibility(),
@@ -320,6 +329,8 @@ export async function checkSharedLibrary() {
       !(document.querySelector(".view-settings") as HTMLElement).checkVisibility(),
       "View controls clutter the initial inspector",
     );
+    await select("Map", "York");
+    await until(() => !!document.querySelector("[data-map-name]"));
     const originalWidth = document.querySelector(".editor-canvas")!.getBoundingClientRect().width;
     (document.querySelector('button[aria-label="Hide asset library"]') as HTMLElement).click();
     await until(
@@ -390,16 +401,15 @@ export async function checkSharedLibrary() {
       pixels.some((value, index) => index % 4 === 3 && value > 0),
       "3D preview did not render any geometry",
     );
-    select("Asset type", "Building");
+    await select("Asset type", "Building");
     await until(() => document.querySelectorAll(".asset-card").length === 1);
-    select("Source level", "Derby");
+    await select("Source level", "Derby");
     await until(() => document.querySelectorAll(".asset-card").length === 0);
-    select("Source level", "Leicester");
+    await select("Source level", "Leicester");
     await until(() => document.querySelectorAll(".asset-card").length === 1);
-    select("Map", "York");
+    await select("Map", "York");
     await until(
-      () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York",
+      () => document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "York",
     );
     const card = document.querySelector(".asset-card")!;
     const transfer = new DataTransfer();
@@ -483,9 +493,7 @@ export async function checkSharedLibrary() {
         ),
     );
     await until(
-      () =>
-        document.querySelector('select[aria-label="Map"] option:checked')?.textContent ===
-        "York (Modified)",
+      () => document.querySelector(".active-map-name")?.textContent === "York (Modified)",
     );
     assert(
       document.querySelector(".document-state")?.textContent?.includes("York (Modified)"),
@@ -501,25 +509,22 @@ export async function checkSharedLibrary() {
     await until(() => document.querySelectorAll(".object-list li").length === 1);
     click("Redo");
     await until(() => document.querySelectorAll(".object-list li").length > 1);
-    select("Map", "Lincoln");
+    await select("Map", "Lincoln");
     await until(
-      () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value ===
-        "Lincoln",
+      () => document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "Lincoln",
     );
-    select("Map", "York");
+    await select("Map", "York");
     await until(
-      () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York",
+      () => document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "York",
     );
     assert(
       document.querySelectorAll(".object-list li").length === 1,
       "Original map contains the saved edits",
     );
-    select("Map", "York (Modified)");
+    await select("Map", "York (Modified)");
     await until(
       () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value ===
+        document.querySelector("[data-map-name]")?.getAttribute("data-map-name") ===
         "York (Modified)",
     );
     assert(
@@ -598,7 +603,7 @@ export async function checkSharedLibrary() {
     await until(() => document.querySelectorAll(".spline-list button").length === 0);
     click("Redo");
     await until(() => document.querySelectorAll(".spline-list button").length === 1);
-    select("Wall path asset", "house");
+    await select("Wall path asset", "house");
     click("Draw wall");
     await until(
       () =>
@@ -610,7 +615,7 @@ export async function checkSharedLibrary() {
     await drawPoint(0.3, 0.7);
     await drawPoint(0.55, 0.75);
     await drawPoint(0.6, 0.45);
-    select("Corner tower asset", "prop-0");
+    await select("Corner tower asset", "prop-0");
     await until(
       () =>
         !(document.querySelector('select[aria-label="Corner tower asset"]') as HTMLSelectElement)
@@ -678,14 +683,12 @@ export async function checkSharedLibrary() {
       pathsSaved.splines.some((p: { kind: string }) => p.kind === "road"),
       "Footpath was not saved",
     );
-    select("Map", "Lincoln");
+    await select("Map", "Lincoln");
     await until(
-      () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value ===
-        "Lincoln",
+      () => document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "Lincoln",
     );
     click("Draw");
-    select("Wall preset", "Battlement wall");
+    await select("Wall preset", "Battlement wall");
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     click("Draw wall");
     await until(() => !!document.querySelector('input[aria-label="Corner tower scale"]'));
@@ -695,16 +698,18 @@ export async function checkSharedLibrary() {
       "Preset did not restore its tower across levels",
     );
     click("Cancel");
-    select("Map", "York (Modified)");
+    await select("Map", "York (Modified)");
     await until(
       () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value ===
+        document.querySelector("[data-map-name]")?.getAttribute("data-map-name") ===
         "York (Modified)",
     );
     assert(
       document.querySelectorAll(".spline-list button").length === 3,
       "River, wall and footpath failed to reload",
     );
+    document.querySelector<HTMLButtonElement>('[aria-label="Close map"]')?.click();
+    await until(() => !!document.querySelector(".map-selection"));
     click("New map");
     await until(() => (document.querySelector("dialog") as HTMLDialogElement).open);
     assert(
@@ -717,8 +722,7 @@ export async function checkSharedLibrary() {
     click("Create map");
     await until(
       () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value ===
-        "New forest",
+        document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "New forest",
     );
     assert(document.querySelectorAll(".object-list li").length === 0, "New map inherited objects");
     assert(
@@ -756,16 +760,14 @@ export async function checkSharedLibrary() {
       newSaved.size === null && newSaved.exportBounds[2] === 10,
       "Advisory crop changed canvas size or expanded to fit assets",
     );
-    select("Map", "York");
+    await select("Map", "York");
     await until(
-      () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York",
+      () => document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "York",
     );
-    select("Map", "New forest");
+    await select("Map", "New forest");
     await until(
       () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value ===
-        "New forest",
+        document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "New forest",
     );
     assert(
       document.querySelectorAll(".object-list li").length > 0,
@@ -813,12 +815,13 @@ export async function checkSharedLibrary() {
     dropJson(JSON.stringify({ ...imported, map: "York" }));
     await until(
       () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value ===
+        document.querySelector("[data-map-name]")?.getAttribute("data-map-name") ===
         "York (Modified)",
     );
     assert(
-      document.querySelector('select[aria-label="Map"] option[value="York"]')?.textContent ===
-        "York",
+      (await listFiles(await library.handle.getDirectoryHandle("scenes"))).includes(
+        "York.rhlos-map.json",
+      ),
       "Import removed the original map",
     );
     click("Save *");
@@ -826,19 +829,18 @@ export async function checkSharedLibrary() {
       () =>
         ![...document.querySelectorAll("button")].some((b) => b.textContent?.trim() === "Save *"),
     );
-    select("Map", "York");
+    await select("Map", "York");
     await until(
-      () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York",
+      () => document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "York",
     );
     assert(
       document.querySelectorAll(".object-list li").length === 1,
       "Imported map overwrote the original",
     );
-    select("Map", "York (Modified)");
+    await select("Map", "York (Modified)");
     await until(
       () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value ===
+        document.querySelector("[data-map-name]")?.getAttribute("data-map-name") ===
         "York (Modified)",
     );
     assert(
@@ -849,16 +851,15 @@ export async function checkSharedLibrary() {
     dropJson(JSON.stringify({ ...imported, map: "Dropped forest" }));
     await until(
       () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value ===
+        document.querySelector("[data-map-name]")?.getAttribute("data-map-name") ===
         "Dropped forest",
     );
-    select("Map", "York");
+    await select("Map", "York");
     await until(
-      () =>
-        (document.querySelector('select[aria-label="Map"]') as HTMLSelectElement)?.value === "York",
+      () => document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "York",
     );
     assert(
-      !document.querySelector('select[aria-label="Map"] option[value="Dropped forest"]'),
+      !document.querySelector('[data-map="Dropped forest"]'),
       "Discarded unsaved import left an unloadable map entry",
     );
     assert(errors.length === 0, errors.join("\n"));
