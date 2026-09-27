@@ -27,6 +27,8 @@ import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
 import { recoverLightPlane, recoverLightRegion } from "./recover-light-region.ts";
 import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry.ts";
+import { terrainOwnsJump } from "./terrain-jump-ownership.ts";
+import { jumpEdgeOwners } from "./jump-edge-ownership.ts";
 import { recoverMotionStates } from "./recover-motion-states.ts";
 import { recoverLiftJoins } from "./recover-lift-joins.ts";
 import {
@@ -196,6 +198,8 @@ const movementStateInventory: {
   transitions: ReturnType<typeof recoverMotionStates>["transitions"];
 }[] = [];
 const groundAreas: Parameters<typeof recoverGroundGameplay>[0] = [];
+const groundAreaSectors = new Set<number>();
+let transferredGroundExclusions: MultiPolygon = [];
 const clearanceSources: { regions: MultiPolygon; plane: HeightPlane }[] = [];
 const groundProjectionOwners: {
   asset: string;
@@ -250,6 +254,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
           polygon: motion.polygon,
           obstacles: [...motion.obstacles, ...exclusions],
         });
+        groundAreaSectors.add(identity);
       } else {
         unresolved.push({
           kind: "terrain-projection-remainder",
@@ -267,6 +272,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         motion.obstacles.every((o) => o.state_id === 0)
       ) {
         groundAreas.push(motion);
+        groundAreaSectors.add(identity);
         clearanceSources.push({
           regions: motion.obstacles.length
             ? polygonClipping.difference(
@@ -457,6 +463,7 @@ if (groundAreas.length) {
       })
       .concat(groundProjectionOwners);
     const ground = recoverGroundGameplay(groundAreas, owners);
+    transferredGroundExclusions = ground.blockers.flatMap((b) => b.regions);
     const terrain = packet(grounds[0]!.id);
     terrain.issues.push(...ground.warnings);
     for (const section of ground.sections)
@@ -947,26 +954,45 @@ for (const [index, light] of proto.light_sectors.entries()) {
   }
 }
 let recoveredJumps = 0;
+type JumpOwner = { asset: string; node: string; part?: Level3DObject };
+const jumpPoint = (owner: JumpOwner, p: Vec3) => (owner.part ? localize(owner.part, p) : p);
 for (const [index, pair] of proto.jump_line_pairs.entries()) {
   try {
-    const sideCandidates = [pair.line1, pair.line2].map((line, side) => {
+    const sideCandidates = [pair.line1, pair.line2].map((line, side): JumpOwner[] => {
       const home = proto.jump_zones[(side === 0 ? pair.line2 : pair.line1).jump_zone_index];
       if (!home) throw new Error("Jump pair references a missing receiving zone");
-      const sideOwners = proto.sight_obstacles.flatMap((o, obstacleIndex) =>
+      const supports = proto.sight_obstacles.flatMap((o, obstacleIndex) =>
         Array.isArray(o.projection_area) &&
         o.projection_area[0] === home.sector &&
-        o.projection_area[1] === home.layer &&
-        containsSoundPolyline(
-          [line.point_a.slice(0, 2) as Point, line.point_b.slice(0, 2) as Point],
-          o.points.map((p): Point => [p.x, p.y - p.z_top]),
-        )
+        o.projection_area[1] === home.layer
           ? (locals.get(obstacleIndex) ?? [])
           : [],
+      );
+      const sideOwners = jumpEdgeOwners(
+        line,
+        supports,
+        (owner) => owner.sourceShape ?? transformedObstacle(document, owner.part),
       );
       if (!sideOwners.length && home.layer !== 0)
         throw new Error(`Jump side ${side} has no owned elevated receiving surface`);
       return sideOwners;
     });
+    if (sideCandidates.every((side) => !side.length) && groundMaterialOwners.length === 1) {
+      const terrain = packet(groundMaterialOwners[0]!.id);
+      if (
+        terrainOwnsJump(
+          pair,
+          proto.jump_zones,
+          groundAreaSectors,
+          terrain.surfaces,
+          transferredGroundExclusions,
+        )
+      ) {
+        const owner = { asset: terrain.asset, node: "$root" };
+        sideCandidates[0]!.push(owner);
+        sideCandidates[1]!.push(owner);
+      }
+    }
     const candidates = sideCandidates.flat();
     const assets = new Set(candidates.map((o) => o.asset));
     if (
@@ -974,9 +1000,9 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
       sideCandidates.every((c) => new Set(c.map((o) => o.asset)).size === 1)
     ) {
       const recovered = ([0, 1] as const).map((side) => {
-        const owner = [...locals.values()]
-          .flat()
-          .find((o) => o.asset === sideCandidates[side]![0]!.asset)!;
+        const owner =
+          [...locals.values()].flat().find((o) => o.asset === sideCandidates[side]![0]!.asset) ??
+          sideCandidates[side]![0]!;
         return {
           owner,
           ...recoverJumpSegment(
@@ -984,7 +1010,7 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
             proto,
             index,
             owner.node,
-            (point) => localize(owner.part, point),
+            (point) => jumpPoint(owner, point),
             (zone, point) => heightAt(zone.sector, zone.layer, point),
           ),
         };
@@ -1013,13 +1039,14 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
       });
       continue;
     }
-    const owner = [...locals.values()].flat().find((o) => o.asset === candidates[0]!.asset)!,
+    const owner =
+        [...locals.values()].flat().find((o) => o.asset === candidates[0]!.asset) ?? candidates[0]!,
       p = packet(owner.asset);
     const recovered = recoverJumpGeometry(
       proto,
       index,
       owner.node,
-      (point) => localize(owner.part, point),
+      (point) => jumpPoint(owner, point),
       (zone, point) => heightAt(zone.sector, zone.layer, point),
     );
     for (const zone of recovered.zones) {
