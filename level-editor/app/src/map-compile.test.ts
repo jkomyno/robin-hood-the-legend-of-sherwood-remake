@@ -10,6 +10,7 @@ import {
   assetCompilerFixture,
   slopedAssetCompilerFixture,
   liftAssetCompilerFixture,
+  liftLightCompilerFixture,
   interiorAssetCompilerFixture,
   joinedInteriorCompilerFixture,
   clearanceAssetCompilerFixture,
@@ -148,6 +149,20 @@ test("jump export matches the native traversal fixture", async () => {
   const fixture = JSON.parse(
     await readFile(
       new URL("../../../crates/robin_engine/tests/fixtures/asset-jump.level.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("traversal light export matches the native ambience fixture", async () => {
+  const { document, assets } = liftLightCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-lift-light.level.json",
+        import.meta.url,
+      ),
       "utf8",
     ),
   );

@@ -604,6 +604,26 @@ export function liftAssetCompilerFixture() {
   return fixture;
 }
 
+export function liftLightCompilerFixture() {
+  const fixture = liftAssetCompilerFixture();
+  const surface = fixture.hut.gameplay!.surfaces.find(
+    (surface) => surface.id === "stairs-surface",
+  )!;
+  fixture.hut.gameplay!.lights = [
+    {
+      id: "night-stair-shadow",
+      node: surface.node,
+      ambiences: 2,
+      polygon: surface.polygon.map(([x, y], index) => [
+        x,
+        y,
+        typeof surface.height === "number" ? surface.height : surface.height[index]!,
+      ]),
+    },
+  ];
+  return fixture;
+}
+
 export function multiPlaneRegionCompilerFixture() {
   const fixture = compoundLiftCompilerFixture();
   const gameplay = fixture.hut.gameplay!;

@@ -79,6 +79,9 @@
   Environmental emitters retain asset-local geometry, delays, volume falloff,
   noise-covering ranges and ambience filters; shared audio sample references use
   the base installation. Recovery reports ambiguous emitter ownership explicitly.
+  Light/shadow contours resolve against ordinary surfaces and sloped traversal
+  areas, retaining mission ambience filters. Recovery allows exterior contour
+  extensions only when they do not cross uncovered potentially walkable geometry.
   Native patch bindings can update multiple navigation areas together, retaining
   movement-sector and line activation through apply/reset. Combined visual,
   sight and mask state compilation remains unfinished.

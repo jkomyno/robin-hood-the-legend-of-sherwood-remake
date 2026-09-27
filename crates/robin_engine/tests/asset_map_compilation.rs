@@ -369,6 +369,34 @@ fn compiled_light_regions_follow_mission_ambience_without_changing_interior_link
 }
 
 #[test]
+fn compiled_traversal_light_uses_the_lift_layer_and_mission_ambience() {
+    use robin_engine::coordinates::MapPoint;
+    for mask in [1, 2] {
+        let mut loaded =
+            LoadedLevel::hackable_from_json(include_bytes!("fixtures/asset-lift-light.level.json"))
+                .unwrap();
+        loaded.mission.header.ambiance = mask;
+        let mut assets = LevelAssets::new();
+        let engine = construct_loaded(loaded, &mut assets);
+        let grid = engine.fast_grid();
+        let layer = grid
+            .level
+            .sectors
+            .iter()
+            .find(|sector| sector.sector_type.is_lift())
+            .unwrap()
+            .layer;
+        assert_eq!(
+            grid.is_in_shadow_sector(MapPoint::new(400., 300.), layer),
+            mask == 2
+        );
+        assert!(!grid.is_in_shadow_sector(MapPoint::new(400., 300.), 0));
+        assert!(!grid.is_in_shadow_sector(MapPoint::new(450., 300.), layer));
+        assert_eq!(grid.level.door_projection_infos.len(), 2);
+    }
+}
+
+#[test]
 fn compiled_light_regions_reject_missing_layers_and_degenerate_contours() {
     let mut value: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-light.level.json")).unwrap();

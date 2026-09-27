@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { recoverLightPlane, recoverLightRegion } from "./recover-light-region.ts";
 import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
-import type { LightSector, SightObstacle } from "../../shared/src/level.ts";
+import type { LightSector, MotionArea, SightObstacle } from "../../shared/src/level.ts";
 
 const light: LightSector = {
   layer: 0,
@@ -50,6 +50,9 @@ test("light recovery uses projected elevation and refuses mixed or unsupported p
   };
   const upper = { ...light, layer: 1 };
   assert.deepEqual(recoverLightPlane(upper, [support]), [0, 0, 40]);
+  support.points[3]!.z_top += 0.01;
+  support.points[3]!.y += 0.01;
+  assert.deepEqual(recoverLightPlane(upper, [support]), [0, 0, 40]);
   assert.deepEqual(
     recoverLightRegion(upper, "light", "roof", [0, 0, 40], (p) => p).polygon[0],
     [10, 50, 40],
@@ -58,4 +61,59 @@ test("light recovery uses projected elevation and refuses mixed or unsupported p
   support.projection_area = [0, 0];
   support.points[1]!.x = support.points[2]!.x = 20;
   assert.throws(() => recoverLightPlane(light, [support]), /crosses receiving planes/);
+});
+
+test("elevated light contours can extend beyond navigation but not across receiving gaps", () => {
+  const { hut } = assetCompilerFixture();
+  const support: SightObstacle = {
+    ...hut.parts[0]!.obstacle_local_game!,
+    projection_area: [0, 1],
+    points: [
+      [0, 0],
+      [20, 0],
+      [20, 100],
+      [0, 100],
+    ].map(([x, y]) => ({ x: x!, y: y! + 40, z_bottom: 0, z_top: 40 })),
+  };
+  const upper = { ...light, layer: 1 };
+  const area: MotionArea = {
+    is_lift: false,
+    state_id: 0,
+    flags: 0,
+    skeleton_segments: [],
+    obstacles: [],
+    polygon: {
+      points: [
+        [0, 0],
+        [20, 0],
+        [20, 100],
+        [0, 100],
+      ],
+    },
+  };
+  const plane = recoverLightPlane(upper, [support], [area]);
+  assert.deepEqual(plane, [0, 0, 40]);
+  assert.deepEqual(
+    recoverLightRegion(upper, "shadow", "roof", plane, (point) => point).polygon,
+    light.polygon.points.map(([x, y]) => [x, y + 40, 40]),
+  );
+  area.polygon.points[1]![0] = area.polygon.points[2]![0] = 40;
+  assert.throws(() => recoverLightPlane(upper, [support], [area]), /uncovered elevated/);
+  area.obstacles = [
+    {
+      state_id: 0,
+      polygon: {
+        points: [
+          [20, 0],
+          [40, 0],
+          [40, 100],
+          [20, 100],
+        ],
+      },
+    },
+  ];
+  assert.deepEqual(recoverLightPlane(upper, [support], [area]), [0, 0, 40]);
+  area.obstacles[0]!.state_id = 1;
+  assert.throws(() => recoverLightPlane(upper, [support], [area]), /uncovered elevated/);
+  assert.throws(() => recoverLightPlane(upper, [], []), /no receiving geometry/);
 });

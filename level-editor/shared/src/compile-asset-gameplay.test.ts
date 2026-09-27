@@ -7,6 +7,7 @@ import {
   assetCompilerFixture,
   slopedAssetCompilerFixture,
   liftAssetCompilerFixture,
+  liftLightCompilerFixture,
   interiorAssetCompilerFixture,
   joinedInteriorCompilerFixture,
   soundAssetCompilerFixture,
@@ -650,6 +651,24 @@ test("light regions follow placement and preserve ambience without shifting inte
   );
   hut.gameplay!.lights![0]!.ambiences = -1;
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid light region/);
+});
+
+test("light regions resolve on sloped traversal areas and follow their asset", () => {
+  const { document, assets } = liftLightCompilerFixture();
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  const light = geometry.light_sectors![0]!;
+  assert.equal(light.layer, geometry.motion_data.layers.length - 1);
+  assert.equal(light.ambience, 2);
+  for (const part of document.objects) part.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    moved.light_sectors![0]!.polygon.points,
+    light.polygon.points.map(([x, y]) => [x + 100, y]),
+  );
+  assert.deepEqual(
+    moved.lifts!.map((lift) => lift.motion_area_index),
+    geometry.lifts!.map((lift) => lift.motion_area_index),
+  );
 });
 
 test("light receiving planes resolve after elevation and reject absent or nonplanar surfaces", () => {

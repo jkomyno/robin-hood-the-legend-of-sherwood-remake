@@ -25,7 +25,7 @@ intended construction, not functionality available today.
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
-| Light/shadow regions | Transform asset-local planar contours, resolve the receiving navigation layer and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering and interior links; multi-plane regions and ambiguous ownership remain recovery gaps |
+| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering, stair shadows and interior links; multi-plane regions, receiving gaps and ownership remain unfinished |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
@@ -117,10 +117,18 @@ their complete geometry has one containing asset part. Ambiguous/unowned sources
 remain explicit gaps; they are not silently attached to terrain. Shared audio
 samples are referenced from the base installation, rather than bundled in the ZIP.
 
-Light recovery preserves projection priority when resolving receiving heights.
-The latest all-map pass recovers 24 of 149 light/shadow regions into asset-local
-drafts. The other 125 need ownership review or splitting across receiving planes;
-they are not silently assigned to terrain. These drafts remain unpublished.
+Light recovery preserves projection priority and fits receiving planes from the
+leading three vertices. Elevated light contours may extend outside navigation
+when their intersecting receivers agree on one plane; uncovered potentially
+walkable portions remain errors, including areas opened by state changes.
+The latest all-map pass recovers 29 of 149 light/shadow regions into asset-local
+drafts, including five additional regions in Derby, Leicester and Lincoln.
+All 29 exported contours and ambience masks match source records. Light regions
+also resolve onto stair/lift traversal surfaces; a native test verifies ambience
+filtering on the traversal layer without affecting the ground layer or door links.
+All nine static diagnostics construct successfully. The other 120 regions need
+receiving-geometry fixes, ownership review or multi-plane authoring; they are not
+silently assigned to terrain. These drafts remain unpublished.
 
 Jump recovery produces asset-local drafts for all 173 pairs across nine maps.
 `compare-jump-geometry.ts` verifies exact endpoint coordinates, polygon boundaries,

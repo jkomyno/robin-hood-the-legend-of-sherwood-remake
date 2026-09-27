@@ -1378,7 +1378,11 @@ for (const [index, sound] of proto.sound_sources.entries()) {
 let recoveredLights = 0;
 for (const [index, light] of proto.light_sectors.entries()) {
   try {
-    const plane = recoverLightPlane(light, proto.sight_obstacles);
+    const plane = recoverLightPlane(
+      light,
+      proto.sight_obstacles,
+      proto.motion_data.layers[light.layer],
+    );
     const world = recoverLightRegion(light, `light-${index}`, "$root", plane, (p) => p);
     const contour = world.polygon.map(([x, y]): Point => [x, y]);
     const owners = [...locals.values()].flat().filter((owner) =>

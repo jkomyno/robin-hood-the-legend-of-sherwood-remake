@@ -891,7 +891,6 @@ export function compileAssetGameplay(
               areas
                 .filter(
                   (area) =>
-                    !area.lift &&
                     area.plane.every((n, i) => Math.abs(n - light.plane[i]!) < 1e-7) &&
                     polygonClipping.intersection([area.polygon], [light.polygon]).length > 0,
                 )
