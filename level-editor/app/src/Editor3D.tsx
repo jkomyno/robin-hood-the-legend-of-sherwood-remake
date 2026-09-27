@@ -1058,6 +1058,26 @@ export default function Editor3D(props: EditorProps) {
     }
     return out;
   };
+  let sceneObjectList: HTMLUListElement | undefined;
+  createEffect(
+    () => ({ selection: selected(), panel: panel(), expanded: expanded(), filter: filter() }),
+    ({ selection, panel }) => {
+      if (!selection || panel !== "Selection") return undefined;
+      // Wait for the selected row and any expanded parent to finish rendering.
+      const frame = requestAnimationFrame(() => {
+        const list = sceneObjectList;
+        const row = list?.querySelector<HTMLElement>('li[aria-pressed="true"]');
+        if (!list || !row) return;
+        const bounds = list.getBoundingClientRect();
+        const item = row.getBoundingClientRect();
+        const top = bounds.top + list.clientTop;
+        const bottom = top + list.clientHeight;
+        if (item.top < top) list.scrollTop += item.top - top;
+        else if (item.bottom > bottom) list.scrollTop += item.bottom - bottom;
+      });
+      return () => cancelAnimationFrame(frame);
+    },
+  );
   const isSelected = (r: Row) => {
     const s = selected();
     return !!s && s.kind === r.kind && s.id === r.id;
@@ -1986,7 +2006,11 @@ export default function Editor3D(props: EditorProps) {
                     : "Your scene has no objects yet. Add one from Assets."}
                 </p>
               </Show>
-              <ul>
+              <ul
+                ref={(element) => {
+                  sceneObjectList = element;
+                }}
+              >
                 <For each={rows()}>
                   {(r) => (
                     <li
