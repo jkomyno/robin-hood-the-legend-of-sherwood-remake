@@ -326,11 +326,15 @@ def generate(only=None, prompt_suffix=''):
               'basis':'explicit batch authorization in this conversation','exact_user_text':REQUEST,
               'geometry_revision':manifest['worker_sha256'],
               'input_sha256':uf.sha(experiment/'input.png'),'texture_approval':'pending'})
+        terrain_context = (' This is bare terrain underneath separately modeled objects. Fill missing areas with '
+            'continuous earth, fallen leaves, moss, grass, existing paths or river water as appropriate. '
+            'Do not reconstruct removed foreground objects in the gray holes: no furniture, fences, buildings, '
+            'trunks, containers or other props.') if manifest['target'].get('region') else ''
         command=['node',str(EDITOR/'pipeline/src/refinement/generate-textures.ts'),str(experiment),
                  '--generate','--prompt-variant','short','--no-mask',
                  '--provider',PROVIDER,
                  '--prompt-suffix','This asset is '+manifest['target']['assets'][0].removeprefix('sherwood-').replace('-',' ')+
-                 '. Continue its existing materials onto missing surfaces; preserve the approved geometry and do not add objects. '+prompt_suffix,
+                 '. Continue its existing materials onto missing surfaces; preserve the approved geometry and do not add objects. '+prompt_suffix+terrain_context,
                  '--lighting-reference',str(experiment/'solid.png')]
         env=dict(os.environ,NODE_USE_ENV_PROXY='1')
         result=subprocess.run(command,cwd=EDITOR.parent,env=env,text=True,capture_output=True)
@@ -458,7 +462,8 @@ def fill(source, output, only=None):
         # narrow visible edges instead of dropping them at the center-pass floor.
         corrected=fill_visible_fragments(target,cameras,sheet,solid,editable,raster,gr,uf.SS,1e-8)
         counts['screen_corrected_texels']=sum(corrected.values())
-        counts['unseen_after_screen_correction']=sum(int(((kind.mask==0)&interior_masks[image.name]).sum())
+        counts['unseen_after_screen_correction']=sum(int(((kind.mask==0)&interior_masks[image.name]&
+            ((gr.read_image(image)[...,3]>=128) if kind.physical else True)).sum())
             for image,kind in zip(target.images,target.image_kind) if kind and image.name in interior_masks)
         for record in target.receivers:
             obj=record['object']
@@ -490,11 +495,27 @@ def fill(source, output, only=None):
         path=output/'ownership'/(hashlib.sha256(name.encode()).hexdigest()[:20]+'.npz')
         np.savez_compressed(path,ownership=mask)
         masks[name]={'path':str(path),'sha256':uf.sha(path)}
+    updates=[]
+    (output/'atlas-updates').mkdir()
+    for record in scene.meshes:
+        obj=record['object']
+        if not np.any(MASKS[obj.name]==2):continue
+        for slot in np.unique(record['slots']):
+            binding,kind=fillable(scene,obj,int(slot))
+            image=binding['image'];material=binding['material']
+            path=output/'atlas-updates'/(hashlib.sha256((obj.name+':'+str(slot)).encode()).hexdigest()[:20]+'.npz')
+            np.savez_compressed(path,rgba=gr.read_image(image))
+            properties={key:material[key] for key in (
+                'source_ownership_fill','texture_review_status','generated_sources_json',
+                'generated_source_sha256','generated_camera_manifest','generated_input_sha256') if key in material}
+            updates.append({'object':obj.name,'slot':int(slot),'image':image.name,
+                'path':str(path),'sha256':uf.sha(path),'alpha_mode':image.alpha_mode,
+                'physical_alpha':kind.physical,'material_properties':properties})
     write(output/'fill.json',{'status':'CANDIDATE_REVIEW_PENDING','assets':reports,
                             'source':str(Path(source).resolve()),
                             'worker_sha256':uf.sha(output/'candidate.blend'),
                             'source_worker_sha256':provenance['worker_sha256'],
-                            'geometry_and_uvs_unchanged':True,'ownership':masks,
+                            'geometry_and_uvs_unchanged':True,'ownership':masks,'atlas_updates':updates,
                             'ownership_semantics':{'0':'unfilled-or-padding','1':'protected-source','2':'generated'}})
 
 

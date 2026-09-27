@@ -184,3 +184,20 @@ Render the baked worker again in all eight cameras and inspect those renders.
 Report remaining unseen interior texels separately from visible unknown pixels:
 fully occluded internal faces are not evidence of a visible hole, and a zero
 visible count does not establish that every interior texel was synthesized.
+
+Inspect both raw generations and the protected composite before baking. Reject
+outputs that mistake neutral missing-texture gray for pale material. For terrain,
+the removed-object silhouettes need continuous ground, not reconstructed props;
+use the normal driver's prompt suffix to clarify a failed candidate and retain
+the rejected output as evidence. User texture approval remains separate.
+
+Large bakes can use disjoint `--asset` batches under the shared render-slot pool.
+Keep all six terrain regions in one batch because they share receiver atlases.
+Each normal bake exports hashed atlas updates. `merge_texture_candidates.py`
+requires complete target coverage, rejects shared receivers, verifies source
+pixels and physical alpha, and transfers texture bytes and their provenance onto
+the source worker without importing geometry. Run `verify_texture_candidate.py`
+on the saved combined candidate to independently compare every protected source
+texel, physical alpha value, geometry and UV against the validated source worker.
+The texture gallery requires this receipt as well as inspection of the actual
+eight-view baked sheets.

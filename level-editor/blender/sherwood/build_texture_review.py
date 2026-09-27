@@ -41,6 +41,11 @@ def main(candidate, experiments, inspections, output):
     worker = candidate/'candidate.blend'
     if sha(worker) != fill['worker_sha256'] or not fill['geometry_and_uvs_unchanged']:
         raise ValueError('Baked worker no longer matches its verification')
+    verification = json.loads((candidate/'saved-worker-verification.json').read_text())
+    if (verification['status'] != 'PASS_SAVED_TEXTURE_CANDIDATE'
+            or verification['worker_sha256'] != fill['worker_sha256']
+            or verification['source_worker_sha256'] != fill['source_worker_sha256']):
+        raise ValueError('Saved candidate has not passed independent source preservation checks')
     inspected = json.loads(Path(inspections).read_text())['items']
     decisions_path = output/'decisions.json'
     decisions = json.loads(decisions_path.read_text())['decisions'] if decisions_path.exists() else []
@@ -71,6 +76,7 @@ def main(candidate, experiments, inspections, output):
             'baked_model_sha256': fill['worker_sha256'],
             'source_worker_sha256': fill['source_worker_sha256'],
             'fill_report_sha256': sha(candidate/'fill.json'), 'counts': row['counts'],
+            'saved_worker_verification_sha256': sha(candidate/'saved-worker-verification.json'),
         })
         notes = [
             'Existing Sherwood reconstruction, fully reprojected from original artwork before synthesis.',
