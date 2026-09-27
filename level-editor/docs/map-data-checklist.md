@@ -81,7 +81,7 @@ All eight also construct their compiled movement areas, sight obstacles and grid
 in the native engine without a datadir. York passes both checks using staged
 canonical tower, golden timber house and stone-shop assets, including the tower's
 previously missing elevated door landing: 194 movement areas, 1,161 sight obstacles,
-179 doors and 72 jump pairs construct successfully.
+244 doors and 72 jump pairs construct successfully after door ownership recovery.
 `export-gameplay-diagnostics.ts` generates
 these explicitly labelled static probes from draft assets; the ignored
 `recovered_static_exports_construct_native_geometry` test reads their manifest via
@@ -172,26 +172,33 @@ for each placement, including duplicates. Native fixture tests verify both link
 directions, permission changes and restoration on reset. Door-only transitions
 are supported without adding navigation or sight changes. Offline recovery maps
 source door indices into local endpoint IDs and reports missing owners, cross-asset
-links and unrecovered geometry in `pending.doorTransitionBindings`. Nineteen of the
+links and unrecovered geometry in `pending.doorTransitionBindings`. Twenty-one of the
 28 door-linked patches across the nine extracted maps now recover: seven in
-Nottingham, five in York, four in Lincoln, two in Leicester and one in Croisement03.
-The remaining nine are in Derby (one), Leicester (three) and Lincoln (five).
+Nottingham, six in Lincoln, five in York, two in Leicester and one in Croisement03.
+The remaining seven are in Derby (one), Leicester (three) and Lincoln (three).
 Linked changing geometry can establish a door owner only when every obstacle has
 one owner and all belong to the same asset. `doorStateOwnershipRecovery` records
 this evidence for physical-grouping review; conflicting or missing geometry cannot
 select an owner. Recovery also supports sight changes without navigation
 changes when every referenced obstacle and door belongs to the same asset.
 The 42 changing sight shapes match source coordinates at native float32 precision
-and preserve their flags. All eight initial/alternate permission fields match the source for the thirty-two
+and preserve their flags. All eight initial/alternate permission fields match the source for the thirty-nine
 linked doors, and each binding retains its trigger direction.
 Ordinary passages can connect to stair/lift surfaces in either direction without
 becoming lift doors. This restores Lincoln's hall passages onto traversal surfaces.
 All nine extracted map diagnostics compile and load; the native round-trip harness
-applies/resets their 39 recovered transitions. It checks both
+applies/resets their 41 recovered transitions. It checks both
 halves of door permissions as well as movement and sight state, including the
 door-to-patch links for door-triggered transitions.
 This does not establish complete door-transition coverage or publish those drafts.
-The twenty-one recovered transitions pass native initialization, apply and reset checks:
+Spatial ownership ties can be resolved by slicing solid geometry above the landing,
+excluding supporting terrain and preserving disconnected concave pieces. This
+restores 84 connection records without dropping previously recovered doors.
+Across the nine diagnostics, 353 of 397 non-lift doors now compile; all 353 match
+source endpoints, click polygons, door types, active flags and initial/alternate
+permissions. The remaining 44 still need ownership or endpoint recovery. Inferred
+physical grouping remains marked for review before publication.
+The twenty-one recovered movement-changing transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.
 Transition reference points may lie inside static blockers; they must still resolve
 to a unique surface at the authored height. Door and jump endpoints require an
@@ -217,7 +224,7 @@ neighboring building parts in a separate asset with unchanged geometry.
 The updated ownership catalog additionally requires complete green timber-house
 and striped-awning building assets; staging both restores their two local volumes
 without assigning either volume to a partial building. The combined York draft
-again constructs 194 movement areas, 1,161 sight obstacles, 179 doors and 72 jump
+now constructs 194 movement areas, 1,161 sight obstacles, 244 doors and 72 jump
 pairs, whose geometry and traversal flags match the source pairs.
 The compiler reads
 only the resulting local volumes; source sector and material indices are rejected.

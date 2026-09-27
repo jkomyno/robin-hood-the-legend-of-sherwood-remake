@@ -37,7 +37,7 @@ import {
   type GameplayOwnershipCatalog,
 } from "./nonrendering-gameplay-owners.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
-import { recoverDoorStateOwner } from "./recover-door-owner.ts";
+import { doorOwnershipFootprint, recoverDoorStateOwner } from "./recover-door-owner.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
 import { recoverSurfaceOwners } from "./recovery-surface-owners.ts";
@@ -850,6 +850,7 @@ for (const [index, entry] of proto.buildings.entries()) {
         z = isInterior
           ? heightAt(first.sector_out, first.layer_out, first.point_out)
           : heightAt(first.sector_in, first.layer_in, first.point_in);
+      const raisedCandidates: typeof candidates = new Map();
       for (const [obstacleIndex, owners] of locals) {
         if (owners.length !== 1) continue;
         const obstacle = proto.sight_obstacles[obstacleIndex]!;
@@ -863,19 +864,34 @@ for (const [index, entry] of proto.buildings.entries()) {
           previous = candidates.get(owner.asset);
         if (!previous || distance < previous.distance)
           candidates.set(owner.asset, { owner, distance });
+        const footprints = doorOwnershipFootprint(obstacle, z);
+        if (footprints.length) {
+          const raisedDistance = Math.min(
+            ...footprints.map((footprint) =>
+              distanceToPolygon([first.point_in[0], first.point_in[1] + z], footprint),
+            ),
+          );
+          const previousRaised = raisedCandidates.get(owner.asset);
+          if (!previousRaised || raisedDistance < previousRaised.distance)
+            raisedCandidates.set(owner.asset, { owner, distance: raisedDistance });
+        }
       }
       const ranked = [...candidates.values()].sort((a, b) => a.distance - b.distance);
+      const choose = (entries: typeof ranked) =>
+        entries[0] &&
+        entries[0].distance <= 24 &&
+        (!entries[1] || entries[1].distance - entries[0].distance >= 8)
+          ? entries[0].owner
+          : undefined;
+      const spatialOwner =
+        choose(ranked) ??
+        choose([...raisedCandidates.values()].sort((a, b) => a.distance - b.distance));
       const stateOwner = recoverDoorStateOwner(
         doors.map((door) => doorIndices.get(door)!),
         proto.patches,
         locals,
       );
-      if (
-        !stateOwner &&
-        (!ranked[0] ||
-          ranked[0].distance > 24 ||
-          (ranked[1] && ranked[1].distance - ranked[0].distance < 8))
-      ) {
+      if (!stateOwner && !spatialOwner) {
         unresolved.push({
           kind: "building-owner",
           building: index,
@@ -886,7 +902,11 @@ for (const [index, entry] of proto.buildings.entries()) {
         });
         continue;
       }
-      const owner = stateOwner ?? ranked[0]!.owner;
+      const owner = stateOwner ?? spatialOwner!;
+      if (!stateOwner && !choose(ranked))
+        packet(owner.asset).issues.push(
+          "Door ownership resolved from geometry above its landing; review the physical doorway before publication",
+        );
       const endpoints = doors.map((door, i) => {
         const elevation = heightAt(door.sector_out, door.layer_out, door.point_out);
         const local = (point: Point) =>
