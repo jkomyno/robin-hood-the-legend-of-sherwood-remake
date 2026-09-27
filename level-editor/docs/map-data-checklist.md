@@ -78,13 +78,18 @@ overlapping or uncovered portions remain explicit ownership gaps. The latest
 recovery drafts for Derby, Sherwood, Lincoln, Leicester, Nottingham, Croisement01, Croisement02 and Croisement03
 pass the static base-geometry check, excluding explicitly counted movement transitions.
 All eight also construct their compiled movement areas, sight obstacles and grids
-in the native engine without a datadir. `export-gameplay-diagnostics.ts` generates
+in the native engine without a datadir. York passes both checks using staged
+canonical tower and golden timber house assets, including the tower's previously
+missing elevated door landing: 193 movement areas, 1,159 sight obstacles and
+177 doors construct successfully.
+`export-gameplay-diagnostics.ts` generates
 these explicitly labelled static probes from draft assets; the ignored
 `recovered_static_exports_construct_native_geometry` test reads their manifest via
 `ROBIN_ASSET_MAP_DIAGNOSTICS`. This checks construction, not movement/state fidelity.
 These are unpublished drafts, not completed map exports or in-game round-trip
-parity results. Other maps still fail geometry checks; no original map has yet
-been certified at full parity.
+parity results. All nine recovered maps have now passed static construction;
+no map has yet been certified at full parity, and authored maps still require
+published gameplay definitions for their assets.
 
 Material recovery now stores ground regions on the terrain asset and obstacle
 regions on their owning parts. Elevated projection-material links remain explicit
@@ -93,8 +98,8 @@ obstacle-only regions do not become ground water or footstep materials.
 
 Terrain drafts also carry forest behaviour and fallback material. Recovery
 normalizes clearance crossings introduced by integer rounding, preserving valid
-regions instead of discarding a polygon whose signed area cancels. Nottingham
-now reaches the next static-check blocker: gameplay on a hidden prison part.
+regions instead of discarding a polygon whose signed area cancels. Nottingham's
+hidden prison part retains its gameplay frame and passes the static check.
 
 Sound recovery attaches global emitters to terrain and local emitters only when
 their complete geometry has one containing asset part. Ambiguous/unowned sources
@@ -128,7 +133,7 @@ Hidden mesh parts retain coordinate frames for explicit gameplay; whole hidden
 placements remain excluded. Hidden sight geometry is included only when explicitly
 referenced by a transition. Nottingham now passes the prison-frame and castle-door
 checks and its elevated stair landing. York's compound lift now has
-asset-local segment connections; its static check advances to an unresolved
+asset-local segment connections, and its staged canonical tower restores the
 interior-door landing surface. Lift recovery matches shared
 edges once and stores local sockets, never runtime references between assets.
 
@@ -146,9 +151,19 @@ owner's bounds; they can subtract that owner's collision, never another asset's.
 
 Non-rendering gameplay volumes can attach to an existing asset frame without a
 mesh. One-time recovery uses explicit catalog ownership (or `--ownership`) and
-restores six of York's nine inventoried records into drafts, including its missing
-jump landing surface. Three still span multiple pinned assets. The compiler reads
+restores six of York's nine inventoried records against the published scene,
+including a missing jump landing surface. Staged canonical tower and golden timber
+house assets resolve two more records previously spanning multiple pinned assets;
+eight of nine now have asset owners. The remaining stone-shop record needs a
+legacy asset split because that asset also contains parts of other buildings.
+The compiler reads
 only the resulting local volumes; source sector and material indices are rejected.
+`stage-canonical-static-asset.ts` combines complete static assets only when their
+parts exactly match an explicit catalog group. It checks unchanged world collision
+positions and decoded model geometry, materials and texture bytes after writing
+the merged model. Partial groups, edited placements and state/gameplay definitions
+requiring migration are rejected. Its output is a separate library overlay and
+pinned editor scene, not a publication or a runtime dependency on source levels.
 Jump recovery now requires an owned receiving surface on each elevated side;
 missing or ambiguous ownership remains an explicit gap rather than an invalid pair.
 Cross-asset edges retain only their own local landing zone and a shared geometric

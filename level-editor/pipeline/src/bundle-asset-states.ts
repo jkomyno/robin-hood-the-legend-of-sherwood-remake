@@ -134,6 +134,8 @@ async function signatures(doc: Document) {
   };
 }
 
+export { signatures as modelContentSignatures };
+
 /** Compare decoded content independently of GLB packing and table allocation. */
 export async function verifyCanonicalScene(
   modelPath: string,
