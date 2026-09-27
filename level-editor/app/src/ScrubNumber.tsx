@@ -1,8 +1,10 @@
 import { createSignal, onCleanup } from "solid-js";
+import type { JSX } from "@solidjs/web";
 
 /** Preview while dragging; commit one edit on release. A click still permits typing. */
 export default function ScrubNumber(props: {
   label: string;
+  labelExtra?: () => JSX.Element;
   value: number;
   step: number;
   onPreview: (value: number) => void;
@@ -62,7 +64,8 @@ export default function ScrubNumber(props: {
       }}
     >
       <span class="meta-key" style={{ "user-select": "none" }}>
-        {props.label}
+        {props.label}{" "}
+        {props.labelExtra?.()}
       </span>
       <input
         class="scrub-number"
