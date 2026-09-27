@@ -51,6 +51,22 @@ def clip(poly, axis, boundary, above):
             t=(boundary-av)/(bv-av);out.append({k:a[k]+(b[k]-a[k])*t for k in a})
     return out
 
+def clip_parts(parts, box):
+    clipped=[]
+    for attrs,triangles,material,name in parts:
+        values={k:[] for k in attrs}
+        for tri in triangles:
+            poly=[{k:v[i].copy() for k,v in attrs.items()} for i in tri]
+            for axis,limits in enumerate(box):
+                if limits is not None:poly=clip(clip(poly,axis,limits[0],True),axis,limits[1],False)
+            for i in range(1,len(poly)-1):
+                for v in (poly[0],poly[i],poly[i+1]):
+                    for k in values:values[k].append(v[k])
+        if values['POSITION']:
+            values={k:np.array(v) for k,v in values.items()}
+            clipped.append((values,np.arange(len(values['POSITION'])).reshape(-1,3),material,name))
+    return clipped
+
 def source_geometry(recipe, entries):
     entry=entries[recipe['source']];path=LIB/entry['model'];doc,buffers,_=read_glb(path)
     descriptor=json.loads((LIB/entry['descriptor']).read_text())
@@ -59,30 +75,21 @@ def source_geometry(recipe, entries):
     if recipe.get('include_nodes'):
         parts=[p for p in parts if any(name in (p[3] or '') for name in recipe['include_nodes'])]
     if recipe.get('clip_box'):
-        clipped=[]
-        for attrs,triangles,material,name in parts:
-            values={k:[] for k in attrs}
-            for tri in triangles:
-                poly=[{k:v[i].copy() for k,v in attrs.items()} for i in tri]
-                for axis,limits in enumerate(recipe['clip_box']):
-                    if limits is not None:poly=clip(clip(poly,axis,limits[0],True),axis,limits[1],False)
-                for i in range(1,len(poly)-1):
-                    for v in (poly[0],poly[i],poly[i+1]):
-                        for k in values:values[k].append(v[k])
-            if values['POSITION']:
-                values={k:np.array(v) for k,v in values.items()}
-                clipped.append((values,np.arange(len(values['POSITION'])).reshape(-1,3),material,name))
-        parts=clipped
+        parts=clip_parts(parts,recipe['clip_box'])
     if not parts:raise ValueError('No selected geometry: '+recipe['id'])
     points=np.concatenate([p[0]['POSITION'] for p in parts]);center=points[:,:2].mean(axis=0)
     _,axes=np.linalg.eigh((points[:,:2]-center).T@(points[:,:2]-center));direction=axes[:,-1]
     angle=recipe.get('angle',math.degrees(math.atan2(direction[1],direction[0])))
-    if angle>90:angle-=180
-    if angle<=-90:angle+=180
+    if 'angle' not in recipe:
+        if angle>90:angle-=180
+        if angle<=-90:angle+=180
     a=math.radians(angle);rot=np.array([[math.cos(a),math.sin(a),0],[-math.sin(a),math.cos(a),0],[0,0,1]])
     for attrs,_,_,_ in parts:
         attrs['POSITION']=attrs['POSITION']@rot.T
         if 'NORMAL' in attrs:attrs['NORMAL']=attrs['NORMAL']@rot.T
+    if 'cross_interval' in recipe:
+        parts=clip_parts(parts,[None,recipe['cross_interval']])
+        if not parts:raise ValueError('Cross-section crop removed all geometry: '+recipe['id'])
     return entry,path,doc,buffers,parts,angle
 
 def feature_intervals(parts, height):

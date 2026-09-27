@@ -2,10 +2,21 @@
 import unittest
 import numpy as np
 
-from build_segments import feature_intervals, repeat_interval
+from build_segments import clip_parts, feature_intervals, repeat_interval
 
 
 class RepeatIntervalTests(unittest.TestCase):
+    def test_cross_crop_preserves_interpolated_texture_coordinates(self):
+        positions=np.array([[0.,0,0],[10,0,0],[10,10,0]])
+        attrs={'POSITION':positions,'TEXCOORD_0':positions[:,:2]/10}
+        parts=clip_parts([(attrs,np.array([[0,1,2]]),3,'curtain')],[None,[2,8]])
+        self.assertEqual(len(parts),1)
+        clipped,_,material,name=parts[0]
+        self.assertEqual((material,name),(3,'curtain'))
+        self.assertTrue(np.all((clipped['POSITION'][:,1]>=2)&(clipped['POSITION'][:,1]<=8)))
+        np.testing.assert_allclose(clipped['TEXCOORD_0'],clipped['POSITION'][:,:2]/10)
+        np.testing.assert_array_equal(attrs['POSITION'],positions)
+
     def test_low_connecting_wall_does_not_merge_battlements(self):
         positions=[]
         for left,right,bottom,top in [(0,100,0,50),(10,30,50,80),(60,85,50,80)]:

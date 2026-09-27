@@ -21,9 +21,17 @@ def main():
             raise ValueError('Final full-model audit missing: ' + row['id'])
         uri = 'data:image/webp;base64,' + base64.b64encode(image.read_bytes()).decode()
         escape = html.escape
+        descriptor = json.loads((WORK / 'staging/3d-assets' / row['id'] / 'asset.json').read_text())
+        repeat_check = descriptor['provenance'].get('repeat_check')
+        spacing = ''
+        if repeat_check:
+            gaps = repeat_check['internal_gaps']
+            spacing = (f"<br>{repeat_check['features']} complete features per repeat; "
+                       f"join gap {repeat_check['seam_gap']:.2f}")
+            if gaps:spacing += f"; interior gaps {min(gaps):.2f}–{max(gaps):.2f}"
         cards.append(f'''<article data-map="{escape(row['source_map'])}">
           <h2>{escape(row['name'])}</h2><p>Source: <code>{escape(row['source'])}</code><br>
-          Width {row['width']:.1f} · Repeat {row['repeatLength']:.1f} · Height {row['height']:.1f}</p>
+          Width {row['width']:.1f} · Repeat {row['repeatLength']:.1f} · Height {row['height']:.1f}{spacing}</p>
           <details><summary>Original, strip, repeats, curve, corner, and join close-up — both cameras</summary>
           <img loading="lazy" src="{uri}" alt="{escape(row['name'])} comparison"></details></article>''')
         representatives.setdefault(row['source_map'], image)

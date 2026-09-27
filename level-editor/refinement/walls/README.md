@@ -18,6 +18,10 @@ The final clipped mesh is measured again to reject truncated or missing features
 `level_feature_tops` removes the source's longitudinal height slope while retaining
 crenel depth. Texture-only sources use reviewed scene-unit `interval` cuts and
 `repeat_note` documents the visible landmarks; `level_top` removes height jumps.
+`cross_interval` clips across the wall after rotation into its longitudinal frame,
+so attached stairs/platforms can be excluded without cutting diagonally through
+the curtain. Leicester's castle preset uses the southwest curtain's three complete
+merlons; its former single-crenel source joined two end merlons into an oversized one.
 Triangle clipping interpolates the original UVs
 and vertex attributes. Solid-wall copies can straighten their cross-sections;
 low banks can level their ends. Fences retain the thickness differences between
