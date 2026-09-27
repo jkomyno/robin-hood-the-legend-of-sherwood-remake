@@ -11,7 +11,7 @@ test("built-in maps use capitalized English names and distinguish saved copies",
     leicester: "Leicester",
     lincoln: "Lincoln",
     nottingham: "Nottingham",
-    sherwood: "Sherwood",
+    sherwood: "Sherwood (Refined)",
     Wychford: "Wychford",
     york: "York",
   };
