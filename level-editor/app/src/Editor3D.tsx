@@ -1882,44 +1882,46 @@ export default function Editor3D(props: EditorProps) {
                       </>
                     )}
                   </Show>
-                  <For each={["dx", "dy", "dz", "rot_deg"] as const}>
-                    {(f) => (
-                      <ScrubNumber
-                        label={
-                          {
-                            dx: "X",
-                            dy: "Y",
-                            dz: "Height",
-                            rot_deg: "Rotation (°)",
-                          }[f]
-                        }
-                        labelExtra={() => (
-                          <Show when={f === "dz"}>
-                            <label
-                              class="check inline"
-                              title="Move vertically with the gizmo"
-                              onPointerDown={(event) => event.stopPropagation()}
-                              onPointerUp={(event) => event.stopPropagation()}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={gizmoVertical()}
-                                onChange={(event) => setGizmoVertical(event.currentTarget.checked)}
-                              />{" "}
-                              lift
-                            </label>
-                          </Show>
-                        )}
-                        step={f === "rot_deg" ? 5 : 1}
-                        value={t()[f]}
-                        onPreview={(value) => previewTransformField(f, value)}
-                        onCommit={(value) => setTransformField(f, value)}
-                        onCancel={() => {
-                          if (!disposed && doc()) viewport.syncViews(doc()!, false);
-                        }}
-                      />
-                    )}
-                  </For>
+                  <div class="transform-fields">
+                    <For each={["dx", "dy", "dz", "rot_deg"] as const}>
+                      {(f) => (
+                        <ScrubNumber
+                          label={
+                            {
+                              dx: "X",
+                              dy: "Y",
+                              dz: "Height",
+                              rot_deg: "Rotation (°)",
+                            }[f]
+                          }
+                          labelExtra={() => (
+                            <Show when={f === "dz"}>
+                              <label
+                                class="check inline"
+                                title="Move vertically with the gizmo"
+                                onPointerDown={(event) => event.stopPropagation()}
+                                onPointerUp={(event) => event.stopPropagation()}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={gizmoVertical()}
+                                  onChange={(event) => setGizmoVertical(event.currentTarget.checked)}
+                                />{" "}
+                                lift
+                              </label>
+                            </Show>
+                          )}
+                          step={f === "rot_deg" ? 5 : 1}
+                          value={t()[f]}
+                          onPreview={(value) => previewTransformField(f, value)}
+                          onCommit={(value) => setTransformField(f, value)}
+                          onCancel={() => {
+                            if (!disposed && doc()) viewport.syncViews(doc()!, false);
+                          }}
+                        />
+                      )}
+                    </For>
+                  </div>
                   <Show when={selectedPatchPreviews().length > 0}>
                     <h3>Linked patches</h3>
                     <For each={selectedPatchPreviews()}>
