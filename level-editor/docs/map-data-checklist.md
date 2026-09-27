@@ -75,7 +75,8 @@ export or establish gameplay parity; `candidateCompilation` checks the full scen
 
 Split source surfaces are recovered using each asset part's own footprint;
 overlapping or uncovered portions remain explicit ownership gaps. The latest
-recovery drafts for Derby, Sherwood, Lincoln and Leicester pass the static geometry check.
+recovery drafts for Derby, Sherwood, Lincoln, Leicester, Croisement01 and Croisement02
+pass the static base-geometry check, excluding explicitly counted movement transitions.
 These are unpublished drafts, not completed map exports or in-game round-trip
 parity results. Other maps still fail geometry checks; no original map has yet
 been certified at full parity.
@@ -104,5 +105,14 @@ Jump recovery produces asset-local drafts for 83 of 173 pairs; 90 still need
 ownership or geometry authoring. Edge elevations remain independent of fractional
 surface heights. Extraction now preserves the third endpoint coordinate and
 remaps zone references, retaining both destinations when a crop crosses a pair.
-The four passing static diagnostics also include their recovered jump definitions;
-the forest maps still lack receiving terrain for some landing anchors.
+The passing static diagnostics also include their recovered jump definitions.
+Croisement03 now reaches a door-topology issue after its terrain is recovered;
+Nottingham's hidden prison part and York's unowned lift remain blockers.
+
+Stable terrain is recovered even when its movement area has changing obstacles.
+The recovery inventory preserves all 27 changing-obstacle groups, their initial
+and applied contours, and patch associations. These still need asset-local
+transition ownership. `omittedMovementTransitions` makes that exclusion explicit
+in the static diagnostic and prevents it from certifying full compilation.
+Ground recovery uses fixed-point polygon operations and reports reconstruction
+area differences; generated boundaries are normalized after integer rounding.

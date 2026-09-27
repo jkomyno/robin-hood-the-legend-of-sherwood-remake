@@ -6,6 +6,7 @@ import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts
 export function diagnoseGameplayCandidates(
   document: Level3D,
   candidates: ReadonlyMap<string, GameplayAssetDescriptor>,
+  omissions: { omittedMovementTransitions?: number } = {},
 ) {
   const bounds =
     document.exportBounds ??
@@ -21,7 +22,13 @@ export function diagnoseGameplayCandidates(
       return { ready: false, error: String(error) };
     }
   };
-  const compilation = probe(document);
+  const omittedMovementTransitions = omissions.omittedMovementTransitions ?? 0;
+  const compilation = omittedMovementTransitions
+    ? {
+        ready: false,
+        error: `Missing asset-local movement transition definitions (${omittedMovementTransitions})`,
+      }
+    : probe(document);
   // Preserve the currently visible placement geometry. Removing unsupported
   // behaviours is confined to this disposable diagnostic snapshot.
   const staticScene = structuredClone(document);
@@ -34,6 +41,10 @@ export function diagnoseGameplayCandidates(
   for (const part of staticScene.objects) delete part.patches;
   return {
     compilation,
-    staticGeometry: { scope: "current-visible-geometry-only", ...probe(staticScene) },
+    staticGeometry: {
+      scope: "current-visible-geometry-only",
+      omittedMovementTransitions,
+      ...probe(staticScene),
+    },
   };
 }

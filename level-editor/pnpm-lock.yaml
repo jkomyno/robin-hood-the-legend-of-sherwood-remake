@@ -239,6 +239,9 @@ importers:
       '@rle/shared':
         specifier: workspace:*
         version: link:../shared
+      clipper-lib:
+        specifier: 6.4.2
+        version: 6.4.2
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -258,6 +261,9 @@ importers:
         specifier: 0.35.4
         version: 0.35.4(@types/node@26.5.1)
     devDependencies:
+      '@types/clipper-lib':
+        specifier: 6.4.0
+        version: 6.4.0
       '@types/earcut':
         specifier: ^3.0.0
         version: 3.0.0
@@ -1190,6 +1196,9 @@ packages:
   '@types/babel__traverse@7.28.0':
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
 
+  '@types/clipper-lib@6.4.0':
+    resolution: {integrity: sha512-y8WVQWLCIJobtcxk8SJj1f7OGVbQEL7RmfGtrWDkAKFxq2U6F0/7/hLYvDWlUnBayvnRYkq+QVZaUzm13mu+Ng==}
+
   '@types/earcut@3.0.0':
     resolution: {integrity: sha512-k/9fOUGO39yd2sCjrbAJvGDEQvRwRnQIZlBz43roGwUZo5SHAmyVvSFyaVVZkicRVCaDXPKlbxrUcBuJoSWunQ==}
 
@@ -1352,6 +1361,9 @@ packages:
 
   caniuse-lite@1.0.30001809:
     resolution: {integrity: sha512-xxWVywk6a6Arlk+hymeycyn/VgqEfLDxupvhH/xiY5SJ/18kmi9o6MiO320DCUzypORHLtvh0I4i04tUhCNHNQ==}
+
+  clipper-lib@6.4.2:
+    resolution: {integrity: sha512-knglhjQX5ihNj/XCIs6zCHrTemdvHY3LPZP9XB2nq2/3igyYMFueFXtfp84baJvEE+f8pO1ZS4UVeEgmLnAprQ==}
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
@@ -2422,6 +2434,8 @@ snapshots:
     dependencies:
       '@babel/types': 7.29.8
 
+  '@types/clipper-lib@6.4.0': {}
+
   '@types/earcut@3.0.0': {}
 
   '@types/ndarray@1.1.0': {}
@@ -2526,6 +2540,8 @@ snapshots:
       update-browserslist-db: 1.3.1(browserslist@4.28.8)
 
   caniuse-lite@1.0.30001809: {}
+
+  clipper-lib@6.4.2: {}
 
   convert-source-map@2.0.0: {}
 

@@ -1,22 +1,12 @@
-import clipping, { type MultiPolygon, type Polygon } from "polygon-clipping";
+import type { MultiPolygon, Polygon } from "polygon-clipping";
+import {
+  recoveryClipping as clipping,
+  recoveryPolygonBoolean,
+} from "./recovery-polygon-boolean.ts";
 import type { Point } from "@rle/shared";
+import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 
 export const closedPolygon = (points: Point[]): Polygon => [[...points, points[0]!]];
-// Motion coordinates are integer pixels in the engine. Snap intermediate cuts
-// to that same grid and report the resulting geometric error explicitly.
-const motionGrid = (regions: MultiPolygon): MultiPolygon =>
-  regions.flatMap((polygon) => {
-    const rings = polygon.map((ring) => {
-      const points = ring.map(([x, y]): Point => [Math.round(x), Math.round(y)]);
-      const distinct = points.filter((p, i) => {
-        const next = points[(i + 1) % points.length]!;
-        return p[0] !== next[0] || p[1] !== next[1];
-      });
-      return distinct.length >= 3 ? [...distinct, distinct[0]!] : [];
-    });
-    if (!rings[0]!.length || polygonArea([[rings[0]!]]) < 0.5) return [];
-    return [[rings[0]!, ...rings.slice(1).filter((r) => r.length && polygonArea([[r]]) >= 0.5)]];
-  });
 export function polygonArea(regions: MultiPolygon): number {
   const ringArea = (ring: Point[]) =>
     Math.abs(
@@ -40,6 +30,11 @@ export function recoverGroundGameplay(
   owners: { asset: string; node: string; footprint: Point[] }[],
 ) {
   if (!areas.length) throw new Error("No authored ground movement regions");
+  const warnings: string[] = [];
+  const normalize = (regions: MultiPolygon, label: string) =>
+    quantizeRecoveredMotion(regions, label, warnings, (rounded) =>
+      recoveryPolygonBoolean("union", rounded, [], 1),
+    );
   const free = areas.flatMap((area) => {
     const boundary = closedPolygon(area.polygon.points);
     const holes = area.obstacles.map((o) => closedPolygon(o.polygon.points));
@@ -55,21 +50,30 @@ export function recoverGroundGameplay(
   const blockers = owners.flatMap((owner) => {
     // Disconnected ground sectors must not claim unrelated assets elsewhere on the map.
     if (!clipping.intersection(closedPolygon(owner.footprint), envelope).length) return [];
-    const regions = motionGrid(clipping.difference(closedPolygon(owner.footprint), walkable));
+    const regions = normalize(
+      clipping.difference(closedPolygon(owner.footprint), walkable),
+      `${owner.asset}/${owner.node} ground blocker`,
+    );
     return regions.length ? [{ asset: owner.asset, node: owner.node, regions }] : [];
   });
   const additions = blockers.flatMap((b) => b.regions);
   const excluded = additions.length ? clipping.union(additions[0]!, ...additions.slice(1)) : [];
   // A placed footprint can cross the authored outer boundary. It may own an
   // exclusion there, but must not extend the terrain beyond that boundary.
-  const terrain = excluded.length
-    ? motionGrid(clipping.intersection(clipping.union(walkable, excluded), envelope))
-    : walkable;
+  // Fill owned exclusions by subtracting the remaining holes from the envelope.
+  // This avoids rejoining coincident fractional boundaries before clipping them.
+  const holes = clipping.difference(envelope, walkable);
+  const remaining = excluded.length ? clipping.difference(holes, excluded) : holes;
+  const terrain = normalize(
+    remaining.length ? clipping.difference(envelope, remaining) : envelope,
+    "Recovered ground",
+  );
   const reconstructed = excluded.length ? clipping.difference(terrain, excluded) : terrain;
   const difference = clipping.xor(walkable, reconstructed);
   return {
     terrain,
     blockers,
+    warnings,
     coordinateGrid: 1,
     sourceArea: polygonArea(walkable),
     reconstructedArea: polygonArea(reconstructed),

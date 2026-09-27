@@ -1,5 +1,11 @@
 # Post-port Features
 
+- **Terrain beneath changing obstacles.** Offline recovery separates permanent
+  ground from state-dependent exclusions and retains every changing contour and
+  patch association for asset authoring. Static diagnostics count omitted
+  transitions explicitly. Fixed-point ground operations and rounded-boundary
+  normalization handle touching rings without discarding entire terrain areas.
+
 - **Asset-local jumps.** Map export retains 3D paired edges, receiving regions,
   long-jump flags and helper requirements, rebuilding native jump zones and gates
   after placement. Source extraction preserves edge elevation and repairs cropped

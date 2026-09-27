@@ -24,7 +24,7 @@ test("rounded clearance crossings become valid integer regions instead of cancel
   assert.ok(polygonArea(result) > 0);
   for (const polygon of result)
     for (const ring of polygon) for (const point of ring) assert.ok(point.every(Number.isInteger));
-  assert.ok(warnings.some((w) => w.includes("normalized recovered boundaries")));
+  assert.ok(warnings.some((w) => w.includes("normalized generated boundaries")));
   assert.deepEqual(quantizeRecoveredMotion(result, "stable", []), result);
 });
 

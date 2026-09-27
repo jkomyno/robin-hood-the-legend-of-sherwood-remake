@@ -13,6 +13,7 @@ import {
 
 import { heightPlane, planeHeight, clipHeight, type HeightPlane } from "./gameplay-plane.ts";
 import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-quantization.ts";
+import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
 import {
   compileTransitionObstacles,
   type PlacedTransitionBlocker,
@@ -521,7 +522,9 @@ export function compileAssetGameplay(
       }
     }
     const output = layers[layer]!;
-    for (const poly of merged) {
+    for (const poly of merged.flatMap((region) =>
+      normalizeGeneratedMotion([region], `Movement layer ${layer}`, warnings),
+    )) {
       const quantized = quantizeGeneratedMotionPolygon(
         poly,
         quantize,

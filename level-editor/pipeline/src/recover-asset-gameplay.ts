@@ -27,6 +27,7 @@ import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
 import { recoverLightPlane, recoverLightRegion } from "./recover-light-region.ts";
 import { recoverJumpGeometry } from "./recover-jump-geometry.ts";
+import { recoverMotionStates } from "./recover-motion-states.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
@@ -132,6 +133,11 @@ const planeHeight = (
 };
 const unresolved: unknown[] = [];
 const coverage: unknown[] = [];
+const movementStateInventory: {
+  sector: number;
+  layer: number;
+  transitions: ReturnType<typeof recoverMotionStates>["transitions"];
+}[] = [];
 const groundAreas: Parameters<typeof recoverGroundGameplay>[0] = [];
 const clearanceSources: { regions: MultiPolygon; plane: HeightPlane }[] = [];
 const groundProjectionOwners: {
@@ -142,17 +148,25 @@ const groundProjectionOwners: {
 }[] = [];
 let sector = 0;
 for (const [layer, areas] of proto.motion_data.layers.entries())
-  for (const motion of areas) {
+  for (const rawMotion of areas) {
     const identity = sector;
-    sector += 1 + motion.obstacles.length;
-    if (motion.state_id !== 0 || motion.obstacles.some((o) => o.state_id !== 0))
+    sector += 1 + rawMotion.obstacles.length;
+    const { base: motion, transitions } = recoverMotionStates(
+      rawMotion,
+      identity,
+      layer,
+      proto.patches,
+    );
+    if (transitions.length) {
+      movementStateInventory.push({ sector: identity, layer, transitions });
       unresolved.push({
         kind: "movement-states",
         sector: identity,
         layer,
         reason:
-          "State-dependent movement exclusions require asset state ownership; static drafts are incomplete",
+          "Stable terrain recovered separately; changing exclusions in movementStateInventory still require asset-local transition ownership",
       });
+    }
     const supports = proto.sight_obstacles.flatMap((obstacle, index) =>
       Array.isArray(obstacle.projection_area) &&
       obstacle.projection_area[0] === identity &&
@@ -385,6 +399,7 @@ if (groundAreas.length) {
       .concat(groundProjectionOwners);
     const ground = recoverGroundGameplay(groundAreas, owners);
     const terrain = packet(grounds[0]!.id);
+    terrain.issues.push(...ground.warnings);
     for (const [index, region] of ground.terrain.entries())
       terrain.surfaces.push({
         id: `ground-${index}`,
@@ -881,6 +896,10 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
   }
 }
 const pending = {
+  movementTransitions: movementStateInventory.reduce(
+    (sum, area) => sum + area.transitions.length,
+    0,
+  ),
   buildingEntries: proto.buildings.length - recoveredBuildings,
   maskRecords: proto.masks.length,
   patches: proto.patches.length,
@@ -913,7 +932,9 @@ for (const [id, descriptor] of candidates) {
   const gameplay = packets.get(id)?.gameplayCandidate;
   if (gameplay) candidates.set(id, { ...descriptor, gameplay });
 }
-const diagnostics = diagnoseGameplayCandidates(document, candidates);
+const diagnostics = diagnoseGameplayCandidates(document, candidates, {
+  omittedMovementTransitions: pending.movementTransitions,
+});
 const report = {
   status: "incomplete-authoring-recovery",
   assets: packets.size,
@@ -925,6 +946,7 @@ const report = {
     0,
   ),
   definitionValidation,
+  movementStateInventory,
   candidateCompilation: diagnostics.compilation,
   staticGeometryDiagnostic: diagnostics.staticGeometry,
   coverage,
