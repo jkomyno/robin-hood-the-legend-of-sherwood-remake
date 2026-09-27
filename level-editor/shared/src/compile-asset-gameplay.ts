@@ -146,9 +146,13 @@ export function compileAssetGameplay(
       "Asset state transitions need gameplay compilation support before this map can be exported",
     );
   const project = (p: Vec3): Point => [quantize(p[0]), quantize(p[1] - p[2])];
-  const surfaces: { polygon: Point[]; holes: Point[][]; plane: HeightPlane }[] = [];
+  const surfaces: { polygon: Point[]; holes: Point[][]; plane: HeightPlane; lift?: string }[] = [];
+  const lifts: { id: string; type: number; direction: number }[] = [];
+  const interiors: string[] = [];
   const doors: {
     name: string;
+    lift?: string;
+    interior?: string;
     definition: AssetGameplay["doors"][number];
     outside: Vec3;
     inside: Vec3;
@@ -209,6 +213,9 @@ export function compileAssetGameplay(
       surfaces.push({
         polygon: ring(points.map(project)),
         plane,
+        ...(gameplay.lifts?.find((l) => l.surface === surface.id)
+          ? { lift: `${placement.id}/${gameplay.lifts.find((l) => l.surface === surface.id)!.id}` }
+          : {}),
         holes: (surface.holes ?? []).map((hole) =>
           ring(
             hole.map((p) =>
@@ -218,17 +225,33 @@ export function compileAssetGameplay(
         ),
       });
     }
-    for (const door of gameplay.doors)
+    const placeDoor = (door: AssetGameplay["doors"][number], lift?: string, interior?: string) =>
       doors.push({
+        lift,
+        interior,
         name: `${placement.id}/${door.id}`,
         definition: door,
         outside: transform(door.node, door.outside),
         inside: transform(door.node, door.inside),
         middle: project(transform(door.node, door.middle)),
-        polygon: ring(
-          door.polygon.map((p) => project(transform(door.node, [...p, door.outside[2]]))),
-        ),
+        polygon: door.polygon.length
+          ? ring(door.polygon.map((p) => project(transform(door.node, [...p, door.outside[2]]))))
+          : [],
       });
+    for (const door of gameplay.doors) placeDoor(door);
+    for (const lift of gameplay.lifts ?? []) {
+      const id = `${placement.id}/${lift.id}`;
+      const origin = transform(lift.node, [0, 0, 0]);
+      const direction = transform(lift.node, [...lift.direction, 0]);
+      const angle = Math.atan2(direction[0] - origin[0], origin[1] - direction[1]);
+      lifts.push({ id, type: lift.type, direction: (Math.round((angle * 8) / Math.PI) + 16) % 16 });
+      for (const door of lift.doors) placeDoor(door, id);
+    }
+    for (const interior of gameplay.interiors ?? []) {
+      const id = `${placement.id}/${interior.id}`;
+      interiors.push(id);
+      for (const door of interior.doors) placeDoor(door, undefined, id);
+    }
     for (const spawn of gameplay.spawns)
       spawns.push({
         name: `${placement.id}/${spawn.id}`,
@@ -246,26 +269,47 @@ export function compileAssetGameplay(
   )
     throw new Error("Export frame cuts authored walkable surfaces; enlarge it before compiling");
   const planes: HeightPlane[] = [];
-  for (const surface of surfaces) {
+  for (const surface of surfaces.filter((s) => !s.lift)) {
     if (!planes.some((p) => p.every((n, i) => Math.abs(n - surface.plane[i]!) < 1e-7)))
       planes.push(surface.plane);
   }
   planes.sort((a, b) => a[2] - b[2] || a[0] - b[0] || a[1] - b[1]);
-  const layers: CompiledAssetGeometry["motion_data"]["layers"] = [];
+  // Ordinary surfaces occupy conventional layers; all lifts use the reserved last layer.
+  const layers: CompiledAssetGeometry["motion_data"]["layers"] = Array.from(
+    { length: Math.max(1, planes.length) + 1 },
+    () => [],
+  );
+  const groups = planes.map((plane, layer) => ({
+    plane,
+    layer,
+    lift: undefined as string | undefined,
+    surfaces: surfaces.filter(
+      (s) => !s.lift && s.plane.every((n, i) => Math.abs(n - plane[i]!) < 1e-7),
+    ),
+  }));
+  for (const surface of surfaces.filter((s) => s.lift))
+    groups.push({
+      plane: surface.plane,
+      layer: layers.length - 1,
+      lift: surface.lift,
+      surfaces: [surface],
+    });
   const areas: {
     plane: HeightPlane;
+    lift?: string;
     sector: number;
     layer: number;
     polygon: Point[];
     blockers: Point[][];
   }[] = [];
   let sector = 0;
-  for (const [layer, plane] of planes.entries()) {
-    const input = surfaces
-      .filter((s) => s.plane.every((n, i) => Math.abs(n - plane[i]!) < 1e-7))
-      .map((s): Polygon => [polygon(s.polygon)[0]!, ...s.holes.map((h) => polygon(h)[0]!)]);
+  for (const { layer, plane, lift, surfaces: group } of groups) {
+    const input = group.map((s): Polygon => [
+      polygon(s.polygon)[0]!,
+      ...s.holes.map((h) => polygon(h)[0]!),
+    ]);
     const merged = polygonClipping.union(input[0]!, ...input.slice(1));
-    const output: CompiledAssetGeometry["motion_data"]["layers"][number] = [];
+    const output = layers[layer]!;
     for (const poly of merged) {
       const boundary = ring(poly[0]!.map((p) => [quantize(p[0]), quantize(p[1])]));
       const blockers = poly
@@ -314,11 +358,11 @@ export function compileAssetGameplay(
           }
         }
       }
-      const area = { plane, sector, layer, polygon: boundary, blockers };
+      const area = { plane, lift, sector, layer, polygon: boundary, blockers };
       areas.push(area);
       sector += 1 + blockers.length;
       output.push({
-        is_lift: false,
+        is_lift: !!lift,
         state_id: 0,
         polygon: { points: boundary },
         skeleton_segments: [],
@@ -326,7 +370,7 @@ export function compileAssetGameplay(
         obstacles: blockers.map((points) => ({ state_id: 0, polygon: { points } })),
       });
       // Projection surfaces provide layer-aware elevation and picking.
-      if (plane.some((n) => Math.abs(n) > 1e-7))
+      if (lift || plane.some((n) => Math.abs(n) > 1e-7))
         sight.push({
           points: boundary.map(([x, y]) => {
             const height = planeHeight(plane, [x, y]);
@@ -341,12 +385,11 @@ export function compileAssetGameplay(
           material_indices: [],
         });
     }
-    layers.push(output);
   }
-  layers.push([]); // Engine reserves a final layer for lifts/building interiors.
-  const resolve = (point: Vec3, label: string) => {
+  const resolve = (point: Vec3, label: string, lift?: string) => {
     const matches = areas.filter(
       (a) =>
+        a.lift === lift &&
         Math.abs(planeHeight(a.plane, [point[0], point[1] - point[2]]) - point[2]) < 1e-4 &&
         inside(project(point), a.polygon) &&
         !a.blockers.some((b) => inside(project(point), b)),
@@ -357,23 +400,35 @@ export function compileAssetGameplay(
       );
     return matches[0]!;
   };
+  // Runtime construction order is motion, projection planes, then buildings.
+  // Motion adds an out-of-map sector; each door also consumes a constructor slot.
+  let nextInteriorSector = sector + 1 + sight.filter((o) => o.projection_area !== null).length;
+  const interiorAreas = new Map(
+    interiors.map((id) => {
+      const area = { sector: nextInteriorSector, layer: layers.length - 1 };
+      nextInteriorSector += 1 + doors.filter((d) => d.interior === id).length;
+      return [id, area] as const;
+    }),
+  );
   const compiledDoors = doors.map((door) => {
     const outside = resolve(door.outside, `${door.name} outside`),
-      inside = resolve(door.inside, `${door.name} inside`);
+      inside = door.interior
+        ? interiorAreas.get(door.interior)!
+        : resolve(door.inside, `${door.name} inside`, door.lift);
     if (outside.sector === inside.sector)
       throw new Error(`${door.name} does not connect distinct motion areas`);
     const d = door.definition;
     return {
       door_type: d.type,
-      active: true,
+      active: d.active ?? true,
       locked_pc: d.locked,
       unlockable: d.unlockable,
-      locked_npc_villain: false,
-      locked_npc_civilian: false,
+      locked_npc_villain: d.lockedVillains ?? false,
+      locked_npc_civilian: d.lockedCivilians ?? false,
       locked_pc_after_patch: d.locked,
       unlockable_after_patch: d.unlockable,
-      locked_npc_villain_after_patch: false,
-      locked_npc_civilian_after_patch: false,
+      locked_npc_villain_after_patch: d.lockedVillains ?? false,
+      locked_npc_civilian_after_patch: d.lockedCivilians ?? false,
       door_sector: { points: door.polygon },
       point_out: project(door.outside),
       sector_out: outside.sector,
@@ -397,7 +452,30 @@ export function compileAssetGameplay(
   return {
     motion_data: { layers, graph_bytes: [] },
     sight_obstacles: sight,
-    doors: compiledDoors,
+    doors: compiledDoors.filter((_, i) => !doors[i]!.lift && !doors[i]!.interior),
+    ...(interiors.length
+      ? {
+          buildings: interiors.map((id) => ({
+            Building: {
+              doors: compiledDoors.filter((_, i) => doors[i]!.interior === id),
+            },
+          })),
+        }
+      : {}),
+    ...(lifts.length
+      ? {
+          lifts: lifts.map((lift) => {
+            const area = areas.find((a) => a.lift === lift.id);
+            if (!area) throw new Error(`Missing lift motion area ${lift.id}`);
+            return {
+              motion_area_index: area.sector,
+              lift_type: lift.type,
+              direction: lift.direction,
+              doors: compiledDoors.filter((_, i) => doors[i]!.lift === lift.id),
+            };
+          }),
+        }
+      : {}),
     spawn: {
       position: project(spawn.position),
       sector: spawnArea.sector,

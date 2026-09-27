@@ -12,6 +12,7 @@ import {
   type Point,
   type ProtoLevel,
 } from "@rle/shared";
+import { recoverEndpointElevation, distanceToPolygon } from "./recovery-elevation.ts";
 import { readStoredMap } from "./stored-map.ts";
 
 const { values } = parseArgs({
@@ -165,7 +166,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         });
         if (motion.is_lift)
           packet(owner.asset).issues.push(
-            "Lift surfaces require their paired traversal endpoints and authored movement type",
+            "Review lift surface coverage and endpoint ownership before publishing",
           );
       }
     }
@@ -179,15 +180,22 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
 // Recover lifts only where their surface has a unique owner. Neighbour endpoints
 // remain geometric queries; no source sector or layer indices enter asset packets.
 const heightAt = (sector: number, layer: number, point: Point) => {
-  const support = proto.sight_obstacles.find(
+  const supports = proto.sight_obstacles.filter(
     (o) =>
       Array.isArray(o.projection_area) &&
       o.projection_area[0] === sector &&
       o.projection_area[1] === layer,
   );
-  if (support) return planeHeight(support.points, ...point);
-  if (layer === 0) return 0;
-  throw new Error(`Cannot recover endpoint elevation in sector ${sector}, layer ${layer}`);
+  return recoverEndpointElevation(
+    supports.map((o) => ({
+      distance: distanceToPolygon(
+        point,
+        o.points.map((p) => [p.x, p.y - p.z_top]),
+      ),
+      height: planeHeight(o.points, ...point),
+    })),
+    layer === 0,
+  );
 };
 const localEndpoint = (part: Level3DObject, point: Point, sector: number, layer: number) => {
   const z = heightAt(sector, layer, point);
@@ -217,9 +225,18 @@ for (const [index, lift] of proto.lifts.entries()) {
         locked_pc: boolean;
         unlockable: boolean;
         active: boolean;
+        locked_npc_villain: boolean;
+        locked_npc_civilian: boolean;
+        door_sector: { points: Point[] };
       }[]
     ).map((door, i) => ({
       id: `${owner.node}-endpoint-${i}`,
+      node: owner.node,
+      polygon: door.door_sector.points.map((point) => {
+        const z = heightAt(door.sector_out, door.layer_out, door.point_out);
+        const local = localize(owner.part, [point[0], point[1] + z, z]);
+        return [local[0], local[1]];
+      }),
       inside: localEndpoint(owner.part, door.point_in, door.sector_in, door.layer_in),
       outside: localEndpoint(owner.part, door.point_out, door.sector_out, door.layer_out),
       middle: localEndpoint(owner.part, door.point_mid, door.sector_in, door.layer_in),
@@ -227,13 +244,20 @@ for (const [index, lift] of proto.lifts.entries()) {
       locked: door.locked_pc,
       unlockable: door.unlockable,
       active: door.active,
+      lockedVillains: door.locked_npc_villain,
+      lockedCivilians: door.locked_npc_civilian,
     }));
     packet(owner.asset).connections.push({
       id: `${owner.node}-lift`,
       node: owner.node,
       kind: "lift",
       type: lift.lift_type,
-      direction: lift.direction,
+      direction: (() => {
+        const angle = (lift.direction * Math.PI) / 8;
+        const origin = localize(owner.part, [0, 0, 0]);
+        const tip = localize(owner.part, [Math.sin(angle), -Math.cos(angle), 0]);
+        return [tip[0] - origin[0], tip[1] - origin[1]];
+      })(),
       endpoints: doors,
     });
   } catch (error) {
@@ -241,27 +265,6 @@ for (const [index, lift] of proto.lifts.entries()) {
   }
 }
 // Building ownership must be spatially unambiguous; do not guess from asset names.
-const distanceToPolygon = (point: Point, points: Point[]) => {
-  let inside = false,
-    distance = Infinity;
-  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
-    const a = points[i]!,
-      b = points[j]!,
-      dx = b[0] - a[0],
-      dy = b[1] - a[1];
-    if (
-      a[1] > point[1] !== b[1] > point[1] &&
-      point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]
-    )
-      inside = !inside;
-    const t = Math.max(
-      0,
-      Math.min(1, ((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)),
-    );
-    distance = Math.min(distance, Math.hypot(point[0] - a[0] - t * dx, point[1] - a[1] - t * dy));
-  }
-  return inside ? 0 : distance;
-};
 type SourceDoor = {
   point_in: Point;
   point_out: Point;
@@ -387,6 +390,7 @@ for (const [asset, p] of packets) {
 const report = {
   status: "incomplete-authoring-recovery",
   assets: packets.size,
+  files: [...packets.keys()].sort().map((asset) => `${asset}.gameplay-authoring.json`),
   surfaces: [...packets.values()].reduce((sum, p) => sum + p.surfaces.length, 0),
   connections: [...packets.values()].reduce((sum, p) => sum + p.connections.length, 0),
   coverage,

@@ -22,6 +22,25 @@ export interface AssetDoor {
   type: number;
   locked: boolean;
   unlockable: boolean;
+  active?: boolean;
+  lockedVillains?: boolean;
+  lockedCivilians?: boolean;
+}
+export interface AssetLift {
+  id: string;
+  node: string;
+  /** Asset-local surface ID; no runtime sector or layer number. */
+  surface: string;
+  type: 1 | 2 | 3;
+  /** Local ground-plane direction; transformed with the owning part. */
+  direction: Point;
+  doors: AssetDoor[];
+}
+export interface AssetInterior {
+  id: string;
+  node: string;
+  /** Entrances share one virtual interior; occupants are authored separately. */
+  doors: AssetDoor[];
 }
 export interface AssetSpawn {
   id: string;
@@ -35,6 +54,8 @@ export interface AssetGameplay {
   surfaces: AssetWalkableSurface[];
   doors: AssetDoor[];
   spawns: AssetSpawn[];
+  lifts?: AssetLift[];
+  interiors?: AssetInterior[];
 }
 export type GameplayAssetDescriptor = ProjectionAssetDescriptor & { gameplay?: AssetGameplay };
 
@@ -71,6 +92,13 @@ export interface CompiledAssetGeometry {
     point_in: Point;
     sector_in: number;
     layer_in: number;
+  }[];
+  buildings?: { Building: { doors: CompiledAssetGeometry["doors"] } }[];
+  lifts?: {
+    motion_area_index: number;
+    lift_type: number;
+    direction: number;
+    doors: CompiledAssetGeometry["doors"];
   }[];
   spawn: { position: Point; sector: number; layer: number; projection_area: number | null };
 }
@@ -122,18 +150,60 @@ export function validateAssetGameplay(
       for (const hole of surface.holes) polygon(hole);
     }
   }
-  for (const door of data.doors) {
+  const validateDoor = (door: AssetDoor, kind: "ordinary" | "lift" | "interior") => {
+    const lift = kind === "lift";
     feature(door);
-    polygon(door.polygon);
+    if (!(lift && Array.isArray(door.polygon) && door.polygon.length === 0)) polygon(door.polygon);
     if (
       !point(door.outside, 3) ||
       !point(door.inside, 3) ||
       !point(door.middle, 3) ||
-      ![0, 3].includes(door.type) ||
+      !(lift ? [4, 5, 6] : kind === "interior" ? [1, 2] : [0, 3]).includes(door.type) ||
       typeof door.locked !== "boolean" ||
       typeof door.unlockable !== "boolean"
     )
       fail(`invalid door ${door.id}`);
+    for (const key of ["active", "lockedVillains", "lockedCivilians"] as const)
+      if (door[key] !== undefined && typeof door[key] !== "boolean")
+        fail(`invalid door ${door.id} ${key}`);
+  };
+  for (const door of data.doors) validateDoor(door, "ordinary");
+  if (data.lifts !== undefined && !Array.isArray(data.lifts)) fail("invalid lifts");
+  const liftSurfaces = new Set<string>();
+  for (const lift of data.lifts ?? []) {
+    feature(lift);
+    const surface = data.surfaces.find((s) => s.id === lift.surface);
+    if (!surface || surface.node !== lift.node || liftSurfaces.has(lift.surface))
+      fail(`lift ${lift.id} needs its own surface on the same node`);
+    liftSurfaces.add(lift.surface);
+    if (
+      ![1, 2, 3].includes(lift.type) ||
+      !point(lift.direction, 2) ||
+      Math.hypot(...lift.direction) < 1e-6
+    )
+      fail(`invalid lift type or direction: ${lift.id}`);
+    if (
+      !Array.isArray(lift.doors) ||
+      lift.doors.length < 2 ||
+      !lift.doors.some((d) => d.type === 5) ||
+      !lift.doors.some((d) => d.type === 4 || d.type === 6)
+    )
+      fail(`lift ${lift.id} needs low and high doors`);
+    for (const door of lift.doors) {
+      if (door.node !== lift.node) fail(`lift ${lift.id} door must use its owning node`);
+      validateDoor(door, "lift");
+    }
+  }
+  if (data.interiors !== undefined && !Array.isArray(data.interiors)) fail("invalid interiors");
+  for (const interior of data.interiors ?? []) {
+    feature(interior);
+    if (!Array.isArray(interior.doors) || !interior.doors.length)
+      fail(`interior ${interior.id} has no entrance`);
+    for (const door of interior.doors) {
+      if (door.node !== interior.node)
+        fail(`interior ${interior.id} door must use its owning node`);
+      validateDoor(door, "interior");
+    }
   }
   for (const spawn of data.spawns) {
     feature(spawn);

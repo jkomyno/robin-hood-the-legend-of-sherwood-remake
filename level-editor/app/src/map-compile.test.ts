@@ -14,6 +14,8 @@ import { bakeScene, contentBakeBounds } from "./map-bake-render.ts";
 import {
   assetCompilerFixture,
   slopedAssetCompilerFixture,
+  liftAssetCompilerFixture,
+  interiorAssetCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
 
@@ -193,6 +195,31 @@ test("sloped asset export matches the native elevation/navigation fixture", asyn
     await readFile(
       new URL(
         "../../../crates/robin_engine/tests/fixtures/asset-sloped.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("lift asset export matches the native traversal fixture", async () => {
+  const { document, assets } = liftAssetCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL("../../../crates/robin_engine/tests/fixtures/asset-lift.level.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("interior asset export matches the native building fixture", async () => {
+  const { document, assets } = interiorAssetCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-interior.level.json",
         import.meta.url,
       ),
       "utf8",

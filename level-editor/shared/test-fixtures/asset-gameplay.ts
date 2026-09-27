@@ -169,3 +169,87 @@ export function slopedAssetCompilerFixture() {
   document.map = "Sloped asset fixture";
   return fixture;
 }
+
+export function liftAssetCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const { hut } = fixture;
+  hut.gameplay!.doors = [];
+  const landing = hut.gameplay!.surfaces[1];
+  if (!landing) throw new Error("Missing fixture landing");
+  landing.height = 100;
+  hut.gameplay!.surfaces.push({
+    id: "stairs-surface",
+    node: "building-999",
+    polygon: [
+      [90, 0],
+      [110, 0],
+      [110, 100],
+      [90, 100],
+    ],
+    height: [0, 100, 100, 0],
+  });
+  hut.gameplay!.lifts = [
+    {
+      id: "stairs",
+      node: "building-999",
+      surface: "stairs-surface",
+      type: 1,
+      direction: [1, 0],
+      doors: [
+        {
+          id: "stairs-low",
+          node: "building-999",
+          polygon: [],
+          type: 5,
+          outside: [80, 50, 0],
+          inside: [92, 50, 10],
+          middle: [90, 50, 0],
+          locked: false,
+          unlockable: false,
+        },
+        {
+          id: "stairs-high",
+          node: "building-999",
+          polygon: [],
+          type: 4,
+          outside: [120, 50, 100],
+          inside: [108, 50, 90],
+          middle: [110, 50, 100],
+          locked: false,
+          unlockable: false,
+        },
+      ],
+    },
+  ];
+  fixture.document.map = "Lift asset fixture";
+  return fixture;
+}
+
+export function interiorAssetCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  fixture.hut.gameplay!.interiors = [
+    {
+      id: "room",
+      node: "building-999",
+      doors: [20, 80].map((x, i) => ({
+        id: `entrance-${i}`,
+        node: "building-999",
+        type: 1,
+        polygon: [
+          [x - 5, 90],
+          [x + 5, 90],
+          [x + 5, 100],
+          [x - 5, 100],
+        ],
+        outside: [x, 80, 0],
+        inside: [x, 120, 0],
+        middle: [x, 95, 0],
+        locked: i === 1,
+        unlockable: true,
+        lockedCivilians: true,
+      })),
+    },
+  ];
+  fixture.document.map = "Interior asset fixture";
+  return fixture;
+}

@@ -67,6 +67,8 @@ A descriptor can contain a `gameplay` definition (see
 - Explicit planar walkable surface polygons, including slopes and holes, attached to asset nodes.
 - Part-local collision and sight shapes, preserving per-vertex sight heights.
 - Passage/gate endpoints and lockpick flags, resolved against assembled surfaces.
+- Lift surfaces, high/low entrances, traversal type and local direction.
+- Empty building interiors with shared entrances and per-actor door locks.
 - An asset-local player spawn, including raised-surface projection.
 
 For example, a ground-only asset can declare:
@@ -99,14 +101,30 @@ references are assigned after placement; missing or ambiguous endpoints fail.
 The engine builds the actual fast-find grid, collision lines, door links and
 visibility-route graph from the generated descriptor.
 
+Optional `lifts` name an asset-local `surface`, a `node`, a traversal `type`
+(`1` stairs, `2` ladder, `3` wall), a local XY `direction` vector and `doors`.
+Lift door types are `4` high, `5` low and `6` high crenellation; their `inside`
+endpoints resolve on that lift, and `outside` endpoints on ordinary surfaces.
+Lift doors may have an empty clickable polygon. The compiler assigns the
+reserved lift layer and rotates the direction with the owning part.
+
+Optional `interiors` contain `id`, `node` and `doors` of type `1` building or
+`2` building trap. Their inside endpoints belong to a generated virtual room;
+only outside endpoints require a walkable surface. All entrances in one
+definition share the room, while duplicated assets get separate rooms.
+Interiors currently start empty. Doors optionally declare `active`,
+`lockedVillains` and `lockedCivilians`, in addition to `locked` and `unlockable`.
+
 The public asset index retains `gameplay`. Publish descriptor changes and update
 saved asset pins through the normal asset-revision workflow. No map-level copy
 of the asset's gameplay definitions is needed.
 
 **This is not yet full Derby parity.** Missing asset definitions stop export.
 Stateful assets, mission population and splines also stop export until their
-semantics are supported. TODO: connections between different surface planes, building interiors,
-lifts, jumps, patch-dependent masks/geometry and authored mission behavior.
+semantics are supported. TODO: automatic connections between different surface
+planes, interior occupants, jumps, patch-dependent masks/geometry and authored
+mission behavior. Lift/interior support is tested with synthetic assets;
+recovered source-map metadata still requires review and publication.
 The low-level sandbox helper remains for the small renderer contract fixture;
 the editor button always requests asset gameplay compilation.
 

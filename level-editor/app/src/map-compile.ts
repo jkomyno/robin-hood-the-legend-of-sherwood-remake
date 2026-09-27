@@ -142,7 +142,7 @@ export function compileMap(
   const warnings = assetGeometry
     ? [
         "Compiled from asset-local surfaces, sight geometry, doors and spawn points. Navigation grids and route graphs are constructed by the engine.",
-        "Mission scripts, dynamic patch states, lifts and jumps are not yet supported by the asset compiler. This export is not a full gameplay-parity certification.",
+        "Mission scripts, dynamic patch states, occupants and jumps are not yet supported by the asset compiler. This export is not a full gameplay-parity certification.",
       ]
     : [
         "This is an unscripted map sandbox. Mission scripts, triggers, and preview population are not exported.",

@@ -95,3 +95,82 @@ fn sloped_asset_surface_constructs_elevation_and_navigation_holes() {
     // Cross the collision volume where it intersects the ramp.
     assert!(!grid.is_reachable_thin(MapPoint::new(330., 330.), MapPoint::new(360., 315.), 0));
 }
+
+#[test]
+fn compiled_lift_registers_traversal_sector_and_both_door_links() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-lift.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    let lift = grid
+        .level
+        .sectors
+        .iter()
+        .find(|s| s.sector_type.is_lift())
+        .unwrap();
+    assert_eq!(lift.lift_type, Some(robin_engine::sector::LiftType::Stairs));
+    assert_eq!(lift.lift_direction, 4);
+    assert_eq!(lift.gate_indices.len(), 2);
+    assert_eq!(grid.level.door_projection_infos.len(), 2);
+    assert_eq!(
+        assets
+            .navigation
+            .pathfinder_graph
+            .static_data
+            .move_layers
+            .len(),
+        3
+    );
+}
+
+#[test]
+fn compiled_lift_rejects_dangling_and_incomplete_definitions() {
+    let original: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-lift.level.json")).unwrap();
+    for field in ["motion_area_index", "lift_type", "direction"] {
+        let mut bad = original.clone();
+        bad["asset_geometry"]["lifts"][0][field] = 99.into();
+        assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap()).is_err());
+    }
+    let mut missing = original;
+    missing["asset_geometry"]["lifts"] = serde_json::json!([]);
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&missing).unwrap())
+            .unwrap_err()
+            .contains("no traversal definition")
+    );
+}
+
+#[test]
+fn compiled_interior_registers_a_shared_building_sector() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-interior.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    let buildings: Vec<_> = grid
+        .level
+        .sectors
+        .iter()
+        .filter(|s| s.sector_type.is_building())
+        .collect();
+    assert_eq!(buildings.len(), 1);
+    assert_eq!(i16::from(buildings[0].sector_number), 4);
+    assert_eq!(buildings[0].gate_indices.len(), 2);
+    assert_eq!(grid.level.door_projection_infos.len(), 3);
+}
+
+#[test]
+fn compiled_interior_rejects_invalid_entrance_identity() {
+    let mut bad: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-interior.level.json")).unwrap();
+    bad["asset_geometry"]["buildings"][0]["Building"]["doors"][0]["sector_in"] = 65535.into();
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+            .unwrap_err()
+            .contains("interior entrance")
+    );
+}

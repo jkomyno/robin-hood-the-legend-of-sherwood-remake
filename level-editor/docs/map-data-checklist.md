@@ -20,8 +20,8 @@ intended construction, not functionality available today.
 | Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. | Working for static geometry |
 | Projection surfaces / elevation | Generate height planes linked to the new movement areas. | Partial: planar surfaces; elevation-boundary links unfinished |
 | Doors, gates and lock rules | Transform local endpoints and polygons; resolve their neighbouring surfaces geometrically. | Partial: passages/gates; complete actor/state rules missing |
-| Building interiors | Asset-local interior definitions and entrances; generate virtual interior sectors and links. | Planned; recovery drafts exist |
-| Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints. | Planned; recovery drafts exist |
+| Building interiors | Asset-local interior definitions and entrances; generate virtual interior sectors and links. | Working for empty interiors; occupants remain planned |
+| Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints. | Working in synthetic compiler/runtime tests; recovered metadata not yet published |
 | Jump zones and paired jump edges | Transform local jump geometry; resolve landing surfaces and pair compatible edges. | Planned |
 | Surface materials | Asset-local material regions and defaults; generate footstep/impact lookup and obstacle links. | Partial: obstacle defaults only |
 | Light/shadow regions | Transform asset-local shadow polygons, resolve layers and preserve ambience filters. | Planned |

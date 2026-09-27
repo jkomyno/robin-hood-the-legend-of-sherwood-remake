@@ -1,7 +1,8 @@
 # Post-port Features
 
 - **Asset-local gameplay compilation.** The editor builds planar walkable regions with slopes and holes,
-  collision/sight geometry, passage/gate connections and a spawn from pinned
+  collision/sight geometry, passage/gate connections, lifts, empty building
+  interiors and a spawn from pinned
   asset definitions and placement transforms. Missing metadata stops export;
   the compiler has no source-level input. Runtime tests construct navigation and
   door links without mounting a game datadir. Full extracted-map parity remains

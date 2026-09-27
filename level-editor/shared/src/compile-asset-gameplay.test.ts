@@ -6,6 +6,8 @@ import { IDENTITY_TRANSFORM } from "./level3d.ts";
 import {
   assetCompilerFixture,
   slopedAssetCompilerFixture,
+  liftAssetCompilerFixture,
+  interiorAssetCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
@@ -161,4 +163,65 @@ test("non-planar and degenerate surfaces fail instead of silently flattening", (
   ];
   hut.gameplay!.surfaces[0]!.height = 0;
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /nondegenerate/);
+});
+
+test("lift surfaces use the reserved layer and rebuild endpoint references", () => {
+  const { document, assets } = liftAssetCompilerFixture();
+  const result = compileAssetGameplay(document, assets, bounds);
+  assert.equal(result.motion_data.layers.length, 3);
+  assert.equal(result.motion_data.layers.at(-1)![0]!.is_lift, true);
+  assert.equal(result.doors.length, 0);
+  const lift = result.lifts![0]!;
+  assert.equal(lift.lift_type, 1);
+  assert.equal(lift.direction, 4);
+  assert.equal(lift.motion_area_index, 3); // Ground blocker occupies sector 1.
+  assert.deepEqual(
+    lift.doors.map((d) => d.layer_out),
+    [0, 1],
+  );
+  assert.ok(lift.doors.every((d) => d.layer_in === 2 && d.sector_in === 3));
+  const clone = structuredClone(document.objects[0]!);
+  clone.id = "stairs-copy";
+  clone.group = "stairs-copy";
+  clone.transform = { ...IDENTITY_TRANSFORM };
+  document.objects.push(clone);
+  document.groups.push({
+    id: "stairs-copy",
+    transform: { ...IDENTITY_TRANSFORM, dx: 1000, dy: 700, rot_deg: 90 },
+  });
+  const duplicated = compileAssetGameplay(document, assets, bounds);
+  assert.equal(duplicated.lifts!.length, 2);
+  assert.notEqual(duplicated.lifts![0]!.motion_area_index, duplicated.lifts![1]!.motion_area_index);
+  assert.equal(duplicated.lifts![1]!.direction, 8);
+});
+
+test("lift validation rejects missing traversal endpoints and mismatched surface ownership", () => {
+  const { hut, document, assets } = liftAssetCompilerFixture();
+  hut.gameplay!.lifts![0]!.doors.pop();
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /low and high doors/);
+  hut.gameplay!.lifts![0]!.surface = "absent";
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /needs its own surface/);
+});
+
+test("interior entrances share a fresh virtual sector independent of motion polygons", () => {
+  const { document, assets } = interiorAssetCompilerFixture();
+  const result = compileAssetGameplay(document, assets, bounds);
+  const doors = result.buildings![0]!.Building.doors;
+  assert.equal(result.doors.length, 1);
+  assert.equal(doors.length, 2);
+  assert.ok(doors.every((d) => d.sector_in === 4 && d.layer_in === 1 && d.sector_out === 0));
+  assert.equal(doors[1]!.locked_pc, true);
+  assert.ok(doors.every((d) => d.locked_npc_civilian));
+  const clone = structuredClone(document.objects[0]!);
+  clone.id = "house-copy";
+  clone.group = "house-copy";
+  clone.transform.dx += 600;
+  document.objects.push(clone);
+  document.groups.push({ id: "house-copy", transform: { ...IDENTITY_TRANSFORM } });
+  const duplicated = compileAssetGameplay(document, assets, bounds);
+  assert.equal(duplicated.buildings!.length, 2);
+  assert.notEqual(
+    duplicated.buildings![0]!.Building.doors[0]!.sector_in,
+    duplicated.buildings![1]!.Building.doors[0]!.sector_in,
+  );
 });

@@ -2115,6 +2115,10 @@ pub struct HackableLevelDescriptor {
 #[serde(deny_unknown_fields)]
 pub struct CompiledAssetGeometry {
     pub motion_data: RawMotionData,
+    #[serde(default)]
+    pub lifts: Vec<RawLift>,
+    #[serde(default)]
+    pub buildings: Vec<RawBuildingEntry>,
     pub sight_obstacles: Vec<RawSightObstacle>,
     pub doors: Vec<RawDoor>,
     pub spawn: CompiledAssetSpawn,
@@ -2589,17 +2593,17 @@ impl LoadedLevel {
         level.mission.timed_mission = descriptor.timed_mission;
         level.mission.ambience_schedule = descriptor.ambience_schedule;
         if let Some(geometry) = descriptor.asset_geometry {
-            if geometry.motion_data.layers.len() < 2
-                || !geometry.motion_data.layers.last().unwrap().is_empty()
-                || !geometry.motion_data.graph_bytes.is_empty()
+            if geometry.motion_data.layers.len() < 2 || !geometry.motion_data.graph_bytes.is_empty()
             {
-                return Err("asset geometry requires ordinary motion layers, an empty lift layer and a freshly constructed graph".into());
+                return Err("asset geometry requires ordinary motion layers, a reserved lift layer and a freshly constructed graph".into());
             }
             let mut area_refs = std::collections::BTreeSet::new();
+            let mut lift_refs = std::collections::BTreeSet::new();
+            let lift_layer = geometry.motion_data.layers.len() - 1;
             let mut sector = 0u16;
             for (layer, areas) in geometry.motion_data.layers.iter().enumerate() {
                 for area in areas {
-                    if area.is_lift
+                    if area.is_lift != (layer == lift_layer)
                         || area.polygon.points.len() < 3
                         || area
                             .obstacles
@@ -2609,6 +2613,9 @@ impl LoadedLevel {
                         return Err("invalid compiled asset motion area".into());
                     }
                     area_refs.insert((sector, layer as u16));
+                    if area.is_lift {
+                        lift_refs.insert(sector);
+                    }
                     sector = sector
                         .checked_add(
                             u16::try_from(1 + area.obstacles.len())
@@ -2630,10 +2637,70 @@ impl LoadedLevel {
                     return Err("asset spawn references an incompatible projection surface".into());
                 }
             }
-            for door in &geometry.doors {
+            // Building identities follow motion's out-of-map slot and sight planes.
+            let mut next_building_sector = usize::from(sector)
+                + 1
+                + geometry
+                    .sight_obstacles
+                    .iter()
+                    .filter(|o| o.projection_area.is_some())
+                    .count();
+            for entry in &geometry.buildings {
+                let RawBuildingEntry::Building { doors } = entry else {
+                    return Err("compiled interiors must be building entries".into());
+                };
+                let identity =
+                    u16::try_from(next_building_sector).map_err(|_| "too many asset sectors")?;
+                if doors.is_empty()
+                    || doors.iter().any(|door| {
+                        !matches!(door.door_type, 1 | 2)
+                            || door.sector_in != identity
+                            || usize::from(door.layer_in) != lift_layer
+                            || !area_refs.contains(&(door.sector_out, door.layer_out))
+                    })
+                {
+                    return Err("invalid asset interior entrance or sector reference".into());
+                }
+                area_refs.insert((identity, lift_layer as u16));
+                next_building_sector += 1 + doors.len();
+            }
+            let mut defined_lifts = std::collections::BTreeSet::new();
+            for lift in &geometry.lifts {
+                if !lift_refs.contains(&lift.motion_area_index)
+                    || !defined_lifts.insert(lift.motion_area_index)
+                    || !(1..=3).contains(&lift.lift_type)
+                    || !(0..=15).contains(&lift.direction)
+                    || lift.doors.len() < 2
+                    || !lift.doors.iter().any(|door| door.door_type == 5)
+                    || !lift
+                        .doors
+                        .iter()
+                        .any(|door| matches!(door.door_type, 4 | 6))
+                    || lift.doors.iter().any(|door| {
+                        !matches!(door.door_type, 4..=6)
+                            || door.sector_in != lift.motion_area_index
+                            || door.layer_in as usize != lift_layer
+                            || door.layer_out as usize == lift_layer
+                    })
+                {
+                    return Err("invalid asset lift or unresolved lift connection".into());
+                }
+            }
+            if lift_refs != defined_lifts {
+                return Err("asset lift motion area has no traversal definition".into());
+            }
+            for door in geometry
+                .doors
+                .iter()
+                .chain(geometry.lifts.iter().flat_map(|lift| &lift.doors))
+                .chain(geometry.buildings.iter().flat_map(|entry| match entry {
+                    RawBuildingEntry::Building { doors }
+                    | RawBuildingEntry::StandaloneDoors { doors } => doors,
+                }))
+            {
                 if !area_refs.contains(&(door.sector_in, door.layer_in))
                     || !area_refs.contains(&(door.sector_out, door.layer_out))
-                    || door.door_sector.points.len() < 3
+                    || (!door.door_sector.points.is_empty() && door.door_sector.points.len() < 3)
                 {
                     return Err(
                         "asset door references a missing motion area or has no polygon".into(),
@@ -2661,12 +2728,29 @@ impl LoadedLevel {
                 ProtoGridChunk::Motion,
                 ProtoGridChunk::Sight,
                 ProtoGridChunk::Building,
+                ProtoGridChunk::Lift,
             ];
+            level.proto.lifts = geometry.lifts;
             level.proto.motion_data = Some(geometry.motion_data);
             level.proto.sight_obstacles = geometry.sight_obstacles;
-            level.proto.buildings = vec![RawBuildingEntry::StandaloneDoors {
-                doors: geometry.doors,
-            }];
+            level.proto.buildings = geometry.buildings;
+            // Asset interiors currently describe empty rooms. The runtime needs
+            // one explicit occupant record per room, including unoccupied ones.
+            level.mission.building_tenants = level
+                .proto
+                .buildings
+                .iter()
+                .map(|_| RawBuildingTenants {
+                    tenant_element_indices: Vec::new(),
+                    arrow_reserve: false,
+                })
+                .collect();
+            level
+                .proto
+                .buildings
+                .push(RawBuildingEntry::StandaloneDoors {
+                    doors: geometry.doors,
+                });
             for beam in &mut level.mission.beam_mes {
                 beam.position = MapPoint::new(
                     geometry.spawn.position.0.into(),
