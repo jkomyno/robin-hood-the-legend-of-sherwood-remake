@@ -37,6 +37,7 @@ import {
   type GameplayOwnershipCatalog,
 } from "./nonrendering-gameplay-owners.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
+import { declaredInteriorSources } from "./recovery-interior-sources.ts";
 import {
   declaredDoorOwners,
   doorOwnershipFootprint,
@@ -870,16 +871,53 @@ const recoveredDoors = new Map<
   { asset: string; id: string; node: string; part: Level3DObject }
 >();
 let doorOffset = 0;
+const ownerFrames = (asset: string, node: string) =>
+  descriptors.get(asset)?.parts.some((part) => part.node === node)
+    ? document.objects
+        .filter((part) => part.node === `asset:${asset}:${node}`)
+        .map((part) => ({ asset, node, part }))
+    : [];
 const declaredDoors = declaredDoorOwners(
   ownership?.door_sources ?? [],
   sourceDoorCount,
-  (asset, node) =>
-    descriptors.get(asset)?.parts.some((part) => part.node === node)
-      ? document.objects
-          .filter((part) => part.node === `asset:${asset}:${node}`)
-          .map((part) => ({ asset, node, part }))
-      : [],
+  ownerFrames,
 );
+let roomOffset = 0;
+const sourceRooms = new Map<number, number[]>();
+for (const [index, entry] of proto.buildings.entries()) {
+  const groups = recoveryDoorGroups(
+    entry as { Building?: { doors: SourceDoor[] }; StandaloneDoors?: { doors: SourceDoor[] } },
+  );
+  const indices = groups.flatMap((group) => group.doors).map(() => roomOffset++);
+  if (groups[0]?.kind === "building-interior") sourceRooms.set(index, indices);
+}
+const interiorSources = declaredInteriorSources(
+  ownership?.interior_sources ?? [],
+  sourceRooms,
+  ownerFrames,
+);
+for (const pieces of interiorSources.values())
+  if (pieces.some((piece) => piece.doors.some((door) => declaredDoors.has(door))))
+    throw new Error("Shared interior declaration conflicts with ordinary door ownership");
+for (const pieces of interiorSources.values())
+  for (const piece of pieces) {
+    const shapes = document.objects
+      .filter((part) => part.obstacle && part.node.startsWith(`asset:${piece.owner}:`))
+      .map((part) => transformedObstacle(document, part));
+    for (const join of piece.joins)
+      if (
+        !shapes.some(
+          (shape) =>
+            shape.solid &&
+            doorOwnershipFootprint(shape, join.point[2]).some(
+              (polygon) => distanceToPolygon([join.point[0], join.point[1]], polygon) <= 1,
+            ),
+        )
+      )
+        throw new Error(
+          `Shared interior socket must touch its asset's wall geometry: ${piece.owner}`,
+        );
+  }
 for (const [index, entry] of proto.buildings.entries()) {
   const building = entry as {
     Building?: { doors: SourceDoor[] };
@@ -898,20 +936,33 @@ for (const [index, entry] of proto.buildings.entries()) {
     continue;
   }
   let recovered = 0;
-  for (const connection of groups) {
+  const recoveryGroups =
+    interiorSources.get(index)?.map((piece) => ({
+      ...groups[0]!,
+      doors: groups[0]!.doors.filter((door) => piece.doors.includes(doorIndices.get(door)!)),
+      authoring: piece,
+    })) ?? groups.map((group) => ({ ...group, authoring: undefined }));
+  for (const connection of recoveryGroups) {
     const { doors, sourceDoor } = connection;
     const isInterior = connection.kind === "building-interior";
     try {
       const declared = doors.map((door) => declaredDoors.get(doorIndices.get(door)!));
-      const explicitOwner = declared.find((owner) => owner !== undefined);
-      if (explicitOwner && declared.some((owner) => owner?.asset !== explicitOwner.asset))
+      const explicitOwner =
+        connection.authoring?.frame ?? declared.find((owner) => owner !== undefined);
+      if (
+        !connection.authoring &&
+        explicitOwner &&
+        declared.some((owner) => owner?.asset !== explicitOwner.asset)
+      )
         throw new Error("Interior door ownership must cover the whole room with one asset");
       const candidates = new Map<
         string,
         { owner: { asset: string; node: string; part: Level3DObject }; distance: number }
       >();
-      const first = doors[0]!,
-        z = isInterior
+      const raisedCandidates: typeof candidates = new Map();
+      const first = doors[0];
+      if (first) {
+        const z = isInterior
           ? endpointBinding(
               `door-outside/${doorIndices.get(first)!}`,
               first.sector_out,
@@ -924,30 +975,30 @@ for (const [index, entry] of proto.buildings.entries()) {
               first.layer_in,
               first.point_in,
             ).height;
-      const raisedCandidates: typeof candidates = new Map();
-      for (const [obstacleIndex, owners] of locals) {
-        if (owners.length !== 1) continue;
-        const obstacle = proto.sight_obstacles[obstacleIndex]!;
-        if (!obstacle.solid) continue;
-        if (Math.min(...obstacle.points.map((p) => p.z_bottom)) > z + 24) continue;
-        const distance = distanceToPolygon(
-          [first.point_in[0], first.point_in[1] + z],
-          obstacle.points.map((p) => [p.x, p.y]),
-        );
-        const owner = owners[0]!,
-          previous = candidates.get(owner.asset);
-        if (!previous || distance < previous.distance)
-          candidates.set(owner.asset, { owner, distance });
-        const footprints = doorOwnershipFootprint(obstacle, z);
-        if (footprints.length) {
-          const raisedDistance = Math.min(
-            ...footprints.map((footprint) =>
-              distanceToPolygon([first.point_in[0], first.point_in[1] + z], footprint),
-            ),
+        for (const [obstacleIndex, owners] of locals) {
+          if (owners.length !== 1) continue;
+          const obstacle = proto.sight_obstacles[obstacleIndex]!;
+          if (!obstacle.solid) continue;
+          if (Math.min(...obstacle.points.map((p) => p.z_bottom)) > z + 24) continue;
+          const distance = distanceToPolygon(
+            [first.point_in[0], first.point_in[1] + z],
+            obstacle.points.map((p) => [p.x, p.y]),
           );
-          const previousRaised = raisedCandidates.get(owner.asset);
-          if (!previousRaised || raisedDistance < previousRaised.distance)
-            raisedCandidates.set(owner.asset, { owner, distance: raisedDistance });
+          const owner = owners[0]!,
+            previous = candidates.get(owner.asset);
+          if (!previous || distance < previous.distance)
+            candidates.set(owner.asset, { owner, distance });
+          const footprints = doorOwnershipFootprint(obstacle, z);
+          if (footprints.length) {
+            const raisedDistance = Math.min(
+              ...footprints.map((footprint) =>
+                distanceToPolygon([first.point_in[0], first.point_in[1] + z], footprint),
+              ),
+            );
+            const previousRaised = raisedCandidates.get(owner.asset);
+            if (!previousRaised || raisedDistance < previousRaised.distance)
+              raisedCandidates.set(owner.asset, { owner, distance: raisedDistance });
+          }
         }
       }
       const ranked = [...candidates.values()].sort((a, b) => a.distance - b.distance);
@@ -1038,6 +1089,18 @@ for (const [index, entry] of proto.buildings.entries()) {
         node: owner.node,
         kind: connection.kind,
         endpoints,
+        ...(connection.authoring
+          ? {
+              interiorJoins: connection.authoring.joins.map((join) => {
+                const origin = localize(owner.part, [0, 0, 0]);
+                const direction = localize(owner.part, [...join.direction, 0]);
+                return {
+                  point: localize(owner.part, join.point),
+                  direction: [direction[0] - origin[0], direction[1] - origin[1]] as Point,
+                };
+              }),
+            }
+          : {}),
       });
       if (stateOwner) {
         doorStateOwnershipRecovery.push({
@@ -1068,7 +1131,7 @@ for (const [index, entry] of proto.buildings.entries()) {
       });
     }
   }
-  if (recovered === groups.length) recoveredBuildings++;
+  if (recovered === recoveryGroups.length) recoveredBuildings++;
 }
 const doorTransitionRecovery: { patch: number; asset: string; transition: string }[] = [];
 for (const [index, source] of proto.patches.entries()) {
@@ -1474,6 +1537,15 @@ const report = {
   doorTransitionRecovery,
   doorStateOwnershipRecovery,
   declaredEndpointBindings: [...endpointBindings.values()],
+  declaredInteriorRecovery: [...interiorSources].map(([building, pieces]) => ({
+    building,
+    pieces: pieces.map((piece) => ({
+      asset: piece.owner,
+      node: piece.node,
+      doors: piece.doors,
+      sockets: piece.joins.length,
+    })),
+  })),
   declaredDoorOwnershipRecovery: [...declaredDoors].map(([door, owner]) => ({
     door,
     asset: owner.asset,
