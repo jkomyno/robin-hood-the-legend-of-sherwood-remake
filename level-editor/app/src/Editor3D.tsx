@@ -1149,33 +1149,35 @@ export default function Editor3D(props: EditorProps) {
           </label>
         </Show>
         <span class="spacer" />
-        <button disabled={!doc()} onClick={() => viewport.gameCamera()} title="g">
-          Reset view
-        </button>
-        <button disabled={history().past.length === 0} onClick={undo} title="ctrl+z">
-          Undo
-        </button>
-        <button disabled={history().future.length === 0} onClick={redo} title="ctrl+shift+z">
-          Redo
-        </button>
-        <button
-          class="primary-action"
-          disabled={!dirty() || editingPath()}
-          onClick={() => void save()}
-          title="ctrl+s"
-        >
-          Save{dirty() ? " *" : ""}
-        </button>
-        <button disabled={!doc()} onClick={() => void download()}>
-          Download
-        </button>
-        <button
-          disabled={!doc() || compiling() || editingPath() || addingAsset() || !!mapLoadProgress()}
-          onClick={() => void exportMod()}
-          title="Compile geometry and connections from placed asset definitions"
-        >
-          {compiling() ? "Compiling…" : "Export mod ZIP"}
-        </button>
+        <Show when={doc()}>
+          <button disabled={!doc()} onClick={() => viewport.gameCamera()} title="g">
+            Reset view
+          </button>
+          <button disabled={history().past.length === 0} onClick={undo} title="ctrl+z">
+            Undo
+          </button>
+          <button disabled={history().future.length === 0} onClick={redo} title="ctrl+shift+z">
+            Redo
+          </button>
+          <button
+            class="primary-action"
+            disabled={!dirty() || editingPath()}
+            onClick={() => void save()}
+            title="ctrl+s"
+          >
+            Save{dirty() ? " *" : ""}
+          </button>
+          <button disabled={!doc()} onClick={() => void download()}>
+            Download
+          </button>
+          <button
+            disabled={!doc() || compiling() || editingPath() || addingAsset() || !!mapLoadProgress()}
+            onClick={() => void exportMod()}
+            title="Compile geometry and connections from placed asset definitions"
+          >
+            {compiling() ? "Compiling…" : "Export mod ZIP"}
+          </button>
+        </Show>
         <button
           aria-expanded={helpOpen() ? "true" : "false"}
           aria-controls="editor-help"
