@@ -21,8 +21,8 @@ read-only; the result is saved to <output>/worker.blend.
 3. An approved object that receives revealed texels is never edited: a copy with its own
    material and image (an "appearance copy") takes the texels and is shown for the state,
    while the original gains that patch in reveal_hide_when_applied. When two states
-   write the same object, the state whose change region contains the other's supersedes
-   it; otherwise the larger writer wins and the conflict is reported.
+   write the same object, the copy of the later patch in native order is shown when both
+   are applied (the game composites that patch on top); each overlap is reported.
 4. Verification: every object and image present in stage-in is byte-identical after the
    bake (geometry, UVs, material slots, image pixels); a source-camera render of each
    state's visible set is compared with the state source inside the change region.
@@ -302,6 +302,11 @@ def prepare_state_object(obj, template):
     return unknown
 
 
+def native_order(patch):
+    layers = json.loads((WORK / 'source-states/layers.json').read_text())
+    return [row['id'] for row in layers['patches']].index(patch)
+
+
 def appearance_copy(obj, state):
     copy = obj.copy()
     copy.data = obj.data.copy()
@@ -451,11 +456,12 @@ def main(argv):
                     continue
                 mine, theirs = change[state], change[other]
                 other_patch = sources[other]['applied_patches'][-1]
-                if not (mine & ~theirs).any():
-                    hide.add(other_patch)  # the other state's region contains this one
-                elif (theirs & ~mine).any() and len(writes[(name, other)][0]) > len(writes[(name, state)][0]):
+                # With both patches applied the game composites them in native patch order,
+                # so the later patch's art is on top: its copy supersedes this one.
+                if native_order(other_patch) > native_order(patch):
                     hide.add(other_patch)
                     report['conflicts'].append({'object': name, 'loser': state, 'winner': other,
+                                                'rule': 'later native patch on top',
                                                 'lost_texels': int(len(writes[(name, state)][0]))})
             if hide:
                 copy['reveal_hide_when_applied'] = sorted(hide)
@@ -475,10 +481,16 @@ def main(argv):
         report['objects'].setdefault(target.name, {})[state] = int(len(rows_))
     for name, mask in unknown.items():
         report['objects'].setdefault(name, {})['unknown_texels'] = int(mask.sum())
+    # State objects are exported visible: the exporter requires one default visibility per
+    # canonical part, and the editor's PatchDisplay hides every object whose
+    # reveal_show_when_applied patch is not applied (all patches start covered). Covered-state
+    # audits must therefore select objects by these properties, not by hide_render.
     for obj in working_meshes():
         if obj.get('state_recipe'):
-            obj.hide_render = True
+            obj.hide_render = False
             obj.hide_viewport = False
+            if 'reveal_show_when_applied' not in obj:
+                raise RuntimeError('State object without a show patch would be visible while covered: ' + obj.name)
     digests_after = {}
     after = {name: object_fingerprint(bpy.data.objects[name], digests_after) for name in before}
     drift = sorted(name for name in before if before[name] != after[name])
