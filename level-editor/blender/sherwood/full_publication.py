@@ -72,9 +72,12 @@ def install(stage):
         checked=verify(stage);old=read(live/'scenes/sherwood.rhlos-map.json')
         old_ids={r['id'] for r in old['assetSources']+old['sceneAssets']}
         new=read(stage/'sherwood.rhlos-map.json');new_ids={r['id'] for r in new['assetSources']+new['sceneAssets']}
+        # Replacing the whole directory also removes assets absent from the
+        # Sherwood map itself. Other maps may still place those older exports.
+        existing_ids={read(p)['id'] for p in (live/'3d-assets/sherwood').glob('*/asset.json')}
         for path in (live/'scenes').glob('*.rhlos-map.json'):
             if path.name=='sherwood.rhlos-map.json':continue
-            assert not {r['id'] for r in read(path).get('assetSources',[])+read(path).get('sceneAssets',[])} & (old_ids|new_ids),('Shared scene asset',path)
+            assert not {r['id'] for r in read(path).get('assetSources',[])+read(path).get('sceneAssets',[])} & (old_ids|new_ids|existing_ids),('Shared scene asset requires migration before directory replacement',path)
         backup=stage/'installation-backup';backup.mkdir(exist_ok=False)
         map_path=live/'scenes/sherwood.rhlos-map.json';index=live/'3d-assets/index.json';target=live/'3d-assets/sherwood'
         shutil.copy2(map_path,backup/map_path.name);shutil.copy2(index,backup/'index.json')

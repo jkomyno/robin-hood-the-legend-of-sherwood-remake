@@ -14,7 +14,7 @@
     "kind": "oblique-orthographic",
     "elevation_deg": 35
   },
-  "notes": "The Tollkeeper’s Ledger. Fortified riverside market town with authored population and patrol previews. Playable mission export, navigation and scripting remain pending.",
+  "notes": "The Tollkeeper\u2019s Ledger. Fortified riverside market town with authored population and patrol previews. Playable mission export, navigation and scripting remain pending.",
   "assetSources": [
     {
       "model": "3d-assets/leicester/leicester-great-keep/model.glb",
@@ -437,11 +437,12 @@
       "id": "leicester-north-edge-field-boundary"
     },
     {
-      "model": "3d-assets/sherwood/sherwood-leaning-tree/model.glb",
-      "model_sha256": "119270c4fcebd085064f44fb5d86bf26a8c9801cfc239c77369c50061d9bcca7",
-      "descriptor": "3d-assets/sherwood/sherwood-leaning-tree/asset.json",
-      "descriptor_sha256": "95827c2d5b2ea3ade59ca2344402b46dd19f46d74fcc1b96d9feb2ca1ba66f87",
-      "id": "sherwood-leaning-tree"
+      "model": "3d-assets/sherwood/sherwood-leaning-woodland-tree/model.glb",
+      "model_sha256": "544f98590a96471bdfe9e6e87013e0f9a4696aaa65dc8f69d8fe19da72ab52ca",
+      "descriptor": "3d-assets/sherwood/sherwood-leaning-woodland-tree/asset.json",
+      "descriptor_sha256": "bd5457701141a1ff0542645f33dd33f92c08ccad03f0a524d0fd906bafb06adc",
+      "id": "sherwood-leaning-woodland-tree",
+      "resources": []
     },
     {
       "model": "3d-assets/leicester/leicester-moat-bank-tree/model.glb",
@@ -4696,13 +4697,13 @@
       "id": "sherwood-leaning-tree-instance1",
       "name": "Woodland tree 1",
       "transform": {
-        "dx": 190,
-        "dy": 230,
+        "dx": 216.6331787109375,
+        "dy": 229.11197876681638,
         "dz": 24.925260692223752,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -4752,13 +4753,13 @@
       "id": "sherwood-leaning-tree-instance2",
       "name": "Woodland tree 5",
       "transform": {
-        "dx": 170,
-        "dy": 1240,
+        "dx": 196.6331787109375,
+        "dy": 1239.1119787668163,
         "dz": 25.473607333049976,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -4808,13 +4809,13 @@
       "id": "sherwood-leaning-tree-instance3",
       "name": "Woodland tree 9",
       "transform": {
-        "dx": 970,
-        "dy": 2300,
+        "dx": 996.6331787109375,
+        "dy": 2299.1119787668163,
         "dz": 12.426099266554468,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -4864,13 +4865,13 @@
       "id": "sherwood-leaning-tree-instance4",
       "name": "Woodland tree 13",
       "transform": {
-        "dx": 1510,
-        "dy": 1530,
+        "dx": 1536.6331787109375,
+        "dy": 1529.1119787668163,
         "dz": 18.39312962453257,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -4920,13 +4921,13 @@
       "id": "sherwood-leaning-tree-instance5",
       "name": "Woodland tree 17",
       "transform": {
-        "dx": 1980,
-        "dy": 1040,
+        "dx": 2006.6331787109375,
+        "dy": 1039.1119787668163,
         "dz": 11.350214920385316,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -4976,13 +4977,13 @@
       "id": "sherwood-leaning-tree-instance6",
       "name": "Woodland tree 21",
       "transform": {
-        "dx": 2750,
-        "dy": 2280,
+        "dx": 2776.6331787109375,
+        "dy": 2279.1119787668163,
         "dz": 10.578465874660049,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -5032,13 +5033,13 @@
       "id": "sherwood-leaning-tree-instance7",
       "name": "Woodland tree 25",
       "transform": {
-        "dx": 3430,
-        "dy": 1170,
+        "dx": 3456.6331787109375,
+        "dy": 1169.1119787668163,
         "dz": 17.267570352431033,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -5088,13 +5089,13 @@
       "id": "sherwood-leaning-tree-instance8",
       "name": "Woodland tree 29",
       "transform": {
-        "dx": 2910,
-        "dy": 130,
+        "dx": 2936.6331787109375,
+        "dy": 129.11197876681638,
         "dz": 50.70534250027117,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -5144,13 +5145,13 @@
       "id": "sherwood-leaning-tree-instance9",
       "name": "Woodland tree 33",
       "transform": {
-        "dx": 170,
-        "dy": 470,
+        "dx": 196.6331787109375,
+        "dy": 469.1119787668164,
         "dz": 27.664258087720523,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -5200,13 +5201,13 @@
       "id": "sherwood-leaning-tree-instance10",
       "name": "Woodland tree 37",
       "transform": {
-        "dx": 180,
-        "dy": 1520,
+        "dx": 206.6331787109375,
+        "dy": 1519.1119787668163,
         "dz": 22.37756925043745,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -5256,13 +5257,13 @@
       "id": "sherwood-leaning-tree-instance11",
       "name": "Woodland tree 41",
       "transform": {
-        "dx": 1490,
-        "dy": 2100,
+        "dx": 1516.6331787109375,
+        "dy": 2099.1119787668163,
         "dz": 21.540831999741265,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -5312,13 +5313,13 @@
       "id": "sherwood-leaning-tree-instance12",
       "name": "Woodland tree 45",
       "transform": {
-        "dx": 2290,
-        "dy": 2250,
+        "dx": 2316.6331787109375,
+        "dy": 2249.1119787668163,
         "dz": 17.763612827415276,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
@@ -5368,13 +5369,13 @@
       "id": "sherwood-leaning-tree-instance13",
       "name": "Woodland tree 49",
       "transform": {
-        "dx": 3370,
-        "dy": 1340,
+        "dx": 3396.6331787109375,
+        "dy": 1339.1119787668163,
         "dz": 16.106932608485376,
         "rot_deg": 0
       },
       "assets": [
-        "sherwood-leaning-tree"
+        "sherwood-leaning-woodland-tree"
       ],
       "idMode": "group"
     },
