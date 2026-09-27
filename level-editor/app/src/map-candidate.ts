@@ -96,7 +96,7 @@ export async function prepareMapCandidate(
         }
       }
     };
-    await Promise.all(Array.from({ length: Math.min(4, references.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(8, references.length) }, worker));
     if (failed) throw failure;
     for (const result of prepared) {
       asset.add(result.asset);
