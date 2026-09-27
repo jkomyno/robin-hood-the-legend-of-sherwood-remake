@@ -34,6 +34,11 @@ a centered, dismissible modal. Compiling, ZIP packaging, and completion messages
 also use a centered status modal. These messages never add rows to the header.
 Local map cards have rename and delete controls; built-in cards do not.
 
+The asset selector defaults to **All refined levels**: Derby, Leicester, Lincoln,
+Nottingham, and Sherwood. **All levels** includes reconstructed and authored sources
+as well. Source filtering combines with asset type and search; the reviewed source
+list is maintained in `app/src/asset-library.ts`.
+
 Saving also captures a 480×300 thumbnail using native browser encoding at quality 0.6:
 AVIF when supported, otherwise WebP (PNG on browsers without either encoder).
 Built-in previews are shipped as `<map>.webp` beside the map JSON in `library/scenes/`;

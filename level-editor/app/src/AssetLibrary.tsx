@@ -2,7 +2,13 @@ import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
 import type { ProjectionAssetEntry } from "@rle/shared";
 import AssetPreview, { AssetPreviewRenderer } from "./AssetPreview";
 import { listProjectionAppearances } from "./projection-library";
-import { ASSET_DRAG_TYPE, assetType, assetTags, filterAssets } from "./asset-library";
+import {
+  ASSET_DRAG_TYPE,
+  REFINED_LEVELS_FILTER,
+  assetType,
+  assetTags,
+  filterAssets,
+} from "./asset-library";
 
 export default function AssetLibrary(props: {
   root: FileSystemDirectoryHandle | null;
@@ -20,12 +26,12 @@ export default function AssetLibrary(props: {
 }) {
   const [search, setSearch] = createSignal("");
   const [type, setType] = createSignal("");
-  const [source, setSource] = createSignal("");
+  const [source, setSource] = createSignal(REFINED_LEVELS_FILTER);
   createEffect(
     () => props.root,
     () => {
       setType("");
-      setSource("");
+      setSource(REFINED_LEVELS_FILTER);
       setSearch("");
     },
   );
@@ -90,6 +96,7 @@ export default function AssetLibrary(props: {
               value={source()}
               onChange={(event) => setSource(event.currentTarget.value)}
             >
+              <option value={REFINED_LEVELS_FILTER}>All refined levels</option>
               <option value="">All levels</option>
               <For each={[...new Set(props.entries.map((entry) => entry.source_map))].sort()}>
                 {(value) => <option value={value}>{value}</option>}

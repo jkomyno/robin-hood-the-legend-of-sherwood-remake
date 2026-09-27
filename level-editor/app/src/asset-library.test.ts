@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assetTags, assetType, filterAssets } from "./asset-library.ts";
+import {
+  assetTags,
+  assetType,
+  filterAssets,
+  REFINED_LEVELS,
+  REFINED_LEVELS_FILTER,
+} from "./asset-library.ts";
 
 const entries = [
   {
@@ -41,4 +47,31 @@ test("type, source and multiword search combine over the shared library", () => 
   assert.equal(filterAssets(entries, "oak", "Building", "").length, 0);
   assert.equal(assetType({ ...entries[0], asset_type: "Prop" }), "Prop");
   assert.deepEqual(assetTags(entries[0]), ["Building", "York", "stone"]);
+});
+
+test("refined-level filter includes reviewed sources regardless of case and combines with other filters", () => {
+  const refined = REFINED_LEVELS.map((source_map) => ({
+    ...entries[0]!,
+    id: source_map.toLowerCase(),
+    source_map: source_map.toLowerCase(),
+  }));
+  const catalog = [
+    ...refined,
+    ...["York", "Croisement01", "Croisement02", "Croisement03", "Wychford", "Future level"].map(
+      (source_map) => ({ ...entries[0]!, id: source_map, source_map }),
+    ),
+  ];
+  assert.deepEqual(filterAssets(catalog, "", "", REFINED_LEVELS_FILTER), refined);
+  assert.equal(filterAssets(catalog, "", "", "").length, catalog.length);
+  assert.deepEqual(
+    filterAssets(catalog, "stone nottingham", "Building", REFINED_LEVELS_FILTER).map(
+      (entry) => entry.id,
+    ),
+    ["nottingham"],
+  );
+  assert.deepEqual(filterAssets(catalog, "", "Vegetation", REFINED_LEVELS_FILTER), []);
+  assert.deepEqual(
+    filterAssets(catalog, "", "", "York").map((entry) => entry.id),
+    ["York"],
+  );
 });

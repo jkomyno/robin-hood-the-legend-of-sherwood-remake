@@ -1,5 +1,12 @@
 import type { ProjectionAssetEntry } from "@rle/shared";
 
+// Reviewed map refinement workflows are recorded in blender/README.md and
+// blender/{leicester,lincoln,nottingham,sherwood}/. Extend this list when another
+// source level goes through refinement; reconstruction alone does not qualify.
+export const REFINED_LEVELS = ["Derby", "Leicester", "Lincoln", "Nottingham", "Sherwood"] as const;
+export const REFINED_LEVELS_FILTER = "refined-levels";
+const refinedLevels = new Set<string>(REFINED_LEVELS.map((name) => name.toLowerCase()));
+
 export const ASSET_DRAG_TYPE = "application/x-rle-asset";
 
 /** Published metadata takes precedence; older catalogs remain browsable. */
@@ -39,7 +46,10 @@ export function filterAssets(
   return entries.filter(
     (entry) =>
       (!type || assetType(entry) === type) &&
-      (!source || entry.source_map === source) &&
+      (!source ||
+        (source === REFINED_LEVELS_FILTER
+          ? refinedLevels.has(entry.source_map.toLowerCase())
+          : entry.source_map === source)) &&
       terms.every((term) =>
         [entry.name, entry.id, ...assetTags(entry)].join(" ").toLowerCase().includes(term),
       ),

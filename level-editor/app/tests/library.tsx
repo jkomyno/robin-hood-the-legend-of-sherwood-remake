@@ -317,6 +317,13 @@ export async function checkSharedLibrary() {
       Math.abs(elevation() - 35) < 1e-8,
       "Initial camera differs from the default map elevation",
     );
+    await until(
+      () =>
+        (document.querySelector('select[aria-label="Source level"]') as HTMLSelectElement)
+          ?.value === "refined-levels",
+    );
+    await until(() => document.querySelectorAll(".asset-card").length === 2);
+    await select("Source level", "");
     await until(() => document.querySelectorAll(".asset-card").length === 40);
     await select("Map", "York");
     await until(() => !!document.querySelector("[data-map-name]"));
