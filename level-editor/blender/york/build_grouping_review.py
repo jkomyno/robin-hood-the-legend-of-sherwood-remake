@@ -37,7 +37,7 @@ def build():
         descriptor=model.with_name('asset.json')
         if not model.is_file():raise FileNotFoundError(model)
         paths={}
-        for key,suffix in [('solid','west'),('east_solid','east'),('projection_errors','source')]:
+        for key,suffix in [('solid','game'),('east_solid','east'),('projection_errors','source')]:
             target=folder/(key+'.png')
             Image.open(review/'assets'/f'{identity}-{suffix}.jpg').save(target)
             paths[key]=str(target)
@@ -52,12 +52,15 @@ def build():
             'model_sha256':ownership['model_sha256']},indent=2)+'\n')
         items.append({'id':identity,'name':record['name'],'status':'ready-for-user','technical_eligible':True,
             'approval_scope':'grouping-only',**paths,'context':str(context),'model':str(model),
+            'solid_label':'Selected geometry — game camera (35° orthographic)',
+            'east_solid_label':'Selected geometry — east oblique',
             'projection_errors_label':'Selected source parts (cyan overlay)',
             'ownership':str(own),'validation':str(validation),
             'notes':record['notes']+' Source parts: '+', '.join(record['sources'])+'. '+
                 'Review the grouping and name. Missing walls, rough proxy geometry and unfinished textures remain separate refinement work.'})
     path=review/'candidates.json'
     path.write_text(json.dumps({'map':'York','review_kind':'grouping','total_groups':len(groups),
+        'solid_view_label':'Game camera','east_view_label':'East oblique',
         'supplemental_count':1,'items':items},indent=2)+'\n')
     # Build the exact revision first; only matching explicit grouping decisions
     # may hide a card. Browser drafts are never treated as submitted approvals.

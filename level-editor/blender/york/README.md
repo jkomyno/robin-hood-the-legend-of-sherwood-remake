@@ -118,6 +118,10 @@ python3 level-editor/blender/york/verify_grounded_export.py
 `ground_assets.py` refuses to overwrite an existing grounded blend. Preserve the
 previous grounding directory before rerunning it.
 
+The first model preview uses the game camera: orthographic, 0° yaw and 35°
+elevation, fitted to the asset. The second uses an east oblique view (40° yaw
+and elevation).
+
 ## Grouping review controls
 
 The shared gallery builder runs in `review_kind: grouping` mode. **Approve grouping** confirms part ownership and naming only. **Request changes** and the

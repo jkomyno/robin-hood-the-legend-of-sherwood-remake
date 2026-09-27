@@ -227,7 +227,8 @@ def build(index_path, output, *, pending_only=False, map_name=None):
         sheets = [("solid", item.get("solid_label", "Solid geometry")),
                   ("textured", item.get("textured_label", "Original textures + shaded unknown surfaces"))]
         if grouping_review:
-            sheets = [("solid", "Selected geometry — west"), ("east_solid", "Selected geometry — east")]
+            sheets = [("solid", item.get("solid_label", "Selected geometry — west")),
+                      ("east_solid", item.get("east_solid_label", "Selected geometry — east"))]
         if item.get("context"):
             sheets.append(("context", "Original artwork with surrounding context"))
         for key, label in (("source_comparison", "Original artwork / before / corrected"),
@@ -466,8 +467,8 @@ body[data-review-kind=grouping] .feedback .draft-status{grid-column:1/-1}
 @media(max-width:1000px){body[data-review-kind=grouping] .sheets{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){body[data-review-kind=grouping] .feedback{grid-template-columns:1fr}body[data-review-kind=grouping] .feedback .note-field{grid-column:1;grid-row:auto}}
 </style>''')
-        document = document.replace('Both sheets', 'Both geometry views').replace('Solid geometry</option>', 'West view</option>')
-        document = document.replace(texture_mode_label+'</option>', 'East view</option>')
+        document = document.replace('Both sheets', 'Both geometry views').replace('Solid geometry</option>', html.escape(data.get('solid_view_label', 'West view'))+'</option>')
+        document = document.replace(texture_mode_label+'</option>', html.escape(data.get('east_view_label', 'East view'))+'</option>')
         document = document.replace('body[data-mode=solid] figure[data-kind$=textured],body[data-mode=textured] figure[data-kind$=solid]',
             'body[data-mode=solid] figure[data-kind=east_solid],body[data-mode=textured] figure[data-kind=solid]')
         document = document.replace('<nav>'+nav+'</nav>',
