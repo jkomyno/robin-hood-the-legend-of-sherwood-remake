@@ -10,6 +10,7 @@ export interface PlacedJumpSegment {
 /** Explicit sockets pair independently movable edges without retaining asset or scene links. */
 export function assembleJumpSegments(segments: PlacedJumpSegment[]) {
   const consumed = new Set<PlacedJumpSegment>();
+  const unmatched: PlacedJumpSegment[] = [];
   const pairs: { id: string; long: boolean; edges: PlacedJumpSegment["edge"][] }[] = [];
   for (const segment of segments) {
     if (consumed.has(segment)) continue;
@@ -17,6 +18,10 @@ export function assembleJumpSegments(segments: PlacedJumpSegment[]) {
       (other) =>
         other !== segment && Math.hypot(...segment.join.map((n, i) => n - other.join[i]!)) < 1e-4,
     );
+    if (!matches.length) {
+      unmatched.push(segment);
+      continue;
+    }
     if (matches.length !== 1 || consumed.has(matches[0]!))
       throw new Error(`Jump ${segment.id}: join must match exactly one complementary edge`);
     const other = matches[0]!;
@@ -28,5 +33,5 @@ export function assembleJumpSegments(segments: PlacedJumpSegment[]) {
     consumed.add(other);
     pairs.push({ id: segment.id, long: segment.long, edges: [segment.edge, other.edge] });
   }
-  return pairs;
+  return { pairs, unmatched };
 }

@@ -24,6 +24,7 @@ import {
   multiPlaneRegionCompilerFixture,
   nonrenderingVolumeCompilerFixture,
   crossAssetJumpCompilerFixture,
+  detachedJumpCompilerFixture,
   doorTransitionCompilerFixture,
   doorAnchorCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
@@ -69,6 +70,20 @@ test("cross-asset jumps export the geometry verified by the native traversal fix
     compileMap(document, [0, 0, 2000, 2000], assets).descriptor.asset_geometry,
     fixture.asset_geometry,
   );
+});
+
+test("detached jump export keeps the complete copy with compact native zone references", async () => {
+  const { document, assets } = detachedJumpCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-jump-detached.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
 });
 
 test("non-rendering gameplay export matches the native collision fixture", async () => {

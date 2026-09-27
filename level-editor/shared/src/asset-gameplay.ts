@@ -121,7 +121,7 @@ export interface AssetJumpSegment {
   id: string;
   node: string;
   long: boolean;
-  /** Shared local 3D socket; must match one complementary edge after placement. */
+  /** Shared local 3D socket; the jump is available only when one complementary edge matches. */
   join: [number, number, number];
   edge: AssetJumpPair["edges"][number];
 }

@@ -109,6 +109,24 @@ export function lightAssetCompilerFixture() {
   return fixture;
 }
 
+export function detachedJumpCompilerFixture() {
+  const fixture = crossAssetJumpCompilerFixture();
+  const { document } = fixture;
+  for (const group of document.groups.slice())
+    document.groups.push({
+      id: `${group.id}-copy`,
+      transform: { ...IDENTITY_TRANSFORM, dx: 1000 },
+    });
+  for (const part of [...document.objects].filter((p) => p.group))
+    document.objects.push({
+      ...structuredClone(part),
+      id: `${part.id}-copy`,
+      group: `${part.group}-copy`,
+    });
+  document.groups.find((group) => group.id === "jump-upper")!.transform.dx = 20;
+  return fixture;
+}
+
 export function crossAssetJumpCompilerFixture() {
   const fixture = jumpAssetCompilerFixture();
   const g = fixture.hut.gameplay!;

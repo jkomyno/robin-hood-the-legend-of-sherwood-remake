@@ -283,6 +283,44 @@ fn compiled_jump_pairs_construct_native_zones_heights_helpers_and_gates() {
 }
 
 #[test]
+fn detached_jump_assets_preserve_complete_pair_registrations() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-jump-detached.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    let lines = &grid.level.jump_lines;
+    assert_eq!(lines.len(), 2);
+    assert_eq!(lines[0].associated_line_index, Some(1));
+    assert_eq!(lines[1].associated_line_index, Some(0));
+    assert_eq!((lines[0].z_a, lines[1].z_a), (0., 100.));
+    assert!(lines.iter().all(|line| line.long_jump_forced));
+    let zones: Vec<_> = grid
+        .level
+        .sectors
+        .iter()
+        .filter(|sector| {
+            sector
+                .sector_type
+                .contains(robin_engine::sector::SectorType::JUMP)
+        })
+        .collect();
+    assert_eq!(zones.len(), 2);
+    for line in lines {
+        let home = line.sector_index.unwrap();
+        assert!(
+            zones
+                .iter()
+                .any(|zone| zone.underlying_sector == Some(home))
+        );
+        let sector = &grid.level.sectors[home.get() as usize];
+        assert_eq!(sector.jump_line_indices.len(), 1);
+        assert!(!sector.gate_indices.is_empty());
+    }
+}
+
+#[test]
 fn compiled_jump_metadata_rejects_orphan_zones_and_stale_links() {
     let value: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-jump.level.json")).unwrap();

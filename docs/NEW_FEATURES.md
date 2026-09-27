@@ -28,7 +28,11 @@
   long-jump flags and helper requirements, rebuilding native jump zones and gates
   after placement. Source extraction preserves edge elevation and repairs cropped
   zone references. Offline recovery keeps ambiguous ownership and unresolved
-  landing geometry visible; cross-asset pairing remains unfinished.
+  landing geometry visible. Local sockets pair edges across independently placed
+  assets. Unmatched edges leave that connection unavailable with an export warning;
+  restoring the placement reconnects it. Export removes unused landing zones and
+  rebuilds references for remaining pairs, while ambiguous matches and conflicting
+  traversal rules remain errors.
 
 - **Asset-local gameplay lighting.** Map export transforms planar light/shadow
   contours, resolves their receiving layer and preserves ambience masks. The same

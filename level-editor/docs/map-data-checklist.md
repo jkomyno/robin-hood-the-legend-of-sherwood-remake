@@ -288,10 +288,15 @@ joins but create no runtime room without an entrance. Compiler/export fixtures
 and native engine tests cover joined and separated room registrations; rotated
 and duplicated assemblies retain independent connections and door-transition links.
 The recovery packet format preserves these definitions without global identifiers.
-The original York arrangement passes native construction with all 123 doors and
-74 rooms. Moving the courtyard wall currently fails compilation because its jump
-socket loses its matching edge on another asset. Detached jump connections need
-placement handling before this real-asset movement case can pass full export.
+The original York arrangement passes native construction with all 123 doors,
+74 rooms and 72 jump pairs. A one-pixel courtyard-wall move now compiles and loads
+as a static diagnostic with 75 rooms: the two lodges become independent, keeping
+their entrances. The wall-to-house jump becomes unavailable, leaving 71 jump pairs.
+Unmatched jump sockets emit warnings; unused landing zones are omitted and remaining
+zone references are rebuilt. Restoring the asset placement reconnects the jump.
+Ambiguous matches and conflicting jump rules still fail. A ten-pixel move also
+intersects a neighboring stairway and fails the existing traversal-connectivity
+check; this verification does not establish arbitrary-placement or full visual parity.
 
 The twenty-one recovered movement-changing transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.

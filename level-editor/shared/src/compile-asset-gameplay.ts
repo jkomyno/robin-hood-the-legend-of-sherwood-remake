@@ -523,7 +523,12 @@ export function compileAssetGameplay(
     doors.some((door) => door.interior === id),
   );
   const assembledLifts = assembleLiftSegments(lifts);
-  jumpPairs.push(...assembleJumpSegments(jumpSegments));
+  const assembledJumps = assembleJumpSegments(jumpSegments);
+  jumpPairs.push(...assembledJumps.pairs);
+  for (const segment of assembledJumps.unmatched)
+    warnings.push(
+      `Jump ${segment.id}: no matching edge after placement; connection is unavailable.`,
+    );
   lifts = assembledLifts.lifts;
   for (const surface of surfaces)
     if (surface.lift) surface.lift = assembledLifts.identities.get(surface.lift)!;
@@ -740,7 +745,10 @@ export function compileAssetGameplay(
     }
     return matches[0]!;
   };
-  const compiledJumpZones = jumpZones.map((zone) => {
+  // Detached edges have no runtime connection. Retain zones used by any remaining pair.
+  const usedJumpZones = new Set(jumpPairs.flatMap((pair) => pair.edges.map((edge) => edge.zone)));
+  const activeJumpZones = jumpZones.filter((zone) => usedJumpZones.has(zone.id));
+  const compiledJumpZones = activeJumpZones.map((zone) => {
     const area = resolve(zone.anchor, `${zone.id} landing anchor`);
     return {
       polygon: { points: zone.polygon },
@@ -750,7 +758,9 @@ export function compileAssetGameplay(
     };
   });
   const compiledJumpPairs = jumpPairs.map((pair) => {
-    const indices = pair.edges.map((edge) => jumpZones.findIndex((zone) => zone.id === edge.zone));
+    const indices = pair.edges.map((edge) =>
+      activeJumpZones.findIndex((zone) => zone.id === edge.zone),
+    );
     const lines = pair.edges.map((edge, i) => {
       // Edge heights are authored independently of the receiving surface's plane.
       // In particular, integer edge heights need not equal fractional projection heights.

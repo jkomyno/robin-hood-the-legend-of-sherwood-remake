@@ -330,7 +330,7 @@ test("duplicated sight transitions control only their own transformed obstacles"
   assert.deepEqual(second!.applied_sight, [3]);
   assert.notDeepEqual(geometry.sight_obstacles[0]!.points, geometry.sight_obstacles[2]!.points);
 });
-test("cross-asset jump edges assemble equivalent native links and detect broken placement", () => {
+test("cross-asset jumps detach and reconnect with independently placed assets", () => {
   const { document, assets } = crossAssetJumpCompilerFixture();
   const whole = jumpAssetCompilerFixture();
   assert.deepEqual(
@@ -338,11 +338,19 @@ test("cross-asset jump edges assemble equivalent native links and detect broken 
     compileAssetGameplay(whole.document, whole.assets, bounds),
   );
   document.groups.find((g) => g.id === "jump-upper")!.transform.dx = 20;
-  assert.throws(
-    () => compileAssetGameplay(document, assets, bounds),
-    /exactly one complementary edge/,
+  const detached = compileAssetGameplay(document, assets, bounds);
+  assert.equal(detached.jump_line_pairs, undefined);
+  assert.equal(detached.jump_zones, undefined);
+  assert.equal(
+    detached.warnings!.filter((warning) => warning.includes("connection is unavailable")).length,
+    2,
   );
+  assert.ok(detached.motion_data.layers.length > 0);
   document.groups.find((g) => g.id === "jump-upper")!.transform.dx = 0;
+  assert.deepEqual(
+    compileAssetGameplay(document, assets, bounds),
+    compileAssetGameplay(whole.document, whole.assets, bounds),
+  );
   for (const group of document.groups.slice())
     document.groups.push({
       id: `${group.id}-copy`,
@@ -360,6 +368,45 @@ test("cross-asset jump edges assemble equivalent native links and detect broken 
   assert.notEqual(
     copies.jump_line_pairs![0]!.line1.jump_zone_index,
     copies.jump_line_pairs![1]!.line1.jump_zone_index,
+  );
+  document.groups.find((g) => g.id === "jump-upper")!.transform.dx = 20;
+  const partial = compileAssetGameplay(document, assets, bounds);
+  assert.equal(partial.jump_line_pairs!.length, 1);
+  assert.equal(partial.jump_zones!.length, 2);
+  const pair = partial.jump_line_pairs![0]!;
+  assert.deepEqual(
+    [pair.line1.jump_zone_index, pair.line2.jump_zone_index].sort((a, b) => a - b),
+    [0, 1],
+  );
+  assert.notDeepEqual(
+    pair.line1.point_a,
+    compileAssetGameplay(whole.document, whole.assets, bounds).jump_line_pairs![0]!.line1.point_a,
+  );
+  assert.ok(
+    copies.jump_line_pairs!.some((copy) =>
+      copy.line1.point_a.every((value, i) => value === pair.line1.point_a[i]),
+    ),
+  );
+});
+test("detached edges do not remove landing zones used by another complete jump", () => {
+  const { document, assets, hut } = jumpAssetCompilerFixture();
+  const expected = compileAssetGameplay(document, assets, bounds);
+  const pair = hut.gameplay!.jumpPairs![0]!;
+  hut.gameplay!.jumpSegments = [
+    {
+      id: "other-edge",
+      node: pair.node,
+      long: pair.long,
+      join: [999, 999, 999],
+      edge: structuredClone(pair.edges[0]),
+    },
+  ];
+  const actual = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(actual.jump_zones, expected.jump_zones);
+  assert.deepEqual(actual.jump_line_pairs, expected.jump_line_pairs);
+  assert.equal(
+    actual.warnings!.filter((warning) => warning.includes("connection is unavailable")).length,
+    1,
   );
 });
 test("non-rendering asset volumes preserve collision and sight without a mesh part", () => {
