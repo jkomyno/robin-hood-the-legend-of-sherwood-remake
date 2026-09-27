@@ -183,6 +183,12 @@ The compiler receives only local endpoints. Derby's two gatehouse declarations
 restore its remaining five doors: all 42 non-lift doors and the three-door permission
 transition now match source geometry and rules. `declaredDoorOwnershipRecovery`
 records the one-time mapping.
+Nottingham declarations restore four rooms and five doors in the two green market
+frontages, north dormer house and castle main hall. Its remaining shared interior
+spans separated castle entrances and still needs physical ownership work.
+Leicester's three drawbridges already have shared multi-scene GLBs; the remaining
+state-binding gap requires common gameplay ownership across their initial/applied
+views, rather than static model merging that would discard variant metadata.
 Linked changing geometry can establish a door owner only when every obstacle has
 one owner and all belong to the same asset. `doorStateOwnershipRecovery` records
 this evidence for physical-grouping review; conflicting or missing geometry cannot
@@ -201,9 +207,9 @@ This does not establish complete door-transition coverage or publish those draft
 Spatial ownership ties can be resolved by slicing solid geometry above the landing,
 excluding supporting terrain and preserving disconnected concave pieces. This
 restores 84 connection records without dropping previously recovered doors.
-Across the nine diagnostics, 358 of 397 non-lift doors now compile; all 358 match
+Across the nine diagnostics, 363 of 397 non-lift doors now compile; all 363 match
 source endpoints, click polygons, door types, active flags and initial/alternate
-permissions. The remaining 39 still need ownership or endpoint recovery. Inferred
+permissions. The remaining 34 still need ownership or endpoint recovery. Inferred
 physical grouping remains marked for review before publication.
 `compare-door-geometry.ts SOURCE_JSON COMPILED_LEVEL_JSON` independently compares
 non-lift door geometry/rules, shared-room membership and door-linked patch rules.
@@ -220,7 +226,7 @@ Current compiled/source counts (no unexpected records in any map):
 | Derby | 42/42 | 14/14 | 1/1 |
 | Leicester | 56/59 | 16/16 | 2/5 |
 | Lincoln | 51/59 | 17/19 | 6/9 |
-| Nottingham | 84/100 | 40/45 | 7/7 |
+| Nottingham | 89/100 | 44/45 | 7/7 |
 | Sherwood | 3/5 | 3/5 | 0/0 |
 | York | 113/123 | 66/74 | 5/5 |
 

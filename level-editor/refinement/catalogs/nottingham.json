@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "map": "nottingham",
+  "groups": [],
+  "door_sources": [
+    {
+      "doors": [0],
+      "owner": "nottingham-market-front-west-green",
+      "node": "building-000",
+      "reason": "The west green market frontage owns this entrance; its interior waypoint extends behind the split frontage footprint."
+    },
+    {
+      "doors": [3],
+      "owner": "nottingham-market-front-east-green",
+      "node": "building-009",
+      "reason": "The east green market frontage owns this entrance; the interior waypoint lies behind its facade rather than on the nearby roof or rear-building footprint."
+    },
+    {
+      "doors": [20],
+      "owner": "nottingham-north-dormer-house",
+      "node": "building-122",
+      "reason": "The inside endpoint is within the dormer house footprint; the neighboring stone house is close enough to fail the generic ownership margin."
+    },
+    {
+      "doors": [79, 80],
+      "owner": "nottingham-castle-main-hall",
+      "node": "building-378",
+      "reason": "Both entrances serve the main-hall interior; the upper curtain wall beside the hall does not own this room."
+    }
+  ]
+}
