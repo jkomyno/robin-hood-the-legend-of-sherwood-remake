@@ -1,4 +1,4 @@
-"""Stage or install the three Derby room repairs with pinned inputs and rollback.
+"""Stage or install Derby room repairs with pinned inputs and rollback.
 
 The full publication browser audit must pass against the exact staged files.
 Use stage <library> <state-output> <publication>, then prepare_publication_browser.py
@@ -22,7 +22,7 @@ from promote_staged_publication import library_lock
 from promote_state_bundles import atomic
 
 PATCHES = {'derby-keep-west-tower': 'patch-001', 'derby-east-hall': 'patch-002',
-           'derby-upper-gatehouse': 'patch-003'}
+           'derby-upper-gatehouse': 'patch-003', 'derby-keep-main-hall': 'patch-000'}
 
 
 def sha(path):
@@ -36,7 +36,8 @@ def write(path, value):
 def stage(library, states, output):
     library, states, output = [Path(p).resolve() for p in (library, states, output)]
     integration = json.loads((states / 'integration.json').read_text())
-    if set(integration['outputs']) != set(PATCHES) or not integration['covered_resources_unchanged']:
+    selected = set(integration['outputs'])
+    if not selected or not selected <= PATCHES.keys() or not integration['covered_resources_unchanged']:
         raise ValueError('Incomplete interior-state verification')
     output.mkdir(parents=True, exist_ok=False)
     target = output / 'map-assets'
@@ -45,7 +46,7 @@ def stage(library, states, output):
             continue
         dst = target / '3d-assets/derby' / asset.name
         dst.mkdir(parents=True)
-        if asset.name in PATCHES:
+        if asset.name in selected:
             for name, key in [('model.glb', 'model_sha256'), ('asset.json', 'descriptor_sha256')]:
                 if sha(states / asset.name / name) != integration['outputs'][asset.name][key]:
                     raise ValueError('State output changed: ' + asset.name)
@@ -59,46 +60,49 @@ def stage(library, states, output):
     scene_path = library / 'scenes/derby.rhlos-map.json'
     scene = json.loads(scene_path.read_text())
     for ref in scene['assetSources']:
-        if ref['id'] in PATCHES:
+        if ref['id'] in selected:
             ref['model_sha256'] = sha(target / ref['model'])
             ref['descriptor_sha256'] = sha(target / ref['descriptor'])
     found = set()
     for placement in scene['placements']:
-        if placement['id'] in PATCHES:
+        if placement['id'] in selected:
             asset = placement['id']
             placement.setdefault('patches', {})[asset] = {'appearance-1': PATCHES[asset]}
             found.add(asset)
-    if found != set(PATCHES):
+    if found != selected:
         raise ValueError('Missing room placement')
     write(output / 'derby.rhlos-map.json', scene)
     (target / 'scenes').mkdir()
     write(target / 'scenes/derby.rhlos-map.json', scene)
     write(output / 'scope.json', {
-        'asset_ids': sorted(PATCHES),
-        'already_published': sorted({r['id'] for r in scene['assetSources']} - set(PATCHES)),
-        'required_patches': ['patch-000', *PATCHES.values()],
+        'asset_ids': sorted(selected),
+        'already_published': sorted({r['id'] for r in scene['assetSources']} - selected),
+        'required_patches': sorted(set(PATCHES.values())),
     })
     files = {}
-    for asset in PATCHES:
+    for asset in selected:
         for name in ('model.glb', 'asset.json', 'preview.glb', 'preview.glb.receipt.json'):
             relative = '3d-assets/derby/' + asset + '/' + name
             files[relative] = {'before': sha(library / relative), 'after': sha(target / relative)}
     relative = 'scenes/derby.rhlos-map.json'
     files[relative] = {'before': sha(scene_path), 'after': sha(target / relative)}
     removals = {}
-    for asset in PATCHES:
+    for asset in selected:
         for name in ('lossy.glb', 'lossy.glb.receipt.json'):
             relative = '3d-assets/derby/' + asset + '/' + name
             if (library / relative).exists():
                 removals[relative] = sha(library / relative)
     write(output / 'install-plan.json', {'version': 1, 'inputs': integration['inputs'],
-                                        'assets': sorted(PATCHES), 'files': files,
+                                        'assets': sorted(selected), 'files': files,
                                         'removals': removals})
 
 
 def apply(library, output):
     library, output = [Path(p).resolve() for p in (library, output)]
     plan = json.loads((output / 'install-plan.json').read_text())
+    selected = set(plan['assets'])
+    if not selected or not selected <= PATCHES.keys():
+        raise ValueError('Unknown interior repair assets')
     result = json.loads((output / 'browser/result.json').read_text())
     if result.get('status') != 'PASS' or result.get('visualOnly'):
         raise ValueError('Full browser audit has not passed')
@@ -113,7 +117,7 @@ def apply(library, output):
     if sha(index_path) != pinned.get('3d-assets/index.json'):
         raise ValueError('Audited catalog changed after verification')
     for entry in json.loads(index_path.read_text())['assets']:
-        if entry['id'] not in PATCHES:
+        if entry['id'] not in selected:
             continue
         relative = '3d-assets/' + entry['descriptor']
         if editor_descriptor(json.loads((target / relative).read_text())) != entry['editor']:
@@ -124,7 +128,7 @@ def apply(library, output):
         raise ValueError('Staged derivatives are inconsistent: ' + repr(problems))
     # Derivatives may be refreshed after lossless staging. Their receipts must
     # bind the models, and the browser must have loaded these exact new bytes.
-    for asset in PATCHES:
+    for asset in selected:
         for name in ('lossy.glb', 'lossy.glb.receipt.json', 'preview.glb', 'preview.glb.receipt.json'):
             relative = '3d-assets/derby/' + asset + '/' + name
             if not (target / relative).is_file():
@@ -183,7 +187,7 @@ def apply(library, output):
             for relative in before:
                 atomic(library / relative, (backup / relative).read_bytes())
             raise
-        receipt = {'status': 'PASS', 'assets': sorted(PATCHES), 'backup': str(backup),
+        receipt = {'status': 'PASS', 'assets': sorted(selected), 'backup': str(backup),
                    'files': {key: sha(library / key) for key in plan['files']},
                    'browser_result_sha256': sha(output / 'browser/result.json')}
         write(output / 'installed.json', receipt)

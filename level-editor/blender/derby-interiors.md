@@ -3,7 +3,8 @@
 The West Tower (`patch-001`), East Hall (`patch-002`), and Upper Gatehouse
 (`patch-003`) use asset-local `appearance-1` bindings, mapped independently by
 placements in `scenes/derby.rhlos-map.json`. Main Hall (`patch-000`) retains its
-existing model and binding. Gameplay masks, sight obstacles, and doors are
+existing binding; its subsequent texture repair is documented below. Gameplay
+masks, sight obstacles, and doors are
 unchanged: these are editor appearance repairs.
 
 `derby_interior_states.py` operates on the published lossless models. It retains
@@ -85,3 +86,6 @@ audit passed with all four reveal controls, 40 map groups, 271 selectable parts,
 cutaway regression tests and eight patch-display/binding tests pass. The local
 `publication/installed.json` records all 19 installed file hashes and the audit
 result hash; `publication/backup/` retains the prior files.
+
+Main Hall’s remaining gray revealed surfaces are repaired separately; see
+[the Main Hall texture notes](derby-main-hall-texture.md).

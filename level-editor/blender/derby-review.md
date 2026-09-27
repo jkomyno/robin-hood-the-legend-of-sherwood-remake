@@ -1,7 +1,9 @@
 # Derby asset refinement review
 
 Interior repair (2026-09-27): West Tower, East Hall, and Upper Gatehouse now
-have covered/revealed states alongside Main Hall. See the
+have covered/revealed states alongside Main Hall. Main Hall’s gray revealed
+shell now receives source reprojection and inferred hidden-face fills; see
+[the texture repair](derby-main-hall-texture.md). See the
 [repair notes](derby-interiors.md) for geometry, texture provenance, and validation.
 Both mission drawbridge switches and the separate winch state remain outstanding;
 [the patch audit](derby-patch-audit.md) inventories all sixteen base/mission records.
