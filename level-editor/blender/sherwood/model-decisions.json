@@ -302,6 +302,96 @@
         }
       },
       "note": "weird geometry?"
+    },
+    {
+      "id": "sherwood-east-archery-target",
+      "decision": "approved",
+      "review_revision": "5fcb961441c8d224a40e9b5902c8a5cb4e09e9ef0f89695fe971508f1a41d2d1",
+      "binding": {
+        "images": {
+          "solid": "49a17b8180bd67e3b1b439a77076dea1c02be293edc8380947cbb4b656caa162",
+          "textured": "0339254c1715df2eecc582768455dce1725dfc62dcee9a1a50802d531ba3bbc0"
+        },
+        "reports": {
+          "validation": "2bebff1257093ecec3d7fb3df1cbd1fc02daad2c777ccfd361b1710a63981049"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-east-bridge-landing",
+      "decision": "approved",
+      "review_revision": "5a5216187bf7c1a8ea0ced727fc75482907289aa949be8f1bff4f835182b6733",
+      "binding": {
+        "images": {
+          "solid": "ee898ccc886648fa364c115dc17e5750ab0eb9a9e40906cb6883d3ff92f5be04",
+          "textured": "b383ef6916db36a0d2c16202b9310b16ba2f51fa445d8df1d94aac6068372ebd"
+        },
+        "reports": {
+          "validation": "3b3139a39fa6f7a0f3a36cc61e1165d0f141a390b9d7461f910bcd1ba8115707"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-east-dining-bench",
+      "decision": "approved",
+      "review_revision": "1fa9159464dd642f9251d506af4f68ef31c7f11a7f47bc5eda51a54651b9cf4f",
+      "binding": {
+        "images": {
+          "solid": "635c53df7e886bfa69f387f253b3fe4cdc95264186c156e07012b0a79f6ab11e",
+          "textured": "c92d613242900025c60cbd608d7a53046bc1bddf3876b8413b1fd922353060d4"
+        },
+        "reports": {
+          "validation": "0fe0cb96bc7b9d88f54dc2193f257da7d825e01e02c1e34046d5ae9c94278d82"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-east-oak-platform",
+      "decision": "approved",
+      "review_revision": "5b3405da9e1714ccf38e89f9fa379329303600770ea1d732c765fae83a459e2f",
+      "binding": {
+        "images": {
+          "solid": "b5e0684c3caa3f957f237876bf816c57ebc8a0c7a80737cfd77111b3ce49d946",
+          "textured": "38149dccb2c6e9ef420db4b3307e8b06ad6abd7911d417a41a344c485dfa9113"
+        },
+        "reports": {
+          "validation": "0cf29b5ea3b17474fbe1aba0da0fd522b963f8bf0fccf5520b8fda3310a62882"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-east-oak-upper-limb",
+      "decision": "approved",
+      "review_revision": "e237a2c5440806824af7da0921ca052911fee6607b6fa1fc3c092dddd9e0a9a4",
+      "binding": {
+        "images": {
+          "solid": "779c4b7c6db3776a3a0eb906c59af385ac59a9a343eac45a2471f1278c7ba610",
+          "textured": "b0f27db2adf62b150105e0c7d78044ae48136c22edaa6277113ab0e2db839e4c"
+        },
+        "reports": {
+          "validation": "55dc2a3c8742f5b9557923ac29b020eb089b559df5b51398f4916e06927aeeca"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-east-suspension-bridge",
+      "decision": "approved",
+      "review_revision": "4483057ecfc4453f83a9747934cf1a6e5381fa31aac127ea6fcb17ace643faf0",
+      "binding": {
+        "images": {
+          "solid": "0ca3d4278aa45eb883b0419c660858fc5dde6207f07df270fd398cfe20d21a2b",
+          "textured": "95ea5d97a809b3a4075def900b3e2bf38cf26ab228b21d19ed8bfe06244ab72f"
+        },
+        "reports": {
+          "validation": "6b8c072c3786360a62fa3f237ae06cac41ddcef17f46554086f220b4db0b0a95"
+        }
+      },
+      "note": ""
     }
   ],
   "grouping_instruction": "Combine the tree itself; keep treehouse and platforms separate"

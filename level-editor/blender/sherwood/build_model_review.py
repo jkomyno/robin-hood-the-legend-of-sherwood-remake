@@ -59,6 +59,17 @@ def main(packets, output):
     inspections = json.loads(inspections_path.read_text()) if inspections_path.exists() else {}
     decisions_path = Path(__file__).with_name('model-decisions.json')
     decisions = {d['id']: d for d in json.loads(decisions_path.read_text())['decisions']}
+    grouping_root = output.parent/'grouping-review'
+    regrouped = {}
+    if (grouping_root/'stage.json').exists():
+        plan = json.loads((grouping_root/'plan.json').read_text())
+        stage = json.loads((grouping_root/'stage.json').read_text())
+        if stage['catalog_sha256'] != hashlib.sha256((grouping_root/'catalog.json').read_bytes()).hexdigest():
+            raise ValueError('Changed grouping candidate catalog')
+        for group in plan['groups']:
+            if group['changed']:
+                for previous in group['previous_assets']:
+                    regrouped.setdefault(previous, []).append(group['id'])
     artwork_path = packets.parent/'original-static-art.png'
     artwork = Image.open(artwork_path).convert('RGBA')
     artwork_hash = hashlib.sha256(artwork_path.read_bytes()).hexdigest()
@@ -70,6 +81,8 @@ def main(packets, output):
         name = asset.removeprefix('sherwood-').replace('-', ' ').title()
         folder = packets/asset
         if not (folder/'preparation.json').exists():
+            if asset in regrouped:
+                continue
             missing.append(dict(id=asset, name=name, status='Rendering', reason='Eight-view model sheets are being prepared.'))
             continue
         preparation = json.loads((folder/'preparation.json').read_text())
@@ -103,6 +116,8 @@ def main(packets, output):
         if decision and decision['review_revision'] == display_revision:
             reviewed.append(dict(name=name, **decision))
             continue
+        if asset in regrouped:
+            continue
         items.append(dict(id=asset, name=name, status='ready-for-user' if inspected else 'in-progress',
             user_approval='pending', solid=str(display_folder/'solid.png'), textured=str(display_folder/'input.png'),
             textured_label='Original-art projection; shaded gray marks unknown textures',
@@ -118,6 +133,7 @@ def main(packets, output):
                    'Eight-view visual check complete.' if inspected else 'Visual preflight pending; feedback is available now.']))
     manifest=output/'models.json'
     manifest.write_text(json.dumps(dict(map='Sherwood models',items=items,without_packets=missing,reviewed=reviewed,
+        superseded_by_grouping=regrouped,
         status_counts={'ready for review':sum(i['status']=='ready-for-user' for i in items),
                        'visual check pending':sum(i['status']!='ready-for-user' for i in items),
                        'approved':sum(i['decision']=='approved' for i in reviewed),
@@ -139,6 +155,8 @@ def main(packets, output):
     reviewed_summary = '<details><summary>Recorded reviews</summary><ul>'+''.join(
         '<li>'+html.escape(i['name']+': '+i['decision']+(' — '+i['note'] if i['note'] else ''))+'</li>'
         for i in reviewed)+'</ul></details>'
+    if regrouped:
+        reviewed_summary += '<p><strong>Grouping has been revised.</strong> <a href="grouping/index.html">Review the regrouped assets here</a>.</p>'
     page.write_text(page.read_text().replace('<nav>', '<p><a href="scene/index.html">Full-scene model views and original artwork</a></p>'
         +reviewed_summary+'<nav>',1))
     print(json.dumps({'gallery':str(page),'available':len(items),'rendering':len(missing)}))
