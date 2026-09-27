@@ -4,6 +4,7 @@ import { parseArgs } from "node:util";
 import type { ProtoLevel } from "../../shared/src/level.ts";
 import { decodeRecoveryMask, recoveryMaskRectangles } from "./recover-mask-bitmap.ts";
 import { maskBoundaryPolyline } from "../../shared/src/compile-mask-geometry.ts";
+import { maskReferenceResolver } from "../../shared/src/mask-references.ts";
 
 const { positionals } = parseArgs({ allowPositionals: true });
 if (!positionals.length) throw new Error("Usage: audit-mask-bitmaps.ts <level.rhp.json> [...]");
@@ -46,7 +47,18 @@ for (const source of positionals) {
       errors.push({ index, error: String(error) });
     }
   }
-  failed ||= errors.length > 0;
+  const patchErrors: { index: number; error: string }[] = [];
+  let maskStateReferences = 0;
+  const resolve = maskReferenceResolver(level.masks);
+  for (const [index, patch] of level.patches.entries()) {
+    try {
+      const refs = [...resolve(patch.old_masks), ...resolve(patch.new_masks)];
+      maskStateReferences += refs.length;
+    } catch (error) {
+      patchErrors.push({ index, error: String(error) });
+    }
+  }
+  failed ||= errors.length > 0 || patchErrors.length > 0;
   console.log(
     JSON.stringify({
       source,
@@ -57,6 +69,8 @@ for (const source of positionals) {
       exactBoundaries,
       obstacleLinked,
       errors,
+      maskStateReferences,
+      patchErrors,
     }),
   );
 }

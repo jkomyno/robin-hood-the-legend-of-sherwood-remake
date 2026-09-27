@@ -85,6 +85,34 @@ test("patch and animation sprite fields fail at their source path", () => {
     /level.animations\[0\].sprite.position_x/,
   );
 });
+
+test("patch mask references fail at the source path rather than accepting global indices", () => {
+  const patch = {
+    active: true,
+    integrate_in_background: false,
+    element_fx: {
+      sprite: {
+        frame_profile_name: "",
+        profile_name: "",
+        position_x: 0,
+        position_y: 0,
+        elevation: 0,
+      },
+      active: true,
+      force_display: false,
+      blit_type: 0,
+      display_polyline: [],
+    },
+    old_masks: [],
+    new_masks: [],
+  };
+  assert.equal(parseProtoLevel({ ...level(), patches: [patch] }).patches.length, 1);
+  for (const old_masks of [[0], [{ layer: 0, index: 0 }], undefined])
+    assert.throws(
+      () => parseProtoLevel({ ...level(), patches: [{ ...patch, old_masks }] }),
+      /level.patches\[0\].old_masks/,
+    );
+});
 function document() {
   return {
     version: 1,

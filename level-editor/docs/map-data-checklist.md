@@ -168,6 +168,14 @@ elevation and independent authoring data. Missing height/ownership evidence is
 rejected. The batch migration still needs reviewed inputs for existing masks;
 this authoring function does not certify their recovery or state links.
 
+Patch mask references now use the correct `{layer, index}` schema, with indices
+local to each layer. Parsing rejects dangling/flat references. State-link recovery
+resolves these into recovered asset-local IDs, refusing missing owners, duplicate
+state IDs or implicit cross-asset coordination. Tests cover interleaved source
+layers and independent links after asset duplication. All 518 state references
+across the nine source maps resolve; none reuses a mask within/across patches.
+This does not mean those masks have recovered coverage or published state links.
+
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.
 Receiving footprints retain material across blocked portions omitted from walking

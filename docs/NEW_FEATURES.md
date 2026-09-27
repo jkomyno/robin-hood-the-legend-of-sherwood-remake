@@ -69,6 +69,9 @@
   One-time rule recovery combines verified coverage, explicit boundary heights
   and local obstacle ownership into a complete asset mask definition. Its output
   recompiles independently of source maps; existing-map migration remains pending.
+  Patch mask references are validated as layer-local pairs and can be recovered
+  into local state IDs after ownership is established, with independent compiled
+  references for duplicated assets.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits

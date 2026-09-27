@@ -4,6 +4,7 @@ import {
   obstaclePartIdentity,
 } from "./component-parts.ts";
 import { validatePopulation } from "./population.ts";
+import { maskReferenceResolver } from "./mask-references.ts";
 import {
   safeLibraryPath,
   type ExternalAssetSource,
@@ -310,6 +311,11 @@ export function parseProtoLevel(value: unknown): ProtoLevel {
     array(mask.mask_data, `masks[${i}].mask_data`);
   });
   object(d.misc, "level.misc");
+  const resolveMaskReferences = maskReferenceResolver(d.masks);
+  d.patches.forEach((patch: any, i: number) => {
+    resolveMaskReferences(patch.old_masks, `level.patches[${i}].old_masks`);
+    resolveMaskReferences(patch.new_masks, `level.patches[${i}].new_masks`);
+  });
   object(d.motion_data, "level.motion_data");
   array(d.motion_data.layers, "level.motion_data.layers");
   array(d.motion_data.graph_bytes, "level.motion_data.graph_bytes");
