@@ -4136,10 +4136,6 @@
         {
           "obstacle": 759,
           "name": "Structural volume 759"
-        },
-        {
-          "obstacle": 760,
-          "name": "Structural volume 760"
         }
       ]
     },
@@ -4147,10 +4143,6 @@
       "id": "york-castle-courtyard-west-lodge",
       "name": "Castle courtyard west lodge",
       "parts": [
-        {
-          "obstacle": 761,
-          "name": "Structural volume 761"
-        },
         {
           "obstacle": 771,
           "name": "Structural volume 771"
@@ -4162,12 +4154,26 @@
       "name": "Castle courtyard lodge stairs",
       "parts": [
         {
-          "obstacle": 772,
-          "name": "Structural volume 772"
-        },
-        {
           "obstacle": 812,
           "name": "Structural volume 812"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-courtyard-rear-curtain-wall",
+      "name": "Castle courtyard rear curtain wall",
+      "parts": [
+        {
+          "obstacle": 760,
+          "name": "Structural volume 760"
+        },
+        {
+          "obstacle": 761,
+          "name": "Structural volume 761"
+        },
+        {
+          "obstacle": 772,
+          "name": "Structural volume 772"
         }
       ]
     },
@@ -6183,11 +6189,11 @@
     "building-758": "york-castle-west-lane-gable-house",
     "building-757": "york-castle-courtyard-rear-walkway",
     "building-759": "york-castle-courtyard-east-lodge",
-    "building-760": "york-castle-courtyard-east-lodge",
-    "building-761": "york-castle-courtyard-west-lodge",
     "building-771": "york-castle-courtyard-west-lodge",
-    "building-772": "york-castle-courtyard-lodge-stairs",
     "building-812": "york-castle-courtyard-lodge-stairs",
+    "building-760": "york-castle-courtyard-rear-curtain-wall",
+    "building-761": "york-castle-courtyard-rear-curtain-wall",
+    "building-772": "york-castle-courtyard-rear-curtain-wall",
     "building-763": "york-castle-west-gatehouse",
     "building-764": "york-castle-west-gatehouse",
     "building-765": "york-castle-west-gatehouse",

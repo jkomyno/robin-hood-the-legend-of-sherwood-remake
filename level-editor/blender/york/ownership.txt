@@ -189,9 +189,10 @@ Castle west lane rear timber house | p744 p745 p746 p747 p748 p749 p750
 Castle west lane front timber house | p751 p752 p753
 Castle west lane gable house | p754 p755 p756 p758
 Castle courtyard rear walkway | p757
-Castle courtyard east lodge | p759 p760
-Castle courtyard west lodge | p761 p771
-Castle courtyard lodge stairs | p772 p812
+Castle courtyard east lodge | p759
+Castle courtyard west lodge | p771
+Castle courtyard lodge stairs | p812
+Castle courtyard rear curtain wall | p760 p761 p772
 Castle west gatehouse | p763 p764 p765 p774 p776 p777 p778 p779
 Castle northwest bastion | p762 p773
 Castle southwest bastion | p766 p767 p775 p816

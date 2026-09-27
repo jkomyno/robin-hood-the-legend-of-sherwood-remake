@@ -3,11 +3,12 @@
 This is the first refinement step: freeze source evidence, inspect the whole map,
 and assign the reconstructed surfaces to named logical assets. The reviewed
 catalog is `../../refinement/catalogs/york.json`; `ownership.txt` is its editable
-recipe. It replaces 460 proximity groups with 250 named groups plus background
+recipe. It replaces 460 proximity groups with 251 named groups plus background
 terrain. All 972 visible source records and nine records without meshes are
 accounted for. Distinct adjoining buildings are separate assets, including attached towers
 and gatehouses. Cathedral towers and the north precinct hall are separate from
-the nave. `building-review.json` records the subdivisions of the first pass.
+the nave. The courtyard rear curtain wall owns 760, 761 and battlements 772;
+the east lodge owns 759, west lodge 771, and stairs 812. `building-review.json` records the subdivisions of the first pass.
 
 Outputs are local under `../../work/york-refinement/`:
 
@@ -18,7 +19,12 @@ Outputs are local under `../../work/york-refinement/`:
 - `grounding/york-grounded.blend`: subsequent terrain-trimmed asset scene.
 - `grounding/report.json`, `verification.json` and `coverage-audit.json`: cut
   inventory, retained-surface/UV checks and complete-scene burial audit.
-- `review/index.html`: searchable source crops and two geometry views per asset.
+- `review/index.html`: shared interactive grouping review, with approve/request
+  buttons, original context, selected-part overlay and two geometry views.
+- `review/inspection.html`: compact map overviews and direct staged model links.
+- `review/evidence.json`: exact image/report/model revisions shown for decisions.
+- `grouping-decisions.json`: explicit submitted grouping decisions, separate from
+  geometry and texture approvals.
 - `grouping-review.json`: exact reviewed catalog/inventory hashes and scope.
 - `state-ownership.json`: native patch associations and sprite-only asset inventory.
 - `stage/york.rhlos-map.json`: staged map with individual reusable assets in
@@ -55,7 +61,7 @@ the static grouping review.
 
 `ground_assets.py` reads the frozen grouped scene and subtracts the volumes below
 the reviewed terrain, ramp and raised-lane surfaces from each asset. It trims
-447 component meshes across 171 assets. All 250 named assets and terrain remain.
+447 component meshes across 171 assets. All 251 named assets and terrain remain.
 Cuts follow both the support footprint and its sloping height, preserving exposed
 lower walls at terrace edges. Bridge decks and roofs are not solid-ground cutters.
 The eleven support sources are listed explicitly in the recipe and its report.
@@ -88,8 +94,8 @@ python3 level-editor/blender/york/build_catalog.py
 blender --background --python level-editor/blender/york/group_scene.py
 blender --background --python level-editor/blender/york/verify_partition.py
 blender --background --python level-editor/blender/york/review_geometry.py
-python3 level-editor/blender/york/build_gallery.py
 blender --background --python level-editor/blender/york/export_grouped.py
+python3 level-editor/blender/york/build_gallery.py
 ```
 
 Review all source and geometry cards before writing `grouping-review.json`.
@@ -104,10 +110,31 @@ blender --background --python-exit-code 1 --python level-editor/blender/york/gro
 blender --background --python-exit-code 1 --python level-editor/blender/york/verify_grounding.py
 blender --background --python-exit-code 1 --python level-editor/blender/york/review_geometry.py -- --grounded
 python3 level-editor/blender/york/audit_grounding.py
-python3 level-editor/blender/york/build_gallery.py
 blender --background --python-exit-code 1 --python level-editor/blender/york/export_grouped.py -- --grounded
+python3 level-editor/blender/york/build_gallery.py
 python3 level-editor/blender/york/verify_grounded_export.py
 ```
 
 `ground_assets.py` refuses to overwrite an existing grounded blend. Preserve the
 previous grounding directory before rerunning it.
+
+## Grouping review controls
+
+The shared gallery builder runs in `review_kind: grouping` mode. **Approve grouping** confirms part ownership and naming only. **Request changes** and the
+feedback field collect corrections. Drafts are saved in the browser by stable
+asset ID and exact revision; **Copy review results** produces text to paste into
+chat. Nothing is submitted or approved merely by opening the page.
+
+After the user supplies that text, save it unchanged and run:
+
+```sh
+python3 level-editor/blender/york/record_grouping_feedback.py <user-feedback.txt>
+python3 level-editor/blender/york/build_grouping_review.py
+```
+
+Matching approved groupings disappear from the pending gallery. Changed revisions
+remain pending, and previous galleries/evidence remain in `review/history/`.
+Grouping decisions never authorize texture synthesis or final geometry publication.
+The later geometry review still requires the procedure's complete eight-view
+solid/source-textured packets. Browser control verification is available with
+`node level-editor/blender/york/verify_gallery.mjs` (using an isolated profile).

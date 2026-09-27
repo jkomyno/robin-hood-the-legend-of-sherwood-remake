@@ -2,7 +2,7 @@
   "version": 1,
   "policy": "One asset per distinct building, including adjoining houses. Towers and gatehouses are independent assets even when attached. Roofs, walls and details stay with their individual building.",
   "previous_group_count": 171,
-  "group_count": 250,
+  "group_count": 251,
   "review_method": "Whole-map source-artwork survey followed by numbered native-part overlays at building scale; direct source membership is recorded in ownership.txt. All asset geometry contact sheets were inspected, with shared surfaces checked against retained originals.",
   "splits": [
     {
@@ -299,6 +299,7 @@
       "individual_assets": [
         "Castle courtyard east lodge",
         "Castle courtyard lodge stairs",
+        "Castle courtyard rear curtain wall",
         "Castle courtyard west lodge"
       ]
     },
@@ -362,7 +363,8 @@
     "Castle courtyard walkway 757 is separate from the small west-lane gable house.",
     "Source 174 is the west bridge tower drum; source 710 belongs to the north river lane stone house; source 924 belongs to the precinct great hall.",
     "Market southwest manor is separated into its front and rear square towers, hanging round tower, stone annex, central hipped house, rear gable house, east timber house and connecting stairs.",
-    "Castle hall and east round tower share sources 769 and 795: both surfaces are partitioned along their visible junction, preserving materials and UVs without adding caps. Source 811 belongs to the tower."
+    "Castle hall and east round tower share sources 769 and 795: both surfaces are partitioned along their visible junction, preserving materials and UVs without adding caps. Source 811 belongs to the tower.",
+    "Courtyard rear curtain wall owns sources 760, 761 and battlement strip 772. The east lodge owns 759, west lodge 771, and lodge stairs 812."
   ],
   "scope": "Grouping only: no hidden-wall completion, texture synthesis or animation authoring."
 }

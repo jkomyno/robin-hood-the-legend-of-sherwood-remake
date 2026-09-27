@@ -113,8 +113,10 @@ const input=document.querySelector('#search'),cards=[...document.querySelectorAl
     if grounding:
         body=body.replace('Mesh shape and textures are still the reconstruction baseline.',
             'Buried surfaces have been trimmed against raised terrain. Visible surfaces and texture coordinates are preserved.')
-    (OUT/'review/index.html').write_text(body)
+    (OUT/'review/inspection.html').write_text(body)
     (OUT/'review/manifest.json').write_text(json.dumps({'groups':manifest,'scene':scene,'catalog_sha256':hashlib.sha256((ROOT/'level-editor/refinement/catalogs/york.json').read_bytes()).hexdigest()},indent=2)+'\n')
+    from build_grouping_review import build
+    build()
     print(json.dumps({'cards':len(cards),'gallery':str(OUT/'review/index.html')}))
 
 

@@ -15,7 +15,8 @@ def main():
     geometry=json.loads((OUT/'review/geometry.json').read_text())
     grounding=json.loads((OUT/'grounding/report.json').read_text())
     manifest=json.loads((OUT/'review/manifest.json').read_text())
-    assert len(index)==len(geometry)==251
+    catalog=json.loads((ROOT/'level-editor/refinement/catalogs/york.json').read_text())
+    assert len(index)==len(geometry)==len(catalog['groups'])+1
     assert {entry['id'] for entry in index}==set(geometry)
     assert manifest['scene']['sha256']==grounding['output_sha256']
     resources=set();maximum=0;near_zero_bases=[]

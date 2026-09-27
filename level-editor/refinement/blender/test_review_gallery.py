@@ -12,6 +12,31 @@ spec.loader.exec_module(gallery)
 
 
 class StableGalleryLinks(unittest.TestCase):
+    def test_grouping_review_has_scoped_buttons_and_stable_revisions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root=Path(temporary);source=root/'source.png';source.write_bytes(b'image')
+            model=root/'model.glb';model.write_bytes(b'geometry')
+            manifest=root/'manifest.json';output=root/'gallery'
+            item={'id':'wall','name':'Courtyard wall','status':'ready-for-user',
+                  'solid':str(source),'east_solid':str(source),'context':str(source),'model':str(model)}
+            manifest.write_text(json.dumps({'map':'York','review_kind':'grouping','items':[item]}))
+            gallery.build(manifest,output,pending_only=True)
+            page=(output/'index.html').read_text()
+            self.assertIn('Approve grouping</button>',page)
+            self.assertIn('Request changes</button>',page)
+            self.assertIn('does not approve geometry completion',page)
+            self.assertIn('id="asset-search"',page)
+            self.assertNotIn('Gray means no accepted original texture',page)
+            first=json.loads((output/'evidence.json').read_text())['items'][0]
+            self.assertEqual(set(first['images']),{'solid','east_solid','context'})
+            gallery.build(manifest,output,pending_only=True)
+            second=json.loads((output/'evidence.json').read_text())['items'][0]
+            self.assertEqual(first['review_revision'],second['review_revision'])
+            model.write_bytes(b'changed geometry')
+            gallery.build(manifest,output,pending_only=True)
+            third=json.loads((output/'evidence.json').read_text())['items'][0]
+            self.assertNotEqual(first['review_revision'],third['review_revision'])
+
     def test_removal_and_new_image_keep_previous_links_valid(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

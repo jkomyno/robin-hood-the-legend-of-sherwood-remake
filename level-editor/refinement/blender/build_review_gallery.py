@@ -24,6 +24,9 @@ FEEDBACK_SCRIPT = r"""
     const note = card.querySelector('.review-note');
     if (decision.value !== draft.decision) decision.value = draft.decision;
     if (note.value !== draft.note) note.value = draft.note;
+    card.querySelectorAll('.decision-action').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.decision === draft.decision));
+    });
   }
   function refresh() {
     cards.forEach(render);
@@ -89,6 +92,10 @@ FEEDBACK_SCRIPT = r"""
       refresh();
     };
     decision.addEventListener('change', () => save('decision'));
+    card.querySelectorAll('.decision-action').forEach(button => button.addEventListener('click', () => {
+      decision.value = button.dataset.decision;
+      save('decision');
+    }));
     note.addEventListener('input', () => save('note'));
     card.querySelector('.feedback').addEventListener('focusin', () => render(card));
   }
@@ -144,12 +151,16 @@ def build(index_path, output, *, pending_only=False, map_name=None):
     if not isinstance(map_name, str) or not map_name.strip():
         raise ValueError("Review gallery requires a nonempty map name")
     texture_review = data.get("review_kind") == "texture"
-    title = html.escape(map_name.strip() + (" review" if texture_review else " model review"))
+    grouping_review = data.get("review_kind") == "grouping"
+    title = html.escape(map_name.strip() + (" grouping review" if grouping_review else " review" if texture_review else " model review"))
     description = ("Generated textures baked onto the approved geometry. Review the actual mesh views and every additional state. "
                    "Click any sheet for its full resolution. Texture approval is a separate decision."
                    if texture_review else "Geometry candidates, not generated textures. Gray means no accepted original texture. "
                    "Click any sheet for its full resolution. Review status does not imply user approval.")
     texture_mode_label = "Baked textures" if texture_review else "Original textures + gray"
+    if grouping_review:
+        description = ('Review asset names and which source parts belong together. Approve grouping confirms ownership only; '
+                       'it does not approve geometry completion, textures, or publication. Request changes and describe the correction below.')
     items = data["items"]
     if pending_only:
         items = [item for item in items if not (str(item.get("user_approval", "")).lower().startswith("approved")
@@ -215,6 +226,8 @@ def build(index_path, output, *, pending_only=False, map_name=None):
         animation_figures, animation_keys = {}, {}
         sheets = [("solid", item.get("solid_label", "Solid geometry")),
                   ("textured", item.get("textured_label", "Original textures + shaded unknown surfaces"))]
+        if grouping_review:
+            sheets = [("solid", "Selected geometry — west"), ("east_solid", "Selected geometry — east")]
         if item.get("context"):
             sheets.append(("context", "Original artwork with surrounding context"))
         for key, label in (("source_comparison", "Original artwork / before / corrected"),
@@ -357,7 +370,9 @@ def build(index_path, output, *, pending_only=False, map_name=None):
             binding['model'] = hashlib.sha256(model.read_bytes()).hexdigest()
         revision = hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest()
         approval_disabled = '' if item['status'] == 'ready-for-user' and item.get('technical_eligible', True) else ' disabled'
-        controls = (f'<fieldset class="feedback"><legend>Your review</legend>'
+        buttons = (f'<div><button class="decision-action" type="button" data-decision="approved"{approval_disabled}>Approve grouping</button> '
+                   '<button class="decision-action" type="button" data-decision="needs refinement">Request changes</button></div>') if grouping_review else ''
+        controls = (f'<fieldset class="feedback"><legend>Your review</legend>{buttons}'
                     f'<label>Decision <select class="decision" autocomplete="off" '
                     f'name="decision-{asset_id}-{revision[:16]}" aria-label="Decision for {asset_id}">'
                     '<option value="">Not decided</option>'
@@ -436,6 +451,27 @@ document.querySelector('#readiness').addEventListener('change',event=>{
   }
 });
 </script><script>'''+FEEDBACK_SCRIPT+'''</script></body></html>'''
+    if grouping_review:
+        document = document.replace('Both sheets', 'Both geometry views').replace('Solid geometry</option>', 'West view</option>')
+        document = document.replace(texture_mode_label+'</option>', 'East view</option>')
+        document = document.replace('body[data-mode=solid] figure[data-kind$=textured],body[data-mode=textured] figure[data-kind$=solid]',
+            'body[data-mode=solid] figure[data-kind=east_solid],body[data-mode=textured] figure[data-kind=solid]')
+        document = document.replace('<nav>'+nav+'</nav>',
+            '<p><label>Find an asset <input id="asset-search" type="search" placeholder="Name or stable asset ID"></label></p>'
+            '<details><summary>Jump to an asset</summary><nav>'+nav+'</nav></details>')
+        document = document.replace('</style>', 'button[aria-pressed=true]{outline:3px solid #83caa3}input[type=search]{font:inherit;padding:8px;width:min(650px,100%)}\n</style>')
+        document = document.replace('</body>', '''<script>
+function filterGroupingAssets(){
+  const q=document.querySelector('#asset-search').value.toLowerCase();
+  const ready=document.querySelector('#readiness').value==='ready';
+  for(const card of document.querySelectorAll('article')){
+    card.hidden=!(card.id+' '+card.querySelector('h2').textContent).toLowerCase().includes(q)||(ready&&card.querySelector('.status').textContent!=='ready-for-user');
+    const link=document.querySelector('nav a[href="#'+card.id+'"]');if(link)link.hidden=card.hidden;
+  }
+}
+document.querySelector('#asset-search').addEventListener('input',filterGroupingAssets);
+document.querySelector('#readiness').addEventListener('change',filterGroupingAssets);
+</script></body>''')
     (output / "index.html").write_text(document)
     (output / "evidence.json").write_text(json.dumps({"source_index": str(index_path), "items": records,
                                                     "without_packets": missing}, indent=2)+"\n")
