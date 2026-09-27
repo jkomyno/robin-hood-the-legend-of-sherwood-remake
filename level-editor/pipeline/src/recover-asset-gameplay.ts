@@ -23,6 +23,7 @@ import {
 } from "./recovered-gameplay-definition.ts";
 import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
+import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
@@ -433,6 +434,11 @@ for (const [sourceIndex, source] of clearanceSources.entries()) {
       let regions: MultiPolygon;
       try {
         regions = recoverMovementClearance(source.regions, source.plane, solid);
+        regions = quantizeRecoveredMotion(
+          regions,
+          `${owner.node}-clearance-${sourceIndex}`,
+          packet(owner.asset).issues,
+        );
       } catch (error) {
         unresolved.push({
           kind: "movement-clearance",
@@ -443,15 +449,8 @@ for (const [sourceIndex, source] of clearanceSources.entries()) {
         });
         continue;
       }
-      for (const [regionIndex, generated] of regions.entries()) {
+      for (const [regionIndex, region] of regions.entries()) {
         const id = `${owner.node}-clearance-${sourceIndex}-${regionIndex}`;
-        const region = quantizeGeneratedMotionPolygon(
-          generated,
-          Math.round,
-          id,
-          packet(owner.asset).issues,
-        );
-        if (!region) continue;
         const local = (ring: Point[]) =>
           ring.slice(0, -1).map(([x, y]) => {
             const z = evaluateHeight(source.plane, [x, y]);
@@ -689,6 +688,16 @@ for (const [index, entry] of proto.buildings.entries()) {
 const groundMaterialOwners = [...descriptors.values()].filter(
   (d) => d.editor_usage === "map-background",
 );
+if (groundMaterialOwners.length === 1) {
+  packet(groundMaterialOwners[0]!.id).environment = {
+    forest: proto.misc.forest_level,
+    defaultMaterial: proto.misc.default_material,
+  };
+} else
+  unresolved.push({
+    kind: "map-environment-owner",
+    candidates: groundMaterialOwners.map((d) => d.id),
+  });
 const recoveredMaterials = new Set<number>();
 for (const index of proto.sight_material_indices) {
   const region = proto.material_sectors[index];

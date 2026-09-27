@@ -2127,7 +2127,16 @@ pub struct CompiledAssetGeometry {
     pub material_sectors: Vec<RawMaterialSector>,
     #[serde(default)]
     pub sight_material_indices: Vec<u16>,
+    #[serde(default)]
+    pub map_settings: Option<CompiledMapSettings>,
     pub doors: Vec<RawDoor>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
+#[serde(deny_unknown_fields)]
+pub struct CompiledMapSettings {
+    pub forest_level: bool,
+    pub default_material: u8,
 }
 
 /// Author-facing timed-mission rules for hackable JSON levels.
@@ -2732,6 +2741,16 @@ impl LoadedLevel {
                 ProtoGridChunk::Lift,
             ];
             level.proto.lifts = geometry.lifts;
+            if let Some(settings) = geometry.map_settings {
+                if settings.default_material > 8 {
+                    return Err("invalid compiled map default material".into());
+                }
+                level.proto.misc = Some(ProtoMisc {
+                    control_crc: 0,
+                    forest_level: settings.forest_level,
+                    default_material: u32::from(settings.default_material),
+                });
+            }
             level.proto.material_sectors = geometry.material_sectors;
             level.proto.sight_material_indices = geometry.sight_material_indices;
             level.proto.motion_data = Some(geometry.motion_data);

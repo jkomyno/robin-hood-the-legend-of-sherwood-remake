@@ -24,12 +24,12 @@ intended construction, not functionality available today.
 | Building interiors | Asset-local interior definitions and entrances; generate virtual interior sectors and links. | Working for empty interiors; occupants remain planned |
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints. | Working in synthetic compiler/runtime tests; recovered metadata not yet published |
 | Jump zones and paired jump edges | Transform local jump geometry; resolve landing surfaces and pair compatible edges. | Planned |
-| Surface materials | Transform asset-local material polygons; rebuild the ground lookup subset and per-obstacle references independently. | Partial: ground/obstacle regions tested in the engine; elevated-surface links and map defaults unfinished |
+| Surface materials | Transform asset-local material polygons; rebuild the ground lookup subset and per-obstacle references independently. | Partial: ground/obstacle regions and terrain defaults tested in the engine; elevated-surface links unfinished |
 | Light/shadow regions | Transform asset-local shadow polygons, resolve layers and preserve ambience filters. | Planned |
 | Environmental sound sources | Place local sound emitters with range, timing, altitude and noise-covering rules. | Planned |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Compile asset states into changing visuals, collision, sight, masks, interaction zones and door links. | Planned |
-| Map settings | Scene settings for identity, ambience, forest behaviour and default material. | Partial: identity and export bounds |
+| Map settings | Scene identity/export bounds; terrain assets supply forest behaviour and default material. Ambience is selected by the mission. | Working in compiler/runtime tests; recovered terrain metadata unpublished |
 | Resource banks and references | Package generated resources and resolve shared sprite/audio/profile dependencies. | Partial: baked images; shared resources use the base installation |
 
 The following information belongs to **missions referencing a map**, not map
@@ -84,3 +84,8 @@ Material recovery now stores ground regions on the terrain asset and obstacle
 regions on their owning parts. Elevated projection-material links remain explicit
 recovery gaps. An empty ground-material list correctly activates no ground regions;
 obstacle-only regions do not become ground water or footstep materials.
+
+Terrain drafts also carry forest behaviour and fallback material. Recovery
+normalizes clearance crossings introduced by integer rounding, preserving valid
+regions instead of discarding a polygon whose signed area cancels. Nottingham
+now reaches the next static-check blocker: gameplay on a hidden prison part.

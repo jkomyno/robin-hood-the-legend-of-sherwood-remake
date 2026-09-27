@@ -72,6 +72,39 @@ fn invalid_material_references_are_rejected() {
 }
 
 #[test]
+fn terrain_defaults_reach_material_fallback_and_map_metadata() {
+    use robin_engine::{coordinates::MapPoint, element::GameMaterial};
+    let mut value: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-material.level.json")).unwrap();
+    value["asset_geometry"]["map_settings"] =
+        serde_json::json!({"forest_level":true,"default_material":4});
+    value["asset_geometry"]["material_sectors"][1]["material"] = 9.into();
+    let bytes = serde_json::to_vec(&value).unwrap();
+    let loaded = LoadedLevel::hackable_from_json(&bytes).unwrap();
+    let misc = loaded.proto.misc.unwrap();
+    assert!(misc.forest_level);
+    assert_eq!(misc.default_material, 4);
+    let mut assets = LevelAssets::new();
+    let engine = construct(&bytes, &mut assets);
+    assert!(engine.weather().is_forest_level);
+    let materials = &assets.environment.material_sectors;
+    assert_eq!(
+        materials.material_at_layer(MapPoint::new(320., 320.), 0),
+        GameMaterial::Leaves
+    );
+    assert_eq!(
+        materials.material_at(MapPoint::new(100., 100.)),
+        GameMaterial::Leaves
+    );
+    value["asset_geometry"]["map_settings"]["default_material"] = 9.into();
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap())
+            .unwrap_err()
+            .contains("default material")
+    );
+}
+
+#[test]
 fn map_geometry_does_not_accept_embedded_player_spawns() {
     let mut value: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-compiled.level.json")).unwrap();

@@ -155,6 +155,7 @@ export function compileAssetGameplay(
   const sight: SightObstacle[] = [];
   const materials: NonNullable<CompiledAssetGeometry["material_sectors"]> = [];
   const groundMaterials: number[] = [];
+  let mapSettings: CompiledAssetGeometry["map_settings"];
   const quantize = (n: number) => {
     const result = Math.round(n);
     if (!Number.isFinite(n) || result < -32768 || result > 32767)
@@ -164,6 +165,19 @@ export function compileAssetGameplay(
   for (const placement of placements) {
     const gameplay = placement.descriptor.gameplay!;
     validateAssetGameplay(gameplay, placement.descriptor);
+    if (gameplay.environment) {
+      const settings = {
+        forest_level: gameplay.environment.forest,
+        default_material: gameplay.environment.defaultMaterial,
+      };
+      if (
+        mapSettings &&
+        (mapSettings.forest_level !== settings.forest_level ||
+          mapSettings.default_material !== settings.default_material)
+      )
+        throw new Error("Terrain assets disagree on map environment defaults");
+      mapSettings = settings;
+    }
     const transform = (node: string, point: Vec3): Vec3 => {
       let p = point;
       if (!placement.background || node !== "$root") {
@@ -508,6 +522,7 @@ export function compileAssetGameplay(
   return {
     ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
+    ...(mapSettings ? { map_settings: mapSettings } : {}),
     sight_obstacles: sight,
     ...(materials.length
       ? { material_sectors: materials, sight_material_indices: groundMaterials }

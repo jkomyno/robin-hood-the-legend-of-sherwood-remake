@@ -46,6 +46,7 @@ export interface RecoveredGameplayPacket {
   movementBlockers?: RecoveredSurface[];
   movementClearances?: RecoveredSurface[];
   materials?: AssetGameplay["materials"];
+  environment?: AssetGameplay["environment"];
   connections: RecoveredConnection[];
 }
 
@@ -134,6 +135,7 @@ export function recoveredGameplayDefinition(
     version: 1,
     collision: descriptor.parts.some((p) => p.obstacle_local_game) ? "parts" : "none",
     surfaces: packet.surfaces.map(surface),
+    ...(packet.environment ? { environment: { ...packet.environment } } : {}),
     ...(packet.materials ? { materials: structuredClone(packet.materials) } : {}),
     ...(packet.movementClearances
       ? { movementClearances: packet.movementClearances.map(surface) }

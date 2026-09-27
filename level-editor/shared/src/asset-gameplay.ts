@@ -74,6 +74,8 @@ export interface AssetGameplay {
   lifts?: AssetLift[];
   interiors?: AssetInterior[];
   materials?: AssetMaterialRegion[];
+  /** Map-wide defaults supplied by a terrain asset. Ambience is mission-owned. */
+  environment?: { forest: boolean; defaultMaterial: number };
 }
 export type GameplayAssetDescriptor = ProjectionAssetDescriptor & { gameplay?: AssetGameplay };
 
@@ -95,6 +97,7 @@ export interface CompiledAssetGeometry {
   sight_obstacles: SightObstacle[];
   material_sectors?: MaterialSector[];
   sight_material_indices?: number[];
+  map_settings?: { forest_level: boolean; default_material: number };
   doors: {
     door_type: number;
     active: boolean;
@@ -135,6 +138,16 @@ export function validateAssetGameplay(
   const data = value as AssetGameplay;
   if (data.version !== 1 || !["parts", "none"].includes(data.collision))
     fail("invalid gameplay version or collision mode");
+  if (
+    data.environment !== undefined &&
+    (descriptor.editor_usage !== "map-background" ||
+      !data.environment ||
+      typeof data.environment.forest !== "boolean" ||
+      !Number.isInteger(data.environment.defaultMaterial) ||
+      data.environment.defaultMaterial < 0 ||
+      data.environment.defaultMaterial > 8)
+  )
+    fail("invalid terrain environment defaults");
   const point = (p: unknown, length: number) =>
     Array.isArray(p) &&
     p.length === length &&

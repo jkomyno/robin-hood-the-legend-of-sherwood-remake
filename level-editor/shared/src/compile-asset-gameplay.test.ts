@@ -13,6 +13,43 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("terrain owns map defaults and conflicting terrain definitions fail", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const terrain = {
+    ...structuredClone(hut),
+    id: "terrain",
+    editor_usage: "map-background" as const,
+    parts: [],
+    gameplay: {
+      version: 1 as const,
+      collision: "none" as const,
+      surfaces: [],
+      doors: [],
+      environment: { forest: true, defaultMaterial: 4 },
+    },
+  };
+  assets.set(terrain.id, terrain);
+  const source = {
+    id: terrain.id,
+    role: "ground" as const,
+    model: "terrain.glb",
+    model_sha256: "0".repeat(64),
+    resources: [],
+  };
+  document.sceneAssets.push(source);
+  assert.deepEqual(compileAssetGameplay(document, assets, bounds).map_settings, {
+    forest_level: true,
+    default_material: 4,
+  });
+  const other = structuredClone(terrain);
+  other.id = "other-terrain";
+  other.gameplay.environment.forest = false;
+  assets.set(other.id, other);
+  document.sceneAssets.push({ ...source, id: other.id });
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /Terrain assets disagree/);
+  hut.gameplay!.environment = { forest: false, defaultMaterial: 0 };
+  assert.throws(() => validateAssetGameplay(hut.gameplay, hut), /invalid terrain environment/);
+});
 test("material regions follow placement and preserve separate ground and obstacle lookups", () => {
   const { document, assets, hut } = assetCompilerFixture();
   hut.gameplay!.materials = [
