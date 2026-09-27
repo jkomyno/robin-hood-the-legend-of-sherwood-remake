@@ -172,17 +172,22 @@ for each placement, including duplicates. Native fixture tests verify both link
 directions, permission changes and restoration on reset. Door-only transitions
 are supported without adding navigation or sight changes. Offline recovery maps
 source door indices into local endpoint IDs and reports missing owners, cross-asset
-links and unrecovered geometry in `pending.doorTransitionBindings`. Thirteen of the
+links and unrecovered geometry in `pending.doorTransitionBindings`. Nineteen of the
 28 door-linked patches across the nine extracted maps now recover: seven in
-Nottingham, three in York, two in Leicester and one in Lincoln. The other fifteen
-have missing door owners. Recovery also supports sight changes without navigation
+Nottingham, five in York, four in Lincoln, two in Leicester and one in Croisement03.
+The remaining nine are in Derby (one), Leicester (three) and Lincoln (five).
+Linked changing geometry can establish a door owner only when every obstacle has
+one owner and all belong to the same asset. `doorStateOwnershipRecovery` records
+this evidence for physical-grouping review; conflicting or missing geometry cannot
+select an owner. Recovery also supports sight changes without navigation
 changes when every referenced obstacle and door belongs to the same asset.
-The 35 changing sight shapes match source coordinates and flags exactly; compiled
-navigation remains unchanged from the preceding diagnostic exports.
-All eight initial/alternate permission fields match the source for the nineteen
+The 42 changing sight shapes match source coordinates at native float32 precision
+and preserve their flags. All eight initial/alternate permission fields match the source for the thirty-two
 linked doors, and each binding retains its trigger direction.
-The native round-trip harness applies/resets fourteen recovered transitions in
-these four maps, including all thirteen door-linked transitions. It checks both
+Ordinary passages can connect to stair/lift surfaces in either direction without
+becoming lift doors. This restores Lincoln's hall passages onto traversal surfaces.
+All nine extracted map diagnostics compile and load; the native round-trip harness
+applies/resets their 39 recovered transitions. It checks both
 halves of door permissions as well as movement and sight state, including the
 door-to-patch links for door-triggered transitions.
 This does not establish complete door-transition coverage or publish those drafts.

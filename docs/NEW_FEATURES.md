@@ -4,7 +4,9 @@
   door permissions or be activated by a door. Export regenerates native door
   indices for each placement and rejects missing or conflicting links. Door-only
   transitions require no mission content. Recovery retains unresolved ownership
-  and state geometry as explicit authoring gaps.
+  and state geometry as explicit authoring gaps. Unambiguous linked state geometry
+  provides recorded ownership evidence. Ordinary passages can meet stair/lift
+  surfaces without being converted into lift doors.
 
 - **Terrain beneath changing obstacles.** Offline recovery separates permanent
   ground from state-dependent exclusions and retains every changing contour and

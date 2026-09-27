@@ -691,10 +691,10 @@ export function compileAssetGameplay(
     }
     sector += 1 + blockers.length + changing.obstacles.length;
   }
-  const resolve = (point: Vec3, label: string, lift?: string, allowBlocked = false) => {
+  const resolve = (point: Vec3, label: string, lift?: string | null, allowBlocked = false) => {
     const matches = areas.filter(
       (a) =>
-        a.lift === lift &&
+        (lift === null || a.lift === lift) &&
         Math.abs(planeHeight(a.plane, [point[0], point[1] - point[2]]) - point[2]) < 1e-4 &&
         inside(project(point), a.polygon) &&
         (allowBlocked || !a.blockers.some((b) => inside(project(point), b))),
@@ -748,10 +748,11 @@ export function compileAssetGameplay(
     }),
   );
   const compiledDoors = doors.map((door) => {
-    const outside = resolve(door.outside, `${door.name} outside`),
+    // Ordinary passages can meet traversal surfaces; lift doors retain their explicit owner.
+    const outside = resolve(door.outside, `${door.name} outside`, door.lift ? undefined : null),
       inside = door.interior
         ? interiorAreas.get(door.interior)!
-        : resolve(door.inside, `${door.name} inside`, door.lift);
+        : resolve(door.inside, `${door.name} inside`, door.lift ?? null);
     if (outside.sector === inside.sector)
       throw new Error(`${door.name} does not connect distinct motion areas`);
     const d = door.definition;

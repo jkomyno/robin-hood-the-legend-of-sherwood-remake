@@ -1044,6 +1044,27 @@ test("non-planar and degenerate surfaces fail instead of silently flattening", (
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /nondegenerate/);
 });
 
+test("ordinary passages can connect to a lift surface in either direction", () => {
+  const { hut, document, assets } = liftAssetCompilerFixture();
+  const low = hut.gameplay!.lifts![0]!.doors[0]!;
+  for (const reverse of [false, true]) {
+    hut.gameplay!.doors = [
+      {
+        ...low,
+        id: "passage",
+        type: 0,
+        outside: reverse ? low.inside : low.outside,
+        inside: reverse ? low.outside : low.inside,
+      },
+    ];
+    const compiled = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+    const door = compiled.doors[0]!;
+    assert.equal(reverse ? door.sector_out : door.sector_in, compiled.lifts![0]!.motion_area_index);
+    assert.equal(reverse ? door.layer_out : door.layer_in, compiled.motion_data.layers.length - 1);
+    assert.equal(door.door_type, 0);
+  }
+});
+
 test("lift surfaces use the reserved layer and rebuild endpoint references", () => {
   const { document, assets } = liftAssetCompilerFixture();
   const result = compileAssetGameplay(document, assets, bounds);

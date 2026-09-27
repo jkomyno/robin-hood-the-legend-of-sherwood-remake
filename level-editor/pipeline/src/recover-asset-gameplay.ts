@@ -37,6 +37,7 @@ import {
   type GameplayOwnershipCatalog,
 } from "./nonrendering-gameplay-owners.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
+import { recoverDoorStateOwner } from "./recover-door-owner.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
 import { recoverSurfaceOwners } from "./recovery-surface-owners.ts";
@@ -808,6 +809,12 @@ type SourceDoor = {
   locked_npc_civilian_after_patch: boolean;
 };
 let recoveredBuildings = 0;
+const doorStateOwnershipRecovery: {
+  building: number;
+  doors: number[];
+  asset: string;
+  connection: string;
+}[] = [];
 const recoveredDoors = new Map<
   number,
   { asset: string; id: string; node: string; part: Level3DObject }
@@ -858,10 +865,16 @@ for (const [index, entry] of proto.buildings.entries()) {
           candidates.set(owner.asset, { owner, distance });
       }
       const ranked = [...candidates.values()].sort((a, b) => a.distance - b.distance);
+      const stateOwner = recoverDoorStateOwner(
+        doors.map((door) => doorIndices.get(door)!),
+        proto.patches,
+        locals,
+      );
       if (
-        !ranked[0] ||
-        ranked[0].distance > 24 ||
-        (ranked[1] && ranked[1].distance - ranked[0].distance < 8)
+        !stateOwner &&
+        (!ranked[0] ||
+          ranked[0].distance > 24 ||
+          (ranked[1] && ranked[1].distance - ranked[0].distance < 8))
       ) {
         unresolved.push({
           kind: "building-owner",
@@ -873,7 +886,7 @@ for (const [index, entry] of proto.buildings.entries()) {
         });
         continue;
       }
-      const owner = ranked[0].owner;
+      const owner = stateOwner ?? ranked[0]!.owner;
       const endpoints = doors.map((door, i) => {
         const elevation = heightAt(door.sector_out, door.layer_out, door.point_out);
         const local = (point: Point) =>
@@ -910,6 +923,17 @@ for (const [index, entry] of proto.buildings.entries()) {
         kind: connection.kind,
         endpoints,
       });
+      if (stateOwner) {
+        doorStateOwnershipRecovery.push({
+          building: index,
+          doors: doors.map((door) => doorIndices.get(door)!),
+          asset: owner.asset,
+          connection: connectionId,
+        });
+        packet(owner.asset).issues.push(
+          "Door ownership follows linked state geometry; review physical asset grouping before publication",
+        );
+      }
       doors.forEach((door, i) => {
         recoveredDoors.set(doorIndices.get(door)!, {
           asset: owner.asset,
@@ -1325,6 +1349,7 @@ const report = {
   movementStateInventory,
   movementTransitionRecovery,
   doorTransitionRecovery,
+  doorStateOwnershipRecovery,
   candidateCompilation: diagnostics.compilation,
   staticGeometryDiagnostic: diagnostics.staticGeometry,
   coverage,
