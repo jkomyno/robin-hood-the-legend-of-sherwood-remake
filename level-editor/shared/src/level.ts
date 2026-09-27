@@ -144,8 +144,9 @@ export interface JumpZone {
 }
 
 export interface JumpLine {
-  point_a: Point;
-  point_b: Point;
+  /** Projected map x/y plus world elevation. */
+  point_a: [number, number, number];
+  point_b: [number, number, number];
   jump_zone_index: number;
 }
 

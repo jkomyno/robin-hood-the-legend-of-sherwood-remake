@@ -1,0 +1,273 @@
+{
+  "title": "Authored fixture",
+  "map_filename": "editor-authored-fixture",
+  "spawn_player": false,
+  "walkable_polygon": [
+    [
+      0,
+      0
+    ],
+    [
+      1999,
+      0
+    ],
+    [
+      1999,
+      1999
+    ],
+    [
+      0,
+      1999
+    ]
+  ],
+  "volumes": [],
+  "asset_geometry": {
+    "motion_data": {
+      "layers": [
+        [
+          {
+            "is_lift": false,
+            "state_id": 0,
+            "polygon": {
+              "points": [
+                [
+                  300,
+                  300
+                ],
+                [
+                  390,
+                  300
+                ],
+                [
+                  390,
+                  400
+                ],
+                [
+                  300,
+                  400
+                ]
+              ]
+            },
+            "skeleton_segments": [],
+            "flags": 0,
+            "obstacles": [
+              {
+                "state_id": 0,
+                "polygon": {
+                  "points": [
+                    [
+                      350,
+                      340
+                    ],
+                    [
+                      350,
+                      350
+                    ],
+                    [
+                      340,
+                      350
+                    ],
+                    [
+                      340,
+                      340
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        [
+          {
+            "is_lift": false,
+            "state_id": 0,
+            "polygon": {
+              "points": [
+                [
+                  410,
+                  200
+                ],
+                [
+                  500,
+                  200
+                ],
+                [
+                  500,
+                  300
+                ],
+                [
+                  410,
+                  300
+                ]
+              ]
+            },
+            "skeleton_segments": [],
+            "flags": 0,
+            "obstacles": []
+          }
+        ],
+        []
+      ],
+      "graph_bytes": []
+    },
+    "jump_zones": [
+      {
+        "polygon": {
+          "points": [
+            [
+              360,
+              320
+            ],
+            [
+              390,
+              320
+            ],
+            [
+              390,
+              380
+            ],
+            [
+              360,
+              380
+            ]
+          ]
+        },
+        "sector": 0,
+        "layer": 0,
+        "helper_needed": true
+      },
+      {
+        "polygon": {
+          "points": [
+            [
+              410,
+              220
+            ],
+            [
+              440,
+              220
+            ],
+            [
+              440,
+              280
+            ],
+            [
+              410,
+              280
+            ]
+          ]
+        },
+        "sector": 2,
+        "layer": 1,
+        "helper_needed": false
+      }
+    ],
+    "jump_line_pairs": [
+      {
+        "line1": {
+          "point_a": [
+            385,
+            330,
+            0
+          ],
+          "point_b": [
+            385,
+            370,
+            0
+          ],
+          "jump_zone_index": 1
+        },
+        "line2": {
+          "point_a": [
+            415,
+            270,
+            100
+          ],
+          "point_b": [
+            415,
+            230,
+            100
+          ],
+          "jump_zone_index": 0
+        },
+        "jump_long": true
+      }
+    ],
+    "sight_obstacles": [
+      {
+        "points": [
+          {
+            "x": 340,
+            "y": 340,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 350,
+            "y": 340,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 350,
+            "y": 350,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 340,
+            "y": 350,
+            "z_bottom": 0,
+            "z_top": 30
+          }
+        ],
+        "projection_area": null,
+        "solid": true,
+        "opaque": true,
+        "mouse": true,
+        "show_shadow_polygon": false,
+        "default_material": 0,
+        "material_indices": []
+      },
+      {
+        "points": [
+          {
+            "x": 410,
+            "y": 300,
+            "z_bottom": 100,
+            "z_top": 100
+          },
+          {
+            "x": 500,
+            "y": 300,
+            "z_bottom": 100,
+            "z_top": 100
+          },
+          {
+            "x": 500,
+            "y": 400,
+            "z_bottom": 100,
+            "z_top": 100
+          },
+          {
+            "x": 410,
+            "y": 400,
+            "z_bottom": 100,
+            "z_top": 100
+          }
+        ],
+        "projection_area": [
+          2,
+          1
+        ],
+        "opaque": false,
+        "solid": false,
+        "mouse": true,
+        "show_shadow_polygon": false,
+        "default_material": 0,
+        "material_indices": []
+      }
+    ],
+    "doors": []
+  }
+}

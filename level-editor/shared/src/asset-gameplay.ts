@@ -78,6 +78,8 @@ export interface AssetGameplay {
   environment?: { forest: boolean; defaultMaterial: number };
   sounds?: AssetSoundSource[];
   lights?: AssetLightRegion[];
+  jumpZones?: AssetJumpZone[];
+  jumpPairs?: AssetJumpPair[];
   /** Nonvisual movement changes. Visual/sight/mask transitions require separate authoring. */
   movementTransitions?: AssetMovementTransition[];
 }
@@ -88,6 +90,24 @@ export interface AssetLightRegion {
   polygon: [number, number, number][];
   /** Mission ambience bit mask controlling this region, not a mission selection. */
   ambiences: number;
+}
+export interface AssetJumpZone {
+  id: string;
+  node: string;
+  polygon: [number, number, number][];
+  /** An unblocked point on the receiving movement surface. */
+  anchor: [number, number, number];
+  helperNeeded: boolean;
+}
+export interface AssetJumpPair {
+  id: string;
+  node: string;
+  long: boolean;
+  /** Each edge names its home zone; destination links are rebuilt during compilation. */
+  edges: [
+    { zone: string; a: [number, number, number]; b: [number, number, number] },
+    { zone: string; a: [number, number, number]; b: [number, number, number] },
+  ];
 }
 export interface AssetMovementTransition {
   id: string;
@@ -145,6 +165,25 @@ export interface CompiledAssetGeometry {
   map_settings?: { forest_level: boolean; default_material: number };
   sound_sources?: SoundSource[];
   light_sectors?: LightSector[];
+  jump_zones?: {
+    polygon: { points: Point[] };
+    sector: number;
+    layer: number;
+    helper_needed: boolean;
+  }[];
+  jump_line_pairs?: {
+    line1: {
+      point_a: [number, number, number];
+      point_b: [number, number, number];
+      jump_zone_index: number;
+    };
+    line2: {
+      point_a: [number, number, number];
+      point_b: [number, number, number];
+      jump_zone_index: number;
+    };
+    jump_long: boolean;
+  }[];
   movement_transitions?: {
     id: string;
     waypoint: Point;
@@ -246,6 +285,33 @@ export function validateAssetGameplay(
   }
   const integer = (n: unknown, max: number): n is number =>
     typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= max;
+  if (data.jumpZones !== undefined && !Array.isArray(data.jumpZones)) fail("invalid jump zones");
+  if (data.jumpPairs !== undefined && !Array.isArray(data.jumpPairs)) fail("invalid jump pairs");
+  const jumpZones = new Set<string>();
+  for (const zone of data.jumpZones ?? []) {
+    feature(zone);
+    if (
+      !point(zone.anchor, 3) ||
+      typeof zone.helperNeeded !== "boolean" ||
+      !Array.isArray(zone.polygon) ||
+      zone.polygon.length < 3 ||
+      !zone.polygon.every((p) => point(p, 3))
+    )
+      fail(`invalid jump zone ${zone.id}`);
+    jumpZones.add(zone.id);
+  }
+  const usedJumpZones = new Set<string>();
+  for (const pair of data.jumpPairs ?? []) {
+    feature(pair);
+    if (typeof pair.long !== "boolean" || !Array.isArray(pair.edges) || pair.edges.length !== 2)
+      fail(`invalid jump pair ${pair.id}`);
+    for (const edge of pair.edges) {
+      if (!edge || !jumpZones.has(edge.zone) || !point(edge.a, 3) || !point(edge.b, 3))
+        fail(`invalid jump edge or missing zone ${pair.id}`);
+      usedJumpZones.add(edge.zone);
+    }
+  }
+  if ([...jumpZones].some((id) => !usedJumpZones.has(id))) fail("jump zone has no paired edge");
   if (data.lights !== undefined && !Array.isArray(data.lights)) fail("invalid light regions");
   for (const light of data.lights ?? []) {
     feature(light);

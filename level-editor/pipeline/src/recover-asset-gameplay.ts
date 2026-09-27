@@ -26,6 +26,7 @@ import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
 import { recoverLightPlane, recoverLightRegion } from "./recover-light-region.ts";
+import { recoverJumpGeometry } from "./recover-jump-geometry.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
@@ -825,11 +826,65 @@ for (const [index, light] of proto.light_sectors.entries()) {
     unresolved.push({ kind: "light-geometry", source: index, error: String(error) });
   }
 }
+let recoveredJumps = 0;
+for (const [index, pair] of proto.jump_line_pairs.entries()) {
+  try {
+    const candidates = [pair.line1, pair.line2].flatMap((line, side) => {
+      const home = proto.jump_zones[(side === 0 ? pair.line2 : pair.line1).jump_zone_index];
+      if (!home) throw new Error("Jump pair references a missing receiving zone");
+      return proto.sight_obstacles.flatMap((o, obstacleIndex) =>
+        Array.isArray(o.projection_area) &&
+        o.projection_area[0] === home.sector &&
+        o.projection_area[1] === home.layer &&
+        containsSoundPolyline(
+          [line.point_a.slice(0, 2) as Point, line.point_b.slice(0, 2) as Point],
+          o.points.map((p): Point => [p.x, p.y - p.z_top]),
+        )
+          ? (locals.get(obstacleIndex) ?? [])
+          : [],
+      );
+    });
+    const assets = new Set(candidates.map((o) => o.asset));
+    if (assets.size !== 1) {
+      unresolved.push({
+        kind: "jump-owner",
+        source: index,
+        candidates: [...assets],
+        reason:
+          "Jump pair requires one explicit owning asset; cross-asset ownership must be authored",
+      });
+      continue;
+    }
+    const owner = [...locals.values()].flat().find((o) => o.asset === candidates[0]!.asset)!,
+      p = packet(owner.asset);
+    const recovered = recoverJumpGeometry(
+      proto,
+      index,
+      owner.node,
+      (point) => localize(owner.part, point),
+      (zone, point) => heightAt(zone.sector, zone.layer, point),
+    );
+    for (const zone of recovered.zones) {
+      const previous = p.jumpZones?.find((z) => z.id === zone.id);
+      if (previous && JSON.stringify(previous) !== JSON.stringify(zone))
+        throw new Error(`Shared jump zone ${zone.id} needs consistent owner and anchor`);
+    }
+    for (const zone of recovered.zones)
+      if (!p.jumpZones?.some((z) => z.id === zone.id)) (p.jumpZones ??= []).push(zone);
+    (p.jumpPairs ??= []).push(recovered.pair);
+    p.issues.push(
+      "Review jump ownership inferred from projection surfaces, landing anchors and click-region height",
+    );
+    recoveredJumps++;
+  } catch (error) {
+    unresolved.push({ kind: "jump-geometry", source: index, error: String(error) });
+  }
+}
 const pending = {
   buildingEntries: proto.buildings.length - recoveredBuildings,
   maskRecords: proto.masks.length,
   patches: proto.patches.length,
-  jumpPairs: proto.jump_line_pairs.length,
+  jumpPairs: proto.jump_line_pairs.length - recoveredJumps,
   materialRegions: proto.material_sectors.length - recoveredMaterials.size,
   shadowRegions: proto.light_sectors.length - recoveredLights,
   soundSources: proto.sound_sources.length - recoveredSounds,

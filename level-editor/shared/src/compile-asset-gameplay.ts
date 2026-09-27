@@ -146,6 +146,9 @@ export function compileAssetGameplay(
   const movementClearances: typeof surfaces = [];
   const transitionBlockers: PlacedTransitionBlocker[] = [];
   const lights: { id: string; polygon: Point[]; plane: HeightPlane; ambiences: number }[] = [];
+  const jumpZones: { id: string; polygon: Point[]; anchor: Vec3; helper: boolean }[] = [];
+  const jumpPairs: { id: string; long: boolean; edges: { zone: string; a: Vec3; b: Vec3 }[] }[] =
+    [];
   const transitions: {
     id: string;
     waypoint: Vec3;
@@ -212,6 +215,26 @@ export function compileAssetGameplay(
       }
       return [p[0] - bounds[0], p[1] - bounds[1], p[2]];
     };
+    for (const zone of gameplay.jumpZones ?? [])
+      jumpZones.push({
+        id: `${placement.id}/${zone.id}`,
+        anchor: transform(zone.node, zone.anchor),
+        polygon: ring(
+          zone.polygon.map((p) => project(transform(zone.node, p))),
+          `${placement.id}/${zone.id}`,
+        ),
+        helper: zone.helperNeeded,
+      });
+    for (const pair of gameplay.jumpPairs ?? [])
+      jumpPairs.push({
+        id: `${placement.id}/${pair.id}`,
+        long: pair.long,
+        edges: pair.edges.map((edge) => ({
+          zone: `${placement.id}/${edge.zone}`,
+          a: transform(pair.node, edge.a),
+          b: transform(pair.node, edge.b),
+        })),
+      });
     for (const light of gameplay.lights ?? []) {
       const points = light.polygon.map((p) => transform(light.node, p));
       lights.push({
@@ -586,6 +609,28 @@ export function compileAssetGameplay(
     }
     return matches[0]!;
   };
+  const compiledJumpZones = jumpZones.map((zone) => {
+    const area = resolve(zone.anchor, `${zone.id} landing anchor`);
+    return {
+      polygon: { points: zone.polygon },
+      sector: area.sector,
+      layer: area.layer,
+      helper_needed: zone.helper,
+    };
+  });
+  const compiledJumpPairs = jumpPairs.map((pair) => {
+    const indices = pair.edges.map((edge) => jumpZones.findIndex((zone) => zone.id === edge.zone));
+    const lines = pair.edges.map((edge, i) => {
+      // Edge heights are authored independently of the receiving surface's plane.
+      // In particular, integer edge heights need not equal fractional projection heights.
+      const a: Vec3 = [...project(edge.a), quantize(edge.a[2])];
+      const b: Vec3 = [...project(edge.b), quantize(edge.b[2])];
+      if (a[0] === b[0] && a[1] === b[1])
+        throw new Error(`${pair.id}: jump edge collapses on the movement grid`);
+      return { point_a: a, point_b: b, jump_zone_index: indices[1 - i]! };
+    });
+    return { line1: lines[0]!, line2: lines[1]!, jump_long: pair.long };
+  });
   // Runtime construction order is motion, materials, projection planes, then buildings.
   // Motion adds an out-of-map sector; each door also consumes a constructor slot.
   let nextInteriorSector =
@@ -631,6 +676,9 @@ export function compileAssetGameplay(
   return {
     ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
+    ...(compiledJumpZones.length
+      ? { jump_zones: compiledJumpZones, jump_line_pairs: compiledJumpPairs }
+      : {}),
     ...(lights.length
       ? {
           light_sectors: lights.map((light) => {

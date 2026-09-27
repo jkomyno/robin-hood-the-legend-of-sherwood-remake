@@ -11,11 +11,60 @@ import {
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
   lightAssetCompilerFixture,
+  jumpAssetCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("jump pairs rebuild crossed destination links and preserve height after duplication", () => {
+  const { hut, document, assets } = jumpAssetCompilerFixture();
+  const first = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    first.jump_zones!.map((z) => [z.sector, z.layer]),
+    [
+      [0, 0],
+      [2, 1],
+    ],
+  );
+  assert.deepEqual(first.jump_line_pairs![0], {
+    line1: { point_a: [385, 330, 0], point_b: [385, 370, 0], jump_zone_index: 1 },
+    line2: { point_a: [415, 270, 100], point_b: [415, 230, 100], jump_zone_index: 0 },
+    jump_long: true,
+  });
+  const body = structuredClone(document.objects.find((p) => p.group === "hut-a")!);
+  body.id = "jump-copy";
+  body.group = "jump-copy";
+  document.objects.push(body);
+  document.groups.push({
+    id: "jump-copy",
+    transform: { ...IDENTITY_TRANSFORM, dx: 700, dy: 500, rot_deg: 90 },
+  });
+  const copied = compileAssetGameplay(document, assets, bounds);
+  assert.equal(copied.jump_zones!.length, 4);
+  assert.equal(copied.jump_line_pairs![1]!.line1.jump_zone_index, 3);
+  assert.equal(copied.jump_line_pairs![1]!.line2.jump_zone_index, 2);
+  assert.notDeepEqual(
+    copied.jump_line_pairs![1]!.line1.point_a,
+    first.jump_line_pairs![0]!.line1.point_a,
+  );
+  hut.gameplay!.jumpPairs![0]!.edges[0].a[2] = 20;
+  assert.equal(
+    compileAssetGameplay(document, assets, bounds).jump_line_pairs![0]!.line1.point_a[2],
+    20,
+  );
+});
+test("jump metadata rejects orphan zones, missing links and collapsed edges", () => {
+  const { hut, document, assets } = jumpAssetCompilerFixture();
+  const pair = hut.gameplay!.jumpPairs![0]!;
+  pair.edges[0].zone = "missing";
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /missing zone/);
+  pair.edges[0].zone = "low-zone";
+  pair.edges[0].b = [...pair.edges[0].a];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /collapses/);
+  hut.gameplay!.jumpPairs = [];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /no paired edge/);
+});
 test("light regions follow placement and preserve ambience without shifting interior links", () => {
   const { hut, document, assets } = lightAssetCompilerFixture();
   const first = compileAssetGameplay(document, assets, bounds);

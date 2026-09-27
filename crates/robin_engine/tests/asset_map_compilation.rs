@@ -4,6 +4,72 @@ use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimCo
 use robin_engine::level_data::LoadedLevel;
 
 #[test]
+fn compiled_jump_pairs_construct_native_zones_heights_helpers_and_gates() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-jump.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    let lines = &grid.level.jump_lines;
+    assert_eq!(lines.len(), 2);
+    assert_eq!((lines[0].layer, lines[1].layer), (0, 1));
+    assert_eq!((lines[0].z_a, lines[1].z_a), (0., 100.));
+    assert_eq!(lines[0].associated_line_index, Some(1));
+    assert_eq!(lines[1].associated_line_index, Some(0));
+    assert!(lines.iter().all(|line| line.long_jump_forced));
+    assert!(!lines[0].helper_needed);
+    assert!(lines[1].helper_needed);
+    let zones: Vec<_> = grid
+        .level
+        .sectors
+        .iter()
+        .filter(|s| {
+            s.sector_type
+                .contains(robin_engine::sector::SectorType::JUMP)
+        })
+        .collect();
+    assert_eq!(zones.len(), 2);
+    for (index, line) in lines.iter().enumerate() {
+        let home = line.sector_index.unwrap();
+        let sector = &grid.level.sectors[home.get() as usize];
+        assert_eq!(sector.layer, index as u16);
+        assert_eq!(sector.jump_line_indices.len(), 1);
+        assert!(!sector.gate_indices.is_empty());
+        assert!(
+            zones
+                .iter()
+                .any(|zone| zone.layer == line.layer && zone.underlying_sector == Some(home))
+        );
+    }
+}
+
+#[test]
+fn compiled_jump_metadata_rejects_orphan_zones_and_stale_links() {
+    let value: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-jump.level.json")).unwrap();
+    for (field, replacement) in [
+        ("jump_line_pairs", serde_json::json!([])),
+        ("jump_zones", serde_json::json!([])),
+    ] {
+        let mut bad = value.clone();
+        bad["asset_geometry"][field] = replacement;
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+                .unwrap_err()
+                .contains("jump")
+        );
+    }
+    let mut bad = value;
+    bad["asset_geometry"]["jump_zones"][0]["sector"] = 123.into();
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+            .unwrap_err()
+            .contains("jump zone")
+    );
+}
+
+#[test]
 fn compiled_light_regions_follow_mission_ambience_without_changing_interior_links() {
     use robin_engine::coordinates::MapPoint;
     for mask in [1, 2] {

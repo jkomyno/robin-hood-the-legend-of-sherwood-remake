@@ -50,6 +50,8 @@ export interface RecoveredGameplayPacket {
   environment?: AssetGameplay["environment"];
   sounds?: AssetGameplay["sounds"];
   lights?: AssetGameplay["lights"];
+  jumpZones?: AssetGameplay["jumpZones"];
+  jumpPairs?: AssetGameplay["jumpPairs"];
   connections: RecoveredConnection[];
 }
 
@@ -141,6 +143,8 @@ export function recoveredGameplayDefinition(
     ...(packet.environment ? { environment: { ...packet.environment } } : {}),
     ...(packet.sounds ? { sounds: structuredClone(packet.sounds) } : {}),
     ...(packet.lights ? { lights: structuredClone(packet.lights) } : {}),
+    ...(packet.jumpZones ? { jumpZones: structuredClone(packet.jumpZones) } : {}),
+    ...(packet.jumpPairs ? { jumpPairs: structuredClone(packet.jumpPairs) } : {}),
     ...(packet.movementTransitions
       ? { movementTransitions: structuredClone(packet.movementTransitions) }
       : {}),

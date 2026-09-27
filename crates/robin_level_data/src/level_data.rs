@@ -2156,6 +2156,10 @@ pub struct CompiledAssetGeometry {
     pub doors: Vec<RawDoor>,
     #[serde(default)]
     pub movement_transitions: Vec<CompiledMovementTransition>,
+    #[serde(default)]
+    pub jump_zones: Vec<RawJumpZone>,
+    #[serde(default)]
+    pub jump_line_pairs: Vec<RawJumpLinePair>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
@@ -2837,6 +2841,32 @@ impl LoadedLevel {
             if !geometry.light_sectors.is_empty() {
                 level.proto.grid_chunk_order.push(ProtoGridChunk::Light);
                 level.proto.light_sectors = geometry.light_sectors;
+            }
+            let mut used_jump_zones = std::collections::BTreeSet::new();
+            for pair in &geometry.jump_line_pairs {
+                for line in [&pair.line1, &pair.line2] {
+                    if usize::from(line.jump_zone_index) >= geometry.jump_zones.len()
+                        || (line.point_a.0, line.point_a.1) == (line.point_b.0, line.point_b.1)
+                    {
+                        return Err("invalid compiled jump edge or unresolved zone".into());
+                    }
+                    used_jump_zones.insert(usize::from(line.jump_zone_index));
+                }
+            }
+            if geometry.jump_zones.len() > 65536
+                || geometry.jump_zones.iter().enumerate().any(|(index, zone)| {
+                    zone.polygon.points.len() < 3
+                        || !motion_states.contains_key(&(zone.sector, zone.layer))
+                        || lift_refs.contains(&zone.sector)
+                        || !used_jump_zones.contains(&index)
+                })
+            {
+                return Err("invalid compiled jump zone or unresolved motion area".into());
+            }
+            if !geometry.jump_zones.is_empty() {
+                level.proto.grid_chunk_order.push(ProtoGridChunk::Jump);
+                level.proto.jump_zones = geometry.jump_zones;
+                level.proto.jump_line_pairs = geometry.jump_line_pairs;
             }
             if !geometry.movement_transitions.is_empty() {
                 level.proto.grid_chunk_order.push(ProtoGridChunk::Patch);

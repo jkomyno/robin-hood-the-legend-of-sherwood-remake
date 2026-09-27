@@ -5,7 +5,10 @@ import type { AssetMotion, AssetVolumes, Mask, Point, Polygon, ProtoLevel } from
 
 export type Bbox = [number, number, number, number]; // x, y, w, h
 
-function bboxOverlapsPoly(bbox: Bbox, pts: readonly Point[]): boolean {
+function bboxOverlapsPoly(
+  bbox: Bbox,
+  pts: readonly (readonly [number, number, ...number[]])[],
+): boolean {
   if (pts.length === 0) return false;
   const [bx, by, bw, bh] = bbox;
   let minX = Infinity,
@@ -85,29 +88,41 @@ export function clipLevel(level: ProtoLevel, bbox: Bbox): ClippedLevel {
   });
 
   const shiftedLift = new Set<number>();
-  const jumpZones = level.jump_zones
-    .filter((jz) => bboxOverlapsPoly(bbox, jz.polygon.points))
-    .map((jz) => ({ ...jz, polygon: { points: shift(jz.polygon.points, ox, oy) } }));
-
-  const jumpPairs = level.jump_line_pairs
-    .filter(
-      (p) =>
-        bboxOverlapsPoly(bbox, [p.line1.point_a, p.line1.point_b]) ||
-        bboxOverlapsPoly(bbox, [p.line2.point_a, p.line2.point_b]),
-    )
-    .map((p) => ({
-      ...p,
-      line1: {
-        ...p.line1,
-        point_a: shift([p.line1.point_a], ox, oy)[0]!,
-        point_b: shift([p.line1.point_b], ox, oy)[0]!,
-      },
-      line2: {
-        ...p.line2,
-        point_a: shift([p.line2.point_a], ox, oy)[0]!,
-        point_b: shift([p.line2.point_b], ox, oy)[0]!,
-      },
-    }));
+  const selectedPairs = level.jump_line_pairs.filter(
+    (p) =>
+      bboxOverlapsPoly(bbox, [p.line1.point_a, p.line1.point_b]) ||
+      bboxOverlapsPoly(bbox, [p.line2.point_a, p.line2.point_b]),
+  );
+  const requiredZones = new Set(
+    selectedPairs.flatMap((p) => [p.line1.jump_zone_index, p.line2.jump_zone_index]),
+  );
+  for (const index of requiredZones)
+    if (!level.jump_zones[index]) throw new Error(`Jump pair references missing zone ${index}`);
+  const zoneIndices = new Map<number, number>();
+  const jumpZones = level.jump_zones.flatMap((zone, index) => {
+    if (!requiredZones.has(index) && !bboxOverlapsPoly(bbox, zone.polygon.points)) return [];
+    zoneIndices.set(index, zoneIndices.size);
+    return [{ ...zone, polygon: { points: shift(zone.polygon.points, ox, oy) } }];
+  });
+  const shiftJump = ([x, y, z]: [number, number, number]): [number, number, number] => {
+    if (!Number.isFinite(z)) throw new Error("Jump edge is missing its elevation");
+    return [x - ox, y - oy, z];
+  };
+  const jumpPairs = selectedPairs.map((p) => ({
+    ...p,
+    line1: {
+      ...p.line1,
+      point_a: shiftJump(p.line1.point_a),
+      point_b: shiftJump(p.line1.point_b),
+      jump_zone_index: zoneIndices.get(p.line1.jump_zone_index)!,
+    },
+    line2: {
+      ...p.line2,
+      point_a: shiftJump(p.line2.point_a),
+      point_b: shiftJump(p.line2.point_b),
+      jump_zone_index: zoneIndices.get(p.line2.jump_zone_index)!,
+    },
+  }));
 
   level.motion_data.layers.forEach((areas) => {
     areas.forEach((area, i) => {

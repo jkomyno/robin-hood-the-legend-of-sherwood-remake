@@ -1,6 +1,53 @@
 import type { GameplayAssetDescriptor } from "../src/asset-gameplay.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "../src/level3d.ts";
 
+export function jumpAssetCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const g = fixture.hut.gameplay!;
+  g.doors = [];
+  const east = g.surfaces.find((surface) => surface.id === "east");
+  if (!east) throw new Error("Jump fixture needs its eastern surface");
+  east.height = 100;
+  g.jumpZones = [
+    {
+      id: "low-zone",
+      node: "building-999",
+      anchor: [80, 50, 0],
+      helperNeeded: true,
+      polygon: [
+        [60, 20, 0],
+        [90, 20, 0],
+        [90, 80, 0],
+        [60, 80, 0],
+      ],
+    },
+    {
+      id: "high-zone",
+      node: "building-999",
+      anchor: [120, 50, 100],
+      helperNeeded: false,
+      polygon: [
+        [110, 20, 100],
+        [140, 20, 100],
+        [140, 80, 100],
+        [110, 80, 100],
+      ],
+    },
+  ];
+  g.jumpPairs = [
+    {
+      id: "wall-jump",
+      node: "building-999",
+      long: true,
+      edges: [
+        { zone: "low-zone", a: [85, 30, 0], b: [85, 70, 0] },
+        { zone: "high-zone", a: [115, 70, 100], b: [115, 30, 100] },
+      ],
+    },
+  ];
+  return fixture;
+}
+
 export function lightAssetCompilerFixture() {
   const fixture = interiorAssetCompilerFixture();
   fixture.hut.gameplay!.lights = [

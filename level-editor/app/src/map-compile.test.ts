@@ -16,8 +16,20 @@ import {
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
   lightAssetCompilerFixture,
+  jumpAssetCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("jump export matches the native traversal fixture", async () => {
+  const { document, assets } = jumpAssetCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL("../../../crates/robin_engine/tests/fixtures/asset-jump.level.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("light region export matches the native ambience and interior fixture", async () => {
   const { document, assets } = lightAssetCompilerFixture();

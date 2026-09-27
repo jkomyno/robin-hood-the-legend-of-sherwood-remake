@@ -1,5 +1,11 @@
 # Post-port Features
 
+- **Asset-local jumps.** Map export retains 3D paired edges, receiving regions,
+  long-jump flags and helper requirements, rebuilding native jump zones and gates
+  after placement. Source extraction preserves edge elevation and repairs cropped
+  zone references. Offline recovery keeps ambiguous ownership and unresolved
+  landing geometry visible; cross-asset pairing remains unfinished.
+
 - **Asset-local gameplay lighting.** Map export transforms planar light/shadow
   contours, resolves their receiving layer and preserves ambience masks. The same
   compiled map supports different mission ambiences without shifting interior
