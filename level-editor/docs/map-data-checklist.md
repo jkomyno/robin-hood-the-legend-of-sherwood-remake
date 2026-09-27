@@ -245,9 +245,12 @@ navigation fidelity and publication remain unfinished.
 Spatial ownership ties can be resolved by slicing solid geometry above the landing,
 excluding supporting terrain and preserving disconnected concave pieces. This
 restores 84 connection records without dropping previously recovered doors.
-Across the nine diagnostics, 387 of 397 non-lift doors now compile; all 387 match
+Across the nine diagnostics, 393 of 397 non-lift doors now compile; all 393 match
 source endpoints, click polygons, door types, active flags and initial/alternate
-permissions. The remaining 10 in York still need ownership or endpoint recovery. Inferred
+permissions. The remaining four in York belong to two shared interiors spanning
+independent buildings. They need asset-local interior connections that resolve
+after placement; assigning both buildings' doors to one movable asset would leave
+the other building's entrance behind. Inferred
 physical grouping remains marked for review before publication.
 `compare-door-geometry.ts SOURCE_JSON COMPILED_LEVEL_JSON` independently compares
 non-lift door geometry/rules, shared-room membership and door-linked patch rules.
@@ -266,7 +269,16 @@ Current compiled/source counts (no unexpected records in any map):
 | Lincoln | 59/59 | 19/19 | 9/9 |
 | Nottingham | 100/100 | 45/45 | 7/7 |
 | Sherwood | 5/5 | 5/5 | 0/0 |
-| York | 113/123 | 66/74 | 5/5 |
+| York | 119/123 | 72/74 | 5/5 |
+
+York's counts use the current library building groupings. Explicit entrance
+ownership distinguishes raised terrain from buildings, the bridge gatehouse from
+its adjoining tower, and overlapping market-house projections. These declarations
+recover ten entrances that were unresolved in the newly grouped scene. Its 72 jump
+pairs and five door-linked patches still match, and native geometry construction
+and transition apply/reset pass. The two remaining rooms connect the paired castle
+lodges and the market corner shop with its adjoining gabled house. The catalog keeps
+those buildings independently editable, so shared-room links must preserve that.
 
 The twenty-one recovered movement-changing transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.

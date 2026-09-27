@@ -1,6 +1,56 @@
 {
   "version": 2,
   "map": "york",
+  "door_sources": [
+    {
+      "doors": [32],
+      "owner": "york-south-wall-lane-timber-house",
+      "node": "building-390",
+      "reason": "The doorway and room belong to the timber house above the sloping south terrace, not to the terrain supporting it."
+    },
+    {
+      "doors": [33],
+      "owner": "york-south-wall-lane-square-stone-tower",
+      "node": "building-412",
+      "reason": "The arched entrance is in the square tower's lower connecting wall component. The inside marker extends past its footprint toward the adjacent round tower; the click polygon identifies the connecting-wall doorway."
+    },
+    {
+      "doors": [41, 42],
+      "owner": "york-southeast-lane-western-timber-house",
+      "node": "building-377",
+      "reason": "These two separate rooms belong to the western timber house and its doorway extension. Their containing terrain and the nearby eastern house do not own these entrances."
+    },
+    {
+      "doors": [71, 72],
+      "owner": "york-west-bridge-approach-gatehouse",
+      "node": "building-176",
+      "reason": "Both entrances share the gatehouse interior: one lies at its junction with the round tower and the other lies inside the same gatehouse wall component. The tower and supporting terrace remain separate assets."
+    },
+    {
+      "doors": [73],
+      "owner": "york-west-bridge-street-tall-timber-house",
+      "node": "building-195",
+      "reason": "This entrance is contained by the street-side timber house wall, not the adjoining approach house or the terrace underneath."
+    },
+    {
+      "doors": [77],
+      "owner": "york-west-town-lane-narrow-timber-house",
+      "node": "building-582",
+      "reason": "The narrow timber house contains the doorway at its raised landing. The adjacent broad house and supporting town terrace are independent assets."
+    },
+    {
+      "doors": [85],
+      "owner": "york-west-market-frontage-dormer-house",
+      "node": "building-630",
+      "reason": "The dormer-house wall contains this entrance at its sloped landing; the neighboring gabled house does not own this separate interior."
+    },
+    {
+      "doors": [88],
+      "owner": "york-market-north-square-tower",
+      "node": "building-078",
+      "reason": "The small street-facing entrance is in the square tower. The adjoining stone house overlaps its footprint in the projection but remains a separate building."
+    }
+  ],
   "groups": [
     {
       "id": "york-riverside-stone-storehouse",
