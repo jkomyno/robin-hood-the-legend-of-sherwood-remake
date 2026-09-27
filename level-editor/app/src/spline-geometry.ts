@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { excludedCornerAssetIds } from "./spline-corners.ts";
 import { gameToScene, type LevelSpline, type MapCamera } from "@rle/shared";
 
 export function splineCurve(path: LevelSpline, camera: MapCamera) {
@@ -289,7 +290,7 @@ export function wallGeometry(
 
 /** Turns are measured in the ground plane, including the seam of closed walls. */
 export function wallCorners(path: LevelSpline, camera: MapCamera) {
-  if (!path.cornerAsset) return [];
+  if (!path.cornerAsset || excludedCornerAssetIds.has(path.cornerAsset)) return [];
   const points = path.points.map((p) => new THREE.Vector3(...gameToScene(camera, ...p)));
   return points.flatMap((p, i) => {
     if ((!path.closed && (i === 0 || i === points.length - 1)) || path.cornerDisabled?.includes(i))
@@ -395,7 +396,8 @@ export function wallMesh(
   camera: MapCamera,
   sources: Map<string, THREE.Object3D>,
 ): THREE.Group {
-  if (path.cornerAsset) return towerWall(path, camera, sources);
+  if (path.cornerAsset && !excludedCornerAssetIds.has(path.cornerAsset))
+    return towerWall(path, camera, sources);
   const source = new THREE.Group();
   for (const [key, node] of sources)
     if (key.startsWith("asset:" + path.asset + ":")) source.add(node.clone(true));

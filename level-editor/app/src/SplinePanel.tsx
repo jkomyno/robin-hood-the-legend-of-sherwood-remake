@@ -137,6 +137,8 @@ export default function SplinePanel(props: {
       patch({ cornerAsset: undefined, cornerDisabled: undefined });
       return;
     }
+    if (!cornerAssetIds.has(id))
+      return props.onError("Choose a reviewed exterior-only corner model");
     const entry = props.entries().find((e) => e.id === id);
     if (!entry) return props.onError("Corner model is missing from the shared library");
     const token = ++attempt;
@@ -257,6 +259,7 @@ export default function SplinePanel(props: {
     }
   }
   async function begin(kind: "river" | "road" | "wall", preset?: WallPreset) {
+    if (preset) preset = wallPreset(preset);
     const document = props.document(),
       root = props.library();
     if (!document || !root || busy()) return;
@@ -513,13 +516,10 @@ export default function SplinePanel(props: {
               ? sources()
               : props
                   .entries()
-                  .filter(
-                    (entry) =>
-                      cornerAssetIds.has(entry.id) ||
-                      presets().some((preset) => preset.cornerAsset === entry.id),
-                  )
+                  .filter((entry) => cornerAssetIds.has(entry.id))
           }
-          selected={picker() === "wall" ? path()?.asset : path()?.cornerAsset}
+          selected={picker() === "wall" ? path()?.asset :
+            cornerAssetIds.has(path()?.cornerAsset ?? "") ? path()?.cornerAsset : undefined}
           emptyLabel={picker() === "corner" ? "Continuous join — no corner model" : undefined}
           onClose={() => setPicker(null)}
           onSelect={(id) => {
@@ -604,7 +604,7 @@ export default function SplinePanel(props: {
                   Change corner type
                 </button>
               </div>
-              <Show when={current().cornerAsset}>
+              <Show when={cornerAssetIds.has(current().cornerAsset ?? "")}>
                 <label>
                   Minimum corner angle
                   <input

@@ -6,7 +6,11 @@ compound wall models. The original shared models and map placements are untouche
 The initial audit inventoried 1,223 non-Wychford assets and rendered 346 likely
 wall/boundary candidates. The 19 shipped strips cover Derby, Leicester, Lincoln,
 Nottingham, York, Sherwood, and Croisement01–03. Natural banks and bridge railings
-are named explicitly. Round corner models are selected from standalone towers.
+are named explicitly. Corner models use the explicit exterior-only shortlist in
+`app/src/spline-corners.ts`. Leicester's large moat towers contain interiors and
+are excluded; its curtain uses a continuous join. The stretched Nottingham
+northwest tower is also excluded. Saved presets cannot expand the shortlist, and
+older walls using retired corner models render continuous joins.
 
 `recipes.json` records source model IDs, selected components, spatial cuts,
 longitudinal direction and trims. For modeled battlements/posts, `feature_height`

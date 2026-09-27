@@ -1,4 +1,5 @@
 import type { LevelSpline } from "@rle/shared";
+import { cornerAssetIds } from "./spline-corners.ts";
 export type WallPreset = Pick<
   LevelSpline,
   | "name"
@@ -35,7 +36,7 @@ export function wallPreset(path: WallPreset): WallPreset {
     cornerWidthScale,
     cornerRotation,
   } = path;
-  return {
+  const result = {
     name,
     asset,
     axis,
@@ -52,6 +53,14 @@ export function wallPreset(path: WallPreset): WallPreset {
     cornerWidthScale,
     cornerRotation,
   };
+  if (cornerAsset && !cornerAssetIds.has(cornerAsset)) {
+    result.cornerAsset = undefined;
+    result.cornerMinAngle = undefined;
+    result.cornerScale = undefined;
+    result.cornerWidthScale = undefined;
+    result.cornerRotation = undefined;
+  }
+  return result;
 }
 export function readWallPresets(): WallPreset[] {
   const raw = localStorage.getItem("rle.wallPresets");

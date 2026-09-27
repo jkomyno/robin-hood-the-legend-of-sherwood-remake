@@ -55,10 +55,7 @@
     "interval": [-107, 49],
     "feature_height": 210,
     "repeat_note": "Three complete merlons from the straight rear curtain; exclude the turret, stair platform and end battlements.",
-    "straighten": true,
-    "cornerAsset": "leicester-west-moat-tower",
-    "cornerScale": 0.7,
-    "cornerMinAngle": 35
+    "straighten": true
   },
   {
     "id": "spline-leicester-stone-boundary",

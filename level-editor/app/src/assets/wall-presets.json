@@ -43,9 +43,6 @@
   },
   {
     "name": "Leicester \u00b7 Castle curtain",
-    "cornerAsset": "leicester-west-moat-tower",
-    "cornerScale": 0.7,
-    "cornerMinAngle": 35,
     "source_map": "Leicester",
     "asset": "spline-leicester-castle",
     "axis": "x",

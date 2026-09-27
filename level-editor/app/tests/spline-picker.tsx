@@ -8,6 +8,7 @@ import type { SplineEditMode } from "../src/spline-layer";
 import { openHttpLibrary } from "../src/http-library";
 import { listProjectionAssets } from "../src/projection-library";
 import { builtInWallPresets } from "../src/spline-presets";
+import { excludedCornerAssetIds } from "../src/spline-corners";
 import "../src/styles.css";
 
 const result = document.querySelector("#result")!;
@@ -139,6 +140,12 @@ async function main() {
       dialog.querySelectorAll(".asset-card").length >= 5,
       "Corner picker contains reviewed standalone towers",
     );
+    for (const id of excludedCornerAssetIds) {
+      const entry = entries.find((entry) => entry.id === id);
+      if (entry) assert(!Array.from(dialog.querySelectorAll("strong")).some(
+        (label) => label.textContent === entry.name,
+      ), `Rejected corner ${id} must not appear in the picker`);
+    }
     dialog.querySelector<HTMLButtonElement>(".asset-card")!.click();
     await waitFor(() => !!current().splines?.[0]?.cornerAsset);
     click("Change corner type");

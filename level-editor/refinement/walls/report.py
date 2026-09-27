@@ -78,6 +78,7 @@ def main():
         if image.height < 2040:raise ValueError('Join close-up missing: '+row['id'])
         crop = image.crop((0,1700,1000,2040))
         crop.save(WORK / 'segments' / (row['id'] + '-join.png'))
+        image.crop((0,1360,1000,1700)).save(WORK / 'segments' / (row['id'] + '-corner.png'))
         joins.paste(crop,(0,index*375+35))
         labels.text((12,index*375+8),row['name'],font=font,fill='#ecf0e5')
     joins.save(WORK / 'repeat-joins.jpg',quality=94)
