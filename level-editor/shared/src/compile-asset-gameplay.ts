@@ -130,9 +130,16 @@ export function compileAssetGameplay(
     );
   const project = (p: Vec3): Point => [quantize(p[0]), quantize(p[1] - p[2])];
   const warnings: string[] = [];
-  const surfaces: { polygon: Point[]; holes: Point[][]; plane: HeightPlane; lift?: string }[] = [];
+  const surfaces: {
+    owner: string;
+    polygon: Point[];
+    holes: Point[][];
+    plane: HeightPlane;
+    lift?: string;
+  }[] = [];
   const movementBlockers: typeof surfaces = [];
-  const movementSolids: SightObstacle[] = [];
+  const movementSolids: { owner: string; shape: SightObstacle }[] = [];
+  const movementClearances: typeof surfaces = [];
   const lifts: { id: string; type: number; direction: number }[] = [];
   const interiors: string[] = [];
   const doors: {
@@ -184,9 +191,14 @@ export function compileAssetGameplay(
           projection_area: null,
           material_indices: [],
         });
-        if (gameplay.movementBlockers === undefined) movementSolids.push(sight.at(-1)!);
+        if (gameplay.movementBlockers === undefined)
+          movementSolids.push({ owner: placement.id, shape: sight.at(-1)! });
       }
-    for (const surface of [...gameplay.surfaces, ...(gameplay.movementBlockers ?? [])]) {
+    for (const surface of [
+      ...gameplay.surfaces,
+      ...(gameplay.movementBlockers ?? []),
+      ...(gameplay.movementClearances ?? []),
+    ]) {
       const local = surface.polygon.map((p, i): Vec3 => [
         p[0],
         p[1],
@@ -196,8 +208,13 @@ export function compileAssetGameplay(
       const points = local.map((p) => transform(surface.node, p));
       // Fit before integer quantization so height remains exact after placement.
       const plane = heightPlane(points.map(([x, y, z]) => [x, y - z, z]));
-      const target = gameplay.movementBlockers?.includes(surface) ? movementBlockers : surfaces;
+      const target = gameplay.movementClearances?.includes(surface)
+        ? movementClearances
+        : gameplay.movementBlockers?.includes(surface)
+          ? movementBlockers
+          : surfaces;
       target.push({
+        owner: placement.id,
         polygon: ring(points.map(project), `${placement.id}/${surface.id}`),
         plane,
         ...(gameplay.lifts?.find((l) => l.surface === surface.id)
@@ -304,6 +321,58 @@ export function compileAssetGameplay(
         ...blocker.holes.map((h) => polygon(h)[0]!),
       ]);
     }
+    // Intersect solids with this surface's plane in world XY, then project
+    // the resulting slice. Bounding-box clipping also handles concave solids.
+    const worldPlane = heightPlane(
+      group[0]!.polygon.map(([x, y]) => {
+        const z = planeHeight(plane, [x, y]);
+        return [x, y + z, z];
+      }),
+    );
+    for (const { owner, shape: obstacle } of movementSolids) {
+      if (!obstacle.solid) continue;
+      const footprint = obstacle.points.map((p): Point => [p.x, p.y]);
+      const top = heightPlane(
+        obstacle.points.map((p) => [p.x, p.y, p.z_top]),
+        false,
+      );
+      const bottom = heightPlane(
+        obstacle.points.map((p) => [p.x, p.y, p.z_bottom]),
+        false,
+      );
+      const xs = footprint.map((p) => p[0]),
+        ys = footprint.map((p) => p[1]);
+      let slice: Point[] = [
+        [Math.min(...xs), Math.min(...ys)],
+        [Math.max(...xs), Math.min(...ys)],
+        [Math.max(...xs), Math.max(...ys)],
+        [Math.min(...xs), Math.max(...ys)],
+      ];
+      const above = top.map((n, i) => n - worldPlane[i]!) as HeightPlane;
+      if (footprint.every((p) => planeHeight(above, p) <= 1e-7)) continue;
+      slice = clipHeight(slice, above);
+      slice = clipHeight(slice, worldPlane.map((n, i) => n - bottom[i]!) as HeightPlane);
+      if (slice.length < 3 || Math.abs(signedArea(slice)) < 1e-7) continue;
+      const cuts = polygonClipping.intersection(polygon(footprint), polygon(slice));
+      for (const cut of cuts) {
+        const projected: Polygon = cut.map((r) =>
+          r.map(([x, y]) => [x, y - planeHeight(worldPlane, [x, y])]),
+        );
+        let regions = [projected];
+        for (const clearance of movementClearances) {
+          if (
+            clearance.owner !== owner ||
+            !plane.every((n, i) => Math.abs(n - clearance.plane[i]!) < 1e-7)
+          )
+            continue;
+          regions = polygonClipping.difference(regions, [
+            polygon(clearance.polygon)[0]!,
+            ...clearance.holes.map((h) => polygon(h)[0]!),
+          ]);
+        }
+        if (regions.length) merged = polygonClipping.difference(merged, regions);
+      }
+    }
     const output = layers[layer]!;
     for (const poly of merged) {
       const quantized = quantizeGeneratedMotionPolygon(
@@ -317,49 +386,6 @@ export function compileAssetGameplay(
       const blockers = quantized
         .slice(1)
         .map((r) => ring(r, `Merged movement hole on layer ${layer}`));
-      // Intersect solids with this surface's plane in world XY, then project
-      // the resulting slice. Bounding-box clipping also handles concave solids.
-      const worldPlane = heightPlane(
-        boundary.map(([x, y]) => {
-          const z = planeHeight(plane, [x, y]);
-          return [x, y + z, z];
-        }),
-      );
-      for (const obstacle of movementSolids) {
-        if (!obstacle.solid) continue;
-        const footprint = obstacle.points.map((p): Point => [p.x, p.y]);
-        const top = heightPlane(
-          obstacle.points.map((p) => [p.x, p.y, p.z_top]),
-          false,
-        );
-        const bottom = heightPlane(
-          obstacle.points.map((p) => [p.x, p.y, p.z_bottom]),
-          false,
-        );
-        const xs = footprint.map((p) => p[0]),
-          ys = footprint.map((p) => p[1]);
-        let slice: Point[] = [
-          [Math.min(...xs), Math.min(...ys)],
-          [Math.max(...xs), Math.min(...ys)],
-          [Math.max(...xs), Math.max(...ys)],
-          [Math.min(...xs), Math.max(...ys)],
-        ];
-        const above = top.map((n, i) => n - worldPlane[i]!) as HeightPlane;
-        if (footprint.every((p) => planeHeight(above, p) <= 1e-7)) continue;
-        slice = clipHeight(slice, above);
-        slice = clipHeight(slice, worldPlane.map((n, i) => n - bottom[i]!) as HeightPlane);
-        if (slice.length < 3 || Math.abs(signedArea(slice)) < 1e-7) continue;
-        const cuts = polygonClipping.intersection(polygon(footprint), polygon(slice));
-        for (const cut of cuts) {
-          const projected: Polygon = cut.map((r) =>
-            r.map(([x, y]) => [x, y - planeHeight(worldPlane, [x, y])]),
-          );
-          for (const region of polygonClipping.intersection(polygon(boundary), projected)) {
-            const points = region[0]!.map((p): Point => [quantize(p[0]), quantize(p[1])]);
-            if (Math.abs(signedArea(points)) >= 0.5) blockers.push(ring(points));
-          }
-        }
-      }
       const area = { plane, lift, sector, layer, polygon: boundary, blockers };
       areas.push(area);
       sector += 1 + blockers.length;

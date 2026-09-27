@@ -55,6 +55,8 @@ export interface AssetGameplay {
   collision: "parts" | "none";
   /** Omit to derive movement from sight solids; an explicit list replaces that derivation. */
   movementBlockers?: AssetWalkableSurface[];
+  /** Plane-local openings in this asset's derived movement collision, never in other assets. */
+  movementClearances?: AssetWalkableSurface[];
   surfaces: AssetWalkableSurface[];
   doors: AssetDoor[];
   lifts?: AssetLift[];
@@ -142,7 +144,13 @@ export function validateAssetGameplay(
     fail("Player spawns belong to missions, not map assets");
   if (data.movementBlockers !== undefined && !Array.isArray(data.movementBlockers))
     fail("invalid movement blockers");
-  for (const surface of [...data.surfaces, ...(data.movementBlockers ?? [])]) {
+  if (data.movementClearances !== undefined && !Array.isArray(data.movementClearances))
+    fail("invalid movement clearances");
+  for (const surface of [
+    ...data.surfaces,
+    ...(data.movementBlockers ?? []),
+    ...(data.movementClearances ?? []),
+  ]) {
     feature(surface);
     polygon(surface.polygon);
     if (

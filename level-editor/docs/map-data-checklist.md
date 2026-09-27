@@ -16,6 +16,7 @@ intended construction, not functionality available today.
 | Projectile/view/obstacle masks and masking polylines | Generate typed masks and links from asset geometry and states. A depth PNG alone does **not** replace all these semantics. | Planned |
 | Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions and assign fresh sectors/layers. | Partial: flat/sloped surfaces and holes; full connectivity unfinished |
 | Movement blockers | Transform explicit asset-local movement contours on their height plane; otherwise intersect collision volumes with walkable surfaces. Sight geometry stays independent. | Working in synthetic tests; recovered ownership still needs review |
+| Openings in movement collision | Asset-local clearances remove only the owning asset's derived collision on the matching plane; sight geometry and other assets remain intact. | Working in compiler/runtime tests; recovery geometry failures remain explicit gaps |
 | Navigation graph and fast-find grid | Engine constructs routing and spatial lookup structures from compiled geometry. No copied grids or graph bytes. | Working on synthetic maps |
 | Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. | Working for static geometry |
 | Projection surfaces / elevation | Generate height planes linked to the new movement areas. | Partial: planar surfaces; elevation-boundary links unfinished |
@@ -28,7 +29,16 @@ intended construction, not functionality available today.
 | Environmental sound sources | Place local sound emitters with range, timing, altitude and noise-covering rules. | Planned |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Compile asset states into changing visuals, collision, sight, masks, interaction zones and door links. | Planned |
-| Player starting locations | Mission-owned placements, resolved against the referenced compiled map. Never embedded in map assets. | Separate mission compilation planned |
+| Map settings | Scene settings for identity, ambience, forest behaviour and default material. | Partial: identity and export bounds |
+| Resource banks and references | Package generated resources and resolve shared sprite/audio/profile dependencies. | Partial: baked images; shared resources use the base installation |
+
+The following information belongs to **missions referencing a map**, not map
+assets or map export. A separate mission-authoring/export workflow is planned.
+Map exports neither require nor generate player spawns or NPCs.
+
+| Mission information | Intended construction | Status |
+|---|---|---|
+| Player starting locations | Mission-owned placements, resolved against the referenced compiled map. Never embedded in map assets. | Planned |
 | Soldiers, civilians, targets and rescue characters | Actor assets plus editor placement, facing, profiles and initial behaviour. | Planned |
 | Items, bonuses and scrolls | Item assets plus placement and gameplay properties. | Planned |
 | Building occupants | Actor-to-interior associations resolved after placement. | Planned |
@@ -37,8 +47,7 @@ intended construction, not functionality available today.
 | Moving carts | Moving-object assets with routes, collision and animation metadata. | Planned |
 | Script points, lines and sectors | Transform named local markers/regions; generate fresh runtime references. | Planned |
 | Mission scripts, objectives and triggers | Authored behaviours referencing scene instances and named asset features. | Planned |
-| Map/mission settings | Scene settings for identity, ambience, forest behaviour and default material. | Partial: identity and export bounds |
-| Resource banks and references | Package generated resources and resolve shared sprite/audio/profile dependencies. | Partial: baked images; shared resources use the base installation |
+| Mission settings | Mission-specific ambience, objectives and initial map state/door-rule selection. | Planned |
 
 The ZIP additionally includes `editor/<map>.rhlos-map.json`, preserving unsaved
 scene edits for reopening with the pinned asset library. This is editor source,
@@ -63,3 +72,10 @@ passages are assigned independently; an interior's entrances remain grouped.
 `staticGeometryDiagnostic` checks a disposable copy of the current visible
 geometry without state/population behaviours. Its success does not authorize
 export or establish gameplay parity; `candidateCompilation` checks the full scene.
+
+Split source surfaces are recovered using each asset part's own footprint;
+overlapping or uncovered portions remain explicit ownership gaps. The latest
+recovery drafts for Derby, Sherwood, Lincoln and Leicester pass the static geometry check.
+These are unpublished drafts, not completed map exports or in-game round-trip
+parity results. Other maps still fail geometry checks; no original map has yet
+been certified at full parity.

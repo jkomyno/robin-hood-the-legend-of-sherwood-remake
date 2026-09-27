@@ -2,7 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import polygonClipping, { type Polygon } from "polygon-clipping";
+import polygonClipping, { type Polygon, type MultiPolygon } from "polygon-clipping";
 import {
   gameToScene,
   sceneToGame,
@@ -27,6 +27,12 @@ import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
 import { recoverSurfaceOwners } from "./recovery-surface-owners.ts";
+import { recoverMovementClearance } from "./recover-movement-clearance.ts";
+import {
+  heightPlane as fitHeightPlane,
+  planeHeight as evaluateHeight,
+  type HeightPlane,
+} from "../../shared/src/gameplay-plane.ts";
 
 const { values } = parseArgs({
   options: {
@@ -123,6 +129,7 @@ const planeHeight = (
 const unresolved: unknown[] = [];
 const coverage: unknown[] = [];
 const groundAreas: Parameters<typeof recoverGroundGameplay>[0] = [];
+const clearanceSources: { regions: MultiPolygon; plane: HeightPlane }[] = [];
 const groundProjectionOwners: {
   asset: string;
   node: string;
@@ -185,6 +192,15 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         motion.obstacles.every((o) => o.state_id === 0)
       ) {
         groundAreas.push(motion);
+        clearanceSources.push({
+          regions: motion.obstacles.length
+            ? polygonClipping.difference(
+                close(motion.polygon.points),
+                ...motion.obstacles.map((o) => close(o.polygon.points)),
+              )
+            : [close(motion.polygon.points)],
+          plane: [0, 0, 0],
+        });
         continue;
       }
       unresolved.push({
@@ -206,6 +222,9 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         maximumHeight: Math.max(...obstacle.points.map((p) => Math.max(p.z_top, p.z_bottom))),
       })),
     );
+    const staticMotion = motion.state_id === 0 && motion.obstacles.every((o) => o.state_id === 0);
+    if (layer === 0 && staticMotion)
+      clearanceSources.push({ regions: partition.ground, plane: [0, 0, 0] });
     for (const [supportIndex, { obstacle, index }] of supports.entries()) {
       const owners = locals.get(index) ?? [];
       if (!owners.length) {
@@ -227,6 +246,14 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
           regions,
           ...motion.obstacles.map((o) => close(o.polygon.points)),
         );
+      if (staticMotion)
+        clearanceSources.push({
+          regions: partition.surfaces[supportIndex]!,
+          plane: fitHeightPlane(
+            obstacle.points.map((p) => [p.x, p.y - p.z_top, p.z_top]),
+            false,
+          ),
+        });
       const overlapArea = polygonArea(regions) - polygonArea(partition.surfaces[supportIndex]!);
       if (overlapArea > 1e-6) {
         unresolved.push({
@@ -390,6 +417,54 @@ if (groundAreas.length) {
       blockerOwners: ground.blockers.length,
     });
   }
+}
+// Restore openings only in each placed asset's own derived collision. These
+// local contours move with the asset; no assembled-map override is exported.
+for (const [sourceIndex, source] of clearanceSources.entries()) {
+  for (const owners of locals.values())
+    for (const owner of owners) {
+      if (packet(owner.asset).movementBlockers !== undefined) continue;
+      const definition = descriptors.get(owner.asset)!.parts.find((p) => p.node === owner.node);
+      if (!definition?.obstacle_local_game?.solid) continue;
+      const solid = transformedObstacle(document, {
+        ...owner.part,
+        obstacle: definition.obstacle_local_game,
+      });
+      let regions: MultiPolygon;
+      try {
+        regions = recoverMovementClearance(source.regions, source.plane, solid);
+      } catch (error) {
+        unresolved.push({
+          kind: "movement-clearance",
+          asset: owner.asset,
+          node: owner.node,
+          source: sourceIndex,
+          error: String(error),
+        });
+        continue;
+      }
+      for (const [regionIndex, generated] of regions.entries()) {
+        const id = `${owner.node}-clearance-${sourceIndex}-${regionIndex}`;
+        const region = quantizeGeneratedMotionPolygon(
+          generated,
+          Math.round,
+          id,
+          packet(owner.asset).issues,
+        );
+        if (!region) continue;
+        const local = (ring: Point[]) =>
+          ring.slice(0, -1).map(([x, y]) => {
+            const z = evaluateHeight(source.plane, [x, y]);
+            return localize(owner.part, [x, y + z, z]);
+          });
+        (packet(owner.asset).movementClearances ??= []).push({
+          id,
+          node: owner.node,
+          vertices: local(region[0]!),
+          holes: region.slice(1).map(local),
+        });
+      }
+    }
 }
 // Recover lifts only where their surface has a unique owner. Neighbour endpoints
 // remain geometric queries; no source sector or layer indices enter asset packets.

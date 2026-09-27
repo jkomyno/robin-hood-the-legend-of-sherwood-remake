@@ -165,6 +165,25 @@ export function slopedAssetCompilerFixture() {
   return fixture;
 }
 
+export function clearanceAssetCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  fixture.document.map = "Movement clearance fixture";
+  fixture.hut.gameplay!.movementClearances = [
+    {
+      id: "pass-through",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [39, 42],
+        [51, 42],
+        [51, 48],
+        [39, 48],
+      ],
+    },
+  ];
+  return fixture;
+}
+
 export function liftAssetCompilerFixture() {
   const fixture = assetCompilerFixture();
   const { hut } = fixture;

@@ -13,6 +13,66 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("movement clearances follow their owner and cannot erase another asset's collision", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  hut.gameplay!.movementClearances = [
+    {
+      id: "opening",
+      node: "building-999",
+      polygon: [
+        [39, 39],
+        [51, 39],
+        [51, 51],
+        [39, 51],
+      ],
+      height: 0,
+    },
+  ];
+  const clear = compileAssetGameplay(document, assets, bounds);
+  assert.equal(clear.motion_data.layers[0]![0]!.obstacles.length, 0);
+  assert.equal(clear.sight_obstacles[0]!.solid, true);
+  for (const p of document.objects) p.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.equal(moved.motion_data.layers[0]![0]!.obstacles.length, 0);
+  assert.equal(moved.sight_obstacles[0]!.points[0]!.x, 440);
+  const other = assets.get("marker")!;
+  other.gameplay!.collision = "parts";
+  other.parts[0]!.obstacle_local_game = structuredClone(hut.parts[0]!.obstacle_local_game!);
+  assert.equal(
+    compileAssetGameplay(document, assets, bounds).motion_data.layers[0]![0]!.obstacles.length,
+    1,
+  );
+  other.gameplay!.collision = "none";
+  hut.gameplay!.movementClearances[0]!.height = 1;
+  assert.equal(
+    compileAssetGameplay(document, assets, bounds).motion_data.layers[0]![0]!.obstacles.length,
+    1,
+  );
+});
+
+test("an enclosed clearance retains a walkable island inside derived collision", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  hut.gameplay!.movementClearances = [
+    {
+      id: "island",
+      node: "building-999",
+      polygon: [
+        [42, 42],
+        [48, 42],
+        [48, 48],
+        [42, 48],
+      ],
+      height: 0,
+    },
+  ];
+  const result = compileAssetGameplay(document, assets, bounds);
+  assert.equal(result.motion_data.layers[0]!.length, 3);
+  assert.ok(
+    result.motion_data.layers[0]!.some((a) =>
+      a.polygon.points.every(([x, y]) => x >= 342 && x <= 348 && y >= 342 && y <= 348),
+    ),
+  );
+});
 test("map assets reject mission spawns rather than silently dropping them", () => {
   const { document, assets, hut } = assetCompilerFixture();
   Object.assign(hut.gameplay!, {

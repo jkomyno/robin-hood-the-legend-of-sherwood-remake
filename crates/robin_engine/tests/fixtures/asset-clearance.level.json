@@ -1,6 +1,6 @@
 {
-  "title": "Interior asset fixture",
-  "map_filename": "editor-interior-asset-fixture",
+  "title": "Movement clearance fixture",
+  "map_filename": "editor-movement-clearance-fixture",
   "spawn_player": false,
   "walkable_polygon": [
     [
@@ -61,15 +61,38 @@
                     ],
                     [
                       350,
-                      350
+                      342
                     ],
                     [
                       340,
-                      350
+                      342
                     ],
                     [
                       340,
                       340
+                    ]
+                  ]
+                }
+              },
+              {
+                "state_id": 0,
+                "polygon": {
+                  "points": [
+                    [
+                      350,
+                      348
+                    ],
+                    [
+                      350,
+                      350
+                    ],
+                    [
+                      340,
+                      350
+                    ],
+                    [
+                      340,
+                      348
                     ]
                   ]
                 }
@@ -191,112 +214,8 @@
           420,
           350
         ],
-        "sector_in": 2,
+        "sector_in": 3,
         "layer_in": 0
-      }
-    ],
-    "buildings": [
-      {
-        "Building": {
-          "doors": [
-            {
-              "door_type": 1,
-              "active": true,
-              "locked_pc": false,
-              "unlockable": true,
-              "locked_npc_villain": false,
-              "locked_npc_civilian": true,
-              "locked_pc_after_patch": false,
-              "unlockable_after_patch": true,
-              "locked_npc_villain_after_patch": false,
-              "locked_npc_civilian_after_patch": true,
-              "door_sector": {
-                "points": [
-                  [
-                    315,
-                    390
-                  ],
-                  [
-                    325,
-                    390
-                  ],
-                  [
-                    325,
-                    400
-                  ],
-                  [
-                    315,
-                    400
-                  ]
-                ]
-              },
-              "point_out": [
-                320,
-                380
-              ],
-              "sector_out": 0,
-              "layer_out": 0,
-              "point_mid": [
-                320,
-                395
-              ],
-              "point_in": [
-                320,
-                420
-              ],
-              "sector_in": 4,
-              "layer_in": 1
-            },
-            {
-              "door_type": 1,
-              "active": true,
-              "locked_pc": true,
-              "unlockable": true,
-              "locked_npc_villain": false,
-              "locked_npc_civilian": true,
-              "locked_pc_after_patch": true,
-              "unlockable_after_patch": true,
-              "locked_npc_villain_after_patch": false,
-              "locked_npc_civilian_after_patch": true,
-              "door_sector": {
-                "points": [
-                  [
-                    375,
-                    390
-                  ],
-                  [
-                    385,
-                    390
-                  ],
-                  [
-                    385,
-                    400
-                  ],
-                  [
-                    375,
-                    400
-                  ]
-                ]
-              },
-              "point_out": [
-                380,
-                380
-              ],
-              "sector_out": 0,
-              "layer_out": 0,
-              "point_mid": [
-                380,
-                395
-              ],
-              "point_in": [
-                380,
-                420
-              ],
-              "sector_in": 4,
-              "layer_in": 1
-            }
-          ]
-        }
       }
     ]
   }

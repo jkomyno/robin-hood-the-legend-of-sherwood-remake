@@ -105,6 +105,14 @@ references are assigned after placement; missing or ambiguous endpoints fail.
 The engine builds the actual fast-find grid, collision lines, door links and
 visibility-route graph from the generated descriptor.
 
+Optional `movementClearances` use the same plane/polygon schema as surfaces.
+They remove openings only from the owning instance's collision derived from
+sight solids on the matching plane. They do not erase sight shapes, other assets'
+collision, explicit movement blockers or surface holes. Both the collision and
+its openings follow asset placement. Offline recovery clips static walkable
+regions to each solid's footprint to restore these local openings, reporting
+failed geometry operations as unresolved authoring records.
+
 Movement coordinates use the engine's integer grid. Boolean cuts can produce
 subpixel fragments that collapse when rounded; these generated regions or holes
 are omitted with a compilation warning. Authored surfaces that collapse still

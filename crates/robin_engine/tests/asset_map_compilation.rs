@@ -84,6 +84,20 @@ fn asset_compiler_output_constructs_live_navigation_sight_and_door_links() {
 }
 
 #[test]
+fn movement_clearance_opens_navigation_without_removing_sight_geometry() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-clearance.level.json"),
+        &mut assets,
+    );
+    use robin_engine::coordinates::MapPoint;
+    let grid = engine.fast_grid();
+    assert!(grid.is_reachable_thin(MapPoint::new(330., 345.), MapPoint::new(360., 345.), 0));
+    assert!(!grid.is_reachable_thin(MapPoint::new(330., 341.), MapPoint::new(360., 341.), 0));
+    assert!(!assets.environment.static_sight_obstacles.is_empty());
+}
+
+#[test]
 fn compiler_interchange_rejects_unresolved_asset_references() {
     let mut descriptor: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-compiled.level.json")).unwrap();
