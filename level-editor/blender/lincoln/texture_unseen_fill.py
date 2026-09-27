@@ -228,28 +228,96 @@ def material_color(material):
     return np.rint(np.array(material.diffuse_color[:3]) ** (1 / 2.2) * 255)
 
 
+def fillable(scene, obj, slot):
+    """(binding, kind) of a slot whose unknown texels may be filled, else None.
+
+    kind 'ownership': per-asset exterior atlases, unknown = global_reproject.neutral_mask.
+    kind 'ground': the terrain source-projection atlas (one texel per source pixel),
+    unknown = alpha 0 (RGB 128); observed texels have alpha 255.
+    """
+    binding = scene.slot_binding(obj, slot)
+    if binding is None:
+        return None
+    if obj.get('source_node') == 'ground':
+        return binding, 'ground'
+    if binding['kind'] == 'ownership':
+        return binding, 'ownership'
+    return None
+
+
+def unknown_texels_mask(kind, texels, normals, face_normals, gr):
+    """Unknown flags for (N, 4) uint8 texels of a fillable atlas."""
+    if kind == 'ground':
+        return texels[:, 3] == 0
+    gray = (texels[:, 0] == texels[:, 1]) & (texels[:, 1] == texels[:, 2]) & (texels[:, 3] == 255)
+    expected = np.stack([gr.neutral_value(normals), gr.neutral_value(face_normals)]) * 255
+    return gray & (np.abs(texels[:, 0].astype(float) - expected).min(0) <= 1.0)
+
+
+def island_unknown(kind, atlas, rows, cols, normals, face_normal, gr):
+    if kind == 'ground':
+        return atlas[rows, cols, 3] == 0
+    return gr.neutral_mask(atlas, rows, cols, normals, face_normal)
+
+
+def asset_of(obj):
+    """Catalog asset of a worker mesh; staged terrain meshes carry only source_node 'ground'."""
+    return obj.get('asset_group') or ('lincoln-terrain' if obj.get('source_node') == 'ground' else None)
+
+
+def subset(record, keep):
+    """A mesh record restricted to the kept triangles (face normals stay indexed by polygon)."""
+    return dict(record, corners=record['corners'][keep], loops=record['loops'][keep],
+                polygons=record['polygons'][keep], slots=record['slots'][keep], normals=record['normals'][keep])
+
+
 class Target:
-    """Displayed triangles of one target state, their texture bindings and receiver records."""
+    """Displayed triangles of one target state, their texture bindings and receiver records.
+
+    Optional spec keys: `context_assets` are displayed (visibility, framing context) but never
+    receive; `region` {"x": [lo, hi], "y": [lo, hi]} keeps only terrain ('ground') triangles whose
+    centroid lies inside it.
+    """
 
     def __init__(self, spec, scene, gr):
         self.spec, self.gr, self.scene = spec, gr, scene
         patches = set(spec['patches'])
-        self.records = [r for r in scene.meshes if r['object'].get('asset_group') in spec['assets']
-                        and displayed(r['object'], patches)]
+        region = spec.get('region')
+        receiving = set(spec['assets'])
+        shown = receiving | set(spec.get('context_assets', []))
+        self.records = []
+        for record in scene.meshes:
+            obj = record['object']
+            if asset_of(obj) not in shown or not displayed(obj, patches):
+                continue
+            if region and obj.get('source_node') == 'ground':
+                # Ground polygons can be very large n-gons: keep triangles overlapping the region;
+                # texels are restricted to the region separately (in_region).
+                low, high = record['corners'].min(1), record['corners'].max(1)
+                keep = ((high[:, 0] >= region['x'][0]) & (low[:, 0] <= region['x'][1])
+                        & (high[:, 1] >= region['y'][0]) & (low[:, 1] <= region['y'][1]))
+                if not keep.any():
+                    continue
+                record = subset(record, keep)
+            self.records.append(record)
         names = {r['object'].name for r in self.records}
         missing = set(spec['receivers']) - names
         require(not missing, f"{spec['id']}: receivers not displayed in this state: {sorted(missing)}")
-        # Every displayed object receives: the input marks every neutral displayed texel editable,
-        # and in a revealed state appearance copies and unchanged parts (e.g. room floors under a
-        # removed roof) show unseen faces besides the named cut objects. `receivers` are the
-        # objects that motivated the target and must be displayed.
-        self.receivers = self.records
+        # Every displayed object of the target's own assets receives: the input marks their
+        # unknown texels editable, and in a revealed state appearance copies and unchanged parts
+        # (e.g. room floors under a removed roof) show unseen faces besides the named cut objects.
+        # `receivers` are the objects that motivated the target and must be displayed.
+        self.receivers = [r for r in self.records if asset_of(r['object']) in receiving]
+        self.region = region
         self.corners = np.concatenate([r['corners'] for r in self.records])
         self.normals = np.concatenate([r['normals'] for r in self.records])
         self.face_normals = np.concatenate([r['face_normals'][r['polygons']] for r in self.records])
-        self.receiver_tri = np.concatenate([np.full(len(r['corners']), r in self.receivers) for r in self.records])
-        # Per triangle texture binding: image id (-1 = flat color), UV corners, ownership flag.
-        self.images, self.image_ownership = [], []
+        self.tri_ground = np.concatenate([np.full(len(r['corners']), r['object'].get('source_node') == 'ground')
+                                          for r in self.records])
+        receiver_ids = {id(r) for r in self.receivers}
+        self.receiver_tri = np.concatenate([np.full(len(r['corners']), id(r) in receiver_ids) for r in self.records])
+        # Per triangle texture binding: image id (-1 = flat color), UV corners, fill kind.
+        self.images, self.image_kind = [], []
         image_ids = {}
         tri_image, tri_uv, tri_color = [], [], []
         for record in self.records:
@@ -265,11 +333,12 @@ class Target:
                     material = obj.data.materials[slot] if slot < len(obj.data.materials) else None
                     color[chosen] = material_color(material)
                     continue
+                entry = fillable(scene, obj, int(slot))
                 key = binding['image'].name
                 if key not in image_ids:
                     image_ids[key] = len(self.images)
                     self.images.append(binding['image'])
-                    self.image_ownership.append(binding['kind'] == 'ownership')
+                    self.image_kind.append(entry[1] if entry else None)
                 image[chosen] = image_ids[key]
                 uv[chosen] = gr.slot_uvs(obj, binding['uv'])[record['loops'][chosen]]
             tri_image.append(image)
@@ -279,6 +348,25 @@ class Target:
         self.tri_uv = np.concatenate(tri_uv)
         self.tri_color = np.concatenate(tri_color)
         self._atlases = {}
+
+    def in_region(self, obj, points):
+        """Texels of a region-limited ground mesh outside the region are never unknown targets."""
+        if not self.region or obj.get('source_node') != 'ground':
+            return np.ones(len(points), dtype=bool)
+        r = self.region
+        return ((points[:, 0] >= r['x'][0]) & (points[:, 0] <= r['x'][1])
+                & (points[:, 1] >= r['y'][0]) & (points[:, 1] <= r['y'][1]))
+
+    def bound(self):
+        """Framing bound: displayed corners, with region-limited ground clipped to its region."""
+        parts = []
+        for record in self.records:
+            corners = record['corners'].reshape(-1, 3).copy()
+            if self.region and record['object'].get('source_node') == 'ground':
+                corners[:, 0] = corners[:, 0].clip(*self.region['x'])
+                corners[:, 1] = corners[:, 1].clip(*self.region['y'])
+            parts.append(corners)
+        return np.concatenate(parts)
 
     def atlas(self, image_id):
         if image_id not in self._atlases:
@@ -294,14 +382,16 @@ class Target:
         for record in self.receivers:
             obj = record['object']
             for slot in sorted(set(record['slots'].tolist())):
-                binding = self.scene.slot_binding(obj, slot)
-                if binding is None or binding['kind'] != 'ownership':
+                entry = fillable(self.scene, obj, slot)
+                if entry is None:
                     continue
+                binding, kind = entry
                 atlas = gr.read_image(binding['image'])
                 uv = gr.slot_uvs(obj, binding['uv'])
                 for face, rows, cols, points, face_normals, inner in gr.islands(
                         record, uv, binding['image'].size, lambda group, s=slot: record['slots'][group[0]] == s):
-                    neutral = gr.neutral_mask(atlas, rows, cols, face_normals, record['face_normals'][face])
+                    neutral = island_unknown(kind, atlas, rows, cols, face_normals, record['face_normals'][face], gr)
+                    neutral &= self.in_region(obj, points)
                     positions.append(points[neutral])
                     normals.append(face_normals[neutral])
                     interior.append(inner[neutral])
@@ -328,6 +418,7 @@ class Target:
         uv = np.einsum('nk,nkj->nj', weights, self.tri_uv[t])
         rgb = np.zeros((len(t), 3))
         unknown = np.zeros(len(t), dtype=bool)
+        ground_unknown = np.zeros(len(t), dtype=bool)
         images = self.tri_image[t]
         flat = images < 0
         rgb[flat] = self.tri_color[t[flat]]
@@ -339,13 +430,22 @@ class Target:
             row = np.clip(np.floor(uv[chosen, 1] * height).astype(int), 0, height - 1)
             texel = atlas[row, col]
             rgb[chosen] = texel[:, :3]
-            if self.image_ownership[image_id]:
-                gray = (texel[:, 0] == texel[:, 1]) & (texel[:, 1] == texel[:, 2]) & (texel[:, 3] == 255)
-                value = texel[:, 0].astype(float)
+            kind = self.image_kind[image_id]
+            if kind == 'ground':
+                ground_unknown[chosen] = texel[:, 3] == 0
+            if kind:
                 tri = t[chosen]
-                expected = np.stack([self.gr.neutral_value(self.normals[tri]),
-                                     self.gr.neutral_value(self.face_normals[tri])]) * 255
-                unknown[chosen] = gray & (np.abs(value - expected).min(0) <= 1.0)
+                # Context objects never receive, so their unknown texels are not editable.
+                unknown[chosen] = self.receiver_tri[tri] & unknown_texels_mask(
+                    kind, texel, self.normals[tri], self.face_normals[tri], self.gr)
+        if self.region:
+            r = self.region
+            inside = ((world[:, 0] >= r['x'][0]) & (world[:, 0] <= r['x'][1])
+                      & (world[:, 1] >= r['y'][0]) & (world[:, 1] <= r['y'][1]))
+            unknown &= ~self.tri_ground[t] | inside
+            # Unknown ground outside the region is neither shown nor editable (background).
+            keep = ~(self.tri_ground[t] & ~inside & ground_unknown)
+            t, gy, gx, world, rgb, unknown = t[keep], gy[keep], gx[keep], world[keep], rgb[keep], unknown[keep]
         # Pure-gray lighting: normals turned toward the camera, cast shadows toward the sun.
         normal = self.normals[t] * np.where(self.normals[t] @ camera.toward < 0, -1, 1)[:, None]
         sun = np.array(lighting['toward_sun'])
@@ -508,7 +608,7 @@ def select_cameras(target, points, normals):
     if len(points) > SELECT_POINTS:
         pick = np.random.default_rng(0).choice(len(points), SELECT_POINTS, replace=False)
         points, normals = points[pick], normals[pick]
-    bound = target.corners.reshape(-1, 3)
+    bound = target.bound()
     candidates, facing = [], []
     for elevation in ELEVATIONS:
         for azimuth in AZIMUTHS:
@@ -557,7 +657,7 @@ def prepare(worker, ids):
         records, counts = [], {}
         (output / 'views').mkdir(parents=True)
         for index, (azimuth, elevation) in enumerate(views):
-            camera = Camera(azimuth, elevation, frame, target.corners.reshape(-1, 3), TILE)
+            camera = Camera(azimuth, elevation, frame, target.bound(), TILE)
             _, tri, coords = raster(camera, target.corners, SS)
             covered, color, editable, gray = target.shade(camera, tri, coords, lighting, bvh)
             editable &= covered
@@ -696,16 +796,18 @@ def fill_target(target_id, scene, gr):
         obj = record['object']
         counts = {'neutral_before': 0, 'generated': 0, 'unseen': 0}
         for slot in sorted(set(record['slots'].tolist())):
-            binding = scene.slot_binding(obj, slot)
-            if binding is None or binding['kind'] != 'ownership':
+            entry = fillable(scene, obj, slot)
+            if entry is None:
                 continue
+            binding, kind = entry
             image = binding['image']
             atlas = gr.read_image(image)
             before = atlas.copy()
             uv = gr.slot_uvs(obj, binding['uv'])
             for face, rows, cols, positions, normals, _ in gr.islands(
                     record, uv, image.size, lambda group, s=slot: record['slots'][group[0]] == s):
-                neutral = gr.neutral_mask(atlas, rows, cols, normals, record['face_normals'][face])
+                neutral = island_unknown(kind, atlas, rows, cols, normals, record['face_normals'][face], gr)
+                neutral &= target.in_region(obj, positions)
                 if not neutral.any():
                     continue
                 rows, cols, positions, normals = rows[neutral], cols[neutral], positions[neutral], normals[neutral]
@@ -744,8 +846,11 @@ def fill_target(target_id, scene, gr):
             if not np.array_equal(atlas, before):
                 diff = np.any(atlas != before, axis=2)
                 rgb = before[..., :3].astype(np.int16)
-                gray = (rgb[..., 0] == rgb[..., 1]) & (rgb[..., 1] == rgb[..., 2]) & (before[..., 3] == 255)
-                require(not np.any(diff & ~gray), 'Fill changed a non-neutral texel: ' + image.name)
+                if kind == 'ground':
+                    gray = before[..., 3] == 0
+                else:
+                    gray = (rgb[..., 0] == rgb[..., 1]) & (rgb[..., 1] == rgb[..., 2]) & (before[..., 3] == 255)
+                require(not np.any(diff & ~gray), 'Fill changed a known texel: ' + image.name)
                 gr.write_image(image, atlas)
             counts.setdefault('images', []).append({'slot': slot, 'image': image.name, 'size': list(image.size),
                                                     'sha256': hashlib.sha256(gr.read_image(image).tobytes()).hexdigest()})
