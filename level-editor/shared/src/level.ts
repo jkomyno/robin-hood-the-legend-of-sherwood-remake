@@ -162,6 +162,7 @@ export interface ProtoLevel {
   patches: Patch[];
   animations: ElementFx[];
   material_sectors: MaterialSector[];
+  sight_material_indices: number[];
   light_sectors: LightSector[];
   elevation_lines: ElevationLine[];
   masks: Mask[];

@@ -4,6 +4,74 @@ use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimCo
 use robin_engine::level_data::LoadedLevel;
 
 #[test]
+fn materials_keep_ground_and_obstacle_queries_separate() {
+    use robin_engine::{coordinates::MapPoint, element::GameMaterial};
+    let mut assets = LevelAssets::new();
+    let _engine = construct(
+        include_bytes!("fixtures/asset-material.level.json"),
+        &mut assets,
+    );
+    let materials = &assets.environment.material_sectors;
+    assert_eq!(
+        materials.material_at_layer(MapPoint::new(320., 320.), 0),
+        GameMaterial::Stone
+    );
+    assert_eq!(
+        materials.material_at_layer(MapPoint::new(320., 320.), 1),
+        GameMaterial::Ground
+    );
+    assert_eq!(
+        materials.material_at(MapPoint::new(345., 345.)),
+        GameMaterial::Ground
+    );
+    let obstacle = assets
+        .environment
+        .static_sight_obstacles
+        .iter()
+        .find(|obstacle| !obstacle.material_sectors.is_empty())
+        .unwrap();
+    assert_eq!(
+        materials.material_at_with_obstacle(Some(obstacle), MapPoint::new(345., 345.)),
+        GameMaterial::Water
+    );
+    assert!(assets.environment.water_zones.zones.is_empty());
+}
+
+#[test]
+fn empty_ground_material_list_does_not_activate_obstacle_materials() {
+    use robin_engine::{coordinates::MapPoint, element::GameMaterial};
+    let mut value: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-material.level.json")).unwrap();
+    value["asset_geometry"]["sight_material_indices"] = serde_json::json!([]);
+    let mut assets = LevelAssets::new();
+    let _engine = construct(&serde_json::to_vec(&value).unwrap(), &mut assets);
+    assert!(assets.environment.material_sectors.sectors.is_empty());
+    assert!(assets.environment.water_zones.zones.is_empty());
+    assert_eq!(
+        assets
+            .environment
+            .material_sectors
+            .material_at(MapPoint::new(345., 345.)),
+        GameMaterial::Ground
+    );
+}
+
+#[test]
+fn invalid_material_references_are_rejected() {
+    let mut value: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-material.level.json")).unwrap();
+    value["asset_geometry"]["sight_material_indices"] = serde_json::json!([99]);
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap())
+            .unwrap_err()
+            .contains("material")
+    );
+    value["asset_geometry"]["sight_material_indices"] = serde_json::json!([]);
+    value["asset_geometry"]["sight_obstacles"][0]["material_indices"] = serde_json::json!([99]);
+    assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap()).is_err());
+}
+
+#[test]
 fn map_geometry_does_not_accept_embedded_player_spawns() {
     let mut value: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-compiled.level.json")).unwrap();
@@ -272,4 +340,32 @@ fn compiled_interior_rejects_invalid_entrance_identity() {
             .unwrap_err()
             .contains("interior entrance")
     );
+}
+
+#[test]
+fn materials_shift_interior_constructors_without_breaking_entrances() {
+    let mut value: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-interior.level.json")).unwrap();
+    value["asset_geometry"]["material_sectors"] = serde_json::json!([
+        {"material":2,"polygon":{"points":[[310,310],[320,310],[320,320],[310,320]]}}
+    ]);
+    value["asset_geometry"]["sight_material_indices"] = serde_json::json!([0]);
+    for door in value["asset_geometry"]["buildings"][0]["Building"]["doors"]
+        .as_array_mut()
+        .unwrap()
+    {
+        door["sector_in"] = (door["sector_in"].as_u64().unwrap() + 1).into();
+    }
+    let mut assets = LevelAssets::new();
+    let engine = construct(&serde_json::to_vec(&value).unwrap(), &mut assets);
+    let grid = engine.fast_grid();
+    let building = grid
+        .level
+        .sectors
+        .iter()
+        .find(|s| s.sector_type.is_building())
+        .unwrap();
+    assert_eq!(i16::from(building.sector_number), 5);
+    assert_eq!(building.gate_indices.len(), 2);
+    assert_eq!(grid.level.door_projection_infos.len(), 3);
 }

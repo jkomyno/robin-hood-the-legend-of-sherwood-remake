@@ -1,4 +1,4 @@
-import type { Point, SightObstacle } from "./level.ts";
+import type { MaterialSector, Point, SightObstacle } from "./level.ts";
 import type { ProjectionAssetDescriptor } from "./projection-assets.ts";
 
 /** All coordinates belong to the named mesh part's local game frame. No level indices. */
@@ -49,6 +49,18 @@ export interface AssetInterior {
   /** Entrances share one virtual interior; occupants are authored separately. */
   doors: AssetDoor[];
 }
+export interface AssetMaterialRegion {
+  id: string;
+  node: string;
+  /** Local 3D vertices, projected after placement. */
+  polygon: [number, number, number][];
+  /** Material codes 0–8; 9 selects the map default. */
+  material: number;
+  /** Register in the ground-layer lookup, independently of obstacle links. */
+  ground: boolean;
+  /** Owning asset's part nodes whose impact material lookup uses this region. */
+  obstacles: string[];
+}
 export interface AssetGameplay {
   version: 1;
   /** Reuse asset-local part obstacles, or explicitly declare a visual-only asset. */
@@ -61,6 +73,7 @@ export interface AssetGameplay {
   doors: AssetDoor[];
   lifts?: AssetLift[];
   interiors?: AssetInterior[];
+  materials?: AssetMaterialRegion[];
 }
 export type GameplayAssetDescriptor = ProjectionAssetDescriptor & { gameplay?: AssetGameplay };
 
@@ -80,6 +93,8 @@ export interface CompiledAssetGeometry {
     graph_bytes: never[];
   };
   sight_obstacles: SightObstacle[];
+  material_sectors?: MaterialSector[];
+  sight_material_indices?: number[];
   doors: {
     door_type: number;
     active: boolean;
@@ -142,6 +157,26 @@ export function validateAssetGameplay(
   const legacySpawns = (value as { spawns?: unknown }).spawns;
   if (legacySpawns !== undefined && (!Array.isArray(legacySpawns) || legacySpawns.length))
     fail("Player spawns belong to missions, not map assets");
+  if (data.materials !== undefined && !Array.isArray(data.materials)) fail("invalid materials");
+  for (const region of data.materials ?? []) {
+    feature(region);
+    if (
+      !Array.isArray(region.polygon) ||
+      region.polygon.length < 3 ||
+      !region.polygon.every((p) => point(p, 3)) ||
+      !Number.isInteger(region.material) ||
+      region.material < 0 ||
+      region.material > 9 ||
+      typeof region.ground !== "boolean" ||
+      !Array.isArray(region.obstacles) ||
+      region.obstacles.some((node) => !nodes.has(node)) ||
+      new Set(region.obstacles).size !== region.obstacles.length ||
+      (!region.ground && !region.obstacles.length)
+    )
+      fail(`invalid material region ${region.id}`);
+    if (region.obstacles.length && data.collision !== "parts")
+      fail(`material region ${region.id} references disabled obstacles`);
+  }
   if (data.movementBlockers !== undefined && !Array.isArray(data.movementBlockers))
     fail("invalid movement blockers");
   if (data.movementClearances !== undefined && !Array.isArray(data.movementClearances))

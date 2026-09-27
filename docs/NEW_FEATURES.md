@@ -15,6 +15,9 @@
   differ from sight footprints and follow asset placement, preserving courtyard
   holes. Asset-local movement clearances open only their owner's derived collision
   on the matching plane, without removing sight geometry or other assets' blockers.
+  Local material polygons follow placement and rebuild separate ground and
+  obstacle lookup references. An empty ground list leaves obstacle-only materials
+  inactive on the ground; material allocation also preserves interior door links.
   Offline terrain recovery reports reconstruction error on the integer
   movement grid and keeps unresolved ownership visible. Recovery drafts are
   checked against the asset schema; passage connections can omit click polygons,

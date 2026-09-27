@@ -684,12 +684,70 @@ for (const [index, entry] of proto.buildings.entries()) {
   }
   if (recovered === groups.length) recoveredBuildings++;
 }
+// Ground regions belong to the terrain asset. Obstacle-only regions must have
+// explicit local owners; unresolved projection links stay in the recovery report.
+const groundMaterialOwners = [...descriptors.values()].filter(
+  (d) => d.editor_usage === "map-background",
+);
+const recoveredMaterials = new Set<number>();
+for (const index of proto.sight_material_indices) {
+  const region = proto.material_sectors[index];
+  if (!region || groundMaterialOwners.length !== 1) {
+    unresolved.push({
+      kind: "ground-material-owner",
+      index,
+      candidates: groundMaterialOwners.map((d) => d.id),
+    });
+    continue;
+  }
+  const p = packet(groundMaterialOwners[0]!.id);
+  (p.materials ??= []).push({
+    id: `ground-material-${p.materials?.length ?? 0}`,
+    node: "$root",
+    material: region.material,
+    ground: true,
+    obstacles: [],
+    polygon: region.polygon.points.map(([x, y]) => [x, y, 0]),
+  });
+  recoveredMaterials.add(index);
+}
+for (const [index, obstacle] of proto.sight_obstacles.entries()) {
+  if (!obstacle.material_indices.length) continue;
+  const owners = locals.get(index) ?? [];
+  if (!owners.length || obstacle.projection_area !== null) {
+    unresolved.push({
+      kind: "obstacle-material-owner",
+      obstacle: index,
+      reason:
+        obstacle.projection_area !== null
+          ? "Projection-surface material links still need recovery"
+          : "No asset-local owner",
+    });
+    continue;
+  }
+  for (const material of obstacle.material_indices) {
+    const region = proto.material_sectors[material];
+    if (!region) throw new Error(`Missing material region ${material}`);
+    for (const owner of owners) {
+      const p = packet(owner.asset);
+      (p.materials ??= []).push({
+        id: `obstacle-material-${p.materials?.length ?? 0}`,
+        node: owner.node,
+        material: region.material,
+        ground: false,
+        obstacles: [owner.node],
+        polygon: region.polygon.points.map(([x, y]) => localize(owner.part, [x, y, 0])),
+      });
+    }
+    recoveredMaterials.add(material);
+  }
+}
 const pending = {
   buildingEntries: proto.buildings.length - recoveredBuildings,
   maskRecords: proto.masks.length,
   patches: proto.patches.length,
   jumpPairs: proto.jump_line_pairs.length,
-  materialRegions: proto.material_sectors.length,
+  materialRegions: proto.material_sectors.length - recoveredMaterials.size,
   shadowRegions: proto.light_sectors.length,
 };
 await fs.mkdir(values.out, { recursive: true });

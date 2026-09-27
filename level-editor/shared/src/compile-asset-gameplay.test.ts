@@ -13,6 +13,72 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("material regions follow placement and preserve separate ground and obstacle lookups", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  hut.gameplay!.materials = [
+    {
+      id: "stone-inlay",
+      node: "building-999",
+      material: 2,
+      ground: false,
+      obstacles: ["building-999"],
+      polygon: [
+        [40, 40, 10],
+        [50, 40, 10],
+        [50, 50, 10],
+        [40, 50, 10],
+      ],
+    },
+    {
+      id: "water",
+      node: "building-999",
+      material: 5,
+      ground: true,
+      obstacles: [],
+      polygon: [
+        [10, 10, 0],
+        [20, 10, 0],
+        [20, 20, 0],
+        [10, 20, 0],
+      ],
+    },
+  ];
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(compiled.sight_material_indices, [1]);
+  assert.deepEqual(compiled.sight_obstacles[0]!.material_indices, [0]);
+  assert.deepEqual(compiled.material_sectors![0]!.polygon.points[0], [340, 330]);
+  for (const p of document.objects) p.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(moved.material_sectors![0]!.polygon.points[0], [440, 330]);
+  hut.gameplay!.materials[0]!.obstacles = ["missing"];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid material region/);
+});
+
+test("material constructors are included in regenerated interior identities", () => {
+  const { document, assets } = interiorAssetCompilerFixture();
+  const descriptor = [...assets.values()].find((a) => a.gameplay?.interiors?.length)!;
+  const before = compileAssetGameplay(document, assets, bounds);
+  descriptor.gameplay!.materials = [
+    {
+      id: "floor",
+      node: descriptor.parts[0]!.node,
+      material: 2,
+      ground: true,
+      obstacles: [],
+      polygon: [
+        [0, 0, 0],
+        [10, 0, 0],
+        [10, 10, 0],
+        [0, 10, 0],
+      ],
+    },
+  ];
+  const after = compileAssetGameplay(document, assets, bounds);
+  assert.equal(
+    after.buildings![0]!.Building.doors[0]!.sector_in,
+    before.buildings![0]!.Building.doors[0]!.sector_in + 1,
+  );
+});
 test("movement clearances follow their owner and cannot erase another asset's collision", () => {
   const { document, assets, hut } = assetCompilerFixture();
   hut.gameplay!.movementClearances = [

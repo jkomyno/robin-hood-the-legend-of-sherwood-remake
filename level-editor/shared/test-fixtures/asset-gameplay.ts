@@ -1,6 +1,39 @@
 import type { GameplayAssetDescriptor } from "../src/asset-gameplay.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "../src/level3d.ts";
 
+export function materialAssetCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  fixture.hut.gameplay!.materials = [
+    {
+      id: "inlay",
+      node: "building-999",
+      material: 5,
+      ground: false,
+      obstacles: ["building-999"],
+      polygon: [
+        [40, 40, 0],
+        [50, 40, 0],
+        [50, 50, 0],
+        [40, 50, 0],
+      ],
+    },
+    {
+      id: "paving",
+      node: "building-999",
+      material: 2,
+      ground: true,
+      obstacles: [],
+      polygon: [
+        [10, 10, 0],
+        [30, 10, 0],
+        [30, 30, 0],
+        [10, 30, 0],
+      ],
+    },
+  ];
+  return fixture;
+}
+
 export function assetCompilerFixture() {
   const obstacle = {
     points: (

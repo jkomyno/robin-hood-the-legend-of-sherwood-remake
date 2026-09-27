@@ -45,6 +45,7 @@ export interface RecoveredGameplayPacket {
   /** Omitted means derive collision from parts; an empty list explicitly disables that derivation. */
   movementBlockers?: RecoveredSurface[];
   movementClearances?: RecoveredSurface[];
+  materials?: AssetGameplay["materials"];
   connections: RecoveredConnection[];
 }
 
@@ -133,6 +134,7 @@ export function recoveredGameplayDefinition(
     version: 1,
     collision: descriptor.parts.some((p) => p.obstacle_local_game) ? "parts" : "none",
     surfaces: packet.surfaces.map(surface),
+    ...(packet.materials ? { materials: structuredClone(packet.materials) } : {}),
     ...(packet.movementClearances
       ? { movementClearances: packet.movementClearances.map(surface) }
       : {}),

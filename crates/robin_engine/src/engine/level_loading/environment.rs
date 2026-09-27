@@ -60,12 +60,15 @@ impl EngineInner {
         // detection).  Filter the raw list so `MaterialSectors::material_at`
         // and `WaterZones` see the same subset.
         //
-        // Empty `sight_material_indices` means the level has no SIGHT
-        // chunk at all (test fixtures, or broken data) — preserve the
-        // original pre-filter behaviour of including every material
-        // sector rather than silently blanking material lookup.
+        // An explicitly empty SIGHT list activates no ground materials.
+        // Legacy fixtures without a SIGHT chunk retain their implicit list.
         let filtered_material_sectors: Vec<crate::level_data::RawMaterialSector> =
-            if loaded.proto.sight_material_indices.is_empty() {
+            if loaded.proto.sight_material_indices.is_empty()
+                && !loaded
+                    .proto
+                    .grid_chunk_order
+                    .contains(&crate::level_data::ProtoGridChunk::Sight)
+            {
                 loaded.proto.material_sectors.clone()
             } else {
                 loaded

@@ -2123,6 +2123,10 @@ pub struct CompiledAssetGeometry {
     #[serde(default)]
     pub buildings: Vec<RawBuildingEntry>,
     pub sight_obstacles: Vec<RawSightObstacle>,
+    #[serde(default)]
+    pub material_sectors: Vec<RawMaterialSector>,
+    #[serde(default)]
+    pub sight_material_indices: Vec<u16>,
     pub doors: Vec<RawDoor>,
 }
 
@@ -2619,9 +2623,10 @@ impl LoadedLevel {
                         .ok_or("too many asset sectors")?;
                 }
             }
-            // Building identities follow motion's out-of-map slot and sight planes.
+            // Building identities follow motion's out-of-map slot, materials and sight planes.
             let mut next_building_sector = usize::from(sector)
                 + 1
+                + geometry.material_sectors.len()
                 + geometry
                     .sight_obstacles
                     .iter()
@@ -2687,6 +2692,18 @@ impl LoadedLevel {
                     );
                 }
             }
+            if geometry.material_sectors.len() > 65536
+                || geometry
+                    .material_sectors
+                    .iter()
+                    .any(|region| region.material > 9 || region.polygon.points.len() < 3)
+                || geometry
+                    .sight_material_indices
+                    .iter()
+                    .any(|&index| usize::from(index) >= geometry.material_sectors.len())
+            {
+                return Err("invalid asset material geometry or unresolved reference".into());
+            }
             for obstacle in &geometry.sight_obstacles {
                 if obstacle.points.len() < 3
                     || obstacle.points.iter().any(|p| {
@@ -2699,18 +2716,24 @@ impl LoadedLevel {
                     || obstacle
                         .projection_area
                         .is_some_and(|area| !area_refs.contains(&area))
-                    || !obstacle.material_indices.is_empty()
+                    || obstacle
+                        .material_indices
+                        .iter()
+                        .any(|&index| usize::from(index) >= geometry.material_sectors.len())
                 {
                     return Err("invalid asset sight geometry or unresolved reference".into());
                 }
             }
             level.proto.grid_chunk_order = vec![
                 ProtoGridChunk::Motion,
+                ProtoGridChunk::Material,
                 ProtoGridChunk::Sight,
                 ProtoGridChunk::Building,
                 ProtoGridChunk::Lift,
             ];
             level.proto.lifts = geometry.lifts;
+            level.proto.material_sectors = geometry.material_sectors;
+            level.proto.sight_material_indices = geometry.sight_material_indices;
             level.proto.motion_data = Some(geometry.motion_data);
             level.proto.sight_obstacles = geometry.sight_obstacles;
             level.proto.buildings = geometry.buildings;

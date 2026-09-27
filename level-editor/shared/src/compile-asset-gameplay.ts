@@ -153,6 +153,8 @@ export function compileAssetGameplay(
     polygon: Point[];
   }[] = [];
   const sight: SightObstacle[] = [];
+  const materials: NonNullable<CompiledAssetGeometry["material_sectors"]> = [];
+  const groundMaterials: number[] = [];
   const quantize = (n: number) => {
     const result = Math.round(n);
     if (!Number.isFinite(n) || result < -32768 || result > 32767)
@@ -180,8 +182,9 @@ export function compileAssetGameplay(
       }
       return [p[0] - bounds[0], p[1] - bounds[1], p[2]];
     };
+    const partSight = new Map<string, SightObstacle>();
     if (gameplay.collision === "parts")
-      for (const part of placement.parts.values()) {
+      for (const [node, part] of placement.parts) {
         if (!part.obstacle) continue;
         const shape = transformedObstacle(document, part);
         // Keep per-vertex heights and flags, but rebuild all map-wide references.
@@ -191,9 +194,32 @@ export function compileAssetGameplay(
           projection_area: null,
           material_indices: [],
         });
+        partSight.set(node, sight.at(-1)!);
         if (gameplay.movementBlockers === undefined)
           movementSolids.push({ owner: placement.id, shape: sight.at(-1)! });
       }
+    for (const region of gameplay.materials ?? []) {
+      const index = materials.length;
+      if (index > 65535) throw new Error("Too many asset material regions");
+      materials.push({
+        material: region.material,
+        polygon: {
+          points: ring(
+            region.polygon.map((p) => project(transform(region.node, p))),
+            `${placement.id}/${region.id}`,
+          ),
+        },
+      });
+      if (region.ground) groundMaterials.push(index);
+      for (const node of region.obstacles) {
+        const obstacle = partSight.get(node);
+        if (!obstacle)
+          throw new Error(
+            `${placement.id}/${region.id}: material obstacle ${node} is hidden or missing`,
+          );
+        obstacle.material_indices.push(index);
+      }
+    }
     for (const surface of [
       ...gameplay.surfaces,
       ...(gameplay.movementBlockers ?? []),
@@ -437,9 +463,10 @@ export function compileAssetGameplay(
     }
     return matches[0]!;
   };
-  // Runtime construction order is motion, projection planes, then buildings.
+  // Runtime construction order is motion, materials, projection planes, then buildings.
   // Motion adds an out-of-map sector; each door also consumes a constructor slot.
-  let nextInteriorSector = sector + 1 + sight.filter((o) => o.projection_area !== null).length;
+  let nextInteriorSector =
+    sector + 1 + materials.length + sight.filter((o) => o.projection_area !== null).length;
   const interiorAreas = new Map(
     interiors.map((id) => {
       const area = { sector: nextInteriorSector, layer: layers.length - 1 };
@@ -482,6 +509,9 @@ export function compileAssetGameplay(
     ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
     sight_obstacles: sight,
+    ...(materials.length
+      ? { material_sectors: materials, sight_material_indices: groundMaterials }
+      : {}),
     doors: compiledDoors.filter((_, i) => !doors[i]!.lift && !doors[i]!.interior),
     ...(interiors.length
       ? {
