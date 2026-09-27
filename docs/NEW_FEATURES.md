@@ -26,7 +26,9 @@
   requiring mission actors. Explicit non-rendering asset frames support reusable
   navigation-only boundaries in the editor, including save/reopen and independent
   placement. Their reference points can resolve inside static collision while
-  traversal endpoints still require clear positions. Visual and mask transitions remain unfinished;
+  traversal endpoints still require clear positions. An asset can explicitly select
+  permanent part/volume solids while authoring independent changing contours;
+  permanent geometry retains its local movement clearances. Visual and mask transitions remain unfinished;
   this does not certify extracted-map parity.
 
 - **Map selection and safe editing.** The editor opens on thumbnail cards, with

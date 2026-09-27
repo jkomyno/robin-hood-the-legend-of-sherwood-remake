@@ -298,6 +298,8 @@ export function compileAssetGameplay(
       });
     }
     const partSight = new Map<string, SightObstacle>();
+    const movementSolid = (id: string) =>
+      gameplay.movementSolids?.includes(id) ?? gameplay.movementBlockers === undefined;
     const explicitSight = new Set(
       (gameplay.movementTransitions ?? []).flatMap((t) => [
         ...(t.initialSight ?? []),
@@ -317,8 +319,7 @@ export function compileAssetGameplay(
           material_indices: [],
         });
         partSight.set(node, sight.at(-1)!);
-        if (gameplay.movementBlockers === undefined)
-          movementSolids.push({ owner: placement.id, shape: sight.at(-1)! });
+        if (movementSolid(node)) movementSolids.push({ owner: placement.id, shape: sight.at(-1)! });
       }
     for (const volume of gameplay.volumes ?? []) {
       const shape: SightObstacle = {
@@ -335,9 +336,11 @@ export function compileAssetGameplay(
       };
       sight.push(shape);
       partSight.set(volume.id, shape);
-      if (gameplay.movementBlockers === undefined)
-        movementSolids.push({ owner: placement.id, shape });
+      if (movementSolid(volume.id)) movementSolids.push({ owner: placement.id, shape });
     }
+    for (const id of gameplay.movementSolids ?? [])
+      if (!partSight.has(id))
+        throw new Error(`Permanent movement solid ${placement.id}/${id} is hidden or missing`);
     for (const region of gameplay.materials ?? []) {
       const index = materials.length;
       if (index > 65535) throw new Error("Too many asset material regions");

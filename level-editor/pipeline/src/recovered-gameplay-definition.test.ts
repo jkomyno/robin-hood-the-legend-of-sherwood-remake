@@ -103,6 +103,17 @@ test("geometry-only assets retain derived movement collision unless explicitly r
   );
 });
 
+test("selected permanent solids survive authoring conversion without sharing the draft list", () => {
+  const { hut } = assetCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  delete packet.movementBlockers;
+  packet.movementSolids = ["building-999"];
+  const gameplay = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(gameplay.movementSolids, ["building-999"]);
+  packet.movementSolids.length = 0;
+  assert.deepEqual(gameplay.movementSolids, ["building-999"]);
+});
+
 test("mission surface recovery uses local geometry without retaining projection references", () => {
   const { hut } = assetCompilerFixture();
   const shape = structuredClone(hut.parts[0]!.obstacle_local_game!);

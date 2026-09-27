@@ -75,8 +75,10 @@ export interface AssetGameplay {
     node: string;
     shape: Omit<SightObstacle, "projection_area" | "material_indices">;
   }[];
-  /** Omit to derive movement from sight solids; an explicit list replaces that derivation. */
+  /** Authored contours replace implicit movement derivation; movementSolids can select additional solids. */
   movementBlockers?: AssetWalkableSurface[];
+  /** Explicit part/volume IDs supplying permanent movement solids, independently of sight states. */
+  movementSolids?: string[];
   /** Plane-local openings in this asset's derived movement collision, never in other assets. */
   movementClearances?: AssetWalkableSurface[];
   surfaces: AssetWalkableSurface[];
@@ -327,9 +329,30 @@ export function validateAssetGameplay(
     for (const contour of [transition.applyPolygon, transition.noApplyPolygon])
       if (!(Array.isArray(contour) && contour.length === 0)) polygon(contour);
   }
-  if (changingSight.size && data.movementBlockers === undefined)
+  if (data.movementSolids !== undefined) {
+    if (
+      !Array.isArray(data.movementSolids) ||
+      new Set(data.movementSolids).size !== data.movementSolids.length
+    )
+      fail("invalid permanent movement solids");
+    for (const ref of data.movementSolids)
+      if (
+        typeof ref !== "string" ||
+        !(
+          data.volumes?.some((volume) => volume.id === ref && volume.shape.solid) ||
+          (data.collision === "parts" &&
+            descriptor.parts.some((part) => part.node === ref && part.obstacle_local_game?.solid))
+        )
+      )
+        fail(`invalid permanent movement solid ${ref}`);
+  }
+  if (
+    changingSight.size &&
+    data.movementBlockers === undefined &&
+    data.movementSolids === undefined
+  )
     fail(
-      "Sight transitions require explicit movement blockers; author navigation changes independently",
+      "Sight transitions require explicit movement blockers or permanent movement solids; author navigation changes independently",
     );
   const integer = (n: unknown, max: number): n is number =>
     typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= max;

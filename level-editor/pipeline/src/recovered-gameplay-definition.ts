@@ -47,6 +47,7 @@ export interface RecoveredGameplayPacket {
   volumes?: AssetGameplay["volumes"];
   /** Omitted means derive collision from parts; an empty list explicitly disables that derivation. */
   movementBlockers?: RecoveredSurface[];
+  movementSolids?: AssetGameplay["movementSolids"];
   movementClearances?: RecoveredSurface[];
   movementTransitions?: AssetGameplay["movementTransitions"];
   materials?: AssetGameplay["materials"];
@@ -162,6 +163,7 @@ export function recoveredGameplayDefinition(
     ...(packet.movementBlockers !== undefined
       ? { movementBlockers: packet.movementBlockers.map(surface) }
       : {}),
+    ...(packet.movementSolids !== undefined ? { movementSolids: [...packet.movementSolids] } : {}),
     doors: [],
     lifts: [],
     interiors: [],

@@ -640,14 +640,6 @@ for (const area of movementStateInventory)
       const initialSight = source.old_sight_obstacles.map(localRef);
       const appliedSight = source.new_sight_obstacles.map(localRef);
       const controlled = new Set([...initialSight, ...appliedSight]);
-      if (
-        p.movementBlockers === undefined &&
-        (descriptor.parts.some(
-          (part) => part.obstacle_local_game?.solid && !controlled.has(part.node),
-        ) ||
-          p.volumes?.some((volume) => volume.shape.solid && !controlled.has(volume.id)))
-      )
-        throw new Error("Unchanged collision parts need explicit stable movement contours");
       const definition = recoverMovementTransition({
         id: `movement-change-${change.patches[0]}`,
         node: owner.node,
@@ -666,9 +658,17 @@ for (const area of movementStateInventory)
         waypointHeight: heightAt(source.sector, source.layer, source.waypoint),
         localize: (point) => localize(owner.part, point),
       });
-      // Existing stable contours remain independent of the changing exclusions.
-      // With no unchanged solids, an empty list disables both endpoint colliders.
-      p.movementBlockers ??= [];
+      // Keep permanent solids and their clearances, excluding both changing endpoints.
+      // Explicit stable contours already replace part-derived movement collision.
+      if (p.movementBlockers === undefined) {
+        const solids = p.movementSolids ?? [
+          ...descriptor.parts
+            .filter((part) => part.obstacle_local_game?.solid)
+            .map((part) => part.node),
+          ...(p.volumes ?? []).filter((volume) => volume.shape.solid).map((volume) => volume.id),
+        ];
+        p.movementSolids = solids.filter((ref) => !controlled.has(ref));
+      }
       (p.movementTransitions ??= []).push(definition);
       p.issues.push(
         "Movement/sight states recovered; visual states, effects and door bindings still need separate authoring",

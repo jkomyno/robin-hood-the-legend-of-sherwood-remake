@@ -58,6 +58,79 @@ test("hidden mesh frames retain explicit gameplay and only referenced sight geom
   assert.equal(geometry.sight_obstacles.length, 1);
   assert.deepEqual(geometry.movement_transitions![0]!.applied_sight, [0]);
 });
+for (const kind of ["part", "volume"] as const)
+  test(`selected permanent ${kind} collision retains its clearances independently of changing sight`, () => {
+    const { document, assets, hut } = sightTransitionCompilerFixture();
+    const gameplay = hut.gameplay!;
+    delete gameplay.movementBlockers;
+    const fixed = structuredClone(hut.parts[0]!.obstacle_local_game!);
+    fixed.points = fixed.points.map((p) => ({ ...p, y: p.y + 30 }));
+    let ref: string;
+    if (kind === "part") {
+      ref = "building-998";
+      hut.parts.push({
+        node: ref,
+        name: "Permanent wall",
+        source_obstacle: 998,
+        obstacle_local_game: fixed,
+      });
+      const placed = structuredClone(document.objects.find((p) => p.group === "hut-a")!);
+      placed.id = "fixed-wall";
+      placed.node = `asset:hut:${ref}`;
+      placed.obstacle = fixed;
+      document.objects.push(placed);
+    } else {
+      ref = "fixed-wall";
+      const { projection_area: _projection, material_indices: _materials, ...shape } = fixed;
+      gameplay.volumes!.push({ id: ref, node: "building-999", shape });
+    }
+    gameplay.movementSolids = [ref];
+    gameplay.movementClearances = [
+      {
+        id: "opening",
+        node: "building-999",
+        height: 0,
+        polygon: [
+          [40, 70],
+          [45, 70],
+          [45, 80],
+          [40, 80],
+        ],
+      },
+    ];
+    const compiled = compileAssetGameplay(document, assets, bounds);
+    const permanent = compiled.motion_data.layers.flatMap((layer) =>
+      layer.flatMap((area) => area.obstacles.filter((o) => o.state_id === 0)),
+    );
+    assert.equal(permanent.length, 1);
+    assert.deepEqual(permanent[0]!.polygon.points.map((p) => p.join(",")).sort(), [
+      "345,370",
+      "345,380",
+      "350,370",
+      "350,380",
+    ]);
+    assert.equal(compiled.sight_obstacles.length, 3);
+    assert.equal(compiled.movement_transitions!.length, 1);
+    for (const part of document.objects) part.transform.dx += 100;
+    const moved = compileAssetGameplay(document, assets, bounds);
+    const after = moved.motion_data.layers.flatMap((layer) =>
+      layer.flatMap((area) => area.obstacles.filter((o) => o.state_id === 0)),
+    );
+    assert.deepEqual(
+      after[0]!.polygon.points,
+      permanent[0]!.polygon.points.map(([x, y]) => [x + 100, y]),
+    );
+    gameplay.movementSolids = ["absent"];
+    assert.throws(
+      () => compileAssetGameplay(document, assets, bounds),
+      /invalid permanent movement solid/,
+    );
+    gameplay.movementSolids = [ref, ref];
+    assert.throws(
+      () => compileAssetGameplay(document, assets, bounds),
+      /invalid permanent movement solids/,
+    );
+  });
 test("duplicated sight transitions control only their own transformed obstacles", () => {
   const { document, assets } = sightTransitionCompilerFixture();
   const part = document.objects.find((p) => p.group)!;

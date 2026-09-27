@@ -1,0 +1,10 @@
+{
+  "groups": [
+    {
+      "id": "croisement02-central-pitched-cover",
+      "name": "Central pitched cover",
+      "rationale": "The two sloped volumes share one ridge and one removable cover mask. Their movement and sight state belongs to the complete cover.",
+      "parts": [{ "obstacle": 142 }, { "obstacle": 143 }]
+    }
+  ]
+}

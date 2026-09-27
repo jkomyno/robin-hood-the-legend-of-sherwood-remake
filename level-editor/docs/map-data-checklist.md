@@ -15,7 +15,7 @@ intended construction, not functionality available today.
 | Character occlusion | Bake a 16-bit depth PNG from scene geometry. | Working for static scenes |
 | Projectile/view/obstacle masks and masking polylines | Generate typed masks and links from asset geometry and states. A depth PNG alone does **not** replace all these semantics. | Planned |
 | Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions or explicit local regions spanning several planes, then assign fresh sectors/layers. | Partial: flat/sloped surfaces, holes and ordinary multi-plane regions tested; cross-asset multi-plane joins and full-map connectivity unfinished |
-| Movement blockers | Transform explicit asset-local movement contours on their height plane; otherwise intersect collision volumes with walkable surfaces. Sight geometry stays independent. | Working in synthetic tests; recovered ownership still needs review |
+| Movement blockers | Transform explicit asset-local movement contours; optionally select permanent part/volume solids and intersect them with walkable surfaces. Sight states stay independent. | Working in synthetic tests; recovered ownership still needs review |
 | Openings in movement collision | Asset-local clearances remove only the owning asset's derived collision on the matching plane; sight geometry and other assets remain intact. | Working in compiler/runtime tests; recovery geometry failures remain explicit gaps |
 | Navigation graph and fast-find grid | Engine constructs routing and spatial lookup structures from compiled geometry. No copied grids or graph bytes. | Working on synthetic maps |
 | Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. Explicit transition references select initial/applied obstacles. | Static geometry working; sight transitions verified through native initialization, apply and reset; recovered state ownership still incomplete |
@@ -144,24 +144,30 @@ edges once and stores local sockets, never runtime references between assets.
 
 Stable terrain is recovered even when its movement area has changing obstacles.
 The recovery inventory preserves all 27 changing-obstacle groups, their initial
-and applied contours, and patch associations. Eighteen now recover into asset-local
-movement/sight transitions: five in Croisement01, seven in Croisement02, five in
-Croisement03 and one in Nottingham. Four belong to existing physical assets;
+and applied contours, and patch associations. Twenty-one now recover into asset-local
+movement/sight transitions: five in Croisement01, eight in Croisement02, seven in
+Croisement03 and one in Nottingham. Seven belong to physical assets;
 fourteen navigation-only boundaries have newly staged assets and editor placements.
 These non-rendering assets carry their own local contours and support independent
 movement and duplication. They add no mission actors or scripts. Their models,
 descriptor hashes and editor index entries are staged but not yet published.
 Each transition has one unambiguous asset owner and explicit stable movement
-contours; an empty stable list is allowed only when no unchanged solid remains.
+contours or a local list of permanent collision solids. The latter keeps a mixed
+asset's unchanged parts and their clearances without deriving permanent collision
+from the changing endpoints. Croisement03's compound obstacle uses three permanent
+parts and one changing part. Two additional pitched-cover assets combine paired
+sloped volumes that share one ridge and cover mask; both pass real-browser
+loading, insertion, save/reopen and rendering checks. Their visual/mask state
+export remains pending.
 Changing contours are split across receiving planes while preserving holes and
 projection priority. Output stores local geometry and references, with fresh
-movement bindings allocated during compilation. The other nine still need explicit
-ownership, stable collision authoring or elevated receiving geometry. One remaining
+movement bindings allocated during compilation. The other six still need explicit
+ownership or elevated receiving geometry. One remaining
 navigation-only contour extends beyond its elevated receiving surface and is
 rejected rather than assigned an inferred height. `movementTransitionRecovery` records
 the recovered groups, and each unresolved group has a specific failure reason.
 Visual states, effects and door bindings remain separate pending work.
-The eighteen recovered transitions pass native initialization, apply and reset checks:
+The twenty-one recovered transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.
 Transition reference points may lie inside static blockers; they must still resolve
 to a unique surface at the authored height. Door and jump endpoints require an
