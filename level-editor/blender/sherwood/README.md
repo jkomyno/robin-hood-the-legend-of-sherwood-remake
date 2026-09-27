@@ -411,3 +411,21 @@ TODO: The original `pipeline/src/volume-fill.ts` synthesizes eligible partially
 visible tiles independently, but fully hidden faces still borrow/repeat donors.
 A general exporter fix needs synthesis for those faces and continuity across
 adjacent face boundaries; this Blender correction does not change that pipeline.
+
+### Full grouped texture publication
+
+After all synthesis/bakes and saved-worker checks pass, an explicit request to
+publish the full set can use `stage_full_publication.py --candidate CANDIDATE
+--output STAGE` under Blender, followed by `python3
+blender/sherwood/full_publication.py STAGE --install`. This exports the approved
+80-group catalog plus terrain, preserves world geometry and original unsplit
+obstacle volumes, and uses the shared component-footprint export for the two
+split native sources. Authored component selectors are retained alongside their
+portable publication IDs. The merged central oak retains its native upper-trunk
+part through the existing triangle partitioner.
+
+The installer checks all embedded textures, ownership, placement pivots, native
+flags and runtime scene metadata, then replaces the Sherwood library under its
+shared lock with rollback backups. Superseded fragments are retired. This path
+records explicit publication authorization separately from texture approval;
+texture review remains pending and gallery generation need not block installation.
