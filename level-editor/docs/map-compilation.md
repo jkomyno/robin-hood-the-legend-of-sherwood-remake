@@ -176,3 +176,29 @@ cargo test -p robin_engine --test asset_map_compilation
 It constructs an actual engine and checks grid, sight, door links and blocked
 versus clear movement queries. Passing this fixture is not a claim of complete
 functional parity for the extracted game maps.
+
+
+## Whole-library checks
+
+Check every saved scene, including custom scenes which reuse assets from other
+maps, against its pinned asset definitions:
+
+```sh
+pnpm --filter pipeline exec node src/audit-map-compilation.ts --out ../work/map-compile/all-maps-audit.json
+```
+
+The check calls the actual gameplay compiler, reports each map separately, and
+returns a failure status if any map fails (or the scene directory is empty).
+It reads only the saved editor maps and asset library. Passing this check covers
+geometry compilation; it does not certify rendered output or gameplay parity.
+
+The separately authorized one-time recovery can process all source-map scenes:
+
+```sh
+pnpm --filter pipeline exec node src/recover-library-gameplay.ts --sources ../../datadirs/fullgame_gog_hackable/Data/Levels --out ../work/map-compile/all-map-recovery
+```
+
+This writes per-asset authoring drafts and a library-wide recovery report.
+Custom scenes without a `sourceMap` use shared asset definitions; their own
+terrain, spawns and scene-specific features still need authoring. Recovery drafts
+are not automatically installed as complete gameplay definitions.
