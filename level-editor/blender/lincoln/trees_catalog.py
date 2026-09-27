@@ -2,7 +2,7 @@
 
 Plain Python, run from the repository root after trees_geometry.py:
 
-    python3 level-editor/blender/lincoln/trees_catalog.py
+    python3 level-editor/blender/lincoln/trees_catalog.py            # LINCOLN_TREES_SCENE=scene-v2 selects a rebuilt scene
     python3 level-editor/blender/lincoln/trees_catalog.py merge <base-catalog.json> <merged.json>
 
 Writes into work/lincoln-refinement/trees/ (never touches grouping/ or mask-review/):
@@ -31,7 +31,7 @@ PROPOSAL = R / 'scratch/trees/inventory/tree-catalog-proposal.json'
 BASE_CATALOG = R / 'grouping/catalog-v4.json'
 MASKS = R / 'mask-review/source-masks-v5.json'
 SOURCE = R / 'source-states/covered.png'
-SCENE_INVENTORY = OUT / 'scene/inventory/inventory.json'
+SCENE_INVENTORY = OUT / os.environ.get('LINCOLN_TREES_SCENE', 'scene') / 'inventory/inventory.json'
 FIRST_INDEX = 456
 W, H = 2944, 2176
 

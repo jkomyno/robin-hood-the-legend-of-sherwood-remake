@@ -192,7 +192,8 @@ def main():
     import bpy
     sys.path.insert(0, json.loads((R / 'tooling-trees/current.json').read_text())['directory'])
     proposal = {r['id']: r for r in json.loads((R / 'scratch/trees/inventory/tree-catalog-proposal.json').read_text())['assets']}
-    scene = json.loads((T / 'scene/scene-report.json').read_text())
+    import os
+    scene = json.loads((T / os.environ.get('LINCOLN_TREES_SCENE', 'scene') / 'scene-report.json').read_text())
     scene_rows = {r['asset_id']: r for r in scene['assets']}
     ids = args or [i for i in proposal if (T / 'assets' / i / 'modified/views.json').exists()]
     bpy.ops.wm.open_mainfile(filepath=scene['output_blend'], load_ui=False)

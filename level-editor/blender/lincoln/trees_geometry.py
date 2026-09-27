@@ -19,7 +19,8 @@ and built with their recipes (imported, not copied):
   ``foliage_trees.refine_crown`` builds paired curved cutout cards per lobe (source front,
   neutral back) plus two transverse neutral cards. Every card lies on the vertical plane
   through the foot and is offset only along the source ray, so the source view is exact.
-  Lobe count, depth and card offsets scale with the plant; low linear plantings get flat lobes.
+  Lobes spread along the ray over a round plan footprint as deep as the crown is wide
+  (clipped at architecture, terrain and ground); low linear plantings stay shallow.
 - wood (projection_component ``wood``): ``props_trees.geometry`` lofts a trunk from the terrain
   contact and forks toward the upper lobes (a short stem for bushes).
 Scenery (``scenery-<slug>``): explicit plank/post geometry fitted to traced source corners.
@@ -42,7 +43,7 @@ sys.path.insert(0, str(ROOT / 'level-editor/blender/lincoln'))
 sys.path.insert(0, str(ROOT / 'level-editor/blender/leicester'))
 from render_slots import acquire  # noqa: E402
 
-VERSION = 'lincoln-foliage-cards-v5'
+VERSION = 'lincoln-foliage-cards-v6'
 SCENE_BLEND = R / 'grouped/lincoln-grouped-v5.blend'
 CATALOG = R / 'scratch/trees/inventory/tree-catalog-proposal.json'
 MASKS = R / 'mask-review/source-masks-v5.json'
@@ -254,8 +255,6 @@ def foliage_packet(row, node_number, ground, plan, directory):
         x0, y0, x1, y1 = lobe['bbox_source']
         if plan['shape'] == 'linear-flat':
             lobe['depth_radius'] = .35 * min(x1 - x0, y1 - y0)
-        elif plan['shape'] == 'bush-round':
-            lobe['depth_radius'] = .45 * max(x1 - x0, y1 - y0)
     return evidence
 
 
@@ -289,10 +288,8 @@ def wood_paths(domain, foot_on_plane, seeds, width, kind):
             for path in paths]
 
 
-def build_foliage(row, terrain_tree, architecture_tree, collection, image, directory, node_number):
+def build_foliage(row, terrain_tree, architecture_tree, static_tree, collection, image, directory, node_number):
     import numpy as np
-    import foliage_trees
-    import props_trees
     node = node_for(row)
     domain = load_domain(row)
     base, base_rule = base_pixel(domain)
@@ -311,20 +308,160 @@ def build_foliage(row, terrain_tree, architecture_tree, collection, image, direc
             foot, foot_pixel, walked = ground_contact(terrain_tree, architecture_tree, base, 0.)
             base_rule += '; crown depth clearance waived (overhang)'
     # Leicester convention: cards lie on the vertical plane native y = ground.
-    ground = -foot.y * SIN
+    ground0 = -foot.y * SIN
     plan = lobe_plan(domain, row['kind'])
     props = dict(source_node=node, asset_group=row['id'], asset_name=row['name'],
                  part_name='Painted ' + row['kind'], foliage_recipe=VERSION, foliage_kind=row['kind'])
+    samples = list(zip(xs[::5], ys[::5]))
+    shift, attempts = 0., []
+    while True:
+        ground = ground0 + shift
+        if shift:
+            # Moved toward the camera along the source rays (projection unchanged): the
+            # foot drops vertically from the plane at the base pixel onto whatever is below.
+            foot = drop_to_surface(static_tree, world_on_plane(foot_pixel[0], foot_pixel[1], ground))
+        crown, wood, crown_report, evidence, paths = build_parts(row, node_number, ground, foot, plan, props,
+                                                                 collection, image, directory, domain, width, static_tree)
+        hidden = hidden_fraction([crown, wood], static_tree, samples)
+        attempts.append(dict(card_plane_native_y=ground, shift=shift, hidden_domain_fraction=hidden))
+        if hidden <= .05 or shift >= MAX_SHIFT:
+            break
+        # Rebuild in front: remove this attempt's meshes (and their unused data).
+        for obj in (crown, wood):
+            mesh = obj.data
+            bpy_remove(obj)
+            if mesh.users == 0:
+                import bpy
+                bpy.data.meshes.remove(mesh)
+        shift += SHIFT_STEP
+    native_foot_z = foot.z * COS
+    return dict(asset_id=row['id'], kind=row['kind'], source_node=node, base_pixel=list(base), base_pixel_rule=base_rule,
+                foot_pixel=list(foot_pixel), foot_walked_up_pixels=walked, ground_contact_world=list(foot),
+                ground_contact_native_z=native_foot_z, card_plane_native_y=ground, lobe_plan=plan,
+                depth_fit=attempts,
+                wood_paths=paths, lobes=len(evidence['lobes']),
+                crown={k: v for k, v in crown_report.items() if k != 'source_partition'} | dict(name=crown.name),
+                wood=dict(name=wood.name, **topology(wood)))
+
+
+# Depth fit: when other geometry hides more than 5% of a plant's painted pixels, move its
+# card plane toward the camera in SHIFT_STEP native-y steps (source projection unchanged).
+SHIFT_STEP, MAX_SHIFT = 12., 360.
+
+
+def bpy_remove(obj):
+    import bpy
+    bpy.data.objects.remove(obj, do_unlink=True)
+
+
+def drop_to_surface(static_tree, point, lift=2.):
+    from mathutils import Vector
+    hit = static_tree.ray_cast(point + Vector((0, 0, lift)), Vector((0, 0, -1)))[0]
+    if hit is None:
+        raise ValueError(f'No surface below {tuple(point)}')
+    return hit
+
+
+def hidden_fraction(objects, static_tree, samples):
+    """Fraction of sampled domain pixels where static geometry is hit before the plant
+    (plant hits honour physical cutout alpha)."""
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    from physical_opacity import OpacityRegistry
+    import bpy
+    bpy.context.view_layer.update()
+    opacity = OpacityRegistry()
+    verts, tris = [], []
+    for obj in objects:
+        obj.data.calc_loop_triangles()
+        offset = len(verts)
+        verts += [obj.matrix_world @ v.co for v in obj.data.vertices]
+        for tri in obj.data.loop_triangles:
+            opacity.add(obj, obj.data, tri)
+            tris.append(tuple(offset + i for i in tri.vertices))
+    own = opacity.wrap(BVHTree.FromPolygons(verts, tris, all_triangles=True))
+    toward = Vector((0, -COS, SIN))
+    hidden = seen = 0
+    for x, y in samples:
+        start = Vector((x + .5, 0, -(y + .5) / COS)) + toward * 20000
+        mine = own.ray_cast(start, -toward)
+        if mine[0] is None:
+            continue
+        seen += 1
+        other = static_tree.ray_cast(start, -toward)
+        if other[0] is not None and other[3] < mine[3]:
+            hidden += 1
+    return hidden / max(seen, 1)
+
+
+def round_depths(evidence, ground, domain, static_tree):
+    """Per-lobe (offset, radius) along the source ray so the crown is about as deep as it is
+    wide: lobes spread over a round plan footprint of the crown's visible width, alternating
+    front and back. Each lobe's ray extent is clipped where architecture or terrain lies in
+    front of or behind it, and where its back would sink into the ground. Returns
+    (depths, radii, clips); a lobe occupies [depth - radius, depth + radius] along the ray.
+    """
+    import numpy as np
+    from mathutils import Vector
+    toward = Vector((0, -COS, SIN))
+    ys, xs = np.nonzero(domain)
+    centre_x, half_width = float(xs.mean()), (xs.max() - xs.min() + 1) / 2.
+    depths, radii, clips = [], [], []
+    for number, lobe in enumerate(evidence['lobes']):
+        x0, y0, x1, y1 = lobe['bbox_source']
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        # Plan-view half depth available at this lobe's x on a disc of the crown's width,
+        # converted to distance along the source ray (horizontal = cos35 * ray distance).
+        half_depth = math.sqrt(max(half_width ** 2 - (cx - centre_x) ** 2, (.35 * half_width) ** 2)) / COS
+        own = .55 * max(x1 - x0, y1 - y0)
+        sign = 1 if number % 2 == 0 else -1
+        depth, radius = sign * .5 * half_depth, max(own, .5 * half_depth)
+        low, high = depth - radius, depth + radius
+        centre = world_on_plane(cx, cy, ground)
+        clip = []
+        ahead = static_tree.ray_cast(centre, toward)
+        if ahead[0] is not None and ahead[3] - 2 < high:
+            high = max(ahead[3] - 2, 2.); clip.append('front architecture/terrain')
+        behind = static_tree.ray_cast(centre, -toward)
+        if behind[0] is not None and -(behind[3] - 2) > low:
+            low = min(-(behind[3] - 2), -2.); clip.append('back architecture/terrain')
+        # The back card's lowest edge must stay above the ground below it.
+        bottom = world_on_plane(cx, y1, ground)
+        for _ in range(40):
+            point = bottom + toward * low
+            surface = static_tree.ray_cast(point + Vector((0, 0, 400)), Vector((0, 0, -1)))[0]
+            if surface is None or surface.z <= point.z or low >= -2:
+                break
+            low = min(low + 4., -2.); clip.append('back ground') if 'back ground' not in clip else None
+        depths.append((low + high) / 2)
+        radii.append(max((high - low) / 2, 2.))
+        clips.append(clip)
+    return depths, radii, clips
+
+
+def build_parts(row, node_number, ground, foot, plan, props, collection, image, directory, domain, width, static_tree):
+    import foliage_trees
+    import props_trees
     original_depths = list(foliage_trees.DEPTHS)
-    foliage_trees.DEPTHS[:] = [d * plan['offset_scale'] for d in original_depths]
     try:
-        evidence = foliage_packet(row, node_number, ground, plan, directory)
+        if plan['shape'] == 'linear-flat':
+            # Hedges, beds and fences: the painting shows a line; keep them shallow.
+            foliage_trees.DEPTHS[:] = [d * plan['offset_scale'] for d in original_depths]
+            evidence = foliage_packet(row, node_number, ground, plan, directory)
+            clips = []
+        else:
+            evidence = foliage_packet(row, node_number, ground, plan, directory)
+            depths, radii, clips = round_depths(evidence, ground, domain, static_tree)
+            foliage_trees.DEPTHS[:] = depths + original_depths[len(depths):]
+            for lobe, radius in zip(evidence['lobes'], radii):
+                lobe['depth_radius'] = radius
         crown = mesh_object(row['name'] + ' / crown', [], [], collection, {**props, 'projection_component': 'crown'})
         crown_report = foliage_trees.refine_crown(crown, node_number, evidence)
+        crown_report['lobe_depth_clips'] = clips
+        crown_report['lobe_depths'] = list(foliage_trees.DEPTHS[:len(evidence['lobes'])])
     finally:
         foliage_trees.DEPTHS[:] = original_depths
-    native_foot_z = foot.z * COS
-    paths = wood_paths(domain, (foot.x, ground - native_foot_z), foliage_trees.CONFIG[node_number]['seeds'],
+    paths = wood_paths(domain, (foot.x, ground - foot.z * COS), foliage_trees.CONFIG[node_number]['seeds'],
                        width, row['kind'])
     props_trees.SUPPORTED.add(node_number)
     props_trees.GROUND[node_number] = ground
@@ -333,12 +470,7 @@ def build_foliage(row, terrain_tree, architecture_tree, collection, image, direc
     verts, faces = props_trees.geometry(node_number, 'wood')
     wood = mesh_object(row['name'] + ' / wood', verts, faces, collection, {**props, 'projection_component': 'wood'})
     source_uv_and_material(wood, image)
-    return dict(asset_id=row['id'], kind=row['kind'], source_node=node, base_pixel=list(base), base_pixel_rule=base_rule,
-                foot_pixel=list(foot_pixel), foot_walked_up_pixels=walked, ground_contact_world=list(foot),
-                ground_contact_native_z=native_foot_z, card_plane_native_y=ground, lobe_plan=plan,
-                wood_paths=paths, lobes=len(evidence['lobes']),
-                crown={k: v for k, v in crown_report.items() if k != 'source_partition'} | dict(name=crown.name),
-                wood=dict(name=wood.name, **topology(wood)))
+    return crown, wood, crown_report, evidence, paths
 
 
 # Landing stage corners traced on the source (x, y): deck back-left, back-right,
@@ -360,41 +492,63 @@ def box_between(a, b, radius, sides=8):
     return verts, faces
 
 
-def build_landing_stage(row, terrain_tree, collection, image):
-    """Plank deck at the height that places its painted front-left post on the terrain."""
+def build_landing_stage(row, terrain_tree, static_tree, collection, image):
+    """Plank deck at the height that places its painted front-left post on the terrain.
+
+    If the bank hides the deck from the source camera, the whole stage moves toward the
+    camera along the source rays (projection unchanged); posts drop vertically to the ground.
+    """
     from mathutils import Vector
     node = node_for(row)
+    toward = Vector((0, -COS, SIN))
     post_foot = terrain_hit(terrain_tree, LANDING['post_foot'])
     foot_native_z = post_foot.z * COS
     # The painted post runs from the deck's front-left corner straight down to its foot,
     # so the deck stands (post pixel length) native units above that foot.
     deck_z = foot_native_z + (LANDING['post_foot'][1] - LANDING['deck'][3][1])
-    corners = [Vector((x, -(y + deck_z) / SIN, deck_z / COS)) for x, y in LANDING['deck']]
+    base_corners = [Vector((x, -(y + deck_z) / SIN, deck_z / COS)) for x, y in LANDING['deck']]
+    pole_top0 = terrain_hit(terrain_tree, LANDING['pole_foot']) + Vector((0, 0, (LANDING['pole_foot'][1] - LANDING['pole_top'][1]) / COS))
     down = Vector((0, 0, -LANDING['deck_thickness'] / COS))
-    verts = corners + [c + down for c in corners]
-    faces = [(0, 1, 2, 3), (7, 6, 5, 4), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]
     props = dict(source_node=node, asset_group=row['id'], asset_name=row['name'],
                  part_name='Landing stage and mooring pole', foliage_recipe=VERSION)
-    parts = [mesh_object(row['name'] + ' / deck', verts, faces, collection, {**props, 'projection_component': 'deck'})]
-    # Four posts under the deck corners down to the terrain, and the mooring pole.
-    post_verts, post_faces = [], []
-    for corner in corners:
-        foot = terrain_hit(terrain_tree, pixel_of(corner + down))
-        bottom = Vector((corner.x, corner.y, min(foot.z, corner.z + down.z) - 4))
-        v, f = box_between(bottom, corner + down, 2.2)
+    domain = load_domain(row)
+    import numpy as np
+    ys, xs = np.nonzero(domain)
+    samples = list(zip(xs[::2], ys[::2]))
+    shift, attempts = 0., []
+    while True:
+        corners = [c + toward * shift for c in base_corners]
+        verts = corners + [c + down for c in corners]
+        faces = [(0, 1, 2, 3), (7, 6, 5, 4), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]
+        parts = [mesh_object(row['name'] + ' / deck', verts, faces, collection, {**props, 'projection_component': 'deck'})]
+        post_verts, post_faces = [], []
+        for corner in corners:
+            # Start above: a buried corner still finds the bank surface over it.
+            ground = drop_to_surface(static_tree, corner + down, 200.)
+            v, f = box_between(ground - Vector((0, 0, 4)), corner + down, 2.2)
+            post_faces += [tuple(len(post_verts) + i for i in face) for face in f]
+            post_verts += v
+        pole_top = pole_top0 + toward * shift
+        pole_foot = drop_to_surface(static_tree, pole_top, 0.)
+        v, f = box_between(pole_foot - Vector((0, 0, 4)), pole_top, 2.)
         post_faces += [tuple(len(post_verts) + i for i in face) for face in f]
         post_verts += v
-    pole_foot = terrain_hit(terrain_tree, LANDING['pole_foot'])
-    pole_height = LANDING['pole_foot'][1] - LANDING['pole_top'][1]
-    v, f = box_between(pole_foot - Vector((0, 0, 4)), pole_foot + Vector((0, 0, pole_height / COS)), 2.)
-    post_faces += [tuple(len(post_verts) + i for i in face) for face in f]
-    post_verts += v
-    parts.append(mesh_object(row['name'] + ' / posts', post_verts, post_faces, collection,
-                             {**props, 'projection_component': 'posts'}))
+        parts.append(mesh_object(row['name'] + ' / posts', post_verts, post_faces, collection,
+                                 {**props, 'projection_component': 'posts'}))
+        hidden = hidden_fraction(parts, static_tree, samples)
+        attempts.append(dict(shift_along_source_ray=shift, hidden_domain_fraction=hidden))
+        if hidden <= .05 or shift >= 120:
+            break
+        for part in parts:
+            mesh = part.data
+            bpy_remove(part)
+            import bpy
+            bpy.data.meshes.remove(mesh)
+        shift += 4.
     for part in parts:
         source_uv_and_material(part, image)
-    return dict(asset_id=row['id'], kind='scenery', source_node=node, deck_native_z=deck_z,
-                post_foot_native_z=foot_native_z, pole_foot_native_z=pole_foot.z * COS,
+    return dict(asset_id=row['id'], kind='scenery', source_node=node, deck_native_z=corners[0].z * COS,
+                post_foot_native_z=foot_native_z, pole_foot_native_z=pole_foot.z * COS, depth_fit=attempts,
                 meshes=[dict(name=p.name, **topology(p)) for p in parts])
 
 
@@ -439,15 +593,17 @@ def main():
     terrain_tree = bvh(terrain)
     architecture_tree = bvh([o for o in collection.all_objects
                              if o.type == 'MESH' and not o.hide_render and o not in terrain])
+    # Everything already in the scene (no foliage yet): depth-fit occluders and foot surfaces.
+    static_tree = bvh([o for o in collection.all_objects if o.type == 'MESH' and not o.hide_render])
     image = bpy.data.images.load(str(SOURCE), check_existing=True)
     reports, failures = [], []
     for number, row in enumerate(selected):
         try:
             if row['kind'] == 'scenery':
-                reports.append(build_landing_stage(row, terrain_tree, collection, image))
+                reports.append(build_landing_stage(row, terrain_tree, static_tree, collection, image))
             else:
                 # Lobe partition ids only key the Leicester recipe tables; they are not mask indices.
-                reports.append(build_foliage(row, terrain_tree, architecture_tree, collection, image,
+                reports.append(build_foliage(row, terrain_tree, architecture_tree, static_tree, collection, image,
                                              output / 'foliage-source' / row['id'], 10000 + number))
         except ValueError as error:
             if not args.keep_going:
