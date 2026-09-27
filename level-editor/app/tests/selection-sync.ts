@@ -34,7 +34,9 @@ async function main() {
     partViews: Map<string, { wrapper: THREE.Group; rot: THREE.Group; meshes: THREE.Mesh[] }>;
     gizmoFrame: THREE.Object3D;
     selectionBox: THREE.Box3Helper;
-    gizmo: { attach(object: THREE.Object3D): void; detach(): void };
+    dragging: boolean;
+    refreshSelectionBox(): void;
+    gizmo: { dragging?: boolean; attach(object: THREE.Object3D): void; detach(): void };
   };
   let attached: THREE.Object3D | null = null;
   state.gizmo = {
@@ -83,6 +85,24 @@ async function main() {
       );
     }
   }
+  const dragged = state.partViews.get("a")!.wrapper;
+  state.dragging = true;
+  dragged.position.x += 125;
+  state.refreshSelectionBox();
+  assert(
+    state.gizmoFrame.position.distanceTo(dragged.getWorldPosition(new THREE.Vector3())) < 1e-9,
+    "Gizmo must follow direct object dragging before release",
+  );
+  state.gizmo.dragging = true;
+  state.gizmoFrame.position.x += 50;
+  const handlePosition = state.gizmoFrame.position.clone();
+  state.refreshSelectionBox();
+  assert(
+    state.gizmoFrame.position.equals(handlePosition),
+    "Handle dragging must retain control of the gizmo frame",
+  );
+  state.gizmo.dragging = false;
+  state.dragging = false;
   setSelection(null);
   await flush();
   assert(

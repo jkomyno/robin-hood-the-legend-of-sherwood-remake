@@ -362,7 +362,9 @@ export class EditorViewport {
     this.gizmoFrame.rotation.set(0, THREE.MathUtils.degToRad(degrees), 0);
   }
   private syncGizmoFrame(view = this.selectedView()) {
-    if (view && !this.dragging) view.wrapper.getWorldPosition(this.gizmoFrame.position);
+    // Direct object drags move the wrapper, so its gizmo must follow each frame.
+    // Only freeze synchronization while TransformControls itself owns the drag.
+    if (view && !this.gizmo?.dragging) view.wrapper.getWorldPosition(this.gizmoFrame.position);
   }
   setGizmoVertical(vertical: boolean) {
     if (this.gizmo) this.gizmo.showY = vertical;
