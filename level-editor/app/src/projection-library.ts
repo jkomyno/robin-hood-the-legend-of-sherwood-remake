@@ -333,7 +333,11 @@ export async function prepareProjectionAsset(
       node.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) meshes++;
       });
-      if (!meshes) throw new Error(`Standalone part has no mesh: ${node.name}`);
+      if (part.gameplay_only === true) {
+        if (meshes || node.userData.gameplay_only !== true)
+          throw new Error(`Invalid gameplay-only frame: ${node.name}`);
+      } else if (!meshes || node.userData.gameplay_only === true)
+        throw new Error(`Standalone part has no mesh: ${node.name}`);
       sources.set(key, node);
     }
     if (sources.size !== parts.size) throw new Error(`Missing standalone asset parts: ${entry.id}`);

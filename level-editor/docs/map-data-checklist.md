@@ -144,18 +144,28 @@ edges once and stores local sockets, never runtime references between assets.
 
 Stable terrain is recovered even when its movement area has changing obstacles.
 The recovery inventory preserves all 27 changing-obstacle groups, their initial
-and applied contours, and patch associations. Four now recover into asset-local
-movement/sight transitions: two in Croisement02, one in Croisement03 and one in
-Nottingham. Each has one unambiguous asset owner and explicit stable movement
+and applied contours, and patch associations. Eighteen now recover into asset-local
+movement/sight transitions: five in Croisement01, seven in Croisement02, five in
+Croisement03 and one in Nottingham. Four belong to existing physical assets;
+fourteen navigation-only boundaries have newly staged assets and editor placements.
+These non-rendering assets carry their own local contours and support independent
+movement and duplication. They add no mission actors or scripts. Their models,
+descriptor hashes and editor index entries are staged but not yet published.
+Each transition has one unambiguous asset owner and explicit stable movement
 contours; an empty stable list is allowed only when no unchanged solid remains.
 Changing contours are split across receiving planes while preserving holes and
 projection priority. Output stores local geometry and references, with fresh
-movement bindings allocated during compilation. The other 23 still need explicit
-ownership or stable collision authoring. `movementTransitionRecovery` records
+movement bindings allocated during compilation. The other nine still need explicit
+ownership, stable collision authoring or elevated receiving geometry. One remaining
+navigation-only contour extends beyond its elevated receiving surface and is
+rejected rather than assigned an inferred height. `movementTransitionRecovery` records
 the recovered groups, and each unresolved group has a specific failure reason.
 Visual states, effects and door bindings remain separate pending work.
-The four recovered transitions pass native initialization, apply and reset checks:
+The eighteen recovered transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.
+Transition reference points may lie inside static blockers; they must still resolve
+to a unique surface at the authored height. Door and jump endpoints require an
+unblocked receiving position.
 The ignored `recovered_asset_transitions_apply_and_reset_native_geometry` test uses
 `ROBIN_ASSET_MAP_DIAGNOSTICS` to load the generated transition-bearing probes.
 `omittedMovementTransitions` makes missing transition definitions explicit

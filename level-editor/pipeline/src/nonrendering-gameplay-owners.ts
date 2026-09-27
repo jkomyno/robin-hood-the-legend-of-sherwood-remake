@@ -1,6 +1,8 @@
 export interface GameplayOwnershipCatalog {
   groups: { id: string; parts: { obstacle?: number }[] }[];
   nonrendering_sources?: { obstacle: number; owner: string }[];
+  /** Offline ownership only; compiled assets retain no patch indices. */
+  movement_transitions?: { patch: number; owner: string; node: string }[];
 }
 
 /** Resolve explicit authoring ownership against the assets actually pinned in the scene. */

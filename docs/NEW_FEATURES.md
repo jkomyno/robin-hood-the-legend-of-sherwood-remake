@@ -20,9 +20,13 @@
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits
-  to each instance. Blocker holes and trigger polygons are retained. The game
+  to each instance. Blocker holes, trigger polygons and local sight-obstacle
+  references are retained. The game
   applies and resets all affected areas through native map patches, without
-  requiring mission actors. Visual, sight and mask transitions remain unfinished;
+  requiring mission actors. Explicit non-rendering asset frames support reusable
+  navigation-only boundaries in the editor, including save/reopen and independent
+  placement. Their reference points can resolve inside static collision while
+  traversal endpoints still require clear positions. Visual and mask transitions remain unfinished;
   this does not certify extracted-map parity.
 
 - **Map selection and safe editing.** The editor opens on thumbnail cards, with

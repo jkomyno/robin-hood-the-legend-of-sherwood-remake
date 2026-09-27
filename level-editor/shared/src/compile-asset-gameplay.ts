@@ -679,13 +679,13 @@ export function compileAssetGameplay(
     }
     sector += 1 + blockers.length + changing.obstacles.length;
   }
-  const resolve = (point: Vec3, label: string, lift?: string) => {
+  const resolve = (point: Vec3, label: string, lift?: string, allowBlocked = false) => {
     const matches = areas.filter(
       (a) =>
         a.lift === lift &&
         Math.abs(planeHeight(a.plane, [point[0], point[1] - point[2]]) - point[2]) < 1e-4 &&
         inside(project(point), a.polygon) &&
-        !a.blockers.some((b) => inside(project(point), b)),
+        (allowBlocked || !a.blockers.some((b) => inside(project(point), b))),
     );
     if (new Set(matches.map((a) => a.sector)).size !== 1) {
       const containing = areas.filter((a) => inside(project(point), a.polygon));
@@ -697,7 +697,7 @@ export function compileAssetGameplay(
         blocked: a.blockers.some((b) => inside(project(point), b)),
       }));
       throw new Error(
-        `${label} must resolve to exactly one unblocked walkable surface (found ${matches.length}); world point ${JSON.stringify(point)}, projected ${JSON.stringify(project(point))}; containing areas (${containing.length}, showing up to 8) ${JSON.stringify(details)}`,
+        `${label} must resolve to exactly one ${allowBlocked ? "" : "unblocked "}walkable surface (found ${matches.length}); world point ${JSON.stringify(point)}, projected ${JSON.stringify(project(point))}; containing areas (${containing.length}, showing up to 8) ${JSON.stringify(details)}`,
       );
     }
     return matches[0]!;
@@ -802,7 +802,9 @@ export function compileAssetGameplay(
           movement_transitions: transitions.map((t) => {
             if (!t.changes.length && !t.initialSight.length && !t.appliedSight.length)
               throw new Error(`${t.id}: movement transition affects no walkable area`);
-            const area = resolve(t.waypoint, `${t.id} waypoint`);
+            // State reference points identify a surface even inside its collision contours.
+            // Door endpoints and jump landing anchors still require an unblocked position.
+            const area = resolve(t.waypoint, `${t.id} waypoint`, undefined, true);
             return {
               id: t.id,
               waypoint: project(t.waypoint),

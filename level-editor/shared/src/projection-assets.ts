@@ -46,6 +46,8 @@ export interface ProjectionAssetDescriptor {
     node: string;
     name: string;
     default_hidden?: boolean;
+    /** Non-rendering coordinate frame for asset-local gameplay. */
+    gameplay_only?: true;
   } & (
     | {
         source_obstacle: number;

@@ -154,6 +154,64 @@ test("standalone index filters the current map and actual model parts receive na
   assert.equal(f.disposed(), 1);
 });
 
+test("explicit gameplay-only frames load and reopen without rendering a placeholder mesh", async (t) => {
+  const f = fixture();
+  const descriptor = {
+    ...f.descriptor,
+    parts: [
+      {
+        node: "scenery-navigation-frame",
+        name: "Navigation boundary",
+        scenery: true,
+        gameplay_only: true,
+      },
+    ],
+  };
+  f.json(f.entry.descriptor, descriptor);
+  f.group.remove(f.mesh);
+  const frame = new THREE.Group();
+  frame.name = "scenery-navigation-frame";
+  frame.userData = { scenery: true, gameplay_only: true };
+  f.group.add(frame);
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
+  assert.equal(prepared.sources.get("asset:house:scenery-navigation-frame"), frame);
+  const blank: Level3D = {
+    version: 1,
+    map: "Example",
+    size: [1000, 1000],
+    camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+    sceneAssets: [],
+    groups: [],
+    objects: [],
+  };
+  const placed = insertProjectionAsset(
+    blank,
+    prepared.descriptor,
+    prepared.reference,
+    [100, 200, 0],
+  ).document;
+  const descriptors = new Map([[prepared.descriptor.id, prepared.descriptor]]);
+  const restored = parseStoredMap(serializeStoredMap(placed, descriptors), descriptors);
+  assert.equal(restored.objects[0]!.kind, "scenery");
+  assert.equal(restored.objects[0]!.obstacle, undefined);
+  assert.deepEqual(restored.groups[0]!.transform, placed.groups[0]!.transform);
+  frame.add(f.mesh);
+  await assert.rejects(
+    prepareProjectionAsset(f.directory, f.entry, "Leicester"),
+    /Invalid gameplay-only frame/,
+  );
+  frame.remove(f.mesh);
+  f.json(f.entry.descriptor, {
+    ...descriptor,
+    parts: [{ ...descriptor.parts[0], gameplay_only: undefined }],
+  });
+  await assert.rejects(
+    prepareProjectionAsset(f.directory, f.entry, "Leicester"),
+    /Standalone part has no mesh/,
+  );
+});
+
 test("palette assets load from the index without reading descriptors", async (t) => {
   const f = fixture();
   f.files.delete(f.entry.descriptor);

@@ -61,7 +61,15 @@ export default function AssetPreview(props: {
       asset.traverseVisible((node) => {
         if (node instanceof THREE.Mesh) box.expandByObject(node);
       });
-      if (box.isEmpty()) throw new Error("Model has no visible geometry");
+      if (box.isEmpty()) {
+        let gameplayOnly = false;
+        asset.traverse((node) => {
+          gameplayOnly ||= node.userData.gameplay_only === true;
+        });
+        if (!gameplayOnly) throw new Error("Model has no visible geometry");
+        setStatus(entry.name);
+        return;
+      }
       const center = box.getCenter(new THREE.Vector3());
       const radius = Math.max(box.getBoundingSphere(new THREE.Sphere()).radius, 0.01);
       const camera = new THREE.PerspectiveCamera(35, 320 / 220, radius / 100, radius * 20);

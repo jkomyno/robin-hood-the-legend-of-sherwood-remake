@@ -405,6 +405,32 @@ test("movement transitions receive fresh bindings across separate areas and dupl
   assert.deepEqual(moved.movement_transitions![0]!.waypoint, [420, 320]);
   assert.equal(moved.motion_data.layers[0]![0]!.obstacles[0]!.polygon.points[0]![0], 445);
 });
+test("transition reference points may be blocked but must still resolve to a surface", () => {
+  const { document, assets, hut } = movementTransitionCompilerFixture();
+  hut.gameplay!.movementBlockers = [
+    {
+      id: "fixed-wall",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [10, 10],
+        [30, 10],
+        [30, 30],
+        [10, 30],
+      ],
+    },
+  ];
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(compiled.movement_transitions![0]!.waypoint, [320, 320]);
+  const transition = hut.gameplay!.movementTransitions![0]!;
+  const door = hut.gameplay!.doors[0]!;
+  const outside = door.outside;
+  door.outside = [...transition.waypoint];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /unblocked walkable surface/);
+  door.outside = outside;
+  transition.waypoint = [20, 20, 100];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /waypoint must resolve/);
+});
 test("sound geometry follows placement while acoustic categories and falloff remain intact", () => {
   const { document, assets, hut } = soundAssetCompilerFixture();
   const compiled = compileAssetGameplay(document, assets, bounds);

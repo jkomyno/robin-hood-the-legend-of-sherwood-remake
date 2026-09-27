@@ -881,6 +881,12 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     object(part, "asset part");
     text(part.node, "asset part.node");
     text(part.name, "asset part.name");
+    if (part.gameplay_only !== undefined)
+      check(
+        part.gameplay_only === true && part.scenery === true,
+        part.node,
+        "gameplay-only frames must be scenery parts without collision geometry",
+      );
     const identity = obstaclePartIdentity(part.node);
     if (part.scenery !== undefined) {
       check(

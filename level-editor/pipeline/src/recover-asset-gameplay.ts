@@ -610,12 +610,24 @@ for (const area of movementStateInventory)
         throw new Error("Changing contours need one explicit patch owner");
       const source = proto.patches[change.patches[0]!]!;
       const refs = [...source.old_sight_obstacles, ...source.new_sight_obstacles];
-      if (!refs.length) throw new Error("No sight ownership; explicit asset authoring is required");
       const owners = refs.map((ref) => {
         const matches = locals.get(ref) ?? [];
         if (matches.length !== 1) throw new Error(`Missing or ambiguous sight owner ${ref}`);
         return matches[0]!;
       });
+      const declared = (ownership?.movement_transitions ?? []).filter(
+        (entry) => entry.patch === change.patches[0],
+      );
+      if (declared.length > 1) throw new Error("Ambiguous explicit movement-transition ownership");
+      if (declared[0]) {
+        const { owner: asset, node } = declared[0];
+        const parts = document.objects.filter((part) => part.node === `asset:${asset}:${node}`);
+        if (parts.length !== 1 || !descriptors.get(asset)?.parts.some((part) => part.node === node))
+          throw new Error("Explicit movement owner needs one pinned asset frame");
+        owners.unshift({ asset, node, part: parts[0]! });
+      }
+      if (!owners.length)
+        throw new Error("No sight ownership; explicit asset authoring is required");
       const owner = owners[0]!;
       if (owners.some((entry) => entry.asset !== owner.asset))
         throw new Error("Changing sight geometry spans assets; author independent local states");
