@@ -26,7 +26,7 @@ intended construction, not functionality available today.
 | Jump zones and paired jump edges | Transform local jump geometry; resolve landing surfaces and pair compatible edges. | Planned |
 | Surface materials | Transform asset-local material polygons; rebuild the ground lookup subset and per-obstacle references independently. | Partial: ground/obstacle regions and terrain defaults tested in the engine; elevated-surface links unfinished |
 | Light/shadow regions | Transform asset-local shadow polygons, resolve layers and preserve ambience filters. | Planned |
-| Environmental sound sources | Place local sound emitters with range, timing, altitude and noise-covering rules. | Planned |
+| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Compile asset states into changing visuals, collision, sight, masks, interaction zones and door links. | Planned |
 | Map settings | Scene identity/export bounds; terrain assets supply forest behaviour and default material. Ambience is selected by the mission. | Working in compiler/runtime tests; recovered terrain metadata unpublished |
@@ -89,3 +89,8 @@ Terrain drafts also carry forest behaviour and fallback material. Recovery
 normalizes clearance crossings introduced by integer rounding, preserving valid
 regions instead of discarding a polygon whose signed area cancels. Nottingham
 now reaches the next static-check blocker: gameplay on a hidden prison part.
+
+Sound recovery attaches global emitters to terrain and local emitters only when
+their complete geometry has one containing asset part. Ambiguous/unowned sources
+remain explicit gaps; they are not silently attached to terrain. Shared audio
+samples are referenced from the base installation, rather than bundled in the ZIP.

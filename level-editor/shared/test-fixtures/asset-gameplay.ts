@@ -1,6 +1,43 @@
 import type { GameplayAssetDescriptor } from "../src/asset-gameplay.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "../src/level3d.ts";
 
+export function soundAssetCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  fixture.hut.gameplay!.sounds = [
+    {
+      id: "stream",
+      node: "building-999",
+      sample: 17,
+      kind: 2,
+      active: true,
+      delay: [100, 200, 4],
+      altitude: 1,
+      ambiences: 255,
+      spatial: {
+        polyline: [
+          [10, 20, 5],
+          [30, 40, 5],
+        ],
+        innerDistance: 30,
+        outerDistance: 250,
+        innerVolume: 70,
+        outerVolume: 10,
+        noiseCoveringDistance: 60,
+      },
+    },
+    {
+      id: "night",
+      node: "building-999",
+      sample: 18,
+      kind: 1,
+      active: true,
+      altitude: 2,
+      ambiences: 0,
+    },
+  ];
+  return fixture;
+}
+
 export function materialAssetCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.materials = [

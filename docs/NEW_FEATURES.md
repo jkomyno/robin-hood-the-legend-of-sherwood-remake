@@ -20,6 +20,9 @@
   inactive on the ground; material allocation also preserves interior door links.
   Terrain definitions supply forest behaviour and default material; conflicting
   defaults from multiple terrain assets stop export.
+  Environmental emitters retain asset-local geometry, delays, volume falloff,
+  noise-covering ranges and ambience filters; shared audio sample references use
+  the base installation. Recovery reports ambiguous emitter ownership explicitly.
   Offline terrain recovery reports reconstruction error on the integer
   movement grid and keeps unresolved ownership visible. Recovery drafts are
   checked against the asset schema; passage connections can omit click polygons,

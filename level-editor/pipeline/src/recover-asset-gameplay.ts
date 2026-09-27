@@ -24,6 +24,7 @@ import {
 import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
+import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
@@ -751,6 +752,44 @@ for (const [index, obstacle] of proto.sight_obstacles.entries()) {
     recoveredMaterials.add(material);
   }
 }
+let recoveredSounds = 0;
+for (const [index, sound] of proto.sound_sources.entries()) {
+  if (sound.global && groundMaterialOwners.length === 1) {
+    const p = packet(groundMaterialOwners[0]!.id);
+    (p.sounds ??= []).push(recoverSoundSource(sound, `ambient-sound-${index}`, "$root", (p) => p));
+    recoveredSounds++;
+    continue;
+  }
+  const owners = [...locals.values()].flat().filter((owner) => {
+    const shape = transformedObstacle(document, owner.part);
+    return (
+      sound.polyline &&
+      containsSoundPolyline(
+        sound.polyline,
+        shape.points.map((p) => [p.x, p.y]),
+      )
+    );
+  });
+  if (owners.length !== 1) {
+    unresolved.push({
+      kind: "sound-owner",
+      source: index,
+      sample: sound.id,
+      candidates: owners.map(({ asset, node }) => ({ asset, node })),
+      reason: "Local emitter needs explicit asset ownership; no terrain fallback",
+    });
+    continue;
+  }
+  const owner = owners[0]!;
+  const p = packet(owner.asset);
+  (p.sounds ??= []).push(
+    recoverSoundSource(sound, `ambient-sound-${index}`, owner.node, (point) =>
+      localize(owner.part, point),
+    ),
+  );
+  p.issues.push("Review environmental sound ownership inferred from unique geometric containment");
+  recoveredSounds++;
+}
 const pending = {
   buildingEntries: proto.buildings.length - recoveredBuildings,
   maskRecords: proto.masks.length,
@@ -758,6 +797,7 @@ const pending = {
   jumpPairs: proto.jump_line_pairs.length,
   materialRegions: proto.material_sectors.length - recoveredMaterials.size,
   shadowRegions: proto.light_sectors.length,
+  soundSources: proto.sound_sources.length - recoveredSounds,
 };
 await fs.mkdir(values.out, { recursive: true });
 const definitionValidation: { asset: string; valid: boolean; error?: string }[] = [];

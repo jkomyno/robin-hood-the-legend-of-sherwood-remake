@@ -123,10 +123,17 @@ export interface ElevationLine {
 export interface SoundSource {
   id: number;
   active: boolean;
-  polyline: Point[];
-  inner_distance: number;
-  outer_distance: number;
-  [k: string]: unknown;
+  source_kind: number;
+  delayed_params: [number, number, number] | null;
+  global: boolean;
+  polyline: Point[] | null;
+  inner_distance: number | null;
+  outer_distance: number | null;
+  inner_volume: number | null;
+  outer_volume: number | null;
+  noise_covering_distance: number | null;
+  altitude: number;
+  ambience_filter: number;
 }
 
 export interface JumpZone {

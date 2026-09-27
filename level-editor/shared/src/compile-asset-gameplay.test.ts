@@ -8,11 +8,43 @@ import {
   slopedAssetCompilerFixture,
   liftAssetCompilerFixture,
   interiorAssetCompilerFixture,
+  soundAssetCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("sound geometry follows placement while acoustic categories and falloff remain intact", () => {
+  const { document, assets, hut } = soundAssetCompilerFixture();
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(compiled.sound_sources![0]!.polyline, [
+    [310, 315],
+    [330, 335],
+  ]);
+  assert.equal(compiled.sound_sources![0]!.altitude, 1);
+  assert.deepEqual(compiled.sound_sources![0]!.delayed_params, [100, 200, 4]);
+  assert.equal(compiled.sound_sources![1]!.global, true);
+  assert.equal(compiled.sound_sources![1]!.polyline, null);
+  for (const p of document.objects) p.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(moved.sound_sources![0]!.polyline, [
+    [410, 315],
+    [430, 335],
+  ]);
+  assert.equal(moved.sound_sources![0]!.noise_covering_distance, 60);
+  hut.gameplay!.sounds![0]!.delay![2] = 65535;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid sound delay/);
+  hut.gameplay!.sounds![0]!.delay![2] = 4;
+  hut.gameplay!.sounds![0]!.spatial!.innerVolume = 101;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid sound geometry/);
+  hut.gameplay!.sounds![0]!.spatial!.innerVolume = 70;
+  hut.parts.push({ node: "absent", name: "Absent emitter", scenery: true });
+  hut.gameplay!.sounds![1]!.node = "absent";
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /absent is hidden or missing/,
+  );
+});
 test("terrain owns map defaults and conflicting terrain definitions fail", () => {
   const { document, assets, hut } = assetCompilerFixture();
   const terrain = {

@@ -4,6 +4,48 @@ use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimCo
 use robin_engine::level_data::LoadedLevel;
 
 #[test]
+fn environmental_sounds_load_from_compiled_assets_and_filter_unused_samples() {
+    let bytes = include_bytes!("fixtures/asset-sound.level.json");
+    let level = LoadedLevel::hackable_from_json(bytes).unwrap();
+    let source = &level.proto.sound_sources[0];
+    assert_eq!(
+        source.polyline.as_deref(),
+        Some([(310, 315), (330, 335)].as_slice())
+    );
+    assert_eq!(source.delayed_params, Some((100, 200, 4)));
+    assert_eq!(source.altitude, 1);
+    assert_eq!(source.noise_covering_distance, Some(60));
+    let mut assets = LevelAssets::new();
+    let engine = construct(bytes, &mut assets);
+    assert_eq!(
+        assets.audio.sound_source_required_ids,
+        [17].into_iter().collect()
+    );
+    let snapshot = serde_json::to_value(engine.capture_persisted_state().unwrap()).unwrap();
+    let sources = &snapshot["feedback"]["sound_sim"]["sources"]["sources"];
+    assert_eq!(sources[0]["delay_stepping"], 5);
+    assert_eq!(sources[0]["inner_volume"], 178);
+    assert_eq!(sources[0]["noise_covering_distance"], 60);
+    assert!(sources[1].is_null());
+}
+
+#[test]
+fn environmental_sounds_reject_incomplete_geometry_and_overflowing_delay() {
+    let mut value: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-sound.level.json")).unwrap();
+    value["asset_geometry"]["sound_sources"][0]["delayed_params"] =
+        serde_json::json!([0, 1, 65535]);
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap())
+            .unwrap_err()
+            .contains("sound source")
+    );
+    value["asset_geometry"]["sound_sources"][0]["delayed_params"] = serde_json::json!([0, 1, 0]);
+    value["asset_geometry"]["sound_sources"][0]["inner_volume"] = serde_json::Value::Null;
+    assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap()).is_err());
+}
+
+#[test]
 fn materials_keep_ground_and_obstacle_queries_separate() {
     use robin_engine::{coordinates::MapPoint, element::GameMaterial};
     let mut assets = LevelAssets::new();

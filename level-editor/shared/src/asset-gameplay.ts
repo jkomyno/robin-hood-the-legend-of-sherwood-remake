@@ -1,4 +1,4 @@
-import type { MaterialSector, Point, SightObstacle } from "./level.ts";
+import type { MaterialSector, Point, SightObstacle, SoundSource } from "./level.ts";
 import type { ProjectionAssetDescriptor } from "./projection-assets.ts";
 
 /** All coordinates belong to the named mesh part's local game frame. No level indices. */
@@ -76,6 +76,28 @@ export interface AssetGameplay {
   materials?: AssetMaterialRegion[];
   /** Map-wide defaults supplied by a terrain asset. Ambience is mission-owned. */
   environment?: { forest: boolean; defaultMaterial: number };
+  sounds?: AssetSoundSource[];
+}
+export interface AssetSoundSource {
+  id: string;
+  node: string;
+  /** Shared sound-bank sample identity, not a level source index. */
+  sample: number;
+  kind: 0 | 1 | 2 | 3;
+  active: boolean;
+  delay?: [number, number, number];
+  /** Acoustic altitude category, independent of geometric elevation. */
+  altitude: 0 | 1 | 2 | 3;
+  ambiences: number;
+  /** Omitted for a global emitter. Distances use game units, volumes use percent. */
+  spatial?: {
+    polyline: [number, number, number][];
+    innerDistance: number;
+    outerDistance: number;
+    innerVolume: number;
+    outerVolume: number;
+    noiseCoveringDistance: number;
+  };
 }
 export type GameplayAssetDescriptor = ProjectionAssetDescriptor & { gameplay?: AssetGameplay };
 
@@ -98,6 +120,7 @@ export interface CompiledAssetGeometry {
   material_sectors?: MaterialSector[];
   sight_material_indices?: number[];
   map_settings?: { forest_level: boolean; default_material: number };
+  sound_sources?: SoundSource[];
   doors: {
     door_type: number;
     active: boolean;
@@ -170,6 +193,45 @@ export function validateAssetGameplay(
   const legacySpawns = (value as { spawns?: unknown }).spawns;
   if (legacySpawns !== undefined && (!Array.isArray(legacySpawns) || legacySpawns.length))
     fail("Player spawns belong to missions, not map assets");
+  const integer = (n: unknown, max: number): n is number =>
+    typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= max;
+  if (data.sounds !== undefined && !Array.isArray(data.sounds)) fail("invalid sound sources");
+  for (const sound of data.sounds ?? []) {
+    feature(sound);
+    if (
+      !integer(sound.sample, 2147483647) ||
+      !integer(sound.kind, 3) ||
+      !integer(sound.altitude, 3) ||
+      !integer(sound.ambiences, 4294967295) ||
+      typeof sound.active !== "boolean"
+    )
+      fail(`invalid sound source ${sound.id}`);
+    if (
+      sound.kind === 2
+        ? !Array.isArray(sound.delay) ||
+          sound.delay.length !== 3 ||
+          !sound.delay.every((n) => integer(n, 65535)) ||
+          sound.delay[0] > sound.delay[1] ||
+          sound.delay[2] === 65535
+        : sound.delay !== undefined
+    )
+      fail(`invalid sound delay ${sound.id}`);
+    const s = sound.spatial;
+    if (
+      s !== undefined &&
+      (!s ||
+        !Array.isArray(s.polyline) ||
+        !s.polyline.length ||
+        !s.polyline.every((p) => point(p, 3)) ||
+        !integer(s.innerDistance, 65535) ||
+        !integer(s.outerDistance, 65535) ||
+        s.innerDistance > s.outerDistance ||
+        !integer(s.innerVolume, 100) ||
+        !integer(s.outerVolume, 100) ||
+        !integer(s.noiseCoveringDistance, 65535))
+    )
+      fail(`invalid sound geometry ${sound.id}`);
+  }
   if (data.materials !== undefined && !Array.isArray(data.materials)) fail("invalid materials");
   for (const region of data.materials ?? []) {
     feature(region);

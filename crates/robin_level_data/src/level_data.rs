@@ -2129,6 +2129,8 @@ pub struct CompiledAssetGeometry {
     pub sight_material_indices: Vec<u16>,
     #[serde(default)]
     pub map_settings: Option<CompiledMapSettings>,
+    #[serde(default)]
+    pub sound_sources: Vec<RawSoundSource>,
     pub doors: Vec<RawDoor>,
 }
 
@@ -2740,6 +2742,41 @@ impl LoadedLevel {
                 ProtoGridChunk::Building,
                 ProtoGridChunk::Lift,
             ];
+            for sound in &geometry.sound_sources {
+                let delay_valid = match (sound.source_kind, sound.delayed_params) {
+                    (2, Some((min, max, step))) => min <= max && step < u16::MAX,
+                    (2, None) => false,
+                    (_, None) => true,
+                    _ => false,
+                };
+                let spatial_valid = match (
+                    sound.inner_distance,
+                    sound.outer_distance,
+                    sound.inner_volume,
+                    sound.outer_volume,
+                    sound.noise_covering_distance,
+                    sound.polyline.as_ref(),
+                ) {
+                    (None, None, None, None, None, None) => sound.global,
+                    (Some(inner), Some(outer), Some(iv), Some(ov), Some(_), Some(points)) => {
+                        !sound.global
+                            && inner <= outer
+                            && iv <= 100
+                            && ov <= 100
+                            && !points.is_empty()
+                    }
+                    _ => false,
+                };
+                if sound.id < 0
+                    || sound.source_kind > 3
+                    || sound.altitude > 3
+                    || !delay_valid
+                    || !spatial_valid
+                {
+                    return Err("invalid compiled environmental sound source".into());
+                }
+            }
+            level.proto.sound_sources = geometry.sound_sources;
             level.proto.lifts = geometry.lifts;
             if let Some(settings) = geometry.map_settings {
                 if settings.default_material > 8 {

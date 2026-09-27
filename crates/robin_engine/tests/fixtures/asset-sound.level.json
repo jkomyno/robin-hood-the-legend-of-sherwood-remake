@@ -1,0 +1,244 @@
+{
+  "title": "Authored fixture",
+  "map_filename": "editor-authored-fixture",
+  "spawn_player": false,
+  "walkable_polygon": [
+    [
+      0,
+      0
+    ],
+    [
+      1999,
+      0
+    ],
+    [
+      1999,
+      1999
+    ],
+    [
+      0,
+      1999
+    ]
+  ],
+  "volumes": [],
+  "asset_geometry": {
+    "motion_data": {
+      "layers": [
+        [
+          {
+            "is_lift": false,
+            "state_id": 0,
+            "polygon": {
+              "points": [
+                [
+                  300,
+                  300
+                ],
+                [
+                  390,
+                  300
+                ],
+                [
+                  390,
+                  400
+                ],
+                [
+                  300,
+                  400
+                ]
+              ]
+            },
+            "skeleton_segments": [],
+            "flags": 0,
+            "obstacles": [
+              {
+                "state_id": 0,
+                "polygon": {
+                  "points": [
+                    [
+                      350,
+                      340
+                    ],
+                    [
+                      350,
+                      350
+                    ],
+                    [
+                      340,
+                      350
+                    ],
+                    [
+                      340,
+                      340
+                    ]
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "is_lift": false,
+            "state_id": 0,
+            "polygon": {
+              "points": [
+                [
+                  410,
+                  300
+                ],
+                [
+                  500,
+                  300
+                ],
+                [
+                  500,
+                  400
+                ],
+                [
+                  410,
+                  400
+                ]
+              ]
+            },
+            "skeleton_segments": [],
+            "flags": 0,
+            "obstacles": []
+          }
+        ],
+        []
+      ],
+      "graph_bytes": []
+    },
+    "sound_sources": [
+      {
+        "id": 17,
+        "active": true,
+        "source_kind": 2,
+        "delayed_params": [
+          100,
+          200,
+          4
+        ],
+        "global": false,
+        "polyline": [
+          [
+            310,
+            315
+          ],
+          [
+            330,
+            335
+          ]
+        ],
+        "inner_distance": 30,
+        "outer_distance": 250,
+        "inner_volume": 70,
+        "outer_volume": 10,
+        "noise_covering_distance": 60,
+        "altitude": 1,
+        "ambience_filter": 255
+      },
+      {
+        "id": 18,
+        "active": true,
+        "source_kind": 1,
+        "delayed_params": null,
+        "global": true,
+        "polyline": null,
+        "inner_distance": null,
+        "outer_distance": null,
+        "inner_volume": null,
+        "outer_volume": null,
+        "noise_covering_distance": null,
+        "altitude": 2,
+        "ambience_filter": 0
+      }
+    ],
+    "sight_obstacles": [
+      {
+        "points": [
+          {
+            "x": 340,
+            "y": 340,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 350,
+            "y": 340,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 350,
+            "y": 350,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 340,
+            "y": 350,
+            "z_bottom": 0,
+            "z_top": 30
+          }
+        ],
+        "projection_area": null,
+        "solid": true,
+        "opaque": true,
+        "mouse": true,
+        "show_shadow_polygon": false,
+        "default_material": 0,
+        "material_indices": []
+      }
+    ],
+    "doors": [
+      {
+        "door_type": 0,
+        "active": true,
+        "locked_pc": false,
+        "unlockable": false,
+        "locked_npc_villain": false,
+        "locked_npc_civilian": false,
+        "locked_pc_after_patch": false,
+        "unlockable_after_patch": false,
+        "locked_npc_villain_after_patch": false,
+        "locked_npc_civilian_after_patch": false,
+        "door_sector": {
+          "points": [
+            [
+              390,
+              340
+            ],
+            [
+              410,
+              340
+            ],
+            [
+              410,
+              360
+            ],
+            [
+              390,
+              360
+            ]
+          ]
+        },
+        "point_out": [
+          380,
+          350
+        ],
+        "sector_out": 0,
+        "layer_out": 0,
+        "point_mid": [
+          400,
+          350
+        ],
+        "point_in": [
+          420,
+          350
+        ],
+        "sector_in": 2,
+        "layer_in": 0
+      }
+    ]
+  }
+}

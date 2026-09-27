@@ -155,6 +155,7 @@ export function compileAssetGameplay(
   const sight: SightObstacle[] = [];
   const materials: NonNullable<CompiledAssetGeometry["material_sectors"]> = [];
   const groundMaterials: number[] = [];
+  const sounds: NonNullable<CompiledAssetGeometry["sound_sources"]> = [];
   let mapSettings: CompiledAssetGeometry["map_settings"];
   const quantize = (n: number) => {
     const result = Math.round(n);
@@ -196,6 +197,26 @@ export function compileAssetGameplay(
       }
       return [p[0] - bounds[0], p[1] - bounds[1], p[2]];
     };
+    for (const sound of gameplay.sounds ?? []) {
+      const s = sound.spatial;
+      // Global emitters still require their owning part to be present.
+      if (!s) transform(sound.node, [0, 0, 0]);
+      sounds.push({
+        id: sound.sample,
+        active: sound.active,
+        source_kind: sound.kind,
+        delayed_params: sound.delay ? [...sound.delay] : null,
+        global: !s,
+        polyline: s ? s.polyline.map((p) => project(transform(sound.node, p))) : null,
+        inner_distance: s?.innerDistance ?? null,
+        outer_distance: s?.outerDistance ?? null,
+        inner_volume: s?.innerVolume ?? null,
+        outer_volume: s?.outerVolume ?? null,
+        noise_covering_distance: s?.noiseCoveringDistance ?? null,
+        altitude: sound.altitude,
+        ambience_filter: sound.ambiences,
+      });
+    }
     const partSight = new Map<string, SightObstacle>();
     if (gameplay.collision === "parts")
       for (const [node, part] of placement.parts) {
@@ -523,6 +544,7 @@ export function compileAssetGameplay(
     ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
     ...(mapSettings ? { map_settings: mapSettings } : {}),
+    ...(sounds.length ? { sound_sources: sounds } : {}),
     sight_obstacles: sight,
     ...(materials.length
       ? { material_sectors: materials, sight_material_indices: groundMaterials }

@@ -13,8 +13,23 @@ import {
   interiorAssetCompilerFixture,
   clearanceAssetCompilerFixture,
   materialAssetCompilerFixture,
+  soundAssetCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("asset environmental sound export matches the native source fixture", async () => {
+  const { document, assets } = soundAssetCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-sound.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("asset material export matches the native lookup fixture", async () => {
   const { document, assets } = materialAssetCompilerFixture();
