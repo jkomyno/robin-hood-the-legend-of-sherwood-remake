@@ -393,6 +393,7 @@ export default function SplinePanel(props: {
   const onKey = (event: KeyboardEvent) => {
     if (
       props.active === false ||
+      document.querySelector("dialog[open]") ||
       !path() ||
       (event.target instanceof HTMLElement &&
         (event.target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(event.target.tagName)))

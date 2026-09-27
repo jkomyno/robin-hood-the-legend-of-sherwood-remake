@@ -52,6 +52,7 @@ export interface ViewportBindings {
   showObstacles(): boolean;
   showElevation(): boolean;
   onSelection(selection: Selection): void;
+  onError?(message: string): void;
   commitTransform(transform: GameTransform): void;
 }
 
@@ -1163,11 +1164,29 @@ export class EditorViewport {
     }
   }
 
+  private splinePreviewError: string | null = null;
+  private updateSplinePreview(update: () => void) {
+    try {
+      update();
+      this.splinePreviewError = null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      // Pointer moves can retry the same invalid draft many times per second.
+      if (message !== this.splinePreviewError) {
+        this.splinePreviewError = message;
+        const report = this.bindings.onError ?? console.error;
+        report(`Could not preview path: ${message}`);
+      }
+    }
+  }
+
   setSplineEdit(mode: SplineEditMode | null) {
     if (mode && !this.splineMode) this.select(null);
     this.splineMode = mode;
-    this.splines.setMode(mode);
-    this.refreshSunLighting();
+    this.updateSplinePreview(() => {
+      this.splines.setMode(mode);
+      this.refreshSunLighting();
+    });
   }
 
   private setupSplineInteraction(canvas: HTMLCanvasElement) {
@@ -1224,8 +1243,10 @@ export class EditorViewport {
         gesture.point = point;
         if (gesture.index !== null) {
           const points = gesture.mode.path.points.map((p, i) => (i === gesture!.index ? point : p));
-          this.splines.showPreview({ ...gesture.mode.path, points });
-          this.refreshSunLighting();
+          this.updateSplinePreview(() => {
+            this.splines.showPreview({ ...gesture!.mode.path, points });
+            this.refreshSunLighting();
+          });
         }
       },
       { capture: true, signal: this.listeners.signal },
@@ -1241,12 +1262,14 @@ export class EditorViewport {
           canvas.releasePointerCapture(event.pointerId);
         if (this.orbit) this.orbit.enabled = true;
       }
-      if (event.type === "pointerup" && this.splineMode?.path.id === active.mode.path.id) {
-        if (active.index === null) {
-          if (!active.moved && this.splineMode.drawing) active.mode.append(active.point);
-        } else active.mode.move(active.index, active.point);
-      }
-      this.splines.setMode(this.splineMode);
+      this.updateSplinePreview(() => {
+        if (event.type === "pointerup" && this.splineMode?.path.id === active.mode.path.id) {
+          if (active.index === null) {
+            if (!active.moved && this.splineMode.drawing) active.mode.append(active.point);
+          } else active.mode.move(active.index, active.point);
+        }
+        this.splines.setMode(this.splineMode);
+      });
     };
     canvas.addEventListener("pointerup", finish, { capture: true, signal: this.listeners.signal });
     canvas.addEventListener("pointercancel", finish, {

@@ -17,6 +17,7 @@ function fixture() {
     showElevation: () => false,
     onSelection: (next) => {
       selection = next;
+      viewport.syncSelection(next);
     },
     commitTransform: () => {
       throw new Error("Unexpected gesture");
@@ -183,6 +184,7 @@ test("gizmo binding commits through the document owner and picking resolves the 
     showElevation: () => false,
     onSelection: (next) => {
       selection = next;
+      viewport.syncSelection(next);
     },
     commitTransform: (transform) => {
       commits.push(transform);
@@ -208,6 +210,7 @@ test("gizmo binding commits through the document owner and picking resolves the 
   });
   const callbacks = viewport as unknown as {
     commitGizmo(): void;
+    partViews: Map<string, { wrapper: THREE.Object3D }>;
     partOfHit(hit: { object: THREE.Object3D }): Level3D["objects"][number] | null;
   };
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
@@ -217,7 +220,8 @@ test("gizmo binding commits through the document owner and picking resolves the 
   viewport.syncViews(document);
   viewport.select({ kind: "part", id: "part" });
   assert.ok(attached);
-  const wrapper = attached as THREE.Object3D;
+  const wrapper = callbacks.partViews.get("part")!.wrapper;
+  assert.notEqual(attached, wrapper, "Gizmo uses an independent rotated frame");
   const picked = wrapper.children[0].children[0];
   assert.equal(callbacks.partOfHit({ object: picked }), document.objects[0]);
   const delta = gameToScene(document.camera, 7, -3, 2);
@@ -739,5 +743,65 @@ test("source node names cannot redirect a hit to another asset's wrapper", () =>
   const clicked = internals.partViews.get("part")!.meshes[0];
   assert.equal(clicked.name, "other");
   assert.equal(internals.partOfHit({ object: clicked })?.id, "part");
+  viewport.dispose();
+});
+
+test("invalid wall previews report errors without breaking editing and recover after trimming", () => {
+  const errors: string[] = [];
+  const viewport = new EditorViewport({
+    document: () => null,
+    selection: () => null,
+    level: () => null,
+    showObstacles: () => false,
+    showElevation: () => false,
+    onSelection: () => {},
+    commitTransform: () => {},
+    onError: (message) => errors.push(message),
+  });
+  const source = new THREE.Group();
+  for (const x of [0, 200]) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(100, 12, 40), new THREE.MeshBasicMaterial());
+    mesh.position.x = x;
+    source.add(mesh);
+  }
+  viewport.replaceMap(source, null, new Map([["asset:wall:building-000", source]]));
+  const internals = viewport as unknown as { splines: import("./spline-layer.ts").SplineLayer };
+  internals.splines.sync(
+    [],
+    { kind: "oblique-orthographic", elevation_deg: 35 },
+    new Map([["asset:wall:building-000", source]]),
+  );
+  const mode: import("./spline-layer.ts").SplineEditMode = {
+    path: {
+      id: "wall",
+      name: "Wall",
+      kind: "wall",
+      asset: "wall",
+      axis: "x",
+      points: [
+        [0, 0, 0],
+        [300, 0, 0],
+      ],
+      width: 12,
+      repeatLength: 100,
+      closed: false,
+    },
+    drawing: true,
+    point: 0,
+    append: () => {},
+    move: () => {},
+    selectPoint: () => {},
+  };
+  assert.doesNotThrow(() => viewport.setSplineEdit(mode));
+  assert.match(errors[0]!, /Wall source has a gap/);
+  assert.ok(internals.splines.controls.children.length > 0, "Draft handles must remain editable");
+  viewport.setSplineEdit(mode);
+  assert.equal(errors.length, 1, "Repeated preview attempts must not spam error dialogs");
+  viewport.setSplineEdit({ ...mode, path: { ...mode.path, sourceEnd: 0.3 } });
+  assert.ok(
+    internals.splines.root.children.length > 1,
+    "Trimming to the continuous first segment restores preview",
+  );
+  assert.doesNotThrow(() => viewport.setSplineEdit(null));
   viewport.dispose();
 });

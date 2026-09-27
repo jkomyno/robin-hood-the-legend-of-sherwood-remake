@@ -67,8 +67,9 @@ export class SplineLayer {
     if (mode?.drawing && mode.path.points.length >= 2) this.showPreview(mode.path);
   }
   showPreview(path: LevelSpline) {
-    this.clearPreview();
+    // A failed replacement must not discard the last valid preview.
     const object = this.build(path);
+    this.clearPreview();
     this.root.add(object);
     this.preview = { path, object };
     const original = this.views.get(path.id);

@@ -163,6 +163,7 @@ export default function Editor3D(props: EditorProps) {
       }
     },
     commitTransform: setTransform,
+    onError: props.onError,
   });
   const select = (selection: Selection) => viewport.select(selection);
   createEffect(
