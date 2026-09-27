@@ -1,0 +1,248 @@
+{
+  "version": 1,
+  "scope": "model review; texture synthesis approval remains separate",
+  "source": "User-submitted model review in chat",
+  "decisions": [
+    {
+      "id": "sherwood-camp-barrel",
+      "decision": "approved",
+      "review_revision": "a71737e66c682fdf7ac99626c19a71afa5d7332d79f51f0d04780b80da377e37",
+      "binding": {
+        "images": {
+          "solid": "6a0867600401babf9386577e97dd427055bbdd2bd567655802ea476d309514cb",
+          "textured": "22956dffdae16a7e5a59671b8893fd1e50b549a37e4327e374274f4415ac0872"
+        },
+        "reports": {
+          "validation": "b60d5896281d07cb81625053e5fc2c306db3d68387da1ec6c0832ffea6ed854b"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-camp-baskets",
+      "decision": "approved",
+      "review_revision": "7af31840cbffebdef432891407681e5521c74d8da5e40c85b95ce7de1f6feb00",
+      "binding": {
+        "images": {
+          "solid": "09248a104ee5319c1e99ca1dc3f54576452bd7d7ef73ae9210b77170aaa12050",
+          "textured": "e9d1465af50d08c04b63400dd0aaa86a1c4e34b25f95676d8843dd92b0c892c1"
+        },
+        "reports": {
+          "validation": "6eddf2813f3226b7fe9eefcf44491a75beac0e5c1cc5c221d40fa3fb0b07ba64"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-camp-cut-timber",
+      "decision": "approved",
+      "review_revision": "6bc013a7e4594b0607a4a247ce6133b74c9fdfac3a40e803e7c07f8ac0cc3000",
+      "binding": {
+        "images": {
+          "solid": "7a5081b802a7da2bf46f756085ab43e72cbcc2c9af98692a01b7d6aa07867c81",
+          "textured": "15393bece86be540acb4225a1f0aa6307c5593c2763b64bf54ea3b1bddf2beab"
+        },
+        "reports": {
+          "validation": "2d35ffc6e0d082c168a0316472b2a1fb037660537a1eabaf511b6c4998c9dafc"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-camp-dining-table",
+      "decision": "approved",
+      "review_revision": "535eaaf18e034e03377f642d19c2c6f86f45471d4dc7a3c4bcbfb2a0fc013137",
+      "binding": {
+        "images": {
+          "solid": "41542979c1e7512a35dd04b147dcc7206e0bd076df94da33582fe194fc5b90be",
+          "textured": "5efeb49e5bd241474d626d0bc40972139c37302f0f8a173ec83e9ffcb772bef9"
+        },
+        "reports": {
+          "validation": "2b088826b0e20212993ec377d06bff212ed70b657a43e20ae5278c22cde71a38"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-camp-preparation-table",
+      "decision": "approved",
+      "review_revision": "5f41c8ddadce40c88b53e34886cfed58a83057c391a85aec1f4c5c8b6c5c6ad4",
+      "binding": {
+        "images": {
+          "solid": "e5788f835822a4b3fc8363d97f69c3e91c419b854a588d33e1a53826edf010b5",
+          "textured": "6ed1569698aed33da7fc9ca2cd92494a8d60d9f3baf3d34bf9003f5296c08cac"
+        },
+        "reports": {
+          "validation": "2915d3d3dc28d7771a7583c678534731247ac8a30e276b12cf188aa4f03504a1"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-camp-serving-stool",
+      "decision": "approved",
+      "review_revision": "da4bb6d388c96d66c848754d2894a86ad586364e80fa449e64578e23d60dd466",
+      "binding": {
+        "images": {
+          "solid": "ba7dca90fa79d4d8015ce2d3bbd4b80f8810915a9f36141aea4e58ea744c97e4",
+          "textured": "a7da112e7b9189f4de6f0fb50adf8c251d67515c5c386ed94a7b87f022dc7c45"
+        },
+        "reports": {
+          "validation": "2514b8fbbc67bf9ce77f26db40edc83a8de87d11143cf011e1dc05e91bb1dc83"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-camp-supply-shelter",
+      "decision": "approved",
+      "review_revision": "2909aed9beab92ed92498dfcc771e4e444cc90dc3496f37168ec9a1fc46a7cef",
+      "binding": {
+        "images": {
+          "solid": "9cb0f0a53b6358b02563bb552c20eac27ef6fc160d38d81b9ecc45afd7dcdbad",
+          "textured": "540ca982cee9d05d4d6024b787bbc23372bca283167d39ff778e9ce1843b8e2e"
+        },
+        "reports": {
+          "validation": "0eaf5647fa1ad68140c3597b2489cf5640d0b77af6a791cd753d6c6979bb55a1"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-camp-wash-stand",
+      "decision": "approved",
+      "review_revision": "6abe8a44e247b8efd47b7ab60c9bb31bb32158dcf7835a57c529b10c66e1972b",
+      "binding": {
+        "images": {
+          "solid": "26c4d80b7eed0d8eb0c397f9765ca7d5f3615443dafc0da1a029c21bbeb7f4a8",
+          "textured": "1432b5968ede9a8cb643367a41ea6e32572e4dc8d18cf1f02e55e8ce6431bd10"
+        },
+        "reports": {
+          "validation": "8b71df383d79bfbe84248701a5b561357d3b01b4ff105c13dff7e63272ebb152"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-camp-woodpile",
+      "decision": "approved",
+      "review_revision": "3aeb2b8993a2ab00ba38758c60a1567b2cf908e13758e24883f33a9fa54f7690",
+      "binding": {
+        "images": {
+          "solid": "04dd1e5fa58644d1b9f0f33ca7bff17a8c06dea58b92a70cd8cd0b320d98bcd7",
+          "textured": "31f00a41556b6340d1fbc17ad8d2e6ab10decc29731ceff80d2f3b0b8d1f1f7e"
+        },
+        "reports": {
+          "validation": "c47577efa45d26b9a72cb54ae330a6ed5a9d6951ba5c5bb198065893ce867967"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-camp-worktable",
+      "decision": "approved",
+      "review_revision": "177cd788bf6715c5364829bace389d224d501b6cfb9f1714431ccaf71c7c5a5f",
+      "binding": {
+        "images": {
+          "solid": "836bc289fb7e2c88ab50bf00c7453ab3e2815fa2c6d639b67cd53e379b62a597",
+          "textured": "ed74cddbc549f441ec8a3692dc1ae5ec7b504fef172d44db5e404a8691f35c36"
+        },
+        "reports": {
+          "validation": "fcd26e1dfa4a127532b3c5a05d26ac8bb8608df6e99c6aa679c5bc1a24ad91e4"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-central-oak-buttress",
+      "decision": "needs refinement",
+      "review_revision": "5491d789067423165ef34db757a87a2e9766235dcb8c08caf19caba524a635da",
+      "binding": {
+        "images": {
+          "solid": "78682bc809cd05635a7ee79c39cef2f786ab8630563c3ac436700b67953bc87e",
+          "textured": "f50cfba910d6b1a5957be1f4e52e194cf10a54befa8f128064f53db40d043411"
+        },
+        "reports": {
+          "validation": "2a46b8333b5694087cb9482aa6cfd9d30cf3f9bd3f3e45f039066bfc5f39a73b"
+        }
+      },
+      "note": "oak should probably be one big asset?"
+    },
+    {
+      "id": "sherwood-central-oak-platform",
+      "decision": "approved",
+      "review_revision": "bb91a420c798cd1a9fde586cbc4f0629a57058ee4da680e8c1aaff1f0c2b31cc",
+      "binding": {
+        "images": {
+          "solid": "219a4c05a94d1f985f1e89b7acbde82f0a57e729ab878a83616c72359e0d2f57",
+          "textured": "1cd5eefa8279cf25af2a66e40509efe6f9e17e736088b203e03a8900ca8e45fe"
+        },
+        "reports": {
+          "validation": "9a730e230e7255bbe94183da991c3b1d9d150f51d9d4a90d8e4364cb7ddd785d"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-central-oak-spreading-root",
+      "decision": "needs refinement",
+      "review_revision": "6a7bca0d58268ba04a523c57e5dcb3e0899dd38190bf726e2c05685c0a83bc9b",
+      "binding": {
+        "images": {
+          "solid": "d505db757e40027d25683f1c9d1117f4d4602cef422720aab34ed94783cc2639",
+          "textured": "caabe5117f56f1ac4e62526a84cc5368738c7952345c86e2216a0a7631750704"
+        },
+        "reports": {
+          "validation": "9f7e29bc5ef512d55df93a2374aaf6a101f057182318b94428f39686cbe1bea4"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-central-oak-treehouse",
+      "decision": "approved",
+      "review_revision": "afa175db46f1d2d8fbe5332890b3e6c5840cda2b6d094802c8a94df4ffb52860",
+      "binding": {
+        "images": {
+          "solid": "b4abad67d4da789324203cac5a634c1841d5c003e196ef7db85d4470efaa2740",
+          "textured": "05440ef2f24ccb4ff5ba3d5f8b441e01c8a180eec56b6471a7b45c5cfa769ad6"
+        },
+        "reports": {
+          "validation": "72726638923d8820e714553fb968f0dba515db5a908b3825cd50833027bac47c"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-central-tree-landing",
+      "decision": "approved",
+      "review_revision": "739536660bd4779d070c71d8bf49d0af66ec0d8eb3a8592052b69d5dc9f63cfc",
+      "binding": {
+        "images": {
+          "solid": "037315e7a352e11331de2aead1d46d15648eeaf9e3997bc4a8de8b3955707de4",
+          "textured": "7614f10cb1406fb77b36086db3aa640431d9d27dc19d838a5593fe28c27a940f"
+        },
+        "reports": {
+          "validation": "89db02b80d489c8babd6c9abb2256dcbd061191993c55456b372b400a0832b2e"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-central-treehouse-side-roof",
+      "decision": "approved",
+      "review_revision": "77bc425b8594dd36132e538d788351c8f4d4ac234fc3a716bd85a59f5d0837ec",
+      "binding": {
+        "images": {
+          "solid": "18a148df3e5fb1f31cb0f107f6b36c6027fdff0d8ff0d2a018aefd5bbe135efa",
+          "textured": "017b85d32e04b143ba8e002fb56bdf8627c598bf3bdc9707a0ea05f1e08a77d2"
+        },
+        "reports": {
+          "validation": "17555fdc6c86a357b5bdd947379aec576ac498337fe40b9bbd7596a3bc18b25a"
+        }
+      },
+      "note": ""
+    }
+  ],
+  "grouping_instruction": "Combine the tree itself; keep treehouse and platforms separate"
+}

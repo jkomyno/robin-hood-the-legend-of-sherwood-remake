@@ -14,18 +14,27 @@ sys.path.insert(0, str(EDITOR/'refinement/blender'))
 from build_review_gallery import build
 
 
+def review_revision(preparation):
+    binding = dict(images={'solid': preparation['files']['solid.png'],
+                           'textured': preparation['files']['input.png']},
+                   reports={'validation': preparation['files']['views.json']})
+    return hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest()
+
+
 def main(packets, output):
     packets, output = Path(packets).resolve(), Path(output).resolve()
     output.mkdir(parents=True, exist_ok=True)
     targets = json.loads((packets/'targets.json').read_text())['targets']
     inspections_path = output/'inspections.json'
     inspections = json.loads(inspections_path.read_text()) if inspections_path.exists() else {}
+    decisions_path = Path(__file__).with_name('model-decisions.json')
+    decisions = {d['id']: d for d in json.loads(decisions_path.read_text())['decisions']}
     artwork_path = packets.parent/'original-static-art.png'
     artwork = Image.open(artwork_path).convert('RGBA')
     artwork_hash = hashlib.sha256(artwork_path.read_bytes()).hexdigest()
     references = output/'original-art'
     references.mkdir(exist_ok=True)
-    items, missing = [], []
+    items, missing, reviewed = [], [], []
     for target in targets:
         asset = target['id']
         name = asset.removeprefix('sherwood-').replace('-', ' ').title()
@@ -37,6 +46,10 @@ def main(packets, output):
         for key in ('input.png', 'solid.png', 'views.json'):
             if hashlib.sha256((folder/key).read_bytes()).hexdigest() != preparation['files'][key]:
                 raise ValueError('Changed model review evidence: '+asset+'/'+key)
+        decision = decisions.get(asset)
+        if decision and decision['review_revision'] == review_revision(preparation):
+            reviewed.append(dict(name=name, **decision))
+            continue
         inspection = inspections.get(asset, {})
         views = json.loads((folder/'views.json').read_text())['views']
         source_view = next(v for v in views if v['azimuth_degrees'] == 0 and v['elevation_degrees'] == 35)
@@ -67,9 +80,11 @@ def main(packets, output):
                    'Inherited coarse background props and inferred hidden geometry remain visible for review.',
                    'Eight-view visual check complete.' if inspected else 'Visual preflight pending; feedback is available now.']))
     manifest=output/'models.json'
-    manifest.write_text(json.dumps(dict(map='Sherwood models',items=items,without_packets=missing,
+    manifest.write_text(json.dumps(dict(map='Sherwood models',items=items,without_packets=missing,reviewed=reviewed,
         status_counts={'ready for review':sum(i['status']=='ready-for-user' for i in items),
                        'visual check pending':sum(i['status']!='ready-for-user' for i in items),
+                       'approved':sum(i['decision']=='approved' for i in reviewed),
+                       'awaiting refinement':sum(i['decision']=='needs refinement' for i in reviewed),
                        'rendering':len(missing)}),indent=2)+'\n')
     build(manifest,output/'gallery',map_name='Sherwood models',pending_only=False)
     scene=output/'gallery/scene';scene.mkdir(exist_ok=True)
@@ -84,7 +99,11 @@ def main(packets, output):
         '<h1>Sherwood model context</h1><p><a href="../index.html">Back to model review</a></p>'
         '<p>Original-art projection on published geometry. Gray marks unknown surfaces; no new AI textures are shown.</p><main>'+''.join(figures)+'</main>')
     page=output/'gallery/index.html'
-    page.write_text(page.read_text().replace('<nav>', '<p><a href="scene/index.html">Full-scene model views and original artwork</a></p><nav>',1))
+    reviewed_summary = '<details><summary>Recorded reviews</summary><ul>'+''.join(
+        '<li>'+html.escape(i['name']+': '+i['decision']+(' — '+i['note'] if i['note'] else ''))+'</li>'
+        for i in reviewed)+'</ul></details>'
+    page.write_text(page.read_text().replace('<nav>', '<p><a href="scene/index.html">Full-scene model views and original artwork</a></p>'
+        +reviewed_summary+'<nav>',1))
     print(json.dumps({'gallery':str(page),'available':len(items),'rendering':len(missing)}))
 
 
