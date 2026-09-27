@@ -444,6 +444,11 @@ export default function Editor3D(props: EditorProps) {
     const s = selected();
     return s?.kind === "part" ? (doc()?.objects.find((o) => o.id === s.id) ?? null) : null;
   };
+  const selectedPatchPreviews = () => {
+    doc();
+    patchPreviewRevision();
+    return viewport.patchPreviews(selected());
+  };
   const selectedGroup = () => {
     const s = selected();
     return s?.kind === "group" ? (doc()?.groups.find((g) => g.id === s.id) ?? null) : null;
@@ -1818,6 +1823,24 @@ export default function Editor3D(props: EditorProps) {
                       lift
                     </label>
                   </div>
+                  <Show when={selectedPatchPreviews().length > 0}>
+                    <h3>Linked patches</h3>
+                    <For each={selectedPatchPreviews()}>
+                      {(patch) => (
+                        <label class="check">
+                          <input
+                            type="checkbox"
+                            checked={patch.revealed}
+                            onChange={(event) => {
+                              viewport.setPatchRevealed(patch.id, event.currentTarget.checked);
+                              setPatchPreviewRevision((value) => value + 1);
+                            }}
+                          />{" "}
+                          Reveal interior: {patch.name}
+                        </label>
+                      )}
+                    </For>
+                  </Show>
                   <Show when={selectedGroup()?.states}>
                     <label>
                       State{" "}

@@ -92,13 +92,23 @@ export class EditorViewport {
     this.patchDisplay.set(patch, revealed);
     this.patchDisplay.apply(this.objectsRoot);
   }
-  patchPreviews() {
+  patchPreviews(selection?: Selection) {
     const patches = new Set<string>();
     const labels = new Map<string, string>();
     this.sourceAsset?.traverse((object) => {
       for (const patch of object.userData.reveal?.patches ?? []) labels.set(patch.id, patch.name);
     });
     this.objectsRoot.traverse((object) => {
+      for (const patch of object.userData.reveal?.patches ?? []) labels.set(patch.id, patch.name);
+    });
+    const root =
+      selection === undefined
+        ? this.objectsRoot
+        : selection
+          ? (selection.kind === "group" ? this.groupViews : this.partViews).get(selection.id)
+              ?.wrapper
+          : null;
+    root?.traverse((object) => {
       const id = object.userData.reveal_material_patch;
       if (typeof id === "string") patches.add(id);
       for (const key of ["reveal_hide_when_applied", "reveal_show_when_applied"])
