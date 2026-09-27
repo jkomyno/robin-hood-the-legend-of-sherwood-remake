@@ -13,7 +13,7 @@ intended construction, not functionality available today.
 |---|---|---|
 | Background image and minimap | Render placed models/textures; downsample the minimap. | Working |
 | Character occlusion | Bake a 16-bit depth PNG from scene geometry. | Working for static scenes |
-| Projectile/view/obstacle masks and masking polylines | Generate typed masks and links from asset geometry and states. A depth PNG alone does **not** replace all these semantics. | Partial: native interchange, bitmap encoding and mask-state links implemented; asset authoring and raster bake integration remain unfinished |
+| Projectile/view/obstacle masks and masking polylines | Rasterize asset-local coverage triangles after placement; rebuild masking boundaries, receiving layers and obstacle/state links. A depth PNG alone does **not** replace all these semantics. | Partial: explicit mask authoring, raster compilation, ZIP packaging and native state links tested; recovery/publication and visual/depth state integration remain unfinished |
 | Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions or explicit local regions spanning several planes, then assign fresh sectors/layers. | Partial: flat/sloped surfaces, holes and ordinary multi-plane regions tested; cross-asset multi-plane joins and full-map connectivity unfinished |
 | Movement blockers | Transform explicit asset-local movement contours; optionally select permanent part/volume solids and intersect them with walkable surfaces. Sight states stay independent. | Working in synthetic tests; recovered ownership still needs review |
 | Openings in movement collision | Asset-local clearances remove only the owning asset's derived collision on the matching plane; sight geometry and other assets remain intact. | Working in compiler/runtime tests; recovery geometry failures remain explicit gaps |
@@ -102,9 +102,25 @@ binary-silhouette encoder has shared fixtures checked by the native decoder,
 including partial bytes, transparent rows and runs longer than one control byte
 can represent. Incompressible rows exceeding the format's byte limit require
 narrower bake tiles and fail explicitly. This establishes the interchange and
-encoding, not mask recovery or completed mask export: asset-local masking rules,
-raster generation from placed geometry, state-dependent visuals and renderer
-integration still need implementation and placement/parity verification.
+encoding, not full-map mask parity.
+
+Assets can now define local coverage triangles, a receiving-surface anchor,
+character/projectile masking boundaries, view flags and local obstacle IDs.
+Compilation transforms this geometry, rasterizes binary coverage in 1024-pixel
+tiles and regenerates front masking polylines, preserving concave vertical steps.
+Character boundaries use projected coordinates; projectile boundaries use world
+XY, with obstacle links supplying altitude tests. Explicit triangles preserve
+cutouts and can include multiple surfaces; they are not inferred from a bounding
+box or an unchanged screen bitmap. Local initial/applied mask IDs bind every
+generated tile independently for each placed copy. Tests cover movement,
+elevation, rotation, duplication, holes, wide-mask seams, packet conversion and
+ZIP retention. An editor-generated fixture verifies native coverage, masking
+rules and apply/reset behavior without source-level files or mission actors.
+Existing map assets still need recovered/authored coverage and boundaries;
+automatic extraction from textured meshes, visual-state resources and coordinated
+depth-buffer changes remain unfinished. Static depth can otherwise continue
+occluding a character after a typed mask is deactivated, so these tests do not
+certify complete visual-state behavior or full-map mask parity.
 
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.
@@ -232,8 +248,10 @@ Static merging preserves component annotations, translates declared bounds and
 namespaces appearance bindings without changing their resolved behavior. Its GLB
 writer retains near-identity transforms so binary round trips meet the existing
 world-transform tolerance. These assets and gameplay definitions remain staged.
-Sherwood's two camp-hut declarations distinguish the walls and doorway from the
-separately editable roofs. All five non-lift doors and five shared interiors now
+Sherwood's two camp-hut declarations bind entrances to their wall frames within
+the current grouped hut assets, including their roofs. Two treehouse declarations
+keep the central-west and west rooms with their huts rather than the overlapping
+oak/platform assets. All five non-lift doors and five shared interiors now
 match the reference geometry/rules. Missing ladder ownership and other navigation
 gaps remain separate from this door comparison.
 Lincoln declarations attach the hall-terrace gate and western-tower passage to

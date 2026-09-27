@@ -106,11 +106,27 @@ export interface AssetGameplay {
   environment?: { forest: boolean; defaultMaterial: number };
   sounds?: AssetSoundSource[];
   lights?: AssetLightRegion[];
+  masks?: AssetOcclusionMask[];
   jumpZones?: AssetJumpZone[];
   jumpPairs?: AssetJumpPair[];
   jumpSegments?: AssetJumpSegment[];
-  /** Nonvisual movement changes. Visual/sight/mask transitions require separate authoring. */
+  /** Independent navigation, sight, mask and door state links; visual resources are separate. */
   movementTransitions?: AssetMovementTransition[];
+}
+export interface AssetOcclusionMask {
+  id: string;
+  node: string;
+  /** Explicit local 3D coverage, including cutouts between triangles. */
+  triangles: import("./compile-mask-geometry.ts").MaskTriangle[];
+  /** Local point on the receiving navigation surface; may lie inside a blocker. */
+  anchor: [number, number, number];
+  view: boolean;
+  /** Closed local boundary; its projected front envelope controls character masking. */
+  characterBoundary?: [number, number, number][];
+  /** Closed local boundary; its world XY front envelope controls projectile masking. */
+  projectileBoundary?: [number, number, number][];
+  /** Local part/volume IDs used for the projectile/flying-human altitude test. */
+  obstacles: string[];
 }
 export interface AssetLightRegion {
   id: string;
@@ -159,6 +175,8 @@ export interface AssetMovementTransition {
   /** Local part/volume IDs enabled before and after the transition, respectively. */
   initialSight?: string[];
   appliedSight?: string[];
+  initialMasks?: string[];
+  appliedMasks?: string[];
   /** Local ordinary/interior door IDs. Lift traversal doors cannot bind map patches. */
   doorLinks?: { mode: "trigger-transition" | "swap-rights"; ids: string[] };
   /** Trigger contours at the waypoint's local elevation; empty means externally activated. */
@@ -322,6 +340,44 @@ export function validateAssetGameplay(
   if (data.movementTransitions !== undefined && !Array.isArray(data.movementTransitions))
     fail("invalid movement transitions");
   const changingSight = new Set<string>();
+  if (data.masks !== undefined && !Array.isArray(data.masks)) fail("invalid masks");
+  const maskIds = new Set<string>();
+  for (const mask of data.masks ?? []) {
+    feature(mask);
+    if (
+      !point(mask.anchor, 3) ||
+      typeof mask.view !== "boolean" ||
+      !Array.isArray(mask.triangles) ||
+      !mask.triangles.length ||
+      !mask.triangles.every(
+        (triangle) =>
+          Array.isArray(triangle) && triangle.length === 3 && triangle.every((p) => point(p, 3)),
+      ) ||
+      !Array.isArray(mask.obstacles) ||
+      new Set(mask.obstacles).size !== mask.obstacles.length
+    )
+      fail(`invalid mask ${mask.id}`);
+    for (const boundary of [mask.characterBoundary, mask.projectileBoundary])
+      if (
+        boundary !== undefined &&
+        (!Array.isArray(boundary) || boundary.length < 3 || !boundary.every((p) => point(p, 3)))
+      )
+        fail(`invalid mask boundary ${mask.id}`);
+    for (const ref of mask.obstacles)
+      if (
+        typeof ref !== "string" ||
+        !(
+          data.volumes?.some((volume) => volume.id === ref) ||
+          (data.collision === "parts" &&
+            descriptor.parts.some((part) => part.node === ref && part.obstacle_local_game))
+        )
+      )
+        fail(`mask ${mask.id} references missing obstacle ${ref}`);
+    if (!mask.view && !mask.characterBoundary && !mask.projectileBoundary && !mask.obstacles.length)
+      fail(`mask ${mask.id} has no application rule`);
+    maskIds.add(mask.id);
+  }
+  const changingMasks = new Set<string>();
   const triggeringDoors = new Set<string>();
   for (const transition of data.movementTransitions ?? []) {
     feature(transition);
@@ -336,9 +392,20 @@ export function validateAssetGameplay(
         !transition.applied.length &&
         !transition.initialSight?.length &&
         !transition.appliedSight?.length &&
+        !transition.initialMasks?.length &&
+        !transition.appliedMasks?.length &&
         !transition.doorLinks)
     )
       fail(`invalid movement transition ${transition.id}`);
+    for (const refs of [transition.initialMasks, transition.appliedMasks]) {
+      if (refs === undefined) continue;
+      if (!Array.isArray(refs)) fail("invalid mask transition references");
+      for (const ref of refs) {
+        if (!maskIds.has(ref) || changingMasks.has(ref))
+          fail(`invalid or multiply controlled mask ${ref}`);
+        changingMasks.add(ref);
+      }
+    }
     const links = transition.doorLinks;
     if (links !== undefined) {
       if (

@@ -1,0 +1,135 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  maskBoundaryPolyline,
+  rasterizeMaskGeometry,
+  type MaskTriangle,
+} from "./compile-mask-geometry.ts";
+import type { Mask, Point } from "./level.ts";
+
+const rules = {
+  layer: 0,
+  mask_type: 4,
+  character_polyline: null,
+  projectile_polyline: null,
+  obstacle_indices: [],
+};
+const rectangle = (x: number, y: number, width: number, height: number): MaskTriangle[] => [
+  [
+    [x, y, 0],
+    [x + width, y, 0],
+    [x + width, y + height, 0],
+  ],
+  [
+    [x, y, 0],
+    [x + width, y + height, 0],
+    [x, y + height, 0],
+  ],
+];
+function decode(mask: Mask): number[] {
+  const [width, height] = mask.box_size;
+  const pixels = Array<number>(width * height).fill(0);
+  let offset = 0;
+  for (let y = 0; y < height; y++) {
+    const end = offset + 1 + mask.mask_data[offset++]!;
+    let x = 0;
+    while (offset < end) {
+      const control = mask.mask_data[offset++]!,
+        count = control & 127;
+      for (let block = 0; block < count; block++) {
+        const byte = mask.mask_data[offset + (control & 128 ? 0 : block)]!;
+        for (let bit = 0; bit < 8; bit++, x++)
+          if (x < width) pixels[y * width + x] = (byte >> (7 - bit)) & 1;
+      }
+      offset += control & 128 ? 1 : count;
+    }
+  }
+  return pixels;
+}
+
+test("mask boundary envelopes preserve concave steps, winding and rotation", () => {
+  const boundary: Point[] = [
+    [0, 0],
+    [10, 0],
+    [10, 20],
+    [5, 20],
+    [5, 10],
+    [0, 10],
+  ];
+  const expected: Point[] = [
+    [0, 10],
+    [5, 10],
+    [5, 20],
+    [10, 20],
+  ];
+  assert.deepEqual(maskBoundaryPolyline(boundary), expected);
+  assert.deepEqual(maskBoundaryPolyline([...boundary].reverse()), expected);
+  const rotated = boundary.map(([x, y]): Point => [30 - y, x]);
+  assert.deepEqual(maskBoundaryPolyline(rotated), [
+    [10, 10],
+    [20, 10],
+    [30, 10],
+  ]);
+});
+
+test("rasterized mask coverage preserves holes and triangle winding", () => {
+  const geometry = [
+    ...rectangle(0, 0, 6, 2),
+    ...rectangle(0, 4, 6, 2),
+    ...rectangle(0, 2, 2, 2),
+    ...rectangle(4, 2, 2, 2),
+  ];
+  const masks = rasterizeMaskGeometry(geometry, rules);
+  assert.equal(masks.length, 1);
+  const expected = ["111111", "111111", "110011", "110011", "111111", "111111"].join("");
+  assert.equal(decode(masks[0]!).join(""), expected);
+  assert.deepEqual(
+    rasterizeMaskGeometry(
+      geometry.map(([a, b, c]) => [c, b, a]),
+      rules,
+    ),
+    masks,
+  );
+});
+
+test("wide masks tile without seams or overflowing native scanline lengths", () => {
+  const masks = rasterizeMaskGeometry(rectangle(0, 0, 2050, 1), rules);
+  assert.deepEqual(
+    masks.map((mask) => [mask.box_top_left, mask.box_size]),
+    [
+      [
+        [0, 0],
+        [1024, 1],
+      ],
+      [
+        [1024, 0],
+        [1024, 1],
+      ],
+      [
+        [2048, 0],
+        [2, 1],
+      ],
+    ],
+  );
+  assert.ok(masks.flatMap(decode).every((pixel) => pixel === 1));
+  assert.equal(masks.flatMap(decode).length, 2050);
+});
+
+test("mask coverage projects elevation and preserves transparent edge-on states", () => {
+  const geometry = rectangle(10, 20, 2, 2).map(
+    (triangle): MaskTriangle => triangle.map(([x, y]) => [x, y, 5]) as MaskTriangle,
+  );
+  assert.deepEqual(rasterizeMaskGeometry(geometry, rules)[0]!.box_top_left, [10, 15]);
+  const edge = rasterizeMaskGeometry(
+    [
+      [
+        [0, 0, 0],
+        [0, 2, 0],
+        [0, 2, 2],
+      ],
+    ],
+    rules,
+  );
+  assert.ok(decode(edge[0]!).every((pixel) => pixel === 0));
+  assert.throws(() => rasterizeMaskGeometry(rectangle(32766, 0, 2, 2), rules), /16-bit/);
+});

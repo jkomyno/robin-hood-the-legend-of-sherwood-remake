@@ -1,5 +1,62 @@
 import type { GameplayAssetDescriptor } from "../src/asset-gameplay.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "../src/level3d.ts";
+import type { MaskTriangle } from "../src/compile-mask-geometry.ts";
+
+export function maskAssetCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const g = fixture.hut.gameplay!;
+  const vertices: [number, number, number][] = [
+    [40, 40, 0],
+    [50, 40, 0],
+    [50, 50, 0],
+    [40, 50, 0],
+    [40, 40, 30],
+    [50, 40, 30],
+    [50, 50, 30],
+    [40, 50, 30],
+  ];
+  const triangles = [
+    [0, 1, 2, 3],
+    [4, 5, 6, 7],
+    [0, 1, 5, 4],
+    [1, 2, 6, 5],
+    [2, 3, 7, 6],
+    [3, 0, 4, 7],
+  ].flatMap(([a, b, c, d]): MaskTriangle[] => [
+    [vertices[a!]!, vertices[b!]!, vertices[c!]!],
+    [vertices[a!]!, vertices[c!]!, vertices[d!]!],
+  ]);
+  const initial = {
+    id: "covered",
+    node: "building-999",
+    triangles,
+    anchor: [45, 45, 0] as [number, number, number],
+    view: true,
+    characterBoundary: vertices.slice(0, 4),
+    obstacles: ["building-999"],
+  };
+  g.masks = [
+    initial,
+    { ...structuredClone(initial), id: "revealed", triangles: triangles.slice(0, 2) },
+  ];
+  g.movementTransitions = [
+    {
+      id: "cover-state",
+      node: "building-999",
+      waypoint: [45, 45, 0],
+      active: true,
+      definitive: false,
+      initial: [],
+      applied: [],
+      initialMasks: ["covered"],
+      appliedMasks: ["revealed"],
+      applyPolygon: [],
+      noApplyPolygon: [],
+    },
+  ];
+  fixture.document.map = "Asset mask fixture";
+  return fixture;
+}
 
 export function navigationRegionCompilerFixture() {
   const fixture = assetCompilerFixture();

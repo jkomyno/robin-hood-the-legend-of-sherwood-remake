@@ -3,6 +3,58 @@
 use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimConfig};
 use robin_engine::level_data::LoadedLevel;
 
+#[test]
+fn editor_asset_masks_construct_baked_coverage_and_local_state_links() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-mask.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    assert_eq!(grid.level.masks.len(), 2);
+    assert_eq!(grid.level.masks[0].mask_type, 23);
+    assert_eq!(
+        (grid.level.masks[0].width, grid.level.masks[0].height),
+        (10, 40)
+    );
+    assert_eq!(
+        (grid.level.masks[1].width, grid.level.masks[1].height),
+        (10, 10)
+    );
+    assert!(
+        grid.level
+            .masks
+            .iter()
+            .all(|mask| mask.bitmap.iter().all(|&pixel| pixel == 1))
+    );
+    assert_eq!(grid.mask_active, [true, false]);
+    let mask = &grid.level.masks[0];
+    use robin_engine::coordinates::{MapPoint, WorldPoint3D};
+    assert!(mask.is_applied_to_point_character(MapPoint::new(345., 339.)));
+    assert!(!mask.is_applied_to_point_character(MapPoint::new(345., 351.)));
+    let obstacles = robin_engine::sight_obstacle::ObstacleList::from_slice_all_active(
+        &assets.environment.static_sight_obstacles,
+    );
+    assert!(mask.is_applied_to_point_3d(
+        WorldPoint3D {
+            x: 345.,
+            y: 345.,
+            z: 20.
+        },
+        false,
+        obstacles
+    ));
+    assert!(!mask.is_applied_to_point_3d(
+        WorldPoint3D {
+            x: 345.,
+            y: 345.,
+            z: 40.
+        },
+        false,
+        obstacles
+    ));
+}
+
 fn descriptor_with_compiled_masks() -> serde_json::Value {
     let mut descriptor: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-lift.level.json")).unwrap();

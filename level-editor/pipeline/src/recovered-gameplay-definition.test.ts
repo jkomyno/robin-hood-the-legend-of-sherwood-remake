@@ -8,6 +8,7 @@ import {
   doorTransitionCompilerFixture,
   doorAnchorCompilerFixture,
   projectionMaterialCompilerFixture,
+  maskAssetCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import {
@@ -75,6 +76,20 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
     ],
   };
 }
+
+test("asset mask coverage and state links survive recovery packet conversion independently", () => {
+  const { hut } = maskAssetCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  packet.masks = hut.gameplay!.masks;
+  packet.movementTransitions = hut.gameplay!.movementTransitions;
+  const result = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(result.masks, packet.masks);
+  assert.deepEqual(result.movementTransitions, packet.movementTransitions);
+  result.masks![0]!.triangles[0]![0][0] += 10;
+  result.movementTransitions![0]!.initialMasks!.push("extra");
+  assert.notDeepEqual(result.masks, packet.masks);
+  assert.notDeepEqual(result.movementTransitions, packet.movementTransitions);
+});
 
 test("receiving material references survive recovery without sharing draft metadata", () => {
   const { hut } = projectionMaterialCompilerFixture();

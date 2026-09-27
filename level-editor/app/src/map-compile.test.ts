@@ -8,6 +8,7 @@ import { compileMap, packageCompiledMap, validateBakeBounds } from "./map-compil
 import { bakeScene, contentBakeBounds } from "./map-bake-render.ts";
 import {
   assetCompilerFixture,
+  maskAssetCompilerFixture,
   slopedAssetCompilerFixture,
   liftAssetCompilerFixture,
   liftLightCompilerFixture,
@@ -31,6 +32,29 @@ import {
   doorAnchorCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("asset mask geometry exports the native state fixture and survives ZIP packaging", async () => {
+  const { document, assets } = maskAssetCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL("../../../crates/robin_engine/tests/fixtures/asset-mask.level.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+  const compiled = compileMap(document, [0, 0, 512, 512], assets);
+  const bytes = await packageCompiledMap(compiled, {
+    color: new Uint8Array(512 * 512 * 4),
+    depth: new Uint16Array(512 * 512),
+  });
+  const files = unzipSync(bytes);
+  const packaged = JSON.parse(strFromU8(files[`Data/Levels/${compiled.name}.level.json`]!));
+  assert.deepEqual(packaged.asset_geometry.masks, compiled.descriptor.asset_geometry!.masks);
+  assert.deepEqual(
+    packaged.asset_geometry.movement_transitions,
+    compiled.descriptor.asset_geometry!.movement_transitions,
+  );
+});
 
 test("door receiving anchors export the native endpoint fixture", async () => {
   const { document, assets } = doorAnchorCompilerFixture();

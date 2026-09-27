@@ -25,6 +25,11 @@ import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-qua
 import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
 import { normalizeGameplayStateViews } from "./gameplay-state-views.ts";
 import {
+  maskBoundaryPolyline,
+  rasterizeMaskGeometry,
+  type MaskTriangle,
+} from "./compile-mask-geometry.ts";
+import {
   compileTransitionObstacles,
   type PlacedTransitionBlocker,
 } from "./compile-movement-transitions.ts";
@@ -177,6 +182,12 @@ export function compileAssetGameplay(
     lift?: string;
   })[] = [];
   const lights: { id: string; polygon: Point[]; plane: HeightPlane; ambiences: number }[] = [];
+  const placedMasks: {
+    id: string;
+    anchor: Vec3;
+    triangles: MaskTriangle[];
+    rules: Omit<import("./level.ts").Mask, "layer" | "box_top_left" | "box_size" | "mask_data">;
+  }[] = [];
   const jumpZones: { id: string; polygon: Point[]; anchor: Vec3; helper: boolean }[] = [];
   const jumpSegments: PlacedJumpSegment[] = [];
   const jumpPairs: { id: string; long: boolean; edges: { zone: string; a: Vec3; b: Vec3 }[] }[] =
@@ -192,6 +203,8 @@ export function compileAssetGameplay(
     changes: { layer: number; sector: number; changing_obstacle: number }[];
     initialSight: number[];
     appliedSight: number[];
+    initialMasks: string[];
+    appliedMasks: string[];
     doorLinks?: { mode: "trigger-transition" | "swap-rights"; ids: string[] };
   }[] = [];
   let lifts: PlacedLiftSegment[] = [];
@@ -316,12 +329,13 @@ export function compileAssetGameplay(
     const partSight = new Map<string, SightObstacle>();
     const movementSolid = (id: string) =>
       gameplay.movementSolids?.includes(id) ?? gameplay.movementBlockers === undefined;
-    const explicitSight = new Set(
-      (gameplay.movementTransitions ?? []).flatMap((t) => [
+    const explicitSight = new Set([
+      ...(gameplay.movementTransitions ?? []).flatMap((t) => [
         ...(t.initialSight ?? []),
         ...(t.appliedSight ?? []),
       ]),
-    );
+      ...(gameplay.masks ?? []).flatMap((mask) => mask.obstacles),
+    ]);
     if (gameplay.collision === "parts")
       for (const [node, part] of placement.frames) {
         if (!placement.parts.has(node) && !explicitSight.has(node)) continue;
@@ -357,6 +371,46 @@ export function compileAssetGameplay(
     for (const id of gameplay.movementSolids ?? [])
       if (!partSight.has(id))
         throw new Error(`Permanent movement solid ${placement.id}/${id} is hidden or missing`);
+    for (const mask of gameplay.masks ?? []) {
+      const boundary = (points: Vec3[] | undefined, projected: boolean) =>
+        points
+          ? maskBoundaryPolyline(
+              points.map((point): Point => {
+                const p = transform(mask.node, point);
+                return projected ? project(p) : [quantize(p[0]), quantize(p[1])];
+              }),
+            )
+          : null;
+      placedMasks.push({
+        id: `${placement.id}/${mask.id}`,
+        anchor: transform(mask.node, mask.anchor),
+        triangles: mask.triangles.map(([a, b, c]) => [
+          transform(mask.node, a),
+          transform(mask.node, b),
+          transform(mask.node, c),
+        ]),
+        rules: {
+          mask_type:
+            (mask.characterBoundary ? 1 : 0) |
+            (mask.projectileBoundary || mask.obstacles.length ? 2 : 0) |
+            (mask.view ? 4 : 0) |
+            (mask.obstacles.length ? 16 : 0),
+          character_polyline: boundary(mask.characterBoundary, true),
+          projectile_polyline:
+            boundary(mask.projectileBoundary, false) ?? (mask.obstacles.length ? [] : null),
+          obstacle_indices: mask.obstacles.map((id) => {
+            const shape = partSight.get(id);
+            if (!shape)
+              throw new Error(
+                `${placement.id}/${mask.id}: mask obstacle ${id} is hidden or missing`,
+              );
+            const index = sight.indexOf(shape);
+            if (index > 65535) throw new Error("Mask obstacle reference exceeds 16-bit indices");
+            return index;
+          }),
+        },
+      });
+    }
     const materialIndices = new Map<string, number>();
     for (const region of gameplay.materials ?? []) {
       const index = materials.length;
@@ -419,6 +473,8 @@ export function compileAssetGameplay(
         changes: [],
         initialSight: sightRefs(t.initialSight),
         appliedSight: sightRefs(t.appliedSight),
+        initialMasks: (t.initialMasks ?? []).map((id) => `${placement.id}/${id}`),
+        appliedMasks: (t.appliedMasks ?? []).map((id) => `${placement.id}/${id}`),
         ...(t.doorLinks
           ? {
               doorLinks: {
@@ -798,6 +854,24 @@ export function compileAssetGameplay(
     }
     return matches[0]!;
   };
+  const masks: NonNullable<CompiledAssetGeometry["masks"]> = [];
+  const maskIndices = new Map<string, number[]>();
+  for (const mask of placedMasks) {
+    const layer = resolve(mask.anchor, `${mask.id} receiving anchor`, null, true).layer;
+    const tiles = rasterizeMaskGeometry(mask.triangles, { ...mask.rules, layer });
+    maskIndices.set(
+      mask.id,
+      tiles.map((_, index) => masks.length + index),
+    );
+    masks.push(...tiles);
+  }
+  if (masks.length > 65536) throw new Error("Too many compiled mask tiles");
+  const maskRefs = (ids: string[]) =>
+    ids.flatMap((id) => {
+      const indices = maskIndices.get(id);
+      if (!indices) throw new Error(`Unresolved transition mask ${id}`);
+      return indices;
+    });
   // Detached edges have no runtime connection. Retain zones used by any remaining pair.
   const usedJumpZones = new Set(jumpPairs.flatMap((pair) => pair.edges.map((edge) => edge.zone)));
   const activeJumpZones = jumpZones.filter((zone) => usedJumpZones.has(zone.id));
@@ -881,6 +955,7 @@ export function compileAssetGameplay(
   return {
     ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
+    ...(masks.length ? { masks } : {}),
     ...(compiledJumpZones.length
       ? { jump_zones: compiledJumpZones, jump_line_pairs: compiledJumpPairs }
       : {}),
@@ -915,6 +990,8 @@ export function compileAssetGameplay(
               !t.changes.length &&
               !t.initialSight.length &&
               !t.appliedSight.length &&
+              !t.initialMasks.length &&
+              !t.appliedMasks.length &&
               !t.doorLinks
             )
               throw new Error(`${t.id}: movement transition affects no walkable area`);
@@ -933,6 +1010,8 @@ export function compileAssetGameplay(
               motion_changes: t.changes,
               ...(t.initialSight.length ? { initial_sight: t.initialSight } : {}),
               ...(t.appliedSight.length ? { applied_sight: t.appliedSight } : {}),
+              ...(t.initialMasks.length ? { initial_masks: maskRefs(t.initialMasks) } : {}),
+              ...(t.appliedMasks.length ? { applied_masks: maskRefs(t.appliedMasks) } : {}),
               ...(t.doorLinks
                 ? {
                     door_links: {

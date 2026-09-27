@@ -803,6 +803,43 @@ mod tests {
     }
 
     #[test]
+    fn editor_asset_mask_transition_switches_baked_coverage_and_resets() {
+        let (mut engine, assets) = load_compiled_transition(
+            include_bytes!("../../tests/fixtures/asset-mask.level.json"),
+            (2000., 2000.),
+        );
+        let patch = crate::patch::PatchIndex::new(0).unwrap();
+        let coverage = |engine: &EngineInner| {
+            engine
+                .world
+                .fast_grid
+                .level
+                .masks
+                .iter()
+                .enumerate()
+                .filter(|(index, _)| {
+                    engine
+                        .world
+                        .fast_grid
+                        .is_mask_active(crate::mask::MaskIndex::new(*index as u32).unwrap())
+                })
+                .map(|(_, mask)| {
+                    mask.bitmap
+                        .iter()
+                        .map(|&pixel| usize::from(pixel))
+                        .sum::<usize>()
+                })
+                .sum::<usize>()
+        };
+        assert_eq!(coverage(&engine), 400);
+        let sim = crate::sim_rng::test_context();
+        engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+        assert_eq!(coverage(&engine), 100);
+        engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+        assert_eq!(coverage(&engine), 400);
+    }
+
+    #[test]
     fn editor_compiled_door_links_wire_both_directions_and_restore_rights() {
         let (mut engine, assets) = load_compiled_transition(
             include_bytes!("../../tests/fixtures/asset-door-transition.level.json"),

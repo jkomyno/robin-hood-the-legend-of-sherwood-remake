@@ -47,9 +47,13 @@
   bitmaps, character/projectile polylines and sight-obstacle links. Mask-only
   transitions rebuild per-layer references and switch initial/applied masks.
   Invalid bitmap rows and conflicting state ownership fail before construction.
-  The editor has a binary-silhouette encoder verified against the native decoder;
-  asset mask authoring, raster bake integration and visual-state export remain
-  unfinished.
+  The editor has a binary-silhouette encoder verified against the native decoder.
+  Assets can author local coverage triangles, receiving anchors, masking
+  boundaries and obstacle/state links. Compilation rasterizes placed coverage in
+  bounded tiles, preserves holes and concave boundary steps, and rebuilds links
+  independently for rotated/duplicated assets. Map ZIPs include the resulting
+  masks. Recovery for existing assets, textured-mesh extraction and coordinated
+  visual/depth-state export remain unfinished.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits

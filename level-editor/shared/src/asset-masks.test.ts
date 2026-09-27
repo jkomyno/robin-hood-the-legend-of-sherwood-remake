@@ -1,0 +1,114 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { maskAssetCompilerFixture } from "../test-fixtures/asset-gameplay.ts";
+import { compileAssetGameplay } from "./compile-asset-gameplay.ts";
+import { validateAssetGameplay } from "./asset-gameplay.ts";
+import { IDENTITY_TRANSFORM } from "./level3d.ts";
+import type { AssetGameplay } from "./asset-gameplay.ts";
+
+const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("asset mask geometry, rules and transitions compile entirely from local definitions", () => {
+  const { document, assets } = maskAssetCompilerFixture();
+  const first = compileAssetGameplay(document, assets, bounds);
+  assert.equal(first.masks?.length, 2);
+  const mask = first.masks![0]!;
+  assert.equal(mask.mask_type, 23);
+  assert.deepEqual(mask.box_top_left, [340, 310]);
+  assert.deepEqual(mask.box_size, [10, 40]);
+  assert.deepEqual(mask.character_polyline, [
+    [340, 350],
+    [350, 350],
+  ]);
+  assert.deepEqual(mask.projectile_polyline, []);
+  assert.deepEqual(mask.obstacle_indices, [0]);
+  assert.deepEqual(first.movement_transitions![0]!.initial_masks, [0]);
+  assert.deepEqual(first.movement_transitions![0]!.applied_masks, [1]);
+  document.groups[0]!.transform.dx = 100;
+  document.groups[0]!.transform.dy = -10;
+  document.groups[0]!.transform.dz = 10;
+  const moved = compileAssetGameplay(document, assets, bounds).masks![0]!;
+  assert.deepEqual(moved.box_top_left, [440, 290]);
+  assert.deepEqual(moved.character_polyline, [
+    [440, 330],
+    [450, 330],
+  ]);
+  assert.deepEqual(moved.mask_data, mask.mask_data);
+});
+
+test("rotated duplicates rebuild independent mask and obstacle state references", () => {
+  const { document, assets } = maskAssetCompilerFixture();
+  const part = document.objects.find((p) => p.group)!;
+  document.groups.push({
+    id: "mask-copy",
+    transform: { ...IDENTITY_TRANSFORM, dx: 1000, rot_deg: 90 },
+  });
+  document.objects.push({ ...structuredClone(part), id: "mask-copy-part", group: "mask-copy" });
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  assert.equal(geometry.masks?.length, 4);
+  assert.deepEqual(
+    geometry.movement_transitions!.map((t) => [t.initial_masks, t.applied_masks]),
+    [
+      [[0], [1]],
+      [[2], [3]],
+    ],
+  );
+  assert.deepEqual(
+    geometry.masks!.map((mask) => mask.obstacle_indices),
+    [[0], [0], [1], [1]],
+  );
+  assert.notDeepEqual(geometry.masks![0]!.box_top_left, geometry.masks![2]!.box_top_left);
+  assert.ok(
+    geometry.masks!.every(
+      (mask) => mask.character_polyline![0]![0] < mask.character_polyline!.at(-1)![0],
+    ),
+  );
+});
+
+test("one local mask state controls every generated bitmap tile", () => {
+  const { document, assets, hut } = maskAssetCompilerFixture();
+  hut.gameplay!.masks![0]!.triangles = [
+    [
+      [0, 0, 0],
+      [1500, 0, 0],
+      [1500, 1, 0],
+    ],
+    [
+      [0, 0, 0],
+      [1500, 1, 0],
+      [0, 1, 0],
+    ],
+  ];
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  assert.equal(geometry.masks!.length, 3);
+  assert.deepEqual(geometry.movement_transitions![0]!.initial_masks, [0, 1]);
+  assert.deepEqual(geometry.movement_transitions![0]!.applied_masks, [2]);
+});
+
+test("mask authoring rejects missing rules, references, geometry and competing state ownership", () => {
+  for (const mutate of [
+    (g: AssetGameplay) => {
+      g.masks![0]!.obstacles = ["missing"];
+    },
+    (g: AssetGameplay) => {
+      g.masks![0]!.triangles = [];
+    },
+    (g: AssetGameplay) => {
+      g.masks![0]!.view = false;
+      g.masks![0]!.obstacles = [];
+      delete g.masks![0]!.characterBoundary;
+    },
+    (g: AssetGameplay) => {
+      g.movementTransitions![0]!.appliedMasks = ["covered"];
+    },
+    (g: AssetGameplay) => {
+      g.movementTransitions![0]!.appliedMasks = ["missing"];
+    },
+  ]) {
+    const { hut } = maskAssetCompilerFixture();
+    mutate(hut.gameplay!);
+    assert.throws(() => validateAssetGameplay(hut.gameplay, hut), /mask/i);
+  }
+  const { document, assets, hut } = maskAssetCompilerFixture();
+  hut.gameplay!.masks![0]!.anchor = [500, 500, 0];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /receiving anchor/);
+});

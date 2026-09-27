@@ -4,15 +4,27 @@
   "door_sources": [
     {
       "doors": [0],
-      "owner": "sherwood-north-camp-hut-walls",
+      "owner": "sherwood-north-camp-hut",
       "node": "building-008",
-      "reason": "The north camp hut walls enclose this ground-level room and own its entrance. The separately editable roof above the room does not own the interior."
+      "reason": "The grouped north camp hut contains the room walls, roof and supply shelter. Its wall frame owns this ground-level room entrance."
     },
     {
       "doors": [1],
       "owner": "sherwood-west-camp-hut",
       "node": "building-001",
-      "reason": "The west camp hut contains the wall and doorway components for this room. Its nearby roof is a separate visual component, not a second interior owner."
+      "reason": "The grouped west camp hut contains the walls, doorway, chimney and roof. Its wall frame owns this room entrance independently of the roof geometry."
+    },
+    {
+      "doors": [3],
+      "owner": "sherwood-central-west-treehouse",
+      "node": "building-104",
+      "reason": "This entrance belongs to the central west treehouse hut. Its separately placed oak and platform support the building but do not own its room."
+    },
+    {
+      "doors": [4],
+      "owner": "sherwood-west-treehouse",
+      "node": "building-105",
+      "reason": "The west treehouse hut frame owns this entrance within the grouped hut, platform, thatch and ladder asset. The adjacent oak is a separate supporting asset."
     }
   ],
   "groups": [
