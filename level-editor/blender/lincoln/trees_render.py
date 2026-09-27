@@ -26,11 +26,18 @@ def load_glb(path):
     return [o for o in set(bpy.data.objects) - before if o.type == 'MESH']
 
 
+_LOADED = {}
+
+
 def load_blend(path, asset):
+    """Append each blend's objects once; later assets from the same file reuse them."""
     import bpy
-    with bpy.data.libraries.load(str(path), link=False) as (source, target):
-        target.objects = list(source.objects)
-    objects = [o for o in target.objects if o is not None and o.type == 'MESH' and o.get('asset_group') == asset]
+    key = str(Path(path).resolve())
+    if key not in _LOADED:
+        with bpy.data.libraries.load(key, link=False) as (source, target):
+            target.objects = [name for name in source.objects]
+        _LOADED[key] = [o for o in target.objects if o is not None and o.type == 'MESH']
+    objects = [o for o in _LOADED[key] if o.get('asset_group') == asset]
     if not objects:
         raise ValueError(f'No meshes for {asset} in {path}')
     for obj in objects:

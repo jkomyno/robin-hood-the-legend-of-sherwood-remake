@@ -57,6 +57,7 @@ SIN, COS = math.sin(ELEVATION), math.cos(ELEVATION)
 TOWARD = np.array([0.0, -COS, SIN])
 LIGHT = np.array([-.35, -.45, .82]) / np.linalg.norm([-.35, -.45, .82])
 SS = 2  # subsamples per source pixel along each axis
+ASSET_SCOPE = None  # set of asset ids allowed to change (None = all)
 MIN_COSINE_OVERRIDES = {}  # asset_id -> reviewed floor not yet carried by the staged meshes
 DEPTH_TOLERANCE = 0.02  # world units (= map pixels)
 GRAZING_COSINE = 0.18  # below this one source pixel smears over > 5.5 texels (Nottingham precedent)
@@ -354,6 +355,8 @@ class Pass:
             row = {'object': obj.name, 'source_node': obj.get('source_node'), 'asset_group': obj.get('asset_group'),
                    'projection_component': obj.get('projection_component'), 'slots': []}
             fill_record = {}
+            # --assets limits every texel change to the named assets; the rest is audited only.
+            apply_here = apply_fill and (ASSET_SCOPE is None or obj.get('asset_group') in ASSET_SCOPE)
             for slot in np.unique(record['slots']):
                 slot = int(slot)
                 binding = self.scene.slot_binding(obj, slot)
@@ -393,7 +396,7 @@ class Pass:
                 if projected:
                     neutral = atlas[:, :, 3] == 0
                     on_island[:] = interior[:] = True
-                    if apply_fill:
+                    if apply_here:
                         cy, cx = np.divmod(slot_cells, self.width * SS)
                         seen = np.zeros(atlas.shape[:2], dtype=bool)
                         seen[self.height - 1 - cy // SS, cx // SS] = True
@@ -410,7 +413,7 @@ class Pass:
                     neutral[ty, tx] = mask
                     on_island[ty, tx] = True
                     interior[ty, tx] |= inner
-                    if not apply_fill:
+                    if not apply_here:
                         continue
                     grazing = np.abs(normals @ TOWARD) < floor
                     grazing_map[ty, tx] = grazing
@@ -438,7 +441,7 @@ class Pass:
                     gray_before |= neutral[r, c] & (w > 1e-6)
                 gray['before'][slot_cells] = gray_before
                 pixel_filled = 0
-                if apply_fill:
+                if apply_here:
                     remaining = neutral & (fill == 0) & ~grazing_map
                     total = np.zeros(atlas.shape[:2] + (3,), dtype=np.float64)
                     count = np.zeros(atlas.shape[:2], dtype=np.int64)
@@ -562,10 +565,13 @@ def main(argv):
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--grazing-cosine', type=float, default=GRAZING_COSINE,
                         help='Global grazing floor; per-mesh projection_min_cosine can raise it')
+    parser.add_argument('--assets', nargs='+', help='Only change texels of these asset ids (others are audited only)')
     parser.add_argument('--min-cosine-override', action='append', default=[], metavar='ASSET=COSINE',
                         help='Per-asset floor for a projection_min_cosine not yet in the staged worker')
     args = parser.parse_args(argv)
     GRAZING_COSINE = args.grazing_cosine
+    global ASSET_SCOPE
+    ASSET_SCOPE = set(args.assets) if args.assets else None
     for item in args.min_cosine_override:
         asset, value = item.split('=')
         MIN_COSINE_OVERRIDES[asset] = float(value)
@@ -606,7 +612,8 @@ def main(argv):
               'camera': {'elevation_deg': 35.0, 'projection': 'orthographic; x = world x, '
                          'top row = -(y sin + z cos), depth = -y cos + z sin', 'subsamples': SS,
                          'depth_tolerance': DEPTH_TOLERANCE, 'grazing_cosine': GRAZING_COSINE,
-                         'min_cosine_overrides': MIN_COSINE_OVERRIDES},
+                         'min_cosine_overrides': MIN_COSINE_OVERRIDES,
+                         'asset_scope': sorted(ASSET_SCOPE) if ASSET_SCOPE else None},
               'counts': pixel_counts(gray, kind, cosine, pass_.width, pass_.height),
               'objects': rows, 'evidence': str(evidence)}
     if args.mode == 'apply':

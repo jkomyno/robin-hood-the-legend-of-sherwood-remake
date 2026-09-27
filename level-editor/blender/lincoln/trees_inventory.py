@@ -6,7 +6,7 @@ Plain Python (numpy/PIL/scipy/torch). Run from the repository root:
 
 Lincoln foliage has no sight obstacles. Native occlusion masks exist for most clumps
 (0-85, 153-161 and the garden layer-2 masks 327-338); the reviewed receiver manifest
-(source-masks-v4) leaves them unassigned or uses them only as foreground exclusions.
+(source-masks-v5) leaves them unassigned or uses them only as foreground exclusions.
 A few clumps on the north ridge have no native mask at all and need authored domains.
 
 Each proposal's *foliage domain* is its native mask union minus pixels that show
@@ -34,11 +34,11 @@ ROOT = Path(__file__).resolve().parents[3]
 R = ROOT / 'level-editor/work/lincoln-refinement'
 OUT = R / 'scratch/trees/inventory'
 SOURCE = R / 'source-states/covered.png'
-MASKS = R / 'mask-review/source-masks-v4.json'
-INVENTORY = R / 'mask-review/inventory-v4/manifest.json'
+MASKS = R / 'mask-review/source-masks-v5.json'
+INVENTORY = R / 'mask-review/inventory-v5/manifest.json'
 W, H = 2944, 2176
 BEHIND_ARCHITECTURE = {53, 54, 156, 160}
-GROUND_DOMAINS = list(range(433, 453))  # authored ground/rock domains (masks v4)
+GROUND_DOMAINS = list(range(433, 453)) + [454]  # authored ground/rock domains; 454 = terrain ground (v5)
 
 # (id, name, kind, native masks, region, note). Grouping is visual: masks whose
 # painted crowns read as one plant form one asset; duplicates (L0/L2 copies)
@@ -156,6 +156,31 @@ UNMASKED = [
 ]
 
 
+# Obstacle-less non-foliage scenery: painted pixels in the box that no reviewed
+# receiver owns (the terrain-ground lane carved them out of ground mask 454).
+SCENERY = [
+    ('lincoln-village-pond-landing-stage', 'Village pond landing stage and mooring pole', 'scenery', (484, 612, 548, 678),
+     'village', 'No node or native mask; plank deck on posts plus a mooring pole. The punt belongs to lincoln-village-stream-boat.'),
+]
+# Traced source-pixel outlines (x, y) of the painted landing stage: deck with its
+# shaded left face, the front-left post, and the mooring pole at the front-right corner.
+SCENERY_POLYGONS = {
+    'lincoln-village-pond-landing-stage': [
+        [(486, 630), (529, 621), (543, 648), (506, 662), (497, 652)],
+        [(505, 660), (511, 660), (511, 678), (505, 678)],
+        [(540, 614), (545, 614), (545, 673), (540, 673)],
+    ],
+}
+
+
+# Non-foliage artwork inside native foliage masks, traced on the source (x, y).
+DOMAIN_EXCLUSIONS = {
+    # Boulder behind the west plateau tree (mask 50/52 envelope); it is north-rock-ridge terrain.
+    'lincoln-tree-north-plateau-west': [[(2377, 257), (2405, 255), (2428, 266), (2433, 274), (2423, 282),
+                                        (2407, 285), (2392, 290), (2378, 285), (2375, 272)]],
+}
+
+
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -266,8 +291,22 @@ def main():
     assigned = np.zeros((H, W), np.int16)
     rows = []
     trims = {index: np.zeros((H, W), bool) for index in ground}
-    for number, (asset_id, name, kind, masks, region, note) in enumerate(ASSETS + UNMASKED, 1):
-        if isinstance(masks, tuple):
+    for number, (asset_id, name, kind, masks, region, note) in enumerate(ASSETS + UNMASKED + SCENERY, 1):
+        if kind == 'scenery':
+            x0, y0, x1, y1 = masks
+            box = np.zeros((H, W), bool)
+            box[y0:y1, x0:x1] = True
+            from PIL import ImageDraw
+            traced = Image.new('L', (W, H), 0)
+            for polygon in SCENERY_POLYGONS[asset_id]:
+                ImageDraw.Draw(traced).polygon(polygon, fill=255)
+            # Within the unowned hole the terrain lane carved, keep only the traced stage.
+            domain = box & (np.asarray(traced) > 0) & ~arch & ~ground_union & ~foliage_union
+            envelope = domain
+            seethrough = np.zeros((H, W), bool)
+            native_masks = []
+            source_kind = 'traced-polygon-within-unowned-pixels'
+        elif isinstance(masks, tuple):
             x0, y0, x1, y1 = masks
             box = np.zeros((H, W), bool)
             box[y0:y1, x0:x1] = True
@@ -300,6 +339,14 @@ def main():
             domain &= bodies
             native_masks = list(masks)
             source_kind = 'native-mask-union-minus-architecture-seethrough'
+        if asset_id in DOMAIN_EXCLUSIONS:
+            from PIL import ImageDraw
+            traced = Image.new('L', (W, H), 0)
+            for polygon in DOMAIN_EXCLUSIONS[asset_id]:
+                ImageDraw.Draw(traced).polygon(polygon, fill=255)
+            cut = domain & (np.asarray(traced) > 0)
+            seethrough |= cut
+            domain &= ~cut
         overlap = (assigned > 0) & domain
         # Domains may share pixels (one crown in front of another). Both keep them;
         # fixed-camera first-hit gating on the fitted crowns decides the receiver.
@@ -339,7 +386,7 @@ def main():
         mask_manifest=str(MASKS), mask_manifest_sha256=sha(MASKS),
         mask_inventory=str(INVENTORY), mask_inventory_sha256=sha(INVENTORY),
         counts=dict(assets=len(rows), trees=sum(r['kind'] == 'tree' for r in rows),
-                    bushes=sum(r['kind'] == 'bush' for r in rows),
+                    bushes=sum(r['kind'] == 'bush' for r in rows), scenery=sum(r['kind'] == 'scenery' for r in rows),
                     with_native_masks=sum(bool(r['native_masks']) for r in rows),
                     authored_only=sum(not r['native_masks'] for r in rows),
                     native_masks_used=len(native)),

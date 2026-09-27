@@ -1,5 +1,6 @@
 {
   "map": "Lincoln",
+  "sourceMap": "Lincoln",
   "size": [
     2944,
     2176
@@ -8,923 +9,819 @@
     "kind": "oblique-orthographic",
     "elevation_deg": 35
   },
-  "provenance": {
-    "source_sha256": "fdbbcee1dc8cbdb19704f3595b5678a7adc3e431691702d50bbe3fccd620ca9b"
-  },
-  "sourceMap": "Lincoln",
   "sceneAssets": [
     {
       "id": "lincoln-terrain",
       "role": "ground",
       "model": "3d-assets/lincoln/lincoln-terrain/model.glb",
       "model_sha256": "65833a88068a695dc1f6415bf8e5a653ca4679597b5ece7ba6740a80ae3fa2d4",
-      "resources": [],
-      "model_scene": "default",
       "descriptor": "3d-assets/lincoln/lincoln-terrain/asset.json",
-      "descriptor_sha256": "0d5a55ff912257f1d8a2d5eee732fee9505bb13240d2c3d732ecaeaaa3a4aa4b"
+      "descriptor_sha256": "0d5a55ff912257f1d8a2d5eee732fee9505bb13240d2c3d732ecaeaaa3a4aa4b",
+      "resources": []
     }
   ],
   "assetSources": [
     {
       "model": "3d-assets/lincoln/lincoln-archery-target-east/model.glb",
       "model_sha256": "065b39462672be4c3f63b397e4fa716929d93c4fe1564a1c3d6e6f398779b4f2",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-archery-target-east/asset.json",
-      "descriptor_sha256": "7fff6c789f1574a8aa053a4853f94a439fb5ee01c364674f10812a7479ede8e6",
+      "descriptor_sha256": "d9258eabbf3fdc3fd0629f6bfb21c29f8816bfd324b14dececd07dce894d8e36",
       "id": "lincoln-archery-target-east",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-archery-target-east-middle/model.glb",
       "model_sha256": "ad5cbee95e8c523ed6b42ebb46e4aaf5d187ae454a2420fac5ca6c0bb83ec225",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-archery-target-east-middle/asset.json",
-      "descriptor_sha256": "80ad787165d6ea211bf6fe00b1a29f5a2d0542a26a1d8cfeb9158015e4196e88",
+      "descriptor_sha256": "80d2eb9266119ef8f3b453c4d639e990257140988d4976ee3f3c98f4aa90dfe3",
       "id": "lincoln-archery-target-east-middle",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-archery-target-west/model.glb",
       "model_sha256": "a19da900fe1a62446e79a2b9feac0d7c4d5cb05a0582ff1e98eeb42e6332b4fc",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-archery-target-west/asset.json",
-      "descriptor_sha256": "d054a3fca3d03c3eff34705aff8a638366e2f7c7631dfe3b9425f85acaf1df02",
+      "descriptor_sha256": "18650ff42705fbca0d2ba7e3b88bd9c5c599f0911193de55156adcb756fc87a9",
       "id": "lincoln-archery-target-west",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-archery-target-west-middle/model.glb",
       "model_sha256": "1410b8f4687ed65a94a4a98de6b9fda34b67c010d1d349fae64da9e4a977087a",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-archery-target-west-middle/asset.json",
-      "descriptor_sha256": "3a03de70437d8678abdbb09d65e5e3899c36497fe4d2620f48330bac20843ff1",
+      "descriptor_sha256": "dc32de0b2da77f4beb8573043c06b746875559133a40ef0b2c959320d200a940",
       "id": "lincoln-archery-target-west-middle",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-garden-fountain/model.glb",
       "model_sha256": "86e08bf84b2e975d7ad0b0c1805ef7674990473826d5abeb10e0898bfbe12915",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-garden-fountain/asset.json",
-      "descriptor_sha256": "e1503d51b7ab45e953f4841d100a3ee2033c031b87ce1f8a32c245d750fefe7d",
+      "descriptor_sha256": "546ecd4428dcc2a70a3f59d7d434816379b759756af580e24a10bdcf49f2e0d1",
       "id": "lincoln-garden-fountain",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-garden/model.glb",
       "model_sha256": "b343186ba1800d901108037abe6671929a1bd2b3b882da055ad9fa5ec966fe4f",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-garden/asset.json",
-      "descriptor_sha256": "9ccc0d1a74d6744b2edfa258f67bfa38216f103743b56e9104f86f52238b1987",
+      "descriptor_sha256": "521461186a97912ad70d683af1367520470ec916b497b23dade7af067f34731e",
       "id": "lincoln-garden",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-garden-north-wall/model.glb",
       "model_sha256": "3e635959f7e2bae14266e168762eabf900c69bd14bb9f4ee61c04ef1899d3bce",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-garden-north-wall/asset.json",
-      "descriptor_sha256": "ddc90f76ecd2ec359c4af59843d699728ec3d129fcd5e00a8e9b9b5661b3d7d4",
+      "descriptor_sha256": "cd36bca7d83c762311995cba23683e6ea0a5d5b66178fc307541522c5531c4a5",
       "id": "lincoln-garden-north-wall",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-castle-hill-east-slope/model.glb",
       "model_sha256": "4379542cb4e925fca9eb5cf8c4d7cc5c7f0fe48513381f0a391f749bc1c0a1ea",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-castle-hill-east-slope/asset.json",
-      "descriptor_sha256": "4c9cbbb5bc02dec2925f9c4034399d268eb73b80edaddcbf6b5470bf28aec72f",
+      "descriptor_sha256": "8dce5d80ca651eff8930e3be349d72c33e620fb85875d03b6435d9f8e8197711",
       "id": "lincoln-castle-hill-east-slope",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-castle-hill-inner-bailey-plateau/model.glb",
       "model_sha256": "72668bc2d401c73a36af52d70f97d31298d65e9d85ad18e845a8ee2a468f0f37",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-castle-hill-inner-bailey-plateau/asset.json",
-      "descriptor_sha256": "c4a1d2b1dc14161b15e65e8df8c398dd64e8dbdffde8b474b0d8544f4eef5c3b",
+      "descriptor_sha256": "14628f0c1f68ca43e57ec73d038e94485cec60b27607ee92f421dca1b810625e",
       "id": "lincoln-castle-hill-inner-bailey-plateau",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-castle-hill-keep-plateau/model.glb",
       "model_sha256": "9c6c951bbd53d5242382bb86a8801fd8f43dcb4cb995986df2eb9ff39bfdb9ff",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-castle-hill-keep-plateau/asset.json",
-      "descriptor_sha256": "1913cf231947a79e44a91ea39455f1cab61676580c73c97cf82a232fe503f022",
+      "descriptor_sha256": "18e48ae715f0ac0c50547cae0158aaef44b388c82409721fefda0274d174fcc6",
       "id": "lincoln-castle-hill-keep-plateau",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-castle-hill-north-bailey-plateau/model.glb",
       "model_sha256": "0f0b9457b142a612234c7a2e90c1ab30432e7430f5dfe9c9bd2a7bb70f7194a2",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-castle-hill-north-bailey-plateau/asset.json",
-      "descriptor_sha256": "692f0acf53a258621f2e309701cade755e2bfb7960c18d8674ec8aa0d355cc96",
+      "descriptor_sha256": "540b4e7aba03d6a775805c4dccd989d4df20d7f3fbf66f2cd8dbf7a9b8a4360f",
       "id": "lincoln-castle-hill-north-bailey-plateau",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-castle-hill-west-plateau/model.glb",
-      "model_sha256": "18c11f6d4813586e9c4d342f1dd7f9fb15456a8e94b0049ed6992e358f5dda17",
-      "resources": [],
+      "model_sha256": "a355ceed7074f904df7f73cf252e5c82d36c80950ad7be26e838826f47fbfa52",
       "descriptor": "3d-assets/lincoln/lincoln-castle-hill-west-plateau/asset.json",
-      "descriptor_sha256": "8f5e2844a515026242685f10f92b5012d04aad9e20623d14b1e6c71c9672f5ad",
+      "descriptor_sha256": "a4008fda482f95568cffd23a911d9642f50eb678d95aabcd8b8397df5d42f252",
       "id": "lincoln-castle-hill-west-plateau",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-castle-inner-rock-spur/model.glb",
       "model_sha256": "809cdf95a9d2c6574f5f233fa8ab71f3194f91a25b0d52473abca84a7a2adfb8",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-castle-inner-rock-spur/asset.json",
-      "descriptor_sha256": "75937159a13d3d7bfac2c7d90926776caeae9d1c8646364d6b814f235c328562",
+      "descriptor_sha256": "8f1af2a8763289e9060466ce22aebbb6e98118307aec30c59456df996ecd764e",
       "id": "lincoln-castle-inner-rock-spur",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-courtyard-shed/model.glb",
       "model_sha256": "25db4217fe1f3d636ee95b2144bdc1d706054c2fa38576b5b3f348db7ef75633",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-courtyard-shed/asset.json",
-      "descriptor_sha256": "2867a2998fd1ab992c1110653bc49c4049b7bc279af29290cc4d1cbad828962e",
+      "descriptor_sha256": "00cc5257a835a10c511e26bb7de0523dc81a25f48bc8aab046e8dd437671996f",
       "id": "lincoln-courtyard-shed",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-east-corner-turret/model.glb",
       "model_sha256": "56aaba06a05e9625795cff6e4d32c7e283b4beea3e701b46c9a507a4a8bfd63f",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-east-corner-turret/asset.json",
-      "descriptor_sha256": "03ea2f67fc71653708e3a49770012cd52314d3f896b6cd8ecc6e5e12cc48d8a3",
+      "descriptor_sha256": "fcebe5757c3daf7fabffa730fe3e9111b508356dfed63c7372b4b982e1d1df0a",
       "id": "lincoln-east-corner-turret",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-east-curtain-wall-middle/model.glb",
       "model_sha256": "30d7e96ec98ca716142dddf0c7ae7018c9a3be700ff643ef8c5cb261c5021ac4",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-east-curtain-wall-middle/asset.json",
-      "descriptor_sha256": "7521cef96574334f81fb8836538fab70b12f35a7c0be40fc3353cd03fe91e999",
+      "descriptor_sha256": "4cb7b561b4358e6904e9717bc6523336ccceaf42fcc7cf7afd64e341eb318323",
       "id": "lincoln-east-curtain-wall-middle",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-east-curtain-wall-south/model.glb",
       "model_sha256": "48a4d7dba6dfc2097ef1d79e6f2bb995d42235dafcbe91cdfb2104ff660e1da3",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-east-curtain-wall-south/asset.json",
-      "descriptor_sha256": "45907a0c4ba2b8e61c447e989a6e6ebe1f8b97629159016dd5273b1a02d910ba",
+      "descriptor_sha256": "d2edf3c5e81a965b2617c116ad74d3c7ead87020d6d8111f8229a5051f382d1d",
       "id": "lincoln-east-curtain-wall-south",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-east-gate-arch/model.glb",
       "model_sha256": "1adbea0c111575793cff31157c4eefd2f68aceb62b3dc2ed0521479ca40dc2dd",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-east-gate-arch/asset.json",
-      "descriptor_sha256": "d158c5059232ad2d9a644b868e2f98135d89cc0f7431291b2a9ea0fbf25e297f",
+      "descriptor_sha256": "bc4dd676e03fdc9565bc57b1fa657ba173cac39c2eb8b8a7993bbaeb2b4dc43c",
       "id": "lincoln-east-gate-arch",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-east-gate-north-tower/model.glb",
       "model_sha256": "7f38785c7be127fb71523826c36c37cdba2c363db7c45dfee3f451e772efc912",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-east-gate-north-tower/asset.json",
-      "descriptor_sha256": "6b032e4017f39b1d3821fc01c4f5fb6f1dad1974292fc5c32b7fa971aa891d03",
+      "descriptor_sha256": "9c6fcad467d00e715d2b07fedf6b0893399af895181d7c1a8134c3622a8405e2",
       "id": "lincoln-east-gate-north-tower",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-east-gate-south-tower/model.glb",
       "model_sha256": "37ab3dd9bc2964149d95a38c6e96024abe4b34f29af10c729373a33e488ac1ec",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-east-gate-south-tower/asset.json",
-      "descriptor_sha256": "f9c572c7dd2e8299200449f55d708e2a55f712707841e424de456a11491384c7",
+      "descriptor_sha256": "24aa9d4c130d45076b97482cc6ab66eb60de0258f242dd839317daa7f9874c9c",
       "id": "lincoln-east-gate-south-tower",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-east-curtain-wall-lower/model.glb",
       "model_sha256": "11cc1d3f1b54a1095817a2147d354e2e440648cc1d8bdecb00c0afd80be791f2",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-east-curtain-wall-lower/asset.json",
-      "descriptor_sha256": "cb005179a82a4ace49bf6dafc5e53c900e8e9c87bb6a28ab06415e8af607ffba",
+      "descriptor_sha256": "3fe00d1d09f987f3d8c7fefe2a14dcbe9ea40319861d8a8223c744841642221f",
       "id": "lincoln-east-curtain-wall-lower",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-east-slate-tower/model.glb",
       "model_sha256": "e0d862ff01ac1e632a62ad7f4dcc9ea03d3a2ca12130ca086aac5fe713793b89",
+      "descriptor": "3d-assets/lincoln/lincoln-east-slate-tower/asset.json",
+      "descriptor_sha256": "70f091032972b6e59c1382343c2cc1ca933f105243d998c9d6f35c493b93a011",
+      "id": "lincoln-east-slate-tower",
       "resources": [
         {
           "path": "3d-assets/blobs/9acc9a2f48643ca812dafcff470ff94e84542cb93c0382207eebec6e7269e177.jpg",
           "sha256": "9acc9a2f48643ca812dafcff470ff94e84542cb93c0382207eebec6e7269e177"
         }
-      ],
-      "descriptor": "3d-assets/lincoln/lincoln-east-slate-tower/asset.json",
-      "descriptor_sha256": "63fc7586913ba6507e512f264703dab60be659cf4d9950059e84d6f3967dbcd8",
-      "id": "lincoln-east-slate-tower",
-      "model_scene": "default"
+      ]
     },
     {
       "model": "3d-assets/lincoln/lincoln-hall-northwest-rocks/model.glb",
       "model_sha256": "dbf124e3c0cb327c640eac74f08df4be24aa32b14509101be41bb4f775a5dd4c",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-hall-northwest-rocks/asset.json",
-      "descriptor_sha256": "7fb5097efe51191374ffecbdabd0ad667c41bee14f0bb08c5572d0a7247414e9",
+      "descriptor_sha256": "76f31a6a7aabba29fdd947ece953ea24fd08f2042d4aede37d4059c23416a9dd",
       "id": "lincoln-hall-northwest-rocks",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-great-hall-slate-spire/model.glb",
-      "model_sha256": "b247cbe9d0695de7a369340620eb1f5d65fbc931605bc3e601d5dd01ec1a3a79",
-      "resources": [],
+      "model_sha256": "d621a31767d23b004957a92967de9e282dadc899c7d8348bc411ce894058e50c",
       "descriptor": "3d-assets/lincoln/lincoln-great-hall-slate-spire/asset.json",
-      "descriptor_sha256": "ece6f60bbac74e05edf9d839d9a6ebcc374472579c046e6a637da606aea0ff61",
+      "descriptor_sha256": "711a1008135f3d7f6a304dd7a53e849628abe596eb99f272d072ed435a300407",
       "id": "lincoln-great-hall-slate-spire",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-hall-south-terrace/model.glb",
-      "model_sha256": "c6ac2f32a45ab7eea81dfc629a1d79567de528b18e46297e4abafb94bb4e2f13",
-      "resources": [],
+      "model_sha256": "85308c54c08b21e6fd3b2179e6ae50893dac7c699940f2a7b3ab3061450504ff",
       "descriptor": "3d-assets/lincoln/lincoln-hall-south-terrace/asset.json",
-      "descriptor_sha256": "5e4a22e5d29545952311eef3c709dfe4dfcea9cd585cf3680da1a085145a28cc",
+      "descriptor_sha256": "6333a5840cca4d5685acbe381ee38a5fc67fcfb815ced8ece86b319067f08b1c",
       "id": "lincoln-hall-south-terrace",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-hall-approach-ramp/model.glb",
       "model_sha256": "d24748666bd01d7926dea11e5c44173080f2a85e001d3e65dbcf23087a599303",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-hall-approach-ramp/asset.json",
-      "descriptor_sha256": "008e940a854778e1e30d5046359238639cefbf572e9f9c05d3377e03d2dc3e56",
+      "descriptor_sha256": "8f6dce400dca777239260daeafd538969e24093a878e07849cedcd2708dc1f49",
       "id": "lincoln-hall-approach-ramp",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-great-hall/model.glb",
-      "model_sha256": "41604ea64d6b550f6a9d08485c44d04ccc112bd4d2641f7986734ecfb6b398e6",
-      "resources": [],
+      "model_sha256": "809a231dd2a1cde1b7c1fed647cf66d5600d7bd7a7349eefbb8310a3e87c2bb4",
       "descriptor": "3d-assets/lincoln/lincoln-great-hall/asset.json",
-      "descriptor_sha256": "6e194f8578aa15a9d3d35fa1c277a65f7a37e74fc507966a6e86a732ccb7033c",
+      "descriptor_sha256": "d01a2316b5a5d0e6c770120f48487b1cef6acf1b01430e522f63b92773430956",
       "id": "lincoln-great-hall",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-keep/model.glb",
-      "model_sha256": "69b890f048d0cfc1e1e62e0d5a265201db94d88b5ced623719b426aae4fdcb2b",
-      "resources": [],
+      "model_sha256": "ff92702209b24f51ae39d4657f8a718f9a6acc48bbbbfcb7b5809ae842fbe256",
       "descriptor": "3d-assets/lincoln/lincoln-keep/asset.json",
-      "descriptor_sha256": "b59f0802c9a0cb15c21a3a53a524853ff04de29a824c2fc3c67a6eda969fc504",
+      "descriptor_sha256": "93f7557a6fde3541e6aa2c8c46eb60c3e2dbde294adb25c2287054c87f2be6a9",
       "id": "lincoln-keep",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-angle-bastion/model.glb",
       "model_sha256": "cff344488ddcd5d135b5af52512e38c7d549ee704c38187ace3b7cc6c518d007",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-angle-bastion/asset.json",
-      "descriptor_sha256": "78ae0f1cc366cd12b38f7e0c8035f19f2296c6a5b39f54948b687a6ef7d869c2",
+      "descriptor_sha256": "6dde43833e329bdb659fb2142592462513442d308cf75a72f85e5b923a2ba34f",
       "id": "lincoln-south-angle-bastion",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-hall-keep-north-wall/model.glb",
       "model_sha256": "f67577a6f162c09d66f864de6043969e61d561ea81a4f2a038de01770cb0d1df",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-hall-keep-north-wall/asset.json",
-      "descriptor_sha256": "662810ee527004e623a3d76554267b48c1cb77a06b3fc65932b6d3128077ba02",
+      "descriptor_sha256": "db3b60c0fbc6ae7cfda39b380ea5ade70d2affdac510b60f7120a49cf8b93770",
       "id": "lincoln-hall-keep-north-wall",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-bailey-hay-cart/model.glb",
       "model_sha256": "541f614ca64b84248cbca4e64762c2946c67bc4214c35e0a8869c44b60ec809c",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-bailey-hay-cart/asset.json",
-      "descriptor_sha256": "f9a4ae63c6ee8643b6095fa8180079a0e1d8ec46c184627323f5744aaa884638",
+      "descriptor_sha256": "9cf1100329dadda3c282771161464b4eeff382389b6df1b9cc7a9ba7e4456e65",
       "id": "lincoln-bailey-hay-cart",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-bailey-shingle-cottage/model.glb",
       "model_sha256": "e5efabd9d9b97b4a04745df52cd1ecb4e52278081f37dde7834489b374d47d84",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-bailey-shingle-cottage/asset.json",
-      "descriptor_sha256": "2e7d43cf94fc52f2ebf8c13dcf1d187450e395260a4424bc1da6de35fe32b871",
+      "descriptor_sha256": "cbf30091a5444068fa2484479dddad754a9acf0a5620f3d1148e970c2713f8db",
       "id": "lincoln-bailey-shingle-cottage",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-bailey-thatched-cottage/model.glb",
       "model_sha256": "6e29b2e6225614f8e8795d53a5a8db461fe578477655ddc79df840700c643534",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-bailey-thatched-cottage/asset.json",
-      "descriptor_sha256": "ef77f0271baa16c5e9484d4faaa0d6469ae28f4c04b7c625c33ab320883bd5c9",
+      "descriptor_sha256": "f3f367ee91b2a807189a0dd00c7bffa21a9935fbc9a8835d9cef89bc71d30cbc",
       "id": "lincoln-bailey-thatched-cottage",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-bailey-trough/model.glb",
       "model_sha256": "cd57b69ce876646bf785e3ffa817ac5c8be71ea212bf727e631c054cb2680117",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-bailey-trough/asset.json",
-      "descriptor_sha256": "bb1ab423112f1bdc8ad3f1437867bc67a6d7d7cc5543629627bb0feb8564392c",
+      "descriptor_sha256": "f4644dad4708c8402c71a26de77566793967aca2741c39674daf596bccebfae0",
       "id": "lincoln-bailey-trough",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-bailey-well/model.glb",
       "model_sha256": "3ae662d183267956b427642320e829350822fa4d05bb94a7f6aa39c6b8996c1e",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-bailey-well/asset.json",
-      "descriptor_sha256": "22bb571748a9ee7c44f228907a362197bf39c8cc4911582d03c66c9dda00872c",
+      "descriptor_sha256": "fd3be29487b919dbd3fc2686361e36200f33c25869b5e6f2e6f58f7ffb502913",
       "id": "lincoln-bailey-well",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-inner-gatehouse/model.glb",
       "model_sha256": "380c9085e4547a14fedce10d4d2ad380a38cad03e3b017f667453cc383add8f3",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-inner-gatehouse/asset.json",
-      "descriptor_sha256": "9b7eb4437e0bc9f85839a5fd2c8d276bc43d03f8b864a09de99e7e05aa14a4c1",
+      "descriptor_sha256": "e5c4b7ca9604ac2a973a0755a50f62e4fd1bb47355f1419da6068c85bd8cbe53",
       "id": "lincoln-inner-gatehouse",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-inner-west-gate/model.glb",
       "model_sha256": "e64a976870191e42d3b40052b7fbe67e1cddeaf5a881a4b233ed7a24cef3b07b",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-inner-west-gate/asset.json",
-      "descriptor_sha256": "66ce428ae8c5cabb2f55f1ce0b5d47dc4af8e309b61ca24f388faa062782cc66",
+      "descriptor_sha256": "c0f06035ad5977312dca4d7241fd82dac9a91f0c0c3cee80a80bb6cb9e1c4d6a",
       "id": "lincoln-inner-west-gate",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-keep-annex-cone-turret/model.glb",
       "model_sha256": "38358348a57ef75017ae83f7dbb159f97fd0f0dccfeae6ac6901fcd95591f594",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-keep-annex-cone-turret/asset.json",
-      "descriptor_sha256": "8855453c8ee395ee430a04f56812f715cf9c9a8fc2341be5b7cc14083e5f37d0",
+      "descriptor_sha256": "b1d40485df44910fe4aad12c52fb7ea0562073bda95edabfbbecc3fa33b5f93d",
       "id": "lincoln-keep-annex-cone-turret",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-keep-annex-round-turret/model.glb",
       "model_sha256": "74e35095d1d6677fbfe9fd77dad791618ea802ccdc36180b01d4e983d8d12ff0",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-keep-annex-round-turret/asset.json",
-      "descriptor_sha256": "d7668d8ed458da5109e89a008e23db181e1d3cdf86fa5691d356c851b821e9fd",
+      "descriptor_sha256": "7b363a994897a2189bb124ef740a35b8d7aa0a5ef1a96d736643ccb0695de3bb",
       "id": "lincoln-keep-annex-round-turret",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-keep-annex/model.glb",
-      "model_sha256": "68db3ed0720d06631d736ab66276e841a66fcd07d01e8f5ff3200456f957089f",
-      "resources": [],
+      "model_sha256": "f4930d396130b8b55310772809eb5f0a9bc3751bcbc52e3c8cf98448c31cbca4",
       "descriptor": "3d-assets/lincoln/lincoln-keep-annex/asset.json",
-      "descriptor_sha256": "6d113527d1d5b708bef1c8b894f2d5382f1d08b88b8debd86fce7a3d5e9e9d8c",
+      "descriptor_sha256": "d44839ccaa5d42b06ede272af880f062966dc2eb8aa4e299bc00f30c5f35cc0d",
       "id": "lincoln-keep-annex",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-north-hall-stair/model.glb",
       "model_sha256": "106fd2b4ab1ddc92af6929dd65254253808c9804c18744d3c0336368d2bc2ed5",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-north-hall-stair/asset.json",
-      "descriptor_sha256": "39e68883a16495f42a6927832334cfc7cd1078542b3dbdc3f7c401310b230812",
+      "descriptor_sha256": "4e7617a5b06464cd7af0b7bf04ae726b86c2f5e5aaadc7fec504b16f59f9e8f9",
       "id": "lincoln-north-hall-stair",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-northeast-curtain-wall/model.glb",
       "model_sha256": "801f17829606e37c72b23fe2e6594243dfe3ce62d6da1fee2702437ee6eafb15",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-northeast-curtain-wall/asset.json",
-      "descriptor_sha256": "9bd3ca456f3af699afea06e3c2d1ed41d91c112954e6ae3d8d57d3b1bb0b6623",
+      "descriptor_sha256": "33e5b9fe0fff0f1762223609edd976fecabc0aba89f72617b91bee0d86495952",
       "id": "lincoln-northeast-curtain-wall",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-northeast-square-tower/model.glb",
       "model_sha256": "81bc69faa0d10f01af42d4317b6404126bc715b6107760ba3208a7a0e32df5f9",
+      "descriptor": "3d-assets/lincoln/lincoln-northeast-square-tower/asset.json",
+      "descriptor_sha256": "60f5c3ebcec4360aa314e3323bcfd89d0881221abe9b01a3cb5cb3148b926672",
+      "id": "lincoln-northeast-square-tower",
       "resources": [
         {
           "path": "3d-assets/blobs/9acc9a2f48643ca812dafcff470ff94e84542cb93c0382207eebec6e7269e177.jpg",
           "sha256": "9acc9a2f48643ca812dafcff470ff94e84542cb93c0382207eebec6e7269e177"
         }
-      ],
-      "descriptor": "3d-assets/lincoln/lincoln-northeast-square-tower/asset.json",
-      "descriptor_sha256": "59d7394ee5307fd719c35de0a68bbd9fc213cc59d939a1b6b6b930bd0f44e4b0",
-      "id": "lincoln-northeast-square-tower",
-      "model_scene": "default"
+      ]
     },
     {
       "model": "3d-assets/lincoln/lincoln-northeast-tower-stair/model.glb",
       "model_sha256": "d89009e232394aa7c90ae0c4a17fd19ea0f97a732600c6b895a4da99f957cd5b",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-northeast-tower-stair/asset.json",
-      "descriptor_sha256": "f70011310b0df1cd53053154642081fb73ae7085379dc5e41e537519ed887f02",
+      "descriptor_sha256": "ef9af19f90f86281368898b87081629c6788dcffacd6da070127818388135fe8",
       "id": "lincoln-northeast-tower-stair",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-northeast-yard-props/model.glb",
       "model_sha256": "79482c7a4583b5455f40965300f7cb640a6cbd6676e89c0937de96a820b278ae",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-northeast-yard-props/asset.json",
-      "descriptor_sha256": "7c2e95fd21e8cee32c7e2e89d419889dbb8ebaed0aa195933459d2fb529c2841",
+      "descriptor_sha256": "ec171b87052f362a9d3bbcc75802040da6296a85f1c5f2308ae581e4b462d4a4",
       "id": "lincoln-northeast-yard-props",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-northeast-yard-hutches/model.glb",
       "model_sha256": "bac3622f330c07c43d23a7f4d0bb2f363df4b392e604d376c753d82665811e45",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-northeast-yard-hutches/asset.json",
-      "descriptor_sha256": "9960dce54f5c1c84d8fc4820b1e8598d8fd6053eccbedb73e9d0bf217e5afb50",
+      "descriptor_sha256": "4c65de12cc01de1b59e958f704d0b6bfd5d6e28fe673075f055b5db93aad57da",
       "id": "lincoln-northeast-yard-hutches",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-north-curtain-wall-east/model.glb",
       "model_sha256": "0449b0a8dc444386a46655f08bd8d0f20792268445c009d6284e5b45485ffc53",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-north-curtain-wall-east/asset.json",
-      "descriptor_sha256": "076676017ef610dd30064591f2d68e73c3501b4d64b1ef9b8c48f6c17ce0d8a7",
+      "descriptor_sha256": "854be4dc1feafb96b8068296b220438bf6325d9444c05828779a3ab5facb519c",
       "id": "lincoln-north-curtain-wall-east",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-north-curtain-wall-west/model.glb",
       "model_sha256": "9efdc5b96f06a7e3882b752233f8aeddc9c1a58a6558661045006e0419eead6a",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-north-curtain-wall-west/asset.json",
-      "descriptor_sha256": "12c248bafde1c554aa263627d017ce11c5651482f2e0472e07c2823dd58c0f59",
+      "descriptor_sha256": "c5818ad4069ed93198cf7e53d64d761f15c5fec5e7ed901b34dac19270f559ba",
       "id": "lincoln-north-curtain-wall-west",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-north-outer-plateau/model.glb",
       "model_sha256": "d5987fa81ff1b3bc0582c7b68be6b09811fa71770fbdb6480ace5c130d7e7f45",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-north-outer-plateau/asset.json",
-      "descriptor_sha256": "ab13601aaf8134f7952c5e4c37d94bdf08d66bb1fe055a5267ba2f8ec4faa154",
+      "descriptor_sha256": "e7d8d424f0ef617af1b4795512a72f58024d7033da7b9e0a681fc8f55933fdda",
       "id": "lincoln-north-outer-plateau",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-north-rock-ridge/model.glb",
       "model_sha256": "872d91db8136bc4954e837ccb9dd4865914fdf4bc882b97b74cc6552ffb3c631",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-north-rock-ridge/asset.json",
-      "descriptor_sha256": "7c74bfdf85a073880bcee61379538a7cd68c147b5829d4054670b967c16bf5d6",
+      "descriptor_sha256": "b0a094a146424a92f73dd5c78af03d028ace9efded1e22f8a7367813523fe711",
       "id": "lincoln-north-rock-ridge",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-north-hall/model.glb",
       "model_sha256": "9b57117d06d627d8b7b4e04b8efd436577928ef7373aa75ca0c370d1b3f459f9",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-north-hall/asset.json",
-      "descriptor_sha256": "402c6e74ebf9bfd6cf5dcb05082fb7dd0d2bc1e1ec2cd7517300b7887e3d27e2",
+      "descriptor_sha256": "9b86571524d7e47908eefd6528b61b9a02f5305b827b97e6b334e2ea52e300a4",
       "id": "lincoln-north-hall",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-southeast-corner-turret/model.glb",
       "model_sha256": "9296da844f453c515f1117fec13180866907773fb57d99a5f895c5f71e30f7ec",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-southeast-corner-turret/asset.json",
-      "descriptor_sha256": "19206886c0be628269c519fbe9a74142d110e08610976c109c7472a75afe0759",
+      "descriptor_sha256": "5319bec90ac2709a26b912249d7b275e610e645b4c4725306823ea09de841b20",
       "id": "lincoln-southeast-corner-turret",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-southeast-curtain-wall/model.glb",
       "model_sha256": "669b0fb19eba1d2151da1cfc2aba1139a67ad4b5575dd013bf5236f5b265f75e",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-southeast-curtain-wall/asset.json",
-      "descriptor_sha256": "1d16e1761e3c63556f77984ab0e48bc3fa5f86815d40ca9b9f06602312a01057",
+      "descriptor_sha256": "a2132c7be0cbaa8cc7a6534fd4b1dc6e0c3f38e00fd5604ee734cc4786ee5ade",
       "id": "lincoln-southeast-curtain-wall",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-southeast-rock-outcrop/model.glb",
       "model_sha256": "34a7e49804711179f961bce20f6d43f3364df52ad0ed47c9839209d6e399befe",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-southeast-rock-outcrop/asset.json",
-      "descriptor_sha256": "e88cb7b91663b712b1c9bf678452f3f5a570a851b09b757b6d5b5921c20c7db0",
+      "descriptor_sha256": "8ab9d3b380c1f5ae2fa3d74286cba3212b6290e8c78867bc88a8dd175f20605e",
       "id": "lincoln-southeast-rock-outcrop",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-southeast-small-rocks/model.glb",
       "model_sha256": "a4330e6cb7570bf9c388f19a4c5d8f17d2f930bf6a15df35aaf5fb663b356a9b",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-southeast-small-rocks/asset.json",
-      "descriptor_sha256": "5f1632d9d5ca70d800f875f2f0b6e18da75ac66a93a905c7f0b8b1b1044d8bb9",
+      "descriptor_sha256": "9ac3d936f3ad41f335482843173208d403caf09554f9567c939c0832b6234902",
       "id": "lincoln-southeast-small-rocks",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-southeast-lean-to/model.glb",
       "model_sha256": "c452f002b8efbf3f86231880dc482122396edc35125594bbfbde26198666fee4",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-southeast-lean-to/asset.json",
-      "descriptor_sha256": "5f26746b63c274ac1cdb68dd35c38bdfab0291abcf7447f23f0d7451b9055d2f",
+      "descriptor_sha256": "34a2e197105807a4daad0447bccd4f2c8dbab58c10b5b5a229f9ac398a844740",
       "id": "lincoln-southeast-lean-to",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-curtain-wall-angle/model.glb",
       "model_sha256": "934faa884ce12c118d6eb0bd0fde9947cc833e22ea0fa5f147f0d9e883c86b89",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-curtain-wall-angle/asset.json",
-      "descriptor_sha256": "8cbe436ea36d16178ee206c61bc669148b9cd48753e85170a2480a70f83894de",
+      "descriptor_sha256": "dc83e22cb7f52ba1e222e4cb9ef4e8f99c1a5541219257415bc61f0da9b60a65",
       "id": "lincoln-south-curtain-wall-angle",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-curtain-wall-central/model.glb",
       "model_sha256": "43122b1a731fc0d58f8a9b41a8e61b6b07430c26264e1a9df3facafb8ca1c86b",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-curtain-wall-central/asset.json",
-      "descriptor_sha256": "5983f02e77057eb3b95cd5106b73668b1f0b0b8221b920ee34c34632ce72709e",
+      "descriptor_sha256": "e4f6ffec587fa8c185044d7caa63cebee1959d9cc4280ac0b06c47b51c9a3900",
       "id": "lincoln-south-curtain-wall-central",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-wall-cone-turret/model.glb",
       "model_sha256": "0b4f4048509301c0176e2478f954c69defef63299344df4efd6348725edd739e",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-wall-cone-turret/asset.json",
-      "descriptor_sha256": "6d505253d7c5f574061818cbf6dd50e867f9cd555d18f3ce5a60a9284d91ba55",
+      "descriptor_sha256": "4c6ca22d5c1d6783fe6f03265af8a5b16ebf6eede19f3688a93f2919c9f2b258",
       "id": "lincoln-south-wall-cone-turret",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-wall-stair/model.glb",
       "model_sha256": "d6bdb00e55582a8a2fbc416d33a24b738769e64955fe2a74a6839c0ab7798ffa",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-wall-stair/asset.json",
-      "descriptor_sha256": "9665a26c4b2dbcb3b5c2cbaa2967301214da59b299fbae0088b13b86a5c0f64f",
+      "descriptor_sha256": "137ec22ddcfb6178355f82247d01d6fbbf1c77d553848500d878475a3f1b9cca",
       "id": "lincoln-south-wall-stair",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-curtain-wall-west/model.glb",
       "model_sha256": "5aa1f4699662005e6a16db1f8cd9b45aab3dc79971d882f809585af7e661c714",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-curtain-wall-west/asset.json",
-      "descriptor_sha256": "8f677d7415dd58454f37298ab7d67694c0af8ed062d051113c5c5ff382eedf75",
+      "descriptor_sha256": "2e2fcf86c9197da01db9f5e3ab85707170f062f26ed82aed3b4975ede640cebc",
       "id": "lincoln-south-curtain-wall-west",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-gate-drawbridge/model.glb",
-      "model_sha256": "7d15b116d9319f93e560411dd062e067e16a0810236b8e80a45aa7de45fd2fea",
-      "resources": [],
+      "model_sha256": "7b5b2bd31fd9d8f4ba0523de55391842e3d64ad92d96ee97684f3fc5e4bef613",
       "descriptor": "3d-assets/lincoln/lincoln-south-gate-drawbridge/asset.json",
-      "descriptor_sha256": "9444c08bb209789cc2f9d2484ed1e686629584ae4a5a01e1f1527bef1bd98c79",
+      "descriptor_sha256": "ac5db3d8ab53055f15871270766d675fca47a9ed2f2851e1e492cab1ea2cc71f",
       "id": "lincoln-south-gate-drawbridge",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-gatehouse-west-tower/model.glb",
       "model_sha256": "32136386c3ea67d2d5d812f10ac84b131ba76f13bbc090e2609abd8ba45dc067",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-gatehouse-west-tower/asset.json",
-      "descriptor_sha256": "80421097dba9dd59a8602f48bff85a0210425548bd9f8e37d5f5eb0ea5023e7f",
+      "descriptor_sha256": "0b402bbc8a57c81e4cbb2197993a7e6855e4f376abfb8edfd067866691306395",
       "id": "lincoln-south-gatehouse-west-tower",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-gatehouse/model.glb",
-      "model_sha256": "33c377c7d7556272fcc979e405cecac64cb22a9ed81f3abd9f214d2db8bbb270",
-      "resources": [],
+      "model_sha256": "101a03c219f3ee4f6948637f55aedae6340efc0f0013c4fea1f06129a34db2b0",
       "descriptor": "3d-assets/lincoln/lincoln-south-gatehouse/asset.json",
-      "descriptor_sha256": "f92d01402643fe3c74cfbb23e639b919d364f6c3a2c70b9502543938e1b9f5a4",
+      "descriptor_sha256": "891b75895449e11718f8138ef592df505dc1ecbe60ec2e08192325dcdc0ee5e9",
       "id": "lincoln-south-gatehouse",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-bank-plateau/model.glb",
       "model_sha256": "433e5d1d43aba1c821e61e246f9c1db38c654ffd61d0438ad4fd5cadb27b535e",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-bank-plateau/asset.json",
-      "descriptor_sha256": "6c95911d2cda87e0cd5149e320c6073a0d8c5c3fbe187c18cd2aa3776a49dbb7",
+      "descriptor_sha256": "ee0bfdf05ff4c6d89b881fab6aa68b259d9f0c7072076e910f77ffc57a722bba",
       "id": "lincoln-south-bank-plateau",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-ravine-cliff-ledge/model.glb",
       "model_sha256": "7e4e51d682cbd1f2153419e9876db8673e236e6bcf311aabca795de0e544586a",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-ravine-cliff-ledge/asset.json",
-      "descriptor_sha256": "9616c0bd6e21057751f7d576fedcf340d162244947866ce29a591fa427534882",
+      "descriptor_sha256": "1c5ba0bd498c10c32c4b56f23924ba3dc09ba5d8aff36009b6a5b5770e92f3ae",
       "id": "lincoln-south-ravine-cliff-ledge",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-wall-cottage/model.glb",
       "model_sha256": "3e8097e717e7b0b7fe1b362c923d6d162a12eb4a55e64e1a12cf5abd54e036ce",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-wall-cottage/asset.json",
-      "descriptor_sha256": "77048f509b038250f706a2c3db465b1e02c677055f909dd10e7e33b54a5ca90a",
+      "descriptor_sha256": "4f64e45d35bab2acfb3a454388fc4fe3dbff6728661b3e09bb3aef5bb893412d",
       "id": "lincoln-south-wall-cottage",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-wall-lean-to/model.glb",
       "model_sha256": "a01940165259affc7946d5aca5dc5c23c4533f7cfea329a471126aaa9c08dd37",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-wall-lean-to/asset.json",
-      "descriptor_sha256": "5fe754a9b4275ab18756f34a26f3736bfe6e3188ad37fa33a2fdfd0666317dbf",
+      "descriptor_sha256": "0a856605b12a55483bc31a81a21399acad7bfe5bcdf943b0767ce5c1948bec7d",
       "id": "lincoln-south-wall-lean-to",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-wall-thatched-store/model.glb",
       "model_sha256": "df5c917b4fc7fc2cba8f382309dfa69752f21afa3a39e4752c69ce963397ef27",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-wall-thatched-store/asset.json",
-      "descriptor_sha256": "8697067f0b9307206f55e6b0d871824dde2874e20dbf6adb1949ec7b385bc321",
+      "descriptor_sha256": "eb3598e219f5ce1400d7bdeda31d58a6ae8d03b111c6d20831f847e780e3d520",
       "id": "lincoln-south-wall-thatched-store",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-southwest-cliff-lower-ledges/model.glb",
       "model_sha256": "4828c255bd9f0a0945401bdaba649a4e3daabc0ba41745041f831b92093a707c",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-southwest-cliff-lower-ledges/asset.json",
-      "descriptor_sha256": "71e4030533fd21e4ec4ac96ee130a8a2a6047e3a9dc19b1e7c1d85e78b9006e0",
+      "descriptor_sha256": "17babe4f636da44d6d4e7dbca9e429fc964aa2f6d44797a5354976c52d737460",
       "id": "lincoln-southwest-cliff-lower-ledges",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-southwest-cliff-upper-rocks/model.glb",
       "model_sha256": "436d43d49dd29db0d130a9330198e060a5337c4a5d3df1a76a73826d978ead00",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-southwest-cliff-upper-rocks/asset.json",
-      "descriptor_sha256": "c70558b473fd57fb4acf0db320f680b66c5af9f53dcfe3501c14936e6bde3180",
+      "descriptor_sha256": "a0c74111190a0a33d6699f432d2109e7942d713686ae9762e47c75ee1ddb6caf",
       "id": "lincoln-southwest-cliff-upper-rocks",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-southwest-cliff-road/model.glb",
       "model_sha256": "beb297ea43310f3a161c5b94b7e1c0e2c1fe385dd73c9b7efbfb867a4c14be6e",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-southwest-cliff-road/asset.json",
-      "descriptor_sha256": "f622f565c7efe9cade0efe10dc6d9514b7b63f8f25dc61b570901f214aa3d9c8",
+      "descriptor_sha256": "1c06d0e113db5551e1754ad086e7af85d44b9860f7be6fe2b978bcc5f71f4481",
       "id": "lincoln-southwest-cliff-road",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-southwest-ravine-bridge/model.glb",
       "model_sha256": "f62f698588fdb9278ad61ba9141fda3fbe5331b63eb35ac8e09277ecfc54ccf8",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-southwest-ravine-bridge/asset.json",
-      "descriptor_sha256": "8b218ce514b930dd32b41f6ff3820fc6ea7f846b1406170064f1c085fa0ad37e",
+      "descriptor_sha256": "40054fa26a56d83d887402dc039994a7110db82af4f975535561e4ca53c2b64d",
       "id": "lincoln-southwest-ravine-bridge",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-southwest-road-slope/model.glb",
       "model_sha256": "7c746e1f4ebdd3cc4a53a35734efef1f24e8cf587b64d3dad67064240946c383",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-southwest-road-slope/asset.json",
-      "descriptor_sha256": "2795a73fdba2ebb676cb5583b8f4f917b0887120caede37e253019bbf4f5a5a5",
+      "descriptor_sha256": "019d6c14a9a14b226381da86a683e71caaf87402a567c2eaf6df37a2a8e9e45e",
       "id": "lincoln-southwest-road-slope",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-stream-south-tree-stump/model.glb",
       "model_sha256": "941d780b0d4986ecdc5761b8935fdf110598c3291eacb6b871266fa60c0339a1",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-stream-south-tree-stump/asset.json",
-      "descriptor_sha256": "39f1f43b199c4045d438464c8b55077097dc03ed85de79721661f34a46e57251",
+      "descriptor_sha256": "af5abbc0e57cb2be3f76a98e377fcf352d4bba4623dec25376fdf280ee5bb475",
       "id": "lincoln-stream-south-tree-stump",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-stream-west-rock-outcrop/model.glb",
       "model_sha256": "f870902b8616adc7ebf5ecf42170512dba3198272e34e1665e46d458e984fe26",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-stream-west-rock-outcrop/asset.json",
-      "descriptor_sha256": "c2a38174d1f34a397548587be6926fe48510eaf8b6b493bbe27253f9ab48e7be",
+      "descriptor_sha256": "943d4090775f71b9abddceaf76997c48bc929e5fe683c1e252ff22b03b7e24dc",
       "id": "lincoln-stream-west-rock-outcrop",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-barn-barrels/model.glb",
       "model_sha256": "ed15d462d3cd531b8c60bcf28e30015e393e55a0725eacd9442ab2329deb94b2",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-barn-barrels/asset.json",
-      "descriptor_sha256": "1d225ed16c8e52caf7a3a316ec1bddd9c455917cf9af883556adc985fd0a1d5e",
+      "descriptor_sha256": "060a25ea6bad726cfccdb4c7c269694001da88a63e3366b978848060b72bc721",
       "id": "lincoln-village-barn-barrels",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-barn-cart/model.glb",
       "model_sha256": "6293c187e7bc25b9c331ba770260a9f4d4a0d9bfd4bbae99a171dc8024efa1c5",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-barn-cart/asset.json",
-      "descriptor_sha256": "584b82410ddb42f0bca9d143a97aafed2ddad416bfd8d936a3123f64d19c74de",
+      "descriptor_sha256": "9ba534822e5cb84540b3f42f235fa23bf2a7bfb9ff88d2e5b448547ed2e2b959",
       "id": "lincoln-village-barn-cart",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-ladder-cottage-rear-stone-wall/model.glb",
       "model_sha256": "ee2b98c5e7a5c641720a961d35a7a80bf32a065061a63560a4c01831a713e7e9",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-ladder-cottage-rear-stone-wall/asset.json",
-      "descriptor_sha256": "925e0227a5889895e2d700ddb78c91f0c31d246e9e6a8194121ed5de8145d2f9",
+      "descriptor_sha256": "ea1c5186e0497aef92f2916a36f21b12ef9b51f137a62f3b9e9b0fbd93d08db3",
       "id": "lincoln-village-ladder-cottage-rear-stone-wall",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-field-wattle-fence/model.glb",
       "model_sha256": "fe826871216277fd383bebedc2c36d7a4ee55565040ab71fc8e7f1bf26d36728",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-field-wattle-fence/asset.json",
-      "descriptor_sha256": "ec5d08c12254dd85b16819811c5838bc563a388c7e33f7e3b384bbc5a1ce5eb0",
+      "descriptor_sha256": "490bdbb0faa628ecf4989dc7a6dff37cb9d44147ee707f4f1de889b86fb0d55b",
       "id": "lincoln-village-field-wattle-fence",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-longhouse-props/model.glb",
       "model_sha256": "8a9d74db6021df493857fa84863edc4aab7257a687d6cf8db6c70dd845126147",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-longhouse-props/asset.json",
-      "descriptor_sha256": "d1c6240f9772292da1738a7e98bf8d34926122f66ae892773fe4cb957aed0604",
+      "descriptor_sha256": "e8aa8908c62376c082b0ea74f7e5025d16edb2223bd03603259fecb789f59462",
       "id": "lincoln-village-longhouse-props",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-north-rail-fence/model.glb",
       "model_sha256": "5bac4342262eeed33fd47bd5f1d01468828966f32173dfbcd3b799627d78852d",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-north-rail-fence/asset.json",
-      "descriptor_sha256": "e4cabb0a8e2079ed3dd0c6af3c8672032d4659195efeef513c709aa88c1c4e24",
+      "descriptor_sha256": "ccc956ce6feb0e9387fcc2e627d599d34b0025dfc4733439d2071a9c64c7314e",
       "id": "lincoln-village-north-rail-fence",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-northwest-cottage/model.glb",
       "model_sha256": "c324408aa962aafd66dc9f6fdee9f8363c69741511257421de93835303bd5598",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-northwest-cottage/asset.json",
-      "descriptor_sha256": "0e0f8705b326e3cb025bf84b9cfa17d4998b39ac9f60b0b38b152844f1dfe2e0",
+      "descriptor_sha256": "9abd95e0f78b8baf5140212601598912c9b66540f64e4f81e72918f510d2faba",
       "id": "lincoln-village-northwest-cottage",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-open-barn/model.glb",
       "model_sha256": "f6ccb21aa22ca9b085a7e0d7f724459c054aa16f424d5b1105e9d99909b37306",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-open-barn/asset.json",
-      "descriptor_sha256": "ab042adea8d27c20cdedab5a98456a3b3f7221f4d28f7c6caa49f6838e36838c",
+      "descriptor_sha256": "9364caa73112cdae9da8754c9d8dd5d92b50abc7c4f4f52febdf55c8f3147b4a",
       "id": "lincoln-village-open-barn",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-stone-footbridge/model.glb",
       "model_sha256": "471b4befa0ec9a2aebfcbd486dc01b8eb85f0d3475b346509c1ab3ffe2570891",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-stone-footbridge/asset.json",
-      "descriptor_sha256": "818515106c451d24d632016ec09da84a6166cdf0ae2b4c62ed2fc52b1cbe68ce",
+      "descriptor_sha256": "aee9db5556c301da02683945d24993648a0e2938e1f934ce0b6159ce7ed3957e",
       "id": "lincoln-village-stone-footbridge",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-stream-boat/model.glb",
       "model_sha256": "50dff639531b3e0572481e692b5971ff780f8a75791ac66f36ed9502366649c9",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-stream-boat/asset.json",
-      "descriptor_sha256": "1befb2e6f65eed591f8ddb5bfd34e41ebf9b8f096e7833f6c2616fe0d6c2c6ab",
+      "descriptor_sha256": "a4c464dee8c708ad7c2de3695a0e4daa7051a1c0f518d5faad523c5995caf6be",
       "id": "lincoln-village-stream-boat",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-ladder-cottage/model.glb",
       "model_sha256": "71d5b83b33afe7b0d913770bf76af605c8aea5fc4aa55c79e0ab4dd9a638ed0e",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-ladder-cottage/asset.json",
-      "descriptor_sha256": "a8ed7a80005825768c60ddcedb86ff720d3ec2be604e25a982559897c9e1359d",
+      "descriptor_sha256": "9e17a3e37b8698a533f43695572d6199b15227042a7b14d69841666f3db2d98f",
       "id": "lincoln-village-ladder-cottage",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-longhouse/model.glb",
       "model_sha256": "845db9ad185d78fc78dc41d09f3151b3b6b07b3e5cc4bd6319c1387f95e344bc",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-longhouse/asset.json",
-      "descriptor_sha256": "d5013cac80f850924e5d811364c8603580b5fe5901c9427b9eaed55f7d6b3a47",
+      "descriptor_sha256": "6e91635ebf7f2e3d29445545cfb6e93f53462a34869c2eb2d06424f22c567e14",
       "id": "lincoln-village-longhouse",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-west-cottage/model.glb",
       "model_sha256": "5b77cfa1cf89b205536911203ce6b824db1af69d7d8277729a78c0d8c11d5ffc",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-west-cottage/asset.json",
-      "descriptor_sha256": "9172b9919c5d1ef9c8634ea6dc1ebc2c7b60d099bf7846a88a16efba94b04cd5",
+      "descriptor_sha256": "6d887bad3c19bc42c3b52bdd16136f1a4420d9a1e7a0a3be6679faf3ce2bb60e",
       "id": "lincoln-village-west-cottage",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-village-west-yard-props/model.glb",
       "model_sha256": "b35de8f6b4663a3a556124fb7f30961aefd08c85599bc5f9ca47a2c7c3eeccef",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-village-west-yard-props/asset.json",
-      "descriptor_sha256": "8867aa37f6e7bd9dc4780df542237a3d84e0b64161953ca07d2b2bc926317918",
+      "descriptor_sha256": "c0305460e48a92a0e282046376bea77e7def2384ebfe175e82ce4e637fb23917",
       "id": "lincoln-village-west-yard-props",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-wall-walk-step/model.glb",
       "model_sha256": "db858ff22d7d745594be7263a21ceab90bbad99a9006e37260b574765386f021",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-south-wall-walk-step/asset.json",
-      "descriptor_sha256": "4dd5101fc939cb07f07e6400a98d7bff07fb0e3ecf3ec1e0615a6e965071da6e",
+      "descriptor_sha256": "d94e8359666d3aecacabf44ee14276aecc2d571fa8370e3832781d01e9e6dffc",
       "id": "lincoln-south-wall-walk-step",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-west-edge-rocks-north/model.glb",
       "model_sha256": "f3f3db72196cb6ab89f36a4c963347454dd795bf4a5efda3e61283095658e791",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-west-edge-rocks-north/asset.json",
-      "descriptor_sha256": "4ac5ed29fd8b181a4f712596e976cf150ace62df3af0e1a1b90cbee41564d2a1",
+      "descriptor_sha256": "352ea11e6b3641736dc6ea1bea59adfdea5a28661a4c18601ca7a3d56571bfdc",
       "id": "lincoln-west-edge-rocks-north",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-west-edge-rocks-south/model.glb",
       "model_sha256": "d69cdc9c12c3654b83359c3db084ea73794c683bdfef7b0f7b9404508c7de0aa",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-west-edge-rocks-south/asset.json",
-      "descriptor_sha256": "5fedfd679de7e0f64a3dba423f84339ade4f4620b56643f54fda411a862cc0a5",
+      "descriptor_sha256": "0460f07e87eff780a88cf71417b8a9dfe36ffe5cacd808360382cde9e5453578",
       "id": "lincoln-west-edge-rocks-south",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-west-round-tower/model.glb",
       "model_sha256": "bb22f85f6db4b6a4cf7d8a039ba791bec19191bc8cdd8215fbf5d95b234682ea",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-west-round-tower/asset.json",
-      "descriptor_sha256": "8c75f93e00a8ba7d5757eac397fad4e58252dc3214268ea24ce8a8989df7818c",
+      "descriptor_sha256": "a9f272d179eddf6f9ca0b5a0eb2f6d4af2848643b01828c3109bc37e0d5f5351",
       "id": "lincoln-west-round-tower",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-west-slate-tower/model.glb",
-      "model_sha256": "1945c20e10c78a60ea21292f6518fca2d1d18e9e85be5f79af43e2fad8b440e2",
-      "resources": [],
+      "model_sha256": "4e2132a0fdbef6149f34eedd039a29087f50762c96b2b7b93c4d3842fee65081",
       "descriptor": "3d-assets/lincoln/lincoln-west-slate-tower/asset.json",
-      "descriptor_sha256": "e09dda849bf8a1d2b93356d36195ef2e8d0544e0e9b5ff752bee237de27a386b",
+      "descriptor_sha256": "9dc163cffc1d2f42ce52b23acc9feedb7f479cdca6d3ab4c401d544b982615d2",
       "id": "lincoln-west-slate-tower",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-west-tower-hall/model.glb",
-      "model_sha256": "c489b985ec74e63fc97f011eaf5b4560f6027d775d41297ae69fa732ac997657",
-      "resources": [],
+      "model_sha256": "f7305451633590ea45cb5cce9b71d19546de934bd95e255fce53e1b661295d3b",
       "descriptor": "3d-assets/lincoln/lincoln-west-tower-hall/asset.json",
-      "descriptor_sha256": "46d9bb3021b424f26984e756a569151b888eb47ba42f4e7ba9c35581bf5cac40",
+      "descriptor_sha256": "61d13932820df9d8528ddb4305f8b93f836be21648ef348cb7d2b40f49ddce12",
       "id": "lincoln-west-tower-hall",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-west-tower-terrace/model.glb",
-      "model_sha256": "1cba4750ec0aa3f38d9ec1c2fe98356d637a2580c5d92cce4792605520240c40",
-      "resources": [],
+      "model_sha256": "8feb7657a9572f5eb2fd2ef640def77012e6f01f1846fd10f97ddf26943b390f",
       "descriptor": "3d-assets/lincoln/lincoln-west-tower-terrace/asset.json",
-      "descriptor_sha256": "4aa5f18c746cd84dcfcb95e3ed126669b8f747aef56ea5900bb590313e2b6b58",
+      "descriptor_sha256": "32bce1da311f37b6fe8eee21378b6257f833934a6b61eb9658db577029e03053",
       "id": "lincoln-west-tower-terrace",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-west-tower-hillside/model.glb",
       "model_sha256": "0239ee693baca59f3c31d48ac221b143aecd63ad9dd4804f39f54ee272329a94",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-west-tower-hillside/asset.json",
-      "descriptor_sha256": "0f6b95f0b1fdf5745efaae233e7822ad5928bdaf318e622829ac2f61d934cc0f",
+      "descriptor_sha256": "9bc62bf8f4dc617d15c6b6208294195c07f551208bca86aa684e54402620acc2",
       "id": "lincoln-west-tower-hillside",
-      "model_scene": "default"
+      "resources": []
     },
     {
       "model": "3d-assets/lincoln/lincoln-west-upper-curtain-wall/model.glb",
       "model_sha256": "4e8c69de92410f5a9e423e7cb1f8e840ecaefbf4652d2389062d2f292c10f5ef",
-      "resources": [],
       "descriptor": "3d-assets/lincoln/lincoln-west-upper-curtain-wall/asset.json",
-      "descriptor_sha256": "9a58116924e9b0949d99b2c3f518ad18a0b25a84e89177e8f0f886c06621397c",
+      "descriptor_sha256": "b4b06add8388b82425b77986877c778184285a66ce0b950282ea73e253a87294",
       "id": "lincoln-west-upper-curtain-wall",
-      "model_scene": "default"
+      "resources": []
     }
   ],
   "sceneMetadata": {
@@ -1084,6 +981,11 @@
         "dz": -8.81498467958899e-05,
         "rot_deg": 0
       },
+      "patches": {
+        "lincoln-castle-hill-west-plateau": {
+          "appearance-1": "patch-000"
+        }
+      },
       "assets": [
         "lincoln-castle-hill-west-plateau"
       ]
@@ -1240,6 +1142,11 @@
         "dz": 359.99999947921197,
         "rot_deg": 0
       },
+      "patches": {
+        "lincoln-great-hall-slate-spire": {
+          "appearance-1": "patch-011"
+        }
+      },
       "assets": [
         "lincoln-great-hall-slate-spire"
       ]
@@ -1252,6 +1159,11 @@
         "dy": 1542.0207597364642,
         "dz": 399.9999827556556,
         "rot_deg": 0
+      },
+      "patches": {
+        "lincoln-hall-south-terrace": {
+          "appearance-1": "patch-006"
+        }
       },
       "assets": [
         "lincoln-hall-south-terrace"
@@ -1279,6 +1191,12 @@
         "dz": 359.99992448360246,
         "rot_deg": 0
       },
+      "patches": {
+        "lincoln-great-hall": {
+          "appearance-1": "patch-010",
+          "appearance-2": "patch-011"
+        }
+      },
       "assets": [
         "lincoln-great-hall"
       ]
@@ -1291,6 +1209,11 @@
         "dy": 1161.6421192522002,
         "dz": 219.99994551824489,
         "rot_deg": 0
+      },
+      "patches": {
+        "lincoln-keep": {
+          "appearance-1": "patch-008"
+        }
       },
       "assets": [
         "lincoln-keep"
@@ -1447,6 +1370,11 @@
         "dy": 1364.7615551747303,
         "dz": 219.99994551824489,
         "rot_deg": 0
+      },
+      "patches": {
+        "lincoln-keep-annex": {
+          "appearance-1": "patch-007"
+        }
       },
       "assets": [
         "lincoln-keep-annex"
@@ -1734,6 +1662,11 @@
         "dz": 213.99997177538802,
         "rot_deg": 0
       },
+      "patches": {
+        "lincoln-south-gate-drawbridge": {
+          "appearance-1": "patch-003"
+        }
+      },
       "assets": [
         "lincoln-south-gate-drawbridge"
       ]
@@ -1759,6 +1692,13 @@
         "dy": 2056.5000586798587,
         "dz": 211.6947067327808,
         "rot_deg": 0
+      },
+      "patches": {
+        "lincoln-south-gatehouse": {
+          "appearance-1": "patch-003",
+          "appearance-3": "patch-005",
+          "appearance-2": "patch-004"
+        }
       },
       "assets": [
         "lincoln-south-gatehouse"
@@ -2163,6 +2103,11 @@
         "dz": 211.99996386207806,
         "rot_deg": 0
       },
+      "patches": {
+        "lincoln-west-slate-tower": {
+          "appearance-1": "patch-001"
+        }
+      },
       "assets": [
         "lincoln-west-slate-tower"
       ]
@@ -2176,6 +2121,11 @@
         "dz": 219.9999705167814,
         "rot_deg": 0
       },
+      "patches": {
+        "lincoln-west-tower-hall": {
+          "appearance-1": "patch-001"
+        }
+      },
       "assets": [
         "lincoln-west-tower-hall"
       ]
@@ -2188,6 +2138,12 @@
         "dy": 1684.6231204914307,
         "dz": 94.99996965600488,
         "rot_deg": 0
+      },
+      "patches": {
+        "lincoln-west-tower-terrace": {
+          "appearance-1": "patch-000",
+          "appearance-2": "patch-002"
+        }
       },
       "assets": [
         "lincoln-west-tower-terrace"

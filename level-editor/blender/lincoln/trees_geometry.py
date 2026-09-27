@@ -1,37 +1,37 @@
-"""Proxy tree/bush geometry fitted to painted Lincoln foliage (35-degree source camera).
+"""Lincoln tree, bush and scenery assets added to the grouped scene (no obstacles).
 
 Run from the repository root after trees_inventory.py:
 
     /usr/bin/blender --background --threads 2 --python-exit-code 1 \
       --python level-editor/blender/lincoln/trees_geometry.py -- \
-      --output level-editor/work/lincoln-refinement/scratch/trees/pilot \
-      lincoln-tree-north-plateau-west lincoln-tree-north-plateau-red lincoln-tree-north-plateau-east
+      --output level-editor/work/lincoln-refinement/trees/scene [asset ids ...]
 
-Representation per asset (two meshes sharing one source node ``foliage-<slug>``), in the
-style of the reviewed-good Leicester trees and built with their recipes:
-- crown (projection_component ``crown``): Leicester ``foliage_trees.source_packet`` partitions
-  the painted domain into 8 lobes (exact source RGB, domain as physical alpha) and
+Without asset ids every proposal in the tree catalog proposal is built. The script opens
+lincoln-grouped-v5.blend (terrain ground with the stream cut), adds each asset to
+``lincoln Working`` without touching other objects and saves ``lincoln-grouped-trees.blend``
+plus ``scene-report.json``. Workspaces, packets and review files come from
+prepare_assets.py and trees_handoff.py.
+
+Foliage (source node ``foliage-<slug>``), in the style of the reviewed-good Leicester trees
+and built with their recipes (imported, not copied):
+- crown (projection_component ``crown``): ``foliage_trees.source_packet`` partitions the
+  painted domain into lobes (exact source RGB, domain as physical alpha) and
   ``foliage_trees.refine_crown`` builds paired curved cutout cards per lobe (source front,
-  neutral back) plus two transverse neutral cards, all on the vertical plane through the
-  tree's foot and offset only along the source ray, so the source view is exact;
-- wood (projection_component ``wood``): Leicester ``props_trees.geometry`` lofts a trunk from
-  the terrain contact to the crown centre and three forks toward the upper lobes.
-Ground contact: the asset's base pixel is cast along the source ray onto the terrain
-receivers only (the ``ground`` mesh, every node that owns an authored ground domain, and
-rock/cliff/plateau groups). Lobe depth, rear cards and wood are inferred.
+  neutral back) plus two transverse neutral cards. Every card lies on the vertical plane
+  through the foot and is offset only along the source ray, so the source view is exact.
+  Lobe count, depth and card offsets scale with the plant; low linear plantings get flat lobes.
+- wood (projection_component ``wood``): ``props_trees.geometry`` lofts a trunk from the terrain
+  contact and forks toward the upper lobes (a short stem for bushes).
+Scenery (``scenery-<slug>``): explicit plank/post geometry fitted to traced source corners.
 
-The script opens lincoln-grouped-v4.blend, adds the requested assets to ``lincoln Working``
-(never touching other objects), bakes owned source pixels through the shared
-source_projection_bake with a scratch mask manifest carrying the proposed foliage domains,
-renders the eight-view packet with the shared refinement_review, and runs a source-camera
-coverage audit. There is no catalog/workspace support for obstacle-less parts yet, so the
-output is a scratch pilot, not a prepared workspace (see the pilot README).
+Ground contact: the base pixel is cast along the source ray onto terrain only (the ``ground``
+mesh, nodes owning authored ground domains, and rock/cliff/plateau groups) and walks up the
+column while it sits under architecture. BASE_OVERRIDES hold visually chosen feet.
 """
 import argparse
 import hashlib
 import json
 import math
-import os
 import sys
 from pathlib import Path
 
@@ -42,26 +42,34 @@ sys.path.insert(0, str(ROOT / 'level-editor/blender/lincoln'))
 sys.path.insert(0, str(ROOT / 'level-editor/blender/leicester'))
 from render_slots import acquire  # noqa: E402
 
-VERSION = 'lincoln-foliage-cards-v3'
-SCENE_BLEND = R / 'grouped/lincoln-grouped-v4.blend'
+VERSION = 'lincoln-foliage-cards-v5'
+SCENE_BLEND = R / 'grouped/lincoln-grouped-v5.blend'
 CATALOG = R / 'scratch/trees/inventory/tree-catalog-proposal.json'
-MASKS = R / 'mask-review/source-masks-v4.json'
+MASKS = R / 'mask-review/source-masks-v5.json'
 SOURCE = R / 'source-states/covered.png'
-LIGHTING = R / 'lighting-calibration/map-lighting.json'
+TOOLING_POINTER = R / 'tooling-trees/current.json'
 W, H = 2944, 2176
 SIN, COS = math.sin(math.radians(35)), math.cos(math.radians(35))
-GROUND_DOMAINS = set(range(433, 453))
-FIRST_TREE_MASK = 454
+GROUND_DOMAINS = set(range(433, 453)) | {454}
 # Rock/cliff/plateau groups without an authored ground domain still carry plants.
 NATURAL_GROUP_WORDS = ('rock', 'cliff', 'plateau', 'slope', 'ridge', 'hillside', 'spur', 'ledge', 'bank')
-# Visually chosen trunk-foot pixels where base_pixel()'s guess is wrong. Keyed by
-# asset id: (x, y). ground_contact() still walks up past architecture from here.
+# Visually chosen trunk-foot pixels (x, y) where base_pixel()'s guess is wrong, mostly
+# feet hidden behind walls. ground_contact() still walks up past architecture from here.
 BASE_OVERRIDES = {
     # Foot hidden behind the north curtain; crown centred near x=2465.
     'lincoln-tree-north-plateau-west': (2465, 400),
-    # Foot hidden behind the NE square tower; the lower-left crown part that drags
-    # the centroid west is shared with the western tree.
+    # Foot hidden behind the NE square tower.
     'lincoln-tree-north-plateau-east': (2690, 449),
+}
+# Visually chosen feet that must not walk (they already stand on the ledge they grow from).
+FIXED_FEET = {
+    # Painted on the rock spur behind the bailey thatched cottage; the column walk
+    # otherwise climbs past the keep terrace to native z 422.
+    'lincoln-bush-bailey-rock': (1440, 1330),
+    # Both stand in the north bailey in front of the curtain; the painted foot is visible
+    # grass, so the walk-up (which pushed them back into the curtain) is not wanted.
+    'lincoln-tree-north-curtain-west': (2110, 603),
+    'lincoln-tree-north-bailey-rim': (2331, 496),
 }
 
 
@@ -72,6 +80,12 @@ def sha(path):
 def pixel_of(point):
     """Source pixel (x, y) of a Blender world point."""
     return point[0], -point[1] * SIN - point[2] * COS
+
+
+def world_on_plane(x, y, ground):
+    """Point with source pixel (x, y) on the vertical plane native y = ground."""
+    from mathutils import Vector
+    return Vector((x, -ground / SIN, (ground - y) / COS))
 
 
 def terrain_nodes():
@@ -88,6 +102,10 @@ def load_domain(row):
     full = np.zeros((H, W), bool)
     full[y:y + bitmap.shape[0], x:x + bitmap.shape[1]] = bitmap
     return full
+
+
+def node_for(row):
+    return ('scenery-' if row['kind'] == 'scenery' else 'foliage-') + row['id'].removeprefix('lincoln-')
 
 
 def terrain_hit(terrain_tree, pixel):
@@ -147,7 +165,7 @@ def mesh_object(name, verts, faces, collection, props):
 
 
 def source_uv_and_material(obj, image):
-    """Fallback source-projection UV and material (the bake replaces the material)."""
+    """Fallback source-projection UV and material (the ownership bake replaces it)."""
     import bpy
     mesh = obj.data
     layer = mesh.uv_layers.new(name='source projection')
@@ -169,19 +187,17 @@ def topology(obj):
     bm.from_mesh(obj.data)
     report = dict(vertices=len(bm.verts), faces=len(bm.faces),
                   non_manifold_edges=sum(not e.is_manifold for e in bm.edges),
-                  zero_area_faces=sum(f.calc_area() < 1e-8 for f in bm.faces),
-                  volume=float(bm.calc_volume(signed=True)))
+                  zero_area_faces=sum(f.calc_area() < 1e-8 for f in bm.faces))
     bm.free()
     return report
 
 
-def kmeans_seeds(domain, count=8, rounds=25):
+def kmeans_seeds(domain, count, rounds=25):
     """Deterministic lobe seeds: farthest-point initialisation plus Lloyd rounds."""
     import numpy as np
     ys, xs = np.nonzero(domain)
     points = np.stack([xs, ys], 1).astype(float)
-    step = max(1, len(points) // 20000)
-    sample = points[::step]
+    sample = points[::max(1, len(points) // 20000)]
     seeds = [sample[np.argmin(sample[:, 1])]]
     for _ in range(1, min(count, len(sample))):
         distance = np.min([((sample - s) ** 2).sum(1) for s in seeds], 0)
@@ -193,15 +209,34 @@ def kmeans_seeds(domain, count=8, rounds=25):
     return [(int(round(x)), int(round(y))) for x, y in seeds]
 
 
-def foliage_packet(row, node_number, ground, workspace):
-    """Run the Leicester native-cutout partition (foliage_trees.source_packet) on a
-    Lincoln foliage domain: exact source RGB with the domain as alpha, per lobe."""
+def lobe_plan(domain, kind):
+    """Lobe count, card offset scale and depth rule, sized to the plant.
+
+    Leicester tuned 8 lobes and +-20 px card offsets for ~250 px trees. Smaller plants get
+    fewer lobes and proportionally smaller offsets; low linear plantings (beds, hedges,
+    wide flat thickets) get flat lobes whose depth follows their height, not their width.
+    """
+    import numpy as np
+    ys, xs = np.nonzero(domain)
+    width, height = xs.max() - xs.min() + 1, ys.max() - ys.min() + 1
+    count = int(min(8, max(2, round(math.sqrt(len(xs)) / 18))))
+    scale = min(1., max(width, height) / 250.)
+    # Trees keep round crowns even when wide (several are cut by the map edge).
+    linear = kind != 'tree' and width >= 1.75 * height
+    if linear:
+        shape = 'linear-flat'
+    else:
+        shape = 'tree-round' if kind == 'tree' else 'bush-round'
+    return dict(lobes=count, offset_scale=scale, shape=shape, width=int(width), height=int(height))
+
+
+def foliage_packet(row, node_number, ground, plan, directory):
+    """Leicester native-cutout partition (foliage_trees.source_packet) on a Lincoln domain."""
     import numpy as np
     import foliage_trees
-    directory = workspace / 'foliage-source'
+    from PIL import Image
     directory.mkdir(parents=True, exist_ok=True)
     x, y = row['domain_box_top_left']
-    from PIL import Image
     width, height = Image.open(row['domain_png']).size
     inventory = dict(masks=[dict(index=node_number, png=str(Path(row['domain_png']).resolve()),
                                  box_top_left=[x, y], box_size=[width, height])])
@@ -213,57 +248,84 @@ def foliage_packet(row, node_number, ground, workspace):
     domain = load_domain(row)
     foliage_trees.CONFIG[node_number] = dict(mask=node_number, ground=ground,
                                             canopy_bottom=int(np.nonzero(domain)[0].max()),
-                                            seeds=kmeans_seeds(domain, len(foliage_trees.DEPTHS)))
-    return foliage_trees.source_packet(directory, node_number, directory / 'lobes')
+                                            seeds=kmeans_seeds(domain, plan['lobes']))
+    evidence = foliage_trees.source_packet(directory, node_number, directory / 'lobes')
+    for lobe in evidence['lobes']:
+        x0, y0, x1, y1 = lobe['bbox_source']
+        if plan['shape'] == 'linear-flat':
+            lobe['depth_radius'] = .35 * min(x1 - x0, y1 - y0)
+        elif plan['shape'] == 'bush-round':
+            lobe['depth_radius'] = .45 * max(x1 - x0, y1 - y0)
+    return evidence
 
 
-def wood_paths(domain, foot_pixel_on_plane, seeds, width):
-    """Trunk from the foot to the crown centre, forking toward the upper lobes
-    (props_trees BRANCHES format: (x, plane y, radius) centreline samples)."""
+def wood_paths(domain, foot_on_plane, seeds, width, kind):
+    """props_trees BRANCHES centrelines (x, plane y, radius): a vertical trunk from the
+    foot forking toward the upper lobes; bushes get a short hidden stem and two forks."""
     import numpy as np
+    from scipy import ndimage as nd
     ys, xs = np.nonzero(domain)
-    fx, fy = foot_pixel_on_plane
+    fx, fy = foot_on_plane
+    # Wood must not show where the painting shows ground: each sample's radius is
+    # capped by the painted half-width at its source pixel (1 px inside holes).
+    halfwidth = nd.distance_transform_edt(domain)
     cx, cy = float(xs.mean()), float(ys.mean())
-    radius = min(max(.045 * width, 3.), 11.)
-    trunk = [(fx, fy + 4, radius * 1.2), (fx + .35 * (cx - fx), fy + .45 * (cy - fy), radius * .9),
-             (cx, cy + .15 * (fy - cy), radius * .65)]
+    radius = min(max(.045 * width, 3.), 11.) if kind == 'tree' else min(max(.03 * width, 1.5), 4.)
+    rise = .45 if kind == 'tree' else .25
+    trunk = [(fx, fy + 4, radius * 1.2), (fx, fy + rise * (cy - fy), radius * .9),
+             (fx + .25 * (cx - fx), cy + (.15 if kind == 'tree' else .5) * (fy - cy), radius * .65)]
     paths = [trunk]
     top = trunk[-1]
-    upper = sorted(seeds, key=lambda s: s[1])[:3]
-    for sx, sy in upper:
-        mid = ((top[0] + sx) / 2, (top[1] + sy) / 2, radius * .4)
-        paths.append([top[:2] + (radius * .5,), mid, (sx, sy, radius * .15)])
-    return paths
+    for sx, sy in sorted(seeds, key=lambda s: s[1])[:3 if kind == 'tree' else 2]:
+        paths.append([top[:2] + (radius * .5,), ((top[0] + sx) / 2, (top[1] + sy) / 2, radius * .4),
+                      (sx, sy, radius * .15)])
+
+    def capped(x, y, r):
+        ix, iy = int(round(x)), int(round(y))
+        painted = halfwidth[iy, ix] if 0 <= ix < W and 0 <= iy < H else 0.
+        return (x, y, float(min(r, max(painted, 1.))))
+    # The first trunk sample is below the foot (underground, hidden by terrain); keep it.
+    return [[path[0] if path is trunk and i == 0 else capped(*sample) for i, sample in enumerate(path)]
+            for path in paths]
 
 
-def build(row, terrain_tree, architecture_tree, collection, image, workspace, node_number):
+def build_foliage(row, terrain_tree, architecture_tree, collection, image, directory, node_number):
     import numpy as np
     import foliage_trees
     import props_trees
-    node = 'foliage-' + row['id'].removeprefix('lincoln-')
+    node = node_for(row)
     domain = load_domain(row)
     base, base_rule = base_pixel(domain)
     if row['id'] in BASE_OVERRIDES:
         base, base_rule = list(BASE_OVERRIDES[row['id']]), 'visual override'
     ys, xs = np.nonzero(domain)
     width = float(xs.max() - xs.min())
-    try:
-        foot, foot_pixel, walked = ground_contact(terrain_tree, architecture_tree, base, .3 * width)
-    except ValueError:
-        # Plants on ledges under overhanging architecture: require only the foot itself open.
-        foot, foot_pixel, walked = ground_contact(terrain_tree, architecture_tree, base, 0.)
-        base_rule += '; crown depth clearance waived (overhang)'
-    # Leicester convention: every card lies on the vertical plane native y = ground
-    # (offset along the source ray), so ground = native y of the foot.
+    if row['id'] in FIXED_FEET:
+        foot_pixel, walked = tuple(FIXED_FEET[row['id']]), 0
+        foot, base_rule = terrain_hit(terrain_tree, foot_pixel), 'visual fixed foot (no walk)'
+    else:
+        try:
+            foot, foot_pixel, walked = ground_contact(terrain_tree, architecture_tree, base, .3 * width)
+        except ValueError:
+            # Plants on ledges under overhanging architecture: require only the foot itself open.
+            foot, foot_pixel, walked = ground_contact(terrain_tree, architecture_tree, base, 0.)
+            base_rule += '; crown depth clearance waived (overhang)'
+    # Leicester convention: cards lie on the vertical plane native y = ground.
     ground = -foot.y * SIN
+    plan = lobe_plan(domain, row['kind'])
     props = dict(source_node=node, asset_group=row['id'], asset_name=row['name'],
                  part_name='Painted ' + row['kind'], foliage_recipe=VERSION, foliage_kind=row['kind'])
-    evidence = foliage_packet(row, node_number, ground, workspace)
-    crown = mesh_object(row['name'] + ' / crown', [], [], collection, {**props, 'projection_component': 'crown'})
-    crown_report = foliage_trees.refine_crown(crown, node_number, evidence)
-    # Wood: the Leicester props_trees loft, fed Lincoln branch paths.
+    original_depths = list(foliage_trees.DEPTHS)
+    foliage_trees.DEPTHS[:] = [d * plan['offset_scale'] for d in original_depths]
+    try:
+        evidence = foliage_packet(row, node_number, ground, plan, directory)
+        crown = mesh_object(row['name'] + ' / crown', [], [], collection, {**props, 'projection_component': 'crown'})
+        crown_report = foliage_trees.refine_crown(crown, node_number, evidence)
+    finally:
+        foliage_trees.DEPTHS[:] = original_depths
     native_foot_z = foot.z * COS
-    paths = wood_paths(domain, (foot.x, ground - native_foot_z), foliage_trees.CONFIG[node_number]['seeds'], width)
+    paths = wood_paths(domain, (foot.x, ground - native_foot_z), foliage_trees.CONFIG[node_number]['seeds'],
+                       width, row['kind'])
     props_trees.SUPPORTED.add(node_number)
     props_trees.GROUND[node_number] = ground
     props_trees.CROWNS[node_number] = [[paths[0][-1][1], paths[0][-1][0] - 1, paths[0][-1][0] + 1]] * 2
@@ -271,264 +333,139 @@ def build(row, terrain_tree, architecture_tree, collection, image, workspace, no
     verts, faces = props_trees.geometry(node_number, 'wood')
     wood = mesh_object(row['name'] + ' / wood', verts, faces, collection, {**props, 'projection_component': 'wood'})
     source_uv_and_material(wood, image)
-    return dict(asset_id=row['id'], source_node=node, base_pixel=list(base), base_pixel_rule=base_rule,
-                foot_pixel=list(foot_pixel), foot_walked_up_pixels=walked,
-                ground_contact_world=list(foot), ground_contact_native_z=native_foot_z, card_plane_native_y=ground,
+    return dict(asset_id=row['id'], kind=row['kind'], source_node=node, base_pixel=list(base), base_pixel_rule=base_rule,
+                foot_pixel=list(foot_pixel), foot_walked_up_pixels=walked, ground_contact_world=list(foot),
+                ground_contact_native_z=native_foot_z, card_plane_native_y=ground, lobe_plan=plan,
                 wood_paths=paths, lobes=len(evidence['lobes']),
                 crown={k: v for k, v in crown_report.items() if k != 'source_partition'} | dict(name=crown.name),
                 wood=dict(name=wood.name, **topology(wood)))
 
 
-def pilot_masks(rows, output):
-    """Scratch inventory + manifest: v4 plus proposed foliage domains for the built assets."""
-    inventory_path = (MASKS.parent / json.loads(MASKS.read_text())['mask_inventory']).resolve()
-    inventory = json.loads(inventory_path.read_text())
-    directory = output / 'mask-inventory'
-    directory.mkdir(parents=True, exist_ok=True)
-    records = []
-    for record in inventory['masks']:
-        record = dict(record)
-        if record.get('png'):
-            record['png'] = os.path.relpath(inventory_path.parent / record['png'], directory)
-        records.append(record)
-    manifest = json.loads(MASKS.read_text())
-    for number, row in enumerate(rows):
-        index = FIRST_TREE_MASK + number
-        from PIL import Image
-        bitmap = Image.open(row['domain_png'])
-        records.append(dict(index=index, layer=None, layer_index=None,
-                            png=os.path.relpath(row['domain_png'], directory), mask_type=None,
-                            box_top_left=row['domain_box_top_left'], box_size=list(bitmap.size),
-                            character_polyline=[], projectile_polyline=[], obstacle_indices=[], synthetic=True,
-                            constraint_kind='proposed-foliage-domain', source_sha256=sha(SOURCE),
-                            review_evidence=str(CATALOG), pixels=row['domain_pixels'],
-                            reason=f"Proposed foliage domain for {row['id']} (native masks {row['native_masks']})."))
-        manifest['projections']['exterior']['assignments'].append(dict(
-            reviewed=True, source_node='foliage-' + row['id'].removeprefix('lincoln-'), mask_indices=[index],
-            constraint_kind='proposed-foliage-domain', review_status='pilot-visual-check-only',
-            review_evidence=str(CATALOG), review_note=row['name']))
-    inventory = dict(inventory, masks=records)
-    (directory / 'manifest.json').write_text(json.dumps(inventory, indent=2) + '\n')
-    manifest['mask_inventory'] = os.path.relpath(directory / 'manifest.json', output)
-    manifest['limitations'] = list(manifest.get('limitations', [])) + [
-        'SCRATCH PILOT: foliage-* assignments are unreviewed proposals from trees_inventory.py.']
-    path = output / 'source-masks-pilot.json'
-    path.write_text(json.dumps(manifest, indent=2) + '\n')
-    return path
+# Landing stage corners traced on the source (x, y): deck back-left, back-right,
+# front-right, front-left; front-left post foot; mooring-pole top and foot.
+LANDING = dict(deck=[(486, 630), (529, 621), (543, 648), (506, 662)], deck_thickness=3.,
+               post_foot=(508, 677), pole_top=(542, 614), pole_foot=(542, 672))
 
 
-def coverage_audit(row, collection, output, domains):
-    """Source-camera first-hit audit over the proposed domain, independent of acceptance."""
-    import numpy as np
+def box_between(a, b, radius, sides=8):
+    """Closed vertical-ish prism (octagonal) from world point a to b."""
     from mathutils import Vector
-    from mathutils.bvhtree import BVHTree
-    from PIL import Image
-    domain = load_domain(row)
-    objects = [o for o in collection.all_objects if o.type == 'MESH' and not o.hide_render]
-    verts, tris, owners = [], [], []
-    from physical_opacity import OpacityRegistry
-    opacity = OpacityRegistry()
-    for obj in objects:
-        obj.data.calc_loop_triangles()
-        offset = len(verts)
-        verts += [obj.matrix_world @ v.co for v in obj.data.vertices]
-        for tri in obj.data.loop_triangles:
-            opacity.add(obj, obj.data, tri)
-            tris.append(tuple(offset + i for i in tri.vertices))
-            owners.append(obj)
-    # Cutout alpha is physical coverage: rays pass through transparent leaf gaps.
-    tree = opacity.wrap(BVHTree.FromPolygons(verts, tris, all_triangles=True))
-    toward = Vector((0, -COS, SIN))
-    ys, xs = np.nonzero(domain)
-    counts = dict(own_first_hit=0, shared_with_front_foliage=0, foreign_first_hit=0, miss=0)
-    foreign = {}
-    picture = np.zeros((H, W, 3), np.uint8)
-    for x, y in zip(xs, ys):
-        start = Vector((x + .5, 0, -(y + .5) / COS)) + toward * 20000
-        hit, _, index, _ = tree.ray_cast(start, -toward)
-        if hit is None:
-            counts['miss'] += 1; picture[y, x] = (255, 0, 0)
-        elif owners[index].get('asset_group') == row['id']:
-            counts['own_first_hit'] += 1; picture[y, x] = (0, 255, 0)
-        else:
-            key = owners[index].get('asset_group') or owners[index].get('source_node')
-            if key in domains and domains[key][y, x]:
-                # Pixel lies in both proposed foliage domains: first hit decides.
-                counts['shared_with_front_foliage'] += 1; picture[y, x] = (0, 120, 255)
-            else:
-                counts['foreign_first_hit'] += 1; picture[y, x] = (255, 0, 255)
-            foreign[key] = foreign.get(key, 0) + 1
-    # Painted pixels outside the domain that the proxy now covers first (overreach).
-    x0, y0, x1, y1 = row['source_box']
-    pad = 40
-    over = 0
-    for y in range(max(0, y0 - pad), min(H, y1 + pad)):
-        for x in range(max(0, x0 - pad), min(W, x1 + pad)):
-            if domain[y, x]:
-                continue
-            start = Vector((x + .5, 0, -(y + .5) / COS)) + toward * 20000
-            hit, _, index, _ = tree.ray_cast(start, -toward)
-            if hit is not None and owners[index].get('asset_group') == row['id']:
-                over += 1; picture[y, x] = (255, 200, 0)
-    source = np.asarray(Image.open(SOURCE).convert('RGB'))
-    bx0, by0, bx1, by1 = max(0, x0 - pad), max(0, y0 - pad), min(W, x1 + pad), min(H, y1 + pad)
-    crop = source[by0:by1, bx0:bx1].astype(float)
-    marks = picture[by0:by1, bx0:bx1]
-    painted = marks.any(-1)
-    blend = crop.copy()
-    blend[painted] = crop[painted] * .35 + marks[painted] * .65
-    sheet = np.concatenate([crop, blend], 1).astype(np.uint8)
-    path = output / 'coverage-source-camera.png'
-    Image.fromarray(sheet).resize((sheet.shape[1] * 2, sheet.shape[0] * 2), Image.NEAREST).save(path)
-    total = int(domain.sum())
-    return dict(domain_pixels=total, **counts, foreign_first_hit_by_asset=foreign,
-                own_fraction=counts['own_first_hit'] / total, overreach_pixels_outside_domain=over,
-                image=str(path), image_sha256=sha(path),
-                legend=('left: source; right: green own first hit, blue shared pixel won by a front foliage proxy, '
-                        'magenta foreign (non-foliage or exclusive) first hit, red miss, orange overreach'))
+    axis = (b - a).normalized()
+    side = axis.cross(Vector((0, 1, 0))).normalized() if abs(axis.y) < .9 else axis.cross(Vector((1, 0, 0))).normalized()
+    up = axis.cross(side).normalized()
+    verts = [p + radius * (side * math.cos(k * math.tau / sides) + up * math.sin(k * math.tau / sides))
+             for p in (a, b) for k in range(sides)]
+    faces = [tuple(reversed(range(sides))), tuple(range(sides, 2 * sides))]
+    faces += [(k, (k + 1) % sides, sides + (k + 1) % sides, sides + k) for k in range(sides)]
+    return verts, faces
 
 
-def write_handoff(row, report, workspace):
-    """Pilot review files in the Lincoln candidate/audit shape (scratch, not gallery input)."""
-    coverage = report['coverage']
-    views = workspace / 'modified/views.json'
-    exclusive = coverage['foreign_first_hit'] + coverage['miss']
-    status = 'PASS' if exclusive <= .08 * coverage['domain_pixels'] else 'FAIL'
-    audit = dict(
-        version=1, asset_id=row['id'], status=status, model_sha256=report['model_sha256'],
-        modified_views_sha256=sha(views), inspected_views=list(range(8)),
-        method=('Source-camera first-hit ray per proposed foliage-domain pixel against the complete pilot scene '
-                '(domain derived from native masks independently of the acceptance manifest), plus an overreach '
-                'scan of non-domain pixels within 40 px of the domain box.'),
-        observation=(f"{coverage['own_first_hit']}/{coverage['domain_pixels']} domain pixels hit this proxy first; "
-                     f"{coverage['shared_with_front_foliage']} shared pixels are won by a front foliage proxy "
-                     f"(domains overlap, first-hit gating); {coverage['foreign_first_hit']} exclusive pixels hit other "
-                     f"geometry first {coverage['foreign_first_hit_by_asset']}; {coverage['miss']} miss; "
-                     f"{coverage['overreach_pixels_outside_domain']} non-domain pixels are covered by the proxy (leaf gaps "
-                     'filled by the closed crown; they receive neutral texture and hide terrain behind them).'),
-        evidence={coverage['image']: coverage['image_sha256'], str(views): sha(views)},
-        limitations=['Foliage domains are unreviewed proposals (trees_inventory.py).',
-                     'Lobe depth, rear cards, transverse cards and wood are inferred; rear/transverse cards are neutral until texture fill.',
-                     'Cards are intentionally open render surfaces (Leicester foliage contract), not closed volumes.'])
-    (workspace / 'source-coverage-audit.json').write_text(json.dumps(audit, indent=2) + '\n')
-    candidate = dict(
-        version=1, asset_id=row['id'], status='refinement-in-progress', geometry_refined=True,
-        geometry_reviewed=True, inspected_views=list(range(8)), recipe=str(Path(__file__).resolve()),
-        model_sha256=report['model_sha256'], modified_views_sha256=sha(views),
-        changes=[f"New foliage asset ({VERSION}): {report['lobes']} Leicester-style cutout lobes (paired curved "
-                 f"source/neutral cards plus transverse neutral cards, {report['crown']['faces']} faces) and "
-                 f"{len(report['wood_paths'])} lofted wood paths on terrain at native z {report['ground_contact_native_z']:.1f} "
-                 f"(foot pixel {report['foot_pixel']}, {report['base_pixel_rule']})."],
-        limitations=audit['limitations'] + [
-            'Not a prepared workspace: the catalog/workspace/gallery tooling has no obstacle-less supplemental part '
-            'kind, so there is no frozen input packet or baseline.'],
-        geometry_approval='pending', texture_generation='not-started',
-        source_comparison=str(Path(coverage['image']).relative_to(workspace)))
-    (workspace / 'candidate.json').write_text(json.dumps(candidate, indent=2) + '\n')
+def build_landing_stage(row, terrain_tree, collection, image):
+    """Plank deck at the height that places its painted front-left post on the terrain."""
+    from mathutils import Vector
+    node = node_for(row)
+    post_foot = terrain_hit(terrain_tree, LANDING['post_foot'])
+    foot_native_z = post_foot.z * COS
+    # The painted post runs from the deck's front-left corner straight down to its foot,
+    # so the deck stands (post pixel length) native units above that foot.
+    deck_z = foot_native_z + (LANDING['post_foot'][1] - LANDING['deck'][3][1])
+    corners = [Vector((x, -(y + deck_z) / SIN, deck_z / COS)) for x, y in LANDING['deck']]
+    down = Vector((0, 0, -LANDING['deck_thickness'] / COS))
+    verts = corners + [c + down for c in corners]
+    faces = [(0, 1, 2, 3), (7, 6, 5, 4), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]
+    props = dict(source_node=node, asset_group=row['id'], asset_name=row['name'],
+                 part_name='Landing stage and mooring pole', foliage_recipe=VERSION)
+    parts = [mesh_object(row['name'] + ' / deck', verts, faces, collection, {**props, 'projection_component': 'deck'})]
+    # Four posts under the deck corners down to the terrain, and the mooring pole.
+    post_verts, post_faces = [], []
+    for corner in corners:
+        foot = terrain_hit(terrain_tree, pixel_of(corner + down))
+        bottom = Vector((corner.x, corner.y, min(foot.z, corner.z + down.z) - 4))
+        v, f = box_between(bottom, corner + down, 2.2)
+        post_faces += [tuple(len(post_verts) + i for i in face) for face in f]
+        post_verts += v
+    pole_foot = terrain_hit(terrain_tree, LANDING['pole_foot'])
+    pole_height = LANDING['pole_foot'][1] - LANDING['pole_top'][1]
+    v, f = box_between(pole_foot - Vector((0, 0, 4)), pole_foot + Vector((0, 0, pole_height / COS)), 2.)
+    post_faces += [tuple(len(post_verts) + i for i in face) for face in f]
+    post_verts += v
+    parts.append(mesh_object(row['name'] + ' / posts', post_verts, post_faces, collection,
+                             {**props, 'projection_component': 'posts'}))
+    for part in parts:
+        source_uv_and_material(part, image)
+    return dict(asset_id=row['id'], kind='scenery', source_node=node, deck_native_z=deck_z,
+                post_foot_native_z=foot_native_z, pole_foot_native_z=pole_foot.z * COS,
+                meshes=[dict(name=p.name, **topology(p)) for p in parts])
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--no-packets', action='store_true')
     parser.add_argument('--keep-going', action='store_true', help='Record per-asset fitting failures and continue')
-    parser.add_argument('assets', nargs='+')
+    parser.add_argument('assets', nargs='*')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
     acquire()
     import bpy
     from mathutils.bvhtree import BVHTree
-    tooling = json.loads((R / 'tooling/current.json').read_text())['directory']
-    sys.path.insert(0, tooling)
+    sys.path.insert(0, json.loads(TOOLING_POINTER.read_text())['directory'])
     output = args.output.resolve()
+    blend = output / 'lincoln-grouped-trees.blend'
+    if blend.exists():
+        raise FileExistsError(blend)
     output.mkdir(parents=True, exist_ok=True)
     catalog = json.loads(CATALOG.read_text())
     rows = {row['id']: row for row in catalog['assets']}
     missing = set(args.assets) - set(rows)
     if missing:
         raise ValueError(f'Unknown proposed assets: {sorted(missing)}')
-    selected = [rows[a] for a in args.assets]
+    selected = [rows[a] for a in (args.assets or rows)]
     bpy.ops.wm.open_mainfile(filepath=str(SCENE_BLEND), load_ui=False)
-    scene = bpy.data.scenes['lincoln Refinement']
-    bpy.context.window.scene = scene
+    bpy.context.window.scene = bpy.data.scenes['lincoln Refinement']
     collection = bpy.data.collections['lincoln Working']
-    if any(str(o.get('source_node', '')).startswith('foliage-') for o in collection.all_objects):
-        raise ValueError('Scene already contains foliage proxies')
+    if any(str(o.get('source_node', '')).startswith(('foliage-', 'scenery-')) for o in collection.all_objects):
+        raise ValueError('Scene already contains foliage or scenery assets')
     nodes = terrain_nodes()
     terrain = [o for o in collection.all_objects if o.type == 'MESH' and not o.hide_render
                and (o.get('source_node') in nodes or any(word in str(o.get('asset_group', '')) for word in NATURAL_GROUP_WORDS))]
-    verts, tris = [], []
-    for obj in terrain:
-        obj.data.calc_loop_triangles()
-        offset = len(verts)
-        verts += [obj.matrix_world @ v.co for v in obj.data.vertices]
-        tris += [tuple(offset + i for i in t.vertices) for t in obj.data.loop_triangles]
-    terrain_tree = BVHTree.FromPolygons(verts, tris, all_triangles=True)
-    verts, tris = [], []
-    for obj in collection.all_objects:
-        if obj.type != 'MESH' or obj.hide_render or obj in terrain:
-            continue
-        obj.data.calc_loop_triangles()
-        offset = len(verts)
-        verts += [obj.matrix_world @ v.co for v in obj.data.vertices]
-        tris += [tuple(offset + i for i in t.vertices) for t in obj.data.loop_triangles]
-    architecture_tree = BVHTree.FromPolygons(verts, tris, all_triangles=True)
+
+    def bvh(objects):
+        verts, tris = [], []
+        for obj in objects:
+            obj.data.calc_loop_triangles()
+            offset = len(verts)
+            verts += [obj.matrix_world @ v.co for v in obj.data.vertices]
+            tris += [tuple(offset + i for i in t.vertices) for t in obj.data.loop_triangles]
+        return BVHTree.FromPolygons(verts, tris, all_triangles=True)
+    terrain_tree = bvh(terrain)
+    architecture_tree = bvh([o for o in collection.all_objects
+                             if o.type == 'MESH' and not o.hide_render and o not in terrain])
     image = bpy.data.images.load(str(SOURCE), check_existing=True)
     reports, failures = [], []
     for number, row in enumerate(selected):
         try:
-            reports.append(build(row, terrain_tree, architecture_tree, collection, image,
-                                 output / row['id'], FIRST_TREE_MASK + number))
+            if row['kind'] == 'scenery':
+                reports.append(build_landing_stage(row, terrain_tree, collection, image))
+            else:
+                # Lobe partition ids only key the Leicester recipe tables; they are not mask indices.
+                reports.append(build_foliage(row, terrain_tree, architecture_tree, collection, image,
+                                             output / 'foliage-source' / row['id'], 10000 + number))
         except ValueError as error:
-            # Fitting fails before any mesh is created; --keep-going lists every
-            # asset that needs a visual foot override instead of stopping at the first.
             if not args.keep_going:
                 raise
             failures.append(dict(asset_id=row['id'], error=str(error)))
-    selected = [row for row in selected if row['id'] not in {f['asset_id'] for f in failures}]
     bpy.context.view_layer.update()
-    masks = pilot_masks(selected, output)
-    summary = dict(version=1, terrain_objects=sorted(o.name for o in terrain), recipe=str(Path(__file__).resolve()), recipe_version=VERSION,
-                   scene=str(SCENE_BLEND), scene_sha256=sha(SCENE_BLEND), catalog=str(CATALOG),
-                   catalog_sha256=sha(CATALOG), terrain_nodes=sorted(nodes), mask_manifest=str(masks), assets=reports, failures=failures)
-    if not args.no_packets:
-        from source_projection_bake import bake
-        from refinement_review import render_review
-        lighting = json.loads(LIGHTING.read_text())['lighting']
-        domains = {row['id']: load_domain(row) for row in selected}
-        for row, report in zip(selected, reports):
-            workspace = output / row['id']
-            workspace.mkdir(exist_ok=True)
-            report['ownership'] = bake('lincoln', str(SOURCE), workspace / 'ownership.json',
-                                       receiver_nodes=[report['source_node']], projection_label='exterior',
-                                       preserve_authored=False, source_mask_manifest=str(masks),
-                                       receiver_asset_id=row['id'])
-            modified = workspace / 'modified'
-            if modified.exists():
-                raise FileExistsError(modified)
-            render_review(modified, scene_name='lincoln Refinement', collection_name='lincoln Working',
-                          asset_id=row['id'], source_path=str(SOURCE), lighting=lighting,
-                          source_mask_manifest=str(masks),
-                          projection_layers=[dict(source_path=str(SOURCE), projection_label='exterior',
-                                                  receiver_nodes=sorted({o.get('source_node') for o in collection.all_objects if o.type == 'MESH' and not o.hide_render}, key=str),
-                                                  occluder_nodes=sorted({o.get('source_node') for o in collection.all_objects if o.type == 'MESH' and not o.hide_render}, key=str))])
-            report['coverage'] = coverage_audit(row, collection, workspace, domains)
-            report['modified_views_sha256'] = sha(modified / 'views.json')
-    for row, report in zip(selected, reports):
-        workspace = output / row['id']
-        workspace.mkdir(exist_ok=True)
-        objects = {o for o in collection.all_objects if o.get('asset_group') == row['id']}
-        model = workspace / 'model.blend'
-        bpy.data.libraries.write(str(model), objects, compress=True)
-        report['model'] = str(model)
-        report['model_sha256'] = sha(model)
-        if not args.no_packets:
-            write_handoff(row, report, workspace)
-    blend = output / 'lincoln-trees-pilot.blend'
     bpy.ops.wm.save_as_mainfile(filepath=str(blend), compress=True)
-    summary['pilot_blend'] = str(blend)
-    summary['pilot_blend_sha256'] = sha(blend)
-    (output / 'pilot-report.json').write_text(json.dumps(summary, indent=2, default=list) + '\n')
-    print('TREES_PILOT_COMPLETE', json.dumps([dict(id=r['asset_id'], crown=r['crown'], coverage=r.get('coverage', {}).get('own_fraction')) for r in reports]), flush=True)
+    # Scene inventory for catalog validation (prepare_assets): every mesh incl. the new parts.
+    from refinement_inventory import inventory
+    scene_inventory = inventory(output / 'inventory', collection_name='lincoln Working', map_name='lincoln',
+                                source_path=str(SOURCE))
+    summary = dict(version=1, recipe=str(Path(__file__).resolve()), recipe_sha256=sha(__file__), recipe_version=VERSION,
+                   scene=str(SCENE_BLEND), scene_sha256=sha(SCENE_BLEND), catalog=str(CATALOG),
+                   catalog_sha256=sha(CATALOG), terrain_nodes=sorted(nodes),
+                   terrain_objects=sorted(o.name for o in terrain), output_blend=str(blend),
+                   output_blend_sha256=sha(blend), inventory=scene_inventory, assets=reports, failures=failures)
+    (output / 'scene-report.json').write_text(json.dumps(summary, indent=2, default=list) + '\n')
+    print('TREES_SCENE_COMPLETE', len(reports), 'built', len(failures), 'failed', flush=True)
 
 
 if __name__ == '__main__':
