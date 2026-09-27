@@ -119,14 +119,19 @@ samples are referenced from the base installation, rather than bundled in the ZI
 
 Light recovery preserves projection priority and fits receiving planes from the
 leading three vertices. Elevated light contours may extend outside navigation
-when their intersecting receivers agree on one plane; uncovered potentially
-walkable portions remain errors, including areas opened by state changes.
-The latest all-map pass recovers 29 of 149 light/shadow regions into asset-local
-drafts, including five additional regions in Derby, Leicester and Lincoln.
-All 29 exported contours and ambience masks match source records. Light regions
+when their intersecting receivers agree on one plane, including raised terrain
+on layer zero. A non-walkable receiving-footprint notch does not establish a
+ground plane; uncovered potentially walkable portions still require a valid
+plane, including areas opened by state changes. Ownership can span several parts
+of one asset, but their combined footprints must cover the entire light polygon,
+including its interior; enclosed gaps and competing asset owners remain errors.
+The latest all-map pass recovers 35 of 149 light/shadow regions into asset-local
+drafts, including six additional regions on Leicester's keep, west wing and moat
+towers. All 35 exported contours and ambience masks match source records, and
+the previously recovered regions remain covered. Light regions
 also resolve onto stair/lift traversal surfaces; a native test verifies ambience
 filtering on the traversal layer without affecting the ground layer or door links.
-All nine static diagnostics construct successfully. The other 120 regions need
+All nine static diagnostics construct successfully. The other 114 regions need
 receiving-geometry fixes, ownership review or multi-plane authoring; they are not
 silently assigned to terrain. These drafts remain unpublished.
 

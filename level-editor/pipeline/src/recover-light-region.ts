@@ -5,6 +5,14 @@ import { heightPlane, planeHeight, type HeightPlane } from "../../shared/src/gam
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
 import { fixedClipping } from "../../shared/src/fixed-polygon-boolean.ts";
 
+/** Complete region coverage by one asset's parts, including interior gaps. */
+export function containsLightPolygon(points: Point[], footprints: Point[][]): boolean {
+  if (!footprints.length) return false;
+  const polygons = footprints.map((ring) => [[...ring, ring[0]!]]);
+  const coverage = fixedClipping.union(polygons[0]!, ...polygons.slice(1));
+  return fixedClipping.difference([[...points, points[0]!]], coverage).length === 0;
+}
+
 /** Preserve projection priority and reject regions that need multiple receiving planes. */
 export function recoverLightPlane(
   light: LightSector,
@@ -29,24 +37,23 @@ export function recoverLightPlane(
       : [],
   );
   if (partition.ground.length) {
-    if (light.layer === 0) planes.push([0, 0, 0]);
-    else {
-      // A light contour can extend outside navigation. Its single receiving
-      // plane continues there; never extrapolate over potentially walkable gaps.
-      if (
-        !motionAreas ||
-        motionAreas.some((area) => {
-          const walkable = fixedClipping.difference(
-            close(area.polygon.points),
-            ...area.obstacles
-              .filter((obstacle) => obstacle.state_id === 0)
-              .map((obstacle) => close(obstacle.polygon.points)),
-          );
-          return fixedClipping.intersection(partition.ground, walkable).length > 0;
-        })
-      )
-        throw new Error("Light region has uncovered elevated receiving geometry");
-    }
+    // A receiving-footprint notch outside navigation does not establish a
+    // second plane, even on layer zero, which can also contain raised terrain.
+    const uncoveredWalkable =
+      !motionAreas ||
+      motionAreas.some((area) => {
+        const walkable = fixedClipping.difference(
+          close(area.polygon.points),
+          ...area.obstacles
+            .filter((obstacle) => obstacle.state_id === 0)
+            .map((obstacle) => close(obstacle.polygon.points)),
+        );
+        return fixedClipping.intersection(partition.ground, walkable).length > 0;
+      });
+    if (light.layer === 0) {
+      if (!planes.length || uncoveredWalkable) planes.push([0, 0, 0]);
+    } else if (uncoveredWalkable)
+      throw new Error("Light region has uncovered elevated receiving geometry");
   }
   const plane = planes[0];
   if (!plane) throw new Error("Light region has no receiving geometry");

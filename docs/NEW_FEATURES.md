@@ -37,7 +37,10 @@
 - **Asset-local gameplay lighting.** Map export transforms planar light/shadow
   contours, resolves their receiving layer and preserves ambience masks. The same
   compiled map supports different mission ambiences without shifting interior
-  links. Offline recovery reports ambiguous ownership and regions spanning
+  links. Offline recovery can attach a region spanning several parts of one
+  asset, requiring complete footprint coverage without unowned interior gaps.
+  Raised terrain on layer zero retains its elevation across non-walkable
+  receiving-footprint notches. Recovery reports ambiguous ownership and regions spanning
   multiple receiving planes; these remain authoring gaps.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied

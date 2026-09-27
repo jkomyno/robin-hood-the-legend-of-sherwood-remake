@@ -25,7 +25,11 @@ import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/as
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
-import { recoverLightPlane, recoverLightRegion } from "./recover-light-region.ts";
+import {
+  containsLightPolygon,
+  recoverLightPlane,
+  recoverLightRegion,
+} from "./recover-light-region.ts";
 import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry.ts";
 import { terrainOwnsJump } from "./terrain-jump-ownership.ts";
 import { jumpEdgeOwners } from "./jump-edge-ownership.ts";
@@ -1385,15 +1389,17 @@ for (const [index, light] of proto.light_sectors.entries()) {
     );
     const world = recoverLightRegion(light, `light-${index}`, "$root", plane, (p) => p);
     const contour = world.polygon.map(([x, y]): Point => [x, y]);
-    const owners = [...locals.values()].flat().filter((owner) =>
-      containsSoundPolyline(
-        [...contour, contour[0]!],
+    const allOwners = [...locals.values()].flat();
+    const owners = [...new Set(allOwners.map((owner) => owner.asset))].flatMap((asset) => {
+      const parts = allOwners.filter((owner) => owner.asset === asset);
+      const footprints = parts.map((owner) =>
         (owner.sourceShape ?? transformedObstacle(document, owner.part)).points.map((p): Point => [
           p.x,
           p.y,
         ]),
-      ),
-    );
+      );
+      return containsLightPolygon(contour, footprints) ? [parts[0]!] : [];
+    });
     if (owners.length !== 1) {
       unresolved.push({
         kind: "light-owner",
