@@ -92,3 +92,7 @@ __pycache__/
 /a
 /test.json
 /extra-content
+.pnpm-store
+.gitmodules
+.claude
+.mcp.json
