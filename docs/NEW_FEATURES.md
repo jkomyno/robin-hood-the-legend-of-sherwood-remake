@@ -61,6 +61,9 @@
   Surface lifting can intersect that coverage with explicitly supplied owner
   triangles, resolve overlapping depths and produce local geometry while
   rejecting uncovered pixels. Batch ownership and migration remain unfinished.
+  Published static opaque mesh parts can supply those triangles, including
+  nested transforms. Recovery verifies the clipped result through the compiler's
+  rasterizer; transparent materials require explicit texture coverage extraction.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits

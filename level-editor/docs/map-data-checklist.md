@@ -139,6 +139,14 @@ outside the mesh instead of extrapolating height. Tests cover sloped faces,
 cutouts, crossing surfaces, duplicate faces and foreground islands. This helper
 is not yet connected to source-mask ownership or the batch asset migration;
 no existing-map mask is certified recovered by these tests.
+The mesh reader handles indexed/unindexed triangles and nested transforms in a
+selected model part. Skinned/animated geometry and transparent materials reject
+until their state or texture coverage is explicitly handled. Surface clipping
+uses fixed-point polygon operations; recovery then rerasterizes with the map
+compiler and requires exact source pixel coverage, allowing partially covered
+edge cells only when their pixel samples match. Four Derby probes (mask records
+15, 27, 67 and 93) still fail coverage against their obstacle-linked candidate
+assets' published meshes. They are not recovered or published as gameplay masks.
 
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.

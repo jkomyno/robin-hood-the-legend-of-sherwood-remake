@@ -34,6 +34,21 @@ const surface = (z: (x: number) => number): MaskTriangle[] => {
   ];
 };
 
+test("partial edge cells recover only when compiler pixel samples remain exact", () => {
+  const source = mask(["1111", "1111", "1111", "1111"]);
+  const inset = (amount: number) =>
+    surface(() => 0).map(
+      (t) =>
+        t.map(([x, y, z]): Vec3 => [
+          amount + x * (1 - amount / 2),
+          amount + y * (1 - amount / 2),
+          z,
+        ]) as MaskTriangle,
+    );
+  assert.ok(recoverMaskSurface(source, inset(0.1), identity).length > 0);
+  assert.throws(() => recoverMaskSurface(source, inset(0.6), identity), /no owner surface/);
+});
+
 test("surface recovery preserves cutouts on sloped geometry and localizes once", () => {
   const source = mask(["1111", "1001", "1001", "1111"]);
   const recovered = recoverMaskSurface(

@@ -1,29 +1,20 @@
-import clipping, { type MultiPolygon } from "polygon-clipping";
+import { fixedClipping as clipping } from "../../shared/src/fixed-polygon-boolean.ts";
 import earcut, { flatten } from "earcut";
 import type { Mask, Point } from "../../shared/src/level.ts";
 import type { Vec3 } from "../../shared/src/scene.ts";
-import type { MaskTriangle } from "../../shared/src/compile-mask-geometry.ts";
+import {
+  rasterizeMaskGeometry,
+  type MaskTriangle,
+} from "../../shared/src/compile-mask-geometry.ts";
 import {
   heightPlane,
   planeHeight,
   clipHeight,
   type HeightPlane,
 } from "../../shared/src/gameplay-plane.ts";
-import { recoveryMaskRectangles } from "./recover-mask-bitmap.ts";
+import { decodeRecoveryMask, recoveryMaskRectangles } from "./recover-mask-bitmap.ts";
 
 const closed = (points: Point[]) => [[...points, points[0]!]];
-const area = (polygons: MultiPolygon) =>
-  polygons.reduce(
-    (sum, polygon) =>
-      sum +
-      polygon.reduce((s, ring, index) => {
-        let twice = 0;
-        for (let i = 1; i < ring.length; i++)
-          twice += ring[i - 1]![0] * ring[i]![1] - ring[i]![0] * ring[i - 1]![1];
-        return s + ((index ? -1 : 1) * Math.abs(twice)) / 2;
-      }, 0),
-    0,
-  );
 
 /** Lift coverage onto explicitly supplied owner surfaces. Along a projection
  * ray (0, 1, 1), the largest Z is the visible surface. Split overlapping faces
@@ -69,11 +60,11 @@ export function recoverMaskSurface(
         f.top < rectangle.bottom &&
         f.bottom > rectangle.top,
     );
-    let uncovered: MultiPolygon = [closed(region)];
+    if (!candidates.length)
+      throw new Error(`Mask coverage has no owner surface near ${rectangle.left},${rectangle.top}`);
     for (const [index, face] of candidates.entries()) {
       let visible = clipping.intersection(closed(region), closed(face.projected));
       if (!visible.length) continue;
-      uncovered = clipping.difference(uncovered, closed(face.projected));
       for (const [otherIndex, other] of candidates.entries()) {
         if (index === otherIndex || !visible.length) continue;
         const difference: HeightPlane = [
@@ -97,17 +88,42 @@ export function recoverMaskSurface(
           const x = vertices[i * 2]!,
             y = vertices[i * 2 + 1]!;
           const z = planeHeight(face.plane, [x, y]);
-          const result = localize([x, y + z, z]);
-          if (!result.every(Number.isFinite)) throw new Error("Invalid localized mask surface");
-          return result;
+          return [x, y + z, z];
         };
         for (let i = 0; i < indices.length; i += 3)
           triangles.push([point(indices[i]!), point(indices[i + 1]!), point(indices[i + 2]!)]);
       }
     }
-    if (area(uncovered) > 1e-7)
-      throw new Error(`Mask coverage has no owner surface near ${rectangle.left},${rectangle.top}`);
   }
-  if (!triangles.length) throw new Error("Mask has no recoverable surface coverage");
-  return triangles;
+  if (!triangles.length) throw new Error("Mask coverage has no owner surface");
+  // A silhouette pixel describes a sample, not an entire square of material.
+  // Clip to real geometry and verify with the compiler's rasterizer, allowing
+  // partial edge pixels only when the resulting binary coverage is identical.
+  const remaining = decodeRecoveryMask(mask);
+  for (const tile of rasterizeMaskGeometry(triangles, mask)) {
+    const pixels = decodeRecoveryMask(tile);
+    for (let i = 0; i < pixels.length; i++) {
+      if (!pixels[i]) continue;
+      const x = tile.box_top_left[0] + (i % tile.box_size[0]) - mask.box_top_left[0];
+      const y = tile.box_top_left[1] + Math.floor(i / tile.box_size[0]) - mask.box_top_left[1];
+      const index = y * mask.box_size[0] + x;
+      if (x < 0 || y < 0 || x >= mask.box_size[0] || y >= mask.box_size[1] || !remaining[index])
+        throw new Error("Recovered surface adds mask coverage");
+      remaining[index] = 0;
+    }
+  }
+  const missing = remaining.indexOf(1);
+  if (missing !== -1)
+    throw new Error(
+      `Mask coverage has no owner surface near ${mask.box_top_left[0] + (missing % mask.box_size[0])},${mask.box_top_left[1] + Math.floor(missing / mask.box_size[0])}`,
+    );
+  return triangles.map(
+    (triangle) =>
+      triangle.map((point) => {
+        const result = localize(point);
+        if (result.length !== 3 || !result.every(Number.isFinite))
+          throw new Error("Invalid localized mask surface");
+        return result;
+      }) as MaskTriangle,
+  );
 }
