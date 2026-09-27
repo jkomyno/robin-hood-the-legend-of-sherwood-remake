@@ -25,6 +25,13 @@ export interface AssetDoor {
   active?: boolean;
   lockedVillains?: boolean;
   lockedCivilians?: boolean;
+  /** Alternate lock rules; activation still requires an authored state transition. */
+  afterTransition?: {
+    locked: boolean;
+    unlockable: boolean;
+    lockedVillains: boolean;
+    lockedCivilians: boolean;
+  };
 }
 export interface AssetLift {
   id: string;
@@ -157,12 +164,13 @@ export function validateAssetGameplay(
   const validateDoor = (door: AssetDoor, kind: "ordinary" | "lift" | "interior") => {
     const lift = kind === "lift";
     feature(door);
-    if (!(lift && Array.isArray(door.polygon) && door.polygon.length === 0)) polygon(door.polygon);
+    // A connection can have no clickable sector while still linking navigation areas.
+    if (!(Array.isArray(door.polygon) && door.polygon.length === 0)) polygon(door.polygon);
     if (
       !point(door.outside, 3) ||
       !point(door.inside, 3) ||
       !point(door.middle, 3) ||
-      !(lift ? [4, 5, 6] : kind === "interior" ? [1, 2] : [0, 3]).includes(door.type) ||
+      !(lift ? [4, 5, 6] : kind === "interior" ? [1, 2] : [0, 3, 7]).includes(door.type) ||
       typeof door.locked !== "boolean" ||
       typeof door.unlockable !== "boolean"
     )
@@ -170,6 +178,13 @@ export function validateAssetGameplay(
     for (const key of ["active", "lockedVillains", "lockedCivilians"] as const)
       if (door[key] !== undefined && typeof door[key] !== "boolean")
         fail(`invalid door ${door.id} ${key}`);
+    if (door.afterTransition !== undefined) {
+      if (!door.afterTransition || typeof door.afterTransition !== "object")
+        fail(`invalid door ${door.id} transition locks`);
+      for (const key of ["locked", "unlockable", "lockedVillains", "lockedCivilians"] as const)
+        if (typeof door.afterTransition[key] !== "boolean")
+          fail(`invalid door ${door.id} transition ${key}`);
+    }
   };
   for (const door of data.doors) validateDoor(door, "ordinary");
   if (data.lifts !== undefined && !Array.isArray(data.lifts)) fail("invalid lifts");
@@ -189,10 +204,9 @@ export function validateAssetGameplay(
     if (
       !Array.isArray(lift.doors) ||
       lift.doors.length < 2 ||
-      !lift.doors.some((d) => d.type === 5) ||
-      !lift.doors.some((d) => d.type === 4 || d.type === 6)
+      !lift.doors.some((d) => d.type === 5)
     )
-      fail(`lift ${lift.id} needs low and high doors`);
+      fail(`lift ${lift.id} needs at least two traversal doors including a low door`);
     for (const door of lift.doors) {
       if (door.node !== lift.node) fail(`lift ${lift.id} door must use its owning node`);
       validateDoor(door, "lift");

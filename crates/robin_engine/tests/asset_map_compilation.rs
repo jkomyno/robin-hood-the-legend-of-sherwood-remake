@@ -77,6 +77,53 @@ fn compiler_interchange_rejects_unresolved_asset_references() {
 }
 
 #[test]
+fn non_clickable_passage_still_registers_navigation_links() {
+    let mut descriptor: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-compiled.level.json")).unwrap();
+    descriptor["asset_geometry"]["doors"][0]["door_sector"]["points"] = serde_json::json!([]);
+    let mut assets = LevelAssets::new();
+    let engine = construct(&serde_json::to_vec(&descriptor).unwrap(), &mut assets);
+    let grid = engine.fast_grid();
+    assert_eq!(grid.level.door_projection_infos.len(), 1);
+    assert_eq!(
+        grid.level
+            .sectors
+            .iter()
+            .filter(|s| !s.gate_indices.is_empty())
+            .count(),
+        2
+    );
+}
+
+#[test]
+fn compiled_door_retains_alternate_lock_rules() {
+    let mut descriptor: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-compiled.level.json")).unwrap();
+    let door = &mut descriptor["asset_geometry"]["doors"][0];
+    door["door_type"] = 7.into();
+    door["locked_pc_after_patch"] = true.into();
+    door["unlockable_after_patch"] = true.into();
+    door["locked_npc_villain_after_patch"] = true.into();
+    door["locked_npc_civilian_after_patch"] = true.into();
+    let mut assets = LevelAssets::new();
+    let engine = construct(&serde_json::to_vec(&descriptor).unwrap(), &mut assets);
+    let mut door = engine.presentation_view().doors()[0].clone();
+    assert_eq!(door.door_type, robin_engine::gate::DoorType::Trap);
+    assert!(!door.locked_pc);
+    door.swap_rights_patch();
+    assert!(
+        door.locked_pc && door.unlockable && door.locked_npc_villain && door.locked_npc_civilian
+    );
+    door.swap_rights_patch();
+    assert!(
+        !door.locked_pc
+            && !door.unlockable
+            && !door.locked_npc_villain
+            && !door.locked_npc_civilian
+    );
+}
+
+#[test]
 fn sloped_asset_surface_constructs_elevation_and_navigation_holes() {
     let mut assets = LevelAssets::new();
     let engine = construct(
@@ -135,12 +182,31 @@ fn compiled_lift_rejects_dangling_and_incomplete_definitions() {
         assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap()).is_err());
     }
     let mut missing = original;
+    let mut flat = missing.clone();
+    flat["asset_geometry"]["lifts"][0]["doors"][1]["point_out"][1] =
+        flat["asset_geometry"]["lifts"][0]["doors"][0]["point_out"][1].clone();
+    assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&flat).unwrap()).is_err());
     missing["asset_geometry"]["lifts"] = serde_json::json!([]);
     assert!(
         LoadedLevel::hackable_from_json(&serde_json::to_vec(&missing).unwrap())
             .unwrap_err()
             .contains("no traversal definition")
     );
+}
+
+#[test]
+fn lift_endpoints_are_selected_spatially_when_both_doors_use_low_actions() {
+    let mut descriptor: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-lift.level.json")).unwrap();
+    descriptor["asset_geometry"]["lifts"][0]["doors"][1]["door_type"] = 5.into();
+    let mut assets = LevelAssets::new();
+    let engine = construct(&serde_json::to_vec(&descriptor).unwrap(), &mut assets);
+    let view = engine.presentation_view();
+    let doors = view.doors();
+    let endpoints =
+        robin_engine::gate::lift_endpoint_door_indices(doors, doors[0].sector_in).unwrap();
+    assert_ne!(endpoints.0, endpoints.1);
+    assert!(doors[endpoints.0 as usize].point_out.y > doors[endpoints.1 as usize].point_out.y);
 }
 
 #[test]

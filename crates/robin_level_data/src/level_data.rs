@@ -2672,10 +2672,8 @@ impl LoadedLevel {
                     || !(0..=15).contains(&lift.direction)
                     || lift.doors.len() < 2
                     || !lift.doors.iter().any(|door| door.door_type == 5)
-                    || !lift
-                        .doors
-                        .iter()
-                        .any(|door| matches!(door.door_type, 4 | 6))
+                    || lift.doors.iter().map(|door| door.point_out.1).min()
+                        == lift.doors.iter().map(|door| door.point_out.1).max()
                     || lift.doors.iter().any(|door| {
                         !matches!(door.door_type, 4..=6)
                             || door.sector_in != lift.motion_area_index

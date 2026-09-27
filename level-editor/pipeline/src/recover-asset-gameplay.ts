@@ -13,8 +13,14 @@ import {
   type ProtoLevel,
 } from "@rle/shared";
 import { recoverEndpointElevation, distanceToPolygon } from "./recovery-elevation.ts";
-import { readStoredMap } from "./stored-map.ts";
+import { readStoredMap, pinnedDescriptors } from "./stored-map.ts";
 import { recoverGroundGameplay, polygonArea } from "./recover-ground-gameplay.ts";
+import {
+  recoveredGameplayDefinition,
+  type RecoveredGameplayPacket,
+} from "./recovered-gameplay-definition.ts";
+import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
+import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 
 const { values } = parseArgs({
   options: {
@@ -29,6 +35,11 @@ if (!values.map || !values.source || !values.out)
     "Usage: --map <saved-map.json> --library <library> --source <proto-level.json> --out <authoring directory>",
   );
 const document = await readStoredMap(values.map, values.library);
+const descriptors = await pinnedDescriptors(
+  values.library,
+  document.assetSources ?? [],
+  document.sceneAssets,
+);
 const proto: ProtoLevel = JSON.parse(await fs.readFile(values.source, "utf8"));
 const locals = new Map<number, { asset: string; node: string; part: Level3DObject }[]>();
 for (const part of document.objects) {
@@ -41,14 +52,11 @@ for (const part of document.objects) {
 }
 const packets = new Map<
   string,
-  {
+  RecoveredGameplayPacket & {
     version: 1;
     status: "needs-review";
-    asset: string;
-    surfaces: unknown[];
-    movementBlockers: unknown[];
-    connections: unknown[];
     issues: string[];
+    gameplayCandidate?: AssetGameplay;
   }
 >();
 const packet = (asset: string) => {
@@ -274,7 +282,7 @@ if (groundAreas.length) {
 }
 // Recover lifts only where their surface has a unique owner. Neighbour endpoints
 // remain geometric queries; no source sector or layer indices enter asset packets.
-const heightAt = (sector: number, layer: number, point: Point) => {
+const heightAt = (sector: number, layer: number, point: Point, projectionPoint = point) => {
   const supports = proto.sight_obstacles.filter(
     (o) =>
       Array.isArray(o.projection_area) &&
@@ -284,16 +292,23 @@ const heightAt = (sector: number, layer: number, point: Point) => {
   return recoverEndpointElevation(
     supports.map((o) => ({
       distance: distanceToPolygon(
-        point,
+        projectionPoint,
         o.points.map((p) => [p.x, p.y - p.z_top]),
       ),
       height: planeHeight(o.points, ...point),
+      maximumHeight: Math.max(...o.points.map((p) => Math.max(p.z_top, p.z_bottom))),
     })),
     layer === 0,
   );
 };
-const localEndpoint = (part: Level3DObject, point: Point, sector: number, layer: number) => {
-  const z = heightAt(sector, layer, point);
+const localEndpoint = (
+  part: Level3DObject,
+  point: Point,
+  sector: number,
+  layer: number,
+  projectionPoint = point,
+) => {
+  const z = heightAt(sector, layer, point, projectionPoint);
   return localize(part, [point[0], point[1] + z, z]);
 };
 for (const [index, lift] of proto.lifts.entries()) {
@@ -307,40 +322,37 @@ for (const [index, lift] of proto.lifts.entries()) {
   }
   const owner = owners[0]!;
   try {
-    const doors = (
-      lift.doors as {
-        point_in: Point;
-        point_out: Point;
-        point_mid: Point;
-        sector_in: number;
-        sector_out: number;
-        layer_in: number;
-        layer_out: number;
-        door_type: number;
-        locked_pc: boolean;
-        unlockable: boolean;
-        active: boolean;
-        locked_npc_villain: boolean;
-        locked_npc_civilian: boolean;
-        door_sector: { points: Point[] };
-      }[]
-    ).map((door, i) => ({
+    const doors = (lift.doors as SourceDoor[]).map((door, i) => ({
       id: `${owner.node}-endpoint-${i}`,
       node: owner.node,
       polygon: door.door_sector.points.map((point) => {
         const z = heightAt(door.sector_out, door.layer_out, door.point_out);
         const local = localize(owner.part, [point[0], point[1] + z, z]);
-        return [local[0], local[1]];
+        return [local[0], local[1]] as Point;
       }),
       inside: localEndpoint(owner.part, door.point_in, door.sector_in, door.layer_in),
       outside: localEndpoint(owner.part, door.point_out, door.sector_out, door.layer_out),
-      middle: localEndpoint(owner.part, door.point_mid, door.sector_in, door.layer_in),
+      // A transition midpoint can sit just outside its projection polygon.
+      // Keep the plane selected by the actual inside endpoint.
+      middle: localEndpoint(
+        owner.part,
+        door.point_mid,
+        door.sector_in,
+        door.layer_in,
+        door.point_in,
+      ),
       type: door.door_type,
       locked: door.locked_pc,
       unlockable: door.unlockable,
       active: door.active,
       lockedVillains: door.locked_npc_villain,
       lockedCivilians: door.locked_npc_civilian,
+      afterTransition: {
+        player: door.locked_pc_after_patch,
+        unlockable: door.unlockable_after_patch,
+        villains: door.locked_npc_villain_after_patch,
+        civilians: door.locked_npc_civilian_after_patch,
+      },
     }));
     packet(owner.asset).connections.push({
       id: `${owner.node}-lift`,
@@ -351,7 +363,7 @@ for (const [index, lift] of proto.lifts.entries()) {
         const angle = (lift.direction * Math.PI) / 8;
         const origin = localize(owner.part, [0, 0, 0]);
         const tip = localize(owner.part, [Math.sin(angle), -Math.cos(angle), 0]);
-        return [tip[0] - origin[0], tip[1] - origin[1]];
+        return [tip[0] - origin[0], tip[1] - origin[1]] as Point;
       })(),
       endpoints: doors,
     });
@@ -475,12 +487,41 @@ const pending = {
   shadowRegions: proto.light_sectors.length,
 };
 await fs.mkdir(values.out, { recursive: true });
+const definitionValidation: { asset: string; valid: boolean; error?: string }[] = [];
 for (const [asset, p] of packets) {
+  try {
+    const descriptor = descriptors.get(asset);
+    if (!descriptor) throw new Error(`Missing pinned descriptor ${asset}`);
+    p.gameplayCandidate = recoveredGameplayDefinition(p, descriptor);
+    definitionValidation.push({ asset, valid: true });
+  } catch (error) {
+    definitionValidation.push({ asset, valid: false, error: String(error) });
+  }
   p.issues = [...new Set(p.issues)];
   await fs.writeFile(
     path.join(values.out, `${asset}.gameplay-authoring.json`),
     JSON.stringify(p, null, 2) + "\n",
   );
+}
+// Probe the assembled scene using only the candidate asset definitions. Keep
+// this diagnostic separate from publication and from recovery coverage.
+let candidateCompilation: { ready: boolean; error?: string };
+try {
+  const candidates = new Map<string, GameplayAssetDescriptor>(descriptors);
+  for (const [id, descriptor] of candidates) {
+    const gameplay = packets.get(id)?.gameplayCandidate;
+    if (gameplay) candidates.set(id, { ...descriptor, gameplay });
+  }
+  const bounds =
+    document.exportBounds ??
+    (document.size
+      ? ([0, 0, document.size[0], document.size[1]] as [number, number, number, number])
+      : undefined);
+  if (!bounds) throw new Error("Map has no export bounds or size");
+  compileAssetGameplay(document, candidates, bounds);
+  candidateCompilation = { ready: true };
+} catch (error) {
+  candidateCompilation = { ready: false, error: String(error) };
 }
 const report = {
   status: "incomplete-authoring-recovery",
@@ -489,6 +530,8 @@ const report = {
   surfaces: [...packets.values()].reduce((sum, p) => sum + p.surfaces.length, 0),
   connections: [...packets.values()].reduce((sum, p) => sum + p.connections.length, 0),
   movementBlockers: [...packets.values()].reduce((sum, p) => sum + p.movementBlockers.length, 0),
+  definitionValidation,
+  candidateCompilation,
   coverage,
   unresolved,
   pending,

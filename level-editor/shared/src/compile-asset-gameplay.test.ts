@@ -182,6 +182,45 @@ test("missing metadata and disconnected doors fail; no level-data fallback", () 
     /unknown gameplay node/,
   );
 });
+test("passages without click polygons retain their navigation endpoints", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const before = compileAssetGameplay(document, assets, bounds);
+  hut.gameplay!.doors[0]!.polygon = [];
+  const result = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    result.doors,
+    before.doors.map((d) => ({ ...d, door_sector: { points: [] } })),
+  );
+  hut.gameplay!.doors[0]!.polygon = [
+    [1, 1],
+    [2, 2],
+  ];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid gameplay polygon/);
+});
+test("door transition lock rules remain asset-local and survive placement", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const door = hut.gameplay!.doors[0]!;
+  door.locked = true;
+  door.unlockable = true;
+  door.type = 7;
+  door.afterTransition = {
+    locked: false,
+    unlockable: false,
+    lockedVillains: true,
+    lockedCivilians: true,
+  };
+  const result = compileAssetGameplay(document, assets, bounds).doors[0]!;
+  assert.equal(result.door_type, 7);
+  assert.equal(result.locked_pc, true);
+  assert.equal(result.locked_pc_after_patch, false);
+  assert.equal(result.unlockable_after_patch, false);
+  assert.equal(result.locked_npc_villain_after_patch, true);
+  assert.equal(result.locked_npc_civilian_after_patch, true);
+  for (const part of document.objects) part.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds).doors[0]!;
+  assert.deepEqual(moved.point_in, [result.point_in[0] + 100, result.point_in[1]]);
+  assert.equal(moved.locked_npc_villain_after_patch, true);
+});
 test("adjacent same-height asset surfaces are joined without a blocking seam", () => {
   const { document, assets, hut } = assetCompilerFixture();
   hut.gameplay!.surfaces[1]!.polygon = [
@@ -296,7 +335,10 @@ test("lift surfaces use the reserved layer and rebuild endpoint references", () 
 test("lift validation rejects missing traversal endpoints and mismatched surface ownership", () => {
   const { hut, document, assets } = liftAssetCompilerFixture();
   hut.gameplay!.lifts![0]!.doors.pop();
-  assert.throws(() => compileAssetGameplay(document, assets, bounds), /low and high doors/);
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /at least two traversal doors/,
+  );
   hut.gameplay!.lifts![0]!.surface = "absent";
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /needs its own surface/);
 });

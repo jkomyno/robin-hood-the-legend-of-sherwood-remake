@@ -438,10 +438,12 @@ export function compileAssetGameplay(
       unlockable: d.unlockable,
       locked_npc_villain: d.lockedVillains ?? false,
       locked_npc_civilian: d.lockedCivilians ?? false,
-      locked_pc_after_patch: d.locked,
-      unlockable_after_patch: d.unlockable,
-      locked_npc_villain_after_patch: d.lockedVillains ?? false,
-      locked_npc_civilian_after_patch: d.lockedCivilians ?? false,
+      locked_pc_after_patch: d.afterTransition?.locked ?? d.locked,
+      unlockable_after_patch: d.afterTransition?.unlockable ?? d.unlockable,
+      locked_npc_villain_after_patch:
+        d.afterTransition?.lockedVillains ?? d.lockedVillains ?? false,
+      locked_npc_civilian_after_patch:
+        d.afterTransition?.lockedCivilians ?? d.lockedCivilians ?? false,
       door_sector: { points: door.polygon },
       point_out: project(door.outside),
       sector_out: outside.sector,
@@ -480,11 +482,16 @@ export function compileAssetGameplay(
           lifts: lifts.map((lift) => {
             const area = areas.find((a) => a.lift === lift.id);
             if (!area) throw new Error(`Missing lift motion area ${lift.id}`);
+            const endpoints = compiledDoors.filter((_, i) => doors[i]!.lift === lift.id);
+            if (new Set(endpoints.map((d) => d.point_out[1])).size < 2)
+              throw new Error(
+                `Lift ${lift.id} needs distinct projected endpoint heights after placement`,
+              );
             return {
               motion_area_index: area.sector,
               lift_type: lift.type,
               direction: lift.direction,
-              doors: compiledDoors.filter((_, i) => doors[i]!.lift === lift.id),
+              doors: endpoints,
             };
           }),
         }

@@ -1,20 +1,22 @@
 import type { Point } from "@rle/shared";
 
-/** Choose among surfaces in one movement area without extrapolating the first surface arbitrarily. */
+/** Resolve a movement area's projection at the endpoint; uncovered ground is height zero. */
 export function recoverEndpointElevation(
-  candidates: { distance: number; height: number }[],
+  candidates: { distance: number; height: number; maximumHeight: number }[],
   groundLayer: boolean,
 ): number {
-  const containing = candidates.filter((candidate) => candidate.distance < 1);
-  const selected = containing.length ? containing : candidates;
-  if (!selected.length) {
+  if (candidates.some((c) => ![c.distance, c.height, c.maximumHeight].every(Number.isFinite)))
+    throw new Error("Invalid endpoint projection geometry");
+  const containing = candidates.filter((candidate) => candidate.distance === 0);
+  if (!containing.length) {
     if (groundLayer) return 0;
     throw new Error("No projection surface for endpoint elevation");
   }
-  const heights = selected.map((candidate) => candidate.height);
-  if (!heights.every(Number.isFinite) || Math.max(...heights) - Math.min(...heights) > 0.01)
-    throw new Error("Ambiguous endpoint elevation across projection surfaces");
-  return heights[0]!;
+  // Keep source order when bounding heights tie. Priority uses the whole
+  // obstacle's maximum height, not its evaluated height at this endpoint.
+  return containing.reduce((best, candidate) =>
+    candidate.maximumHeight > best.maximumHeight ? candidate : best,
+  ).height;
 }
 
 export function distanceToPolygon(point: Point, points: Point[]): number {

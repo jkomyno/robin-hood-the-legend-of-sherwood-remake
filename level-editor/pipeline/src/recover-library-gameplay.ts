@@ -75,9 +75,12 @@ for (const file of (await fs.readdir(path.join(library, "scenes")))
     connections: report.connections,
     unresolved: report.unresolved.length,
     pending: report.pending,
+    validDefinitions: report.definitionValidation.filter((v: { valid: boolean }) => v.valid).length,
+    invalidDefinitions: report.definitionValidation.filter((v: { valid: boolean }) => !v.valid),
+    candidateCompilation: report.candidateCompilation,
   });
   console.log(
-    `${file}: ${report.assets} asset drafts; ${report.unresolved.length} unresolved ownership/terrain records`,
+    `${file}: ${report.assets} asset drafts; ${report.definitionValidation.filter((v: { valid: boolean }) => v.valid).length} schema-valid; ${report.unresolved.length} unresolved ownership/terrain records`,
   );
 }
 await fs.mkdir(output, { recursive: true });

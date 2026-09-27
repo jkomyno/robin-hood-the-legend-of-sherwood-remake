@@ -16,44 +16,43 @@ test("endpoint recovery uses the containing projection, not the first surface in
   assert.equal(
     recoverEndpointElevation(
       [
-        { distance: 20, height: 3 },
-        { distance, height: 100 },
+        { distance: 20, height: 3, maximumHeight: 200 },
+        { distance, height: 100, maximumHeight: 100 },
       ],
       false,
     ),
     100,
-  );
-  assert.throws(
-    () =>
-      recoverEndpointElevation(
-        [
-          { distance: 0, height: 3 },
-          { distance: 0, height: 100 },
-        ],
-        false,
-      ),
-    /Ambiguous/,
-  );
-  assert.throws(
-    () =>
-      recoverEndpointElevation(
-        [
-          { distance: 20, height: 3 },
-          { distance: 30, height: 100 },
-        ],
-        false,
-      ),
-    /Ambiguous/,
   );
   assert.equal(
     recoverEndpointElevation(
       [
-        { distance: 20, height: 100 },
-        { distance: 30, height: 100 },
+        { distance: 0, height: 3, maximumHeight: 200 },
+        { distance: 0, height: 100, maximumHeight: 100 },
       ],
       false,
     ),
-    100,
+    3,
+  );
+  assert.throws(
+    () =>
+      recoverEndpointElevation(
+        [
+          { distance: 20, height: 3, maximumHeight: 200 },
+          { distance: 30, height: 100, maximumHeight: 100 },
+        ],
+        false,
+      ),
+    /No projection/,
+  );
+  assert.equal(
+    recoverEndpointElevation(
+      [
+        { distance: 0.2, height: 100, maximumHeight: 100 },
+        { distance: 30, height: 100, maximumHeight: 100 },
+      ],
+      true,
+    ),
+    0,
   );
   assert.equal(recoverEndpointElevation([], true), 0);
   assert.throws(() => recoverEndpointElevation([], false), /No projection/);

@@ -19,7 +19,7 @@ intended construction, not functionality available today.
 | Navigation graph and fast-find grid | Engine constructs routing and spatial lookup structures from compiled geometry. No copied grids or graph bytes. | Working on synthetic maps |
 | Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. | Working for static geometry |
 | Projection surfaces / elevation | Generate height planes linked to the new movement areas. | Partial: planar surfaces; elevation-boundary links unfinished |
-| Doors, gates and lock rules | Transform local endpoints and polygons; resolve their neighbouring surfaces geometrically. | Partial: passages/gates; complete actor/state rules missing |
+| Doors, gates and lock rules | Transform local endpoints and optional click polygons; resolve neighbours geometrically and retain initial/alternate actor lock rules. | Partial: rules preserved; state-transition triggers still missing |
 | Building interiors | Asset-local interior definitions and entrances; generate virtual interior sectors and links. | Working for empty interiors; occupants remain planned |
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints. | Working in synthetic compiler/runtime tests; recovered metadata not yet published |
 | Jump zones and paired jump edges | Transform local jump geometry; resolve landing surfaces and pair compatible edges. | Planned |
@@ -50,3 +50,8 @@ the engine's integer coordinate grid. Terrain drafts fill placed-object cutouts
 and move the exclusions into asset-local movement blockers. A zero area difference
 alone does not prove correct ownership; adjacent assets, remaining terrain holes,
 state-dependent exclusions and elevated ground still require review.
+
+Each recovered draft now includes a compiler-schema candidate when validation
+passes. `definitionValidation` lists per-asset failures. Schema validity does not
+mean all gameplay was recovered or that the assembled map compiles; drafts stay
+separate from the published asset library until their missing information is resolved.
