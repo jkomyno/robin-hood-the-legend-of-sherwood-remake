@@ -1,6 +1,20 @@
 {
   "version": 1,
   "map": "Sherwood",
+  "door_sources": [
+    {
+      "doors": [0],
+      "owner": "sherwood-north-camp-hut-walls",
+      "node": "building-008",
+      "reason": "The north camp hut walls enclose this ground-level room and own its entrance. The separately editable roof above the room does not own the interior."
+    },
+    {
+      "doors": [1],
+      "owner": "sherwood-west-camp-hut",
+      "node": "building-001",
+      "reason": "The west camp hut contains the wall and doorway components for this room. Its nearby roof is a separate visual component, not a second interior owner."
+    }
+  ],
   "groups": [
     {
       "id": "sherwood-west-camp-hut-roof",

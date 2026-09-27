@@ -193,6 +193,10 @@ Static merging preserves component annotations, translates declared bounds and
 namespaces appearance bindings without changing their resolved behavior. Its GLB
 writer retains near-identity transforms so binary round trips meet the existing
 world-transform tolerance. These assets and gameplay definitions remain staged.
+Sherwood's two camp-hut declarations distinguish the walls and doorway from the
+separately editable roofs. All five non-lift doors and five shared interiors now
+match the reference geometry/rules. Missing ladder ownership and other navigation
+gaps remain separate from this door comparison.
 Lincoln declarations attach the hall-terrace gate and western-tower passage to
 their corresponding revealed assets, the shed entrance to its room, and all three
 keep-floor entrances to one shared keep interior. These restore six doors and two
@@ -241,9 +245,9 @@ navigation fidelity and publication remain unfinished.
 Spatial ownership ties can be resolved by slicing solid geometry above the landing,
 excluding supporting terrain and preserving disconnected concave pieces. This
 restores 84 connection records without dropping previously recovered doors.
-Across the nine diagnostics, 385 of 397 non-lift doors now compile; all 385 match
+Across the nine diagnostics, 387 of 397 non-lift doors now compile; all 387 match
 source endpoints, click polygons, door types, active flags and initial/alternate
-permissions. The remaining 12 still need ownership or endpoint recovery. Inferred
+permissions. The remaining 10 in York still need ownership or endpoint recovery. Inferred
 physical grouping remains marked for review before publication.
 `compare-door-geometry.ts SOURCE_JSON COMPILED_LEVEL_JSON` independently compares
 non-lift door geometry/rules, shared-room membership and door-linked patch rules.
@@ -261,7 +265,7 @@ Current compiled/source counts (no unexpected records in any map):
 | Leicester | 59/59 | 16/16 | 5/5 |
 | Lincoln | 59/59 | 19/19 | 9/9 |
 | Nottingham | 100/100 | 45/45 | 7/7 |
-| Sherwood | 3/5 | 3/5 | 0/0 |
+| Sherwood | 5/5 | 5/5 | 0/0 |
 | York | 113/123 | 66/74 | 5/5 |
 
 The twenty-one recovered movement-changing transitions pass native initialization, apply and reset checks:
