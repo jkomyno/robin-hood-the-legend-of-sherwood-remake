@@ -12,6 +12,17 @@ export interface AssetWalkableSurface {
   holes?: Point[][];
   /** Asset-local navigation region, optionally spanning height planes; distinct regions never merge. */
   navigationRegion?: string;
+  /** Receiving-surface material and ordered asset-local material-region references. */
+  projectionMaterials?: {
+    defaultMaterial: number;
+    regions: string[];
+    /** Local bounding height for overlap priority; equal heights use surface order within the asset. */
+    priorityHeight?: number;
+    /** Higher values win equal-height overlaps across independent placements. */
+    priority?: number;
+    /** Local receiving footprint, including blocked portions omitted from walking contours. */
+    footprint?: [number, number, number][];
+  };
 }
 export interface AssetDoor {
   id: string;
@@ -519,7 +530,13 @@ export function validateAssetGameplay(
       !Array.isArray(region.obstacles) ||
       region.obstacles.some((node) => !nodes.has(node) && !volumes.has(node)) ||
       new Set(region.obstacles).size !== region.obstacles.length ||
-      (!region.ground && !region.obstacles.length)
+      (!region.ground &&
+        !region.obstacles.length &&
+        !data.surfaces.some(
+          (surface) =>
+            Array.isArray(surface.projectionMaterials?.regions) &&
+            surface.projectionMaterials.regions.includes(region.id),
+        ))
     )
       fail(`invalid material region ${region.id}`);
     if (region.obstacles.some((node) => nodes.has(node)) && data.collision !== "parts")
@@ -537,6 +554,26 @@ export function validateAssetGameplay(
   ]) {
     feature(surface);
     polygon(surface.polygon);
+    if (surface.projectionMaterials !== undefined) {
+      const projection = surface.projectionMaterials;
+      if (
+        !data.surfaces.includes(surface) ||
+        !projection ||
+        !Number.isInteger(projection.defaultMaterial) ||
+        projection.defaultMaterial < 0 ||
+        projection.defaultMaterial > 9 ||
+        (projection.priorityHeight !== undefined && !Number.isFinite(projection.priorityHeight)) ||
+        (projection.priority !== undefined && !Number.isFinite(projection.priority)) ||
+        (projection.footprint !== undefined &&
+          (!Array.isArray(projection.footprint) ||
+            projection.footprint.length < 3 ||
+            !projection.footprint.every((p) => point(p, 3)))) ||
+        !Array.isArray(projection.regions) ||
+        new Set(projection.regions).size !== projection.regions.length ||
+        projection.regions.some((id) => !data.materials?.some((region) => region.id === id))
+      )
+        fail(`invalid projection materials on ${surface.id}`);
+    }
     if (
       surface.navigationRegion !== undefined &&
       (typeof surface.navigationRegion !== "string" ||

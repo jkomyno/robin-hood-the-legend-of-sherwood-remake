@@ -19,6 +19,7 @@ import {
   crossAssetJumpCompilerFixture,
   doorTransitionCompilerFixture,
   doorAnchorCompilerFixture,
+  projectionMaterialCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
@@ -841,6 +842,107 @@ test("material regions follow placement and preserve separate ground and obstacl
   assert.deepEqual(moved.material_sectors![0]!.polygon.points[0], [440, 330]);
   hut.gameplay!.materials[0]!.obstacles = ["missing"];
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid material region/);
+});
+
+test("receiving materials preserve a joined walking area and follow asset placement", () => {
+  const { document, assets, hut } = projectionMaterialCompilerFixture();
+  const gameplay = hut.gameplay!;
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  const receivers = compiled.sight_obstacles.filter(
+    (obstacle) => obstacle.projection_area !== null,
+  );
+  assert.equal(receivers.length, 2);
+  assert.deepEqual(
+    receivers.map((obstacle) => obstacle.default_material),
+    [2, 4],
+  );
+  assert.deepEqual(
+    receivers.map((obstacle) => obstacle.material_indices),
+    [[0], []],
+  );
+  assert.deepEqual(receivers[0]!.projection_area, receivers[1]!.projection_area);
+  assert.deepEqual(compiled.sight_material_indices, []);
+  for (const part of document.objects) part.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(moved.material_sectors![0]!.polygon.points[0], [410, 290]);
+  assert.deepEqual(
+    moved.sight_obstacles[0]!.points.map((point) => point.x),
+    receivers[0]!.points.map((point) => point.x + 100),
+  );
+  gameplay.surfaces[0]!.projectionMaterials!.regions = ["missing"];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /invalid material region|invalid projection materials/,
+  );
+});
+
+test("rotated copies keep receiving material references local to each placement", () => {
+  const { document, assets } = projectionMaterialCompilerFixture();
+  const group = document.groups[0]!;
+  group.transform.rot_deg = 90;
+  group.transform.dx = 800;
+  group.transform.dy = 600;
+  document.groups.push({
+    ...structuredClone(group),
+    id: "hut-copy",
+    transform: { ...group.transform, dx: 1400 },
+  });
+  const part = document.objects.find((object) => object.group === group.id)!;
+  document.objects.push({ ...structuredClone(part), id: "hut-copy-body", group: "hut-copy" });
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  const linked = compiled.sight_obstacles.filter((obstacle) => obstacle.material_indices.length);
+  assert.equal(linked.length, 2);
+  assert.deepEqual(
+    linked.map((obstacle) => obstacle.material_indices),
+    [[0], [1]],
+  );
+  assert.notDeepEqual(linked[0]!.projection_area, linked[1]!.projection_area);
+  const [first, second] = compiled.material_sectors!;
+  assert.deepEqual(
+    second!.polygon.points,
+    first!.polygon.points.map(([x, y]) => [x + 600, y]),
+  );
+  assert.notDeepEqual(first!.polygon.points, [
+    [310, 290],
+    [330, 290],
+    [330, 310],
+    [310, 310],
+  ]);
+});
+
+test("receiving footprints retain material across portions omitted from walking contours", () => {
+  const { document, assets, hut } = projectionMaterialCompilerFixture();
+  const surface = hut.gameplay!.surfaces[0]!;
+  surface.projectionMaterials!.footprint = surface.polygon.map(([x, y]) => [x, y, 20]);
+  surface.polygon = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [50, 100],
+    [50, 50],
+    [0, 50],
+  ];
+  hut.gameplay!.surfaces.push({
+    id: "adjoining-contour",
+    node: surface.node,
+    height: 20,
+    polygon: [
+      [0, 50],
+      [50, 50],
+      [50, 100],
+      [0, 100],
+    ],
+  });
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  const receivers = geometry.sight_obstacles.filter(
+    (obstacle) => obstacle.projection_area !== null,
+  );
+  assert.equal(receivers.length, 2);
+  assert.deepEqual(
+    new Set(receivers[0]!.points.map((point) => `${point.x},${point.y}`)),
+    new Set(["300,300", "400,300", "400,400", "300,400"]),
+  );
+  assert.equal(receivers[0]!.default_material, 2);
 });
 
 test("material constructors are included in regenerated interior identities", () => {

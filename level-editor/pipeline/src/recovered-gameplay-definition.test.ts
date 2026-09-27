@@ -7,6 +7,7 @@ import {
   movementTransitionCompilerFixture,
   doorTransitionCompilerFixture,
   doorAnchorCompilerFixture,
+  projectionMaterialCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import {
@@ -33,9 +34,11 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
   return {
     asset: "hut",
     movementBlockers: [],
+    materials: gameplay.materials,
     surfaces: gameplay.surfaces.map((s) => ({
       id: s.id,
       node: s.node,
+      projectionMaterials: s.projectionMaterials,
       kind: gameplay.lifts?.some((l) => l.surface === s.id) ? "lift" : "walkable",
       vertices: s.polygon.map(([x, y], i) => [
         x,
@@ -72,6 +75,21 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
     ],
   };
 }
+
+test("receiving material references survive recovery without sharing draft metadata", () => {
+  const { hut } = projectionMaterialCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  packet.surfaces[0]!.projectionMaterials!.priorityHeight = 25;
+  packet.surfaces[0]!.projectionMaterials!.priority = 3;
+  const restored = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(
+    restored.surfaces[0]!.projectionMaterials,
+    packet.surfaces[0]!.projectionMaterials,
+  );
+  assert.deepEqual(restored.materials, packet.materials);
+  packet.surfaces[0]!.projectionMaterials!.regions.length = 0;
+  assert.deepEqual(restored.surfaces[0]!.projectionMaterials!.regions, ["inlay"]);
+});
 
 test("recovered door links retain endpoint identities and independent draft data", () => {
   const { hut, document, assets } = doorTransitionCompilerFixture();

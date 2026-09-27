@@ -24,7 +24,7 @@ intended construction, not functionality available today.
 | Building interiors | Asset-local interior definitions and entrances; matching positioned sockets with opposing directions join independent assets into shared virtual rooms. | Compiler/native tests cover separate, rotated and duplicated assemblies; all recovered room memberships match, including York's shared rooms; definitions remain unpublished; occupants are mission-owned |
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
-| Surface materials | Transform asset-local material polygons; rebuild the ground lookup subset and per-obstacle references independently. | Partial: ground/obstacle regions and terrain defaults tested in the engine; elevated-surface links unfinished |
+| Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
 | Light/shadow regions | Transform asset-local planar contours, resolve the receiving navigation layer and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering and interior links; multi-plane regions and ambiguous ownership remain recovery gaps |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
@@ -91,10 +91,21 @@ parity results. All nine recovered maps have now passed static construction;
 no map has yet been certified at full parity, and authored maps still require
 published gameplay definitions for their assets.
 
-Material recovery now stores ground regions on the terrain asset and obstacle
-regions on their owning parts. Elevated projection-material links remain explicit
-recovery gaps. An empty ground-material list correctly activates no ground regions;
-obstacle-only regions do not become ground water or footstep materials.
+Material recovery stores ground regions on terrain, obstacle regions on their
+owning parts, and receiving defaults/region references on asset-local surfaces.
+Receiving footprints retain material across blocked portions omitted from walking
+contours. Material boundaries split projection faces without splitting navigation;
+bounding-height priority and authored tie precedence resolve overlapping receivers.
+An empty ground-material list correctly activates no ground regions; obstacle-only
+regions do not become ground water or footstep materials. Native tests verify
+raised material overrides and defaults, independent ground lookup and traversal
+across material boundaries. Rotated/duplicated asset tests rebuild local references.
+All nine recovered drafts compile and construct native geometry with these definitions;
+all 397 non-lift doors, room memberships and door-linked bindings still match.
+A 16-pixel sampling probe found matching material codes at 34,120 points shared
+by source and compiled receiving surfaces, plus 88 compiled samples with no matching
+source receiver. This is a sampled material check, not complete geometry or gameplay
+parity. Definitions remain unpublished and receiving-geometry gaps remain open.
 
 Terrain drafts also carry forest behaviour and fallback material. Recovery
 normalizes clearance crossings introduced by integer rounding, preserving valid

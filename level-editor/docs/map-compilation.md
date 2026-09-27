@@ -105,6 +105,17 @@ references are assigned after placement; missing or ambiguous endpoints fail.
 The engine builds the actual fast-find grid, collision lines, door links and
 visibility-route graph from the generated descriptor.
 
+Walkable surfaces may include `projectionMaterials` with `defaultMaterial` and
+ordered asset-local material IDs in `regions`. Its optional local 3D `footprint`
+extends material coverage across blocked portions omitted from the walking contour.
+`priorityHeight` supplies the local bounding height used for overlap selection;
+`priority` resolves equal-height overlaps between placements, with higher values
+winning. Equal priorities within one asset follow surface order. Conflicting
+equal-priority definitions from different placements fail compilation. These fields
+contain no runtime sector, obstacle or material-table references. Receiving faces
+are partitioned without splitting the navigation area; ground material registration
+remains controlled by each material region's `ground` flag.
+
 Optional `movementClearances` use the same plane/polygon schema as surfaces.
 They remove openings only from the owning instance's collision derived from
 sight solids on the matching plane. They do not erase sight shapes, other assets'

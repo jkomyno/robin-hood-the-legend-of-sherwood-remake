@@ -4,6 +4,10 @@ import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navi
 import { assembleJumpSegments, type PlacedJumpSegment } from "./assemble-jump-segments.ts";
 import { assembleLiftSegments, type PlacedLiftSegment } from "./assemble-lift-segments.ts";
 import { assembleInteriors, type PlacedInterior } from "./assemble-interiors.ts";
+import {
+  partitionProjectionMaterials,
+  type ProjectionMaterialSupport,
+} from "./partition-projection-materials.ts";
 import { partMatrix, transformedObstacle, type Level3D, type Level3DObject } from "./level3d.ts";
 import { gameToScene, type Vec3 } from "./scene.ts";
 import { sceneToGame } from "./geometry.ts";
@@ -167,6 +171,11 @@ export function compileAssetGameplay(
   const movementSolids: { owner: string; shape: SightObstacle }[] = [];
   const movementClearances: typeof surfaces = [];
   const transitionBlockers: PlacedTransitionBlocker[] = [];
+  const projectionSupports: (ProjectionMaterialSupport & {
+    plane: HeightPlane;
+    navigationRegion?: string;
+    lift?: string;
+  })[] = [];
   const lights: { id: string; polygon: Point[]; plane: HeightPlane; ambiences: number }[] = [];
   const jumpZones: { id: string; polygon: Point[]; anchor: Vec3; helper: boolean }[] = [];
   const jumpSegments: PlacedJumpSegment[] = [];
@@ -348,8 +357,10 @@ export function compileAssetGameplay(
     for (const id of gameplay.movementSolids ?? [])
       if (!partSight.has(id))
         throw new Error(`Permanent movement solid ${placement.id}/${id} is hidden or missing`);
+    const materialIndices = new Map<string, number>();
     for (const region of gameplay.materials ?? []) {
       const index = materials.length;
+      materialIndices.set(region.id, index);
       if (index > 65535) throw new Error("Too many asset material regions");
       materials.push({
         material: region.material,
@@ -459,6 +470,35 @@ export function compileAssetGameplay(
         ),
       };
       const change = dynamic.find((d) => d.surface === surface);
+      if (gameplay.surfaces.includes(surface))
+        projectionSupports.push({
+          ...placed,
+          footprint: surface.projectionMaterials?.footprint
+            ? ring(
+                surface.projectionMaterials.footprint.map((point): Point => {
+                  const [x, y, z] = transform(surface.node, point);
+                  return [x, y - z];
+                }),
+                `${placement.id}/${surface.id} receiving footprint`,
+              )
+            : undefined,
+          defaultMaterial: surface.projectionMaterials?.defaultMaterial ?? 0,
+          materialIndices: (surface.projectionMaterials?.regions ?? []).map((id) =>
+            materialIndices.get(id)!,
+          ),
+          materialSignature: JSON.stringify(
+            (surface.projectionMaterials?.regions ?? []).map(
+              (id) => materials[materialIndices.get(id)!],
+            ),
+          ),
+          explicit: surface.projectionMaterials !== undefined,
+          tiePriority: surface.projectionMaterials?.priority ?? 0,
+          priority: Math.fround(
+            surface.projectionMaterials?.priorityHeight === undefined
+              ? Math.max(...points.map((point) => point[2]))
+              : transform(surface.node, [0, 0, surface.projectionMaterials.priorityHeight])[2],
+          ),
+        });
       if (change)
         transitionBlockers.push({
           ...placed,
@@ -532,6 +572,8 @@ export function compileAssetGameplay(
   lifts = assembledLifts.lifts;
   for (const surface of surfaces)
     if (surface.lift) surface.lift = assembledLifts.identities.get(surface.lift)!;
+  for (const support of projectionSupports)
+    if (support.lift) support.lift = assembledLifts.identities.get(support.lift)!;
   for (const door of doors) if (door.lift) door.lift = assembledLifts.identities.get(door.lift)!;
   if (!surfaces.length)
     throw new Error(
@@ -705,9 +747,19 @@ export function compileAssetGameplay(
     // Projection surfaces provide layer-aware elevation and picking.
     for (const piece of pieces) {
       areas.push({ ...piece, sector, layer, blockers: [...piece.blockers, ...changing.initial] });
-      if (lift || piece.plane.some((n) => Math.abs(n) > 1e-7))
+      for (const material of partitionProjectionMaterials(
+        piece.polygon,
+        projectionSupports.filter(
+          (support) =>
+            support.lift === piece.lift &&
+            support.navigationRegion === piece.navigationRegion &&
+            support.plane.every((n, i) => Math.abs(n - piece.plane[i]!) < 1e-7),
+        ),
+        warnings,
+      )) {
+        if (!lift && !material.explicit && !piece.plane.some((n) => Math.abs(n) > 1e-7)) continue;
         sight.push({
-          points: piece.polygon.map(([x, y]) => {
+          points: material.polygon.map(([x, y]) => {
             const height = planeHeight(piece.plane, [x, y]);
             return { x, y: y + height, z_bottom: height, z_top: height };
           }),
@@ -716,9 +768,10 @@ export function compileAssetGameplay(
           solid: false,
           mouse: true,
           show_shadow_polygon: false,
-          default_material: 0,
-          material_indices: [],
+          default_material: material.defaultMaterial,
+          material_indices: material.materialIndices,
         });
+      }
     }
     sector += 1 + blockers.length + changing.obstacles.length;
   }

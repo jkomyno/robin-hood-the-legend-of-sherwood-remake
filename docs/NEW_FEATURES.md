@@ -71,6 +71,9 @@
   Local material polygons follow placement and rebuild separate ground and
   obstacle lookup references. An empty ground list leaves obstacle-only materials
   inactive on the ground; material allocation also preserves interior door links.
+  Walkable surfaces can author receiving-material defaults, local region references,
+  footprints and overlap priority. Compilation partitions receiving faces independently
+  of navigation, preserving joined walking areas across material boundaries.
   Terrain definitions supply forest behaviour and default material; conflicting
   defaults from multiple terrain assets stop export.
   Environmental emitters retain asset-local geometry, delays, volume falloff,

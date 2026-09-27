@@ -103,6 +103,8 @@ const packets = new Map<
     gameplayCandidate?: AssetGameplay;
   }
 >();
+const recoveredMaterials = new Set<number>();
+const recoveredProjectionMaterials = new Set<number>();
 const packet = (asset: string) => {
   let p = packets.get(asset);
   if (!p) {
@@ -420,10 +422,53 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
               planeHeight(obstacle.points, x, y),
             ]),
           );
+          const surfaceId = `${owner.collisionId ?? owner.node}-walk-${regionIndex}`;
+          const materialRegions = obstacle.material_indices.map((material, materialIndex) => {
+            const source = proto.material_sectors[material];
+            if (!source) throw new Error(`Missing material region ${material}`);
+            const id = `${surfaceId}-material-${materialIndex}`;
+            (packet(owner.asset).materials ??= []).push({
+              id,
+              node: owner.node,
+              material: source.material,
+              ground: false,
+              obstacles: [],
+              polygon: source.polygon.points.map(([x, y]) => {
+                const z = planeHeight(obstacle.points, x, y);
+                return localize(owner.part, [x, y + z, z]);
+              }),
+            });
+            recoveredMaterials.add(material);
+            return id;
+          });
+          recoveredProjectionMaterials.add(index);
           packet(owner.asset).surfaces.push({
-            id: `${owner.collisionId ?? owner.node}-walk-${regionIndex}`,
+            id: surfaceId,
             node: owner.node,
             navigationRegion,
+            projectionMaterials: {
+              defaultMaterial: obstacle.default_material,
+              regions: materialRegions,
+              priority: -index,
+              footprint:
+                owners.length === 1
+                  ? obstacle.points.map((point) =>
+                      localize(owner.part, [point.x, point.y, point.z_top]),
+                    )
+                  : descriptors
+                      .get(owner.asset)!
+                      .parts.find((part) => part.node === owner.node)!
+                      .obstacle_local_game!.points.map((point): Vec3 => [
+                        point.x,
+                        point.y,
+                        point.z_top,
+                      ]),
+              priorityHeight: localize(owner.part, [
+                0,
+                0,
+                Math.max(...obstacle.points.map((point) => Math.max(point.z_top, point.z_bottom))),
+              ])[2],
+            },
             vertices,
             kind: motion.is_lift ? "lift" : "walkable",
             holes: region
@@ -1239,7 +1284,6 @@ if (groundMaterialOwners.length === 1) {
     kind: "map-environment-owner",
     candidates: groundMaterialOwners.map((d) => d.id),
   });
-const recoveredMaterials = new Set<number>();
 for (const index of proto.sight_material_indices) {
   const region = proto.material_sectors[index];
   if (!region || groundMaterialOwners.length !== 1) {
@@ -1263,6 +1307,7 @@ for (const index of proto.sight_material_indices) {
 }
 for (const [index, obstacle] of proto.sight_obstacles.entries()) {
   if (!obstacle.material_indices.length) continue;
+  if (obstacle.projection_area !== null && recoveredProjectionMaterials.has(index)) continue;
   const owners = locals.get(index) ?? [];
   if (!owners.length || obstacle.projection_area !== null) {
     unresolved.push({

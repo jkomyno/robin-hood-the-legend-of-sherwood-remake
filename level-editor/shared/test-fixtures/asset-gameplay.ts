@@ -277,6 +277,52 @@ export function soundAssetCompilerFixture() {
   return fixture;
 }
 
+export function projectionMaterialCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  gameplay.collision = "none";
+  gameplay.doors = [];
+  gameplay.surfaces = [0, 1].map((index) => ({
+    id: `platform-${index}`,
+    node: "building-999",
+    height: 20,
+    polygon: [
+      [index * 100, 0],
+      [(index + 1) * 100, 0],
+      [(index + 1) * 100, 100],
+      [index * 100, 100],
+    ],
+    projectionMaterials: { defaultMaterial: index ? 4 : 2, regions: index ? [] : ["inlay"] },
+  }));
+  gameplay.materials = [
+    {
+      id: "inlay",
+      node: "building-999",
+      material: 5,
+      ground: false,
+      obstacles: [],
+      polygon: [
+        [10, 10, 20],
+        [30, 10, 20],
+        [30, 30, 20],
+        [10, 30, 20],
+      ],
+    },
+  ];
+  gameplay.surfaces.push({
+    id: "ground-under-platform",
+    node: "building-999",
+    height: 0,
+    polygon: [
+      [-50, -50],
+      [250, -50],
+      [250, 150],
+      [-50, 150],
+    ],
+  });
+  return fixture;
+}
+
 export function materialAssetCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.materials = [

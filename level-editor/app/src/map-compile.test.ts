@@ -14,6 +14,7 @@ import {
   joinedInteriorCompilerFixture,
   clearanceAssetCompilerFixture,
   materialAssetCompilerFixture,
+  projectionMaterialCompilerFixture,
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
   sightTransitionCompilerFixture,
@@ -201,6 +202,20 @@ test("asset environmental sound export matches the native source fixture", async
     await readFile(
       new URL(
         "../../../crates/robin_engine/tests/fixtures/asset-sound.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("receiving material export matches the native lookup fixture", async () => {
+  const { document, assets } = projectionMaterialCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-projection-material.level.json",
         import.meta.url,
       ),
       "utf8",

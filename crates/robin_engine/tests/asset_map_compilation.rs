@@ -554,6 +554,41 @@ fn materials_keep_ground_and_obstacle_queries_separate() {
 }
 
 #[test]
+fn receiving_materials_keep_navigation_connected_and_ground_independent() {
+    use robin_engine::{coordinates::MapPoint, element::GameMaterial};
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-projection-material.level.json"),
+        &mut assets,
+    );
+    let receivers = &assets.environment.static_sight_obstacles;
+    assert_eq!(receivers.len(), 2);
+    assert_eq!(
+        receivers[0].projection_area_ref(),
+        receivers[1].projection_area_ref()
+    );
+    let materials = &assets.environment.material_sectors;
+    for (point, expected) in [
+        (MapPoint::new(320., 300.), GameMaterial::Water),
+        (MapPoint::new(350., 330.), GameMaterial::Stone),
+        (MapPoint::new(450., 330.), GameMaterial::Leaves),
+    ] {
+        let receiver = receivers
+            .iter()
+            .find(|obstacle| obstacle.contains_point_projection(point))
+            .unwrap();
+        assert_eq!(
+            materials.material_at_with_obstacle(Some(receiver), point),
+            expected
+        );
+        assert!((receiver.compute_top_z_from_projection(point.x, point.y) - 20.).abs() < 0.001);
+        assert_eq!(materials.material_at_layer(point, 0), GameMaterial::Ground);
+    }
+    let grid = engine.fast_grid();
+    assert!(grid.is_reachable_thin(MapPoint::new(350., 330.), MapPoint::new(450., 330.), 1));
+}
+
+#[test]
 fn empty_ground_material_list_does_not_activate_obstacle_materials() {
     use robin_engine::{coordinates::MapPoint, element::GameMaterial};
     let mut value: serde_json::Value =

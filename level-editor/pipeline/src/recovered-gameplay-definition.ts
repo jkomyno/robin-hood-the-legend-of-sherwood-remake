@@ -14,6 +14,7 @@ export interface RecoveredSurface {
   holes: Vec3[][];
   kind?: "walkable" | "lift";
   navigationRegion?: string;
+  projectionMaterials?: AssetWalkableSurface["projectionMaterials"];
 }
 type Locks = { player: boolean; unlockable: boolean; villains: boolean; civilians: boolean };
 export interface RecoveredDoor {
@@ -108,6 +109,9 @@ export function recoveredGameplayDefinition(
       id: draft.id,
       node: draft.node,
       ...(draft.navigationRegion === undefined ? {} : { navigationRegion: draft.navigationRegion }),
+      ...(draft.projectionMaterials === undefined
+        ? {}
+        : { projectionMaterials: structuredClone(draft.projectionMaterials) }),
       polygon: draft.vertices.map(([x, y]) => [x, y]),
       height: draft.vertices.map((p) => p[2]),
       holes: draft.holes.map((hole) => hole.map(([x, y]) => [x, y])),
