@@ -1,5 +1,11 @@
 # Post-port Features
 
+- **Asset-local door state links.** Map transitions can change ordinary/interior
+  door permissions or be activated by a door. Export regenerates native door
+  indices for each placement and rejects missing or conflicting links. Door-only
+  transitions require no mission content. Recovery retains unresolved ownership
+  and state geometry as explicit authoring gaps.
+
 - **Terrain beneath changing obstacles.** Offline recovery separates permanent
   ground from state-dependent exclusions and retains every changing contour and
   patch association for asset authoring. Static diagnostics count omitted

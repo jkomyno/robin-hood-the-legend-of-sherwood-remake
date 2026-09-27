@@ -20,7 +20,7 @@ intended construction, not functionality available today.
 | Navigation graph and fast-find grid | Engine constructs routing and spatial lookup structures from compiled geometry. No copied grids or graph bytes. | Working on synthetic maps |
 | Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. Explicit transition references select initial/applied obstacles. | Static geometry working; sight transitions verified through native initialization, apply and reset; recovered state ownership still incomplete |
 | Projection surfaces / elevation | Generate height planes linked to the new movement areas. | Partial: planar surfaces; elevation-boundary links unfinished |
-| Doors, gates and lock rules | Transform local endpoints and optional click polygons; resolve neighbours geometrically and retain initial/alternate actor lock rules. | Partial: rules preserved; state-transition triggers still missing |
+| Doors, gates and lock rules | Transform local endpoints and optional click polygons; resolve neighbours geometrically and retain initial/alternate actor lock rules. Asset-local transition links either trigger state changes from doors or swap door permissions. | Compiler/native links implemented; recovered ownership and coverage incomplete |
 | Building interiors | Asset-local interior definitions and entrances; generate virtual interior sectors and links. | Working for empty interiors; occupants remain planned |
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
@@ -28,7 +28,7 @@ intended construction, not functionality available today.
 | Light/shadow regions | Transform asset-local planar contours, resolve the receiving navigation layer and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering and interior links; multi-plane regions and ambiguous ownership remain recovery gaps |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
-| Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours and sight-obstacle references, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement and sight transitions implemented; changing visuals, masks and door links remain unfinished |
+| Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
 | Map settings | Scene identity/export bounds; terrain assets supply forest behaviour and default material. Ambience is selected by the mission. | Working in compiler/runtime tests; recovered terrain metadata unpublished |
 | Resource banks and references | Package generated resources and resolve shared sprite/audio/profile dependencies. | Partial: baked images; shared resources use the base installation |
 
@@ -166,7 +166,22 @@ ownership or elevated receiving geometry. One remaining
 navigation-only contour extends beyond its elevated receiving surface and is
 rejected rather than assigned an inferred height. `movementTransitionRecovery` records
 the recovered groups, and each unresolved group has a specific failure reason.
-Visual states, effects and door bindings remain separate pending work.
+Visual states and effects remain separate pending work.
+Door links use local endpoint IDs; compilation allocates fresh non-lift door indices
+for each placement, including duplicates. Native fixture tests verify both link
+directions, permission changes and restoration on reset. Door-only transitions
+are supported without adding navigation or sight changes. Offline recovery maps
+source door indices into local endpoint IDs and reports missing owners, cross-asset
+links and unrecovered geometry in `pending.doorTransitionBindings`. Three of the
+28 door-linked patches across the nine extracted maps now recover: Nottingham's
+three-door courtyard, Leicester's two-door west wing and York's two-door terrace
+permission transitions. The other 25 retain explicit unresolved reasons: 15 have
+missing door owners, and 10 still need their changing movement/sight geometry recovered.
+All eight initial/alternate permission fields match the source for those seven doors.
+The native round-trip harness loads all six door-bearing map diagnostics and
+applies/resets their eleven recovered transitions, including these three permission
+transitions. It checks both halves of door permissions as well as movement and sight state.
+This does not establish complete door-transition coverage or publish those drafts.
 The twenty-one recovered transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.
 Transition reference points may lie inside static blockers; they must still resolve

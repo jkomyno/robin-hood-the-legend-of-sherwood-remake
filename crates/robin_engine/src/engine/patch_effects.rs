@@ -734,6 +734,57 @@ mod tests {
         );
     }
 
+    #[test]
+    fn editor_compiled_door_links_wire_both_directions_and_restore_rights() {
+        let (mut engine, assets) = load_compiled_transition(
+            include_bytes!("../../tests/fixtures/asset-door-transition.level.json"),
+            (2000., 2000.),
+        );
+        let trigger = crate::patch::PatchIndex::new(0).unwrap();
+        let swap = crate::patch::PatchIndex::new(1).unwrap();
+        let domains = &engine.script_domains.interactables;
+        assert_eq!(domains.doors.len(), 3);
+        assert_eq!(domains.doors[2].patch_index, Some(trigger));
+        assert_eq!(domains.doors[0].patch_index, None);
+        assert_eq!(domains.doors[1].patch_index, None);
+        assert!(domains.patches[0].door_indices.is_empty());
+        assert_eq!(domains.patches[1].door_indices, vec![0, 1]);
+        let rights = |engine: &EngineInner| {
+            engine
+                .script_domains
+                .interactables
+                .doors
+                .iter()
+                .map(|door| {
+                    [
+                        door.locked_pc,
+                        door.unlockable,
+                        door.locked_npc_villain,
+                        door.locked_npc_civilian,
+                    ]
+                })
+                .collect::<Vec<_>>()
+        };
+        let before = rights(&engine);
+        let sim = crate::sim_rng::test_context();
+        engine.apply_patch(TickCtx::new(&sim, &assets), swap);
+        let after = rights(&engine);
+        assert_eq!(after[0], [true, false, true, false]);
+        assert_eq!(after[1], [false, false, true, false]);
+        assert_eq!(after[2], before[2]);
+        engine.reset_patch(TickCtx::new(&sim, &assets), swap);
+        assert_eq!(rights(&engine), before);
+        let linked = engine.script_domains.interactables.doors[2]
+            .patch_index
+            .unwrap();
+        engine.apply_patch(TickCtx::new(&sim, &assets), linked);
+        assert!(engine.script_domains.interactables.patches[0].applied);
+        assert_eq!(rights(&engine), before);
+        engine.reset_patch(TickCtx::new(&sim, &assets), linked);
+        assert!(!engine.script_domains.interactables.patches[0].applied);
+        assert_eq!(rights(&engine), before);
+    }
+
     fn load_compiled_transition(
         bytes: &[u8],
         bg_pixel_dims: (f32, f32),
@@ -799,7 +850,10 @@ mod tests {
             let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
             let transitions: Vec<crate::level_data::CompiledMovementTransition> =
                 serde_json::from_value(
-                    descriptor["asset_geometry"]["movement_transitions"].clone(),
+                    descriptor["asset_geometry"]
+                        .get("movement_transitions")
+                        .cloned()
+                        .unwrap_or_else(|| serde_json::json!([])),
                 )
                 .unwrap();
             let dims = &descriptor["walkable_polygon"][2];
@@ -815,7 +869,47 @@ mod tests {
                 transitions.len()
             );
             let sim = crate::sim_rng::test_context();
+            let rights = |engine: &EngineInner| {
+                engine
+                    .script_domains
+                    .interactables
+                    .doors
+                    .iter()
+                    .map(|door| {
+                        [
+                            door.locked_pc,
+                            door.unlockable,
+                            door.locked_npc_villain,
+                            door.locked_npc_civilian,
+                            door.locked_pc_after_patch,
+                            door.unlockable_after_patch,
+                            door.locked_npc_villain_after_patch,
+                            door.locked_npc_civilian_after_patch,
+                        ]
+                    })
+                    .collect::<Vec<_>>()
+            };
             for (index, transition) in transitions.iter().enumerate() {
+                let before_rights = rights(&engine);
+                let mut expected_rights = before_rights.clone();
+                let patch = crate::patch::PatchIndex::new(index as u32).unwrap();
+                if let Some(links) = &transition.door_links {
+                    for &door in &links.indices {
+                        match links.mode {
+                            crate::level_data::CompiledDoorLinkMode::TriggerTransition => {
+                                assert_eq!(
+                                    engine.script_domains.interactables.doors[door as usize]
+                                        .patch_index,
+                                    Some(patch),
+                                    "{file}"
+                                );
+                            }
+                            crate::level_data::CompiledDoorLinkMode::SwapRights => {
+                                expected_rights[door as usize].rotate_left(4);
+                            }
+                        }
+                    }
+                }
                 let before_states = engine.world.pathfinder.states.clone();
                 let before_sight = engine.world.static_sight_obstacle_active.clone();
                 let before_sectors = engine.world.fast_grid.sector_active.clone();
@@ -840,8 +934,13 @@ mod tests {
                 for &sight in &transition.applied_sight {
                     assert!(!before_sight[sight as usize]);
                 }
-                let patch = crate::patch::PatchIndex::new(index as u32).unwrap();
                 engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+                assert_eq!(
+                    rights(&engine),
+                    expected_rights,
+                    "{file}: {}",
+                    transition.id
+                );
                 assert_eq!(
                     engine.world.pathfinder.states, expected_states,
                     "{file}: {}",
@@ -876,6 +975,7 @@ mod tests {
                     }
                 }
                 engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+                assert_eq!(rights(&engine), before_rights, "{file}: {}", transition.id);
                 assert_eq!(engine.world.pathfinder.states, before_states, "{file}");
                 assert_eq!(
                     engine.world.static_sight_obstacle_active, before_sight,

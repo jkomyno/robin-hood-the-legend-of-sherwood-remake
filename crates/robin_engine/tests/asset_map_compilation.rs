@@ -344,6 +344,38 @@ fn sight_transitions_reject_missing_duplicate_and_projection_obstacles() {
 }
 
 #[test]
+fn compiled_door_links_reject_missing_duplicate_and_conflicting_bindings() {
+    let source: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-door-transition.level.json"))
+            .unwrap();
+    let loaded = LoadedLevel::hackable_from_json(&serde_json::to_vec(&source).unwrap()).unwrap();
+    assert!(loaded.proto.patches[0].door_triggered);
+    assert!(!loaded.proto.patches[0].triggers_door);
+    assert_eq!(loaded.proto.patches[0].door_indices, vec![2]);
+    assert!(!loaded.proto.patches[1].door_triggered);
+    assert!(loaded.proto.patches[1].triggers_door);
+    assert_eq!(loaded.proto.patches[1].door_indices, vec![0, 1]);
+    for indices in [vec![], vec![3], vec![0, 0]] {
+        let mut bad = source.clone();
+        bad["asset_geometry"]["movement_transitions"][1]["door_links"]["indices"] =
+            serde_json::json!(indices);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+                .unwrap_err()
+                .contains("transition door binding")
+        );
+    }
+    let mut bad = source;
+    bad["asset_geometry"]["movement_transitions"][1]["door_links"] =
+        serde_json::json!({"mode":"trigger-transition","indices":[2]});
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+            .unwrap_err()
+            .contains("transition door binding")
+    );
+}
+
+#[test]
 fn compiled_movement_transitions_reject_stale_or_unbound_state_bits() {
     let value: serde_json::Value = serde_json::from_slice(include_bytes!(
         "fixtures/asset-movement-transition.level.json"

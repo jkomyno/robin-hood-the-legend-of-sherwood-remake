@@ -23,8 +23,23 @@ import {
   multiPlaneRegionCompilerFixture,
   nonrenderingVolumeCompilerFixture,
   crossAssetJumpCompilerFixture,
+  doorTransitionCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("door transition export matches the native door wiring fixture", async () => {
+  const { document, assets } = doorTransitionCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-door-transition.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("cross-asset jumps export the geometry verified by the native traversal fixture", async () => {
   const { document, assets } = crossAssetJumpCompilerFixture();

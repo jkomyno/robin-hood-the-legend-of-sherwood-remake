@@ -625,3 +625,43 @@ export function interiorAssetCompilerFixture() {
   fixture.document.map = "Interior asset fixture";
   return fixture;
 }
+
+export function doorTransitionCompilerFixture() {
+  const fixture = interiorAssetCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  for (const door of gameplay.interiors![0]!.doors)
+    door.afterTransition = {
+      locked: !door.locked,
+      unlockable: false,
+      lockedVillains: true,
+      lockedCivilians: false,
+    };
+  gameplay.movementTransitions = [
+    {
+      id: "open-gate",
+      node: "building-999",
+      waypoint: [20, 20, 0],
+      active: true,
+      definitive: false,
+      initial: [],
+      applied: [],
+      applyPolygon: [],
+      noApplyPolygon: [],
+      doorLinks: { mode: "trigger-transition", ids: ["passage"] },
+    },
+    {
+      id: "room-rights",
+      node: "building-999",
+      waypoint: [20, 20, 0],
+      active: true,
+      definitive: false,
+      initial: [],
+      applied: [],
+      applyPolygon: [],
+      noApplyPolygon: [],
+      doorLinks: { mode: "swap-rights", ids: ["entrance-0", "entrance-1"] },
+    },
+  ];
+  fixture.document.map = "Door transition asset fixture";
+  return fixture;
+}

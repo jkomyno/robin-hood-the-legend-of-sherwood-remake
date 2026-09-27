@@ -141,6 +141,8 @@ export interface AssetMovementTransition {
   /** Local part/volume IDs enabled before and after the transition, respectively. */
   initialSight?: string[];
   appliedSight?: string[];
+  /** Local ordinary/interior door IDs. Lift traversal doors cannot bind map patches. */
+  doorLinks?: { mode: "trigger-transition" | "swap-rights"; ids: string[] };
   /** Trigger contours at the waypoint's local elevation; empty means externally activated. */
   applyPolygon: Point[];
   noApplyPolygon: Point[];
@@ -220,6 +222,7 @@ export interface CompiledAssetGeometry {
     motion_changes: { layer: number; sector: number; changing_obstacle: number }[];
     initial_sight?: number[];
     applied_sight?: number[];
+    door_links?: { mode: "trigger-transition" | "swap-rights"; indices: number[] };
   }[];
   doors: {
     door_type: number;
@@ -296,6 +299,7 @@ export function validateAssetGameplay(
   if (data.movementTransitions !== undefined && !Array.isArray(data.movementTransitions))
     fail("invalid movement transitions");
   const changingSight = new Set<string>();
+  const triggeringDoors = new Set<string>();
   for (const transition of data.movementTransitions ?? []) {
     feature(transition);
     if (
@@ -307,9 +311,30 @@ export function validateAssetGameplay(
       (!transition.initial.length &&
         !transition.applied.length &&
         !transition.initialSight?.length &&
-        !transition.appliedSight?.length)
+        !transition.appliedSight?.length &&
+        !transition.doorLinks)
     )
       fail(`invalid movement transition ${transition.id}`);
+    const links = transition.doorLinks;
+    if (links !== undefined) {
+      if (
+        !links ||
+        !["trigger-transition", "swap-rights"].includes(links.mode) ||
+        !Array.isArray(links.ids) ||
+        !links.ids.length ||
+        new Set(links.ids).size !== links.ids.length
+      )
+        fail("invalid transition door links");
+      const doors = [...data.doors, ...(data.interiors ?? []).flatMap((room) => room.doors)];
+      for (const id of links.ids) {
+        if (typeof id !== "string" || !doors.some((door) => door.id === id))
+          fail(`transition references missing ordinary/interior door ${id}`);
+        if (links.mode === "trigger-transition") {
+          if (triggeringDoors.has(id)) fail(`door ${id} triggers multiple transitions`);
+          triggeringDoors.add(id);
+        }
+      }
+    }
     for (const refs of [transition.initialSight, transition.appliedSight]) {
       if (refs === undefined) continue;
       if (!Array.isArray(refs)) fail("invalid sight transition references");

@@ -4,6 +4,7 @@ import {
   liftAssetCompilerFixture,
   interiorAssetCompilerFixture,
   movementTransitionCompilerFixture,
+  doorTransitionCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import {
@@ -68,6 +69,28 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
     ],
   };
 }
+
+test("recovered door links retain endpoint identities and independent draft data", () => {
+  const { hut, document, assets } = doorTransitionCompilerFixture();
+  const expected = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  const packet = packetFromFixture(hut.gameplay!);
+  const ids = new Map(
+    packet.connections.flatMap((connection) =>
+      connection.endpoints.map(
+        (endpoint) => [endpoint.id, `${connection.id}/${endpoint.id}`] as const,
+      ),
+    ),
+  );
+  packet.movementTransitions = structuredClone(hut.gameplay!.movementTransitions);
+  for (const transition of packet.movementTransitions!)
+    transition.doorLinks!.ids = transition.doorLinks!.ids.map((id) => ids.get(id)!);
+  hut.gameplay = recoveredGameplayDefinition(packet, hut);
+  packet.movementTransitions![0]!.doorLinks!.ids[0] = "missing";
+  assert.deepEqual(
+    compileAssetGameplay(document, assets, [0, 0, 2000, 2000]).movement_transitions,
+    expected.movement_transitions,
+  );
+});
 
 test("reviewed movement transitions survive draft conversion without shared mutable data", () => {
   const { hut, document, assets } = movementTransitionCompilerFixture();

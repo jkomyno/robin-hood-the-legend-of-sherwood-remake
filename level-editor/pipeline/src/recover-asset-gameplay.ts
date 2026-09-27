@@ -597,6 +597,7 @@ const localEndpoint = (
   return localize(part, [point[0], point[1] + z, z]);
 };
 const movementTransitionRecovery: {
+  patch: number;
   sector: number;
   layer: number;
   pair: number;
@@ -671,9 +672,10 @@ for (const area of movementStateInventory)
       }
       (p.movementTransitions ??= []).push(definition);
       p.issues.push(
-        "Movement/sight states recovered; visual states, effects and door bindings still need separate authoring",
+        "Movement/sight states recovered; visual states and effects still need separate authoring",
       );
       movementTransitionRecovery.push({
+        patch: change.patches[0]!,
         sector: area.sector,
         layer: area.layer,
         pair: change.pair,
@@ -806,12 +808,20 @@ type SourceDoor = {
   locked_npc_civilian_after_patch: boolean;
 };
 let recoveredBuildings = 0;
+const recoveredDoors = new Map<
+  number,
+  { asset: string; id: string; node: string; part: Level3DObject }
+>();
+let doorOffset = 0;
 for (const [index, entry] of proto.buildings.entries()) {
   const building = entry as {
     Building?: { doors: SourceDoor[] };
     StandaloneDoors?: { doors: SourceDoor[] };
   };
   const groups = recoveryDoorGroups(building);
+  const doorIndices = new Map(
+    groups.flatMap((group) => group.doors).map((door) => [door, doorOffset++] as const),
+  );
   if (!groups.length) {
     recoveredBuildings++;
     continue;
@@ -893,11 +903,20 @@ for (const [index, entry] of proto.buildings.entries()) {
           },
         };
       });
+      const connectionId = `${isInterior ? "interior" : "passage"}-${packet(owner.asset).connections.length}`;
       packet(owner.asset).connections.push({
-        id: `${isInterior ? "interior" : "passage"}-${packet(owner.asset).connections.length}`,
+        id: connectionId,
         node: owner.node,
         kind: connection.kind,
         endpoints,
+      });
+      doors.forEach((door, i) => {
+        recoveredDoors.set(doorIndices.get(door)!, {
+          asset: owner.asset,
+          id: `${connectionId}/${endpoints[i]!.id}`,
+          node: owner.node,
+          part: owner.part,
+        });
       });
       recovered++;
     } catch (error) {
@@ -910,6 +929,66 @@ for (const [index, entry] of proto.buildings.entries()) {
     }
   }
   if (recovered === groups.length) recoveredBuildings++;
+}
+const doorTransitionRecovery: { patch: number; asset: string; transition: string }[] = [];
+for (const [index, source] of proto.patches.entries()) {
+  if (!source.door_indices.length) continue;
+  try {
+    const transitions = movementTransitionRecovery.filter((entry) => entry.patch === index);
+    const doorOwners = source.door_indices.map((door) => {
+      const owner = recoveredDoors.get(door);
+      if (!owner) throw new Error(`Missing door ownership ${door}`);
+      return owner;
+    });
+    const owner = doorOwners[0]!;
+    if (doorOwners.some((entry) => entry.asset !== owner.asset))
+      throw new Error("Linked doors belong to different assets");
+    if (!source.door_triggered && !source.triggers_door)
+      throw new Error("Door binding has neither trigger nor rights-swap semantics");
+    if (transitions.length > 1)
+      throw new Error("Door binding needs one recovered asset-local transition");
+    const recovered = transitions[0];
+    if (recovered && recovered.asset !== owner.asset)
+      throw new Error("Door and its transition belong to different assets");
+    if (
+      !recovered &&
+      (source.old_sight_obstacles.length ||
+        source.new_sight_obstacles.length ||
+        movementStateInventory.some((area) =>
+          area.transitions.some((change) => change.patches.includes(index)),
+        ))
+    )
+      throw new Error("Door transition has unrecovered movement or sight changes");
+    const p = packet(owner.asset);
+    const transition = recovered
+      ? p.movementTransitions!.find((entry) => entry.id === recovered.transition)!
+      : recoverMovementTransition({
+          id: `door-change-${index}`,
+          node: owner.node,
+          patch: source,
+          initial: [],
+          applied: [],
+          initialSight: [],
+          appliedSight: [],
+          receivers: [],
+          groundLayer: source.layer === 0,
+          waypointHeight: heightAt(source.sector, source.layer, source.waypoint),
+          localize: (point) => localize(owner.part, point),
+        });
+    transition.doorLinks = {
+      mode: source.door_triggered ? "trigger-transition" : "swap-rights",
+      ids: doorOwners.map((entry) => entry.id),
+    };
+    if (!recovered) (p.movementTransitions ??= []).push(transition);
+    p.issues.push("Door bindings recovered; visual states and effects need separate authoring");
+    doorTransitionRecovery.push({
+      patch: index,
+      asset: owner.asset,
+      transition: transition.id,
+    });
+  } catch (error) {
+    unresolved.push({ kind: "door-transition", patch: index, reason: String(error) });
+  }
 }
 // Ground regions belong to the terrain asset. Obstacle-only regions must have
 // explicit local owners; unresolved projection links stay in the recovery report.
@@ -1167,6 +1246,9 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
   }
 }
 const pending = {
+  doorTransitionBindings:
+    proto.patches.filter((patch) => patch.door_indices.length > 0).length -
+    doorTransitionRecovery.length,
   movementTransitions:
     movementStateInventory.reduce((sum, area) => sum + area.transitions.length, 0) -
     movementTransitionRecovery.length,
@@ -1218,6 +1300,7 @@ const report = {
   definitionValidation,
   movementStateInventory,
   movementTransitionRecovery,
+  doorTransitionRecovery,
   candidateCompilation: diagnostics.compilation,
   staticGeometryDiagnostic: diagnostics.staticGeometry,
   coverage,

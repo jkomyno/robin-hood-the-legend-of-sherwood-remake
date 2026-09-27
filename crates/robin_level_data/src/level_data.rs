@@ -2178,6 +2178,24 @@ pub struct CompiledMovementTransition {
     pub initial_sight: Vec<u16>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub applied_sight: Vec<u16>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub door_links: Option<CompiledTransitionDoors>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
+#[serde(deny_unknown_fields)]
+pub struct CompiledTransitionDoors {
+    pub mode: CompiledDoorLinkMode,
+    pub indices: Vec<u16>,
+}
+
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, bitcode::Encode, bitcode::Decode,
+)]
+#[serde(rename_all = "kebab-case")]
+pub enum CompiledDoorLinkMode {
+    TriggerTransition,
+    SwapRights,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
@@ -2691,18 +2709,42 @@ impl LoadedLevel {
             let mut transition_ids = std::collections::BTreeSet::new();
             let mut transition_sight = std::collections::BTreeSet::new();
             let mut transition_pairs = std::collections::BTreeMap::<(u16, u16), u32>::new();
+            let non_lift_door_count = geometry.doors.len()
+                + geometry
+                    .buildings
+                    .iter()
+                    .map(|entry| match entry {
+                        RawBuildingEntry::Building { doors }
+                        | RawBuildingEntry::StandaloneDoors { doors } => doors.len(),
+                    })
+                    .sum::<usize>();
+            let mut triggering_doors = std::collections::BTreeSet::new();
             for transition in &geometry.movement_transitions {
                 if transition.id.is_empty()
                     || !transition_ids.insert(&transition.id)
                     || !motion_states.contains_key(&(transition.sector, transition.layer))
                     || (transition.motion_changes.is_empty()
                         && transition.initial_sight.is_empty()
-                        && transition.applied_sight.is_empty())
+                        && transition.applied_sight.is_empty()
+                        && transition.door_links.is_none())
                     || [&transition.apply_polygon, &transition.no_apply_polygon]
                         .iter()
                         .any(|p| !p.points.is_empty() && p.points.len() < 3)
                 {
                     return Err("invalid compiled movement transition".into());
+                }
+                if let Some(links) = &transition.door_links {
+                    let mut seen = std::collections::BTreeSet::new();
+                    if links.indices.is_empty()
+                        || links.indices.iter().any(|index| {
+                            usize::from(*index) >= non_lift_door_count
+                                || !seen.insert(*index)
+                                || (links.mode == CompiledDoorLinkMode::TriggerTransition
+                                    && !triggering_doors.insert(*index))
+                        })
+                    {
+                        return Err("invalid or multiply assigned transition door binding".into());
+                    }
                 }
                 for index in transition
                     .initial_sight
@@ -2934,9 +2976,16 @@ impl LoadedLevel {
                         new_masking_sector: SectorPolygon { points: Vec::new() },
                         apply_sector: transition.apply_polygon,
                         no_apply_sector: transition.no_apply_polygon,
-                        door_triggered: false,
-                        triggers_door: false,
-                        door_indices: Vec::new(),
+                        door_triggered: transition.door_links.as_ref().is_some_and(|links| {
+                            links.mode == CompiledDoorLinkMode::TriggerTransition
+                        }),
+                        triggers_door: transition
+                            .door_links
+                            .as_ref()
+                            .is_some_and(|links| links.mode == CompiledDoorLinkMode::SwapRights),
+                        door_indices: transition
+                            .door_links
+                            .map_or_else(Vec::new, |links| links.indices),
                     });
                 }
             }

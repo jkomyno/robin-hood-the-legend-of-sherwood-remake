@@ -16,11 +16,56 @@ import {
   compoundLiftCompilerFixture,
   multiPlaneRegionCompilerFixture,
   crossAssetJumpCompilerFixture,
+  doorTransitionCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("door-only transitions resolve native interior-first indices independently for each placement", () => {
+  const { document, assets, hut } = doorTransitionCompilerFixture();
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    compiled.movement_transitions!.map((t) => t.door_links),
+    [
+      { mode: "trigger-transition", indices: [2] },
+      { mode: "swap-rights", indices: [0, 1] },
+    ],
+  );
+  const part = structuredClone(document.objects.find((p) => p.group === "hut-a")!);
+  part.id = "copy";
+  part.group = "hut-b";
+  part.transform.dx += 300;
+  document.objects.push(part);
+  document.groups.push({
+    ...structuredClone(document.groups.find((g) => g.id === "hut-a")!),
+    id: "hut-b",
+  });
+  const duplicate = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    duplicate.movement_transitions!.map((t) => t.door_links),
+    [
+      { mode: "trigger-transition", indices: [4] },
+      { mode: "swap-rights", indices: [0, 1] },
+      { mode: "trigger-transition", indices: [5] },
+      { mode: "swap-rights", indices: [2, 3] },
+    ],
+  );
+  hut.gameplay!.movementTransitions![0]!.doorLinks!.ids = ["missing"];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /missing ordinary\/interior door/,
+  );
+  hut.gameplay!.movementTransitions![0]!.doorLinks!.ids = ["passage"];
+  hut.gameplay!.movementTransitions![1]!.doorLinks = {
+    mode: "trigger-transition",
+    ids: ["passage"],
+  };
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /triggers multiple transitions/,
+  );
+});
 test("sight transitions rebuild local references and reject ambiguous obstacle control", () => {
   const { document, assets, hut } = sightTransitionCompilerFixture();
   const geometry = compileAssetGameplay(document, assets, bounds);

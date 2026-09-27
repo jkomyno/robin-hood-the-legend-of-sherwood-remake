@@ -179,6 +179,7 @@ export function compileAssetGameplay(
     changes: { layer: number; sector: number; changing_obstacle: number }[];
     initialSight: number[];
     appliedSight: number[];
+    doorLinks?: { mode: "trigger-transition" | "swap-rights"; ids: string[] };
   }[] = [];
   let lifts: PlacedLiftSegment[] = [];
   const interiors: string[] = [];
@@ -400,6 +401,14 @@ export function compileAssetGameplay(
         changes: [],
         initialSight: sightRefs(t.initialSight),
         appliedSight: sightRefs(t.appliedSight),
+        ...(t.doorLinks
+          ? {
+              doorLinks: {
+                mode: t.doorLinks.mode,
+                ids: t.doorLinks.ids.map((id) => `${placement.id}/${id}`),
+              },
+            }
+          : {}),
       });
     }
     for (const surface of [
@@ -769,6 +778,12 @@ export function compileAssetGameplay(
       layer_in: inside.layer,
     };
   });
+  // Native non-lift door allocation follows interiors, then standalone passages.
+  const patchDoors = [
+    ...interiors.flatMap((id) => doors.filter((door) => door.interior === id)),
+    ...doors.filter((door) => !door.lift && !door.interior),
+  ];
+  const doorIndices = new Map(patchDoors.map((door, index) => [door.name, index]));
   return {
     ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
@@ -803,7 +818,12 @@ export function compileAssetGameplay(
     ...(transitions.length
       ? {
           movement_transitions: transitions.map((t) => {
-            if (!t.changes.length && !t.initialSight.length && !t.appliedSight.length)
+            if (
+              !t.changes.length &&
+              !t.initialSight.length &&
+              !t.appliedSight.length &&
+              !t.doorLinks
+            )
               throw new Error(`${t.id}: movement transition affects no walkable area`);
             // State reference points identify a surface even inside its collision contours.
             // Door endpoints and jump landing anchors still require an unblocked position.
@@ -820,6 +840,19 @@ export function compileAssetGameplay(
               motion_changes: t.changes,
               ...(t.initialSight.length ? { initial_sight: t.initialSight } : {}),
               ...(t.appliedSight.length ? { applied_sight: t.appliedSight } : {}),
+              ...(t.doorLinks
+                ? {
+                    door_links: {
+                      mode: t.doorLinks.mode,
+                      indices: t.doorLinks.ids.map((id) => {
+                        const index = doorIndices.get(id);
+                        if (index === undefined || index > 65535)
+                          throw new Error(`${t.id}: unresolved transition door ${id}`);
+                        return index;
+                      }),
+                    },
+                  }
+                : {}),
             };
           }),
         }
