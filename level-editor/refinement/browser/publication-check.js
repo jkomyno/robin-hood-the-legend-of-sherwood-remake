@@ -16,7 +16,7 @@
  const library=(await openHttpLibrary()).handle;
  // Independently inspect the same real GLBs through the production loader.
  const {prepareMapCandidate}=await import('/src/map-candidate.ts');
- const {PatchDisplay}=await import('/src/patch-display.ts');
+ const {PatchDisplay,applyPlacementPatches}=await import('/src/patch-display.ts');
  const {prepareProjectionAsset}=await import('/src/projection-library.ts');
  const {disposeObjectResources}=await import('/src/resources.ts');
  window.__publicationProgress={phase:'production-loader-and-state-preflight'};
@@ -29,15 +29,21 @@
  assert(groundMeshes>0&&groundTextures>0,'Ground geometry/texture absent');
  const generated={};candidate.asset.traverse(object=>{for(const material of Array.isArray(object.material)?object.material:[object.material]){const sha=material?.userData.generated_source_sha256;if(sha)(generated[sha]??=new Set()).add(material);}});
  for(const [sha,count] of Object.entries(config.expected.generated_materials??{}))assert(generated[sha]?.size===count,'Generated material provenance '+sha);
- const patches=new Set();candidate.asset.traverse(o=>{if(o.userData.reveal_material_patch)patches.add(o.userData.reveal_material_patch);for(const k of ['reveal_hide_when_applied','reveal_show_when_applied'])for(const id of o.userData[k]??[])patches.add(id);});
+ // Models carry asset-local appearance IDs; each placement binds them to mission patches
+ // (placement or group `patches`). Check per-placement copies, exactly as the viewport builds them.
+ const placed=new candidate.asset.constructor();const available=new Set(candidate.sources.keys());
+ for(const part of candidate.document.objects){const source=candidate.sources.get(part.node);assert(source,'Missing placed source '+part.node);const node=source.clone(true);applyPlacementPatches(node,candidate.document,part,available);placed.add(node);}
+ const unbound=new Set();placed.traverse(o=>{const u=o.userData;for(const id of [u.reveal_material_patch,...(u.reveal_hide_when_applied??[]),...(u.reveal_show_when_applied??[])])if(typeof id==='string'&&/^appearance-\d+$/.test(id))unbound.add(id);});
+ assert(!unbound.size,'Placed appearance IDs without mission patch binding '+[...unbound].join(','));
+ const patches=new Set();placed.traverse(o=>{if(o.userData.reveal_material_patch)patches.add(o.userData.reveal_material_patch);for(const k of ['reveal_hide_when_applied','reveal_show_when_applied'])for(const id of o.userData[k]??[])patches.add(id);});
  for(const id of config.expected.required_patches)assert(patches.has(id),'Required patch missing '+id);
  const display=new PatchDisplay(),patchChecks=[];
- const checkVisible=active=>{let matched=0;candidate.asset.traverse(o=>{const u=o.userData;let visible=true,governed=false;if(u.reveal_material_patch){governed=true;visible=(u.reveal_material_state==='revealed')===active.has(u.reveal_material_patch);}if(u.reveal_hide_when_applied){governed=true;visible=visible&&!u.reveal_hide_when_applied.some(p=>active.has(p));}if(u.reveal_show_when_applied){governed=true;visible=visible&&u.reveal_show_when_applied.some(p=>active.has(p));}if(governed){assert(o.visible===visible,'Patch visibility '+o.name);matched++;}});assert(matched>0||!patches.size,'No governed patch nodes');return matched;};
- const transforms=[];candidate.asset.traverse(o=>transforms.push([o,o.matrix.toArray()]));
- display.apply(candidate.asset);checkVisible(new Set());
- for(const id of patches){display.set(id,true);display.apply(candidate.asset);const nodes=checkVisible(new Set([id]));display.set(id,false);display.apply(candidate.asset);checkVisible(new Set());patchChecks.push({id,nodes,roundTrip:true});}
- for(const id of patches)display.set(id,true);display.apply(candidate.asset);checkVisible(patches);
- for(const id of patches)display.set(id,false);display.apply(candidate.asset);checkVisible(new Set());
+ const checkVisible=active=>{let matched=0;placed.traverse(o=>{const u=o.userData;let visible=true,governed=false;if(u.reveal_material_patch){governed=true;visible=(u.reveal_material_state==='revealed')===active.has(u.reveal_material_patch);}if(u.reveal_hide_when_applied){governed=true;visible=visible&&!u.reveal_hide_when_applied.some(p=>active.has(p));}if(u.reveal_show_when_applied){governed=true;visible=visible&&u.reveal_show_when_applied.some(p=>active.has(p));}if(governed){assert(o.visible===visible,'Patch visibility '+o.name);matched++;}});assert(matched>0||!patches.size,'No governed patch nodes');return matched;};
+ const transforms=[];placed.traverse(o=>transforms.push([o,o.matrix.toArray()]));
+ display.apply(placed);checkVisible(new Set());
+ for(const id of patches){display.set(id,true);display.apply(placed);const nodes=checkVisible(new Set([id]));display.set(id,false);display.apply(placed);checkVisible(new Set());patchChecks.push({id,nodes,roundTrip:true});}
+ for(const id of patches)display.set(id,true);display.apply(placed);checkVisible(patches);
+ for(const id of patches)display.set(id,false);display.apply(placed);checkVisible(new Set());
  for(const [o,m]of transforms)assert(JSON.stringify(o.matrix.toArray())===JSON.stringify(m),'Patch preview changed geometry transform '+o.name);
  const selectionGroups=candidate.document.groups.map(group=>({id:group.id,name:group.name??group.id,parts:candidate.document.objects.filter(part=>part.group===group.id).map(part=>({id:part.id,name:part.name??part.id}))}));
  const summary={groundMeshes,groundTextures,generatedCounts:Object.fromEntries(Object.entries(generated).map(([sha,set])=>[sha,set.size])),patchIds:[...patches],patchChecks,selectionGroups};

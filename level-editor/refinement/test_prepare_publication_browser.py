@@ -84,3 +84,16 @@ class FirstPublicationTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class BoundPatchesTest(unittest.TestCase):
+    def test_placements_bind_asset_local_appearances(self):
+        from prepare_publication_browser import bound_patches
+        nodes = [{'extras': {'reveal_hide_when_applied': ['appearance-1']}},
+                 {'extras': {'reveal_show_when_applied': ['appearance-1', 'appearance-2']}},
+                 {'extras': {'reveal_material_patch': 'patch-legacy'}}]
+        document = {'groups': [{'id': 'hall', 'patches': {'hall': {'appearance-1': 'patch-010', 'appearance-2': 'patch-011'}}}],
+                    'objects': [{'node': 'asset:gate:x', 'patches': {'gate': {'appearance-1': 'patch-003'}}}]}
+        self.assertEqual(bound_patches(nodes, document), {'patch-010', 'patch-011', 'patch-003', 'patch-legacy'})
+        with self.assertRaisesRegex(ValueError, 'appearance-2'):
+            bound_patches(nodes, {'groups': [{'id': 'hall', 'patches': {'hall': {'appearance-1': 'patch-010'}}}]})

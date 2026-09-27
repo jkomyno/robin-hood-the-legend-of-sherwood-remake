@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { endpointPatchRule, patchBindingExtras, remapPatchExtras, type Level3D } from "@rle/shared";
 
 export function isEffectivelyVisible(object: THREE.Object3D) {
   for (let node: THREE.Object3D | null = object; node; node = node.parent)
@@ -54,5 +55,30 @@ export class PatchDisplay {
       }
       if (controlled) object.visible = visible;
     });
+  }
+}
+
+/**
+ * Bind one placed part's asset-local appearance IDs to mission patch IDs, exactly as the
+ * editor viewport does: the placement's (or its group's) `patches` mapping for the part's
+ * asset renames every reveal trigger below `node`, and grouped endpoint variants gain their
+ * hide/show rule. `node` must be this placement's own copy of the source node.
+ */
+export function applyPlacementPatches(
+  node: THREE.Object3D,
+  document: Pick<Level3D, "groups">,
+  part: { node: string; group?: string; patches?: Level3D["objects"][number]["patches"] },
+  availableNodes: ReadonlySet<string>,
+) {
+  const asset = part.node.split(":")[1]!;
+  const group = part.group ? document.groups.find((item) => item.id === part.group) : undefined;
+  const patches = part.group ? group?.patches?.[asset] : part.patches?.[asset];
+  if (patches)
+    node.traverse((child) => {
+      child.userData = remapPatchExtras(child.userData, patches);
+    });
+  if (part.group) {
+    const rule = endpointPatchRule(part.node, availableNodes, group?.patches);
+    if (rule) Object.assign(node.userData, patchBindingExtras(rule));
   }
 }

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "three";
-import { PatchDisplay, isEffectivelyVisible } from "./patch-display.ts";
+import { PatchDisplay, applyPlacementPatches, isEffectivelyVisible } from "./patch-display.ts";
 
 test("patch state selects one material alternative and hides only reviewed covers", () => {
   const root = new THREE.Group(),
@@ -92,4 +92,27 @@ test("receiver visibility composes with material alternatives and rejects malfor
     root.userData = { reveal_show_when_applied: triggers };
     assert.throws(() => display.apply(root), /Invalid reviewed patch receiver/);
   }
+});
+
+test("placement patches rename asset-local appearance IDs to mission patches", () => {
+  const node = new THREE.Group(),
+    roof = new THREE.Group(),
+    room = new THREE.Group();
+  roof.userData = { reveal_hide_when_applied: ["appearance-1"] };
+  room.userData = { reveal_show_when_applied: ["appearance-1"] };
+  node.add(roof, room);
+  applyPlacementPatches(
+    node,
+    { groups: [] },
+    { node: "asset:house:building-001", patches: { house: { "appearance-1": "patch-006" } } },
+    new Set(),
+  );
+  assert.deepEqual(roof.userData.reveal_hide_when_applied, ["patch-006"]);
+  assert.deepEqual(room.userData.reveal_show_when_applied, ["patch-006"]);
+  const display = new PatchDisplay();
+  display.apply(node);
+  assert.deepEqual([roof.visible, room.visible], [true, false]);
+  display.set("patch-006", true);
+  display.apply(node);
+  assert.deepEqual([roof.visible, room.visible], [false, true]);
 });

@@ -16,9 +16,6 @@ import {
   groupCentroid,
   groupParts,
   partPivot,
-  patchBindingExtras,
-  endpointPatchRule,
-  remapPatchExtras,
   transformedObstacle,
   type GameTransform,
   type Level3D,
@@ -30,7 +27,7 @@ import type { SceneEntities } from "./population-view.ts";
 import type { Selection } from "./document-commands.ts";
 import { disposeObjectResources } from "./resources.ts";
 import { TextureDisplay } from "./texture-display.ts";
-import { PatchDisplay } from "./patch-display.ts";
+import { PatchDisplay, applyPlacementPatches } from "./patch-display.ts";
 import { setViewportRay, visibleSurface } from "./viewport-picking.ts";
 
 interface View {
@@ -1067,19 +1064,7 @@ export class EditorViewport {
         if (!src) throw new Error(`Missing source node ${o.node} for ${o.id}`);
         v = this.makeView(o.id);
         const node = src.clone(true);
-        const asset = o.node.split(":")[1]!;
-        const patches = o.group
-          ? d.groups.find((group) => group.id === o.group)?.patches?.[asset]
-          : o.patches?.[asset];
-        if (patches)
-          node.traverse((child) => {
-            child.userData = remapPatchExtras(child.userData, patches);
-          });
-        if (o.group) {
-          const group = d.groups.find((item) => item.id === o.group);
-          const rule = endpointPatchRule(o.node, availableNodes, group?.patches);
-          if (rule) Object.assign(node.userData, patchBindingExtras(rule));
-        }
+        applyPlacementPatches(node, d, o, availableNodes);
         node.traverse((c) => {
           const m = c as THREE.Mesh;
           if (m.isMesh) v!.meshes.push(m);

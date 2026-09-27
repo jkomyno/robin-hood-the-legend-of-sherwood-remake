@@ -6,6 +6,7 @@ The scope lists asset_ids, already_published, and optional required_patches.
 import argparse
 import hashlib
 import json
+import re
 from asset_index import write_asset_index, discover_asset_index
 import subprocess
 import tempfile
@@ -16,6 +17,30 @@ from stored_map import expand_document, store_document
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def bound_patches(nodes, document):
+    """Mission patch IDs the editor exposes for this map.
+
+    Models name reusable appearances asset-locally (appearance-N); placements (group or
+    ungrouped part `patches`) bind them to mission patch IDs, which is what the editor and the
+    audit see. Direct mission IDs in older models pass through unchanged. Every local
+    appearance must be bound by some placement.
+    """
+    triggers = set()
+    for node in nodes:
+        extras = node.get("extras", {})
+        if extras.get("reveal_material_patch"):
+            triggers.add(extras["reveal_material_patch"])
+        for key in ("reveal_hide_when_applied", "reveal_show_when_applied"):
+            triggers.update(extras.get(key, []))
+    mappings = [mapping for item in document.get("groups", []) + document.get("objects", [])
+                for mapping in (item.get("patches") or {}).values()]
+    bound = {local for mapping in mappings for local in mapping}
+    local = {trigger for trigger in triggers if re.fullmatch(r"appearance-\d+", trigger)}
+    if local - bound:
+        raise ValueError("Asset-local appearances without a placement patch binding: " + repr(sorted(local - bound)))
+    return (triggers - local) | {patch for mapping in mappings for patch in mapping.values()}
 
 
 def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migration_path=None, document_path=None):
@@ -100,7 +125,11 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
             staged_root = stage / "assets"
         sources.update({entry["id"]: (entry, staged_root) for entry in
                         discover_asset_index(staged_root)["assets"]})
-    expected_ids = set(scope["asset_ids"]) | set(scope["already_published"])
+    # Descriptor-pinned scene assets (the map ground) are always loaded by the editor, which
+    # validates their pins against the index; they belong to the private index whether or not
+    # the scope names them. Descriptor-less local scene models need no index entry.
+    scene_ids = {reference["id"] for reference in staged_document["sceneAssets"] if reference.get("descriptor")}
+    expected_ids = set(scope["asset_ids"]) | set(scope["already_published"]) | scene_ids
     if not expected_ids <= sources.keys():
         raise ValueError("Missing expected assets: " + repr(sorted(expected_ids - sources.keys())))
     entries = [sources[identity][0] for identity in sorted(expected_ids)]
@@ -113,6 +142,16 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
         if entry.get("lossy_model"):
             receipt = entry["lossy_model"] + ".receipt.json"
             prospective[receipt] = source / receipt
+        # Absence in the selected catalog also overrides live derivatives. A
+        # newly staged original must never inherit a receipt for an older GLB.
+        for kind in ('lossy', 'preview'):
+            if entry.get(kind + '_model'):
+                continue
+            model_path = Path(entry['model'])
+            for basename in {kind + '.glb', model_path.stem + '.' + kind + '.glb'}:
+                candidate = model_path.with_name(basename).as_posix()
+                prospective[candidate] = None
+                prospective[candidate + '.receipt.json'] = None
     write_asset_index(library / "3d-assets", target=private_index, files=prospective,
                       descriptors=[entry["descriptor"] for entry in entries])
     files, seen = [], set()
@@ -158,20 +197,22 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
                              "name": entry["name"] + " — " + variant["name"] + " (static)",
                              "model": model_path, "state_variant": state, "base_id": entry["id"],
                              **({"model_scene": variant["model_scene"]} if "model_scene" in variant else {})})
-    generated, patches = {}, set()
+    # The editor opens mission/game data alongside its asset library. Include
+    # the indexed read-only files in the same hash-pinned private HTTP catalog.
+    game_index = library / 'game-data/index.json'
+    if game_index.is_file():
+        add('game-data/index.json', game_index)
+        for path in json.loads(game_index.read_text())['files']:
+            add('game-data/' + path, library / 'game-data' / path)
+    generated = {}
     for material in model.get("materials", []):
         identity = material.get("extras", {}).get("generated_source_sha256")
         if identity:
             generated[identity] = generated.get(identity, 0) + 1
-    for node in nodes:
-        extras = node.get("extras", {})
-        if extras.get("reveal_material_patch"):
-            patches.add(extras["reveal_material_patch"])
-        for key in ("reveal_hide_when_applied", "reveal_show_when_applied"):
-            patches.update(extras.get(key, []))
+    patches = bound_patches(nodes, staged_document)
     required = scope.get("required_patches", sorted(patches))
     if not set(required) <= patches:
-        raise ValueError("Required runtime state triggers missing")
+        raise ValueError("Required runtime state triggers missing: " + repr(sorted(set(required) - patches)))
     protected = {str(path): sha(path) for path in library.rglob("*")
                  if path.is_file() and path.suffix in (".json", ".gltf", ".glb", ".bin", ".png", ".jpg")}
     config = {"map": map_name, "mode": "live" if live else "staged", "files": files,
