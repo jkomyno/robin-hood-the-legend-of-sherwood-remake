@@ -92,6 +92,16 @@ test("canonical merge preserves world collisions, raw vertex data, and relative 
   );
   assert.equal(merged.document.groups.length, 1);
   const model = await new NodeIO().readBinary(merged.bytes);
+  const map = model.getRoot().getDefaultScene()!.listChildren()[0]!;
+  assert.equal(map.getName(), "map");
+  assert.equal(map.listChildren().length, 1);
+  const group = map.listChildren()[0]!;
+  assert.deepEqual(group.getExtras(), { asset_group: "whole-building" });
+  assert.deepEqual(group.getTranslation(), [0, 0, 0]);
+  assert.deepEqual(
+    group.listChildren().map((node) => node.getName()),
+    ["building-0", "building-1"],
+  );
   assert.equal(model.getRoot().listMeshes().length, 2);
   for (const accessor of model.getRoot().listAccessors())
     assert.deepEqual(Array.from(accessor.getArray()!), [0, 0, 0, 10, 0, 0, 10, 0, -10]);
@@ -121,6 +131,38 @@ test("partial catalog membership and edited placements cannot silently lose data
   );
 });
 
+test("editor normalization preserves transformed parts and rejects unowned model content", async () => {
+  const { document, inputs } = fixture();
+  const model = inputs[0]!.model;
+  const scene = model.getRoot().listScenes()[0]!;
+  const part = scene.listChildren()[0]!;
+  const wrapper = model
+    .createNode("parent")
+    .setTranslation([12, 34, 56])
+    .setRotation([0, 0, Math.sin(0.3), Math.cos(0.3)])
+    .setScale([2, 2, 2]);
+  wrapper.addChild(part);
+  scene.addChild(wrapper);
+  const world = part.getWorldMatrix();
+  const merged = await mergeStaticAssets(document, "whole-building", [0, 1], inputs);
+  const result = await new NodeIO().readBinary(merged.bytes);
+  const after = result
+    .getRoot()
+    .listNodes()
+    .find((node) => node.getName() === "building-0")!
+    .getWorldMatrix();
+  for (const [index, value] of world.entries()) assert.ok(Math.abs(value - after[index]!) < 1e-9);
+  const invalid = fixture();
+  const unowned = invalid.inputs[0]!.model.createNode("unowned").setMesh(
+    invalid.inputs[0]!.model.getRoot().listMeshes()[0]!,
+  );
+  invalid.inputs[0]!.model.getRoot().listScenes()[0]!.addChild(unowned);
+  await assert.rejects(
+    mergeStaticAssets(invalid.document, "whole-building", [0, 1], invalid.inputs),
+    /Unowned model content/,
+  );
+});
+
 test("stateful assets require explicit migration", async () => {
   const { document, inputs } = fixture();
   inputs[1]!.descriptor.states = { active: "initial", initial: ["building-1"], applied: [] };
@@ -147,6 +189,10 @@ test("split preserves nested model transforms and assigns every part once", asyn
     [[0], [1]],
   );
   for (const [index, output] of split.outputs.entries()) {
+    const map = output.model.getRoot().listScenes()[0]!.listChildren()[0]!;
+    assert.equal(map.getName(), "map");
+    assert.equal(map.listChildren().length, 1);
+    assert.deepEqual(map.listChildren()[0]!.getExtras(), { asset_group: output.descriptor.id });
     const rendered: string[] = [];
     output.model
       .getRoot()

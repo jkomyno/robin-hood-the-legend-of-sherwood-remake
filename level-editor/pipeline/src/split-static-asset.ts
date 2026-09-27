@@ -4,8 +4,9 @@ import { cloneDocument, unpartition } from "@gltf-transform/functions";
 import { assetNodeKey, isIdentity, type Level3D } from "@rle/shared";
 import { canonical, modelContentSignatures } from "./bundle-asset-states.ts";
 import { assertStaticDescriptor, type StaticAssetInput } from "./merge-static-assets.ts";
+import { normalizeStaticAssetModel, verifyStaticParts } from "./static-asset-model.ts";
 
-/** Split complete leaf parts, preserving their frame and all ancestor transforms. */
+/** Split complete leaf parts, preserving their world geometry in normalized editor frames. */
 export async function splitStaticAsset(
   document: Level3D,
   input: StaticAssetInput,
@@ -101,19 +102,15 @@ export async function splitStaticAsset(
         }
       }
     for (const node of copy.getRoot().listNodes()) if (!keep.has(node)) node.dispose();
+    await normalizeStaticAssetModel(copy, partition.id, [...names]);
     await copy.transform(unpartition());
     const bytes = await io.writeBinary(copy);
     const roundtrip = await io.readBinary(bytes);
-    const after = await modelContentSignatures(roundtrip);
-    for (const name of names) {
-      const beforeNode = reachable.find((node) => node.getName() === name)!;
-      const afterNode = roundtrip
-        .getRoot()
-        .listNodes()
-        .find((node) => node.getName() === name)!;
-      if (canonical(proof.nodeData(beforeNode)) !== canonical(after.nodeData(afterNode)))
-        throw new Error(`Split changed geometry or appearance: ${name}`);
-    }
+    await verifyStaticParts(
+      roundtrip,
+      [...names],
+      [...names].map((name) => proof.nodeData(reachable.find((node) => node.getName() === name)!)),
+    );
     const next = {
       ...structuredClone(descriptor),
       id: partition.id,

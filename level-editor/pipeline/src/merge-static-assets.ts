@@ -12,6 +12,7 @@ import {
   type ProjectionAssetDescriptor,
 } from "@rle/shared";
 import { canonical, modelContentSignatures } from "./bundle-asset-states.ts";
+import { normalizeStaticAssetModel, verifyStaticParts } from "./static-asset-model.ts";
 
 export interface StaticAssetInput {
   descriptor: ProjectionAssetDescriptor;
@@ -133,7 +134,15 @@ export async function mergeStaticAssets(
     for (const child of source.listChildren()) wrapper.addChild(child);
     source.addChild(wrapper);
     const proof = await modelContentSignatures(model);
-    expectedNodes.push(...proof.sceneData(source).nodes);
+    for (const part of descriptor.parts)
+      expectedNodes.push(
+        proof.nodeData(
+          model
+            .getRoot()
+            .listNodes()
+            .find((node) => node.getName() === part.node)!,
+        ),
+      );
     const mapped = mergeDocuments(target, model);
     const merged = mapped.get(source)!;
     if (!(merged instanceof Scene)) throw new Error("Missing merged scene");
@@ -171,16 +180,15 @@ export async function mergeStaticAssets(
           if (Math.abs(point[key] - after[index]![key]) > 1e-9)
             throw new Error(`World collision geometry changed: ${old.id}`);
     }
+  const names = parts.map((part) => part.node);
   await target.transform(unpartition());
+  // Embedded output has no external resource names; merged inputs may reuse URI strings.
+  for (const texture of target.getRoot().listTextures()) texture.setURI("");
+  await normalizeStaticAssetModel(target, id, names);
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
   const bytes = await io.writeBinary(target);
   const roundtrip = await io.readBinary(bytes);
-  const actual = await modelContentSignatures(roundtrip);
-  if (
-    canonical(actual.sceneData(roundtrip.getRoot().getDefaultScene()!).nodes) !==
-    canonical(expectedNodes)
-  )
-    throw new Error("Merged model changed geometry or appearance");
+  await verifyStaticParts(roundtrip, names, expectedNodes);
   const descriptor: ProjectionAssetDescriptor = {
     version: 1,
     kind: "projection-mapped-asset",

@@ -184,13 +184,23 @@ including a missing jump landing surface. Staged canonical tower, golden timber
 house and stone-shop assets resolve the remaining three records; all nine now
 have asset owners. The stone shop uses an explicit split that preserves its
 neighboring building parts in a separate asset with unchanged geometry.
+The updated ownership catalog additionally requires complete green timber-house
+and striped-awning building assets; staging both restores their two local volumes
+without assigning either volume to a partial building. The combined York draft
+again constructs 194 movement areas, 1,161 sight obstacles, 179 doors and 72 jump
+pairs, whose geometry and traversal flags match the source pairs.
 The compiler reads
 only the resulting local volumes; source sector and material indices are rejected.
 `stage-canonical-static-asset.ts` combines complete static assets only when their
 parts exactly match an explicit catalog group. It checks unchanged world collision
 positions and decoded model geometry, materials and texture bytes after writing
 the merged model. Partial groups require `--split`, which partitions leaf parts
-without changing their ancestor transforms, collision coordinates or appearance.
+without changing their world transforms, collision coordinates or appearance.
+Merged and split models normalize their hierarchy to one Z-up map wrapper and
+one identity asset group; the part transforms retain the placed geometry.
+The staged index includes each new descriptor and model hash, and other map scenes
+remain available in the overlay. The five York canonical assets and the split
+remainder pass real-browser loading, insertion, save/reopen and rendering checks.
 Every part must be assigned exactly once. Edited placements and state/gameplay
 definitions requiring migration are rejected. Its output is a separate library overlay and
 pinned editor scene, not a publication or a runtime dependency on source levels.

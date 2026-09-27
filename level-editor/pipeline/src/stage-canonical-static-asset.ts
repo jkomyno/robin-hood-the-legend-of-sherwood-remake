@@ -90,16 +90,29 @@ export async function stageCanonicalStaticAsset(options: {
     if (!["3d-assets", "scenes"].includes(entry))
       await fs.symlink(path.join(library, entry), path.join(out, entry));
   for (const entry of await fs.readdir(path.join(library, "3d-assets"))) {
+    if (entry === "index.json") continue;
     if (outputs.some((output) => output.descriptor.id === entry))
       throw new Error(`Asset directory already exists: ${entry}`);
     await fs.symlink(path.join(library, "3d-assets", entry), path.join(out, "3d-assets", entry));
   }
+  const index = JSON.parse(await fs.readFile(path.join(library, "3d-assets/index.json"), "utf8"));
   for (const output of outputs) {
     const assetDir = `3d-assets/${output.descriptor.id}`;
     await fs.mkdir(path.join(out, assetDir));
     const descriptorBytes = JSON.stringify(output.descriptor, null, 2) + "\n";
     await fs.writeFile(path.join(out, assetDir, "model.glb"), output.bytes);
     await fs.writeFile(path.join(out, assetDir, "asset.json"), descriptorBytes);
+    index.assets.push({
+      id: output.descriptor.id,
+      name: output.descriptor.name,
+      source_map: output.descriptor.source_map,
+      descriptor: `${output.descriptor.id}/asset.json`,
+      descriptor_sha256: sha256(descriptorBytes),
+      model: `${output.descriptor.id}/model.glb`,
+      model_sha256: sha256(output.bytes),
+      model_scene: output.descriptor.model_scene,
+      editor: output.descriptor,
+    });
     merged.document.assetSources!.push({
       id: output.descriptor.id,
       descriptor: `${assetDir}/asset.json`,
@@ -110,6 +123,10 @@ export async function stageCanonicalStaticAsset(options: {
       resources: [],
     });
   }
+  await fs.writeFile(path.join(out, "3d-assets/index.json"), JSON.stringify(index, null, 2) + "\n");
+  for (const entry of await fs.readdir(path.join(library, "scenes")))
+    if (entry !== path.basename(options.map))
+      await fs.symlink(path.join(library, "scenes", entry), path.join(out, "scenes", entry));
   const scenePath = path.join(out, "scenes", path.basename(options.map));
   await fs.writeFile(
     scenePath,
