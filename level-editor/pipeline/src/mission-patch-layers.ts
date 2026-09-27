@@ -14,14 +14,21 @@ export async function exportMissionPatchLayers(
 ) {
   const records = [];
   const levels = levelsDirPath();
-  const animationDir = path.join(datadirPath(), "Data", "Animations", "Day");
-  const banks = await fs.readdir(animationDir);
   for (const file of (await fs.readdir(levels)).filter((f) => /\.rhm\.json$/i.test(f)).sort()) {
     const mission = JSON.parse(await fs.readFile(path.join(levels, file), "utf8")) as {
       header: { map_filename: string; ambiance: number };
       mission_patches: Patch[];
     };
     if (mission.header.map_filename.toLowerCase() !== map.toLowerCase()) continue;
+    if (mission.mission_patches.length === 0) continue;
+    const ambiance =
+      mission.header.ambiance === 2 ? "Fog" : mission.header.ambiance === 4 ? "Night" : "Day";
+    const animationDirectories = await Promise.all(
+      [...new Set([ambiance, "Day"])].map(async (name) => {
+        const directory = path.join(datadirPath(), "Data", "Animations", name);
+        return { name, directory, banks: await fs.readdir(directory) };
+      }),
+    );
     const missionId = file.replace(/\.rhm\.json$/i, "");
     for (const [index, patch] of mission.mission_patches.entries()) {
       const sprite = patch.element_fx.sprite;
@@ -38,12 +45,19 @@ export async function exportMissionPatchLayers(
           }[];
         }
       > = {};
+      let graphicsAmbiance = ambiance;
       if (sprite.frame_profile_name !== "pixel_vert") {
-        const bank = banks.find(
-          (b) => b.toLowerCase() === `${sprite.frame_profile_name}.rhs.d`.toLowerCase(),
-        );
-        if (!bank) throw new Error(`Missing mission patch bank ${sprite.frame_profile_name}`);
-        const directory = path.join(animationDir, bank);
+        const match = animationDirectories.flatMap(({ name, directory, banks }) =>
+          banks
+            .filter((b) => b.toLowerCase() === `${sprite.frame_profile_name}.rhs.d`.toLowerCase())
+            .map((bank) => ({ name, directory: path.join(directory, bank) })),
+        )[0];
+        if (!match)
+          throw new Error(
+            `Missing mission patch bank ${sprite.frame_profile_name} (${ambiance}/Day)`,
+          );
+        const { directory } = match;
+        graphicsAmbiance = match.name;
         const manifest = JSON.parse(
           await fs.readFile(path.join(directory, "manifest.json"), "utf8"),
         ) as { profiles: RhsProfile[] };
@@ -94,7 +108,7 @@ export async function exportMissionPatchLayers(
         id,
         mission: missionId,
         mission_ambiance: mission.header.ambiance,
-        graphics_ambiance: "Day",
+        graphics_ambiance: graphicsAmbiance,
         mission_patch_index: index,
         runtime_patch_index: basePatchCount + index,
         name: sprite.profile_name,

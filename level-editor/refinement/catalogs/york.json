@@ -1,0 +1,5999 @@
+{
+  "version": 2,
+  "map": "york",
+  "groups": [
+    {
+      "id": "york-riverside-stone-storehouse",
+      "name": "Riverside stone storehouse",
+      "parts": [
+        {
+          "obstacle": 0,
+          "name": "Structural volume 000"
+        },
+        {
+          "obstacle": 1,
+          "name": "Raised sloped section 001"
+        },
+        {
+          "obstacle": 2,
+          "name": "Raised sloped section 002"
+        },
+        {
+          "obstacle": 3,
+          "name": "Raised sloped section 003"
+        },
+        {
+          "obstacle": 4,
+          "name": "Raised sloped section 004"
+        },
+        {
+          "obstacle": 5,
+          "name": "Structural volume 005"
+        },
+        {
+          "obstacle": 6,
+          "name": "Structural volume 006"
+        }
+      ]
+    },
+    {
+      "id": "york-riverside-timber-stack",
+      "name": "Riverside timber stack",
+      "parts": [
+        {
+          "obstacle": 7,
+          "name": "Structural volume 007"
+        }
+      ]
+    },
+    {
+      "id": "york-riverside-loose-planks",
+      "name": "Riverside loose planks",
+      "parts": [
+        {
+          "obstacle": 8,
+          "name": "Structural volume 008"
+        }
+      ]
+    },
+    {
+      "id": "york-west-riverbank-retaining-wall",
+      "name": "West riverbank retaining wall",
+      "parts": [
+        {
+          "obstacle": 9,
+          "name": "Structural volume 009"
+        }
+      ]
+    },
+    {
+      "id": "york-stone-river-bridge-and-approach-stairs",
+      "name": "Stone river bridge and approach stairs",
+      "parts": [
+        {
+          "obstacle": 10,
+          "name": "Structural volume 010"
+        },
+        {
+          "obstacle": 14,
+          "name": "Structural volume 014"
+        },
+        {
+          "obstacle": 15,
+          "name": "Structural volume 015"
+        },
+        {
+          "obstacle": 16,
+          "name": "Structural volume 016"
+        },
+        {
+          "obstacle": 17,
+          "name": "Structural volume 017"
+        },
+        {
+          "obstacle": 18,
+          "name": "Structural volume 018"
+        },
+        {
+          "obstacle": 19,
+          "name": "Structural volume 019"
+        },
+        {
+          "obstacle": 20,
+          "name": "Raised sloped section 020"
+        },
+        {
+          "obstacle": 21,
+          "name": "Raised section 021"
+        },
+        {
+          "obstacle": 22,
+          "name": "Structural volume 022"
+        },
+        {
+          "obstacle": 23,
+          "name": "Structural volume 023"
+        },
+        {
+          "obstacle": 25,
+          "name": "Structural volume 025"
+        },
+        {
+          "obstacle": 26,
+          "name": "Structural volume 026"
+        },
+        {
+          "obstacle": 27,
+          "name": "Structural volume 027"
+        },
+        {
+          "obstacle": 94,
+          "name": "Structural volume 094"
+        },
+        {
+          "obstacle": 95,
+          "name": "Structural volume 095"
+        },
+        {
+          "obstacle": 97,
+          "name": "Structural volume 097"
+        },
+        {
+          "obstacle": 100,
+          "name": "Structural volume 100"
+        },
+        {
+          "obstacle": 101,
+          "name": "Structural volume 101"
+        },
+        {
+          "obstacle": 102,
+          "name": "Structural volume 102"
+        },
+        {
+          "obstacle": 103,
+          "name": "Raised section 103"
+        },
+        {
+          "obstacle": 671,
+          "name": "Structural volume 671"
+        }
+      ]
+    },
+    {
+      "id": "york-south-riverbank-retaining-wall",
+      "name": "South riverbank retaining wall",
+      "parts": [
+        {
+          "obstacle": 11,
+          "name": "Structural volume 011"
+        },
+        {
+          "obstacle": 12,
+          "name": "Structural volume 012"
+        },
+        {
+          "obstacle": 13,
+          "name": "Structural volume 013"
+        },
+        {
+          "obstacle": 28,
+          "name": "Structural volume 028"
+        }
+      ]
+    },
+    {
+      "id": "york-east-riverside-wooden-walkway",
+      "name": "East riverside wooden walkway",
+      "parts": [
+        {
+          "obstacle": 24,
+          "name": "Structural volume 024"
+        }
+      ]
+    },
+    {
+      "id": "york-market-long-cream-canopy-stall",
+      "name": "Market long cream-canopy stall",
+      "parts": [
+        {
+          "obstacle": 29,
+          "name": "Raised sloped section 029"
+        },
+        {
+          "obstacle": 30,
+          "name": "Structural volume 030"
+        },
+        {
+          "obstacle": 940,
+          "name": "Structural volume 940"
+        },
+        {
+          "obstacle": 941,
+          "name": "Structural volume 941"
+        },
+        {
+          "obstacle": 942,
+          "name": "Structural volume 942"
+        },
+        {
+          "obstacle": 943,
+          "name": "Structural volume 943"
+        },
+        {
+          "obstacle": 944,
+          "name": "Structural volume 944"
+        },
+        {
+          "obstacle": 945,
+          "name": "Structural volume 945"
+        },
+        {
+          "obstacle": 946,
+          "name": "Structural volume 946"
+        },
+        {
+          "obstacle": 947,
+          "name": "Structural volume 947"
+        },
+        {
+          "obstacle": 969,
+          "name": "Structural volume 969"
+        }
+      ]
+    },
+    {
+      "id": "york-market-produce-table",
+      "name": "Market produce table",
+      "parts": [
+        {
+          "obstacle": 31,
+          "name": "Structural volume 031"
+        }
+      ]
+    },
+    {
+      "id": "york-market-red-canopy-stall",
+      "name": "Market red-canopy stall",
+      "parts": [
+        {
+          "obstacle": 32,
+          "name": "Raised sloped section 032"
+        },
+        {
+          "obstacle": 33,
+          "name": "Structural volume 033"
+        },
+        {
+          "obstacle": 34,
+          "name": "Structural volume 034"
+        },
+        {
+          "obstacle": 950,
+          "name": "Structural volume 950"
+        },
+        {
+          "obstacle": 951,
+          "name": "Structural volume 951"
+        },
+        {
+          "obstacle": 972,
+          "name": "Structural volume 972"
+        }
+      ]
+    },
+    {
+      "id": "york-market-roofed-stone-well",
+      "name": "Market roofed stone well",
+      "parts": [
+        {
+          "obstacle": 35,
+          "name": "Structural volume 035"
+        },
+        {
+          "obstacle": 36,
+          "name": "Raised sloped section 036"
+        },
+        {
+          "obstacle": 37,
+          "name": "Raised sloped section 037"
+        }
+      ]
+    },
+    {
+      "id": "york-market-street-barrel",
+      "name": "Market street barrel",
+      "parts": [
+        {
+          "obstacle": 38,
+          "name": "Structural volume 038"
+        }
+      ]
+    },
+    {
+      "id": "york-market-west-display-table",
+      "name": "Market west display table",
+      "parts": [
+        {
+          "obstacle": 39,
+          "name": "Structural volume 039"
+        }
+      ]
+    },
+    {
+      "id": "york-market-wall-display-table",
+      "name": "Market wall display table",
+      "parts": [
+        {
+          "obstacle": 40,
+          "name": "Raised section 040"
+        }
+      ]
+    },
+    {
+      "id": "york-market-east-display-table",
+      "name": "Market east display table",
+      "parts": [
+        {
+          "obstacle": 41,
+          "name": "Raised section 041"
+        }
+      ]
+    },
+    {
+      "id": "york-market-cream-canopy-stall",
+      "name": "Market cream-canopy stall",
+      "parts": [
+        {
+          "obstacle": 42,
+          "name": "Raised sloped section 042"
+        },
+        {
+          "obstacle": 43,
+          "name": "Raised sloped section 043"
+        }
+      ]
+    },
+    {
+      "id": "york-market-stepped-green-canopy-stall",
+      "name": "Market stepped green-canopy stall",
+      "parts": [
+        {
+          "obstacle": 44,
+          "name": "Raised section 044"
+        }
+      ]
+    },
+    {
+      "id": "york-market-stacked-barrels",
+      "name": "Market stacked barrels",
+      "parts": [
+        {
+          "obstacle": 46,
+          "name": "Structural volume 046"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-wall-and-stair",
+      "name": "North garden wall and stair",
+      "parts": [
+        {
+          "obstacle": 47,
+          "name": "Structural volume 047"
+        },
+        {
+          "obstacle": 48,
+          "name": "Structural volume 048"
+        },
+        {
+          "obstacle": 49,
+          "name": "Structural volume 049"
+        },
+        {
+          "obstacle": 50,
+          "name": "Raised sloped section 050"
+        },
+        {
+          "obstacle": 51,
+          "name": "Raised section 051"
+        },
+        {
+          "obstacle": 52,
+          "name": "Structural volume 052"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-square-watchtower",
+      "name": "North garden square watchtower",
+      "parts": [
+        {
+          "obstacle": 53,
+          "name": "Structural volume 053"
+        },
+        {
+          "obstacle": 54,
+          "name": "Structural volume 054"
+        },
+        {
+          "obstacle": 56,
+          "name": "Raised section 056"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-rear-wall",
+      "name": "North garden rear wall",
+      "parts": [
+        {
+          "obstacle": 55,
+          "name": "Structural volume 055"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-timber-shed",
+      "name": "North garden timber shed",
+      "parts": [
+        {
+          "obstacle": 57,
+          "name": "Structural volume 057"
+        },
+        {
+          "obstacle": 66,
+          "name": "Structural volume 066"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-central-vegetable-enclosure",
+      "name": "North garden central vegetable enclosure",
+      "parts": [
+        {
+          "obstacle": 58,
+          "name": "Structural volume 058"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-west-vegetable-enclosure",
+      "name": "North garden west vegetable enclosure",
+      "parts": [
+        {
+          "obstacle": 59,
+          "name": "Structural volume 059"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-tree-enclosure",
+      "name": "North garden tree enclosure",
+      "parts": [
+        {
+          "obstacle": 60,
+          "name": "Structural volume 060"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-front-fence",
+      "name": "North garden front fence",
+      "parts": [
+        {
+          "obstacle": 61,
+          "name": "Structural volume 061"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-fence-barrel",
+      "name": "North garden fence barrel",
+      "parts": [
+        {
+          "obstacle": 62,
+          "name": "Structural volume 062"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-workbench",
+      "name": "North garden workbench",
+      "parts": [
+        {
+          "obstacle": 63,
+          "name": "Structural volume 063"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-shed-barrel",
+      "name": "North garden shed barrel",
+      "parts": [
+        {
+          "obstacle": 64,
+          "name": "Structural volume 064"
+        }
+      ]
+    },
+    {
+      "id": "york-north-garden-shed-barrel-pair",
+      "name": "North garden shed barrel pair",
+      "parts": [
+        {
+          "obstacle": 65,
+          "name": "Structural volume 065"
+        }
+      ]
+    },
+    {
+      "id": "york-west-city-wall-roofed-stair-turret",
+      "name": "West city wall roofed stair turret",
+      "parts": [
+        {
+          "obstacle": 68,
+          "name": "Raised sloped section 068"
+        },
+        {
+          "obstacle": 69,
+          "name": "Raised sloped section 069"
+        },
+        {
+          "obstacle": 70,
+          "name": "Raised sloped section 070"
+        },
+        {
+          "obstacle": 71,
+          "name": "Structural volume 071"
+        }
+      ]
+    },
+    {
+      "id": "york-west-city-wall-and-access-stair",
+      "name": "West city wall and access stair",
+      "parts": [
+        {
+          "obstacle": 72,
+          "name": "Structural volume 072"
+        },
+        {
+          "obstacle": 73,
+          "name": "Structural volume 073"
+        },
+        {
+          "obstacle": 74,
+          "name": "Structural volume 074"
+        },
+        {
+          "obstacle": 75,
+          "name": "Structural volume 075"
+        },
+        {
+          "obstacle": 76,
+          "name": "Structural volume 076"
+        },
+        {
+          "obstacle": 77,
+          "name": "Structural volume 077"
+        }
+      ]
+    },
+    {
+      "id": "york-market-north-stone-house",
+      "name": "Market north stone house",
+      "parts": [
+        {
+          "obstacle": 78,
+          "name": "Structural volume 078"
+        },
+        {
+          "obstacle": 79,
+          "name": "Structural volume 079"
+        },
+        {
+          "obstacle": 80,
+          "name": "Structural volume 080"
+        },
+        {
+          "obstacle": 81,
+          "name": "Structural volume 081"
+        },
+        {
+          "obstacle": 82,
+          "name": "Structural volume 082"
+        },
+        {
+          "obstacle": 83,
+          "name": "Structural volume 083"
+        },
+        {
+          "obstacle": 84,
+          "name": "Structural volume 084"
+        },
+        {
+          "obstacle": 85,
+          "name": "Structural volume 085"
+        }
+      ]
+    },
+    {
+      "id": "york-west-town-raised-lane",
+      "name": "West town raised lane",
+      "parts": [
+        {
+          "obstacle": 88,
+          "name": "Structural volume 088"
+        },
+        {
+          "obstacle": 110,
+          "name": "Structural volume 110"
+        },
+        {
+          "obstacle": 613,
+          "name": "Structural volume 613"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-stone-causeway",
+      "name": "Precinct stone causeway",
+      "parts": [
+        {
+          "obstacle": 89,
+          "name": "Structural volume 089"
+        },
+        {
+          "obstacle": 614,
+          "name": "Structural volume 614"
+        },
+        {
+          "obstacle": 615,
+          "name": "Raised section 615"
+        },
+        {
+          "obstacle": 616,
+          "name": "Raised section 616"
+        }
+      ]
+    },
+    {
+      "id": "york-east-quay-timber-house",
+      "name": "East quay timber house",
+      "parts": [
+        {
+          "obstacle": 695,
+          "name": "Structural volume 695"
+        },
+        {
+          "obstacle": 696,
+          "name": "Raised sloped section 696"
+        },
+        {
+          "obstacle": 697,
+          "name": "Raised sloped section 697"
+        },
+        {
+          "obstacle": 698,
+          "name": "Structural volume 698"
+        },
+        {
+          "obstacle": 699,
+          "name": "Raised sloped section 699"
+        },
+        {
+          "obstacle": 700,
+          "name": "Structural volume 700"
+        },
+        {
+          "obstacle": 701,
+          "name": "Structural volume 701"
+        },
+        {
+          "obstacle": 702,
+          "name": "Structural volume 702"
+        },
+        {
+          "obstacle": 703,
+          "name": "Structural volume 703"
+        }
+      ]
+    },
+    {
+      "id": "york-east-quay-ground-landing",
+      "name": "East quay ground landing",
+      "parts": [
+        {
+          "obstacle": 96,
+          "name": "Structural volume 096"
+        }
+      ]
+    },
+    {
+      "id": "york-south-city-gatehouse",
+      "name": "South city gatehouse",
+      "parts": [
+        {
+          "obstacle": 99,
+          "name": "Structural volume 099"
+        },
+        {
+          "obstacle": 526,
+          "name": "Structural volume 526"
+        },
+        {
+          "obstacle": 527,
+          "name": "Structural volume 527"
+        },
+        {
+          "obstacle": 528,
+          "name": "Raised section 528"
+        },
+        {
+          "obstacle": 529,
+          "name": "Raised section 529"
+        },
+        {
+          "obstacle": 530,
+          "name": "Structural volume 530"
+        },
+        {
+          "obstacle": 531,
+          "name": "Structural volume 531"
+        },
+        {
+          "obstacle": 532,
+          "name": "Raised section 532"
+        },
+        {
+          "obstacle": 533,
+          "name": "Structural volume 533"
+        },
+        {
+          "obstacle": 534,
+          "name": "Structural volume 534"
+        },
+        {
+          "obstacle": 535,
+          "name": "Structural volume 535"
+        },
+        {
+          "obstacle": 536,
+          "name": "Structural volume 536"
+        },
+        {
+          "obstacle": 537,
+          "name": "Structural volume 537"
+        },
+        {
+          "obstacle": 538,
+          "name": "Structural volume 538"
+        },
+        {
+          "obstacle": 539,
+          "name": "Structural volume 539"
+        },
+        {
+          "obstacle": 540,
+          "name": "Structural volume 540"
+        },
+        {
+          "obstacle": 541,
+          "name": "Structural volume 541"
+        },
+        {
+          "obstacle": 542,
+          "name": "Structural volume 542"
+        },
+        {
+          "obstacle": 543,
+          "name": "Structural volume 543"
+        },
+        {
+          "obstacle": 544,
+          "name": "Structural volume 544"
+        },
+        {
+          "obstacle": 545,
+          "name": "Structural volume 545"
+        },
+        {
+          "obstacle": 546,
+          "name": "Structural volume 546"
+        },
+        {
+          "obstacle": 547,
+          "name": "Structural volume 547"
+        },
+        {
+          "obstacle": 548,
+          "name": "Structural volume 548"
+        },
+        {
+          "obstacle": 549,
+          "name": "Structural volume 549"
+        },
+        {
+          "obstacle": 550,
+          "name": "Raised section 550"
+        },
+        {
+          "obstacle": 551,
+          "name": "Structural volume 551"
+        },
+        {
+          "obstacle": 576,
+          "name": "Structural volume 576"
+        },
+        {
+          "obstacle": 577,
+          "name": "Structural volume 577"
+        }
+      ]
+    },
+    {
+      "id": "york-riverbank-wooden-landing-steps",
+      "name": "Riverbank wooden landing steps",
+      "parts": [
+        {
+          "obstacle": 104,
+          "name": "Structural volume 104"
+        }
+      ]
+    },
+    {
+      "id": "york-riverbank-stone-landing-steps",
+      "name": "Riverbank stone landing steps",
+      "parts": [
+        {
+          "obstacle": 105,
+          "name": "Structural volume 105"
+        }
+      ]
+    },
+    {
+      "id": "york-west-lane-access-steps",
+      "name": "West lane access steps",
+      "parts": [
+        {
+          "obstacle": 106,
+          "name": "Structural volume 106"
+        }
+      ]
+    },
+    {
+      "id": "york-river-timber-jetty",
+      "name": "River timber jetty",
+      "parts": [
+        {
+          "obstacle": 107,
+          "name": "Structural volume 107"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-southwest-wall-turret",
+      "name": "Precinct southwest wall turret",
+      "parts": [
+        {
+          "obstacle": 108,
+          "name": "Raised section 108"
+        },
+        {
+          "obstacle": 109,
+          "name": "Structural volume 109"
+        }
+      ]
+    },
+    {
+      "id": "york-bridge-square-turreted-timber-house",
+      "name": "Bridge Square turreted timber house",
+      "parts": [
+        {
+          "obstacle": 111,
+          "name": "Structural volume 111"
+        },
+        {
+          "obstacle": 112,
+          "name": "Raised section 112"
+        },
+        {
+          "obstacle": 113,
+          "name": "Raised sloped section 113"
+        },
+        {
+          "obstacle": 114,
+          "name": "Raised sloped section 114"
+        },
+        {
+          "obstacle": 116,
+          "name": "Structural volume 116"
+        },
+        {
+          "obstacle": 117,
+          "name": "Raised sloped section 117"
+        },
+        {
+          "obstacle": 118,
+          "name": "Raised section 118"
+        },
+        {
+          "obstacle": 120,
+          "name": "Structural volume 120"
+        },
+        {
+          "obstacle": 121,
+          "name": "Raised section 121"
+        },
+        {
+          "obstacle": 122,
+          "name": "Structural volume 122"
+        },
+        {
+          "obstacle": 123,
+          "name": "Raised sloped section 123"
+        },
+        {
+          "obstacle": 124,
+          "name": "Raised sloped section 124"
+        },
+        {
+          "obstacle": 125,
+          "name": "Raised sloped section 125"
+        },
+        {
+          "obstacle": 126,
+          "name": "Raised sloped section 126"
+        },
+        {
+          "obstacle": 127,
+          "name": "Raised sloped section 127"
+        },
+        {
+          "obstacle": 128,
+          "name": "Structural volume 128"
+        },
+        {
+          "obstacle": 135,
+          "name": "Structural volume 135"
+        },
+        {
+          "obstacle": 136,
+          "name": "Structural volume 136"
+        },
+        {
+          "obstacle": 143,
+          "name": "Structural volume 143"
+        }
+      ]
+    },
+    {
+      "id": "york-bridge-square-scaffolded-corner-house",
+      "name": "Bridge Square scaffolded corner house",
+      "parts": [
+        {
+          "obstacle": 129,
+          "name": "Structural volume 129"
+        },
+        {
+          "obstacle": 130,
+          "name": "Raised section 130"
+        },
+        {
+          "obstacle": 131,
+          "name": "Structural volume 131"
+        },
+        {
+          "obstacle": 132,
+          "name": "Structural volume 132"
+        },
+        {
+          "obstacle": 133,
+          "name": "Raised sloped section 133"
+        },
+        {
+          "obstacle": 134,
+          "name": "Raised section 134"
+        },
+        {
+          "obstacle": 137,
+          "name": "Structural volume 137"
+        },
+        {
+          "obstacle": 138,
+          "name": "Structural volume 138"
+        },
+        {
+          "obstacle": 139,
+          "name": "Structural volume 139"
+        },
+        {
+          "obstacle": 140,
+          "name": "Structural volume 140"
+        },
+        {
+          "obstacle": 141,
+          "name": "Structural volume 141"
+        },
+        {
+          "obstacle": 142,
+          "name": "Structural volume 142"
+        }
+      ]
+    },
+    {
+      "id": "york-central-lane-stone-gable-house",
+      "name": "Central lane stone gable house",
+      "parts": [
+        {
+          "obstacle": 144,
+          "name": "Structural volume 144"
+        },
+        {
+          "obstacle": 145,
+          "name": "Raised sloped section 145"
+        },
+        {
+          "obstacle": 146,
+          "name": "Structural volume 146"
+        },
+        {
+          "obstacle": 147,
+          "name": "Raised sloped section 147"
+        }
+      ]
+    },
+    {
+      "id": "york-central-lane-timber-lean-to",
+      "name": "Central lane timber lean-to",
+      "parts": [
+        {
+          "obstacle": 148,
+          "name": "Raised sloped section 148"
+        },
+        {
+          "obstacle": 149,
+          "name": "Structural volume 149"
+        }
+      ]
+    },
+    {
+      "id": "york-central-lane-cross-gable-house",
+      "name": "Central lane cross-gable house",
+      "parts": [
+        {
+          "obstacle": 150,
+          "name": "Raised section 150"
+        },
+        {
+          "obstacle": 151,
+          "name": "Structural volume 151"
+        },
+        {
+          "obstacle": 152,
+          "name": "Structural volume 152"
+        },
+        {
+          "obstacle": 153,
+          "name": "Raised sloped section 153"
+        },
+        {
+          "obstacle": 154,
+          "name": "Structural volume 154"
+        }
+      ]
+    },
+    {
+      "id": "york-central-lane-rear-gable-house",
+      "name": "Central lane rear gable house",
+      "parts": [
+        {
+          "obstacle": 165,
+          "name": "Structural volume 165"
+        },
+        {
+          "obstacle": 166,
+          "name": "Structural volume 166"
+        },
+        {
+          "obstacle": 167,
+          "name": "Structural volume 167"
+        },
+        {
+          "obstacle": 168,
+          "name": "Structural volume 168"
+        },
+        {
+          "obstacle": 169,
+          "name": "Structural volume 169"
+        }
+      ]
+    },
+    {
+      "id": "york-central-lane-polygonal-corner-house",
+      "name": "Central lane polygonal corner house",
+      "parts": [
+        {
+          "obstacle": 155,
+          "name": "Structural volume 155"
+        },
+        {
+          "obstacle": 156,
+          "name": "Raised section 156"
+        },
+        {
+          "obstacle": 157,
+          "name": "Raised section 157"
+        },
+        {
+          "obstacle": 158,
+          "name": "Raised sloped section 158"
+        },
+        {
+          "obstacle": 159,
+          "name": "Raised sloped section 159"
+        },
+        {
+          "obstacle": 160,
+          "name": "Raised sloped section 160"
+        },
+        {
+          "obstacle": 161,
+          "name": "Structural volume 161"
+        },
+        {
+          "obstacle": 162,
+          "name": "Structural volume 162"
+        },
+        {
+          "obstacle": 163,
+          "name": "Structural volume 163"
+        },
+        {
+          "obstacle": 164,
+          "name": "Structural volume 164"
+        }
+      ]
+    },
+    {
+      "id": "york-west-bridge-approach-gate-and-turret",
+      "name": "West bridge approach gate and turret",
+      "parts": [
+        {
+          "obstacle": 170,
+          "name": "Raised sloped section 170"
+        },
+        {
+          "obstacle": 171,
+          "name": "Structural volume 171"
+        },
+        {
+          "obstacle": 172,
+          "name": "Structural volume 172"
+        },
+        {
+          "obstacle": 173,
+          "name": "Raised sloped section 173"
+        },
+        {
+          "obstacle": 174,
+          "name": "Raised section 174"
+        },
+        {
+          "obstacle": 175,
+          "name": "Structural volume 175"
+        },
+        {
+          "obstacle": 176,
+          "name": "Structural volume 176"
+        },
+        {
+          "obstacle": 177,
+          "name": "Structural volume 177"
+        },
+        {
+          "obstacle": 178,
+          "name": "Structural volume 178"
+        },
+        {
+          "obstacle": 179,
+          "name": "Raised sloped section 179"
+        },
+        {
+          "obstacle": 180,
+          "name": "Raised sloped section 180"
+        },
+        {
+          "obstacle": 181,
+          "name": "Raised sloped section 181"
+        },
+        {
+          "obstacle": 182,
+          "name": "Structural volume 182"
+        },
+        {
+          "obstacle": 183,
+          "name": "Structural volume 183"
+        }
+      ]
+    },
+    {
+      "id": "york-west-bridge-approach-timber-house",
+      "name": "West bridge approach timber house",
+      "parts": [
+        {
+          "obstacle": 184,
+          "name": "Structural volume 184"
+        },
+        {
+          "obstacle": 185,
+          "name": "Raised section 185"
+        },
+        {
+          "obstacle": 186,
+          "name": "Raised sloped section 186"
+        },
+        {
+          "obstacle": 187,
+          "name": "Raised sloped section 187"
+        },
+        {
+          "obstacle": 188,
+          "name": "Structural volume 188"
+        },
+        {
+          "obstacle": 189,
+          "name": "Raised sloped section 189"
+        },
+        {
+          "obstacle": 191,
+          "name": "Structural volume 191"
+        },
+        {
+          "obstacle": 192,
+          "name": "Structural volume 192"
+        },
+        {
+          "obstacle": 197,
+          "name": "Structural volume 197"
+        },
+        {
+          "obstacle": 216,
+          "name": "Raised section 216"
+        }
+      ]
+    },
+    {
+      "id": "york-west-bridge-street-tall-timber-house",
+      "name": "West bridge street tall timber house",
+      "parts": [
+        {
+          "obstacle": 193,
+          "name": "Raised section 193"
+        },
+        {
+          "obstacle": 194,
+          "name": "Raised sloped section 194"
+        },
+        {
+          "obstacle": 195,
+          "name": "Structural volume 195"
+        },
+        {
+          "obstacle": 196,
+          "name": "Raised section 196"
+        },
+        {
+          "obstacle": 198,
+          "name": "Structural volume 198"
+        },
+        {
+          "obstacle": 199,
+          "name": "Structural volume 199"
+        }
+      ]
+    },
+    {
+      "id": "york-west-bridge-street-arcade-house",
+      "name": "West bridge street arcade house",
+      "parts": [
+        {
+          "obstacle": 200,
+          "name": "Raised sloped section 200"
+        },
+        {
+          "obstacle": 201,
+          "name": "Raised sloped section 201"
+        },
+        {
+          "obstacle": 202,
+          "name": "Raised sloped section 202"
+        },
+        {
+          "obstacle": 203,
+          "name": "Raised sloped section 203"
+        },
+        {
+          "obstacle": 204,
+          "name": "Raised sloped section 204"
+        },
+        {
+          "obstacle": 205,
+          "name": "Structural volume 205"
+        },
+        {
+          "obstacle": 206,
+          "name": "Structural volume 206"
+        },
+        {
+          "obstacle": 207,
+          "name": "Structural volume 207"
+        },
+        {
+          "obstacle": 208,
+          "name": "Structural volume 208"
+        },
+        {
+          "obstacle": 209,
+          "name": "Raised sloped section 209"
+        },
+        {
+          "obstacle": 210,
+          "name": "Raised section 210"
+        },
+        {
+          "obstacle": 211,
+          "name": "Raised sloped section 211"
+        },
+        {
+          "obstacle": 212,
+          "name": "Raised sloped section 212"
+        },
+        {
+          "obstacle": 213,
+          "name": "Structural volume 213"
+        },
+        {
+          "obstacle": 214,
+          "name": "Structural volume 214"
+        },
+        {
+          "obstacle": 215,
+          "name": "Structural volume 215"
+        },
+        {
+          "obstacle": 217,
+          "name": "Raised section 217"
+        }
+      ]
+    },
+    {
+      "id": "york-southeast-wall-lane-long-house",
+      "name": "Southeast wall-lane long house",
+      "parts": [
+        {
+          "obstacle": 218,
+          "name": "Structural volume 218"
+        },
+        {
+          "obstacle": 219,
+          "name": "Structural volume 219"
+        },
+        {
+          "obstacle": 220,
+          "name": "Structural volume 220"
+        },
+        {
+          "obstacle": 221,
+          "name": "Structural volume 221"
+        },
+        {
+          "obstacle": 222,
+          "name": "Raised sloped section 222"
+        },
+        {
+          "obstacle": 227,
+          "name": "Structural volume 227"
+        },
+        {
+          "obstacle": 228,
+          "name": "Structural volume 228"
+        },
+        {
+          "obstacle": 229,
+          "name": "Structural volume 229"
+        },
+        {
+          "obstacle": 230,
+          "name": "Raised sloped section 230"
+        },
+        {
+          "obstacle": 231,
+          "name": "Structural volume 231"
+        }
+      ]
+    },
+    {
+      "id": "york-southeast-wall-lane-gable-house",
+      "name": "Southeast wall-lane gable house",
+      "parts": [
+        {
+          "obstacle": 223,
+          "name": "Structural volume 223"
+        },
+        {
+          "obstacle": 224,
+          "name": "Structural volume 224"
+        },
+        {
+          "obstacle": 225,
+          "name": "Structural volume 225"
+        },
+        {
+          "obstacle": 226,
+          "name": "Structural volume 226"
+        }
+      ]
+    },
+    {
+      "id": "york-outer-southeast-wall-stair-and-bastion",
+      "name": "Outer southeast wall stair and bastion",
+      "parts": [
+        {
+          "obstacle": 232,
+          "name": "Raised section 232"
+        },
+        {
+          "obstacle": 233,
+          "name": "Structural volume 233"
+        },
+        {
+          "obstacle": 234,
+          "name": "Structural volume 234"
+        },
+        {
+          "obstacle": 235,
+          "name": "Structural volume 235"
+        }
+      ]
+    },
+    {
+      "id": "york-outer-east-wall-southern-stair-section",
+      "name": "Outer east wall southern stair section",
+      "parts": [
+        {
+          "obstacle": 236,
+          "name": "Raised section 236"
+        },
+        {
+          "obstacle": 237,
+          "name": "Structural volume 237"
+        },
+        {
+          "obstacle": 238,
+          "name": "Raised section 238"
+        },
+        {
+          "obstacle": 239,
+          "name": "Structural volume 239"
+        },
+        {
+          "obstacle": 240,
+          "name": "Raised section 240"
+        },
+        {
+          "obstacle": 241,
+          "name": "Structural volume 241"
+        },
+        {
+          "obstacle": 242,
+          "name": "Structural volume 242"
+        },
+        {
+          "obstacle": 244,
+          "name": "Structural volume 244"
+        },
+        {
+          "obstacle": 249,
+          "name": "Structural volume 249"
+        },
+        {
+          "obstacle": 250,
+          "name": "Structural volume 250"
+        },
+        {
+          "obstacle": 251,
+          "name": "Structural volume 251"
+        },
+        {
+          "obstacle": 252,
+          "name": "Structural volume 252"
+        },
+        {
+          "obstacle": 253,
+          "name": "Raised section 253"
+        },
+        {
+          "obstacle": 980,
+          "name": "Structural volume 980"
+        }
+      ]
+    },
+    {
+      "id": "york-outer-east-conical-watchtower",
+      "name": "Outer east conical watchtower",
+      "parts": [
+        {
+          "obstacle": 243,
+          "name": "Structural volume 243"
+        },
+        {
+          "obstacle": 245,
+          "name": "Raised section 245"
+        },
+        {
+          "obstacle": 246,
+          "name": "Raised sloped section 246"
+        },
+        {
+          "obstacle": 247,
+          "name": "Raised sloped section 247"
+        },
+        {
+          "obstacle": 248,
+          "name": "Raised sloped section 248"
+        }
+      ]
+    },
+    {
+      "id": "york-inner-southeast-curtain-wall",
+      "name": "Inner southeast curtain wall",
+      "parts": [
+        {
+          "obstacle": 254,
+          "name": "Structural volume 254"
+        },
+        {
+          "obstacle": 275,
+          "name": "Structural volume 275"
+        },
+        {
+          "obstacle": 284,
+          "name": "Structural volume 284"
+        }
+      ]
+    },
+    {
+      "id": "york-inner-east-curtain-wall-and-stair",
+      "name": "Inner east curtain wall and stair",
+      "parts": [
+        {
+          "obstacle": 255,
+          "name": "Structural volume 255"
+        },
+        {
+          "obstacle": 256,
+          "name": "Raised section 256"
+        },
+        {
+          "obstacle": 257,
+          "name": "Raised section 257"
+        },
+        {
+          "obstacle": 979,
+          "name": "Structural volume 979"
+        }
+      ]
+    },
+    {
+      "id": "york-inner-east-blue-roof-watchtower",
+      "name": "Inner east blue-roof watchtower",
+      "parts": [
+        {
+          "obstacle": 258,
+          "name": "Structural volume 258"
+        },
+        {
+          "obstacle": 276,
+          "name": "Raised sloped section 276"
+        },
+        {
+          "obstacle": 277,
+          "name": "Raised sloped section 277"
+        },
+        {
+          "obstacle": 278,
+          "name": "Raised sloped section 278"
+        },
+        {
+          "obstacle": 279,
+          "name": "Raised sloped section 279"
+        }
+      ]
+    },
+    {
+      "id": "york-east-riverside-curtain-wall-and-bastion",
+      "name": "East riverside curtain wall and bastion",
+      "parts": [
+        {
+          "obstacle": 259,
+          "name": "Structural volume 259"
+        },
+        {
+          "obstacle": 260,
+          "name": "Structural volume 260"
+        },
+        {
+          "obstacle": 261,
+          "name": "Structural volume 261"
+        },
+        {
+          "obstacle": 265,
+          "name": "Structural volume 265"
+        },
+        {
+          "obstacle": 283,
+          "name": "Structural volume 283"
+        }
+      ]
+    },
+    {
+      "id": "york-east-water-gate-and-bastion",
+      "name": "East water gate and bastion",
+      "parts": [
+        {
+          "obstacle": 262,
+          "name": "Raised section 262"
+        },
+        {
+          "obstacle": 263,
+          "name": "Raised section 263"
+        },
+        {
+          "obstacle": 264,
+          "name": "Raised section 264"
+        },
+        {
+          "obstacle": 266,
+          "name": "Structural volume 266"
+        },
+        {
+          "obstacle": 267,
+          "name": "Structural volume 267"
+        }
+      ]
+    },
+    {
+      "id": "york-east-riverside-wall-and-roofed-passage",
+      "name": "East riverside wall and roofed passage",
+      "parts": [
+        {
+          "obstacle": 268,
+          "name": "Structural volume 268"
+        },
+        {
+          "obstacle": 269,
+          "name": "Raised sloped section 269"
+        },
+        {
+          "obstacle": 274,
+          "name": "Structural volume 274"
+        },
+        {
+          "obstacle": 280,
+          "name": "Structural volume 280"
+        },
+        {
+          "obstacle": 282,
+          "name": "Structural volume 282"
+        },
+        {
+          "obstacle": 285,
+          "name": "Structural volume 285"
+        },
+        {
+          "obstacle": 286,
+          "name": "Structural volume 286"
+        },
+        {
+          "obstacle": 287,
+          "name": "Structural volume 287"
+        },
+        {
+          "obstacle": 815,
+          "name": "Structural volume 815"
+        }
+      ]
+    },
+    {
+      "id": "york-east-riverside-round-watchtower",
+      "name": "East riverside round watchtower",
+      "parts": [
+        {
+          "obstacle": 270,
+          "name": "Raised sloped section 270"
+        },
+        {
+          "obstacle": 271,
+          "name": "Raised sloped section 271"
+        },
+        {
+          "obstacle": 272,
+          "name": "Raised sloped section 272"
+        },
+        {
+          "obstacle": 273,
+          "name": "Raised sloped section 273"
+        },
+        {
+          "obstacle": 281,
+          "name": "Structural volume 281"
+        }
+      ]
+    },
+    {
+      "id": "york-southwest-square-courtyard-house",
+      "name": "Southwest square courtyard house",
+      "parts": [
+        {
+          "obstacle": 288,
+          "name": "Structural volume 288"
+        },
+        {
+          "obstacle": 289,
+          "name": "Raised section 289"
+        },
+        {
+          "obstacle": 290,
+          "name": "Raised sloped section 290"
+        },
+        {
+          "obstacle": 291,
+          "name": "Raised sloped section 291"
+        },
+        {
+          "obstacle": 292,
+          "name": "Structural volume 292"
+        },
+        {
+          "obstacle": 293,
+          "name": "Raised section 293"
+        },
+        {
+          "obstacle": 294,
+          "name": "Raised sloped section 294"
+        },
+        {
+          "obstacle": 295,
+          "name": "Raised sloped section 295"
+        },
+        {
+          "obstacle": 307,
+          "name": "Structural volume 307"
+        },
+        {
+          "obstacle": 308,
+          "name": "Structural volume 308"
+        },
+        {
+          "obstacle": 309,
+          "name": "Structural volume 309"
+        },
+        {
+          "obstacle": 310,
+          "name": "Structural volume 310"
+        },
+        {
+          "obstacle": 313,
+          "name": "Structural volume 313"
+        }
+      ]
+    },
+    {
+      "id": "york-southwest-square-narrow-gable-house",
+      "name": "Southwest square narrow gable house",
+      "parts": [
+        {
+          "obstacle": 296,
+          "name": "Structural volume 296"
+        },
+        {
+          "obstacle": 297,
+          "name": "Raised sloped section 297"
+        },
+        {
+          "obstacle": 298,
+          "name": "Raised sloped section 298"
+        },
+        {
+          "obstacle": 299,
+          "name": "Structural volume 299"
+        },
+        {
+          "obstacle": 300,
+          "name": "Raised section 300"
+        },
+        {
+          "obstacle": 301,
+          "name": "Structural volume 301"
+        },
+        {
+          "obstacle": 302,
+          "name": "Raised sloped section 302"
+        },
+        {
+          "obstacle": 303,
+          "name": "Raised sloped section 303"
+        },
+        {
+          "obstacle": 304,
+          "name": "Structural volume 304"
+        },
+        {
+          "obstacle": 305,
+          "name": "Raised sloped section 305"
+        },
+        {
+          "obstacle": 306,
+          "name": "Raised sloped section 306"
+        }
+      ]
+    },
+    {
+      "id": "york-market-southeast-tall-narrow-house",
+      "name": "Market southeast tall narrow house",
+      "parts": [
+        {
+          "obstacle": 311,
+          "name": "Raised sloped section 311"
+        },
+        {
+          "obstacle": 312,
+          "name": "Raised sloped section 312"
+        },
+        {
+          "obstacle": 949,
+          "name": "Raised section 949"
+        },
+        {
+          "obstacle": 962,
+          "name": "Raised sloped section 962"
+        },
+        {
+          "obstacle": 971,
+          "name": "Structural volume 971"
+        }
+      ]
+    },
+    {
+      "id": "york-central-south-green-timber-house",
+      "name": "Central south green timber house",
+      "parts": [
+        {
+          "obstacle": 314,
+          "name": "Structural volume 314"
+        },
+        {
+          "obstacle": 315,
+          "name": "Raised sloped section 315"
+        },
+        {
+          "obstacle": 316,
+          "name": "Raised section 316"
+        },
+        {
+          "obstacle": 317,
+          "name": "Raised sloped section 317"
+        },
+        {
+          "obstacle": 320,
+          "name": "Structural volume 320"
+        }
+      ]
+    },
+    {
+      "id": "york-central-south-street-barrel",
+      "name": "Central south street barrel",
+      "parts": [
+        {
+          "obstacle": 318,
+          "name": "Structural volume 318"
+        }
+      ]
+    },
+    {
+      "id": "york-central-south-red-timber-house",
+      "name": "Central south red timber house",
+      "parts": [
+        {
+          "obstacle": 321,
+          "name": "Structural volume 321"
+        },
+        {
+          "obstacle": 322,
+          "name": "Raised sloped section 322"
+        },
+        {
+          "obstacle": 323,
+          "name": "Raised sloped section 323"
+        },
+        {
+          "obstacle": 324,
+          "name": "Structural volume 324"
+        },
+        {
+          "obstacle": 325,
+          "name": "Structural volume 325"
+        },
+        {
+          "obstacle": 326,
+          "name": "Raised section 326"
+        },
+        {
+          "obstacle": 327,
+          "name": "Structural volume 327"
+        },
+        {
+          "obstacle": 330,
+          "name": "Structural volume 330"
+        },
+        {
+          "obstacle": 331,
+          "name": "Structural volume 331"
+        },
+        {
+          "obstacle": 332,
+          "name": "Raised section 332"
+        },
+        {
+          "obstacle": 333,
+          "name": "Structural volume 333"
+        },
+        {
+          "obstacle": 334,
+          "name": "Structural volume 334"
+        }
+      ]
+    },
+    {
+      "id": "york-central-south-golden-timber-house",
+      "name": "Central south golden timber house",
+      "parts": [
+        {
+          "obstacle": 328,
+          "name": "Raised sloped section 328"
+        },
+        {
+          "obstacle": 335,
+          "name": "Structural volume 335"
+        },
+        {
+          "obstacle": 336,
+          "name": "Raised sloped section 336"
+        },
+        {
+          "obstacle": 337,
+          "name": "Structural volume 337"
+        },
+        {
+          "obstacle": 338,
+          "name": "Structural volume 338"
+        },
+        {
+          "obstacle": 339,
+          "name": "Structural volume 339"
+        },
+        {
+          "obstacle": 340,
+          "name": "Structural volume 340"
+        },
+        {
+          "obstacle": 341,
+          "name": "Structural volume 341"
+        },
+        {
+          "obstacle": 342,
+          "name": "Raised sloped section 342"
+        },
+        {
+          "obstacle": 343,
+          "name": "Raised sloped section 343"
+        }
+      ]
+    },
+    {
+      "id": "york-central-south-jettied-corner-house",
+      "name": "Central south jettied corner house",
+      "parts": [
+        {
+          "obstacle": 344,
+          "name": "Structural volume 344"
+        },
+        {
+          "obstacle": 345,
+          "name": "Structural volume 345"
+        },
+        {
+          "obstacle": 346,
+          "name": "Structural volume 346"
+        },
+        {
+          "obstacle": 347,
+          "name": "Structural volume 347"
+        },
+        {
+          "obstacle": 348,
+          "name": "Structural volume 348"
+        },
+        {
+          "obstacle": 349,
+          "name": "Structural volume 349"
+        },
+        {
+          "obstacle": 350,
+          "name": "Raised sloped section 350"
+        },
+        {
+          "obstacle": 351,
+          "name": "Structural volume 351"
+        },
+        {
+          "obstacle": 352,
+          "name": "Structural volume 352"
+        },
+        {
+          "obstacle": 353,
+          "name": "Structural volume 353"
+        },
+        {
+          "obstacle": 354,
+          "name": "Structural volume 354"
+        },
+        {
+          "obstacle": 355,
+          "name": "Structural volume 355"
+        }
+      ]
+    },
+    {
+      "id": "york-south-terrace-pale-timber-shop",
+      "name": "South terrace pale timber shop",
+      "parts": [
+        {
+          "obstacle": 357,
+          "name": "Structural volume 357"
+        },
+        {
+          "obstacle": 358,
+          "name": "Raised section 358"
+        },
+        {
+          "obstacle": 359,
+          "name": "Raised sloped section 359"
+        }
+      ]
+    },
+    {
+      "id": "york-south-terrace-dark-timber-house",
+      "name": "South terrace dark timber house",
+      "parts": [
+        {
+          "obstacle": 360,
+          "name": "Structural volume 360"
+        },
+        {
+          "obstacle": 361,
+          "name": "Raised sloped section 361"
+        },
+        {
+          "obstacle": 362,
+          "name": "Structural volume 362"
+        },
+        {
+          "obstacle": 363,
+          "name": "Raised section 363"
+        }
+      ]
+    },
+    {
+      "id": "york-south-terrace-retaining-wall-and-stairs",
+      "name": "South terrace retaining wall and stairs",
+      "parts": [
+        {
+          "obstacle": 91,
+          "name": "Structural volume 091"
+        },
+        {
+          "obstacle": 364,
+          "name": "Structural volume 364"
+        },
+        {
+          "obstacle": 365,
+          "name": "Structural volume 365"
+        }
+      ]
+    },
+    {
+      "id": "york-south-terrace-low-timber-row",
+      "name": "South terrace low timber row",
+      "parts": [
+        {
+          "obstacle": 366,
+          "name": "Structural volume 366"
+        },
+        {
+          "obstacle": 367,
+          "name": "Structural volume 367"
+        },
+        {
+          "obstacle": 368,
+          "name": "Structural volume 368"
+        },
+        {
+          "obstacle": 370,
+          "name": "Structural volume 370"
+        },
+        {
+          "obstacle": 372,
+          "name": "Structural volume 372"
+        }
+      ]
+    },
+    {
+      "id": "york-south-terrace-thatched-round-turret",
+      "name": "South terrace thatched round turret",
+      "parts": [
+        {
+          "obstacle": 369,
+          "name": "Structural volume 369"
+        },
+        {
+          "obstacle": 371,
+          "name": "Structural volume 371"
+        },
+        {
+          "obstacle": 374,
+          "name": "Structural volume 374"
+        },
+        {
+          "obstacle": 375,
+          "name": "Raised sloped section 375"
+        },
+        {
+          "obstacle": 376,
+          "name": "Raised sloped section 376"
+        }
+      ]
+    },
+    {
+      "id": "york-south-terrace-riverside-wall",
+      "name": "South terrace riverside wall",
+      "parts": [
+        {
+          "obstacle": 373,
+          "name": "Structural volume 373"
+        }
+      ]
+    },
+    {
+      "id": "york-southeast-lane-western-timber-house",
+      "name": "Southeast lane western timber house",
+      "parts": [
+        {
+          "obstacle": 377,
+          "name": "Structural volume 377"
+        },
+        {
+          "obstacle": 378,
+          "name": "Raised section 378"
+        },
+        {
+          "obstacle": 379,
+          "name": "Raised sloped section 379"
+        },
+        {
+          "obstacle": 380,
+          "name": "Raised sloped section 380"
+        },
+        {
+          "obstacle": 381,
+          "name": "Structural volume 381"
+        },
+        {
+          "obstacle": 388,
+          "name": "Structural volume 388"
+        },
+        {
+          "obstacle": 389,
+          "name": "Structural volume 389"
+        }
+      ]
+    },
+    {
+      "id": "york-southeast-lane-eastern-timber-house",
+      "name": "Southeast lane eastern timber house",
+      "parts": [
+        {
+          "obstacle": 382,
+          "name": "Structural volume 382"
+        },
+        {
+          "obstacle": 383,
+          "name": "Raised section 383"
+        },
+        {
+          "obstacle": 384,
+          "name": "Raised sloped section 384"
+        },
+        {
+          "obstacle": 385,
+          "name": "Raised sloped section 385"
+        },
+        {
+          "obstacle": 386,
+          "name": "Structural volume 386"
+        },
+        {
+          "obstacle": 387,
+          "name": "Raised sloped section 387"
+        }
+      ]
+    },
+    {
+      "id": "york-south-wall-lane-timber-house",
+      "name": "South wall-lane timber house",
+      "parts": [
+        {
+          "obstacle": 390,
+          "name": "Structural volume 390"
+        },
+        {
+          "obstacle": 391,
+          "name": "Raised sloped section 391"
+        },
+        {
+          "obstacle": 392,
+          "name": "Structural volume 392"
+        },
+        {
+          "obstacle": 397,
+          "name": "Structural volume 397"
+        },
+        {
+          "obstacle": 398,
+          "name": "Structural volume 398"
+        },
+        {
+          "obstacle": 399,
+          "name": "Structural volume 399"
+        }
+      ]
+    },
+    {
+      "id": "york-south-wall-lane-stone-hall",
+      "name": "South wall-lane stone hall",
+      "parts": [
+        {
+          "obstacle": 393,
+          "name": "Structural volume 393"
+        },
+        {
+          "obstacle": 394,
+          "name": "Raised sloped section 394"
+        },
+        {
+          "obstacle": 395,
+          "name": "Raised sloped section 395"
+        },
+        {
+          "obstacle": 396,
+          "name": "Raised sloped section 396"
+        },
+        {
+          "obstacle": 400,
+          "name": "Structural volume 400"
+        },
+        {
+          "obstacle": 401,
+          "name": "Structural volume 401"
+        },
+        {
+          "obstacle": 402,
+          "name": "Structural volume 402"
+        },
+        {
+          "obstacle": 403,
+          "name": "Structural volume 403"
+        },
+        {
+          "obstacle": 404,
+          "name": "Structural volume 404"
+        }
+      ]
+    },
+    {
+      "id": "york-south-wall-lane-square-stone-tower-house",
+      "name": "South wall-lane square stone tower house",
+      "parts": [
+        {
+          "obstacle": 405,
+          "name": "Structural volume 405"
+        },
+        {
+          "obstacle": 406,
+          "name": "Raised sloped section 406"
+        },
+        {
+          "obstacle": 407,
+          "name": "Raised sloped section 407"
+        },
+        {
+          "obstacle": 408,
+          "name": "Structural volume 408"
+        },
+        {
+          "obstacle": 409,
+          "name": "Raised sloped section 409"
+        },
+        {
+          "obstacle": 410,
+          "name": "Raised sloped section 410"
+        },
+        {
+          "obstacle": 411,
+          "name": "Raised sloped section 411"
+        },
+        {
+          "obstacle": 412,
+          "name": "Structural volume 412"
+        }
+      ]
+    },
+    {
+      "id": "york-south-gate-lane-house-and-round-turret",
+      "name": "South gate lane house and round turret",
+      "parts": [
+        {
+          "obstacle": 413,
+          "name": "Structural volume 413"
+        },
+        {
+          "obstacle": 414,
+          "name": "Raised sloped section 414"
+        },
+        {
+          "obstacle": 415,
+          "name": "Raised sloped section 415"
+        },
+        {
+          "obstacle": 416,
+          "name": "Structural volume 416"
+        },
+        {
+          "obstacle": 417,
+          "name": "Raised sloped section 417"
+        },
+        {
+          "obstacle": 418,
+          "name": "Raised sloped section 418"
+        },
+        {
+          "obstacle": 419,
+          "name": "Raised sloped section 419"
+        },
+        {
+          "obstacle": 420,
+          "name": "Structural volume 420"
+        },
+        {
+          "obstacle": 421,
+          "name": "Structural volume 421"
+        },
+        {
+          "obstacle": 422,
+          "name": "Structural volume 422"
+        },
+        {
+          "obstacle": 423,
+          "name": "Structural volume 423"
+        },
+        {
+          "obstacle": 424,
+          "name": "Structural volume 424"
+        },
+        {
+          "obstacle": 425,
+          "name": "Raised sloped section 425"
+        }
+      ]
+    },
+    {
+      "id": "york-south-gate-lane-tall-timber-house",
+      "name": "South gate lane tall timber house",
+      "parts": [
+        {
+          "obstacle": 426,
+          "name": "Structural volume 426"
+        },
+        {
+          "obstacle": 427,
+          "name": "Raised section 427"
+        },
+        {
+          "obstacle": 428,
+          "name": "Raised section 428"
+        },
+        {
+          "obstacle": 429,
+          "name": "Raised sloped section 429"
+        },
+        {
+          "obstacle": 430,
+          "name": "Raised sloped section 430"
+        },
+        {
+          "obstacle": 439,
+          "name": "Raised section 439"
+        },
+        {
+          "obstacle": 440,
+          "name": "Structural volume 440"
+        },
+        {
+          "obstacle": 441,
+          "name": "Structural volume 441"
+        },
+        {
+          "obstacle": 446,
+          "name": "Structural volume 446"
+        },
+        {
+          "obstacle": 456,
+          "name": "Structural volume 456"
+        },
+        {
+          "obstacle": 457,
+          "name": "Structural volume 457"
+        }
+      ]
+    },
+    {
+      "id": "york-south-gate-lane-courtyard-boundary-wall",
+      "name": "South gate lane courtyard boundary wall",
+      "parts": [
+        {
+          "obstacle": 431,
+          "name": "Structural volume 431"
+        },
+        {
+          "obstacle": 432,
+          "name": "Structural volume 432"
+        }
+      ]
+    },
+    {
+      "id": "york-south-gate-lane-stone-house-and-turret",
+      "name": "South gate lane stone house and turret",
+      "parts": [
+        {
+          "obstacle": 433,
+          "name": "Structural volume 433"
+        },
+        {
+          "obstacle": 434,
+          "name": "Structural volume 434"
+        },
+        {
+          "obstacle": 436,
+          "name": "Raised sloped section 436"
+        },
+        {
+          "obstacle": 437,
+          "name": "Raised sloped section 437"
+        },
+        {
+          "obstacle": 438,
+          "name": "Structural volume 438"
+        },
+        {
+          "obstacle": 442,
+          "name": "Structural volume 442"
+        },
+        {
+          "obstacle": 459,
+          "name": "Raised sloped section 459"
+        }
+      ]
+    },
+    {
+      "id": "york-south-gate-lane-terrace-stairs",
+      "name": "South gate lane terrace stairs",
+      "parts": [
+        {
+          "obstacle": 435,
+          "name": "Structural volume 435"
+        },
+        {
+          "obstacle": 460,
+          "name": "Structural volume 460"
+        }
+      ]
+    },
+    {
+      "id": "york-southwest-lane-broad-timber-house",
+      "name": "Southwest lane broad timber house",
+      "parts": [
+        {
+          "obstacle": 443,
+          "name": "Structural volume 443"
+        },
+        {
+          "obstacle": 444,
+          "name": "Raised sloped section 444"
+        },
+        {
+          "obstacle": 445,
+          "name": "Raised sloped section 445"
+        },
+        {
+          "obstacle": 447,
+          "name": "Structural volume 447"
+        },
+        {
+          "obstacle": 448,
+          "name": "Raised section 448"
+        },
+        {
+          "obstacle": 449,
+          "name": "Structural volume 449"
+        },
+        {
+          "obstacle": 450,
+          "name": "Structural volume 450"
+        },
+        {
+          "obstacle": 451,
+          "name": "Structural volume 451"
+        },
+        {
+          "obstacle": 452,
+          "name": "Structural volume 452"
+        },
+        {
+          "obstacle": 453,
+          "name": "Structural volume 453"
+        },
+        {
+          "obstacle": 454,
+          "name": "Structural volume 454"
+        },
+        {
+          "obstacle": 455,
+          "name": "Raised section 455"
+        },
+        {
+          "obstacle": 458,
+          "name": "Structural volume 458"
+        }
+      ]
+    },
+    {
+      "id": "york-market-southwest-stone-manor",
+      "name": "Market southwest stone manor",
+      "parts": [
+        {
+          "obstacle": 461,
+          "name": "Structural volume 461"
+        },
+        {
+          "obstacle": 462,
+          "name": "Structural volume 462"
+        },
+        {
+          "obstacle": 463,
+          "name": "Raised sloped section 463"
+        },
+        {
+          "obstacle": 464,
+          "name": "Raised sloped section 464"
+        },
+        {
+          "obstacle": 465,
+          "name": "Structural volume 465"
+        },
+        {
+          "obstacle": 466,
+          "name": "Structural volume 466"
+        },
+        {
+          "obstacle": 467,
+          "name": "Structural volume 467"
+        },
+        {
+          "obstacle": 468,
+          "name": "Structural volume 468"
+        },
+        {
+          "obstacle": 469,
+          "name": "Raised sloped section 469"
+        },
+        {
+          "obstacle": 470,
+          "name": "Raised sloped section 470"
+        },
+        {
+          "obstacle": 471,
+          "name": "Structural volume 471"
+        },
+        {
+          "obstacle": 472,
+          "name": "Structural volume 472"
+        },
+        {
+          "obstacle": 473,
+          "name": "Structural volume 473"
+        },
+        {
+          "obstacle": 474,
+          "name": "Structural volume 474"
+        },
+        {
+          "obstacle": 475,
+          "name": "Structural volume 475"
+        },
+        {
+          "obstacle": 476,
+          "name": "Structural volume 476"
+        },
+        {
+          "obstacle": 477,
+          "name": "Structural volume 477"
+        },
+        {
+          "obstacle": 478,
+          "name": "Structural volume 478"
+        },
+        {
+          "obstacle": 479,
+          "name": "Structural volume 479"
+        },
+        {
+          "obstacle": 480,
+          "name": "Structural volume 480"
+        },
+        {
+          "obstacle": 481,
+          "name": "Structural volume 481"
+        },
+        {
+          "obstacle": 482,
+          "name": "Structural volume 482"
+        },
+        {
+          "obstacle": 483,
+          "name": "Structural volume 483"
+        },
+        {
+          "obstacle": 484,
+          "name": "Raised sloped section 484"
+        },
+        {
+          "obstacle": 485,
+          "name": "Structural volume 485"
+        },
+        {
+          "obstacle": 486,
+          "name": "Structural volume 486"
+        },
+        {
+          "obstacle": 487,
+          "name": "Structural volume 487"
+        },
+        {
+          "obstacle": 488,
+          "name": "Structural volume 488"
+        },
+        {
+          "obstacle": 489,
+          "name": "Raised section 489"
+        },
+        {
+          "obstacle": 490,
+          "name": "Raised sloped section 490"
+        },
+        {
+          "obstacle": 491,
+          "name": "Raised sloped section 491"
+        },
+        {
+          "obstacle": 492,
+          "name": "Raised sloped section 492"
+        }
+      ]
+    },
+    {
+      "id": "york-market-southwest-stone-arch",
+      "name": "Market southwest stone arch",
+      "parts": [
+        {
+          "obstacle": 493,
+          "name": "Structural volume 493"
+        },
+        {
+          "obstacle": 494,
+          "name": "Raised section 494"
+        }
+      ]
+    },
+    {
+      "id": "york-market-striped-canopy-pottery-stall",
+      "name": "Market striped-canopy pottery stall",
+      "parts": [
+        {
+          "obstacle": 495,
+          "name": "Structural volume 495"
+        },
+        {
+          "obstacle": 496,
+          "name": "Structural volume 496"
+        },
+        {
+          "obstacle": 497,
+          "name": "Structural volume 497"
+        },
+        {
+          "obstacle": 966,
+          "name": "Structural volume 966"
+        },
+        {
+          "obstacle": 967,
+          "name": "Raised section 967"
+        },
+        {
+          "obstacle": 978,
+          "name": "Structural volume 978"
+        }
+      ]
+    },
+    {
+      "id": "york-southwest-ivy-covered-tower-house",
+      "name": "Southwest ivy-covered tower house",
+      "parts": [
+        {
+          "obstacle": 498,
+          "name": "Structural volume 498"
+        },
+        {
+          "obstacle": 499,
+          "name": "Structural volume 499"
+        },
+        {
+          "obstacle": 500,
+          "name": "Structural volume 500"
+        },
+        {
+          "obstacle": 501,
+          "name": "Raised sloped section 501"
+        },
+        {
+          "obstacle": 502,
+          "name": "Structural volume 502"
+        },
+        {
+          "obstacle": 503,
+          "name": "Structural volume 503"
+        },
+        {
+          "obstacle": 523,
+          "name": "Structural volume 523"
+        },
+        {
+          "obstacle": 524,
+          "name": "Structural volume 524"
+        },
+        {
+          "obstacle": 525,
+          "name": "Structural volume 525"
+        }
+      ]
+    },
+    {
+      "id": "york-southwest-market-courtyard-house",
+      "name": "Southwest market courtyard house",
+      "parts": [
+        {
+          "obstacle": 504,
+          "name": "Raised sloped section 504"
+        },
+        {
+          "obstacle": 505,
+          "name": "Structural volume 505"
+        },
+        {
+          "obstacle": 506,
+          "name": "Structural volume 506"
+        },
+        {
+          "obstacle": 507,
+          "name": "Raised sloped section 507"
+        },
+        {
+          "obstacle": 508,
+          "name": "Raised sloped section 508"
+        },
+        {
+          "obstacle": 509,
+          "name": "Raised sloped section 509"
+        },
+        {
+          "obstacle": 510,
+          "name": "Structural volume 510"
+        },
+        {
+          "obstacle": 511,
+          "name": "Structural volume 511"
+        },
+        {
+          "obstacle": 512,
+          "name": "Structural volume 512"
+        },
+        {
+          "obstacle": 513,
+          "name": "Structural volume 513"
+        },
+        {
+          "obstacle": 514,
+          "name": "Structural volume 514"
+        },
+        {
+          "obstacle": 515,
+          "name": "Structural volume 515"
+        },
+        {
+          "obstacle": 516,
+          "name": "Raised sloped section 516"
+        },
+        {
+          "obstacle": 517,
+          "name": "Structural volume 517"
+        },
+        {
+          "obstacle": 518,
+          "name": "Structural volume 518"
+        },
+        {
+          "obstacle": 519,
+          "name": "Structural volume 519"
+        },
+        {
+          "obstacle": 520,
+          "name": "Structural volume 520"
+        },
+        {
+          "obstacle": 521,
+          "name": "Structural volume 521"
+        },
+        {
+          "obstacle": 522,
+          "name": "Structural volume 522"
+        }
+      ]
+    },
+    {
+      "id": "york-south-city-wall-western-curtain",
+      "name": "South city wall western curtain",
+      "parts": [
+        {
+          "obstacle": 552,
+          "name": "Structural volume 552"
+        },
+        {
+          "obstacle": 553,
+          "name": "Structural volume 553"
+        },
+        {
+          "obstacle": 554,
+          "name": "Structural volume 554"
+        },
+        {
+          "obstacle": 575,
+          "name": "Structural volume 575"
+        },
+        {
+          "obstacle": 578,
+          "name": "Structural volume 578"
+        }
+      ]
+    },
+    {
+      "id": "york-south-city-wall-western-roofed-tower",
+      "name": "South city wall western roofed tower",
+      "parts": [
+        {
+          "obstacle": 555,
+          "name": "Structural volume 555"
+        },
+        {
+          "obstacle": 556,
+          "name": "Structural volume 556"
+        },
+        {
+          "obstacle": 557,
+          "name": "Structural volume 557"
+        },
+        {
+          "obstacle": 558,
+          "name": "Raised sloped section 558"
+        },
+        {
+          "obstacle": 559,
+          "name": "Raised sloped section 559"
+        },
+        {
+          "obstacle": 560,
+          "name": "Raised sloped section 560"
+        },
+        {
+          "obstacle": 561,
+          "name": "Raised sloped section 561"
+        },
+        {
+          "obstacle": 562,
+          "name": "Raised sloped section 562"
+        }
+      ]
+    },
+    {
+      "id": "york-south-city-wall-long-central-curtain",
+      "name": "South city wall long central curtain",
+      "parts": [
+        {
+          "obstacle": 563,
+          "name": "Structural volume 563"
+        },
+        {
+          "obstacle": 564,
+          "name": "Structural volume 564"
+        }
+      ]
+    },
+    {
+      "id": "york-south-city-wall-eastern-curtain",
+      "name": "South city wall eastern curtain",
+      "parts": [
+        {
+          "obstacle": 565,
+          "name": "Structural volume 565"
+        },
+        {
+          "obstacle": 566,
+          "name": "Structural volume 566"
+        }
+      ]
+    },
+    {
+      "id": "york-south-city-wall-eastern-roofed-tower",
+      "name": "South city wall eastern roofed tower",
+      "parts": [
+        {
+          "obstacle": 567,
+          "name": "Structural volume 567"
+        },
+        {
+          "obstacle": 568,
+          "name": "Structural volume 568"
+        },
+        {
+          "obstacle": 569,
+          "name": "Structural volume 569"
+        },
+        {
+          "obstacle": 570,
+          "name": "Raised sloped section 570"
+        },
+        {
+          "obstacle": 571,
+          "name": "Raised sloped section 571"
+        },
+        {
+          "obstacle": 572,
+          "name": "Raised sloped section 572"
+        },
+        {
+          "obstacle": 573,
+          "name": "Raised sloped section 573"
+        },
+        {
+          "obstacle": 574,
+          "name": "Raised sloped section 574"
+        }
+      ]
+    },
+    {
+      "id": "york-west-town-lane-turreted-house",
+      "name": "West town lane turreted house",
+      "parts": [
+        {
+          "obstacle": 579,
+          "name": "Structural volume 579"
+        },
+        {
+          "obstacle": 580,
+          "name": "Raised sloped section 580"
+        },
+        {
+          "obstacle": 581,
+          "name": "Raised sloped section 581"
+        },
+        {
+          "obstacle": 584,
+          "name": "Raised sloped section 584"
+        },
+        {
+          "obstacle": 585,
+          "name": "Raised sloped section 585"
+        },
+        {
+          "obstacle": 586,
+          "name": "Raised sloped section 586"
+        },
+        {
+          "obstacle": 594,
+          "name": "Structural volume 594"
+        },
+        {
+          "obstacle": 595,
+          "name": "Structural volume 595"
+        },
+        {
+          "obstacle": 596,
+          "name": "Raised sloped section 596"
+        },
+        {
+          "obstacle": 597,
+          "name": "Raised sloped section 597"
+        },
+        {
+          "obstacle": 598,
+          "name": "Structural volume 598"
+        },
+        {
+          "obstacle": 599,
+          "name": "Structural volume 599"
+        },
+        {
+          "obstacle": 600,
+          "name": "Raised section 600"
+        },
+        {
+          "obstacle": 601,
+          "name": "Structural volume 601"
+        },
+        {
+          "obstacle": 602,
+          "name": "Structural volume 602"
+        },
+        {
+          "obstacle": 607,
+          "name": "Structural volume 607"
+        },
+        {
+          "obstacle": 617,
+          "name": "Structural volume 617"
+        },
+        {
+          "obstacle": 618,
+          "name": "Raised section 618"
+        }
+      ]
+    },
+    {
+      "id": "york-west-town-lane-narrow-timber-house",
+      "name": "West town lane narrow timber house",
+      "parts": [
+        {
+          "obstacle": 582,
+          "name": "Structural volume 582"
+        },
+        {
+          "obstacle": 583,
+          "name": "Raised section 583"
+        }
+      ]
+    },
+    {
+      "id": "york-west-town-lane-broad-timber-house",
+      "name": "West town lane broad timber house",
+      "parts": [
+        {
+          "obstacle": 587,
+          "name": "Raised sloped section 587"
+        },
+        {
+          "obstacle": 588,
+          "name": "Structural volume 588"
+        },
+        {
+          "obstacle": 589,
+          "name": "Raised section 589"
+        },
+        {
+          "obstacle": 590,
+          "name": "Raised section 590"
+        },
+        {
+          "obstacle": 591,
+          "name": "Raised sloped section 591"
+        },
+        {
+          "obstacle": 592,
+          "name": "Raised sloped section 592"
+        },
+        {
+          "obstacle": 593,
+          "name": "Structural volume 593"
+        },
+        {
+          "obstacle": 603,
+          "name": "Structural volume 603"
+        },
+        {
+          "obstacle": 604,
+          "name": "Structural volume 604"
+        },
+        {
+          "obstacle": 605,
+          "name": "Raised sloped section 605"
+        },
+        {
+          "obstacle": 606,
+          "name": "Raised sloped section 606"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-causeway-ivy-covered-house",
+      "name": "Precinct causeway ivy-covered house",
+      "parts": [
+        {
+          "obstacle": 608,
+          "name": "Structural volume 608"
+        },
+        {
+          "obstacle": 609,
+          "name": "Structural volume 609"
+        },
+        {
+          "obstacle": 610,
+          "name": "Structural volume 610"
+        },
+        {
+          "obstacle": 611,
+          "name": "Structural volume 611"
+        },
+        {
+          "obstacle": 612,
+          "name": "Structural volume 612"
+        }
+      ]
+    },
+    {
+      "id": "york-west-market-frontage-corner-shop",
+      "name": "West market frontage corner shop",
+      "parts": [
+        {
+          "obstacle": 619,
+          "name": "Structural volume 619"
+        },
+        {
+          "obstacle": 620,
+          "name": "Raised section 620"
+        },
+        {
+          "obstacle": 621,
+          "name": "Raised sloped section 621"
+        },
+        {
+          "obstacle": 622,
+          "name": "Raised sloped section 622"
+        },
+        {
+          "obstacle": 623,
+          "name": "Raised sloped section 623"
+        },
+        {
+          "obstacle": 624,
+          "name": "Raised sloped section 624"
+        },
+        {
+          "obstacle": 625,
+          "name": "Raised sloped section 625"
+        },
+        {
+          "obstacle": 641,
+          "name": "Structural volume 641"
+        },
+        {
+          "obstacle": 642,
+          "name": "Structural volume 642"
+        },
+        {
+          "obstacle": 643,
+          "name": "Raised sloped section 643"
+        },
+        {
+          "obstacle": 644,
+          "name": "Raised sloped section 644"
+        },
+        {
+          "obstacle": 650,
+          "name": "Shared foundation / front-shop",
+          "components": [
+            "front-shop"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "york-west-market-frontage-gabled-house",
+      "name": "West market frontage gabled house",
+      "parts": [
+        {
+          "obstacle": 626,
+          "name": "Structural volume 626"
+        },
+        {
+          "obstacle": 627,
+          "name": "Raised sloped section 627"
+        },
+        {
+          "obstacle": 628,
+          "name": "Structural volume 628"
+        },
+        {
+          "obstacle": 629,
+          "name": "Structural volume 629"
+        },
+        {
+          "obstacle": 645,
+          "name": "Structural volume 645"
+        },
+        {
+          "obstacle": 646,
+          "name": "Structural volume 646"
+        },
+        {
+          "obstacle": 647,
+          "name": "Structural volume 647"
+        },
+        {
+          "obstacle": 650,
+          "name": "Shared foundation / gable-house",
+          "components": [
+            "gable-house"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "york-west-market-frontage-dormer-house",
+      "name": "West market frontage dormer house",
+      "parts": [
+        {
+          "obstacle": 630,
+          "name": "Structural volume 630"
+        },
+        {
+          "obstacle": 631,
+          "name": "Structural volume 631"
+        },
+        {
+          "obstacle": 632,
+          "name": "Structural volume 632"
+        },
+        {
+          "obstacle": 648,
+          "name": "Structural volume 648"
+        },
+        {
+          "obstacle": 649,
+          "name": "Structural volume 649"
+        },
+        {
+          "obstacle": 650,
+          "name": "Shared foundation / dormer-house",
+          "components": [
+            "dormer-house"
+          ]
+        },
+        {
+          "obstacle": 651,
+          "name": "Structural volume 651"
+        }
+      ]
+    },
+    {
+      "id": "york-west-market-frontage-red-roof-house",
+      "name": "West market frontage red-roof house",
+      "parts": [
+        {
+          "obstacle": 633,
+          "name": "Structural volume 633"
+        },
+        {
+          "obstacle": 634,
+          "name": "Structural volume 634"
+        },
+        {
+          "obstacle": 638,
+          "name": "Structural volume 638"
+        },
+        {
+          "obstacle": 650,
+          "name": "Shared foundation / red-roof-house",
+          "components": [
+            "red-roof-house"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "york-west-market-frontage-north-end-house",
+      "name": "West market frontage north-end house",
+      "parts": [
+        {
+          "obstacle": 635,
+          "name": "Structural volume 635"
+        },
+        {
+          "obstacle": 636,
+          "name": "Structural volume 636"
+        },
+        {
+          "obstacle": 637,
+          "name": "Raised sloped section 637"
+        },
+        {
+          "obstacle": 639,
+          "name": "Structural volume 639"
+        },
+        {
+          "obstacle": 640,
+          "name": "Structural volume 640"
+        },
+        {
+          "obstacle": 650,
+          "name": "Shared foundation / north-house",
+          "components": [
+            "north-house"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "york-east-bridge-street-northern-timber-house",
+      "name": "East bridge street northern timber house",
+      "parts": [
+        {
+          "obstacle": 652,
+          "name": "Structural volume 652"
+        },
+        {
+          "obstacle": 653,
+          "name": "Structural volume 653"
+        },
+        {
+          "obstacle": 663,
+          "name": "Structural volume 663"
+        }
+      ]
+    },
+    {
+      "id": "york-east-bridge-street-central-timber-house",
+      "name": "East bridge street central timber house",
+      "parts": [
+        {
+          "obstacle": 654,
+          "name": "Structural volume 654"
+        },
+        {
+          "obstacle": 655,
+          "name": "Structural volume 655"
+        },
+        {
+          "obstacle": 656,
+          "name": "Raised section 656"
+        },
+        {
+          "obstacle": 657,
+          "name": "Raised section 657"
+        },
+        {
+          "obstacle": 658,
+          "name": "Raised sloped section 658"
+        },
+        {
+          "obstacle": 659,
+          "name": "Raised sloped section 659"
+        },
+        {
+          "obstacle": 660,
+          "name": "Structural volume 660"
+        },
+        {
+          "obstacle": 661,
+          "name": "Raised sloped section 661"
+        },
+        {
+          "obstacle": 662,
+          "name": "Raised sloped section 662"
+        }
+      ]
+    },
+    {
+      "id": "york-east-bridge-street-stair-side-timber-house",
+      "name": "East bridge street stair-side timber house",
+      "parts": [
+        {
+          "obstacle": 664,
+          "name": "Structural volume 664"
+        },
+        {
+          "obstacle": 665,
+          "name": "Raised section 665"
+        },
+        {
+          "obstacle": 666,
+          "name": "Raised section 666"
+        },
+        {
+          "obstacle": 667,
+          "name": "Raised sloped section 667"
+        },
+        {
+          "obstacle": 668,
+          "name": "Raised sloped section 668"
+        },
+        {
+          "obstacle": 669,
+          "name": "Structural volume 669"
+        },
+        {
+          "obstacle": 670,
+          "name": "Structural volume 670"
+        }
+      ]
+    },
+    {
+      "id": "york-east-bridge-street-stone-fronted-house",
+      "name": "East bridge street stone-fronted house",
+      "parts": [
+        {
+          "obstacle": 672,
+          "name": "Structural volume 672"
+        },
+        {
+          "obstacle": 673,
+          "name": "Raised section 673"
+        },
+        {
+          "obstacle": 674,
+          "name": "Raised sloped section 674"
+        },
+        {
+          "obstacle": 675,
+          "name": "Structural volume 675"
+        },
+        {
+          "obstacle": 676,
+          "name": "Raised section 676"
+        },
+        {
+          "obstacle": 677,
+          "name": "Raised sloped section 677"
+        },
+        {
+          "obstacle": 678,
+          "name": "Raised sloped section 678"
+        },
+        {
+          "obstacle": 679,
+          "name": "Structural volume 679"
+        },
+        {
+          "obstacle": 680,
+          "name": "Structural volume 680"
+        },
+        {
+          "obstacle": 681,
+          "name": "Structural volume 681"
+        },
+        {
+          "obstacle": 682,
+          "name": "Structural volume 682"
+        },
+        {
+          "obstacle": 694,
+          "name": "Structural volume 694"
+        }
+      ]
+    },
+    {
+      "id": "york-east-riverside-corner-house",
+      "name": "East riverside corner house",
+      "parts": [
+        {
+          "obstacle": 683,
+          "name": "Structural volume 683"
+        },
+        {
+          "obstacle": 684,
+          "name": "Raised section 684"
+        },
+        {
+          "obstacle": 685,
+          "name": "Raised sloped section 685"
+        },
+        {
+          "obstacle": 686,
+          "name": "Raised sloped section 686"
+        },
+        {
+          "obstacle": 687,
+          "name": "Raised sloped section 687"
+        },
+        {
+          "obstacle": 688,
+          "name": "Structural volume 688"
+        },
+        {
+          "obstacle": 689,
+          "name": "Raised sloped section 689"
+        },
+        {
+          "obstacle": 690,
+          "name": "Structural volume 690"
+        },
+        {
+          "obstacle": 691,
+          "name": "Raised section 691"
+        },
+        {
+          "obstacle": 692,
+          "name": "Raised section 692"
+        },
+        {
+          "obstacle": 693,
+          "name": "Structural volume 693"
+        }
+      ]
+    },
+    {
+      "id": "york-east-riverside-low-courtyard-wall",
+      "name": "East riverside low courtyard wall",
+      "parts": [
+        {
+          "obstacle": 704,
+          "name": "Structural volume 704"
+        }
+      ]
+    },
+    {
+      "id": "york-east-bridge-mooring-buttress",
+      "name": "East bridge mooring buttress",
+      "parts": [
+        {
+          "obstacle": 705,
+          "name": "Structural volume 705"
+        }
+      ]
+    },
+    {
+      "id": "york-east-bridge-cargo-stack",
+      "name": "East bridge cargo stack",
+      "parts": [
+        {
+          "obstacle": 706,
+          "name": "Structural volume 706"
+        }
+      ]
+    },
+    {
+      "id": "york-river-west-moored-boat",
+      "name": "River west moored boat",
+      "parts": [
+        {
+          "obstacle": 707,
+          "name": "Structural volume 707"
+        }
+      ]
+    },
+    {
+      "id": "york-river-east-moored-boat",
+      "name": "River east moored boat",
+      "parts": [
+        {
+          "obstacle": 708,
+          "name": "Structural volume 708"
+        }
+      ]
+    },
+    {
+      "id": "york-river-north-bank-beached-boat",
+      "name": "River north bank beached boat",
+      "parts": [
+        {
+          "obstacle": 709,
+          "name": "Structural volume 709"
+        }
+      ]
+    },
+    {
+      "id": "york-north-river-lane-turreted-stone-house",
+      "name": "North river lane turreted stone house",
+      "parts": [
+        {
+          "obstacle": 710,
+          "name": "Structural volume 710"
+        },
+        {
+          "obstacle": 711,
+          "name": "Raised section 711"
+        },
+        {
+          "obstacle": 712,
+          "name": "Raised sloped section 712"
+        },
+        {
+          "obstacle": 713,
+          "name": "Raised sloped section 713"
+        },
+        {
+          "obstacle": 714,
+          "name": "Raised sloped section 714"
+        },
+        {
+          "obstacle": 715,
+          "name": "Raised sloped section 715"
+        },
+        {
+          "obstacle": 716,
+          "name": "Raised section 716"
+        },
+        {
+          "obstacle": 717,
+          "name": "Raised sloped section 717"
+        },
+        {
+          "obstacle": 718,
+          "name": "Raised sloped section 718"
+        },
+        {
+          "obstacle": 719,
+          "name": "Raised sloped section 719"
+        },
+        {
+          "obstacle": 720,
+          "name": "Raised sloped section 720"
+        },
+        {
+          "obstacle": 721,
+          "name": "Structural volume 721"
+        },
+        {
+          "obstacle": 726,
+          "name": "Structural volume 726"
+        },
+        {
+          "obstacle": 730,
+          "name": "Structural volume 730"
+        },
+        {
+          "obstacle": 731,
+          "name": "Raised sloped section 731"
+        },
+        {
+          "obstacle": 732,
+          "name": "Structural volume 732"
+        },
+        {
+          "obstacle": 736,
+          "name": "Structural volume 736"
+        },
+        {
+          "obstacle": 737,
+          "name": "Structural volume 737"
+        },
+        {
+          "obstacle": 738,
+          "name": "Raised sloped section 738"
+        }
+      ]
+    },
+    {
+      "id": "york-north-river-lane-northern-timber-house",
+      "name": "North river lane northern timber house",
+      "parts": [
+        {
+          "obstacle": 722,
+          "name": "Structural volume 722"
+        },
+        {
+          "obstacle": 723,
+          "name": "Raised sloped section 723"
+        },
+        {
+          "obstacle": 724,
+          "name": "Raised sloped section 724"
+        },
+        {
+          "obstacle": 725,
+          "name": "Raised sloped section 725"
+        },
+        {
+          "obstacle": 727,
+          "name": "Structural volume 727"
+        },
+        {
+          "obstacle": 728,
+          "name": "Raised sloped section 728"
+        },
+        {
+          "obstacle": 729,
+          "name": "Structural volume 729"
+        },
+        {
+          "obstacle": 733,
+          "name": "Structural volume 733"
+        },
+        {
+          "obstacle": 734,
+          "name": "Raised sloped section 734"
+        },
+        {
+          "obstacle": 735,
+          "name": "Structural volume 735"
+        }
+      ]
+    },
+    {
+      "id": "york-north-river-lane-cargo-stack",
+      "name": "North river lane cargo stack",
+      "parts": [
+        {
+          "obstacle": 739,
+          "name": "Structural volume 739"
+        }
+      ]
+    },
+    {
+      "id": "york-north-river-lane-barrel-on-stand",
+      "name": "North river lane barrel on stand",
+      "parts": [
+        {
+          "obstacle": 740,
+          "name": "Structural volume 740"
+        }
+      ]
+    },
+    {
+      "id": "york-north-river-lane-wall-shelf",
+      "name": "North river lane wall shelf",
+      "parts": [
+        {
+          "obstacle": 741,
+          "name": "Structural volume 741"
+        }
+      ]
+    },
+    {
+      "id": "york-north-river-lane-storage-chest",
+      "name": "North river lane storage chest",
+      "parts": [
+        {
+          "obstacle": 742,
+          "name": "Structural volume 742"
+        }
+      ]
+    },
+    {
+      "id": "york-north-river-lane-barrel-pair",
+      "name": "North river lane barrel pair",
+      "parts": [
+        {
+          "obstacle": 743,
+          "name": "Structural volume 743"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-west-lane-tall-timber-house",
+      "name": "Castle west lane tall timber house",
+      "parts": [
+        {
+          "obstacle": 744,
+          "name": "Structural volume 744"
+        },
+        {
+          "obstacle": 745,
+          "name": "Raised section 745"
+        },
+        {
+          "obstacle": 746,
+          "name": "Raised sloped section 746"
+        },
+        {
+          "obstacle": 747,
+          "name": "Raised sloped section 747"
+        },
+        {
+          "obstacle": 748,
+          "name": "Raised sloped section 748"
+        },
+        {
+          "obstacle": 749,
+          "name": "Raised sloped section 749"
+        },
+        {
+          "obstacle": 750,
+          "name": "Structural volume 750"
+        },
+        {
+          "obstacle": 751,
+          "name": "Structural volume 751"
+        },
+        {
+          "obstacle": 752,
+          "name": "Structural volume 752"
+        },
+        {
+          "obstacle": 753,
+          "name": "Structural volume 753"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-west-lane-gable-house",
+      "name": "Castle west lane gable house",
+      "parts": [
+        {
+          "obstacle": 754,
+          "name": "Structural volume 754"
+        },
+        {
+          "obstacle": 755,
+          "name": "Structural volume 755"
+        },
+        {
+          "obstacle": 756,
+          "name": "Structural volume 756"
+        },
+        {
+          "obstacle": 757,
+          "name": "Structural volume 757"
+        },
+        {
+          "obstacle": 758,
+          "name": "Structural volume 758"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-courtyard-gate-lodge-and-stairs",
+      "name": "Castle courtyard gate lodge and stairs",
+      "parts": [
+        {
+          "obstacle": 759,
+          "name": "Structural volume 759"
+        },
+        {
+          "obstacle": 760,
+          "name": "Structural volume 760"
+        },
+        {
+          "obstacle": 761,
+          "name": "Structural volume 761"
+        },
+        {
+          "obstacle": 771,
+          "name": "Structural volume 771"
+        },
+        {
+          "obstacle": 772,
+          "name": "Structural volume 772"
+        },
+        {
+          "obstacle": 812,
+          "name": "Structural volume 812"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-west-curtain-wall-and-bastions",
+      "name": "Castle west curtain wall and bastions",
+      "parts": [
+        {
+          "obstacle": 762,
+          "name": "Structural volume 762"
+        },
+        {
+          "obstacle": 763,
+          "name": "Structural volume 763"
+        },
+        {
+          "obstacle": 764,
+          "name": "Raised section 764"
+        },
+        {
+          "obstacle": 765,
+          "name": "Structural volume 765"
+        },
+        {
+          "obstacle": 766,
+          "name": "Structural volume 766"
+        },
+        {
+          "obstacle": 767,
+          "name": "Structural volume 767"
+        },
+        {
+          "obstacle": 773,
+          "name": "Structural volume 773"
+        },
+        {
+          "obstacle": 774,
+          "name": "Structural volume 774"
+        },
+        {
+          "obstacle": 775,
+          "name": "Structural volume 775"
+        },
+        {
+          "obstacle": 776,
+          "name": "Structural volume 776"
+        },
+        {
+          "obstacle": 777,
+          "name": "Raised sloped section 777"
+        },
+        {
+          "obstacle": 778,
+          "name": "Structural volume 778"
+        },
+        {
+          "obstacle": 779,
+          "name": "Structural volume 779"
+        },
+        {
+          "obstacle": 816,
+          "name": "Structural volume 816"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-south-curtain-and-conical-turret",
+      "name": "Castle south curtain and conical turret",
+      "parts": [
+        {
+          "obstacle": 768,
+          "name": "Structural volume 768"
+        },
+        {
+          "obstacle": 780,
+          "name": "Structural volume 780"
+        },
+        {
+          "obstacle": 781,
+          "name": "Structural volume 781"
+        },
+        {
+          "obstacle": 782,
+          "name": "Structural volume 782"
+        },
+        {
+          "obstacle": 783,
+          "name": "Raised section 783"
+        },
+        {
+          "obstacle": 784,
+          "name": "Raised section 784"
+        },
+        {
+          "obstacle": 785,
+          "name": "Raised sloped section 785"
+        },
+        {
+          "obstacle": 786,
+          "name": "Raised sloped section 786"
+        },
+        {
+          "obstacle": 787,
+          "name": "Raised sloped section 787"
+        },
+        {
+          "obstacle": 788,
+          "name": "Raised sloped section 788"
+        },
+        {
+          "obstacle": 789,
+          "name": "Raised sloped section 789"
+        },
+        {
+          "obstacle": 814,
+          "name": "Structural volume 814"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-great-hall-and-east-turret",
+      "name": "Castle great hall and east turret",
+      "parts": [
+        {
+          "obstacle": 769,
+          "name": "Structural volume 769"
+        },
+        {
+          "obstacle": 791,
+          "name": "Structural volume 791"
+        },
+        {
+          "obstacle": 793,
+          "name": "Structural volume 793"
+        },
+        {
+          "obstacle": 794,
+          "name": "Structural volume 794"
+        },
+        {
+          "obstacle": 795,
+          "name": "Structural volume 795"
+        },
+        {
+          "obstacle": 799,
+          "name": "Raised sloped section 799"
+        },
+        {
+          "obstacle": 800,
+          "name": "Raised section 800"
+        },
+        {
+          "obstacle": 801,
+          "name": "Raised sloped section 801"
+        },
+        {
+          "obstacle": 802,
+          "name": "Raised sloped section 802"
+        },
+        {
+          "obstacle": 803,
+          "name": "Raised sloped section 803"
+        },
+        {
+          "obstacle": 804,
+          "name": "Raised sloped section 804"
+        },
+        {
+          "obstacle": 811,
+          "name": "Raised section 811"
+        },
+        {
+          "obstacle": 824,
+          "name": "Structural volume 824"
+        },
+        {
+          "obstacle": 825,
+          "name": "Structural volume 825"
+        },
+        {
+          "obstacle": 826,
+          "name": "Structural volume 826"
+        },
+        {
+          "obstacle": 827,
+          "name": "Structural volume 827"
+        },
+        {
+          "obstacle": 828,
+          "name": "Structural volume 828"
+        },
+        {
+          "obstacle": 829,
+          "name": "Structural volume 829"
+        },
+        {
+          "obstacle": 832,
+          "name": "Structural volume 832"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-main-keep",
+      "name": "Castle main keep",
+      "parts": [
+        {
+          "obstacle": 67,
+          "name": "Raised sloped section 067"
+        },
+        {
+          "obstacle": 770,
+          "name": "Structural volume 770"
+        },
+        {
+          "obstacle": 790,
+          "name": "Structural volume 790"
+        },
+        {
+          "obstacle": 792,
+          "name": "Structural volume 792"
+        },
+        {
+          "obstacle": 796,
+          "name": "Raised sloped section 796"
+        },
+        {
+          "obstacle": 797,
+          "name": "Raised sloped section 797"
+        },
+        {
+          "obstacle": 798,
+          "name": "Raised section 798"
+        },
+        {
+          "obstacle": 808,
+          "name": "Structural volume 808"
+        },
+        {
+          "obstacle": 809,
+          "name": "Raised section 809"
+        },
+        {
+          "obstacle": 810,
+          "name": "Raised section 810"
+        },
+        {
+          "obstacle": 813,
+          "name": "Structural volume 813"
+        },
+        {
+          "obstacle": 817,
+          "name": "Structural volume 817"
+        },
+        {
+          "obstacle": 818,
+          "name": "Structural volume 818"
+        },
+        {
+          "obstacle": 819,
+          "name": "Structural volume 819"
+        },
+        {
+          "obstacle": 820,
+          "name": "Structural volume 820"
+        },
+        {
+          "obstacle": 821,
+          "name": "Structural volume 821"
+        },
+        {
+          "obstacle": 822,
+          "name": "Structural volume 822"
+        },
+        {
+          "obstacle": 823,
+          "name": "Structural volume 823"
+        },
+        {
+          "obstacle": 830,
+          "name": "Structural volume 830"
+        },
+        {
+          "obstacle": 831,
+          "name": "Structural volume 831"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-northeast-square-watchtower",
+      "name": "Castle northeast square watchtower",
+      "parts": [
+        {
+          "obstacle": 805,
+          "name": "Structural volume 805"
+        },
+        {
+          "obstacle": 806,
+          "name": "Structural volume 806"
+        },
+        {
+          "obstacle": 807,
+          "name": "Raised section 807"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-north-approach-gateway",
+      "name": "Castle north approach gateway",
+      "parts": [
+        {
+          "obstacle": 833,
+          "name": "Raised section 833"
+        },
+        {
+          "obstacle": 836,
+          "name": "Raised section 836"
+        },
+        {
+          "obstacle": 846,
+          "name": "Structural volume 846"
+        },
+        {
+          "obstacle": 847,
+          "name": "Structural volume 847"
+        },
+        {
+          "obstacle": 848,
+          "name": "Raised section 848"
+        },
+        {
+          "obstacle": 849,
+          "name": "Raised section 849"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-north-approach-wall-stair",
+      "name": "Castle north approach wall stair",
+      "parts": [
+        {
+          "obstacle": 834,
+          "name": "Structural volume 834"
+        },
+        {
+          "obstacle": 835,
+          "name": "Structural volume 835"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-north-round-watchtower",
+      "name": "Castle north round watchtower",
+      "parts": [
+        {
+          "obstacle": 837,
+          "name": "Structural volume 837"
+        },
+        {
+          "obstacle": 838,
+          "name": "Raised section 838"
+        },
+        {
+          "obstacle": 839,
+          "name": "Raised sloped section 839"
+        },
+        {
+          "obstacle": 840,
+          "name": "Raised sloped section 840"
+        },
+        {
+          "obstacle": 841,
+          "name": "Raised sloped section 841"
+        },
+        {
+          "obstacle": 842,
+          "name": "Raised sloped section 842"
+        },
+        {
+          "obstacle": 843,
+          "name": "Raised sloped section 843"
+        },
+        {
+          "obstacle": 844,
+          "name": "Raised sloped section 844"
+        },
+        {
+          "obstacle": 845,
+          "name": "Raised sloped section 845"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-east-timber-crowned-watchtower",
+      "name": "Precinct east timber-crowned watchtower",
+      "parts": [
+        {
+          "obstacle": 850,
+          "name": "Structural volume 850"
+        },
+        {
+          "obstacle": 851,
+          "name": "Raised section 851"
+        },
+        {
+          "obstacle": 852,
+          "name": "Raised sloped section 852"
+        },
+        {
+          "obstacle": 853,
+          "name": "Raised sloped section 853"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-east-gate-passage",
+      "name": "Precinct east gate passage",
+      "parts": [
+        {
+          "obstacle": 854,
+          "name": "Raised section 854"
+        },
+        {
+          "obstacle": 855,
+          "name": "Structural volume 855"
+        },
+        {
+          "obstacle": 856,
+          "name": "Structural volume 856"
+        },
+        {
+          "obstacle": 857,
+          "name": "Raised section 857"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-east-tall-square-tower",
+      "name": "Precinct east tall square tower",
+      "parts": [
+        {
+          "obstacle": 858,
+          "name": "Structural volume 858"
+        },
+        {
+          "obstacle": 860,
+          "name": "Raised section 860"
+        },
+        {
+          "obstacle": 861,
+          "name": "Raised section 861"
+        },
+        {
+          "obstacle": 862,
+          "name": "Raised sloped section 862"
+        },
+        {
+          "obstacle": 863,
+          "name": "Raised sloped section 863"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-east-roofed-gatehouse",
+      "name": "Precinct east roofed gatehouse",
+      "parts": [
+        {
+          "obstacle": 864,
+          "name": "Structural volume 864"
+        },
+        {
+          "obstacle": 865,
+          "name": "Structural volume 865"
+        },
+        {
+          "obstacle": 866,
+          "name": "Structural volume 866"
+        },
+        {
+          "obstacle": 867,
+          "name": "Structural volume 867"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-east-wall-stair",
+      "name": "Precinct east wall stair",
+      "parts": [
+        {
+          "obstacle": 868,
+          "name": "Structural volume 868"
+        },
+        {
+          "obstacle": 869,
+          "name": "Structural volume 869"
+        }
+      ]
+    },
+    {
+      "id": "york-north-precinct-boundary",
+      "name": "North precinct boundary",
+      "parts": [
+        {
+          "obstacle": 870,
+          "name": "Structural volume 870"
+        },
+        {
+          "obstacle": 871,
+          "name": "Structural volume 871"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-south-curtain-wall",
+      "name": "Precinct south curtain wall",
+      "parts": [
+        {
+          "obstacle": 872,
+          "name": "Structural volume 872"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-southeast-bastion-and-wall",
+      "name": "Precinct southeast bastion and wall",
+      "parts": [
+        {
+          "obstacle": 873,
+          "name": "Structural volume 873"
+        },
+        {
+          "obstacle": 874,
+          "name": "Structural volume 874"
+        },
+        {
+          "obstacle": 875,
+          "name": "Structural volume 875"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-southwest-curtain-wall",
+      "name": "Precinct southwest curtain wall",
+      "parts": [
+        {
+          "obstacle": 876,
+          "name": "Structural volume 876"
+        },
+        {
+          "obstacle": 877,
+          "name": "Structural volume 877"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-southwest-round-bastion",
+      "name": "Precinct southwest round bastion",
+      "parts": [
+        {
+          "obstacle": 878,
+          "name": "Raised section 878"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-west-terrace-parapet",
+      "name": "Precinct west terrace parapet",
+      "parts": [
+        {
+          "obstacle": 879,
+          "name": "Structural volume 879"
+        },
+        {
+          "obstacle": 880,
+          "name": "Structural volume 880"
+        }
+      ]
+    },
+    {
+      "id": "york-cathedral",
+      "name": "Cathedral",
+      "parts": [
+        {
+          "obstacle": 881,
+          "name": "Raised sloped section 881"
+        },
+        {
+          "obstacle": 882,
+          "name": "Raised section 882"
+        },
+        {
+          "obstacle": 883,
+          "name": "Raised sloped section 883"
+        },
+        {
+          "obstacle": 884,
+          "name": "Raised section 884"
+        },
+        {
+          "obstacle": 885,
+          "name": "Raised sloped section 885"
+        },
+        {
+          "obstacle": 886,
+          "name": "Raised section 886"
+        },
+        {
+          "obstacle": 887,
+          "name": "Raised section 887"
+        },
+        {
+          "obstacle": 888,
+          "name": "Raised section 888"
+        },
+        {
+          "obstacle": 889,
+          "name": "Raised sloped section 889"
+        },
+        {
+          "obstacle": 890,
+          "name": "Raised sloped section 890"
+        },
+        {
+          "obstacle": 891,
+          "name": "Raised sloped section 891"
+        },
+        {
+          "obstacle": 892,
+          "name": "Raised sloped section 892"
+        },
+        {
+          "obstacle": 893,
+          "name": "Raised sloped section 893"
+        },
+        {
+          "obstacle": 894,
+          "name": "Raised sloped section 894"
+        },
+        {
+          "obstacle": 895,
+          "name": "Raised sloped section 895"
+        },
+        {
+          "obstacle": 896,
+          "name": "Raised section 896"
+        },
+        {
+          "obstacle": 897,
+          "name": "Raised section 897"
+        },
+        {
+          "obstacle": 898,
+          "name": "Structural volume 898"
+        },
+        {
+          "obstacle": 899,
+          "name": "Structural volume 899"
+        },
+        {
+          "obstacle": 900,
+          "name": "Structural volume 900"
+        },
+        {
+          "obstacle": 901,
+          "name": "Structural volume 901"
+        },
+        {
+          "obstacle": 902,
+          "name": "Raised section 902"
+        },
+        {
+          "obstacle": 903,
+          "name": "Structural volume 903"
+        },
+        {
+          "obstacle": 904,
+          "name": "Structural volume 904"
+        },
+        {
+          "obstacle": 905,
+          "name": "Structural volume 905"
+        },
+        {
+          "obstacle": 906,
+          "name": "Structural volume 906"
+        },
+        {
+          "obstacle": 907,
+          "name": "Structural volume 907"
+        },
+        {
+          "obstacle": 908,
+          "name": "Structural volume 908"
+        },
+        {
+          "obstacle": 909,
+          "name": "Structural volume 909"
+        },
+        {
+          "obstacle": 910,
+          "name": "Structural volume 910"
+        },
+        {
+          "obstacle": 911,
+          "name": "Structural volume 911"
+        },
+        {
+          "obstacle": 912,
+          "name": "Raised section 912"
+        },
+        {
+          "obstacle": 913,
+          "name": "Raised section 913"
+        },
+        {
+          "obstacle": 914,
+          "name": "Raised section 914"
+        },
+        {
+          "obstacle": 915,
+          "name": "Structural volume 915"
+        },
+        {
+          "obstacle": 916,
+          "name": "Structural volume 916"
+        },
+        {
+          "obstacle": 921,
+          "name": "Structural volume 921"
+        },
+        {
+          "obstacle": 922,
+          "name": "Structural volume 922"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-west-great-hall",
+      "name": "Precinct west great hall",
+      "parts": [
+        {
+          "obstacle": 917,
+          "name": "Structural volume 917"
+        },
+        {
+          "obstacle": 918,
+          "name": "Structural volume 918"
+        },
+        {
+          "obstacle": 923,
+          "name": "Raised section 923"
+        },
+        {
+          "obstacle": 924,
+          "name": "Structural volume 924"
+        },
+        {
+          "obstacle": 925,
+          "name": "Raised section 925"
+        },
+        {
+          "obstacle": 926,
+          "name": "Raised sloped section 926"
+        },
+        {
+          "obstacle": 927,
+          "name": "Raised sloped section 927"
+        },
+        {
+          "obstacle": 928,
+          "name": "Raised sloped section 928"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-north-connecting-gateway",
+      "name": "Precinct north connecting gateway",
+      "parts": [
+        {
+          "obstacle": 919,
+          "name": "Structural volume 919"
+        },
+        {
+          "obstacle": 920,
+          "name": "Raised section 920"
+        }
+      ]
+    },
+    {
+      "id": "york-precinct-west-suspended-footbridge",
+      "name": "Precinct west suspended footbridge",
+      "parts": [
+        {
+          "obstacle": 929,
+          "name": "Raised section 929"
+        }
+      ]
+    },
+    {
+      "id": "york-market-tavern-table-and-stools",
+      "name": "Market tavern table and stools",
+      "parts": [
+        {
+          "obstacle": 930,
+          "name": "Structural volume 930"
+        },
+        {
+          "obstacle": 931,
+          "name": "Raised section 931"
+        }
+      ]
+    },
+    {
+      "id": "york-market-tavern-barrel",
+      "name": "Market tavern barrel",
+      "parts": [
+        {
+          "obstacle": 932,
+          "name": "Structural volume 932"
+        }
+      ]
+    },
+    {
+      "id": "york-market-tavern-side-stool",
+      "name": "Market tavern side stool",
+      "parts": [
+        {
+          "obstacle": 933,
+          "name": "Structural volume 933"
+        }
+      ]
+    },
+    {
+      "id": "york-market-stone-house-striped-awning",
+      "name": "Market stone-house striped awning",
+      "parts": [
+        {
+          "obstacle": 935,
+          "name": "Raised section 935"
+        },
+        {
+          "obstacle": 936,
+          "name": "Raised section 936"
+        },
+        {
+          "obstacle": 956,
+          "name": "Raised section 956"
+        },
+        {
+          "obstacle": 957,
+          "name": "Raised section 957"
+        },
+        {
+          "obstacle": 973,
+          "name": "Structural volume 973"
+        }
+      ]
+    },
+    {
+      "id": "york-market-north-display-stand",
+      "name": "Market north display stand",
+      "parts": [
+        {
+          "obstacle": 937,
+          "name": "Raised section 937"
+        }
+      ]
+    },
+    {
+      "id": "york-market-timber-house-striped-awning",
+      "name": "Market timber-house striped awning",
+      "parts": [
+        {
+          "obstacle": 939,
+          "name": "Raised section 939"
+        },
+        {
+          "obstacle": 952,
+          "name": "Raised sloped section 952"
+        },
+        {
+          "obstacle": 953,
+          "name": "Raised sloped section 953"
+        },
+        {
+          "obstacle": 954,
+          "name": "Raised sloped section 954"
+        },
+        {
+          "obstacle": 974,
+          "name": "Structural volume 974"
+        }
+      ]
+    },
+    {
+      "id": "york-market-west-long-canopy-stall",
+      "name": "Market west long-canopy stall",
+      "parts": [
+        {
+          "obstacle": 955,
+          "name": "Raised section 955"
+        },
+        {
+          "obstacle": 958,
+          "name": "Raised sloped section 958"
+        },
+        {
+          "obstacle": 959,
+          "name": "Raised section 959"
+        },
+        {
+          "obstacle": 975,
+          "name": "Structural volume 975"
+        }
+      ]
+    },
+    {
+      "id": "york-market-north-cream-canopy-stall",
+      "name": "Market north cream-canopy stall",
+      "parts": [
+        {
+          "obstacle": 45,
+          "name": "Raised section 045"
+        },
+        {
+          "obstacle": 963,
+          "name": "Raised section 963"
+        },
+        {
+          "obstacle": 964,
+          "name": "Raised sloped section 964"
+        },
+        {
+          "obstacle": 976,
+          "name": "Structural volume 976"
+        }
+      ]
+    },
+    {
+      "id": "york-market-freestanding-canvas-screen",
+      "name": "Market freestanding canvas screen",
+      "parts": [
+        {
+          "obstacle": 965,
+          "name": "Raised section 965"
+        },
+        {
+          "obstacle": 977,
+          "name": "Structural volume 977"
+        }
+      ]
+    },
+    {
+      "id": "york-east-bridge-street-trestle-stall",
+      "name": "East bridge street trestle stall",
+      "parts": [
+        {
+          "obstacle": 968,
+          "name": "Raised sloped section 968"
+        }
+      ]
+    },
+    {
+      "id": "york-west-town-raised-terrain",
+      "name": "West town raised terrain",
+      "parts": [
+        {
+          "obstacle": 86,
+          "name": "Structural volume 086"
+        }
+      ]
+    },
+    {
+      "id": "york-cathedral-precinct-raised-terrain",
+      "name": "Cathedral precinct raised terrain",
+      "parts": [
+        {
+          "obstacle": 87,
+          "name": "Structural volume 087"
+        }
+      ]
+    },
+    {
+      "id": "york-south-town-raised-terrace",
+      "name": "South town raised terrace",
+      "parts": [
+        {
+          "obstacle": 90,
+          "name": "Structural volume 090"
+        }
+      ]
+    },
+    {
+      "id": "york-east-bridge-raised-terrace",
+      "name": "East bridge raised terrace",
+      "parts": [
+        {
+          "obstacle": 92,
+          "name": "Structural volume 092"
+        }
+      ]
+    },
+    {
+      "id": "york-southeast-riverside-raised-terrace",
+      "name": "Southeast riverside raised terrace",
+      "parts": [
+        {
+          "obstacle": 93,
+          "name": "Structural volume 093"
+        }
+      ]
+    },
+    {
+      "id": "york-castle-courtyard-raised-terrain",
+      "name": "Castle courtyard raised terrain",
+      "parts": [
+        {
+          "obstacle": 98,
+          "name": "Structural volume 098"
+        }
+      ]
+    },
+    {
+      "id": "york-market-southeast-canopy-stall",
+      "name": "Market southeast canopy stall",
+      "parts": [
+        {
+          "obstacle": 948,
+          "name": "Raised section 948"
+        },
+        {
+          "obstacle": 960,
+          "name": "Raised sloped section 960"
+        },
+        {
+          "obstacle": 961,
+          "name": "Raised section 961"
+        },
+        {
+          "obstacle": 970,
+          "name": "Structural volume 970"
+        }
+      ]
+    }
+  ],
+  "canonical_owners": {
+    "building-000": "york-riverside-stone-storehouse",
+    "building-001": "york-riverside-stone-storehouse",
+    "building-002": "york-riverside-stone-storehouse",
+    "building-003": "york-riverside-stone-storehouse",
+    "building-004": "york-riverside-stone-storehouse",
+    "building-006": "york-riverside-stone-storehouse",
+    "building-005": "york-riverside-stone-storehouse",
+    "building-007": "york-riverside-timber-stack",
+    "building-008": "york-riverside-loose-planks",
+    "building-009": "york-west-riverbank-retaining-wall",
+    "building-010": "york-stone-river-bridge-and-approach-stairs",
+    "building-014": "york-stone-river-bridge-and-approach-stairs",
+    "building-015": "york-stone-river-bridge-and-approach-stairs",
+    "building-016": "york-stone-river-bridge-and-approach-stairs",
+    "building-017": "york-stone-river-bridge-and-approach-stairs",
+    "building-018": "york-stone-river-bridge-and-approach-stairs",
+    "building-019": "york-stone-river-bridge-and-approach-stairs",
+    "building-022": "york-stone-river-bridge-and-approach-stairs",
+    "building-103": "york-stone-river-bridge-and-approach-stairs",
+    "building-020": "york-stone-river-bridge-and-approach-stairs",
+    "building-021": "york-stone-river-bridge-and-approach-stairs",
+    "building-023": "york-stone-river-bridge-and-approach-stairs",
+    "building-025": "york-stone-river-bridge-and-approach-stairs",
+    "building-026": "york-stone-river-bridge-and-approach-stairs",
+    "building-027": "york-stone-river-bridge-and-approach-stairs",
+    "building-094": "york-stone-river-bridge-and-approach-stairs",
+    "building-095": "york-stone-river-bridge-and-approach-stairs",
+    "building-097": "york-stone-river-bridge-and-approach-stairs",
+    "building-100": "york-stone-river-bridge-and-approach-stairs",
+    "building-101": "york-stone-river-bridge-and-approach-stairs",
+    "building-102": "york-stone-river-bridge-and-approach-stairs",
+    "building-671": "york-stone-river-bridge-and-approach-stairs",
+    "building-011": "york-south-riverbank-retaining-wall",
+    "building-012": "york-south-riverbank-retaining-wall",
+    "building-013": "york-south-riverbank-retaining-wall",
+    "building-028": "york-south-riverbank-retaining-wall",
+    "building-024": "york-east-riverside-wooden-walkway",
+    "building-029": "york-market-long-cream-canopy-stall",
+    "building-940": "york-market-long-cream-canopy-stall",
+    "building-941": "york-market-long-cream-canopy-stall",
+    "building-942": "york-market-long-cream-canopy-stall",
+    "building-943": "york-market-long-cream-canopy-stall",
+    "building-944": "york-market-long-cream-canopy-stall",
+    "building-945": "york-market-long-cream-canopy-stall",
+    "building-946": "york-market-long-cream-canopy-stall",
+    "building-969": "york-market-long-cream-canopy-stall",
+    "building-030": "york-market-long-cream-canopy-stall",
+    "building-947": "york-market-long-cream-canopy-stall",
+    "building-031": "york-market-produce-table",
+    "building-032": "york-market-red-canopy-stall",
+    "building-950": "york-market-red-canopy-stall",
+    "building-972": "york-market-red-canopy-stall",
+    "building-033": "york-market-red-canopy-stall",
+    "building-034": "york-market-red-canopy-stall",
+    "building-951": "york-market-red-canopy-stall",
+    "building-035": "york-market-roofed-stone-well",
+    "building-036": "york-market-roofed-stone-well",
+    "building-037": "york-market-roofed-stone-well",
+    "building-038": "york-market-street-barrel",
+    "building-039": "york-market-west-display-table",
+    "building-040": "york-market-wall-display-table",
+    "building-041": "york-market-east-display-table",
+    "building-042": "york-market-cream-canopy-stall",
+    "building-043": "york-market-cream-canopy-stall",
+    "building-044": "york-market-stepped-green-canopy-stall",
+    "building-046": "york-market-stacked-barrels",
+    "building-047": "york-north-garden-wall-and-stair",
+    "building-048": "york-north-garden-wall-and-stair",
+    "building-049": "york-north-garden-wall-and-stair",
+    "building-050": "york-north-garden-wall-and-stair",
+    "building-051": "york-north-garden-wall-and-stair",
+    "building-052": "york-north-garden-wall-and-stair",
+    "building-053": "york-north-garden-square-watchtower",
+    "building-054": "york-north-garden-square-watchtower",
+    "building-056": "york-north-garden-square-watchtower",
+    "building-055": "york-north-garden-rear-wall",
+    "building-057": "york-north-garden-timber-shed",
+    "building-066": "york-north-garden-timber-shed",
+    "building-058": "york-north-garden-central-vegetable-enclosure",
+    "building-059": "york-north-garden-west-vegetable-enclosure",
+    "building-060": "york-north-garden-tree-enclosure",
+    "building-061": "york-north-garden-front-fence",
+    "building-062": "york-north-garden-fence-barrel",
+    "building-063": "york-north-garden-workbench",
+    "building-064": "york-north-garden-shed-barrel",
+    "building-065": "york-north-garden-shed-barrel-pair",
+    "building-068": "york-west-city-wall-roofed-stair-turret",
+    "building-069": "york-west-city-wall-roofed-stair-turret",
+    "building-071": "york-west-city-wall-roofed-stair-turret",
+    "building-070": "york-west-city-wall-roofed-stair-turret",
+    "building-072": "york-west-city-wall-and-access-stair",
+    "building-073": "york-west-city-wall-and-access-stair",
+    "building-074": "york-west-city-wall-and-access-stair",
+    "building-077": "york-west-city-wall-and-access-stair",
+    "building-075": "york-west-city-wall-and-access-stair",
+    "building-076": "york-west-city-wall-and-access-stair",
+    "building-078": "york-market-north-stone-house",
+    "building-079": "york-market-north-stone-house",
+    "building-080": "york-market-north-stone-house",
+    "building-081": "york-market-north-stone-house",
+    "building-082": "york-market-north-stone-house",
+    "building-083": "york-market-north-stone-house",
+    "building-084": "york-market-north-stone-house",
+    "building-085": "york-market-north-stone-house",
+    "building-088": "york-west-town-raised-lane",
+    "building-613": "york-west-town-raised-lane",
+    "building-110": "york-west-town-raised-lane",
+    "building-089": "york-precinct-stone-causeway",
+    "building-616": "york-precinct-stone-causeway",
+    "building-614": "york-precinct-stone-causeway",
+    "building-615": "york-precinct-stone-causeway",
+    "building-695": "york-east-quay-timber-house",
+    "building-696": "york-east-quay-timber-house",
+    "building-697": "york-east-quay-timber-house",
+    "building-698": "york-east-quay-timber-house",
+    "building-699": "york-east-quay-timber-house",
+    "building-700": "york-east-quay-timber-house",
+    "building-701": "york-east-quay-timber-house",
+    "building-702": "york-east-quay-timber-house",
+    "building-703": "york-east-quay-timber-house",
+    "building-096": "york-east-quay-ground-landing",
+    "building-099": "york-south-city-gatehouse",
+    "building-526": "york-south-city-gatehouse",
+    "building-527": "york-south-city-gatehouse",
+    "building-528": "york-south-city-gatehouse",
+    "building-530": "york-south-city-gatehouse",
+    "building-531": "york-south-city-gatehouse",
+    "building-533": "york-south-city-gatehouse",
+    "building-534": "york-south-city-gatehouse",
+    "building-537": "york-south-city-gatehouse",
+    "building-538": "york-south-city-gatehouse",
+    "building-539": "york-south-city-gatehouse",
+    "building-540": "york-south-city-gatehouse",
+    "building-541": "york-south-city-gatehouse",
+    "building-542": "york-south-city-gatehouse",
+    "building-543": "york-south-city-gatehouse",
+    "building-544": "york-south-city-gatehouse",
+    "building-545": "york-south-city-gatehouse",
+    "building-546": "york-south-city-gatehouse",
+    "building-551": "york-south-city-gatehouse",
+    "building-576": "york-south-city-gatehouse",
+    "building-529": "york-south-city-gatehouse",
+    "building-532": "york-south-city-gatehouse",
+    "building-535": "york-south-city-gatehouse",
+    "building-536": "york-south-city-gatehouse",
+    "building-547": "york-south-city-gatehouse",
+    "building-548": "york-south-city-gatehouse",
+    "building-549": "york-south-city-gatehouse",
+    "building-550": "york-south-city-gatehouse",
+    "building-577": "york-south-city-gatehouse",
+    "building-104": "york-riverbank-wooden-landing-steps",
+    "building-105": "york-riverbank-stone-landing-steps",
+    "building-106": "york-west-lane-access-steps",
+    "building-107": "york-river-timber-jetty",
+    "building-108": "york-precinct-southwest-wall-turret",
+    "building-109": "york-precinct-southwest-wall-turret",
+    "building-111": "york-bridge-square-turreted-timber-house",
+    "building-112": "york-bridge-square-turreted-timber-house",
+    "building-113": "york-bridge-square-turreted-timber-house",
+    "building-114": "york-bridge-square-turreted-timber-house",
+    "building-116": "york-bridge-square-turreted-timber-house",
+    "building-117": "york-bridge-square-turreted-timber-house",
+    "building-118": "york-bridge-square-turreted-timber-house",
+    "building-120": "york-bridge-square-turreted-timber-house",
+    "building-121": "york-bridge-square-turreted-timber-house",
+    "building-122": "york-bridge-square-turreted-timber-house",
+    "building-123": "york-bridge-square-turreted-timber-house",
+    "building-124": "york-bridge-square-turreted-timber-house",
+    "building-125": "york-bridge-square-turreted-timber-house",
+    "building-126": "york-bridge-square-turreted-timber-house",
+    "building-127": "york-bridge-square-turreted-timber-house",
+    "building-128": "york-bridge-square-turreted-timber-house",
+    "building-135": "york-bridge-square-turreted-timber-house",
+    "building-136": "york-bridge-square-turreted-timber-house",
+    "building-143": "york-bridge-square-turreted-timber-house",
+    "building-129": "york-bridge-square-scaffolded-corner-house",
+    "building-130": "york-bridge-square-scaffolded-corner-house",
+    "building-132": "york-bridge-square-scaffolded-corner-house",
+    "building-133": "york-bridge-square-scaffolded-corner-house",
+    "building-131": "york-bridge-square-scaffolded-corner-house",
+    "building-134": "york-bridge-square-scaffolded-corner-house",
+    "building-137": "york-bridge-square-scaffolded-corner-house",
+    "building-141": "york-bridge-square-scaffolded-corner-house",
+    "building-142": "york-bridge-square-scaffolded-corner-house",
+    "building-138": "york-bridge-square-scaffolded-corner-house",
+    "building-139": "york-bridge-square-scaffolded-corner-house",
+    "building-140": "york-bridge-square-scaffolded-corner-house",
+    "building-144": "york-central-lane-stone-gable-house",
+    "building-145": "york-central-lane-stone-gable-house",
+    "building-147": "york-central-lane-stone-gable-house",
+    "building-146": "york-central-lane-stone-gable-house",
+    "building-148": "york-central-lane-timber-lean-to",
+    "building-149": "york-central-lane-timber-lean-to",
+    "building-150": "york-central-lane-cross-gable-house",
+    "building-151": "york-central-lane-cross-gable-house",
+    "building-152": "york-central-lane-cross-gable-house",
+    "building-153": "york-central-lane-cross-gable-house",
+    "building-154": "york-central-lane-cross-gable-house",
+    "building-165": "york-central-lane-rear-gable-house",
+    "building-166": "york-central-lane-rear-gable-house",
+    "building-167": "york-central-lane-rear-gable-house",
+    "building-169": "york-central-lane-rear-gable-house",
+    "building-168": "york-central-lane-rear-gable-house",
+    "building-155": "york-central-lane-polygonal-corner-house",
+    "building-156": "york-central-lane-polygonal-corner-house",
+    "building-157": "york-central-lane-polygonal-corner-house",
+    "building-158": "york-central-lane-polygonal-corner-house",
+    "building-159": "york-central-lane-polygonal-corner-house",
+    "building-160": "york-central-lane-polygonal-corner-house",
+    "building-161": "york-central-lane-polygonal-corner-house",
+    "building-162": "york-central-lane-polygonal-corner-house",
+    "building-163": "york-central-lane-polygonal-corner-house",
+    "building-164": "york-central-lane-polygonal-corner-house",
+    "building-170": "york-west-bridge-approach-gate-and-turret",
+    "building-175": "york-west-bridge-approach-gate-and-turret",
+    "building-176": "york-west-bridge-approach-gate-and-turret",
+    "building-171": "york-west-bridge-approach-gate-and-turret",
+    "building-172": "york-west-bridge-approach-gate-and-turret",
+    "building-174": "york-west-bridge-approach-gate-and-turret",
+    "building-179": "york-west-bridge-approach-gate-and-turret",
+    "building-180": "york-west-bridge-approach-gate-and-turret",
+    "building-181": "york-west-bridge-approach-gate-and-turret",
+    "building-182": "york-west-bridge-approach-gate-and-turret",
+    "building-173": "york-west-bridge-approach-gate-and-turret",
+    "building-178": "york-west-bridge-approach-gate-and-turret",
+    "building-177": "york-west-bridge-approach-gate-and-turret",
+    "building-183": "york-west-bridge-approach-gate-and-turret",
+    "building-184": "york-west-bridge-approach-timber-house",
+    "building-185": "york-west-bridge-approach-timber-house",
+    "building-186": "york-west-bridge-approach-timber-house",
+    "building-187": "york-west-bridge-approach-timber-house",
+    "building-188": "york-west-bridge-approach-timber-house",
+    "building-191": "york-west-bridge-approach-timber-house",
+    "building-189": "york-west-bridge-approach-timber-house",
+    "building-192": "york-west-bridge-approach-timber-house",
+    "building-197": "york-west-bridge-approach-timber-house",
+    "building-216": "york-west-bridge-approach-timber-house",
+    "building-193": "york-west-bridge-street-tall-timber-house",
+    "building-194": "york-west-bridge-street-tall-timber-house",
+    "building-196": "york-west-bridge-street-tall-timber-house",
+    "building-198": "york-west-bridge-street-tall-timber-house",
+    "building-199": "york-west-bridge-street-tall-timber-house",
+    "building-195": "york-west-bridge-street-tall-timber-house",
+    "building-200": "york-west-bridge-street-arcade-house",
+    "building-201": "york-west-bridge-street-arcade-house",
+    "building-202": "york-west-bridge-street-arcade-house",
+    "building-203": "york-west-bridge-street-arcade-house",
+    "building-204": "york-west-bridge-street-arcade-house",
+    "building-205": "york-west-bridge-street-arcade-house",
+    "building-207": "york-west-bridge-street-arcade-house",
+    "building-208": "york-west-bridge-street-arcade-house",
+    "building-209": "york-west-bridge-street-arcade-house",
+    "building-210": "york-west-bridge-street-arcade-house",
+    "building-213": "york-west-bridge-street-arcade-house",
+    "building-217": "york-west-bridge-street-arcade-house",
+    "building-206": "york-west-bridge-street-arcade-house",
+    "building-211": "york-west-bridge-street-arcade-house",
+    "building-212": "york-west-bridge-street-arcade-house",
+    "building-214": "york-west-bridge-street-arcade-house",
+    "building-215": "york-west-bridge-street-arcade-house",
+    "building-218": "york-southeast-wall-lane-long-house",
+    "building-219": "york-southeast-wall-lane-long-house",
+    "building-220": "york-southeast-wall-lane-long-house",
+    "building-221": "york-southeast-wall-lane-long-house",
+    "building-222": "york-southeast-wall-lane-long-house",
+    "building-227": "york-southeast-wall-lane-long-house",
+    "building-228": "york-southeast-wall-lane-long-house",
+    "building-229": "york-southeast-wall-lane-long-house",
+    "building-231": "york-southeast-wall-lane-long-house",
+    "building-230": "york-southeast-wall-lane-long-house",
+    "building-223": "york-southeast-wall-lane-gable-house",
+    "building-225": "york-southeast-wall-lane-gable-house",
+    "building-226": "york-southeast-wall-lane-gable-house",
+    "building-224": "york-southeast-wall-lane-gable-house",
+    "building-232": "york-outer-southeast-wall-stair-and-bastion",
+    "building-233": "york-outer-southeast-wall-stair-and-bastion",
+    "building-234": "york-outer-southeast-wall-stair-and-bastion",
+    "building-235": "york-outer-southeast-wall-stair-and-bastion",
+    "building-236": "york-outer-east-wall-southern-stair-section",
+    "building-239": "york-outer-east-wall-southern-stair-section",
+    "building-240": "york-outer-east-wall-southern-stair-section",
+    "building-980": "york-outer-east-wall-southern-stair-section",
+    "building-237": "york-outer-east-wall-southern-stair-section",
+    "building-238": "york-outer-east-wall-southern-stair-section",
+    "building-241": "york-outer-east-wall-southern-stair-section",
+    "building-242": "york-outer-east-wall-southern-stair-section",
+    "building-244": "york-outer-east-wall-southern-stair-section",
+    "building-250": "york-outer-east-wall-southern-stair-section",
+    "building-249": "york-outer-east-wall-southern-stair-section",
+    "building-251": "york-outer-east-wall-southern-stair-section",
+    "building-252": "york-outer-east-wall-southern-stair-section",
+    "building-253": "york-outer-east-wall-southern-stair-section",
+    "building-243": "york-outer-east-conical-watchtower",
+    "building-245": "york-outer-east-conical-watchtower",
+    "building-246": "york-outer-east-conical-watchtower",
+    "building-247": "york-outer-east-conical-watchtower",
+    "building-248": "york-outer-east-conical-watchtower",
+    "building-254": "york-inner-southeast-curtain-wall",
+    "building-275": "york-inner-southeast-curtain-wall",
+    "building-284": "york-inner-southeast-curtain-wall",
+    "building-255": "york-inner-east-curtain-wall-and-stair",
+    "building-257": "york-inner-east-curtain-wall-and-stair",
+    "building-979": "york-inner-east-curtain-wall-and-stair",
+    "building-256": "york-inner-east-curtain-wall-and-stair",
+    "building-258": "york-inner-east-blue-roof-watchtower",
+    "building-277": "york-inner-east-blue-roof-watchtower",
+    "building-278": "york-inner-east-blue-roof-watchtower",
+    "building-279": "york-inner-east-blue-roof-watchtower",
+    "building-276": "york-inner-east-blue-roof-watchtower",
+    "building-259": "york-east-riverside-curtain-wall-and-bastion",
+    "building-260": "york-east-riverside-curtain-wall-and-bastion",
+    "building-261": "york-east-riverside-curtain-wall-and-bastion",
+    "building-265": "york-east-riverside-curtain-wall-and-bastion",
+    "building-283": "york-east-riverside-curtain-wall-and-bastion",
+    "building-262": "york-east-water-gate-and-bastion",
+    "building-263": "york-east-water-gate-and-bastion",
+    "building-264": "york-east-water-gate-and-bastion",
+    "building-266": "york-east-water-gate-and-bastion",
+    "building-267": "york-east-water-gate-and-bastion",
+    "building-268": "york-east-riverside-wall-and-roofed-passage",
+    "building-269": "york-east-riverside-wall-and-roofed-passage",
+    "building-280": "york-east-riverside-wall-and-roofed-passage",
+    "building-282": "york-east-riverside-wall-and-roofed-passage",
+    "building-274": "york-east-riverside-wall-and-roofed-passage",
+    "building-285": "york-east-riverside-wall-and-roofed-passage",
+    "building-286": "york-east-riverside-wall-and-roofed-passage",
+    "building-815": "york-east-riverside-wall-and-roofed-passage",
+    "building-287": "york-east-riverside-wall-and-roofed-passage",
+    "building-270": "york-east-riverside-round-watchtower",
+    "building-271": "york-east-riverside-round-watchtower",
+    "building-272": "york-east-riverside-round-watchtower",
+    "building-273": "york-east-riverside-round-watchtower",
+    "building-281": "york-east-riverside-round-watchtower",
+    "building-288": "york-southwest-square-courtyard-house",
+    "building-289": "york-southwest-square-courtyard-house",
+    "building-290": "york-southwest-square-courtyard-house",
+    "building-291": "york-southwest-square-courtyard-house",
+    "building-292": "york-southwest-square-courtyard-house",
+    "building-293": "york-southwest-square-courtyard-house",
+    "building-295": "york-southwest-square-courtyard-house",
+    "building-294": "york-southwest-square-courtyard-house",
+    "building-307": "york-southwest-square-courtyard-house",
+    "building-308": "york-southwest-square-courtyard-house",
+    "building-309": "york-southwest-square-courtyard-house",
+    "building-313": "york-southwest-square-courtyard-house",
+    "building-310": "york-southwest-square-courtyard-house",
+    "building-296": "york-southwest-square-narrow-gable-house",
+    "building-297": "york-southwest-square-narrow-gable-house",
+    "building-298": "york-southwest-square-narrow-gable-house",
+    "building-299": "york-southwest-square-narrow-gable-house",
+    "building-300": "york-southwest-square-narrow-gable-house",
+    "building-301": "york-southwest-square-narrow-gable-house",
+    "building-302": "york-southwest-square-narrow-gable-house",
+    "building-303": "york-southwest-square-narrow-gable-house",
+    "building-304": "york-southwest-square-narrow-gable-house",
+    "building-305": "york-southwest-square-narrow-gable-house",
+    "building-306": "york-southwest-square-narrow-gable-house",
+    "building-311": "york-market-southeast-tall-narrow-house",
+    "building-312": "york-market-southeast-tall-narrow-house",
+    "building-949": "york-market-southeast-tall-narrow-house",
+    "building-962": "york-market-southeast-tall-narrow-house",
+    "building-971": "york-market-southeast-tall-narrow-house",
+    "building-314": "york-central-south-green-timber-house",
+    "building-315": "york-central-south-green-timber-house",
+    "building-316": "york-central-south-green-timber-house",
+    "building-317": "york-central-south-green-timber-house",
+    "building-320": "york-central-south-green-timber-house",
+    "building-318": "york-central-south-street-barrel",
+    "building-321": "york-central-south-red-timber-house",
+    "building-322": "york-central-south-red-timber-house",
+    "building-323": "york-central-south-red-timber-house",
+    "building-324": "york-central-south-red-timber-house",
+    "building-325": "york-central-south-red-timber-house",
+    "building-326": "york-central-south-red-timber-house",
+    "building-327": "york-central-south-red-timber-house",
+    "building-330": "york-central-south-red-timber-house",
+    "building-331": "york-central-south-red-timber-house",
+    "building-332": "york-central-south-red-timber-house",
+    "building-334": "york-central-south-red-timber-house",
+    "building-333": "york-central-south-red-timber-house",
+    "building-328": "york-central-south-golden-timber-house",
+    "building-335": "york-central-south-golden-timber-house",
+    "building-336": "york-central-south-golden-timber-house",
+    "building-337": "york-central-south-golden-timber-house",
+    "building-339": "york-central-south-golden-timber-house",
+    "building-340": "york-central-south-golden-timber-house",
+    "building-338": "york-central-south-golden-timber-house",
+    "building-341": "york-central-south-golden-timber-house",
+    "building-342": "york-central-south-golden-timber-house",
+    "building-343": "york-central-south-golden-timber-house",
+    "building-344": "york-central-south-jettied-corner-house",
+    "building-345": "york-central-south-jettied-corner-house",
+    "building-346": "york-central-south-jettied-corner-house",
+    "building-347": "york-central-south-jettied-corner-house",
+    "building-348": "york-central-south-jettied-corner-house",
+    "building-349": "york-central-south-jettied-corner-house",
+    "building-350": "york-central-south-jettied-corner-house",
+    "building-351": "york-central-south-jettied-corner-house",
+    "building-352": "york-central-south-jettied-corner-house",
+    "building-353": "york-central-south-jettied-corner-house",
+    "building-354": "york-central-south-jettied-corner-house",
+    "building-355": "york-central-south-jettied-corner-house",
+    "building-357": "york-south-terrace-pale-timber-shop",
+    "building-359": "york-south-terrace-pale-timber-shop",
+    "building-358": "york-south-terrace-pale-timber-shop",
+    "building-360": "york-south-terrace-dark-timber-house",
+    "building-361": "york-south-terrace-dark-timber-house",
+    "building-363": "york-south-terrace-dark-timber-house",
+    "building-362": "york-south-terrace-dark-timber-house",
+    "building-091": "york-south-terrace-retaining-wall-and-stairs",
+    "building-364": "york-south-terrace-retaining-wall-and-stairs",
+    "building-365": "york-south-terrace-retaining-wall-and-stairs",
+    "building-366": "york-south-terrace-low-timber-row",
+    "building-368": "york-south-terrace-low-timber-row",
+    "building-372": "york-south-terrace-low-timber-row",
+    "building-367": "york-south-terrace-low-timber-row",
+    "building-370": "york-south-terrace-low-timber-row",
+    "building-369": "york-south-terrace-thatched-round-turret",
+    "building-374": "york-south-terrace-thatched-round-turret",
+    "building-375": "york-south-terrace-thatched-round-turret",
+    "building-376": "york-south-terrace-thatched-round-turret",
+    "building-371": "york-south-terrace-thatched-round-turret",
+    "building-373": "york-south-terrace-riverside-wall",
+    "building-377": "york-southeast-lane-western-timber-house",
+    "building-378": "york-southeast-lane-western-timber-house",
+    "building-379": "york-southeast-lane-western-timber-house",
+    "building-380": "york-southeast-lane-western-timber-house",
+    "building-381": "york-southeast-lane-western-timber-house",
+    "building-389": "york-southeast-lane-western-timber-house",
+    "building-388": "york-southeast-lane-western-timber-house",
+    "building-382": "york-southeast-lane-eastern-timber-house",
+    "building-383": "york-southeast-lane-eastern-timber-house",
+    "building-384": "york-southeast-lane-eastern-timber-house",
+    "building-385": "york-southeast-lane-eastern-timber-house",
+    "building-386": "york-southeast-lane-eastern-timber-house",
+    "building-387": "york-southeast-lane-eastern-timber-house",
+    "building-390": "york-south-wall-lane-timber-house",
+    "building-391": "york-south-wall-lane-timber-house",
+    "building-392": "york-south-wall-lane-timber-house",
+    "building-397": "york-south-wall-lane-timber-house",
+    "building-398": "york-south-wall-lane-timber-house",
+    "building-399": "york-south-wall-lane-timber-house",
+    "building-393": "york-south-wall-lane-stone-hall",
+    "building-394": "york-south-wall-lane-stone-hall",
+    "building-395": "york-south-wall-lane-stone-hall",
+    "building-396": "york-south-wall-lane-stone-hall",
+    "building-400": "york-south-wall-lane-stone-hall",
+    "building-401": "york-south-wall-lane-stone-hall",
+    "building-402": "york-south-wall-lane-stone-hall",
+    "building-404": "york-south-wall-lane-stone-hall",
+    "building-403": "york-south-wall-lane-stone-hall",
+    "building-405": "york-south-wall-lane-square-stone-tower-house",
+    "building-409": "york-south-wall-lane-square-stone-tower-house",
+    "building-410": "york-south-wall-lane-square-stone-tower-house",
+    "building-411": "york-south-wall-lane-square-stone-tower-house",
+    "building-406": "york-south-wall-lane-square-stone-tower-house",
+    "building-407": "york-south-wall-lane-square-stone-tower-house",
+    "building-408": "york-south-wall-lane-square-stone-tower-house",
+    "building-412": "york-south-wall-lane-square-stone-tower-house",
+    "building-413": "york-south-gate-lane-house-and-round-turret",
+    "building-414": "york-south-gate-lane-house-and-round-turret",
+    "building-415": "york-south-gate-lane-house-and-round-turret",
+    "building-416": "york-south-gate-lane-house-and-round-turret",
+    "building-417": "york-south-gate-lane-house-and-round-turret",
+    "building-418": "york-south-gate-lane-house-and-round-turret",
+    "building-419": "york-south-gate-lane-house-and-round-turret",
+    "building-420": "york-south-gate-lane-house-and-round-turret",
+    "building-424": "york-south-gate-lane-house-and-round-turret",
+    "building-421": "york-south-gate-lane-house-and-round-turret",
+    "building-422": "york-south-gate-lane-house-and-round-turret",
+    "building-423": "york-south-gate-lane-house-and-round-turret",
+    "building-425": "york-south-gate-lane-house-and-round-turret",
+    "building-426": "york-south-gate-lane-tall-timber-house",
+    "building-427": "york-south-gate-lane-tall-timber-house",
+    "building-428": "york-south-gate-lane-tall-timber-house",
+    "building-429": "york-south-gate-lane-tall-timber-house",
+    "building-430": "york-south-gate-lane-tall-timber-house",
+    "building-456": "york-south-gate-lane-tall-timber-house",
+    "building-457": "york-south-gate-lane-tall-timber-house",
+    "building-439": "york-south-gate-lane-tall-timber-house",
+    "building-440": "york-south-gate-lane-tall-timber-house",
+    "building-441": "york-south-gate-lane-tall-timber-house",
+    "building-446": "york-south-gate-lane-tall-timber-house",
+    "building-431": "york-south-gate-lane-courtyard-boundary-wall",
+    "building-432": "york-south-gate-lane-courtyard-boundary-wall",
+    "building-433": "york-south-gate-lane-stone-house-and-turret",
+    "building-436": "york-south-gate-lane-stone-house-and-turret",
+    "building-437": "york-south-gate-lane-stone-house-and-turret",
+    "building-438": "york-south-gate-lane-stone-house-and-turret",
+    "building-434": "york-south-gate-lane-stone-house-and-turret",
+    "building-442": "york-south-gate-lane-stone-house-and-turret",
+    "building-459": "york-south-gate-lane-stone-house-and-turret",
+    "building-435": "york-south-gate-lane-terrace-stairs",
+    "building-460": "york-south-gate-lane-terrace-stairs",
+    "building-443": "york-southwest-lane-broad-timber-house",
+    "building-444": "york-southwest-lane-broad-timber-house",
+    "building-445": "york-southwest-lane-broad-timber-house",
+    "building-447": "york-southwest-lane-broad-timber-house",
+    "building-448": "york-southwest-lane-broad-timber-house",
+    "building-452": "york-southwest-lane-broad-timber-house",
+    "building-455": "york-southwest-lane-broad-timber-house",
+    "building-458": "york-southwest-lane-broad-timber-house",
+    "building-449": "york-southwest-lane-broad-timber-house",
+    "building-454": "york-southwest-lane-broad-timber-house",
+    "building-450": "york-southwest-lane-broad-timber-house",
+    "building-451": "york-southwest-lane-broad-timber-house",
+    "building-453": "york-southwest-lane-broad-timber-house",
+    "building-461": "york-market-southwest-stone-manor",
+    "building-465": "york-market-southwest-stone-manor",
+    "building-466": "york-market-southwest-stone-manor",
+    "building-462": "york-market-southwest-stone-manor",
+    "building-463": "york-market-southwest-stone-manor",
+    "building-464": "york-market-southwest-stone-manor",
+    "building-489": "york-market-southwest-stone-manor",
+    "building-490": "york-market-southwest-stone-manor",
+    "building-491": "york-market-southwest-stone-manor",
+    "building-492": "york-market-southwest-stone-manor",
+    "building-467": "york-market-southwest-stone-manor",
+    "building-468": "york-market-southwest-stone-manor",
+    "building-469": "york-market-southwest-stone-manor",
+    "building-470": "york-market-southwest-stone-manor",
+    "building-471": "york-market-southwest-stone-manor",
+    "building-472": "york-market-southwest-stone-manor",
+    "building-473": "york-market-southwest-stone-manor",
+    "building-474": "york-market-southwest-stone-manor",
+    "building-475": "york-market-southwest-stone-manor",
+    "building-476": "york-market-southwest-stone-manor",
+    "building-477": "york-market-southwest-stone-manor",
+    "building-478": "york-market-southwest-stone-manor",
+    "building-479": "york-market-southwest-stone-manor",
+    "building-482": "york-market-southwest-stone-manor",
+    "building-480": "york-market-southwest-stone-manor",
+    "building-481": "york-market-southwest-stone-manor",
+    "building-483": "york-market-southwest-stone-manor",
+    "building-484": "york-market-southwest-stone-manor",
+    "building-485": "york-market-southwest-stone-manor",
+    "building-486": "york-market-southwest-stone-manor",
+    "building-487": "york-market-southwest-stone-manor",
+    "building-488": "york-market-southwest-stone-manor",
+    "building-493": "york-market-southwest-stone-arch",
+    "building-494": "york-market-southwest-stone-arch",
+    "building-495": "york-market-striped-canopy-pottery-stall",
+    "building-496": "york-market-striped-canopy-pottery-stall",
+    "building-497": "york-market-striped-canopy-pottery-stall",
+    "building-966": "york-market-striped-canopy-pottery-stall",
+    "building-967": "york-market-striped-canopy-pottery-stall",
+    "building-978": "york-market-striped-canopy-pottery-stall",
+    "building-498": "york-southwest-ivy-covered-tower-house",
+    "building-501": "york-southwest-ivy-covered-tower-house",
+    "building-502": "york-southwest-ivy-covered-tower-house",
+    "building-503": "york-southwest-ivy-covered-tower-house",
+    "building-525": "york-southwest-ivy-covered-tower-house",
+    "building-499": "york-southwest-ivy-covered-tower-house",
+    "building-500": "york-southwest-ivy-covered-tower-house",
+    "building-523": "york-southwest-ivy-covered-tower-house",
+    "building-524": "york-southwest-ivy-covered-tower-house",
+    "building-504": "york-southwest-market-courtyard-house",
+    "building-505": "york-southwest-market-courtyard-house",
+    "building-507": "york-southwest-market-courtyard-house",
+    "building-508": "york-southwest-market-courtyard-house",
+    "building-509": "york-southwest-market-courtyard-house",
+    "building-510": "york-southwest-market-courtyard-house",
+    "building-506": "york-southwest-market-courtyard-house",
+    "building-511": "york-southwest-market-courtyard-house",
+    "building-512": "york-southwest-market-courtyard-house",
+    "building-513": "york-southwest-market-courtyard-house",
+    "building-514": "york-southwest-market-courtyard-house",
+    "building-518": "york-southwest-market-courtyard-house",
+    "building-515": "york-southwest-market-courtyard-house",
+    "building-516": "york-southwest-market-courtyard-house",
+    "building-517": "york-southwest-market-courtyard-house",
+    "building-519": "york-southwest-market-courtyard-house",
+    "building-521": "york-southwest-market-courtyard-house",
+    "building-522": "york-southwest-market-courtyard-house",
+    "building-520": "york-southwest-market-courtyard-house",
+    "building-552": "york-south-city-wall-western-curtain",
+    "building-553": "york-south-city-wall-western-curtain",
+    "building-554": "york-south-city-wall-western-curtain",
+    "building-575": "york-south-city-wall-western-curtain",
+    "building-578": "york-south-city-wall-western-curtain",
+    "building-555": "york-south-city-wall-western-roofed-tower",
+    "building-561": "york-south-city-wall-western-roofed-tower",
+    "building-556": "york-south-city-wall-western-roofed-tower",
+    "building-558": "york-south-city-wall-western-roofed-tower",
+    "building-559": "york-south-city-wall-western-roofed-tower",
+    "building-557": "york-south-city-wall-western-roofed-tower",
+    "building-560": "york-south-city-wall-western-roofed-tower",
+    "building-562": "york-south-city-wall-western-roofed-tower",
+    "building-563": "york-south-city-wall-long-central-curtain",
+    "building-564": "york-south-city-wall-long-central-curtain",
+    "building-565": "york-south-city-wall-eastern-curtain",
+    "building-566": "york-south-city-wall-eastern-curtain",
+    "building-567": "york-south-city-wall-eastern-roofed-tower",
+    "building-568": "york-south-city-wall-eastern-roofed-tower",
+    "building-570": "york-south-city-wall-eastern-roofed-tower",
+    "building-571": "york-south-city-wall-eastern-roofed-tower",
+    "building-569": "york-south-city-wall-eastern-roofed-tower",
+    "building-572": "york-south-city-wall-eastern-roofed-tower",
+    "building-573": "york-south-city-wall-eastern-roofed-tower",
+    "building-574": "york-south-city-wall-eastern-roofed-tower",
+    "building-579": "york-west-town-lane-turreted-house",
+    "building-580": "york-west-town-lane-turreted-house",
+    "building-581": "york-west-town-lane-turreted-house",
+    "building-584": "york-west-town-lane-turreted-house",
+    "building-585": "york-west-town-lane-turreted-house",
+    "building-586": "york-west-town-lane-turreted-house",
+    "building-594": "york-west-town-lane-turreted-house",
+    "building-598": "york-west-town-lane-turreted-house",
+    "building-599": "york-west-town-lane-turreted-house",
+    "building-595": "york-west-town-lane-turreted-house",
+    "building-596": "york-west-town-lane-turreted-house",
+    "building-597": "york-west-town-lane-turreted-house",
+    "building-600": "york-west-town-lane-turreted-house",
+    "building-601": "york-west-town-lane-turreted-house",
+    "building-602": "york-west-town-lane-turreted-house",
+    "building-607": "york-west-town-lane-turreted-house",
+    "building-617": "york-west-town-lane-turreted-house",
+    "building-618": "york-west-town-lane-turreted-house",
+    "building-582": "york-west-town-lane-narrow-timber-house",
+    "building-583": "york-west-town-lane-narrow-timber-house",
+    "building-587": "york-west-town-lane-broad-timber-house",
+    "building-588": "york-west-town-lane-broad-timber-house",
+    "building-589": "york-west-town-lane-broad-timber-house",
+    "building-590": "york-west-town-lane-broad-timber-house",
+    "building-591": "york-west-town-lane-broad-timber-house",
+    "building-592": "york-west-town-lane-broad-timber-house",
+    "building-593": "york-west-town-lane-broad-timber-house",
+    "building-603": "york-west-town-lane-broad-timber-house",
+    "building-604": "york-west-town-lane-broad-timber-house",
+    "building-605": "york-west-town-lane-broad-timber-house",
+    "building-606": "york-west-town-lane-broad-timber-house",
+    "building-608": "york-precinct-causeway-ivy-covered-house",
+    "building-609": "york-precinct-causeway-ivy-covered-house",
+    "building-611": "york-precinct-causeway-ivy-covered-house",
+    "building-610": "york-precinct-causeway-ivy-covered-house",
+    "building-612": "york-precinct-causeway-ivy-covered-house",
+    "building-619": "york-west-market-frontage-corner-shop",
+    "building-620": "york-west-market-frontage-corner-shop",
+    "building-621": "york-west-market-frontage-corner-shop",
+    "building-622": "york-west-market-frontage-corner-shop",
+    "building-623": "york-west-market-frontage-corner-shop",
+    "building-624": "york-west-market-frontage-corner-shop",
+    "building-625": "york-west-market-frontage-corner-shop",
+    "building-641": "york-west-market-frontage-corner-shop",
+    "building-642": "york-west-market-frontage-corner-shop",
+    "building-643": "york-west-market-frontage-corner-shop",
+    "building-644": "york-west-market-frontage-corner-shop",
+    "building-650": "york-west-market-frontage-corner-shop",
+    "building-626": "york-west-market-frontage-gabled-house",
+    "building-627": "york-west-market-frontage-gabled-house",
+    "building-628": "york-west-market-frontage-gabled-house",
+    "building-629": "york-west-market-frontage-gabled-house",
+    "building-645": "york-west-market-frontage-gabled-house",
+    "building-646": "york-west-market-frontage-gabled-house",
+    "building-647": "york-west-market-frontage-gabled-house",
+    "building-630": "york-west-market-frontage-dormer-house",
+    "building-631": "york-west-market-frontage-dormer-house",
+    "building-632": "york-west-market-frontage-dormer-house",
+    "building-648": "york-west-market-frontage-dormer-house",
+    "building-649": "york-west-market-frontage-dormer-house",
+    "building-651": "york-west-market-frontage-dormer-house",
+    "building-633": "york-west-market-frontage-red-roof-house",
+    "building-634": "york-west-market-frontage-red-roof-house",
+    "building-638": "york-west-market-frontage-red-roof-house",
+    "building-635": "york-west-market-frontage-north-end-house",
+    "building-636": "york-west-market-frontage-north-end-house",
+    "building-639": "york-west-market-frontage-north-end-house",
+    "building-640": "york-west-market-frontage-north-end-house",
+    "building-637": "york-west-market-frontage-north-end-house",
+    "building-652": "york-east-bridge-street-northern-timber-house",
+    "building-653": "york-east-bridge-street-northern-timber-house",
+    "building-663": "york-east-bridge-street-northern-timber-house",
+    "building-654": "york-east-bridge-street-central-timber-house",
+    "building-655": "york-east-bridge-street-central-timber-house",
+    "building-656": "york-east-bridge-street-central-timber-house",
+    "building-657": "york-east-bridge-street-central-timber-house",
+    "building-658": "york-east-bridge-street-central-timber-house",
+    "building-659": "york-east-bridge-street-central-timber-house",
+    "building-660": "york-east-bridge-street-central-timber-house",
+    "building-661": "york-east-bridge-street-central-timber-house",
+    "building-662": "york-east-bridge-street-central-timber-house",
+    "building-664": "york-east-bridge-street-stair-side-timber-house",
+    "building-665": "york-east-bridge-street-stair-side-timber-house",
+    "building-666": "york-east-bridge-street-stair-side-timber-house",
+    "building-667": "york-east-bridge-street-stair-side-timber-house",
+    "building-668": "york-east-bridge-street-stair-side-timber-house",
+    "building-669": "york-east-bridge-street-stair-side-timber-house",
+    "building-670": "york-east-bridge-street-stair-side-timber-house",
+    "building-672": "york-east-bridge-street-stone-fronted-house",
+    "building-673": "york-east-bridge-street-stone-fronted-house",
+    "building-674": "york-east-bridge-street-stone-fronted-house",
+    "building-675": "york-east-bridge-street-stone-fronted-house",
+    "building-676": "york-east-bridge-street-stone-fronted-house",
+    "building-677": "york-east-bridge-street-stone-fronted-house",
+    "building-678": "york-east-bridge-street-stone-fronted-house",
+    "building-679": "york-east-bridge-street-stone-fronted-house",
+    "building-680": "york-east-bridge-street-stone-fronted-house",
+    "building-681": "york-east-bridge-street-stone-fronted-house",
+    "building-682": "york-east-bridge-street-stone-fronted-house",
+    "building-694": "york-east-bridge-street-stone-fronted-house",
+    "building-683": "york-east-riverside-corner-house",
+    "building-684": "york-east-riverside-corner-house",
+    "building-685": "york-east-riverside-corner-house",
+    "building-686": "york-east-riverside-corner-house",
+    "building-687": "york-east-riverside-corner-house",
+    "building-688": "york-east-riverside-corner-house",
+    "building-689": "york-east-riverside-corner-house",
+    "building-690": "york-east-riverside-corner-house",
+    "building-691": "york-east-riverside-corner-house",
+    "building-692": "york-east-riverside-corner-house",
+    "building-693": "york-east-riverside-corner-house",
+    "building-704": "york-east-riverside-low-courtyard-wall",
+    "building-705": "york-east-bridge-mooring-buttress",
+    "building-706": "york-east-bridge-cargo-stack",
+    "building-707": "york-river-west-moored-boat",
+    "building-708": "york-river-east-moored-boat",
+    "building-709": "york-river-north-bank-beached-boat",
+    "building-710": "york-north-river-lane-turreted-stone-house",
+    "building-711": "york-north-river-lane-turreted-stone-house",
+    "building-712": "york-north-river-lane-turreted-stone-house",
+    "building-713": "york-north-river-lane-turreted-stone-house",
+    "building-714": "york-north-river-lane-turreted-stone-house",
+    "building-715": "york-north-river-lane-turreted-stone-house",
+    "building-721": "york-north-river-lane-turreted-stone-house",
+    "building-726": "york-north-river-lane-turreted-stone-house",
+    "building-716": "york-north-river-lane-turreted-stone-house",
+    "building-717": "york-north-river-lane-turreted-stone-house",
+    "building-718": "york-north-river-lane-turreted-stone-house",
+    "building-719": "york-north-river-lane-turreted-stone-house",
+    "building-720": "york-north-river-lane-turreted-stone-house",
+    "building-730": "york-north-river-lane-turreted-stone-house",
+    "building-731": "york-north-river-lane-turreted-stone-house",
+    "building-732": "york-north-river-lane-turreted-stone-house",
+    "building-736": "york-north-river-lane-turreted-stone-house",
+    "building-737": "york-north-river-lane-turreted-stone-house",
+    "building-738": "york-north-river-lane-turreted-stone-house",
+    "building-722": "york-north-river-lane-northern-timber-house",
+    "building-723": "york-north-river-lane-northern-timber-house",
+    "building-724": "york-north-river-lane-northern-timber-house",
+    "building-729": "york-north-river-lane-northern-timber-house",
+    "building-725": "york-north-river-lane-northern-timber-house",
+    "building-727": "york-north-river-lane-northern-timber-house",
+    "building-728": "york-north-river-lane-northern-timber-house",
+    "building-733": "york-north-river-lane-northern-timber-house",
+    "building-735": "york-north-river-lane-northern-timber-house",
+    "building-734": "york-north-river-lane-northern-timber-house",
+    "building-739": "york-north-river-lane-cargo-stack",
+    "building-740": "york-north-river-lane-barrel-on-stand",
+    "building-741": "york-north-river-lane-wall-shelf",
+    "building-742": "york-north-river-lane-storage-chest",
+    "building-743": "york-north-river-lane-barrel-pair",
+    "building-744": "york-castle-west-lane-tall-timber-house",
+    "building-745": "york-castle-west-lane-tall-timber-house",
+    "building-746": "york-castle-west-lane-tall-timber-house",
+    "building-747": "york-castle-west-lane-tall-timber-house",
+    "building-748": "york-castle-west-lane-tall-timber-house",
+    "building-749": "york-castle-west-lane-tall-timber-house",
+    "building-750": "york-castle-west-lane-tall-timber-house",
+    "building-751": "york-castle-west-lane-tall-timber-house",
+    "building-753": "york-castle-west-lane-tall-timber-house",
+    "building-752": "york-castle-west-lane-tall-timber-house",
+    "building-754": "york-castle-west-lane-gable-house",
+    "building-756": "york-castle-west-lane-gable-house",
+    "building-758": "york-castle-west-lane-gable-house",
+    "building-755": "york-castle-west-lane-gable-house",
+    "building-757": "york-castle-west-lane-gable-house",
+    "building-759": "york-castle-courtyard-gate-lodge-and-stairs",
+    "building-760": "york-castle-courtyard-gate-lodge-and-stairs",
+    "building-761": "york-castle-courtyard-gate-lodge-and-stairs",
+    "building-771": "york-castle-courtyard-gate-lodge-and-stairs",
+    "building-772": "york-castle-courtyard-gate-lodge-and-stairs",
+    "building-812": "york-castle-courtyard-gate-lodge-and-stairs",
+    "building-762": "york-castle-west-curtain-wall-and-bastions",
+    "building-763": "york-castle-west-curtain-wall-and-bastions",
+    "building-764": "york-castle-west-curtain-wall-and-bastions",
+    "building-778": "york-castle-west-curtain-wall-and-bastions",
+    "building-779": "york-castle-west-curtain-wall-and-bastions",
+    "building-765": "york-castle-west-curtain-wall-and-bastions",
+    "building-766": "york-castle-west-curtain-wall-and-bastions",
+    "building-767": "york-castle-west-curtain-wall-and-bastions",
+    "building-773": "york-castle-west-curtain-wall-and-bastions",
+    "building-774": "york-castle-west-curtain-wall-and-bastions",
+    "building-775": "york-castle-west-curtain-wall-and-bastions",
+    "building-776": "york-castle-west-curtain-wall-and-bastions",
+    "building-777": "york-castle-west-curtain-wall-and-bastions",
+    "building-816": "york-castle-west-curtain-wall-and-bastions",
+    "building-768": "york-castle-south-curtain-and-conical-turret",
+    "building-781": "york-castle-south-curtain-and-conical-turret",
+    "building-782": "york-castle-south-curtain-and-conical-turret",
+    "building-783": "york-castle-south-curtain-and-conical-turret",
+    "building-784": "york-castle-south-curtain-and-conical-turret",
+    "building-785": "york-castle-south-curtain-and-conical-turret",
+    "building-786": "york-castle-south-curtain-and-conical-turret",
+    "building-787": "york-castle-south-curtain-and-conical-turret",
+    "building-788": "york-castle-south-curtain-and-conical-turret",
+    "building-789": "york-castle-south-curtain-and-conical-turret",
+    "building-780": "york-castle-south-curtain-and-conical-turret",
+    "building-814": "york-castle-south-curtain-and-conical-turret",
+    "building-769": "york-castle-great-hall-and-east-turret",
+    "building-791": "york-castle-great-hall-and-east-turret",
+    "building-793": "york-castle-great-hall-and-east-turret",
+    "building-794": "york-castle-great-hall-and-east-turret",
+    "building-795": "york-castle-great-hall-and-east-turret",
+    "building-799": "york-castle-great-hall-and-east-turret",
+    "building-800": "york-castle-great-hall-and-east-turret",
+    "building-801": "york-castle-great-hall-and-east-turret",
+    "building-802": "york-castle-great-hall-and-east-turret",
+    "building-803": "york-castle-great-hall-and-east-turret",
+    "building-804": "york-castle-great-hall-and-east-turret",
+    "building-811": "york-castle-great-hall-and-east-turret",
+    "building-824": "york-castle-great-hall-and-east-turret",
+    "building-825": "york-castle-great-hall-and-east-turret",
+    "building-826": "york-castle-great-hall-and-east-turret",
+    "building-827": "york-castle-great-hall-and-east-turret",
+    "building-828": "york-castle-great-hall-and-east-turret",
+    "building-829": "york-castle-great-hall-and-east-turret",
+    "building-832": "york-castle-great-hall-and-east-turret",
+    "building-770": "york-castle-main-keep",
+    "building-790": "york-castle-main-keep",
+    "building-792": "york-castle-main-keep",
+    "building-796": "york-castle-main-keep",
+    "building-797": "york-castle-main-keep",
+    "building-798": "york-castle-main-keep",
+    "building-809": "york-castle-main-keep",
+    "building-810": "york-castle-main-keep",
+    "building-817": "york-castle-main-keep",
+    "building-818": "york-castle-main-keep",
+    "building-819": "york-castle-main-keep",
+    "building-820": "york-castle-main-keep",
+    "building-821": "york-castle-main-keep",
+    "building-822": "york-castle-main-keep",
+    "building-823": "york-castle-main-keep",
+    "building-830": "york-castle-main-keep",
+    "building-831": "york-castle-main-keep",
+    "building-067": "york-castle-main-keep",
+    "building-808": "york-castle-main-keep",
+    "building-813": "york-castle-main-keep",
+    "building-805": "york-castle-northeast-square-watchtower",
+    "building-806": "york-castle-northeast-square-watchtower",
+    "building-807": "york-castle-northeast-square-watchtower",
+    "building-833": "york-castle-north-approach-gateway",
+    "building-846": "york-castle-north-approach-gateway",
+    "building-847": "york-castle-north-approach-gateway",
+    "building-848": "york-castle-north-approach-gateway",
+    "building-849": "york-castle-north-approach-gateway",
+    "building-836": "york-castle-north-approach-gateway",
+    "building-834": "york-castle-north-approach-wall-stair",
+    "building-835": "york-castle-north-approach-wall-stair",
+    "building-837": "york-castle-north-round-watchtower",
+    "building-838": "york-castle-north-round-watchtower",
+    "building-839": "york-castle-north-round-watchtower",
+    "building-840": "york-castle-north-round-watchtower",
+    "building-841": "york-castle-north-round-watchtower",
+    "building-842": "york-castle-north-round-watchtower",
+    "building-843": "york-castle-north-round-watchtower",
+    "building-844": "york-castle-north-round-watchtower",
+    "building-845": "york-castle-north-round-watchtower",
+    "building-850": "york-precinct-east-timber-crowned-watchtower",
+    "building-851": "york-precinct-east-timber-crowned-watchtower",
+    "building-852": "york-precinct-east-timber-crowned-watchtower",
+    "building-853": "york-precinct-east-timber-crowned-watchtower",
+    "building-854": "york-precinct-east-gate-passage",
+    "building-855": "york-precinct-east-gate-passage",
+    "building-856": "york-precinct-east-gate-passage",
+    "building-857": "york-precinct-east-gate-passage",
+    "building-858": "york-precinct-east-tall-square-tower",
+    "building-861": "york-precinct-east-tall-square-tower",
+    "building-862": "york-precinct-east-tall-square-tower",
+    "building-863": "york-precinct-east-tall-square-tower",
+    "building-860": "york-precinct-east-tall-square-tower",
+    "building-864": "york-precinct-east-roofed-gatehouse",
+    "building-865": "york-precinct-east-roofed-gatehouse",
+    "building-866": "york-precinct-east-roofed-gatehouse",
+    "building-867": "york-precinct-east-roofed-gatehouse",
+    "building-868": "york-precinct-east-wall-stair",
+    "building-869": "york-precinct-east-wall-stair",
+    "building-870": "york-north-precinct-boundary",
+    "building-871": "york-north-precinct-boundary",
+    "building-872": "york-precinct-south-curtain-wall",
+    "building-873": "york-precinct-southeast-bastion-and-wall",
+    "building-874": "york-precinct-southeast-bastion-and-wall",
+    "building-875": "york-precinct-southeast-bastion-and-wall",
+    "building-876": "york-precinct-southwest-curtain-wall",
+    "building-877": "york-precinct-southwest-curtain-wall",
+    "building-878": "york-precinct-southwest-round-bastion",
+    "building-879": "york-precinct-west-terrace-parapet",
+    "building-880": "york-precinct-west-terrace-parapet",
+    "building-881": "york-cathedral",
+    "building-899": "york-cathedral",
+    "building-882": "york-cathedral",
+    "building-886": "york-cathedral",
+    "building-891": "york-cathedral",
+    "building-892": "york-cathedral",
+    "building-898": "york-cathedral",
+    "building-903": "york-cathedral",
+    "building-883": "york-cathedral",
+    "building-885": "york-cathedral",
+    "building-896": "york-cathedral",
+    "building-902": "york-cathedral",
+    "building-910": "york-cathedral",
+    "building-916": "york-cathedral",
+    "building-884": "york-cathedral",
+    "building-887": "york-cathedral",
+    "building-893": "york-cathedral",
+    "building-894": "york-cathedral",
+    "building-900": "york-cathedral",
+    "building-888": "york-cathedral",
+    "building-889": "york-cathedral",
+    "building-890": "york-cathedral",
+    "building-895": "york-cathedral",
+    "building-897": "york-cathedral",
+    "building-901": "york-cathedral",
+    "building-904": "york-cathedral",
+    "building-905": "york-cathedral",
+    "building-906": "york-cathedral",
+    "building-912": "york-cathedral",
+    "building-907": "york-cathedral",
+    "building-908": "york-cathedral",
+    "building-909": "york-cathedral",
+    "building-911": "york-cathedral",
+    "building-913": "york-cathedral",
+    "building-914": "york-cathedral",
+    "building-915": "york-cathedral",
+    "building-921": "york-cathedral",
+    "building-922": "york-cathedral",
+    "building-917": "york-precinct-west-great-hall",
+    "building-918": "york-precinct-west-great-hall",
+    "building-923": "york-precinct-west-great-hall",
+    "building-924": "york-precinct-west-great-hall",
+    "building-925": "york-precinct-west-great-hall",
+    "building-926": "york-precinct-west-great-hall",
+    "building-927": "york-precinct-west-great-hall",
+    "building-928": "york-precinct-west-great-hall",
+    "building-919": "york-precinct-north-connecting-gateway",
+    "building-920": "york-precinct-north-connecting-gateway",
+    "building-929": "york-precinct-west-suspended-footbridge",
+    "building-930": "york-market-tavern-table-and-stools",
+    "building-931": "york-market-tavern-table-and-stools",
+    "building-932": "york-market-tavern-barrel",
+    "building-933": "york-market-tavern-side-stool",
+    "building-935": "york-market-stone-house-striped-awning",
+    "building-936": "york-market-stone-house-striped-awning",
+    "building-956": "york-market-stone-house-striped-awning",
+    "building-957": "york-market-stone-house-striped-awning",
+    "building-973": "york-market-stone-house-striped-awning",
+    "building-937": "york-market-north-display-stand",
+    "building-939": "york-market-timber-house-striped-awning",
+    "building-952": "york-market-timber-house-striped-awning",
+    "building-953": "york-market-timber-house-striped-awning",
+    "building-954": "york-market-timber-house-striped-awning",
+    "building-974": "york-market-timber-house-striped-awning",
+    "building-955": "york-market-west-long-canopy-stall",
+    "building-958": "york-market-west-long-canopy-stall",
+    "building-959": "york-market-west-long-canopy-stall",
+    "building-975": "york-market-west-long-canopy-stall",
+    "building-045": "york-market-north-cream-canopy-stall",
+    "building-963": "york-market-north-cream-canopy-stall",
+    "building-964": "york-market-north-cream-canopy-stall",
+    "building-976": "york-market-north-cream-canopy-stall",
+    "building-965": "york-market-freestanding-canvas-screen",
+    "building-977": "york-market-freestanding-canvas-screen",
+    "building-968": "york-east-bridge-street-trestle-stall",
+    "building-086": "york-west-town-raised-terrain",
+    "building-087": "york-cathedral-precinct-raised-terrain",
+    "building-090": "york-south-town-raised-terrace",
+    "building-092": "york-east-bridge-raised-terrace",
+    "building-093": "york-southeast-riverside-raised-terrace",
+    "building-098": "york-castle-courtyard-raised-terrain",
+    "building-948": "york-market-southeast-canopy-stall",
+    "building-960": "york-market-southeast-canopy-stall",
+    "building-961": "york-market-southeast-canopy-stall",
+    "building-970": "york-market-southeast-canopy-stall"
+  },
+  "terrain": {
+    "source_node": "ground",
+    "id": "york-terrain",
+    "name": "York river and background terrain",
+    "role": "Painted ground and river; raised terrain has separate named owners"
+  },
+  "review_scope": "Complete imported static geometry ownership; state-only sprites and absent geometry are separately inventoried.",
+  "nonrendering_sources": [
+    {
+      "obstacle": 115,
+      "owner": "york-bridge-square-turreted-timber-house",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 119,
+      "owner": "york-bridge-square-turreted-timber-house",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 190,
+      "owner": "york-west-bridge-approach-timber-house",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 319,
+      "owner": "york-central-south-green-timber-house",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 329,
+      "owner": "york-central-south-golden-timber-house",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 356,
+      "owner": "york-central-south-jettied-corner-house",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 859,
+      "owner": "york-precinct-east-tall-square-tower",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 934,
+      "owner": "york-market-stone-house-striped-awning",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    },
+    {
+      "obstacle": 938,
+      "owner": "york-market-timber-house-striped-awning",
+      "reason": "No mesh in frozen reconstruction; native gameplay record retained in frozen level data. Do not fabricate visible geometry during grouping."
+    }
+  ],
+  "partitions": [
+    {
+      "source_node": "building-650",
+      "coordinate": "game_y - 0.325 * game_x",
+      "boundaries": [
+        669.0,
+        716.0,
+        774.0,
+        832.0
+      ],
+      "components_ascending": [
+        "north-house",
+        "red-roof-house",
+        "dormer-house",
+        "gable-house",
+        "front-shop"
+      ],
+      "rationale": "Five visible frontage buildings share a single lower volume. Vertical seams follow frontage divisions; continuation through hidden foundation surfaces is inferred. Preserve the complete surface union and interpolate existing UVs."
+    }
+  ]
+}

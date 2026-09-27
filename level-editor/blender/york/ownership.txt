@@ -1,0 +1,172 @@
+# Logical name | reviewed automatic group roots (expanded to explicit source parts)
+Riverside stone storehouse | 0 5
+Riverside timber stack | 7
+Riverside loose planks | 8
+West riverbank retaining wall | 9
+Stone river bridge and approach stairs | 10 14 15 16 17 18 19 20 21 23 25 26 94 95 97 100 671
+South riverbank retaining wall | 11 12 13
+East riverside wooden walkway | 24
+Market long cream-canopy stall | 29 30 947
+Market produce table | 31
+Market red-canopy stall | 32 33 34 951
+Market roofed stone well | 35 36 37
+Market street barrel | 38
+Market west display table | 39
+Market wall display table | 40
+Market east display table | 41
+Market cream-canopy stall | 42 43
+Market stepped green-canopy stall | 44
+Market stacked barrels | 46
+North garden wall and stair | 47 48 49 50 51
+North garden square watchtower | 53
+North garden rear wall | 55
+North garden timber shed | 57 66
+North garden central vegetable enclosure | 58
+North garden west vegetable enclosure | 59
+North garden tree enclosure | 60
+North garden front fence | 61
+North garden fence barrel | 62
+North garden workbench | 63
+North garden shed barrel | 64
+North garden shed barrel pair | 65
+West city wall roofed stair turret | 68 69 70
+West city wall and access stair | 72 74 75 76
+Market north stone house | 78 84 85
+West town raised lane | 88 110
+Precinct stone causeway | 89 614 615
+East quay timber house | p695 p696 p697 p698 p699 p700 p701 p702 p703
+East quay ground landing | p96
+South city gatehouse | 99 529 532 535 536 547 548 549 550 577
+Riverbank wooden landing steps | 104
+Riverbank stone landing steps | 105
+West lane access steps | 106
+River timber jetty | 107
+Precinct southwest wall turret | 108 109
+Bridge Square turreted timber house | 111 116 120 135 143
+Bridge Square scaffolded corner house | 129 130 131 134 137 138 139
+Central lane stone gable house | 144 146
+Central lane timber lean-to | 148
+Central lane cross-gable house | 150
+Central lane rear gable house | 165 168
+Central lane polygonal corner house | 155 162 164
+West bridge approach gate and turret | 170 171 172 173 177 183
+West bridge approach timber house | 184 189 192 197 216
+West bridge street tall timber house | 193 195
+West bridge street arcade house | 200 206 211 212 214 215
+Southeast wall-lane long house | 218 219 221 222 227 230
+Southeast wall-lane gable house | 223 224
+Outer southeast wall stair and bastion | 232 233 234 235
+Outer east wall southern stair section | 236 237 238 241 242 244 249 251 252 253
+Outer east conical watchtower | 243
+Inner southeast curtain wall | 254
+Inner east curtain wall and stair | 255 256
+Inner east blue-roof watchtower | 258 276
+East riverside curtain wall and bastion | 259 260 261 265 283
+East water gate and bastion | 262 263 264 266 267
+East riverside wall and roofed passage | 268 269 274 285 286 287
+East riverside round watchtower | 270 271
+Southwest square courtyard house | 288 294 307 309 310
+Southwest square narrow gable house | 296 301 305 306
+Market southeast tall narrow house | 311 312 949
+Central south green timber house | 314
+Central south street barrel | 318
+Central south red timber house | 321 327 330 331 332 333
+Central south golden timber house | 328 337 338 342
+Central south jettied corner house | 344
+South terrace pale timber shop | 357 358
+South terrace dark timber house | 360 362
+South terrace retaining wall and stairs | 91 364 365
+South terrace low timber row | 366 367 370
+South terrace thatched round turret | 369 371
+South terrace riverside wall | 373
+Southeast lane western timber house | 377 388
+Southeast lane eastern timber house | 382 387
+South wall-lane timber house | 390
+South wall-lane stone hall | 393 402 403
+South wall-lane square stone tower house | 405 406 412
+South gate lane house and round turret | 413 416 421 422 423 425
+South gate lane tall timber house | 426 439 440 441 446
+South gate lane courtyard boundary wall | 431 432
+South gate lane stone house and turret | 433 434 442 459
+South gate lane terrace stairs | 435
+Southwest lane broad timber house | 443 449 450 453
+Market southwest stone manor | 461 462 467 468 472 473 474 475 476 478 480 481 483 486 487 488
+Market southwest stone arch | 493 494
+Market striped-canopy pottery stall | 495 496 497 966 967
+Southwest ivy-covered tower house | 498 499 500 523 524
+Southwest market courtyard house | 504 505 506 511 512 513 514 515 516 517 519 520
+South city wall western curtain | 552 553 554 575 578
+South city wall western roofed tower | 555 556 557 560 562
+South city wall long central curtain | 563 564
+South city wall eastern curtain | 565 566
+South city wall eastern roofed tower | 567 568 569 574
+West town lane turreted house | 579 594 595 601 602 607 617 618
+West town lane narrow timber house | 582
+West town lane broad timber house | 587
+Precinct causeway ivy-covered house | 608 610 612
+West market frontage corner shop | p619 p620 p621 p622 p623 p624 p625 p641 p642 p643 p644 c650:front-shop
+West market frontage gabled house | p626 p627 p628 p629 p645 p646 p647 c650:gable-house
+West market frontage dormer house | p630 p631 p632 p648 p649 p651 c650:dormer-house
+West market frontage red-roof house | p633 p634 p638 c650:red-roof-house
+West market frontage north-end house | p635 p636 p639 p640 637 c650:north-house
+East bridge street northern timber house | 652 663
+East bridge street central timber house | 654 655
+East bridge street stair-side timber house | 664 670
+East bridge street stone-fronted house | 672 675 680 681
+East riverside corner house | 683 693
+East riverside low courtyard wall | 704
+East bridge mooring buttress | 705
+East bridge cargo stack | 706
+River west moored boat | 707
+River east moored boat | 708
+River north bank beached boat | 709
+North river lane turreted stone house | 710 716 730 736 737 738
+North river lane northern timber house | 722 725 727 733 734
+North river lane cargo stack | 739
+North river lane barrel on stand | 740
+North river lane wall shelf | 741
+North river lane storage chest | 742
+North river lane barrel pair | 743
+Castle west lane tall timber house | 744 751 752
+Castle west lane gable house | 754 755 757
+Castle courtyard gate lodge and stairs | 759 760 761 771 772 812
+Castle west curtain wall and bastions | 762 763 765 766 767 773 774 775 776 777 816
+Castle south curtain and conical turret | 768 780 814
+Castle great hall and east turret | p769 p791 p793 p794 p795 p799 p800 p801 p802 p803 p804 p811 p824 p825 p826 p827 p828 p829 p832
+Castle main keep | p770 p790 p792 p796 p797 p798 p809 p810 p817 p818 p819 p820 p821 p822 p823 p830 p831 67 808 813
+Castle northeast square watchtower | 805 806 807
+Castle north approach gateway | 833 836
+Castle north approach wall stair | 834 835
+Castle north round watchtower | 837
+Precinct east timber-crowned watchtower | 850
+Precinct east gate passage | 854 857
+Precinct east tall square tower | 858 859
+Precinct east roofed gatehouse | 864 867
+Precinct east wall stair | 868 869
+North precinct boundary | 870 871
+Precinct south curtain wall | 872
+Precinct southeast bastion and wall | 873 874 875
+Precinct southwest curtain wall | 876 877
+Precinct southwest round bastion | 878
+Precinct west terrace parapet | 879 880
+Cathedral | 881 882 883 884 888 904 905 906 907 908 909 911 913 914 915 921 922
+Precinct west great hall | 917 918 923 924 925
+Precinct north connecting gateway | 919 920
+Precinct west suspended footbridge | 929
+Market tavern table and stools | 930 931
+Market tavern barrel | 932
+Market tavern side stool | 933
+Market stone-house striped awning | 934
+Market north display stand | 937
+Market timber-house striped awning | 938
+Market west long-canopy stall | 955
+Market north cream-canopy stall | 45 963
+Market freestanding canvas screen | 965
+East bridge street trestle stall | 968
+West town raised terrain | t86
+Cathedral precinct raised terrain | t87
+South town raised terrace | t90
+East bridge raised terrace | t92
+Southeast riverside raised terrace | t93
+Castle courtyard raised terrain | t98
+Market southeast canopy stall | 948
