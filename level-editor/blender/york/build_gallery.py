@@ -60,10 +60,15 @@ def solid(record,yaw,elevation):
     return Image.fromarray(pixels)
 
 
-def main():
+def main(*, previews_only=False):
     records=json.loads((OUT/'review/geometry.json').read_text())
     catalog=json.loads((ROOT/'level-editor/refinement/catalogs/york.json').read_text())
-    audit=json.loads(Path(__file__).with_name('grouping-audit-round-2.json').read_text())
+    audit={'changes':[], 'asset_notes':{}, 'view_overrides':{}}
+    for path in sorted(Path(__file__).parent.glob('grouping-audit-round-*.json')):
+        revision=json.loads(path.read_text())
+        audit['changes'].extend(revision['changes'])
+        for field in ('asset_notes','view_overrides'):
+            audit[field].update(revision.get(field,{}))
     updates={}
     for change in audit['changes']:
         identities={change['from'],*change.get('components',{}).values()}
@@ -93,7 +98,8 @@ def main():
         crop=Image.alpha_composite(crop,overlay).convert('RGB')
         crop.thumbnail((600,450))
         crop.save(folder/(key+'-source.jpg'),quality=92)
-        left,right=solid(record,0,35),solid(record,40,40)
+        view=audit['view_overrides'].get(key,{'yaw':40,'elevation':40,'label':'Selected geometry — east oblique'})
+        left,right=solid(record,0,35),solid(record,view['yaw'],view['elevation'])
         left.save(folder/(key+'-game.jpg'),quality=92)
         right.save(folder/(key+'-east.jpg'),quality=92)
         small=Image.new('RGB',(400,370),'#20262d')
@@ -117,9 +123,9 @@ def main():
 <h2>{number:03} · {html.escape(record['name'])}</h2><div class="images">
 <a href="assets/{key}-source.jpg"><img loading="lazy" src="assets/{key}-source.jpg" alt="Source artwork with selected geometry tinted cyan"></a>
 <a href="assets/{key}-game.jpg"><img loading="lazy" src="assets/{key}-game.jpg" alt="Selected geometry — game camera (orthographic, 35° elevation)"></a>
-<a href="assets/{key}-east.jpg"><img loading="lazy" src="assets/{key}-east.jpg" alt="Selected geometry from the east"></a></div>
+<a href="assets/{key}-east.jpg"><img loading="lazy" src="assets/{key}-east.jpg" alt="{html.escape(view['label'])}"></a></div>
 <p>{html.escape(note)}</p><p><a href="../stage/map-assets/3d-assets/york/{key}/model.glb">Asset model</a> · <a href="../stage/map-assets/3d-assets/york/{key}/asset.json">Asset descriptor</a></p><details><summary>{len(names)} source parts</summary><p>{', '.join(names)}</p><code>{key}</code></details></article>''')
-        manifest.append({'id':key,'name':record['name'],'sources':names,'source_bounds':box,'notes':note})
+        manifest.append({'id':key,'name':record['name'],'sources':names,'source_bounds':box,'notes':note,'east_solid_label':view['label']})
     for start in range(0,len(sheets),12):
         image=Image.new('RGB',(1600,1110),'#20262d')
         for i,card in enumerate(sheets[start:start+12]):image.paste(card,((i%4)*400,(i//4)*370))
@@ -139,10 +145,17 @@ const input=document.querySelector('#search'),cards=[...document.querySelectorAl
             'Buried surfaces have been trimmed against raised terrain. Visible surfaces and texture coordinates are preserved.')
     (OUT/'review/inspection.html').write_text(body)
     (OUT/'review/manifest.json').write_text(json.dumps({'groups':manifest,'scene':scene,'catalog_sha256':hashlib.sha256((ROOT/'level-editor/refinement/catalogs/york.json').read_bytes()).hexdigest()},indent=2)+'\n')
-    from build_grouping_review import build
-    build()
-    print(json.dumps({'cards':len(cards),'gallery':str(OUT/'review/index.html')}))
+    if previews_only:
+        print(json.dumps({'cards':len(cards),'manifest':str(OUT/'review/manifest.json')}))
+    else:
+        from build_grouping_review import build
+        build()
+        print(json.dumps({'cards':len(cards),'gallery':str(OUT/'review/index.html')}))
 
 
 if __name__=='__main__':
-    main()
+    import argparse
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--previews-only',action='store_true',
+                        help='Prepare images and manifest while export runs; build_grouping_review.py finalizes the verified gallery.')
+    main(previews_only=parser.parse_args().previews_only)

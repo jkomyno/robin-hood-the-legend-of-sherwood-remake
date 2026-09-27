@@ -1,0 +1,44 @@
+{
+  "scope": "Grouping only; no geometry or texture approval",
+  "submitted_review_count": 91,
+  "changes": [
+    {
+      "source": "building-242",
+      "from": "york-outer-east-wall-stair-passage",
+      "to": "york-outer-east-upper-wall-stair",
+      "reason": "Separate the detached stair beside the upper curtain wall from the lower wall passage."
+    },
+    {
+      "source": "building-552",
+      "from": "york-south-city-wall-western-curtain",
+      "to": "york-south-city-gate-east-wall",
+      "reason": "Return the wall deck and supporting body to their matching gate-side parapet 551."
+    },
+    {
+      "source": "building-578",
+      "from": "york-south-city-wall-western-curtain",
+      "to": "york-south-city-gate-east-wall",
+      "reason": "Keep the access ramp with the gate-side wall deck it reaches."
+    }
+  ],
+  "asset_notes": {
+    "york-precinct-south-curtain-wall": "The broad surface behind this parapet belongs to Cathedral precinct raised terrain (source 087). There is no independent narrow walkway mesh to transfer; the wall stands at the edge of the raised precinct.",
+    "york-precinct-southeast-bastion": "The floor inside this curved parapet is part of Cathedral precinct raised terrain (source 087), continuous with the precinct plateau. No separate bastion deck exists in the frozen reconstruction.",
+    "york-south-city-wall-eastern-curtain": "The walkway is already included: source 565 is its deck/supporting body and 566 is the outer parapet. The rear oblique preview exposes the deck hidden by the parapet in the game view."
+  },
+  "view_overrides": {
+    "york-south-city-wall-eastern-curtain": {
+      "yaw": 150,
+      "elevation": 55,
+      "label": "Selected geometry \u2014 rear oblique (walkway visible)"
+    },
+    "york-south-city-gate-east-wall": {
+      "yaw": 150,
+      "elevation": 55,
+      "label": "Selected geometry \u2014 rear oblique (deck and access ramp)"
+    }
+  },
+  "observations": {
+    "york-precinct-southwest-curtain-wall": "Approval retained. Its adjoining floor is the broad precinct plateau in source 087, not a separately modeled wall walk. The same applies to the south wall and southeast bastion."
+  }
+}

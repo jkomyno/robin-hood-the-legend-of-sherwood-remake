@@ -59,7 +59,7 @@ def build():
         items.append({'id':identity,'name':record['name'],'status':'ready-for-user','technical_eligible':True,
             'approval_scope':'grouping-only',**paths,'context':str(context),'model':str(model),
             'solid_label':'Selected geometry — game camera (35° orthographic)',
-            'east_solid_label':'Selected geometry — east oblique',
+            'east_solid_label':record.get('east_solid_label','Selected geometry — east oblique'),
             'projection_errors_label':'Selected source parts (cyan overlay)',
             'ownership':str(own),'validation':str(validation),
             'notes':record['notes']+(' Foundation trimmed to its adjoining floor. '+floor['reason'] if floor else '')+' Source parts: '+', '.join(record['sources'])+'. '+

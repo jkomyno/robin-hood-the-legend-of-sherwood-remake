@@ -3,7 +3,7 @@
 This is the first refinement step: freeze source evidence, inspect the whole map,
 and assign the reconstructed surfaces to named logical assets. The reviewed
 catalog is `../../refinement/catalogs/york.json`; `ownership.txt` is its editable
-recipe. It replaces 460 proximity groups with 248 named groups plus background
+recipe. It replaces 460 proximity groups with 249 named groups plus background
 terrain. All 972 visible source records and nine records without meshes are
 accounted for. Distinct adjoining buildings are separate assets, including attached towers
 and gatehouses. Cathedral towers and the north precinct hall are separate from
@@ -81,6 +81,33 @@ level-editor/work/york-refinement/review-round-2/ungrounded` before grounding.
 Changed groupings return to the pending gallery; submitted approvals remain
 valid only for matching asset evidence.
 
+### Third partial review: stairs and wall walks
+
+`grouping-audit-round-3.json` records 91 further decisions and three source
+transfers. The detached upper-east stair (242) becomes its own asset. The south
+gate east wall gains its deck/support (552) and access ramp (578) from the
+neighbouring western curtain wall. Three existing groups change and one is
+added; all 246 other geometry records remain identical. All 988 retained
+components preserve their topology and world positions within float32 tolerance.
+
+The eastern city curtain already includes its deck (565) behind parapet 566.
+Its alternate preview now faces the rear so that deck is visible; the first
+preview remains the game camera. The precinct south wall, southeast bastion
+and southwest wall adjoin the broad raised precinct terrain (087). Their floor
+is continuous with that plateau, rather than an independently modeled wall
+walk. The two pending precinct cards explain this; the southwest wall retains
+its submitted approval and unchanged evidence.
+
+The preceding gallery is frozen in `review-v9/`; scenes, catalog and export are
+under `review-round-3/before/`. Run `verify_regrouping.py` with `--before
+level-editor/work/york-refinement/review-v9/geometry.json`, `--audit
+level-editor/blender/york/grouping-audit-round-3.json` and `--output
+level-editor/work/york-refinement/review-round-3/preservation.json`.
+Gallery notes accumulate the audit records, and per-asset alternate camera
+settings come from their `view_overrides` entries. To prepare previews during
+export, run `build_gallery.py --previews-only`; after export succeeds, run
+`build_grouping_review.py` to validate the evidence and refresh the pending gallery.
+
 
 Base patches and Fog mission doors are inventoried separately. Door receiver
 ownership and interior/exterior projection receivers still require authored
@@ -91,7 +118,7 @@ the static grouping review.
 
 `ground_assets.py` reads the frozen grouped scene and subtracts the volumes below
 the reviewed terrain, ramp and raised-lane surfaces from each asset. It trims
-476 component meshes across 174 assets. All 248 named assets and terrain remain.
+476 component meshes across 173 assets. All 249 named assets and terrain remain.
 Cuts follow both the support footprint and its sloping height, preserving exposed
 lower walls at terrace edges. Bridge decks and roofs are not solid-ground cutters.
 The eleven support sources are listed explicitly in the recipe and its report.

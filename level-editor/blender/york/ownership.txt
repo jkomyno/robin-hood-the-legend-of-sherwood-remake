@@ -40,7 +40,7 @@ South city west gate tower | p526 p527 p537 p538 p539 p540 p541 p576 p577
 South city east gate tower | p530 p531 p542 p543 p544 p545 p546
 South city gatehouse | p528 p529 p532 p533 p534 p535 p536
 South city gate bridge | p99 p547 p548 p549 p550
-South city gate east wall | p551
+South city gate east wall | p551 p552 p578
 Riverbank wooden landing steps | 104
 Riverbank stone landing steps | 105
 West lane access steps | 106
@@ -70,7 +70,8 @@ Southeast wall lane front house | p227 p228 p229 p230 p231
 Southeast wall-lane gable house | 223 224
 Outer southeast round bastion | p232 c235:bastion p249
 Outer southeast wall stair | p233 p234 c235:wall-stair p251
-Outer east wall stair passage | p236 p237 p240 p242 p252 p253 p980
+Outer east wall stair passage | p236 p237 p240 p252 p253 p980
+Outer east upper wall stair | p242
 Outer east middle round bastion | p238 p239 c244:bastion p250
 Outer east upper curtain wall | p241 c244:curtain-wall
 Outer east conical watchtower | 243
@@ -136,7 +137,7 @@ Southwest market square tower | p505 p507 p508 p509 p510 p513
 Southwest market west low house | p511 p512 p517
 Southwest market north house | p514 p515 p516 p518
 Southwest market northwest house | p519 p520 p521 p522
-South city wall western curtain | 552 553 554 575 578
+South city wall western curtain | 553 554 575
 South city wall western roofed tower | 555 556 557 560 562
 South city wall long central curtain | 563 564
 South city wall eastern curtain | 565 566

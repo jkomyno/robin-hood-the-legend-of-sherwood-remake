@@ -849,6 +849,14 @@
         {
           "obstacle": 551,
           "name": "Structural volume 551"
+        },
+        {
+          "obstacle": 552,
+          "name": "Structural volume 552"
+        },
+        {
+          "obstacle": 578,
+          "name": "Structural volume 578"
         }
       ]
     },
@@ -1575,10 +1583,6 @@
           "name": "Raised section 240"
         },
         {
-          "obstacle": 242,
-          "name": "Structural volume 242"
-        },
-        {
           "obstacle": 252,
           "name": "Structural volume 252"
         },
@@ -1589,6 +1593,16 @@
         {
           "obstacle": 980,
           "name": "Structural volume 980"
+        }
+      ]
+    },
+    {
+      "id": "york-outer-east-upper-wall-stair",
+      "name": "Outer east upper wall stair",
+      "parts": [
+        {
+          "obstacle": 242,
+          "name": "Structural volume 242"
         }
       ]
     },
@@ -3066,10 +3080,6 @@
       "name": "South city wall western curtain",
       "parts": [
         {
-          "obstacle": 552,
-          "name": "Structural volume 552"
-        },
-        {
           "obstacle": 553,
           "name": "Structural volume 553"
         },
@@ -3080,10 +3090,6 @@
         {
           "obstacle": 575,
           "name": "Structural volume 575"
-        },
-        {
-          "obstacle": 578,
-          "name": "Structural volume 578"
         }
       ]
     },
@@ -5665,6 +5671,8 @@
     "building-549": "york-south-city-gate-bridge",
     "building-550": "york-south-city-gate-bridge",
     "building-551": "york-south-city-gate-east-wall",
+    "building-552": "york-south-city-gate-east-wall",
+    "building-578": "york-south-city-gate-east-wall",
     "building-104": "york-riverbank-wooden-landing-steps",
     "building-105": "york-riverbank-stone-landing-steps",
     "building-106": "york-west-lane-access-steps",
@@ -5796,10 +5804,10 @@
     "building-236": "york-outer-east-wall-stair-passage",
     "building-237": "york-outer-east-wall-stair-passage",
     "building-240": "york-outer-east-wall-stair-passage",
-    "building-242": "york-outer-east-wall-stair-passage",
     "building-252": "york-outer-east-wall-stair-passage",
     "building-253": "york-outer-east-wall-stair-passage",
     "building-980": "york-outer-east-wall-stair-passage",
+    "building-242": "york-outer-east-upper-wall-stair",
     "building-238": "york-outer-east-middle-round-bastion",
     "building-239": "york-outer-east-middle-round-bastion",
     "building-244": "york-outer-east-middle-round-bastion",
@@ -6058,11 +6066,9 @@
     "building-520": "york-southwest-market-northwest-house",
     "building-521": "york-southwest-market-northwest-house",
     "building-522": "york-southwest-market-northwest-house",
-    "building-552": "york-south-city-wall-western-curtain",
     "building-553": "york-south-city-wall-western-curtain",
     "building-554": "york-south-city-wall-western-curtain",
     "building-575": "york-south-city-wall-western-curtain",
-    "building-578": "york-south-city-wall-western-curtain",
     "building-555": "york-south-city-wall-western-roofed-tower",
     "building-561": "york-south-city-wall-western-roofed-tower",
     "building-556": "york-south-city-wall-western-roofed-tower",

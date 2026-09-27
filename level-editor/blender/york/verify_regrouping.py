@@ -15,11 +15,13 @@ def sha(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--before', type=Path, required=True)
+    parser.add_argument('--audit', type=Path, default=Path(__file__).with_name('grouping-audit-round-2.json'))
+    parser.add_argument('--output', type=Path, default=OUT/'review-round-2/preservation.json')
     args = parser.parse_args()
     current = OUT / 'review/geometry.json'
     before = json.loads(args.before.read_text())
     after = json.loads(current.read_text())
-    audit = json.loads(Path(__file__).with_name('grouping-audit-round-2.json').read_text())
+    audit = json.loads(args.audit.read_text())
     affected = set()
     for change in audit['changes']:
         affected.add(change['from'])
@@ -57,7 +59,7 @@ def main():
               'changed_existing_assets': sorted(set(after) & affected & set(before)),
               'added_assets': added, 'retired_assets': removed,
               'preserved_components': checked, 'max_position_drift': max_drift, 'errors': errors}
-    (OUT/'review-round-2/preservation.json').write_text(json.dumps(result, indent=2)+'\n')
+    args.output.write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps({k:len(v) if isinstance(v,list) and k!='errors' else v for k,v in result.items()}))
     if errors:
         raise ValueError('Regrouping changed pre-existing grounded surfaces')
