@@ -1123,29 +1123,31 @@ export default function Editor3D(props: EditorProps) {
             {mapLabel(mapName()!)}
           </span>
         </Show>
-        <label class="mission-picker">
-          Mission
-          <select
-            aria-label="Mission"
-            value={missionName()}
-            disabled={
-              !props.index() ||
-              !mapName() ||
-              !missionsForMap(props.index(), doc()?.sourceMap ?? doc()?.map ?? mapName()).length
-            }
-            onChange={(e) => {
-              const value = e.currentTarget.value;
-              e.currentTarget.value = missionName();
-              if (value) void openMap("", value);
-              else if (mapName()) void openMap(mapName()!);
-            }}
-          >
-            <option value="">Map only</option>
-            <For each={missionsForMap(props.index(), doc()?.sourceMap ?? doc()?.map ?? mapName())}>
-              {(mission) => <option value={mission.id}>{mission.label}</option>}
-            </For>
-          </select>
-        </label>
+        <Show when={doc()}>
+          <label class="mission-picker">
+            Mission
+            <select
+              aria-label="Mission"
+              value={missionName()}
+              disabled={
+                !props.index() ||
+                !mapName() ||
+                !missionsForMap(props.index(), doc()?.sourceMap ?? doc()?.map ?? mapName()).length
+              }
+              onChange={(e) => {
+                const value = e.currentTarget.value;
+                e.currentTarget.value = missionName();
+                if (value) void openMap("", value);
+                else if (mapName()) void openMap(mapName()!);
+              }}
+            >
+              <option value="">Map only</option>
+              <For each={missionsForMap(props.index(), doc()?.sourceMap ?? doc()?.map ?? mapName())}>
+                {(mission) => <option value={mission.id}>{mission.label}</option>}
+              </For>
+            </select>
+          </label>
+        </Show>
         <span class="spacer" />
         <button disabled={!doc()} onClick={() => viewport.gameCamera()} title="g">
           Reset view
