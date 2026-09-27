@@ -6,6 +6,7 @@ import { readStoredMap, pinnedDescriptors } from "./stored-map.ts";
 import { staticGameplaySnapshot } from "./diagnose-gameplay-candidates.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import type { GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
+import { normalizeGameplayStateViews } from "../../shared/src/gameplay-state-views.ts";
 
 const { values } = parseArgs({
   options: {
@@ -28,17 +29,18 @@ for (const map of (await fs.readdir(values.recovery, { withFileTypes: true }))
       await fs.readFile(path.join(values.recovery, map, "recovery-report.json"), "utf8"),
     );
     result.pending = report.pending;
-    const document = staticGameplaySnapshot(
+    let document = staticGameplaySnapshot(
       await readStoredMap(
         path.join(values.library, "scenes", `${map}.rhlos-map.json`),
         values.library,
       ),
     );
-    const assets = await pinnedDescriptors(
+    let assets = await pinnedDescriptors(
       values.library,
       document.assetSources ?? [],
       document.sceneAssets,
     );
+    ({ document, descriptors: assets } = normalizeGameplayStateViews(document, assets));
     for (const [id, descriptor] of assets) {
       const packet = JSON.parse(
         await fs.readFile(path.join(values.recovery, map, `${id}.gameplay-authoring.json`), "utf8"),

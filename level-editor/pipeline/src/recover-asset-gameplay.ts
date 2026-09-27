@@ -46,6 +46,7 @@ import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantiza
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
 import { recoverSurfaceOwners } from "./recovery-surface-owners.ts";
 import { recoverMovementClearance } from "./recover-movement-clearance.ts";
+import { normalizeGameplayStateViews } from "../../shared/src/gameplay-state-views.ts";
 import {
   heightPlane as fitHeightPlane,
   planeHeight as evaluateHeight,
@@ -65,12 +66,13 @@ if (!values.map || !values.source || !values.out)
   throw new Error(
     "Usage: --map <saved-map.json> --library <library> --source <proto-level.json> --out <authoring directory>",
   );
-const document = await readStoredMap(values.map, values.library);
-const descriptors = await pinnedDescriptors(
+const inputDocument = await readStoredMap(values.map, values.library);
+const inputDescriptors = await pinnedDescriptors(
   values.library,
-  document.assetSources ?? [],
-  document.sceneAssets,
+  inputDocument.assetSources ?? [],
+  inputDocument.sceneAssets,
 );
+const { document, descriptors } = normalizeGameplayStateViews(inputDocument, inputDescriptors);
 const proto: ProtoLevel = JSON.parse(await fs.readFile(values.source, "utf8"));
 const locals = new Map<
   number,

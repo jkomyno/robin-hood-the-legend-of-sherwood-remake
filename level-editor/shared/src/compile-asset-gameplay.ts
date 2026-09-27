@@ -18,6 +18,7 @@ import {
 import { heightPlane, planeHeight, clipHeight, type HeightPlane } from "./gameplay-plane.ts";
 import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-quantization.ts";
 import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
+import { normalizeGameplayStateViews } from "./gameplay-state-views.ts";
 import {
   compileTransitionObstacles,
   type PlacedTransitionBlocker,
@@ -118,6 +119,7 @@ export function compileAssetGameplay(
   descriptors: ReadonlyMap<string, ProjectionAssetDescriptor>,
   bounds: [number, number, number, number],
 ): CompiledAssetGeometry {
+  ({ document, descriptors } = normalizeGameplayStateViews(document, descriptors));
   // Saved placements may contain old obstacle snapshots. Geometry authority is
   // the pinned asset; scene instances supply identity, visibility and transforms.
   document = {
