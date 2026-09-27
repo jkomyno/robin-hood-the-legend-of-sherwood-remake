@@ -12,14 +12,27 @@ import {
   type ProjectionAssetDescriptor,
 } from "@rle/shared";
 import { canonical, modelContentSignatures } from "./bundle-asset-states.ts";
-import { normalizeStaticAssetModel, verifyStaticParts } from "./static-asset-model.ts";
+import {
+  normalizeStaticAssetModel,
+  verifyStaticParts,
+  writeStaticAssetModel,
+} from "./static-asset-model.ts";
+import {
+  staticMetadataKeys,
+  readStaticAssetMetadata,
+  mergeStaticAssetMetadata,
+} from "./static-asset-metadata.ts";
+import { mergeStaticAppearances } from "./merge-static-appearances.ts";
 
 export interface StaticAssetInput {
   descriptor: ProjectionAssetDescriptor;
   model: Document;
 }
 
-export function assertStaticDescriptor(descriptor: ProjectionAssetDescriptor) {
+export function assertStaticDescriptor(
+  descriptor: ProjectionAssetDescriptor,
+  extraKeys: string[] = [],
+) {
   const supported = new Set([
     "version",
     "kind",
@@ -31,6 +44,7 @@ export function assertStaticDescriptor(descriptor: ProjectionAssetDescriptor) {
     "model_scene",
     "resources",
     "parts",
+    ...extraKeys,
   ]);
   if (Object.keys(descriptor).some((key) => !supported.has(key)))
     throw new Error(`Asset requires explicit metadata migration: ${descriptor.id}`);
@@ -50,7 +64,7 @@ export async function mergeStaticAssets(
   const nodes = new Set<string>();
   const obstacles: number[] = [];
   const selected = inputs.map(({ descriptor }) => {
-    assertStaticDescriptor(descriptor);
+    assertStaticDescriptor(descriptor, staticMetadataKeys);
     const parts = document.objects.filter((part) =>
       part.node.startsWith(`asset:${descriptor.id}:`),
     );
@@ -61,7 +75,6 @@ export async function mergeStaticAssets(
       groups.size !== 1 ||
       group.hidden ||
       group.states ||
-      group.patches ||
       group.transform.rot_deg !== 0 ||
       parts.length !== descriptor.parts.length ||
       document.objects.some((part) => part.group === group.id && !parts.includes(part))
@@ -103,6 +116,8 @@ export async function mergeStaticAssets(
   const scene = target.createScene("default");
   target.getRoot().setDefaultScene(scene);
   const expectedNodes: unknown[] = [];
+  const appearanceBindings: Record<string, string> = {};
+  const metadata: Parameters<typeof mergeStaticAssetMetadata>[0] = [];
   for (const [i, { descriptor, model }] of inputs.entries()) {
     if (descriptor.source_map !== inputs[0]!.descriptor.source_map)
       throw new Error("Cannot combine unrelated source maps");
@@ -112,6 +127,10 @@ export async function mergeStaticAssets(
       dy: placement.group.transform.dy - origin.dy,
       dz: placement.group.transform.dz - origin.dz,
     };
+    metadata.push({
+      metadata: readStaticAssetMetadata(descriptor),
+      offset: gameToScene(document.camera, delta.dx, delta.dy, delta.dz),
+    });
     const sourceScenes = model.getRoot().listScenes();
     const source = sourceScenes[0];
     if (
@@ -123,6 +142,10 @@ export async function mergeStaticAssets(
       throw new Error(`Expected one static scene without scene metadata: ${descriptor.id}`);
     if (Object.keys(model.getRoot().getExtras()).length)
       throw new Error(`Model requires explicit root metadata migration: ${descriptor.id}`);
+    Object.assign(
+      appearanceBindings,
+      mergeStaticAppearances(source, descriptor.id, placement.group.patches),
+    );
     const reachable: string[] = [];
     source.traverse((node) => reachable.push(node.getName()));
     for (const part of descriptor.parts)
@@ -169,7 +192,11 @@ export async function mergeStaticAssets(
   result.groups = result.groups.filter(
     (group) => !selected.some((entry) => entry.group.id === group.id),
   );
-  result.groups.push({ id, transform: { ...origin } });
+  result.groups.push({
+    id,
+    transform: { ...origin },
+    ...(Object.keys(appearanceBindings).length ? { patches: { [id]: appearanceBindings } } : {}),
+  });
   for (const { parts: oldParts } of selected)
     for (const old of oldParts) {
       const next = result.objects.find((part) => part.id === old.id)!;
@@ -186,10 +213,11 @@ export async function mergeStaticAssets(
   for (const texture of target.getRoot().listTextures()) texture.setURI("");
   await normalizeStaticAssetModel(target, id, names);
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
-  const bytes = await io.writeBinary(target);
+  const bytes = await writeStaticAssetModel(io, target);
   const roundtrip = await io.readBinary(bytes);
   await verifyStaticParts(roundtrip, names, expectedNodes);
   const descriptor: ProjectionAssetDescriptor = {
+    ...mergeStaticAssetMetadata(metadata),
     version: 1,
     kind: "projection-mapped-asset",
     id,

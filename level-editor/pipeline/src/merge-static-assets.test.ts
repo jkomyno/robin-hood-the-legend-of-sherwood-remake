@@ -4,11 +4,13 @@ import { Document, NodeIO } from "@gltf-transform/core";
 import {
   IDENTITY_TRANSFORM,
   transformedObstacle,
+  type AppearancePatches,
   type Level3D,
   type ProjectionAssetDescriptor,
 } from "@rle/shared";
 import { mergeStaticAssets } from "./merge-static-assets.ts";
 import { splitStaticAsset } from "./split-static-asset.ts";
+import { readStaticAssetMetadata } from "./static-asset-metadata.ts";
 
 function fixture() {
   const document: Level3D = {
@@ -167,6 +169,93 @@ test("stateful assets require explicit migration", async () => {
   const { document, inputs } = fixture();
   inputs[1]!.descriptor.states = { active: "initial", initial: ["building-1"], applied: [] };
   await assert.rejects(mergeStaticAssets(document, "whole-building", [0, 1], inputs), /migration/);
+});
+
+test("merge retains near-identity transforms and independent appearance bindings", async () => {
+  const { document, inputs } = fixture();
+  for (const [i, input] of inputs.entries()) {
+    const node = input.model.getRoot().listNodes()[0]!;
+    node.setTranslation([1e-7, 0, 0]).setScale([1 + 1e-7, 1, 1]);
+    node.setExtras({ reveal_hide_when_applied: ["appearance-1"] });
+    document.groups[i]!.patches = { [input.descriptor.id]: { "appearance-1": `patch-${i}` } };
+    const wrapper = input.model.createNode("map").setExtras({ default_hidden_source_nodes: [] });
+    wrapper.addChild(node);
+    input.model.getRoot().listScenes()[0]!.addChild(wrapper);
+  }
+  const merged = await mergeStaticAssets(document, "whole-building", [0, 1], inputs);
+  assert.deepEqual(merged.document.groups[0]!.patches, {
+    "whole-building": {
+      "piece-0/appearance-1": "patch-0",
+      "piece-1/appearance-1": "patch-1",
+    },
+  });
+  const model = await new NodeIO().readBinary(merged.bytes);
+  assert.deepEqual(model.getRoot().getDefaultScene()!.listChildren()[0]!.getExtras(), {
+    default_hidden_source_nodes: [],
+  });
+  const first = model
+    .getRoot()
+    .listNodes()
+    .find((node) => node.getName() === "building-0")!;
+  assert.ok(Math.abs(first.getWorldMatrix()[12]! - 1e-7) < 1e-12);
+  assert.ok(Math.abs(first.getWorldMatrix()[0]! - 1 - 1e-7) < 1e-12);
+  assert.deepEqual(first.getExtras().reveal_hide_when_applied, ["piece-0/appearance-1"]);
+});
+
+test("static merge rejects unresolved appearance bindings", async () => {
+  const cases: AppearancePatches[] = [
+    { another: { "appearance-1": "patch-1" } },
+    { "piece-0": { state: "patch-1" } },
+    { "piece-0": { missing: "patch-1" } },
+  ];
+  for (const patches of cases) {
+    const { document, inputs } = fixture();
+    document.groups[0]!.patches = patches;
+    await assert.rejects(
+      mergeStaticAssets(document, "whole-building", [0, 1], inputs),
+      /appearance bindings|explicit migration|no model trigger/,
+    );
+  }
+});
+
+test("static merge retains component annotations and rebases declared scene bounds", async () => {
+  const { document, inputs } = fixture();
+  for (const input of inputs)
+    Object.assign(input.descriptor, {
+      coordinates: "Z-up mesh children; Y-up glTF map wrapper; units are map pixels",
+      anchor: "horizontal bounds center at lowest geometry point",
+      bounds_local_scene: { min: [0, 0, 0], max: [10, 10, 10] },
+      components: [
+        {
+          name: input.descriptor.id,
+          source_node: input.descriptor.parts[0]!.node,
+          default_hidden: false,
+          reprojection_known_texels: 7,
+          reprojection_source_sha256: "a".repeat(64),
+        },
+      ],
+    });
+  const before = inputs.flatMap((input) => readStaticAssetMetadata(input.descriptor).components!);
+  const merged = await mergeStaticAssets(document, "whole-building", [0, 1], inputs);
+  const metadata = readStaticAssetMetadata(merged.descriptor);
+  assert.deepEqual(metadata.components, before);
+  assert.equal(metadata.bounds_local_scene!.min[0], 0);
+  assert.equal(metadata.bounds_local_scene!.max[0], 30);
+  assert.ok(
+    Math.abs(metadata.bounds_local_scene!.min[1] + 40 / Math.sin((35 * Math.PI) / 180)) < 1e-9,
+  );
+  assert.ok(
+    Math.abs(metadata.bounds_local_scene!.max[2] - 10 - 10 / Math.cos((35 * Math.PI) / 180)) < 1e-9,
+  );
+  assert.equal(metadata.anchor, "Origin of the first constituent asset");
+  const invalid = fixture();
+  Object.assign(invalid.inputs[0]!.descriptor, {
+    components: [{ name: "part", source_node: "building-0", position: [1, 2, 3] }],
+  });
+  await assert.rejects(
+    mergeStaticAssets(invalid.document, "whole-building", [0, 1], invalid.inputs),
+    /explicit migration/,
+  );
 });
 
 test("split preserves nested model transforms and assigns every part once", async () => {

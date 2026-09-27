@@ -183,8 +183,16 @@ restore its remaining five doors: all 42 non-lift doors and the three-door permi
 transition now match source geometry and rules. `declaredDoorOwnershipRecovery`
 records the one-time mapping.
 Nottingham declarations restore four rooms and five doors in the two green market
-frontages, north dormer house and castle main hall. Its remaining shared interior
-spans separated castle entrances and still needs physical ownership work.
+frontages, north dormer house and castle main hall. Further declarations attach
+parallel passage lanes to the north gate gallery, stream wall and south gate arch.
+The castle hall and watchtower form one 35-part asset, keeping their shared
+three-door interior together when moved. Nottingham now matches all 100 non-lift
+doors, 45 interiors and seven door-linked patches in the geometry/rules comparison.
+The staged combined asset passes editor insertion, rendering and save/reopen checks.
+Static merging preserves component annotations, translates declared bounds and
+namespaces appearance bindings without changing their resolved behavior. Its GLB
+writer retains near-identity transforms so binary round trips meet the existing
+world-transform tolerance. These assets and gameplay definitions remain staged.
 Lincoln declarations attach the hall-terrace gate and western-tower passage to
 their corresponding revealed assets, the shed entrance to its room, and all three
 keep-floor entrances to one shared keep interior. These restore six doors and two
@@ -233,9 +241,9 @@ navigation fidelity and publication remain unfinished.
 Spatial ownership ties can be resolved by slicing solid geometry above the landing,
 excluding supporting terrain and preserving disconnected concave pieces. This
 restores 84 connection records without dropping previously recovered doors.
-Across the nine diagnostics, 374 of 397 non-lift doors now compile; all 374 match
+Across the nine diagnostics, 385 of 397 non-lift doors now compile; all 385 match
 source endpoints, click polygons, door types, active flags and initial/alternate
-permissions. The remaining 23 still need ownership or endpoint recovery. Inferred
+permissions. The remaining 12 still need ownership or endpoint recovery. Inferred
 physical grouping remains marked for review before publication.
 `compare-door-geometry.ts SOURCE_JSON COMPILED_LEVEL_JSON` independently compares
 non-lift door geometry/rules, shared-room membership and door-linked patch rules.
@@ -252,7 +260,7 @@ Current compiled/source counts (no unexpected records in any map):
 | Derby | 42/42 | 14/14 | 1/1 |
 | Leicester | 59/59 | 16/16 | 5/5 |
 | Lincoln | 59/59 | 19/19 | 9/9 |
-| Nottingham | 89/100 | 44/45 | 7/7 |
+| Nottingham | 100/100 | 45/45 | 7/7 |
 | Sherwood | 3/5 | 3/5 | 0/0 |
 | York | 113/123 | 66/74 | 5/5 |
 
