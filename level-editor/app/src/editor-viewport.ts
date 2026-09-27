@@ -299,6 +299,9 @@ export class EditorViewport {
   }
   private orbit: OrbitControls | null = null;
   private gizmo: TransformControls | null = null;
+  // A separate frame rotates translation axes without changing asset orientation.
+  private readonly gizmoFrame = new THREE.Object3D();
+  private coordinateRotation = 45;
   private readonly scene = new THREE.Scene();
   private readonly mapRoot = new THREE.Group();
   private readonly objectsRoot = new THREE.Group();
@@ -352,6 +355,15 @@ export class EditorViewport {
     return s?.kind === "group"
       ? (this.bindings.document()?.groups.find((g) => g.id === s.id) ?? null)
       : null;
+  }
+  setCoordinateRotation(degrees: number) {
+    if (!Number.isFinite(degrees)) return;
+    this.coordinateRotation = degrees;
+    this.gizmoFrame.rotation.set(0, THREE.MathUtils.degToRad(degrees), 0);
+  }
+  private syncGizmoFrame() {
+    const view = this.selectedView();
+    if (view && !this.dragging) view.wrapper.getWorldPosition(this.gizmoFrame.position);
   }
   setGizmoVertical(vertical: boolean) {
     if (this.gizmo) this.gizmo.showY = vertical;
@@ -591,6 +603,9 @@ export class EditorViewport {
     this.setupSplineInteraction(this.renderer.domElement);
     this.gizmo = this.ownControl(new TransformControls(this.camera, this.renderer.domElement));
     this.gizmo.setMode("translate");
+    this.gizmo.setSpace("local");
+    this.setCoordinateRotation(this.coordinateRotation);
+    this.scene.add(this.gizmoFrame);
     this.gizmo.showY = false;
     this.scene.add(this.gizmo.getHelper());
     this.gizmo.addEventListener("dragging-changed", (e) => {
@@ -599,6 +614,12 @@ export class EditorViewport {
       if (!this.dragging) this.commitGizmo();
     });
     this.gizmo.addEventListener("objectChange", () => {
+      const view = this.selectedView();
+      if (view?.wrapper.parent) {
+        view.wrapper.position.copy(
+          view.wrapper.parent.worldToLocal(this.gizmoFrame.position.clone()),
+        );
+      }
       this.refreshSelectionBox();
       if (this.renderer) this.renderer.shadowMap.needsUpdate = true;
     });
@@ -1286,8 +1307,10 @@ export class EditorViewport {
     const d = this.bindings.document();
     const v = s ? (s.kind === "group" ? this.groupViews : this.partViews).get(s.id) : null;
     if (this.gizmo) {
-      if (v) this.gizmo.attach(v.wrapper);
-      else this.gizmo.detach();
+      if (v) {
+        this.syncGizmoFrame();
+        this.gizmo.attach(this.gizmoFrame);
+      } else this.gizmo.detach();
     }
     if (s && d) {
       const parts =
@@ -1309,6 +1332,7 @@ export class EditorViewport {
   }
 
   private refreshSelectionBox() {
+    this.syncGizmoFrame();
     const v = this.selectedView();
     if (!v) {
       this.selectionBox.visible = false;

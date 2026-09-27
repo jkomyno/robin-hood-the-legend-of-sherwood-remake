@@ -143,6 +143,7 @@ export default function Editor3D(props: EditorProps) {
   const [showObstacles, setShowObstacles] = createSignal(false);
   const [showElevation, setShowElevation] = createSignal(false);
   const [gizmoVertical, setGizmoVertical] = createSignal(false);
+  const [coordinateRotation, setCoordinateRotation] = createSignal(45);
   const [level, setLevel] = createSignal<ProtoLevel | null>(null);
   /** obstacle index -> suggested snap (Δ along the view ray, support obstacle) */
   const [suspects, setSuspects] = createSignal<Map<number, { delta: number; support: number }>>(
@@ -771,6 +772,11 @@ export default function Editor3D(props: EditorProps) {
   createEffect(
     () => gizmoVertical(),
     (v) => viewport.setGizmoVertical(v),
+  );
+
+  createEffect(
+    () => coordinateRotation(),
+    (degrees) => viewport.setCoordinateRotation(degrees),
   );
 
   // ── actions ──
@@ -1466,6 +1472,19 @@ export default function Editor3D(props: EditorProps) {
           <div class="inspector-content" hidden={panel() !== "View"}>
             <section class="view-settings">
               <h2>Camera &amp; display</h2>
+              <label>
+                Coordinate rotation (°)
+                <input
+                  type="number"
+                  aria-label="Coordinate rotation (°)"
+                  step="1"
+                  value={coordinateRotation()}
+                  onInput={(event) => {
+                    const degrees = event.currentTarget.valueAsNumber;
+                    if (Number.isFinite(degrees)) setCoordinateRotation(degrees);
+                  }}
+                />
+              </label>
               <div class="view-overlays">
                 <label class="check">
                   <input
