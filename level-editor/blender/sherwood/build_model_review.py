@@ -21,6 +21,36 @@ def review_revision(preparation):
     return hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest()
 
 
+def source_first_sheets(folder, output, asset):
+    """Reorder gallery copies; synthesis packets and their generated results stay bound."""
+    manifest = json.loads((folder/'views.json').read_text())
+    views = manifest['views']
+    source = next(v for v in views if (v['azimuth_degrees'], v['elevation_degrees']) == (0, 35))
+    if views[0] == source and source['crop']['left'] == source['crop']['top'] == 0:
+        return folder
+    destination = output/'source-first'/asset
+    destination.mkdir(parents=True, exist_ok=True)
+    order = [source] + [v for v in views if v != source]
+    reordered = []
+    for name in ('solid.png', 'input.png'):
+        with Image.open(folder/name) as original:
+            sheet = Image.new(original.mode, original.size)
+            for index, view in enumerate(order):
+                crop = view['crop']
+                left, top, width, height = (crop[k] for k in ('left', 'top', 'width', 'height'))
+                target = views[index]['crop']
+                sheet.paste(original.crop((left, top, left+width, top+height)),
+                            (target['left'], target['top']))
+            sheet.save(destination/name)
+    for index, view in enumerate(order):
+        reordered.append({**view, 'source_packet_index': view['index'],
+                          'index': index, 'crop': views[index]['crop']})
+    manifest.update(views=reordered, source_packet_views_sha256=hashlib.sha256((folder/'views.json').read_bytes()).hexdigest(),
+                    gallery_change='Source-camera tile moved first; original tile pixels unchanged.')
+    (destination/'views.json').write_text(json.dumps(manifest, indent=2)+'\n')
+    return destination
+
+
 def main(packets, output):
     packets, output = Path(packets).resolve(), Path(output).resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -67,16 +97,23 @@ def main(packets, output):
         artwork.crop(crop).save(reference_path)
         inspected = (inspection.get('views_sha256') == preparation['files']['views.json']
                      and inspection.get('all_eight_solid_and_source_views_inspected') is True)
+        display_folder = source_first_sheets(folder, output, asset)
+        display_revision = review_revision({'files': {key: hashlib.sha256((display_folder/key).read_bytes()).hexdigest()
+            for key in ('solid.png', 'input.png', 'views.json')}})
+        if decision and decision['review_revision'] == display_revision:
+            reviewed.append(dict(name=name, **decision))
+            continue
         items.append(dict(id=asset, name=name, status='ready-for-user' if inspected else 'in-progress',
-            user_approval='pending', solid=str(folder/'solid.png'), textured=str(folder/'input.png'),
+            user_approval='pending', solid=str(display_folder/'solid.png'), textured=str(display_folder/'input.png'),
             textured_label='Original-art projection; shaded gray marks unknown textures',
-            validation=str(folder/'views.json'),
+            validation=str(display_folder/'views.json'),
             artwork_references=[dict(id='original', label='Original artwork — source view with surrounding context',
                 path=str(reference_path), sha256=hashlib.sha256(reference_path.read_bytes()).hexdigest(),
                 source=str(artwork_path), source_sha256=artwork_hash,
                 crop=dict(zip(('left','top','right','bottom'), crop)))],
             notes=['Model review only: existing Sherwood reconstruction, with the published geometry unchanged.',
                    'No newly synthesized textures are shown.',
+                   'Upper-left tile: original artwork camera (azimuth 0°, elevation 35°).',
                    'Inherited coarse background props and inferred hidden geometry remain visible for review.',
                    'Eight-view visual check complete.' if inspected else 'Visual preflight pending; feedback is available now.']))
     manifest=output/'models.json'

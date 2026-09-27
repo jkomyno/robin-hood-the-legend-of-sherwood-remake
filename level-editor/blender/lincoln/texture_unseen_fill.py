@@ -605,7 +605,7 @@ def survey_visible(worker, output, tile=4096, min_facing=0.2):
 
 # ---------------------------------------------------------------- prepare
 
-def select_cameras(target, points, normals):
+def select_cameras(target, points, normals, *, required_views=()):
     if len(points) > SELECT_POINTS:
         pick = np.random.default_rng(0).choice(len(points), SELECT_POINTS, replace=False)
         points, normals = points[pick], normals[pick]
@@ -621,15 +621,24 @@ def select_cameras(target, points, normals):
             facing.append(np.where(seen & (score > SELECT_MIN_FACING), score, 0))
     facing = np.array(facing)
     best = np.zeros(len(points))
-    chosen = []
-    for _ in range(8):
+    required = [tuple(view) for view in required_views]
+    if len(required) > 8 or len(set(required)) != len(required):
+        raise ValueError('Required camera views must be unique and fit the eight-view sheet')
+    if any(view not in candidates for view in required):
+        raise ValueError('Required camera view is outside the candidate grid')
+    chosen = [candidates.index(view) for view in required]
+    for index in chosen:
+        best = np.maximum(best, facing[index])
+    for _ in range(8-len(chosen)):
         gain = np.maximum(facing, best).sum(1) - best.sum()
         gain[chosen] = -1
         pick = int(np.argmax(gain))
         chosen.append(pick)
         best = np.maximum(best, facing[pick])
     coverage = float((best > 0).mean()) if len(best) else 1.0
-    order = sorted(chosen, key=lambda i: (candidates[i][0], candidates[i][1]))
+    required_indices = [candidates.index(view) for view in required]
+    order = required_indices + sorted((i for i in chosen if i not in required_indices),
+                                      key=lambda i: (candidates[i][0], candidates[i][1]))
     return [candidates[i] for i in order], coverage
 
 

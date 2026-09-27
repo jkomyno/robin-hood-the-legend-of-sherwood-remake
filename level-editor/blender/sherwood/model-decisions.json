@@ -242,6 +242,66 @@
         }
       },
       "note": ""
+    },
+    {
+      "id": "sherwood-central-treehouse-thatch",
+      "decision": "approved",
+      "review_revision": "be6e409dac0f0136bbafa8480aeb7fd76b5063150282e3fffd970dc750ff4d6a",
+      "binding": {
+        "images": {
+          "solid": "4449e330a5e126b3f14e29a492a2d9af0635f2f3f1b01de2be10ac4f30fc6c06",
+          "textured": "32f99d8f7a1cf3956c7deaeb027956f6778c4c4a8a7f55c622ca60e8d54235db"
+        },
+        "reports": {
+          "validation": "68c317b4913d3cfa2d68ca399528bd68f64794334c53cb37c2c695d4dafcc5a2"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-cooking-stool",
+      "decision": "approved",
+      "review_revision": "cf6aa9a81cf510ea34279c9e91347a7e760572ba7f12b0edb67356d208cb1e6c",
+      "binding": {
+        "images": {
+          "solid": "edb91021e92ae6d9745262544bdff90a30bf6ed5497c5845e69a8b0755b90025",
+          "textured": "30ca974585ad163721b8e04f715cb2b9befd7e91dbb995830e98b64bbbf1c446"
+        },
+        "reports": {
+          "validation": "ee5213979f9d335d1f05e4bf72d6d58e965dc011177811faaae71247f92329fc"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-northeast-border-oak",
+      "decision": "approved",
+      "review_revision": "9f976c97383d3ab81dd54a1922639003e3f7b4d20bc4fb98b977a27f51784b4e",
+      "binding": {
+        "images": {
+          "solid": "07410313c32fea360eb6c4f22845cc10325822604c2672236bb7ecc8d596770d",
+          "textured": "2f0eaa5f1e95c6be83d2778393cf1199d84128c73409836f8eb2ecb9df58c19f"
+        },
+        "reports": {
+          "validation": "8409a66952b00fccf5b42fcad5fa8e34cebbb90036bc1b4750e8e74a4c543061"
+        }
+      },
+      "note": ""
+    },
+    {
+      "id": "sherwood-northeast-woodland-oak",
+      "decision": "needs refinement",
+      "review_revision": "bcdd946c4ab89323cf00312cef69c8f2b8e634da8164a3659866cd7dc75c655d",
+      "binding": {
+        "images": {
+          "solid": "81d4b4db028a7326f65ab36ef7fdd044126304393a7360937bb59c97b611f022",
+          "textured": "79c21c0be736342ebc35f64d5b4b26d6362b1dcec6013f5d5017f35bbe98b108"
+        },
+        "reports": {
+          "validation": "f35a6187e784577bd2278b72083bef9cb00663c4e2733ab22e40c5b33f6ad378"
+        }
+      },
+      "note": "weird geometry?"
     }
   ],
   "grouping_instruction": "Combine the tree itself; keep treehouse and platforms separate"
