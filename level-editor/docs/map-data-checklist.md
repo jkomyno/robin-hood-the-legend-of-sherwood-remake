@@ -172,10 +172,10 @@ for each placement, including duplicates. Native fixture tests verify both link
 directions, permission changes and restoration on reset. Door-only transitions
 are supported without adding navigation or sight changes. Offline recovery maps
 source door indices into local endpoint IDs and reports missing owners, cross-asset
-links and unrecovered geometry in `pending.doorTransitionBindings`. Twenty-five of the
+links and unrecovered geometry in `pending.doorTransitionBindings`. Twenty-seven of the
 28 door-linked patches across the nine extracted maps now recover: seven in
-Nottingham, six in Lincoln, five in York, five in Leicester, one in Croisement03 and one in Derby.
-The remaining three are in Lincoln.
+Nottingham, eight in Lincoln, five in York, five in Leicester, one in Croisement03 and one in Derby.
+The remaining one is in Lincoln.
 Explicit `door_sources` authoring declarations cover gate passages whose empty
 openings lie beyond nearby wall geometry. They require unique source door indices,
 a rationale and one pinned asset frame, and reject conflicting state ownership.
@@ -186,6 +186,13 @@ records the one-time mapping.
 Nottingham declarations restore four rooms and five doors in the two green market
 frontages, north dormer house and castle main hall. Its remaining shared interior
 spans separated castle entrances and still needs physical ownership work.
+Lincoln declarations attach the hall-terrace gate and western-tower passage to
+their corresponding revealed assets, the shed entrance to its room, and all three
+keep-floor entrances to one shared keep interior. These restore six doors and two
+permission transitions without assigning rooms to supporting terrain. Its two
+remaining passage endpoints lie outside their assigned projection surfaces;
+recovery still rejects them rather than inventing an elevation. Full recovery
+needs explicit receiving-area semantics for those endpoints.
 Leicester's three drawbridges have shared multi-scene GLBs. Their initial/applied
 views now share one gameplay definition per placement. Compilation unions local
 state parts, deduplicates shared frames and supplies hidden frames for alternate
@@ -201,21 +208,21 @@ this evidence for physical-grouping review; conflicting or missing geometry cann
 select an owner. Recovery also supports sight changes without navigation
 changes when every referenced obstacle and door belongs to the same asset.
 The 59 recovered initial/applied sight references match source coordinates at native float32 precision
-and preserve their flags. All eight initial/alternate permission fields match the source for the 63
+and preserve their flags. All eight initial/alternate permission fields match the source for the 65
 linked door references, and each binding retains its trigger direction.
 Ordinary passages can connect to stair/lift surfaces in either direction without
 becoming lift doors. This restores Lincoln's hall passages onto traversal surfaces.
 All nine extracted map diagnostics compile and load; the native round-trip harness
-applies/resets their 45 recovered transitions. It checks both
+applies/resets their 47 recovered transitions. It checks both
 halves of door permissions as well as movement and sight state, including the
 door-to-patch links for door-triggered transitions.
 This does not establish complete door-transition coverage or publish those drafts.
 Spatial ownership ties can be resolved by slicing solid geometry above the landing,
 excluding supporting terrain and preserving disconnected concave pieces. This
 restores 84 connection records without dropping previously recovered doors.
-Across the nine diagnostics, 366 of 397 non-lift doors now compile; all 366 match
+Across the nine diagnostics, 372 of 397 non-lift doors now compile; all 372 match
 source endpoints, click polygons, door types, active flags and initial/alternate
-permissions. The remaining 31 still need ownership or endpoint recovery. Inferred
+permissions. The remaining 25 still need ownership or endpoint recovery. Inferred
 physical grouping remains marked for review before publication.
 `compare-door-geometry.ts SOURCE_JSON COMPILED_LEVEL_JSON` independently compares
 non-lift door geometry/rules, shared-room membership and door-linked patch rules.
@@ -231,7 +238,7 @@ Current compiled/source counts (no unexpected records in any map):
 | Croisement03 | 5/5 | 0/0 | 1/1 |
 | Derby | 42/42 | 14/14 | 1/1 |
 | Leicester | 59/59 | 16/16 | 5/5 |
-| Lincoln | 51/59 | 17/19 | 6/9 |
+| Lincoln | 57/59 | 19/19 | 8/9 |
 | Nottingham | 89/100 | 44/45 | 7/7 |
 | Sherwood | 3/5 | 3/5 | 0/0 |
 | York | 113/123 | 66/74 | 5/5 |

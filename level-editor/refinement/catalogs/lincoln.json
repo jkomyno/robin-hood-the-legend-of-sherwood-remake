@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "map": "Lincoln",
+  "groups": [],
+  "door_sources": [
+    {
+      "doors": [6],
+      "owner": "lincoln-hall-south-terrace",
+      "node": "building-242",
+      "reason": "The gate belongs to the southern hall terrace and its revealed appearance. Supporting keep terrain overlaps the inside endpoint but does not own the doorway."
+    },
+    {
+      "doors": [7],
+      "owner": "lincoln-west-slate-tower",
+      "node": "building-073",
+      "reason": "This passage and its permission change belong to the western tower's revealed appearance. The landing overlaps the adjacent curtain and plateau, so nearest-solid ownership cannot identify the tower entrance."
+    },
+    {
+      "doors": [35],
+      "owner": "lincoln-courtyard-shed",
+      "node": "building-188",
+      "reason": "This entrance serves the courtyard shed interior. The supporting inner-bailey plateau also contains its inside endpoint but is not the room owner."
+    },
+    {
+      "doors": [54, 55, 56],
+      "owner": "lincoln-keep",
+      "node": "building-190",
+      "reason": "The three entrances on separate keep floors serve one shared keep interior. They stay together on the complete keep asset rather than the overlapping castle plateau."
+    }
+  ]
+}
