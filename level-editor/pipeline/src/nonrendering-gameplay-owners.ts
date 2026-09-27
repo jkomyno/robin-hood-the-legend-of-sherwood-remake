@@ -1,9 +1,12 @@
+import type { EndpointBindingDeclaration } from "./recovery-endpoint-binding.ts";
+
 export interface GameplayOwnershipCatalog {
   groups: { id: string; parts: { obstacle?: number }[] }[];
   nonrendering_sources?: { obstacle: number; owner: string }[];
   /** Offline ownership only; compiled assets retain no patch indices. */
   movement_transitions?: { patch: number; owner: string; node: string }[];
   door_sources?: { doors: number[]; owner: string; node: string; reason: string }[];
+  endpoint_bindings?: EndpointBindingDeclaration[];
 }
 
 /** Resolve explicit authoring ownership against the assets actually pinned in the scene. */

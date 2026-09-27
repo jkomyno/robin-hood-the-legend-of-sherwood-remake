@@ -47,6 +47,7 @@ import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
 import { recoverSurfaceOwners } from "./recovery-surface-owners.ts";
 import { recoverMovementClearance } from "./recover-movement-clearance.ts";
 import { normalizeGameplayStateViews } from "../../shared/src/gameplay-state-views.ts";
+import { declaredEndpointBindings, recoverDeclaredEndpoint } from "./recovery-endpoint-binding.ts";
 import {
   heightPlane as fitHeightPlane,
   planeHeight as evaluateHeight,
@@ -216,9 +217,11 @@ const groundProjectionOwners: {
   footprint: Point[];
 }[] = [];
 let sector = 0;
+const sourceMotionAreas = new Map<number, { layer: number; polygon: Point[] }>();
 for (const [layer, areas] of proto.motion_data.layers.entries())
   for (const rawMotion of areas) {
     const identity = sector;
+    sourceMotionAreas.set(identity, { layer, polygon: rawMotion.polygon.points });
     sector += 1 + rawMotion.obstacles.length;
     const { base: motion, transitions } = recoverMotionStates(
       rawMotion,
@@ -603,6 +606,40 @@ const localEndpoint = (
   const z = heightAt(sector, layer, point, projectionPoint);
   return localize(part, [point[0], point[1] + z, z]);
 };
+const sourceDoorCount = proto.buildings.reduce<number>(
+  (sum, entry) =>
+    sum +
+    recoveryDoorGroups(
+      entry as {
+        Building?: { doors: SourceDoor[] };
+        StandaloneDoors?: { doors: SourceDoor[] };
+      },
+    ).reduce((count, group) => count + group.doors.length, 0),
+  0,
+);
+const endpointBindings = declaredEndpointBindings(
+  ownership?.endpoint_bindings ?? [],
+  sourceDoorCount,
+  proto.patches.length,
+);
+const endpointBinding = (key: string, sector: number, layer: number, point: Point) => {
+  const declaration = endpointBindings.get(key);
+  return declaration
+    ? recoverDeclaredEndpoint(
+        declaration,
+        point,
+        layer,
+        proto.sight_obstacles,
+        (anchor) => {
+          const area = sourceMotionAreas.get(sector);
+          if (!area || area.layer !== layer || distanceToPolygon(anchor, area.polygon) !== 0)
+            throw new Error("Declared receiving anchor must lie in its linked movement area");
+          return heightAt(sector, layer, anchor);
+        },
+        (projection, point) => planeHeight(projection.points, ...point),
+      )
+    : { height: heightAt(sector, layer, point), anchor: undefined };
+};
 const movementTransitionRecovery: {
   patch: number;
   sector: number;
@@ -648,6 +685,12 @@ for (const area of movementStateInventory)
       const initialSight = source.old_sight_obstacles.map(localRef);
       const appliedSight = source.new_sight_obstacles.map(localRef);
       const controlled = new Set([...initialSight, ...appliedSight]);
+      const waypoint = endpointBinding(
+        `patch-waypoint/${change.patches[0]}`,
+        source.sector,
+        source.layer,
+        source.waypoint,
+      );
       const definition = recoverMovementTransition({
         id: `movement-change-${change.patches[0]}`,
         node: owner.node,
@@ -663,9 +706,10 @@ for (const area of movementStateInventory)
             obstacle.projection_area[1] === area.layer,
         ),
         groundLayer: area.layer === 0,
-        waypointHeight: heightAt(source.sector, source.layer, source.waypoint),
+        waypointHeight: waypoint.height,
         localize: (point) => localize(owner.part, point),
       });
+      if (waypoint.anchor) definition.waypointAnchor = localize(owner.part, waypoint.anchor);
       // Keep permanent solids and their clearances, excluding both changing endpoints.
       // Explicit stable contours already replace part-derived movement collision.
       if (p.movementBlockers === undefined) {
@@ -828,17 +872,7 @@ const recoveredDoors = new Map<
 let doorOffset = 0;
 const declaredDoors = declaredDoorOwners(
   ownership?.door_sources ?? [],
-  proto.buildings.reduce<number>(
-    (sum, entry) =>
-      sum +
-      recoveryDoorGroups(
-        entry as {
-          Building?: { doors: SourceDoor[] };
-          StandaloneDoors?: { doors: SourceDoor[] };
-        },
-      ).reduce((count, group) => count + group.doors.length, 0),
-    0,
-  ),
+  sourceDoorCount,
   (asset, node) =>
     descriptors.get(asset)?.parts.some((part) => part.node === node)
       ? document.objects
@@ -878,8 +912,18 @@ for (const [index, entry] of proto.buildings.entries()) {
       >();
       const first = doors[0]!,
         z = isInterior
-          ? heightAt(first.sector_out, first.layer_out, first.point_out)
-          : heightAt(first.sector_in, first.layer_in, first.point_in);
+          ? endpointBinding(
+              `door-outside/${doorIndices.get(first)!}`,
+              first.sector_out,
+              first.layer_out,
+              first.point_out,
+            ).height
+          : endpointBinding(
+              `door-inside/${doorIndices.get(first)!}`,
+              first.sector_in,
+              first.layer_in,
+              first.point_in,
+            ).height;
       const raisedCandidates: typeof candidates = new Map();
       for (const [obstacleIndex, owners] of locals) {
         if (owners.length !== 1) continue;
@@ -940,7 +984,21 @@ for (const [index, entry] of proto.buildings.entries()) {
           "Door ownership resolved from geometry above its landing; review the physical doorway before publication",
         );
       const endpoints = doors.map((door, i) => {
-        const elevation = heightAt(door.sector_out, door.layer_out, door.point_out);
+        const outside = endpointBinding(
+          `door-outside/${doorIndices.get(door)!}`,
+          door.sector_out,
+          door.layer_out,
+          door.point_out,
+        );
+        const inside = isInterior
+          ? undefined
+          : endpointBinding(
+              `door-inside/${doorIndices.get(door)!}`,
+              door.sector_in,
+              door.layer_in,
+              door.point_in,
+            );
+        const elevation = outside.height;
         const local = (point: Point) =>
           localize(owner.part, [point[0], point[1] + elevation, elevation]);
         return {
@@ -950,7 +1008,13 @@ for (const [index, entry] of proto.buildings.entries()) {
           outside: local(door.point_out),
           inside: isInterior
             ? local(door.point_in)
-            : localEndpoint(owner.part, door.point_in, door.sector_in, door.layer_in),
+            : localize(owner.part, [
+                door.point_in[0],
+                door.point_in[1] + inside!.height,
+                inside!.height,
+              ]),
+          ...(outside.anchor ? { outsideAnchor: localize(owner.part, outside.anchor) } : {}),
+          ...(inside?.anchor ? { insideAnchor: localize(owner.part, inside.anchor) } : {}),
           middle: local(door.point_mid),
           type: door.door_type,
           active: door.active,
@@ -1045,6 +1109,12 @@ for (const [index, source] of proto.patches.entries()) {
     const initialSight = source.old_sight_obstacles.map(sightRef);
     const appliedSight = source.new_sight_obstacles.map(sightRef);
     const p = packet(owner.asset);
+    const waypoint = endpointBinding(
+      `patch-waypoint/${index}`,
+      source.sector,
+      source.layer,
+      source.waypoint,
+    );
     const transition = recovered
       ? p.movementTransitions!.find((entry) => entry.id === recovered.transition)!
       : recoverMovementTransition({
@@ -1057,13 +1127,14 @@ for (const [index, source] of proto.patches.entries()) {
           appliedSight,
           receivers: [],
           groundLayer: source.layer === 0,
-          waypointHeight: heightAt(source.sector, source.layer, source.waypoint),
+          waypointHeight: waypoint.height,
           localize: (point) => localize(owner.part, point),
         });
     transition.doorLinks = {
       mode: source.door_triggered ? "trigger-transition" : "swap-rights",
       ids: doorOwners.map((entry) => entry.id),
     };
+    if (waypoint.anchor) transition.waypointAnchor = localize(owner.part, waypoint.anchor);
     if (
       !recovered &&
       (initialSight.length || appliedSight.length) &&
@@ -1402,6 +1473,7 @@ const report = {
   movementTransitionRecovery,
   doorTransitionRecovery,
   doorStateOwnershipRecovery,
+  declaredEndpointBindings: [...endpointBindings.values()],
   declaredDoorOwnershipRecovery: [...declaredDoors].map(([door, owner]) => ({
     door,
     asset: owner.asset,

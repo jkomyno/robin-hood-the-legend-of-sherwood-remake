@@ -2,7 +2,36 @@
   "version": 1,
   "map": "Lincoln",
   "groups": [],
+  "endpoint_bindings": [
+    {
+      "kind": "door-inside",
+      "index": 17,
+      "projection": 85,
+      "anchor": [1960, 1530],
+      "reason": "The endpoint is physically on the lower curtain walk but is linked to the sloped wall-walk step; keep its position and select the receiving step independently."
+    },
+    {
+      "kind": "door-outside",
+      "index": 22,
+      "projection": 228,
+      "anchor": [1765, 1033],
+      "reason": "The gate endpoint is physically on the round-turret floor but its outside link selects the annex landing."
+    },
+    {
+      "kind": "patch-waypoint",
+      "index": 7,
+      "projection": 228,
+      "anchor": [1765, 1033],
+      "reason": "The gate transition uses the same annex landing as its door while retaining its reference point on the round-turret floor."
+    }
+  ],
   "door_sources": [
+    {
+      "doors": [17],
+      "owner": "lincoln-south-wall-walk-step",
+      "node": "building-122",
+      "reason": "This passage connects the lower curtain walk to the sloped step. The complete step asset owns the connection; the lower endpoint lies outside its own projection footprint."
+    },
     {
       "doors": [6],
       "owner": "lincoln-hall-south-terrace",

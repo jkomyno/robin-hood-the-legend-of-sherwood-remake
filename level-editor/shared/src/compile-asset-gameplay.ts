@@ -174,6 +174,7 @@ export function compileAssetGameplay(
   const transitions: {
     id: string;
     waypoint: Vec3;
+    waypointAnchor: Vec3;
     active: boolean;
     definitive: boolean;
     applyPolygon: Point[];
@@ -398,6 +399,7 @@ export function compileAssetGameplay(
       transitions.push({
         id: `${placement.id}/${t.id}`,
         waypoint: transform(t.node, t.waypoint),
+        waypointAnchor: transform(t.node, t.waypointAnchor ?? t.waypoint),
         active: t.active,
         definitive: t.definitive,
         applyPolygon: contour(t.applyPolygon),
@@ -837,8 +839,8 @@ export function compileAssetGameplay(
             )
               throw new Error(`${t.id}: movement transition affects no walkable area`);
             // State reference points identify a surface even inside its collision contours.
-            // Door endpoints and jump landing anchors still require an unblocked position.
-            const area = resolve(t.waypoint, `${t.id} waypoint`, undefined, true);
+            // Door receiving anchors and jump landing anchors require an unblocked position.
+            const area = resolve(t.waypointAnchor, `${t.id} waypoint`, undefined, true);
             return {
               id: t.id,
               waypoint: project(t.waypoint),

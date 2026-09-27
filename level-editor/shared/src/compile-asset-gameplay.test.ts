@@ -23,6 +23,22 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("transition receiving anchors preserve reference points outside their linked surfaces", () => {
+  const { document, assets, hut } = doorTransitionCompilerFixture();
+  const transition = hut.gameplay!.movementTransitions![0]!;
+  const before = compileAssetGameplay(document, assets, bounds).movement_transitions![0]!;
+  transition.waypointAnchor = [...transition.waypoint];
+  transition.waypoint = [95, 50, 0];
+  const result = compileAssetGameplay(document, assets, bounds).movement_transitions![0]!;
+  assert.deepEqual(result.waypoint, [395, 350]);
+  assert.equal(result.sector, before.sector);
+  assert.equal(result.layer, before.layer);
+  transition.waypointAnchor = [500, 500, 0];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /waypoint must resolve/);
+  transition.waypointAnchor = [NaN, 0, 0];
+  assert.throws(() => validateAssetGameplay(hut.gameplay, hut), /invalid movement transition/);
+});
+
 test("receiving anchors preserve door coordinates outside the receiving polygons", () => {
   const { document, assets, hut } = doorAnchorCompilerFixture();
   const compiled = compileAssetGameplay(document, assets, bounds);

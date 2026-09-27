@@ -137,6 +137,8 @@ export interface AssetMovementTransition {
   id: string;
   node: string;
   waypoint: [number, number, number];
+  /** Local receiving-area anchor when the reference point lies outside its linked surface. */
+  waypointAnchor?: [number, number, number];
   active: boolean;
   definitive: boolean;
   initial: AssetWalkableSurface[];
@@ -307,6 +309,7 @@ export function validateAssetGameplay(
     feature(transition);
     if (
       !point(transition.waypoint, 3) ||
+      (transition.waypointAnchor !== undefined && !point(transition.waypointAnchor, 3)) ||
       typeof transition.active !== "boolean" ||
       typeof transition.definitive !== "boolean" ||
       !Array.isArray(transition.initial) ||
