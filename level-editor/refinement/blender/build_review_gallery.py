@@ -373,12 +373,12 @@ def build(index_path, output, *, pending_only=False, map_name=None):
         buttons = (f'<div><button class="decision-action" type="button" data-decision="approved"{approval_disabled}>Approve grouping</button> '
                    '<button class="decision-action" type="button" data-decision="needs refinement">Request changes</button></div>') if grouping_review else ''
         controls = (f'<fieldset class="feedback"><legend>Your review</legend>{buttons}'
-                    f'<label>Decision <select class="decision" autocomplete="off" '
+                    f'<label class="decision-field">Decision <select class="decision" autocomplete="off" '
                     f'name="decision-{asset_id}-{revision[:16]}" aria-label="Decision for {asset_id}">'
                     '<option value="">Not decided</option>'
                     f'<option value="approved"{approval_disabled}>Approve</option>'
                     '<option value="needs refinement">Needs refinement</option></select></label>'
-                    f'<label>Feedback <textarea class="review-note" rows="2" autocomplete="off" '
+                    f'<label class="note-field">Feedback <textarea class="review-note" rows="2" autocomplete="off" '
                     f'name="feedback-{asset_id}-{revision[:16]}" '
                     f'aria-label="Feedback for {asset_id}" placeholder="What should change, or any notes?"></textarea></label>'
                     '<span class="draft-status" aria-live="polite"></span></fieldset>')
@@ -393,7 +393,7 @@ def build(index_path, output, *, pending_only=False, map_name=None):
                      f'<p><code>{html.escape(item["id"])}</code></p>'
                      f'<p class="status">{html.escape(item["status"])}</p>'
                      f'<p>{html.escape(notes)}</p>{paired_note}<p>{" · ".join(report_links)}</p>'
-                     f'{controls}<div class="sheets">{"".join(reference_figures)}{"".join(figures)}</div>{animation_sections}</article>')
+                     f'<div class="sheets">{"".join(reference_figures)}{"".join(figures)}</div>{animation_sections}{controls}</article>')
         records.append({**item, "number": number, "images": evidence, "reports": reports,
                         "review_revision": revision, **({"reference_images": reference_evidence} if reference_evidence else {})})
     nav = "".join(f'<a href="#{item["id"]}">{n}. {html.escape(item["name"])}</a>' for n, item in enumerate(items, 1))
@@ -452,6 +452,20 @@ document.querySelector('#readiness').addEventListener('change',event=>{
 });
 </script><script>'''+FEEDBACK_SCRIPT+'''</script></body></html>'''
     if grouping_review:
+        document = document.replace('<body data-mode="both">', '<body data-mode="both" data-review-kind="grouping">')
+        document = document.replace('</style>', '''
+body[data-review-kind=grouping] .sheets{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+body[data-review-kind=grouping] figure[data-kind$=context]{grid-column:auto}
+body[data-review-kind=grouping] figcaption{font-size:14px;min-height:54px}
+body[data-review-kind=grouping] figure a{display:flex;align-items:center;justify-content:center;height:min(220px,32vh);background:#202731}
+body[data-review-kind=grouping] figure img{width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain}
+body[data-review-kind=grouping] .feedback{grid-template-columns:auto minmax(0,1fr);column-gap:20px}
+body[data-review-kind=grouping] .feedback .decision-field{grid-column:1}
+body[data-review-kind=grouping] .feedback .note-field{grid-column:2;grid-row:1 / span 2}
+body[data-review-kind=grouping] .feedback .draft-status{grid-column:1/-1}
+@media(max-width:1000px){body[data-review-kind=grouping] .sheets{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){body[data-review-kind=grouping] .feedback{grid-template-columns:1fr}body[data-review-kind=grouping] .feedback .note-field{grid-column:1;grid-row:auto}}
+</style>''')
         document = document.replace('Both sheets', 'Both geometry views').replace('Solid geometry</option>', 'West view</option>')
         document = document.replace(texture_mode_label+'</option>', 'East view</option>')
         document = document.replace('body[data-mode=solid] figure[data-kind$=textured],body[data-mode=textured] figure[data-kind$=solid]',
