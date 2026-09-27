@@ -48,7 +48,7 @@ export interface ViewportBindings {
   level(): ProtoLevel | null;
   showObstacles(): boolean;
   showElevation(): boolean;
-  onSelection(selection: Selection): void;
+  onSelection(selection: Selection, revealInList: boolean): void;
   onError?(message: string): void;
   commitTransform(transform: GameTransform): void;
 }
@@ -1314,8 +1314,8 @@ export class EditorViewport {
   }
 
   /** Request a state change; the UI's selection effect owns visual publication. */
-  select(s: Selection) {
-    this.bindings.onSelection(s);
+  select(s: Selection, revealInList = true) {
+    this.bindings.onSelection(s, revealInList);
   }
 
   /** Project the published selection into all three visual representations together. */

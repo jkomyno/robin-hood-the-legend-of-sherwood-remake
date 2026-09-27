@@ -137,6 +137,7 @@ export default function Editor3D(props: EditorProps) {
   const [compiling, setCompiling] = createSignal(false);
   let disposed = false;
   const [selected, setSelected] = createSignal<Selection>(null);
+  const [revealSelectionInList, setRevealSelectionInList] = createSignal(false);
   const [filter, setFilter] = createSignal("");
   const [expanded, setExpanded] = createSignal<Set<string>>(new Set());
   const [showObstacles, setShowObstacles] = createSignal(false);
@@ -155,7 +156,8 @@ export default function Editor3D(props: EditorProps) {
     level,
     showObstacles,
     showElevation,
-    onSelection: (selection) => {
+    onSelection: (selection, revealInList) => {
+      setRevealSelectionInList(revealInList);
       setSelected(selection);
       if (selection?.kind === "part") {
         const group = doc()?.objects.find((o) => o.id === selection.id)?.group;
@@ -165,7 +167,8 @@ export default function Editor3D(props: EditorProps) {
     commitTransform: setTransform,
     onError: props.onError,
   });
-  const select = (selection: Selection) => viewport.select(selection);
+  const select = (selection: Selection, revealInList = true) =>
+    viewport.select(selection, revealInList);
   createEffect(
     () => ({ selection: selected(), document: doc() }),
     ({ selection, document }) => {
@@ -1061,9 +1064,16 @@ export default function Editor3D(props: EditorProps) {
   };
   let sceneObjectList: HTMLUListElement | undefined;
   createEffect(
-    () => ({ selection: selected(), panel: panel(), expanded: expanded(), filter: filter() }),
-    ({ selection, panel }) => {
-      if (!selection || panel !== "Selection") return undefined;
+    () => ({
+      selection: selected(),
+      revealInList: revealSelectionInList(),
+      panel: panel(),
+      expanded: expanded(),
+      filter: filter(),
+    }),
+    ({ selection, revealInList, panel }) => {
+      // List selections are already visible; keep the user's scroll position.
+      if (!selection || !revealInList || panel !== "Selection") return undefined;
       // Wait for the selected row and any expanded parent to finish rendering.
       const frame = requestAnimationFrame(() => {
         const list = sceneObjectList;
@@ -2011,10 +2021,10 @@ export default function Editor3D(props: EditorProps) {
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
-                          select({ kind: r.kind, id: r.id });
+                          select({ kind: r.kind, id: r.id }, false);
                         }
                       }}
-                      onClick={() => select({ kind: r.kind, id: r.id })}
+                      onClick={() => select({ kind: r.kind, id: r.id }, false)}
                     >
                       <Show
                         when={r.kind === "group"}
