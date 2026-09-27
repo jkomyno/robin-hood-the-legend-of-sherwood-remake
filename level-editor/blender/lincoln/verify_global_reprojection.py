@@ -24,7 +24,7 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def snapshot(bpy, keep_pixels):
+def snapshot(bpy, keep_pixels, wanted=None):
     working = bpy.data.collections['lincoln Working']
     out = {}
     for obj in working.all_objects:
@@ -67,7 +67,11 @@ def snapshot(bpy, keep_pixels):
                     image = images[0]
                     buffer = np.empty(image.size[0] * image.size[1] * 4, dtype=np.float32)
                     image.pixels.foreach_get(buffer)
-                    pixels[index] = np.rint(buffer.reshape(image.size[1], image.size[0], 4) * 255).astype(np.uint8)
+                    array = np.rint(buffer.reshape(image.size[1], image.size[0], 4) * 255).astype(np.uint8)
+                    del buffer
+                    # Keep only a digest unless this slot's texels are requested (memory: whole-map atlases).
+                    pixels[index] = array if wanted is not None and (obj.name, index) in wanted else (
+                        array.shape, hashlib.sha256(array.tobytes()).hexdigest())
         out[obj.name] = {
             'props': [obj.get(k) for k in ('asset_group', 'source_node', 'projection_component')],
             'hide': [obj.hide_render, obj.hide_viewport],
@@ -110,6 +114,12 @@ def main(stage, report_path):
     after = snapshot(bpy, True)
     if set(before) != set(after):
         raise RuntimeError('Object set changed')
+    # Load full texel arrays only for slots whose digests differ, from both workers.
+    wanted = {(name, slot) for name, row in before.items() for slot, digest in row['pixels'].items()
+              if after[name]['pixels'].get(slot) != digest}
+    after = snapshot(bpy, True, wanted)
+    bpy.ops.wm.open_mainfile(filepath=str(stage_in / 'worker.blend'))
+    before = snapshot(bpy, True, wanted)
     changed_texels, reset_texels, objects_changed, failures = 0, 0, 0, []
     for name, old in before.items():
         new = after[name]
@@ -122,6 +132,10 @@ def main(stage, report_path):
         touched = False
         for slot, pixels in old['pixels'].items():
             other = new['pixels'][slot]
+            if isinstance(pixels, tuple) or isinstance(other, tuple):
+                if pixels != other:
+                    failures.append(f'{name} slot {slot}: digest mismatch without texel arrays')
+                continue
             if pixels.shape != other.shape:
                 failures.append(f'{name} slot {slot}: atlas size changed')
                 continue

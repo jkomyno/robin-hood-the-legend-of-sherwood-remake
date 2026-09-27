@@ -666,6 +666,11 @@ def main(argv):
         report_path = output / 'global-reprojection.json'
         report_path.write_text(json.dumps(report, indent=1) + '\n')
         staged = dict(integration)
+        # Earlier texel stages become history: verifiers bind to the latest operation only.
+        if 'texture_combine' in staged:
+            staged['texture_combine_chain'] = staged.get('texture_combine_chain', []) + [staged.pop('texture_combine')]
+        if 'global_reprojection' in staged:
+            staged['global_reprojection_chain'] = staged.get('global_reprojection_chain', []) + [staged.pop('global_reprojection')]
         staged['worker'] = str(output / 'worker.blend')
         staged['worker_sha256'] = report['output_worker_sha256']
         staged['staged_catalog'] = str(output / 'catalog.json')
