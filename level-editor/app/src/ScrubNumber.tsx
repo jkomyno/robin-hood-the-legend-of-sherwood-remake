@@ -12,6 +12,7 @@ export default function ScrubNumber(props: {
   onCancel: () => void;
 }) {
   const [preview, setPreview] = createSignal<number | null>(null);
+  const [editing, setEditing] = createSignal(false);
   let gesture: { x: number; value: number; current: number; moved: boolean } | null = null;
   function cancel() {
     if (gesture?.moved) props.onCancel();
@@ -72,7 +73,9 @@ export default function ScrubNumber(props: {
         type="number"
         aria-label={props.label}
         step={props.step}
-        value={preview() ?? props.value}
+        value={editing() ? (preview() ?? props.value) : (preview() ?? props.value).toFixed(2)}
+        onFocus={() => setEditing(true)}
+        onBlur={() => setEditing(false)}
         onChange={(event) => {
           const value = event.currentTarget.valueAsNumber;
           if (!gesture?.moved && Number.isFinite(value)) props.onCommit(value);
