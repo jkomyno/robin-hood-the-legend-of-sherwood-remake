@@ -849,9 +849,6 @@ export default function Editor3D(props: EditorProps) {
         setMaps((names) => [...new Set([...names, savedName])].sort());
       }
       session.saved(snapshot, savedName);
-      if (!disposed && session.current === snapshot.session) {
-        props.onStatus(`Saved ${mapLabel(savedName)} in this browser`);
-      }
     } catch (e) {
       if (!disposed) props.onError(String(e));
     } finally {
