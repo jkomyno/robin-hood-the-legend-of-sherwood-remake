@@ -166,6 +166,19 @@ export default function Editor3D(props: EditorProps) {
     commitTransform: setTransform,
   });
   const select = (selection: Selection) => viewport.select(selection);
+  createEffect(
+    () => ({ selection: selected(), document: doc() }),
+    ({ selection, document }) => {
+      if (disposed) return;
+      const exists =
+        selection &&
+        (selection.kind === "group" ? document?.groups : document?.objects)?.some(
+          (object) => object.id === selection.id,
+        );
+      if (selection && !exists) setSelected(null);
+      viewport.syncSelection(exists ? selection : null);
+    },
+  );
 
   // ── scenes in the library ──
   createEffect(
@@ -1472,19 +1485,14 @@ export default function Editor3D(props: EditorProps) {
           <div class="inspector-content" hidden={panel() !== "View"}>
             <section class="view-settings">
               <h2>Camera &amp; display</h2>
-              <label>
-                Coordinate rotation (°)
-                <input
-                  type="number"
-                  aria-label="Coordinate rotation (°)"
-                  step="1"
-                  value={coordinateRotation()}
-                  onInput={(event) => {
-                    const degrees = event.currentTarget.valueAsNumber;
-                    if (Number.isFinite(degrees)) setCoordinateRotation(degrees);
-                  }}
-                />
-              </label>
+              <ScrubNumber
+                label="Gizmo rotation (°)"
+                step={1}
+                value={coordinateRotation()}
+                onPreview={(degrees) => viewport.setCoordinateRotation(degrees)}
+                onCommit={setCoordinateRotation}
+                onCancel={() => viewport.setCoordinateRotation(coordinateRotation())}
+              />
               <div class="view-overlays">
                 <label class="check">
                   <input

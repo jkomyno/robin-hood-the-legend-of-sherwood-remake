@@ -532,6 +532,9 @@ export class EditorViewport {
     this.replaceEntities(null);
     this.flight = null;
     this.select(null);
+    // Retire borrowed material tints before releasing the old map, even if
+    // reactive selection publication is pending or its owner is being disposed.
+    this.syncSelection(null);
     disposeObjectResources([
       this.overlayRoot,
       ...(this.sourceAsset ? [this.sourceAsset] : []),
@@ -1296,13 +1299,18 @@ export class EditorViewport {
     this.select(null);
   }
 
+  /** Request a state change; the UI's selection effect owns visual publication. */
   select(s: Selection) {
+    this.bindings.onSelection(s);
+  }
+
+  /** Project the published selection into all three visual representations together. */
+  syncSelection(s: Selection) {
     for (const [m, mat] of this.tinted) {
       for (const owned of Array.isArray(m.material) ? m.material : [m.material]) owned.dispose();
       m.material = mat;
     }
     this.tinted.clear();
-    this.bindings.onSelection(s);
     const d = this.bindings.document();
     const v = s ? (s.kind === "group" ? this.groupViews : this.partViews).get(s.id) : null;
     if (this.gizmo) {
@@ -1327,8 +1335,6 @@ export class EditorViewport {
         }
       }
     }
-    // Signal writes may publish after this event; use the selection passed in,
-    // just as highlighting does, instead of reading the previous bound selection.
     this.refreshSelectionBox(v);
   }
 

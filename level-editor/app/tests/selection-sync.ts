@@ -1,3 +1,5 @@
+import { createEffect, createSignal } from "solid-js";
+import { render } from "@solidjs/web";
 import * as THREE from "three";
 import { EditorViewport } from "../src/editor-viewport";
 import type { Selection } from "../src/document-commands";
@@ -7,21 +9,25 @@ const result = document.querySelector("#result")!;
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
 }
-try {
-  // Model deferred signal publication: callbacks do not immediately change getters.
-  let published: Selection = null;
-  let pending: Selection = null;
-  const viewport = new EditorViewport({
-    document: () => ({ objects: [{ id: "a" }, { id: "b" }], groups: [] }) as unknown as Level3D,
-    selection: () => published,
-    onSelection: (selection) => {
-      pending = selection;
-    },
-    level: () => null,
-    showObstacles: () => false,
-    showElevation: () => false,
-    commitTransform: () => {},
-  });
+async function main() {
+  let viewport!: EditorViewport;
+  let setSelection!: (selection: Selection) => void;
+  const dispose = render(() => {
+    const [selection, updateSelection] = createSignal<Selection>(null);
+    setSelection = updateSelection;
+    viewport = new EditorViewport({
+      document: () => ({ objects: [{ id: "a" }, { id: "b" }], groups: [] }) as unknown as Level3D,
+      selection,
+      onSelection: updateSelection,
+      level: () => null,
+      showObstacles: () => false,
+      showElevation: () => false,
+      commitTransform: () => {},
+    });
+    createEffect(selection, (value) => viewport.syncSelection(value));
+    return null;
+  }, document.createElement("div"));
+  const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
   // Inspect rendered state without allocating WebGL or a render loop.
   const state = viewport as unknown as {
     objectsRoot: THREE.Group;
@@ -54,7 +60,9 @@ try {
     state.partViews.set(id, { wrapper, rot, meshes: [mesh] });
   }
   for (const id of ["a", "b", "a"]) {
-    viewport.select({ kind: "part", id });
+    if (id === "b") setSelection({ kind: "part", id }); // Changes outside viewport picking.
+    else viewport.select({ kind: "part", id });
+    await flush();
     const view = state.partViews.get(id)!;
     const origin = view.wrapper.getWorldPosition(new THREE.Vector3());
     const bounds = new THREE.Box3().setFromObject(view.wrapper, true);
@@ -74,14 +82,18 @@ try {
         "Highlight must match the box and gizmo",
       );
     }
-    published = pending;
   }
-  viewport.select(null);
+  setSelection(null);
+  await flush();
   assert(
     attached === null && !state.selectionBox.visible,
     "Deselect must clear gizmo and box immediately",
   );
-  result.textContent = "PASS selection highlight, bounds and transform origin stay synchronized";
-} catch (error) {
-  result.textContent = "FAIL " + String(error);
+  dispose();
+  viewport.dispose();
+  result.textContent =
+    "PASS reactive selection keeps highlight, bounds and transform origin synchronized";
 }
+void main().catch((error) => {
+  result.textContent = "FAIL " + String(error);
+});
