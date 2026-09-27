@@ -50,6 +50,17 @@ try {
     card.scrollIntoView();return true;
   })()`);
   checks.persistence=restored;checks.clear=true;
+  await evaluate(socket,++id,`(() => {
+    const images=[...document.querySelectorAll('#york-castle-courtyard-lodge-stairs img')];
+    if(images.length!==4)throw Error('Expected four review images');
+    for(const image of images)image.loading='eager';
+  })()`);
+  checks.images=false;
+  for(let i=0;i<200&&!checks.images;i++){
+    checks.images=await evaluate(socket,++id,`[...document.querySelectorAll('#york-castle-courtyard-lodge-stairs img')].every(image=>image.complete&&image.naturalWidth>0)`);
+    if(!checks.images)await new Promise(resolve=>setTimeout(resolve,100));
+  }
+  if(!checks.images)throw Error('Review images did not load');
   const screenshot=await new Promise((resolve,reject)=>{
     const request=++id;const timer=setTimeout(()=>reject(Error('Screenshot timeout')),10000);
     const listener=event=>{const data=JSON.parse(event.data);if(data.id!==request)return;clearTimeout(timer);socket.removeEventListener('message',listener);data.error?reject(data.error):resolve(data.result.data)};
