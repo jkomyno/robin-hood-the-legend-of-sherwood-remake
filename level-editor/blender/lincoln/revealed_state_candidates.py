@@ -1,6 +1,6 @@
 """Write state-review candidates into cloned Lincoln workspaces (system Python).
 
-python3 level-editor/blender/lincoln/revealed_state_candidates.py <spec.json> [...]
+python3 level-editor/blender/lincoln/revealed_state_candidates.py [--overrides <workspace map>] <spec.json> [...]
 
 Review text (summary, state names, limitations) lives beside each spec in
 <asset>.review.json, so wording edits do not invalidate rendered packets.
@@ -29,8 +29,12 @@ def sha(path):
 
 
 def main():
-    overrides = json.loads((WORK / 'workspace-overrides-v6.json').read_text())['assets']
-    for spec_path in map(Path, sys.argv[1:]):
+    args = sys.argv[1:]
+    overrides_path = WORK / 'workspace-overrides-v6.json'
+    if args[:1] == ['--overrides']:
+        overrides_path, args = Path(args[1]), args[2:]
+    overrides = json.loads(overrides_path.read_text())['assets']
+    for spec_path in map(Path, args):
         spec = json.loads(spec_path.read_text())
         asset = spec['asset_id']
         review = json.loads(spec_path.with_suffix('.review.json').read_text())

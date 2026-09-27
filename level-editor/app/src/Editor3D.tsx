@@ -1133,10 +1133,6 @@ export default function Editor3D(props: EditorProps) {
                 onInput={(event) => setNewMapName(event.currentTarget.value)}
               />
             </label>
-            <p class="hint">
-              No size to choose now. Set an optional export frame later, when you know what to
-              include.
-            </p>
             <p class="hint">Saved in this browser. Use Download to export the map JSON.</p>
             <Show when={dirty()}>
               <p class="hint">Your current map will be saved before creating the new one.</p>
@@ -1409,7 +1405,7 @@ export default function Editor3D(props: EditorProps) {
                 {!props.library()
                   ? "Loading maps…"
                   : maps().length
-                    ? "Choose a map to open, or create a new map."
+                    ? "I've marked the maps where I've done 3D model refinement. The ones marked WIP are pure projection maps."
                     : "No maps yet. Create a new map to begin."}
               </p>
               <div class="map-grid">

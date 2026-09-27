@@ -33,6 +33,7 @@ from mathutils import Matrix, Vector
 
 S, C = math.sin(math.radians(35)), math.cos(math.radians(35))
 TAG = 'lincoln-revealed-states-v1'
+STATE_SHOWN = {}  # (source_node, patches) -> variant built so far in this run
 
 
 def world(p):
@@ -135,6 +136,88 @@ def sprite_mesh(name, image, bbox, plane_y, depth):
     bm.to_mesh(mesh)
     bm.free()
     return mesh
+
+
+def _clip_area(subject, clipper):
+    """Area of a convex polygon intersection (Sutherland-Hodgman, 2D)."""
+    def side(p, a, b):
+        return (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+
+    def cross(p, q, a, b):
+        x1, y1 = p; x2, y2 = q; x3, y3 = a; x4, y4 = b
+        den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        if abs(den) < 1e-12:
+            return q
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+        return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+
+    def signed(poly):
+        return sum(poly[i][0] * poly[i - 1][1] - poly[i - 1][0] * poly[i][1] for i in range(len(poly))) * -0.5
+    if signed(clipper) < 0:
+        clipper = clipper[::-1]
+    out = subject
+    for i in range(len(clipper)):
+        a, b = clipper[i], clipper[(i + 1) % len(clipper)]
+        points, out = out, []
+        for j in range(len(points)):
+            p, q = points[j - 1], points[j]
+            if side(q, a, b) >= 0:
+                if side(p, a, b) < 0:
+                    out.append(cross(p, q, a, b))
+                out.append(q)
+            elif side(p, a, b) >= 0:
+                out.append(cross(p, q, a, b))
+        if not out:
+            return 0.0
+    return abs(signed(out)) if len(out) > 2 else 0.0
+
+
+def triangles(obj):
+    mesh = obj.data
+    mesh.calc_loop_triangles()
+    rows = []
+    for tri in mesh.loop_triangles:
+        points = [obj.matrix_world @ mesh.vertices[v].co for v in tri.vertices]
+        normal = (points[1] - points[0]).cross(points[2] - points[0])
+        if normal.length < 1e-9:
+            continue
+        rows.append((tri.polygon_index, points, normal.normalized()))
+    return rows
+
+
+def coplanar_pairs(a, b, tolerance=0.3, minimum=1.0, visible_only=False):
+    """Same-facing triangle pairs of two meshes within `tolerance` and overlapping > minimum area.
+
+    visible_only skips downward-facing pairs (undersides; no editor view looks up at them).
+    """
+    result = []
+    tb = triangles(b)
+    boxes = [(min(p[i] for p in pts) - tolerance, max(p[i] for p in pts) + tolerance) for _, pts, _ in tb
+             for i in range(3)]
+    for ia, pa, na in triangles(a):
+        lo = [min(p[i] for p in pa) for i in range(3)]
+        hi = [max(p[i] for p in pa) for i in range(3)]
+        u = (pa[1] - pa[0]).normalized()
+        v = na.cross(u)
+        flat_a = [((p - pa[0]).dot(u), (p - pa[0]).dot(v)) for p in pa]
+        for k, (ib, pb, nb) in enumerate(tb):
+            if any(hi[i] < boxes[3 * k + i][0] or lo[i] > boxes[3 * k + i][1] for i in range(3)):
+                continue
+            if na.dot(nb) < 0.999 or abs((pb[0] - pa[0]).dot(na)) > tolerance:
+                continue
+            if visible_only and na.z < -0.9:
+                continue
+            area = _clip_area(flat_a, [((p - pa[0]).dot(u), (p - pa[0]).dot(v)) for p in pb])
+            if area > minimum:
+                result.append((ia, ib, area))
+    return result
+
+
+def coplanar_faces(obj, other, tolerance=0.3, visible_only=False):
+    """Faces of obj in a coplanar overlap with other, measured from both sides (the plane
+    distance and clip use one triangle's frame, so near-parallel pairs are not symmetric)."""
+    return ({ia for ia, _, _ in coplanar_pairs(obj, other, tolerance, visible_only=visible_only)} |
+            {ib for _, ib, _ in coplanar_pairs(other, obj, tolerance, visible_only=visible_only)})
 
 
 def circle(center, radius, segments=32):
@@ -248,6 +331,47 @@ def apply_op(obj, op):
         bm.to_mesh(obj.data)
         bm.free()
         obj.data.update()
+    elif kind == 'inset_coplanar_with':
+        # Resolve same-facing coplanar overlaps with what the state shows of other owned nodes
+        # (an earlier variant for the same patches, else the approved mesh): overlapping faces of
+        # this copy move `distance` world units inward, so the hidden side goes behind (the
+        # round-8 rule). Moving shared vertices can bring a neighbour face into a new overlap,
+        # so passes repeat until none is left. Downward undersides stay flush (never visible).
+        references = []
+        for other in op['others']:
+            shown_variant = op.get('_references', {}).get(other)
+            reference = [shown_variant] if shown_variant is not None else [
+                o for o in bpy.data.objects if o.type == 'MESH' and o.get('source_node') == other
+                and o.get('asset_group') == obj.get('asset_group') and not o.get('state_recipe')
+                and not o.get('state_context_recipe')]
+            if len(reference) != 1:
+                raise ValueError('inset_coplanar_with needs one shown mesh for ' + other)
+            references.append(reference[0])
+        mesh = obj.data
+        inverse = obj.matrix_world.inverted()
+        moved = []
+        for attempt in range(6):
+            flagged = set()
+            for reference in references:
+                flagged |= coplanar_faces(obj, reference, op.get('tolerance', 0.3), visible_only=True)
+            if not flagged:
+                break
+            if attempt == 5:
+                raise ValueError(f'inset_coplanar_with could not separate {obj.name}: faces {sorted(flagged)}')
+            moves = {}
+            for index in flagged:
+                polygon = mesh.polygons[index]
+                normal = (obj.matrix_world.to_3x3() @ polygon.normal).normalized()
+                for v in polygon.vertices:
+                    moves.setdefault(v, Vector()).__iadd__(normal)
+            for v, direction in moves.items():
+                position = obj.matrix_world @ mesh.vertices[v].co
+                mesh.vertices[v].co = inverse @ (position - direction.normalized() * op.get('distance', 2.0))
+            mesh.update()
+            moved.append(sorted(flagged))
+        if not moved:
+            raise ValueError(f"inset_coplanar_with found no overlap between {obj.name} and {op['others']}")
+        obj['state_inset_faces'] = json.dumps({'others': op['others'], 'passes': moved})
     elif kind == 'rotate_hinge':
         a, b = world(op['p0']), world(op['p1'])
         axis = (b - a).normalized()
@@ -356,7 +480,13 @@ def build(spec, spec_path, include_context=True):
         for collection in base.users_collection:
             collection.objects.link(obj)
         for op in variant['ops']:
+            if op['op'] == 'inset_coplanar_with':
+                # References are what this state shows: an earlier variant of that node for the
+                # same patches, else the approved mesh. Cut faces of neighbours count too.
+                op = {**op, '_references': {other: STATE_SHOWN.get((other, tuple(variant['patches'])))
+                                            for other in op['others']}}
             apply_op(obj, op)
+        STATE_SHOWN[(variant['source_node'], tuple(variant['patches']))] = obj
         obj['projection_component'] = variant['component']
         obj['state_recipe'] = TAG
         obj['state_variant_of'] = base.name

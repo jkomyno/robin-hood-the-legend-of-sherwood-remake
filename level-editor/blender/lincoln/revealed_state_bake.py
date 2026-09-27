@@ -307,6 +307,37 @@ def native_order(patch):
     return [row['id'] for row in layers['patches']].index(patch)
 
 
+def remove_states(assets):
+    """Delete the state objects (and their isolated materials/images) of the given assets and
+    clear the reveal lists their build added to approved objects. Returns what was removed."""
+    removed, cleared = [], []
+    victims = [o for o in working_meshes() if o.get('asset_group') in assets and o.get('state_recipe')]
+    materials = {m for o in victims for m in o.data.materials if m}
+    for obj in victims:
+        mesh = obj.data
+        removed.append(obj.name)
+        bpy.data.objects.remove(obj, do_unlink=True)
+        if mesh.users == 0:
+            bpy.data.meshes.remove(mesh)
+    for material in materials:
+        if material.users == 0:
+            images = [n.image for n in material.node_tree.nodes if n.type == 'TEX_IMAGE' and n.image] \
+                if material.node_tree else []
+            bpy.data.materials.remove(material)
+            for image in images:
+                if image.users == 0:
+                    bpy.data.images.remove(image)
+    for obj in working_meshes():
+        if obj.get('asset_group') in assets:
+            for key in ('reveal_hide_when_applied', 'reveal_show_when_applied'):
+                if key in obj:
+                    del obj[key]
+                    cleared.append(obj.name)
+    if not removed:
+        raise ValueError('No state objects found to replace for ' + ', '.join(sorted(assets)))
+    return {'assets': sorted(assets), 'removed_objects': sorted(removed), 'cleared_reveal_lists': sorted(set(cleared))}
+
+
 def appearance_copy(obj, state):
     copy = obj.copy()
     copy.data = obj.data.copy()
@@ -330,6 +361,10 @@ def main(argv):
     parser.add_argument('--stage-in', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--dry-run', action='store_true', help='count texels, do not save')
+    parser.add_argument('--replace-assets', nargs='+', metavar='ASSET',
+                        help='Stage-in already carries baked states: remove only these assets\' state objects '
+                             '(state_recipe), clear their approved objects\' reveal lists, and rebake just them; '
+                             'every other object stays byte-identical')
     args = parser.parse_args(argv)
     output = args.output.resolve()
     if output.exists():
@@ -341,8 +376,6 @@ def main(argv):
     sys.path.insert(0, tooling)
     from occlusion_constraints import SourceMaskConstraints
 
-    digests_before = {}
-    before = {o.name: object_fingerprint(o, digests_before) for o in working_meshes()}
     report = {'version': 1, 'recipe': TAG, 'stage_in': str(worker), 'stage_in_sha256': sha(worker),
               'assets': {}, 'states': {}, 'objects': {}, 'conflicts': []}
     specs = {}
@@ -354,6 +387,15 @@ def main(argv):
     handoff = json.loads((REVIEW / 'HANDOFF.json').read_text())
     if set(specs) != set(handoff['assets']):
         raise ValueError('State specs differ from the approved handoff assets')
+    if args.replace_assets:
+        if set(args.replace_assets) - set(specs):
+            raise ValueError('Unknown replacement assets')
+        specs = {a: specs[a] for a in args.replace_assets}
+        report['replaced'] = remove_states(set(args.replace_assets))
+    elif any(o.get('state_recipe') for o in working_meshes()):
+        raise ValueError('Stage-in already carries state objects; pass --replace-assets')
+    digests_before = {}
+    before = {o.name: object_fingerprint(o, digests_before) for o in working_meshes()}
     for asset, (spec, spec_path) in specs.items():
         geometry = RG.build(spec, spec_path, include_context=False)
         approved = json.loads((REVIEW / 'models' / asset / 'state-digests.json').read_text())['digests']
@@ -363,7 +405,8 @@ def main(argv):
             raise ValueError(f'{asset}: rebuilt state geometry differs from the approved state model')
         report['assets'][asset] = {'spec_sha256': sha(spec_path), 'state_objects': sorted(geometry['world_digests']),
                                    'approved_state_model_sha256': handoff['assets'][asset]['state_model_sha256']}
-    state_objects = [o for o in working_meshes() if o.get('state_recipe') == RG.TAG]
+    built = {name for row in report['assets'].values() for name in row['state_objects']}
+    state_objects = [bpy.data.objects[name] for name in sorted(built)]
     unknown = {}
     for obj in state_objects:
         template = bpy.data.objects[obj['state_variant_of']] if obj.get('state_variant_of') else next(
@@ -371,8 +414,9 @@ def main(argv):
             and o.get('source_node') == obj['source_node'] and not o.get('state_recipe'))
         unknown[obj.name] = prepare_state_object(obj, template)
     sources = json.loads((REVIEW / 'sources/manifest.json').read_text())['states']
-    primary = sorted(s for s, row in sources.items() if len(row['applied_patches']) == 1)
-    combos = sorted(s for s, row in sources.items() if len(row['applied_patches']) > 1)
+    wanted = {state for spec, _ in specs.values() for state in spec['states']}
+    primary = sorted(s for s, row in sources.items() if len(row['applied_patches']) == 1 and s in wanted)
+    combos = sorted(s for s, row in sources.items() if len(row['applied_patches']) > 1 and s in wanted)
     assets_of = {}
     for asset, (spec, _) in specs.items():
         for state in spec['states']:
