@@ -1177,14 +1177,14 @@ export default function Editor3D(props: EditorProps) {
           >
             {compiling() ? "Compiling…" : "Export mod ZIP"}
           </button>
+          <button
+            aria-expanded={helpOpen() ? "true" : "false"}
+            aria-controls="editor-help"
+            onClick={() => setHelpOpen(!helpOpen())}
+          >
+            Help
+          </button>
         </Show>
-        <button
-          aria-expanded={helpOpen() ? "true" : "false"}
-          aria-controls="editor-help"
-          onClick={() => setHelpOpen(!helpOpen())}
-        >
-          Help
-        </button>
         {props.toolbarEnd?.()}
         <Show when={doc()}>
           <button class="close-map" aria-label="Close map" title="Close map" onClick={closeMap}>
