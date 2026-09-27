@@ -1034,7 +1034,9 @@ export class EditorViewport {
       );
       this.exportFrame.computeLineDistances();
     }
-    if (rebuildFraming) this.splines.sync(d.splines ?? [], d.camera, this.sourceNodes);
+    const syncSplines = () => this.splines.sync(d.splines ?? [], d.camera, this.sourceNodes);
+    if (rebuildFraming) syncSplines();
+    else this.updateSplinePreview(syncSplines);
     const aliveGroups = new Set<string>();
     for (const g of d.groups) {
       aliveGroups.add(g.id);

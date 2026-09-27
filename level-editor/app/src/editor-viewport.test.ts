@@ -805,3 +805,54 @@ test("invalid wall previews report errors without breaking editing and recover a
   assert.doesNotThrow(() => viewport.setSplineEdit(null));
   viewport.dispose();
 });
+
+test("incremental edits rebuild changed wall assets and undo restores their geometry", () => {
+  const { viewport } = fixture();
+  const source = new THREE.Group();
+  const short = new THREE.Mesh(new THREE.BoxGeometry(100, 12, 40), new THREE.MeshBasicMaterial());
+  const tall = new THREE.Mesh(new THREE.BoxGeometry(100, 12, 80), new THREE.MeshBasicMaterial());
+  source.add(short, tall);
+  viewport.replaceMap(
+    source,
+    null,
+    new Map([
+      ["asset:short:building-000", short],
+      ["asset:tall:building-000", tall],
+    ]),
+  );
+  const document = documentFixture();
+  document.objects = [];
+  document.groups = [];
+  document.splines = [
+    {
+      id: "wall",
+      name: "Wall",
+      kind: "wall",
+      asset: "short",
+      axis: "x",
+      points: [
+        [0, 0, 0],
+        [300, 0, 0],
+      ],
+      width: 12,
+      repeatLength: 100,
+      closed: false,
+    },
+  ];
+  const layer = (viewport as unknown as { splines: import("./spline-layer.ts").SplineLayer })
+    .splines;
+  const height = () => new THREE.Box3().setFromObject(layer.root).getSize(new THREE.Vector3()).z;
+  viewport.syncViews(document, false);
+  const originalHeight = height();
+  const originalMesh = layer.root.children[1];
+  viewport.syncViews(document, false);
+  assert.equal(layer.root.children[1], originalMesh, "Unchanged splines retain their meshes");
+  viewport.syncViews({ ...document, splines: [{ ...document.splines[0]!, asset: "tall" }] }, false);
+  assert.ok(
+    height() > originalHeight * 1.9,
+    "Changing source updates the rendered wall immediately",
+  );
+  viewport.syncViews(document, false);
+  assert.ok(Math.abs(height() - originalHeight) < 1e-5, "Undo restores the prior wall");
+  viewport.dispose();
+});

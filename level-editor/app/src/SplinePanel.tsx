@@ -452,6 +452,7 @@ export default function SplinePanel(props: {
         Wall asset
         <select
           aria-label="Wall path asset"
+          disabled={busy()}
           value={path()?.kind === "wall" ? (path()?.asset ?? wallSource()) : wallSource()}
           onChange={(event) => {
             const id = event.currentTarget.value;
