@@ -135,6 +135,25 @@ check covers 933 unchanged components; the floor verifier covers the 55 explicit
 regrounded components. Use the same audit commands as round 3 with the round-4
 audit/output paths and `review-v10/geometry.json` as the previous geometry.
 
+### Fifth partial review: outer-east return walkway
+
+`grouping-audit-round-5.json` records 25 further decisions. The passage's return
+walkway was still assigned to the middle bastion. Source 244 now has three
+components: the unchanged upper curtain-wall deck, the passage return and the
+bastion deck. The new boundary follows the bastion entrance between the native
+inner and upper neck junctions. Support pier 239 also returns to the passage.
+Nonparallel boundaries use explicit halfspace cuts in `review-partitions.json`;
+the existing parallel-strip partitions keep their previous behavior.
+
+Both changed cards include a reverse view exposing the walkway, alongside the
+game-camera view. The previous gallery is `review-v11/`; scenes, catalog and
+export are under `review-round-5/before/`. Verification preserves all 251 other
+asset geometry records and 987 components exactly. The repartitioned source is
+checked separately for surface coverage, area and UV preservation. Use the
+round-5 audit/output paths and `review-v11/geometry.json` with
+`verify_regrouping.py`. Only the passage and middle bastion require renewed
+grouping review; the asset count remains 252 plus terrain.
+
 
 Base patches and Fog mission doors are inventoried separately. Door receiver
 ownership and interior/exterior projection receivers still require authored

@@ -70,9 +70,9 @@ Southeast wall lane front house | p227 p228 p229 p230 p231
 Southeast wall-lane gable house | 223 224
 Outer southeast round bastion | p232 c235:bastion p249
 Outer southeast wall stair | p233 p234 c235:wall-stair p251
-Outer east wall stair passage | p236 p237 p240 p252 p253 p980
+Outer east wall stair passage | p236 p237 p239 p240 p252 p253 p980 c244:passage
 Outer east upper wall stair | p242
-Outer east middle round bastion | p238 p239 c244:bastion p250
+Outer east middle round bastion | p238 c244:bastion p250
 Outer east upper curtain wall | p241 c244:curtain-wall
 Outer east conical watchtower | 243
 Inner southeast curtain wall | c254:southeast-wall p275 p284

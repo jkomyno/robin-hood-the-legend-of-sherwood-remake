@@ -46,11 +46,15 @@ def main():
                   if identity in floor_changes for p in record['parts']}
     errors = []
     checked = 0
+    repartitioned = []
     max_drift = 0
     for key in old.keys() & new.keys():
         if key in regrounded:
             continue  # Retained surfaces and UVs are checked by verify_grounding.
         a, b = old[key], new[key]
+        if key[0] in audit.get('repartitioned_sources', []) and a != b:
+            repartitioned.append(key)
+            continue  # Area and UV coverage are checked by verify_partition.
         if a['triangles'] != b['triangles'] or len(a['positions']) != len(b['positions']):
             errors.append({'part': key, 'reason': 'Topology changed'})
             continue
@@ -64,6 +68,7 @@ def main():
               'changed_existing_assets': sorted(set(after) & affected & set(before)),
               'added_assets': added, 'retired_assets': removed,
               'preserved_components': checked, 'regrounded_components':len(regrounded),
+              'repartitioned_components':sorted(repartitioned),
               'max_position_drift': max_drift, 'errors': errors}
     args.output.write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps({k:len(v) if isinstance(v,list) and k!='errors' else v for k,v in result.items()}))

@@ -1,0 +1,37 @@
+{
+  "scope": "Grouping only; no completed geometry or texture approval",
+  "submitted_review_count": 25,
+  "changes": [
+    {
+      "source": "building-244",
+      "component": "bastion",
+      "from": "york-outer-east-middle-round-bastion",
+      "components": {
+        "passage": "york-outer-east-wall-stair-passage",
+        "bastion": "york-outer-east-middle-round-bastion"
+      },
+      "reason": "Return the inner walkway behind parapet 252 to the passage, splitting the shared deck at the bastion entrance. The upper curtain boundary stays unchanged."
+    },
+    {
+      "source": "building-239",
+      "from": "york-outer-east-middle-round-bastion",
+      "to": "york-outer-east-wall-stair-passage",
+      "reason": "The adjoining pier sits beneath the passage end, on the passage side of the bastion entrance."
+    }
+  ],
+  "repartitioned_sources": [
+    "building-244"
+  ],
+  "view_overrides": {
+    "york-outer-east-wall-stair-passage": {
+      "yaw": 150,
+      "elevation": 65,
+      "label": "Selected geometry \u2014 rear oblique (complete return walkway)"
+    },
+    "york-outer-east-middle-round-bastion": {
+      "yaw": 150,
+      "elevation": 65,
+      "label": "Selected geometry \u2014 rear oblique (bastion entrance)"
+    }
+  }
+}

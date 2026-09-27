@@ -56,20 +56,28 @@ def main():
     partitions = []
     for spec in catalog.get('partitions', []):
         original = next(o for o in working.objects if o.get('source_node')==spec['source_node'])
-        bounds = [-math.inf,*spec['boundaries'],math.inf]
+        bounds = [-math.inf,*spec.get('boundaries', []),math.inf]
         area_before = surface_area(original)
         axis_x, axis_y = spec.get('axis_coefficients', [-.325,1.0])
         if not axis_y:
             raise ValueError('Partition axis must have a nonzero game-y coefficient')
+        component_cuts = spec.get('component_cuts')
+        if component_cuts is None:
+            component_cuts = {component:[{'axis_coefficients':[axis_x,axis_y],
+                'boundary':boundary,'keep_above':keep_above}
+                for boundary,keep_above in [(bounds[i],True),(bounds[i+1],False)]
+                if math.isfinite(boundary)] for i,component in enumerate(spec['components_ascending'])}
         components = []
-        for i, component in enumerate(spec['components_ascending']):
+        for component, cuts in component_cuts.items():
             mesh = original.data.copy()
             mesh.transform(original.matrix_world)
             bm = bmesh.new()
             bm.from_mesh(mesh)
-            for boundary, keep_above in [(bounds[i],True),(bounds[i+1],False)]:
-                if not math.isfinite(boundary):
-                    continue
+            for cut in cuts:
+                boundary,keep_above = cut['boundary'],cut['keep_above']
+                axis_x,axis_y = cut['axis_coefficients']
+                if not axis_y:
+                    raise ValueError('Partition axis must have a nonzero game-y coefficient')
                 bmesh.ops.bisect_plane(bm, geom=list(bm.verts)+list(bm.edges)+list(bm.faces),
                     dist=0.000001, plane_co=Vector((0,-boundary/(axis_y*math.sin(math.radians(35))),0)),
                     plane_no=Vector((axis_x,-axis_y*math.sin(math.radians(35)),0)),

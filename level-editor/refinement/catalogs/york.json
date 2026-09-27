@@ -1579,8 +1579,19 @@
           "name": "Structural volume 237"
         },
         {
+          "obstacle": 239,
+          "name": "Structural volume 239"
+        },
+        {
           "obstacle": 240,
           "name": "Raised section 240"
+        },
+        {
+          "obstacle": 244,
+          "name": "Shared surface / passage",
+          "components": [
+            "passage"
+          ]
         },
         {
           "obstacle": 252,
@@ -1613,10 +1624,6 @@
         {
           "obstacle": 238,
           "name": "Raised section 238"
-        },
-        {
-          "obstacle": 239,
-          "name": "Structural volume 239"
         },
         {
           "obstacle": 244,
@@ -5797,14 +5804,14 @@
     "building-251": "york-outer-southeast-wall-stair",
     "building-236": "york-outer-east-wall-stair-passage",
     "building-237": "york-outer-east-wall-stair-passage",
+    "building-239": "york-outer-east-wall-stair-passage",
     "building-240": "york-outer-east-wall-stair-passage",
     "building-252": "york-outer-east-wall-stair-passage",
     "building-253": "york-outer-east-wall-stair-passage",
     "building-980": "york-outer-east-wall-stair-passage",
+    "building-244": "york-outer-east-wall-stair-passage",
     "building-242": "york-outer-east-upper-wall-stair",
     "building-238": "york-outer-east-middle-round-bastion",
-    "building-239": "york-outer-east-middle-round-bastion",
-    "building-244": "york-outer-east-middle-round-bastion",
     "building-250": "york-outer-east-middle-round-bastion",
     "building-241": "york-outer-east-upper-curtain-wall",
     "building-243": "york-outer-east-conical-watchtower",
@@ -6681,19 +6688,55 @@
     },
     {
       "source_node": "building-244",
-      "axis_coefficients": [
-        -0.2,
-        1
-      ],
-      "coordinate": "-0.2 * game_x + 1 * game_y",
-      "boundaries": [
-        1441
-      ],
-      "components_ascending": [
-        "curtain-wall",
-        "bastion"
-      ],
-      "rationale": "Split the shared wall foundation at the middle-bastion landing, restoring its lower body. Hidden continuation of each seam is inferred; retain all existing surfaces and UVs without caps."
+      "rationale": "Preserve the upper-curtain boundary and split the remaining deck at the bastion entrance between native junctions (2732.6182,2053.9822) and (2762.76,1994.1995). The return walkway belongs to the wall passage; retain all surfaces and UVs without caps.",
+      "component_cuts": {
+        "passage": [
+          {
+            "axis_coefficients": [
+              -0.2,
+              1
+            ],
+            "boundary": 1441,
+            "keep_above": true
+          },
+          {
+            "axis_coefficients": [
+              1,
+              0.5041893390562879
+            ],
+            "boundary": 3768.21412785138,
+            "keep_above": false
+          }
+        ],
+        "bastion": [
+          {
+            "axis_coefficients": [
+              -0.2,
+              1
+            ],
+            "boundary": 1441,
+            "keep_above": true
+          },
+          {
+            "axis_coefficients": [
+              1,
+              0.5041893390562879
+            ],
+            "boundary": 3768.21412785138,
+            "keep_above": true
+          }
+        ],
+        "curtain-wall": [
+          {
+            "axis_coefficients": [
+              -0.2,
+              1
+            ],
+            "boundary": 1441,
+            "keep_above": false
+          }
+        ]
+      }
     },
     {
       "source_node": "building-213",
