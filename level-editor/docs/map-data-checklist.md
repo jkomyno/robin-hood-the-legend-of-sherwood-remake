@@ -122,6 +122,16 @@ depth-buffer changes remain unfinished. Static depth can otherwise continue
 occluding a character after a typed mask is deactivated, so these tests do not
 certify complete visual-state behavior or full-map mask parity.
 
+The one-time bitmap recovery helper strictly decodes source scanlines and merges
+coverage into nonoverlapping screen-space rectangles without filling cutouts.
+`node --max-old-space-size=1536 pipeline/src/audit-mask-bitmaps.ts library/game-data/Data/Levels/*.rhp.json`
+(from `level-editor`) verifies every pixel after reconstructing those rectangles.
+All 3,027 masks across the nine source maps pass. Only 363 have obstacle links;
+these are altitude-test references, not sufficient evidence of visual ownership.
+The rectangles are intermediate authoring data, not asset geometry: ownership,
+intersection with actual asset surfaces, local 3D coordinates, masking boundaries
+and state bindings still need recovery before publication.
+
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.
 Receiving footprints retain material across blocked portions omitted from walking

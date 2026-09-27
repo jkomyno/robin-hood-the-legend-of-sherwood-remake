@@ -54,6 +54,10 @@
   independently for rotated/duplicated assets. Map ZIPs include the resulting
   masks. Recovery for existing assets, textured-mesh extraction and coordinated
   visual/depth-state export remain unfinished.
+  A one-time recovery audit strictly decodes source masks and verifies exact
+  coverage after merging pixels into nonoverlapping rectangles. These remain
+  intermediate screen-space authoring data until mapped onto an owning asset's
+  surfaces; the runtime compiler does not read the source maps.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits
