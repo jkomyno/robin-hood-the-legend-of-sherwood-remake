@@ -1,0 +1,198 @@
+{
+  "title": "Sloped asset fixture",
+  "map_filename": "editor-sloped-asset-fixture",
+  "spawn": [
+    320,
+    310
+  ],
+  "spawn_player": true,
+  "reveal_all": true,
+  "walkable_polygon": [
+    [
+      0,
+      0
+    ],
+    [
+      1999,
+      0
+    ],
+    [
+      1999,
+      1999
+    ],
+    [
+      0,
+      1999
+    ]
+  ],
+  "volumes": [],
+  "asset_geometry": {
+    "motion_data": {
+      "layers": [
+        [
+          {
+            "is_lift": false,
+            "state_id": 0,
+            "polygon": {
+              "points": [
+                [
+                  300,
+                  300
+                ],
+                [
+                  500,
+                  200
+                ],
+                [
+                  500,
+                  300
+                ],
+                [
+                  300,
+                  400
+                ]
+              ]
+            },
+            "skeleton_segments": [],
+            "flags": 0,
+            "obstacles": [
+              {
+                "state_id": 0,
+                "polygon": {
+                  "points": [
+                    [
+                      380,
+                      320
+                    ],
+                    [
+                      380,
+                      340
+                    ],
+                    [
+                      370,
+                      345
+                    ],
+                    [
+                      370,
+                      325
+                    ]
+                  ]
+                }
+              },
+              {
+                "state_id": 0,
+                "polygon": {
+                  "points": [
+                    [
+                      340,
+                      320
+                    ],
+                    [
+                      350,
+                      315
+                    ],
+                    [
+                      350,
+                      325
+                    ],
+                    [
+                      340,
+                      330
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        []
+      ],
+      "graph_bytes": []
+    },
+    "sight_obstacles": [
+      {
+        "points": [
+          {
+            "x": 340,
+            "y": 340,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 350,
+            "y": 340,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 350,
+            "y": 350,
+            "z_bottom": 0,
+            "z_top": 30
+          },
+          {
+            "x": 340,
+            "y": 350,
+            "z_bottom": 0,
+            "z_top": 30
+          }
+        ],
+        "projection_area": null,
+        "solid": true,
+        "opaque": true,
+        "mouse": true,
+        "show_shadow_polygon": false,
+        "default_material": 0,
+        "material_indices": []
+      },
+      {
+        "points": [
+          {
+            "x": 300,
+            "y": 300,
+            "z_bottom": 0,
+            "z_top": 0
+          },
+          {
+            "x": 500,
+            "y": 300,
+            "z_bottom": 100,
+            "z_top": 100
+          },
+          {
+            "x": 500,
+            "y": 400,
+            "z_bottom": 100,
+            "z_top": 100
+          },
+          {
+            "x": 300,
+            "y": 400,
+            "z_bottom": 0,
+            "z_top": 0
+          }
+        ],
+        "projection_area": [
+          0,
+          0
+        ],
+        "opaque": false,
+        "solid": false,
+        "mouse": true,
+        "show_shadow_polygon": false,
+        "default_material": 0,
+        "material_indices": []
+      }
+    ],
+    "doors": [],
+    "spawn": {
+      "position": [
+        320,
+        310
+      ],
+      "sector": 0,
+      "layer": 0,
+      "projection_area": 1
+    }
+  }
+}

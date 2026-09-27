@@ -53,25 +53,79 @@ uncovered pixels. Physical texture alpha clips the depth pass; alpha used only
 for texture provenance does not. The engine compares this field with character
 ground Y to hide sprites behind the baked scene.
 
-## Current gameplay scope
+## Asset-only gameplay compilation
 
-The result is an **unscripted map sandbox**, not an export of a selected mission.
-Authored obstacle footprints follow object/group transforms and the crop origin.
-Sight volumes use each obstacle's minimum bottom and maximum top height. Solid
-obstacles intersecting ground level become movement blockers. The compiler finds
-a spawn with 16 map units of clearance from those blockers; it reports an error
-if it cannot find one.
+The editor export button reads the placed assets' pinned definitions. It does
+not load a proto-level, mission, source-map baseline or precomputed navigation
+graph. Asset geometry and features use local coordinates and follow the same
+part/group transforms as the rendered models. Source obstacle numbers and
+source map names are provenance, not runtime references.
 
-The following remain to be compiled:
+A descriptor can contain a `gameplay` definition (see
+`shared/src/asset-gameplay.ts`). Version 1 supports:
 
-- Multiple navigation layers, raised walkways, lifts, jumps and sloped volumes.
-- Mission scripts, objectives, triggers, population and items.
-- Interactive patch transitions and their changing geometry/graphics.
-- Collision for scenery without authored obstacles and for spline surfaces.
+- Explicit planar walkable surface polygons, including slopes and holes, attached to asset nodes.
+- Part-local collision and sight shapes, preserving per-vertex sight heights.
+- Passage/gate endpoints and lockpick flags, resolved against assembled surfaces.
+- An asset-local player spawn, including raised-surface projection.
 
-For now, walkable space is the export rectangle minus ground-level blockers.
-Terrain holes and surfaces without authored obstacles do not constrain movement.
-These limitations also appear in the editor and in the archive's compile report.
+For example, a ground-only asset can declare:
+
+```json
+{
+  "gameplay": {
+    "version": 1,
+    "collision": "none",
+    "surfaces": [{
+      "id": "ground", "node": "$root", "height": 0,
+      "polygon": [[0, 0], [511, 0], [511, 511], [0, 511]]
+    }],
+    "doors": [],
+    "spawns": [{ "id": "player", "node": "$root", "position": [64, 64, 0] }]
+  }
+}
+```
+
+`$root` is reserved for a map-background asset. Placeable assets name one of
+their descriptor parts. Coordinates are game-world `[x,y,z]`; runtime motion
+uses projected `[x,y-z]`. A door's `middle`, `inside` and `outside` are 3D
+points; its 2D polygon is at the outside endpoint's height. Type `0` is a
+passage and `3` is a gate. There must be exactly one player spawn across the
+assembled assets. Surface `height` can be a constant or one value per polygon
+vertex; all vertices must lie on a plane. Optional `holes` use the same local XY
+frame and height plane. Coplanar surfaces are joined; connections between
+different planes still require authored traversal features. Sector and layer
+references are assigned after placement; missing or ambiguous endpoints fail.
+The engine builds the actual fast-find grid, collision lines, door links and
+visibility-route graph from the generated descriptor.
+
+The public asset index retains `gameplay`. Publish descriptor changes and update
+saved asset pins through the normal asset-revision workflow. No map-level copy
+of the asset's gameplay definitions is needed.
+
+**This is not yet full Derby parity.** Missing asset definitions stop export.
+Stateful assets, mission population and splines also stop export until their
+semantics are supported. TODO: connections between different surface planes, building interiors,
+lifts, jumps, patch-dependent masks/geometry and authored mission behavior.
+The low-level sandbox helper remains for the small renderer contract fixture;
+the editor button always requests asset gameplay compilation.
+
+### One-time metadata recovery
+
+Source levels may be used by an offline authoring migration to restore missing
+asset metadata. This is separate from compilation. The current recovery tool
+writes reviewed-owner candidates in local 3D coordinates and an explicit gap
+report; it does not publish incomplete metadata as valid gameplay:
+
+```sh
+pnpm --filter pipeline exec node src/recover-asset-gameplay.ts --map ../library/scenes/derby.rhlos-map.json --source ../../datadirs/fullgame_gog_hackable/Data/Levels/Derby.rhp.json --out ../work/map-compile/derby-asset-recovery
+```
+
+The resulting `*.gameplay-authoring.json` files are drafts requiring review and
+support for the remaining feature types. They contain localized surface regions
+and connection endpoints, without runtime source sector/layer references or
+copied graph bytes. Terrain boundaries that include other assets' cutouts,
+ambiguous door ownership, masks and patch behavior remain explicit gaps.
 
 ## Verification
 
@@ -102,3 +156,23 @@ cargo test -p robin_rs --test editor_mod_export
 This test discovers and mounts the real browser-produced archive, expands the
 descriptor into runtime sight/motion data and reads the map, minimap and depth
 through the engine's terrain loaders.
+
+The asset compiler is also tested independently of the renderer:
+
+```sh
+pnpm --filter pipeline exec node --test ../shared/src/compile-asset-gameplay.test.ts ../app/src/map-compile.test.ts
+```
+
+These checks cover placement translation, rotation, duplication, elevation,
+surface joins, slopes, holes, unresolved metadata and reopening the archived editor JSON.
+The synthetic descriptor in `crates/robin_engine/tests/fixtures` is generated
+from `shared/test-fixtures/asset-gameplay.ts`; a cross-language contract test
+asserts it matches the compiler output. The Rust test mounts no game datadir:
+
+```sh
+cargo test -p robin_engine --test asset_map_compilation
+```
+
+It constructs an actual engine and checks grid, sight, door links and blocked
+versus clear movement queries. Passing this fixture is not a claim of complete
+functional parity for the extracted game maps.

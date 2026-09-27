@@ -1,6 +1,8 @@
-import { transformedObstacle, type Level3D, type Point } from "@rle/shared";
+import { transformedObstacle, serializeStoredMap, type Level3D, type Point } from "@rle/shared";
 import { encode } from "fast-png";
 import { strToU8, zip } from "fflate";
+import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
+import type { ProjectionAssetDescriptor } from "@rle/shared";
 
 export type BakeBounds = [number, number, number, number];
 export interface CompiledVolume {
@@ -120,9 +122,13 @@ export function findBakeSpawn(bounds: BakeBounds, volumes: CompiledVolume[]): Po
   );
 }
 
-export function compileMap(document: Level3D, requestedBounds: BakeBounds) {
-  // TODO: Compile layered movement, mission entities and patch transitions once
-  // the document exposes their authored topology. This export is a static sandbox.
+export function compileMap(
+  document: Level3D,
+  requestedBounds: BakeBounds,
+  assets?: ReadonlyMap<string, ProjectionAssetDescriptor>,
+) {
+  // TODO: Compile mission entities, special traversal and patch transitions
+  // from their authored asset definitions.
   const bounds = validateBakeBounds(requestedBounds);
   const slug =
     document.map
@@ -131,16 +137,22 @@ export function compileMap(document: Level3D, requestedBounds: BakeBounds) {
       .replace(/^-+|-+$/g, "") || "map";
   // Namespace map and mission names so installation cannot replace a base-game map.
   const name = `editor-${slug}`;
-  const volumes = compileVolumes(document, bounds);
-  const warnings = [
-    "This is an unscripted map sandbox. Mission scripts, triggers, and preview population are not exported.",
-    "Navigation uses one ground layer. Raised walkways, lifts, jumps, and sloped obstacle heights are not compiled; sight volumes use their full height range.",
-    "Scenery without authored obstacles and spline surfaces are visual only. Add obstacle-bearing assets where gameplay collision is required.",
-  ];
+  const assetGeometry = assets ? compileAssetGameplay(document, assets, bounds) : undefined;
+  const volumes = assetGeometry ? [] : compileVolumes(document, bounds);
+  const warnings = assetGeometry
+    ? [
+        "Compiled from asset-local surfaces, sight geometry, doors and spawn points. Navigation grids and route graphs are constructed by the engine.",
+        "Mission scripts, dynamic patch states, lifts and jumps are not yet supported by the asset compiler. This export is not a full gameplay-parity certification.",
+      ]
+    : [
+        "This is an unscripted map sandbox. Mission scripts, triggers, and preview population are not exported.",
+        "Navigation uses one ground layer. Raised walkways, lifts, jumps, and sloped obstacle heights are not compiled; sight volumes use their full height range.",
+        "Scenery without authored obstacles and spline surfaces are visual only. Add obstacle-bearing assets where gameplay collision is required.",
+      ];
   const descriptor = {
     title: document.map,
     map_filename: name,
-    spawn: findBakeSpawn(bounds, volumes),
+    spawn: assetGeometry?.spawn.position ?? findBakeSpawn(bounds, volumes),
     spawn_player: true,
     reveal_all: true,
     walkable_polygon: [
@@ -150,6 +162,7 @@ export function compileMap(document: Level3D, requestedBounds: BakeBounds) {
       [0, bounds[3] - 1],
     ],
     volumes,
+    ...(assetGeometry ? { asset_geometry: assetGeometry } : {}),
   };
   const details = {
     slug: name,
@@ -161,7 +174,7 @@ export function compileMap(document: Level3D, requestedBounds: BakeBounds) {
     description: "Compiled level-editor map sandbox",
     hackable_missions: [name],
   };
-  const editorDocument = structuredClone(document);
+  const editorDocument = assets ? serializeStoredMap(document, assets) : structuredClone(document);
   return { name, bounds, descriptor, details, warnings, editorDocument };
 }
 

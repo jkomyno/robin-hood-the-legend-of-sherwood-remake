@@ -2092,6 +2092,10 @@ pub struct HackableLevelDescriptor {
     pub walkable_polygon: Vec<(i16, i16)>,
     #[serde(default)]
     pub volumes: Vec<HackableLevelVolume>,
+    /// Geometry compiled from placed asset-local definitions. Replaces the
+    /// simple rectangle/volume navigation when present.
+    #[serde(default)]
+    pub asset_geometry: Option<CompiledAssetGeometry>,
     #[serde(default)]
     pub soldiers: Vec<HackableSoldier>,
     #[serde(default)]
@@ -2105,6 +2109,25 @@ pub struct HackableLevelDescriptor {
     /// Optional symmetric relationship matrix and player coalition.
     #[serde(default)]
     pub diplomacy: Option<crate::diplomacy::DiplomacyDefinition>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
+#[serde(deny_unknown_fields)]
+pub struct CompiledAssetGeometry {
+    pub motion_data: RawMotionData,
+    pub sight_obstacles: Vec<RawSightObstacle>,
+    pub doors: Vec<RawDoor>,
+    pub spawn: CompiledAssetSpawn,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
+#[serde(deny_unknown_fields)]
+pub struct CompiledAssetSpawn {
+    pub position: (i16, i16),
+    pub sector: u16,
+    pub layer: u16,
+    #[serde(default)]
+    pub projection_area: Option<u16>,
 }
 
 /// Author-facing timed-mission rules for hackable JSON levels.
@@ -2565,6 +2588,95 @@ impl LoadedLevel {
             .collect();
         level.mission.timed_mission = descriptor.timed_mission;
         level.mission.ambience_schedule = descriptor.ambience_schedule;
+        if let Some(geometry) = descriptor.asset_geometry {
+            if geometry.motion_data.layers.len() < 2
+                || !geometry.motion_data.layers.last().unwrap().is_empty()
+                || !geometry.motion_data.graph_bytes.is_empty()
+            {
+                return Err("asset geometry requires ordinary motion layers, an empty lift layer and a freshly constructed graph".into());
+            }
+            let mut area_refs = std::collections::BTreeSet::new();
+            let mut sector = 0u16;
+            for (layer, areas) in geometry.motion_data.layers.iter().enumerate() {
+                for area in areas {
+                    if area.is_lift
+                        || area.polygon.points.len() < 3
+                        || area
+                            .obstacles
+                            .iter()
+                            .any(|obstacle| obstacle.polygon.points.len() < 3)
+                    {
+                        return Err("invalid compiled asset motion area".into());
+                    }
+                    area_refs.insert((sector, layer as u16));
+                    sector = sector
+                        .checked_add(
+                            u16::try_from(1 + area.obstacles.len())
+                                .map_err(|_| "too many asset obstacles")?,
+                        )
+                        .ok_or("too many asset sectors")?;
+                }
+            }
+            if !area_refs.contains(&(geometry.spawn.sector, geometry.spawn.layer)) {
+                return Err("asset spawn references a missing motion area".into());
+            }
+            if let Some(index) = geometry.spawn.projection_area {
+                if geometry
+                    .sight_obstacles
+                    .get(index as usize)
+                    .and_then(|obstacle| obstacle.projection_area)
+                    != Some((geometry.spawn.sector, geometry.spawn.layer))
+                {
+                    return Err("asset spawn references an incompatible projection surface".into());
+                }
+            }
+            for door in &geometry.doors {
+                if !area_refs.contains(&(door.sector_in, door.layer_in))
+                    || !area_refs.contains(&(door.sector_out, door.layer_out))
+                    || door.door_sector.points.len() < 3
+                {
+                    return Err(
+                        "asset door references a missing motion area or has no polygon".into(),
+                    );
+                }
+            }
+            for obstacle in &geometry.sight_obstacles {
+                if obstacle.points.len() < 3
+                    || obstacle.points.iter().any(|p| {
+                        !p.x.is_finite()
+                            || !p.y.is_finite()
+                            || !p.z_bottom.is_finite()
+                            || !p.z_top.is_finite()
+                            || p.z_top < p.z_bottom
+                    })
+                    || obstacle
+                        .projection_area
+                        .is_some_and(|area| !area_refs.contains(&area))
+                    || !obstacle.material_indices.is_empty()
+                {
+                    return Err("invalid asset sight geometry or unresolved reference".into());
+                }
+            }
+            level.proto.grid_chunk_order = vec![
+                ProtoGridChunk::Motion,
+                ProtoGridChunk::Sight,
+                ProtoGridChunk::Building,
+            ];
+            level.proto.motion_data = Some(geometry.motion_data);
+            level.proto.sight_obstacles = geometry.sight_obstacles;
+            level.proto.buildings = vec![RawBuildingEntry::StandaloneDoors {
+                doors: geometry.doors,
+            }];
+            for beam in &mut level.mission.beam_mes {
+                beam.position = MapPoint::new(
+                    geometry.spawn.position.0.into(),
+                    geometry.spawn.position.1.into(),
+                );
+                beam.sector = geometry.spawn.sector;
+                beam.layer = geometry.spawn.layer;
+                beam.projection_area = geometry.spawn.projection_area.unwrap_or(u16::MAX);
+            }
+        }
         Ok(level)
     }
 

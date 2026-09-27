@@ -11,6 +11,11 @@ import {
   validateBakeBounds,
 } from "./map-compile.ts";
 import { bakeScene, contentBakeBounds } from "./map-bake-render.ts";
+import {
+  assetCompilerFixture,
+  slopedAssetCompilerFixture,
+} from "../../shared/test-fixtures/asset-gameplay.ts";
+import { readFile } from "node:fs/promises";
 
 export function bakeFixture(): Level3D {
   return {
@@ -153,4 +158,45 @@ test("mod ZIP has root metadata, a playable descriptor and lossless 16-bit depth
     packageCompiledMap(compiled, { color: new Uint8Array(), depth }),
     /dimensions/,
   );
+});
+
+test("asset export retains a reopenable pinned scene and matches the Rust runtime fixture", async () => {
+  const { document, assets } = assetCompilerFixture();
+  const runtimeFixture = compileMap(document, [0, 0, 2000, 2000], assets);
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-compiled.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(runtimeFixture.descriptor, fixture);
+  const expected = structuredClone(document);
+  const compiled = compileMap(document, [0, 0, 512, 512], assets);
+  const bytes = await packageCompiledMap(compiled, {
+    color: new Uint8Array(512 * 512 * 4),
+    depth: new Uint16Array(512 * 512),
+  });
+  const files = unzipSync(bytes);
+  const reopened = parseStoredMap(
+    JSON.parse(strFromU8(files[`editor/${compiled.name}.rhlos-map.json`]!)),
+    assets,
+  );
+  assert.deepEqual(reopened, expected);
+});
+
+test("sloped asset export matches the native elevation/navigation fixture", async () => {
+  const { document, assets } = slopedAssetCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-sloped.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
 });

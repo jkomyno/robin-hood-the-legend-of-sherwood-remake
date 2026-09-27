@@ -1,5 +1,13 @@
 # Post-port Features
 
+- **Asset-local gameplay compilation.** The editor builds planar walkable regions with slopes and holes,
+  collision/sight geometry, passage/gate connections and a spawn from pinned
+  asset definitions and placement transforms. Missing metadata stops export;
+  the compiler has no source-level input. Runtime tests construct navigation and
+  door links without mounting a game datadir. Full extracted-map parity remains
+  unfinished. Every ZIP also contains the editable level JSON, including unsaved
+  edits, for reopening with its pinned asset library.
+
 - **Level-editor mod compilation.** Export mod ZIP renders the current placed
   scene into a hackable datadir archive with a map PNG, minimap, 16-bit sprite
   occlusion depth, and a discoverable playable sandbox descriptor. Compilation
