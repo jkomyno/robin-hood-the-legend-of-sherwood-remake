@@ -1,4 +1,3 @@
-import { centerGizmoFrame, moveFromGizmoFrame } from "./gizmo-frame";
 import { stableOpaqueSort } from "./render-order.ts";
 import { bakeScene, contentBakeBounds, renderMapBake } from "./map-bake-render.ts";
 import { compileMap } from "./map-compile.ts";
@@ -302,7 +301,6 @@ export class EditorViewport {
   private gizmo: TransformControls | null = null;
   // A separate frame rotates translation axes without changing asset orientation.
   private readonly gizmoFrame = new THREE.Object3D();
-  private readonly gizmoOriginOffset = new THREE.Vector3();
   private coordinateRotation = 45;
   private readonly scene = new THREE.Scene();
   private readonly mapRoot = new THREE.Group();
@@ -364,8 +362,7 @@ export class EditorViewport {
     this.gizmoFrame.rotation.set(0, THREE.MathUtils.degToRad(degrees), 0);
   }
   private syncGizmoFrame(view = this.selectedView()) {
-    if (view && !this.dragging)
-      centerGizmoFrame(view.wrapper, this.gizmoFrame, this.gizmoOriginOffset);
+    if (view && !this.dragging) view.wrapper.getWorldPosition(this.gizmoFrame.position);
   }
   setGizmoVertical(vertical: boolean) {
     if (this.gizmo) this.gizmo.showY = vertical;
@@ -617,7 +614,11 @@ export class EditorViewport {
     });
     this.gizmo.addEventListener("objectChange", () => {
       const view = this.selectedView();
-      if (view) moveFromGizmoFrame(view.wrapper, this.gizmoFrame, this.gizmoOriginOffset);
+      if (view?.wrapper.parent) {
+        view.wrapper.position.copy(
+          view.wrapper.parent.worldToLocal(this.gizmoFrame.position.clone()),
+        );
+      }
       this.refreshSelectionBox();
       if (this.renderer) this.renderer.shadowMap.needsUpdate = true;
     });
@@ -1326,12 +1327,13 @@ export class EditorViewport {
         }
       }
     }
-    this.refreshSelectionBox();
+    // Signal writes may publish after this event; use the selection passed in,
+    // just as highlighting does, instead of reading the previous bound selection.
+    this.refreshSelectionBox(v);
   }
 
-  private refreshSelectionBox() {
-    this.syncGizmoFrame();
-    const v = this.selectedView();
+  private refreshSelectionBox(v = this.selectedView()) {
+    this.syncGizmoFrame(v);
     if (!v) {
       this.selectionBox.visible = false;
       return;
