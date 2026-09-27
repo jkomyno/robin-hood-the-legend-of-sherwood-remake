@@ -121,10 +121,14 @@ export interface AssetOcclusionMask {
   /** Local point on the receiving navigation surface; may lie inside a blocker. */
   anchor: [number, number, number];
   view: boolean;
-  /** Closed local boundary; its projected front envelope controls character masking. */
+  /** Local boundary; its projected front envelope controls character masking. */
   characterBoundary?: [number, number, number][];
-  /** Closed local boundary; its world XY front envelope controls projectile masking. */
+  /** Defaults to true. False preserves an authored open polyline without a closing edge. */
+  characterBoundaryClosed?: boolean;
+  /** Local boundary; its world XY front envelope controls projectile masking. */
   projectileBoundary?: [number, number, number][];
+  /** Defaults to true, independently of the character boundary. */
+  projectileBoundaryClosed?: boolean;
   /** Local part/volume IDs used for the projectile/flying-human altitude test. */
   obstacles: string[];
 }
@@ -357,12 +361,20 @@ export function validateAssetGameplay(
       new Set(mask.obstacles).size !== mask.obstacles.length
     )
       fail(`invalid mask ${mask.id}`);
-    for (const boundary of [mask.characterBoundary, mask.projectileBoundary])
+    for (const [boundary, closed] of [
+      [mask.characterBoundary, mask.characterBoundaryClosed],
+      [mask.projectileBoundary, mask.projectileBoundaryClosed],
+    ] as const) {
+      if (closed !== undefined && (typeof closed !== "boolean" || boundary === undefined))
+        fail(`invalid mask boundary closure ${mask.id}`);
       if (
         boundary !== undefined &&
-        (!Array.isArray(boundary) || boundary.length < 3 || !boundary.every((p) => point(p, 3)))
+        (!Array.isArray(boundary) ||
+          boundary.length < (closed === false ? 2 : 3) ||
+          !boundary.every((p) => point(p, 3)))
       )
         fail(`invalid mask boundary ${mask.id}`);
+    }
     for (const ref of mask.obstacles)
       if (
         typeof ref !== "string" ||

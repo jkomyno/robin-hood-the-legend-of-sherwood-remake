@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import { parseArgs } from "node:util";
 import type { ProtoLevel } from "../../shared/src/level.ts";
 import { decodeRecoveryMask, recoveryMaskRectangles } from "./recover-mask-bitmap.ts";
+import { maskBoundaryPolyline } from "../../shared/src/compile-mask-geometry.ts";
 
 const { positionals } = parseArgs({ allowPositionals: true });
 if (!positionals.length) throw new Error("Usage: audit-mask-bitmaps.ts <level.rhp.json> [...]");
@@ -14,6 +15,7 @@ for (const source of positionals) {
     rectangles = 0,
     obstacleLinked = 0;
   const errors: { index: number; error: string }[] = [];
+  let exactBoundaries = 0;
   for (const [index, mask] of level.masks.entries()) {
     try {
       const pixels = decodeRecoveryMask(mask);
@@ -30,6 +32,12 @@ for (const source of positionals) {
           }
       if (!pixels.every((pixel, i) => pixel === reconstructed[i]))
         throw new Error("Recovered coverage differs from source bitmap");
+      for (const boundary of [mask.character_polyline, mask.projectile_polyline]) {
+        if (!boundary?.length) continue;
+        if (JSON.stringify(maskBoundaryPolyline(boundary, false)) !== JSON.stringify(boundary))
+          throw new Error("Open boundary differs from source polyline");
+        exactBoundaries++;
+      }
       coveredPixels += pixels.reduce((sum, pixel) => sum + pixel, 0);
       rectangles += coverage.length;
       obstacleLinked += Number(mask.obstacle_indices.length > 0);
@@ -46,6 +54,7 @@ for (const source of positionals) {
       exact,
       coveredPixels,
       rectangles,
+      exactBoundaries,
       obstacleLinked,
       errors,
     }),

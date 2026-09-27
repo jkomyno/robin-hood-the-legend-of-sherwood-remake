@@ -72,6 +72,62 @@ test("mask boundary envelopes preserve concave steps, winding and rotation", () 
   ]);
 });
 
+test("open masking polylines retain valleys without an invented closing edge", () => {
+  const boundary: Point[] = [
+    [0, 10],
+    [5, 0],
+    [10, 10],
+  ];
+  assert.deepEqual(maskBoundaryPolyline(boundary, false), boundary);
+  assert.deepEqual(maskBoundaryPolyline([...boundary].reverse(), false), boundary);
+  assert.notDeepEqual(maskBoundaryPolyline(boundary), boundary);
+  assert.deepEqual(
+    maskBoundaryPolyline(
+      [
+        [3, 4],
+        [8, 9],
+      ],
+      false,
+    ),
+    [
+      [3, 4],
+      [8, 9],
+    ],
+  );
+  assert.deepEqual(
+    maskBoundaryPolyline(
+      boundary.map(([x, y]) => [20 - x, 30 - y]),
+      false,
+    ),
+    [
+      [10, 20],
+      [15, 30],
+      [20, 20],
+    ],
+  );
+});
+
+test("open boundary endpoint steps survive placement and reversed ordering", () => {
+  const boundary: Point[] = [
+    [10, 20],
+    [20, 10],
+    [20, 11],
+  ];
+  assert.deepEqual(maskBoundaryPolyline(boundary, false), boundary);
+  assert.deepEqual(maskBoundaryPolyline([...boundary].reverse(), false), boundary);
+  assert.throws(
+    () =>
+      maskBoundaryPolyline(
+        [
+          [10, 10],
+          [10, 20],
+        ],
+        false,
+      ),
+    /collapses/,
+  );
+});
+
 test("rasterized mask coverage preserves holes and triangle winding", () => {
   const geometry = [
     ...rectangle(0, 0, 6, 2),

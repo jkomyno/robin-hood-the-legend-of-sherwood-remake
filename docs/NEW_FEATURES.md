@@ -64,6 +64,8 @@
   Published static opaque mesh parts can supply those triangles, including
   nested transforms. Recovery verifies the clipped result through the compiler's
   rasterizer; transparent materials require explicit texture coverage extraction.
+  Character and projectile boundaries can independently use open polylines,
+  preserving concavities and endpoint steps without adding a closing segment.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits

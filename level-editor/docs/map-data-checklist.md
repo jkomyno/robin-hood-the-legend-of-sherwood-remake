@@ -147,6 +147,17 @@ compiler and requires exact source pixel coverage, allowing partially covered
 edge cells only when their pixel samples match. Four Derby probes (mask records
 15, 27, 67 and 93) still fail coverage against their obstacle-linked candidate
 assets' published meshes. They are not recovered or published as gameplay masks.
+Those four candidates lack 175, 323, 72 and 332 covered pixels respectively;
+the gaps include interior pixels, so accepting boundary rounding alone is
+insufficient. Reviewed cottage associations also require geometry work.
+
+Asset character/projectile boundaries can now be explicitly open, independently
+of one another; existing authored boundaries remain closed by default. This
+preserves source polylines without inventing a closing edge across a concavity.
+Monotone open lines retain vertical endpoint steps; other placements recompute
+their front envelope. The bitmap audit also verifies all 5,166 nonempty source
+polylines across the nine maps are reproduced point-for-point. This verifies the
+boundary representation only, not their receiving elevation or asset ownership.
 
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.

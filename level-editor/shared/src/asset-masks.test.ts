@@ -7,6 +7,37 @@ import { IDENTITY_TRANSFORM } from "./level3d.ts";
 import type { AssetGameplay } from "./asset-gameplay.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("open asset boundaries compile separate character and projectile rules", () => {
+  const { document, assets, hut } = maskAssetCompilerFixture();
+  const mask = hut.gameplay!.masks![0]!;
+  mask.characterBoundary = [
+    [40, 50, 5],
+    [45, 40, 5],
+    [50, 50, 5],
+  ];
+  mask.characterBoundaryClosed = false;
+  mask.projectileBoundary = [
+    [40, 55, 5],
+    [50, 60, 5],
+  ];
+  mask.projectileBoundaryClosed = false;
+  validateAssetGameplay(hut.gameplay, hut);
+  const compiled = compileAssetGameplay(document, assets, bounds).masks![0]!;
+  assert.deepEqual(compiled.character_polyline, [
+    [340, 345],
+    [345, 335],
+    [350, 345],
+  ]);
+  assert.deepEqual(compiled.projectile_polyline, [
+    [340, 355],
+    [350, 360],
+  ]);
+  mask.projectileBoundaryClosed = true;
+  assert.throws(() => validateAssetGameplay(hut.gameplay, hut), /mask boundary/);
+  delete mask.projectileBoundary;
+  assert.throws(() => validateAssetGameplay(hut.gameplay, hut), /mask boundary closure/);
+});
+
 test("asset mask geometry, rules and transitions compile entirely from local definitions", () => {
   const { document, assets } = maskAssetCompilerFixture();
   const first = compileAssetGameplay(document, assets, bounds);

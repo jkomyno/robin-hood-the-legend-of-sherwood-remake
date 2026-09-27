@@ -4,10 +4,21 @@ import { encodeMaskBitmap } from "./encode-mask-bitmap.ts";
 
 export type MaskTriangle = [Vec3, Vec3, Vec3];
 
-/** Front envelope of an authored closed boundary. Recomputed after placement,
+/** Front envelope of an authored boundary. Recomputed after placement,
  * so rotating a concave footprint does not leave a backwards masking polyline. */
-export function maskBoundaryPolyline(boundary: Point[]): Point[] {
-  const edges = boundary
+export function maskBoundaryPolyline(boundary: Point[], closed = true): Point[] {
+  if (!closed && boundary.length >= 2) {
+    const rounded = boundary.map(([x, y]): Point => [Math.round(x), Math.round(y)]);
+    const monotone = (points: Point[]) => points.every((p, i) => !i || p[0] >= points[i - 1]![0]);
+    if (rounded[0]![0] !== rounded.at(-1)![0]) {
+      // Retain authored vertical endpoints as well as interior steps. They
+      // carry bounds even when no nonvertical envelope segment ends there.
+      if (monotone(rounded)) return rounded;
+      const reversed = [...rounded].reverse();
+      if (monotone(reversed)) return reversed;
+    }
+  }
+  const edges = (closed ? boundary : boundary.slice(0, -1))
     .map((a, i) => [a, boundary[(i + 1) % boundary.length]!] as const)
     .filter(([a, b]) => a[0] !== b[0]);
   const at = ([a, b]: (typeof edges)[number], x: number) =>

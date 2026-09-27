@@ -372,13 +372,14 @@ export function compileAssetGameplay(
       if (!partSight.has(id))
         throw new Error(`Permanent movement solid ${placement.id}/${id} is hidden or missing`);
     for (const mask of gameplay.masks ?? []) {
-      const boundary = (points: Vec3[] | undefined, projected: boolean) =>
+      const boundary = (points: Vec3[] | undefined, projected: boolean, closed = true) =>
         points
           ? maskBoundaryPolyline(
               points.map((point): Point => {
                 const p = transform(mask.node, point);
                 return projected ? project(p) : [quantize(p[0]), quantize(p[1])];
               }),
+              closed,
             )
           : null;
       placedMasks.push({
@@ -395,9 +396,10 @@ export function compileAssetGameplay(
             (mask.projectileBoundary || mask.obstacles.length ? 2 : 0) |
             (mask.view ? 4 : 0) |
             (mask.obstacles.length ? 16 : 0),
-          character_polyline: boundary(mask.characterBoundary, true),
+          character_polyline: boundary(mask.characterBoundary, true, mask.characterBoundaryClosed),
           projectile_polyline:
-            boundary(mask.projectileBoundary, false) ?? (mask.obstacles.length ? [] : null),
+            boundary(mask.projectileBoundary, false, mask.projectileBoundaryClosed) ??
+            (mask.obstacles.length ? [] : null),
           obstacle_indices: mask.obstacles.map((id) => {
             const shape = partSight.get(id);
             if (!shape)
