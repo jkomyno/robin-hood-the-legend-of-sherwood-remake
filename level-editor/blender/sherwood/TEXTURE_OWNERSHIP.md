@@ -169,3 +169,18 @@ directory for scene comparisons and crops original art around each source view.
 Fresh synthesis packets use `texture_packets.py --root <new-packet-directory>`;
 the default is `textures/sunburst-masked`. The earlier unmasked packets and their
 four generated candidates remain historical evidence and are not reused.
+
+After the atlas-center bake, `screen_fill.py` projects actual first-hit fragments
+from the same eight frozen cameras into still-unknown atlas texels. This covers
+thin hoops and triangle edges whose texel centers miss the visible surface.
+Only generated-sheet pixels inside the editable and solid domains can supply
+color. The most facing view wins, with proximity to the atlas center breaking
+ties; colors are never averaged. Original-source texels, previously filled
+texels and physical alpha remain locked. Fragment transfer accepts any positive
+facing angle because it transfers an actual visible fragment; the center pass
+retains its stricter grazing-angle cutoff.
+
+Render the baked worker again in all eight cameras and inspect those renders.
+Report remaining unseen interior texels separately from visible unknown pixels:
+fully occluded internal faces are not evidence of a visible hole, and a zero
+visible count does not establish that every interior texel was synthesized.

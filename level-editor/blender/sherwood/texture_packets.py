@@ -18,7 +18,7 @@ from PIL import Image
 
 HERE = Path(__file__).resolve().parent
 EDITOR = HERE.parents[1]
-sys.path[:0] = [str(EDITOR/'refinement'), str(EDITOR/'refinement/blender'), str(EDITOR/'blender/lincoln')]
+sys.path[:0] = [str(HERE), str(EDITOR/'refinement'), str(EDITOR/'refinement/blender'), str(EDITOR/'blender/lincoln')]
 import render_slots  # Bind the shared FIFO pool before legacy helpers alter sys.path.
 import texture_unseen_fill as uf
 import global_reproject as gr
@@ -42,7 +42,9 @@ ACTUAL_TEXTURE_REVIEW = False
 
 def write(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2)+'\n')
+    temporary=path.with_name(path.name+f'.{os.getpid()}.tmp')
+    temporary.write_text(json.dumps(data, indent=2)+'\n')
+    temporary.replace(path)
 
 
 class Kind(str):
@@ -301,7 +303,7 @@ def prepare(source, only=None):
         print(json.dumps({'prepared':spec['id'],'unknown_texels':len(points),'coverage':coverage}),flush=True)
 
 
-def generate(only=None):
+def generate(only=None, prompt_suffix=''):
     """Run the repository's normal two-image Sunburst driver, four jobs at most."""
     from concurrent.futures import ThreadPoolExecutor
     experiments = [p.parent for p in sorted(ROOT.glob('*/preparation.json'))
@@ -327,6 +329,8 @@ def generate(only=None):
         command=['node',str(EDITOR/'pipeline/src/refinement/generate-textures.ts'),str(experiment),
                  '--generate','--prompt-variant','short','--no-mask',
                  '--provider',PROVIDER,
+                 '--prompt-suffix','This asset is '+manifest['target']['assets'][0].removeprefix('sherwood-').replace('-',' ')+
+                 '. Continue its existing materials onto missing surfaces; preserve the approved geometry and do not add objects. '+prompt_suffix,
                  '--lighting-reference',str(experiment/'solid.png')]
         env=dict(os.environ,NODE_USE_ENV_PROXY='1')
         result=subprocess.run(command,cwd=EDITOR.parent,env=env,text=True,capture_output=True)
@@ -351,6 +355,7 @@ def fill(source, output, only=None):
     """Bake generated candidates, protecting source RGB and every physical alpha."""
     import bpy
     import texture_combine as tc
+    from screen_fill import fill_visible_fragments
     source,output=Path(source).resolve(),Path(output).resolve()
     output.mkdir(parents=True,exist_ok=False)
     scene,provenance=open_source(source)
@@ -384,6 +389,7 @@ def fill(source, output, only=None):
             depth,_,_=raster(camera,target.corners,uf.SS)
             cameras.append((camera,depth))
         counts={'unknown':0,'generated':0,'unseen':0,'protected_changed':0,'physical_alpha_changed':0}
+        interior_masks={}
         for record in target.receivers:
             obj=record['object']
             for slot in np.unique(record['slots']):
@@ -392,8 +398,12 @@ def fill(source, output, only=None):
                 wrote = False
                 uv=gr.slot_uvs(obj,binding['uv'])
                 interiors=np.zeros(atlas.shape[:2],dtype=bool)
-                for _,rr,cc,_,_,inside in gr.islands(record,uv,image.size,lambda group:record['slots'][group[0]]==slot):
+                region_interiors=np.zeros(atlas.shape[:2],dtype=bool)
+                for _,rr,cc,pp,_,inside in gr.islands(record,uv,image.size,lambda group:record['slots'][group[0]]==slot):
                     interiors[rr[inside],cc[inside]]=True
+                    scoped=inside & target.in_region(obj,pp)
+                    region_interiors[rr[scoped],cc[scoped]]=True
+                interior_masks[image.name]=region_interiors
                 for face,rows,cols,positions,normals,inside in gr.islands(record,uv,image.size,lambda group:record['slots'][group[0]]==slot):
                     unknown=island_unknown(kind,atlas,rows,cols,normals,record['face_normals'][face],gr)
                     unknown &= inside | ~interiors[rows,cols]
@@ -443,6 +453,30 @@ def fill(source, output, only=None):
                     image.alpha_mode = 'CHANNEL_PACKED'
                     atlas[kind.mask != 1, 3] = 0
                 gr.write_image(image,atlas)
+        # Unlike projecting an atlas center across a nearly edge-on face, this
+        # pass transfers only actual first-hit raster fragments. Retain those
+        # narrow visible edges instead of dropping them at the center-pass floor.
+        corrected=fill_visible_fragments(target,cameras,sheet,solid,editable,raster,gr,uf.SS,1e-8)
+        counts['screen_corrected_texels']=sum(corrected.values())
+        counts['unseen_after_screen_correction']=sum(int(((kind.mask==0)&interior_masks[image.name]).sum())
+            for image,kind in zip(target.images,target.image_kind) if kind and image.name in interior_masks)
+        for record in target.receivers:
+            obj=record['object']
+            for slot in np.unique(record['slots']):
+                binding,kind=fillable(scene,obj,int(slot))
+                if binding['image'].name not in corrected:continue
+                material=binding['material']
+                material['source_ownership_fill']='synthesized'
+                material['texture_review_status']='candidate-review-pending'
+                evidence={'sha256':uf.sha(experiment/GENERATION/'generated-preserved.png'),
+                          'views_sha256':uf.sha(experiment/'views.json')}
+                sources=json.loads(material.get('generated_sources_json','[]'))
+                if evidence not in sources:sources.append(evidence)
+                material['generated_sources_json']=json.dumps(sources,sort_keys=True)
+                material['generated_source_sha256']=evidence['sha256']
+                material['generated_camera_manifest']=str(experiment/'views.json')
+                material['generated_input_sha256']=uf.sha(experiment/'input.png')
+                if not kind.physical:binding['image'].alpha_mode='CHANNEL_PACKED'
         reports.append({'asset':experiment.name,'counts':counts,'generation_directory':GENERATION,
                         'generated_sha256':uf.sha(experiment/GENERATION/'generated-preserved.png'),
                         'views_sha256':uf.sha(experiment/'views.json')})
@@ -505,6 +539,7 @@ if __name__ == '__main__':
     parser.add_argument('--asset',action='append')
     parser.add_argument('--generate',action='store_true')
     parser.add_argument('--provider',choices=['openai','openrouter'],default='openrouter')
+    parser.add_argument('--prompt-suffix',default='')
     parser.add_argument('--fill',metavar='OUTPUT')
     parser.add_argument('--review',metavar='CANDIDATE')
     args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else sys.argv[1:])
@@ -513,7 +548,7 @@ if __name__ == '__main__':
     PROVIDER=args.provider
     GENERATION='generation-short-no-mask-with-lighting'+('-openrouter' if PROVIDER=='openrouter' else '')
     if args.generate:
-        generate(args.asset)
+        generate(args.asset,args.prompt_suffix)
     elif args.review:
         review(args.review, args.asset)
     elif args.fill:

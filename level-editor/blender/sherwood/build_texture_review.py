@@ -74,8 +74,9 @@ def main(candidate, experiments, inspections, output):
         })
         notes = [
             'Existing Sherwood reconstruction, fully reprojected from original artwork before synthesis.',
-            f"Generated {row['counts']['generated']} of {row['counts']['unknown']} unknown interior texels; "
-            f"{row['counts']['unseen']} remain outside the generated views.",
+            f"Center projection filled {row['counts']['generated']} of {row['counts']['unknown']} unknown interior texels; "
+            f"visible-fragment correction filled {row['counts'].get('screen_corrected_texels', 0)} additional atlas texels. "
+            f"{row['counts'].get('unseen_after_screen_correction', row['counts']['unseen'])} interior texels remain unseen.",
             f"Actual review views contain {receipt['residual_unknown_pixels']} unknown pixels.",
             *inspection.get('notes', []),
         ]
