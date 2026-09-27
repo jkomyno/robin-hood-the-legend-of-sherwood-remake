@@ -41,7 +41,21 @@ class AssetIndexTest(unittest.TestCase):
         self.assertEqual(index['assets'][0]['tags'], ['building'])
         self.assertEqual(index['assets'][0]['model_scene'], 'default')
         self.assertEqual(index['assets'][0]['asset_type'], 'house')
+        self.assertEqual(index['assets'][0]['descriptor_sha256'],
+                         hashlib.sha256((self.asset/'asset.json').read_bytes()).hexdigest())
         self.assertEqual((self.root/'index.json').read_bytes(), self.previous)
+
+    def test_editor_projection_excludes_reconstruction_evidence(self):
+        descriptor = {**self.descriptor, 'version': 1, 'kind': 'projection-mapped-asset',
+                      'parts': [{'node': 'building-000', 'name': 'Wall', 'source_obstacle': 0,
+                                 'obstacle_local_game': {'points': []},
+                                 'reprojection_source_path': '/private/review.png'}],
+                      'components': [{'reprojection_source_path': '/private/review.png'}]}
+        (self.asset/'asset.json').write_text(json.dumps(descriptor))
+        editor = write_asset_index(self.root)['assets'][0]['editor']
+        self.assertEqual(editor['parts'][0]['source_obstacle'], 0)
+        self.assertNotIn('reprojection_source_path', editor['parts'][0])
+        self.assertNotIn('components', editor)
 
     def test_directory_addition_removal_and_descriptor_edits_change_catalog(self):
         other = self.root/'another'; shutil.copytree(self.asset, other)

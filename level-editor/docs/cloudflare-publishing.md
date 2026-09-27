@@ -39,14 +39,15 @@ Library publication regenerates the catalog from directory descriptors and
 fails for missing or stale lossy models, external runtime GLB resources, stale
 map pins, or files exceeding Cloudflare's static asset limits. It uploads only:
 
-- Optimized models, palette previews, and asset descriptors.
-- A generated asset catalog containing verified original-model hashes.
+- Optimized models and palette previews.
+- A generated asset catalog containing the editor fields, descriptor hashes, and verified original-model hashes.
 - Published maps and their generated listing.
 - Population sprite catalogs filtered to referenced sprites, and those images.
 
-Original models, receipts, source textures/buffers, backups, blobs, and authoring
-files are excluded. Original paths and hashes remain identities in descriptors
-and saved maps; the editor renders optimized models without fetching originals.
+Original models, asset descriptors, receipts, source textures/buffers, backups,
+blobs, and authoring files are excluded. Original paths and hashes remain
+identities in the catalog and saved maps; the editor renders optimized models
+without fetching originals.
 The source library is never modified. `report.json` records each uploaded
 payload's hash and size and remains outside the public assets directory.
 

@@ -19,968 +19,674 @@
     {
       "model": "3d-assets/leicester/leicester-great-keep/model.glb",
       "model_sha256": "35111663282fafd6bddcdf2afa47c1b0370bf890c6d90c03b094602989e3fbbf",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-great-keep/asset.json",
       "descriptor_sha256": "296a55adf75a370df1f162e6c89fd9c1e067a5fd3498e46bffa54ed251de1260",
-      "id": "leicester-great-keep",
-      "model_scene": "default"
+      "id": "leicester-great-keep"
     },
     {
       "model": "3d-assets/derby/derby-south-gatehouse/model.glb",
       "model_sha256": "0e1ef6a50aa2461936bea16c3603a35b8ac1716508f1b44c5890eb70ba539a56",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-south-gatehouse/asset.json",
       "descriptor_sha256": "d093e1efe60f7576b7e608c3c348e62fdf03efc0fd1719efcb7305963cd2f912",
-      "id": "derby-south-gatehouse",
-      "model_scene": "default"
+      "id": "derby-south-gatehouse"
     },
     {
       "model": "3d-assets/derby/derby-east-courtyard-north-shelter/model.glb",
       "model_sha256": "ffc75e462d982c6b859c6e6e0d75d39e599795495d59ce18c501823e8c4df456",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-east-courtyard-north-shelter/asset.json",
       "descriptor_sha256": "690f7997a4393952692ba4de6a1630b40f391e6a0e23cb8b0fa89b2db4cf071b",
-      "id": "derby-east-courtyard-north-shelter",
-      "model_scene": "default"
+      "id": "derby-east-courtyard-north-shelter"
     },
     {
       "model": "3d-assets/leicester/leicester-church/model.glb",
       "model_sha256": "bfa179a0b08ad0248e0dac1918b6103bb1fe10c2c5b492a47572b8577d3d6bff",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-church/asset.json",
       "descriptor_sha256": "1faadc1ed5256df6e7f115af131507d93b13c66f6b1d8222f5a9a51e3a8938e5",
-      "id": "leicester-church",
-      "model_scene": "default"
+      "id": "leicester-church"
     },
     {
       "model": "3d-assets/leicester/leicester-church-west-archway/model.glb",
       "model_sha256": "fb87cb99c06c212cb457f4c72aecebba1ee441b320034f8c5c2402d1c74a7b58",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-church-west-archway/asset.json",
       "descriptor_sha256": "7c2af137bd9cc2222073a7c402fd496401d0e22f7b4b5c485960e1fdef3fdb35",
-      "id": "leicester-church-west-archway",
-      "model_scene": "default"
+      "id": "leicester-church-west-archway"
     },
     {
       "model": "3d-assets/leicester/leicester-south-hall/model.glb",
       "model_sha256": "911e8b958895edb864820bfae9843c0cc85b08e4f11fb806220c7879afd00879",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-hall/asset.json",
       "descriptor_sha256": "70c00f64479edc32e184fa0953cda3f9247b38036d81bf06692e65312acd6ddc",
-      "id": "leicester-south-hall",
-      "model_scene": "default"
+      "id": "leicester-south-hall"
     },
     {
       "model": "3d-assets/leicester/leicester-north-village-cottage/model.glb",
       "model_sha256": "44c31f284d5c8c923669b2a84c77c6e70453726d0905987fc62407293ad7ca88",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-north-village-cottage/asset.json",
       "descriptor_sha256": "d65644b4e751c9ea103088f282adc74e5c984e2fa93c0ee3a1d2826cff18d116",
-      "id": "leicester-north-village-cottage",
-      "model_scene": "default"
+      "id": "leicester-north-village-cottage"
     },
     {
       "model": "3d-assets/leicester/leicester-northeast-gabled-house/model.glb",
       "model_sha256": "0b148ca23e32eac4a33137fcac277d050fe2c150527cc6b03a408228990a98f2",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northeast-gabled-house/asset.json",
       "descriptor_sha256": "2c8944198f80292b3c3838b0be68f60401dfd3e0168dfea8bcc4a8b13ab91950",
-      "id": "leicester-northeast-gabled-house",
-      "model_scene": "default"
+      "id": "leicester-northeast-gabled-house"
     },
     {
       "model": "3d-assets/leicester/leicester-east-edge-thatched-house/model.glb",
       "model_sha256": "7c410b4d580bfc3c646c845cd41b5a48f7e08642a9f50856cf851c4f0533c6af",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-edge-thatched-house/asset.json",
       "descriptor_sha256": "ecdddc33d7694cf9a39bb7eb8cc874958faa279a0295309d29108dfa9ffa173f",
-      "id": "leicester-east-edge-thatched-house",
-      "model_scene": "default"
+      "id": "leicester-east-edge-thatched-house"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-cottage/model.glb",
       "model_sha256": "d64f95d585b5abcd664268269a6fd9ed9ac1f48ed1302fff0f613a64c65660bc",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-cottage/asset.json",
       "descriptor_sha256": "e2a23bec0dc737f3309546ea9883845ce1d4af03a12c72d185bd8fb252805767",
-      "id": "leicester-mill-south-cottage",
-      "model_scene": "default"
+      "id": "leicester-mill-south-cottage"
     },
     {
       "model": "3d-assets/leicester/leicester-east-riverside-house/model.glb",
       "model_sha256": "bc034dff2d90c76aeec7e86bcdfc8e00350a008386b3fc16fd49f75a54e7972b",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-riverside-house/asset.json",
       "descriptor_sha256": "45280c62c8a9cfe4be24a6135b614ec9898959a1ccfc7b5b35c1b229e5eedd20",
-      "id": "leicester-east-riverside-house",
-      "model_scene": "default"
+      "id": "leicester-east-riverside-house"
     },
     {
       "model": "3d-assets/leicester/leicester-northeast-longhouse/model.glb",
       "model_sha256": "23b1f47bf4922afdb9d8d9a2f3274168033a183a8c5872f4d9402ee2b4dddd17",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northeast-longhouse/asset.json",
       "descriptor_sha256": "9337bf1e3a8584d6af4260300aecba04e50693141e43a400272f0c93b57c93fb",
-      "id": "leicester-northeast-longhouse",
-      "model_scene": "default"
+      "id": "leicester-northeast-longhouse"
     },
     {
       "model": "3d-assets/leicester/leicester-southeast-cottage/model.glb",
       "model_sha256": "b68847e1ccf1b03c7924d023d6a9ab81005b1a361078b8374f5e976209795ba7",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southeast-cottage/asset.json",
       "descriptor_sha256": "4bebd56eaebf846059613c85f2f9aedb2dd6533c351b584e71fa3595dab39637",
-      "id": "leicester-southeast-cottage",
-      "model_scene": "default"
+      "id": "leicester-southeast-cottage"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-north-cottage/model.glb",
       "model_sha256": "5861c93b88d03c1fce1280d61d43df657a12e61f304a383a9bcd0205996902de",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-north-cottage/asset.json",
       "descriptor_sha256": "bcfa82db64828449a37e063fa5fc5416dc78e070e7a26a5fc718defca22cc9db",
-      "id": "leicester-mill-north-cottage",
-      "model_scene": "default"
+      "id": "leicester-mill-north-cottage"
     },
     {
       "model": "3d-assets/leicester/leicester-southeast-manor/model.glb",
       "model_sha256": "fbc603916f6a3faff90b00eb379d181f155ccd6addb6ee48dd818514f7c391a7",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southeast-manor/asset.json",
       "descriptor_sha256": "be021440ed78045aca87d0bb6f93f50b95dfda1248c1745f82e0463b7fe833cd",
-      "id": "leicester-southeast-manor",
-      "model_scene": "default"
+      "id": "leicester-southeast-manor"
     },
     {
       "model": "3d-assets/leicester/leicester-watermill/model.glb",
       "model_sha256": "ba0b9fc1d5047e0bffc876e357408270651414e3d31c8190bee86466a133dc11",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-watermill/asset.json",
       "descriptor_sha256": "7e8d5d64ca334981ea7c395a96d9c7a44f013cd4b6ab4d540c314a4a5baa9419",
-      "id": "leicester-watermill",
-      "model_scene": "default"
+      "id": "leicester-watermill"
     },
     {
       "model": "3d-assets/leicester/leicester-south-stilt-shed/model.glb",
       "model_sha256": "bf68168185cc1ec733ba389a6bc0cd3691a16bc481836ac691d0f2770edde626",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-stilt-shed/asset.json",
       "descriptor_sha256": "54c110bcd900e01b45b411ebb908845041a78a29b9d023d8e5b364684169b897",
-      "id": "leicester-south-stilt-shed",
-      "model_scene": "default"
+      "id": "leicester-south-stilt-shed"
     },
     {
       "model": "3d-assets/leicester/leicester-east-village-footbridge/model.glb",
       "model_sha256": "0612d8742eff8b8fff4dd72af8e68becdb88ed282ac8144592bf45bdbcb9a822",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-village-footbridge/asset.json",
       "descriptor_sha256": "4d709baded31cec4595fdca9d82f4c1690e1bb2219de970b7e4b03b6e5dd91e1",
-      "id": "leicester-east-village-footbridge",
-      "model_scene": "default"
+      "id": "leicester-east-village-footbridge"
     },
     {
       "model": "3d-assets/leicester/leicester-south-footbridge/model.glb",
       "model_sha256": "9e81173f4bdd87ea6bb515fdb3dc8b5e9211372fe05b4ffea7ad56da875a39bc",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-footbridge/asset.json",
       "descriptor_sha256": "5b378f231a4118fbf5da3a874a81e232fc54f9a499e87365487fc1980f43031c",
-      "id": "leicester-south-footbridge",
-      "model_scene": "default"
+      "id": "leicester-south-footbridge"
     },
     {
       "model": "3d-assets/derby/derby-lower-east-cottage/model.glb",
       "model_sha256": "997d331d7c763c2d8ffcc27a354c0749a36af884e53247fc8c5d2aaf6808c750",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-east-cottage/asset.json",
       "descriptor_sha256": "8bbb300c87b8a57e9ded3f602ad2dbe4a81bab242fd38111fb7ba9cdbe4f7c27",
-      "id": "derby-lower-east-cottage",
-      "model_scene": "default"
+      "id": "derby-lower-east-cottage"
     },
     {
       "model": "3d-assets/derby/derby-lower-northwest-cottage/model.glb",
       "model_sha256": "7dbc15a728ecf12ef3235163d185f15b685e23857b5e15543690cafe0973c967",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-northwest-cottage/asset.json",
       "descriptor_sha256": "39a722e12fbdf137a2269b6298957610f25015e43fb9537e9ca061426f2b7acc",
-      "id": "derby-lower-northwest-cottage",
-      "model_scene": "default"
+      "id": "derby-lower-northwest-cottage"
     },
     {
       "model": "3d-assets/derby/derby-lower-southeast-cottage/model.glb",
       "model_sha256": "f6975b27e53d77c5f7c06ba91d8748607d874ee142432469984a3dab83124985",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-southeast-cottage/asset.json",
       "descriptor_sha256": "b0b17ade98fb03924b8406d999dec03649a53309710417ff49f92e45a6557db8",
-      "id": "derby-lower-southeast-cottage",
-      "model_scene": "default"
+      "id": "derby-lower-southeast-cottage"
     },
     {
       "model": "3d-assets/derby/derby-lower-southwest-cottage/model.glb",
       "model_sha256": "32aa7237d1e8d946f8e3283e1f46079caa944b557cfb35fea29a0f70a0b85918",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-southwest-cottage/asset.json",
       "descriptor_sha256": "3b86679a21fdad1dffcbb7250c1abf03b51e1bd765bcdbd99d4f6f3bca801f91",
-      "id": "derby-lower-southwest-cottage",
-      "model_scene": "default"
+      "id": "derby-lower-southwest-cottage"
     },
     {
       "model": "3d-assets/derby/derby-lower-west-cottage/model.glb",
       "model_sha256": "7d3615a851ace3c8aab726fb21375e3317fb5cb36cfce023d4dd015d9f978bc5",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-west-cottage/asset.json",
       "descriptor_sha256": "0120225ad4ce7982746d2398b9a3b8326f0fb2f199d8f4e64d0871d4ccfa22c9",
-      "id": "derby-lower-west-cottage",
-      "model_scene": "default"
+      "id": "derby-lower-west-cottage"
     },
     {
       "model": "3d-assets/derby/derby-east-courtyard-south-shelter/model.glb",
       "model_sha256": "93ba61a1d3005b609fcfaf6b042381211e836024b4c30381f4c9c40b50a50514",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-east-courtyard-south-shelter/asset.json",
       "descriptor_sha256": "0c7b3dd4fa56dbb9fa3032a0a2a72ebc857f9bf75e9080d6e82bd89c19ef3969",
-      "id": "derby-east-courtyard-south-shelter",
-      "model_scene": "default"
+      "id": "derby-east-courtyard-south-shelter"
     },
     {
       "model": "3d-assets/leicester/leicester-village-well/model.glb",
       "model_sha256": "4ef7ef15a9c66f5dcd338b273febe287e9d9ef9a1abfc2cbb3cb26b7e5b07903",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-village-well/asset.json",
       "descriptor_sha256": "b2dc089d41d9a0ed007d66fa68f988c76ac121f0bde95238e65dc829b7f8ab16",
-      "id": "leicester-village-well",
-      "model_scene": "default"
+      "id": "leicester-village-well"
     },
     {
       "model": "3d-assets/leicester/leicester-northeast-handcart/model.glb",
       "model_sha256": "92eda64c9a1e3d112a1215e78206f2d55651cc24edd695942fbdb47e2e09c001",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northeast-handcart/asset.json",
       "descriptor_sha256": "c5e4ab9cba60c2399ef34a35088932c214e60417f1f2b431105a062295e094ac",
-      "id": "leicester-northeast-handcart",
-      "model_scene": "default"
+      "id": "leicester-northeast-handcart"
     },
     {
       "model": "3d-assets/derby/derby-lower-east-supplies/model.glb",
       "model_sha256": "0c2dc3c15ac37e415f6ddf6d4a1ee815cf760fccadf4f52deacac7f050f70ceb",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-east-supplies/asset.json",
       "descriptor_sha256": "0e4576ff94502054bca8542cbe31d812538a727a35857a202ab1f78e3c6e8423",
-      "id": "derby-lower-east-supplies",
-      "model_scene": "default"
+      "id": "derby-lower-east-supplies"
     },
     {
       "model": "3d-assets/leicester/leicester-village-well-bucket/model.glb",
       "model_sha256": "0e5124c78f6452626cb820c4f7162e09b9072f5e47f4424eeabe7237a8e8eb15",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-village-well-bucket/asset.json",
       "descriptor_sha256": "e8d0072d50b93ed6ad1fa0d0d297e87e0cc44ac4c9a17802a3a9afa700b8ea03",
-      "id": "leicester-village-well-bucket",
-      "model_scene": "default"
+      "id": "leicester-village-well-bucket"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-well/model.glb",
       "model_sha256": "c30b4ba6bbfdd5fb801e576809accf56fc63aa572394a664ec82b0c63864bffb",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-east-bailey-well/asset.json",
       "descriptor_sha256": "768a6439d0db996c9c6fc6de546ec734387ca86dfb28d971faaeb0bfaf86cda9",
-      "id": "derby-east-bailey-well",
-      "model_scene": "default"
+      "id": "derby-east-bailey-well"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-stacked-timber/model.glb",
       "model_sha256": "c2000c521574d8173947e19c0da4f2b4467698cda7bbc932d8617b01fd22c992",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-east-bailey-stacked-timber/asset.json",
       "descriptor_sha256": "cb63543d3a07b1f92788d94289c8ee051d215929e9ebcc1428dcb0b382bd0a57",
-      "id": "derby-east-bailey-stacked-timber",
-      "model_scene": "default"
+      "id": "derby-east-bailey-stacked-timber"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-yard-prop/model.glb",
       "model_sha256": "13f7e4ba691d114c311c41d04a2ea30f41454a8e355caa9187bc065256d3895b",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-east-bailey-yard-prop/asset.json",
       "descriptor_sha256": "84753c7cab8e90541b3c7806c7eddfde3122f36b7816dd5e2c9a54fb91816945",
-      "id": "derby-east-bailey-yard-prop",
-      "model_scene": "default"
+      "id": "derby-east-bailey-yard-prop"
     },
     {
       "model": "3d-assets/leicester/leicester-courtyard-well/model.glb",
       "model_sha256": "d16412c7fc2b7f05c167613862943526923e9e1fc15ffd4f24ac35e3c5aa42d5",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-courtyard-well/asset.json",
       "descriptor_sha256": "018ef396b382888111d8fa849b46af11234eb3b1e9c79d4c4acc1bb677fc4314",
-      "id": "leicester-courtyard-well",
-      "model_scene": "default"
+      "id": "leicester-courtyard-well"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-trough/model.glb",
       "model_sha256": "54a8983ec2239c23e4229a40a4a7c943158e6f4fd6961d5658535c1b042465f6",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-trough/asset.json",
       "descriptor_sha256": "eb0ad108f8b73aa343eaa31db923a2b5399fbe3164e50e5e198f6d6d596d0190",
-      "id": "leicester-mill-south-trough",
-      "model_scene": "default"
+      "id": "leicester-mill-south-trough"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-north-trough/model.glb",
       "model_sha256": "256b6c9a77284067af50d490346d915def937c21a5bb356b24fe2d2dc83c3c2a",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-north-trough/asset.json",
       "descriptor_sha256": "f6a085af20d7777e88e5e4d4c531e33e5b4546664503d8b96ddbde15ab81ff53",
-      "id": "leicester-mill-north-trough",
-      "model_scene": "default"
+      "id": "leicester-mill-north-trough"
     },
     {
       "model": "3d-assets/derby/derby-lower-northwest-wash-tub/model.glb",
       "model_sha256": "f9f97e847c734fb4bcc3f69b2ca9d21ce2401f265c583b9211b28005d9ac6e58",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-northwest-wash-tub/asset.json",
       "descriptor_sha256": "a515e0d960a76826e9bb81fc58a34ca455dccfbac376bc53e0c0a98e086fdf54",
-      "id": "derby-lower-northwest-wash-tub",
-      "model_scene": "default"
+      "id": "derby-lower-northwest-wash-tub"
     },
     {
       "model": "3d-assets/derby/derby-lower-courtyard-prop/model.glb",
       "model_sha256": "7fcf3c6a575d419ea6214728836ede5b225738591154227d6e1b6c9bca97cdee",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-courtyard-prop/asset.json",
       "descriptor_sha256": "c33fbd6e0a003c84a84e51a3209e01a732ede1c589c54ff8b5606aad7199bfe1",
-      "id": "derby-lower-courtyard-prop",
-      "model_scene": "default"
+      "id": "derby-lower-courtyard-prop"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-bucket/model.glb",
       "model_sha256": "6be0bf106b6e054612ab64743b3fbb86d470b28c78b9b6a9d033b1c5a896f0d2",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-bucket/asset.json",
       "descriptor_sha256": "1b62cf414d234775ffcee6591b751e438e08075e56491b6df8801d7349505c4f",
-      "id": "leicester-mill-south-bucket",
-      "model_scene": "default"
+      "id": "leicester-mill-south-bucket"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-barrel/model.glb",
       "model_sha256": "7f8e18d7512045160ac3e565c389da8aa31ff16c25f1059fbafe21b3529f3950",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-barrel/asset.json",
       "descriptor_sha256": "86c4fc3436b1c3914abcfe0fa5481be23f6b5f537a14e0aabba434f57d11d857",
-      "id": "leicester-mill-south-barrel",
-      "model_scene": "default"
+      "id": "leicester-mill-south-barrel"
     },
     {
       "model": "3d-assets/leicester/leicester-east-riverside-hay-mound/model.glb",
       "model_sha256": "f73f115dee48c78336474c3c95ce62e7176214cdbe3349094df5ae4c86fcc113",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-riverside-hay-mound/asset.json",
       "descriptor_sha256": "4ee6498459dfa7fd87156f3fbbb588695948b3fcb534b11eee26b6509f399abb",
-      "id": "leicester-east-riverside-hay-mound",
-      "model_scene": "default"
+      "id": "leicester-east-riverside-hay-mound"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-crate/model.glb",
       "model_sha256": "4bbd5e49d64e969be6a7d597b9b1f195fab1b7a50af0905eb0f57273927286ec",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-east-bailey-crate/asset.json",
       "descriptor_sha256": "56b0937ce8696d377caa40ed64b219e620b95398395d2181023ee95bf46ce123",
-      "id": "derby-east-bailey-crate",
-      "model_scene": "default"
+      "id": "derby-east-bailey-crate"
     },
     {
       "model": "3d-assets/leicester/leicester-southeast-cottage-barrel/model.glb",
       "model_sha256": "847d54be711b42893c69f7d24ead0973c0b6dd2490799a4e7dfd695b9b6e6377",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southeast-cottage-barrel/asset.json",
       "descriptor_sha256": "2cf3ac36390371529285d378cd1b0f1e5a121ca29ad6ca273f1ae73fcac827fe",
-      "id": "leicester-southeast-cottage-barrel",
-      "model_scene": "default"
+      "id": "leicester-southeast-cottage-barrel"
     },
     {
       "model": "3d-assets/derby/derby-lower-east-cottage-barrel/model.glb",
       "model_sha256": "d68b768e2b69dd873c6c72874f6f0f4291319c0ce7bdea58b87f3f1d040d7d6d",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-east-cottage-barrel/asset.json",
       "descriptor_sha256": "4d283391616c5d24ea5adee3001bb3aedd8fa27081568dcdf296dd1adaf2e9a0",
-      "id": "derby-lower-east-cottage-barrel",
-      "model_scene": "default"
+      "id": "derby-lower-east-cottage-barrel"
     },
     {
       "model": "3d-assets/derby/derby-lower-northwest-cottage-barrel/model.glb",
       "model_sha256": "2b0aa6d4a267fe8e0a0796aef95ce2e6db86f1cd92705be85a945b038d0741c6",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-northwest-cottage-barrel/asset.json",
       "descriptor_sha256": "a6fe15c00b6ac1e65caee2aaf553921f96cef50f212dde8470d1c4d9be2ef7eb",
-      "id": "derby-lower-northwest-cottage-barrel",
-      "model_scene": "default"
+      "id": "derby-lower-northwest-cottage-barrel"
     },
     {
       "model": "3d-assets/leicester/leicester-north-village-field-fence/model.glb",
       "model_sha256": "7d283393f16cb57b5077705f48fe3a5d52c319cd6d5de22b79a2cd745ec74769",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-north-village-field-fence/asset.json",
       "descriptor_sha256": "7cbf2055783f46fd0b0478b738b012b53a56f16e3c793964fea70a5e5f03d58a",
-      "id": "leicester-north-village-field-fence",
-      "model_scene": "default"
+      "id": "leicester-north-village-field-fence"
     },
     {
       "model": "3d-assets/leicester/leicester-south-cottage-garden-fence/model.glb",
       "model_sha256": "c2053d04800ce5b8a2309233be9e37313791fad40af6beb46e5b0b8015bbbfc4",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-cottage-garden-fence/asset.json",
       "descriptor_sha256": "0c29fd160810afa72d63aa0303d5c116bb337d4773ed62e230903f6cca872488",
-      "id": "leicester-south-cottage-garden-fence",
-      "model_scene": "default"
+      "id": "leicester-south-cottage-garden-fence"
     },
     {
       "model": "3d-assets/leicester/leicester-roadside-rail-fence/model.glb",
       "model_sha256": "e69a081afdcdad6c1490dfa3b80ec7f48aa269f3727fdf6fcbb370fd089c7aaa",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-roadside-rail-fence/asset.json",
       "descriptor_sha256": "0f925c9555bf91ee3574a7bd45cf1ade67a5ca9dbd6ef54050ee43e27c47a385",
-      "id": "leicester-roadside-rail-fence",
-      "model_scene": "default"
+      "id": "leicester-roadside-rail-fence"
     },
     {
       "model": "3d-assets/leicester/leicester-northeast-field-boundary/model.glb",
       "model_sha256": "5e1ba173d5890ada3db1e98951cbbd9a82d102ae11b301f7365906494ab14b67",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northeast-field-boundary/asset.json",
       "descriptor_sha256": "8f8b7a2dd2553589b28d7c2f64fdf37f028b51350c215258b823b4bbf7b9a421",
-      "id": "leicester-northeast-field-boundary",
-      "model_scene": "default"
+      "id": "leicester-northeast-field-boundary"
     },
     {
       "model": "3d-assets/derby/derby-lower-northwest-yard-fence/model.glb",
       "model_sha256": "cded84764442a0a6c1dbd00c96580cff379bc0aadacb5ef985d13929da02c253",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-northwest-yard-fence/asset.json",
       "descriptor_sha256": "72d405e2b8e5b5b5435eef70c2390ce03f93109798efaa2635c6bf056602356b",
-      "id": "derby-lower-northwest-yard-fence",
-      "model_scene": "default"
+      "id": "derby-lower-northwest-yard-fence"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-yard-wall/model.glb",
       "model_sha256": "c22f0a808a2cc3abd7161b74bbc48fe13d69034768513c381c040fbfd8ed87c7",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-yard-wall/asset.json",
       "descriptor_sha256": "c903c750c07b416faf6c136a941c7a9b637a2eb1056863516d5a830c1b6d196d",
-      "id": "leicester-mill-south-yard-wall",
-      "model_scene": "default"
+      "id": "leicester-mill-south-yard-wall"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-path-boundary-wall/model.glb",
       "model_sha256": "b871e28a5597bcece5e1cae9c4330b4161b2f1970c24ebc1063ea40fe259afca",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-path-boundary-wall/asset.json",
       "descriptor_sha256": "75fd58f81eec3717676555f4320b68b59d7886aad8fbdb584d526b79e797f5bc",
-      "id": "leicester-mill-path-boundary-wall",
-      "model_scene": "default"
+      "id": "leicester-mill-path-boundary-wall"
     },
     {
       "model": "3d-assets/leicester/leicester-church-courtyard-wall/model.glb",
       "model_sha256": "b3542e12138888183978a5362f7536d4e4375326a069edb6a2b22a4b937a5668",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-church-courtyard-wall/asset.json",
       "descriptor_sha256": "687f84144d68687005e22050fe7ea9910cd295218b274c39af5e736751c2c34b",
-      "id": "leicester-church-courtyard-wall",
-      "model_scene": "default"
+      "id": "leicester-church-courtyard-wall"
     },
     {
       "model": "3d-assets/leicester/leicester-southwest-woodland-bank/model.glb",
       "model_sha256": "48ce68ecbe58ea6b1db1f27c05cb829fa10fc8f99154bf1cb5abd71fc7c68b32",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southwest-woodland-bank/asset.json",
       "descriptor_sha256": "339457a70044219f81e24c7c640baca6ee6faab29c4b27a173ba985e1e47af76",
-      "id": "leicester-southwest-woodland-bank",
-      "model_scene": "default"
+      "id": "leicester-southwest-woodland-bank"
     },
     {
       "model": "3d-assets/leicester/leicester-southwest-edge-bank/model.glb",
       "model_sha256": "fd421f54a1e523dd64be6dd7379e168a0a18992e71a76fd8937e35ba0951fa09",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southwest-edge-bank/asset.json",
       "descriptor_sha256": "af583db30eed17958e66ced4a6cf33d1da4a7224736dd93424965b26bfba109c",
-      "id": "leicester-southwest-edge-bank",
-      "model_scene": "default"
+      "id": "leicester-southwest-edge-bank"
     },
     {
       "model": "3d-assets/leicester/leicester-southwest-field-bank/model.glb",
       "model_sha256": "84d9e38e12e73e4c51e584a88e56de42000797dda6e270d27f1af0074fd83464",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southwest-field-bank/asset.json",
       "descriptor_sha256": "3b651f01947f29a4d47b819629446c2035fb627c11ff34865eda6fbff60374a7",
-      "id": "leicester-southwest-field-bank",
-      "model_scene": "default"
+      "id": "leicester-southwest-field-bank"
     },
     {
       "model": "3d-assets/leicester/leicester-south-edge-field-bank/model.glb",
       "model_sha256": "6779d8f5dce78edd5924e8d8d8fdc7a488d55be643406220c523f53f62e2d104",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-edge-field-bank/asset.json",
       "descriptor_sha256": "84313671fefb05b7b91effe0df3f32f9731a7200c5b382cf8ec44d188523687f",
-      "id": "leicester-south-edge-field-bank",
-      "model_scene": "default"
+      "id": "leicester-south-edge-field-bank"
     },
     {
       "model": "3d-assets/leicester/leicester-south-field-corner-bank/model.glb",
       "model_sha256": "772a4fb7f794b67a107dfc1d099c52318c528ced4466ac983f143fd6a848e2f7",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-field-corner-bank/asset.json",
       "descriptor_sha256": "55e256dd6c881007eeb6cd8d118f15021f6504029b8c4cb671bb949c83beac4d",
-      "id": "leicester-south-field-corner-bank",
-      "model_scene": "default"
+      "id": "leicester-south-field-corner-bank"
     },
     {
       "model": "3d-assets/leicester/leicester-south-field-corner-rock/model.glb",
       "model_sha256": "2c5744db90742e70355757da5569b265a99561ad614b2098c4389a27671e4165",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-field-corner-rock/asset.json",
       "descriptor_sha256": "2e16dbff8a6ca00107fe8c2fdca392e4ad4ff64a1a772d664c51007d381cc833",
-      "id": "leicester-south-field-corner-rock",
-      "model_scene": "default"
+      "id": "leicester-south-field-corner-rock"
     },
     {
       "model": "3d-assets/leicester/leicester-south-fence-end-rock/model.glb",
       "model_sha256": "f60742d92f807ba0387f3fb5f8099e418ae8f1592028aaf7d22177bb406715d3",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-fence-end-rock/asset.json",
       "descriptor_sha256": "ee4af4cf5f9a94fc1ceefd7906c177be1e6200fe62b243740854b513a31712c5",
-      "id": "leicester-south-fence-end-rock",
-      "model_scene": "default"
+      "id": "leicester-south-fence-end-rock"
     },
     {
       "model": "3d-assets/leicester/leicester-north-edge-field-boundary/model.glb",
       "model_sha256": "d69aedfa1f79638085099e006adcc1c557172eb8e80450e6c9f7ab302d00caee",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-north-edge-field-boundary/asset.json",
       "descriptor_sha256": "76400296d114f0ba0a9508ee37515856e3b7415196630ab9c104784dab9898d1",
-      "id": "leicester-north-edge-field-boundary",
-      "model_scene": "default"
+      "id": "leicester-north-edge-field-boundary"
     },
     {
       "model": "3d-assets/sherwood/sherwood-leaning-tree/model.glb",
       "model_sha256": "119270c4fcebd085064f44fb5d86bf26a8c9801cfc239c77369c50061d9bcca7",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/1d0afc88d210c8ae584ce3fd301839f486d6fb7d00a36c3dc48e3e25b593b970.png",
-          "sha256": "1d0afc88d210c8ae584ce3fd301839f486d6fb7d00a36c3dc48e3e25b593b970"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-leaning-tree/asset.json",
       "descriptor_sha256": "95827c2d5b2ea3ade59ca2344402b46dd19f46d74fcc1b96d9feb2ca1ba66f87",
-      "id": "sherwood-leaning-tree",
-      "model_scene": "default"
+      "id": "sherwood-leaning-tree"
     },
     {
       "model": "3d-assets/leicester/leicester-moat-bank-tree/model.glb",
       "model_sha256": "8f67b11e6a7992cdb296587c4af403eea0475033a25dd1c58789d4cc1b2a0ad3",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-moat-bank-tree/asset.json",
       "descriptor_sha256": "9847215d6344148e3c057c39f4c08e78b5e58030c441bb5241c2acc14d0c9dd4",
-      "id": "leicester-moat-bank-tree",
-      "model_scene": "default"
+      "id": "leicester-moat-bank-tree"
     },
     {
       "model": "3d-assets/sherwood/sherwood-spreading-oak/model.glb",
       "model_sha256": "ac5e715a64c7d9c52ad9cd506ee3b2d0bb24fe57c6f9b96c0424e0b761c0df80",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/1d0afc88d210c8ae584ce3fd301839f486d6fb7d00a36c3dc48e3e25b593b970.png",
-          "sha256": "1d0afc88d210c8ae584ce3fd301839f486d6fb7d00a36c3dc48e3e25b593b970"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-spreading-oak/asset.json",
       "descriptor_sha256": "c9a49ba3bf0d9fe6fa95277f023c40936ec00ca8ff69a62464ecab0272836306",
-      "id": "sherwood-spreading-oak",
-      "model_scene": "default"
+      "id": "sherwood-spreading-oak"
     },
     {
       "model": "3d-assets/leicester/leicester-southeast-cottage-tree/model.glb",
       "model_sha256": "78210dd535d03da517ce220908a3f8b1eeb3538b9581b6ccd84fc99259d82a88",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southeast-cottage-tree/asset.json",
       "descriptor_sha256": "33f5897a4a1a011f9ce5195aeddbfdd27d1dcc24cbb254465047734952490f86",
-      "id": "leicester-southeast-cottage-tree",
-      "model_scene": "default"
+      "id": "leicester-southeast-cottage-tree"
     },
     {
       "model": "3d-assets/sherwood/sherwood-rock-057/model.glb",
       "model_sha256": "3c2ae518ccb97ef08b25ff541be70c72b9f520019aefaa7917ee0a154ccf87da",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-rock-057/asset.json",
       "descriptor_sha256": "550831e7690b3580a6e71ddda5081e5d6919273c1b6e471d9a3b35a21ec9399a",
-      "id": "sherwood-rock-057",
-      "model_scene": "default"
+      "id": "sherwood-rock-057"
     },
     {
       "model": "3d-assets/sherwood/sherwood-rock-059/model.glb",
       "model_sha256": "33a3c35d29f9b84fca4d5f8dabffb86f70fcb6b7c90e55fabfa4a292b112d9a2",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-rock-059/asset.json",
       "descriptor_sha256": "a549d08178f51f52a139928d9230c18bf027df3d3fdb25ff75407cb4803118c8",
-      "id": "sherwood-rock-059",
-      "model_scene": "default"
+      "id": "sherwood-rock-059"
     },
     {
       "model": "3d-assets/sherwood/sherwood-rock-062/model.glb",
       "model_sha256": "fb7094280ba9084ca0ee5a138c29e413d52e2fa9bcd6970f0d040bb51dd87fe2",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-rock-062/asset.json",
       "descriptor_sha256": "885421a707b37ef651056da3332c460c613c218bc3639969ef4706c7f2e8dd41",
-      "id": "sherwood-rock-062",
-      "model_scene": "default"
+      "id": "sherwood-rock-062"
     },
     {
       "model": "3d-assets/sherwood/sherwood-rock-067/model.glb",
       "model_sha256": "05c8e8b88551768b2df8ea310574e1704c5a7a058f8f5eef00792e63e1a69163",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-rock-067/asset.json",
       "descriptor_sha256": "cb70251ef294ff914ad1cf3c2bdd3f2725deae517536fcd151aa8e75b5763d9e",
-      "id": "sherwood-rock-067",
-      "model_scene": "default"
+      "id": "sherwood-rock-067"
     },
     {
       "model": "3d-assets/sherwood/sherwood-rock-074/model.glb",
       "model_sha256": "f3983a9afcc4291abcb3fc6cdcf643779c51ed8554e981d36ad4497edf149808",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-rock-074/asset.json",
       "descriptor_sha256": "77ec6d74c5348aef40c2e47355471edb6011fd2db016569fe563c9eeeab21365",
-      "id": "sherwood-rock-074",
-      "model_scene": "default"
+      "id": "sherwood-rock-074"
     },
     {
       "model": "3d-assets/sherwood/sherwood-rock-080/model.glb",
       "model_sha256": "98542196348c09c92f896b64551396a6950738b566e7316a01a858dee61554ca",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-rock-080/asset.json",
       "descriptor_sha256": "54e37fdc759aa62762f08fd7f6effa4ebac21f6c5178e2fe5a1660af9da26733",
-      "id": "sherwood-rock-080",
-      "model_scene": "default"
+      "id": "sherwood-rock-080"
     },
     {
       "model": "3d-assets/sherwood/sherwood-camp-table-011/model.glb",
       "model_sha256": "01954a8e7036198bb2dbb2484f0f330c0e38236d955566520ded5378d8f54b58",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        },
-        {
-          "path": "3d-assets/blobs/0b90454aba3083eec47fc707f3456dd54a8d201e0ed1956f6e79477812b0554d.jpg",
-          "sha256": "0b90454aba3083eec47fc707f3456dd54a8d201e0ed1956f6e79477812b0554d"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-camp-table-011/asset.json",
       "descriptor_sha256": "6a2707423f3b871f29a381b8bf93d7ffc1464549a6fffb7e6eea9b93f70a8eef",
-      "id": "sherwood-camp-table-011",
-      "model_scene": "default"
+      "id": "sherwood-camp-table-011"
     },
     {
       "model": "3d-assets/sherwood/sherwood-camp-table-012/model.glb",
       "model_sha256": "fa490e55b07848ddc14745e492ceeb689662962651d08f3cbd07fe3332dbeb61",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        },
-        {
-          "path": "3d-assets/blobs/0b90454aba3083eec47fc707f3456dd54a8d201e0ed1956f6e79477812b0554d.jpg",
-          "sha256": "0b90454aba3083eec47fc707f3456dd54a8d201e0ed1956f6e79477812b0554d"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-camp-table-012/asset.json",
       "descriptor_sha256": "ee6e4e6db0ab2b85ed83679f221f3213d582b36db59927ad95927fe1175f5228",
-      "id": "sherwood-camp-table-012",
-      "model_scene": "default"
+      "id": "sherwood-camp-table-012"
     },
     {
       "model": "3d-assets/sherwood/sherwood-camp-table-014/model.glb",
       "model_sha256": "b2523cb72ced18ffdbef34f01024fbdb71a963578a6ebcb8c490c0f318097397",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        },
-        {
-          "path": "3d-assets/blobs/0b90454aba3083eec47fc707f3456dd54a8d201e0ed1956f6e79477812b0554d.jpg",
-          "sha256": "0b90454aba3083eec47fc707f3456dd54a8d201e0ed1956f6e79477812b0554d"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-camp-table-014/asset.json",
       "descriptor_sha256": "cd60c0e9184e4d914f45c8bafc7556d9872933f99c58964235c84c24469b0af4",
-      "id": "sherwood-camp-table-014",
-      "model_scene": "default"
+      "id": "sherwood-camp-table-014"
     },
     {
       "model": "3d-assets/sherwood/sherwood-round-stool/model.glb",
       "model_sha256": "7cb3513a509aa378f6e06aa6b9e919fa1ae64d04d9c3d62b59dc2bbfc5deaaf5",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-round-stool/asset.json",
       "descriptor_sha256": "cfe8ad018dd09e4c3bd03c1a897411e3c25a91383c1daf8e4bce9d162beb36a1",
-      "id": "sherwood-round-stool",
-      "model_scene": "default"
+      "id": "sherwood-round-stool"
     },
     {
       "model": "3d-assets/sherwood/sherwood-cooking-cauldron/model.glb",
       "model_sha256": "9943834e69dd853e9c958e11eea70bab03104abf976587468a5774fbe2abb07a",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-cooking-cauldron/asset.json",
       "descriptor_sha256": "cd508a7c7dff40404178dc1c1536c9a867b3191838907d5b893a783a2b9e2d1b",
-      "id": "sherwood-cooking-cauldron",
-      "model_scene": "default"
+      "id": "sherwood-cooking-cauldron"
     },
     {
       "model": "3d-assets/sherwood/sherwood-cooper-barrel/model.glb",
       "model_sha256": "0bd100224b07b93acdc537f06d99c4f06379ca29b6ad1b97e7ff5ebe9c091d44",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-cooper-barrel/asset.json",
       "descriptor_sha256": "cf5592576730e14295d27de405c080fef8f765f12988f3eb11c21aeff28b6f63",
-      "id": "sherwood-cooper-barrel",
-      "model_scene": "default"
+      "id": "sherwood-cooper-barrel"
     },
     {
       "model": "3d-assets/sherwood/sherwood-supply-barrel/model.glb",
       "model_sha256": "2844449e2de427114a16633b9d8bd7067d498ed29bc24c115d8bf9ade019d65a",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-supply-barrel/asset.json",
       "descriptor_sha256": "ebe22f3a1effa3ea67ba111e6c43eb9ba7ca577688caa3fc2a43e6d846c9c87f",
-      "id": "sherwood-supply-barrel",
-      "model_scene": "default"
+      "id": "sherwood-supply-barrel"
     },
     {
       "model": "3d-assets/sherwood/sherwood-logs-116/model.glb",
       "model_sha256": "97a828a0f4ea1a6f5c36c304a8be34c9eea77dd3dc38f915c5388e5c48603c57",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-logs-116/asset.json",
       "descriptor_sha256": "650ee09ae8d59c775916999ce0118038b8e6f449fd821deff1357ca1b4529c94",
-      "id": "sherwood-logs-116",
-      "model_scene": "default"
+      "id": "sherwood-logs-116"
     },
     {
       "model": "3d-assets/sherwood/sherwood-logs-117/model.glb",
       "model_sha256": "805cda0d56236b5468090d77f4d72b978dc8cabcd8577fc290e55f9f06d67435",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-logs-117/asset.json",
       "descriptor_sha256": "409d5cde1023f0c41b898a85a64c586c04891805392ed967bf28009c93df7bae",
-      "id": "sherwood-logs-117",
-      "model_scene": "default"
+      "id": "sherwood-logs-117"
     },
     {
       "model": "3d-assets/sherwood/sherwood-logs-118/model.glb",
       "model_sha256": "55956301ad1034e2e4f6cb8ae00db8e38cada246052a757cef5a5064aa2507b7",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af.png",
-          "sha256": "07d3376a6fe8cd3bc87e5fbe71330f49a16f2382cdd55effbbc39fb3019465af"
-        }
-      ],
       "descriptor": "3d-assets/sherwood/sherwood-logs-118/asset.json",
       "descriptor_sha256": "f379445d0bbab93044c6f99ef22f91cca0c9fee7320b5b5349e50267a2ab8815",
-      "id": "sherwood-logs-118",
-      "model_scene": "default"
+      "id": "sherwood-logs-118"
     },
     {
       "model": "3d-assets/derby/derby-upper-east-curtain/model.glb",
       "model_sha256": "8057ac75034126f13b860df37cc21962d7c2a55ab2ce803abd21ac8968dba57a",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-upper-east-curtain/asset.json",
       "descriptor_sha256": "5ce276e464c9d1bb17a433f17b03276cdadcd5dd388b89d8852dcbd17b918449",
-      "id": "derby-upper-east-curtain",
-      "model_scene": "default"
+      "id": "derby-upper-east-curtain"
     },
     {
       "model": "3d-assets/derby/derby-lower-west-wall-turret/model.glb",
       "model_sha256": "8d6f9ae6d265dae7d0d727f862d0e852f600b38ee845ccb9c22a803c4c3ef813",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-lower-west-wall-turret/asset.json",
       "descriptor_sha256": "bb7919ee7e7e6f7cdcb1d035fe875a836fe09f47e379476e5b6893403fc40fdb",
-      "id": "derby-lower-west-wall-turret",
-      "model_scene": "default"
+      "id": "derby-lower-west-wall-turret"
     },
     {
       "model": "3d-assets/leicester/leicester-northwest-tower/model.glb",
       "model_sha256": "a526c85f97e9b2a4bd1ced01f604de917d0604fd4124a1d4292fbc949325ec59",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northwest-tower/asset.json",
       "descriptor_sha256": "4ae8314c486f9bf9e043848b3d0d17f62e94e59b021347b2d412c28415975f3b",
-      "id": "leicester-northwest-tower",
-      "model_scene": "default"
+      "id": "leicester-northwest-tower"
     },
     {
       "model": "3d-assets/leicester/leicester-church-side-tower/model.glb",
       "model_sha256": "1c2a831d839e0bf5132722e7d743a6b419d1ade2b2a87543ecbd65dc861a40c4",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-church-side-tower/asset.json",
       "descriptor_sha256": "c919a31feb4bbd9205f9d40643097f40cb50cdb5c7ec1e9f2d23e04ff2524da1",
-      "id": "leicester-church-side-tower",
-      "model_scene": "default"
+      "id": "leicester-church-side-tower"
     },
     {
       "model": "3d-assets/derby/derby-east-watchtower/model.glb",
       "model_sha256": "eee53338bcb1ea01b38da55e63747d46619fd6923ad8c683196d076bf024d64c",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-east-watchtower/asset.json",
       "descriptor_sha256": "375df92c57270ee9c18babc2755a67dc4bbd46710f3b7e54748ecc9d78cae7de",
-      "id": "derby-east-watchtower",
-      "model_scene": "default"
+      "id": "derby-east-watchtower"
     },
     {
       "model": "3d-assets/leicester/leicester-west-tower-footbridge/model.glb",
       "model_sha256": "996d72edf5a138432e0c7d951efb80171e7301fcddd3b0b6aa6fbb50cf189f6b",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-west-tower-footbridge/asset.json",
       "descriptor_sha256": "cc8c1278a444e38056cb2e7a39a0b8561e1f36730914f26cc6a2ca4a617aaf1a",
-      "id": "leicester-west-tower-footbridge",
-      "model_scene": "default"
+      "id": "leicester-west-tower-footbridge"
     },
     {
       "model": "3d-assets/leicester/leicester-west-moat-tower/model.glb",
       "model_sha256": "567ce09f35fde860f0617b7eb8e91495fb1ee46bc6dbe11ffc20d783cb38bb8d",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-west-moat-tower/asset.json",
       "descriptor_sha256": "2691e98ef79d4f6d89a0125a6b30461aa074b66bd9f0439fe6c29b15f6f8cdf9",
-      "id": "leicester-west-moat-tower",
-      "model_scene": "default"
+      "id": "leicester-west-moat-tower"
     },
     {
       "model": "3d-assets/leicester/leicester-tower-covered-bridge/model.glb",
       "model_sha256": "b6702688efec23418e1da805831feb46700d5fece4c0899890f8fadfad12cc59",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-tower-covered-bridge/asset.json",
       "descriptor_sha256": "393b84fa58ca97f15206062b0b9a64a4454c20c75e0c950d065c833f00bcfe2a",
-      "id": "leicester-tower-covered-bridge",
-      "model_scene": "default"
+      "id": "leicester-tower-covered-bridge"
     },
     {
       "model": "3d-assets/derby/derby-southwest-postern/model.glb",
       "model_sha256": "3b03292e8411111b1db5992168fe57b749de7d180851e35118e3bdbc099bb61d",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-southwest-postern/asset.json",
       "descriptor_sha256": "b8d8f3e88b5b79214464fe33a5f44c4e1b33391813fbd2ccf56ac5b0b1e8202a",
-      "id": "derby-southwest-postern",
-      "model_scene": "default"
+      "id": "derby-southwest-postern"
     },
     {
       "model": "3d-assets/leicester/leicester-southwest-wall-turret/model.glb",
       "model_sha256": "9874233f0ad8d4d6bb549f4712bfefdad7d52804effaeb7c5ecf33a4f783af72",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southwest-wall-turret/asset.json",
       "descriptor_sha256": "427a9466cd9220ea461c95b94a7a61d32a24b28657267a7d57ea40d0422d608c",
-      "id": "leicester-southwest-wall-turret",
-      "model_scene": "default"
+      "id": "leicester-southwest-wall-turret"
     },
     {
       "model": "3d-assets/leicester/leicester-east-moat-tower/model.glb",
       "model_sha256": "a8970c8fb4a5cea9e380272c9d861194283e7fc3b5f1bd78b9ed0e57af850527",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-moat-tower/asset.json",
       "descriptor_sha256": "d8fe5d23c7877835ab9f079661c0bb72c230dbc907968c177956e2fb9b795b3d",
-      "id": "leicester-east-moat-tower",
-      "model_scene": "default"
+      "id": "leicester-east-moat-tower"
     },
     {
       "model": "3d-assets/leicester/leicester-east-wall-turret/model.glb",
       "model_sha256": "175576c5166a5d69b766a259541f1bf2af9bf95280416be50a8f5cad3aee0492",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-wall-turret/asset.json",
       "descriptor_sha256": "a33e376d103385b63a3e7703f79cb4a778e3b685ef61ccc4c55590646db0e45b",
-      "id": "leicester-east-wall-turret",
-      "model_scene": "default"
+      "id": "leicester-east-wall-turret"
     },
     {
       "model": "3d-assets/derby/derby-keep-central-gallery/model.glb",
       "model_sha256": "8e35b1be1767ae67c8ca925135a59c8f47c34eb7ee1de9d1439ec80618e4b08d",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-keep-central-gallery/asset.json",
       "descriptor_sha256": "4e88a804436d40c0c2838333a7ffc9fcab62810d248f1f55e5b946fd377d559c",
-      "id": "derby-keep-central-gallery",
-      "model_scene": "default"
+      "id": "derby-keep-central-gallery"
     },
     {
       "model": "3d-assets/derby/derby-keep-west-tower/model.glb",
       "model_sha256": "94b3546cc766294d7054cd971a7b4ec02da22368c4fb365318da81ba8131be86",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-keep-west-tower/asset.json",
       "descriptor_sha256": "8309b8ab354a918dd7cbc2ff338da15d3bc75d04900102abc04c45682f565f83",
-      "id": "derby-keep-west-tower",
-      "model_scene": "default"
+      "id": "derby-keep-west-tower"
     },
     {
       "model": "3d-assets/derby/derby-great-keep/model.glb",
       "model_sha256": "2ec310e014d06e401adb0331e4d11aeb578dd2718c7b82fdf653236165b61628",
-      "resources": [],
       "descriptor": "3d-assets/derby/derby-great-keep/asset.json",
       "descriptor_sha256": "09723b8fc9da1464276c6b1ce9678961cf991f4d9508ad4d19c667197b73c393",
-      "id": "derby-great-keep",
-      "model_scene": "default"
+      "id": "derby-great-keep"
     },
     {
       "model": "3d-assets/leicester/leicester-south-gatehouse/model.glb",
       "model_sha256": "4264c819ade22fd9bda6f55ac6729aa8faa002aca26504ff037d1bed2432fb67",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-gatehouse/asset.json",
       "descriptor_sha256": "c9425c6cec3c592c13a14a5e2211ee6e43bb9ad7be22a7bef08ee0780ba53f16",
-      "id": "leicester-south-gatehouse",
-      "model_scene": "default"
+      "id": "leicester-south-gatehouse"
     }
   ],
   "splines": [
@@ -3803,8 +3509,6 @@
       "role": "ground",
       "model": "3d-assets/wychford/wychford-terrain/model.glb",
       "model_sha256": "13e22112c21ccf3399089cb2287b96796f786149d9b46137b045c1e9d309a153",
-      "resources": [],
-      "model_scene": "default",
       "descriptor": "3d-assets/wychford/wychford-terrain/asset.json",
       "descriptor_sha256": "8ec0d97968c574c7eef5ed56bc3264eb9b5fcb34f4717a847d011f346055f55c"
     }

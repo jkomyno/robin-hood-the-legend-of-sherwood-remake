@@ -91,7 +91,32 @@ def validate_asset_index(root, index, *, files=None):
 
 
 def encoded(index):
-    return (json.dumps(index, indent=2, ensure_ascii=False) + '\n').encode()
+    return (json.dumps(index, separators=(',', ':'), ensure_ascii=False) + '\n').encode()
+
+
+_EDITOR_FIELDS = ('version', 'kind', 'id', 'name', 'source_map', 'source_origin_scene',
+                  'model', 'model_scene', 'resources', 'states', 'editor_usage', 'gameplay')
+_EDITOR_PART_FIELDS = ('node', 'name', 'default_hidden', 'source_obstacle',
+                       'source_components', 'mission_profile', 'scenery',
+                       'obstacle_local_game')
+
+
+def editor_descriptor(descriptor):
+    """Only the catalog fields needed to insert, display, and save editor assets."""
+    def parts(values):
+        return [{key: value[key] for key in _EDITOR_PART_FIELDS if key in value}
+                for value in values]
+    result = {key: descriptor[key] for key in _EDITOR_FIELDS if key in descriptor}
+    if descriptor.get('editor_usage') == 'map-background':
+        result['components'] = descriptor['components']
+    result['parts'] = parts(descriptor.get('parts', []))
+    for field in ('state_variants', 'standalone_variants'):
+        if field in descriptor:
+            result[field] = {
+                state: {key: (parts(value[key]) if key == 'parts' else value[key])
+                        for key in ('name', 'model', 'model_scene', 'parts') if key in value}
+                for state, value in descriptor[field].items()}
+    return result
 
 
 def discover_asset_index(root, *, files=None, descriptors=None):
@@ -144,7 +169,8 @@ def discover_asset_index(root, *, files=None, descriptors=None):
         source = resolve(name)
         if source is None:
             continue
-        descriptor = json.loads(source.read_bytes())
+        descriptor_bytes = source.read_bytes()
+        descriptor = json.loads(descriptor_bytes)
         if not isinstance(descriptor, dict):
             raise ValueError(f'{name}: descriptor must be an object')
         for key in ('id', 'name', 'source_map', 'model'):
@@ -168,6 +194,8 @@ def discover_asset_index(root, *, files=None, descriptors=None):
             raise ValueError(f'{name}: source model missing: {model}')
         entry = {key: descriptor[key] for key in ('id', 'name', 'source_map')}
         entry.update(descriptor=name, model=model)
+        entry['descriptor_sha256'] = hashlib.sha256(descriptor_bytes).hexdigest()
+        entry['editor'] = editor_descriptor(descriptor)
         for key in ('model_scene', 'editor_usage', 'asset_type', 'tags'):
             if key in descriptor: entry[key] = descriptor[key]
         for kind in ('lossy', 'preview'):

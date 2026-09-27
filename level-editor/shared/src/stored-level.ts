@@ -97,7 +97,8 @@ function compactSources(sources: ExternalAssetSource[]): unknown[] {
     grouped.set(asset, group);
   }
   return [...grouped].map(([id, group]) => {
-    if (group.every((source) => appearanceId(source.id).state === "base")) return group[0]!;
+    if (group.every((source) => appearanceId(source.id).state === "base"))
+      return withoutDescriptorDefaults(group[0]!);
     const first = group[0]!;
     if (
       group.some(
@@ -115,11 +116,46 @@ function compactSources(sources: ExternalAssetSource[]): unknown[] {
         state: appearanceId(source.id).state,
         model: source.model,
         model_sha256: source.model_sha256,
-        ...(source.model_scene ? { model_scene: source.model_scene } : {}),
-        ...(source.resources ? { resources: source.resources } : {}),
       })),
     };
   });
+}
+
+function withoutDescriptorDefaults<
+  T extends { descriptor?: string; model_scene?: string; resources?: unknown },
+>(source: T): Omit<T, "model_scene" | "resources"> {
+  if (!source.descriptor) return source;
+  const { model_scene: _scene, resources: _resources, ...saved } = source;
+  return saved;
+}
+
+function hydrateReference<
+  T extends {
+    id: string;
+    descriptor?: string;
+    model: string;
+    model_scene?: string;
+    resources?: unknown;
+  },
+>(source: T, descriptor: ProjectionAssetDescriptor | undefined): T {
+  if (!source.descriptor) return source;
+  if (!descriptor) throw new Error(`Missing pinned asset descriptor: ${source.id}`);
+  if (descriptor.id !== source.id)
+    throw new Error(`Asset descriptor identity mismatch: ${source.id}`);
+  const folder = source.descriptor.split("/").slice(0, -1).join("/");
+  const model = folder ? `${folder}/${descriptor.model}` : descriptor.model;
+  if (source.model !== model) throw new Error(`Asset model differs from descriptor: ${source.id}`);
+  if (source.model_scene !== undefined && source.model_scene !== descriptor.model_scene)
+    throw new Error(`Asset scene differs from descriptor: ${source.id}`);
+  if (source.resources !== undefined && !equal(source.resources, descriptor.resources ?? []))
+    throw new Error(`Asset resources differ from descriptor: ${source.id}`);
+  return {
+    ...source,
+    ...(descriptor.model_scene ? { model_scene: descriptor.model_scene } : {}),
+    ...(descriptor.resources !== undefined
+      ? { resources: structuredClone(descriptor.resources) }
+      : {}),
+  };
 }
 
 function compactPlacement(placement: Entry): Entry {
@@ -391,15 +427,43 @@ export function loadAssetMap(value: unknown, descriptors: Descriptors): Level3D 
 
 /** Save asset-backed documents as v2; retain v1 for reconstruction-only drafts. */
 export function serializeStoredMap(document: Level3D, descriptors: Descriptors): unknown {
-  return document.assetSources?.length && document.objects.every((part) => assetId(part.node))
-    ? storeAssetMap(document, descriptors)
-    : compactAssetInstances(document, descriptors);
+  const saved =
+    document.assetSources?.length && document.objects.every((part) => assetId(part.node))
+      ? storeAssetMap(document, descriptors)
+      : compactAssetInstances(document, descriptors);
+  const result = record(saved, "document");
+  return {
+    ...result,
+    sceneAssets: document.sceneAssets.map(withoutDescriptorDefaults),
+    ...(result.version === 1 && document.assetSources
+      ? { assetSources: document.assetSources.map(withoutDescriptorDefaults) }
+      : {}),
+  };
 }
 
 /** Accept both version 2 placements and earlier full or compact part documents. */
 export function parseStoredMap(value: unknown, descriptors: Descriptors): Level3D {
   const saved = expandStoredMap(value);
-  if (saved.version === 2) return loadAssetMap(saved, descriptors);
+  const hydrated = {
+    ...saved,
+    ...(Array.isArray(saved.assetSources)
+      ? {
+          assetSources: saved.assetSources.map((raw) => {
+            const source = record(raw, "asset source") as unknown as ExternalAssetSource;
+            return hydrateReference(source, descriptors.get(source.id));
+          }),
+        }
+      : {}),
+    ...(Array.isArray(saved.sceneAssets)
+      ? {
+          sceneAssets: saved.sceneAssets.map((raw) => {
+            const source = record(raw, "scene asset") as unknown as Level3D["sceneAssets"][number];
+            return hydrateReference(source, descriptors.get(source.id));
+          }),
+        }
+      : {}),
+  };
+  if (saved.version === 2) return loadAssetMap(hydrated, descriptors);
   if (saved.version !== 1) throw new Error("Unsupported stored map version");
-  return hydrateAssetInstances(saved, descriptors);
+  return hydrateAssetInstances(hydrated, descriptors);
 }

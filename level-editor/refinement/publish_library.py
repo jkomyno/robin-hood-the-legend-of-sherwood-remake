@@ -1,6 +1,6 @@
 """Stage and publish the editor's runtime library as Cloudflare Worker static assets.
 
-Original models, their external resources, receipts, backups and authoring files
+Original models, asset descriptors, their external resources, receipts, backups and authoring files
 are never uploaded. The local library is not modified. --stage-only is offline;
 --dry-run additionally asks Wrangler to validate the deployment without publishing.
 """
@@ -59,8 +59,8 @@ def stage_library(library, output, *, worker_name='robinhood-editor-library'):
     records, models, descriptors = {}, {}, {}
 
     def put(relative, data):
-        if relative in originals or relative.endswith('.receipt.json'):
-            raise ValueError(f'Original model or receipt must not be uploaded: {relative}')
+        if relative in originals or relative.endswith('.receipt.json') or relative.endswith('/asset.json'):
+            raise ValueError(f'Authoring asset must not be uploaded: {relative}')
         if len(data) > MAX_FILE_BYTES:
             raise ValueError(f'Cloudflare static asset exceeds 25 MiB: {relative}')
         target = site/'editor/library'/relative
@@ -94,7 +94,9 @@ def stage_library(library, output, *, worker_name='robinhood-editor-library'):
         copy(lossy, receipt['output'], glb=True)
         entry['model_sha256'] = source_hash
         descriptor_path = '3d-assets/'+entry['descriptor']
-        raw = copy(descriptor_path)
+        raw = safe_file(library, descriptor_path).read_bytes()
+        if digest(raw) != entry['descriptor_sha256']:
+            raise ValueError(f'Descriptor changed while staging: {descriptor_path}')
         descriptor = json.loads(raw)
         for key in ('id', 'name', 'source_map', 'model_scene'):
             if descriptor.get(key) != entry.get(key):
@@ -105,7 +107,7 @@ def stage_library(library, output, *, worker_name='robinhood-editor-library'):
             for variant in descriptor.get(field, {}).values():
                 if variant['model'] != descriptor['model']:
                     raise ValueError(f'Bundle separate variant models before publication: {entry["id"]}')
-        descriptors[descriptor_path] = digest(raw)
+        descriptors[descriptor_path] = entry['descriptor_sha256']
         models[model] = source_hash
         if entry.get('preview_model'):
             copy('3d-assets/'+entry['preview_model'], glb=True)

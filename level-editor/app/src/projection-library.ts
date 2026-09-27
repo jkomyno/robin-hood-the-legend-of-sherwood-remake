@@ -11,6 +11,7 @@ import {
   safeLibraryPath,
   selectGlbScene,
   type ExternalAssetSource,
+  type SceneAssetSource,
   type ProjectionAssetDescriptor,
   type ProjectionAssetEntry,
 } from "@rle/shared";
@@ -32,6 +33,18 @@ async function hash(bytes: ArrayBuffer): Promise<string> {
   return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), (b) =>
     b.toString(16).padStart(2, "0"),
   ).join("");
+}
+
+async function indexedAsset(
+  root: FileSystemDirectoryHandle,
+  entry: Pick<ProjectionAssetEntry, "id" | "editor" | "descriptor_sha256">,
+): Promise<ProjectionAssetEntry> {
+  if (entry.editor && entry.descriptor_sha256) return entry as ProjectionAssetEntry;
+  const id = entry.id.replace(/--state-(initial|applied)$/, "");
+  const indexed = (await listProjectionAssets(root)).find((asset) => asset.id === id);
+  if (!indexed?.editor || !indexed.descriptor_sha256)
+    throw new Error(`Asset index lacks editor data: ${id}`);
+  return indexed;
 }
 
 function restoreNodeNames(gltf: Awaited<ReturnType<GLTFLoader["parseAsync"]>>) {
@@ -79,9 +92,8 @@ export async function listProjectionAppearances(
   root: FileSystemDirectoryHandle,
   entry: ProjectionAssetEntry,
 ): Promise<ProjectionAssetEntry[]> {
-  const descriptor = parseProjectionAssetDescriptor(
-    JSON.parse(await (await libraryFile(root, entry.descriptor)).text()),
-  );
+  const indexed = await indexedAsset(root, entry);
+  const descriptor = parseProjectionAssetDescriptor(indexed.editor);
   if (
     descriptor.id !== entry.id ||
     descriptor.source_map.toLowerCase() !== entry.source_map.toLowerCase()
@@ -90,16 +102,16 @@ export async function listProjectionAppearances(
   if (entry.model_scene !== descriptor.model_scene)
     throw new Error(`Asset catalog scene mismatch: ${entry.id}`);
   const variants = descriptor.state_variants ?? descriptor.standalone_variants;
-  if (!variants) return [entry];
+  if (!variants) return [indexed];
   const parent = entry.descriptor.split("/").slice(0, -1).join("/");
   return [
-    ...(descriptor.standalone_variants ? [entry] : []),
+    ...(descriptor.standalone_variants ? [indexed] : []),
     ...(["initial", "applied"] as const).flatMap((state) => {
       const variant = variants[state];
       return variant
         ? [
             {
-              ...entry,
+              ...indexed,
               id: assetVariantId(entry.id, state),
               name: variant.name,
               state_variant: state,
@@ -151,21 +163,28 @@ export interface PreparedProjectionAsset {
 export async function readPinnedAssetDescriptors(
   root: FileSystemDirectoryHandle,
   references: ExternalAssetSource[],
+  sceneAssets: SceneAssetSource[] = [],
 ): Promise<Map<string, ProjectionAssetDescriptor>> {
   parseExternalAssetSources(references);
+  const pinned = [...references, ...sceneAssets.filter((source) => source.descriptor)];
+  if (!pinned.length) return new Map();
+  const catalog = new Map((await listProjectionAssets(root)).map((entry) => [entry.id, entry]));
   return new Map(
-    await Promise.all(
-      references.map(async (reference) => {
-        const bytes = await (await libraryFile(root, reference.descriptor)).arrayBuffer();
-        if ((await hash(bytes)) !== reference.descriptor_sha256)
-          throw new Error(`Asset descriptor changed: ${reference.id}`);
-        const descriptor = descriptorForSource(
-          reference,
-          JSON.parse(new TextDecoder().decode(bytes)),
-        );
-        return [reference.id, descriptor] as const;
-      }),
-    ),
+    pinned.map((reference) => {
+      const id = reference.id.replace(/--state-(initial|applied)$/, "");
+      const entry = catalog.get(id);
+      if (
+        !entry?.editor ||
+        entry.descriptor_sha256 !== reference.descriptor_sha256 ||
+        entry.descriptor !== reference.descriptor
+      )
+        throw new Error(`Asset descriptor changed: ${reference.id}`);
+      const descriptor =
+        "role" in reference
+          ? parseProjectionAssetDescriptor(entry.editor)
+          : descriptorForSource(reference, entry.editor);
+      return [reference.id, descriptor] as const;
+    }),
   );
 }
 
@@ -178,19 +197,20 @@ export async function prepareProjectionAsset(
   _map: string,
   expected?: ExternalAssetSource,
   sharedLoader?: SceneAssetLoader,
+  pinnedDescriptor?: ProjectionAssetDescriptor,
 ): Promise<PreparedProjectionAsset> {
   if (expected) parseExternalAssetSources([expected]);
-  const descriptorBytes = await (await libraryFile(root, entry.descriptor)).arrayBuffer();
-  const descriptorHash = await hash(descriptorBytes);
+  const indexed = pinnedDescriptor ? undefined : await indexedAsset(root, entry);
+  const descriptorHash = indexed?.descriptor_sha256 ?? expected?.descriptor_sha256;
+  if (!descriptorHash) throw new Error(`Missing descriptor pin: ${entry.id}`);
   if (expected && expected.descriptor_sha256 !== descriptorHash)
     throw new Error(`Asset descriptor changed: ${entry.id}`);
-  const original = parseProjectionAssetDescriptor(
-    JSON.parse(new TextDecoder().decode(descriptorBytes)),
-  );
-  const variant = entry.state_variant
-    ? (original.state_variants ?? original.standalone_variants)?.[entry.state_variant]
-    : undefined;
-  if (entry.state_variant && !variant)
+  const original = pinnedDescriptor ?? parseProjectionAssetDescriptor(indexed!.editor);
+  const variant =
+    !pinnedDescriptor && entry.state_variant
+      ? (original.state_variants ?? original.standalone_variants)?.[entry.state_variant]
+      : undefined;
+  if (entry.state_variant && !variant && !pinnedDescriptor)
     throw new Error(`Unknown static asset variant: ${entry.state_variant}`);
   const descriptor = variant
     ? {
@@ -324,10 +344,9 @@ export async function loadProjectionAssetPreview(
   root: FileSystemDirectoryHandle,
   entry: ProjectionAssetEntry,
 ): Promise<THREE.Object3D> {
+  const indexed = await indexedAsset(root, entry);
   if (entry.editor_usage === "map-background") {
-    const descriptor = parseProjectionAssetDescriptor(
-      JSON.parse(await (await libraryFile(root, entry.descriptor)).text()),
-    );
+    const descriptor = parseProjectionAssetDescriptor(indexed.editor);
     const bytes = await (await libraryFile(root, entry.model)).arrayBuffer();
     const loader = new SceneAssetLoader(root);
     try {
@@ -344,9 +363,7 @@ export async function loadProjectionAssetPreview(
     }
   }
   if (entry.preview_model) {
-    const original = parseProjectionAssetDescriptor(
-      JSON.parse(await (await libraryFile(root, entry.descriptor)).text()),
-    );
+    const original = parseProjectionAssetDescriptor(indexed.editor);
     const variant = entry.state_variant
       ? (original.state_variants ?? original.standalone_variants)?.[entry.state_variant]
       : undefined;

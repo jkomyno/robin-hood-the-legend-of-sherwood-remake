@@ -32,13 +32,12 @@ export async function prepareMapCandidate(
     if (!directory) throw new Error("scenes/ missing");
     const saved = importedDocument ?? (await readJson(directory, `${name}.rhlos-map.json`));
     const expanded = expandStoredMap(saved);
-    const document = parseStoredMap(
-      saved,
-      await readPinnedAssetDescriptors(
-        library,
-        (expanded.assetSources as import("@rle/shared").ExternalAssetSource[] | undefined) ?? [],
-      ),
+    const descriptors = await readPinnedAssetDescriptors(
+      library,
+      (expanded.assetSources as import("@rle/shared").ExternalAssetSource[] | undefined) ?? [],
+      (expanded.sceneAssets as import("@rle/shared").SceneAssetSource[] | undefined) ?? [],
     );
+    const document = parseStoredMap(saved, descriptors);
     if (document.map.toLowerCase() !== documentMap.toLowerCase())
       throw new Error(`level3d.map: expected source ${documentMap}, got ${document.map}`);
     asset.userData = structuredClone(document.sceneMetadata ?? {});
@@ -86,6 +85,7 @@ export async function prepareMapCandidate(
             document.map,
             reference,
             loader,
+            descriptors.get(reference.id),
           );
           asset.add(result.asset);
           prepared[index] = result;

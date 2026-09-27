@@ -5,6 +5,7 @@ import {
   parseStoredMap,
   serializeStoredMap,
   type ExternalAssetSource,
+  type SceneAssetSource,
 } from "@rle/shared";
 import { pinnedDescriptors } from "./stored-map.ts";
 
@@ -14,9 +15,11 @@ if (!library || (action !== "expand" && action !== "store"))
 let input = "";
 for await (const chunk of process.stdin) input += chunk.toString();
 const raw = JSON.parse(input);
+const expanded = expandStoredMap(raw);
 const descriptors = await pinnedDescriptors(
   library,
-  (expandStoredMap(raw).assetSources as ExternalAssetSource[] | undefined) ?? [],
+  (expanded.assetSources as ExternalAssetSource[] | undefined) ?? [],
+  (expanded.sceneAssets as SceneAssetSource[] | undefined) ?? [],
 );
 const result =
   action === "expand"

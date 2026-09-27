@@ -81,8 +81,13 @@ def graph(staged, previous):
             include(reference['model'], reference['model_sha256'])
             include(reference['descriptor'], reference['descriptor_sha256'])
             descriptor = json.loads(Path(files[reference['descriptor']]['source']).read_text())
-            if reference['resources'] != descriptor['resources']: raise ValueError('Map resource pins differ from catalog')
-            for resource in reference['resources']: include(resource['path'], resource['sha256'])
+            if 'resources' in reference and reference['resources'] != descriptor.get('resources', []):
+                raise ValueError('Map resource pins differ from catalog')
+            state = reference['id'].removeprefix(descriptor['id'] + '--state-')
+            selected = (descriptor.get('state_variants') or descriptor.get('standalone_variants') or {}).get(state, descriptor)
+            if 'model_scene' in reference and reference['model_scene'] != selected.get('model_scene'):
+                raise ValueError('Map scene differs from catalog')
+            for resource in descriptor.get('resources', []): include(resource['path'], resource['sha256'])
     validate_asset_index(staged/'3d-assets', index, files={
         relative.removeprefix('3d-assets/'): record['source']
         for relative, record in files.items() if relative.startswith('3d-assets/') and 'source' in record})

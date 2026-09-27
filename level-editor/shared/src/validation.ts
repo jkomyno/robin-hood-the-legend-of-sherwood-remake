@@ -772,6 +772,31 @@ export function parseProjectionAssetIndex(value: unknown): ProjectionAssetEntry[
         "unsupported asset capability",
       );
     for (const key of ["id", "name", "source_map"]) text(entry[key], key);
+    if (entry.descriptor_sha256 !== undefined)
+      check(
+        /^[a-f0-9]{64}$/.test(entry.descriptor_sha256),
+        "descriptor_sha256",
+        "invalid catalog descriptor hash",
+      );
+    if (entry.editor !== undefined) {
+      const editor = parseProjectionAssetDescriptor(entry.editor);
+      check(entry.descriptor_sha256 !== undefined, entry.id, "missing descriptor pin");
+      check(safeLibraryPath(entry.descriptor), entry.id, "invalid editor descriptor path");
+      check(
+        editor.id === entry.id &&
+          editor.name === entry.name &&
+          editor.source_map === entry.source_map,
+        entry.id,
+        "editor catalog identity mismatch",
+      );
+      check(editor.model_scene === entry.model_scene, entry.id, "editor catalog scene mismatch");
+      const parent = entry.descriptor.split("/").slice(0, -1).join("/");
+      check(
+        entry.model === (parent ? `${parent}/${editor.model}` : editor.model),
+        entry.id,
+        "editor catalog model mismatch",
+      );
+    }
     if (entry.model_scene !== undefined)
       check(
         typeof entry.model_scene === "string" && !!entry.model_scene.trim(),

@@ -61,8 +61,6 @@ export class SceneAssetLoader {
       lossyBytes ?? (await checked(await read(this.root, reference.model), reference.model_sha256));
     // Lossy models embed everything, so the published model's shared resources are not fetched.
     const resources = lossyBytes ? [] : reference.resources;
-    if (reference.descriptor)
-      await checked(await read(this.root, reference.descriptor), reference.descriptor_sha256!);
     if (reference.model.endsWith(".gltf"))
       bytes = new TextEncoder().encode(
         JSON.stringify(

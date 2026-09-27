@@ -21,7 +21,12 @@ library/
 `3d-assets/index.json` is a generated cache. The source of truth is the recursive
 set of `asset.json` files and their neighboring models, not the previous index.
 Descriptors supply IDs, names, source maps, scene names, tags, asset types, and
-editor usage. The generator sorts entries by ID and discovers `lossy.glb` and
+editor usage. The index includes each descriptor's SHA-256 and a trimmed editor
+view: part names, local collision footprints, appearances, model scenes, and
+external resource pins. The editor reads this catalog for map loading, insertion,
+and previews without opening individual `asset.json` files. Reconstruction and
+publication tools continue to use the full descriptors and their review evidence.
+The generator sorts entries by ID and discovers `lossy.glb` and
 `preview.glb` (or `<model-stem>.lossy.glb` / `<model-stem>.preview.glb` for named
 models). Duplicate IDs, incomplete descriptors, and missing models are errors.
 Hidden, backup, shared-blob, and symlinked directories are excluded.
@@ -91,7 +96,9 @@ appearance switch has an asset-local ID.
 
 The map's `assetSources` pins each catalog asset. When an asset has multiple
 appearances in the scene, one source entry holds the descriptor pin and an
-`appearances` array of model and scene pins. A version 2 map stores one entry
+`appearances` array of model pins. Saved source records omit `model_scene` and
+`resources`: the verified descriptor supplies the scene selector and external
+resource pins when the map is loaded. A version 2 map stores one entry
 in `placements` for each placed asset group. Its `assets` array names each
 catalog asset once; `appearances` records which of its forms are present in
 that placement. The placement retains its ID, name, and transform. The pinned

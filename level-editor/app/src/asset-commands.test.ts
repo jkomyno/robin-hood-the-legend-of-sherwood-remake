@@ -154,6 +154,51 @@ test("version 2 stores placements and only exceptional part records", () => {
   );
 });
 
+test("saved source pins derive scene selection and resources from the descriptor", () => {
+  const { descriptor, reference, document } = assetFixture();
+  descriptor.model_scene = "default";
+  descriptor.resources = [{ path: "3d-assets/blobs/shared.bin", sha256: "c".repeat(64) }];
+  reference.model_scene = "default";
+  reference.resources = structuredClone(descriptor.resources);
+  const placed = insertProjectionAsset(document, descriptor, reference, [0, 0, 0]).document;
+  const descriptors = new Map([[descriptor.id, descriptor]]);
+  const ground = {
+    ...descriptor,
+    id: "ground",
+    model: "model.glb",
+    editor_usage: "map-background" as const,
+    parts: [],
+  };
+  descriptors.set(ground.id, ground);
+  placed.sceneAssets.push({
+    id: ground.id,
+    role: "ground",
+    descriptor: "3d-assets/ground/asset.json",
+    descriptor_sha256: "d".repeat(64),
+    model: "3d-assets/ground/model.glb",
+    model_sha256: "e".repeat(64),
+    model_scene: "default",
+    resources: structuredClone(ground.resources),
+  });
+  const saved = serializeStoredMap(placed, descriptors) as {
+    assetSources: { model_scene?: string; resources?: unknown }[];
+    sceneAssets: { model_scene?: string; resources?: unknown }[];
+  };
+  assert.equal(saved.assetSources[0]!.model_scene, undefined);
+  assert.equal(saved.assetSources[0]!.resources, undefined);
+  assert.equal(saved.sceneAssets[0]!.model_scene, undefined);
+  assert.equal(saved.sceneAssets[0]!.resources, undefined);
+  assert.deepEqual(parseStoredMap(saved, descriptors), placed);
+  assert.throws(
+    () =>
+      parseStoredMap(
+        { ...saved, assetSources: [{ ...saved.assetSources[0], model_scene: "wrong" }] },
+        descriptors,
+      ),
+    /scene differs from descriptor/,
+  );
+});
+
 test("placement sequence defines object order without a separate permutation", () => {
   const { descriptor, reference, document } = assetFixture();
   const first = insertProjectionAsset(document, descriptor, reference, [50, 40, 0]).document;

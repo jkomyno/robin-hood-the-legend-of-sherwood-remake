@@ -41,13 +41,15 @@ class PublishLibraryTest(unittest.TestCase):
 
     def test_allowlist_and_source_identity(self):
         report = self.stage()
-        self.assertEqual(set(report['payloads']), {'3d-assets/house/asset.json',
-            '3d-assets/house/lossy.glb', '3d-assets/index.json', 'scenes/index.json'})
+        self.assertEqual(set(report['payloads']), {'3d-assets/house/lossy.glb',
+            '3d-assets/index.json', 'scenes/index.json'})
         site = self.root/'deploy/site/editor/library'
         index = json.loads((site/'3d-assets/index.json').read_bytes())
         entry = index['assets'][0]
         self.assertEqual(entry['model_sha256'], hashlib.sha256(b'original').hexdigest())
         self.assertEqual(entry['preview_model'], entry['lossy_model'])
+        self.assertEqual(entry['descriptor_sha256'], hashlib.sha256((self.asset/'asset.json').read_bytes()).hexdigest())
+        self.assertFalse((site/'3d-assets/house/asset.json').exists())
         self.assertFalse((site/'3d-assets/house/model.glb').exists())
         config = json.loads((self.root/'deploy/wrangler.json').read_bytes())
         self.assertEqual(config['name'], 'robinhood-editor-library')

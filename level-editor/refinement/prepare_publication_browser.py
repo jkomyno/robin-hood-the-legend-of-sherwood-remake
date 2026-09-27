@@ -120,7 +120,6 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
 
     for reference in document["sceneAssets"] + document.get("assetSources", []):
         add(reference["model"], asset_library / reference["model"])
-        if reference.get("descriptor"): add(reference["descriptor"], asset_library / reference["descriptor"])
         for resource in reference.get("resources", []):
             add(resource["path"], asset_library / resource["path"])
     add(f"scenes/{map_name}.rhlos-map.json", document_path)
@@ -129,7 +128,6 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
     for entry in entries:
         source = sources[entry["id"]][1]
         descriptor = json.loads((source / entry["descriptor"]).read_text())
-        add("3d-assets/" + entry["descriptor"], source / entry["descriptor"])
         add("3d-assets/" + entry["model"], source / entry["model"])
         for resource in descriptor.get("resources", []):
             add(resource["path"], source / Path(resource["path"]).relative_to("3d-assets"))

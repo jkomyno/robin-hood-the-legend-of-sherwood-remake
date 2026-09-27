@@ -197,6 +197,7 @@ test("authored standalone scenes open without a matching datadir level", async (
 function parallelFixture(count: number) {
   const f = fixture();
   const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
+  const catalog: Record<string, unknown>[] = [];
   const references = Array.from({ length: count }, (_, i) => {
     const id = `asset-${i}`,
       model = `${id}.glb`,
@@ -237,14 +238,27 @@ function parallelFixture(count: number) {
     );
     f.files.set(model, new File([bytes], model));
     f.files.set(descriptor, new File([descriptorBytes], descriptor));
-    return {
+    catalog.push({
       id,
+      name: id,
+      source_map: "Derby",
       model,
       descriptor,
+      descriptor_sha256: hash(descriptorBytes),
+      editor: JSON.parse(new TextDecoder().decode(descriptorBytes)),
+    });
+    return {
+      id,
+      model: `3d-assets/${model}`,
+      descriptor: `3d-assets/${descriptor}`,
       model_sha256: hash(bytes),
       descriptor_sha256: hash(descriptorBytes),
     };
   });
+  f.files.set(
+    "index.json",
+    new File([JSON.stringify({ version: 1, assets: catalog })], "index.json"),
+  );
   const saved = {
     version: 1,
     map: "York",

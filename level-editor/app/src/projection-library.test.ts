@@ -49,8 +49,34 @@ function fixture() {
     model: "3d-assets/house/model.glb",
   };
   const files = new Map<string, File>();
-  const json = (path: string, value: unknown) =>
+  const descriptors = new Map<string, unknown>();
+  let indexValue: { version: number; assets: Record<string, unknown>[] } | undefined;
+  const json = (path: string, value: unknown) => {
     files.set(path, new File([JSON.stringify(value)], path));
+    if (path.endsWith("/asset.json")) descriptors.set(path, value);
+    if (path === "3d-assets/index.json")
+      indexValue = value as { version: number; assets: Record<string, unknown>[] };
+    if (!indexValue) return;
+    const assets = indexValue.assets.map((asset) => {
+      const stored = descriptors.get(`3d-assets/${asset.descriptor}`);
+      if (!stored) return asset;
+      const encoded = JSON.stringify(stored);
+      return {
+        ...asset,
+        name: (stored as { name: string }).name,
+        source_map: (stored as { source_map: string }).source_map,
+        ...((stored as { model_scene?: string }).model_scene
+          ? { model_scene: (stored as { model_scene: string }).model_scene }
+          : {}),
+        editor: stored,
+        descriptor_sha256: createHash("sha256").update(encoded).digest("hex"),
+      };
+    });
+    files.set(
+      "3d-assets/index.json",
+      new File([JSON.stringify({ version: 1, assets })], "index.json"),
+    );
+  };
   json(entry.descriptor, descriptor);
   files.set(entry.model, new File([new Uint8Array([3, 2, 1])], "model.glb"));
   json("3d-assets/index.json", {
@@ -113,7 +139,12 @@ function fixture() {
 
 test("standalone index filters the current map and actual model parts receive namespaced keys", async (t) => {
   const f = fixture();
-  assert.deepEqual(await listProjectionAssets(f.directory, "leicester"), [f.entry]);
+  const catalog = await listProjectionAssets(f.directory, "leicester");
+  assert.deepEqual(
+    catalog.map((entry) => entry.id),
+    [f.entry.id],
+  );
+  assert.deepEqual(catalog[0]!.editor, f.descriptor);
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
   const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
   assert.equal(prepared.sources.get("asset:house:building-000"), f.mesh);
@@ -123,10 +154,17 @@ test("standalone index filters the current map and actual model parts receive na
   assert.equal(f.disposed(), 1);
 });
 
-test("ordinary palette entries load from the index without reading descriptors", async () => {
+test("palette assets load from the index without reading descriptors", async (t) => {
   const f = fixture();
   f.files.delete(f.entry.descriptor);
-  assert.deepEqual(await listProjectionAssets(f.directory, "Leicester"), [f.entry]);
+  assert.deepEqual(
+    (await listProjectionAssets(f.directory, "Leicester")).map((entry) => entry.id),
+    [f.entry.id],
+  );
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: f.asset }));
+  const prepared = await prepareProjectionAsset(f.directory, f.entry, "Leicester");
+  assert.equal(prepared.descriptor.parts[0]!.node, "building-000");
+  disposeObjectResources([prepared.asset]);
 });
 
 test("changed files reject before model publication; bad model cleanup is owned", async (t) => {
@@ -192,6 +230,7 @@ test("saved version 2 asset placements reload before document validation", async
     placements: [],
   });
   f.files.set("scenes/York-volumes.scene.glb", new File([new Uint8Array([7])], "map.glb"));
+  f.files.delete(f.entry.descriptor);
   let calls = 0;
   t.mock.method(GLTFLoader.prototype, "parseAsync", async () => {
     calls++;

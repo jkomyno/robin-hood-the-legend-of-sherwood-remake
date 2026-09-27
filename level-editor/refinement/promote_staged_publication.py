@@ -117,7 +117,9 @@ def _prepare(stage, library, main_blend, map_name, catalog_source=None, catalog_
     pairs=[(stage/'worker.blend',main_blend)]
     from stored_map import asset_source_references
     for reference in document['sceneAssets'] + list(asset_source_references(document)):
-        relatives = [reference['model']] + [resource['path'] for resource in reference.get('resources', [])]
+        descriptor = (json.loads(contained_path(asset_library, safe_relative(reference['descriptor']), required=True).read_text())
+                      if reference.get('descriptor') else reference)
+        relatives = [reference['model']] + [resource['path'] for resource in descriptor.get('resources', [])]
         if reference.get('descriptor'): relatives.append(reference['descriptor'])
         pairs.extend((contained_path(asset_library,safe_relative(relative),required=True),
                       contained_path(library,safe_relative(relative))) for relative in relatives)

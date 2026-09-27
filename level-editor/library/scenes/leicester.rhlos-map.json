@@ -18,13 +18,6 @@
       "role": "ground",
       "model": "3d-assets/leicester/leicester-terrain/model.glb",
       "model_sha256": "0312aaaa66c8412e522beffb225b3ef836fe6e07f25c00d9e9c45a961f63f199",
-      "resources": [
-        {
-          "path": "3d-assets/blobs/751e7d62147a0ab4aaddb98f2105d3b6213f84f95311998a5d5e9b86243e71f7.png",
-          "sha256": "751e7d62147a0ab4aaddb98f2105d3b6213f84f95311998a5d5e9b86243e71f7"
-        }
-      ],
-      "model_scene": "default",
       "descriptor": "3d-assets/leicester/leicester-terrain/asset.json",
       "descriptor_sha256": "945f7fbd64cc0d20a247dbdb893287db226fbf49f848020375379a4c98a85975"
     }
@@ -33,29 +26,23 @@
     {
       "model": "3d-assets/leicester/leicester-church/model.glb",
       "model_sha256": "bfa179a0b08ad0248e0dac1918b6103bb1fe10c2c5b492a47572b8577d3d6bff",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-church/asset.json",
       "descriptor_sha256": "1faadc1ed5256df6e7f115af131507d93b13c66f6b1d8222f5a9a51e3a8938e5",
-      "id": "leicester-church",
-      "model_scene": "default"
+      "id": "leicester-church"
     },
     {
       "model": "3d-assets/leicester/leicester-church-courtyard-wall/model.glb",
       "model_sha256": "b3542e12138888183978a5362f7536d4e4375326a069edb6a2b22a4b937a5668",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-church-courtyard-wall/asset.json",
       "descriptor_sha256": "687f84144d68687005e22050fe7ea9910cd295218b274c39af5e736751c2c34b",
-      "id": "leicester-church-courtyard-wall",
-      "model_scene": "default"
+      "id": "leicester-church-courtyard-wall"
     },
     {
       "model": "3d-assets/leicester/leicester-church-side-tower/model.glb",
       "model_sha256": "1c2a831d839e0bf5132722e7d743a6b419d1ade2b2a87543ecbd65dc861a40c4",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-church-side-tower/asset.json",
       "descriptor_sha256": "c919a31feb4bbd9205f9d40643097f40cb50cdb5c7ec1e9f2d23e04ff2524da1",
-      "id": "leicester-church-side-tower",
-      "model_scene": "default"
+      "id": "leicester-church-side-tower"
     },
     {
       "id": "leicester-east-moat-drawbridge",
@@ -65,90 +52,70 @@
         {
           "state": "base",
           "model": "3d-assets/leicester/leicester-east-moat-drawbridge/model.glb",
-          "model_sha256": "05a0e1186124b41925c6e1be906abe60ac2de5c572e31370ab9261771ac46c23",
-          "model_scene": "initial",
-          "resources": []
+          "model_sha256": "05a0e1186124b41925c6e1be906abe60ac2de5c572e31370ab9261771ac46c23"
         },
         {
           "state": "applied",
           "model": "3d-assets/leicester/leicester-east-moat-drawbridge/model.glb",
-          "model_sha256": "05a0e1186124b41925c6e1be906abe60ac2de5c572e31370ab9261771ac46c23",
-          "model_scene": "applied",
-          "resources": []
+          "model_sha256": "05a0e1186124b41925c6e1be906abe60ac2de5c572e31370ab9261771ac46c23"
         }
       ]
     },
     {
       "model": "3d-assets/leicester/leicester-church-west-archway/model.glb",
       "model_sha256": "fb87cb99c06c212cb457f4c72aecebba1ee441b320034f8c5c2402d1c74a7b58",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-church-west-archway/asset.json",
       "descriptor_sha256": "7c2af137bd9cc2222073a7c402fd496401d0e22f7b4b5c485960e1fdef3fdb35",
-      "id": "leicester-church-west-archway",
-      "model_scene": "default"
+      "id": "leicester-church-west-archway"
     },
     {
       "model": "3d-assets/leicester/leicester-courtyard-well/model.glb",
       "model_sha256": "d16412c7fc2b7f05c167613862943526923e9e1fc15ffd4f24ac35e3c5aa42d5",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-courtyard-well/asset.json",
       "descriptor_sha256": "018ef396b382888111d8fa849b46af11234eb3b1e9c79d4c4acc1bb677fc4314",
-      "id": "leicester-courtyard-well",
-      "model_scene": "default"
+      "id": "leicester-courtyard-well"
     },
     {
       "model": "3d-assets/leicester/leicester-east-wall-turret/model.glb",
       "model_sha256": "175576c5166a5d69b766a259541f1bf2af9bf95280416be50a8f5cad3aee0492",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-wall-turret/asset.json",
       "descriptor_sha256": "a33e376d103385b63a3e7703f79cb4a778e3b685ef61ccc4c55590646db0e45b",
-      "id": "leicester-east-wall-turret",
-      "model_scene": "default"
+      "id": "leicester-east-wall-turret"
     },
     {
       "model": "3d-assets/leicester/leicester-east-edge-thatched-house/model.glb",
       "model_sha256": "7c410b4d580bfc3c646c845cd41b5a48f7e08642a9f50856cf851c4f0533c6af",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-edge-thatched-house/asset.json",
       "descriptor_sha256": "ecdddc33d7694cf9a39bb7eb8cc874958faa279a0295309d29108dfa9ffa173f",
-      "id": "leicester-east-edge-thatched-house",
-      "model_scene": "default"
+      "id": "leicester-east-edge-thatched-house"
     },
     {
       "model": "3d-assets/leicester/leicester-east-moat-tower/model.glb",
       "model_sha256": "a8970c8fb4a5cea9e380272c9d861194283e7fc3b5f1bd78b9ed0e57af850527",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-moat-tower/asset.json",
       "descriptor_sha256": "d8fe5d23c7877835ab9f079661c0bb72c230dbc907968c177956e2fb9b795b3d",
-      "id": "leicester-east-moat-tower",
-      "model_scene": "default"
+      "id": "leicester-east-moat-tower"
     },
     {
       "model": "3d-assets/leicester/leicester-east-riverside-hay-mound/model.glb",
       "model_sha256": "f73f115dee48c78336474c3c95ce62e7176214cdbe3349094df5ae4c86fcc113",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-riverside-hay-mound/asset.json",
       "descriptor_sha256": "4ee6498459dfa7fd87156f3fbbb588695948b3fcb534b11eee26b6509f399abb",
-      "id": "leicester-east-riverside-hay-mound",
-      "model_scene": "default"
+      "id": "leicester-east-riverside-hay-mound"
     },
     {
       "model": "3d-assets/leicester/leicester-east-riverside-house/model.glb",
       "model_sha256": "bc034dff2d90c76aeec7e86bcdfc8e00350a008386b3fc16fd49f75a54e7972b",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-riverside-house/asset.json",
       "descriptor_sha256": "45280c62c8a9cfe4be24a6135b614ec9898959a1ccfc7b5b35c1b229e5eedd20",
-      "id": "leicester-east-riverside-house",
-      "model_scene": "default"
+      "id": "leicester-east-riverside-house"
     },
     {
       "model": "3d-assets/leicester/leicester-east-riverside-gate/model.glb",
       "model_sha256": "bdd6e6386c44c3b9a4611e52d70deb9b4d75cd7c0fc79cee1bb33fa945f1bcee",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-riverside-gate/asset.json",
       "descriptor_sha256": "e1e254428f48eaf59fbbda5980b655aaa352971051837058f768b36325abc901",
-      "id": "leicester-east-riverside-gate",
-      "model_scene": "default"
+      "id": "leicester-east-riverside-gate"
     },
     {
       "id": "leicester-east-village-drawbridge",
@@ -158,297 +125,231 @@
         {
           "state": "applied",
           "model": "3d-assets/leicester/leicester-east-village-drawbridge/model.glb",
-          "model_sha256": "dd515d52ef2c6f4eca4ec8298fe5d3cb55f5ad9b97019ea09c962c74c543f2b3",
-          "model_scene": "applied",
-          "resources": []
+          "model_sha256": "dd515d52ef2c6f4eca4ec8298fe5d3cb55f5ad9b97019ea09c962c74c543f2b3"
         },
         {
           "state": "base",
           "model": "3d-assets/leicester/leicester-east-village-drawbridge/model.glb",
-          "model_sha256": "dd515d52ef2c6f4eca4ec8298fe5d3cb55f5ad9b97019ea09c962c74c543f2b3",
-          "model_scene": "initial",
-          "resources": []
+          "model_sha256": "dd515d52ef2c6f4eca4ec8298fe5d3cb55f5ad9b97019ea09c962c74c543f2b3"
         }
       ]
     },
     {
       "model": "3d-assets/leicester/leicester-east-village-footbridge/model.glb",
       "model_sha256": "0612d8742eff8b8fff4dd72af8e68becdb88ed282ac8144592bf45bdbcb9a822",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-east-village-footbridge/asset.json",
       "descriptor_sha256": "4d709baded31cec4595fdca9d82f4c1690e1bb2219de970b7e4b03b6e5dd91e1",
-      "id": "leicester-east-village-footbridge",
-      "model_scene": "default"
+      "id": "leicester-east-village-footbridge"
     },
     {
       "model": "3d-assets/leicester/leicester-great-keep/model.glb",
       "model_sha256": "35111663282fafd6bddcdf2afa47c1b0370bf890c6d90c03b094602989e3fbbf",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-great-keep/asset.json",
       "descriptor_sha256": "296a55adf75a370df1f162e6c89fd9c1e067a5fd3498e46bffa54ed251de1260",
-      "id": "leicester-great-keep",
-      "model_scene": "default"
+      "id": "leicester-great-keep"
     },
     {
       "model": "3d-assets/leicester/leicester-lower-bailey-terrace/model.glb",
       "model_sha256": "54bf7dfc7fe331735e3f98c6cfebe51970d036494298efed3d631a5de7eae080",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-lower-bailey-terrace/asset.json",
       "descriptor_sha256": "9c02d507d8326996dc5c5d44a792918865633794939b26413741780303894131",
-      "id": "leicester-lower-bailey-terrace",
-      "model_scene": "default"
+      "id": "leicester-lower-bailey-terrace"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-channel-wall-east/model.glb",
       "model_sha256": "5f719175f16f704807a01ae61bdcc580d160997b273bbb56a53a24dc2460df0f",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-channel-wall-east/asset.json",
       "descriptor_sha256": "d0d2d797540d7d3b5131e4da8386d6de596f1108043a440805dc7c64725b1d5e",
-      "id": "leicester-mill-channel-wall-east",
-      "model_scene": "default"
+      "id": "leicester-mill-channel-wall-east"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-channel-wall-west/model.glb",
       "model_sha256": "48d8a352ac1ed83da02b382dae86d2481e8e59b1e14acaa8e644b47e3cf16fe9",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-channel-wall-west/asset.json",
       "descriptor_sha256": "10bdf95253b938a81d55c675b42447e1f484961221fba7c47e6978868044a6f9",
-      "id": "leicester-mill-channel-wall-west",
-      "model_scene": "default"
+      "id": "leicester-mill-channel-wall-west"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-north-cottage/model.glb",
       "model_sha256": "5861c93b88d03c1fce1280d61d43df657a12e61f304a383a9bcd0205996902de",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-north-cottage/asset.json",
       "descriptor_sha256": "bcfa82db64828449a37e063fa5fc5416dc78e070e7a26a5fc718defca22cc9db",
-      "id": "leicester-mill-north-cottage",
-      "model_scene": "default"
+      "id": "leicester-mill-north-cottage"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-north-trough/model.glb",
       "model_sha256": "256b6c9a77284067af50d490346d915def937c21a5bb356b24fe2d2dc83c3c2a",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-north-trough/asset.json",
       "descriptor_sha256": "f6a085af20d7777e88e5e4d4c531e33e5b4546664503d8b96ddbde15ab81ff53",
-      "id": "leicester-mill-north-trough",
-      "model_scene": "default"
+      "id": "leicester-mill-north-trough"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-path-boundary-wall/model.glb",
       "model_sha256": "b871e28a5597bcece5e1cae9c4330b4161b2f1970c24ebc1063ea40fe259afca",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-path-boundary-wall/asset.json",
       "descriptor_sha256": "75fd58f81eec3717676555f4320b68b59d7886aad8fbdb584d526b79e797f5bc",
-      "id": "leicester-mill-path-boundary-wall",
-      "model_scene": "default"
+      "id": "leicester-mill-path-boundary-wall"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-barrel/model.glb",
       "model_sha256": "7f8e18d7512045160ac3e565c389da8aa31ff16c25f1059fbafe21b3529f3950",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-barrel/asset.json",
       "descriptor_sha256": "86c4fc3436b1c3914abcfe0fa5481be23f6b5f537a14e0aabba434f57d11d857",
-      "id": "leicester-mill-south-barrel",
-      "model_scene": "default"
+      "id": "leicester-mill-south-barrel"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-bucket/model.glb",
       "model_sha256": "6be0bf106b6e054612ab64743b3fbb86d470b28c78b9b6a9d033b1c5a896f0d2",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-bucket/asset.json",
       "descriptor_sha256": "1b62cf414d234775ffcee6591b751e438e08075e56491b6df8801d7349505c4f",
-      "id": "leicester-mill-south-bucket",
-      "model_scene": "default"
+      "id": "leicester-mill-south-bucket"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-cottage/model.glb",
       "model_sha256": "d64f95d585b5abcd664268269a6fd9ed9ac1f48ed1302fff0f613a64c65660bc",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-cottage/asset.json",
       "descriptor_sha256": "e2a23bec0dc737f3309546ea9883845ce1d4af03a12c72d185bd8fb252805767",
-      "id": "leicester-mill-south-cottage",
-      "model_scene": "default"
+      "id": "leicester-mill-south-cottage"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-fence-panel/model.glb",
       "model_sha256": "efdd618e0b1ed2854d5125ef11cb6432499edc2f4f155e339023bf794b0824a4",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-fence-panel/asset.json",
       "descriptor_sha256": "a69316ccb98d1af9f3d3223270072d8b88bf4d4c7521d5844fbf621b0471229e",
-      "id": "leicester-mill-south-fence-panel",
-      "model_scene": "default"
+      "id": "leicester-mill-south-fence-panel"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-trough/model.glb",
       "model_sha256": "54a8983ec2239c23e4229a40a4a7c943158e6f4fd6961d5658535c1b042465f6",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-trough/asset.json",
       "descriptor_sha256": "eb0ad108f8b73aa343eaa31db923a2b5399fbe3164e50e5e198f6d6d596d0190",
-      "id": "leicester-mill-south-trough",
-      "model_scene": "default"
+      "id": "leicester-mill-south-trough"
     },
     {
       "model": "3d-assets/leicester/leicester-mill-south-yard-wall/model.glb",
       "model_sha256": "c22f0a808a2cc3abd7161b74bbc48fe13d69034768513c381c040fbfd8ed87c7",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-mill-south-yard-wall/asset.json",
       "descriptor_sha256": "c903c750c07b416faf6c136a941c7a9b637a2eb1056863516d5a830c1b6d196d",
-      "id": "leicester-mill-south-yard-wall",
-      "model_scene": "default"
+      "id": "leicester-mill-south-yard-wall"
     },
     {
       "model": "3d-assets/leicester/leicester-moat-bank-tree/model.glb",
       "model_sha256": "8f67b11e6a7992cdb296587c4af403eea0475033a25dd1c58789d4cc1b2a0ad3",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-moat-bank-tree/asset.json",
       "descriptor_sha256": "9847215d6344148e3c057c39f4c08e78b5e58030c441bb5241c2acc14d0c9dd4",
-      "id": "leicester-moat-bank-tree",
-      "model_scene": "default"
+      "id": "leicester-moat-bank-tree"
     },
     {
       "model": "3d-assets/leicester/leicester-moat-bank-wall-middle/model.glb",
       "model_sha256": "e91aad63afcbb90ddc44c93226d3201f7b166f49f7e79e4e4d5250494aab43cf",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-moat-bank-wall-middle/asset.json",
       "descriptor_sha256": "2e3949adc66cb307b64057eef288c9a1b541d88005d92b4a5f48d1da9ebafffa",
-      "id": "leicester-moat-bank-wall-middle",
-      "model_scene": "default"
+      "id": "leicester-moat-bank-wall-middle"
     },
     {
       "model": "3d-assets/leicester/leicester-moat-bank-wall-north/model.glb",
       "model_sha256": "59c930957b9ee4b3a1bde20c753eb50d533811e2cf73a397b57b8f9d5460a5cd",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-moat-bank-wall-north/asset.json",
       "descriptor_sha256": "e7841d3f8fb9ba250248827da0e599abaa3176d7d9333d5e7d8a2967ea7810ec",
-      "id": "leicester-moat-bank-wall-north",
-      "model_scene": "default"
+      "id": "leicester-moat-bank-wall-north"
     },
     {
       "model": "3d-assets/leicester/leicester-moat-bank-wall-south/model.glb",
       "model_sha256": "d883fde1dd95421270f1dbcca62518fd6b3663aa386f8c7f0218a7ea0f819062",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-moat-bank-wall-south/asset.json",
       "descriptor_sha256": "e0534cca1efa503f778f7e1d35fba1e6138d7aa3201da48a2356426a7970d4ec",
-      "id": "leicester-moat-bank-wall-south",
-      "model_scene": "default"
+      "id": "leicester-moat-bank-wall-south"
     },
     {
       "model": "3d-assets/leicester/leicester-north-church-tree/model.glb",
       "model_sha256": "6e5f03a1ab9ecffa2e3f321de9df465086014bcc488dd3b9a275c13a1b6a6c6f",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-north-church-tree/asset.json",
       "descriptor_sha256": "923a1d671f0d52becd5da497344d6f9d43f4d8603df5f3a1a00239b23584f427",
-      "id": "leicester-north-church-tree",
-      "model_scene": "default"
+      "id": "leicester-north-church-tree"
     },
     {
       "model": "3d-assets/leicester/leicester-north-edge-field-boundary/model.glb",
       "model_sha256": "d69aedfa1f79638085099e006adcc1c557172eb8e80450e6c9f7ab302d00caee",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-north-edge-field-boundary/asset.json",
       "descriptor_sha256": "76400296d114f0ba0a9508ee37515856e3b7415196630ab9c104784dab9898d1",
-      "id": "leicester-north-edge-field-boundary",
-      "model_scene": "default"
+      "id": "leicester-north-edge-field-boundary"
     },
     {
       "model": "3d-assets/leicester/leicester-north-village-cottage/model.glb",
       "model_sha256": "44c31f284d5c8c923669b2a84c77c6e70453726d0905987fc62407293ad7ca88",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-north-village-cottage/asset.json",
       "descriptor_sha256": "d65644b4e751c9ea103088f282adc74e5c984e2fa93c0ee3a1d2826cff18d116",
-      "id": "leicester-north-village-cottage",
-      "model_scene": "default"
+      "id": "leicester-north-village-cottage"
     },
     {
       "model": "3d-assets/leicester/leicester-north-village-field-fence/model.glb",
       "model_sha256": "7d283393f16cb57b5077705f48fe3a5d52c319cd6d5de22b79a2cd745ec74769",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-north-village-field-fence/asset.json",
       "descriptor_sha256": "7cbf2055783f46fd0b0478b738b012b53a56f16e3c793964fea70a5e5f03d58a",
-      "id": "leicester-north-village-field-fence",
-      "model_scene": "default"
+      "id": "leicester-north-village-field-fence"
     },
     {
       "model": "3d-assets/leicester/leicester-northeast-field-boundary/model.glb",
       "model_sha256": "5e1ba173d5890ada3db1e98951cbbd9a82d102ae11b301f7365906494ab14b67",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northeast-field-boundary/asset.json",
       "descriptor_sha256": "8f8b7a2dd2553589b28d7c2f64fdf37f028b51350c215258b823b4bbf7b9a421",
-      "id": "leicester-northeast-field-boundary",
-      "model_scene": "default"
+      "id": "leicester-northeast-field-boundary"
     },
     {
       "model": "3d-assets/leicester/leicester-northeast-gabled-house/model.glb",
       "model_sha256": "0b148ca23e32eac4a33137fcac277d050fe2c150527cc6b03a408228990a98f2",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northeast-gabled-house/asset.json",
       "descriptor_sha256": "2c8944198f80292b3c3838b0be68f60401dfd3e0168dfea8bcc4a8b13ab91950",
-      "id": "leicester-northeast-gabled-house",
-      "model_scene": "default"
+      "id": "leicester-northeast-gabled-house"
     },
     {
       "model": "3d-assets/leicester/leicester-northeast-handcart/model.glb",
       "model_sha256": "92eda64c9a1e3d112a1215e78206f2d55651cc24edd695942fbdb47e2e09c001",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northeast-handcart/asset.json",
       "descriptor_sha256": "c5e4ab9cba60c2399ef34a35088932c214e60417f1f2b431105a062295e094ac",
-      "id": "leicester-northeast-handcart",
-      "model_scene": "default"
+      "id": "leicester-northeast-handcart"
     },
     {
       "model": "3d-assets/leicester/leicester-northeast-longhouse/model.glb",
       "model_sha256": "23b1f47bf4922afdb9d8d9a2f3274168033a183a8c5872f4d9402ee2b4dddd17",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northeast-longhouse/asset.json",
       "descriptor_sha256": "9337bf1e3a8584d6af4260300aecba04e50693141e43a400272f0c93b57c93fb",
-      "id": "leicester-northeast-longhouse",
-      "model_scene": "default"
+      "id": "leicester-northeast-longhouse"
     },
     {
       "model": "3d-assets/leicester/leicester-northwest-forest-tree/model.glb",
       "model_sha256": "c08cc0f3cb447e3d9826222ad1b053090813ae7ffa853af9c325a2fdf21235da",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northwest-forest-tree/asset.json",
       "descriptor_sha256": "07948287cad7de73fba90392d1420bb4daa9794a490fe80364dcc342652c1443",
-      "id": "leicester-northwest-forest-tree",
-      "model_scene": "default"
+      "id": "leicester-northwest-forest-tree"
     },
     {
       "model": "3d-assets/leicester/leicester-northwest-tower/model.glb",
       "model_sha256": "a526c85f97e9b2a4bd1ced01f604de917d0604fd4124a1d4292fbc949325ec59",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northwest-tower/asset.json",
       "descriptor_sha256": "4ae8314c486f9bf9e043848b3d0d17f62e94e59b021347b2d412c28415975f3b",
-      "id": "leicester-northwest-tower",
-      "model_scene": "default"
+      "id": "leicester-northwest-tower"
     },
     {
       "model": "3d-assets/leicester/leicester-northwest-tower-tree/model.glb",
       "model_sha256": "e5cfe1fe0dd832c3bc7208735aa6f0adb4051bc2d1fb8fb43e094d3db4133d42",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-northwest-tower-tree/asset.json",
       "descriptor_sha256": "422d29214be8dd0c38268c7465f777d5e8f916c52f78439bd82b712d8455c271",
-      "id": "leicester-northwest-tower-tree",
-      "model_scene": "default"
+      "id": "leicester-northwest-tower-tree"
     },
     {
       "model": "3d-assets/leicester/leicester-roadside-rail-fence/model.glb",
       "model_sha256": "e69a081afdcdad6c1490dfa3b80ec7f48aa269f3727fdf6fcbb370fd089c7aaa",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-roadside-rail-fence/asset.json",
       "descriptor_sha256": "0f925c9555bf91ee3574a7bd45cf1ade67a5ca9dbd6ef54050ee43e27c47a385",
-      "id": "leicester-roadside-rail-fence",
-      "model_scene": "default"
+      "id": "leicester-roadside-rail-fence"
     },
     {
       "model": "3d-assets/leicester/leicester-south-cottage-garden-fence/model.glb",
       "model_sha256": "c2053d04800ce5b8a2309233be9e37313791fad40af6beb46e5b0b8015bbbfc4",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-cottage-garden-fence/asset.json",
       "descriptor_sha256": "0c29fd160810afa72d63aa0303d5c116bb337d4773ed62e230903f6cca872488",
-      "id": "leicester-south-cottage-garden-fence",
-      "model_scene": "default"
+      "id": "leicester-south-cottage-garden-fence"
     },
     {
       "id": "leicester-south-drawbridge",
@@ -458,243 +359,189 @@
         {
           "state": "applied",
           "model": "3d-assets/leicester/leicester-south-drawbridge/model.glb",
-          "model_sha256": "aadc28fe74ebce463238bc15a67f8a996d4801a4719ce5535bafd95d9c6bf3c7",
-          "model_scene": "applied",
-          "resources": []
+          "model_sha256": "aadc28fe74ebce463238bc15a67f8a996d4801a4719ce5535bafd95d9c6bf3c7"
         },
         {
           "state": "base",
           "model": "3d-assets/leicester/leicester-south-drawbridge/model.glb",
-          "model_sha256": "aadc28fe74ebce463238bc15a67f8a996d4801a4719ce5535bafd95d9c6bf3c7",
-          "model_scene": "initial",
-          "resources": []
+          "model_sha256": "aadc28fe74ebce463238bc15a67f8a996d4801a4719ce5535bafd95d9c6bf3c7"
         }
       ]
     },
     {
       "model": "3d-assets/leicester/leicester-south-edge-field-bank/model.glb",
       "model_sha256": "6779d8f5dce78edd5924e8d8d8fdc7a488d55be643406220c523f53f62e2d104",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-edge-field-bank/asset.json",
       "descriptor_sha256": "84313671fefb05b7b91effe0df3f32f9731a7200c5b382cf8ec44d188523687f",
-      "id": "leicester-south-edge-field-bank",
-      "model_scene": "default"
+      "id": "leicester-south-edge-field-bank"
     },
     {
       "model": "3d-assets/leicester/leicester-south-fence-end-rock/model.glb",
       "model_sha256": "f60742d92f807ba0387f3fb5f8099e418ae8f1592028aaf7d22177bb406715d3",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-fence-end-rock/asset.json",
       "descriptor_sha256": "ee4af4cf5f9a94fc1ceefd7906c177be1e6200fe62b243740854b513a31712c5",
-      "id": "leicester-south-fence-end-rock",
-      "model_scene": "default"
+      "id": "leicester-south-fence-end-rock"
     },
     {
       "model": "3d-assets/leicester/leicester-south-field-corner-bank/model.glb",
       "model_sha256": "772a4fb7f794b67a107dfc1d099c52318c528ced4466ac983f143fd6a848e2f7",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-field-corner-bank/asset.json",
       "descriptor_sha256": "55e256dd6c881007eeb6cd8d118f15021f6504029b8c4cb671bb949c83beac4d",
-      "id": "leicester-south-field-corner-bank",
-      "model_scene": "default"
+      "id": "leicester-south-field-corner-bank"
     },
     {
       "model": "3d-assets/leicester/leicester-south-field-corner-rock/model.glb",
       "model_sha256": "2c5744db90742e70355757da5569b265a99561ad614b2098c4389a27671e4165",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-field-corner-rock/asset.json",
       "descriptor_sha256": "2e16dbff8a6ca00107fe8c2fdca392e4ad4ff64a1a772d664c51007d381cc833",
-      "id": "leicester-south-field-corner-rock",
-      "model_scene": "default"
+      "id": "leicester-south-field-corner-rock"
     },
     {
       "model": "3d-assets/leicester/leicester-south-footbridge/model.glb",
       "model_sha256": "9e81173f4bdd87ea6bb515fdb3dc8b5e9211372fe05b4ffea7ad56da875a39bc",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-footbridge/asset.json",
       "descriptor_sha256": "5b378f231a4118fbf5da3a874a81e232fc54f9a499e87365487fc1980f43031c",
-      "id": "leicester-south-footbridge",
-      "model_scene": "default"
+      "id": "leicester-south-footbridge"
     },
     {
       "model": "3d-assets/leicester/leicester-south-gatehouse/model.glb",
       "model_sha256": "4264c819ade22fd9bda6f55ac6729aa8faa002aca26504ff037d1bed2432fb67",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-gatehouse/asset.json",
       "descriptor_sha256": "c9425c6cec3c592c13a14a5e2211ee6e43bb9ad7be22a7bef08ee0780ba53f16",
-      "id": "leicester-south-gatehouse",
-      "model_scene": "default"
+      "id": "leicester-south-gatehouse"
     },
     {
       "model": "3d-assets/leicester/leicester-south-hall/model.glb",
       "model_sha256": "911e8b958895edb864820bfae9843c0cc85b08e4f11fb806220c7879afd00879",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-hall/asset.json",
       "descriptor_sha256": "70c00f64479edc32e184fa0953cda3f9247b38036d81bf06692e65312acd6ddc",
-      "id": "leicester-south-hall",
-      "model_scene": "default"
+      "id": "leicester-south-hall"
     },
     {
       "model": "3d-assets/leicester/leicester-south-wall-west/model.glb",
       "model_sha256": "a12cdd0796d486a643d9879c0d4f331584f826fe08ec39984ec2e1222030f5df",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-wall-west/asset.json",
       "descriptor_sha256": "6bf4d7145f6d54c3a0dcab992c32f136de0f1f55e9107bde563f6266c5ba8e2e",
-      "id": "leicester-south-wall-west",
-      "model_scene": "default"
+      "id": "leicester-south-wall-west"
     },
     {
       "model": "3d-assets/leicester/leicester-south-stilt-shed/model.glb",
       "model_sha256": "bf68168185cc1ec733ba389a6bc0cd3691a16bc481836ac691d0f2770edde626",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-south-stilt-shed/asset.json",
       "descriptor_sha256": "54c110bcd900e01b45b411ebb908845041a78a29b9d023d8e5b364684169b897",
-      "id": "leicester-south-stilt-shed",
-      "model_scene": "default"
+      "id": "leicester-south-stilt-shed"
     },
     {
       "model": "3d-assets/leicester/leicester-southeast-cottage/model.glb",
       "model_sha256": "b68847e1ccf1b03c7924d023d6a9ab81005b1a361078b8374f5e976209795ba7",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southeast-cottage/asset.json",
       "descriptor_sha256": "4bebd56eaebf846059613c85f2f9aedb2dd6533c351b584e71fa3595dab39637",
-      "id": "leicester-southeast-cottage",
-      "model_scene": "default"
+      "id": "leicester-southeast-cottage"
     },
     {
       "model": "3d-assets/leicester/leicester-southeast-cottage-barrel/model.glb",
       "model_sha256": "847d54be711b42893c69f7d24ead0973c0b6dd2490799a4e7dfd695b9b6e6377",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southeast-cottage-barrel/asset.json",
       "descriptor_sha256": "2cf3ac36390371529285d378cd1b0f1e5a121ca29ad6ca273f1ae73fcac827fe",
-      "id": "leicester-southeast-cottage-barrel",
-      "model_scene": "default"
+      "id": "leicester-southeast-cottage-barrel"
     },
     {
       "model": "3d-assets/leicester/leicester-southeast-cottage-tree/model.glb",
       "model_sha256": "78210dd535d03da517ce220908a3f8b1eeb3538b9581b6ccd84fc99259d82a88",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southeast-cottage-tree/asset.json",
       "descriptor_sha256": "33f5897a4a1a011f9ce5195aeddbfdd27d1dcc24cbb254465047734952490f86",
-      "id": "leicester-southeast-cottage-tree",
-      "model_scene": "default"
+      "id": "leicester-southeast-cottage-tree"
     },
     {
       "model": "3d-assets/leicester/leicester-southeast-wall-turret/model.glb",
       "model_sha256": "6423d553bf3342f267cd4cec1baedcbe1c9e285f603bf785505309d8b2371ac3",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southeast-wall-turret/asset.json",
       "descriptor_sha256": "30edb3e5c0ca9020cda89993dcf9ed547bed33dc51e83ff4bfc86058b0aefcf1",
-      "id": "leicester-southeast-wall-turret",
-      "model_scene": "default"
+      "id": "leicester-southeast-wall-turret"
     },
     {
       "model": "3d-assets/leicester/leicester-southeast-manor/model.glb",
       "model_sha256": "fbc603916f6a3faff90b00eb379d181f155ccd6addb6ee48dd818514f7c391a7",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southeast-manor/asset.json",
       "descriptor_sha256": "be021440ed78045aca87d0bb6f93f50b95dfda1248c1745f82e0463b7fe833cd",
-      "id": "leicester-southeast-manor",
-      "model_scene": "default"
+      "id": "leicester-southeast-manor"
     },
     {
       "model": "3d-assets/leicester/leicester-southwest-wall-turret/model.glb",
       "model_sha256": "9874233f0ad8d4d6bb549f4712bfefdad7d52804effaeb7c5ecf33a4f783af72",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southwest-wall-turret/asset.json",
       "descriptor_sha256": "427a9466cd9220ea461c95b94a7a61d32a24b28657267a7d57ea40d0422d608c",
-      "id": "leicester-southwest-wall-turret",
-      "model_scene": "default"
+      "id": "leicester-southwest-wall-turret"
     },
     {
       "model": "3d-assets/leicester/leicester-southwest-edge-bank/model.glb",
       "model_sha256": "fd421f54a1e523dd64be6dd7379e168a0a18992e71a76fd8937e35ba0951fa09",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southwest-edge-bank/asset.json",
       "descriptor_sha256": "af583db30eed17958e66ced4a6cf33d1da4a7224736dd93424965b26bfba109c",
-      "id": "leicester-southwest-edge-bank",
-      "model_scene": "default"
+      "id": "leicester-southwest-edge-bank"
     },
     {
       "model": "3d-assets/leicester/leicester-southwest-field-bank/model.glb",
       "model_sha256": "84d9e38e12e73e4c51e584a88e56de42000797dda6e270d27f1af0074fd83464",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southwest-field-bank/asset.json",
       "descriptor_sha256": "3b651f01947f29a4d47b819629446c2035fb627c11ff34865eda6fbff60374a7",
-      "id": "leicester-southwest-field-bank",
-      "model_scene": "default"
+      "id": "leicester-southwest-field-bank"
     },
     {
       "model": "3d-assets/leicester/leicester-southwest-woodland-bank/model.glb",
       "model_sha256": "48ce68ecbe58ea6b1db1f27c05cb829fa10fc8f99154bf1cb5abd71fc7c68b32",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-southwest-woodland-bank/asset.json",
       "descriptor_sha256": "339457a70044219f81e24c7c640baca6ee6faab29c4b27a173ba985e1e47af76",
-      "id": "leicester-southwest-woodland-bank",
-      "model_scene": "default"
+      "id": "leicester-southwest-woodland-bank"
     },
     {
       "model": "3d-assets/leicester/leicester-tower-covered-bridge/model.glb",
       "model_sha256": "b6702688efec23418e1da805831feb46700d5fece4c0899890f8fadfad12cc59",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-tower-covered-bridge/asset.json",
       "descriptor_sha256": "393b84fa58ca97f15206062b0b9a64a4454c20c75e0c950d065c833f00bcfe2a",
-      "id": "leicester-tower-covered-bridge",
-      "model_scene": "default"
+      "id": "leicester-tower-covered-bridge"
     },
     {
       "model": "3d-assets/leicester/leicester-village-well/model.glb",
       "model_sha256": "4ef7ef15a9c66f5dcd338b273febe287e9d9ef9a1abfc2cbb3cb26b7e5b07903",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-village-well/asset.json",
       "descriptor_sha256": "b2dc089d41d9a0ed007d66fa68f988c76ac121f0bde95238e65dc829b7f8ab16",
-      "id": "leicester-village-well",
-      "model_scene": "default"
+      "id": "leicester-village-well"
     },
     {
       "model": "3d-assets/leicester/leicester-village-well-bucket/model.glb",
       "model_sha256": "0e5124c78f6452626cb820c4f7162e09b9072f5e47f4424eeabe7237a8e8eb15",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-village-well-bucket/asset.json",
       "descriptor_sha256": "e8d0072d50b93ed6ad1fa0d0d297e87e0cc44ac4c9a17802a3a9afa700b8ea03",
-      "id": "leicester-village-well-bucket",
-      "model_scene": "default"
+      "id": "leicester-village-well-bucket"
     },
     {
       "model": "3d-assets/leicester/leicester-watermill/model.glb",
       "model_sha256": "ba0b9fc1d5047e0bffc876e357408270651414e3d31c8190bee86466a133dc11",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-watermill/asset.json",
       "descriptor_sha256": "7e8d5d64ca334981ea7c395a96d9c7a44f013cd4b6ab4d540c314a4a5baa9419",
-      "id": "leicester-watermill",
-      "model_scene": "default"
+      "id": "leicester-watermill"
     },
     {
       "model": "3d-assets/leicester/leicester-west-moat-tower/model.glb",
       "model_sha256": "567ce09f35fde860f0617b7eb8e91495fb1ee46bc6dbe11ffc20d783cb38bb8d",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-west-moat-tower/asset.json",
       "descriptor_sha256": "2691e98ef79d4f6d89a0125a6b30461aa074b66bd9f0439fe6c29b15f6f8cdf9",
-      "id": "leicester-west-moat-tower",
-      "model_scene": "default"
+      "id": "leicester-west-moat-tower"
     },
     {
       "model": "3d-assets/leicester/leicester-west-tower-footbridge/model.glb",
       "model_sha256": "996d72edf5a138432e0c7d951efb80171e7301fcddd3b0b6aa6fbb50cf189f6b",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-west-tower-footbridge/asset.json",
       "descriptor_sha256": "cc8c1278a444e38056cb2e7a39a0b8561e1f36730914f26cc6a2ca4a617aaf1a",
-      "id": "leicester-west-tower-footbridge",
-      "model_scene": "default"
+      "id": "leicester-west-tower-footbridge"
     },
     {
       "model": "3d-assets/leicester/leicester-west-wing/model.glb",
       "model_sha256": "4a034a5d003f3eb3215e2623c5f8d8f9c6768390c765c7576b78345e2dc45dc1",
-      "resources": [],
       "descriptor": "3d-assets/leicester/leicester-west-wing/asset.json",
       "descriptor_sha256": "6de558e237676aad7bd4fb860105561f16d20f723a6fb104dc7aa9a332d9525e",
-      "id": "leicester-west-wing",
-      "model_scene": "default"
+      "id": "leicester-west-wing"
     }
   ],
   "sceneMetadata": {
@@ -734,17 +581,17 @@
       "transform": {
         "dx": 1633.7822265625,
         "dy": 933.8628875159003,
-        "dz": -9.935441106828641e-06,
+        "dz": -0.000009935441106828641,
         "rot_deg": 0
       },
-      "assets": [
-        "leicester-church-side-tower"
-      ],
       "patches": {
         "leicester-church-side-tower": {
           "appearance-1": "patch-003"
         }
-      }
+      },
+      "assets": [
+        "leicester-church-side-tower"
+      ]
     },
     {
       "id": "leicester-church-west-archway",
@@ -807,6 +654,11 @@
         "dz": 44.21499901629928,
         "rot_deg": 0
       },
+      "patches": {
+        "leicester-east-moat-drawbridge": {
+          "state": "patch-001"
+        }
+      },
       "assets": [
         "leicester-east-moat-drawbridge"
       ],
@@ -818,11 +670,6 @@
           "base",
           "applied"
         ]
-      },
-      "patches": {
-        "leicester-east-moat-drawbridge": {
-          "state": "patch-001"
-        }
       }
     },
     {
@@ -831,17 +678,17 @@
       "transform": {
         "dx": 1987.52587890625,
         "dy": 976.5257157023218,
-        "dz": -7.283451930463818e-06,
+        "dz": -0.000007283451930463818,
         "rot_deg": 0
       },
-      "assets": [
-        "leicester-east-moat-tower"
-      ],
       "patches": {
         "leicester-east-moat-tower": {
           "appearance-1": "patch-003"
         }
-      }
+      },
+      "assets": [
+        "leicester-east-moat-tower"
+      ]
     },
     {
       "id": "leicester-east-riverside-hay-mound",
@@ -849,7 +696,7 @@
       "transform": {
         "dx": 3096.099853515625,
         "dy": 1052.5967106733083,
-        "dz": -1.0233387283364024e-05,
+        "dz": -0.000010233387283364024,
         "rot_deg": 0
       },
       "assets": [
@@ -891,6 +738,11 @@
         "dz": 43.50099081656227,
         "rot_deg": 0
       },
+      "patches": {
+        "leicester-east-village-drawbridge": {
+          "state": "patch-008"
+        }
+      },
       "assets": [
         "leicester-east-village-drawbridge"
       ],
@@ -899,11 +751,6 @@
           "applied",
           "base"
         ]
-      },
-      "patches": {
-        "leicester-east-village-drawbridge": {
-          "state": "patch-008"
-        }
       }
     },
     {
@@ -925,18 +772,18 @@
       "transform": {
         "dx": 820.0673828125,
         "dy": 658.472610563174,
-        "dz": 8.286845132099367e-05,
+        "dz": 0.00008286845132099367,
         "rot_deg": 0
       },
-      "assets": [
-        "leicester-great-keep"
-      ],
       "patches": {
         "leicester-great-keep": {
           "appearance-2": "patch-006",
           "appearance-1": "patch-005"
         }
-      }
+      },
+      "assets": [
+        "leicester-great-keep"
+      ]
     },
     {
       "id": "leicester-lower-bailey-terrace",
@@ -957,7 +804,7 @@
       "transform": {
         "dx": 2725.09326171875,
         "dy": 921.6857309415227,
-        "dz": -1.8653683574794272e-05,
+        "dz": -0.000018653683574794272,
         "rot_deg": 0
       },
       "assets": [
@@ -970,7 +817,7 @@
       "transform": {
         "dx": 2652.7998046875,
         "dy": 955.1527817327981,
-        "dz": -1.3911612996247517e-05,
+        "dz": -0.000013911612996247517,
         "rot_deg": 0
       },
       "assets": [
@@ -1009,7 +856,7 @@
       "transform": {
         "dx": 2376.912841796875,
         "dy": 1059.829641167006,
-        "dz": -5.395907175031743e-06,
+        "dz": -0.000005395907175031743,
         "rot_deg": 0
       },
       "assets": [
@@ -1022,7 +869,7 @@
       "transform": {
         "dx": 2962.5,
         "dy": 1234.5000499331293,
-        "dz": -2.148740859462613e-06,
+        "dz": -0.000002148740859462613,
         "rot_deg": 0
       },
       "assets": [
@@ -1035,7 +882,7 @@
       "transform": {
         "dx": 2963.39990234375,
         "dy": 1174.0000588293437,
-        "dz": -1.1820577975576973e-06,
+        "dz": -0.0000011820577975576973,
         "rot_deg": 0
       },
       "assets": [
@@ -1061,7 +908,7 @@
       "transform": {
         "dx": 3045,
         "dy": 1248.0001011838274,
-        "dz": -1.2298340838371057e-06,
+        "dz": -0.0000012298340838371057,
         "rot_deg": 0
       },
       "assets": [
@@ -1087,7 +934,7 @@
       "transform": {
         "dx": 3055.04833984375,
         "dy": 1190.926165034086,
-        "dz": -1.4515360781618215e-05,
+        "dz": -0.000014515360781618215,
         "rot_deg": 0
       },
       "assets": [
@@ -1113,7 +960,7 @@
       "transform": {
         "dx": 2067.444091796875,
         "dy": 1182.296052193295,
-        "dz": -1.54286173676987e-05,
+        "dz": -0.0000154286173676987,
         "rot_deg": 0
       },
       "assets": [
@@ -1126,7 +973,7 @@
       "transform": {
         "dx": 2243.46826171875,
         "dy": 1107.6723014776037,
-        "dz": -1.638442917883345e-05,
+        "dz": -0.00001638442917883345,
         "rot_deg": 0
       },
       "assets": [
@@ -1139,7 +986,7 @@
       "transform": {
         "dx": 1888.5057373046875,
         "dy": 1270.4313368910764,
-        "dz": -2.0874160385062643e-05,
+        "dz": -0.000020874160385062643,
         "rot_deg": 0
       },
       "assets": [
@@ -1165,7 +1012,7 @@
       "transform": {
         "dx": 3032.605224609375,
         "dy": 61.46656227160443,
-        "dz": -3.6586273629136495e-06,
+        "dz": -0.0000036586273629136495,
         "rot_deg": 0
       },
       "assets": [
@@ -1178,7 +1025,7 @@
       "transform": {
         "dx": 2388.406494140625,
         "dy": 536.4041742029274,
-        "dz": 9.18302002700261e-05,
+        "dz": 0.0000918302002700261,
         "rot_deg": 0
       },
       "assets": [
@@ -1191,7 +1038,7 @@
       "transform": {
         "dx": 2138.368408203125,
         "dy": 465.01179713253066,
-        "dz": -7.15479091600354e-06,
+        "dz": -0.00000715479091600354,
         "rot_deg": 0
       },
       "assets": [
@@ -1204,7 +1051,7 @@
       "transform": {
         "dx": 2703,
         "dy": 222.5476923125333,
-        "dz": -6.270036794524523e-05,
+        "dz": -0.00006270036794524523,
         "rot_deg": 0
       },
       "assets": [
@@ -1230,7 +1077,7 @@
       "transform": {
         "dx": 2836.660888671875,
         "dy": 485.2497961356198,
-        "dz": -6.914032048207045e-06,
+        "dz": -0.000006914032048207045,
         "rot_deg": 0
       },
       "assets": [
@@ -1256,7 +1103,7 @@
       "transform": {
         "dx": 340,
         "dy": 325.9999954621268,
-        "dz": -3.3018086549665376e-06,
+        "dz": -0.0000033018086549665376,
         "rot_deg": 0
       },
       "assets": [
@@ -1269,17 +1116,17 @@
       "transform": {
         "dx": 801.36279296875,
         "dy": 472.59327053396225,
-        "dz": 8.119747332432514e-05,
+        "dz": 0.00008119747332432514,
         "rot_deg": 0
       },
-      "assets": [
-        "leicester-northwest-tower"
-      ],
       "patches": {
         "leicester-northwest-tower": {
           "appearance-1": "patch-007"
         }
-      }
+      },
+      "assets": [
+        "leicester-northwest-tower"
+      ]
     },
     {
       "id": "leicester-northwest-tower-tree",
@@ -1313,7 +1160,7 @@
       "transform": {
         "dx": 2482.607421875,
         "dy": 1560.7521753692918,
-        "dz": -1.9094112273759236e-05,
+        "dz": -0.000019094112273759236,
         "rot_deg": 0
       },
       "assets": [
@@ -1329,6 +1176,11 @@
         "dz": 44.75098638792981,
         "rot_deg": 0
       },
+      "patches": {
+        "leicester-south-drawbridge": {
+          "state": "patch-010"
+        }
+      },
       "assets": [
         "leicester-south-drawbridge"
       ],
@@ -1337,11 +1189,6 @@
           "applied",
           "base"
         ]
-      },
-      "patches": {
-        "leicester-south-drawbridge": {
-          "state": "patch-010"
-        }
       }
     },
     {
@@ -1350,7 +1197,7 @@
       "transform": {
         "dx": 111.06438446044922,
         "dy": 1980.3482644892008,
-        "dz": -1.522811908046825e-05,
+        "dz": -0.00001522811908046825,
         "rot_deg": 0
       },
       "assets": [
@@ -1363,7 +1210,7 @@
       "transform": {
         "dx": 2249,
         "dy": 1556.000004972805,
-        "dz": -3.3503239955746194e-06,
+        "dz": -0.0000033503239955746194,
         "rot_deg": 0
       },
       "assets": [
@@ -1376,7 +1223,7 @@
       "transform": {
         "dx": 1091.8289794921875,
         "dy": 1865.2966172091978,
-        "dz": -1.5542550936625495e-05,
+        "dz": -0.000015542550936625495,
         "rot_deg": 0
       },
       "assets": [
@@ -1389,7 +1236,7 @@
       "transform": {
         "dx": 980.6085205078125,
         "dy": 1821.6322707921165,
-        "dz": -3.634788390727264e-06,
+        "dz": -0.000003634788390727264,
         "rot_deg": 0
       },
       "assets": [
@@ -1418,14 +1265,14 @@
         "dz": 0.0002621481728891049,
         "rot_deg": 0
       },
-      "assets": [
-        "leicester-south-gatehouse"
-      ],
       "patches": {
         "leicester-south-gatehouse": {
           "appearance-1": "patch-004"
         }
-      }
+      },
+      "assets": [
+        "leicester-south-gatehouse"
+      ]
     },
     {
       "id": "leicester-south-hall",
@@ -1485,7 +1332,7 @@
       "transform": {
         "dx": 2906.5,
         "dy": 1673.000075723362,
-        "dz": -1.457081369673094e-06,
+        "dz": -0.000001457081369673094,
         "rot_deg": 0
       },
       "assets": [
@@ -1511,7 +1358,7 @@
       "transform": {
         "dx": 1326.64501953125,
         "dy": 1549.6291895500046,
-        "dz": -2.794865066420959e-05,
+        "dz": -0.00002794865066420959,
         "rot_deg": 0
       },
       "assets": [
@@ -1550,7 +1397,7 @@
       "transform": {
         "dx": 0.0451812744140625,
         "dy": 1727.7802662609379,
-        "dz": -6.968073607956627e-05,
+        "dz": -0.00006968073607956627,
         "rot_deg": 0
       },
       "assets": [
@@ -1563,7 +1410,7 @@
       "transform": {
         "dx": 584.8762817382812,
         "dy": 1806.7475701755397,
-        "dz": -4.5850239177498624e-05,
+        "dz": -0.000045850239177498624,
         "rot_deg": 0
       },
       "assets": [
@@ -1592,14 +1439,14 @@
         "dz": 184.52675972898265,
         "rot_deg": 0
       },
-      "assets": [
-        "leicester-tower-covered-bridge"
-      ],
       "patches": {
         "leicester-tower-covered-bridge": {
           "appearance-1": "patch-003"
         }
-      }
+      },
+      "assets": [
+        "leicester-tower-covered-bridge"
+      ]
     },
     {
       "id": "leicester-village-well",
@@ -1607,7 +1454,7 @@
       "transform": {
         "dx": 2785.5927734375,
         "dy": 831.4678008458824,
-        "dz": -6.039015563519857e-06,
+        "dz": -0.000006039015563519857,
         "rot_deg": 0
       },
       "assets": [
@@ -1620,7 +1467,7 @@
       "transform": {
         "dx": 2883,
         "dy": 854.999978433647,
-        "dz": -2.3985531427853574e-06,
+        "dz": -0.0000023985531427853574,
         "rot_deg": 0
       },
       "assets": [
@@ -1649,15 +1496,15 @@
         "dz": 0.00018351964645113323,
         "rot_deg": 0
       },
-      "assets": [
-        "leicester-west-moat-tower"
-      ],
       "patches": {
         "leicester-west-moat-tower": {
           "appearance-1": "patch-013",
           "appearance-2": "patch-014"
         }
-      }
+      },
+      "assets": [
+        "leicester-west-moat-tower"
+      ]
     },
     {
       "id": "leicester-west-tower-footbridge",
@@ -1681,14 +1528,14 @@
         "dz": -0.05852157396485992,
         "rot_deg": 0
       },
-      "assets": [
-        "leicester-west-wing"
-      ],
       "patches": {
         "leicester-west-wing": {
           "appearance-1": "patch-000"
         }
-      }
+      },
+      "assets": [
+        "leicester-west-wing"
+      ]
     }
   ]
 }
