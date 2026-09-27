@@ -61,10 +61,28 @@ the static grouping review.
 
 `ground_assets.py` reads the frozen grouped scene and subtracts the volumes below
 the reviewed terrain, ramp and raised-lane surfaces from each asset. It trims
-447 component meshes across 171 assets. All 251 named assets and terrain remain.
+472 component meshes across 172 assets. All 251 named assets and terrain remain.
 Cuts follow both the support footprint and its sloping height, preserving exposed
 lower walls at terrace edges. Bridge decks and roofs are not solid-ground cutters.
 The eleven support sources are listed explicitly in the recipe and its report.
+
+Terrain footprints often stop at a building frontage instead of continuing
+under its foundation. Footprint-only clipping therefore missed the courtyard
+lodges and left partial foundations under the stairs and other edge assets.
+`floor-contacts.json` records 24 reviewed floor continuations, with the adjoining
+support, game height and source-artwork rationale for each. `floor_contacts.py`
+applies each continuation only to its named asset. Lower streets, exposed
+retaining walls, bridges and buildings with visible lower facades retain their
+lower geometry. These hidden floor continuations are explicit inferences;
+they do not add visible terrain or alter native gameplay obstacles.
+
+The floor-contact correction is compared against `review-v7/geometry.json`;
+all 228 other geometry records are identical. Before/after source-camera
+comparisons and the map-wide candidate survey are in `grounding-investigation/`.
+`grounding/outside-preservation.json` records the comparison, and the coverage
+audit now checks every vertex against each reviewed floor independently of
+the terrain footprint. The previous delivered scene and export are archived
+in `grounding-v3/` and `stage-v6/`.
 
 Clipping interpolates every UV channel and retains material assignments. No caps
 or replacement textures are added. Untrimmed meshes remain in a hidden reference

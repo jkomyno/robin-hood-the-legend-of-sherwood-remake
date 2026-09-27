@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "scope": "Asset-specific continuation of adjoining ground beneath foundations. These are reviewed hidden floor inferences, not new visible terrain or changes to native gameplay obstacles.",
+  "contacts": {
+    "york-riverside-stone-storehouse": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "Door threshold meets the raised town street; the river-facing foundation is hidden."
+    },
+    "york-market-north-cream-canopy-stall": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "Market stall feet stand on the raised market surface."
+    },
+    "york-west-city-wall-roofed-stair-turret": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "Turret entrance meets the raised inner street."
+    },
+    "york-southwest-west-gatehouse": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "Gate entrance meets the raised inner lane."
+    },
+    "york-southwest-market-west-low-house": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "The low house meets the raised inner lane behind the covered link."
+    },
+    "york-southwest-market-northwest-house": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "House facade meets the raised market lane."
+    },
+    "york-precinct-causeway-ivy-covered-house": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "Lower door and stair foot meet the town street; preserve the upper causeway contact separately."
+    },
+    "york-precinct-causeway-stone-annex": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "Annex door meets the lower town street."
+    },
+    "york-east-bridge-street-northern-timber-house": {
+      "support_source": "building-093",
+      "floor_game_z": 50.00101,
+      "reason": "The house meets the lower street at the foot of the bridge steps, not the upper bridge terrace."
+    },
+    "york-east-bridge-street-central-timber-house": {
+      "support_source": "building-093",
+      "floor_game_z": 50.00101,
+      "reason": "The front door meets the lower street, preserving the wall beside the higher stairs."
+    },
+    "york-east-bridge-street-stair-side-timber-house": {
+      "support_source": "building-093",
+      "floor_game_z": 50.00101,
+      "reason": "The shop frontage and lower stair foot meet the lower street."
+    },
+    "york-east-riverside-roofed-link": {
+      "support_source": "building-093",
+      "floor_game_z": 50.00101,
+      "reason": "The covered link meets the lower riverside street."
+    },
+    "york-east-quay-front-timber-house": {
+      "support_source": "building-096",
+      "floor_game_z": 50.00101,
+      "reason": "The front house meets the quay landing, below the bridge road."
+    },
+    "york-east-quay-rear-timber-house": {
+      "support_source": "building-096",
+      "floor_game_z": 50.00101,
+      "reason": "Continue the shared quay-level foundation under the adjoining rear house; hidden contact is inferred."
+    },
+    "york-east-riverside-low-courtyard-wall": {
+      "support_source": "building-092",
+      "floor_game_z": 90.00101,
+      "reason": "The short courtyard wall stands on the upper bridge terrace."
+    },
+    "york-castle-courtyard-east-lodge": {
+      "support_source": "building-098",
+      "floor_game_z": 90.00101,
+      "reason": "The lodge door meets the courtyard; the terrain footprint stops at its front facade."
+    },
+    "york-castle-west-gatehouse": {
+      "support_source": "building-098",
+      "floor_game_z": 90.00101,
+      "reason": "The gate passage joins the bridge terrace and courtyard at the same elevation."
+    },
+    "york-castle-main-keep": {
+      "support_source": "building-098",
+      "floor_game_z": 90.00101,
+      "reason": "The keep door and front facade meet the courtyard; continue that floor beneath the building."
+    },
+    "york-castle-courtyard-west-lodge": {
+      "support_source": "building-098",
+      "floor_game_z": 90.00101,
+      "reason": "The west lodge meets the courtyard behind the gate wall."
+    },
+    "york-castle-south-round-tower": {
+      "support_source": "building-093",
+      "floor_game_z": 50.00101,
+      "reason": "Use the lower riverside street as the base; retain the tower below the higher courtyard floor."
+    },
+    "york-castle-great-hall": {
+      "support_source": "building-098",
+      "floor_game_z": 90.00101,
+      "reason": "The hall meets the courtyard; the hidden foundation continues that floor beneath its footprint."
+    },
+    "york-castle-east-round-tower": {
+      "support_source": "building-098",
+      "floor_game_z": 90.00101,
+      "reason": "The tower adjoins the hall and raised courtyard; continue that floor beneath its hidden foundation."
+    },
+    "york-castle-courtyard-lodge-stairs": {
+      "support_source": "building-098",
+      "floor_game_z": 90.00101,
+      "reason": "The first stair tread meets the courtyard; its proxy continues to global zero beyond the terrain edge."
+    },
+    "york-precinct-east-wall-stair": {
+      "support_source": "building-087",
+      "floor_game_z": 160.00101,
+      "reason": "The wall stair begins on the upper precinct floor; its support volume is behind the terrace rim."
+    }
+  }
+}

@@ -55,8 +55,14 @@ def main():
             supports[obj['source_node']]=[p for p,_,_ in triangles(obj)
                 if abs(cross([p[1][k]-p[0][k] for k in range(3)],[p[2][k]-p[0][k] for k in range(3)])[2])>1e-6]
     removed_samples=0
+    floors = report.get('floor_extensions', {})
+    for floor in floors.values():
+        supports[floor['source']] = floor['triangles']
     for item in evidence:
         for polygon in item['polygons']:
+            if polygon['support'].startswith('asset-floor:'):
+                if polygon['support'] != floors.get(item['asset'], {}).get('source'):
+                    raise ValueError('Floor continuation applied to another asset')
             vertices=polygon['vertices'];p=[sum(v[k]for v in vertices)/len(vertices) for k in range(3)]
             heights=[z for tri in supports[polygon['support']] if (z:=terrain_height(p[0],p[1],tri)) is not None]
             if not heights or p[2]<-.002 or p[2]>max(heights)+.002:
@@ -102,7 +108,17 @@ def main():
                 error,distance=min(candidates)
                 if error>2e-5:raise ValueError('Texture coordinates changed: '+name)
                 max_distance=max(max_distance,distance);max_uv=max(max_uv,error);samples+=1
+    floor_vertices = 0
+    for obj in working.objects:
+        if obj.type != 'MESH' or obj.hide_render or obj.get('asset_group') not in floors:
+            continue
+        z = floors[obj['asset_group']]['height_scene']
+        for v in obj.data.vertices:
+            if (obj.matrix_world @ v.co).z < z-.003:
+                raise ValueError('Below reviewed floor: '+obj.name)
+            floor_vertices += 1
     result={'status':'PASS','changed_meshes':len(changes),'retained_surface_samples':samples,
+            'floor_continuations_checked':len(floors),'floor_vertices_checked':floor_vertices,
             'removed_surface_samples':removed_samples,'max_surface_distance':max_distance,'max_uv_error':max_uv}
     (OUT/'grounding/verification.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
 

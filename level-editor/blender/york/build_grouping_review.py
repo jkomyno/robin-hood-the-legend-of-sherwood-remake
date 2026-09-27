@@ -19,6 +19,9 @@ def build():
     review=OUT/'review'
     manifest=json.loads((review/'manifest.json').read_text())
     geometry=json.loads((review/'geometry.json').read_text())
+    grounding=json.loads((OUT/'grounding/report.json').read_text()) if manifest['scene']['grounded'] else None
+    if grounding and grounding['output_sha256'] != manifest['scene']['sha256']:
+        raise ValueError('Stale grounding evidence')
     catalog=json.loads((ROOT/'level-editor/refinement/catalogs/york.json').read_text())
     checked=json.loads((OUT/'catalog-validation.json').read_text())
     exported=json.loads((OUT/'stage/export-report.json').read_text())
@@ -46,6 +49,9 @@ def build():
             'parts':groups.get(identity,{}).get('parts',[]),'source_nodes':record['sources'],
             'model_sha256':sha(model),'descriptor_sha256':sha(descriptor),
             'geometry_sha256':hashlib.sha256(json.dumps(geometry[identity],sort_keys=True).encode()).hexdigest()}
+        floor=grounding.get('floor_extensions',{}).get(identity) if grounding else None
+        if floor:
+            ownership['floor_continuation']=floor
         own=folder/'ownership.json';own.write_text(json.dumps(ownership,indent=2)+'\n')
         validation=folder/'validation.json';validation.write_text(json.dumps({'status':'PASS','scope':'grouping-only',
             'asset_id':identity,'unique_source_ownership':True,'source_parts':len(record['sources']),
@@ -56,7 +62,7 @@ def build():
             'east_solid_label':'Selected geometry — east oblique',
             'projection_errors_label':'Selected source parts (cyan overlay)',
             'ownership':str(own),'validation':str(validation),
-            'notes':record['notes']+' Source parts: '+', '.join(record['sources'])+'. '+
+            'notes':record['notes']+(' Foundation trimmed to its adjoining floor. '+floor['reason'] if floor else '')+' Source parts: '+', '.join(record['sources'])+'. '+
                 'Review the grouping and name. Missing walls, rough proxy geometry and unfinished textures remain separate refinement work.'})
     path=review/'candidates.json'
     path.write_text(json.dumps({'map':'York','review_kind':'grouping','total_groups':len(groups),

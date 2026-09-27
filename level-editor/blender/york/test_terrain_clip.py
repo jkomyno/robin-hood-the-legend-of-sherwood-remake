@@ -1,5 +1,6 @@
 import unittest
 from terrain_clip import area, clip, prism
+from floor_contacts import extension, cutters
 
 
 class TerrainClipTests(unittest.TestCase):
@@ -45,6 +46,26 @@ class TerrainClipTests(unittest.TestCase):
             kept,removed=clip(tri,[self.cutter])
             self.assertEqual(kept,[])
             self.assertAlmostEqual(sum(area(p) for p,_ in removed),area(tri))
+
+    def test_frontage_floor_removes_foundation_outside_terrain_footprint(self):
+        # Terrain ends at Y=0; the lodge sits behind it, so footprint clipping
+        # alone misses the foundation. Its explicitly reviewed floor fills it.
+        terrain = prism([(0,-10,5),(10,-10,5),(0,0,5)], 'courtyard')
+        wall = [(1,1,0,0,0),(2,1,10,1,1),(1,1,10,0,1)]
+        self.assertEqual(clip(wall,[terrain]),([wall],[]))
+        import math
+        floor = extension('lodge',wall,{'floor_game_z':5*math.cos(math.radians(35))})
+        kept, removed = clip(wall,[terrain]+cutters(floor))
+        self.assertTrue(removed)
+        self.assertTrue(all(v[2]>=5-1e-6 for p in kept for v in p))
+        for p in kept:
+            for v in p:
+                self.assertAlmostEqual(v[4],v[2]/10)
+
+    def test_floor_continuation_is_bounded_to_its_asset(self):
+        floor = extension('lodge',[(0,0,0),(5,5,10)],{'floor_game_z':5})
+        river_wall = [(20,1,0),(21,1,0),(20,1,10)]
+        self.assertEqual(clip(river_wall,cutters(floor)),([river_wall],[]))
 
 
 if __name__ == '__main__':

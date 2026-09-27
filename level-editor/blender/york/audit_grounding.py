@@ -8,6 +8,7 @@ ROOT=Path(__file__).resolve().parents[3]
 OUT=ROOT/'level-editor/work/york-refinement'
 sys.path.insert(0,str(Path(__file__).parent))
 from verify_grounding import terrain_height
+from floor_contacts import load_contacts
 
 
 def height_inside(x,y,tri):
@@ -61,7 +62,17 @@ def main():
                     if z is not None and p[2]<z-.003:
                         count+=1;depth=max(depth,z-p[2]);break
         if count:suspects.append({'source':key,'samples':count,'max_depth':depth})
+    contacts = load_contacts()
+    floor_checks = []
+    for identity, contact in contacts.items():
+        height = contact['floor_game_z']/math.cos(math.radians(35))
+        points = [p for part in after[identity]['parts'] for p in part['positions']]
+        low = min(p[2] for p in points)
+        floor_checks.append({'asset':identity,'minimum_z':low,'floor_z':height})
+        if low < height-.003:
+            suspects.append({'asset':identity,'max_depth':height-low,'reason':'Below reviewed floor continuation'})
     result={'status':'PASS' if not suspects else 'FAIL','unchanged_components':len(old)-len(changed),
+        'floor_continuations':floor_checks,
         'max_unchanged_position_drift':drift,'retained_surface_samples_checked':samples,'buried_candidates':suspects}
     (OUT/'grounding/coverage-audit.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result))

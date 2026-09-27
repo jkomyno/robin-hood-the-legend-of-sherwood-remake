@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[3]
 OUT = ROOT/'level-editor/work/york-refinement'
 sys.path.insert(0, str(Path(__file__).parent))
 from terrain_clip import area, clip, prism
+from floor_contacts import load_contacts, extension, cutters as floor_cutters
 
 # Reviewed terrain, ramps and raised lanes. Bridge decks and roof receivers are
 # not ground: their undersides can be visible and must not become solid cutters.
@@ -34,6 +35,14 @@ def main():
     bpy.context.window.scene = bpy.data.scenes['york Refinement']
     working = bpy.data.collections['york Working']
     objects = [o for o in working.objects if o.type == 'MESH' and not o.hide_render]
+    contacts = load_contacts()
+    extensions = {}
+    for identity, contact in contacts.items():
+        positions = [tuple(o.matrix_world @ v.co) for o in objects
+                     if o.get('asset_group') == identity for v in o.data.vertices]
+        if not positions:
+            raise ValueError('Missing floor-contact asset: '+identity)
+        extensions[identity] = extension(identity, positions, contact)
     support_ids = {f'building-{i:03}' for i in SUPPORTS}
     cutters = []
     for obj in objects:
@@ -56,12 +65,14 @@ def main():
             continue
         obj.data.calc_loop_triangles()
         uvs = list(obj.data.uv_layers)
+        floor = extensions.get(obj.get('asset_group'))
+        object_cutters = cutters + (floor_cutters(floor) if floor else [])
         retained, removed, total = [], [], 0.0
         for tri in obj.data.loop_triangles:
             points = [tuple(obj.matrix_world @ obj.data.vertices[v].co) + tuple(
                 x for layer in uvs for x in layer.data[loop].uv)
                 for v, loop in zip(tri.vertices, tri.loops)]
-            pieces, buried = clip(points, cutters)
+            pieces, buried = clip(points, object_cutters)
             retained.extend((poly, tri.material_index) for poly in pieces)
             removed.extend((poly, support, tri.material_index) for poly, support in buried)
             total += area(points)
@@ -132,13 +143,15 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=str(output))
     report = {'status':'PASS', 'input_sha256':frozen, 'output_sha256':sha(output),
         'recipe_sha256':sha(__file__), 'clip_recipe_sha256':sha(Path(__file__).with_name('terrain_clip.py')),
+        'floor_contacts_sha256':sha(Path(__file__).with_name('floor-contacts.json')),
+        'floor_extensions':extensions,
         'support_sources':sorted(support_ids), 'support_triangles':len(cutters),
         'assets_changed':len(anchors), 'meshes_changed':len(changed), 'meshes_unchanged':len(unaffected),
         'changes':changed, 'anchors':anchors, 'new_caps':False,
-        'scope':'Remove only surfaces inside the reviewed terrain volumes; retain boundary-exposed walls and all original meshes in a hidden reference collection.'}
+        'scope':'Remove surfaces inside reviewed terrain volumes and explicit asset floor continuations; retain exposed lower walls and all original meshes in a hidden reference collection.'}
     (output.parent/'report.json').write_text(json.dumps(report,indent=2)+'\n')
     (output.parent/'removed-surfaces.json').write_text(json.dumps(removed_evidence,separators=(',',':'))+'\n')
-    print(json.dumps({k:v for k,v in report.items() if k not in ('changes','anchors')}))
+    print(json.dumps({k:v for k,v in report.items() if k not in ('changes','anchors','floor_extensions')}))
 
 
 if __name__ == '__main__':
