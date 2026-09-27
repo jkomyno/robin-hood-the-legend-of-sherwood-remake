@@ -59,7 +59,10 @@ export interface ViewportBindings {
  * selection are borrowed from the session/UI, never copied into another model.
  * Editable clones share source resources; only source roots own their disposal. */
 export class EditorViewport {
-  bakeMap(document: Level3D) {
+  bakeMap(
+    document: Level3D,
+    assets?: ReadonlyMap<string, import("@rle/shared").ProjectionAssetDescriptor>,
+  ) {
     if (this.disposed || this.bindings.document() !== document)
       throw new Error("The map changed before compilation started. Export the current map again.");
     // Reapply committed transforms so an in-progress numeric preview cannot leak into export.
@@ -74,7 +77,7 @@ export class EditorViewport {
       (document.size
         ? ([0, 0, ...document.size] as [number, number, number, number])
         : contentBakeBounds(root, document.camera));
-    const compiled = compileMap(document, bounds);
+    const compiled = compileMap(document, bounds, assets);
     const pixels = renderMapBake(
       root,
       document.camera,

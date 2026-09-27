@@ -102,13 +102,28 @@ try {
       outcome?.startsWith("FAIL") ? outcome : "Lifecycle acceptance timed out without a result",
     );
   if (process.env.TEST_BAKE_ZIP) {
-    const bytes = await evaluate(socket, ++id, "window.__bakeZip", {
+    console.log(outcome);
+    const length = await evaluate(socket, ++id, "window.__bakeZip?.length", {
       signal: lifetime.signal,
       timeoutMs: 10000,
     });
-    if (!Array.isArray(bytes) || !bytes.length)
+    if (!Number.isSafeInteger(length) || length <= 0)
       throw new Error("No compiled mod ZIP produced by the fixture");
-    await writeFile(process.env.TEST_BAKE_ZIP, new Uint8Array(bytes));
+    const bytes = new Uint8Array(length);
+    // A full map can be tens of megabytes; avoid one enormous CDP JSON reply.
+    for (let offset = 0; offset < length; offset += 262144) {
+      const chunk = await evaluate(
+        socket,
+        ++id,
+        `Array.from(window.__bakeZip.slice(${offset}, ${offset + 262144}))`,
+        {
+          signal: lifetime.signal,
+          timeoutMs: 10000,
+        },
+      );
+      bytes.set(chunk, offset);
+    }
+    await writeFile(process.env.TEST_BAKE_ZIP, bytes);
   }
   console.log(outcome);
 } catch (error) {

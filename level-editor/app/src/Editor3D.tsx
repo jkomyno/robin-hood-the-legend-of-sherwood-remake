@@ -777,7 +777,14 @@ export default function Editor3D(props: EditorProps) {
     try {
       // Let the busy state paint before borrowing the viewport's GPU resources.
       await new Promise((resolve) => setTimeout(resolve, 0));
-      const { compiled, pixels } = viewport.bakeMap(document);
+      const library = props.library();
+      if (!library) throw new Error("Connect the asset library before compiling.");
+      const assets = await readPinnedAssetDescriptors(
+        library.handle,
+        document.assetSources ?? [],
+        document.sceneAssets,
+      );
+      const { compiled, pixels } = viewport.bakeMap(document, assets);
       props.onStatus("Packaging mod ZIP…");
       const bytes = await packageCompiledMap(compiled, pixels);
       if (disposed) return;
@@ -790,7 +797,7 @@ export default function Editor3D(props: EditorProps) {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       props.onStatus(
-        `Exported ${compiled.name}.zip — map sandbox with ground-level navigation. Installation and limitations are in the ZIP's README.`,
+        `Exported ${compiled.name}.zip — gameplay geometry compiled from placed assets. See the compile report for supported features.`,
       );
     } catch (error) {
       if (!disposed) {
@@ -1069,7 +1076,7 @@ export default function Editor3D(props: EditorProps) {
         <button
           disabled={!doc() || compiling() || editingPath() || addingAsset() || !!mapLoadProgress()}
           onClick={() => void exportMod()}
-          title="Compile the map into a playable sandbox mod ZIP"
+          title="Compile geometry and connections from placed asset definitions"
         >
           {compiling() ? "Compiling…" : "Export mod ZIP"}
         </button>
@@ -1481,9 +1488,9 @@ export default function Editor3D(props: EditorProps) {
             <section class="view-settings export-settings">
               <h2>Export frame</h2>
               <p class="hint">
-                Export mod ZIP compiles a playable map sandbox with ground-level navigation. Mission
-                scripts, preview population, raised walkways and interactive patch states are not
-                included. Scenery without obstacles and spline surfaces are visual only.
+                Gameplay is compiled from asset-local definitions. Assets need authored walkable
+                surfaces, door connections and a player spawn. Missing definitions stop export.
+                Mission scripts, lifts, jumps and interactive state changes are not supported yet.
               </p>
               <p class="hint">
                 An optional crop for compilation. Assets remain editable outside the frame,
