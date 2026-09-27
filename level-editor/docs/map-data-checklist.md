@@ -75,8 +75,13 @@ export or establish gameplay parity; `candidateCompilation` checks the full scen
 
 Split source surfaces are recovered using each asset part's own footprint;
 overlapping or uncovered portions remain explicit ownership gaps. The latest
-recovery drafts for Derby, Sherwood, Lincoln, Leicester, Croisement01, Croisement02 and Croisement03
+recovery drafts for Derby, Sherwood, Lincoln, Leicester, Nottingham, Croisement01, Croisement02 and Croisement03
 pass the static base-geometry check, excluding explicitly counted movement transitions.
+All eight also construct their compiled movement areas, sight obstacles and grids
+in the native engine without a datadir. `export-gameplay-diagnostics.ts` generates
+these explicitly labelled static probes from draft assets; the ignored
+`recovered_static_exports_construct_native_geometry` test reads their manifest via
+`ROBIN_ASSET_MAP_DIAGNOSTICS`. This checks construction, not movement/state fidelity.
 These are unpublished drafts, not completed map exports or in-game round-trip
 parity results. Other maps still fail geometry checks; no original map has yet
 been certified at full parity.
@@ -115,10 +120,14 @@ engine fixture verifies walking across the shared boundary without a gate or lif
 Recovery preserves this relationship when all supports have one unambiguous asset
 owner. Ordinary regions spanning different assets still need explicit join authoring.
 Ground recovery reports per-region differences as well as overall coverage.
+When two pieces have one shared straight cut and lie on opposite sides, recovery
+uses that cut to divide the navigation surface without trimming its outer boundary
+to the mesh. This preserves Nottingham's stair landing. Missing or ambiguous cuts
+keep their unresolved footprint gaps; no nearest-owner assignment fills them.
 Hidden mesh parts retain coordinate frames for explicit gameplay; whole hidden
 placements remain excluded. Hidden sight geometry is included only when explicitly
 referenced by a transition. Nottingham now passes the prison-frame and castle-door
-checks; its static diagnostic stops at a missing elevated stair landing. York's compound lift now has
+checks and its elevated stair landing. York's compound lift now has
 asset-local segment connections; its static check advances to an unresolved
 interior-door landing surface. Lift recovery matches shared
 edges once and stores local sockets, never runtime references between assets.

@@ -2,6 +2,18 @@ import type { Level3D } from "@rle/shared";
 import type { GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 
+export function staticGameplaySnapshot(document: Level3D): Level3D {
+  const scene = structuredClone(document);
+  delete scene.population;
+  delete scene.splines;
+  for (const group of scene.groups) {
+    delete group.states;
+    delete group.patches;
+  }
+  for (const part of scene.objects) delete part.patches;
+  return scene;
+}
+
 /** Authoring diagnostics only. A static probe must never authorize a full export. */
 export function diagnoseGameplayCandidates(
   document: Level3D,
@@ -31,14 +43,7 @@ export function diagnoseGameplayCandidates(
     : probe(document);
   // Preserve the currently visible placement geometry. Removing unsupported
   // behaviours is confined to this disposable diagnostic snapshot.
-  const staticScene = structuredClone(document);
-  delete staticScene.population;
-  delete staticScene.splines;
-  for (const group of staticScene.groups) {
-    delete group.states;
-    delete group.patches;
-  }
-  for (const part of staticScene.objects) delete part.patches;
+  const staticScene = staticGameplaySnapshot(document);
   return {
     compilation,
     staticGeometry: {

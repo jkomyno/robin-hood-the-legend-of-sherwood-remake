@@ -4,6 +4,73 @@ use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimCo
 use robin_engine::level_data::LoadedLevel;
 
 #[test]
+#[ignore = "requires static diagnostic exports via ROBIN_ASSET_MAP_DIAGNOSTICS"]
+fn recovered_static_exports_construct_native_geometry() {
+    let directory = std::path::PathBuf::from(
+        std::env::var("ROBIN_ASSET_MAP_DIAGNOSTICS").expect("diagnostic directory"),
+    );
+    let manifest: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(directory.join("diagnostics.json")).unwrap())
+            .unwrap();
+    assert_eq!(
+        manifest["scope"],
+        "static-geometry-only-not-gameplay-parity"
+    );
+    let mut count = 0;
+    for result in manifest["results"].as_array().unwrap() {
+        let Some(file) = result["file"].as_str() else {
+            continue;
+        };
+        assert!(result["error"].is_null());
+        let bytes = std::fs::read(directory.join(file)).unwrap();
+        let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let geometry = &descriptor["asset_geometry"];
+        let dims = &descriptor["walkable_polygon"][2];
+        let level = LoadedLevel::hackable_from_json(&bytes).unwrap();
+        let mut assets = LevelAssets::new();
+        let engine = construct_with_dimensions(
+            level,
+            &mut assets,
+            (
+                dims[0].as_f64().unwrap() as f32 + 1.,
+                dims[1].as_f64().unwrap() as f32 + 1.,
+            ),
+        );
+        assert_eq!(
+            assets.environment.static_sight_obstacles.len(),
+            geometry["sight_obstacles"].as_array().unwrap().len(),
+            "{file}"
+        );
+        let areas: usize = geometry["motion_data"]["layers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|l| l.as_array().unwrap().len())
+            .sum();
+        assert_eq!(
+            assets
+                .navigation
+                .pathfinder_graph
+                .static_data
+                .move_layers
+                .iter()
+                .map(Vec::len)
+                .sum::<usize>(),
+            areas,
+            "{file}"
+        );
+        assert!(!engine.fast_grid().level.blocks.is_empty(), "{file}");
+        println!(
+            "{file}: constructed {areas} areas, {} sight obstacles, {} doors",
+            assets.environment.static_sight_obstacles.len(),
+            engine.presentation_view().doors().len()
+        );
+        count += 1;
+    }
+    assert!(count > 0, "No successful static exports in manifest");
+}
+
+#[test]
 fn nonrendering_asset_volume_constructs_navigation_and_sight() {
     let mut assets = LevelAssets::new();
     let engine = construct(
@@ -436,6 +503,14 @@ fn construct(bytes: &[u8], assets: &mut LevelAssets) -> Engine {
 }
 
 fn construct_loaded(level: LoadedLevel, assets: &mut LevelAssets) -> Engine {
+    construct_with_dimensions(level, assets, (2000., 2000.))
+}
+
+fn construct_with_dimensions(
+    level: LoadedLevel,
+    assets: &mut LevelAssets,
+    dimensions: (f32, f32),
+) -> Engine {
     assert!(level.mission.beam_mes.is_empty());
     assert!(level.mission.soldiers.is_empty());
     let mut profiles = robin_engine::profiles::ProfileManager::new();
@@ -452,7 +527,7 @@ fn construct_loaded(level: LoadedLevel, assets: &mut LevelAssets) -> Engine {
             level_directory: "",
             progress: &mut |_| {},
             loaded: level,
-            bg_pixel_dims: (2000., 2000.),
+            bg_pixel_dims: dimensions,
         },
         ground_mark_sprite: None,
         titbit_row_frame_counts: vec![],

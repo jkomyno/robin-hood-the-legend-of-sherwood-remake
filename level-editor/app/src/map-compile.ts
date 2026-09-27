@@ -83,7 +83,7 @@ export function compileMap(
   requestedBounds: BakeBounds,
   assets?: ReadonlyMap<string, ProjectionAssetDescriptor>,
 ) {
-  // TODO: Compile special traversal and patch transitions from map assets.
+  // TODO: Compile visual state resources, typed masks and patch-to-door links from assets.
   const bounds = validateBakeBounds(requestedBounds);
   const slug =
     document.map
@@ -98,7 +98,7 @@ export function compileMap(
     ? [
         ...(assetGeometry.warnings ?? []),
         "Compiled from asset-local surfaces, sight geometry and doors. Navigation grids and route graphs are constructed by the engine. Player spawns and NPCs belong to a separate mission.",
-        "Mission scripts, dynamic patch states, occupants and jumps are not yet supported by the asset compiler. This export is not a full gameplay-parity certification.",
+        "Visual state resources, typed masks and patch-to-door links remain incomplete. This export is not a full gameplay-parity certification.",
       ]
     : [
         "This is an unscripted map sandbox. Mission scripts, triggers, and preview population are not exported.",

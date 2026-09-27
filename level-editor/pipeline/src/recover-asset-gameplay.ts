@@ -374,8 +374,10 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
             });
             return close(shape.points.map((p) => [p.x, p.y - p.z_top]));
           }),
+          true,
         );
         owned = split.owned;
+        for (const owner of owners) packet(owner.asset).issues.push(...split.warnings);
         coverage.push({
           kind: "split-surface-ownership",
           obstacle: index,
