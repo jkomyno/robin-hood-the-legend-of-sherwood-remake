@@ -61,7 +61,8 @@ def main(candidate,output):
     for identity,objects in sorted(groups.items()):
         model=root/'sherwood'/identity/'model.glb'
         world=points(objects);low=world.min(0);high=world.max(0)
-        pivot=descriptors.get(identity,{}).get('source_origin_scene',[(low[0]+high[0])/2,(low[1]+high[1])/2,0])
+        pivot=([0,0,0] if identity=='sherwood-terrain' else
+               descriptors.get(identity,{}).get('source_origin_scene',[(low[0]+high[0])/2,(low[1]+high[1])/2,0]))
         report=export_editor('Sherwood',model,asset_id=identity,standalone_pivot=pivot,
             catalog=export_catalog,level=level)
         descriptor=report['asset'];descriptor['source_origin_scene']=pivot

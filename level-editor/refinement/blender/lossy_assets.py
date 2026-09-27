@@ -379,6 +379,9 @@ def load_images(doc, binary, directory, base=None, decode_avif=False):
     import bpy
     directory.mkdir(parents=True, exist_ok=True)
     images = {}
+    physical_alpha = {found[1] for mesh in doc.get('meshes', []) for primitive in mesh['primitives']
+                      if (found := display_texture(doc, primitive))
+                      and doc['materials'][primitive['material']].get('alphaMode', 'OPAQUE') != 'OPAQUE'}
     for index, image in enumerate(doc.get('images', [])):
         if 'uri' in image:
             require(base is not None and not image['uri'].startswith('data:'), f'Unsupported image uri: {image["uri"]}')
@@ -396,7 +399,9 @@ def load_images(doc, binary, directory, base=None, decode_avif=False):
             subprocess.run(['avifdec', str(path), str(decoded)], check=True, capture_output=True)
             path = decoded
         loaded = bpy.data.images.load(str(path))
-        loaded.alpha_mode = 'STRAIGHT'
+        # Opaque atlases can use alpha for source ownership. Cycles must not
+        # premultiply away their synthesized RGB while sampling for the bake.
+        loaded.alpha_mode = 'STRAIGHT' if index in physical_alpha else 'NONE'
         images[index] = loaded
     return images
 
@@ -988,8 +993,16 @@ def derive(asset_id, model_path, lossy_path, args, work):
     reuse, out_of_range = texel_reuse(objects, records)
     # Keep the published layout when a unique-texel atlas cannot help: one image the UVs already
     # fill (map background planes), or texels reused by many faces / tiled (foliage cards).
-    reencode = ((len(images) == 1 and uv_area.sum() >= args.reencode_utilization)
+    # Foliage's many tiny opacity-cutout charts can collapse during smart packing.
+    # Preserve its authored UVs and physical coverage rather than rebaking cards.
+    reencode = (need_alpha or (len(images) == 1 and uv_area.sum() >= args.reencode_utilization)
                 or max(reuse.values(), default=0) > args.reuse_ratio or out_of_range)
+    if not reencode:
+        size, required, history = unwrap(objects, args, targets)
+        new_axes = np.concatenate([face_axes(o, NEW_UV, size, size) for o in objects])
+        # A capped atlas cannot meet the requested surface density. Keep the source
+        # layout instead of silently publishing undersampled or collapsed charts.
+        reencode = required > args.max_size
     if reencode:
         from PIL import Image
         reencoded, avif_command, size = {}, None, []
@@ -1009,8 +1022,6 @@ def derive(asset_id, model_path, lossy_path, args, work):
         required, history, new_axes, atlas_png = None, [], source_axes, None
     else:
         reencoded = None
-        size, required, history = unwrap(objects, args, targets)
-        new_axes = np.concatenate([face_axes(o, NEW_UV, size, size) for o in objects])
         pixels = bake(objects, size, need_alpha, args, work)
         size = [size, size]
         atlas_bytes, avif_command, atlas_png = encode_avif(pixels, work, args)
@@ -1210,7 +1221,7 @@ def main_derive(args):
     require(not failures, f'Failed assets: {failures}')
 
 
-ALGORITHM_VERSION = 2
+ALGORITHM_VERSION = 3
 
 SETTING_KEYS = ('density_coverage', 'density', 'nearest_density', 'pack_shape', 'multiple', 'min_size', 'max_size', 'quality', 'reencode_utilization', 'reuse_ratio', 'keep_normals',
                 'texture_file', 'no_quantize', 'normal_bits', 'speed', 'angle_limit', 'pack_margin_px', 'bake_margin')

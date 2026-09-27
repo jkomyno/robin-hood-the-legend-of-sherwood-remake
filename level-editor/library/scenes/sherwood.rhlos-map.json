@@ -13,9 +13,9 @@
     {
       "id": "sherwood-terrain",
       "model": "3d-assets/sherwood/sherwood-terrain/model.glb",
-      "model_sha256": "e904fada3773033a8c46c903ca9afbb4262dfc2ddf033a71035588934fc5ce8d",
+      "model_sha256": "2e8d91a5f74be21147708a1454f967d095d0745dacbca61cd4e534b3cc69d230",
       "descriptor": "3d-assets/sherwood/sherwood-terrain/asset.json",
-      "descriptor_sha256": "869c8a2a9365a44cc96a80d92ca26525edc9faaf45aac6894342a21728e3be23",
+      "descriptor_sha256": "0ac1591a55c090e71d58904deb5d14bbccfc27a7ebdddb9de3a5c542b0a12e6d",
       "role": "ground",
       "resources": []
     }
