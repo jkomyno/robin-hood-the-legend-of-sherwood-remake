@@ -3,7 +3,7 @@ import {readFile,writeFile,mkdtemp,mkdir,rm} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {resolve,dirname,join} from 'node:path';
 import {chromeEndpoint,socketOpen,evaluate as boundedEvaluate} from '../../app/tests/cdp.mjs';
-const evaluate=(socket,id,expression)=>boundedEvaluate(socket,id,expression,{timeoutMs:60000});
+const evaluate=(socket,id,expression)=>boundedEvaluate(socket,id,expression,{timeoutMs:config.cdp_timeout_ms??60000});
 if(!process.argv[2])throw Error('Usage: node verify_publication.mjs config.json [editor URL]');
 const configPath=resolve(process.argv[2]);
 const here=dirname(configPath),config=JSON.parse(await readFile(configPath,'utf8'));
@@ -64,14 +64,19 @@ try{
  }
  if(result?.status!=='PASS'){await screenshot('failure');await writeFile(join(here,'result.json'),JSON.stringify(result??{status:'TIMEOUT'},null,2));throw Error(JSON.stringify(result));}
  if(!config.visual_only){
+ await writeFile(join(here,'interaction-result.json'),JSON.stringify(result,null,2));
+ const savedResponse=await request('Runtime.evaluate',{expression:`(async()=>{const maps=await(await(await navigator.storage.getDirectory()).getDirectoryHandle('sherwood-level-editor')).getDirectoryHandle('maps');return JSON.parse(await(await(await maps.getFileHandle(${JSON.stringify(config.map+'.rhlos-map.json')})).getFile()).text());})()`,awaitPromise:true,returnByValue:true});
+ if(savedResponse.exceptionDetails)throw Error(JSON.stringify(savedResponse.exceptionDetails));
+ const stored=savedResponse.result.value;
+ await writeFile(join(here,'saved-document.rhlos-map.json'),JSON.stringify(stored,null,2));
  await writeFile(join(here,'progress.json'),JSON.stringify({status:'RUNNING',phase:'saved-document-full-reload'}));
  await request('Page.reload',{});await new Promise(r=>setTimeout(r,1500));
  // The editor does not reopen a map after reload; choose the saved browser copy like a user would.
- const reopen=`(()=>{const chooser=document.querySelector('select[aria-label="Map"]');const value=[...(chooser?.options??[])].map(option=>option.value).find(value=>value===${JSON.stringify(config.map+' (Modified)')});if(!value)return false;chooser.value=value;chooser.dispatchEvent(new Event('change',{bubbles:true}));return true;})()`;
+ const reopen=`(()=>{const card=[...document.querySelectorAll('.map-card-open')].find(button=>button.dataset.map===${JSON.stringify(config.map+' (Modified)')});if(!card||card.disabled)return false;card.click();return true;})()`;
  let reopened=false;for(let i=0;i<300&&!reopened;i++){try{reopened=await evaluate(ws,++id,reopen);}catch(error){if(!/Cannot find default execution context|Execution context was destroyed/.test(String(error)))throw error;}if(!reopened)await new Promise(r=>setTimeout(r,200));}
  if(!reopened)throw Error('Saved publication map copy is not offered after reload');
- let restored=false;for(let i=0;i<300;i++){if(await evaluate(ws,++id,`document.querySelectorAll('.object-list li.depth-0').length===${result.savedGroups} && document.querySelectorAll('.shared-library .asset-card button[aria-label^="Add "]').length===${config.expected.assets.length}`)){restored=true;break;}await new Promise(r=>setTimeout(r,200));}
- if(!restored)throw Error('Full browser reload did not restore saved publication instances');
+ let restored=false;for(let i=0;i<Math.ceil((config.reload_timeout_ms??60000)/200);i++){if(await evaluate(ws,++id,`document.querySelectorAll('.object-list li.depth-0').length===${result.savedGroups} && document.querySelectorAll('.shared-library .asset-card button[aria-label^="Add "]').length===${config.expected.assets.length}`)){restored=true;break;}await new Promise(r=>setTimeout(r,200));}
+ if(!restored){await screenshot('reload-failure');throw Error('Full browser reload did not restore saved publication instances: '+await evaluate(ws,++id,'document.body.innerText'));}
  result.checks.push('full page reload restores saved groups, pinned external models and all palette entries');
  await screenshot('map-after-reload');
  }

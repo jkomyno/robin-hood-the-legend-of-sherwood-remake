@@ -1,0 +1,22 @@
+{
+  "kind": "initial-legacy-refinement-publication",
+  "date": "2026-09-27",
+  "status": "APPLIED",
+  "source_sha256": "73138d606c5c6bb55788f20d433151dde6b85c02b5741cad0aea8d8bdb0807b8",
+  "assets": 108,
+  "selectable_groups": 107,
+  "parts": 124,
+  "triangles": 2542940,
+  "maximum_world_vertex_drift": 0.0001220703125,
+  "retired_generic_ids": 106,
+  "map_sha256": "0b426b89e723cb2542cf0c89538397899bbb82a23bbbc6c7ca6854bad1b243bc",
+  "browser_checks": [
+    "every group and part selectable",
+    "all 107 standalone asset insertions",
+    "duplicate/undo/redo",
+    "saved-map validation",
+    "full saved-map browser reload"
+  ],
+  "evidence_root": "work/sherwood-refinement/editor-migration/stage-v2",
+  "textures": "Inherited legacy appearance at this publication. Full original-art reprojection and Sunburst synthesis follow separately."
+}

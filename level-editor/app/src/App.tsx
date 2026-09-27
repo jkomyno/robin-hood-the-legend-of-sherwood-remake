@@ -52,12 +52,15 @@ export default function App() {
   createEffect(
     () => undefined,
     () => {
-      void connectDatadir(async (current) => {
+      const datadirReady = connectDatadir(async (current) => {
         const next = await openHttpGameData();
         if (current()) setIndex(next);
       });
       void connectLibrary(async (current) => {
         const lib = await openHttpLibrary();
+        // Opening a map before the initial index settles lets its arrival
+        // invalidate that load. Fetch both in parallel, then expose the chooser.
+        await datadirReady;
         if (!current()) return;
         setLibrary(lib);
       });

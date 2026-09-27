@@ -82,6 +82,23 @@ class FirstPublicationTest(unittest.TestCase):
             finally:
                 os.chdir(previous)
 
+    def test_staged_original_does_not_inherit_live_derivative(self):
+        previous = Path.cwd()
+        with tempfile.TemporaryDirectory() as temporary:
+            try:
+                os.chdir(temporary)
+                stage, library, document = stage_fixture()
+                write_asset(library/'3d-assets', b'old model')
+                staged = write_asset(stage/'map-assets/3d-assets', b'new model')
+                (staged/'lossy.glb').unlink()
+                (staged/'lossy.glb.receipt.json').unlink()
+                Path('scope.json').write_text('{"asset_ids":["york-house"],"already_published":[]}')
+                prepare(stage, 'scope.json', 'audit/config.json', map_name='york', document_path='document.json')
+                index = json.loads(Path('audit/private-index.json').read_text())
+                self.assertNotIn('lossy_model', index['assets'][0])
+            finally:
+                os.chdir(previous)
+
 if __name__ == '__main__':
     unittest.main()
 

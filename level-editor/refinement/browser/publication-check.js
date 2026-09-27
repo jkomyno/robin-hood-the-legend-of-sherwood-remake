@@ -3,7 +3,7 @@
  const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  const assert=(value,message)=>{if(!value)throw Error(message);};
  const wait=async(predicate,label)=>{for(let i=0;i<900;i++){if(await predicate())return;await sleep(100);}throw Error('Timeout '+label+' '+document.body.innerText);};
- const button=label=>[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===label);
+ const button=label=>[...document.querySelectorAll('button')].find(b=>b.getAttribute('aria-label')===label||b.textContent.trim()===label);
  const click=label=>{const b=button(label);assert(b&&!b.disabled,'Button unavailable '+label);b.click();};
  const hash=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
  // verify_publication.mjs routes the app's HTTP library (/library/) to exactly these pinned files.
@@ -54,9 +54,9 @@
  window.__publicationProgress={phase:'actual-editor-loading'};
  // The app opens its HTTP library at startup; open the staged map through the Map chooser.
  await wait(()=>document.querySelectorAll('.shared-library .asset-card button[aria-label^="Add "]').length===config.expected.assets.length,'published palette');
- const chooser=()=>document.querySelector('select[aria-label="Map"]');
- await wait(()=>[...(chooser()?.options??[])].some(option=>option.value===config.map),'Map chooser entry '+config.map);
- chooser().value=config.map;chooser().dispatchEvent(new Event('change',{bubbles:true}));
+ const mapCard=()=>[...document.querySelectorAll('.map-card-open')].find(button=>button.dataset.map===config.map);
+ await wait(()=>mapCard()&&!mapCard().disabled,'Map chooser entry '+config.map);
+ mapCard().click();
  await wait(()=>document.querySelectorAll('.object-list li.depth-0').length===config.expected.groups,'ActualUI map groups');
  window.__publicationPhase={phase:'map-ready',groundMeshes,groundTextures};
  await wait(()=>window.__publicationContinue,'map screenshot');
@@ -85,14 +85,18 @@
   selectionChecks.push({id:group.id,parts:group.parts.map(part=>part.id),groupAndPartsSelectable:true});
  }
  // Saves of a published map land in the app's browser-local map copies; parse them with the production loader.
+ const savedParser=config.shared_module_url?await import(config.shared_module_url):null;
+ const {readPinnedAssetDescriptors}=await import('/src/projection-library.ts');
  const saved=async()=>{
   const maps=await(await(await navigator.storage.getDirectory()).getDirectoryHandle('sherwood-level-editor')).getDirectoryHandle('maps');
   const stored=JSON.parse(await(await(await maps.getFileHandle(config.map+'.rhlos-map.json')).getFile()).text());
-  const candidate=await prepareMapCandidate(config.map,library,null,undefined,config.map,stored);
-  const parsed=candidate.document;disposeObjectResources([candidate.asset,candidate.ground].filter(Boolean));return parsed;
+  if(!savedParser){const candidate=await prepareMapCandidate(config.map,library,null,undefined,config.map,stored);const parsed=candidate.document;disposeObjectResources([candidate.asset,candidate.ground].filter(Boolean));return parsed;}
+  const expanded=savedParser.expandStoredMap(stored);
+  const descriptors=await readPinnedAssetDescriptors(library,expanded.assetSources??[],expanded.sceneAssets??[]);
+  return savedParser.parseStoredMap(stored,descriptors);
  };
  const save=async()=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent.trim().startsWith('Save'));if(!b.disabled)b.click();await wait(()=>[...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Save'&&b.disabled),'save');return saved();};
- const transform=async(value)=>{const row=[...document.querySelectorAll('.object-detail .meta-row')].find(row=>['dx','Offset X'].includes(row.querySelector('.meta-key')?.textContent.trim()));const input=row.querySelector('input');input.value=value;input.dispatchEvent(new Event('change',{bubbles:true}));await sleep(50);};
+ const transform=async(value)=>{const input=document.querySelector('.object-detail .transform-fields input[aria-label="X"]');assert(input,'Selected group X coordinate');input.value=value;input.dispatchEvent(new Event('change',{bubbles:true}));await sleep(50);};
  const inserted=[],stateChecks=[];
  for(const [index,asset]of config.expected.assets.entries()){
   window.__publicationProgress={phase:'actual-editor-asset-insertion',index,total:config.expected.assets.length,asset:asset.id};

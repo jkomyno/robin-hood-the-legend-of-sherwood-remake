@@ -87,7 +87,9 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
                 raise ValueError("New editor part has unknown ownership")
             document["objects"].append(obj)
             objects[obj["id"]] = obj
-    if not live and staged_document.get('assetSources'):
+    # An explicit document already uses the staged catalog and its local pivots.
+    # Rebasing it through the live library fails for first publications/new IDs.
+    if not live and document_path is None and staged_document.get('assetSources'):
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', dir=stage) as previous:
             json.dump(document, previous); previous.flush()
             document=expand_document(asset_library, json.loads(subprocess.check_output(['node',
@@ -216,6 +218,7 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
     protected = {str(path): sha(path) for path in library.rglob("*")
                  if path.is_file() and path.suffix in (".json", ".gltf", ".glb", ".bin", ".png", ".jpg")}
     config = {"map": map_name, "mode": "live" if live else "staged", "files": files,
+              "shared_module_url": "/@fs/" + str(Path(__file__).resolve().parents[1] / 'shared/src/index.ts'),
               "expected": {"groups": len(document["groups"]), "parts": len(document["objects"]),
                            "width": document["size"][0], "assets": expanded,
                            "base_asset_ids": sorted(expected_ids), "new_asset_ids": scope["asset_ids"],

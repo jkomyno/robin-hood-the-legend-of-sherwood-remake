@@ -1,0 +1,1157 @@
+{
+  "version": 1,
+  "map": "Sherwood",
+  "groups": [
+    {
+      "id": "sherwood-west-camp-hut-roof",
+      "name": "West camp hut roof",
+      "parts": [
+        {
+          "obstacle": 0,
+          "name": "West camp hut roof"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-camp-hut",
+      "name": "West camp hut",
+      "parts": [
+        {
+          "obstacle": 1,
+          "name": "West camp hut"
+        },
+        {
+          "obstacle": 2,
+          "name": "Hut side wall"
+        },
+        {
+          "obstacle": 3,
+          "name": "Hut doorway"
+        },
+        {
+          "obstacle": 4,
+          "name": "Hut chimney"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-camp-barrel",
+      "name": "West camp barrel",
+      "parts": [
+        {
+          "obstacle": 5,
+          "name": "West camp barrel"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-camp-tub",
+      "name": "West camp tub",
+      "parts": [
+        {
+          "obstacle": 6,
+          "name": "West camp tub"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-camp-woodpile",
+      "name": "Camp woodpile",
+      "parts": [
+        {
+          "obstacle": 7,
+          "name": "Camp woodpile"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-north-camp-hut-walls",
+      "name": "North camp hut walls",
+      "parts": [
+        {
+          "obstacle": 8,
+          "name": "North camp hut walls"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-north-camp-hut-roof",
+      "name": "North camp hut roof",
+      "parts": [
+        {
+          "obstacle": 9,
+          "name": "North camp hut roof"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-camp-supply-shelter",
+      "name": "Camp supply shelter",
+      "parts": [
+        {
+          "obstacle": 10,
+          "name": "Camp supply shelter"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-camp-worktable",
+      "name": "Camp worktable",
+      "parts": [
+        {
+          "obstacle": 11,
+          "name": "Camp worktable"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-camp-dining-table",
+      "name": "Camp dining table",
+      "parts": [
+        {
+          "obstacle": 12,
+          "name": "Camp dining table"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-camp-preparation-table",
+      "name": "Camp preparation table",
+      "parts": [
+        {
+          "obstacle": 14,
+          "name": "Camp preparation table"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-dining-bench",
+      "name": "West dining bench",
+      "parts": [
+        {
+          "obstacle": 15,
+          "name": "West dining bench"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-north-dining-bench",
+      "name": "North dining bench",
+      "parts": [
+        {
+          "obstacle": 16,
+          "name": "North dining bench"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-east-dining-bench",
+      "name": "East dining bench",
+      "parts": [
+        {
+          "obstacle": 17,
+          "name": "East dining bench"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-preparation-bench",
+      "name": "Preparation bench",
+      "parts": [
+        {
+          "obstacle": 18,
+          "name": "Preparation bench"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-camp-wash-stand",
+      "name": "Camp wash stand",
+      "parts": [
+        {
+          "obstacle": 19,
+          "name": "Camp wash stand"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-camp-serving-stool",
+      "name": "Camp serving stool",
+      "parts": [
+        {
+          "obstacle": 20,
+          "name": "Camp serving stool"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-camp-barrel",
+      "name": "Camp barrel",
+      "parts": [
+        {
+          "obstacle": 21,
+          "name": "Camp barrel"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-camp-baskets",
+      "name": "Camp baskets",
+      "parts": [
+        {
+          "obstacle": 22,
+          "name": "Camp baskets"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-round-camp-stool",
+      "name": "Round camp stool",
+      "parts": [
+        {
+          "obstacle": 23,
+          "name": "Round camp stool"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-ladder-oak",
+      "name": "Ladder oak",
+      "parts": [
+        {
+          "obstacle": 24,
+          "name": "Ladder oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-river-oak",
+      "name": "River oak",
+      "parts": [
+        {
+          "obstacle": 25,
+          "name": "River oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-woodland-tree",
+      "name": "West woodland tree",
+      "parts": [
+        {
+          "obstacle": 26,
+          "name": "West woodland tree"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-northwest-woodland-oak",
+      "name": "Northwest woodland oak",
+      "parts": [
+        {
+          "obstacle": 27,
+          "name": "Northwest woodland oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-north-woodland-trunk",
+      "name": "North woodland trunk",
+      "parts": [
+        {
+          "obstacle": 28,
+          "name": "North woodland trunk"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-treehouse-oak",
+      "name": "West treehouse oak",
+      "parts": [
+        {
+          "obstacle": 29,
+          "name": "West treehouse oak"
+        },
+        {
+          "obstacle": 105,
+          "name": "West treehouse hut"
+        },
+        {
+          "obstacle": 106,
+          "name": "West treehouse platform"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-central-west-treehouse-oak",
+      "name": "Central west treehouse oak",
+      "parts": [
+        {
+          "obstacle": 30,
+          "name": "Central west treehouse oak"
+        },
+        {
+          "obstacle": 87,
+          "name": "Treehouse porch"
+        },
+        {
+          "obstacle": 104,
+          "name": "Central west treehouse hut"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-northwest-woodland-tree",
+      "name": "Northwest woodland tree",
+      "parts": [
+        {
+          "obstacle": 31,
+          "name": "Northwest woodland tree"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-central-oak-trunk",
+      "name": "Central oak trunk",
+      "parts": [
+        {
+          "obstacle": 32,
+          "name": "Central oak trunk"
+        },
+        {
+          "obstacle": 48,
+          "name": "Central oak upper trunk"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-central-oak-buttress",
+      "name": "Central oak buttress",
+      "parts": [
+        {
+          "obstacle": 33,
+          "name": "Central oak buttress"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-leaning-woodland-tree",
+      "name": "Leaning woodland tree",
+      "parts": [
+        {
+          "obstacle": 34,
+          "name": "Leaning woodland tree"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-woodland-oak",
+      "name": "West woodland oak",
+      "parts": [
+        {
+          "obstacle": 35,
+          "name": "West woodland oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-broad-woodland-oak",
+      "name": "Broad woodland oak",
+      "parts": [
+        {
+          "obstacle": 36,
+          "name": "Broad woodland oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-east-border-oak",
+      "name": "East border oak",
+      "parts": [
+        {
+          "obstacle": 37,
+          "name": "East border oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-east-oak-upper-limb",
+      "name": "East oak upper limb",
+      "parts": [
+        {
+          "obstacle": 38,
+          "name": "East oak upper limb"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-woodland-stump",
+      "name": "Woodland stump",
+      "parts": [
+        {
+          "obstacle": 39,
+          "name": "Woodland stump"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-spreading-woodland-oak",
+      "name": "Spreading woodland oak",
+      "parts": [
+        {
+          "obstacle": 40,
+          "name": "Spreading woodland oak"
+        },
+        {
+          "obstacle": 41,
+          "name": "Oak side limb"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-northeast-woodland-oak",
+      "name": "Northeast woodland oak",
+      "parts": [
+        {
+          "obstacle": 42,
+          "name": "Northeast woodland oak"
+        },
+        {
+          "obstacle": 43,
+          "name": "Oak roots"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-north-border-oak",
+      "name": "North border oak",
+      "parts": [
+        {
+          "obstacle": 44,
+          "name": "North border oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-northeast-forked-oak",
+      "name": "Northeast forked oak",
+      "parts": [
+        {
+          "obstacle": 45,
+          "name": "Northeast forked oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-border-treehouse-oak",
+      "name": "West border treehouse oak",
+      "parts": [
+        {
+          "obstacle": 46,
+          "name": "West border treehouse oak"
+        },
+        {
+          "obstacle": 90,
+          "name": "West border treehouse porch"
+        },
+        {
+          "obstacle": 119,
+          "name": "West border treehouse hut"
+        },
+        {
+          "obstacle": 120,
+          "name": "West border treehouse barrel"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-rock",
+      "name": "Riverbank rock",
+      "parts": [
+        {
+          "obstacle": 47,
+          "name": "Riverbank rock"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-central-oak-treehouse",
+      "name": "Central oak treehouse",
+      "parts": [
+        {
+          "obstacle": 49,
+          "name": "Central oak treehouse"
+        },
+        {
+          "obstacle": 102,
+          "name": "Central treehouse walls"
+        },
+        {
+          "obstacle": 103,
+          "name": "Central treehouse roof"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-woodland-branch",
+      "name": "West woodland branch",
+      "parts": [
+        {
+          "obstacle": 50,
+          "name": "West woodland branch"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-border-woodland-oak",
+      "name": "West border woodland oak",
+      "parts": [
+        {
+          "obstacle": 51,
+          "name": "West border woodland oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-central-oak-spreading-root",
+      "name": "Central oak spreading root",
+      "parts": [
+        {
+          "obstacle": 52,
+          "name": "Central oak spreading root"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-north-woodland-oak",
+      "name": "North woodland oak",
+      "parts": [
+        {
+          "obstacle": 53,
+          "name": "North woodland oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-north-border-branch",
+      "name": "North border branch",
+      "parts": [
+        {
+          "obstacle": 54,
+          "name": "North border branch"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-northeast-border-oak",
+      "name": "Northeast border oak",
+      "parts": [
+        {
+          "obstacle": 55,
+          "name": "Northeast border oak"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-horizontal-supply-barrel",
+      "name": "Horizontal supply barrel",
+      "parts": [
+        {
+          "obstacle": 56,
+          "name": "Horizontal supply barrel"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-01",
+      "name": "Riverbank boulder 01",
+      "parts": [
+        {
+          "obstacle": 57,
+          "name": "Riverbank boulder 01"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-02",
+      "name": "Riverbank boulder 02",
+      "parts": [
+        {
+          "obstacle": 58,
+          "name": "Riverbank boulder 02"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-03",
+      "name": "Riverbank boulder 03",
+      "parts": [
+        {
+          "obstacle": 59,
+          "name": "Riverbank boulder 03"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-04",
+      "name": "Riverbank boulder 04",
+      "parts": [
+        {
+          "obstacle": 60,
+          "name": "Riverbank boulder 04"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-05",
+      "name": "Riverbank boulder 05",
+      "parts": [
+        {
+          "obstacle": 61,
+          "name": "Riverbank boulder 05"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-06",
+      "name": "Riverbank boulder 06",
+      "parts": [
+        {
+          "obstacle": 62,
+          "name": "Riverbank boulder 06"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-07",
+      "name": "Riverbank boulder 07",
+      "parts": [
+        {
+          "obstacle": 63,
+          "name": "Riverbank boulder 07"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-08",
+      "name": "Riverbank boulder 08",
+      "parts": [
+        {
+          "obstacle": 64,
+          "name": "Riverbank boulder 08"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-09",
+      "name": "Riverbank boulder 09",
+      "parts": [
+        {
+          "obstacle": 65,
+          "name": "Riverbank boulder 09"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-10",
+      "name": "Riverbank boulder 10",
+      "parts": [
+        {
+          "obstacle": 66,
+          "name": "Riverbank boulder 10"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-11",
+      "name": "Riverbank boulder 11",
+      "parts": [
+        {
+          "obstacle": 67,
+          "name": "Riverbank boulder 11"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-12",
+      "name": "Riverbank boulder 12",
+      "parts": [
+        {
+          "obstacle": 68,
+          "name": "Riverbank boulder 12"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-13",
+      "name": "Riverbank boulder 13",
+      "parts": [
+        {
+          "obstacle": 69,
+          "name": "Riverbank boulder 13"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-14",
+      "name": "Riverbank boulder 14",
+      "parts": [
+        {
+          "obstacle": 70,
+          "name": "Riverbank boulder 14"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-15",
+      "name": "Riverbank boulder 15",
+      "parts": [
+        {
+          "obstacle": 71,
+          "name": "Riverbank boulder 15"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-16",
+      "name": "Riverbank boulder 16",
+      "parts": [
+        {
+          "obstacle": 72,
+          "name": "Riverbank boulder 16"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-17",
+      "name": "Riverbank boulder 17",
+      "parts": [
+        {
+          "obstacle": 73,
+          "name": "Riverbank boulder 17"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-18",
+      "name": "Riverbank boulder 18",
+      "parts": [
+        {
+          "obstacle": 74,
+          "name": "Riverbank boulder 18"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-19",
+      "name": "Riverbank boulder 19",
+      "parts": [
+        {
+          "obstacle": 75,
+          "name": "Riverbank boulder 19"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-20",
+      "name": "Riverbank boulder 20",
+      "parts": [
+        {
+          "obstacle": 76,
+          "name": "Riverbank boulder 20"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-21",
+      "name": "Riverbank boulder 21",
+      "parts": [
+        {
+          "obstacle": 77,
+          "name": "Riverbank boulder 21"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-22",
+      "name": "Riverbank boulder 22",
+      "parts": [
+        {
+          "obstacle": 78,
+          "name": "Riverbank boulder 22"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-23",
+      "name": "Riverbank boulder 23",
+      "parts": [
+        {
+          "obstacle": 79,
+          "name": "Riverbank boulder 23"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-24",
+      "name": "Riverbank boulder 24",
+      "parts": [
+        {
+          "obstacle": 80,
+          "name": "Riverbank boulder 24"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-25",
+      "name": "Riverbank boulder 25",
+      "parts": [
+        {
+          "obstacle": 81,
+          "name": "Riverbank boulder 25"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-boulder-26",
+      "name": "Riverbank boulder 26",
+      "parts": [
+        {
+          "obstacle": 82,
+          "name": "Riverbank boulder 26"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-mossy-riverbank-outcrop",
+      "name": "Mossy riverbank outcrop",
+      "parts": [
+        {
+          "obstacle": 83,
+          "name": "Mossy riverbank outcrop"
+        },
+        {
+          "obstacle": 84,
+          "name": "Outcrop side"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-tree-landing",
+      "name": "West tree landing",
+      "parts": [
+        {
+          "obstacle": 85,
+          "name": "West tree landing"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-ladder-oak-platform",
+      "name": "Ladder oak platform",
+      "parts": [
+        {
+          "obstacle": 86,
+          "name": "Ladder oak platform"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-central-oak-platform",
+      "name": "Central oak platform",
+      "parts": [
+        {
+          "obstacle": 88,
+          "name": "Central oak platform"
+        },
+        {
+          "obstacle": 91,
+          "name": "Platform extension"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-east-oak-platform",
+      "name": "East oak platform",
+      "parts": [
+        {
+          "obstacle": 89,
+          "name": "East oak platform"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-central-tree-landing",
+      "name": "Central tree landing",
+      "parts": [
+        {
+          "obstacle": 92,
+          "name": "Central tree landing"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-suspension-bridge",
+      "name": "West suspension bridge",
+      "parts": [
+        {
+          "obstacle": 93,
+          "name": "West suspension bridge"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-long-suspension-bridge",
+      "name": "Long suspension bridge",
+      "parts": [
+        {
+          "obstacle": 94,
+          "name": "Long suspension bridge"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-east-suspension-bridge",
+      "name": "East suspension bridge",
+      "parts": [
+        {
+          "obstacle": 95,
+          "name": "East suspension bridge"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-east-bridge-landing",
+      "name": "East bridge landing",
+      "parts": [
+        {
+          "obstacle": 96,
+          "name": "East bridge landing"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-bridge-landing",
+      "name": "West bridge landing",
+      "parts": [
+        {
+          "obstacle": 99,
+          "name": "West bridge landing"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-treehouse-ladder",
+      "name": "West treehouse ladder",
+      "parts": [
+        {
+          "obstacle": 100,
+          "name": "West treehouse ladder"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-central-treehouse-thatch",
+      "name": "Central treehouse thatch",
+      "parts": [
+        {
+          "obstacle": 107,
+          "name": "Central treehouse thatch"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-central-treehouse-side-roof",
+      "name": "Central treehouse side roof",
+      "parts": [
+        {
+          "obstacle": 108,
+          "name": "Central treehouse side roof"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-north-camp-bed",
+      "name": "North camp bed",
+      "parts": [
+        {
+          "obstacle": 109,
+          "name": "North camp bed"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-south-camp-bed",
+      "name": "South camp bed",
+      "parts": [
+        {
+          "obstacle": 110,
+          "name": "South camp bed"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-river-bluff",
+      "name": "River bluff",
+      "parts": [
+        {
+          "obstacle": 111,
+          "name": "River bluff"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-iron-cooking-cauldron",
+      "name": "Iron cooking cauldron",
+      "parts": [
+        {
+          "obstacle": 112,
+          "name": "Iron cooking cauldron"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-cooking-stool",
+      "name": "Cooking stool",
+      "parts": [
+        {
+          "obstacle": 113,
+          "name": "Cooking stool"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-roasting-spit",
+      "name": "Roasting spit",
+      "parts": [
+        {
+          "obstacle": 114,
+          "name": "Roasting spit"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-fallen-camp-branch",
+      "name": "Fallen camp branch",
+      "parts": [
+        {
+          "obstacle": 115,
+          "name": "Fallen camp branch"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-camp-cut-timber",
+      "name": "Camp cut timber",
+      "parts": [
+        {
+          "obstacle": 116,
+          "name": "Camp cut timber"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-south-river-driftwood",
+      "name": "South river driftwood",
+      "parts": [
+        {
+          "obstacle": 117,
+          "name": "South river driftwood"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-river-driftwood",
+      "name": "River driftwood",
+      "parts": [
+        {
+          "obstacle": 118,
+          "name": "River driftwood"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-riverbank-timber-fence",
+      "name": "Riverbank timber fence",
+      "parts": [
+        {
+          "obstacle": 121,
+          "name": "Riverbank timber fence"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-treehouse-baskets",
+      "name": "Treehouse baskets",
+      "parts": [
+        {
+          "obstacle": 122,
+          "name": "Treehouse baskets"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-hanging-rope-ladder",
+      "name": "Hanging rope ladder",
+      "parts": [
+        {
+          "obstacle": 123,
+          "name": "Hanging rope ladder"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-treehouse-bucket",
+      "name": "Treehouse bucket",
+      "parts": [
+        {
+          "obstacle": 124,
+          "name": "Treehouse bucket"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-west-archery-target",
+      "name": "West archery target",
+      "parts": [
+        {
+          "obstacle": 125,
+          "name": "West archery target"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-east-archery-target",
+      "name": "East archery target",
+      "parts": [
+        {
+          "obstacle": 126,
+          "name": "East archery target"
+        }
+      ]
+    },
+    {
+      "id": "sherwood-foreground-oak",
+      "name": "Foreground oak canopy",
+      "parts": [
+        {
+          "node": "foliage-foreground-oak",
+          "name": "Foreground oak canopy"
+        }
+      ]
+    }
+  ],
+  "legacy_migration": {
+    "source": "work/sherwood-refinement/sherwood-refinement.blend",
+    "previously_unexported_obstacles": [
+      13,
+      97,
+      98,
+      101
+    ],
+    "limitations": "Legacy reconstruction, not a new geometry review. Zero-thickness omitted source obstacles remain unchanged; reconstructed ladder visuals belong to their treehouse. Foliage uses its first authored frame.",
+    "export_partitions": {
+      "building-048": "Existing building-032 trunk triangles above the lower obstacle height, z=221.001; geometry and collision payloads retained."
+    }
+  }
+}

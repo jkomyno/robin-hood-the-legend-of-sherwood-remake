@@ -7,7 +7,7 @@ const builtInNames: Record<string, string> = {
   leicester: "Leicester",
   lincoln: "Lincoln",
   nottingham: "Nottingham",
-  sherwood: "Sherwood",
+  sherwood: "Sherwood (Refined)",
   wychford: "Wychford",
   york: "York",
 };

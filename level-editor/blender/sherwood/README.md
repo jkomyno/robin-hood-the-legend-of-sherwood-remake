@@ -2,12 +2,65 @@
 
 Native scene: `level-editor/work/sherwood-refinement/sherwood-refinement.blend`.
 All textures are packed. The hidden baseline and original working objects remain
-available; replacements have numbered collections. Game collision, source
-obstacles and the editor's library GLB are unchanged.
+available; replacements have numbered collections. Game collision and source
+obstacles are retained. The editor migration below exports the reconstruction
+to the current reusable asset format without modifying this native file.
 
 This reconstruction uses the single Day map and authored animated overlays.
 Visible paths, footprints and heights follow those references. Hidden thickness,
 cross-sections, canopy depth and rear materials are inferred.
+
+## Editor migration and texture refresh
+
+`editor_catalog.py` and `refinement/catalogs/sherwood.json` name 107 logical
+groups, plus the map terrain. `stage_editor_migration.py` copies all 2,368
+visible native meshes into a separate worker, converts the legacy bark and
+timber shaders to portable textures, and exports 108 assets with descriptive
+`sherwood-…` IDs. Generic `sherwood-group-…` IDs are retired on installation;
+there are no compatibility aliases for old editor saves. Existing named assets
+used by Wychford remain available.
+
+All original map placements, collision payloads and source pivots are retained.
+`partition_oak.py` assigns the merged oak's existing upper trunk triangles to
+`building-048`, making that collision part selectable without adding or cutting
+geometry. Canopies use their first authored animation frame, matching the
+existing standalone Sherwood assets.
+
+Run from `level-editor`:
+
+```sh
+blender --background --threads 2 --python-exit-code 1 \
+  --python blender/sherwood/stage_editor_migration.py -- --output WORK_STAGE
+```
+
+The stage records native-to-worker and worker-to-GLB geometry comparisons,
+asset hashes, material checks, ownership, and palette previews. Prepare the
+normal browser audit with `refinement/prepare_publication_browser.py` (from
+the repository root), using `--map sherwood --document WORK_STAGE/sherwood.rhlos-map.json`.
+Its scope includes every staged asset. Run `refinement/browser/verify_publication.mjs`
+against the editor and copy its passing result to `WORK_STAGE/browser-result.json`.
+Use a frozen app snapshot when other work is changing the shared development server.
+Then install with:
+
+```sh
+python3 blender/sherwood/install_editor_migration.py WORK_STAGE
+```
+
+Installation uses the shared library lock, source-hash guards, backups and
+rollback. It changes the local editor library; it does not deploy a website.
+This is an import of the existing reconstruction, not a new geometry approval.
+
+After this normal publication, `reproject_textures.py` performs the requested
+full reset from original artwork. It uses the bare Day layer for opaque
+geometry, the original Arbre frames for foliage, and fresh ground visibility
+plus the audited cleanup mask for terrain. Old synthesized RGB is discarded.
+Physical leaf alpha and source ownership remain separate. The source-only
+worker and per-texel ownership masks are hash-bound in `reprojection.json`.
+`texture_packets.py` prepares source-textured and solid view sheets, invokes
+the shared Sunburst driver, and bakes candidates while checking source RGB,
+physical alpha, geometry and UV preservation. Ground is prepared in six
+regions. Generated candidates retain a pending texture-review status until
+the resulting materials and coverage have been reviewed.
 
 ## Inspection
 
