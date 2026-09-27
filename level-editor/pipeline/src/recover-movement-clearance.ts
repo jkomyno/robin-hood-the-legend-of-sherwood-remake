@@ -7,6 +7,7 @@ export function recoverMovementClearance(
   free: MultiPolygon,
   plane: HeightPlane,
   solid: SightObstacle,
+  roundingMargin = 0,
 ): MultiPolygon {
   if (!solid.solid || !free.length) return [];
   const denominator = 1 + plane[1];
@@ -22,5 +23,24 @@ export function recoverMovementClearance(
     Math.min(...solid.points.map((p) => p.z_bottom)) > Math.max(...heights) + 1e-7
   )
     return [];
-  return clipping.intersection(free, [[...footprint, footprint[0]!]]);
+  if (!Number.isFinite(roundingMargin) || roundingMargin < 0)
+    throw new Error("Invalid clearance rounding margin");
+  if (!roundingMargin) return clipping.intersection(free, [[...footprint, footprint[0]!]]);
+  // Clearance only subtracts its owner's solid. Extending outside that solid
+  // preserves its effect while preventing rounding from shaving thin openings.
+  const xs = footprint.map((p) => p[0]),
+    ys = footprint.map((p) => p[1]);
+  const left = Math.min(...xs) - roundingMargin,
+    right = Math.max(...xs) + roundingMargin;
+  const top = Math.min(...ys) - roundingMargin,
+    bottom = Math.max(...ys) + roundingMargin;
+  return clipping.intersection(free, [
+    [
+      [left, top],
+      [right, top],
+      [right, bottom],
+      [left, bottom],
+      [left, top],
+    ],
+  ]);
 }

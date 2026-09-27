@@ -44,7 +44,16 @@ export function quantizeGeneratedMotionPolygon(
   if (!polygon.length) throw new Error(`${label}: missing polygon boundary`);
   const result: Polygon = [];
   for (const [index, original] of polygon.entries()) {
-    const points = original.map(([x, y]): Point => [quantize(x), quantize(y)]);
+    // Clipping may insert a fractional vertex on a straight edge. Rounding
+    // that redundant vertex first creates a kink and can open a false seam.
+    const points = simplifyMotionRing(original).map(([x, y]): Point => [quantize(x), quantize(y)]);
+    if (
+      points.length &&
+      original.length > 1 &&
+      original[0]![0] === original.at(-1)![0] &&
+      original[0]![1] === original.at(-1)![1]
+    )
+      points.push([...points[0]!]);
     if (collinear(simplifyMotionRing(points))) {
       warnings.push(
         `${label}: generated ${index === 0 ? "region" : "hole"} collapsed to zero area on the integer movement grid and was omitted.`,

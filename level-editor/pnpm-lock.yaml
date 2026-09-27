@@ -276,6 +276,9 @@ importers:
 
   shared:
     dependencies:
+      clipper-lib:
+        specifier: 6.4.2
+        version: 6.4.2
       earcut:
         specifier: 3.2.3
         version: 3.2.3
@@ -283,6 +286,9 @@ importers:
         specifier: ^0.15.7
         version: 0.15.7
     devDependencies:
+      '@types/clipper-lib':
+        specifier: 6.4.0
+        version: 6.4.0
       '@types/earcut':
         specifier: 3.0.0
         version: 3.0.0

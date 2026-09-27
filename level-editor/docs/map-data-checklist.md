@@ -111,8 +111,8 @@ labels preserve separate coplanar areas, including when their boundaries touch.
 Labels are scoped to each placement; unlabelled surfaces retain normal merging.
 Ground recovery reports per-region differences as well as overall coverage.
 Nottingham's hidden prison part remains a blocker. York's compound lift now has
-asset-local segment connections; its static check advances to a solid/surface
-polygon-intersection failure elsewhere in the map. Lift recovery matches shared
+asset-local segment connections; its static check advances to an unresolved jump
+landing surface. Lift recovery matches shared
 edges once and stores local sockets, never runtime references between assets.
 
 Stable terrain is recovered even when its movement area has changing obstacles.
@@ -122,3 +122,7 @@ transition ownership. `omittedMovementTransitions` makes that exclusion explicit
 in the static diagnostic and prevents it from certifying full compilation.
 Ground recovery uses fixed-point polygon operations and reports reconstruction
 area differences; generated boundaries are normalized after integer rounding.
+Solid/surface intersections use fixed-point clipping. Redundant straight-edge
+vertices are removed before rounding to avoid artificial navigation seams.
+Recovered clearances retain the free-space boundary and extend only around their
+owner's bounds; they can subtract that owner's collision, never another asset's.

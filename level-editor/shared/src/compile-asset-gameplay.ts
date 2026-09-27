@@ -1,4 +1,5 @@
 import polygonClipping, { type Polygon } from "polygon-clipping";
+import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { assembleLiftSegments, type PlacedLiftSegment } from "./assemble-lift-segments.ts";
 import { partMatrix, transformedObstacle, type Level3D, type Level3DObject } from "./level3d.ts";
 import { gameToScene, type Vec3 } from "./scene.ts";
@@ -522,7 +523,7 @@ export function compileAssetGameplay(
       slice = clipHeight(slice, above);
       slice = clipHeight(slice, worldPlane.map((n, i) => n - bottom[i]!) as HeightPlane);
       if (slice.length < 3 || Math.abs(signedArea(slice)) < 1e-7) continue;
-      const cuts = polygonClipping.intersection(polygon(footprint), polygon(slice));
+      const cuts = fixedPolygonBoolean("intersection", polygon(footprint), [polygon(slice)]);
       for (const cut of cuts) {
         const projected: Polygon = cut.map((r) =>
           r.map(([x, y]) => [x, y - planeHeight(worldPlane, [x, y])]),

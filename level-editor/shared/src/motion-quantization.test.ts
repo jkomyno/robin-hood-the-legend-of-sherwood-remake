@@ -2,6 +2,33 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { quantizeGeneratedMotionPolygon } from "./motion-quantization.ts";
 
+test("rounding a clipped straight edge does not introduce a false navigation seam", () => {
+  const warnings: string[] = [];
+  const input: [number, number][][] = [
+    [
+      [2962, 137],
+      [2980.791912015435, 128.64803910425104],
+      [2989, 125],
+      [3071, 266],
+      [3077, 277],
+      [3049, 289],
+      [2962, 137],
+    ],
+  ];
+  const result = quantizeGeneratedMotionPolygon(input, Math.round, "lift seam", warnings);
+  assert.deepEqual(result, [
+    [
+      [2962, 137],
+      [2989, 125],
+      [3071, 266],
+      [3077, 277],
+      [3049, 289],
+      [2962, 137],
+    ],
+  ]);
+  assert.equal(warnings.length, 0);
+});
+
 test("generated subpixel fragments collapse explicitly without emitting degenerate motion areas", () => {
   const warnings: string[] = [];
   assert.equal(

@@ -267,7 +267,9 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         );
       if (staticMotion)
         clearanceSources.push({
-          regions: partition.surfaces[supportIndex]!,
+          // Joined traversal planes share one movement area. Projection
+          // priority must not carve collision seams between their supports.
+          regions: motion.is_lift ? regions : partition.surfaces[supportIndex]!,
           plane: fitHeightPlane(
             obstacle.points.map((p) => [p.x, p.y - p.z_top, p.z_top]),
             false,
@@ -458,7 +460,7 @@ for (const [sourceIndex, source] of clearanceSources.entries()) {
       });
       let regions: MultiPolygon;
       try {
-        regions = recoverMovementClearance(source.regions, source.plane, solid);
+        regions = recoverMovementClearance(source.regions, source.plane, solid, 1);
         regions = quantizeRecoveredMotion(
           regions,
           `${owner.node}-clearance-${sourceIndex}`,
