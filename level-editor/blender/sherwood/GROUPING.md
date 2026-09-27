@@ -3,8 +3,11 @@
 The first migration kept too many historical obstacle boundaries. The September
 2026 grouping audit instead follows complete huts, furniture sets, platform and
 ladder assemblies, trees with their branches and roots, and contiguous outcrops.
-The candidate has 82 selectable assets, down from 107. Thirty groups have changed
-membership or names; 52 retain their existing membership and names.
+The candidate now has 80 selectable assets, down from 107. Following the first
+grouping review, the west and west-border platform assemblies merge into their
+respective houses. Twenty-six unchanged grouping approvals remain applicable;
+the two merged assemblies get fresh review packets. Fifty-two other assets retain
+their original membership and names.
 
 `grouping-candidate.json` is a review candidate, not the published catalog. The
 live library and `refinement/catalogs/sherwood.json` remain the initial publication
@@ -61,3 +64,19 @@ exact source-pixel ownership. The Day-art preview bake has not yet been constrai
 by reviewed native source-mask assignments. Follow
 [TEXTURE_OWNERSHIP.md](TEXTURE_OWNERSHIP.md) before preparing final synthesis
 packets or publishing completed textures. Grouping review can proceed unchanged.
+
+## Recording grouping decisions
+
+`grouping_decisions.py` verifies submitted 16-character review IDs against the
+current gallery and hashes every archived image and report before recording the
+exact user line. Run it with `--gallery`, `--root`, `--feedback` (a text file),
+and `--decisions blender/sherwood/grouping-decisions.json`.
+
+Decisions also bind asset ID/name, exact mesh membership, source/component parts,
+canonical source owners, and the geometry/UV/material fingerprint. This allows an
+approved group to remain approved when unrelated groups change metadata. Any
+change to its membership, ownership or geometry requires a new grouping review.
+The original review revision and evidence hashes are retained permanently.
+
+The renderer accepts repeated `--asset` arguments to regenerate only changed
+packets while always saving and verifying the complete regrouped worker.

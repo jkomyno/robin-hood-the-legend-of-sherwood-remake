@@ -371,20 +371,6 @@
       "name": "West treehouse",
       "parts": [
         {
-          "obstacle": 105,
-          "name": "West treehouse hut"
-        },
-        {
-          "obstacle": 107,
-          "name": "Central treehouse thatch"
-        }
-      ]
-    },
-    {
-      "id": "sherwood-west-treehouse-platforms",
-      "name": "West treehouse platforms and ladder",
-      "parts": [
-        {
           "obstacle": 89,
           "name": "East oak platform"
         },
@@ -393,8 +379,16 @@
           "name": "West treehouse ladder"
         },
         {
+          "obstacle": 105,
+          "name": "West treehouse hut"
+        },
+        {
           "obstacle": 106,
           "name": "West treehouse platform"
+        },
+        {
+          "obstacle": 107,
+          "name": "Central treehouse thatch"
         }
       ]
     },
@@ -443,18 +437,12 @@
       "name": "West border treehouse",
       "parts": [
         {
-          "obstacle": 119,
-          "name": "West border treehouse hut"
-        }
-      ]
-    },
-    {
-      "id": "sherwood-west-border-treehouse-platform",
-      "name": "West border treehouse porch",
-      "parts": [
-        {
           "obstacle": 90,
           "name": "West border treehouse porch"
+        },
+        {
+          "obstacle": 119,
+          "name": "West border treehouse hut"
         },
         {
           "obstacle": 120,
@@ -1207,18 +1195,18 @@
     "building-096": "sherwood-central-oak-platform",
     "building-099": "sherwood-central-oak-platform",
     "building-029": "sherwood-west-treehouse-oak",
+    "building-089": "sherwood-west-treehouse",
+    "building-100": "sherwood-west-treehouse",
     "building-105": "sherwood-west-treehouse",
+    "building-106": "sherwood-west-treehouse",
     "building-107": "sherwood-west-treehouse",
-    "building-089": "sherwood-west-treehouse-platforms",
-    "building-100": "sherwood-west-treehouse-platforms",
-    "building-106": "sherwood-west-treehouse-platforms",
     "building-030": "sherwood-central-west-treehouse-oak",
     "building-104": "sherwood-central-west-treehouse",
     "building-087": "sherwood-central-west-treehouse-platform",
     "building-046": "sherwood-west-border-treehouse-oak",
+    "building-090": "sherwood-west-border-treehouse",
     "building-119": "sherwood-west-border-treehouse",
-    "building-090": "sherwood-west-border-treehouse-platform",
-    "building-120": "sherwood-west-border-treehouse-platform",
+    "building-120": "sherwood-west-border-treehouse",
     "building-093": "sherwood-central-suspension-bridge",
     "building-094": "sherwood-long-suspension-bridge",
     "building-095": "sherwood-west-suspension-bridge",

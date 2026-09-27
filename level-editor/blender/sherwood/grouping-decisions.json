@@ -1,0 +1,576 @@
+{
+  "version": 1,
+  "scope": "grouping-only",
+  "decisions": [
+    {
+      "id": "sherwood-west-camp-hut",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "4c61ab516d981a84377a411a499fbeced395af31163e3aefbb09a75fa90893e8",
+      "exact_user_line": "sherwood-west-camp-hut: approved [review 4c61ab516d981a84]",
+      "group_signature": "3cd2424b1589fb3b3027fae28c972e81d2114ede738d743f36f1129eb6b98c90",
+      "binding": {
+        "images": {
+          "solid": "a98f2ae091f0c0dc1118b1b966168e9b418554effbe4a38edb088d0293f54151",
+          "east_solid": "c2ac69bcd7221def938ade001e11ffa1b0d78611dd19d1c9fe4fda648020b0c3",
+          "context": "812656e8033b6e3542a80d05105d2d6dbdf10673bf7efa6f04d692704260e1d1"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "61abb675a9f896678c2dc07b8cc0c1db81097b903fd66c8b8d7547035388306b"
+        }
+      }
+    },
+    {
+      "id": "sherwood-north-camp-hut",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "494f68ec6fe4b590db9177bac109b1359ab34648e01ab3d89986d0ae2fbabf01",
+      "exact_user_line": "sherwood-north-camp-hut: approved [review 494f68ec6fe4b590]",
+      "group_signature": "fd4cb1e627f0f44f8dc19efa5f5876a50a5f36eaf348340b24e435d1a9273cf5",
+      "binding": {
+        "images": {
+          "solid": "eb12905d857c438e108c91682a3b14f144f6852feb53c14b20aeac3282e1d485",
+          "east_solid": "ab559a671d07d7f07c7042d0f080db31f341ae40d50971efc357e8c2d94f2de9",
+          "context": "2573990e54d8c59bca1af07b33f6dcc00dd9c1cafb05f6661c16344e37c75e84"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "4428b41ae687480eb98e47807fcebfbdd9a7c5311a3be16f81d86bfec6af2d54"
+        }
+      }
+    },
+    {
+      "id": "sherwood-camp-dining-shelter",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "8a5f2717549e3f5dcfd20a0e9a51aa8ae35b5e2f068efc5ffe264c778cdfbab6",
+      "exact_user_line": "sherwood-camp-dining-shelter: approved [review 8a5f2717549e3f5d]",
+      "group_signature": "16a2e0268bf72ed3bc31db10b0812f2a9138e9ffb7dfa4f47546f6c6fc0200d9",
+      "binding": {
+        "images": {
+          "solid": "7f250021ab1d0b616aae90c9affb7c01e7de6918b03280b6efe39c9a7cbbd89b",
+          "east_solid": "c74e234e4cbc0f188f41d9fb2617cdb3370e5be1f653cd7beda6823587220da5",
+          "context": "6f7e74d659896f37872e108c20d09807ff979a5292cde0741b60d0192d508315"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "53614534e06d54fac853a8260d109186babb46561a0275a9b0701ad3a314c788"
+        }
+      }
+    },
+    {
+      "id": "sherwood-camp-preparation-table-set",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "57f60cb2f7d642cdb4b8a132571ee85d1d382015987887b2999484799edbcb7d",
+      "exact_user_line": "sherwood-camp-preparation-table-set: approved [review 57f60cb2f7d642cd]",
+      "group_signature": "c560d2ef4d9026e7f4fb1eb4ddb907c8e3324fc796d10d4740206071d258a1e6",
+      "binding": {
+        "images": {
+          "solid": "331f33e1a69dcfee83dfb093d27c2cfcb289597939ff211700842d948d135320",
+          "east_solid": "dbb32686dda9cb6c1af73d2de3900ad335e572b7fdf8e360f8f66e8d55161128",
+          "context": "68206a20cbb5fc26732bb2b308fba2d93274137b6a5ce6570f42de0c858f87f6"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "c4efd4d368d948b089c74253b1ba1e7f64621b0cac46a4d16ef4a5cb01cc01dc"
+        }
+      }
+    },
+    {
+      "id": "sherwood-central-oak",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "1ffa7ddb607d108cf245620017e3efc02340ae48ea2988122bb4bc4d7d825e1c",
+      "exact_user_line": "sherwood-central-oak: approved [review 1ffa7ddb607d108c]",
+      "group_signature": "b8caf4ee77890a3ccfe12c4174379b74439cf9ffeaac81adcea2693ca2aeee28",
+      "binding": {
+        "images": {
+          "solid": "7b9cfc3847f4c95e6ef585e9ab91ff4797a437450bc6933cab74d73a174faf45",
+          "east_solid": "ad518d608de5d217e1834ce9960b0fd982ffffb98db74963eb981a8760f6f471",
+          "context": "01c5915c6006ef6f20a5f049736c5d998dceb276fd52510e74417fe02603dfd2"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "6c8f41c191b33be1f255d8c5be5dbae7c5992651cd78fac0b007ea8bb9cda41a"
+        }
+      }
+    },
+    {
+      "id": "sherwood-broad-woodland-oak",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "d39a6e047369febfc90c9c54c6bc90f34dbdd44da945d646654dd7acc621b95f",
+      "exact_user_line": "sherwood-broad-woodland-oak: approved [review d39a6e047369febf]",
+      "group_signature": "6f5558092048e77b59170f317ce01c199ec33de9adbeca479375e4b4a6167f50",
+      "binding": {
+        "images": {
+          "solid": "586ee806aed1ac9aa1945ce3abc2c5a3e2c63b5347396b2045645a17dab520e8",
+          "east_solid": "92ae196b128928417fccc229e48d5e117b98946310cf9d9196d31c4ca9ca6462",
+          "context": "bc1e11a64848b2e4382b93b5eb4783fd74aa5bdd40068110e2b89ddbd5f03e8f"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "5e2baf8c9162474d9db23c31fc4ce90b14bc82da2dffc97f33380f28b0b03042"
+        }
+      }
+    },
+    {
+      "id": "sherwood-ladder-oak",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "3049adb6cb6f91a4ce91e3a49216aa62ecdd6af4bc9140683780470bf846801e",
+      "exact_user_line": "sherwood-ladder-oak: approved [review 3049adb6cb6f91a4]",
+      "group_signature": "33b753cdc5d9f35edc33dd9865ae58ad5b2ec6de213dd9c9d38dedf692d72054",
+      "binding": {
+        "images": {
+          "solid": "100ec7a37cab4c8a74e471fa73eb0760581cbeb4b8c28f22038690cc7c5610ae",
+          "east_solid": "cadca10d6166daf69798be0667e617c23c5eae0b68ed22028a4ea0d5625a1e45",
+          "context": "e72eaae88dbe9ef4b52bf4b6e727f55ef8d2f27441d90aca3ff002afa8611157"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "71f8cc3addb0becf627b40317345ee1d4e18cc07300ddcde60ec64fbacbb388b"
+        }
+      }
+    },
+    {
+      "id": "sherwood-ladder-oak-platform",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "aca1a6147b621530818642fb06966454bf2a78a5d65e267a7a443a3ced7af5d5",
+      "exact_user_line": "sherwood-ladder-oak-platform: approved [review aca1a6147b621530]",
+      "group_signature": "6c0a0ccd0c596999e7b40f9208e4a8a49df54b074c96bd1a5f66bdd0d3cdaa19",
+      "binding": {
+        "images": {
+          "solid": "6ad08af06a47ac2b8707b9053c3edd9203f171a719a8023ca10bc9069385d6f0",
+          "east_solid": "e768932270e0011ecb54c9fce8fc4e0ce4f199fb060b9618029cc2057eb0ad12",
+          "context": "f35b646b19f36112aefb16e8f6b2f6276987d6a3c7d511f6465c653919894792"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "fd320532db7ab8060a44dd7066bffe00596faf652e2878c4870226271d4c5a80"
+        }
+      }
+    },
+    {
+      "id": "sherwood-central-oak-treehouse",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "3e9b546b55c7d08abd486e7ab5b0f0335dc5b0785e008530d1ad6d9d6af21e85",
+      "exact_user_line": "sherwood-central-oak-treehouse: approved [review 3e9b546b55c7d08a]",
+      "group_signature": "92360eb939195c1ea3d07949fb986e9cdce286e7337274eb0b33b0f9148278b9",
+      "binding": {
+        "images": {
+          "solid": "fc127dd1df5ec2b01b0785f1474be9165331f1e80cc13a8efe24ca7dd2818bc3",
+          "east_solid": "377346879e041ec00c182d3f4ce297f04ad8cfa4418fa5999f78b20c3cc11729",
+          "context": "b405168eff4c1367f84b36587463d7eda63dfc57978ddfaa8fdff4a0b642f673"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "5fab7568278666aacb2125f356a7df2849f0bf430ffd4b028a1fa87329ad7bf3"
+        }
+      }
+    },
+    {
+      "id": "sherwood-central-oak-platform",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "a63da800cfe6afc7d827a8764ed15f055358f9190c0601a5688ccbc3cfe7e501",
+      "exact_user_line": "sherwood-central-oak-platform: approved [review a63da800cfe6afc7]",
+      "group_signature": "beb5e3ffbca6c4c9082164f0fd885e7e54d91162461d37603906de33edc9775d",
+      "binding": {
+        "images": {
+          "solid": "ea6148a1c2dccaba419f3b9e168f4f56be33237c0492c1975b775ea46f84dd8a",
+          "east_solid": "0d33b0083c9ef97965593e0e4271f6d9be40bc676d82fc7a937bfde7ac0894ec",
+          "context": "346e1070cba66c9d4e778b294a1f7c3fb9519550ac6061b6aa01230622359d06"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "928a9a46b626238e4b92f3c7b396d4ff5dfd7296440ac93ebe96f58c0ce04486"
+        }
+      }
+    },
+    {
+      "id": "sherwood-west-treehouse-oak",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "e4a9e8e1370f72ba0f8cb164ff92991d051e704352239fa24c5545e02a905f70",
+      "exact_user_line": "sherwood-west-treehouse-oak: approved [review e4a9e8e1370f72ba]",
+      "group_signature": "0fdc138e9cc23aa1e403d058d9d2f295e157267f0eec5b63d5ec161f3ba2874f",
+      "binding": {
+        "images": {
+          "solid": "cc4a5e8f29bc91e30c2b2c8f57264e6e7695ac3c4636b2f0c496d06accb8ba2d",
+          "east_solid": "858ae94413d3a2a4850557fe483886fd0d5679a60fd8ec80194a829655bb9015",
+          "context": "1d0f6202614fede2b65c8a83b8c2485d4e9f8745586cddeefd28a9fc18b2831a"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "2f5df1e224256eb4158748fe2732799e03883bbb48822b5f433b0daa3169db71"
+        }
+      }
+    },
+    {
+      "id": "sherwood-west-treehouse",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "1a7d126b0dcc467383eec6b393272204f62eee9d0845c17caffd84e5492a73a3",
+      "exact_user_line": "sherwood-west-treehouse: approved [review 1a7d126b0dcc4673]",
+      "group_signature": "8e0b54bf3bd2d56b17baebf0eaa35184e03ce15a04b606313a9b138974098432",
+      "binding": {
+        "images": {
+          "solid": "a9ebf84b9b0413bd8b894aa062141fc8eb6095f29620020e34157f24838aebcb",
+          "east_solid": "6b6378c6a85fce53bc3df9f06e8919e23b555192bf0514f015204df041150d01",
+          "context": "46d687ef65e1e70e872cf417d4801917f638dbe2b4e82d2d1d247fe595d04b62"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "c3e155250e33244df3390dcf5ff9eb8a33892307cc9267db11647d4f442777ba"
+        }
+      }
+    },
+    {
+      "id": "sherwood-west-treehouse-platforms",
+      "decision": "needs refinement",
+      "note": "merge with sherwood-west-treehouse",
+      "review_revision": "4da14815f034b7a8ed250f64a9b46ce564bb611eac85d15098b6e242d3a1da02",
+      "exact_user_line": "sherwood-west-treehouse-platforms: needs refinement \u2014 merge with sherwood-west-treehouse [review 4da14815f034b7a8]",
+      "group_signature": "66a7628425014667aef8695b8323cc962f35979133e463bd971226c13edde391",
+      "binding": {
+        "images": {
+          "solid": "a8fb4f650dcd511927efd8129abb9a9841de8fdc86fd7e82a20ca261ff3555c5",
+          "east_solid": "a3d989d7101f9523a72412011710ce8865ce5ca0a0a027440f4e41855c708229",
+          "context": "27341bac738ca5176d5f67d8a5debcdb27af73d7ca5d079fba5c8f81f9994f28"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "5475e35557039626ada19a52a7e75e73efc9a6d74e6f0f015181583c86eb282a"
+        }
+      }
+    },
+    {
+      "id": "sherwood-central-west-treehouse-oak",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "afd84fe3fa494fbdbe3cfa88b6af3fa19c22bb1d0adb3cb9e12aae1dab018df4",
+      "exact_user_line": "sherwood-central-west-treehouse-oak: approved [review afd84fe3fa494fbd]",
+      "group_signature": "23cd9bcae0e7840ed54dbcfe835b37711342af7955368da19f29e53e5c1c4539",
+      "binding": {
+        "images": {
+          "solid": "3a78dbff1e496314a44964e877c8d52db7ab4f27f71ac3456846d0c2ad425dbd",
+          "east_solid": "b6ec1949f56920ad141f7f6f8794936041db93a0f95da4ef562ea6c4c81d2675",
+          "context": "c0d3280c223918188102c4577f08b3233158f05e6db6fde2cd989ab59c5adc32"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "b112cd8959a5718884e4bd43f013fb96d212f446a94395d88ad36c1993e039fc"
+        }
+      }
+    },
+    {
+      "id": "sherwood-central-west-treehouse",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "96094d518f94a25d47f15d5badf016fcb442cb5ecf79994e12aa87a0ee8540e3",
+      "exact_user_line": "sherwood-central-west-treehouse: approved [review 96094d518f94a25d]",
+      "group_signature": "ea2d12d779a76fe189964d4244cea6a7adfa7873e4f6f3a3664f44279e3d7e53",
+      "binding": {
+        "images": {
+          "solid": "c2edc575a42d47391d82661a22651f9da3ea0854ab90d9e6a44896336cdbbccc",
+          "east_solid": "e2805c97efbb1a778b5c87448895344a6613d87b72038d274a4970ab711f7edd",
+          "context": "5d428f5a9c65d0c1a3d54674acc91b47eb1c29ca54bf260227bc07a7d230546a"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "14862f9999efa966a8c5624245a97fc6681d4d278dc39d2c2ff8e2bee3e80d60"
+        }
+      }
+    },
+    {
+      "id": "sherwood-central-west-treehouse-platform",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "20946f071ee417858a487a3a540495f2a7c88822cdf44f055462b758497f9057",
+      "exact_user_line": "sherwood-central-west-treehouse-platform: approved [review 20946f071ee41785]",
+      "group_signature": "5a4f9f7d0ba3badbc812f531b296344e5e00cb939b8527ece9daddc363aee8df",
+      "binding": {
+        "images": {
+          "solid": "7dad972690ee47127174a9cf76b7197ef65881506054d9995c8628b0159683e4",
+          "east_solid": "37d834126c857f59271d10dcc51b6a5b19f46c2ee2b69f0e17fc0c067616aa1f",
+          "context": "8e890a8e8bde6f349ceb733479e1dc87c7e0c48ba2d042c01475756340191247"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "d7397ccd6eba14ddd92f9c38db499e58a417a710b2fd522896b92d05d92ce694"
+        }
+      }
+    },
+    {
+      "id": "sherwood-west-border-treehouse-oak",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "6bc45970794dc77463de6b7fff6266b74494aa42304718766e7550456f83b01a",
+      "exact_user_line": "sherwood-west-border-treehouse-oak: approved [review 6bc45970794dc774]",
+      "group_signature": "a58c29f952125d30c5b0ff9ab3d6d78f8f4dda723963ef89bf26dd4c235dc9d3",
+      "binding": {
+        "images": {
+          "solid": "e707fbcb797691bc3c6dd377e92a3a2d4358feb0b72c1b3219623f7f4e68c45f",
+          "east_solid": "2f0e9103f15d8fafdbc81d89d61a6cb398314b8ea0eb6b15ffffa00985cc7c1a",
+          "context": "13c926c94c3c2dd359268b39798f5cf646c36d60f835d204fa0f06398a20c8e4"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "ea00a7092811b5712ef2cea8f1c1b866a10e0bcdbab2efb93e9d75fbaeb224aa"
+        }
+      }
+    },
+    {
+      "id": "sherwood-west-border-treehouse",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "70de09793c8a1be26eec264d1a7e6b2f1a697fe170ac61179a10872d7a054cd8",
+      "exact_user_line": "sherwood-west-border-treehouse: approved [review 70de09793c8a1be2]",
+      "group_signature": "29fe4d1250d85635fee7318d8a7e11aec5f86bb4d20ec4abdb3cc7b31beec20c",
+      "binding": {
+        "images": {
+          "solid": "c2b442b860230f1f42cf014087f68cd8b0c4362f7303907e4d1af5e91a60e356",
+          "east_solid": "f23b98e0885814ede021647182c38581839f90a6a3a3f404936780ea70112292",
+          "context": "e5017ec53612202abe3adc6ac8d954a475ad586f60c6dc03dbe495c1408d0115"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "d3680cb355de5cd8ab01e05c8f4713f3dab4c863d8072dce56a25d1e21a86d17"
+        }
+      }
+    },
+    {
+      "id": "sherwood-west-border-treehouse-platform",
+      "decision": "needs refinement",
+      "note": "merge with sherwood-west-border-treehouse",
+      "review_revision": "004e579945f9be7a6737dc78c304f72be743f8f030f97248c44175b171bc1ab6",
+      "exact_user_line": "sherwood-west-border-treehouse-platform: needs refinement \u2014 merge with sherwood-west-border-treehouse [review 004e579945f9be7a]",
+      "group_signature": "a1cb1d828b4614ca13ad7b85250bf6b36f25e911c955b08f382009525e26aedc",
+      "binding": {
+        "images": {
+          "solid": "a6aabee2041ff2c86f0a2aaf5e1f4e01642df05549126a5175294537a15cb25a",
+          "east_solid": "3943cb52a2b0eb3c4ab0bd4b8db7383f25c03ebaf049b2365247b831f7808531",
+          "context": "5c5eac914e51afd10d30243c2b2e14d2030613f80c781084d843b450ad5e75a0"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "4d41672768aae818e4443984bf0b7937ad4391238220d5809e1c781f0e516ce0"
+        }
+      }
+    },
+    {
+      "id": "sherwood-central-suspension-bridge",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "66dd7abd4f3e80e05e5e06735ef9d70f5d2c759ba7bedd963b227e329ae69ed9",
+      "exact_user_line": "sherwood-central-suspension-bridge: approved [review 66dd7abd4f3e80e0]",
+      "group_signature": "8b3c257f38fe5bd3defc92f36e57aad87e01dcca501cf24f21cbd33e3c9090dd",
+      "binding": {
+        "images": {
+          "solid": "fe5da5de279e3a4edbf249ae3887efd20682672e0fe143a4921187c1d5249826",
+          "east_solid": "15e5f099e3eac68e5efa7cb71f4308a0e6048e86f673fd6360d6dec379e94269",
+          "context": "c6874a7704e6831a23633725de7ff1316e276158dd2447cd213ceedecbaaf2f3"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "c8a6aa6f1f1bdbc4411de1adce765e667e5eb4ad79c96d65f5d09dfeb24427b9"
+        }
+      }
+    },
+    {
+      "id": "sherwood-west-suspension-bridge",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "b6ed298ace23f22726a0ce4de1878298dfb437c1183afcc15eaacb60c218f28e",
+      "exact_user_line": "sherwood-west-suspension-bridge: approved [review b6ed298ace23f227]",
+      "group_signature": "4d04b3056f07e72d13f2f33ab81a9d30909a59c912caf607bf802305d7738039",
+      "binding": {
+        "images": {
+          "solid": "21832bc36eb3438047e53e2aadbaca84297d40aa9ca01ef7e664eb785a9464f3",
+          "east_solid": "cad73fd34cfd41f2c61c69c18e5c73d0257976376581add4e375cd9959761c6f",
+          "context": "9bd9601087e315d7bb4296792bcb5f71608d13e58e1cb03ed02c704f0ae4b477"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "c5898d4f96879fa990cb98a9bd5c0c597c195e85db15d57a1116cb3bd0e9b4c8"
+        }
+      }
+    },
+    {
+      "id": "sherwood-west-camp-lookout-shelter",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "ae1ce9e3bc31f311384a15b5f40a2592fbc26da9ec3cbe0812dae9e926ecdd7b",
+      "exact_user_line": "sherwood-west-camp-lookout-shelter: approved [review ae1ce9e3bc31f311]",
+      "group_signature": "ea95c74242d56a81cc99e73280a74d95ee9b5d1d5ce609c09fb5461902ff65d7",
+      "binding": {
+        "images": {
+          "solid": "0a1248e77a7e812268b004aa1a553da39f7a4b0479f742a1226d695f7d592b8a",
+          "east_solid": "f9d9ac7c198b58e4560797c1d6cbbd2b00a6ce83ededb96bea0a46dcc108f0d1",
+          "context": "9f8905e7c167a068e63665ff329d87adc789c3cf295bc73101520636e1339b55"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "8b82d45cf47dd93a55e59fca7a632c433f90cfb1fa8a91e2f2ad66dfc854539f"
+        }
+      }
+    },
+    {
+      "id": "sherwood-southwest-work-shelter",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "b39734e285a4ef75650114e296c7a9bf1978c807b17265ba586bfb4c04f7c202",
+      "exact_user_line": "sherwood-southwest-work-shelter: approved [review b39734e285a4ef75]",
+      "group_signature": "9b4918ba89e5d015cdf4c92a0b4c6d77f36812b9eba077035e7f9c04c107cc65",
+      "binding": {
+        "images": {
+          "solid": "6b64e0310733a25dedfb80c1b1ded96c34b6a1ed6f97b3819f908130605c26bb",
+          "east_solid": "bccf408e53304dc6b0a384d333d6515eb577335c0c1f0ef3a9c005ca6e0db6a8",
+          "context": "c32ade3e9cdd741273fce3a69bc115271159b9d0141f25d4558be226d6d10d7c"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "3f6604a3e7a8fd257779bd38b49d4af6cb00213c9b4c0c79fd71980d052fd96c"
+        }
+      }
+    },
+    {
+      "id": "sherwood-southwest-worktable",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "62374666bbc368d53bce8762e85e80fcec8c0d201f8ecc2959cef2bf12dd95fd",
+      "exact_user_line": "sherwood-southwest-worktable: approved [review 62374666bbc368d5]",
+      "group_signature": "adc80a1457546e710ffc851c53f34759176794488aa35c718028558cb0707925",
+      "binding": {
+        "images": {
+          "solid": "bc4786223b7e0588271c245ee4412c1ab458ee276f383b0db72e5be257217d20",
+          "east_solid": "9f774233faac1810b1a69a0308d48ffcc6f17d1138b88f9a225a1f6f122dac00",
+          "context": "d33f5829ab443659dadb65be5bc8b79eb872bc052e328756bf3dbcc4b8d41c99"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "403c4b3cb94aa1ace8b5174c438e084ca591ba7bbaabd786c4f58b5e3d506248"
+        }
+      }
+    },
+    {
+      "id": "sherwood-north-woodland-shelter",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "d852a592f84b1d56f8837ec285a716bb6972ee050638958f66ef2da61099167d",
+      "exact_user_line": "sherwood-north-woodland-shelter: approved [review d852a592f84b1d56]",
+      "group_signature": "4fd4ef4f4d844edd474d8657158c9b9f822729b40e111c8c2a0832ef773de2f7",
+      "binding": {
+        "images": {
+          "solid": "8ff86bf22bf2701ee6aa342e329f4d105e3b8379bdb89980dc8a20074f54cba2",
+          "east_solid": "2349cc8d371c5e4faa4ba1662facbe85c602cef32353244f68880a13208fbb53",
+          "context": "a1f75f10aa6989c4a3b769cf48a694f5572c6b8c0d39e65310caf4d9bd8db866"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "7efabf5070a56517b038268f68c69ecfa9c3eaf7fec69f47b58123dbc790008c"
+        }
+      }
+    },
+    {
+      "id": "sherwood-west-camp-rock-cluster",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "5a0a2efffe6b12a07221515611c61ea48ff1a98118471079ab4f7c9924a38b2d",
+      "exact_user_line": "sherwood-west-camp-rock-cluster: approved [review 5a0a2efffe6b12a0]",
+      "group_signature": "5dd4568f5777cf176c57ea322a9976a62c2c8925e74347083139329f9fbeed99",
+      "binding": {
+        "images": {
+          "solid": "9be83d0c979f134fdd6ade7e73b4697105cb0bea42d1d6b444db622f3b52b70a",
+          "east_solid": "d71e768a5eebe6c4ca55734864dab5335f578f22622441e0cf515c22fa513adc",
+          "context": "01ce0c2a400331e11093d39455db47c37a03f3bfe377c2235e17af1ad99880c5"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "a2f91d6d4e00c6872ce14b374f8d71be18c67f59c9741902de63872fd74df1a8"
+        }
+      }
+    },
+    {
+      "id": "sherwood-central-oak-rock-outcrop",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "9bf4f6c15f33f76e623c31db584f58f3cfe5c6a0636b34e5b749f36174a9e4fb",
+      "exact_user_line": "sherwood-central-oak-rock-outcrop: approved [review 9bf4f6c15f33f76e]",
+      "group_signature": "76c15be042630f37ddc42acb6a6f746cf751eefd0be538c717a34694841d3107",
+      "binding": {
+        "images": {
+          "solid": "87f063b48bef35019e2e50627ebf6b95ea37d624ff372f42db300e3b2ffc00ff",
+          "east_solid": "c4bc574269d2085038610b4cdc71f4aa6015a0e04687ff5c6a1bc5797c999deb",
+          "context": "3111d64a179851597836b5e692e635b48daa49cd0eb4b08f832ca11316b10112"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "5099247786910145e145cc4431dbef44984c26242ce504a48713998c95e9b0ef"
+        }
+      }
+    },
+    {
+      "id": "sherwood-south-riverbank-rock-outcrop",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "072accf43ba050f30d47e5fa3474ef65d469c71535c7cd5e7d4de8eaeff021fe",
+      "exact_user_line": "sherwood-south-riverbank-rock-outcrop: approved [review 072accf43ba050f3]",
+      "group_signature": "69e166160a57d4d2da5fb0a4d4e4119aee9da814931636c421b4f4413f355567",
+      "binding": {
+        "images": {
+          "solid": "4feabe376c52dae3fde3fac4ef7b7ed481ba5aa2f7b46ec53de78eef70bbe157",
+          "east_solid": "6c7ee2d5ba72683a3ac9f843f3ac3e608a83dfec0baea878ac2a6672a34a94b5",
+          "context": "59bb077bc76a751f244b93234270eff14a549d547f35bfc427ec3419d2cca67e"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "49aeb7a08ea0bc6870e7ae0fab11c8e097ff8760e9c10cf6269c47fb472910cb"
+        }
+      }
+    },
+    {
+      "id": "sherwood-east-riverbank-rock-outcrop",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "b996b49fc1a0406673b3e3064f2f3dc78af665d2a7efd6c66fe79d5cc7ec3ca1",
+      "exact_user_line": "sherwood-east-riverbank-rock-outcrop: approved [review b996b49fc1a04066]",
+      "group_signature": "96e35ffc69562286f41cd4723f8fbae2dad7bf8876d2dd05c375fc0151c8c34c",
+      "binding": {
+        "images": {
+          "solid": "98ee963d2e497e103bb05ef0c8c21c452247e3d1ec5d1ecae227e49e1594e555",
+          "east_solid": "d7e3cd1068df2ce08808da3f5c883af7f8991868b94f6a59e1eb50d7b510410f",
+          "context": "c0c62ac8b85e42a94d4d524c789a266f3149a2e1bcb293de950ba9672f260973"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "fddcb178dabca16bb53e42cfc9acb7afbf430d0f32b19c3a0a13ec932d45c514"
+        }
+      }
+    },
+    {
+      "id": "sherwood-ladder-oak-rock-cluster",
+      "decision": "approved",
+      "note": "",
+      "review_revision": "a2847109c64ddb762e458d7f7aa29d7e32273e68a6663044cc180d895e98ba12",
+      "exact_user_line": "sherwood-ladder-oak-rock-cluster: approved [review a2847109c64ddb76]",
+      "group_signature": "19434bda530e26f9fe3a7b4da10d9ff136087ebb31e437ec0322b6005dfd0ee7",
+      "binding": {
+        "images": {
+          "solid": "86b7ea40e448e8f6eb8fe00d4955fc1e2a4d309e82b794af64606c154e6fea6a",
+          "east_solid": "2d4e4d40d86edb157e609d341df45952c9b973253e8c33349d04529fafa9f6ee",
+          "context": "27bb5f1dbaa179daec160fbb5eadc3b7a287c57636f33b186dd8fe20efef5622"
+        },
+        "reports": {
+          "validation": "7c93de40144b82ef0051d2e44b07638e9b3e44ad4bfbed4a88ffd0c30ce06366",
+          "ownership": "0e7287cf478f13854f8428069b3cc08b62c48ab92174735772cd5b6e7f8ff7d9"
+        }
+      }
+    }
+  ]
+}

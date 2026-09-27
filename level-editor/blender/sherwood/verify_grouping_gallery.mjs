@@ -1,6 +1,7 @@
 import {spawn} from 'node:child_process';
-import {mkdir,mkdtemp,writeFile} from 'node:fs/promises';
+import {mkdir,mkdtemp,writeFile,readFile} from 'node:fs/promises';
 import {chromeEndpoint,socketOpen} from '../../app/tests/cdp.mjs';
+const expectedIds=JSON.parse(await readFile('work/sherwood-refinement/grouping-review/gallery-manifest.json','utf8')).items.map(i=>i.id);
 const root='/home/phire/.cache/sccache/sherwood-gallery-browser';await mkdir(root,{recursive:true});
 const profile=await mkdtemp(root+'/p-');
 const chrome=spawn('/usr/lib/chromium/chromium',['--headless','--no-sandbox','--disable-dev-shm-usage','--disable-background-networking','--window-size=1440,1100','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{stdio:['ignore','ignore','pipe'],env:{...process.env,TMPDIR:root}});
@@ -22,12 +23,12 @@ try{
   await new Promise(r=>setTimeout(r,100));
  }
  const result=await evaluate(`(async()=>{for(let i=0;i<100&&!document.querySelector('article');i++)await new Promise(r=>setTimeout(r,100));
- const cards=[...document.querySelectorAll('article')];const card=document.querySelector('#sherwood-central-oak-platform');if(!card)throw Error('No combined platform card');
+ const cards=[...document.querySelectorAll('article')];const expectedIds=${JSON.stringify(expectedIds)};if(JSON.stringify(cards.map(c=>c.id))!==JSON.stringify(expectedIds))throw Error('Unexpected pending cards');const card=cards[0];if(!card)throw Error('No pending card');
  card.scrollIntoView();for(const img of card.querySelectorAll('img')){img.loading='eager';await img.decode();}
  const ready=cards.filter(c=>[...c.querySelector('.decision').options].some(o=>o.value==='approved'&&!o.disabled)).length;
- if(ready!==30 || cards.length!==30)throw Error('Missing enabled approvals: '+ready);
+ if(ready!==expectedIds.length || cards.length!==expectedIds.length)throw Error('Missing enabled approvals: '+ready);
  const note=card.querySelector('.review-note');note.value='Gallery verification note';note.dispatchEvent(new Event('input',{bubbles:true}));
- if(!document.querySelector('#review-export').value.includes('sherwood-central-oak-platform: feedback — Gallery verification note'))throw Error('Feedback export failed');
+ if(!document.querySelector('#review-export').value.includes(card.id+': feedback — Gallery verification note'))throw Error('Feedback export failed');
  return {status:'PASS',cards:cards.length,ready,images_loaded:[...card.querySelectorAll('img')].every(i=>i.naturalWidth>0),feedback_export:true};})()`);
  const shot=await call('Page.captureScreenshot',{format:'png'});await writeFile('work/sherwood-refinement/grouping-review/browser.png',Buffer.from(shot.data,'base64'));
  await evaluate(`document.querySelector('#clear-reviews').click()`);

@@ -39,7 +39,7 @@ def world_points(objects):
     return np.concatenate(arrays)
 
 
-def main(root):
+def main(root, only=None):
     root=Path(root).resolve();plan=json.loads((root/'plan.json').read_text())
     assert sha(root/'catalog.json')==plan['catalog_sha256']
     source=EDITOR/'work/sherwood-refinement/textures/reproject-v2/source-only.blend'
@@ -96,6 +96,7 @@ def main(root):
     camera.data.type='ORTHO';camera.data.clip_end=20000;scene.camera=camera
     for group in plan['groups']:
         if not group['changed']:continue
+        if only and group['id'] not in only:continue
         folder=root/'packets'/group['id'];folder.mkdir(parents=True,exist_ok=True)
         selected=[bpy.data.objects[n] for n in group['objects']];points=world_points(selected)
         for o in selected:o.hide_render=False
@@ -134,4 +135,5 @@ def main(root):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--root',required=True);a=p.parse_args(sys.argv[sys.argv.index('--')+1:]);main(a.root)
+    p=argparse.ArgumentParser();p.add_argument('--root',required=True);p.add_argument('--asset',action='append')
+    a=p.parse_args(sys.argv[sys.argv.index('--')+1:]);main(a.root,a.asset)
