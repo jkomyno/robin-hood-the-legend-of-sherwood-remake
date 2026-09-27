@@ -1743,11 +1743,74 @@ export default function Editor3D(props: EditorProps) {
                 <section class="object-detail">
                   <h2>{selectionTitle()}</h2>
                   <div class="row">
-                    <button onClick={duplicateSelected} title="d" disabled={!!selectedStatePart()}>
-                      Duplicate
+                    <button
+                      class="asset-action"
+                      onClick={duplicateSelected}
+                      title="Duplicate (D)"
+                      aria-label="Duplicate"
+                      disabled={!!selectedStatePart()}
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <rect x="8" y="8" width="12" height="12" rx="2" />
+                        <path d="M16 8V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4" />
+                      </svg>
                     </button>
-                    <button onClick={deleteSelected} title="del" disabled={!!selectedStatePart()}>
-                      Delete
+                    <button
+                      class="asset-action asset-action-delete"
+                      onClick={deleteSelected}
+                      title="Delete (Del)"
+                      aria-label="Delete"
+                      disabled={!!selectedStatePart()}
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" />
+                      </svg>
+                    </button>
+                    <button
+                      class="asset-action"
+                      aria-label="Hidden"
+                      aria-pressed={(selectedGroup()?.hidden ?? selectedPart()?.hidden) ? "true" : "false"}
+                      title={(selectedGroup()?.hidden ?? selectedPart()?.hidden) ? "Show asset" : "Hide asset"}
+                      disabled={!!selectedStatePart()}
+                      onClick={() => setHidden(!(selectedGroup()?.hidden ?? selectedPart()?.hidden))}
+                    >
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                        <Show when={selectedGroup()?.hidden ?? selectedPart()?.hidden}>
+                          <path d="m3 3 18 18" />
+                        </Show>
+                      </svg>
                     </button>
                   </div>
                   <Show when={selectedPart()}>
@@ -1898,17 +1961,6 @@ export default function Editor3D(props: EditorProps) {
                   <Show when={selectedStatePart()}>
                     <p>Select the whole group to change its state, duplicate it, or delete it.</p>
                   </Show>
-                  <div class="row">
-                    <label class="check inline">
-                      <input
-                        type="checkbox"
-                        checked={!!(selectedGroup()?.hidden ?? selectedPart()?.hidden)}
-                        disabled={!!selectedStatePart()}
-                        onChange={(e) => setHidden(e.currentTarget.checked)}
-                      />{" "}
-                      hidden
-                    </label>
-                  </div>
                 </section>
               )}
             </Show>

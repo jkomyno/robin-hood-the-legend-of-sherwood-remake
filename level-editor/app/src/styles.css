@@ -828,6 +828,9 @@ select, input.search { background: #171c22; border-color: var(--border); min-hei
 .editor-panel h2.panel-title { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 12px; }
 .panel-intro { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 16px; }
 .object-detail { display: flex; flex-direction: column; gap: 10px; }
+.asset-action { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; }
+.asset-action-delete { color: #f08080; }
+.asset-action[aria-pressed="true"] { background: #34473e; border-color: #739882; }
 .editor-panel .object-detail h2 { font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; word-break: normal; }
 .editor-panel h3 { margin-top: 20px; margin-bottom: 10px; font-size: 10px; letter-spacing: .08em; color: var(--muted); }
 .meta-row { align-items: center; font-size: 12px; }
