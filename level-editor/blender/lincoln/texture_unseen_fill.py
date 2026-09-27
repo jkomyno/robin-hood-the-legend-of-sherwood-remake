@@ -493,6 +493,20 @@ def bvh_for(target):
                                 all_triangles=True)
 
 
+def full_scene(gr):
+    """All render-visible working meshes, revealed-state objects included.
+
+    global_reproject.Scene keeps covered-state geometry only (its source camera never sees state
+    objects); targets here select their state themselves through `displayed`.
+    """
+    covered = gr.covered_state_mesh
+    gr.covered_state_mesh = lambda properties: True
+    try:
+        return gr.Scene()
+    finally:
+        gr.covered_state_mesh = covered
+
+
 def open_worker(path):
     import bpy
     sys.path.insert(0, str(HERE))
@@ -502,7 +516,7 @@ def open_worker(path):
     acquire()
     bpy.ops.wm.open_mainfile(filepath=str(path))
     bpy.context.window.scene = bpy.data.scenes[gr.SCENE]
-    return gr, gr.Scene()
+    return gr, full_scene(gr)
 
 
 # ---------------------------------------------------------------- survey
@@ -933,10 +947,10 @@ def fill(worker_in, output, ids=None, include_unapproved=False, render=True):
             failures[target_id] = f'{type(error).__name__}: {error}'
             print(json.dumps({'target': target_id, 'failed': failures[target_id]}), flush=True)
     import global_reproject
-    require(geometry_record(global_reproject.Scene()) == geometry_before, 'Fill changed geometry, UVs or slots')
+    require(geometry_record(full_scene(global_reproject)) == geometry_before, 'Fill changed geometry, UVs or slots')
     bpy.ops.wm.save_as_mainfile(filepath=str(output / 'worker.blend'))
     if render:
-        scene = gr.Scene()
+        scene = full_scene(gr)
         for row in assets:
             row.update(render_actual(row['asset_id'], scene, gr, output))
             print(json.dumps({'target': row['asset_id'], 'residual_unknown_pixels': row['residual_unknown_pixels']}), flush=True)
