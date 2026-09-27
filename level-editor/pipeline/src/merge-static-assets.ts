@@ -18,6 +18,23 @@ export interface StaticAssetInput {
   model: Document;
 }
 
+export function assertStaticDescriptor(descriptor: ProjectionAssetDescriptor) {
+  const supported = new Set([
+    "version",
+    "kind",
+    "id",
+    "name",
+    "source_map",
+    "source_origin_scene",
+    "model",
+    "model_scene",
+    "resources",
+    "parts",
+  ]);
+  if (Object.keys(descriptor).some((key) => !supported.has(key)))
+    throw new Error(`Asset requires explicit metadata migration: ${descriptor.id}`);
+}
+
 /** The catalog must describe exactly the complete parts of the selected assets. */
 export async function mergeStaticAssets(
   document: Level3D,
@@ -32,28 +49,7 @@ export async function mergeStaticAssets(
   const nodes = new Set<string>();
   const obstacles: number[] = [];
   const selected = inputs.map(({ descriptor }) => {
-    const supported = new Set([
-      "version",
-      "kind",
-      "id",
-      "name",
-      "source_map",
-      "source_origin_scene",
-      "model",
-      "model_scene",
-      "resources",
-      "parts",
-    ]);
-    if (Object.keys(descriptor).some((key) => !supported.has(key)))
-      throw new Error(`Asset requires explicit metadata migration: ${descriptor.id}`);
-    if (
-      descriptor.states ||
-      descriptor.state_variants ||
-      descriptor.standalone_variants ||
-      "gameplay" in descriptor ||
-      descriptor.editor_usage
-    )
-      throw new Error(`Asset requires explicit state/gameplay migration: ${descriptor.id}`);
+    assertStaticDescriptor(descriptor);
     const parts = document.objects.filter((part) =>
       part.node.startsWith(`asset:${descriptor.id}:`),
     );

@@ -5,7 +5,8 @@ import { NodeIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import { parseProjectionAssetDescriptor } from "@rle/shared";
 import { sha256 } from "./bundle-asset-states.ts";
-import { mergeStaticAssets } from "./merge-static-assets.ts";
+import { mergeStaticAssets, type StaticAssetInput } from "./merge-static-assets.ts";
+import { splitStaticAsset } from "./split-static-asset.ts";
 import { readStoredMap, compactStoredMap } from "./stored-map.ts";
 import type { GameplayOwnershipCatalog } from "./nonrendering-gameplay-owners.ts";
 
@@ -16,12 +17,13 @@ export async function stageCanonicalStaticAsset(options: {
   catalog: string;
   id: string;
   out: string;
+  split?: boolean;
 }) {
   const library = path.resolve(options.library);
   const out = path.resolve(options.out);
   if (out === library || out.startsWith(`${library}${path.sep}`))
     throw new Error("Staging output must be outside the published library");
-  const document = await readStoredMap(options.map, library);
+  let document = await readStoredMap(options.map, library);
   const catalog: GameplayOwnershipCatalog = JSON.parse(await fs.readFile(options.catalog, "utf8"));
   const group = catalog.groups.find((entry) => entry.id === options.id);
   if (!group || group.parts.some((part) => part.obstacle === undefined))
@@ -35,7 +37,7 @@ export async function stageCanonicalStaticAsset(options: {
       .map((part) => part.node.split(":")[1]),
   );
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
-  const inputs = [];
+  const inputs: StaticAssetInput[] = [];
   for (const id of assets) {
     const reference = document.assetSources?.find((entry) => entry.id === id);
     if (!reference) throw new Error(`Missing pinned asset: ${id}`);
@@ -54,7 +56,32 @@ export async function stageCanonicalStaticAsset(options: {
       if (!known.has(extension)) throw new Error(`Unsupported model extension: ${extension}`);
     inputs.push({ descriptor, model: await io.readJSON(json) });
   }
+  const remaining: Awaited<ReturnType<typeof splitStaticAsset>>["outputs"] = [];
+  if (options.split)
+    for (const [index, input] of inputs.entries()) {
+      const selected = input.descriptor.parts.filter((part) =>
+        expected.includes(part.source_obstacle!),
+      );
+      const other = input.descriptor.parts.filter(
+        (part) => !expected.includes(part.source_obstacle!),
+      );
+      if (!other.length) continue;
+      const split = await splitStaticAsset(document, input, [
+        {
+          id: `${input.descriptor.id}-selected`,
+          obstacles: selected.map((part) => part.source_obstacle!),
+        },
+        {
+          id: `${input.descriptor.id}-remainder`,
+          obstacles: other.map((part) => part.source_obstacle!),
+        },
+      ]);
+      document = split.document;
+      inputs[index] = split.outputs[0]!;
+      remaining.push(split.outputs[1]!);
+    }
   const merged = await mergeStaticAssets(document, options.id, expected, inputs);
+  const outputs = [merged, ...remaining];
   // Exclusive creation prevents accidental writes through a previous overlay's symlinks.
   await fs.mkdir(out);
   await fs.mkdir(path.join(out, "3d-assets"));
@@ -63,23 +90,26 @@ export async function stageCanonicalStaticAsset(options: {
     if (!["3d-assets", "scenes"].includes(entry))
       await fs.symlink(path.join(library, entry), path.join(out, entry));
   for (const entry of await fs.readdir(path.join(library, "3d-assets"))) {
-    if (entry === options.id) throw new Error(`Asset directory already exists: ${entry}`);
+    if (outputs.some((output) => output.descriptor.id === entry))
+      throw new Error(`Asset directory already exists: ${entry}`);
     await fs.symlink(path.join(library, "3d-assets", entry), path.join(out, "3d-assets", entry));
   }
-  const assetDir = `3d-assets/${options.id}`;
-  await fs.mkdir(path.join(out, assetDir));
-  const descriptorBytes = JSON.stringify(merged.descriptor, null, 2) + "\n";
-  await fs.writeFile(path.join(out, assetDir, "model.glb"), merged.bytes);
-  await fs.writeFile(path.join(out, assetDir, "asset.json"), descriptorBytes);
-  merged.document.assetSources!.push({
-    id: options.id,
-    descriptor: `${assetDir}/asset.json`,
-    descriptor_sha256: sha256(descriptorBytes),
-    model: `${assetDir}/model.glb`,
-    model_sha256: sha256(merged.bytes),
-    model_scene: "default",
-    resources: [],
-  });
+  for (const output of outputs) {
+    const assetDir = `3d-assets/${output.descriptor.id}`;
+    await fs.mkdir(path.join(out, assetDir));
+    const descriptorBytes = JSON.stringify(output.descriptor, null, 2) + "\n";
+    await fs.writeFile(path.join(out, assetDir, "model.glb"), output.bytes);
+    await fs.writeFile(path.join(out, assetDir, "asset.json"), descriptorBytes);
+    merged.document.assetSources!.push({
+      id: output.descriptor.id,
+      descriptor: `${assetDir}/asset.json`,
+      descriptor_sha256: sha256(descriptorBytes),
+      model: `${assetDir}/model.glb`,
+      model_sha256: sha256(output.bytes),
+      model_scene: output.descriptor.model_scene,
+      resources: [],
+    });
+  }
   const scenePath = path.join(out, "scenes", path.basename(options.map));
   await fs.writeFile(
     scenePath,
@@ -90,10 +120,22 @@ export async function stageCanonicalStaticAsset(options: {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const [library, map, catalog, id, out] = process.argv.slice(2);
+  const [library, map, catalog, id, out, split] = process.argv.slice(2);
   if (!library || !map || !catalog || !id || !out)
-    throw new Error("Usage: stage-canonical-static-asset.ts LIBRARY MAP CATALOG ID OUT");
+    throw new Error("Usage: stage-canonical-static-asset.ts LIBRARY MAP CATALOG ID OUT [--split]");
+  if (split && split !== "--split") throw new Error(`Unknown option: ${split}`);
   console.log(
-    JSON.stringify(await stageCanonicalStaticAsset({ library, map, catalog, id, out }), null, 2),
+    JSON.stringify(
+      await stageCanonicalStaticAsset({
+        library,
+        map,
+        catalog,
+        id,
+        out,
+        split: split === "--split",
+      }),
+      null,
+      2,
+    ),
   );
 }

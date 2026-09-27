@@ -23,7 +23,7 @@ intended construction, not functionality available today.
 | Doors, gates and lock rules | Transform local endpoints and optional click polygons; resolve neighbours geometrically and retain initial/alternate actor lock rules. | Partial: rules preserved; state-transition triggers still missing |
 | Building interiors | Asset-local interior definitions and entrances; generate virtual interior sectors and links. | Working for empty interiors; occupants remain planned |
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
-| Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | Partial: native zones/gates, cross-asset pairs and rotated/duplicated assets tested; two recovery pairs remain unresolved |
+| Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild the ground lookup subset and per-obstacle references independently. | Partial: ground/obstacle regions and terrain defaults tested in the engine; elevated-surface links unfinished |
 | Light/shadow regions | Transform asset-local planar contours, resolve the receiving navigation layer and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering and interior links; multi-plane regions and ambiguous ownership remain recovery gaps |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
@@ -79,9 +79,9 @@ recovery drafts for Derby, Sherwood, Lincoln, Leicester, Nottingham, Croisement0
 pass the static base-geometry check, excluding explicitly counted movement transitions.
 All eight also construct their compiled movement areas, sight obstacles and grids
 in the native engine without a datadir. York passes both checks using staged
-canonical tower and golden timber house assets, including the tower's previously
-missing elevated door landing: 193 movement areas, 1,159 sight obstacles and
-177 doors construct successfully.
+canonical tower, golden timber house and stone-shop assets, including the tower's
+previously missing elevated door landing: 194 movement areas, 1,161 sight obstacles,
+179 doors and 72 jump pairs construct successfully.
 `export-gameplay-diagnostics.ts` generates
 these explicitly labelled static probes from draft assets; the ignored
 `recovered_static_exports_construct_native_geometry` test reads their manifest via
@@ -111,8 +111,13 @@ The latest all-map pass recovers 24 of 149 light/shadow regions into asset-local
 drafts. The other 125 need ownership review or splitting across receiving planes;
 they are not silently assigned to terrain. These drafts remain unpublished.
 
-Jump recovery produces asset-local drafts for 171 of 173 pairs; two still need
-ownership or geometry authoring. Edge elevations remain independent of fractional
+Jump recovery produces asset-local drafts for all 173 pairs across nine maps.
+`compare-jump-geometry.ts` verifies exact endpoint coordinates, polygon boundaries,
+helper flags and long-jump flags against the reference records, allowing rebuilt
+indices, reversed polygon winding and reordered pairs. All 173 pass. Native checks
+also verify paired lines, endpoint elevations and registration on landing sectors.
+These checks do not establish traversal connectivity or full gameplay parity.
+Edge elevations remain independent of fractional
 surface heights. Extraction now preserves the third endpoint coordinate and
 remaps zone references, retaining both destinations when a crop crosses a pair.
 The passing static diagnostics also include their recovered jump definitions.
@@ -152,17 +157,19 @@ owner's bounds; they can subtract that owner's collision, never another asset's.
 Non-rendering gameplay volumes can attach to an existing asset frame without a
 mesh. One-time recovery uses explicit catalog ownership (or `--ownership`) and
 restores six of York's nine inventoried records against the published scene,
-including a missing jump landing surface. Staged canonical tower and golden timber
-house assets resolve two more records previously spanning multiple pinned assets;
-eight of nine now have asset owners. The remaining stone-shop record needs a
-legacy asset split because that asset also contains parts of other buildings.
+including a missing jump landing surface. Staged canonical tower, golden timber
+house and stone-shop assets resolve the remaining three records; all nine now
+have asset owners. The stone shop uses an explicit split that preserves its
+neighboring building parts in a separate asset with unchanged geometry.
 The compiler reads
 only the resulting local volumes; source sector and material indices are rejected.
 `stage-canonical-static-asset.ts` combines complete static assets only when their
 parts exactly match an explicit catalog group. It checks unchanged world collision
 positions and decoded model geometry, materials and texture bytes after writing
-the merged model. Partial groups, edited placements and state/gameplay definitions
-requiring migration are rejected. Its output is a separate library overlay and
+the merged model. Partial groups require `--split`, which partitions leaf parts
+without changing their ancestor transforms, collision coordinates or appearance.
+Every part must be assigned exactly once. Edited placements and state/gameplay
+definitions requiring migration are rejected. Its output is a separate library overlay and
 pinned editor scene, not a publication or a runtime dependency on source levels.
 Jump recovery now requires an owned receiving surface on each elevated side;
 missing or ambiguous ownership remains an explicit gap rather than an invalid pair.
@@ -173,5 +180,5 @@ Terrain owns ground jumps only between recovered terrain landing regions and
 across retained terrain exclusions; any transferred asset-owned exclusion in the
 jump corridor prevents that assignment. Split-asset ownership uses each actual
 part footprint, allowing an edge to span multiple planes of one asset while
-rejecting gaps between them. The remaining two pairs need York's missing roof
-surface ownership resolved. Recovery coverage is not a connectivity parity proof.
+rejecting gaps between them. York's staged stone-shop roof resolves the final two
+pairs. Recovery coverage is not a connectivity parity proof.

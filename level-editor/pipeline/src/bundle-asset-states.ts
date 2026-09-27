@@ -128,6 +128,7 @@ async function signatures(doc: Document) {
   }
   return {
     resources: { images, accessors, materials, meshes },
+    nodeData: node,
     sceneData: (s: Scene) => ({ extras: s.getExtras(), nodes: s.listChildren().map(node) }),
     scene: (s: Scene) =>
       sha256(canonical({ extras: s.getExtras(), nodes: s.listChildren().map(node) })),

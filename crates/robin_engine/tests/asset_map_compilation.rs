@@ -27,6 +27,8 @@ fn recovered_static_exports_construct_native_geometry() {
         let geometry = &descriptor["asset_geometry"];
         let dims = &descriptor["walkable_polygon"][2];
         let level = LoadedLevel::hackable_from_json(&bytes).unwrap();
+        let jump_pairs = level.proto.jump_line_pairs.clone();
+        let jump_zones = level.proto.jump_zones.clone();
         let mut assets = LevelAssets::new();
         let engine = construct_with_dimensions(
             level,
@@ -60,10 +62,57 @@ fn recovered_static_exports_construct_native_geometry() {
             "{file}"
         );
         assert!(!engine.fast_grid().level.blocks.is_empty(), "{file}");
+        let grid = engine.fast_grid();
+        assert_eq!(grid.level.jump_lines.len(), jump_pairs.len() * 2, "{file}");
+        for (pair_index, pair) in jump_pairs.iter().enumerate() {
+            for (side, (raw, opposite)) in [(&pair.line1, &pair.line2), (&pair.line2, &pair.line1)]
+                .into_iter()
+                .enumerate()
+            {
+                let index = pair_index * 2 + side;
+                let line = &grid.level.jump_lines[index];
+                assert_eq!(
+                    line.associated_line_index,
+                    Some((index ^ 1) as u32),
+                    "{file}"
+                );
+                assert_eq!(line.long_jump_forced, pair.jump_long, "{file}");
+                assert_eq!(
+                    (line.point_a.x, line.point_a.y, line.z_a),
+                    (
+                        raw.point_a.0 as f32,
+                        raw.point_a.1 as f32,
+                        raw.point_a.2 as f32
+                    ),
+                    "{file}"
+                );
+                assert_eq!(
+                    (line.point_b.x, line.point_b.y, line.z_b),
+                    (
+                        raw.point_b.0 as f32,
+                        raw.point_b.1 as f32,
+                        raw.point_b.2 as f32
+                    ),
+                    "{file}"
+                );
+                let zone = &jump_zones[opposite.jump_zone_index as usize];
+                let home = &grid.level.sectors[line.sector_index.unwrap().get() as usize];
+                assert_eq!(line.layer, zone.layer, "{file}");
+                assert_eq!(home.layer, zone.layer, "{file}");
+                assert!(
+                    home.jump_line_indices
+                        .iter()
+                        .any(|id| id.get() as usize == index),
+                    "{file}"
+                );
+                assert!(!home.gate_indices.is_empty(), "{file}");
+            }
+        }
         println!(
-            "{file}: constructed {areas} areas, {} sight obstacles, {} doors",
+            "{file}: constructed {areas} areas, {} sight obstacles, {} doors, {} jump pairs",
             assets.environment.static_sight_obstacles.len(),
-            engine.presentation_view().doors().len()
+            engine.presentation_view().doors().len(),
+            jump_pairs.len()
         );
         count += 1;
     }

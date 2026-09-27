@@ -8,6 +8,7 @@ import {
   type ProjectionAssetDescriptor,
 } from "@rle/shared";
 import { mergeStaticAssets } from "./merge-static-assets.ts";
+import { splitStaticAsset } from "./split-static-asset.ts";
 
 function fixture() {
   const document: Level3D = {
@@ -124,4 +125,58 @@ test("stateful assets require explicit migration", async () => {
   const { document, inputs } = fixture();
   inputs[1]!.descriptor.states = { active: "initial", initial: ["building-1"], applied: [] };
   await assert.rejects(mergeStaticAssets(document, "whole-building", [0, 1], inputs), /migration/);
+});
+
+test("split preserves nested model transforms and assigns every part once", async () => {
+  const { document, inputs } = fixture();
+  const merged = await mergeStaticAssets(document, "whole-building", [0, 1], inputs);
+  const source = {
+    descriptor: merged.descriptor,
+    model: await new NodeIO().readBinary(merged.bytes),
+  };
+  const split = await splitStaticAsset(merged.document, source, [
+    { id: "stone-shop", obstacles: [0] },
+    { id: "timber-house", obstacles: [1] },
+  ]);
+  assert.deepEqual(
+    split.document.objects.map((part) => transformedObstacle(split.document, part)),
+    document.objects.map((part) => transformedObstacle(document, part)),
+  );
+  assert.deepEqual(
+    split.outputs.map((output) => output.descriptor.parts.map((part) => part.source_obstacle)),
+    [[0], [1]],
+  );
+  for (const [index, output] of split.outputs.entries()) {
+    const rendered: string[] = [];
+    output.model
+      .getRoot()
+      .listScenes()[0]!
+      .traverse((node) => {
+        if (node.getMesh()) rendered.push(node.getName());
+      });
+    assert.deepEqual(rendered, [`building-${index}`]);
+  }
+  const house = split.document.groups.find((group) => group.id === "timber-house")!;
+  house.transform.dx += 200;
+  assert.equal(transformedObstacle(split.document, split.document.objects[0]!).points[0]!.x, 100);
+  assert.equal(transformedObstacle(split.document, split.document.objects[1]!).points[0]!.x, 320);
+  await assert.rejects(
+    splitStaticAsset(merged.document, source, [
+      { id: "stone-shop", obstacles: [0] },
+      { id: "timber-house", obstacles: [0] },
+    ]),
+    /every part exactly once/,
+  );
+  source.model
+    .getRoot()
+    .listNodes()
+    .find((node) => node.getName() === "building-1")!
+    .setName("unowned");
+  await assert.rejects(
+    splitStaticAsset(merged.document, source, [
+      { id: "stone-shop", obstacles: [0] },
+      { id: "timber-house", obstacles: [1] },
+    ]),
+    /every rendered node/,
+  );
 });
