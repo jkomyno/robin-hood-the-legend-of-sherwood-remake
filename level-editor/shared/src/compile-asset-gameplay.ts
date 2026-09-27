@@ -145,6 +145,7 @@ export function compileAssetGameplay(
   const movementSolids: { owner: string; shape: SightObstacle }[] = [];
   const movementClearances: typeof surfaces = [];
   const transitionBlockers: PlacedTransitionBlocker[] = [];
+  const lights: { id: string; polygon: Point[]; plane: HeightPlane; ambiences: number }[] = [];
   const transitions: {
     id: string;
     waypoint: Vec3;
@@ -211,6 +212,15 @@ export function compileAssetGameplay(
       }
       return [p[0] - bounds[0], p[1] - bounds[1], p[2]];
     };
+    for (const light of gameplay.lights ?? []) {
+      const points = light.polygon.map((p) => transform(light.node, p));
+      lights.push({
+        id: `${placement.id}/${light.id}`,
+        polygon: ring(points.map(project), `${placement.id}/${light.id}`),
+        plane: heightPlane(points.map(([x, y, z]): Vec3 => [x, y - z, z])),
+        ambiences: light.ambiences,
+      });
+    }
     for (const sound of gameplay.sounds ?? []) {
       const s = sound.spatial;
       // Global emitters still require their owning part to be present.
@@ -621,6 +631,31 @@ export function compileAssetGameplay(
   return {
     ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
+    ...(lights.length
+      ? {
+          light_sectors: lights.map((light) => {
+            const matchingLayers = new Set(
+              areas
+                .filter(
+                  (area) =>
+                    !area.lift &&
+                    area.plane.every((n, i) => Math.abs(n - light.plane[i]!) < 1e-7) &&
+                    polygonClipping.intersection([area.polygon], [light.polygon]).length > 0,
+                )
+                .map((area) => area.layer),
+            );
+            if (matchingLayers.size !== 1)
+              throw new Error(
+                `${light.id}: light region must overlap exactly one receiving layer (found ${matchingLayers.size})`,
+              );
+            return {
+              layer: [...matchingLayers][0]!,
+              polygon: { points: light.polygon },
+              ambience: light.ambiences,
+            };
+          }),
+        }
+      : {}),
     ...(transitions.length
       ? {
           movement_transitions: transitions.map((t) => {

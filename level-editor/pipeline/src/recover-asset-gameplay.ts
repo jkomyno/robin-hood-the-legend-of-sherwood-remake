@@ -25,6 +25,7 @@ import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/as
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
+import { recoverLightPlane, recoverLightRegion } from "./recover-light-region.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
@@ -790,13 +791,47 @@ for (const [index, sound] of proto.sound_sources.entries()) {
   p.issues.push("Review environmental sound ownership inferred from unique geometric containment");
   recoveredSounds++;
 }
+let recoveredLights = 0;
+for (const [index, light] of proto.light_sectors.entries()) {
+  try {
+    const plane = recoverLightPlane(light, proto.sight_obstacles);
+    const world = recoverLightRegion(light, `light-${index}`, "$root", plane, (p) => p);
+    const contour = world.polygon.map(([x, y]): Point => [x, y]);
+    const owners = [...locals.values()].flat().filter((owner) =>
+      containsSoundPolyline(
+        [...contour, contour[0]!],
+        transformedObstacle(document, owner.part).points.map((p): Point => [p.x, p.y]),
+      ),
+    );
+    if (owners.length !== 1) {
+      unresolved.push({
+        kind: "light-owner",
+        source: index,
+        candidates: owners.map(({ asset, node }) => ({ asset, node })),
+        reason: "Light region needs explicit asset ownership; no terrain fallback",
+      });
+      continue;
+    }
+    const owner = owners[0]!,
+      p = packet(owner.asset);
+    (p.lights ??= []).push(
+      recoverLightRegion(light, `light-${index}`, owner.node, plane, (point) =>
+        localize(owner.part, point),
+      ),
+    );
+    p.issues.push("Review light-region ownership inferred from unique geometric containment");
+    recoveredLights++;
+  } catch (error) {
+    unresolved.push({ kind: "light-geometry", source: index, error: String(error) });
+  }
+}
 const pending = {
   buildingEntries: proto.buildings.length - recoveredBuildings,
   maskRecords: proto.masks.length,
   patches: proto.patches.length,
   jumpPairs: proto.jump_line_pairs.length,
   materialRegions: proto.material_sectors.length - recoveredMaterials.size,
-  shadowRegions: proto.light_sectors.length,
+  shadowRegions: proto.light_sectors.length - recoveredLights,
   soundSources: proto.sound_sources.length - recoveredSounds,
 };
 await fs.mkdir(values.out, { recursive: true });

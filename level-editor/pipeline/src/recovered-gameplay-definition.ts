@@ -49,6 +49,7 @@ export interface RecoveredGameplayPacket {
   materials?: AssetGameplay["materials"];
   environment?: AssetGameplay["environment"];
   sounds?: AssetGameplay["sounds"];
+  lights?: AssetGameplay["lights"];
   connections: RecoveredConnection[];
 }
 
@@ -139,6 +140,7 @@ export function recoveredGameplayDefinition(
     surfaces: packet.surfaces.map(surface),
     ...(packet.environment ? { environment: { ...packet.environment } } : {}),
     ...(packet.sounds ? { sounds: structuredClone(packet.sounds) } : {}),
+    ...(packet.lights ? { lights: structuredClone(packet.lights) } : {}),
     ...(packet.movementTransitions
       ? { movementTransitions: structuredClone(packet.movementTransitions) }
       : {}),

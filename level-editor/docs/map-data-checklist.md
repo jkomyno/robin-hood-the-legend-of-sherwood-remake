@@ -25,7 +25,7 @@ intended construction, not functionality available today.
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints. | Working in synthetic compiler/runtime tests; recovered metadata not yet published |
 | Jump zones and paired jump edges | Transform local jump geometry; resolve landing surfaces and pair compatible edges. | Planned |
 | Surface materials | Transform asset-local material polygons; rebuild the ground lookup subset and per-obstacle references independently. | Partial: ground/obstacle regions and terrain defaults tested in the engine; elevated-surface links unfinished |
-| Light/shadow regions | Transform asset-local shadow polygons, resolve layers and preserve ambience filters. | Planned |
+| Light/shadow regions | Transform asset-local planar contours, resolve the receiving navigation layer and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering and interior links; multi-plane regions and ambiguous ownership remain recovery gaps |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local movement transitions compile initial/applied blocker polygons, trigger zones and fresh state bindings across all affected navigation areas. | Partial: movement-only transitions implemented; changing visuals, sight, masks and door links remain unfinished |
@@ -94,3 +94,8 @@ Sound recovery attaches global emitters to terrain and local emitters only when
 their complete geometry has one containing asset part. Ambiguous/unowned sources
 remain explicit gaps; they are not silently attached to terrain. Shared audio
 samples are referenced from the base installation, rather than bundled in the ZIP.
+
+Light recovery preserves projection priority when resolving receiving heights.
+The latest all-map pass recovers 24 of 149 light/shadow regions into asset-local
+drafts. The other 125 need ownership review or splitting across receiving planes;
+they are not silently assigned to terrain. These drafts remain unpublished.

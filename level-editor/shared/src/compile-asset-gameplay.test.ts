@@ -10,11 +10,58 @@ import {
   interiorAssetCompilerFixture,
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
+  lightAssetCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("light regions follow placement and preserve ambience without shifting interior links", () => {
+  const { hut, document, assets } = lightAssetCompilerFixture();
+  const first = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    first.light_sectors?.map((l) => [l.layer, l.ambience]),
+    [
+      [0, 1],
+      [0, 2],
+    ],
+  );
+  assert.deepEqual(first.light_sectors![0]!.polygon.points[0], [310, 310]);
+  document.groups[0]!.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(moved.light_sectors![0]!.polygon.points[0], [410, 310]);
+  assert.equal(
+    moved.buildings![0]!.Building.doors[0]!.sector_in,
+    first.buildings![0]!.Building.doors[0]!.sector_in,
+  );
+  hut.gameplay!.lights![0]!.ambiences = -1;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid light region/);
+});
+
+test("light receiving planes resolve after elevation and reject absent or nonplanar surfaces", () => {
+  const { hut, document, assets } = slopedAssetCompilerFixture();
+  hut.gameplay!.lights = [
+    {
+      id: "ramp-shadow",
+      node: "building-999",
+      ambiences: 0xffffffff,
+      polygon: [
+        [10, 10, 5],
+        [30, 10, 15],
+        [30, 30, 15],
+        [10, 30, 5],
+      ],
+    },
+  ];
+  const first = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(first.light_sectors![0]!.polygon.points[0], [310, 305]);
+  const light = hut.gameplay!.lights[0]!;
+  light.polygon = light.polygon.map(([x, y, z]) => [x, y, z + 100]);
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /receiving layer/);
+  light.polygon[0]![2] += 1;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /must be planar/);
+});
+
 test("movement transitions receive fresh bindings across separate areas and duplicated assets", () => {
   const { document, assets } = movementTransitionCompilerFixture();
   const first = compileAssetGameplay(document, assets, bounds);

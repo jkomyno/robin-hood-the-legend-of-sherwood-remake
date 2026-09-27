@@ -1,4 +1,4 @@
-import type { MaterialSector, Point, SightObstacle, SoundSource } from "./level.ts";
+import type { LightSector, MaterialSector, Point, SightObstacle, SoundSource } from "./level.ts";
 import type { ProjectionAssetDescriptor } from "./projection-assets.ts";
 
 /** All coordinates belong to the named mesh part's local game frame. No level indices. */
@@ -77,8 +77,17 @@ export interface AssetGameplay {
   /** Map-wide defaults supplied by a terrain asset. Ambience is mission-owned. */
   environment?: { forest: boolean; defaultMaterial: number };
   sounds?: AssetSoundSource[];
+  lights?: AssetLightRegion[];
   /** Nonvisual movement changes. Visual/sight/mask transitions require separate authoring. */
   movementTransitions?: AssetMovementTransition[];
+}
+export interface AssetLightRegion {
+  id: string;
+  node: string;
+  /** Planar local 3D contour; the receiving surface determines its compiled layer. */
+  polygon: [number, number, number][];
+  /** Mission ambience bit mask controlling this region, not a mission selection. */
+  ambiences: number;
 }
 export interface AssetMovementTransition {
   id: string;
@@ -135,6 +144,7 @@ export interface CompiledAssetGeometry {
   sight_material_indices?: number[];
   map_settings?: { forest_level: boolean; default_material: number };
   sound_sources?: SoundSource[];
+  light_sectors?: LightSector[];
   movement_transitions?: {
     id: string;
     waypoint: Point;
@@ -236,6 +246,17 @@ export function validateAssetGameplay(
   }
   const integer = (n: unknown, max: number): n is number =>
     typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= max;
+  if (data.lights !== undefined && !Array.isArray(data.lights)) fail("invalid light regions");
+  for (const light of data.lights ?? []) {
+    feature(light);
+    if (
+      !integer(light.ambiences, 4294967295) ||
+      !Array.isArray(light.polygon) ||
+      light.polygon.length < 3 ||
+      !light.polygon.every((p) => point(p, 3))
+    )
+      fail(`invalid light region ${light.id}`);
+  }
   if (data.sounds !== undefined && !Array.isArray(data.sounds)) fail("invalid sound sources");
   for (const sound of data.sounds ?? []) {
     feature(sound);

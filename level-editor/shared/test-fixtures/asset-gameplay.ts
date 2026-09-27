@@ -1,6 +1,35 @@
 import type { GameplayAssetDescriptor } from "../src/asset-gameplay.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "../src/level3d.ts";
 
+export function lightAssetCompilerFixture() {
+  const fixture = interiorAssetCompilerFixture();
+  fixture.hut.gameplay!.lights = [
+    {
+      id: "day-shadow",
+      node: "building-999",
+      ambiences: 1,
+      polygon: [
+        [10, 10, 0],
+        [30, 10, 0],
+        [30, 30, 0],
+        [10, 30, 0],
+      ],
+    },
+    {
+      id: "night-light",
+      node: "building-999",
+      ambiences: 2,
+      polygon: [
+        [60, 10, 0],
+        [80, 10, 0],
+        [80, 30, 0],
+        [60, 30, 0],
+      ],
+    },
+  ];
+  return fixture;
+}
+
 export function movementTransitionCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.movementBlockers = [];

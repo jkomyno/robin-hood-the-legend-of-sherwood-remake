@@ -2151,6 +2151,8 @@ pub struct CompiledAssetGeometry {
     pub map_settings: Option<CompiledMapSettings>,
     #[serde(default)]
     pub sound_sources: Vec<RawSoundSource>,
+    #[serde(default)]
+    pub light_sectors: Vec<RawLightSector>,
     pub doors: Vec<RawDoor>,
     #[serde(default)]
     pub movement_transitions: Vec<CompiledMovementTransition>,
@@ -2826,6 +2828,16 @@ impl LoadedLevel {
                 ProtoGridChunk::Building,
                 ProtoGridChunk::Lift,
             ];
+            if geometry.light_sectors.iter().any(|light| {
+                light.polygon.points.len() < 3
+                    || !area_refs.iter().any(|&(_, layer)| layer == light.layer)
+            }) {
+                return Err("invalid asset light geometry or unresolved layer".into());
+            }
+            if !geometry.light_sectors.is_empty() {
+                level.proto.grid_chunk_order.push(ProtoGridChunk::Light);
+                level.proto.light_sectors = geometry.light_sectors;
+            }
             if !geometry.movement_transitions.is_empty() {
                 level.proto.grid_chunk_order.push(ProtoGridChunk::Patch);
                 level

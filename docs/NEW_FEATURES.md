@@ -1,5 +1,11 @@
 # Post-port Features
 
+- **Asset-local gameplay lighting.** Map export transforms planar light/shadow
+  contours, resolves their receiving layer and preserves ambience masks. The same
+  compiled map supports different mission ambiences without shifting interior
+  links. Offline recovery reports ambiguous ownership and regions spanning
+  multiple receiving planes; these remain authoring gaps.
+
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits
   to each instance. Blocker holes and trigger polygons are retained. The game

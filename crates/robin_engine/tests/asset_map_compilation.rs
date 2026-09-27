@@ -4,6 +4,50 @@ use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimCo
 use robin_engine::level_data::LoadedLevel;
 
 #[test]
+fn compiled_light_regions_follow_mission_ambience_without_changing_interior_links() {
+    use robin_engine::coordinates::MapPoint;
+    for mask in [1, 2] {
+        let mut loaded =
+            LoadedLevel::hackable_from_json(include_bytes!("fixtures/asset-light.level.json"))
+                .unwrap();
+        loaded.mission.header.ambiance = mask;
+        let mut assets = LevelAssets::new();
+        let engine = construct_loaded(loaded, &mut assets);
+        let grid = engine.fast_grid();
+        assert_eq!(
+            grid.is_in_shadow_sector(MapPoint::new(320., 320.), 0),
+            mask == 1
+        );
+        assert_eq!(
+            grid.is_in_shadow_sector(MapPoint::new(370., 320.), 0),
+            mask == 2
+        );
+        assert!(!grid.is_in_shadow_sector(MapPoint::new(320., 350.), 0));
+        assert_eq!(grid.level.door_projection_infos.len(), 3);
+    }
+}
+
+#[test]
+fn compiled_light_regions_reject_missing_layers_and_degenerate_contours() {
+    let mut value: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-light.level.json")).unwrap();
+    value["asset_geometry"]["light_sectors"][0]["layer"] = 123.into();
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap())
+            .unwrap_err()
+            .contains("light geometry")
+    );
+    value["asset_geometry"]["light_sectors"][0]["layer"] = 0.into();
+    value["asset_geometry"]["light_sectors"][0]["polygon"]["points"] =
+        serde_json::json!([[1, 2], [3, 4]]);
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap())
+            .unwrap_err()
+            .contains("light geometry")
+    );
+}
+
+#[test]
 fn compiled_movement_transitions_reject_stale_or_unbound_state_bits() {
     let value: serde_json::Value = serde_json::from_slice(include_bytes!(
         "fixtures/asset-movement-transition.level.json"
@@ -208,6 +252,10 @@ fn geometry_warnings_do_not_require_mission_content() {
 
 fn construct(bytes: &[u8], assets: &mut LevelAssets) -> Engine {
     let level = LoadedLevel::hackable_from_json(bytes).unwrap();
+    construct_loaded(level, assets)
+}
+
+fn construct_loaded(level: LoadedLevel, assets: &mut LevelAssets) -> Engine {
     assert!(level.mission.beam_mes.is_empty());
     assert!(level.mission.soldiers.is_empty());
     let mut profiles = robin_engine::profiles::ProfileManager::new();
