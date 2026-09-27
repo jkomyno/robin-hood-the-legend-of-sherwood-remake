@@ -78,6 +78,7 @@ def main(day,layers,output):
             obj=bpy.data.objects[name];record=records[name];slot=obj.data.polygons[0].material_index
             binding=scene.slot_binding(obj,slot);atlas=gr.read_image(binding['image']);alpha=atlas[...,3].copy();atlas[...,:3]=128
             flags=np.zeros(atlas.shape[:2],dtype=np.uint8);xy=np.full((*flags.shape,2),-1,dtype=np.int16)
+            interiors=np.zeros(flags.shape,dtype=bool)
             uv=gr.slot_uvs(obj,binding['uv'])
             for face,ty,tx,positions,normals,interior in gr.islands(record,uv,binding['image'].size,lambda _:True):
                 sx,sy,_=gr.screen(positions);px,py=np.floor(sx).astype(int),np.floor(sy).astype(int)
@@ -85,6 +86,10 @@ def main(day,layers,output):
                 in_image=(px>=0)&(px<width)&(py>=0)&(py<height)
                 take=in_image & source_mask[cy,cx] & (alpha[ty,tx]>=128)
                 take &= gr.visible(positions,ids,planes,width,height) & (np.abs(normals@gr.TOWARD)>=.05)
+                take &= ~interiors[ty,tx] | interior
+                interiors[ty[interior],tx[interior]]=True
+                atlas[ty[interior],tx[interior],:3]=128
+                flags[ty[interior],tx[interior]]=0;xy[ty[interior],tx[interior]]=-1
                 atlas[ty[take],tx[take],:3]=source[cy[take],cx[take],:3]
                 flags[ty[take],tx[take]]=1;xy[ty[take],tx[take]]=np.stack((cx[take],cy[take]),axis=1)
             assert np.array_equal(alpha,atlas[...,3]);gr.write_image(binding['image'],atlas)

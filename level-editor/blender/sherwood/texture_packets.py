@@ -391,8 +391,12 @@ def fill(source, output, only=None):
                 image=binding['image'];atlas=gr.read_image(image);before=atlas.copy()
                 wrote = False
                 uv=gr.slot_uvs(obj,binding['uv'])
+                interiors=np.zeros(atlas.shape[:2],dtype=bool)
+                for _,rr,cc,_,_,inside in gr.islands(record,uv,image.size,lambda group:record['slots'][group[0]]==slot):
+                    interiors[rr[inside],cc[inside]]=True
                 for face,rows,cols,positions,normals,inside in gr.islands(record,uv,image.size,lambda group:record['slots'][group[0]]==slot):
                     unknown=island_unknown(kind,atlas,rows,cols,normals,record['face_normals'][face],gr)
+                    unknown &= inside | ~interiors[rows,cols]
                     unknown &= target.in_region(obj,positions)
                     rows,cols,positions,normals,inside=rows[unknown],cols[unknown],positions[unknown],normals[unknown],inside[unknown]
                     if not len(rows):continue
@@ -453,6 +457,7 @@ def fill(source, output, only=None):
         np.savez_compressed(path,ownership=mask)
         masks[name]={'path':str(path),'sha256':uf.sha(path)}
     write(output/'fill.json',{'status':'CANDIDATE_REVIEW_PENDING','assets':reports,
+                            'source':str(Path(source).resolve()),
                             'worker_sha256':uf.sha(output/'candidate.blend'),
                             'source_worker_sha256':provenance['worker_sha256'],
                             'geometry_and_uvs_unchanged':True,'ownership':masks,

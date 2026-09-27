@@ -152,6 +152,20 @@ source coordinate samples. Scene renders and the source-visible gaps must still
 be inspected before a final `source_ownership_validation` receipt authorizes
 synthesis. Day assignment completion alone never opens that gate.
 
+UV island padding is subordinate to every polygon interior. Reprojection clears
+an earlier gutter sample when the real interior is encountered, even if the
+interior has no valid source sample. Synthesis likewise excludes gutters that
+overlap another polygon's interior. The independent UV-coordinate check caught
+this case on terrain; do not loosen its pixel-coordinate tolerance to accept
+padding sampled from the wrong surface.
+
+After inspecting the exact combined worker in source/east/west scene renders,
+record their hashes and the worker hash in `inspection.json`, then run
+`authorize_source.py --root <combined-source-directory> --masks <compiled-masks>`.
+It binds the independent verification, inspected images, original artwork,
+native masks and canopy evidence. The texture gallery uses that same source
+directory for scene comparisons and crops original art around each source view.
+
 Fresh synthesis packets use `texture_packets.py --root <new-packet-directory>`;
 the default is `textures/sunburst-masked`. The earlier unmasked packets and their
 four generated candidates remain historical evidence and are not reused.

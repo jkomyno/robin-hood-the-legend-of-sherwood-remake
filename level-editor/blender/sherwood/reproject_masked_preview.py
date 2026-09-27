@@ -84,6 +84,7 @@ def main(grouping, masks, output):
         physical = atlas[...,3].copy()
         atlas[...,:3] = 128
         flags = np.zeros(atlas.shape[:2], dtype=np.uint8)
+        interiors = np.zeros(atlas.shape[:2], dtype=bool)
         accepted = rejected_mask = rejected_visibility = 0
         sample_map = np.full((*atlas.shape[:2],2), -1, dtype=np.int16)
         if obj.get('source_node') in resolved and obj not in leaves:
@@ -95,6 +96,12 @@ def main(grouping, masks, output):
                 seen = gr.visible(positions, ids, planes, width, height)
                 allowed = constraints.allowed(constraints.for_object(obj), px, height-1-py)
                 take = seen & allowed & (np.abs(normals@gr.TOWARD) >= .05)
+                # Island padding must never overwrite another polygon's interior.
+                take &= ~interiors[ty,tx] | interior
+                interiors[ty[interior],tx[interior]] = True
+                atlas[ty[interior],tx[interior],:3] = 128
+                flags[ty[interior],tx[interior]] = 0
+                sample_map[ty[interior],tx[interior]] = -1
                 rejected_mask += int((seen & ~allowed & interior).sum())
                 rejected_visibility += int((allowed & ~seen & interior).sum())
                 cx, cy = np.clip(px,0,width-1), np.clip(py,0,height-1)

@@ -21,6 +21,8 @@ assert coverage['unresolved_source_nodes']==0 and coverage['unconstrained_receiv
 assert sha(root/'source-only.blend')==r['worker_sha256']
 assert sha(r['day_report'])==r['day_report_sha256']
 assert sha(r['canopy_manifest'])==r['canopy_manifest_sha256']
+assert r['source_mask_evidence'][str(masks/'source-masks.json')]==sha(masks/'source-masks.json')
+assert len(r['canopy_sources'])==6
 for path,digest in r['source_mask_evidence'].items():assert sha(path)==digest,path
 source_path=EDITOR.parent/'datadirs/fullgame_gog_hackable/Data/Levels/Day/sherwood.map.png'
 sources={'Day':np.asarray(Image.open(source_path).convert('RGBA'))}
@@ -45,6 +47,7 @@ for number,record in enumerate(scene.meshes):
     assert np.all((px>=0)&(px<w)&(py>=0)&(py<h)),name
     assert np.array_equal(rgba[known,:3],source[py,px,:3]),name
     if row['source_layer']=='Day':
+        assert not binding['material'].get('foliage_physical_opacity'),name
         rule=constraints.for_object(obj);assert rule is not None,name
         assert constraints.allowed(rule,px,h-1-py).all(),name
     else:
