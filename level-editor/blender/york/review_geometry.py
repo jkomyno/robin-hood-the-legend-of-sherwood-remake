@@ -1,5 +1,6 @@
 """Render full-scene grouping checks and export exact mesh triangles for the gallery."""
 import hashlib
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -14,7 +15,11 @@ def main():
     from render_slots import acquire
     acquire()
     sys.path.insert(0,str(ROOT/'level-editor/refinement/blender'))
-    bpy.ops.wm.open_mainfile(filepath=str(OUT/'grouped/york-grouped.blend'))
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--grounded',action='store_true')
+    args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+    source=OUT/('grounding/york-grounded.blend' if args.grounded else 'grouped/york-grouped.blend')
+    bpy.ops.wm.open_mainfile(filepath=str(source))
     scene=bpy.data.scenes['york Refinement']
     bpy.context.window.scene=scene
     records={}
@@ -32,6 +37,8 @@ def main():
         obj.color=tuple(.18+.65*c/255 for c in color[:3])+(1,)
     output=OUT/'review'
     output.mkdir(exist_ok=True)
+    (output/'scene.json').write_text(json.dumps({'source':str(source),'sha256':hashlib.sha256(source.read_bytes()).hexdigest(),
+        'grounded':args.grounded},indent=2)+'\n')
     (output/'geometry.json').write_text(json.dumps(records,separators=(',',':'))+'\n')
     scene.render.engine='BLENDER_WORKBENCH'
     scene.display.shading.color_type='OBJECT'

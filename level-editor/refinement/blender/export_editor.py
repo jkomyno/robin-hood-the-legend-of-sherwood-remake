@@ -400,6 +400,11 @@ def _export_editor(map_name, output_path, asset_id=None, *, standalone_pivot=Non
             if group_id not in groups:
                 group = node(source["asset_name"], root)
                 group["asset_group"] = group_id
+                if asset_id is None and source.parent and 'asset_origin_scene' in source.parent:
+                    values = list(source.parent['asset_origin_scene'])
+                    if len(values) != 3 or any(not math.isfinite(v) for v in values):
+                        raise ValueError('Invalid authored asset origin: '+group_id)
+                    group['asset_origin_scene'] = values
                 groups[group_id] = group
             if key not in parts:
                 part = node(key, groups[group_id])

@@ -112,7 +112,7 @@ def stage(library, output):
         print('catalog '+identity,flush=True)
     maps=[]
     for path, document in documents:
-        source_nodes={};part_owners={};ground=[];metadata={};bindings={}
+        source_nodes={};part_owners={};ground=[];metadata={};bindings={};authored_origins={}
         for reference in document['sceneAssets']:
             sources[reference['model']] = reference['model_sha256']
             for resource in reference['resources']: sources[resource['path']] = resource['sha256']
@@ -136,6 +136,14 @@ def stage(library, output):
             if len(roots)==1 and model['nodes'][roots[0]].get('name')=='map':roots=model['nodes'][roots[0]].get('children',[])
             for root in roots:
                 group=model['nodes'][root];identity=group.get('extras',{}).get('asset_group')
+                anchor=group.get('extras',{}).get('asset_origin_scene')
+                if anchor is not None:
+                    if (not identity or not isinstance(anchor,list) or len(anchor)!=3 or
+                            any(isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) for v in anchor)):
+                        raise ValueError('Invalid authored asset origin: '+str(identity))
+                    if identity in authored_origins and authored_origins[identity]!=anchor:
+                        raise ValueError('Conflicting authored asset origins: '+identity)
+                    authored_origins[identity]=anchor
                 for child in group.get('children',[]):
                     name=model['nodes'][child]['name'];source_nodes[name]=(model,binary,external,child)
                     if identity:part_owners[name]=identity
@@ -167,7 +175,8 @@ def stage(library, output):
                 origin=[round(sum(p['x']for p in points)/len(points)),round(-sum(p['y']for p in points)/len(points)/math.sin(angle)),0]
             else:
                 origin=scenery_origin([source_nodes[part['node']] for part in parts])
-            game_origin=[origin[0],-origin[1]*math.sin(angle),0];origins[identity]=origin
+            origin=authored_origins.get(identity,origin)
+            game_origin=[origin[0],-origin[1]*math.sin(angle),origin[2]*math.cos(angle)];origins[identity]=origin
             descriptor={'version':1,'kind':'projection-mapped-asset','id':identity,'name':next((g.get('name',group_id)for g in document['groups']if g['id']==group_id),group_id),
                         'source_map':document['map'],'source_origin_scene':origin,
                         'model':'model.gltf','model_scene':'default','parts':[]}
@@ -182,6 +191,7 @@ def stage(library, output):
                     obstacle=copy.deepcopy(part['obstacle'])
                     for p in obstacle['points']:
                         p['x']-=game_origin[0];p['y']-=game_origin[1]
+                        p['z_bottom']-=game_origin[2];p['z_top']-=game_origin[2]
                     record={'node':part['node'],'name':part.get('name',part['node']),'obstacle_local_game':obstacle, **({'mission_profile':part['source']['mission_profile']} if part['kind']=='mission' else {'source_obstacle':part['source']['obstacle']})}
                 if part['source'].get('components'):record['source_components']=part['source']['components']
                 descriptor['parts'].append(record)

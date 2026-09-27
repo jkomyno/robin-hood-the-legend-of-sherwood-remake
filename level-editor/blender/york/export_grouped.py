@@ -1,5 +1,6 @@
 """Export the named York grouping to an isolated map and reusable asset library."""
 import hashlib
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -15,7 +16,10 @@ def main():
     acquire()
     sys.path.insert(0,str(ROOT/'level-editor/refinement/blender'))
     from export_editor import export_editor
-    source=OUT/'grouped/york-grouped.blend'
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--grounded',action='store_true')
+    args=parser.parse_args(sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else [])
+    source=OUT/('grounding/york-grounded.blend' if args.grounded else 'grouped/york-grouped.blend')
     bpy.ops.wm.open_mainfile(filepath=str(source))
     bpy.context.window.scene=bpy.data.scenes['york Refinement']
     catalog=json.loads((ROOT/'level-editor/refinement/catalogs/york.json').read_text())
@@ -28,7 +32,8 @@ def main():
     # Keep native map metadata available for later gameplay/state refinement.
     if 'sceneMetadata' in current:
         document['sceneMetadata']=current['sceneMetadata']
-    document['notes']='Named grouping review stage. Geometry refinement, texture completion and state-only sprite models are separate work.'
+    document['notes']=('Named assets with buried surfaces trimmed against reviewed terrain. ' if args.grounded else
+                       'Named grouping review stage. ')+ 'Further geometry refinement, texture completion and state-only sprite models are separate work.'
     output.write_text(json.dumps(document,indent=2)+'\n')
     (OUT/'stage/map-assets/scenes/york.rhlos-map.json').write_text(output.read_text())
     report.update(source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),

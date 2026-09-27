@@ -37,7 +37,15 @@ class LocalMapExportTests(unittest.TestCase):
     def test_authored_scenery_exports_without_a_game_obstacle(self):
         self.export_fixture(scenery=True)
 
-    def export_fixture(self, scenery):
+    def test_authored_elevated_origin_preserves_meshes_and_game_footprints(self):
+        self.export_fixture(scenery=False, anchor=[101, 1, 10])
+
+    def test_invalid_authored_origin_is_rejected(self):
+        for anchor in [[101, 1], [101, 1, float('nan')], [101, 1, True]]:
+            with self.subTest(anchor=anchor), self.assertRaisesRegex(ValueError, 'Invalid authored asset origin'):
+                self.export_fixture(scenery=False, anchor=anchor)
+
+    def export_fixture(self, scenery, anchor=None):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             model = {'asset': {'version': '2.0'}, 'scene': 0, 'scenes': [{'nodes': [0]}],
@@ -51,6 +59,8 @@ class LocalMapExportTests(unittest.TestCase):
                         {'name': f'building-{i:03}', 'mesh': i, 'extras': {'source_obstacle': i, 'part_name': 'Wall'}})
                 model['nodes'].extend([
                     {'name': f'House {i}', 'extras': {'asset_group': f'house-{i}'}, 'children': [2+i*2]}, part])
+                if anchor is not None and i == 0:
+                    model['nodes'][-2]['extras']['asset_origin_scene'] = anchor
                 model['meshes'].append({'primitives': [{'attributes': {'POSITION': i}}]})
                 model['accessors'].append({'bufferView': i, 'componentType': 5126, 'count': 3,
                                           'type': 'VEC3', 'min': [x, 0, 0], 'max': [x+2, 2, 0]})
@@ -86,6 +96,13 @@ class LocalMapExportTests(unittest.TestCase):
                     self.assertEqual(descriptor['source_origin_scene'], [501, 1, 0])
                     continue
                 local, binary, _ = read_model(library/ref['model'], library)
+                if anchor is not None and descriptor['id'] == 'house-0':
+                    import math
+                    self.assertEqual(descriptor['source_origin_scene'], anchor)
+                    self.assertAlmostEqual(descriptor['parts'][0]['obstacle_local_game']['points'][0]['z_bottom'],
+                                           -anchor[2]*math.cos(math.radians(35)))
+                    position = local['accessors'][local['meshes'][0]['primitives'][0]['attributes']['POSITION']]
+                    self.assertEqual(position['min'][2], -anchor[2])
                 self.assertTrue(ref['model'].endswith('.glb'))
                 self.assertEqual(ref['resources'], [])
                 self.assertNotIn('uri', local['buffers'][0])

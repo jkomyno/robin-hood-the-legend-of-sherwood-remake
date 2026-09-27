@@ -51,6 +51,8 @@ def solid(record,yaw):
 def main():
     records=json.loads((OUT/'review/geometry.json').read_text())
     catalog=json.loads((ROOT/'level-editor/refinement/catalogs/york.json').read_text())
+    scene=json.loads((OUT/'review/scene.json').read_text())
+    grounding=json.loads((OUT/'grounding/report.json').read_text()) if scene['grounded'] else None
     source=Image.open(OUT/'baseline/covered.png').convert('RGB')
     folder=OUT/'review/assets'
     folder.mkdir(exist_ok=True)
@@ -85,6 +87,8 @@ def main():
         sheets.append(small)
         names=sorted({p['source_node'] for p in record['parts']})
         note='Shared surface partitioned at the building junction; hidden continuations are inferred.' if any(p.get('component') for p in record['parts']) else ''
+        if grounding and key in grounding['anchors']:
+            note+=' Buried surfaces trimmed against raised terrain; exposed terrace-edge walls retained.'
         cards.append(f'''<article id="{key}" data-search="{html.escape(record['name'].lower()+' '+' '.join(names))}">
 <h2>{number:03} · {html.escape(record['name'])}</h2><div class="images">
 <a href="assets/{key}-source.jpg"><img loading="lazy" src="assets/{key}-source.jpg" alt="Source artwork with selected geometry tinted cyan"></a>
@@ -106,8 +110,11 @@ body{margin:0;background:#151a20;color:#e8edf3;font:16px system-ui}header,main{m
 <p class="notice">Grouping review: source crop (cyan = selected geometry), west and east geometry diagrams. Mesh shape and textures are still the reconstruction baseline. Grouping does not repair missing walls, floating geometry, unseen textures or state-only sprites. Mission doors and patch-only mechanisms are separately inventoried. The market-front foundations and castle hall/tower junction include inferred hidden partition boundaries.</p></header><main>'''+''.join(cards)+'''</main><script>
 const input=document.querySelector('#search'),cards=[...document.querySelectorAll('article')];function filter(){const q=input.value.toLowerCase();let n=0;for(const c of cards){c.hidden=!c.dataset.search.includes(q);if(!c.hidden)n++;}document.querySelector('#count').textContent=` ${n} assets`;}input.addEventListener('input',filter);filter();</script></html>'''
     body = body.replace('GROUP_COUNT', str(len(catalog['groups'])))
+    if grounding:
+        body=body.replace('Mesh shape and textures are still the reconstruction baseline.',
+            'Buried surfaces have been trimmed against raised terrain. Visible surfaces and texture coordinates are preserved.')
     (OUT/'review/index.html').write_text(body)
-    (OUT/'review/manifest.json').write_text(json.dumps({'groups':manifest,'catalog_sha256':hashlib.sha256((ROOT/'level-editor/refinement/catalogs/york.json').read_bytes()).hexdigest()},indent=2)+'\n')
+    (OUT/'review/manifest.json').write_text(json.dumps({'groups':manifest,'scene':scene,'catalog_sha256':hashlib.sha256((ROOT/'level-editor/refinement/catalogs/york.json').read_bytes()).hexdigest()},indent=2)+'\n')
     print(json.dumps({'cards':len(cards),'gallery':str(OUT/'review/index.html')}))
 
 
