@@ -3,7 +3,6 @@ import { For, Show, createEffect, createMemo, createSignal, onCleanup, untrack }
 import type { JSX } from "@solidjs/web";
 import type * as THREE from "three";
 import {
-  IDENTITY_TRANSFORM,
   serializeStoredMap,
   parseLevel3D,
   groupParts,
@@ -1731,7 +1730,6 @@ export default function Editor3D(props: EditorProps) {
             </section>
           </div>
           <div class="inspector-content" hidden={panel() !== "Selection"}>
-            <h2 class="panel-title">Selection</h2>
             <Show
               when={selectedTransform()}
               fallback={
@@ -1744,6 +1742,14 @@ export default function Editor3D(props: EditorProps) {
               {(t) => (
                 <section class="object-detail">
                   <h2>{selectionTitle()}</h2>
+                  <div class="row">
+                    <button onClick={duplicateSelected} title="d" disabled={!!selectedStatePart()}>
+                      Duplicate
+                    </button>
+                    <button onClick={deleteSelected} title="del" disabled={!!selectedStatePart()}>
+                      Delete
+                    </button>
+                  </div>
                   <Show when={selectedPart()}>
                     {(p) => (
                       <>
@@ -1893,13 +1899,6 @@ export default function Editor3D(props: EditorProps) {
                     <p>Select the whole group to change its state, duplicate it, or delete it.</p>
                   </Show>
                   <div class="row">
-                    <button onClick={duplicateSelected} title="d" disabled={!!selectedStatePart()}>
-                      Duplicate
-                    </button>
-                    <button onClick={deleteSelected} title="del" disabled={!!selectedStatePart()}>
-                      Delete
-                    </button>
-                    <button onClick={() => setTransform({ ...IDENTITY_TRANSFORM })}>Reset</button>
                     <label class="check inline">
                       <input
                         type="checkbox"
