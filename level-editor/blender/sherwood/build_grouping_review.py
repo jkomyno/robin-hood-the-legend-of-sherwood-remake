@@ -57,6 +57,8 @@ def main(root):
         '<li>'+html.escape(g['name']+': '+g['reason'])+'</li>' for g in plan['groups'] if not g['changed'])+'</ul></details>'
     summary+='<details><summary>Recorded grouping approvals</summary><ul>'+''.join(
         '<li>'+html.escape(g['name'])+'</li>' for g in approved)+'</ul></details>'
+    if not items:
+        summary='<p><strong>Grouping review complete.</strong> All changed groups are approved. '+str(plan['candidate_groups'])+' selectable assets; no pending grouping cards.</p>'+summary
     page.write_text(page.read_text().replace('<nav>',summary+'<nav>',1))
     parent=gallery.parent/'index.html';text=parent.read_text()
     notice=f'<p><strong>Grouping has been revised.</strong> <a href="grouping/index.html">Review the {len(items)} regrouped assets here</a>.</p>'
