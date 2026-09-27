@@ -101,7 +101,7 @@ The latest all-map pass recovers 24 of 149 light/shadow regions into asset-local
 drafts. The other 125 need ownership review or splitting across receiving planes;
 they are not silently assigned to terrain. These drafts remain unpublished.
 
-Jump recovery produces asset-local drafts for 83 of 173 pairs; 90 still need
+Jump recovery produces asset-local drafts for 78 of 173 pairs; 95 still need
 ownership or geometry authoring. Edge elevations remain independent of fractional
 surface heights. Extraction now preserves the third endpoint coordinate and
 remaps zone references, retaining both destinations when a crop crosses a pair.
@@ -111,8 +111,8 @@ labels preserve separate coplanar areas, including when their boundaries touch.
 Labels are scoped to each placement; unlabelled surfaces retain normal merging.
 Ground recovery reports per-region differences as well as overall coverage.
 Nottingham's hidden prison part remains a blocker. York's compound lift now has
-asset-local segment connections; its static check advances to an unresolved jump
-landing surface. Lift recovery matches shared
+asset-local segment connections; its static check advances to an unresolved
+interior-door landing surface. Lift recovery matches shared
 edges once and stores local sockets, never runtime references between assets.
 
 Stable terrain is recovered even when its movement area has changing obstacles.
@@ -126,3 +126,11 @@ Solid/surface intersections use fixed-point clipping. Redundant straight-edge
 vertices are removed before rounding to avoid artificial navigation seams.
 Recovered clearances retain the free-space boundary and extend only around their
 owner's bounds; they can subtract that owner's collision, never another asset's.
+
+Non-rendering gameplay volumes can attach to an existing asset frame without a
+mesh. One-time recovery uses explicit catalog ownership (or `--ownership`) and
+restores six of York's nine inventoried records into drafts, including its missing
+jump landing surface. Three still span multiple pinned assets. The compiler reads
+only the resulting local volumes; source sector and material indices are rejected.
+Jump recovery now requires an owned receiving surface on each elevated side;
+missing or cross-asset ownership remains an explicit gap rather than an invalid pair.

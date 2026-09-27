@@ -29,6 +29,10 @@ import { recoverLightPlane, recoverLightRegion } from "./recover-light-region.ts
 import { recoverJumpGeometry } from "./recover-jump-geometry.ts";
 import { recoverMotionStates } from "./recover-motion-states.ts";
 import { recoverLiftJoins } from "./recover-lift-joins.ts";
+import {
+  nonrenderingGameplayOwners,
+  type GameplayOwnershipCatalog,
+} from "./nonrendering-gameplay-owners.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
@@ -46,6 +50,7 @@ const { values } = parseArgs({
     library: { type: "string", default: "../library" },
     source: { type: "string" },
     out: { type: "string" },
+    ownership: { type: "string" },
   },
 });
 if (!values.map || !values.source || !values.out)
@@ -59,7 +64,16 @@ const descriptors = await pinnedDescriptors(
   document.sceneAssets,
 );
 const proto: ProtoLevel = JSON.parse(await fs.readFile(values.source, "utf8"));
-const locals = new Map<number, { asset: string; node: string; part: Level3DObject }[]>();
+const locals = new Map<
+  number,
+  {
+    asset: string;
+    node: string;
+    part: Level3DObject;
+    collisionId?: string;
+    sourceShape?: ProtoLevel["sight_obstacles"][number];
+  }[]
+>();
 for (const part of document.objects) {
   const match = /^asset:([^:]+):(.+)$/.exec(part.node);
   if (!match || part.source.obstacle === undefined) continue;
@@ -133,6 +147,48 @@ const planeHeight = (
   throw new Error("Projection surface has no valid plane");
 };
 const unresolved: unknown[] = [];
+const ownershipPath =
+  values.ownership ??
+  new URL(
+    `../../refinement/catalogs/${encodeURIComponent((document.sourceMap ?? path.basename(values.source).replace(/\.rhp\.json$/i, "")).toLowerCase())}.json`,
+    import.meta.url,
+  );
+let ownership: GameplayOwnershipCatalog | undefined;
+try {
+  ownership = JSON.parse(await fs.readFile(ownershipPath, "utf8"));
+} catch (error) {
+  if (values.ownership || (error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+}
+if (ownership)
+  for (const entry of nonrenderingGameplayOwners(ownership, locals)) {
+    if (locals.has(entry.source)) continue;
+    if (!entry.owner) {
+      unresolved.push({ kind: "nonrendering-owner", ...entry });
+      continue;
+    }
+    const source = proto.sight_obstacles[entry.source];
+    if (!source) throw new Error(`Missing non-rendering gameplay volume ${entry.source}`);
+    const owner = entry.owner;
+    const id = `gameplay-volume-${entry.source}`;
+    const { projection_area: _projection, material_indices: _materials, ...flags } = source;
+    const shape = {
+      ...flags,
+      points: source.points.map((p) => {
+        const bottom = localize(owner.part, [p.x, p.y, p.z_bottom]);
+        const top = localize(owner.part, [p.x, p.y, p.z_top]);
+        if (Math.hypot(bottom[0] - top[0], bottom[1] - top[1]) > 1e-5)
+          throw new Error(
+            `Non-rendering gameplay volume ${entry.source} needs a vertical owner frame`,
+          );
+        return { x: top[0], y: top[1], z_bottom: bottom[2], z_top: top[2] };
+      }),
+    };
+    (packet(owner.asset).volumes ??= []).push({ id, node: owner.node, shape });
+    locals.set(entry.source, [{ ...owner, collisionId: id, sourceShape: source }]);
+    packet(owner.asset).issues.push(
+      `Non-rendering gameplay restored from explicit ownership: ${entry.declaredOwner}`,
+    );
+  }
 const coverage: unknown[] = [];
 const movementStateInventory: {
   sector: number;
@@ -342,7 +398,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
             ]),
           );
           packet(owner.asset).surfaces.push({
-            id: `${owner.node}-walk-${regionIndex}`,
+            id: `${owner.collisionId ?? owner.node}-walk-${regionIndex}`,
             node: owner.node,
             vertices,
             kind: motion.is_lift ? "lift" : "walkable",
@@ -453,11 +509,14 @@ for (const [sourceIndex, source] of clearanceSources.entries()) {
     for (const owner of owners) {
       if (packet(owner.asset).movementBlockers !== undefined) continue;
       const definition = descriptors.get(owner.asset)!.parts.find((p) => p.node === owner.node);
-      if (!definition?.obstacle_local_game?.solid) continue;
-      const solid = transformedObstacle(document, {
-        ...owner.part,
-        obstacle: definition.obstacle_local_game,
-      });
+      const localObstacle = owner.sourceShape ?? definition?.obstacle_local_game;
+      if (!localObstacle?.solid) continue;
+      const solid =
+        owner.sourceShape ??
+        transformedObstacle(document, {
+          ...owner.part,
+          obstacle: localObstacle,
+        });
       let regions: MultiPolygon;
       try {
         regions = recoverMovementClearance(source.regions, source.plane, solid, 1);
@@ -805,7 +864,7 @@ for (const [index, obstacle] of proto.sight_obstacles.entries()) {
         node: owner.node,
         material: region.material,
         ground: false,
-        obstacles: [owner.node],
+        obstacles: [owner.collisionId ?? owner.node],
         polygon: region.polygon.points.map(([x, y]) => localize(owner.part, [x, y, 0])),
       });
     }
@@ -821,7 +880,7 @@ for (const [index, sound] of proto.sound_sources.entries()) {
     continue;
   }
   const owners = [...locals.values()].flat().filter((owner) => {
-    const shape = transformedObstacle(document, owner.part);
+    const shape = owner.sourceShape ?? transformedObstacle(document, owner.part);
     return (
       sound.polyline &&
       containsSoundPolyline(
@@ -859,7 +918,10 @@ for (const [index, light] of proto.light_sectors.entries()) {
     const owners = [...locals.values()].flat().filter((owner) =>
       containsSoundPolyline(
         [...contour, contour[0]!],
-        transformedObstacle(document, owner.part).points.map((p): Point => [p.x, p.y]),
+        (owner.sourceShape ?? transformedObstacle(document, owner.part)).points.map((p): Point => [
+          p.x,
+          p.y,
+        ]),
       ),
     );
     if (owners.length !== 1) {
@@ -890,7 +952,7 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
     const candidates = [pair.line1, pair.line2].flatMap((line, side) => {
       const home = proto.jump_zones[(side === 0 ? pair.line2 : pair.line1).jump_zone_index];
       if (!home) throw new Error("Jump pair references a missing receiving zone");
-      return proto.sight_obstacles.flatMap((o, obstacleIndex) =>
+      const sideOwners = proto.sight_obstacles.flatMap((o, obstacleIndex) =>
         Array.isArray(o.projection_area) &&
         o.projection_area[0] === home.sector &&
         o.projection_area[1] === home.layer &&
@@ -901,6 +963,9 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
           ? (locals.get(obstacleIndex) ?? [])
           : [],
       );
+      if (!sideOwners.length && home.layer !== 0)
+        throw new Error(`Jump side ${side} has no owned elevated receiving surface`);
+      return sideOwners;
     });
     const assets = new Set(candidates.map((o) => o.asset));
     if (assets.size !== 1) {

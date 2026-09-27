@@ -22,6 +22,17 @@ export function navigationRegionCompilerFixture() {
   return fixture;
 }
 
+export function nonrenderingVolumeCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const obstacle = fixture.hut.parts[0]?.obstacle_local_game;
+  if (!obstacle) throw new Error("Volume fixture needs a collision shape");
+  const { projection_area: _projection, material_indices: _materials, ...shape } = obstacle;
+  fixture.hut.gameplay!.collision = "none";
+  fixture.hut.gameplay!.volumes = [{ id: "invisible-wall", node: "building-999", shape }];
+  fixture.document.map = "Non-rendering volume fixture";
+  return fixture;
+}
+
 export function jumpAssetCompilerFixture() {
   const fixture = assetCompilerFixture();
   const g = fixture.hut.gameplay!;

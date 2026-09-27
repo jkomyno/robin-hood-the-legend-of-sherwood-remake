@@ -18,6 +18,57 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("non-rendering asset volumes preserve collision and sight without a mesh part", () => {
+  const { hut, document, assets } = assetCompilerFixture();
+  const expected = compileAssetGameplay(document, assets, bounds);
+  const {
+    projection_area: _projection,
+    material_indices: _materials,
+    ...shape
+  } = hut.parts[0]!.obstacle_local_game!;
+  hut.gameplay!.collision = "none";
+  hut.gameplay!.volumes = [
+    { id: "invisible-wall", node: "building-999", shape: structuredClone(shape) },
+  ];
+  const normalized = (value: unknown) =>
+    JSON.parse(
+      JSON.stringify(value, (_, v) => (typeof v === "number" ? Math.round(v * 1e8) / 1e8 : v)),
+    );
+  assert.deepEqual(
+    normalized(compileAssetGameplay(document, assets, bounds)),
+    normalized(expected),
+  );
+  document.groups[0]!.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.equal(
+    moved.sight_obstacles[0]!.points[0]!.x,
+    expected.sight_obstacles[0]!.points[0]!.x + 100,
+  );
+  hut.gameplay!.materials = [
+    {
+      id: "wall-material",
+      node: "building-999",
+      material: 2,
+      ground: false,
+      obstacles: ["invisible-wall"],
+      polygon: [
+        [40, 40, 0],
+        [50, 40, 0],
+        [50, 50, 0],
+        [40, 50, 0],
+      ],
+    },
+  ];
+  assert.deepEqual(
+    compileAssetGameplay(document, assets, bounds).sight_obstacles[0]!.material_indices,
+    [0],
+  );
+  hut.gameplay!.volumes[0]!.node = "missing";
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /unknown gameplay node/);
+  hut.gameplay!.volumes[0]!.node = "building-999";
+  Object.assign(hut.gameplay!.volumes[0]!.shape, { projection_area: [123, 1] });
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid gameplay volume/);
+});
 test("joined lift assets retain multiple height planes in one traversal sector", () => {
   const { document, assets, upper } = compoundLiftCompilerFixture();
   const compiled = compileAssetGameplay(document, assets, bounds);

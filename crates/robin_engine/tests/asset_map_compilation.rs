@@ -4,6 +4,21 @@ use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimCo
 use robin_engine::level_data::LoadedLevel;
 
 #[test]
+fn nonrendering_asset_volume_constructs_navigation_and_sight() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-nonrendering-volume.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    assert_eq!(assets.environment.static_sight_obstacles.len(), 1);
+    assert_eq!(grid.level.door_projection_infos.len(), 1);
+    use robin_engine::coordinates::MapPoint;
+    assert!(grid.is_reachable_thin(MapPoint::new(310., 320.), MapPoint::new(370., 320.), 0));
+    assert!(!grid.is_reachable_thin(MapPoint::new(330., 345.), MapPoint::new(360., 345.), 0));
+}
+
+#[test]
 fn compound_lift_keeps_one_native_sector_and_each_projection_plane() {
     let mut assets = LevelAssets::new();
     let engine = construct(

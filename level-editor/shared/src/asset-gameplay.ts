@@ -67,8 +67,14 @@ export interface AssetMaterialRegion {
 }
 export interface AssetGameplay {
   version: 1;
-  /** Reuse asset-local part obstacles, or explicitly declare a visual-only asset. */
+  /** Reuse part obstacles or disable them; explicit gameplay volumes remain independent. */
   collision: "parts" | "none";
+  /** Gameplay volumes attached to an existing frame; no rendered mesh is required. */
+  volumes?: {
+    id: string;
+    node: string;
+    shape: Omit<SightObstacle, "projection_area" | "material_indices">;
+  }[];
   /** Omit to derive movement from sight solids; an explicit list replaces that derivation. */
   movementBlockers?: AssetWalkableSurface[];
   /** Plane-local openings in this asset's derived movement collision, never in other assets. */
@@ -364,6 +370,31 @@ export function validateAssetGameplay(
     )
       fail(`invalid sound geometry ${sound.id}`);
   }
+  if (data.volumes !== undefined && !Array.isArray(data.volumes)) fail("invalid gameplay volumes");
+  const volumes = new Set<string>();
+  for (const volume of data.volumes ?? []) {
+    feature(volume);
+    if (nodes.has(volume.id)) fail("gameplay volume IDs must not shadow part nodes");
+    volumes.add(volume.id);
+    const shape = volume.shape;
+    if (
+      !shape ||
+      !Array.isArray(shape.points) ||
+      shape.points.length < 3 ||
+      !shape.points.every(
+        (p) => p && [p.x, p.y, p.z_bottom, p.z_top].every(Number.isFinite) && p.z_bottom <= p.z_top,
+      ) ||
+      ![shape.solid, shape.opaque, shape.mouse, shape.show_shadow_polygon].every(
+        (v) => typeof v === "boolean",
+      ) ||
+      !Number.isInteger(shape.default_material) ||
+      shape.default_material < 0 ||
+      shape.default_material > 9 ||
+      "projection_area" in shape ||
+      "material_indices" in shape
+    )
+      fail(`invalid gameplay volume ${volume.id}`);
+  }
   if (data.materials !== undefined && !Array.isArray(data.materials)) fail("invalid materials");
   for (const region of data.materials ?? []) {
     feature(region);
@@ -376,12 +407,12 @@ export function validateAssetGameplay(
       region.material > 9 ||
       typeof region.ground !== "boolean" ||
       !Array.isArray(region.obstacles) ||
-      region.obstacles.some((node) => !nodes.has(node)) ||
+      region.obstacles.some((node) => !nodes.has(node) && !volumes.has(node)) ||
       new Set(region.obstacles).size !== region.obstacles.length ||
       (!region.ground && !region.obstacles.length)
     )
       fail(`invalid material region ${region.id}`);
-    if (region.obstacles.length && data.collision !== "parts")
+    if (region.obstacles.some((node) => nodes.has(node)) && data.collision !== "parts")
       fail(`material region ${region.id} references disabled obstacles`);
   }
   if (data.movementBlockers !== undefined && !Array.isArray(data.movementBlockers))

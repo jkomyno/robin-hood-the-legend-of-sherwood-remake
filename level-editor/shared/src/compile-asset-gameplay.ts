@@ -284,6 +284,24 @@ export function compileAssetGameplay(
         if (gameplay.movementBlockers === undefined)
           movementSolids.push({ owner: placement.id, shape: sight.at(-1)! });
       }
+    for (const volume of gameplay.volumes ?? []) {
+      const shape: SightObstacle = {
+        ...volume.shape,
+        projection_area: null,
+        material_indices: [],
+        points: volume.shape.points.map((p) => {
+          const bottom = transform(volume.node, [p.x, p.y, p.z_bottom]);
+          const top = transform(volume.node, [p.x, p.y, p.z_top]);
+          if (Math.hypot(bottom[0] - top[0], bottom[1] - top[1]) > 1e-5)
+            throw new Error(`Gameplay volume ${volume.id} must remain vertical after placement`);
+          return { x: top[0], y: top[1], z_bottom: bottom[2], z_top: top[2] };
+        }),
+      };
+      sight.push(shape);
+      partSight.set(volume.id, shape);
+      if (gameplay.movementBlockers === undefined)
+        movementSolids.push({ owner: placement.id, shape });
+    }
     for (const region of gameplay.materials ?? []) {
       const index = materials.length;
       if (index > 65535) throw new Error("Too many asset material regions");
