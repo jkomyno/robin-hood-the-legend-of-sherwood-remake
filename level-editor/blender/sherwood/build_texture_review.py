@@ -157,7 +157,11 @@ def main(candidate, experiments, inspections, output):
         '<h1>Sherwood scene texture review</h1><p><a href="../index.html">Asset review and feedback</a></p>'
         '<main>'+''.join(figures)+'</main>')
     page = output/'gallery/index.html'
-    page.write_text(page.read_text().replace('<nav>', '<p><a href="scene/index.html">Full-map and oblique comparisons</a></p><nav>', 1))
+    page.write_text(page.read_text()
+        .replace('Approved models are hidden.', 'Approved texture candidates are hidden.')
+        .replace('<nav>', '<p>The upper-left tile in every eight-view sheet is the original camera. '
+                 'Original-art crops appear above each asset.</p>'
+                 '<p><a href="scene/index.html">Full-map and oblique comparisons</a></p><nav>', 1))
     print(json.dumps({'gallery': str(page), 'candidates': len(items)}))
 
 
