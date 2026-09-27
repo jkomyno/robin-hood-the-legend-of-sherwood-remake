@@ -92,8 +92,14 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
     sources = {entry["id"]: (entry, library / "3d-assets") for entry in
                discover_asset_index(library / "3d-assets")["assets"]}
     if not live:
-        sources.update({entry["id"]: (entry, stage / "assets") for entry in
-                        discover_asset_index(stage / "assets")["assets"]})
+        # Same rule as promotion: the staged catalog carries the refreshed lossy/preview
+        # derivatives; the raw standalone export does not, and falling back to live
+        # derivatives would pair them with the new staged models.
+        staged_root = stage / "map-assets/3d-assets"
+        if not any(staged_root.rglob("asset.json")):
+            staged_root = stage / "assets"
+        sources.update({entry["id"]: (entry, staged_root) for entry in
+                        discover_asset_index(staged_root)["assets"]})
     expected_ids = set(scope["asset_ids"]) | set(scope["already_published"])
     if not expected_ids <= sources.keys():
         raise ValueError("Missing expected assets: " + repr(sorted(expected_ids - sources.keys())))
