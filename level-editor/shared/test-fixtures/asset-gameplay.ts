@@ -109,6 +109,58 @@ export function lightAssetCompilerFixture() {
   return fixture;
 }
 
+export function crossAssetJumpCompilerFixture() {
+  const fixture = jumpAssetCompilerFixture();
+  const g = fixture.hut.gameplay!;
+  const pair = g.jumpPairs?.[0];
+  const lowZone = g.jumpZones?.[0],
+    highZone = g.jumpZones?.[1];
+  const highSurface = g.surfaces.find((s) => s.id === "east");
+  const sourcePart = fixture.document.objects[0],
+    sourceAsset = fixture.document.assetSources?.[0];
+  if (!pair || !lowZone || !highZone || !highSurface || !sourcePart || !sourceAsset)
+    throw new Error("Cross-asset jump fixture needs both sides");
+  const upper = structuredClone(fixture.hut);
+  upper.id = "jump-upper";
+  const upperGameplay = upper.gameplay!;
+  upperGameplay.collision = "none";
+  upperGameplay.surfaces = [structuredClone(highSurface)];
+  upperGameplay.jumpPairs = [];
+  upperGameplay.jumpZones = [structuredClone(highZone)];
+  upperGameplay.jumpSegments = [
+    {
+      id: "upper-edge",
+      node: pair.node,
+      long: pair.long,
+      join: [100, 50, 50],
+      edge: structuredClone(pair.edges[1]),
+    },
+  ];
+  g.surfaces = g.surfaces.filter((s) => s !== highSurface);
+  g.jumpPairs = [];
+  g.jumpZones = [lowZone];
+  g.jumpSegments = [
+    {
+      id: "lower-edge",
+      node: pair.node,
+      long: pair.long,
+      join: [100, 50, 50],
+      edge: structuredClone(pair.edges[0]),
+    },
+  ];
+  fixture.assets.set(upper.id, upper);
+  fixture.document.assetSources!.push({ ...sourceAsset, id: upper.id });
+  fixture.document.objects.push({
+    ...structuredClone(sourcePart),
+    id: "jump-upper-body",
+    group: "jump-upper",
+    node: "asset:jump-upper:building-999",
+  });
+  fixture.document.groups.push({ id: "jump-upper", transform: { ...IDENTITY_TRANSFORM } });
+  fixture.document.map = "Cross-asset jump fixture";
+  return { ...fixture, upper };
+}
+
 export function movementTransitionCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.movementBlockers = [];

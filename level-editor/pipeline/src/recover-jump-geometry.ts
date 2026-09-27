@@ -2,7 +2,32 @@ import earcut, { flatten } from "earcut";
 import clipping from "polygon-clipping";
 import type { JumpZone, Point, ProtoLevel } from "../../shared/src/level.ts";
 import type { Vec3 } from "../../shared/src/scene.ts";
-import type { AssetJumpPair, AssetJumpZone } from "../../shared/src/asset-gameplay.ts";
+import type {
+  AssetJumpPair,
+  AssetJumpZone,
+  AssetJumpSegment,
+} from "../../shared/src/asset-gameplay.ts";
+
+export function recoverJumpSegment(
+  side: 0 | 1,
+  ...args: Parameters<typeof recoverJumpGeometry>
+): { zone: AssetJumpZone; segment: AssetJumpSegment } {
+  const recovered = recoverJumpGeometry(...args);
+  const edge = recovered.pair.edges[side];
+  const zone = recovered.zones.find((zone) => zone.id === edge.zone)!;
+  const endpoints = recovered.pair.edges.flatMap((edge) => [edge.a, edge.b]);
+  const join = [0, 1, 2].map((axis) => endpoints.reduce((sum, p) => sum + p[axis]!, 0) / 4) as Vec3;
+  return {
+    zone,
+    segment: {
+      id: `${recovered.pair.id}-side-${side}`,
+      node: recovered.pair.node,
+      long: recovered.pair.long,
+      join,
+      edge,
+    },
+  };
+}
 
 /** Recover a complete pair into an explicit owner; source indices never enter gameplay links. */
 export function recoverJumpGeometry(

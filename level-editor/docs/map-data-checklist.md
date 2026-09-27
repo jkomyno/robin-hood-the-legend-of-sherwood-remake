@@ -23,7 +23,7 @@ intended construction, not functionality available today.
 | Doors, gates and lock rules | Transform local endpoints and optional click polygons; resolve neighbours geometrically and retain initial/alternate actor lock rules. | Partial: rules preserved; state-transition triggers still missing |
 | Building interiors | Asset-local interior definitions and entrances; generate virtual interior sectors and links. | Working for empty interiors; occupants remain planned |
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
-| Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. | Partial: native zones/gates and duplicated assets tested; cross-asset pairing and unresolved recovery ownership remain unfinished |
+| Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | Partial: native zones/gates, cross-asset pairs and rotated/duplicated assets tested; nine recovery pairs remain unresolved |
 | Surface materials | Transform asset-local material polygons; rebuild the ground lookup subset and per-obstacle references independently. | Partial: ground/obstacle regions and terrain defaults tested in the engine; elevated-surface links unfinished |
 | Light/shadow regions | Transform asset-local planar contours, resolve the receiving navigation layer and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering and interior links; multi-plane regions and ambiguous ownership remain recovery gaps |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
@@ -101,7 +101,7 @@ The latest all-map pass recovers 24 of 149 light/shadow regions into asset-local
 drafts. The other 125 need ownership review or splitting across receiving planes;
 they are not silently assigned to terrain. These drafts remain unpublished.
 
-Jump recovery produces asset-local drafts for 78 of 173 pairs; 95 still need
+Jump recovery produces asset-local drafts for 164 of 173 pairs; nine still need
 ownership or geometry authoring. Edge elevations remain independent of fractional
 surface heights. Extraction now preserves the third endpoint coordinate and
 remaps zone references, retaining both destinations when a crop crosses a pair.
@@ -133,4 +133,7 @@ restores six of York's nine inventoried records into drafts, including its missi
 jump landing surface. Three still span multiple pinned assets. The compiler reads
 only the resulting local volumes; source sector and material indices are rejected.
 Jump recovery now requires an owned receiving surface on each elevated side;
-missing or cross-asset ownership remains an explicit gap rather than an invalid pair.
+missing or ambiguous ownership remains an explicit gap rather than an invalid pair.
+Cross-asset edges retain only their own local landing zone and a shared geometric
+socket. Compilation rejects missing or ambiguous mates and conflicting long-jump
+rules; no source pair index or fixed scene reference links the assets.

@@ -1,5 +1,6 @@
 import polygonClipping, { type Polygon } from "polygon-clipping";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
+import { assembleJumpSegments, type PlacedJumpSegment } from "./assemble-jump-segments.ts";
 import { assembleLiftSegments, type PlacedLiftSegment } from "./assemble-lift-segments.ts";
 import { partMatrix, transformedObstacle, type Level3D, type Level3DObject } from "./level3d.ts";
 import { gameToScene, type Vec3 } from "./scene.ts";
@@ -151,6 +152,7 @@ export function compileAssetGameplay(
   const transitionBlockers: PlacedTransitionBlocker[] = [];
   const lights: { id: string; polygon: Point[]; plane: HeightPlane; ambiences: number }[] = [];
   const jumpZones: { id: string; polygon: Point[]; anchor: Vec3; helper: boolean }[] = [];
+  const jumpSegments: PlacedJumpSegment[] = [];
   const jumpPairs: { id: string; long: boolean; edges: { zone: string; a: Vec3; b: Vec3 }[] }[] =
     [];
   const transitions: {
@@ -238,6 +240,17 @@ export function compileAssetGameplay(
           a: transform(pair.node, edge.a),
           b: transform(pair.node, edge.b),
         })),
+      });
+    for (const segment of gameplay.jumpSegments ?? [])
+      jumpSegments.push({
+        id: `${placement.id}/${segment.id}`,
+        long: segment.long,
+        join: transform(segment.node, segment.join),
+        edge: {
+          zone: `${placement.id}/${segment.edge.zone}`,
+          a: transform(segment.node, segment.edge.a),
+          b: transform(segment.node, segment.edge.b),
+        },
       });
     for (const light of gameplay.lights ?? []) {
       const points = light.polygon.map((p) => transform(light.node, p));
@@ -440,6 +453,7 @@ export function compileAssetGameplay(
     }
   }
   const assembledLifts = assembleLiftSegments(lifts);
+  jumpPairs.push(...assembleJumpSegments(jumpSegments));
   lifts = assembledLifts.lifts;
   for (const surface of surfaces)
     if (surface.lift) surface.lift = assembledLifts.identities.get(surface.lift)!;

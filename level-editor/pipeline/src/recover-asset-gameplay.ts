@@ -26,7 +26,7 @@ import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
 import { recoverLightPlane, recoverLightRegion } from "./recover-light-region.ts";
-import { recoverJumpGeometry } from "./recover-jump-geometry.ts";
+import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry.ts";
 import { recoverMotionStates } from "./recover-motion-states.ts";
 import { recoverLiftJoins } from "./recover-lift-joins.ts";
 import {
@@ -949,7 +949,7 @@ for (const [index, light] of proto.light_sectors.entries()) {
 let recoveredJumps = 0;
 for (const [index, pair] of proto.jump_line_pairs.entries()) {
   try {
-    const candidates = [pair.line1, pair.line2].flatMap((line, side) => {
+    const sideCandidates = [pair.line1, pair.line2].map((line, side) => {
       const home = proto.jump_zones[(side === 0 ? pair.line2 : pair.line1).jump_zone_index];
       if (!home) throw new Error("Jump pair references a missing receiving zone");
       const sideOwners = proto.sight_obstacles.flatMap((o, obstacleIndex) =>
@@ -967,14 +967,49 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
         throw new Error(`Jump side ${side} has no owned elevated receiving surface`);
       return sideOwners;
     });
+    const candidates = sideCandidates.flat();
     const assets = new Set(candidates.map((o) => o.asset));
+    if (
+      assets.size === 2 &&
+      sideCandidates.every((c) => new Set(c.map((o) => o.asset)).size === 1)
+    ) {
+      const recovered = ([0, 1] as const).map((side) => {
+        const owner = [...locals.values()]
+          .flat()
+          .find((o) => o.asset === sideCandidates[side]![0]!.asset)!;
+        return {
+          owner,
+          ...recoverJumpSegment(
+            side,
+            proto,
+            index,
+            owner.node,
+            (point) => localize(owner.part, point),
+            (zone, point) => heightAt(zone.sector, zone.layer, point),
+          ),
+        };
+      });
+      for (const { owner, zone } of recovered) {
+        const previous = packet(owner.asset).jumpZones?.find((z) => z.id === zone.id);
+        if (previous && JSON.stringify(previous) !== JSON.stringify(zone))
+          throw new Error(`Shared jump zone ${zone.id} needs consistent owner and anchor`);
+      }
+      for (const { owner, zone, segment } of recovered) {
+        const p = packet(owner.asset);
+        if (!p.jumpZones?.some((z) => z.id === zone.id)) (p.jumpZones ??= []).push(zone);
+        (p.jumpSegments ??= []).push(segment);
+        p.issues.push("Review cross-asset jump sockets and landing ownership before publication");
+      }
+      recoveredJumps++;
+      continue;
+    }
     if (assets.size !== 1) {
       unresolved.push({
         kind: "jump-owner",
         source: index,
         candidates: [...assets],
         reason:
-          "Jump pair requires one explicit owning asset; cross-asset ownership must be authored",
+          "Each jump side needs one explicit asset owner; ambiguous ownership must be authored",
       });
       continue;
     }

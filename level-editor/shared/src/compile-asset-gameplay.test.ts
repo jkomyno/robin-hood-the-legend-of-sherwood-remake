@@ -13,11 +13,44 @@ import {
   lightAssetCompilerFixture,
   jumpAssetCompilerFixture,
   compoundLiftCompilerFixture,
+  crossAssetJumpCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("cross-asset jump edges assemble equivalent native links and detect broken placement", () => {
+  const { document, assets } = crossAssetJumpCompilerFixture();
+  const whole = jumpAssetCompilerFixture();
+  assert.deepEqual(
+    compileAssetGameplay(document, assets, bounds),
+    compileAssetGameplay(whole.document, whole.assets, bounds),
+  );
+  document.groups.find((g) => g.id === "jump-upper")!.transform.dx = 20;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /exactly one complementary edge/,
+  );
+  document.groups.find((g) => g.id === "jump-upper")!.transform.dx = 0;
+  for (const group of document.groups.slice())
+    document.groups.push({
+      id: `${group.id}-copy`,
+      transform: { ...IDENTITY_TRANSFORM, dx: 1000, dy: 100, rot_deg: 90 },
+    });
+  for (const part of [...document.objects].filter((p) => p.group))
+    document.objects.push({
+      ...structuredClone(part),
+      id: `${part.id}-copy`,
+      group: `${part.group}-copy`,
+    });
+  const copies = compileAssetGameplay(document, assets, bounds);
+  assert.equal(copies.jump_line_pairs!.length, 2);
+  assert.equal(copies.jump_zones!.length, 4);
+  assert.notEqual(
+    copies.jump_line_pairs![0]!.line1.jump_zone_index,
+    copies.jump_line_pairs![1]!.line1.jump_zone_index,
+  );
+});
 test("non-rendering asset volumes preserve collision and sight without a mesh part", () => {
   const { hut, document, assets } = assetCompilerFixture();
   const expected = compileAssetGameplay(document, assets, bounds);

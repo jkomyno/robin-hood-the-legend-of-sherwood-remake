@@ -55,6 +55,7 @@ export interface RecoveredGameplayPacket {
   lights?: AssetGameplay["lights"];
   jumpZones?: AssetGameplay["jumpZones"];
   jumpPairs?: AssetGameplay["jumpPairs"];
+  jumpSegments?: AssetGameplay["jumpSegments"];
   connections: RecoveredConnection[];
 }
 
@@ -150,6 +151,7 @@ export function recoveredGameplayDefinition(
     ...(packet.lights ? { lights: structuredClone(packet.lights) } : {}),
     ...(packet.jumpZones ? { jumpZones: structuredClone(packet.jumpZones) } : {}),
     ...(packet.jumpPairs ? { jumpPairs: structuredClone(packet.jumpPairs) } : {}),
+    ...(packet.jumpSegments ? { jumpSegments: structuredClone(packet.jumpSegments) } : {}),
     ...(packet.movementTransitions
       ? { movementTransitions: structuredClone(packet.movementTransitions) }
       : {}),

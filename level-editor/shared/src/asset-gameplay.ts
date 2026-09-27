@@ -90,6 +90,7 @@ export interface AssetGameplay {
   lights?: AssetLightRegion[];
   jumpZones?: AssetJumpZone[];
   jumpPairs?: AssetJumpPair[];
+  jumpSegments?: AssetJumpSegment[];
   /** Nonvisual movement changes. Visual/sight/mask transitions require separate authoring. */
   movementTransitions?: AssetMovementTransition[];
 }
@@ -108,6 +109,14 @@ export interface AssetJumpZone {
   /** An unblocked point on the receiving movement surface. */
   anchor: [number, number, number];
   helperNeeded: boolean;
+}
+export interface AssetJumpSegment {
+  id: string;
+  node: string;
+  long: boolean;
+  /** Shared local 3D socket; must match one complementary edge after placement. */
+  join: [number, number, number];
+  edge: AssetJumpPair["edges"][number];
 }
 export interface AssetJumpPair {
   id: string;
@@ -311,6 +320,22 @@ export function validateAssetGameplay(
     jumpZones.add(zone.id);
   }
   const usedJumpZones = new Set<string>();
+  if (data.jumpSegments !== undefined && !Array.isArray(data.jumpSegments))
+    fail("invalid jump segments");
+  for (const segment of data.jumpSegments ?? []) {
+    feature(segment);
+    const edge = segment.edge;
+    if (
+      typeof segment.long !== "boolean" ||
+      !point(segment.join, 3) ||
+      !edge ||
+      !jumpZones.has(edge.zone) ||
+      !point(edge.a, 3) ||
+      !point(edge.b, 3)
+    )
+      fail(`invalid jump segment or missing zone ${segment.id}`);
+    usedJumpZones.add(edge.zone);
+  }
   for (const pair of data.jumpPairs ?? []) {
     feature(pair);
     if (typeof pair.long !== "boolean" || !Array.isArray(pair.edges) || pair.edges.length !== 2)
