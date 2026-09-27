@@ -161,6 +161,8 @@ pub struct Patch {
     pub pathfinder_sector: u16,
     /// Pathfinder changing-obstacle index.
     pub pathfinder_changing_obstacles: u32,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_motion_changes: Vec<crate::level_data::PatchMotionChange>,
     /// Map layer this patch belongs to.
     pub layer: u16,
     /// Map sector this patch belongs to.
@@ -244,6 +246,7 @@ impl Default for Patch {
             pathfinder_layer: 0,
             pathfinder_sector: 0,
             pathfinder_changing_obstacles: 0,
+            additional_motion_changes: Vec::new(),
             layer: 0,
             sector: 0,
             waypoint: MapPoint::new(0.0, 0.0),

@@ -28,7 +28,7 @@ intended construction, not functionality available today.
 | Light/shadow regions | Transform asset-local shadow polygons, resolve layers and preserve ambience filters. | Planned |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
-| Interactive patches / state changes | Compile asset states into changing visuals, collision, sight, masks, interaction zones and door links. | Planned |
+| Interactive patches / state changes | Compile asset states into changing visuals, collision, sight, masks, interaction zones and door links. Native transitions support movement changes across multiple navigation areas. | Editor compilation still planned; native transition groundwork only |
 | Map settings | Scene identity/export bounds; terrain assets supply forest behaviour and default material. Ambience is selected by the mission. | Working in compiler/runtime tests; recovered terrain metadata unpublished |
 | Resource banks and references | Package generated resources and resolve shared sprite/audio/profile dependencies. | Partial: baked images; shared resources use the base installation |
 

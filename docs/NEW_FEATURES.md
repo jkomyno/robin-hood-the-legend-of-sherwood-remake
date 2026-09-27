@@ -23,6 +23,9 @@
   Environmental emitters retain asset-local geometry, delays, volume falloff,
   noise-covering ranges and ambience filters; shared audio sample references use
   the base installation. Recovery reports ambiguous emitter ownership explicitly.
+  Native patch bindings can update multiple navigation areas together, retaining
+  movement-sector and line activation through apply/reset. Editor state compilation
+  and visual-state baking remain unfinished.
   Offline terrain recovery reports reconstruction error on the integer
   movement grid and keeps unresolved ownership visible. Recovery drafts are
   checked against the asset schema; passage connections can omit click polygons,

@@ -4616,6 +4616,7 @@ impl EngineInner {
                     pathfinder_layer: raw.pathfinder_layer.unwrap_or(0),
                     pathfinder_sector: raw.pathfinder_sector.unwrap_or(0),
                     pathfinder_changing_obstacles: raw.pathfinder_changing_obstacles,
+                    additional_motion_changes: raw.additional_motion_changes.clone(),
                     // The original game reads the layer twice (mid-stream and again at end of
                     // patch); the late `final_layer` clobbers the early read,
                     // so that's the authoritative value used by patch registration

@@ -265,17 +265,16 @@ impl EngineInner {
             self.world.fast_grid_mut().set_line_active(idx, applied);
         }
         let patch = &self.script_domains.interactables.patches[usize::from(index)];
-        let (
-            use_changing_obstacles,
-            pathfinder_layer,
-            pathfinder_sector,
-            pathfinder_changing_obstacles,
-        ) = (
-            patch.use_changing_obstacles,
-            patch.pathfinder_layer,
-            patch.pathfinder_sector,
-            patch.pathfinder_changing_obstacles,
-        );
+        let mut changes = Vec::with_capacity(1 + patch.additional_motion_changes.len());
+        if patch.use_changing_obstacles {
+            changes.push(crate::level_data::PatchMotionChange {
+                layer: patch.pathfinder_layer,
+                sector: patch.pathfinder_sector,
+                changing_obstacle: u16::try_from(patch.pathfinder_changing_obstacles)
+                    .expect("patch changing-obstacle index exceeds u16"),
+            });
+        }
+        changes.extend_from_slice(&patch.additional_motion_changes);
 
         // Pathfinder obstacle state change.  The stream-deserialised
         // `pathfinder_sector` is a cumulative obstacle count, not an
@@ -288,36 +287,66 @@ impl EngineInner {
         //     their paths, and if any appeared obstacle intersects the
         //     actor's move box, flag them unreachable + queue a lethal
         //     1000-damage sequence element.
-        if use_changing_obstacles {
-            let area = self
-                .world
-                .pathfinder
-                .try_convert_sector(
-                    tcx.assets.navigation.pathfinder_graph.as_ref(),
-                    pathfinder_sector,
-                )
-                .unwrap_or_else(|| {
-                    panic!(
-                        "patch_effects: ConvertSector failed — no area mapping \
+        // Resolve every binding before mutating any area. A duplicated binding
+        // would toggle twice, silently undoing part of the transition.
+        let mut unique = std::collections::BTreeSet::new();
+        let changes: Vec<_> = changes
+            .into_iter()
+            .map(|change| {
+                let crate::level_data::PatchMotionChange {
+                    layer,
+                    sector,
+                    changing_obstacle,
+                } = change;
+                assert!(
+                    changing_obstacle < 16,
+                    "patch movement state exceeds the area's 16 bit pairs"
+                );
+                assert!(
+                    unique.insert((layer, sector, changing_obstacle)),
+                    "duplicate patch movement binding"
+                );
+                let area = self
+                    .world
+                    .pathfinder
+                    .try_convert_sector(tcx.assets.navigation.pathfinder_graph.as_ref(), sector)
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "patch_effects: ConvertSector failed — no area mapping \
                          for pathfinder_sector={} (layer={})",
-                        pathfinder_sector, pathfinder_layer
-                    )
-                });
+                            sector, layer
+                        )
+                    });
+                assert!(
+                    tcx.assets
+                        .navigation
+                        .pathfinder_graph
+                        .static_data
+                        .move_layers
+                        .get(usize::from(layer))
+                        .and_then(|areas| areas.get(usize::from(area)))
+                        .is_some(),
+                    "patch movement binding references a missing layer/area"
+                );
+                (change, area)
+            })
+            .collect();
+        let mut appeared_by_area = Vec::with_capacity(changes.len());
+        for (change, area) in changes {
             let appeared = self.world.pathfinder.toggle_obstacle_state(
                 tcx.assets.navigation.pathfinder_graph.as_ref(),
                 std::sync::Arc::make_mut(&mut self.world.fast_grid),
-                pathfinder_layer as usize,
+                change.layer as usize,
                 area as usize,
-                pathfinder_changing_obstacles as u16,
+                change.changing_obstacle,
             );
 
-            if !forced_reset {
-                self.invalidate_paths_and_kill_crushed(
-                    tcx,
-                    pathfinder_layer,
-                    pathfinder_sector,
-                    &appeared,
-                );
+            appeared_by_area.push((change, appeared));
+        }
+        // Replanning must see the complete transition, not a mix of old and new areas.
+        if !forced_reset {
+            for (change, appeared) in appeared_by_area {
+                self.invalidate_paths_and_kill_crushed(tcx, change.layer, change.sector, &appeared);
             }
         }
     }
@@ -710,6 +739,93 @@ mod tests {
             engine.script_domains.interactables.doors[0].locked_pc,
             applied
         );
+    }
+
+    #[test]
+    fn one_asset_transition_updates_and_resets_multiple_navigation_areas() {
+        use crate::fast_find_grid::{GridSector, SectorIndex};
+        use crate::pathfinder::{MotionArea, MotionObstacle, PathGraph};
+        let (mut engine, index) = patch_fixture(false, false);
+        let old_line = engine.script_domains.interactables.patches[0].old_line_indices[0];
+        let new_line = engine.script_domains.interactables.patches[0].new_line_indices[0];
+        let patch = &mut engine.script_domains.interactables.patches[0];
+        patch.old_line_indices.clear();
+        patch.new_line_indices.clear();
+        patch.use_changing_obstacles = true;
+        patch.pathfinder_layer = 0;
+        patch.pathfinder_sector = 0;
+        patch
+            .additional_motion_changes
+            .push(crate::level_data::PatchMotionChange {
+                layer: 0,
+                sector: 2,
+                changing_obstacle: 0,
+            });
+        let mut graph = PathGraph::new();
+        graph.static_mut().move_layers = vec![vec![
+            MotionArea {
+                polygon: vec![],
+                skeleton: vec![],
+                motion_obstacles: vec![MotionObstacle {
+                    state_id: 1,
+                    active: true,
+                    bounding_box: Default::default(),
+                    polygon: vec![],
+                    grid_sector_index: SectorIndex::new(0),
+                    grid_line_indices: vec![old_line],
+                }],
+            },
+            MotionArea {
+                polygon: vec![],
+                skeleton: vec![],
+                motion_obstacles: vec![MotionObstacle {
+                    state_id: 2,
+                    active: false,
+                    bounding_box: Default::default(),
+                    polygon: vec![],
+                    grid_sector_index: SectorIndex::new(1),
+                    grid_line_indices: vec![new_line],
+                }],
+            },
+        ]];
+        graph.layers = vec![vec![vec![vec![]], vec![vec![]]]];
+        graph.alternative_layers = graph.layers.clone();
+        graph.states = vec![vec![0, 0]];
+        graph.build_sector_conversion();
+        for number in 0..2 {
+            engine.world.fast_grid_mut().add_sector(
+                GridSector {
+                    sector_type: crate::sector::SectorType::MOTION,
+                    layer: 0,
+                    sector_number: crate::sector::SectorNumber::new(number),
+                    ..Default::default()
+                },
+                0,
+            );
+        }
+        engine.world.pathfinder.initialize_from_graph(
+            &graph,
+            std::sync::Arc::make_mut(&mut engine.world.fast_grid),
+        );
+        engine.world.pathfinder.synchronize_motion_obstacle_sectors(
+            &graph,
+            std::sync::Arc::make_mut(&mut engine.world.fast_grid),
+        );
+        let mut assets = LevelAssets::default();
+        assets.navigation.pathfinder_graph = std::sync::Arc::new(graph);
+        let sim = crate::sim_rng::test_context();
+        assert_eq!(engine.world.fast_grid.sector_active, [true, false]);
+        engine.apply_patch(TickCtx::new(&sim, &assets), index);
+        assert_eq!(engine.world.fast_grid.sector_active, [false, true]);
+        assert!(!engine.world.fast_grid.is_line_active(old_line));
+        assert!(engine.world.fast_grid.is_line_active(new_line));
+        let saved = crate::engine::snapshot::encode_native_engine_inner(&engine);
+        let mut engine = crate::engine::snapshot::decode_native_engine_inner(&saved)
+            .expect("movement bindings survive a native snapshot");
+        engine.reset_patch(TickCtx::new(&sim, &assets), index);
+        assert_eq!(engine.world.fast_grid.sector_active, [true, false]);
+        assert!(engine.world.fast_grid.is_line_active(old_line));
+        assert!(!engine.world.fast_grid.is_line_active(new_line));
     }
 
     #[test]

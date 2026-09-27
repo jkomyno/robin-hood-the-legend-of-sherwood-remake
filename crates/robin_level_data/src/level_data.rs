@@ -1338,6 +1338,9 @@ pub struct RawPatch {
     pub pathfinder_changing_obstacles: u32,
     pub pathfinder_sector: Option<u16>,
     pub pathfinder_layer: Option<u16>,
+    /// Extra navigation areas affected by one assembled asset transition.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_motion_changes: Vec<PatchMotionChange>,
     pub start_animation_valid: bool,
     pub transition_animation_valid: bool,
     pub end_animation_valid: bool,
@@ -1373,6 +1376,23 @@ pub struct RawPatch {
     pub door_indices: Vec<u16>,
     /// Final layer value (read at end of patch).
     pub final_layer: u16,
+}
+
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    Serialize,
+    Deserialize,
+    robin_state_hash_derive::StateHash,
+    bitcode::Encode,
+    bitcode::Decode,
+)]
+pub struct PatchMotionChange {
+    pub layer: u16,
+    pub sector: u16,
+    /// Index of the complementary initial/applied bit pair in the area's state word.
+    pub changing_obstacle: u16,
 }
 
 /// CHUNK_MISC data.
@@ -3462,6 +3482,7 @@ fn read_one_patch(reader: &mut ChunkReader, format: LevelFormat) -> Result<RawPa
         pathfinder_changing_obstacles,
         pathfinder_sector,
         pathfinder_layer,
+        additional_motion_changes: Vec::new(),
         start_animation_valid,
         transition_animation_valid,
         end_animation_valid,
