@@ -403,7 +403,7 @@ export function wallMesh(
   source.rotation.z = (-(path.sourceAngle ?? 0) * Math.PI) / 180;
   source.updateWorldMatrix(true, true);
   const bounds = new THREE.Box3().setFromObject(source);
-  const profile = wallSectionProfile(source, bounds, path);
+  const profile = path.sourceStraight ? undefined : wallSectionProfile(source, bounds, path);
   const length = splineCurve(path, camera).getLength();
   const repeats = Math.ceil(length / path.repeatLength);
   if (repeats > 512) throw new Error("Wall path would exceed 512 repeats; increase repeat length");

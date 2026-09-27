@@ -11,8 +11,10 @@ import type { EditorViewport } from "./editor-viewport";
 import { prepareProjectionAsset } from "./projection-library";
 import { disposeObjectResources } from "./resources";
 import { splineCurve } from "./spline-geometry";
-import { readWallPresets, wallPreset } from "./wall-presets";
-import { assetType } from "./asset-library";
+import { readWallPresets, wallPreset, type WallPreset } from "./wall-presets";
+import AssetPreview, { AssetPreviewRenderer } from "./AssetPreview";
+import AssetPickerDialog from "./AssetPickerDialog";
+import { availableWallPresets, builtInWallPresets, cornerAssetIds } from "./spline-presets";
 
 export default function SplinePanel(props: {
   document: () => Level3D | null;
@@ -27,24 +29,24 @@ export default function SplinePanel(props: {
   const [active, setActive] = createSignal("");
   const [draft, setDraft] = createSignal<LevelSpline | null>(null);
   const [point, setPoint] = createSignal(0);
-  const [wallSource, setWallSource] = createSignal("");
+  const [picker, setPicker] = createSignal<"wall" | "corner" | null>(null);
+  const [sourceMap, setSourceMap] = createSignal("");
+  const previewRenderer = new AssetPreviewRenderer();
+  onCleanup(() => previewRenderer.dispose());
   const [busy, setBusy] = createSignal(false);
   const [presets, setPresets] = createSignal(readWallPresets());
-  const [presetName, setPresetName] = createSignal("");
+
   let pendingSources: ExternalAssetSource[] = [];
   let disposed = false;
   let attempt = 0;
   const path = () =>
     draft() ?? props.document()?.splines?.find((path) => path.id === active()) ?? null;
+  const choices = () => [
+    ...availableWallPresets(props.entries()),
+    ...presets().filter((p) => props.entries().some((e) => e.id === p.asset)),
+  ];
   const sources = () =>
-    props
-      .entries()
-      .filter((entry) => entry.editor_usage !== "map-background")
-      .sort(
-        (a, b) =>
-          Number(assetType(b) === "Wall") - Number(assetType(a) === "Wall") ||
-          a.name.localeCompare(b.name),
-      );
+    props.entries().filter((entry) => choices().some((p) => p.asset === entry.id));
   createEffect(
     () => !!draft() || busy(),
     (editing) => {
@@ -130,6 +132,7 @@ export default function SplinePanel(props: {
       document = props.document(),
       root = props.library();
     if (!current || !document || !root || (busy() && !fromPreset)) return;
+    if (id === current.cornerAsset) return;
     if (!id) {
       patch({ cornerAsset: undefined, cornerDisabled: undefined });
       return;
@@ -168,7 +171,12 @@ export default function SplinePanel(props: {
       };
       if (draft()) {
         pendingSources = pendingSources.filter((s) => s.id !== id).concat(reference);
-        setDraft(next);
+        setDraft((latest) => latest?.id === current.id ? {
+          ...latest,
+          cornerAsset: id,
+          cornerMinAngle: latest.cornerMinAngle ?? 35,
+          cornerScale: latest.cornerScale ?? 1,
+        } : latest);
       } else
         publish({
           ...document,
@@ -189,7 +197,7 @@ export default function SplinePanel(props: {
       document = props.document(),
       root = props.library();
     if (!current || current.kind !== "wall" || !document || !root || busy()) return;
-    if (!id) return;
+    if (!id || id === current.asset) return;
     const entry = props.entries().find((e) => e.id === id);
     if (!entry) return props.onError("Wall model is missing from the shared library");
     const token = ++attempt;
@@ -216,15 +224,30 @@ export default function SplinePanel(props: {
         disposeObjectResources([prepared.asset]);
       prepared = null;
       if (!existing) pendingSources = pendingSources.filter((s) => s.id !== id).concat(reference);
-      const next = { ...current, asset: id };
-      if (draft()) setDraft(next);
+      const preset =
+        builtInWallPresets.find((p) => p.asset === id) ?? presets().find((p) => p.asset === id);
+      const replaceSource = (latest: LevelSpline): LevelSpline => ({
+        ...latest,
+        ...(preset ? wallPreset(preset) : {}),
+        id: latest.id,
+        name: latest.name,
+        asset: id,
+        cornerAsset: latest.cornerAsset,
+        cornerMinAngle: latest.cornerMinAngle,
+        cornerScale: latest.cornerScale,
+        cornerWidthScale: latest.cornerWidthScale,
+        cornerRotation: latest.cornerRotation,
+        cornerDisabled: latest.cornerDisabled,
+      });
+      if (draft())
+        setDraft((latest) => latest?.id === current.id ? replaceSource(latest) : latest);
       else
         publish({
           ...document,
           assetSources: existing
             ? document.assetSources
             : [...(document.assetSources ?? []), reference],
-          splines: document.splines?.map((s) => (s.id === current.id ? next : s)),
+          splines: document.splines?.map((s) => (s.id === current.id ? replaceSource(s) : s)),
         });
     } catch (error) {
       props.onError(String(error));
@@ -233,7 +256,7 @@ export default function SplinePanel(props: {
       if (!disposed) setBusy(false);
     }
   }
-  async function begin(kind: "river" | "road" | "wall") {
+  async function begin(kind: "river" | "road" | "wall", preset?: WallPreset) {
     const document = props.document(),
       root = props.library();
     if (!document || !root || busy()) return;
@@ -241,13 +264,12 @@ export default function SplinePanel(props: {
     setBusy(true);
     let prepared: Awaited<ReturnType<typeof prepareProjectionAsset>> | null = null;
     try {
-      const preset = kind === "wall" ? presets().find((p) => p.name === presetName()) : undefined;
       let reference: ExternalAssetSource | undefined;
       let wallWidth = 35,
         wallRepeat = 180,
         sourceAngle = 0;
       if (kind === "wall") {
-        const wanted = preset?.asset ?? wallSource();
+        const wanted = preset?.asset;
         const entry = wanted ? sources().find((entry) => entry.id === wanted) : sources()[0];
         if (!entry) throw new Error("Publish a wall asset to the shared library first");
         prepared = await prepareProjectionAsset(root, entry, document.map);
@@ -266,32 +288,13 @@ export default function SplinePanel(props: {
         )
           throw new Error("The scene already uses a different revision of this asset");
         reference = prepared.reference;
-        const vertices = prepared.descriptor.parts
-          .flatMap((part) => part.obstacle_local_game?.points ?? [])
-          .map((p) => [p.x, -p.y / Math.sin((document.camera.elevation_deg * Math.PI) / 180)]);
-        if (!vertices.length) throw new Error("Wall assets need a collision footprint");
-        const cx = vertices.reduce((sum, p) => sum + p[0]!, 0) / vertices.length;
-        const cy = vertices.reduce((sum, p) => sum + p[1]!, 0) / vertices.length;
-        let xx = 0,
-          xy = 0,
-          yy = 0;
-        for (const p of vertices) {
-          const x = p[0]! - cx,
-            y = p[1]! - cy;
-          xx += x * x;
-          xy += x * y;
-          yy += y * y;
-        }
-        const angle = 0.5 * Math.atan2(2 * xy, xx - yy);
-        sourceAngle = (angle * 180) / Math.PI;
-        const along = vertices.map((p) => p[0]! * Math.cos(angle) + p[1]! * Math.sin(angle));
-        const across = vertices.map((p) => -p[0]! * Math.sin(angle) + p[1]! * Math.cos(angle));
-        wallRepeat = Math.max(1, Math.round(Math.max(...along) - Math.min(...along)));
-        wallWidth = Math.max(1, Math.round(Math.max(...across) - Math.min(...across)));
+        if (!preset) throw new Error("Choose a prepared wall preset");
+        wallWidth = preset.width;
+        wallRepeat = preset.repeatLength;
+        sourceAngle = preset.sourceAngle ?? 0;
         if (!props.viewport.adoptAsset(reference, prepared.asset, prepared.sources))
           disposeObjectResources([prepared.asset]);
         prepared = null;
-        setWallSource(entry.id);
       }
       exit();
       pendingSources = reference ? [reference] : [];
@@ -307,7 +310,7 @@ export default function SplinePanel(props: {
         ...(reference
           ? { asset: reference.id, axis: "x" as const, sourceAngle, sourceStart: 0, sourceEnd: 1 }
           : {}),
-        ...preset,
+        ...(preset ? wallPreset(preset) : {}),
         cornerAsset: undefined,
       });
       if (preset?.cornerAsset) {
@@ -323,17 +326,19 @@ export default function SplinePanel(props: {
     }
   }
   function finish() {
-    const current = draft(),
-      document = props.document();
-    if (busy() || !current || !document || current.points.length < (current.closed ? 3 : 2)) return;
-    const assetSources = [...(document.assetSources ?? [])];
-    for (const source of pendingSources)
-      if (!assetSources.some((s) => s.id === source.id)) assetSources.push(source);
-    if (publish({ ...document, assetSources, splines: [...(document.splines ?? []), current] })) {
+    const document = props.document();
+    if (busy() || !document) return;
+    setDraft((current) => {
+      if (!current || current.points.length < (current.closed ? 3 : 2)) return current;
+      const assetSources = [...(document.assetSources ?? [])];
+      for (const source of pendingSources)
+        if (!assetSources.some((s) => s.id === source.id)) assetSources.push(source);
+      if (!publish({ ...document, assetSources, splines: [...(document.splines ?? []), current] }))
+        return current;
       setActive(current.id);
-      setDraft(null);
       pendingSources = [];
-    }
+      return null;
+    });
   }
   function removePoint() {
     const current = path();
@@ -373,14 +378,21 @@ export default function SplinePanel(props: {
                 point: selected,
                 drawing,
                 append(position) {
-                  const last = current.points.at(-1);
-                  if (last && Math.hypot(last[0] - position[0], last[1] - position[1]) < 1) return;
-                  if (current.points.length >= 256) {
-                    props.onError("A path supports at most 256 control points");
-                    return;
-                  }
-                  patch({ points: [...current.points, position] });
-                  setPoint(current.points.length);
+                  // A pointer gesture can retain this callback while reactive
+                  // viewport publication is pending. The setter sees pending
+                  // writes as well as the last published draft.
+                  setDraft((latest) => {
+                    if (!latest || latest.id !== current.id) return latest;
+                    const last = latest.points.at(-1);
+                    if (last && Math.hypot(last[0] - position[0], last[1] - position[1]) < 1)
+                      return latest;
+                    if (latest.points.length >= 256) {
+                      props.onError("A path supports at most 256 control points");
+                      return latest;
+                    }
+                    setPoint(latest.points.length);
+                    return { ...latest, points: [...latest.points, position] };
+                  });
                 },
                 move,
                 selectPoint: setPoint,
@@ -422,55 +434,102 @@ export default function SplinePanel(props: {
   });
   return (
     <section class="spline-panel">
-      <h2>Paths</h2>
-      <div class="spline-actions">
-        <button disabled={!props.document() || busy()} onClick={() => void begin("river")}>
-          Draw river
-        </button>
-        <button disabled={!props.document() || busy()} onClick={() => void begin("road")}>
-          Draw path
-        </button>
-        <button
-          disabled={!props.document() || busy() || !sources().length}
-          onClick={() => void begin("wall")}
-        >
-          Draw wall
-        </button>
-      </div>
-      <label>
-        Wall preset
-        <select
-          aria-label="Wall preset"
-          value={presetName()}
-          onChange={(e) => setPresetName(e.currentTarget.value)}
-        >
-          <option value="">Custom wall</option>
-          <For each={presets()}>{(p) => <option value={p.name}>{p.name}</option>}</For>
-        </select>
-      </label>
-      <label>
-        Wall asset
-        <select
-          aria-label="Wall path asset"
-          disabled={busy()}
-          value={path()?.kind === "wall" ? (path()?.asset ?? wallSource()) : wallSource()}
-          onChange={(event) => {
-            const id = event.currentTarget.value;
-            setWallSource(id);
-            setPresetName("");
-            if (path()?.kind === "wall") void loadWall(id);
-          }}
-        >
-          <option value="">Choose a wall segment…</option>
-          <For each={sources()}>
-            {(entry) => (
-              <option value={entry.id}>
-                {entry.name} · {entry.source_map}
-              </option>
+      <h2>Paths &amp; walls</h2>
+      <Show
+        when={!path() && props.active !== false}
+        fallback={
+          <Show when={path()}>
+            <button onClick={exit}>Choose another preset</button>
+          </Show>
+        }
+      >
+        <label>
+          Source map
+          <select
+            aria-label="Preset source map"
+            value={sourceMap()}
+            onChange={(event) => setSourceMap(event.currentTarget.value)}
+          >
+            <option value="">All maps</option>
+            <For each={[...new Set(sources().map((entry) => entry.source_map))].sort()}>
+              {(name) => <option value={name}>{name}</option>}
+            </For>
+          </select>
+        </label>
+        <div class="spline-preset-grid">
+          <For each={["road", "river"] as const}>
+            {(kind) => (
+              <button class="asset-card" disabled={busy()} onClick={() => void begin(kind)}>
+                <svg
+                  class={`surface-preset-preview ${kind}`}
+                  viewBox="0 0 160 100"
+                  aria-hidden="true"
+                >
+                  <path d="M-10 85 C35 85 25 20 75 25 S115 80 170 15" />
+                </svg>
+                <span class="asset-card-info">
+                  <strong>{kind === "road" ? "Footpath" : "River"}</strong>
+                </span>
+              </button>
             )}
           </For>
-        </select>
-      </label>
+          <For
+            each={choices().filter(
+              (p) =>
+                !sourceMap() ||
+                props.entries().find((e) => e.id === p.asset)?.source_map === sourceMap(),
+            )}
+          >
+            {(preset) => {
+              const entry = () => props.entries().find((entry) => entry.id === preset.asset);
+              return (
+                <button
+                  class="asset-card"
+                  disabled={busy()}
+                  onClick={() => void begin("wall", preset)}
+                >
+                  <Show when={entry() && props.library()}>
+                    <AssetPreview
+                      entry={entry()!}
+                      root={props.library()!}
+                      renderer={previewRenderer}
+                    />
+                  </Show>
+                  <span class="asset-card-info">
+                    <strong>{preset.name}</strong>
+                  </span>
+                </button>
+              );
+            }}
+          </For>
+        </div>
+      </Show>
+      <Show when={picker() && props.library()}>
+        <AssetPickerDialog
+          title={picker() === "wall" ? "Choose wall type" : "Choose corner type"}
+          root={props.library()!}
+          entries={
+            picker() === "wall"
+              ? sources()
+              : props
+                  .entries()
+                  .filter(
+                    (entry) =>
+                      cornerAssetIds.has(entry.id) ||
+                      presets().some((preset) => preset.cornerAsset === entry.id),
+                  )
+          }
+          selected={picker() === "wall" ? path()?.asset : path()?.cornerAsset}
+          emptyLabel={picker() === "corner" ? "Continuous join — no corner model" : undefined}
+          onClose={() => setPicker(null)}
+          onSelect={(id) => {
+            const kind = picker();
+            setPicker(null);
+            if (kind === "wall") void loadWall(id);
+            else void loadCorner(id);
+          }}
+        />
+      </Show>
       <div class="spline-list">
         <For each={props.document()?.splines ?? []}>
           {(item) => (
@@ -537,28 +596,14 @@ export default function SplinePanel(props: {
               Closed loop
             </label>
             <Show when={current().kind === "wall"}>
-              <label>
-                Corner tower
-                <select
-                  aria-label="Corner tower asset"
-                  disabled={busy()}
-                  value={current().cornerAsset ?? ""}
-                  onChange={(e) => void loadCorner(e.currentTarget.value)}
-                >
-                  <option value="">Continuous wall — no towers</option>
-                  <For
-                    each={sources().filter((e) =>
-                      /tower|turret|bastion/i.test(e.name + " " + e.id),
-                    )}
-                  >
-                    {(entry) => (
-                      <option value={entry.id}>
-                        {entry.name} · {entry.source_map}
-                      </option>
-                    )}
-                  </For>
-                </select>
-              </label>
+              <div class="spline-actions">
+                <button disabled={busy()} onClick={() => setPicker("wall")}>
+                  Change wall type
+                </button>
+                <button disabled={busy()} onClick={() => setPicker("corner")}>
+                  Change corner type
+                </button>
+              </div>
               <Show when={current().cornerAsset}>
                 <label>
                   Minimum corner angle
@@ -628,7 +673,6 @@ export default function SplinePanel(props: {
                       .concat(preset);
                     localStorage.setItem("rle.wallPresets", JSON.stringify(next));
                     setPresets(next);
-                    setPresetName(preset.name);
                   } catch (error) {
                     props.onError("Could not save wall preset: " + error);
                   }

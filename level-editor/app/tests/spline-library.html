@@ -1,0 +1,5 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Spline library acceptance</title><link rel="stylesheet" href="../src/styles.css"></head><body><div id="root" style="width:1000px;height:700px"></div><pre id="result">RUNNING</pre><script type="module">
+import { checkSharedLibrary } from './library.tsx';
+window.confirm = () => true;
+checkSharedLibrary().then(() => { document.querySelector('#result').textContent = 'PASS shared library, spline drawing, undo/redo and save/reload'; }).catch(error => { document.querySelector('#result').textContent = 'FAIL ' + (error.stack ?? error); });
+</script></body></html>

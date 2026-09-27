@@ -287,3 +287,38 @@ test("footpaths save independently of water and follow authored height", () => {
   layer.clear();
   geometry.dispose();
 });
+
+test("prepared fence strips preserve narrow rails between thick posts", () => {
+  const source = new THREE.Group();
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(100, 2, 4), new THREE.MeshBasicMaterial());
+  rail.position.z = 10;
+  const post = new THREE.Mesh(new THREE.BoxGeometry(8, 10, 20), new THREE.MeshBasicMaterial());
+  post.position.set(-40, 0, 10);
+  source.add(rail, post);
+  const path: LevelSpline = {
+    ...river,
+    kind: "wall",
+    asset: "fence",
+    axis: "x",
+    sourceStraight: true,
+    width: 10,
+    repeatLength: 100,
+    points: [
+      [0, 0, 0],
+      [100, 0, 0],
+    ],
+  };
+  const original = Array.from(rail.geometry.getAttribute("position").array);
+  const result = wallMesh(path, camera, new Map([["asset:fence:rails", source]]));
+  const bounds = new THREE.Box3().setFromObject(result.children[0]!);
+  assert.ok(
+    Math.abs(bounds.max.y - bounds.min.y - 2) < 1e-5,
+    "Rails must keep their two-unit thickness, not expand to the ten-unit posts",
+  );
+  assert.deepEqual(Array.from(rail.geometry.getAttribute("position").array), original);
+  result.traverse((node) => {
+    if (node instanceof THREE.Mesh) node.geometry.dispose();
+  });
+  rail.geometry.dispose();
+  post.geometry.dispose();
+});

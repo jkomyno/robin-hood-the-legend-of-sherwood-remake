@@ -92,8 +92,22 @@ export async function checkSharedLibrary() {
     (viewport as unknown as { orbit: { target: THREE.Vector3 } }).orbit.target.clone();
   const pathPoints = () =>
     (viewport as unknown as { splineMode: { path: LevelSpline } }).splineMode.path.points;
+  const cornerSource = () =>
+    (viewport as unknown as { splineMode?: { path: LevelSpline } }).splineMode?.path.cornerAsset;
   const oldPresets = localStorage.getItem("rle.wallPresets");
-  localStorage.removeItem("rle.wallPresets");
+  localStorage.setItem(
+    "rle.wallPresets",
+    JSON.stringify([
+      {
+        name: "Battlement wall",
+        asset: "house",
+        axis: "x",
+        width: 30,
+        repeatLength: 100,
+        cornerAsset: "prop-0",
+      },
+    ]),
+  );
   const files = new Map<string, File>();
   const savedMaps = new Set<string>();
   const json = (name: string, value: unknown) =>
@@ -195,7 +209,6 @@ export async function checkSharedLibrary() {
     descriptor: `${entry.id}/asset.json`,
     model: `${entry.id}/model.glb`,
   }));
-  json("3d-assets/index.json", { version: 1, assets: entries });
   for (const entry of entries) {
     files.set(`3d-assets/${entry.model}`, await model(entry.id));
     json(`3d-assets/${entry.descriptor}`, {
@@ -215,6 +228,19 @@ export async function checkSharedLibrary() {
       ],
     });
   }
+  const digest = async (file: File) => Array.from(
+    new Uint8Array(await crypto.subtle.digest("SHA-256", await file.arrayBuffer())),
+    byte => byte.toString(16).padStart(2, "0"),
+  ).join("");
+  json("3d-assets/index.json", {
+    version: 1,
+    assets: await Promise.all(entries.map(async entry => ({
+      ...entry,
+      editor: JSON.parse(await files.get(`3d-assets/${entry.descriptor}`)!.text()),
+      descriptor_sha256: await digest(files.get(`3d-assets/${entry.descriptor}`)!),
+      model_sha256: await digest(files.get(`3d-assets/${entry.model}`)!),
+    }))),
+  });
   const publishedMaps = new Map(
     [...files].filter(([name]) => name.startsWith("scenes/") && name.endsWith(".rhlos-map.json")),
   );
@@ -296,7 +322,9 @@ export async function checkSharedLibrary() {
   );
   const click = (label: string) => {
     const button = [...document.querySelectorAll("button")].find(
-      (button) => button.textContent?.trim() === label,
+      (button) =>
+        button.textContent?.trim() === label ||
+        button.querySelector("strong")?.textContent === label,
     );
     assert(button && !button.disabled, `Missing enabled button: ${label}`);
     button!.click();
@@ -418,9 +446,14 @@ export async function checkSharedLibrary() {
     await until(
       () => document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "York",
     );
+    await until(() => document.querySelector(".asset-card")?.getAttribute("draggable") === "true");
     const card = document.querySelector(".asset-card")!;
     const transfer = new DataTransfer();
-    card.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: transfer }));
+    card.dispatchEvent(new PointerEvent("pointerenter"));
+    await until(() => {
+      card.dispatchEvent(new DragEvent("dragstart", { bubbles: true, dataTransfer: transfer }));
+      return transfer.getData(ASSET_DRAG_TYPE) === "house";
+    });
     assert(transfer.getData(ASSET_DRAG_TYPE) === "house", "Drag did not identify the asset");
     const viewport = document.querySelector(".editor-canvas")!;
     const rect = viewport.getBoundingClientRect();
@@ -508,7 +541,8 @@ export async function checkSharedLibrary() {
     );
     const saved = JSON.parse(await files.get("scenes/York.rhlos-map.json")!.text());
     assert(
-      saved.objects.some((part: { source: { map: string } }) => part.source.map === "Leicester"),
+      saved.assetSources.some((source: { id: string }) => source.id === "house") &&
+        saved.objects.some((part: { node: string }) => part.node === "asset:house:building-000"),
       "Cross-level source was lost",
     );
     assert(saved.groups[0].transform.dx !== 200, "Drop used map center instead of cursor");
@@ -559,9 +593,13 @@ export async function checkSharedLibrary() {
       drawingCanvas.dispatchEvent(new PointerEvent("pointerup", init));
       await new Promise((resolve) => requestAnimationFrame(resolve));
     };
+    // The resize checks leave only ~100 px of canvas. Give control-point hit
+    // targets room so the next click appends instead of moving the first point.
+    document.querySelector<HTMLButtonElement>('[aria-label="Hide asset library"]')!.click();
+    await until(() => !(document.querySelector(".library-content") as HTMLElement).checkVisibility());
     click("Draw");
     await until(() => (document.querySelector(".spline-panel") as HTMLElement).checkVisibility());
-    click("Draw river");
+    click("River");
     await until(() => !!document.querySelector('input[aria-label="Path name"]'));
     await until(
       () =>
@@ -610,8 +648,9 @@ export async function checkSharedLibrary() {
     await until(() => document.querySelectorAll(".spline-list button").length === 0);
     click("Redo");
     await until(() => document.querySelectorAll(".spline-list button").length === 1);
-    await select("Wall path asset", "house");
-    click("Draw wall");
+    click("Choose another preset");
+    await until(() => !!document.querySelector(".spline-preset-grid"));
+    click("Battlement wall");
     await until(
       () =>
         document.querySelector('input[aria-label="Path name"]')?.getAttribute("value") ===
@@ -622,33 +661,34 @@ export async function checkSharedLibrary() {
     await drawPoint(0.3, 0.7);
     await drawPoint(0.55, 0.75);
     await drawPoint(0.6, 0.45);
-    await select("Corner tower asset", "prop-0");
-    await until(
-      () =>
-        !(document.querySelector('select[aria-label="Corner tower asset"]') as HTMLSelectElement)
-          ?.disabled,
-    );
     await until(() => !!document.querySelector('input[aria-label="Corner tower scale"]'));
+    click("Change corner type");
+    await until(() => !!document.querySelector(".asset-picker-dialog[open]"));
+    click("Round corner tower");
+    await until(() => !document.querySelector(".asset-picker-dialog[open]"));
     const flip = document.querySelector(
       'input[aria-label="Flip battlement side"]',
     ) as HTMLInputElement;
     flip.checked = true;
     flip.dispatchEvent(new Event("change", { bubbles: true }));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await until(() => [...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Finish path" && !button.disabled));
     click("Finish path");
     await until(() => document.querySelectorAll(".spline-list button").length === 2);
     await until(() =>
       [...document.querySelectorAll("button")].some((b) => b.textContent === "Save as wall preset"),
     );
     click("Save as wall preset");
-    click("Draw path");
+    click("Choose another preset");
+    await until(() => !!document.querySelector(".spline-preset-grid"));
+    click("Footpath");
     await until(
       () =>
         (document.querySelector('input[aria-label="Path name"]') as HTMLInputElement)?.value ===
         "Footpath",
     );
-    await drawPoint(0.2, 0.6);
-    await drawPoint(0.35, 0.55);
+    await drawPoint(0.2, 0.25);
+    await drawPoint(0.8, 0.8);
     click("Finish path");
     await until(() => document.querySelectorAll(".spline-list button").length === 3);
     click("View");
@@ -695,13 +735,12 @@ export async function checkSharedLibrary() {
       () => document.querySelector("[data-map-name]")?.getAttribute("data-map-name") === "Lincoln",
     );
     click("Draw");
-    await select("Wall preset", "Battlement wall");
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    click("Draw wall");
+    await until(() => !!document.querySelector(".spline-preset-grid"));
+    click("Battlement wall");
     await until(() => !!document.querySelector('input[aria-label="Corner tower scale"]'));
+    await until(() => cornerSource() === "prop-0");
     assert(
-      (document.querySelector('select[aria-label="Corner tower asset"]') as HTMLSelectElement)
-        .value === "prop-0",
+      cornerSource() === "prop-0",
       "Preset did not restore its tower across levels",
     );
     click("Cancel");

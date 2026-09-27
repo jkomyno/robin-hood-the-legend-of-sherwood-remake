@@ -641,6 +641,12 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
             spline.id,
             "flipCrossSection must be boolean",
           );
+        if (spline.sourceStraight !== undefined)
+          check(
+            typeof spline.sourceStraight === "boolean",
+            spline.id,
+            "sourceStraight must be boolean",
+          );
         if (spline.sourceAngle !== undefined) finite(spline.sourceAngle, "spline.sourceAngle");
         if (spline.cornerAsset !== undefined) {
           check(assetIds.has(spline.cornerAsset), spline.id, "missing corner tower asset source");

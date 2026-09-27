@@ -1,0 +1,226 @@
+[
+  {
+    "id": "spline-derby-upper-curtain",
+    "name": "Derby \u00b7 Upper bailey battlements",
+    "source": "derby-upper-east-curtain",
+    "start": 0.22,
+    "end": 0.43,
+    "straighten": true,
+    "cornerAsset": "derby-lower-west-wall-turret",
+    "cornerScale": 1.4,
+    "cornerMinAngle": 35
+  },
+  {
+    "id": "spline-derby-lower-curtain",
+    "name": "Derby \u00b7 Lower bailey stone wall",
+    "source": "derby-lower-east-curtain",
+    "start": 0.15,
+    "end": 0.35,
+    "straighten": true,
+    "cornerAsset": "derby-lower-west-wall-turret",
+    "cornerScale": 1.7,
+    "cornerMinAngle": 35
+  },
+  {
+    "id": "spline-derby-yard-fence",
+    "name": "Derby \u00b7 Timber yard fence",
+    "source": "derby-lower-northwest-yard-fence",
+    "start": 0.08,
+    "end": 0.92,
+    "include_nodes": [
+      "Connected timber rails and posts"
+    ],
+    "clip_box": [
+      [
+        -65,
+        35
+      ],
+      [
+        20,
+        80
+      ]
+    ],
+    "angle": 24
+  },
+  {
+    "id": "spline-leicester-castle",
+    "name": "Leicester \u00b7 Castle curtain",
+    "source": "leicester-south-wall-west",
+    "start": 0.1,
+    "end": 0.9,
+    "angle": -30,
+    "straighten": true,
+    "cornerAsset": "leicester-west-moat-tower",
+    "cornerScale": 0.7,
+    "cornerMinAngle": 35
+  },
+  {
+    "id": "spline-leicester-stone-boundary",
+    "name": "Leicester \u00b7 Low stone boundary",
+    "source": "leicester-mill-path-boundary-wall",
+    "start": 0.1,
+    "end": 0.9,
+    "straighten": true,
+    "level_top": true
+  },
+  {
+    "id": "spline-leicester-rail-fence",
+    "name": "Leicester \u00b7 Timber rail fence",
+    "source": "leicester-roadside-rail-fence",
+    "start": 0.2,
+    "end": 0.7
+  },
+  {
+    "id": "spline-lincoln-east-curtain",
+    "name": "Lincoln \u00b7 Crenellated curtain",
+    "source": "lincoln-east-curtain-wall-middle",
+    "start": 0.15,
+    "end": 0.85,
+    "include_nodes": [
+      "component 141",
+      "component 151",
+      "component 158",
+      "component 159"
+    ],
+    "angle": 43,
+    "straighten": true,
+    "cornerAsset": "lincoln-east-gate-north-tower",
+    "cornerScale": 0.9,
+    "cornerMinAngle": 35
+  },
+  {
+    "id": "spline-lincoln-garden-wall",
+    "name": "Lincoln \u00b7 Garden boundary",
+    "source": "lincoln-garden-north-wall",
+    "start": 0.15,
+    "end": 0.85,
+    "straighten": true
+  },
+  {
+    "id": "spline-lincoln-wattle-fence",
+    "name": "Lincoln \u00b7 Wattle fence",
+    "source": "lincoln-village-field-wattle-fence",
+    "start": 0.1,
+    "end": 0.9,
+    "include_nodes": [
+      "Source component 038"
+    ]
+  },
+  {
+    "id": "spline-nottingham-curtain",
+    "name": "Nottingham \u00b7 Town battlements",
+    "source": "nottingham-south-curtain-wall-3",
+    "start": 0.08,
+    "end": 0.92,
+    "straighten": true,
+    "cornerAsset": "nottingham-northeast-round-tower",
+    "cornerScale": 1,
+    "cornerMinAngle": 35
+  },
+  {
+    "id": "spline-nottingham-castle-wall",
+    "name": "Nottingham \u00b7 Castle courtyard wall",
+    "source": "nottingham-castle-east-courtyard-wall",
+    "start": 0.2,
+    "end": 0.64,
+    "include_nodes": [
+      "component 325",
+      "volume 326"
+    ],
+    "clip_box": [
+      [
+        0,
+        250
+      ],
+      [
+        -250,
+        100
+      ]
+    ],
+    "angle": 85,
+    "straighten": true,
+    "cornerAsset": "nottingham-castle-east-round-tower",
+    "cornerScale": 1,
+    "cornerMinAngle": 35
+  },
+  {
+    "id": "spline-nottingham-field-wall",
+    "name": "Nottingham \u00b7 Dry-stone field wall",
+    "source": "nottingham-village-south-field-wall",
+    "start": 0.2,
+    "end": 0.8,
+    "clip_box": [
+      [
+        -110,
+        -20
+      ],
+      [
+        -100,
+        100
+      ]
+    ],
+    "angle": 73,
+    "straighten": true,
+    "level_top": true
+  },
+  {
+    "id": "spline-york-curtain",
+    "name": "York \u00b7 Town curtain",
+    "source": "york-group-251",
+    "start": 0.05,
+    "end": 0.95,
+    "straighten": true
+  },
+  {
+    "id": "spline-york-inner-wall",
+    "name": "York \u00b7 Inner bailey wall",
+    "source": "york-group-872",
+    "start": 0.1,
+    "end": 0.9,
+    "straighten": true
+  },
+  {
+    "id": "spline-croisement02-stone-wall",
+    "name": "Croisement02 \u00b7 Woodland dry-stone wall",
+    "source": "croisement02-group-011",
+    "start": 0.15,
+    "end": 0.85,
+    "straighten": true,
+    "level_top": true
+  },
+  {
+    "id": "spline-croisement02-wattle",
+    "name": "Croisement02 \u00b7 Woven field fence",
+    "source": "croisement02-group-020",
+    "start": 0.1,
+    "end": 0.9
+  },
+  {
+    "id": "spline-sherwood-rail",
+    "name": "Sherwood \u00b7 Bridge railing",
+    "source": "sherwood-group-121",
+    "start": 0.2,
+    "end": 0.7
+  },
+  {
+    "id": "spline-croisement01-bank",
+    "name": "Croisement01 \u00b7 Mossy rock bank",
+    "source": "croisement01-group-003",
+    "start": 0.12,
+    "end": 0.6,
+    "include_nodes": [
+      "building-003"
+    ],
+    "straighten": true,
+    "level_top": true
+  },
+  {
+    "id": "spline-croisement03-bank",
+    "name": "Croisement03 \u00b7 Low stone bank",
+    "source": "croisement03-group-087",
+    "start": 0.1,
+    "end": 0.9,
+    "straighten": true,
+    "level_top": true
+  }
+]

@@ -5,6 +5,7 @@ export type WallPreset = Pick<
   | "asset"
   | "axis"
   | "sourceAngle"
+  | "sourceStraight"
   | "sourceStart"
   | "sourceEnd"
   | "flipCrossSection"
@@ -16,12 +17,13 @@ export type WallPreset = Pick<
   | "cornerWidthScale"
   | "cornerRotation"
 >;
-export function wallPreset(path: LevelSpline): WallPreset {
+export function wallPreset(path: WallPreset): WallPreset {
   const {
     name,
     asset,
     axis,
     sourceAngle,
+    sourceStraight,
     sourceStart,
     sourceEnd,
     flipCrossSection,
@@ -38,6 +40,7 @@ export function wallPreset(path: LevelSpline): WallPreset {
     asset,
     axis,
     sourceAngle,
+    sourceStraight,
     sourceStart,
     sourceEnd,
     flipCrossSection,

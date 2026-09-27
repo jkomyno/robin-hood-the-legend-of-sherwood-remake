@@ -13,6 +13,8 @@ export interface LevelSpline {
   asset?: string;
   axis?: "x" | "y";
   sourceAngle?: number;
+  /** Prepared straight strips retain their section shape, including rails and posts. */
+  sourceStraight?: boolean;
   /** Reflect the cross-section so the parapet can face the exterior. */
   flipCrossSection?: boolean;
   /** Optional matching tower from the wall preset, placed at qualifying turns. */
