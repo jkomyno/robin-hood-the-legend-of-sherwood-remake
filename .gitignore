@@ -91,3 +91,4 @@ __pycache__/
 # local scratch files
 /a
 /test.json
+/extra-content
