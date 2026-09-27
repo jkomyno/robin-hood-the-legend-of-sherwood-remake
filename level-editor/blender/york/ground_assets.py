@@ -60,13 +60,16 @@ def main():
     originals.hide_viewport = True
     changed, unaffected, removed_evidence = [], [], []
     for obj in objects:
-        if obj['source_node'] == 'ground' or obj['source_node'] in support_ids:
+        floor = extensions.get(obj.get('asset_group'))
+        is_support = obj['source_node'] in support_ids
+        if obj['source_node'] == 'ground' or (is_support and not floor):
             unaffected.append(obj.name)
             continue
         obj.data.calc_loop_triangles()
         uvs = list(obj.data.uv_layers)
-        floor = extensions.get(obj.get('asset_group'))
-        object_cutters = cutters + (floor_cutters(floor) if floor else [])
+        # A support may itself continue below its lower landing. Only its
+        # reviewed floor may trim it; never subtract its own support volume.
+        object_cutters = ([] if is_support else cutters) + (floor_cutters(floor) if floor else [])
         retained, removed, total = [], [], 0.0
         for tri in obj.data.loop_triangles:
             points = [tuple(obj.matrix_world @ obj.data.vertices[v].co) + tuple(

@@ -1,0 +1,105 @@
+{
+  "scope": "Grouping and reviewed floor contacts only; no completed-geometry or texture approval",
+  "submitted_review_count": 65,
+  "changes": [
+    {
+      "source": "building-499",
+      "from": "york-southwest-west-gatehouse",
+      "to": "york-southwest-east-gatehouse",
+      "reason": "Both roof slopes meet at the identical ridge; the former west gatehouse is the missing half of this roof."
+    },
+    {
+      "source": "building-504",
+      "from": "york-southwest-market-corner-house",
+      "to": "york-southwest-east-gatehouse",
+      "reason": "The narrow roof strip continues the gatehouse eave and was detached into the nearby corner house."
+    },
+    {
+      "source": "building-523",
+      "from": "york-southwest-west-gatehouse",
+      "to": "york-southwest-gatehouse-west-boundary-wall",
+      "reason": "Separate the short adjoining boundary wall from the complete gatehouse."
+    },
+    {
+      "source": "building-517",
+      "from": "york-southwest-market-west-low-house",
+      "to": "york-southwest-market-west-courtyard-wall",
+      "reason": "Separate the courtyard wall from the low house as requested."
+    },
+    {
+      "source": "building-648",
+      "from": "york-west-market-frontage-dormer-house",
+      "to": "york-west-market-frontage-rear-gable-house",
+      "reason": "These two roof slopes form a separate building behind the frontage row, not part of the dormer house."
+    },
+    {
+      "source": "building-649",
+      "from": "york-west-market-frontage-dormer-house",
+      "to": "york-west-market-frontage-rear-gable-house",
+      "reason": "These two roof slopes form a separate building behind the frontage row, not part of the dormer house."
+    },
+    {
+      "source": "building-650",
+      "component": "front-shop",
+      "from": "york-west-market-frontage-corner-shop",
+      "to": "york-west-market-frontage-shared-occlusion-volume",
+      "reason": "Separate the common occlusion volume that crosses the entire row; it is not an individual house floor or roof."
+    },
+    {
+      "source": "building-650",
+      "component": "gable-house",
+      "from": "york-west-market-frontage-gabled-house",
+      "to": "york-west-market-frontage-shared-occlusion-volume",
+      "reason": "Separate the common occlusion volume that crosses the entire row; it is not an individual house floor or roof."
+    },
+    {
+      "source": "building-650",
+      "component": "dormer-house",
+      "from": "york-west-market-frontage-dormer-house",
+      "to": "york-west-market-frontage-shared-occlusion-volume",
+      "reason": "Separate the common occlusion volume that crosses the entire row; it is not an individual house floor or roof."
+    },
+    {
+      "source": "building-650",
+      "component": "red-roof-house",
+      "from": "york-west-market-frontage-red-roof-house",
+      "to": "york-west-market-frontage-shared-occlusion-volume",
+      "reason": "Separate the common occlusion volume that crosses the entire row; it is not an individual house floor or roof."
+    },
+    {
+      "source": "building-650",
+      "component": "north-house",
+      "from": "york-west-market-frontage-north-end-house",
+      "to": "york-west-market-frontage-shared-occlusion-volume",
+      "reason": "Separate the common occlusion volume that crosses the entire row; it is not an individual house floor or roof."
+    },
+    {
+      "source": "building-602",
+      "from": "york-west-town-lane-central-timber-house",
+      "to": "york-west-town-lane-narrow-timber-house",
+      "reason": "The detached doorstep belongs to the narrow house doorway, not the central house farther up the lane."
+    }
+  ],
+  "floor_changes": [
+    "york-southwest-east-gatehouse",
+    "york-southwest-gatehouse-west-boundary-wall",
+    "york-southwest-market-west-courtyard-wall",
+    "york-west-lane-access-steps",
+    "york-west-market-frontage-corner-shop",
+    "york-west-market-frontage-gabled-house",
+    "york-west-market-frontage-dormer-house",
+    "york-west-market-frontage-red-roof-house",
+    "york-west-market-frontage-north-end-house",
+    "york-west-market-frontage-rear-gable-house",
+    "york-west-market-frontage-shared-occlusion-volume",
+    "york-west-town-lane-central-timber-house",
+    "york-west-town-lane-rear-timber-house",
+    "york-west-town-lane-narrow-timber-house"
+  ],
+  "asset_notes": {
+    "york-west-market-frontage-shared-occlusion-volume": "This shared source volume controls occlusion across the row. Its native record is opaque but non-solid and not mouse-selectable; it is not a separate visible building or terrain floor. Retained separately for complete source ownership; replacing its coarse shape belongs to geometry refinement."
+  },
+  "observations": {
+    "floor_plane": "Source 088 is planar and rises along the lane. A constant height-90 floor missed the buried parts beside its higher end; extend its measured plane only under the reviewed assets."
+  }
+}

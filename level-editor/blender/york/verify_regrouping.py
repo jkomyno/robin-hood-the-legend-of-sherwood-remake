@@ -22,7 +22,8 @@ def main():
     before = json.loads(args.before.read_text())
     after = json.loads(current.read_text())
     audit = json.loads(args.audit.read_text())
-    affected = set()
+    floor_changes = set(audit.get('floor_changes', []))
+    affected = set(floor_changes)
     for change in audit['changes']:
         affected.add(change['from'])
         if 'to' in change:
@@ -41,10 +42,14 @@ def main():
     def parts(doc):
         return {(p['source_node'], p['component']): p for g in doc.values() for p in g['parts']}
     old, new = parts(before), parts(after)
+    regrounded = {(p['source_node'],p['component']) for identity,record in after.items()
+                  if identity in floor_changes for p in record['parts']}
     errors = []
     checked = 0
     max_drift = 0
     for key in old.keys() & new.keys():
+        if key in regrounded:
+            continue  # Retained surfaces and UVs are checked by verify_grounding.
         a, b = old[key], new[key]
         if a['triangles'] != b['triangles'] or len(a['positions']) != len(b['positions']):
             errors.append({'part': key, 'reason': 'Topology changed'})
@@ -58,7 +63,8 @@ def main():
               'after_sha256': sha(current), 'unchanged_assets': unchanged,
               'changed_existing_assets': sorted(set(after) & affected & set(before)),
               'added_assets': added, 'retired_assets': removed,
-              'preserved_components': checked, 'max_position_drift': max_drift, 'errors': errors}
+              'preserved_components': checked, 'regrounded_components':len(regrounded),
+              'max_position_drift': max_drift, 'errors': errors}
     args.output.write_text(json.dumps(result, indent=2)+'\n')
     print(json.dumps({k:len(v) if isinstance(v,list) and k!='errors' else v for k,v in result.items()}))
     if errors:

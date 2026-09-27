@@ -2946,13 +2946,27 @@
       ]
     },
     {
-      "id": "york-southwest-west-gatehouse",
-      "name": "Southwest west gatehouse",
+      "id": "york-southwest-east-gatehouse",
+      "name": "Southwest east gatehouse",
       "parts": [
         {
           "obstacle": 499,
           "name": "Structural volume 499"
         },
+        {
+          "obstacle": 500,
+          "name": "Structural volume 500"
+        },
+        {
+          "obstacle": 504,
+          "name": "Raised sloped section 504"
+        }
+      ]
+    },
+    {
+      "id": "york-southwest-gatehouse-west-boundary-wall",
+      "name": "Southwest gatehouse west boundary wall",
+      "parts": [
         {
           "obstacle": 523,
           "name": "Structural volume 523"
@@ -2960,23 +2974,9 @@
       ]
     },
     {
-      "id": "york-southwest-east-gatehouse",
-      "name": "Southwest east gatehouse",
-      "parts": [
-        {
-          "obstacle": 500,
-          "name": "Structural volume 500"
-        }
-      ]
-    },
-    {
       "id": "york-southwest-market-corner-house",
       "name": "Southwest market corner house",
       "parts": [
-        {
-          "obstacle": 504,
-          "name": "Raised sloped section 504"
-        },
         {
           "obstacle": 506,
           "name": "Structural volume 506"
@@ -3024,7 +3024,13 @@
         {
           "obstacle": 512,
           "name": "Structural volume 512"
-        },
+        }
+      ]
+    },
+    {
+      "id": "york-southwest-market-west-courtyard-wall",
+      "name": "Southwest market west courtyard wall",
+      "parts": [
         {
           "obstacle": 517,
           "name": "Structural volume 517"
@@ -3246,10 +3252,6 @@
         {
           "obstacle": 600,
           "name": "Raised section 600"
-        },
-        {
-          "obstacle": 602,
-          "name": "Structural volume 602"
         }
       ]
     },
@@ -3308,6 +3310,10 @@
         {
           "obstacle": 587,
           "name": "Raised sloped section 587"
+        },
+        {
+          "obstacle": 602,
+          "name": "Structural volume 602"
         }
       ]
     },
@@ -3436,13 +3442,6 @@
         {
           "obstacle": 644,
           "name": "Raised sloped section 644"
-        },
-        {
-          "obstacle": 650,
-          "name": "Shared surface / front-shop",
-          "components": [
-            "front-shop"
-          ]
         }
       ]
     },
@@ -3477,13 +3476,6 @@
         {
           "obstacle": 647,
           "name": "Structural volume 647"
-        },
-        {
-          "obstacle": 650,
-          "name": "Shared surface / gable-house",
-          "components": [
-            "gable-house"
-          ]
         }
       ]
     },
@@ -3502,21 +3494,6 @@
         {
           "obstacle": 632,
           "name": "Structural volume 632"
-        },
-        {
-          "obstacle": 648,
-          "name": "Structural volume 648"
-        },
-        {
-          "obstacle": 649,
-          "name": "Structural volume 649"
-        },
-        {
-          "obstacle": 650,
-          "name": "Shared surface / dormer-house",
-          "components": [
-            "dormer-house"
-          ]
         },
         {
           "obstacle": 651,
@@ -3539,13 +3516,6 @@
         {
           "obstacle": 638,
           "name": "Structural volume 638"
-        },
-        {
-          "obstacle": 650,
-          "name": "Shared surface / red-roof-house",
-          "components": [
-            "red-roof-house"
-          ]
         }
       ]
     },
@@ -3572,13 +3542,6 @@
         {
           "obstacle": 640,
           "name": "Structural volume 640"
-        },
-        {
-          "obstacle": 650,
-          "name": "Shared surface / north-house",
-          "components": [
-            "north-house"
-          ]
         }
       ]
     },
@@ -5521,6 +5484,37 @@
           ]
         }
       ]
+    },
+    {
+      "id": "york-west-market-frontage-rear-gable-house",
+      "name": "West market frontage rear gable house",
+      "parts": [
+        {
+          "obstacle": 648,
+          "name": "Structural volume 648"
+        },
+        {
+          "obstacle": 649,
+          "name": "Structural volume 649"
+        }
+      ]
+    },
+    {
+      "id": "york-west-market-frontage-shared-occlusion-volume",
+      "name": "West market frontage shared occlusion volume",
+      "parts": [
+        {
+          "obstacle": 650,
+          "name": "Shared surfaces / front-shop, gable-house, dormer-house, red-roof-house, north-house",
+          "components": [
+            "front-shop",
+            "gable-house",
+            "dormer-house",
+            "red-roof-house",
+            "north-house"
+          ]
+        }
+      ]
     }
   ],
   "canonical_owners": {
@@ -6044,10 +6038,10 @@
     "building-503": "york-southwest-ivy-covered-square-tower",
     "building-524": "york-southwest-ivy-covered-square-tower",
     "building-525": "york-southwest-ivy-covered-square-tower",
-    "building-499": "york-southwest-west-gatehouse",
-    "building-523": "york-southwest-west-gatehouse",
+    "building-499": "york-southwest-east-gatehouse",
     "building-500": "york-southwest-east-gatehouse",
-    "building-504": "york-southwest-market-corner-house",
+    "building-504": "york-southwest-east-gatehouse",
+    "building-523": "york-southwest-gatehouse-west-boundary-wall",
     "building-506": "york-southwest-market-corner-house",
     "building-505": "york-southwest-market-square-tower",
     "building-507": "york-southwest-market-square-tower",
@@ -6057,7 +6051,7 @@
     "building-513": "york-southwest-market-square-tower",
     "building-511": "york-southwest-market-west-low-house",
     "building-512": "york-southwest-market-west-low-house",
-    "building-517": "york-southwest-market-west-low-house",
+    "building-517": "york-southwest-market-west-courtyard-wall",
     "building-514": "york-southwest-market-north-house",
     "building-515": "york-southwest-market-north-house",
     "building-516": "york-southwest-market-north-house",
@@ -6099,7 +6093,6 @@
     "building-596": "york-west-town-lane-central-timber-house",
     "building-597": "york-west-town-lane-central-timber-house",
     "building-600": "york-west-town-lane-central-timber-house",
-    "building-602": "york-west-town-lane-central-timber-house",
     "building-594": "york-west-town-lane-rear-timber-house",
     "building-598": "york-west-town-lane-rear-timber-house",
     "building-599": "york-west-town-lane-rear-timber-house",
@@ -6110,6 +6103,7 @@
     "building-582": "york-west-town-lane-narrow-timber-house",
     "building-583": "york-west-town-lane-narrow-timber-house",
     "building-587": "york-west-town-lane-narrow-timber-house",
+    "building-602": "york-west-town-lane-narrow-timber-house",
     "building-588": "york-west-town-lane-broad-timber-house",
     "building-589": "york-west-town-lane-broad-timber-house",
     "building-590": "york-west-town-lane-broad-timber-house",
@@ -6136,7 +6130,6 @@
     "building-642": "york-west-market-frontage-corner-shop",
     "building-643": "york-west-market-frontage-corner-shop",
     "building-644": "york-west-market-frontage-corner-shop",
-    "building-650": "york-west-market-frontage-corner-shop",
     "building-626": "york-west-market-frontage-gabled-house",
     "building-627": "york-west-market-frontage-gabled-house",
     "building-628": "york-west-market-frontage-gabled-house",
@@ -6147,8 +6140,6 @@
     "building-630": "york-west-market-frontage-dormer-house",
     "building-631": "york-west-market-frontage-dormer-house",
     "building-632": "york-west-market-frontage-dormer-house",
-    "building-648": "york-west-market-frontage-dormer-house",
-    "building-649": "york-west-market-frontage-dormer-house",
     "building-651": "york-west-market-frontage-dormer-house",
     "building-633": "york-west-market-frontage-red-roof-house",
     "building-634": "york-west-market-frontage-red-roof-house",
@@ -6495,7 +6486,10 @@
     "building-932": "york-market-tavern-outdoor-furniture",
     "building-933": "york-market-tavern-outdoor-furniture",
     "building-041": "york-market-north-display-tables",
-    "building-937": "york-market-north-display-tables"
+    "building-937": "york-market-north-display-tables",
+    "building-648": "york-west-market-frontage-rear-gable-house",
+    "building-649": "york-west-market-frontage-rear-gable-house",
+    "building-650": "york-west-market-frontage-shared-occlusion-volume"
   },
   "terrain": {
     "source_node": "ground",
@@ -6569,7 +6563,7 @@
         "gable-house",
         "front-shop"
       ],
-      "rationale": "Five visible frontage buildings share a single lower volume. Vertical seams follow frontage divisions; continuation through hidden foundation surfaces is inferred. Preserve the complete surface union and interpolate existing UVs."
+      "rationale": "Historical frontage slices now belong together to the shared occlusion-volume asset. Retain their complete surface union and UVs; this non-solid source is not an individual building foundation."
     },
     {
       "source_node": "building-769",

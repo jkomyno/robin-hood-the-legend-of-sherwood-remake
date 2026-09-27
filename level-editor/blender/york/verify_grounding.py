@@ -8,6 +8,7 @@ ROOT=Path(__file__).resolve().parents[3]
 OUT=ROOT/'level-editor/work/york-refinement'
 sys.path.insert(0,str(Path(__file__).parent))
 from terrain_clip import area, cross, dot
+from floor_contacts import height_at
 
 
 def coordinates(p,a,b,c):
@@ -112,9 +113,10 @@ def main():
     for obj in working.objects:
         if obj.type != 'MESH' or obj.hide_render or obj.get('asset_group') not in floors:
             continue
-        z = floors[obj['asset_group']]['height_scene']
+        floor = floors[obj['asset_group']]
         for v in obj.data.vertices:
-            if (obj.matrix_world @ v.co).z < z-.003:
+            point = obj.matrix_world @ v.co
+            if point.z < height_at(floor, point.x, point.y)-.003:
                 raise ValueError('Below reviewed floor: '+obj.name)
             floor_vertices += 1
     result={'status':'PASS','changed_meshes':len(changes),'retained_surface_samples':samples,

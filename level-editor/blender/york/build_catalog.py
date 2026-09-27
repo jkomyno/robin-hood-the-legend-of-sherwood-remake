@@ -48,7 +48,12 @@ def main():
                 part = {'obstacle': number, 'name': f'{role} {number:03}'}
                 if component:
                     part.update(name='Shared surface / ' + component, components=[component])
-                parts.append(part)
+                existing = next((p for p in parts if p['obstacle']==number), None)
+                if component and existing and 'components' in existing:
+                    existing['components'].append(component)
+                    existing['name'] = 'Shared surfaces / ' + ', '.join(existing['components'])
+                else:
+                    parts.append(part)
                 owners.setdefault(f'building-{number:03}', identifier)
         groups.append({'id': identifier, 'name': name, 'parts': sorted(parts, key=lambda p:p['obstacle'])})
     expected = {r['source_node'] for r in inventory['objects']} - {'ground'}
@@ -65,7 +70,7 @@ def main():
     catalog['partitions'] = [{'source_node': 'building-650', 'coordinate': 'game_y - 0.325 * game_x',
         'boundaries': [669.0,716.0,774.0,832.0],
         'components_ascending': ['north-house','red-roof-house','dormer-house','gable-house','front-shop'],
-        'rationale': 'Five visible frontage buildings share a single lower volume. Vertical seams follow frontage divisions; continuation through hidden foundation surfaces is inferred. Preserve the complete surface union and interpolate existing UVs.'}]
+        'rationale': 'Historical frontage slices now belong together to the shared occlusion-volume asset. Retain their complete surface union and UVs; this non-solid source is not an individual building foundation.'}]
     for number in [769,795]:
         catalog['partitions'].append({'source_node': f'building-{number:03}',
             'coordinate': 'game_y + 0.305 * game_x', 'axis_coefficients': [0.305,1.0],

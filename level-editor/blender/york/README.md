@@ -3,7 +3,7 @@
 This is the first refinement step: freeze source evidence, inspect the whole map,
 and assign the reconstructed surfaces to named logical assets. The reviewed
 catalog is `../../refinement/catalogs/york.json`; `ownership.txt` is its editable
-recipe. It replaces 460 proximity groups with 249 named groups plus background
+recipe. It replaces 460 proximity groups with 252 named groups plus background
 terrain. All 972 visible source records and nine records without meshes are
 accounted for. Distinct adjoining buildings are separate assets, including attached towers
 and gatehouses. Cathedral towers and the north precinct hall are separate from
@@ -39,10 +39,10 @@ refinement step. Painted vegetation and decorative details remain part of the
 background or building textures, not newly created individual models. Static
 coverage does not imply complete animated state or scenery geometry.
 
-Five market-front houses share source 650. Its surface is partitioned into five
-component selectors following visible frontage divisions. Continuations through
-hidden foundations are inferred; no caps are added. The complete original is
-retained hidden. The castle hall and east round tower also share two surfaces
+Source 650 spans five market-front houses and is now a separate shared occlusion
+volume. Its five historical component selectors remain together, preserving their
+complete surface union without adding caps. The complete original is retained
+hidden. The castle hall and east round tower also share two surfaces
 (sources 769 and 795), split along their visible junction. The continuation
 through their hidden intersection is inferred. Surface area and UV interpolation
 are checked against all three retained originals.
@@ -108,6 +108,33 @@ settings come from their `view_overrides` entries. To prepare previews during
 export, run `build_gallery.py --previews-only`; after export succeeds, run
 `build_grouping_review.py` to validate the evidence and refresh the pending gallery.
 
+### Fourth partial review: roof halves, frontage and sloping floors
+
+`grouping-audit-round-4.json` records 65 further decisions and twelve component
+transfers. Roof halves 499/500 and eave 504 belong to one gatehouse; its west
+boundary wall 523 is separate. Courtyard wall 517 leaves the low house. Roofs
+648/649 form a separate rear building, and doorstep 602 returns to the narrow
+timber house. Source 650 is an opaque, non-solid, non-selectable native volume
+across the frontage; keeping it separate avoids presenting its sloping top as
+part of five individual buildings. Its coarse shape remains geometry-refinement
+work, and its native flags are preserved.
+
+The adjoining lane 088 rises rather than staying at height 90. The reviewed
+floor continuations use its measured plane, clamped below at the lower street.
+The plane matches all six native lane heights within 0.00014 game units. Apply
+it only beneath the named frontage and lane assets; hidden continuation remains
+an explicit inference. Stair 106 now loses its support below the lower landing
+at height 50. Supports with an explicit floor are trimmed only by that floor,
+never by their own support volume. Verification checks every retained vertex
+against the local sloping floor, together with surface area and UV preservation.
+
+The previous gallery is `review-v10/`; scenes, catalog and export are under
+`review-round-4/before/`. There are 237 identical outside-asset geometry records,
+12 changed existing assets, four added assets and one retired asset. The preservation
+check covers 933 unchanged components; the floor verifier covers the 55 explicitly
+regrounded components. Use the same audit commands as round 3 with the round-4
+audit/output paths and `review-v10/geometry.json` as the previous geometry.
+
 
 Base patches and Fog mission doors are inventoried separately. Door receiver
 ownership and interior/exterior projection receivers still require authored
@@ -118,7 +145,7 @@ the static grouping review.
 
 `ground_assets.py` reads the frozen grouped scene and subtracts the volumes below
 the reviewed terrain, ramp and raised-lane surfaces from each asset. It trims
-476 component meshes across 173 assets. All 249 named assets and terrain remain.
+477 component meshes across 177 assets. All 252 named assets and terrain remain.
 Cuts follow both the support footprint and its sloping height, preserving exposed
 lower walls at terrace edges. Bridge decks and roofs are not solid-ground cutters.
 The eleven support sources are listed explicitly in the recipe and its report.
@@ -126,7 +153,7 @@ The eleven support sources are listed explicitly in the recipe and its report.
 Terrain footprints often stop at a building frontage instead of continuing
 under its foundation. Footprint-only clipping therefore missed the courtyard
 lodges and left partial foundations under the stairs and other edge assets.
-`floor-contacts.json` records 25 reviewed floor continuations, with the adjoining
+`floor-contacts.json` records 38 reviewed floor continuations, with the adjoining
 support, game height and source-artwork rationale for each. `floor_contacts.py`
 applies each continuation only to its named asset. Lower streets, exposed
 retaining walls, bridges and buildings with visible lower facades retain their

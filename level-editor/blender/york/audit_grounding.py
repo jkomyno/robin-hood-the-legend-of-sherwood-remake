@@ -9,7 +9,7 @@ ROOT=Path(__file__).resolve().parents[3]
 OUT=ROOT/'level-editor/work/york-refinement'
 sys.path.insert(0,str(Path(__file__).parent))
 from verify_grounding import terrain_height
-from floor_contacts import load_contacts
+from floor_contacts import load_contacts, height_at
 
 
 def height_inside(x,y,tri):
@@ -68,12 +68,12 @@ def main():
     contacts = load_contacts()
     floor_checks = []
     for identity, contact in contacts.items():
-        height = contact['floor_game_z']/math.cos(math.radians(35))
         points = [p for part in after[identity]['parts'] for p in part['positions']]
         low = min(p[2] for p in points)
-        floor_checks.append({'asset':identity,'minimum_z':low,'floor_z':height})
-        if low < height-.003:
-            suspects.append({'asset':identity,'max_depth':height-low,'reason':'Below reviewed floor continuation'})
+        depth = max(height_at(contact,p[0],p[1])-p[2] for p in points)
+        floor_checks.append({'asset':identity,'minimum_z':low,'maximum_depth_below_floor':depth})
+        if depth > .003:
+            suspects.append({'asset':identity,'max_depth':depth,'reason':'Below reviewed floor continuation'})
     result={'status':'PASS' if not suspects else 'FAIL','unchanged_components':len(old)-len(changed),
         'floor_continuations':floor_checks,
         'max_unchanged_position_drift':drift,'retained_surface_samples_checked':samples,'buried_candidates':suspects}

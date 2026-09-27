@@ -67,6 +67,25 @@ class TerrainClipTests(unittest.TestCase):
         river_wall = [(20,1,0),(21,1,0),(20,1,10)]
         self.assertEqual(clip(river_wall,cutters(floor)),([river_wall],[]))
 
+    def test_lane_continuation_clamps_to_lower_street_and_preserves_uvs(self):
+        import math
+        from floor_contacts import height_at
+        cosine, sine = math.cos(math.radians(35)), math.sin(math.radians(35))
+        contact = {'floor_game_z':5*cosine,
+                   'plane_game_z':[.5*cosine,-.25*cosine/sine,2*cosine]}
+        wall = [(0,1,0,0),(10,1,12,1),(0,1,12,1)]
+        floor = extension('lane-house',wall,contact)
+        kept, removed = clip(wall,cutters(floor))
+        self.assertTrue(kept)
+        self.assertTrue(removed)
+        self.assertAlmostEqual(height_at(contact,0,1),5)
+        self.assertAlmostEqual(height_at(contact,10,1),7.25)
+        self.assertAlmostEqual(sum(area(p) for p in kept)+sum(area(p) for p,_ in removed),area(wall))
+        for p in kept:
+            for v in p:
+                self.assertGreaterEqual(v[2],max(5,.5*v[0]+.25*v[1]+2)-1e-6)
+                self.assertAlmostEqual(v[3],v[2]/12)
+
 
 if __name__ == '__main__':
     unittest.main()

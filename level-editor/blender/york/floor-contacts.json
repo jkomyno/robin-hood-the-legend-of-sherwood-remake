@@ -17,11 +17,6 @@
       "floor_game_z": 90.00101,
       "reason": "Turret entrance meets the raised inner street."
     },
-    "york-southwest-west-gatehouse": {
-      "support_source": "building-086",
-      "floor_game_z": 90.00101,
-      "reason": "Gate entrance meets the raised inner lane."
-    },
     "york-southwest-market-west-low-house": {
       "support_source": "building-086",
       "floor_game_z": 90.00101,
@@ -126,6 +121,121 @@
       "support_source": "building-093",
       "floor_game_z": 50.00101,
       "reason": "The separated courtyard wall retains the same reviewed street-floor contact as its former house group."
+    },
+    "york-southwest-east-gatehouse": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "Retain the reviewed lower-town floor under the regrouped gatehouse or adjoining courtyard wall."
+    },
+    "york-southwest-gatehouse-west-boundary-wall": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "Retain the reviewed lower-town floor under the regrouped gatehouse or adjoining courtyard wall."
+    },
+    "york-southwest-market-west-courtyard-wall": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "Retain the reviewed lower-town floor under the regrouped gatehouse or adjoining courtyard wall."
+    },
+    "york-west-lane-access-steps": {
+      "support_source": "building-106",
+      "floor_game_z": 50.001003,
+      "reason": "The native stair lower landing is at game height 50 and upper landing at 90. Remove the support below the lower landing while preserving the sloping top."
+    },
+    "york-west-market-frontage-corner-shop": {
+      "support_source": "building-088",
+      "floor_game_z": 90.00101,
+      "plane_game_z": [
+        0.10303289770864325,
+        -0.19781612284813016,
+        251.23253679099201
+      ],
+      "reason": "Continue the adjoining sloping lane under this asset. The plane matches all six native lane heights within 0.00014 game units; clamp at the lower town street height 90. Hidden continuation is inferred."
+    },
+    "york-west-market-frontage-gabled-house": {
+      "support_source": "building-088",
+      "floor_game_z": 90.00101,
+      "plane_game_z": [
+        0.10303289770864325,
+        -0.19781612284813016,
+        251.23253679099201
+      ],
+      "reason": "Continue the adjoining sloping lane under this asset. The plane matches all six native lane heights within 0.00014 game units; clamp at the lower town street height 90. Hidden continuation is inferred."
+    },
+    "york-west-market-frontage-dormer-house": {
+      "support_source": "building-088",
+      "floor_game_z": 90.00101,
+      "plane_game_z": [
+        0.10303289770864325,
+        -0.19781612284813016,
+        251.23253679099201
+      ],
+      "reason": "Continue the adjoining sloping lane under this asset. The plane matches all six native lane heights within 0.00014 game units; clamp at the lower town street height 90. Hidden continuation is inferred."
+    },
+    "york-west-market-frontage-red-roof-house": {
+      "support_source": "building-088",
+      "floor_game_z": 90.00101,
+      "plane_game_z": [
+        0.10303289770864325,
+        -0.19781612284813016,
+        251.23253679099201
+      ],
+      "reason": "Continue the adjoining sloping lane under this asset. The plane matches all six native lane heights within 0.00014 game units; clamp at the lower town street height 90. Hidden continuation is inferred."
+    },
+    "york-west-market-frontage-north-end-house": {
+      "support_source": "building-088",
+      "floor_game_z": 90.00101,
+      "plane_game_z": [
+        0.10303289770864325,
+        -0.19781612284813016,
+        251.23253679099201
+      ],
+      "reason": "Continue the adjoining sloping lane under this asset. The plane matches all six native lane heights within 0.00014 game units; clamp at the lower town street height 90. Hidden continuation is inferred."
+    },
+    "york-west-market-frontage-rear-gable-house": {
+      "support_source": "building-088",
+      "floor_game_z": 90.00101,
+      "plane_game_z": [
+        0.10303289770864325,
+        -0.19781612284813016,
+        251.23253679099201
+      ],
+      "reason": "Continue the adjoining sloping lane under this asset. The plane matches all six native lane heights within 0.00014 game units; clamp at the lower town street height 90. Hidden continuation is inferred."
+    },
+    "york-west-market-frontage-shared-occlusion-volume": {
+      "support_source": "building-088",
+      "floor_game_z": 90.00101,
+      "plane_game_z": [
+        0.10303289770864325,
+        -0.19781612284813016,
+        251.23253679099201
+      ],
+      "reason": "Continue the adjoining sloping lane under this asset. The plane matches all six native lane heights within 0.00014 game units; clamp at the lower town street height 90. Hidden continuation is inferred."
+    },
+    "york-west-town-lane-central-timber-house": {
+      "support_source": "building-088",
+      "floor_game_z": 90.00101,
+      "plane_game_z": [
+        0.10303289770864325,
+        -0.19781612284813016,
+        251.23253679099201
+      ],
+      "reason": "Continue the adjoining sloping lane under this asset. The plane matches all six native lane heights within 0.00014 game units; clamp at the lower town street height 90. Hidden continuation is inferred."
+    },
+    "york-west-town-lane-rear-timber-house": {
+      "support_source": "building-088",
+      "floor_game_z": 90.00101,
+      "plane_game_z": [
+        0.10303289770864325,
+        -0.19781612284813016,
+        251.23253679099201
+      ],
+      "reason": "Continue the adjoining sloping lane under this asset. The plane matches all six native lane heights within 0.00014 game units; clamp at the lower town street height 90. Hidden continuation is inferred."
+    },
+    "york-west-town-lane-narrow-timber-house": {
+      "support_source": "building-086",
+      "floor_game_z": 90.00101,
+      "reason": "The house doorway and returned doorstep meet the lower town street."
     }
   }
 }

@@ -130,11 +130,12 @@ Market southwest east timber house | p468 p469 p470 p471 p472
 Market southwest stone arch | 493 494
 Market striped-canopy pottery stall | 495 496 497 966 967
 Southwest ivy covered square tower | p498 p501 p502 p503 p524 p525
-Southwest west gatehouse | p499 p523
-Southwest east gatehouse | p500
-Southwest market corner house | p504 p506
+Southwest east gatehouse | p499 p500 p504
+Southwest gatehouse west boundary wall | p523
+Southwest market corner house | p506
 Southwest market square tower | p505 p507 p508 p509 p510 p513
-Southwest market west low house | p511 p512 p517
+Southwest market west low house | p511 p512
+Southwest market west courtyard wall | p517
 Southwest market north house | p514 p515 p516 p518
 Southwest market northwest house | p519 p520 p521 p522
 South city wall western curtain | 553 554 575
@@ -143,18 +144,18 @@ South city wall long central curtain | 563 564
 South city wall eastern curtain | 565 566
 South city wall eastern roofed tower | 567 568 569 574
 West town lane stone tower | p579 p580 p584 p585 p586 p601
-West town lane central timber house | p595 p596 p597 p600 p602
+West town lane central timber house | p595 p596 p597 p600
 West town lane rear timber house | p594 p598 p599
 West town lane courtyard boundary | p607 p617 p618
-West town lane narrow timber house | p581 p582 p583 p587
+West town lane narrow timber house | p581 p582 p583 p587 p602
 West town lane broad timber house | p588 p589 p590 p591 p592 p593 p603 p604 p605 p606
 Precinct causeway ivy covered house | p608 p609 p611 p612
 Precinct causeway stone annex | p610
-West market frontage corner shop | p619 p620 p621 p622 p623 p624 p625 p641 p642 p643 p644 c650:front-shop
-West market frontage gabled house | p626 p627 p628 p629 p645 p646 p647 c650:gable-house
-West market frontage dormer house | p630 p631 p632 p648 p649 p651 c650:dormer-house
-West market frontage red-roof house | p633 p634 p638 c650:red-roof-house
-West market frontage north-end house | p635 p636 p639 p640 637 c650:north-house
+West market frontage corner shop | p619 p620 p621 p622 p623 p624 p625 p641 p642 p643 p644
+West market frontage gabled house | p626 p627 p628 p629 p645 p646 p647
+West market frontage dormer house | p630 p631 p632 p651
+West market frontage red-roof house | p633 p634 p638
+West market frontage north-end house | p635 p636 p639 p640 637
 East bridge street northern timber house | 652 663
 East bridge street central timber house | 654 655
 East bridge street stair-side timber house | p664 p665 p666 p667 p668 p669
@@ -248,3 +249,5 @@ Precinct east gate boundary wall | p867
 Market tavern outdoor furniture | p930 p931 p932 p933
 Market north display tables | p41 p937
 Precinct south central round bastion | c876:bastion
+West market frontage rear gable house | p648 p649
+West market frontage shared occlusion volume | c650:front-shop c650:gable-house c650:dormer-house c650:red-roof-house c650:north-house
