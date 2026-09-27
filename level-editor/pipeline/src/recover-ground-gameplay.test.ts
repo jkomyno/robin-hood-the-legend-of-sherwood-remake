@@ -4,6 +4,32 @@ import clipping, { type MultiPolygon } from "polygon-clipping";
 import { closedPolygon, polygonArea, recoverGroundGameplay } from "./recover-ground-gameplay.ts";
 import type { Point } from "@rle/shared";
 
+test("touching ground regions retain independent topology and per-region fidelity", () => {
+  const areas = [0, 100].map((x) => ({
+    polygon: {
+      points: [
+        [x, 0],
+        [x + 100, 0],
+        [x + 100, 100],
+        [x, 100],
+      ] as Point[],
+    },
+    obstacles: [],
+  }));
+  const recovered = recoverGroundGameplay(areas, []);
+  assert.equal(recovered.sections.length, 2);
+  assert.notEqual(recovered.sections[0]!.navigationRegion, recovered.sections[1]!.navigationRegion);
+  assert.deepEqual(
+    recovered.sections.map((s) => s.differenceArea),
+    [0, 0],
+  );
+  assert.deepEqual(
+    recovered.sections.map((s) => polygonArea(s.terrain)),
+    [10000, 10000],
+  );
+  assert.equal(recovered.differenceArea, 0);
+});
+
 test("ground recovery transfers building cutouts to assets without losing terrain holes", () => {
   const rectangle = (x: number, y: number, w: number, h: number): Point[] => [
     [x, y],

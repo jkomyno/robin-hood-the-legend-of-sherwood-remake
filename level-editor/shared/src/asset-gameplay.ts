@@ -10,6 +10,8 @@ export interface AssetWalkableSurface {
   height: number | number[];
   /** Holes lie on the same plane, in the same local XY frame. */
   holes?: Point[][];
+  /** Asset-local navigation partition; distinct partitions never merge across a gate. */
+  navigationRegion?: string;
 }
 export interface AssetDoor {
   id: string;
@@ -392,6 +394,14 @@ export function validateAssetGameplay(
   ]) {
     feature(surface);
     polygon(surface.polygon);
+    if (
+      surface.navigationRegion !== undefined &&
+      (typeof surface.navigationRegion !== "string" ||
+        !surface.navigationRegion.trim() ||
+        !data.surfaces.includes(surface) ||
+        data.lifts?.some((lift) => lift.surface === surface.id))
+    )
+      fail("navigation regions require nonempty labels on ordinary walkable surfaces");
     if (
       !(typeof surface.height === "number" && Number.isFinite(surface.height)) &&
       !(

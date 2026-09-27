@@ -17,8 +17,23 @@ import {
   movementTransitionCompilerFixture,
   lightAssetCompilerFixture,
   jumpAssetCompilerFixture,
+  navigationRegionCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("navigation partition export matches the native gate fixture", async () => {
+  const { document, assets } = navigationRegionCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-navigation-region.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("jump export matches the native traversal fixture", async () => {
   const { document, assets } = jumpAssetCompilerFixture();

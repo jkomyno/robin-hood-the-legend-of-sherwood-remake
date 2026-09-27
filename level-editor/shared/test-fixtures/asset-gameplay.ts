@@ -1,6 +1,26 @@
 import type { GameplayAssetDescriptor } from "../src/asset-gameplay.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "../src/level3d.ts";
 
+export function navigationRegionCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const [west, east] = fixture.hut.gameplay!.surfaces;
+  west.polygon = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  east.polygon = [
+    [100, 0],
+    [200, 0],
+    [200, 100],
+    [100, 100],
+  ];
+  west.navigationRegion = "west";
+  east.navigationRegion = "east";
+  return fixture;
+}
+
 export function jumpAssetCompilerFixture() {
   const fixture = assetCompilerFixture();
   const g = fixture.hut.gameplay!;

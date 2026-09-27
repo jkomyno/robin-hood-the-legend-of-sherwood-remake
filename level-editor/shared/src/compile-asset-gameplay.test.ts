@@ -17,6 +17,49 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("asset-local navigation regions preserve gates between touching coplanar rooms", () => {
+  const { hut, document, assets } = assetCompilerFixture();
+  const [west, east] = hut.gameplay!.surfaces;
+  west!.polygon = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  east!.polygon = [
+    [100, 0],
+    [200, 0],
+    [200, 100],
+    [100, 100],
+  ];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /distinct motion areas/);
+  west!.navigationRegion = "west";
+  east!.navigationRegion = "east";
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.motion_data.layers[0]!.length, 2);
+  assert.notEqual(compiled.doors[0]!.sector_in, compiled.doors[0]!.sector_out);
+  east!.navigationRegion = "west";
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /distinct motion areas/);
+  east!.navigationRegion = "";
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /navigation regions/);
+});
+
+test("navigation region labels belong to each placement independently", () => {
+  const { hut, document, assets } = assetCompilerFixture();
+  hut.gameplay!.doors = [];
+  hut.gameplay!.surfaces = [hut.gameplay!.surfaces[0]!];
+  const surface = hut.gameplay!.surfaces[0]!;
+  surface.navigationRegion = "room";
+  const copy = structuredClone(document.objects[0]!);
+  copy.id = "copy";
+  copy.group = "copy";
+  document.objects.push(copy);
+  document.groups.push({ id: "copy", transform: { ...IDENTITY_TRANSFORM, dx: 90 } });
+  assert.equal(compileAssetGameplay(document, assets, bounds).motion_data.layers[0]!.length, 2);
+  delete surface.navigationRegion;
+  assert.equal(compileAssetGameplay(document, assets, bounds).motion_data.layers[0]!.length, 1);
+});
+
 test("jump pairs rebuild crossed destination links and preserve height after duplication", () => {
   const { hut, document, assets } = jumpAssetCompilerFixture();
   const first = compileAssetGameplay(document, assets, bounds);

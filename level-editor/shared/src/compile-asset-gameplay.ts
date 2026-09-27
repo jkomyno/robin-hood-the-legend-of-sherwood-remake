@@ -141,6 +141,7 @@ export function compileAssetGameplay(
     holes: Point[][];
     plane: HeightPlane;
     lift?: string;
+    navigationRegion?: string;
   }[] = [];
   const movementBlockers: typeof surfaces = [];
   const movementSolids: { owner: string; shape: SightObstacle }[] = [];
@@ -355,6 +356,10 @@ export function compileAssetGameplay(
           : surfaces;
       const placed = {
         owner: placement.id,
+        navigationRegion:
+          surface.navigationRegion === undefined
+            ? undefined
+            : `${placement.id}/${surface.navigationRegion}`,
         polygon: ring(points.map(project), `${placement.id}/${surface.id}`),
         plane,
         ...(gameplay.lifts?.find((l) => l.surface === surface.id)
@@ -430,14 +435,17 @@ export function compileAssetGameplay(
     { length: Math.max(1, planes.length) + 1 },
     () => [],
   );
-  const groups = planes.map((plane, layer) => ({
-    plane,
-    layer,
-    lift: undefined as string | undefined,
-    surfaces: surfaces.filter(
+  const groups = planes.flatMap((plane, layer) => {
+    const matching = surfaces.filter(
       (s) => !s.lift && s.plane.every((n, i) => Math.abs(n - plane[i]!) < 1e-7),
-    ),
-  }));
+    );
+    return [...new Set(matching.map((s) => s.navigationRegion))].map((region) => ({
+      plane,
+      layer,
+      lift: undefined as string | undefined,
+      surfaces: matching.filter((s) => s.navigationRegion === region),
+    }));
+  });
   for (const surface of surfaces.filter((s) => s.lift))
     groups.push({
       plane: surface.plane,

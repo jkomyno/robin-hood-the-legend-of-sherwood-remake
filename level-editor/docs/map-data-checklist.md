@@ -75,7 +75,7 @@ export or establish gameplay parity; `candidateCompilation` checks the full scen
 
 Split source surfaces are recovered using each asset part's own footprint;
 overlapping or uncovered portions remain explicit ownership gaps. The latest
-recovery drafts for Derby, Sherwood, Lincoln, Leicester, Croisement01 and Croisement02
+recovery drafts for Derby, Sherwood, Lincoln, Leicester, Croisement01, Croisement02 and Croisement03
 pass the static base-geometry check, excluding explicitly counted movement transitions.
 These are unpublished drafts, not completed map exports or in-game round-trip
 parity results. Other maps still fail geometry checks; no original map has yet
@@ -106,8 +106,11 @@ ownership or geometry authoring. Edge elevations remain independent of fractiona
 surface heights. Extraction now preserves the third endpoint coordinate and
 remaps zone references, retaining both destinations when a crop crosses a pair.
 The passing static diagnostics also include their recovered jump definitions.
-Croisement03 now reaches a door-topology issue after its terrain is recovered;
-Nottingham's hidden prison part and York's unowned lift remain blockers.
+Croisement03's door topology now survives recovery: asset-local navigation-region
+labels preserve separate coplanar areas, including when their boundaries touch.
+Labels are scoped to each placement; unlabelled surfaces retain normal merging.
+Ground recovery reports per-region differences as well as overall coverage.
+Nottingham's hidden prison part and York's compound lift remain blockers.
 
 Stable terrain is recovered even when its movement area has changing obstacles.
 The recovery inventory preserves all 27 changing-obstacle groups, their initial

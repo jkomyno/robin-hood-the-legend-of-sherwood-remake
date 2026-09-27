@@ -35,11 +35,12 @@ export function recoverGroundGameplay(
     quantizeRecoveredMotion(regions, label, warnings, (rounded) =>
       recoveryPolygonBoolean("union", rounded, [], 1),
     );
-  const free = areas.flatMap((area) => {
+  const areaFree = areas.map((area) => {
     const boundary = closedPolygon(area.polygon.points);
     const holes = area.obstacles.map((o) => closedPolygon(o.polygon.points));
     return holes.length ? clipping.difference(boundary, ...holes) : [boundary];
   });
+  const free = areaFree.flat();
   if (!free.length) throw new Error("Ground movement regions contain no walkable space");
   const walkable = clipping.union(free[0]!, ...free.slice(1));
   const boundaries = areas.map((area) => closedPolygon(area.polygon.points));
@@ -62,16 +63,27 @@ export function recoverGroundGameplay(
   // exclusion there, but must not extend the terrain beyond that boundary.
   // Fill owned exclusions by subtracting the remaining holes from the envelope.
   // This avoids rejoining coincident fractional boundaries before clipping them.
-  const holes = clipping.difference(envelope, walkable);
-  const remaining = excluded.length ? clipping.difference(holes, excluded) : holes;
-  const terrain = normalize(
-    remaining.length ? clipping.difference(envelope, remaining) : envelope,
-    "Recovered ground",
-  );
+  const sections = areas.map((area, index) => {
+    const boundary = closedPolygon(area.polygon.points);
+    const holes = clipping.difference(boundary, areaFree[index]!);
+    const remaining = excluded.length ? clipping.difference(holes, excluded) : holes;
+    const terrain = normalize(
+      remaining.length ? clipping.difference(boundary, remaining) : [boundary],
+      `Recovered ground section ${index}`,
+    );
+    const reconstructed = excluded.length ? clipping.difference(terrain, excluded) : terrain;
+    return {
+      navigationRegion: `ground-section-${index}`,
+      terrain,
+      differenceArea: polygonArea(clipping.xor(areaFree[index]!, reconstructed)),
+    };
+  });
+  const terrain = sections.flatMap((section) => section.terrain);
   const reconstructed = excluded.length ? clipping.difference(terrain, excluded) : terrain;
   const difference = clipping.xor(walkable, reconstructed);
   return {
     terrain,
+    sections,
     blockers,
     warnings,
     coordinateGrid: 1,

@@ -13,6 +13,7 @@ export interface RecoveredSurface {
   vertices: Vec3[];
   holes: Vec3[][];
   kind?: "walkable" | "lift";
+  navigationRegion?: string;
 }
 type Locks = { player: boolean; unlockable: boolean; villains: boolean; civilians: boolean };
 export interface RecoveredDoor {
@@ -99,6 +100,7 @@ export function recoveredGameplayDefinition(
     return {
       id: draft.id,
       node: draft.node,
+      ...(draft.navigationRegion === undefined ? {} : { navigationRegion: draft.navigationRegion }),
       polygon: draft.vertices.map(([x, y]) => [x, y]),
       height: draft.vertices.map((p) => p[2]),
       holes: draft.holes.map((hole) => hole.map(([x, y]) => [x, y])),

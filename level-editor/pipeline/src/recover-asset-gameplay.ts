@@ -400,14 +400,16 @@ if (groundAreas.length) {
     const ground = recoverGroundGameplay(groundAreas, owners);
     const terrain = packet(grounds[0]!.id);
     terrain.issues.push(...ground.warnings);
-    for (const [index, region] of ground.terrain.entries())
-      terrain.surfaces.push({
-        id: `ground-${index}`,
-        node: "$root",
-        kind: "walkable",
-        vertices: region[0]!.slice(0, -1).map(([x, y]) => [x, y, 0]),
-        holes: region.slice(1).map((hole) => hole.slice(0, -1).map(([x, y]) => [x, y, 0])),
-      });
+    for (const section of ground.sections)
+      for (const [index, region] of section.terrain.entries())
+        terrain.surfaces.push({
+          id: `${section.navigationRegion}-${index}`,
+          navigationRegion: section.navigationRegion,
+          node: "$root",
+          kind: "walkable",
+          vertices: region[0]!.slice(0, -1).map(([x, y]) => [x, y, 0]),
+          holes: region.slice(1).map((hole) => hole.slice(0, -1).map(([x, y]) => [x, y, 0])),
+        });
     for (const [index, blocker] of ground.blockers.entries()) {
       const owner = owners.find((o) => o.asset === blocker.asset && o.node === blocker.node)!;
       for (const [regionIndex, region] of blocker.regions.entries()) {
@@ -434,6 +436,10 @@ if (groundAreas.length) {
       differenceArea: ground.differenceArea,
       coordinateGrid: ground.coordinateGrid,
       blockerOwners: ground.blockers.length,
+      navigationRegions: ground.sections.map(({ navigationRegion, differenceArea }) => ({
+        navigationRegion,
+        differenceArea,
+      })),
     });
   }
 }

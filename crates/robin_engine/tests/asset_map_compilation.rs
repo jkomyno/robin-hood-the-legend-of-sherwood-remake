@@ -4,6 +4,34 @@ use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimCo
 use robin_engine::level_data::LoadedLevel;
 
 #[test]
+fn touching_navigation_regions_keep_native_boundaries_and_gate_links() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-navigation-region.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    assert_eq!(
+        assets.navigation.pathfinder_graph.static_data.move_layers[0].len(),
+        2
+    );
+    let view = engine.presentation_view();
+    let door = &view.doors()[0];
+    assert_ne!(door.sector_in, door.sector_out);
+    use robin_engine::coordinates::MapPoint;
+    assert!(grid.is_reachable_thin(MapPoint::new(310., 320.), MapPoint::new(390., 320.), 0));
+    assert!(!grid.is_reachable_thin(MapPoint::new(390., 320.), MapPoint::new(410., 320.), 0));
+    assert_eq!(
+        grid.level
+            .sectors
+            .iter()
+            .filter(|s| !s.gate_indices.is_empty())
+            .count(),
+        2
+    );
+}
+
+#[test]
 fn compiled_jump_pairs_construct_native_zones_heights_helpers_and_gates() {
     let mut assets = LevelAssets::new();
     let engine = construct(
