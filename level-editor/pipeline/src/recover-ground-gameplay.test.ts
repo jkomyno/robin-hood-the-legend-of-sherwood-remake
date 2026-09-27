@@ -61,3 +61,53 @@ test("ground recovery rejects empty movement instead of inventing a floor", () =
     /no walkable space/,
   );
 });
+
+test("a raised projection's ground exclusion moves with its owner rather than remaining in terrain", () => {
+  const boundary: Point[] = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  const footprint: Point[] = [
+    [20, 20],
+    [40, 20],
+    [40, 40],
+    [20, 40],
+  ];
+  const recovered = recoverGroundGameplay(
+    [{ polygon: { points: boundary }, obstacles: [{ polygon: { points: footprint } }] }],
+    [{ asset: "platform", node: "deck", footprint }],
+  );
+  assert.equal(recovered.differenceArea, 0);
+  assert.equal(polygonArea(recovered.terrain), 10000);
+  assert.equal(polygonArea(recovered.blockers[0]!.regions), 400);
+  const moved = recovered.blockers[0]!.regions.map((p) =>
+    p.map((r) => r.map(([x, y]): Point => [x + 40, y])),
+  );
+  const assembled = clipping.difference(recovered.terrain, moved);
+  assert.equal(polygonArea(clipping.intersection(assembled, closedPolygon(footprint))), 400);
+  assert.equal(polygonArea(clipping.intersection(assembled, moved)), 0);
+});
+
+test("recovered cutouts cannot extend terrain past its authored outer boundary", () => {
+  const boundary: Point[] = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  const footprint: Point[] = [
+    [80, 20],
+    [120, 20],
+    [120, 40],
+    [80, 40],
+  ];
+  const recovered = recoverGroundGameplay(
+    [{ polygon: { points: boundary }, obstacles: [{ polygon: { points: footprint } }] }],
+    [{ asset: "edge-platform", node: "deck", footprint }],
+  );
+  assert.equal(polygonArea(recovered.terrain), 10000);
+  assert.equal(recovered.differenceArea, 0);
+  assert.equal(polygonArea(clipping.difference(recovered.terrain, closedPolygon(boundary))), 0);
+});

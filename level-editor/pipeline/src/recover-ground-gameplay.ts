@@ -60,7 +60,11 @@ export function recoverGroundGameplay(
   });
   const additions = blockers.flatMap((b) => b.regions);
   const excluded = additions.length ? clipping.union(additions[0]!, ...additions.slice(1)) : [];
-  const terrain = excluded.length ? motionGrid(clipping.union(walkable, excluded)) : walkable;
+  // A placed footprint can cross the authored outer boundary. It may own an
+  // exclusion there, but must not extend the terrain beyond that boundary.
+  const terrain = excluded.length
+    ? motionGrid(clipping.intersection(clipping.union(walkable, excluded), envelope))
+    : walkable;
   const reconstructed = excluded.length ? clipping.difference(terrain, excluded) : terrain;
   const difference = clipping.xor(walkable, reconstructed);
   return {

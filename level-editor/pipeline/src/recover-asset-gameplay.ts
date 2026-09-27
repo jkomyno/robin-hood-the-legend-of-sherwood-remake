@@ -24,6 +24,7 @@ import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/as
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
+import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
 
 const { values } = parseArgs({
   options: {
@@ -119,7 +120,13 @@ const planeHeight = (
 };
 const unresolved: unknown[] = [];
 const coverage: unknown[] = [];
-const groundAreas: ProtoLevel["motion_data"]["layers"][number] = [];
+const groundAreas: Parameters<typeof recoverGroundGameplay>[0] = [];
+const groundProjectionOwners: {
+  asset: string;
+  node: string;
+  part: Level3DObject;
+  footprint: Point[];
+}[] = [];
 let sector = 0;
 for (const [layer, areas] of proto.motion_data.layers.entries())
   for (const motion of areas) {
@@ -140,14 +147,34 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         ? [{ obstacle, index }]
         : [],
     );
-    if (layer === 0 && supports.length)
-      unresolved.push({
-        kind: "terrain-projection-remainder",
-        sector: identity,
-        layer,
-        reason:
-          "Recover the ground outside elevated projection footprints separately from those surfaces",
-      });
+    if (layer === 0 && supports.length) {
+      const raised = supports.filter(({ obstacle }) =>
+        obstacle.points.some((p) => Math.abs(p.z_top) > 1e-4),
+      );
+      if (
+        !motion.is_lift &&
+        motion.state_id === 0 &&
+        motion.obstacles.every((o) => o.state_id === 0) &&
+        raised.every(({ index }) => locals.get(index)?.length === 1)
+      ) {
+        const exclusions = raised.map(({ obstacle, index }) => {
+          const footprint = obstacle.points.map((p): Point => [p.x, p.y - p.z_top]);
+          groundProjectionOwners.push({ ...locals.get(index)![0]!, footprint });
+          return { polygon: { points: footprint } };
+        });
+        groundAreas.push({
+          polygon: motion.polygon,
+          obstacles: [...motion.obstacles, ...exclusions],
+        });
+      } else {
+        unresolved.push({
+          kind: "terrain-projection-remainder",
+          sector: identity,
+          layer,
+          reason: "Ground remainder requires static geometry and unique projection-surface owners",
+        });
+      }
+    }
     if (!supports.length) {
       if (
         layer === 0 &&
@@ -169,7 +196,15 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
     }
     let recoveredArea = 0;
     let quantizationDifferenceArea = 0;
-    for (const { obstacle, index } of supports) {
+    const partition = partitionRecoverySurfaces(
+      close(motion.polygon.points),
+      motion.obstacles.map((o) => close(o.polygon.points)),
+      supports.map(({ obstacle }) => ({
+        polygon: close(obstacle.points.map((p) => [p.x, p.y - p.z_top])),
+        maximumHeight: Math.max(...obstacle.points.map((p) => Math.max(p.z_top, p.z_bottom))),
+      })),
+    );
+    for (const [supportIndex, { obstacle, index }] of supports.entries()) {
       const owners = locals.get(index) ?? [];
       if (owners.length !== 1) {
         unresolved.push({
@@ -191,6 +226,19 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
           regions,
           ...motion.obstacles.map((o) => close(o.polygon.points)),
         );
+      const overlapArea = polygonArea(regions) - polygonArea(partition.surfaces[supportIndex]!);
+      if (overlapArea > 1e-6) {
+        unresolved.push({
+          kind: "projection-priority",
+          sector: identity,
+          layer,
+          asset: owner.asset,
+          node: owner.node,
+          overlapArea,
+          reason:
+            "Overlapping surfaces need placement-time priority; do not freeze another asset's footprint into this surface",
+        });
+      }
       for (const [regionIndex, generated] of regions.entries()) {
         const region = quantizeGeneratedMotionPolygon(
           generated,
@@ -249,6 +297,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
       ),
       recoveredArea,
       quantizationDifferenceArea,
+      uncoveredArea: polygonArea(partition.ground),
     });
   }
 if (groundAreas.length) {
@@ -256,16 +305,18 @@ if (groundAreas.length) {
   if (grounds.length !== 1) {
     unresolved.push({ kind: "terrain-owner", candidates: grounds.map((s) => s.id) });
   } else {
-    const owners = [...locals].flatMap(([index, candidates]) => {
-      const obstacle = proto.sight_obstacles[index];
-      if (
-        candidates.length !== 1 ||
-        !obstacle?.solid ||
-        !obstacle.points.every((p) => p.z_bottom <= 0 && p.z_top > 0)
-      )
-        return [];
-      return [{ ...candidates[0]!, footprint: obstacle.points.map((p): Point => [p.x, p.y]) }];
-    });
+    const owners = [...locals]
+      .flatMap(([index, candidates]) => {
+        const obstacle = proto.sight_obstacles[index];
+        if (
+          candidates.length !== 1 ||
+          !obstacle?.solid ||
+          !obstacle.points.every((p) => p.z_bottom <= 0 && p.z_top > 0)
+        )
+          return [];
+        return [{ ...candidates[0]!, footprint: obstacle.points.map((p): Point => [p.x, p.y]) }];
+      })
+      .concat(groundProjectionOwners);
     const ground = recoverGroundGameplay(groundAreas, owners);
     const terrain = packet(grounds[0]!.id);
     for (const [index, region] of ground.terrain.entries())

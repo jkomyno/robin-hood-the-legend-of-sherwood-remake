@@ -151,6 +151,14 @@ and connection endpoints, without runtime source sector/layer references or
 copied graph bytes. Terrain boundaries that include other assets' cutouts,
 ambiguous door ownership, masks and patch behavior remain explicit gaps.
 
+For static ground sectors containing raised surfaces, recovery assigns the
+projected ground exclusions to the owning assets and fills those exclusions in
+the terrain draft. Moving an asset therefore moves its exclusion too. Recovery
+keeps the authored terrain boundary and measures reconstruction error. Stateful
+ground still requires state ownership. Overlapping projections are checked using
+height priority and source-order ties; unresolved overlaps are reported rather
+than permanently cutting another asset's footprint into a surface.
+
 ## Verification
 
 From `level-editor/`:
