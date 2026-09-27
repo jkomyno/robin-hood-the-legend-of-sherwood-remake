@@ -10,7 +10,7 @@
 
 - **Asset-local gameplay compilation.** The editor builds planar walkable regions with slopes and holes,
   collision/sight geometry, passage/gate connections, lifts, empty building
-  interiors and a spawn from pinned
+  interiors from pinned
   asset definitions and placement transforms. Explicit movement contours can
   differ from sight footprints and follow asset placement, preserving courtyard
   holes. Offline terrain recovery reports reconstruction error on the integer
@@ -28,9 +28,9 @@
 
 - **Level-editor mod compilation.** Export mod ZIP renders the current placed
   scene into a hackable datadir archive with a map PNG, minimap, 16-bit sprite
-  occlusion depth, and a discoverable playable sandbox descriptor. Compilation
-  respects hidden placements, transforms and export crops, and finds an open
-  player spawn. Navigation currently uses one ground layer; mission scripts,
+  occlusion depth, and a geometry descriptor. Compilation
+  respects hidden placements, transforms and export crops. Maps contain no
+  player spawn; characters and their starting positions belong to missions. Mission scripts,
   interactive patch transitions and preview population are not compiled.
   See [map compilation](../level-editor/docs/map-compilation.md).
 

@@ -49,11 +49,6 @@ export interface AssetInterior {
   /** Entrances share one virtual interior; occupants are authored separately. */
   doors: AssetDoor[];
 }
-export interface AssetSpawn {
-  id: string;
-  node: string;
-  position: [number, number, number];
-}
 export interface AssetGameplay {
   version: 1;
   /** Reuse asset-local part obstacles, or explicitly declare a visual-only asset. */
@@ -62,7 +57,6 @@ export interface AssetGameplay {
   movementBlockers?: AssetWalkableSurface[];
   surfaces: AssetWalkableSurface[];
   doors: AssetDoor[];
-  spawns: AssetSpawn[];
   lifts?: AssetLift[];
   interiors?: AssetInterior[];
 }
@@ -111,7 +105,6 @@ export interface CompiledAssetGeometry {
     direction: number;
     doors: CompiledAssetGeometry["doors"];
   }[];
-  spawn: { position: Point; sector: number; layer: number; projection_area: number | null };
 }
 
 export function validateAssetGameplay(
@@ -142,8 +135,11 @@ export function validateAssetGameplay(
     if (!Array.isArray(points) || points.length < 3 || !points.every((p) => point(p, 2)))
       fail("invalid gameplay polygon");
   };
-  if (![data.surfaces, data.doors, data.spawns].every(Array.isArray))
-    fail("surfaces, doors and spawns must be explicitly declared");
+  if (![data.surfaces, data.doors].every(Array.isArray))
+    fail("surfaces and doors must be explicitly declared");
+  const legacySpawns = (value as { spawns?: unknown }).spawns;
+  if (legacySpawns !== undefined && (!Array.isArray(legacySpawns) || legacySpawns.length))
+    fail("Player spawns belong to missions, not map assets");
   if (data.movementBlockers !== undefined && !Array.isArray(data.movementBlockers))
     fail("invalid movement blockers");
   for (const surface of [...data.surfaces, ...(data.movementBlockers ?? [])]) {
@@ -224,9 +220,5 @@ export function validateAssetGameplay(
         fail(`interior ${interior.id} door must use its owning node`);
       validateDoor(door, "interior");
     }
-  }
-  for (const spawn of data.spawns) {
-    feature(spawn);
-    if (!point(spawn.position, 3)) fail(`invalid spawn ${spawn.id}`);
   }
 }

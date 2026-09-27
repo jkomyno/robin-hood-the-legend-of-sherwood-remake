@@ -1,12 +1,7 @@
 {
   "title": "Sloped asset fixture",
   "map_filename": "editor-sloped-asset-fixture",
-  "spawn": [
-    320,
-    310
-  ],
-  "spawn_player": true,
-  "reveal_all": true,
+  "spawn_player": false,
   "walkable_polygon": [
     [
       0,
@@ -184,15 +179,6 @@
         "material_indices": []
       }
     ],
-    "doors": [],
-    "spawn": {
-      "position": [
-        320,
-        310
-      ],
-      "sector": 0,
-      "layer": 0,
-      "projection_area": 1
-    }
+    "doors": []
   }
 }

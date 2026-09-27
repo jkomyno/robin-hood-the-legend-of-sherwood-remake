@@ -13,6 +13,13 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("map assets reject mission spawns rather than silently dropping them", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  Object.assign(hut.gameplay!, {
+    spawns: [{ id: "player", node: "building-999", position: [20, 20, 0] }],
+  });
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /spawns belong to missions/);
+});
 test("authored subpixel surfaces remain errors rather than being silently omitted", () => {
   const { document, assets, hut } = assetCompilerFixture();
   hut.gameplay!.surfaces[0]!.polygon = [
@@ -44,7 +51,7 @@ test("authored movement contours follow an asset independently of sight and terr
       height: 0,
     },
   ];
-  const marker = assets.get("spawn")!.gameplay!;
+  const marker = assets.get("marker")!.gameplay!;
   marker.surfaces = [
     {
       id: "terrain",
@@ -80,11 +87,6 @@ test("authored movement contours follow an asset independently of sight and terr
     [455, 335],
     [455, 355],
   ]);
-  // The old building site becomes walkable; the moved blocker rejects a spawn.
-  marker.spawns[0]!.position = [45, 45, 0];
-  compileAssetGameplay(document, assets, bounds);
-  marker.spawns[0]!.position = [145, 45, 0];
-  assert.throws(() => compileAssetGameplay(document, assets, bounds), /found 0/);
   // A plane-specific blocker no longer blocks ground when raised above it.
   document.objects[0]!.transform.dz = 100;
   assert.equal(
@@ -99,12 +101,7 @@ test("asset-only compilation constructs motion areas, fresh references and doors
   assert.equal(result.motion_data.layers.length, 2);
   assert.equal(result.motion_data.layers[0]!.length, 2);
   assert.deepEqual(result.motion_data.graph_bytes, []);
-  assert.deepEqual(result.spawn, {
-    position: [320, 320],
-    sector: 0,
-    layer: 0,
-    projection_area: null,
-  });
+  assert.equal("marker" in result, false);
   assert.deepEqual(result.sight_obstacles[0]!.material_indices, []);
   assert.equal(result.doors[0]!.sector_out, 0);
   assert.equal(result.doors[0]!.sector_in, 2);
@@ -140,9 +137,6 @@ test("movement blocker holes preserve walkable islands and invalid contours fail
   ];
   const compiled = compileAssetGameplay(document, assets, bounds);
   assert.equal(compiled.motion_data.layers[0]!.length, 3);
-  assert.deepEqual(compiled.spawn.position, [320, 320]);
-  assets.get("spawn")!.gameplay!.spawns[0]!.position = [12, 12, 0];
-  assert.throws(() => compileAssetGameplay(document, assets, bounds), /found 0/);
   hut.gameplay!.movementBlockers[0]!.height = [0, 0, 1, 0];
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /must be planar/);
 });
@@ -158,7 +152,6 @@ test("moving, rotating and duplicating assets rebuilds their geometry and connec
     moved.doors[0]!.point_out,
     before.doors[0]!.point_out.map((v, i) => v + (i ? 100 : 200)),
   );
-  assert.deepEqual(moved.spawn.position, [520, 420]);
   // Duplicate the complete asset; local IDs and provenance are intentionally identical.
   const clone = structuredClone(document.objects[0]!);
   clone.id = "hut-b-body";
@@ -253,7 +246,6 @@ test("elevation translates motion in projected coordinates while sight remains i
   const { document, assets } = assetCompilerFixture();
   for (const part of document.objects) part.transform.dz = 100;
   const result = compileAssetGameplay(document, assets, bounds);
-  assert.deepEqual(result.spawn.position, [320, 220]);
   assert.deepEqual(result.doors[0]!.point_out, [380, 250]);
   assert.equal(result.sight_obstacles[0]!.points[0]!.y, 340);
   assert.equal(result.sight_obstacles[0]!.points[0]!.z_bottom, 100);
@@ -270,8 +262,7 @@ test("sloped surfaces preserve height, holes and the intersecting slice of solid
   const result = compileAssetGameplay(document, assets, bounds);
   const area = result.motion_data.layers[0]![0]!;
   assert.equal(area.obstacles.length, 2); // Authored hole and the solid crossing the ramp.
-  assert.deepEqual(result.spawn.position, [320, 310]);
-  const projection = result.sight_obstacles[result.spawn.projection_area!]!;
+  const projection = result.sight_obstacles.find((o) => Array.isArray(o.projection_area))!;
   assert.deepEqual(
     projection.points.map((p) => p.z_top),
     [0, 100, 100, 0],
@@ -285,21 +276,17 @@ test("sloped surfaces preserve height, holes and the intersecting slice of solid
     compileAssetGameplay(document, assets, bounds).motion_data.layers[0]![0]!.obstacles.length,
     1,
   );
-  // A hole is an actual movement exclusion, not just a rendering cutout.
-  assets.get("spawn")!.gameplay!.spawns[0]!.position = [75, 70, 37.5];
-  assert.throws(() => compileAssetGameplay(document, assets, bounds), /found 0/);
 });
 
-test("sloped asset placement transforms both the height plane and the spawn", () => {
+test("sloped asset placement transforms the height plane without mission content", () => {
   const { document, assets } = slopedAssetCompilerFixture();
   document.objects[1]!.group = "hut-a";
   document.groups[0]!.transform = { ...IDENTITY_TRANSFORM, dx: 800, dy: 200, rot_deg: 90, dz: 30 };
   const result = compileAssetGameplay(document, assets, bounds);
-  const surface = result.sight_obstacles[result.spawn.projection_area!]!;
+  const surface = result.sight_obstacles.find((o) => Array.isArray(o.projection_area))!;
   const plane = heightPlane(surface.points.map((p) => [p.x, p.y - p.z_top, p.z_top]));
-  // Integer motion positions incur up to half a pixel of projected rounding.
-  const quantizationError = 0.5 * (Math.abs(plane[0]) + Math.abs(plane[1]));
-  assert.ok(Math.abs(planeHeight(plane, result.spawn.position) - 40) <= quantizationError + 1e-4);
+  for (const p of surface.points)
+    assert.ok(Math.abs(planeHeight(plane, [p.x, p.y - p.z_top]) - p.z_top) < 1e-4);
   assert.ok(Math.max(...surface.points.map((p) => p.z_top)) > 129);
 });
 

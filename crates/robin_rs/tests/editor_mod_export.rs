@@ -12,7 +12,7 @@ use robin_rs::mod_pack::{enumerate_missions, mount_mod_overlay, scan_mods_dir};
 use robin_util::asset_fs::AssetVfs;
 
 #[test]
-fn browser_compiled_map_is_a_discoverable_playable_mod() {
+fn browser_compiled_map_loads_geometry_without_mission_spawns() {
     let directory = tempfile::tempdir().unwrap();
     let archive = directory.path().join("editor-bake-contract.zip");
     std::fs::write(
@@ -34,7 +34,7 @@ fn browser_compiled_map_is_a_discoverable_playable_mod() {
         .unwrap();
     let level = LoadedLevel::hackable_from_json(&bytes).unwrap();
     assert_eq!(level.mission.header.map_filename, "editor-bake-contract");
-    assert_eq!(level.mission.beam_mes.len(), 1);
+    assert!(level.mission.beam_mes.is_empty());
     assert_eq!(level.proto.sight_obstacles.len(), 1);
     let point = &level.proto.sight_obstacles[0].points[0];
     assert_eq!((point.x, point.y, point.z_top), (20.0, 40.0, 20.0));

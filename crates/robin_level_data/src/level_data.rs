@@ -2082,7 +2082,8 @@ pub struct HackableLevelDescriptor {
     #[serde(default)]
     pub title: Option<String>,
     pub map_filename: String,
-    pub spawn: (i16, i16),
+    #[serde(default)]
+    pub spawn: Option<(i16, i16)>,
     /// Whether to create the ordinary player-controlled beam-me PC.
     #[serde(default = "default_true")]
     pub spawn_player: bool,
@@ -2114,6 +2115,8 @@ pub struct HackableLevelDescriptor {
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
 #[serde(deny_unknown_fields)]
 pub struct CompiledAssetGeometry {
+    #[serde(default)]
+    pub warnings: Vec<String>,
     pub motion_data: RawMotionData,
     #[serde(default)]
     pub lifts: Vec<RawLift>,
@@ -2121,17 +2124,6 @@ pub struct CompiledAssetGeometry {
     pub buildings: Vec<RawBuildingEntry>,
     pub sight_obstacles: Vec<RawSightObstacle>,
     pub doors: Vec<RawDoor>,
-    pub spawn: CompiledAssetSpawn,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
-#[serde(deny_unknown_fields)]
-pub struct CompiledAssetSpawn {
-    pub position: (i16, i16),
-    pub sector: u16,
-    pub layer: u16,
-    #[serde(default)]
-    pub projection_area: Option<u16>,
 }
 
 /// Author-facing timed-mission rules for hackable JSON levels.
@@ -2477,15 +2469,18 @@ impl LoadedLevel {
         level.mission.element_chunk_order = vec![MissionElementChunk::Element];
         level.mission.element_group_order = Vec::new();
         if descriptor.spawn_player {
+            if descriptor.asset_geometry.is_some() {
+                return Err("compiled maps do not define player spawns; use a mission".into());
+            }
+            let spawn = descriptor
+                .spawn
+                .ok_or("player spawning requires a mission spawn position")?;
             level
                 .mission
                 .element_group_order
                 .push(MissionElementGroup::BeamMe);
             level.mission.beam_mes = vec![BeamMe {
-                position: MapPoint::new(
-                    f32::from(descriptor.spawn.0),
-                    f32::from(descriptor.spawn.1),
-                ),
+                position: MapPoint::new(f32::from(spawn.0), f32::from(spawn.1)),
                 direction: 0,
                 action: 0,
                 projection_area: u16::MAX,
@@ -2624,19 +2619,6 @@ impl LoadedLevel {
                         .ok_or("too many asset sectors")?;
                 }
             }
-            if !area_refs.contains(&(geometry.spawn.sector, geometry.spawn.layer)) {
-                return Err("asset spawn references a missing motion area".into());
-            }
-            if let Some(index) = geometry.spawn.projection_area {
-                if geometry
-                    .sight_obstacles
-                    .get(index as usize)
-                    .and_then(|obstacle| obstacle.projection_area)
-                    != Some((geometry.spawn.sector, geometry.spawn.layer))
-                {
-                    return Err("asset spawn references an incompatible projection surface".into());
-                }
-            }
             // Building identities follow motion's out-of-map slot and sight planes.
             let mut next_building_sector = usize::from(sector)
                 + 1
@@ -2749,15 +2731,6 @@ impl LoadedLevel {
                 .push(RawBuildingEntry::StandaloneDoors {
                     doors: geometry.doors,
                 });
-            for beam in &mut level.mission.beam_mes {
-                beam.position = MapPoint::new(
-                    geometry.spawn.position.0.into(),
-                    geometry.spawn.position.1.into(),
-                );
-                beam.sector = geometry.spawn.sector;
-                beam.layer = geometry.spawn.layer;
-                beam.projection_area = geometry.spawn.projection_area.unwrap_or(u16::MAX);
-            }
         }
         Ok(level)
     }

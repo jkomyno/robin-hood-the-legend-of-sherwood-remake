@@ -78,57 +78,12 @@ export function compileVolumes(document: Level3D, bounds: BakeBounds): CompiledV
   });
 }
 
-function inside(point: Point, polygon: Point[]) {
-  let result = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const a = polygon[i]!,
-      b = polygon[j]!;
-    if (
-      a[1] > point[1] !== b[1] > point[1] &&
-      point[0] < ((b[0] - a[0]) * (point[1] - a[1])) / (b[1] - a[1]) + a[0]
-    )
-      result = !result;
-  }
-  return result;
-}
-
-/** Leave enough room for a character's collision radius at spawn. */
-export function findBakeSpawn(bounds: BakeBounds, volumes: CompiledVolume[]): Point {
-  const [, , width, height] = bounds;
-  const clearance = 16;
-  const blockers = volumes.filter((volume) => volume.motion_blocking);
-  const free = (point: Point) =>
-    blockers.every(({ footprint }) => {
-      if (inside(point, footprint)) return false;
-      return footprint.every((a, i) => {
-        const b = footprint[(i + 1) % footprint.length]!;
-        const dx = b[0] - a[0],
-          dy = b[1] - a[1];
-        const t = Math.max(
-          0,
-          Math.min(1, ((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)),
-        );
-        return Math.hypot(point[0] - a[0] - t * dx, point[1] - a[1] - t * dy) >= clearance;
-      });
-    });
-  if (width <= clearance * 2 || height <= clearance * 2)
-    throw new Error("The export frame is too small for a player spawn.");
-  const center: Point = [Math.floor(width / 2), Math.floor(height / 2)];
-  if (free(center)) return center;
-  for (let y = clearance; y < height - clearance; y += 16)
-    for (let x = clearance; x < width - clearance; x += 16) if (free([x, y])) return [x, y];
-  throw new Error(
-    "No clear player spawn was found in the export frame. Leave an open ground area.",
-  );
-}
-
 export function compileMap(
   document: Level3D,
   requestedBounds: BakeBounds,
   assets?: ReadonlyMap<string, ProjectionAssetDescriptor>,
 ) {
-  // TODO: Compile mission entities, special traversal and patch transitions
-  // from their authored asset definitions.
+  // TODO: Compile special traversal and patch transitions from map assets.
   const bounds = validateBakeBounds(requestedBounds);
   const slug =
     document.map
@@ -142,7 +97,7 @@ export function compileMap(
   const warnings = assetGeometry
     ? [
         ...(assetGeometry.warnings ?? []),
-        "Compiled from asset-local surfaces, sight geometry, doors and spawn points. Navigation grids and route graphs are constructed by the engine.",
+        "Compiled from asset-local surfaces, sight geometry and doors. Navigation grids and route graphs are constructed by the engine. Player spawns and NPCs belong to a separate mission.",
         "Mission scripts, dynamic patch states, occupants and jumps are not yet supported by the asset compiler. This export is not a full gameplay-parity certification.",
       ]
     : [
@@ -153,9 +108,7 @@ export function compileMap(
   const descriptor = {
     title: document.map,
     map_filename: name,
-    spawn: assetGeometry?.spawn.position ?? findBakeSpawn(bounds, volumes),
-    spawn_player: true,
-    reveal_all: true,
+    spawn_player: false,
     walkable_polygon: [
       [0, 0],
       [bounds[2] - 1, 0],

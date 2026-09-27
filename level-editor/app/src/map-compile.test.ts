@@ -4,12 +4,7 @@ import { decode } from "fast-png";
 import { unzipSync, strFromU8 } from "fflate";
 import * as THREE from "three";
 import { type Level3D, gameToScene, parseStoredMap } from "@rle/shared";
-import {
-  compileMap,
-  findBakeSpawn,
-  packageCompiledMap,
-  validateBakeBounds,
-} from "./map-compile.ts";
+import { compileMap, packageCompiledMap, validateBakeBounds } from "./map-compile.ts";
 import { bakeScene, contentBakeBounds } from "./map-bake-render.ts";
 import {
   assetCompilerFixture,
@@ -72,22 +67,11 @@ test("compilation rebases transformed volumes, namespaces output and preserves t
   assert.deepEqual(compileMap(document, [0, 0, 128, 128]).descriptor.volumes, []);
 });
 
-test("spawn selection avoids geometry and rejects completely blocked maps", () => {
-  const volume = compileMap(bakeFixture(), [0, 0, 128, 128]).descriptor.volumes[0]!;
-  volume.footprint = [
-    [30, 30],
-    [100, 30],
-    [100, 100],
-    [30, 100],
-  ];
-  assert.notDeepEqual(findBakeSpawn([0, 0, 128, 128], [volume]), [64, 64]);
-  volume.footprint = [
-    [-1, -1],
-    [129, -1],
-    [129, 129],
-    [-1, 129],
-  ];
-  assert.throws(() => findBakeSpawn([0, 0, 128, 128], [volume]), /No clear player spawn/);
+test("map export does not invent mission spawns, even for a tiny frame", () => {
+  const result = compileMap(bakeFixture(), [0, 0, 8, 8]);
+  assert.equal(result.descriptor.spawn_player, false);
+  assert.equal("spawn" in result.descriptor, false);
+  assert.equal("reveal_all" in result.descriptor, false);
 });
 
 test("bounds round outward, reject unsafe sizes, and fit visible geometry only", () => {

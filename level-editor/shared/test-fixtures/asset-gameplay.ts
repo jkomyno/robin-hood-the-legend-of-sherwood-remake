@@ -74,23 +74,21 @@ export function assetCompilerFixture() {
           unlockable: false,
         },
       ],
-      spawns: [],
     },
   };
-  const spawn: GameplayAssetDescriptor = {
+  const marker: GameplayAssetDescriptor = {
     version: 1,
     kind: "projection-mapped-asset",
-    id: "spawn",
-    name: "Spawn",
+    id: "marker",
+    name: "Scenery marker",
     source_map: "unused",
-    model: "spawn.glb",
+    model: "marker.glb",
     parts: [{ node: "scenery-marker", name: "Marker", scenery: true }],
     gameplay: {
       version: 1,
       collision: "none",
       surfaces: [],
       doors: [],
-      spawns: [{ id: "player", node: "scenery-marker", position: [20, 20, 0] }],
     },
   };
   const body: Level3DObject = {
@@ -109,7 +107,7 @@ export function assetCompilerFixture() {
     camera: { kind: "oblique-orthographic", elevation_deg: 35 },
     size: [2000, 2000],
     sceneAssets: [],
-    assetSources: [hut, spawn].map((d) => ({
+    assetSources: [hut, marker].map((d) => ({
       id: d.id,
       descriptor: `${d.id}.json`,
       model: d.model,
@@ -119,8 +117,8 @@ export function assetCompilerFixture() {
     objects: [
       body,
       {
-        id: "spawn",
-        node: "asset:spawn:scenery-marker",
+        id: "marker",
+        node: "asset:marker:scenery-marker",
         kind: "scenery",
         source: { map: "ignored" },
         transform: { ...IDENTITY_TRANSFORM, dx: 300, dy: 300 },
@@ -132,7 +130,7 @@ export function assetCompilerFixture() {
     document,
     assets: new Map([
       [hut.id, hut],
-      [spawn.id, spawn],
+      [marker.id, marker],
     ]),
     hut,
   };
@@ -140,7 +138,7 @@ export function assetCompilerFixture() {
 
 export function slopedAssetCompilerFixture() {
   const fixture = assetCompilerFixture();
-  const { hut, assets, document } = fixture;
+  const { hut, document } = fixture;
   hut.gameplay!.doors = [];
   hut.gameplay!.surfaces = [
     {
@@ -163,9 +161,6 @@ export function slopedAssetCompilerFixture() {
       ],
     },
   ];
-  const marker = assets.get("spawn")?.gameplay?.spawns[0];
-  if (!marker) throw new Error("Missing fixture spawn");
-  marker.position = [20, 20, 10];
   document.map = "Sloped asset fixture";
   return fixture;
 }

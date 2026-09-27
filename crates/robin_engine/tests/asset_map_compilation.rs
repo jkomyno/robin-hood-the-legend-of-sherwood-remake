@@ -3,10 +3,29 @@
 use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimConfig};
 use robin_engine::level_data::LoadedLevel;
 
+#[test]
+fn map_geometry_does_not_accept_embedded_player_spawns() {
+    let mut value: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-compiled.level.json")).unwrap();
+    value["spawn_player"] = true.into();
+    value["spawn"] = serde_json::json!([320, 320]);
+    let error = LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap()).unwrap_err();
+    assert!(error.contains("use a mission"), "{error}");
+}
+
+#[test]
+fn geometry_warnings_do_not_require_mission_content() {
+    let mut value: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-compiled.level.json")).unwrap();
+    value["asset_geometry"]["warnings"] = serde_json::json!(["Generated fragment omitted"]);
+    let level = LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap()).unwrap();
+    assert!(level.mission.beam_mes.is_empty());
+}
+
 fn construct(bytes: &[u8], assets: &mut LevelAssets) -> Engine {
-    let mut level = LoadedLevel::hackable_from_json(bytes).unwrap();
-    // This geometry contract does not need a sprite-bearing player entity.
-    level.mission.beam_mes.clear();
+    let level = LoadedLevel::hackable_from_json(bytes).unwrap();
+    assert!(level.mission.beam_mes.is_empty());
+    assert!(level.mission.soldiers.is_empty());
     let mut profiles = robin_engine::profiles::ProfileManager::new();
     let mut campaign = robin_engine::campaign::Campaign::new();
     let index = campaign

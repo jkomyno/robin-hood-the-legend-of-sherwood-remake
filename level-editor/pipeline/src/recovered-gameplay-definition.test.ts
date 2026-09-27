@@ -80,8 +80,8 @@ test("geometry-only assets retain derived movement collision unless explicitly r
   assert.equal(hut.gameplay.movementBlockers, undefined);
   assert.equal(
     recoveredGameplayDefinition(
-      descriptorGameplayPacket(assets.get("spawn")!),
-      assets.get("spawn")!,
+      descriptorGameplayPacket(assets.get("marker")!),
+      assets.get("marker")!,
     ).collision,
     "none",
   );

@@ -114,7 +114,7 @@ export function compileAssetGameplay(
   ];
   if (missing.length)
     throw new Error(
-      `Missing asset gameplay definitions (${missing.length}): ${missing.join(", ")}. Add local surfaces, doors and spawn definitions to these assets; no source-level fallback is available.`,
+      `Missing asset gameplay definitions (${missing.length}): ${missing.join(", ")}. Add local surfaces and door definitions to these assets; no source-level fallback is available.`,
     );
   if (
     document.splines?.length ||
@@ -122,7 +122,7 @@ export function compileAssetGameplay(
     document.population?.items.length
   )
     throw new Error(
-      "Spline and population gameplay must be published as asset definitions before full compilation",
+      "Map compilation does not support spline gameplay or embedded mission population; keep NPCs and items in a separate mission",
     );
   if (document.groups.some((g) => g.states || g.patches) || document.objects.some((p) => p.patches))
     throw new Error(
@@ -145,7 +145,6 @@ export function compileAssetGameplay(
     middle: Point;
     polygon: Point[];
   }[] = [];
-  const spawns: { name: string; position: Vec3 }[] = [];
   const sight: SightObstacle[] = [];
   const quantize = (n: number) => {
     const result = Math.round(n);
@@ -244,11 +243,6 @@ export function compileAssetGameplay(
       interiors.push(id);
       for (const door of interior.doors) placeDoor(door, undefined, id);
     }
-    for (const spawn of gameplay.spawns)
-      spawns.push({
-        name: `${placement.id}/${spawn.id}`,
-        position: transform(spawn.node, spawn.position),
-      });
   }
   if (!surfaces.length)
     throw new Error(
@@ -449,16 +443,6 @@ export function compileAssetGameplay(
       layer_in: inside.layer,
     };
   });
-  if (spawns.length !== 1)
-    throw new Error(`Assets must define exactly one player spawn (found ${spawns.length})`);
-  const spawn = spawns[0]!,
-    spawnArea = resolve(spawn.position, spawn.name);
-  const projection = sight.findIndex(
-    (o) =>
-      Array.isArray(o.projection_area) &&
-      o.projection_area[0] === spawnArea.sector &&
-      o.projection_area[1] === spawnArea.layer,
-  );
   return {
     ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
@@ -492,11 +476,5 @@ export function compileAssetGameplay(
           }),
         }
       : {}),
-    spawn: {
-      position: project(spawn.position),
-      sector: spawnArea.sector,
-      layer: spawnArea.layer,
-      projection_area: projection < 0 ? null : projection,
-    },
   };
 }

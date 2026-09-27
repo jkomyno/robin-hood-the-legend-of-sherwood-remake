@@ -136,7 +136,6 @@ export function recoveredGameplayDefinition(
       ? { movementBlockers: packet.movementBlockers.map(surface) }
       : {}),
     doors: [],
-    spawns: [],
     lifts: [],
     interiors: [],
   };

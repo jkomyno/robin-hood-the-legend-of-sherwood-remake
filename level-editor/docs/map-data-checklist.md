@@ -28,7 +28,7 @@ intended construction, not functionality available today.
 | Environmental sound sources | Place local sound emitters with range, timing, altitude and noise-covering rules. | Planned |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Compile asset states into changing visuals, collision, sight, masks, interaction zones and door links. | Planned |
-| Player starting locations | Resolve an asset-local spawn against compiled movement/projection surfaces. | Working: one spawn |
+| Player starting locations | Mission-owned placements, resolved against the referenced compiled map. Never embedded in map assets. | Separate mission compilation planned |
 | Soldiers, civilians, targets and rescue characters | Actor assets plus editor placement, facing, profiles and initial behaviour. | Planned |
 | Items, bonuses and scrolls | Item assets plus placement and gameplay properties. | Planned |
 | Building occupants | Actor-to-interior associations resolved after placement. | Planned |

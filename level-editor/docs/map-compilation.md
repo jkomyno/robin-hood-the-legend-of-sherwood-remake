@@ -11,6 +11,11 @@ Place the downloaded ZIP in the game's configured mods directory (normally
 the map from Custom Missions. The installed base datadir supplies characters and
 shared resources. The ZIP is an overlay, not a standalone copy of the game.
 
+The exported descriptor contains map geometry only and disables player spawning.
+The current Custom Missions entry can load that geometry, but it is not a playable
+mission. Player starts, NPCs, items and objectives belong to a mission referencing
+the map; a separate mission-authoring/export workflow is still to be implemented.
+
 The output contains:
 
 ```text
@@ -69,7 +74,7 @@ A descriptor can contain a `gameplay` definition (see
 - Passage/gate endpoints and lockpick flags, resolved against assembled surfaces.
 - Lift surfaces, high/low entrances, traversal type and local direction.
 - Empty building interiors with shared entrances and per-actor door locks.
-- An asset-local player spawn, including raised-surface projection.
+- Map geometry without player spawns or NPCs; those belong to missions.
 
 For example, a ground-only asset can declare:
 
@@ -82,8 +87,7 @@ For example, a ground-only asset can declare:
       "id": "ground", "node": "$root", "height": 0,
       "polygon": [[0, 0], [511, 0], [511, 511], [0, 511]]
     }],
-    "doors": [],
-    "spawns": [{ "id": "player", "node": "$root", "position": [64, 64, 0] }]
+    "doors": []
   }
 }
 ```
@@ -92,8 +96,8 @@ For example, a ground-only asset can declare:
 their descriptor parts. Coordinates are game-world `[x,y,z]`; runtime motion
 uses projected `[x,y-z]`. A door's `middle`, `inside` and `outside` are 3D
 points; its 2D polygon is at the outside endpoint's height. Type `0` is a
-passage and `3` is a gate. There must be exactly one player spawn across the
-assembled assets. Surface `height` can be a constant or one value per polygon
+passage and `3` is a gate. Map compilation neither requires nor generates a
+player spawn. Surface `height` can be a constant or one value per polygon
 vertex; all vertices must lie on a plane. Optional `holes` use the same local XY
 frame and height plane. Coplanar surfaces are joined; connections between
 different planes still require authored traversal features. Sector and layer
@@ -232,5 +236,5 @@ pnpm --filter pipeline exec node src/recover-library-gameplay.ts --sources ../..
 
 This writes per-asset authoring drafts and a library-wide recovery report.
 Custom scenes without a `sourceMap` use shared asset definitions; their own
-terrain, spawns and scene-specific features still need authoring. Recovery drafts
+terrain and scene-specific map features still need authoring. Recovery drafts
 are not automatically installed as complete gameplay definitions.

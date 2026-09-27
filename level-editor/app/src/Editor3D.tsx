@@ -1693,7 +1693,8 @@ export default function Editor3D(props: EditorProps) {
               <h2>Export frame</h2>
               <p class="hint">
                 Gameplay is compiled from asset-local definitions. Assets need authored walkable
-                surfaces, door connections and a player spawn. Missing definitions stop export.
+                surfaces and door connections. Player spawns belong to missions. Missing map
+                definitions stop export.
                 Mission scripts, lifts, jumps and interactive state changes are not supported yet.
               </p>
               <p class="hint">

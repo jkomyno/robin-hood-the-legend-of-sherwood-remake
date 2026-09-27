@@ -1,12 +1,7 @@
 {
   "title": "Authored fixture",
   "map_filename": "editor-authored-fixture",
-  "spawn": [
-    320,
-    320
-  ],
-  "spawn_player": true,
-  "reveal_all": true,
+  "spawn_player": false,
   "walkable_polygon": [
     [
       0,
@@ -199,15 +194,6 @@
         "sector_in": 2,
         "layer_in": 0
       }
-    ],
-    "spawn": {
-      "position": [
-        320,
-        320
-      ],
-      "sector": 0,
-      "layer": 0,
-      "projection_area": null
-    }
+    ]
   }
 }
