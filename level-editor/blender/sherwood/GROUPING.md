@@ -53,3 +53,11 @@ Every sheet starts with the original camera, then west, east and back. Each card
 includes raw original-art context. Model decisions remain in `model-decisions.json`;
 superseded component cards are omitted from the pending model gallery. A grouping
 review is a separate revision and does not overwrite previous component decisions.
+
+## Texture ownership after grouping
+
+The source-textured sheets in this grouping gallery are previews, not proof of
+exact source-pixel ownership. The Day-art preview bake has not yet been constrained
+by reviewed native source-mask assignments. Follow
+[TEXTURE_OWNERSHIP.md](TEXTURE_OWNERSHIP.md) before preparing final synthesis
+packets or publishing completed textures. Grouping review can proceed unchanged.
