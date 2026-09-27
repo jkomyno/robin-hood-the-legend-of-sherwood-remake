@@ -6,6 +6,24 @@ import texture_packets as packets
 
 
 class SourceProtectionTest(unittest.TestCase):
+    def test_batched_raster_keeps_nearest_and_first_face_across_batches(self):
+        # More samples than one batch, with equal-depth and nearer replacements.
+        corners=np.tile(np.array([[[0,0,1],[2,0,1],[0,2,1]]],float),(70000,1,1))
+        corners[66000:,:,2]=2
+        class Camera:
+            tile=2
+            def project(self,points):return points[:,0],points[:,1],points[:,2]
+        target=SimpleNamespace(tri_image=np.full(len(corners),-1),image_kind=[])
+        packets.TARGETS[id(corners)]=target
+        try:
+            depth,index,_=packets.raster(Camera(),corners,1)
+            self.assertEqual(index[0,0],66000)
+            self.assertEqual(depth[0,0],2)
+            corners[:,:,2]=1
+            depth,index,_=packets.raster(Camera(),corners,1)
+            self.assertEqual(index[0,0],0)
+        finally:packets.TARGETS.pop(id(corners))
+
     def test_original_view_is_kept_even_when_only_undersides_need_fill(self):
         class Camera:
             def __init__(self, azimuth, elevation, *args):

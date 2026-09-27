@@ -113,42 +113,57 @@ def raster(camera, corners, ss):
     x0, x1 = np.maximum(0, np.ceil(xs.min(1)-.5)).astype(int), np.minimum(size-1, np.floor(xs.max(1)-.5)).astype(int)
     y0, y1 = np.maximum(0, np.ceil(ys.min(1)-.5)).astype(int), np.minimum(size-1, np.floor(ys.max(1)-.5)).astype(int)
     candidate = (np.abs(area)>1e-12)&(x1>=x0)&(y1>=y0)
-    # Most canopy triangles cover at most one selection-raster sample. Batch
-    # those exact samples instead of allocating tiny arrays millions of times.
-    single = candidate & (x0 == x1) & (y0 == y1)
-    ts = np.flatnonzero(single)
-    if len(ts):
-        gx, gy = x0[ts]+.5, y0[ts]+.5
-        ax,bx,cx = xs[ts].T
-        ay,by,cy = ys[ts].T
-        w0 = ((bx-gx)*(cy-gy)-(cx-gx)*(by-gy))/area[ts]
-        w1 = ((cx-gx)*(ay-gy)-(ax-gx)*(cy-gy))/area[ts]
+    # Batch small projected triangles. The leaf meshes contain hundreds of
+    # thousands of these: allocating NumPy grids once per face dominates review
+    # time. Keep each batch bounded, and retain exact depth/first-face ties.
+    widths, heights = x1-x0+1, y1-y0+1
+    small = candidate & (widths*heights <= 256)
+    ts = np.flatnonzero(small)
+    sizes = widths[ts]*heights[ts]
+    offsets = np.concatenate(([0], np.cumsum(sizes)))
+    start = 0
+    while start < len(ts):
+        end = max(start+1, int(np.searchsorted(offsets, offsets[start]+262144, side='right')-1))
+        end = min(end, len(ts))
+        counts = sizes[start:end]
+        t = np.repeat(ts[start:end], counts)
+        local = np.arange(len(t))-np.repeat(np.cumsum(counts)-counts, counts)
+        px, py = x0[t]+local%widths[t], y0[t]+local//widths[t]
+        gx, gy = px+.5, py+.5
+        ax,bx,cx = xs[t].T
+        ay,by,cy = ys[t].T
+        w0 = ((bx-gx)*(cy-gy)-(cx-gx)*(by-gy))/area[t]
+        w1 = ((cx-gx)*(ay-gy)-(ax-gx)*(cy-gy))/area[t]
         w2 = 1-w0-w1
         inside = (w0>=-1e-9)&(w1>=-1e-9)&(w2>=-1e-9)
-        for image_id in np.unique(target.tri_image[ts]):
+        for image_id in np.unique(target.tri_image[t]):
             kind = target.image_kind[image_id] if image_id >= 0 else None
             if not kind or not kind.physical:
                 continue
-            chosen = np.flatnonzero(inside & (target.tri_image[ts] == image_id))
+            chosen = np.flatnonzero(inside & (target.tri_image[t] == image_id))
             if not len(chosen):
                 continue
-            uv = (w0[chosen,None]*target.tri_uv[ts[chosen],0]
-                  +w1[chosen,None]*target.tri_uv[ts[chosen],1]
-                  +w2[chosen,None]*target.tri_uv[ts[chosen],2])
+            uv = (w0[chosen,None]*target.tri_uv[t[chosen],0]
+                  +w1[chosen,None]*target.tri_uv[t[chosen],1]
+                  +w2[chosen,None]*target.tri_uv[t[chosen],2])
             atlas = target.atlas(image_id)
             h,w = atlas.shape[:2]
             col = np.floor(uv[:,0]*w).astype(int).clip(0,w-1)
             row = np.floor(uv[:,1]*h).astype(int).clip(0,h-1)
             inside[chosen] &= atlas[row,col,3] >= 128
-        cells = y0[ts[inside]]*size+x0[ts[inside]]
-        z = (w0*d[ts,0]+w1*d[ts,1]+w2*d[ts,2])[inside]
+        cells = py[inside]*size+px[inside]
+        z = (w0*d[t,0]+w1*d[t,1]+w2*d[t,2])[inside]
+        old = depth.ravel()[cells].copy()
         np.maximum.at(depth.ravel(), cells, z)
+        # Discard former face IDs only where a nearer surface replaced them.
+        index.ravel()[cells[z > old]] = -1
         nearest = z == depth.ravel()[cells]
         first = np.full(size*size, len(corners), np.int64)
-        np.minimum.at(first, cells[nearest], ts[inside][nearest])
-        hit = first < len(corners)
+        np.minimum.at(first, cells[nearest], t[inside][nearest])
+        hit = (first < len(corners)) & ((index.ravel()<0) | (first<index.ravel()))
         index.ravel()[hit] = first[hit]
-    for t in np.flatnonzero(candidate & ~single):
+        start = end
+    for t in np.flatnonzero(candidate & ~small):
         gx = np.arange(x0[t],x1[t]+1)+.5
         gy = (np.arange(y0[t],y1[t]+1)+.5)[:,None]
         (ax,bx,cx),(ay,by,cy) = xs[t],ys[t]
