@@ -193,6 +193,15 @@ permission transitions without assigning rooms to supporting terrain. Its two
 remaining passage endpoints lie outside their assigned projection surfaces;
 recovery still rejects them rather than inventing an elevation. Full recovery
 needs explicit receiving-area semantics for those endpoints.
+Assets now support optional `outsideAnchor`/`insideAnchor` door coordinates for
+selecting receiving areas independently of the visible/traversal endpoints.
+These local anchors move, rotate and duplicate with the asset; no sector indices
+are retained. They must resolve to one unblocked surface, and an interior's inside
+anchor cannot override its shared virtual room. A compiler-generated fixture loads
+in the native engine with both endpoint coordinates outside their linked polygons
+while retaining the intended gate registrations. Recovery packet conversion
+preserves the anchors, but the remaining Lincoln doors still need authored values;
+their coverage counts have not increased.
 Leicester's three drawbridges have shared multi-scene GLBs. Their initial/applied
 views now share one gameplay definition per placement. Compilation unions local
 state parts, deduplicates shared frames and supplies hidden frames for alternate
@@ -246,8 +255,9 @@ Current compiled/source counts (no unexpected records in any map):
 The twenty-one recovered movement-changing transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.
 Transition reference points may lie inside static blockers; they must still resolve
-to a unique surface at the authored height. Door and jump endpoints require an
-unblocked receiving position.
+to a unique surface at the authored height. Doors resolve their optional receiving
+anchors, or otherwise their endpoints, against unblocked surfaces. Jump landing
+anchors likewise require an unblocked receiving position.
 The ignored `recovered_asset_transitions_apply_and_reset_native_geometry` test uses
 `ROBIN_ASSET_MAP_DIAGNOSTICS` to load the generated transition-bearing probes.
 `omittedMovementTransitions` makes missing transition definitions explicit

@@ -17,11 +17,49 @@ import {
   multiPlaneRegionCompilerFixture,
   crossAssetJumpCompilerFixture,
   doorTransitionCompilerFixture,
+  doorAnchorCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("receiving anchors preserve door coordinates outside the receiving polygons", () => {
+  const { document, assets, hut } = doorAnchorCompilerFixture();
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  const door = compiled.doors[0]!;
+  assert.deepEqual(door.point_out, [395, 350]);
+  assert.deepEqual(door.point_in, [405, 350]);
+  assert.notEqual(door.sector_out, door.sector_in);
+  const copy = structuredClone(document.objects[0]!);
+  copy.id = "copy";
+  copy.group = "copy";
+  copy.transform = { ...IDENTITY_TRANSFORM };
+  document.objects.push(copy);
+  document.groups.push({ id: "copy", transform: { dx: 1000, dy: 700, dz: 30, rot_deg: 90 } });
+  const duplicated = compileAssetGameplay(document, assets, bounds);
+  assert.equal(duplicated.doors.length, 2);
+  assert.notEqual(duplicated.doors[1]!.sector_out, duplicated.doors[0]!.sector_out);
+  assert.notEqual(duplicated.doors[1]!.sector_in, duplicated.doors[0]!.sector_in);
+  const rotated = duplicated.doors.find((door) => door.point_out[0] > 500)!;
+  assert.equal(rotated.point_in[0], rotated.point_out[0]);
+  assert.equal(rotated.point_in[1] - rotated.point_out[1], 5);
+  document.objects.pop();
+  document.groups.pop();
+  hut.gameplay!.doors[0]!.insideAnchor = [500, 500, 0];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /inside must resolve/);
+  hut.gameplay!.doors[0]!.insideAnchor = [45, 45, 0];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /inside must resolve/);
+});
+
+test("receiving anchors validate coordinates and cannot replace a virtual interior", () => {
+  const { hut } = doorAnchorCompilerFixture();
+  hut.gameplay!.doors[0]!.insideAnchor = [NaN, 0, 0];
+  assert.throws(() => validateAssetGameplay(hut.gameplay, hut), /insideAnchor/);
+  const interior = interiorAssetCompilerFixture();
+  interior.hut.gameplay!.interiors![0]!.doors[0]!.insideAnchor = [0, 0, 0];
+  assert.throws(() => validateAssetGameplay(interior.hut.gameplay, interior.hut), /shared room/);
+});
+
 test("door-only transitions resolve native interior-first indices independently for each placement", () => {
   const { document, assets, hut } = doorTransitionCompilerFixture();
   const compiled = compileAssetGameplay(document, assets, bounds);

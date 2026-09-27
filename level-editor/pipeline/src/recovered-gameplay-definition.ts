@@ -23,6 +23,8 @@ export interface RecoveredDoor {
   inside: Vec3;
   outside: Vec3;
   middle: Vec3;
+  outsideAnchor?: Vec3;
+  insideAnchor?: Vec3;
   type: number;
   active: boolean;
   locked?: boolean;
@@ -124,6 +126,8 @@ export function recoveredGameplayDefinition(
       inside: d.inside,
       outside: d.outside,
       middle: d.middle,
+      ...(d.outsideAnchor ? { outsideAnchor: d.outsideAnchor } : {}),
+      ...(d.insideAnchor ? { insideAnchor: d.insideAnchor } : {}),
       type: d.type,
       active: d.active,
       locked: d.locks?.player ?? d.locked!,

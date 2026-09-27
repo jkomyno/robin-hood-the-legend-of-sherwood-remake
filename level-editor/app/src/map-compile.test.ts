@@ -24,8 +24,23 @@ import {
   nonrenderingVolumeCompilerFixture,
   crossAssetJumpCompilerFixture,
   doorTransitionCompilerFixture,
+  doorAnchorCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("door receiving anchors export the native endpoint fixture", async () => {
+  const { document, assets } = doorAnchorCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-door-anchor.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("door transition export matches the native door wiring fixture", async () => {
   const { document, assets } = doorTransitionCompilerFixture();

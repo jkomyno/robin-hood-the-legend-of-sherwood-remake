@@ -192,6 +192,8 @@ export function compileAssetGameplay(
     definition: AssetGameplay["doors"][number];
     outside: Vec3;
     inside: Vec3;
+    outsideAnchor: Vec3;
+    insideAnchor: Vec3;
     middle: Point;
     polygon: Point[];
   }[] = [];
@@ -470,6 +472,8 @@ export function compileAssetGameplay(
         definition: door,
         outside: transform(door.node, door.outside),
         inside: transform(door.node, door.inside),
+        outsideAnchor: transform(door.node, door.outsideAnchor ?? door.outside),
+        insideAnchor: transform(door.node, door.insideAnchor ?? door.inside),
         middle: project(transform(door.node, door.middle)),
         polygon: door.polygon.length
           ? ring(
@@ -751,10 +755,14 @@ export function compileAssetGameplay(
   );
   const compiledDoors = doors.map((door) => {
     // Ordinary passages can meet traversal surfaces; lift doors retain their explicit owner.
-    const outside = resolve(door.outside, `${door.name} outside`, door.lift ? undefined : null),
+    const outside = resolve(
+        door.outsideAnchor,
+        `${door.name} outside`,
+        door.lift ? undefined : null,
+      ),
       inside = door.interior
         ? interiorAreas.get(door.interior)!
-        : resolve(door.inside, `${door.name} inside`, door.lift ?? null);
+        : resolve(door.insideAnchor, `${door.name} inside`, door.lift ?? null);
     if (outside.sector === inside.sector)
       throw new Error(`${door.name} does not connect distinct motion areas`);
     const d = door.definition;

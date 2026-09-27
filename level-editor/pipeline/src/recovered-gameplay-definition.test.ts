@@ -5,6 +5,7 @@ import {
   interiorAssetCompilerFixture,
   movementTransitionCompilerFixture,
   doorTransitionCompilerFixture,
+  doorAnchorCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import {
@@ -162,7 +163,11 @@ test("mission surface recovery uses local geometry without retaining projection 
   assert.throws(() => descriptorGameplayPacket(hut), /terrain needs authored movement boundaries/);
 });
 
-for (const fixture of [liftAssetCompilerFixture, interiorAssetCompilerFixture])
+for (const fixture of [
+  liftAssetCompilerFixture,
+  interiorAssetCompilerFixture,
+  doorAnchorCompilerFixture,
+])
   test(`recovered ${fixture.name} produces equivalent compiled connections after placement`, () => {
     const { document, assets, hut } = fixture();
     hut.gameplay!.movementBlockers = [];

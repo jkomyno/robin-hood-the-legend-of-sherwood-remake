@@ -120,6 +120,30 @@ fn recovered_static_exports_construct_native_geometry() {
 }
 
 #[test]
+fn door_endpoints_can_remain_outside_their_explicit_receiving_areas() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-door-anchor.level.json"),
+        &mut assets,
+    );
+    let view = engine.presentation_view();
+    let door = &view.doors()[0];
+    assert_eq!((door.point_out.x, door.point_out.y), (395., 350.));
+    assert_eq!((door.point_in.x, door.point_in.y), (405., 350.));
+    assert_ne!(door.sector_out, door.sector_in);
+    let grid = engine.fast_grid();
+    let outside = &grid.level.sectors[door.sector_out_index.unwrap().get() as usize];
+    let inside = &grid.level.sectors[door.sector_in_index.unwrap().get() as usize];
+    assert!(!outside.contains_point(door.point_out));
+    assert!(!inside.contains_point(door.point_in));
+    assert!(outside.contains_point(robin_engine::coordinates::MapPoint::new(380., 350.)));
+    assert!(inside.contains_point(robin_engine::coordinates::MapPoint::new(420., 350.)));
+    assert!(!outside.gate_indices.is_empty());
+    assert!(!inside.gate_indices.is_empty());
+    assert_eq!(grid.level.door_projection_infos.len(), 1);
+}
+
+#[test]
 fn nonrendering_asset_volume_constructs_navigation_and_sight() {
     let mut assets = LevelAssets::new();
     let engine = construct(

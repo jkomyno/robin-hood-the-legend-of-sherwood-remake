@@ -292,6 +292,16 @@ export function materialAssetCompilerFixture() {
   return fixture;
 }
 
+export function doorAnchorCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const door = fixture.hut.gameplay!.doors[0]!;
+  door.outsideAnchor = [...door.outside];
+  door.insideAnchor = [...door.inside];
+  door.outside = [95, 50, 0];
+  door.inside = [105, 50, 0];
+  return fixture;
+}
+
 export function assetCompilerFixture() {
   const obstacle = {
     points: (

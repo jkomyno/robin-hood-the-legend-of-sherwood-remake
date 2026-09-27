@@ -21,6 +21,9 @@ export interface AssetDoor {
   outside: [number, number, number];
   inside: [number, number, number];
   middle: [number, number, number];
+  /** Optional unblocked local points selecting receiving areas independently of door coordinates. */
+  outsideAnchor?: [number, number, number];
+  insideAnchor?: [number, number, number];
   type: number;
   locked: boolean;
   unlockable: boolean;
@@ -565,6 +568,10 @@ export function validateAssetGameplay(
       typeof door.unlockable !== "boolean"
     )
       fail(`invalid door ${door.id}`);
+    for (const key of ["outsideAnchor", "insideAnchor"] as const)
+      if (door[key] !== undefined && !point(door[key], 3)) fail(`invalid door ${door.id} ${key}`);
+    if (kind === "interior" && door.insideAnchor !== undefined)
+      fail(`interior door ${door.id} cannot override its shared room with an inside anchor`);
     for (const key of ["active", "lockedVillains", "lockedCivilians"] as const)
       if (door[key] !== undefined && typeof door[key] !== "boolean")
         fail(`invalid door ${door.id} ${key}`);
