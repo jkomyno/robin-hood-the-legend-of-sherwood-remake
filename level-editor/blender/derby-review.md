@@ -1,12 +1,12 @@
 # Derby asset refinement review
 
-Patch coverage correction (2026-09-27): the static publication below does not
-provide complete appearance states. A full game-data inventory confirms three
-missing interior reveals (West Tower, East Hall, Upper Gatehouse), both missing
-mission drawbridge switches, and the separate winch state. See
-[the patch audit](derby-patch-audit.md) for all sixteen base/mission records and
-the remaining repair work. The Upper bailey battlements spline preset's sharp
-texture boundary has been removed by selecting a continuous masonry section.
+Interior repair (2026-09-27): West Tower, East Hall, and Upper Gatehouse now
+have covered/revealed states alongside Main Hall. See the
+[repair notes](derby-interiors.md) for geometry, texture provenance, and validation.
+Both mission drawbridge switches and the separate winch state remain outstanding;
+[the patch audit](derby-patch-audit.md) inventories all sixteen base/mission records.
+The Upper bailey battlements spline preset's sharp texture boundary was removed
+by selecting a continuous masonry section.
 
 Publication 13 is LIVE. All 40 catalog groups have their approved geometry and
 texture-fill handoffs integrated in the map and standalone asset library.

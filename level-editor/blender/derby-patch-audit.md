@@ -1,9 +1,9 @@
 # Derby patch coverage audit — 2026-09-27
 
-The published refined scene exposes only the Main Hall appearance patch.
-Three interior reveals, both mission drawbridge switches, and the mission winch
-state are missing from its appearance controls. Static geometry/texture
-publication was complete; patch coverage was not.
+The initial audit found three missing interior reveals. The subsequent
+[interior repair](derby-interiors.md) restores West Tower, East Hall, and Upper
+Gatehouse alongside the existing Main Hall control. Both mission drawbridge
+switches and the mission winch state remain absent from scene appearance controls.
 
 ## Complete game-data inventory
 
@@ -17,9 +17,9 @@ including the terrain and compatibility assets, and the scene's placement bindin
 | Base patch | Appearance/effect | Published refined scene |
 | --- | --- | --- |
 | `patch-000` / Patch01 | Main Hall interior | Bound through `appearance-1`; existing covered/revealed control |
-| `patch-001` / Patch02 | West Tower room | Missing reveal binding; interior floor/cut-wall geometry exists |
-| `patch-002` / Patch03 | East Hall interior | Missing reveal binding; partial facade cutaway needs its own state |
-| `patch-003` / Patch04 | Upper Gatehouse chamber | Missing reveal binding; removable facade components already exist |
+| `patch-001` / Patch02 | West Tower room | Restored cutaway and `appearance-1` binding; curved crown retained |
+| `patch-002` / Patch03 | East Hall interior | Restored partial facade cutaway and `appearance-1` binding |
+| `patch-003` / Patch04 | Upper Gatehouse chamber | Restored removable facade state and `appearance-1` binding |
 | `patch-004` / pixel_vert | Remove mask layer 6, index 19 | No building-cover artwork; mask change, not an additional room |
 | `patch-005` / pixel_vert | Replace mask layer 0, index 112 with 113; doors 39–41 | No building-cover artwork; mask/door state |
 | `patch-006` / pixel_vert | Reversible masking-sector change, final layer 2 | No building-cover artwork; masking state |
@@ -42,9 +42,6 @@ Hiding only the changed sight obstacles would miss both.
 
 ## Remaining repair work
 
-- Bind and visually verify the three missing interior states. Preserve the West
-  Tower's curved cut-wall crown, East Hall's retained battlements, and Upper
-  Gatehouse's retained parapets; whole-wall hiding is insufficient.
 - Connect both raised/lowered bridge endpoints to mission patch controls and
   verify their positions and material states. The second bridge's existing
   endpoint model can be reused. Continuous animation remains unvalidated.
@@ -52,7 +49,7 @@ Hiding only the changed sight obstacles would miss both.
 - Include every visual patch in publication verification. A Main Hall-only
   browser check does not establish complete Derby state coverage.
 
-These are confirmed gaps, not repairs delivered by this audit. This inventory
+The bridge and mechanism entries remain confirmed gaps. This inventory
 does not validate the game runtime's door, collision, or masking behavior.
 
 Local evidence: `work/derby-patch-audit-20260927/audit.json` records native input,

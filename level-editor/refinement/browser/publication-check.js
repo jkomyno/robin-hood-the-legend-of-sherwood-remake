@@ -53,11 +53,12 @@
  const patches=new Set(patchIds);
  window.__publicationProgress={phase:'actual-editor-loading'};
  // The app opens its HTTP library at startup; open the staged map through the Map chooser.
- await wait(()=>document.querySelectorAll('.shared-library .asset-card button[aria-label^="Add "]').length===config.expected.assets.length,'published palette');
  const mapCard=()=>[...document.querySelectorAll('.map-card-open')].find(button=>button.dataset.map===config.map);
  await wait(()=>mapCard()&&!mapCard().disabled,'Map chooser entry '+config.map);
  mapCard().click();
  await wait(()=>document.querySelectorAll('.object-list li.depth-0').length===config.expected.groups,'ActualUI map groups');
+ // The asset palette is mounted inside the opened map workspace.
+ await wait(()=>document.querySelectorAll('.shared-library .asset-card button[aria-label^="Add "]').length===config.expected.assets.length,'published palette');
  window.__publicationPhase={phase:'map-ready',groundMeshes,groundTextures};
  await wait(()=>window.__publicationContinue,'map screenshot');
  const uiPatchLabels=[...document.querySelectorAll('.view-settings label')].filter(l=>l.textContent.includes('Reveal interior:'));
@@ -106,7 +107,7 @@
   const priorGroups=document.querySelectorAll('.object-list li.depth-0').length;
   add.click();
   await wait(()=>!add.disabled&&document.querySelectorAll('.object-list li.depth-0').length===priorGroups+1&&document.querySelector('.object-detail h2')?.textContent.startsWith(asset.name.replace(/ \(static\)$/,"")),'Add '+asset.id);
-  await transform(config.expected.width+500+index*100);inserted.push(asset.id);
+  await transform(config.expected.width+500+index*100);inserted.push(asset.inserted_id??asset.id);
   const selector=[...document.querySelectorAll('.object-detail select')].find(el=>[...el.options].some(o=>o.value==='applied'));
   if(selector){selector.value='applied';selector.dispatchEvent(new Event('change',{bubbles:true}));await sleep(50);let probe=await save();let group=probe.groups.at(-1);assert(group.states.active==='applied','Applied state persisted');for(const id of group.states.initial)assert(probe.objects.find(o=>o.id===id).hidden,'Initial endpoint hidden');for(const id of group.states.applied)assert(!probe.objects.find(o=>o.id===id).hidden,'Applied endpoint visible');stateChecks.push({asset:asset.id,kind:'state-selector',applied:true});}
   if(asset.state_variant)stateChecks.push({asset:asset.id,kind:'static-variant',state:asset.state_variant});

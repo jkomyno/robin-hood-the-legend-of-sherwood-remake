@@ -193,9 +193,9 @@
     },
     {
       "model": "3d-assets/derby/derby-east-hall/model.glb",
-      "model_sha256": "a99f2cfe9f8d96c27655ff563a7a1a237209e7d5ab510a2eb0bd4d908ea71363",
+      "model_sha256": "44f101f4933c8a3f0b445dda7b70ce647fc561fb3b87b0cb55eb583808245354",
       "descriptor": "3d-assets/derby/derby-east-hall/asset.json",
-      "descriptor_sha256": "f1f9933e76f0bb2ef32b4a64849871c9c0f451cac179ea30942f040d856e4a8b",
+      "descriptor_sha256": "d84d07cf62082dfc01f4d11f83894cb600d9ac81697eef7e7809f84022635912",
       "id": "derby-east-hall"
     },
     {
@@ -242,9 +242,9 @@
     },
     {
       "model": "3d-assets/derby/derby-upper-gatehouse/model.glb",
-      "model_sha256": "7b93068b3f8d011af4e361735ca2d1259509d2ca319646656e6afeac4c924661",
+      "model_sha256": "db30b2e76a1b710ea488ea9b582f3b0960c994d7326b2ab211603aad27cd1691",
       "descriptor": "3d-assets/derby/derby-upper-gatehouse/asset.json",
-      "descriptor_sha256": "47d2308f31d5c2d380af578bfce8c2f0819c020f601864d054f78ca6f3097116",
+      "descriptor_sha256": "6d6fb6e38e227eafdbb78532fe9dddc7c8659de87c02da1ed6b60719fcd7db40",
       "id": "derby-upper-gatehouse"
     },
     {
@@ -263,9 +263,9 @@
     },
     {
       "model": "3d-assets/derby/derby-keep-west-tower/model.glb",
-      "model_sha256": "94b3546cc766294d7054cd971a7b4ec02da22368c4fb365318da81ba8131be86",
+      "model_sha256": "275066ae3238a4aafd527350f586138a3f8c550fc5ff23b0511289c11f543534",
       "descriptor": "3d-assets/derby/derby-keep-west-tower/asset.json",
-      "descriptor_sha256": "8309b8ab354a918dd7cbc2ff338da15d3bc75d04900102abc04c45682f565f83",
+      "descriptor_sha256": "f234d4259ebe026aa9d34efbcc8a1b2938b96dbba9bdd576d487100b64bb5aa2",
       "id": "derby-keep-west-tower"
     },
     {
@@ -425,7 +425,7 @@
       "transform": {
         "dx": 894.9620361328125,
         "dy": 1946.7280872738165,
-        "dz": -0.0000186994572622476,
+        "dz": -1.86994572622476e-05,
         "rot_deg": 0
       },
       "assets": [
@@ -503,7 +503,7 @@
       "transform": {
         "dx": 1619.1905517578125,
         "dy": 1500.5496150152155,
-        "dz": -0.00003992168839565324,
+        "dz": -3.992168839565324e-05,
         "rot_deg": 0
       },
       "assets": [
@@ -555,7 +555,7 @@
       "transform": {
         "dx": 1483.408447265625,
         "dy": 1642.144016007278,
-        "dz": -0.00009579669889190113,
+        "dz": -9.579669889190113e-05,
         "rot_deg": 0
       },
       "assets": [
@@ -568,7 +568,7 @@
       "transform": {
         "dx": 1319.9263916015625,
         "dy": 1356.3668383274712,
-        "dz": -0.00007174987363569209,
+        "dz": -7.174987363569209e-05,
         "rot_deg": 0
       },
       "assets": [
@@ -581,7 +581,7 @@
       "transform": {
         "dx": 1113.0533447265625,
         "dy": 1462.6820874846546,
-        "dz": -0.00009166457461890104,
+        "dz": -9.166457461890104e-05,
         "rot_deg": 0
       },
       "assets": [
@@ -620,7 +620,7 @@
       "transform": {
         "dx": 1492.68505859375,
         "dy": 1340.2568462514046,
-        "dz": -0.0000015172070153800141,
+        "dz": -1.5172070153800141e-06,
         "rot_deg": 0
       },
       "assets": [
@@ -662,6 +662,11 @@
         "dz": -0.0003648280661913376,
         "rot_deg": 0
       },
+      "patches": {
+        "derby-upper-gatehouse": {
+          "appearance-1": "patch-003"
+        }
+      },
       "assets": [
         "derby-upper-gatehouse"
       ]
@@ -685,7 +690,7 @@
       "transform": {
         "dx": 905.4322509765625,
         "dy": 1334.534525085621,
-        "dz": -0.00009932749518644538,
+        "dz": -9.932749518644538e-05,
         "rot_deg": 0
       },
       "assets": [
@@ -701,6 +706,11 @@
         "dz": -0.058112222929543995,
         "rot_deg": 0
       },
+      "patches": {
+        "derby-east-hall": {
+          "appearance-1": "patch-002"
+        }
+      },
       "assets": [
         "derby-east-hall"
       ]
@@ -711,7 +721,7 @@
       "transform": {
         "dx": 1737.564697265625,
         "dy": 1384.5933525548346,
-        "dz": -0.00004692837640025994,
+        "dz": -4.692837640025994e-05,
         "rot_deg": 0
       },
       "assets": [
@@ -724,7 +734,7 @@
       "transform": {
         "dx": 922.5999755859375,
         "dy": 2016.2999963103575,
-        "dz": -0.000002439070008320215,
+        "dz": -2.439070008320215e-06,
         "rot_deg": 0
       },
       "assets": [
@@ -737,7 +747,7 @@
       "transform": {
         "dx": 499.20001220703125,
         "dy": 1857.240500904687,
-        "dz": -0.0000014541489928206153,
+        "dz": -1.4541489928206153e-06,
         "rot_deg": 0
       },
       "assets": [
@@ -763,7 +773,7 @@
       "transform": {
         "dx": 449.70001220703125,
         "dy": 1877.5450507381902,
-        "dz": -0.000004068494079347522,
+        "dz": -4.068494079347522e-06,
         "rot_deg": 0
       },
       "assets": [
@@ -805,6 +815,11 @@
         "dz": -0.00019673726359229412,
         "rot_deg": 0
       },
+      "patches": {
+        "derby-keep-west-tower": {
+          "appearance-1": "patch-001"
+        }
+      },
       "assets": [
         "derby-keep-west-tower"
       ]
@@ -833,7 +848,7 @@
       "transform": {
         "dx": 755.0581665039062,
         "dy": 1018.1931871237083,
-        "dz": -0.00003462231125213114,
+        "dz": -3.462231125213114e-05,
         "rot_deg": 0
       },
       "assets": [

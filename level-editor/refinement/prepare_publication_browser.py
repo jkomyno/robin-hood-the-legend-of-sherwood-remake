@@ -184,21 +184,18 @@ def prepare(stage, scope_path, output, *, map_name="leicester", live=False, migr
             # The private index was validated above; the browser needs only model bytes.
             add("3d-assets/" + entry["lossy_model"], source / entry["lossy_model"])
         variants = descriptor.get("state_variants") or descriptor.get("standalone_variants")
+        # The palette has one card per asset; alternate appearances open inside
+        # that card. Keep their model files pinned without counting extra cards.
+        expanded.append({**entry, **({"inserted_id": entry["id"] + "--state-initial"}
+                                    if descriptor.get("state_variants") else {})})
         if not variants:
-            expanded.append(entry)
             continue
-        if descriptor.get("standalone_variants"):
-            expanded.append(entry)
         for state in ("initial", "applied"):
             if state not in variants:
                 continue
             variant = variants[state]
             model_path = str(Path(entry["descriptor"]).parent / variant["model"])
             add("3d-assets/" + model_path, source / model_path)
-            expanded.append({**entry, "id": entry["id"] + "--state-" + state,
-                             "name": entry["name"] + " — " + variant["name"] + " (static)",
-                             "model": model_path, "state_variant": state, "base_id": entry["id"],
-                             **({"model_scene": variant["model_scene"]} if "model_scene" in variant else {})})
     # The editor opens mission/game data alongside its asset library. Include
     # the indexed read-only files in the same hash-pinned private HTTP catalog.
     game_index = library / 'game-data/index.json'
