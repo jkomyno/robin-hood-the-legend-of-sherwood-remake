@@ -270,10 +270,16 @@ importers:
 
   shared:
     dependencies:
+      earcut:
+        specifier: 3.2.3
+        version: 3.2.3
       polygon-clipping:
         specifier: ^0.15.7
         version: 0.15.7
     devDependencies:
+      '@types/earcut':
+        specifier: 3.0.0
+        version: 3.0.0
       '@types/node':
         specifier: 26.5.1
         version: 26.5.1

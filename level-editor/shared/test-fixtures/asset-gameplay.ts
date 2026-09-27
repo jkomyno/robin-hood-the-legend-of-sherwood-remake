@@ -1,6 +1,49 @@
 import type { GameplayAssetDescriptor } from "../src/asset-gameplay.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "../src/level3d.ts";
 
+export function movementTransitionCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  fixture.hut.gameplay!.movementBlockers = [];
+  fixture.hut.gameplay!.movementTransitions = [
+    {
+      id: "barriers",
+      node: "building-999",
+      waypoint: [20, 20, 0],
+      active: true,
+      definitive: false,
+      initial: [
+        {
+          id: "west-barrier",
+          node: "building-999",
+          height: 0,
+          polygon: [
+            [45, 0],
+            [55, 0],
+            [55, 100],
+            [45, 100],
+          ],
+        },
+      ],
+      applied: [
+        {
+          id: "east-barrier",
+          node: "building-999",
+          height: 0,
+          polygon: [
+            [155, 0],
+            [165, 0],
+            [165, 100],
+            [155, 100],
+          ],
+        },
+      ],
+      applyPolygon: [],
+      noApplyPolygon: [],
+    },
+  ];
+  return fixture;
+}
+
 export function soundAssetCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.sounds = [

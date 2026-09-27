@@ -718,6 +718,72 @@ mod tests {
         (engine, crate::patch::PatchIndex::new(0).unwrap())
     }
 
+    #[test]
+    fn editor_compiled_movement_transition_changes_live_routes_without_mission_content() {
+        let loaded = crate::level_data::LoadedLevel::hackable_from_json(include_bytes!(
+            "../../tests/fixtures/asset-movement-transition.level.json"
+        ))
+        .unwrap();
+        assert!(loaded.mission.beam_mes.is_empty());
+        assert!(loaded.mission.soldiers.is_empty());
+        let mut assets = LevelAssets::new();
+        let mut profiles = crate::profiles::ProfileManager::new();
+        let mut campaign = crate::campaign::Campaign::new();
+        let mission = campaign
+            .force_next_mission_by_name(&mut profiles, "asset-state", "asset-state", true)
+            .unwrap();
+        campaign.current_mission_idx = Some(mission);
+        assets.profile_manager = std::sync::Arc::new(profiles);
+        let engine = crate::engine::Engine::new(crate::engine::EngineArgs {
+            campaign,
+            level: crate::engine::LevelLoadArgs {
+                assets: &mut assets,
+                level_directory: "",
+                progress: &mut |_| {},
+                loaded,
+                bg_pixel_dims: (2000., 2000.),
+            },
+            ground_mark_sprite: None,
+            titbit_row_frame_counts: vec![],
+            rng_seed: 0,
+            original_rng_replay: None,
+            sim_config: crate::engine::SimConfig {
+                script_enabled: false,
+                ..Default::default()
+            },
+        })
+        .expect("load editor movement state fixture without datadir");
+        let level_grid = engine.fast_grid().level.clone();
+        let mut engine =
+            crate::engine::snapshot::decode_native_engine_inner(&engine.encode_native_snapshot())
+                .unwrap();
+        engine.world.fast_grid_mut().attach_level_grid(level_grid);
+        let western_route = |e: &EngineInner| {
+            e.world.fast_grid.is_reachable_thin(
+                MapPoint::new(330., 320.),
+                MapPoint::new(370., 320.),
+                0,
+            )
+        };
+        let eastern_route = |e: &EngineInner| {
+            e.world.fast_grid.is_reachable_thin(
+                MapPoint::new(430., 320.),
+                MapPoint::new(490., 320.),
+                0,
+            )
+        };
+        assert!(!western_route(&engine));
+        assert!(eastern_route(&engine));
+        let sim = crate::sim_rng::test_context();
+        let patch = crate::patch::PatchIndex::new(0).unwrap();
+        engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+        assert!(western_route(&engine));
+        assert!(!eastern_route(&engine));
+        engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+        assert!(!western_route(&engine));
+        assert!(eastern_route(&engine));
+    }
+
     fn assert_patch_terrain(engine: &EngineInner, applied: bool) {
         let patch = &engine.script_domains.interactables.patches[0];
         assert_eq!(patch.applied, applied);

@@ -9,11 +9,45 @@ import {
   liftAssetCompilerFixture,
   interiorAssetCompilerFixture,
   soundAssetCompilerFixture,
+  movementTransitionCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("movement transitions receive fresh bindings across separate areas and duplicated assets", () => {
+  const { document, assets } = movementTransitionCompilerFixture();
+  const first = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(first.movement_transitions![0]!.motion_changes, [
+    { layer: 0, sector: 0, changing_obstacle: 0 },
+    { layer: 0, sector: 2, changing_obstacle: 0 },
+  ]);
+  assert.deepEqual(
+    first.motion_data.layers[0]!.map((a) => a.obstacles.map((o) => o.state_id)),
+    [[1], [2]],
+  );
+  const body = structuredClone(document.objects.find((p) => p.group === "hut-a")!);
+  body.id = "hut-b-body";
+  body.group = "hut-b";
+  document.objects.push(body);
+  document.groups.push({
+    ...structuredClone(document.groups.find((g) => g.id === "hut-a")!),
+    id: "hut-b",
+  });
+  const doubled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(doubled.movement_transitions!.length, 2);
+  assert.deepEqual(
+    doubled.motion_data.layers[0]!.map((a) => a.obstacles.map((o) => o.state_id)),
+    [
+      [1, 4],
+      [2, 8],
+    ],
+  );
+  for (const p of document.objects) p.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(moved.movement_transitions![0]!.waypoint, [420, 320]);
+  assert.equal(moved.motion_data.layers[0]![0]!.obstacles[0]!.polygon.points[0]![0], 445);
+});
 test("sound geometry follows placement while acoustic categories and falloff remain intact", () => {
   const { document, assets, hut } = soundAssetCompilerFixture();
   const compiled = compileAssetGameplay(document, assets, bounds);

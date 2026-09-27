@@ -77,6 +77,20 @@ export interface AssetGameplay {
   /** Map-wide defaults supplied by a terrain asset. Ambience is mission-owned. */
   environment?: { forest: boolean; defaultMaterial: number };
   sounds?: AssetSoundSource[];
+  /** Nonvisual movement changes. Visual/sight/mask transitions require separate authoring. */
+  movementTransitions?: AssetMovementTransition[];
+}
+export interface AssetMovementTransition {
+  id: string;
+  node: string;
+  waypoint: [number, number, number];
+  active: boolean;
+  definitive: boolean;
+  initial: AssetWalkableSurface[];
+  applied: AssetWalkableSurface[];
+  /** Trigger contours at the waypoint's local elevation; empty means externally activated. */
+  applyPolygon: Point[];
+  noApplyPolygon: Point[];
 }
 export interface AssetSoundSource {
   id: string;
@@ -121,6 +135,17 @@ export interface CompiledAssetGeometry {
   sight_material_indices?: number[];
   map_settings?: { forest_level: boolean; default_material: number };
   sound_sources?: SoundSource[];
+  movement_transitions?: {
+    id: string;
+    waypoint: Point;
+    sector: number;
+    layer: number;
+    active: boolean;
+    definitive: boolean;
+    apply_polygon: { points: Point[] };
+    no_apply_polygon: { points: Point[] };
+    motion_changes: { layer: number; sector: number; changing_obstacle: number }[];
+  }[];
   doors: {
     door_type: number;
     active: boolean;
@@ -193,6 +218,22 @@ export function validateAssetGameplay(
   const legacySpawns = (value as { spawns?: unknown }).spawns;
   if (legacySpawns !== undefined && (!Array.isArray(legacySpawns) || legacySpawns.length))
     fail("Player spawns belong to missions, not map assets");
+  if (data.movementTransitions !== undefined && !Array.isArray(data.movementTransitions))
+    fail("invalid movement transitions");
+  for (const transition of data.movementTransitions ?? []) {
+    feature(transition);
+    if (
+      !point(transition.waypoint, 3) ||
+      typeof transition.active !== "boolean" ||
+      typeof transition.definitive !== "boolean" ||
+      !Array.isArray(transition.initial) ||
+      !Array.isArray(transition.applied) ||
+      (!transition.initial.length && !transition.applied.length)
+    )
+      fail(`invalid movement transition ${transition.id}`);
+    for (const contour of [transition.applyPolygon, transition.noApplyPolygon])
+      if (!(Array.isArray(contour) && contour.length === 0)) polygon(contour);
+  }
   const integer = (n: unknown, max: number): n is number =>
     typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= max;
   if (data.sounds !== undefined && !Array.isArray(data.sounds)) fail("invalid sound sources");
@@ -260,6 +301,7 @@ export function validateAssetGameplay(
     ...data.surfaces,
     ...(data.movementBlockers ?? []),
     ...(data.movementClearances ?? []),
+    ...(data.movementTransitions ?? []).flatMap((t) => [...t.initial, ...t.applied]),
   ]) {
     feature(surface);
     polygon(surface.polygon);

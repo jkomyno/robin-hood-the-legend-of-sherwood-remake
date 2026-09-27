@@ -2152,6 +2152,22 @@ pub struct CompiledAssetGeometry {
     #[serde(default)]
     pub sound_sources: Vec<RawSoundSource>,
     pub doors: Vec<RawDoor>,
+    #[serde(default)]
+    pub movement_transitions: Vec<CompiledMovementTransition>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
+#[serde(deny_unknown_fields)]
+pub struct CompiledMovementTransition {
+    pub id: String,
+    pub waypoint: (i16, i16),
+    pub sector: u16,
+    pub layer: u16,
+    pub active: bool,
+    pub definitive: bool,
+    pub apply_polygon: SectorPolygon,
+    pub no_apply_polygon: SectorPolygon,
+    pub motion_changes: Vec<PatchMotionChange>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
@@ -2628,6 +2644,7 @@ impl LoadedLevel {
                 return Err("asset geometry requires ordinary motion layers, a reserved lift layer and a freshly constructed graph".into());
             }
             let mut area_refs = std::collections::BTreeSet::new();
+            let mut motion_states = std::collections::BTreeMap::new();
             let mut lift_refs = std::collections::BTreeSet::new();
             let lift_layer = geometry.motion_data.layers.len() - 1;
             let mut sector = 0u16;
@@ -2643,6 +2660,13 @@ impl LoadedLevel {
                         return Err("invalid compiled asset motion area".into());
                     }
                     area_refs.insert((sector, layer as u16));
+                    motion_states.insert(
+                        (sector, layer as u16),
+                        area.obstacles
+                            .iter()
+                            .map(|o| o.state_id)
+                            .collect::<Vec<_>>(),
+                    );
                     if area.is_lift {
                         lift_refs.insert(sector);
                     }
@@ -2652,6 +2676,46 @@ impl LoadedLevel {
                                 .map_err(|_| "too many asset obstacles")?,
                         )
                         .ok_or("too many asset sectors")?;
+                }
+            }
+            let mut transition_ids = std::collections::BTreeSet::new();
+            let mut transition_pairs = std::collections::BTreeMap::<(u16, u16), u32>::new();
+            for transition in &geometry.movement_transitions {
+                if transition.id.is_empty()
+                    || !transition_ids.insert(&transition.id)
+                    || !motion_states.contains_key(&(transition.sector, transition.layer))
+                    || transition.motion_changes.is_empty()
+                    || [&transition.apply_polygon, &transition.no_apply_polygon]
+                        .iter()
+                        .any(|p| !p.points.is_empty() && p.points.len() < 3)
+                {
+                    return Err("invalid compiled movement transition".into());
+                }
+                for change in &transition.motion_changes {
+                    let key = (change.sector, change.layer);
+                    let Some(states) = motion_states.get(&key) else {
+                        return Err("movement transition references missing area".into());
+                    };
+                    if change.changing_obstacle >= 16 {
+                        return Err("movement transition bit pair exceeds u32".into());
+                    }
+                    let mask = 3u32 << (2 * change.changing_obstacle);
+                    let assigned = transition_pairs.entry(key).or_default();
+                    if *assigned & mask != 0 || !states.iter().any(|s| s & mask != 0) {
+                        return Err("duplicate or unused movement transition binding".into());
+                    }
+                    *assigned |= mask;
+                }
+            }
+            for (key, states) in &motion_states {
+                let assigned = transition_pairs.get(key).copied().unwrap_or(0);
+                if states
+                    .iter()
+                    .any(|&s| s & !assigned != 0 || (s != 0 && !s.is_power_of_two()))
+                {
+                    return Err(
+                        "compiled movement obstacle has no independent transition binding".into(),
+                    );
                 }
             }
             // Building identities follow motion's out-of-map slot, materials and sight planes.
@@ -2762,6 +2826,57 @@ impl LoadedLevel {
                 ProtoGridChunk::Building,
                 ProtoGridChunk::Lift,
             ];
+            if !geometry.movement_transitions.is_empty() {
+                level.proto.grid_chunk_order.push(ProtoGridChunk::Patch);
+                level
+                    .proto
+                    .element_chunk_order
+                    .push(ProtoElementChunk::Patch);
+                for transition in geometry.movement_transitions {
+                    level.proto.patches.push(RawPatch {
+                        element_fx: RawElementFx {
+                            sprite: RawSpriteRef {
+                                frame_profile_name: String::new(),
+                                profile_name: String::new(),
+                                position_x: transition.waypoint.0,
+                                position_y: transition.waypoint.1,
+                                elevation: 0,
+                            },
+                            blit_type: 0,
+                            active: false,
+                            force_display: false,
+                            display_polyline: Vec::new(),
+                        },
+                        active: transition.active,
+                        definitive: transition.definitive,
+                        pathfinder_changing_obstacles: 0,
+                        pathfinder_sector: None,
+                        pathfinder_layer: None,
+                        additional_motion_changes: transition.motion_changes,
+                        start_animation_valid: false,
+                        transition_animation_valid: false,
+                        end_animation_valid: false,
+                        waypoint: transition.waypoint,
+                        sector: transition.sector,
+                        layer: transition.layer,
+                        final_layer: transition.layer,
+                        integrate_in_background: false,
+                        old_masks: Vec::new(),
+                        new_masks: Vec::new(),
+                        old_sight_obstacles: Vec::new(),
+                        new_sight_obstacles: Vec::new(),
+                        old_mouse_sector: SectorPolygon { points: Vec::new() },
+                        new_mouse_sector: SectorPolygon { points: Vec::new() },
+                        old_masking_sector: SectorPolygon { points: Vec::new() },
+                        new_masking_sector: SectorPolygon { points: Vec::new() },
+                        apply_sector: transition.apply_polygon,
+                        no_apply_sector: transition.no_apply_polygon,
+                        door_triggered: false,
+                        triggers_door: false,
+                        door_indices: Vec::new(),
+                    });
+                }
+            }
             for sound in &geometry.sound_sources {
                 let delay_valid = match (sound.source_kind, sound.delayed_params) {
                     (2, Some((min, max, step))) => min <= max && step < u16::MAX,

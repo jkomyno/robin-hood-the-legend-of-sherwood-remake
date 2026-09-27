@@ -1,5 +1,12 @@
 # Post-port Features
 
+- **Asset-local movement transitions.** Map compilation clips initial/applied
+  blockers to their placed navigation areas and assigns independent state bits
+  to each instance. Blocker holes and trigger polygons are retained. The game
+  applies and resets all affected areas through native map patches, without
+  requiring mission actors. Visual, sight and mask transitions remain unfinished;
+  this does not certify extracted-map parity.
+
 - **Map selection and safe editing.** The editor opens on thumbnail cards, with
   New map on that screen and a close control in the workspace. Unsaved edits warn
   before leaving; loading uses a cancellable modal. Local copies can be renamed
@@ -24,8 +31,8 @@
   noise-covering ranges and ambience filters; shared audio sample references use
   the base installation. Recovery reports ambiguous emitter ownership explicitly.
   Native patch bindings can update multiple navigation areas together, retaining
-  movement-sector and line activation through apply/reset. Editor state compilation
-  and visual-state baking remain unfinished.
+  movement-sector and line activation through apply/reset. Combined visual,
+  sight and mask state compilation remains unfinished.
   Offline terrain recovery reports reconstruction error on the integer
   movement grid and keeps unresolved ownership visible. Recovery drafts are
   checked against the asset schema; passage connections can omit click polygons,

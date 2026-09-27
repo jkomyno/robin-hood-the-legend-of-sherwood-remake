@@ -7,9 +7,11 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "earcut": "3.2.3",
     "polygon-clipping": "^0.15.7"
   },
   "devDependencies": {
+    "@types/earcut": "3.0.0",
     "@types/node": "26.5.1"
   }
 }

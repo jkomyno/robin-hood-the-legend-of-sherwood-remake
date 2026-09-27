@@ -14,8 +14,23 @@ import {
   clearanceAssetCompilerFixture,
   materialAssetCompilerFixture,
   soundAssetCompilerFixture,
+  movementTransitionCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("movement transition export matches native apply/reset fixture", async () => {
+  const { document, assets } = movementTransitionCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-movement-transition.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("asset environmental sound export matches the native source fixture", async () => {
   const { document, assets } = soundAssetCompilerFixture();

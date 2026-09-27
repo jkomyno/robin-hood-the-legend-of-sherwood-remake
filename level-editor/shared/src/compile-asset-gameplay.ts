@@ -13,6 +13,10 @@ import {
 
 import { heightPlane, planeHeight, clipHeight, type HeightPlane } from "./gameplay-plane.ts";
 import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-quantization.ts";
+import {
+  compileTransitionObstacles,
+  type PlacedTransitionBlocker,
+} from "./compile-movement-transitions.ts";
 
 type Instance = {
   id: string;
@@ -140,6 +144,16 @@ export function compileAssetGameplay(
   const movementBlockers: typeof surfaces = [];
   const movementSolids: { owner: string; shape: SightObstacle }[] = [];
   const movementClearances: typeof surfaces = [];
+  const transitionBlockers: PlacedTransitionBlocker[] = [];
+  const transitions: {
+    id: string;
+    waypoint: Vec3;
+    active: boolean;
+    definitive: boolean;
+    applyPolygon: Point[];
+    noApplyPolygon: Point[];
+    changes: { layer: number; sector: number; changing_obstacle: number }[];
+  }[] = [];
   const lifts: { id: string; type: number; direction: number }[] = [];
   const interiors: string[] = [];
   const doors: {
@@ -255,10 +269,41 @@ export function compileAssetGameplay(
         obstacle.material_indices.push(index);
       }
     }
+    const dynamic = (gameplay.movementTransitions ?? []).flatMap((t) => [
+      ...t.initial.map((surface) => ({
+        surface,
+        transition: `${placement.id}/${t.id}`,
+        applied: false,
+      })),
+      ...t.applied.map((surface) => ({
+        surface,
+        transition: `${placement.id}/${t.id}`,
+        applied: true,
+      })),
+    ]);
+    for (const t of gameplay.movementTransitions ?? []) {
+      const contour = (points: Point[]) =>
+        points.length
+          ? ring(
+              points.map((p) => project(transform(t.node, [...p, t.waypoint[2]]))),
+              `${placement.id}/${t.id}`,
+            )
+          : [];
+      transitions.push({
+        id: `${placement.id}/${t.id}`,
+        waypoint: transform(t.node, t.waypoint),
+        active: t.active,
+        definitive: t.definitive,
+        applyPolygon: contour(t.applyPolygon),
+        noApplyPolygon: contour(t.noApplyPolygon),
+        changes: [],
+      });
+    }
     for (const surface of [
       ...gameplay.surfaces,
       ...(gameplay.movementBlockers ?? []),
       ...(gameplay.movementClearances ?? []),
+      ...dynamic.map((d) => d.surface),
     ]) {
       const local = surface.polygon.map((p, i): Vec3 => [
         p[0],
@@ -274,7 +319,7 @@ export function compileAssetGameplay(
         : gameplay.movementBlockers?.includes(surface)
           ? movementBlockers
           : surfaces;
-      target.push({
+      const placed = {
         owner: placement.id,
         polygon: ring(points.map(project), `${placement.id}/${surface.id}`),
         plane,
@@ -289,7 +334,15 @@ export function compileAssetGameplay(
             `${placement.id}/${surface.id} hole`,
           ),
         ),
-      });
+      };
+      const change = dynamic.find((d) => d.surface === surface);
+      if (change)
+        transitionBlockers.push({
+          ...placed,
+          transition: change.transition,
+          applied: change.applied,
+        });
+      else target.push(placed);
     }
     const placeDoor = (door: AssetGameplay["doors"][number], lift?: string, interior?: string) =>
       doors.push({
@@ -447,16 +500,41 @@ export function compileAssetGameplay(
       const blockers = quantized
         .slice(1)
         .map((r) => ring(r, `Merged movement hole on layer ${layer}`));
-      const area = { plane, lift, sector, layer, polygon: boundary, blockers };
+      const changing = compileTransitionObstacles(
+        boundary,
+        blockers,
+        plane,
+        transitionBlockers,
+        warnings,
+      );
+      for (const [id, pair] of changing.pairs)
+        transitions
+          .find((t) => t.id === id)!
+          .changes.push({
+            layer,
+            sector,
+            changing_obstacle: pair,
+          });
+      const area = {
+        plane,
+        lift,
+        sector,
+        layer,
+        polygon: boundary,
+        blockers: [...blockers, ...changing.initial],
+      };
       areas.push(area);
-      sector += 1 + blockers.length;
+      sector += 1 + blockers.length + changing.obstacles.length;
       output.push({
         is_lift: !!lift,
         state_id: 0,
         polygon: { points: boundary },
         skeleton_segments: [],
         flags: 0,
-        obstacles: blockers.map((points) => ({ state_id: 0, polygon: { points } })),
+        obstacles: [
+          ...blockers.map((points) => ({ state_id: 0, polygon: { points } })),
+          ...changing.obstacles,
+        ],
       });
       // Projection surfaces provide layer-aware elevation and picking.
       if (lift || plane.some((n) => Math.abs(n) > 1e-7))
@@ -543,6 +621,26 @@ export function compileAssetGameplay(
   return {
     ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
+    ...(transitions.length
+      ? {
+          movement_transitions: transitions.map((t) => {
+            if (!t.changes.length)
+              throw new Error(`${t.id}: movement transition affects no walkable area`);
+            const area = resolve(t.waypoint, `${t.id} waypoint`);
+            return {
+              id: t.id,
+              waypoint: project(t.waypoint),
+              sector: area.sector,
+              layer: area.layer,
+              active: t.active,
+              definitive: t.definitive,
+              apply_polygon: { points: t.applyPolygon },
+              no_apply_polygon: { points: t.noApplyPolygon },
+              motion_changes: t.changes,
+            };
+          }),
+        }
+      : {}),
     ...(mapSettings ? { map_settings: mapSettings } : {}),
     ...(sounds.length ? { sound_sources: sounds } : {}),
     sight_obstacles: sight,

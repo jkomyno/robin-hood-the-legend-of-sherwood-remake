@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   liftAssetCompilerFixture,
   interiorAssetCompilerFixture,
+  movementTransitionCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import {
@@ -67,6 +68,21 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
     ],
   };
 }
+
+test("reviewed movement transitions survive draft conversion without shared mutable data", () => {
+  const { hut, document, assets } = movementTransitionCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  packet.movementTransitions = structuredClone(hut.gameplay!.movementTransitions);
+  const expected = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  hut.gameplay = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(hut.gameplay.movementTransitions, packet.movementTransitions);
+  packet.movementTransitions![0]!.waypoint[0] += 100;
+  assert.notDeepEqual(hut.gameplay.movementTransitions, packet.movementTransitions);
+  assert.deepEqual(
+    compileAssetGameplay(document, assets, [0, 0, 2000, 2000]).movement_transitions,
+    expected.movement_transitions,
+  );
+});
 
 test("geometry-only assets retain derived movement collision unless explicitly replaced", () => {
   const { document, assets, hut } = assetCompilerFixture();

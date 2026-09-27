@@ -4,6 +4,47 @@ use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimCo
 use robin_engine::level_data::LoadedLevel;
 
 #[test]
+fn compiled_movement_transitions_reject_stale_or_unbound_state_bits() {
+    let value: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "fixtures/asset-movement-transition.level.json"
+    ))
+    .unwrap();
+    let mut bad = value.clone();
+    bad["asset_geometry"]["movement_transitions"][0]["motion_changes"][0]["sector"] = 123.into();
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+            .unwrap_err()
+            .contains("missing area")
+    );
+    let mut bad = value.clone();
+    bad["asset_geometry"]["movement_transitions"][0]["motion_changes"][0]["changing_obstacle"] =
+        16.into();
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+            .unwrap_err()
+            .contains("bit pair")
+    );
+    let mut bad = value.clone();
+    bad["asset_geometry"]["movement_transitions"] = serde_json::json!([]);
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+            .unwrap_err()
+            .contains("no independent transition")
+    );
+    let mut bad = value;
+    let duplicate = bad["asset_geometry"]["movement_transitions"][0]["motion_changes"][0].clone();
+    bad["asset_geometry"]["movement_transitions"][0]["motion_changes"]
+        .as_array_mut()
+        .unwrap()
+        .push(duplicate);
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+            .unwrap_err()
+            .contains("duplicate")
+    );
+}
+
+#[test]
 fn environmental_sounds_load_from_compiled_assets_and_filter_unused_samples() {
     let bytes = include_bytes!("fixtures/asset-sound.level.json");
     let level = LoadedLevel::hackable_from_json(bytes).unwrap();
