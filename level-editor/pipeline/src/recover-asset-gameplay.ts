@@ -952,13 +952,22 @@ for (const [index, source] of proto.patches.entries()) {
       throw new Error("Door and its transition belong to different assets");
     if (
       !recovered &&
-      (source.old_sight_obstacles.length ||
-        source.new_sight_obstacles.length ||
-        movementStateInventory.some((area) =>
-          area.transitions.some((change) => change.patches.includes(index)),
-        ))
+      movementStateInventory.some((area) =>
+        area.transitions.some((change) => change.patches.includes(index)),
+      )
     )
-      throw new Error("Door transition has unrecovered movement or sight changes");
+      throw new Error("Door transition has unrecovered movement changes");
+    const sightRef = (index: number) => {
+      const candidates = locals.get(index) ?? [];
+      if (candidates.length !== 1)
+        throw new Error(`Door transition needs one sight owner for obstacle ${index}`);
+      const sight = candidates[0]!;
+      if (sight.asset !== owner.asset)
+        throw new Error(`Door and sight obstacle ${index} belong to different assets`);
+      return sight.collisionId ?? sight.node;
+    };
+    const initialSight = source.old_sight_obstacles.map(sightRef);
+    const appliedSight = source.new_sight_obstacles.map(sightRef);
     const p = packet(owner.asset);
     const transition = recovered
       ? p.movementTransitions!.find((entry) => entry.id === recovered.transition)!
@@ -968,8 +977,8 @@ for (const [index, source] of proto.patches.entries()) {
           patch: source,
           initial: [],
           applied: [],
-          initialSight: [],
-          appliedSight: [],
+          initialSight,
+          appliedSight,
           receivers: [],
           groundLayer: source.layer === 0,
           waypointHeight: heightAt(source.sector, source.layer, source.waypoint),
@@ -979,6 +988,21 @@ for (const [index, source] of proto.patches.entries()) {
       mode: source.door_triggered ? "trigger-transition" : "swap-rights",
       ids: doorOwners.map((entry) => entry.id),
     };
+    if (
+      !recovered &&
+      (initialSight.length || appliedSight.length) &&
+      p.movementBlockers === undefined
+    ) {
+      const descriptor = descriptors.get(owner.asset)!;
+      const controlled = new Set([...initialSight, ...appliedSight]);
+      const solids = p.movementSolids ?? [
+        ...descriptor.parts
+          .filter((part) => part.obstacle_local_game?.solid)
+          .map((part) => part.node),
+        ...(p.volumes ?? []).filter((volume) => volume.shape.solid).map((volume) => volume.id),
+      ];
+      p.movementSolids = solids.filter((ref) => !controlled.has(ref));
+    }
     if (!recovered) (p.movementTransitions ??= []).push(transition);
     p.issues.push("Door bindings recovered; visual states and effects need separate authoring");
     doorTransitionRecovery.push({

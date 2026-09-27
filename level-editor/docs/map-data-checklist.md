@@ -172,15 +172,19 @@ for each placement, including duplicates. Native fixture tests verify both link
 directions, permission changes and restoration on reset. Door-only transitions
 are supported without adding navigation or sight changes. Offline recovery maps
 source door indices into local endpoint IDs and reports missing owners, cross-asset
-links and unrecovered geometry in `pending.doorTransitionBindings`. Three of the
-28 door-linked patches across the nine extracted maps now recover: Nottingham's
-three-door courtyard, Leicester's two-door west wing and York's two-door terrace
-permission transitions. The other 25 retain explicit unresolved reasons: 15 have
-missing door owners, and 10 still need their changing movement/sight geometry recovered.
-All eight initial/alternate permission fields match the source for those seven doors.
-The native round-trip harness loads all six door-bearing map diagnostics and
-applies/resets their eleven recovered transitions, including these three permission
-transitions. It checks both halves of door permissions as well as movement and sight state.
+links and unrecovered geometry in `pending.doorTransitionBindings`. Thirteen of the
+28 door-linked patches across the nine extracted maps now recover: seven in
+Nottingham, three in York, two in Leicester and one in Lincoln. The other fifteen
+have missing door owners. Recovery also supports sight changes without navigation
+changes when every referenced obstacle and door belongs to the same asset.
+The 35 changing sight shapes match source coordinates and flags exactly; compiled
+navigation remains unchanged from the preceding diagnostic exports.
+All eight initial/alternate permission fields match the source for the nineteen
+linked doors, and each binding retains its trigger direction.
+The native round-trip harness applies/resets fourteen recovered transitions in
+these four maps, including all thirteen door-linked transitions. It checks both
+halves of door permissions as well as movement and sight state, including the
+door-to-patch links for door-triggered transitions.
 This does not establish complete door-transition coverage or publish those drafts.
 The twenty-one recovered transitions pass native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.
