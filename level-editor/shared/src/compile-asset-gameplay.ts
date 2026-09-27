@@ -27,6 +27,7 @@ type Instance = {
   id: string;
   descriptor: GameplayAssetDescriptor;
   parts: Map<string, Level3DObject>;
+  frames: Map<string, Level3DObject>;
   background: boolean;
 };
 const signedArea = (ring: Point[]) =>
@@ -78,12 +79,23 @@ function instances(
     const id = `${part.group ?? part.id}/${match[1]}`;
     let instance = result.get(id);
     if (!instance) {
-      instance = { id, descriptor, parts: new Map(), background: false };
+      instance = { id, descriptor, parts: new Map(), frames: new Map(), background: false };
       result.set(id, instance);
     }
     if (instance.parts.has(match[2]!))
       throw new Error(`Duplicate asset node ${part.node} in placement ${id}`);
     instance.parts.set(match[2]!, part);
+  }
+  // Explicit gameplay keeps its local frames even when a mesh part is hidden.
+  // Entirely hidden placements still contribute no instance.
+  for (const part of document.objects) {
+    const match = /^asset:([^:]+):(.+)$/.exec(part.node);
+    if (!match) continue;
+    const instance = result.get(`${part.group ?? part.id}/${match[1]}`);
+    if (!instance) continue;
+    if (instance.frames.has(match[2]!))
+      throw new Error(`Duplicate asset frame ${part.node} in placement ${instance.id}`);
+    instance.frames.set(match[2]!, part);
   }
   for (const source of document.sceneAssets) {
     if (source.role !== "ground") continue;
@@ -93,6 +105,7 @@ function instances(
       id: `ground/${source.id}`,
       descriptor,
       parts: new Map(),
+      frames: new Map(),
       background: true,
     });
   }
@@ -164,6 +177,8 @@ export function compileAssetGameplay(
     applyPolygon: Point[];
     noApplyPolygon: Point[];
     changes: { layer: number; sector: number; changing_obstacle: number }[];
+    initialSight: number[];
+    appliedSight: number[];
   }[] = [];
   let lifts: PlacedLiftSegment[] = [];
   const interiors: string[] = [];
@@ -207,7 +222,7 @@ export function compileAssetGameplay(
     const transform = (node: string, point: Vec3): Vec3 => {
       let p = point;
       if (!placement.background || node !== "$root") {
-        const part = placement.parts.get(node);
+        const part = placement.frames.get(node);
         if (!part) throw new Error(`${placement.id}: gameplay node ${node} is hidden or missing`);
         const matrix = partMatrix(document.camera, document, part);
         const local = gameToScene(document.camera, ...point);
@@ -283,8 +298,15 @@ export function compileAssetGameplay(
       });
     }
     const partSight = new Map<string, SightObstacle>();
+    const explicitSight = new Set(
+      (gameplay.movementTransitions ?? []).flatMap((t) => [
+        ...(t.initialSight ?? []),
+        ...(t.appliedSight ?? []),
+      ]),
+    );
     if (gameplay.collision === "parts")
-      for (const [node, part] of placement.parts) {
+      for (const [node, part] of placement.frames) {
+        if (!placement.parts.has(node) && !explicitSight.has(node)) continue;
         if (!part.obstacle) continue;
         const shape = transformedObstacle(document, part);
         // Keep per-vertex heights and flags, but rebuild all map-wide references.
@@ -351,6 +373,13 @@ export function compileAssetGameplay(
       })),
     ]);
     for (const t of gameplay.movementTransitions ?? []) {
+      const sightRefs = (refs: string[] = []) =>
+        refs.map((id) => {
+          const shape = partSight.get(id);
+          if (!shape)
+            throw new Error(`${placement.id}/${t.id}: sight obstacle ${id} is hidden or missing`);
+          return sight.indexOf(shape);
+        });
       const contour = (points: Point[]) =>
         points.length
           ? ring(
@@ -366,6 +395,8 @@ export function compileAssetGameplay(
         applyPolygon: contour(t.applyPolygon),
         noApplyPolygon: contour(t.noApplyPolygon),
         changes: [],
+        initialSight: sightRefs(t.initialSight),
+        appliedSight: sightRefs(t.appliedSight),
       });
     }
     for (const surface of [
@@ -769,7 +800,7 @@ export function compileAssetGameplay(
     ...(transitions.length
       ? {
           movement_transitions: transitions.map((t) => {
-            if (!t.changes.length)
+            if (!t.changes.length && !t.initialSight.length && !t.appliedSight.length)
               throw new Error(`${t.id}: movement transition affects no walkable area`);
             const area = resolve(t.waypoint, `${t.id} waypoint`);
             return {
@@ -782,6 +813,8 @@ export function compileAssetGameplay(
               apply_polygon: { points: t.applyPolygon },
               no_apply_polygon: { points: t.noApplyPolygon },
               motion_changes: t.changes,
+              ...(t.initialSight.length ? { initial_sight: t.initialSight } : {}),
+              ...(t.appliedSight.length ? { applied_sight: t.appliedSight } : {}),
             };
           }),
         }

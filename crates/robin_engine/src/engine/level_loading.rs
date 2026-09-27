@@ -4420,6 +4420,14 @@ impl EngineInner {
                 .iter()
                 .filter_map(|&i| crate::sight_obstacle::SightObstacleIndex::new(u32::from(i)))
                 .collect();
+            // A newly loaded patch starts in its initial geometry, independently
+            // of whether its trigger is currently enabled.
+            for &index in &old_sight {
+                self.set_sight_obstacle_active(u32::from(index), true);
+            }
+            for &index in &new_sight {
+                self.set_sight_obstacle_active(u32::from(index), false);
+            }
 
             // Register old/new sector polygons in the FastFindGrid.
             let mut old_sector_indices: Vec<u32> = Vec::new();

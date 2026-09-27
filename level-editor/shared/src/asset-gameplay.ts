@@ -136,6 +136,9 @@ export interface AssetMovementTransition {
   definitive: boolean;
   initial: AssetWalkableSurface[];
   applied: AssetWalkableSurface[];
+  /** Local part/volume IDs enabled before and after the transition, respectively. */
+  initialSight?: string[];
+  appliedSight?: string[];
   /** Trigger contours at the waypoint's local elevation; empty means externally activated. */
   applyPolygon: Point[];
   noApplyPolygon: Point[];
@@ -213,6 +216,8 @@ export interface CompiledAssetGeometry {
     apply_polygon: { points: Point[] };
     no_apply_polygon: { points: Point[] };
     motion_changes: { layer: number; sector: number; changing_obstacle: number }[];
+    initial_sight?: number[];
+    applied_sight?: number[];
   }[];
   doors: {
     door_type: number;
@@ -288,6 +293,7 @@ export function validateAssetGameplay(
     fail("Player spawns belong to missions, not map assets");
   if (data.movementTransitions !== undefined && !Array.isArray(data.movementTransitions))
     fail("invalid movement transitions");
+  const changingSight = new Set<string>();
   for (const transition of data.movementTransitions ?? []) {
     feature(transition);
     if (
@@ -296,12 +302,35 @@ export function validateAssetGameplay(
       typeof transition.definitive !== "boolean" ||
       !Array.isArray(transition.initial) ||
       !Array.isArray(transition.applied) ||
-      (!transition.initial.length && !transition.applied.length)
+      (!transition.initial.length &&
+        !transition.applied.length &&
+        !transition.initialSight?.length &&
+        !transition.appliedSight?.length)
     )
       fail(`invalid movement transition ${transition.id}`);
+    for (const refs of [transition.initialSight, transition.appliedSight]) {
+      if (refs === undefined) continue;
+      if (!Array.isArray(refs)) fail("invalid sight transition references");
+      for (const ref of refs) {
+        if (
+          typeof ref !== "string" ||
+          changingSight.has(ref) ||
+          !(
+            data.volumes?.some((v) => v.id === ref) ||
+            (data.collision === "parts" && nodes.has(ref))
+          )
+        )
+          fail(`invalid or multiply controlled sight obstacle ${ref}`);
+        changingSight.add(ref);
+      }
+    }
     for (const contour of [transition.applyPolygon, transition.noApplyPolygon])
       if (!(Array.isArray(contour) && contour.length === 0)) polygon(contour);
   }
+  if (changingSight.size && data.movementBlockers === undefined)
+    fail(
+      "Sight transitions require explicit movement blockers; author navigation changes independently",
+    );
   const integer = (n: unknown, max: number): n is number =>
     typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= max;
   if (data.jumpZones !== undefined && !Array.isArray(data.jumpZones)) fail("invalid jump zones");

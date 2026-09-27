@@ -301,7 +301,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
     const soleOwner = supportOwners[0]?.[0]?.asset;
     const regionIsLocal =
       !motion.is_lift &&
-      supports.length > 1 &&
+      supports.length > 0 &&
       soleOwner !== undefined &&
       supportOwners.every((owners) => owners.length === 1 && owners[0]!.asset === soleOwner);
     const navigationRegion = regionIsLocal ? `walk-region-${identity}` : undefined;

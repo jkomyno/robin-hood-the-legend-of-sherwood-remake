@@ -2174,6 +2174,10 @@ pub struct CompiledMovementTransition {
     pub apply_polygon: SectorPolygon,
     pub no_apply_polygon: SectorPolygon,
     pub motion_changes: Vec<PatchMotionChange>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub initial_sight: Vec<u16>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub applied_sight: Vec<u16>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
@@ -2685,17 +2689,34 @@ impl LoadedLevel {
                 }
             }
             let mut transition_ids = std::collections::BTreeSet::new();
+            let mut transition_sight = std::collections::BTreeSet::new();
             let mut transition_pairs = std::collections::BTreeMap::<(u16, u16), u32>::new();
             for transition in &geometry.movement_transitions {
                 if transition.id.is_empty()
                     || !transition_ids.insert(&transition.id)
                     || !motion_states.contains_key(&(transition.sector, transition.layer))
-                    || transition.motion_changes.is_empty()
+                    || (transition.motion_changes.is_empty()
+                        && transition.initial_sight.is_empty()
+                        && transition.applied_sight.is_empty())
                     || [&transition.apply_polygon, &transition.no_apply_polygon]
                         .iter()
                         .any(|p| !p.points.is_empty() && p.points.len() < 3)
                 {
                     return Err("invalid compiled movement transition".into());
+                }
+                for index in transition
+                    .initial_sight
+                    .iter()
+                    .chain(&transition.applied_sight)
+                {
+                    let Some(obstacle) = geometry.sight_obstacles.get(usize::from(*index)) else {
+                        return Err("transition references missing sight obstacle".into());
+                    };
+                    if obstacle.projection_area.is_some() || !transition_sight.insert(*index) {
+                        return Err(
+                            "invalid or multiply controlled transition sight obstacle".into()
+                        );
+                    }
                 }
                 for change in &transition.motion_changes {
                     let key = (change.sector, change.layer);
@@ -2905,8 +2926,8 @@ impl LoadedLevel {
                         integrate_in_background: false,
                         old_masks: Vec::new(),
                         new_masks: Vec::new(),
-                        old_sight_obstacles: Vec::new(),
-                        new_sight_obstacles: Vec::new(),
+                        old_sight_obstacles: transition.initial_sight,
+                        new_sight_obstacles: transition.applied_sight,
                         old_mouse_sector: SectorPolygon { points: Vec::new() },
                         new_mouse_sector: SectorPolygon { points: Vec::new() },
                         old_masking_sector: SectorPolygon { points: Vec::new() },

@@ -10,6 +10,7 @@ import {
   interiorAssetCompilerFixture,
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
+  sightTransitionCompilerFixture,
   lightAssetCompilerFixture,
   jumpAssetCompilerFixture,
   compoundLiftCompilerFixture,
@@ -20,6 +21,59 @@ import {
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("sight transitions rebuild local references and reject ambiguous obstacle control", () => {
+  const { document, assets, hut } = sightTransitionCompilerFixture();
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(geometry.movement_transitions![0]!.initial_sight, [0]);
+  assert.deepEqual(geometry.movement_transitions![0]!.applied_sight, [1]);
+  const transition = hut.gameplay!.movementTransitions![0]!;
+  transition.initial = [];
+  transition.applied = [];
+  assert.deepEqual(
+    compileAssetGameplay(document, assets, bounds).movement_transitions![0]!.motion_changes,
+    [],
+  );
+  transition.appliedSight = ["building-999"];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /multiply controlled/);
+  transition.appliedSight = ["missing"];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /sight obstacle/);
+  transition.appliedSight = ["open-barrier"];
+  delete hut.gameplay!.movementBlockers;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /explicit movement blockers/);
+});
+test("hidden mesh frames retain explicit gameplay and only referenced sight geometry", () => {
+  const { document, assets, hut } = sightTransitionCompilerFixture();
+  const part = document.objects.find((p) => p.node.endsWith(":building-999"))!;
+  const visible = structuredClone(part);
+  visible.id = "visible-anchor";
+  visible.node = visible.node.replace("building-999", "anchor");
+  hut.parts.push({ node: "anchor", name: "Visible frame", scenery: true });
+  document.objects.push(visible);
+  part.hidden = true;
+  let geometry = compileAssetGameplay(document, assets, bounds);
+  assert.equal(geometry.doors.length, 1);
+  assert.equal(geometry.sight_obstacles.length, 2);
+  delete hut.gameplay!.movementTransitions![0]!.initialSight;
+  geometry = compileAssetGameplay(document, assets, bounds);
+  assert.equal(geometry.sight_obstacles.length, 1);
+  assert.deepEqual(geometry.movement_transitions![0]!.applied_sight, [0]);
+});
+test("duplicated sight transitions control only their own transformed obstacles", () => {
+  const { document, assets } = sightTransitionCompilerFixture();
+  const part = document.objects.find((p) => p.group)!;
+  document.groups.push({
+    id: "state-copy",
+    transform: { ...IDENTITY_TRANSFORM, dx: 1000, rot_deg: 90 },
+  });
+  document.objects.push({ ...structuredClone(part), id: "state-copy-part", group: "state-copy" });
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  const [first, second] = geometry.movement_transitions!;
+  assert.equal(geometry.movement_transitions!.length, 2);
+  assert.deepEqual(first!.initial_sight, [0]);
+  assert.deepEqual(second!.initial_sight, [2]);
+  assert.deepEqual(second!.applied_sight, [3]);
+  assert.notDeepEqual(geometry.sight_obstacles[0]!.points, geometry.sight_obstacles[2]!.points);
+});
 test("cross-asset jump edges assemble equivalent native links and detect broken placement", () => {
   const { document, assets } = crossAssetJumpCompilerFixture();
   const whole = jumpAssetCompilerFixture();

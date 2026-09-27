@@ -720,10 +720,22 @@ mod tests {
 
     #[test]
     fn editor_compiled_movement_transition_changes_live_routes_without_mission_content() {
-        let loaded = crate::level_data::LoadedLevel::hackable_from_json(include_bytes!(
-            "../../tests/fixtures/asset-movement-transition.level.json"
-        ))
-        .unwrap();
+        check_compiled_transition(
+            include_bytes!("../../tests/fixtures/asset-movement-transition.level.json"),
+            false,
+        );
+    }
+
+    #[test]
+    fn editor_compiled_sight_transition_swaps_obstacles_with_navigation() {
+        check_compiled_transition(
+            include_bytes!("../../tests/fixtures/asset-sight-transition.level.json"),
+            true,
+        );
+    }
+
+    fn check_compiled_transition(bytes: &[u8], sight: bool) {
+        let loaded = crate::level_data::LoadedLevel::hackable_from_json(bytes).unwrap();
         assert!(loaded.mission.beam_mes.is_empty());
         assert!(loaded.mission.soldiers.is_empty());
         let mut assets = LevelAssets::new();
@@ -774,14 +786,23 @@ mod tests {
         };
         assert!(!western_route(&engine));
         assert!(eastern_route(&engine));
+        if sight {
+            assert_eq!(engine.world.static_sight_obstacle_active, vec![true, false]);
+        }
         let sim = crate::sim_rng::test_context();
         let patch = crate::patch::PatchIndex::new(0).unwrap();
         engine.apply_patch(TickCtx::new(&sim, &assets), patch);
         assert!(western_route(&engine));
         assert!(!eastern_route(&engine));
+        if sight {
+            assert_eq!(engine.world.static_sight_obstacle_active, vec![false, true]);
+        }
         engine.reset_patch(TickCtx::new(&sim, &assets), patch);
         assert!(!western_route(&engine));
         assert!(eastern_route(&engine));
+        if sight {
+            assert_eq!(engine.world.static_sight_obstacle_active, vec![true, false]);
+        }
     }
 
     fn assert_patch_terrain(engine: &EngineInner, applied: bool) {

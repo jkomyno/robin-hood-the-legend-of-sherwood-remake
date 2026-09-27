@@ -212,6 +212,22 @@ fn compiled_light_regions_reject_missing_layers_and_degenerate_contours() {
 }
 
 #[test]
+fn sight_transitions_reject_missing_duplicate_and_projection_obstacles() {
+    let source: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-sight-transition.level.json"))
+            .unwrap();
+    for index in [999, 0] {
+        let mut bad = source.clone();
+        bad["asset_geometry"]["movement_transitions"][0]["applied_sight"] =
+            serde_json::json!([index]);
+        assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap()).is_err());
+    }
+    let mut bad = source;
+    bad["asset_geometry"]["sight_obstacles"][0]["projection_area"] = serde_json::json!([0, 0]);
+    assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap()).is_err());
+}
+
+#[test]
 fn compiled_movement_transitions_reject_stale_or_unbound_state_bits() {
     let value: serde_json::Value = serde_json::from_slice(include_bytes!(
         "fixtures/asset-movement-transition.level.json"

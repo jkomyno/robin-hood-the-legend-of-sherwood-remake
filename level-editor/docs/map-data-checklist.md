@@ -18,7 +18,7 @@ intended construction, not functionality available today.
 | Movement blockers | Transform explicit asset-local movement contours on their height plane; otherwise intersect collision volumes with walkable surfaces. Sight geometry stays independent. | Working in synthetic tests; recovered ownership still needs review |
 | Openings in movement collision | Asset-local clearances remove only the owning asset's derived collision on the matching plane; sight geometry and other assets remain intact. | Working in compiler/runtime tests; recovery geometry failures remain explicit gaps |
 | Navigation graph and fast-find grid | Engine constructs routing and spatial lookup structures from compiled geometry. No copied grids or graph bytes. | Working on synthetic maps |
-| Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. | Working for static geometry |
+| Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. Explicit transition references select initial/applied obstacles. | Static geometry working; sight transitions verified through native initialization, apply and reset; recovered state ownership still incomplete |
 | Projection surfaces / elevation | Generate height planes linked to the new movement areas. | Partial: planar surfaces; elevation-boundary links unfinished |
 | Doors, gates and lock rules | Transform local endpoints and optional click polygons; resolve neighbours geometrically and retain initial/alternate actor lock rules. | Partial: rules preserved; state-transition triggers still missing |
 | Building interiors | Asset-local interior definitions and entrances; generate virtual interior sectors and links. | Working for empty interiors; occupants remain planned |
@@ -28,7 +28,7 @@ intended construction, not functionality available today.
 | Light/shadow regions | Transform asset-local planar contours, resolve the receiving navigation layer and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering and interior links; multi-plane regions and ambiguous ownership remain recovery gaps |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
-| Interactive patches / state changes | Asset-local movement transitions compile initial/applied blocker polygons, trigger zones and fresh state bindings across all affected navigation areas. | Partial: movement-only transitions implemented; changing visuals, sight, masks and door links remain unfinished |
+| Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours and sight-obstacle references, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement and sight transitions implemented; changing visuals, masks and door links remain unfinished |
 | Map settings | Scene identity/export bounds; terrain assets supply forest behaviour and default material. Ambience is selected by the mission. | Working in compiler/runtime tests; recovered terrain metadata unpublished |
 | Resource banks and references | Package generated resources and resolve shared sprite/audio/profile dependencies. | Partial: baked images; shared resources use the base installation |
 
@@ -115,7 +115,10 @@ engine fixture verifies walking across the shared boundary without a gate or lif
 Recovery preserves this relationship when all supports have one unambiguous asset
 owner. Ordinary regions spanning different assets still need explicit join authoring.
 Ground recovery reports per-region differences as well as overall coverage.
-Nottingham's hidden prison part remains a blocker. York's compound lift now has
+Hidden mesh parts retain coordinate frames for explicit gameplay; whole hidden
+placements remain excluded. Hidden sight geometry is included only when explicitly
+referenced by a transition. Nottingham now passes the prison-frame and castle-door
+checks; its static diagnostic stops at a missing elevated stair landing. York's compound lift now has
 asset-local segment connections; its static check advances to an unresolved
 interior-door landing surface. Lift recovery matches shared
 edges once and stores local sockets, never runtime references between assets.

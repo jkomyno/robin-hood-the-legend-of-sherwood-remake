@@ -161,6 +161,24 @@ export function crossAssetJumpCompilerFixture() {
   return { ...fixture, upper };
 }
 
+export function sightTransitionCompilerFixture() {
+  const fixture = movementTransitionCompilerFixture();
+  const shape = structuredClone(fixture.hut.parts[0]!.obstacle_local_game!);
+  const { projection_area: _projection, material_indices: _materials, ...volume } = shape;
+  fixture.hut.gameplay!.volumes = [
+    {
+      id: "open-barrier",
+      node: "building-999",
+      shape: { ...volume, points: volume.points.map((p) => ({ ...p, x: p.x + 100 })) },
+    },
+  ];
+  const transition = fixture.hut.gameplay!.movementTransitions![0]!;
+  transition.initialSight = ["building-999"];
+  transition.appliedSight = ["open-barrier"];
+  fixture.document.map = "Sight transition fixture";
+  return fixture;
+}
+
 export function movementTransitionCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.movementBlockers = [];
