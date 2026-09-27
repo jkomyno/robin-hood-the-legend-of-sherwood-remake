@@ -70,6 +70,16 @@ def main(packets, output):
             if group['changed']:
                 for previous in group['previous_assets']:
                     regrouped.setdefault(previous, []).append(group['id'])
+    blanket_path = Path(__file__).with_name('model-approval.json')
+    blanket = json.loads(blanket_path.read_text()) if blanket_path.exists() else {}
+    blanket_ids = set()
+    if blanket.get('status') == 'MODELS_APPROVED':
+        if hashlib.sha256(Path(blanket['worker']).read_bytes()).hexdigest() != blanket['worker_sha256']:
+            raise ValueError('Approved model baseline changed')
+        for path, expected in blanket['evidence'].items():
+            if hashlib.sha256(Path(path).read_bytes()).hexdigest() != expected:
+                raise ValueError('Approved model evidence changed: '+path)
+        blanket_ids = set(blanket['asset_ids'])
     artwork_path = packets.parent/'original-static-art.png'
     artwork = Image.open(artwork_path).convert('RGBA')
     artwork_hash = hashlib.sha256(artwork_path.read_bytes()).hexdigest()
@@ -80,6 +90,8 @@ def main(packets, output):
         asset = target['id']
         name = asset.removeprefix('sherwood-').replace('-', ' ').title()
         folder = packets/asset
+        if asset in blanket_ids:
+            continue
         if not (folder/'preparation.json').exists():
             if asset in regrouped:
                 continue
@@ -136,7 +148,7 @@ def main(packets, output):
         superseded_by_grouping=regrouped,
         status_counts={'ready for review':sum(i['status']=='ready-for-user' for i in items),
                        'visual check pending':sum(i['status']!='ready-for-user' for i in items),
-                       'approved':sum(i['decision']=='approved' for i in reviewed),
+                       'approved':len(blanket_ids) if blanket_ids else sum(i['decision']=='approved' for i in reviewed),
                        'awaiting refinement':sum(i['decision']=='needs refinement' for i in reviewed),
                        'rendering':len(missing)}),indent=2)+'\n')
     build(manifest,output/'gallery',map_name='Sherwood models',pending_only=False)
@@ -155,6 +167,8 @@ def main(packets, output):
     reviewed_summary = '<details><summary>Recorded reviews</summary><ul>'+''.join(
         '<li>'+html.escape(i['name']+': '+i['decision']+(' — '+i['note'] if i['note'] else ''))+'</li>'
         for i in reviewed)+'</ul></details>'
+    if blanket_ids:
+        reviewed_summary += '<p><strong>All '+str(len(blanket_ids))+' current models approved.</strong> Texture preparation is in progress.</p>'
     if regrouped:
         reviewed_summary += '<p><strong>Grouping has been revised.</strong> <a href="grouping/index.html">Review the regrouped assets here</a>.</p>'
     page.write_text(page.read_text().replace('<nav>', '<p><a href="scene/index.html">Full-scene model views and original artwork</a></p>'

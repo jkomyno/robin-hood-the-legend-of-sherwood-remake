@@ -37,9 +37,16 @@ def main(root):
     manifest=root/'gallery-manifest.json';manifest.write_text(json.dumps(dict(map='Sherwood models',review_kind='model',items=[item]),indent=2)+'\n')
     gallery=EDITOR/'work/sherwood-refinement/model-review/gallery/revisions'
     build(manifest,gallery,map_name='Sherwood models',pending_only=True)
+    evidence=json.loads((gallery/'evidence.json').read_text())
+    decisions=json.loads((HERE/'model-decisions.json').read_text())['decisions']
+    revision=evidence['items'][0]['review_revision']
+    if any(d['id']==item['id'] and d['review_revision']==revision and d['decision']=='approved' for d in decisions):
+        item['user_approval']='approved'
+        manifest.write_text(json.dumps(dict(map='Sherwood models',review_kind='model',items=[item]),indent=2)+'\n')
+        build(manifest,gallery,map_name='Sherwood models',pending_only=True)
     parent=gallery.parent/'index.html'
     if parent.exists():
-        text=parent.read_text();notice='<p><strong>Revised model:</strong> <a href="revisions/">Review the corrected northeast woodland oak</a>.</p>'
+        text=parent.read_text();notice='<p><a href="revisions/">Northeast woodland oak revision</a>: '+('approved' if item['user_approval']=='approved' else 'awaiting review')+'.</p>'
         if 'href="revisions/"' not in text:parent.write_text(text.replace('<nav>',notice+'<nav>',1))
     print(json.dumps(dict(gallery=str(gallery/'index.html'),ready=checked,asset=packet['asset_id'])))
 

@@ -8,6 +8,7 @@ explicitly prevents that preview from being used as a completed synthesis source
 import argparse
 import hashlib
 import json
+import shutil
 from pathlib import Path
 import sys
 
@@ -65,10 +66,27 @@ def verify_coverage(constraints, objects):
     return len(objects)
 
 
-def main(recipe_path, grouping, output):
+def main(recipe_path, grouping, output, models=None):
     recipe_path, grouping, output = map(lambda p: Path(p).resolve(), (recipe_path, grouping, output))
-    output.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=False)
+    shutil.copy2(recipe_path, output/'recipe.json')
+    recipe_path = output/'recipe.json'
     recipe = json.loads(recipe_path.read_text())
+    worker = grouping/'grouped-source-only.blend'
+    model_evidence = {}
+    if models:
+        models = Path(models).resolve()
+        model = json.loads(models.read_text())
+        if model['status'] != 'MODELS_APPROVED' or sha(worker) != model['grouped_worker_sha256']:
+            raise ValueError('Model approval does not match grouped baseline')
+        worker = Path(model['worker'])
+        if sha(worker) != model['worker_sha256']:
+            raise ValueError('Approved model worker changed')
+        for path, expected in model['evidence'].items():
+            if sha(path) != expected:
+                raise ValueError('Approved model evidence changed: '+path)
+        model_evidence[str(models)] = sha(models)
+        model_evidence.update(model['evidence'])
     approval = json.loads((grouping/'grouping-approval.json').read_text())
     if approval['status'] != 'GROUPING_APPROVED':
         raise ValueError('Grouping is not approved')
@@ -107,10 +125,12 @@ def main(recipe_path, grouping, output):
     counts = {node: sum(r['source'] == node for r in geometry) for node in nodes}
     report = dict(status='PARTIAL_AUDIT' if unknown else 'MASK_ASSIGNMENTS_COMPLETE', synthesis_ready=not unknown,
         source_sha256=sha(SOURCE), recipe_sha256=sha(recipe_path), grouping_approval_sha256=sha(grouping/'grouping-approval.json'),
-        grouped_worker_sha256=sha(grouping/'grouped-source-only.blend'), constrained_receivers=len(receivers),
+        grouped_worker_sha256=sha(grouping/'grouped-source-only.blend'), worker=str(worker),
+        worker_sha256=sha(worker), constrained_receivers=len(receivers),
         unconstrained_receivers=0, reviewed_source_nodes=len(nodes)-len(unknown),
         unresolved_source_nodes=len(unknown), unresolved_meshes=sum(counts[n] for n in unknown),
         unresolved=unknown, evidence=evidence_record(output/'source-masks.json'))
+    report['evidence'].update(model_evidence)
     report['evidence'][str(recipe_path)] = sha(recipe_path)
     for rule in assignments:
         if rule['ownership_status'] == 'reviewed':
@@ -125,5 +145,6 @@ if __name__ == '__main__':
     parser.add_argument('--recipe', default=DEFAULT_RECIPE)
     parser.add_argument('--grouping', default=DEFAULT_GROUPING)
     parser.add_argument('--output', required=True)
+    parser.add_argument('--models', help='Approval receipt for a revised model baseline')
     args = parser.parse_args()
-    main(args.recipe, args.grouping, args.output)
+    main(args.recipe, args.grouping, args.output, args.models)

@@ -34,8 +34,8 @@ def write(path, value):
 def main(grouping, masks, output):
     grouping, masks, output = (Path(p).resolve() for p in (grouping, masks, output))
     coverage = json.loads((masks/'coverage.json').read_text())
-    worker = grouping/'grouped-source-only.blend'
-    if sha(worker) != coverage['grouped_worker_sha256']:
+    worker = Path(coverage.get('worker', grouping/'grouped-source-only.blend'))
+    if sha(worker) != coverage.get('worker_sha256', coverage['grouped_worker_sha256']):
         raise ValueError('Approved grouped worker changed')
     for path, expected in coverage['evidence'].items():
         if sha(path) != expected:

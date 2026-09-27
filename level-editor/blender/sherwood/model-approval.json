@@ -1,0 +1,291 @@
+{
+  "version": 1,
+  "status": "MODELS_APPROVED",
+  "user_statement": "models: all approved",
+  "scope": "All current Sherwood models; generated textures remain unapproved",
+  "worker": "/home/phire/data/dev/2026/robin-hood-the-legend-of-sherwood/level-editor/work/sherwood-refinement/models-approved/worker.blend",
+  "worker_sha256": "06699515ea5bc496029567799c540e6d2fa7de91d9f6738ecab95f17e797c0a1",
+  "grouped_worker_sha256": "c721935d88c6d02a8e4497069734b4c39701f91c8b632079caf5d25f60b5b321",
+  "asset_ids": [
+    "sherwood-west-camp-hut",
+    "sherwood-north-camp-hut",
+    "sherwood-camp-dining-shelter",
+    "sherwood-camp-preparation-table-set",
+    "sherwood-central-oak",
+    "sherwood-broad-woodland-oak",
+    "sherwood-ladder-oak",
+    "sherwood-ladder-oak-platform",
+    "sherwood-central-oak-treehouse",
+    "sherwood-central-oak-platform",
+    "sherwood-west-treehouse-oak",
+    "sherwood-west-treehouse",
+    "sherwood-central-west-treehouse-oak",
+    "sherwood-central-west-treehouse",
+    "sherwood-central-west-treehouse-platform",
+    "sherwood-west-border-treehouse-oak",
+    "sherwood-west-border-treehouse",
+    "sherwood-central-suspension-bridge",
+    "sherwood-long-suspension-bridge",
+    "sherwood-west-suspension-bridge",
+    "sherwood-west-camp-lookout-shelter",
+    "sherwood-southwest-work-shelter",
+    "sherwood-southwest-worktable",
+    "sherwood-north-woodland-shelter",
+    "sherwood-west-camp-rock-cluster",
+    "sherwood-central-oak-rock-outcrop",
+    "sherwood-south-riverbank-rock-outcrop",
+    "sherwood-east-riverbank-rock-outcrop",
+    "sherwood-ladder-oak-rock-cluster",
+    "sherwood-west-camp-barrel",
+    "sherwood-west-camp-tub",
+    "sherwood-camp-woodpile",
+    "sherwood-camp-wash-stand",
+    "sherwood-camp-serving-stool",
+    "sherwood-camp-barrel",
+    "sherwood-camp-baskets",
+    "sherwood-round-camp-stool",
+    "sherwood-river-oak",
+    "sherwood-west-woodland-tree",
+    "sherwood-northwest-woodland-oak",
+    "sherwood-north-woodland-trunk",
+    "sherwood-northwest-woodland-tree",
+    "sherwood-leaning-woodland-tree",
+    "sherwood-west-woodland-oak",
+    "sherwood-east-border-oak",
+    "sherwood-woodland-stump",
+    "sherwood-spreading-woodland-oak",
+    "sherwood-northeast-woodland-oak",
+    "sherwood-north-border-oak",
+    "sherwood-northeast-forked-oak",
+    "sherwood-riverbank-rock",
+    "sherwood-west-woodland-branch",
+    "sherwood-west-border-woodland-oak",
+    "sherwood-north-woodland-oak",
+    "sherwood-north-border-branch",
+    "sherwood-northeast-border-oak",
+    "sherwood-horizontal-supply-barrel",
+    "sherwood-riverbank-boulder-10",
+    "sherwood-riverbank-boulder-11",
+    "sherwood-riverbank-boulder-12",
+    "sherwood-riverbank-boulder-13",
+    "sherwood-riverbank-boulder-14",
+    "sherwood-riverbank-boulder-15",
+    "sherwood-riverbank-boulder-16",
+    "sherwood-riverbank-boulder-17",
+    "sherwood-riverbank-boulder-18",
+    "sherwood-riverbank-boulder-22",
+    "sherwood-riverbank-boulder-26",
+    "sherwood-river-bluff",
+    "sherwood-iron-cooking-cauldron",
+    "sherwood-cooking-stool",
+    "sherwood-roasting-spit",
+    "sherwood-fallen-camp-branch",
+    "sherwood-camp-cut-timber",
+    "sherwood-south-river-driftwood",
+    "sherwood-river-driftwood",
+    "sherwood-riverbank-timber-fence",
+    "sherwood-west-archery-target",
+    "sherwood-east-archery-target",
+    "sherwood-foreground-oak"
+  ],
+  "reviewed_packets": [
+    {
+      "id": "sherwood-fallen-camp-branch",
+      "review_revision": "f85c4fab3cd70b7a09e0e03df8e401ed55128c286d4c54110dba2d5d82d0a137"
+    },
+    {
+      "id": "sherwood-horizontal-supply-barrel",
+      "review_revision": "f534dee2ad85b1c59124c2162dc0e56b0c7db166f4e70c4d369814e949462443"
+    },
+    {
+      "id": "sherwood-iron-cooking-cauldron",
+      "review_revision": "384f9024ed2a8ced59701702f5706232e30c91ea83c2f5bb02ee0b7e96d8cac8"
+    },
+    {
+      "id": "sherwood-leaning-woodland-tree",
+      "review_revision": "2b96e517b396cdf3a423ba524184fb2ce6018f045fc3500a4fe1ba6c2c5562c5"
+    },
+    {
+      "id": "sherwood-long-suspension-bridge",
+      "review_revision": "f01c2124d3291c5e48df65a4931e672b1208b3d7de4db52c038a144848e23520"
+    },
+    {
+      "id": "sherwood-north-border-branch",
+      "review_revision": "d9719171c18f7ea31687c3317f3096606424066d2457398b00f17e1539be0994"
+    },
+    {
+      "id": "sherwood-north-border-oak",
+      "review_revision": "1cab8e987d008907b143f99392359d99b87b7660483f65687584c1d9560cc15f"
+    },
+    {
+      "id": "sherwood-north-woodland-oak",
+      "review_revision": "f79947e344c7d4ffa64255a9243ec9b4bf43124eb36707a75586ba4745683e61"
+    },
+    {
+      "id": "sherwood-north-woodland-trunk",
+      "review_revision": "131b7f10f8087f5bf4cbcfe846b96eb7848a389c2f7efb50fb8da5637473e626"
+    },
+    {
+      "id": "sherwood-northeast-forked-oak",
+      "review_revision": "ca3d0d2e70edd36a65de836c878e2293eb8865eadacbab61b779804dd1cd8ebc"
+    },
+    {
+      "id": "sherwood-northwest-woodland-oak",
+      "review_revision": "46b295222440b74d16b511684a33ffe21355a2f764a649feea79df293125baac"
+    },
+    {
+      "id": "sherwood-northwest-woodland-tree",
+      "review_revision": "d9a4e2eb0e9b42cce71eec241821db57243f9596dd261758cade4f578294c279"
+    },
+    {
+      "id": "sherwood-river-bluff",
+      "review_revision": "221594303d25d69284a17059d3cc67dd820a6c2899e69dc91247e4d69c2cc586"
+    },
+    {
+      "id": "sherwood-river-driftwood",
+      "review_revision": "17386ad23b846743a3f75d3bf0cff83141a8b592427693948d2ca274ffbb8c88"
+    },
+    {
+      "id": "sherwood-river-oak",
+      "review_revision": "3c2651becbab74eabe49f2790f517002b8c73d6e597d3d1a30699cdf8ce52023"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-10",
+      "review_revision": "f2eb87b76a0e8234aef4583fc090e0b2160993e06baf440b132a955a2fe2e841"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-11",
+      "review_revision": "ab46fd59d9c424a6e897a0b62d7f990df50372337b371409ca3acf1b4cd666f2"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-12",
+      "review_revision": "874190cad17b83e815b34613604b37bd1849a0f0cabe9e436feccb90ecda02e2"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-13",
+      "review_revision": "69752de1eec65c8aa8cffd43458d4d2cf30aa4c7c48ce1c7c7207a467e040381"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-14",
+      "review_revision": "f45b6d7f72420d21cfab317500303db61e3e94543b6ea7da2df39604a8e868d8"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-15",
+      "review_revision": "047308c9ab741b69f4ac4f8480884b14eb9071e4816f19a19f13da09a46c2f10"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-16",
+      "review_revision": "8fb5936f414908c4bacba1f0d9f1bcf2a29ab9252c6328c0c9bfc337babcefd2"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-17",
+      "review_revision": "13f2334358b8435e2eb54a309965ec737e7327a9f1c9785adaf5c2ef547370d2"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-18",
+      "review_revision": "f74b109693332254513b0d4f52d7369156a37e247acfe6da20b39c59ecb355a0"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-22",
+      "review_revision": "b80e1f959f65c401686a2b79916088083d114d2505ab8e9b01023fbc8d571d85"
+    },
+    {
+      "id": "sherwood-riverbank-boulder-26",
+      "review_revision": "c49c696f0ef951e0763e0ab290f730e78c88f0099c3e5c8a4a7acf95adbb4094"
+    },
+    {
+      "id": "sherwood-riverbank-rock",
+      "review_revision": "397b45053ba9db8efca0e52c27d0f2e90fa032ddbebeb44afcba51a1f659f70b"
+    },
+    {
+      "id": "sherwood-riverbank-timber-fence",
+      "review_revision": "16e5d70a8e1e4d74d58dc8aa400e9526e8f1f8d6155645049109888a051fc542"
+    },
+    {
+      "id": "sherwood-roasting-spit",
+      "review_revision": "377013d9593c0367dc42d2cffb9bf833a9bc3f8189dd70b6d3e99461aca48e2f"
+    },
+    {
+      "id": "sherwood-round-camp-stool",
+      "review_revision": "625b7e78a4e085dbda69e92f413b06b978d8057e8f2e473c361d7ad80e15b1c2"
+    },
+    {
+      "id": "sherwood-south-river-driftwood",
+      "review_revision": "0fb3013b7d6ad2c5eba000cc6092234ee5edc2f37e4a1c124f684a45cf3922a0"
+    },
+    {
+      "id": "sherwood-spreading-woodland-oak",
+      "review_revision": "0ce4501dbd57a23bb6bbab92b4522257aef1f15d24d3529a7323d9df7327bb99"
+    },
+    {
+      "id": "sherwood-terrain-1-1",
+      "review_revision": "a19c10f638f2aa27a4633e1b4116aff93ee5a031a882a4ba9e8b750b4d953037"
+    },
+    {
+      "id": "sherwood-terrain-1-2",
+      "review_revision": "2b8443e082d373fdb2ed45f7e5a39b1977b7825cab6c9ce37aa4b86f91cb4844"
+    },
+    {
+      "id": "sherwood-terrain-1-3",
+      "review_revision": "af8f51ae0413a8cfc86f32d0155353d14863a9a8e620b488edfc3648bb6f3061"
+    },
+    {
+      "id": "sherwood-terrain-2-1",
+      "review_revision": "cafbdfa267667d5e0a356c2d29b2b60c4e06636566219159f1e077f5d31dbdf9"
+    },
+    {
+      "id": "sherwood-terrain-2-2",
+      "review_revision": "199ba2f9f17e166e29e77995015a46e55573afa42c2d121af21c3e2ba76d9309"
+    },
+    {
+      "id": "sherwood-terrain-2-3",
+      "review_revision": "afb6637e353d7557767f09f6d350d77146fcbcec9072279872cca7cdd0a39a41"
+    },
+    {
+      "id": "sherwood-west-archery-target",
+      "review_revision": "5e8673ecdf29b8f1a74f0f503489f470433f989a306a54f66ebd185ca0be659a"
+    },
+    {
+      "id": "sherwood-west-border-woodland-oak",
+      "review_revision": "cd7a378fbc520dfb567f8a2cf39196a23437f563ed72b923dea45bf4a53836dd"
+    },
+    {
+      "id": "sherwood-west-camp-barrel",
+      "review_revision": "e92ac25ae8355ba47d6b655aa468d93e6b78519311ce99734dcd0d7f3aed4f66"
+    },
+    {
+      "id": "sherwood-west-camp-tub",
+      "review_revision": "0bee5a21de2cfba3a73d1c918e5c871a85f2d6c177aa5954740d99e95005d908"
+    },
+    {
+      "id": "sherwood-west-woodland-branch",
+      "review_revision": "4dade151a22f5e890157df82166a9cf102d91e4407504fc8060f509090e1a4b7"
+    },
+    {
+      "id": "sherwood-west-woodland-oak",
+      "review_revision": "b8f08fe332485fdf891155a3093fb9aed74be5f8865ab29de885a227b8e8b94b"
+    },
+    {
+      "id": "sherwood-west-woodland-tree",
+      "review_revision": "afe72a2fb8c8687d8d9eab874527c85dda4f5a8e40752c702a578bd340205f11"
+    },
+    {
+      "id": "sherwood-woodland-stump",
+      "review_revision": "24989d62aed12c4a5e6b11f121ff8b4b87f5d8c34772b0bb25abaa96eb5f6ba9"
+    },
+    {
+      "id": "sherwood-northeast-woodland-oak",
+      "review_revision": "b679e8904207fa041211a20f5e4f82122b3b2a506fb55d2aa7ae0124199a6c5d"
+    }
+  ],
+  "unrendered_packet_approvals": "Covered only by the user blanket approval of the current worker; no per-packet review is claimed.",
+  "evidence": {
+    "/home/phire/data/dev/2026/robin-hood-the-legend-of-sherwood/level-editor/work/sherwood-refinement/grouping-review/catalog.json": "367f0a44b73f859302a35137a0b75e2c0a4bed97b9d338bb9a727ca1a1d64cc3",
+    "/home/phire/data/dev/2026/robin-hood-the-legend-of-sherwood/level-editor/work/sherwood-refinement/grouping-review/plan.json": "15784b7dd1e20cee3b343d3d26cda261d3e30178123cc449f8d820a0c1d114a4",
+    "/home/phire/data/dev/2026/robin-hood-the-legend-of-sherwood/level-editor/work/sherwood-refinement/grouping-review/grouping-approval.json": "f5fca913d35717f433a2ea61bf79c413feabc861ac692808dcbdfa1280a18478",
+    "/home/phire/data/dev/2026/robin-hood-the-legend-of-sherwood/level-editor/work/sherwood-refinement/northeast-oak-review/stage.json": "2386cdd81b082651580ae1e16d355e1d0104d701d3b73c7404fd3237bec77d47",
+    "/home/phire/data/dev/2026/robin-hood-the-legend-of-sherwood/level-editor/work/sherwood-refinement/northeast-oak-review/saved-worker-verification.json": "273c09a6144179a4606fe3f0723eff13c7c6529b9eed0bf2380e90df97c1b30d",
+    "/home/phire/data/dev/2026/robin-hood-the-legend-of-sherwood/level-editor/work/sherwood-refinement/models-approved/remaining-evidence.json": "c7184d1c49e3a756734f0e17a0c12185a2868b742eddccaac6ee729e8bef5561",
+    "/home/phire/data/dev/2026/robin-hood-the-legend-of-sherwood/level-editor/work/sherwood-refinement/models-approved/revised-oak-evidence.json": "eeb0c4d386fa7220075708ac4dbe9e59e0a39528398c2fd8814af55331409136"
+  }
+}

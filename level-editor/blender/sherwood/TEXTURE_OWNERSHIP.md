@@ -97,3 +97,19 @@ hashed `evidence`. This final receipt also requires the visual and independent
 domain checks in step 5 above; the partial audit verifier cannot produce it.
 Previously prepared packets and the four old OpenRouter outputs cannot bypass
 this guard. Rebuild them after the full source audit passes.
+
+## Approved model baseline
+
+The user approved all current models with `models: all approved`. The receipt in
+`model-approval.json` binds all 80 current asset IDs, the exact worker, the grouping
+receipt, and the reviewed northeast oak replacement. Per-card decisions retain
+47 displayed revisions and their original preflight statuses; the blanket
+approval does not claim that missing packets were rendered or inspected.
+The original grouping worker and historical rejection records remain unchanged.
+
+For subsequent mask passes, compile with
+`--models work/sherwood-refinement/models-approved/approval.json` and a new output
+directory. The compiler validates the model receipt and freezes a recipe copy;
+the Day audit opens the exact approved worker named in that coverage report.
+This model approval does not resolve the remaining source masks or approve
+future synthesized textures.
