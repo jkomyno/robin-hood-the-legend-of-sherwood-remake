@@ -58,6 +58,9 @@ def main():
         original = next(o for o in working.objects if o.get('source_node')==spec['source_node'])
         bounds = [-math.inf,*spec['boundaries'],math.inf]
         area_before = surface_area(original)
+        axis_x, axis_y = spec.get('axis_coefficients', [-.325,1.0])
+        if not axis_y:
+            raise ValueError('Partition axis must have a nonzero game-y coefficient')
         components = []
         for i, component in enumerate(spec['components_ascending']):
             mesh = original.data.copy()
@@ -68,8 +71,8 @@ def main():
                 if not math.isfinite(boundary):
                     continue
                 bmesh.ops.bisect_plane(bm, geom=list(bm.verts)+list(bm.edges)+list(bm.faces),
-                    dist=0.000001, plane_co=Vector((0,-boundary/math.sin(math.radians(35)),0)),
-                    plane_no=Vector((-.325,-math.sin(math.radians(35)),0)),
+                    dist=0.000001, plane_co=Vector((0,-boundary/(axis_y*math.sin(math.radians(35))),0)),
+                    plane_no=Vector((axis_x,-axis_y*math.sin(math.radians(35)),0)),
                     clear_inner=keep_above, clear_outer=not keep_above)
             bm.to_mesh(mesh)
             bm.free()

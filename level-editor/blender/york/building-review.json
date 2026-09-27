@@ -1,0 +1,368 @@
+{
+  "version": 1,
+  "policy": "One asset per distinct building, including adjoining houses. Towers and gatehouses are independent assets even when attached. Roofs, walls and details stay with their individual building.",
+  "previous_group_count": 171,
+  "group_count": 250,
+  "review_method": "Whole-map source-artwork survey followed by numbered native-part overlays at building scale; direct source membership is recorded in ownership.txt. All asset geometry contact sheets were inspected, with shared surfaces checked against retained originals.",
+  "splits": [
+    {
+      "previous_group": "Riverside stone storehouse",
+      "individual_assets": [
+        "Riverside stone storehouse",
+        "Riverside storehouse timber shed"
+      ]
+    },
+    {
+      "previous_group": "Market north stone house",
+      "individual_assets": [
+        "Market north square tower",
+        "Market north stone house"
+      ]
+    },
+    {
+      "previous_group": "East quay timber house",
+      "individual_assets": [
+        "East quay front timber house",
+        "East quay rear timber house"
+      ]
+    },
+    {
+      "previous_group": "South city gatehouse",
+      "individual_assets": [
+        "South city east gate tower",
+        "South city gate bridge",
+        "South city gate east wall",
+        "South city gatehouse",
+        "South city west gate tower"
+      ]
+    },
+    {
+      "previous_group": "Bridge Square turreted timber house",
+      "individual_assets": [
+        "Bridge Square central timber house",
+        "Bridge Square east gable house",
+        "Bridge Square round tower",
+        "Bridge Square west gable house"
+      ]
+    },
+    {
+      "previous_group": "Central lane polygonal corner house",
+      "individual_assets": [
+        "Central lane north roof house",
+        "Central lane polygonal corner house"
+      ]
+    },
+    {
+      "previous_group": "West bridge approach gate and turret",
+      "individual_assets": [
+        "West bridge approach gatehouse",
+        "West bridge approach round tower"
+      ]
+    },
+    {
+      "previous_group": "West bridge approach timber house",
+      "individual_assets": [
+        "West bridge approach stone shop",
+        "West bridge approach tall timber house"
+      ]
+    },
+    {
+      "previous_group": "West bridge street arcade house",
+      "individual_assets": [
+        "West bridge street arcade house",
+        "West bridge street east gallery house",
+        "West bridge street rear gable house"
+      ]
+    },
+    {
+      "previous_group": "Southeast wall-lane long house",
+      "individual_assets": [
+        "Southeast wall lane front house",
+        "Southeast wall lane rear gable house",
+        "Southeast wall lane roofed arch"
+      ]
+    },
+    {
+      "previous_group": "Outer southeast wall stair and bastion",
+      "individual_assets": [
+        "Outer southeast round bastion",
+        "Outer southeast wall stair"
+      ]
+    },
+    {
+      "previous_group": "Outer east wall southern stair section",
+      "individual_assets": [
+        "Outer east lower round bastion",
+        "Outer east middle round bastion",
+        "Outer east upper curtain wall",
+        "Outer east wall stair passage"
+      ]
+    },
+    {
+      "previous_group": "East riverside curtain wall and bastion",
+      "individual_assets": [
+        "East riverside curtain wall",
+        "East water gate south bastion"
+      ]
+    },
+    {
+      "previous_group": "East water gate and bastion",
+      "individual_assets": [
+        "East water gate",
+        "East water gate north bastion"
+      ]
+    },
+    {
+      "previous_group": "East riverside wall and roofed passage",
+      "individual_assets": [
+        "East riverside northern wall stair",
+        "East riverside roofed gatehouse",
+        "East riverside southern wall stair"
+      ]
+    },
+    {
+      "previous_group": "Southwest square courtyard house",
+      "individual_assets": [
+        "Southwest square corner house",
+        "Southwest square rear house",
+        "Southwest square west house"
+      ]
+    },
+    {
+      "previous_group": "Southwest square narrow gable house",
+      "individual_assets": [
+        "Southwest square east timber house",
+        "Southwest square narrow gable house"
+      ]
+    },
+    {
+      "previous_group": "Central south red timber house",
+      "individual_assets": [
+        "Central south rear courtyard wall",
+        "Central south rear timber house",
+        "Central south red timber house"
+      ]
+    },
+    {
+      "previous_group": "Central south jettied corner house",
+      "individual_assets": [
+        "Central south jettied corner house",
+        "Central south narrow arch house"
+      ]
+    },
+    {
+      "previous_group": "South terrace low timber row",
+      "individual_assets": [
+        "South terrace east low timber house",
+        "South terrace west low timber house"
+      ]
+    },
+    {
+      "previous_group": "South wall-lane stone hall",
+      "individual_assets": [
+        "South wall lane rear stone house",
+        "South wall lane stone tower"
+      ]
+    },
+    {
+      "previous_group": "South wall-lane square stone tower house",
+      "individual_assets": [
+        "South wall lane north house",
+        "South wall lane square stone tower"
+      ]
+    },
+    {
+      "previous_group": "South gate lane house and round turret",
+      "individual_assets": [
+        "South gate lane front timber house",
+        "South gate lane rear timber house",
+        "South gate lane round tower"
+      ]
+    },
+    {
+      "previous_group": "South gate lane tall timber house",
+      "individual_assets": [
+        "South gate lane rear house",
+        "South gate lane tall timber house"
+      ]
+    },
+    {
+      "previous_group": "South gate lane stone house and turret",
+      "individual_assets": [
+        "South gate lane conical tower",
+        "South gate lane link roof",
+        "South gate lane stone house"
+      ]
+    },
+    {
+      "previous_group": "Southwest lane broad timber house",
+      "individual_assets": [
+        "Southwest lane east timber house",
+        "Southwest lane north courtyard house",
+        "Southwest lane west jettied house"
+      ]
+    },
+    {
+      "previous_group": "Market southwest stone manor",
+      "individual_assets": [
+        "Market southwest central hipped house",
+        "Market southwest connecting stairs",
+        "Market southwest east stone annex",
+        "Market southwest east timber house",
+        "Market southwest front square tower",
+        "Market southwest rear gable house",
+        "Market southwest rear square tower",
+        "Market southwest round tower"
+      ]
+    },
+    {
+      "previous_group": "Southwest ivy-covered tower house",
+      "individual_assets": [
+        "Southwest east gatehouse",
+        "Southwest ivy covered square tower",
+        "Southwest west gatehouse"
+      ]
+    },
+    {
+      "previous_group": "Southwest market courtyard house",
+      "individual_assets": [
+        "Southwest market corner house",
+        "Southwest market north house",
+        "Southwest market northwest house",
+        "Southwest market square tower",
+        "Southwest market west low house"
+      ]
+    },
+    {
+      "previous_group": "West town lane turreted house",
+      "individual_assets": [
+        "West town lane central timber house",
+        "West town lane courtyard boundary",
+        "West town lane rear timber house",
+        "West town lane stone tower"
+      ]
+    },
+    {
+      "previous_group": "Precinct causeway ivy-covered house",
+      "individual_assets": [
+        "Precinct causeway ivy covered house",
+        "Precinct causeway stone annex"
+      ]
+    },
+    {
+      "previous_group": "East bridge street stone-fronted house",
+      "individual_assets": [
+        "East bridge street narrow gable house",
+        "East bridge street stone fronted house"
+      ]
+    },
+    {
+      "previous_group": "East riverside corner house",
+      "individual_assets": [
+        "East riverside corner house",
+        "East riverside rear house",
+        "East riverside roofed link"
+      ]
+    },
+    {
+      "previous_group": "North river lane turreted stone house",
+      "individual_assets": [
+        "North river lane rear timber house",
+        "North river lane round tower",
+        "North river lane stone house"
+      ]
+    },
+    {
+      "previous_group": "North river lane northern timber house",
+      "individual_assets": [
+        "North river lane northern timber house",
+        "North river lane northwest house",
+        "North river lane west low house"
+      ]
+    },
+    {
+      "previous_group": "Castle west lane tall timber house",
+      "individual_assets": [
+        "Castle west lane front timber house",
+        "Castle west lane rear timber house"
+      ]
+    },
+    {
+      "previous_group": "Castle west lane gable house",
+      "individual_assets": [
+        "Castle courtyard rear walkway",
+        "Castle west lane gable house"
+      ]
+    },
+    {
+      "previous_group": "Castle courtyard gate lodge and stairs",
+      "individual_assets": [
+        "Castle courtyard east lodge",
+        "Castle courtyard lodge stairs",
+        "Castle courtyard west lodge"
+      ]
+    },
+    {
+      "previous_group": "Castle west curtain wall and bastions",
+      "individual_assets": [
+        "Castle northwest bastion",
+        "Castle southwest bastion",
+        "Castle west gatehouse"
+      ]
+    },
+    {
+      "previous_group": "Castle south curtain and conical turret",
+      "individual_assets": [
+        "Castle south curtain wall",
+        "Castle south round tower"
+      ]
+    },
+    {
+      "previous_group": "Castle great hall and east turret",
+      "individual_assets": [
+        "Castle east round tower",
+        "Castle great hall"
+      ]
+    },
+    {
+      "previous_group": "Castle main keep",
+      "individual_assets": [
+        "Castle main keep",
+        "Castle northeast square watchtower"
+      ]
+    },
+    {
+      "previous_group": "Precinct southeast bastion and wall",
+      "individual_assets": [
+        "Precinct east curtain wall",
+        "Precinct southeast bastion"
+      ]
+    },
+    {
+      "previous_group": "Cathedral",
+      "individual_assets": [
+        "Cathedral nave and aisles",
+        "Cathedral northwest tower",
+        "Cathedral southwest tower",
+        "Precinct north hall"
+      ]
+    },
+    {
+      "previous_group": "Precinct west great hall",
+      "individual_assets": [
+        "Precinct hall east tower",
+        "Precinct hall west tower",
+        "Precinct west great hall"
+      ]
+    }
+  ],
+  "corrections": [
+    "Source 67 belongs to the castle northeast square tower ledge.",
+    "Sources 921 and 922 belong to the separate north precinct hall behind the cathedral.",
+    "Castle courtyard walkway 757 is separate from the small west-lane gable house.",
+    "Source 174 is the west bridge tower drum; source 710 belongs to the north river lane stone house; source 924 belongs to the precinct great hall.",
+    "Market southwest manor is separated into its front and rear square towers, hanging round tower, stone annex, central hipped house, rear gable house, east timber house and connecting stairs.",
+    "Castle hall and east round tower share sources 769 and 795: both surfaces are partitioned along their visible junction, preserving materials and UVs without adding caps. Source 811 belongs to the tower."
+  ],
+  "scope": "Grouping only: no hidden-wall completion, texture synthesis or animation authoring."
+}

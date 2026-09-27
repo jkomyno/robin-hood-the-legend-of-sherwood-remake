@@ -84,7 +84,7 @@ def main():
         ImageDraw.Draw(small).multiline_text((7,5),'\n'.join(lines),fill='white',font=font)
         sheets.append(small)
         names=sorted({p['source_node'] for p in record['parts']})
-        note='Shared lower-wall surface partitioned at frontage boundaries; hidden continuations are inferred.' if any(p.get('component') for p in record['parts']) else ''
+        note='Shared surface partitioned at the building junction; hidden continuations are inferred.' if any(p.get('component') for p in record['parts']) else ''
         cards.append(f'''<article id="{key}" data-search="{html.escape(record['name'].lower()+' '+' '.join(names))}">
 <h2>{number:03} · {html.escape(record['name'])}</h2><div class="images">
 <a href="assets/{key}-source.jpg"><img loading="lazy" src="assets/{key}-source.jpg" alt="Source artwork with selected geometry tinted cyan"></a>
@@ -103,7 +103,7 @@ body{margin:0;background:#151a20;color:#e8edf3;font:16px system-ui}header,main{m
 <p>GROUP_COUNT named groups + background terrain · 972 visible source records · 9 non-rendering records accounted for</p>
 <input id="search" placeholder="Find a house, castle, bridge, prop or source number…" aria-label="Filter assets"><span id="count"></span>
 <nav><a href="reference.png">Map view</a><a href="east.png">East overview</a><a href="west.png">West overview</a><a href="plan.png">Plan view</a><a href="../stage/york.rhlos-map.json">Staged map JSON</a></nav>
-<p class="notice">Grouping review: source crop (cyan = selected geometry), west and east geometry diagrams. Mesh shape and textures are still the reconstruction baseline. Grouping does not repair missing walls, floating geometry, unseen textures or state-only sprites. Mission doors and patch-only mechanisms are separately inventoried. The five market-front foundations have inferred hidden partition boundaries.</p></header><main>'''+''.join(cards)+'''</main><script>
+<p class="notice">Grouping review: source crop (cyan = selected geometry), west and east geometry diagrams. Mesh shape and textures are still the reconstruction baseline. Grouping does not repair missing walls, floating geometry, unseen textures or state-only sprites. Mission doors and patch-only mechanisms are separately inventoried. The market-front foundations and castle hall/tower junction include inferred hidden partition boundaries.</p></header><main>'''+''.join(cards)+'''</main><script>
 const input=document.querySelector('#search'),cards=[...document.querySelectorAll('article')];function filter(){const q=input.value.toLowerCase();let n=0;for(const c of cards){c.hidden=!c.dataset.search.includes(q);if(!c.hidden)n++;}document.querySelector('#count').textContent=` ${n} assets`;}input.addEventListener('input',filter);filter();</script></html>'''
     body = body.replace('GROUP_COUNT', str(len(catalog['groups'])))
     (OUT/'review/index.html').write_text(body)

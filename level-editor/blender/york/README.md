@@ -3,10 +3,11 @@
 This is the first refinement step: freeze source evidence, inspect the whole map,
 and assign the reconstructed surfaces to named logical assets. The reviewed
 catalog is `../../refinement/catalogs/york.json`; `ownership.txt` is its editable
-recipe. It replaces 460 proximity groups with 171 named groups plus background
+recipe. It replaces 460 proximity groups with 250 named groups plus background
 terrain. All 972 visible source records and nine records without meshes are
-accounted for. The cathedral is one asset; castle buildings, walls, towers,
-houses, stalls, bridges and raised terrain have distinct owners.
+accounted for. Distinct adjoining buildings are separate assets, including attached towers
+and gatehouses. Cathedral towers and the north precinct hall are separate from
+the nave. `building-review.json` records the subdivisions of the first pass.
 
 Outputs are local under `../../work/york-refinement/`:
 
@@ -31,10 +32,13 @@ coverage does not imply complete animated state or scenery geometry.
 Five market-front houses share source 650. Its surface is partitioned into five
 component selectors following visible frontage divisions. Continuations through
 hidden foundations are inferred; no caps are added. The complete original is
-retained hidden. Surface area and UV interpolation are checked against it.
+retained hidden. The castle hall and east round tower also share two surfaces
+(sources 769 and 795), split along their visible junction. The continuation
+through their hidden intersection is inferred. Surface area and UV interpolation
+are checked against all three retained originals.
 
-Some native volumes have displaced depth. In particular, source 67 belongs to
-the main keep's visible stone ledge even though the proxy is disconnected in 3D.
+Some native volumes have displaced depth. Source artwork locates source 67 on
+the northeast square watchtower ledge; it is owned by that tower.
 The north precinct boundary includes clipped low boundary proxies 870–871.
 These decisions assign ownership without pretending to repair their shape.
 
