@@ -14,9 +14,9 @@
       "id": "sherwood-terrain",
       "role": "ground",
       "model": "3d-assets/sherwood/sherwood-terrain/model.glb",
-      "model_sha256": "3bc7dcde917312e44c4c8cf8382f047c60408bf4a344f80ce2366086702775f3",
+      "model_sha256": "62e06022287fcbf72f555fafe8be72173762793a9d8904ced3230230573798ed",
       "descriptor": "3d-assets/sherwood/sherwood-terrain/asset.json",
-      "descriptor_sha256": "7a4cfd596b1602c32e3c1b3d2be5fbe6082d35e0925b542e1aa6994113df2474"
+      "descriptor_sha256": "d60ba5a3f506bc82d0d5f6ce3183ec58477af06ce33d636afef72fd33f7f1a19"
     }
   ],
   "provenance": {
@@ -39,9 +39,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-west-camp-barrel/model.glb",
-      "model_sha256": "0d36d2e5b51c1729407a6ec7cb5166b7a08160361f6885b9a926ca37ec7342e0",
+      "model_sha256": "a8c9ba38ed34121e7b8d157e570676e316b9488be1027111db0681a7c34323da",
       "descriptor": "3d-assets/sherwood/sherwood-west-camp-barrel/asset.json",
-      "descriptor_sha256": "eee662152917e9aba4c504f13e76f2c3673c548c90b99b095639610d72f75fe7",
+      "descriptor_sha256": "8834606b38be895f3b3b6ba131c50e0cb07a7ad4815e44f689f1d6ee4eee0b08",
       "id": "sherwood-west-camp-barrel"
     },
     {
@@ -137,9 +137,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-camp-serving-stool/model.glb",
-      "model_sha256": "b9506319606add670d80291b84b51d2abe21a214a1489de79449e3bbfb1bcdac",
+      "model_sha256": "d90c20a4dc64175e7720c924bf295ce6eda308befb36b70f9cf0e8a9c96a1597",
       "descriptor": "3d-assets/sherwood/sherwood-camp-serving-stool/asset.json",
-      "descriptor_sha256": "5847a092ca8d9e7fa6b466775a83984d39c1193fcee6b520b499c7910377e841",
+      "descriptor_sha256": "2d9784fb1edb81876e879d3f916f81dc79f9c8beffc9be3a16118d37fe375f5d",
       "id": "sherwood-camp-serving-stool"
     },
     {
@@ -158,9 +158,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-round-camp-stool/model.glb",
-      "model_sha256": "dfc4c651326356ccd377289dda344f234473a40c335def16ab581ba8987775a2",
+      "model_sha256": "ff9b10dbf4c93c72f10c8cca3b26df1c76e8e7a352967a3f9055cd9d86187459",
       "descriptor": "3d-assets/sherwood/sherwood-round-camp-stool/asset.json",
-      "descriptor_sha256": "fca48f4a065708678b32a2f9b950f253d85939d9fc31b0839c884d59369388f3",
+      "descriptor_sha256": "49dffb5301e1d97b8d26025e269e5f5fd1126fc059c09932475e42ad3e042951",
       "id": "sherwood-round-camp-stool"
     },
     {
@@ -186,9 +186,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-northwest-woodland-oak/model.glb",
-      "model_sha256": "8f232efd310cd375bae8eb641661f174b012a62dcdad03f57e6d4231b72fa40c",
+      "model_sha256": "0cacaab5ec63dd18472f9c19ce4c9ef413584b8bd7453fbecd23e2fe29bcd0cb",
       "descriptor": "3d-assets/sherwood/sherwood-northwest-woodland-oak/asset.json",
-      "descriptor_sha256": "4bf52360baed6db24063a30326032ea02ddfe21ca03c3d3efd7567d5c5e491ca",
+      "descriptor_sha256": "62bf9651face120f22762e920c76b2efc3560febab70c44b96cdb5d85aa06c15",
       "id": "sherwood-northwest-woodland-oak"
     },
     {
@@ -242,9 +242,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-west-woodland-oak/model.glb",
-      "model_sha256": "5d17620b5a32cc791789c58334abbe8a72a8e002c3232ea6ccd3e0e092c0e9ad",
+      "model_sha256": "5b0a777d16a6d9e6269d74161c9a7c2843f71ad290fd4c87369ac1487a6a5612",
       "descriptor": "3d-assets/sherwood/sherwood-west-woodland-oak/asset.json",
-      "descriptor_sha256": "24478ec9b8544aac07f5ab776e214a21efde770c7f6343c440748090a68c4caf",
+      "descriptor_sha256": "f1252eb19e171d3f6895c2746abed665a83c2fdf8b350b4d573cb185ad9e5566",
       "id": "sherwood-west-woodland-oak"
     },
     {
@@ -347,16 +347,16 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-north-woodland-oak/model.glb",
-      "model_sha256": "291861b49341ce48291cbab1adacd1db221693ff3e28cc04ab325519c9773772",
+      "model_sha256": "188866fe02221d6d7c5f92481f9d3c4c1ce319351122424f6cfb78a73188179b",
       "descriptor": "3d-assets/sherwood/sherwood-north-woodland-oak/asset.json",
-      "descriptor_sha256": "ff27b42fbb37804b86e57c4fd5ac0a73eda7fdc9d502b8f8f2dbca89b4885289",
+      "descriptor_sha256": "4478f7c17d8a0b0b78e3267e290bc866475893b2ffee17ea4edee5a883187329",
       "id": "sherwood-north-woodland-oak"
     },
     {
       "model": "3d-assets/sherwood/sherwood-north-border-branch/model.glb",
-      "model_sha256": "3216faaf8a051884908ce917cf50b03396a240477001fe98488e66f5f72249a1",
+      "model_sha256": "f3265f73f813789e0baede1cadd49bf911af5667b73f80094180263639ff9c3b",
       "descriptor": "3d-assets/sherwood/sherwood-north-border-branch/asset.json",
-      "descriptor_sha256": "acfdf8630051f495cfa415676112e71f389d6cf11875cf8baf8bef9f9be866f5",
+      "descriptor_sha256": "5f59ff5e51636f7e68f3921e7f98335979894a482778db75dc4b3bed987cf05a",
       "id": "sherwood-north-border-branch"
     },
     {
@@ -368,9 +368,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-horizontal-supply-barrel/model.glb",
-      "model_sha256": "bbc7ccea45bb8d9f72d6fc10170489ec447c73784f8918b72e80bd4ba8749590",
+      "model_sha256": "9116ec7f52f73218d3bb3d2f15b9fb04163bcdef25734935505551313611dfba",
       "descriptor": "3d-assets/sherwood/sherwood-horizontal-supply-barrel/asset.json",
-      "descriptor_sha256": "3cc43ce6a18c2ae64737b71874ac8d0dc7a1f91da30c7d8a0fef85a154d13d14",
+      "descriptor_sha256": "c9e6755ac06edc638fd62c07bd310cf99052542f32eeef7e03cf18a4d7ef1998",
       "id": "sherwood-horizontal-supply-barrel"
     },
     {
@@ -466,9 +466,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-14/model.glb",
-      "model_sha256": "30daac412cdd538d22173bdc70bdecfa2df13b33bbccdda885677e5a1d731831",
+      "model_sha256": "ce6e2148f34702071fd1ca609e2e593feaf731f6aefba9727588f9a016baeb6f",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-14/asset.json",
-      "descriptor_sha256": "cc790e8c4cddd5aa6ee40cb7eb5c26d7e200ca0454064a160e46ad21266c69e3",
+      "descriptor_sha256": "4a2c2578f2554491bbe747419cea688bddc8d355b684b78b6523fc3dbd3aa8e4",
       "id": "sherwood-riverbank-boulder-14"
     },
     {
@@ -494,9 +494,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-18/model.glb",
-      "model_sha256": "987077cacbb39271c84286badc70ef12d14c0b698d11938dfc60c42409f50874",
+      "model_sha256": "536691e8ab3a5aa897f918dc34e5b6f54ef7a22c6f576286432708dcc2572b74",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-18/asset.json",
-      "descriptor_sha256": "aba89a60ac35b91bd857c1acc2fa1405e4a5c4de6ea54a8b6c7013a0b439b861",
+      "descriptor_sha256": "2eda9b51a0b55b1423648bc042d265ab6037b7f7d9ed794162520a3d2c4306eb",
       "id": "sherwood-riverbank-boulder-18"
     },
     {
@@ -697,9 +697,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-fallen-camp-branch/model.glb",
-      "model_sha256": "3f63e3ebc35c60f1c736f6ff8fad84c83753432d7233c7e62cbe499a9c617717",
+      "model_sha256": "b2f3f91f2000b063331d81a84be24d6dd039ffa16f7c3035d3993bf178787714",
       "descriptor": "3d-assets/sherwood/sherwood-fallen-camp-branch/asset.json",
-      "descriptor_sha256": "73ef19aa9343b5c79fe58d911a7b3dba242fd52e6348343d28ef2288c85b4ba4",
+      "descriptor_sha256": "9be49f75c3cae474e2b05cd70da814003c4f35c101542c99009d69be9e4ca68a",
       "id": "sherwood-fallen-camp-branch"
     },
     {
@@ -711,9 +711,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-south-river-driftwood/model.glb",
-      "model_sha256": "00426208ba11b33ca2600b670ddd17f0ac039345aa9dfb5fb110f35a5d519c66",
+      "model_sha256": "cfff71c6053e8315bdbe88e515c24caa24af71ecf19768b750e5827fcd5ed8d1",
       "descriptor": "3d-assets/sherwood/sherwood-south-river-driftwood/asset.json",
-      "descriptor_sha256": "1941e241dcce93ca8247dafba2c0a7f0a0170672b322b3bc7d9c1c6506647e65",
+      "descriptor_sha256": "19e2dc007783ef794757251eea88d5734345e18d8639fa2a8943bb7f426cb6c2",
       "id": "sherwood-south-river-driftwood"
     },
     {
@@ -753,9 +753,9 @@
     },
     {
       "model": "3d-assets/sherwood/sherwood-west-archery-target/model.glb",
-      "model_sha256": "c5e4373edfbb9048007cc41cb6bcf2713f1ece37b002daa2485b751aa77ae38e",
+      "model_sha256": "631a3080d48b8c59b5d2da772922fbcd1759fbb57ad0eed3a36b878ec2a21f42",
       "descriptor": "3d-assets/sherwood/sherwood-west-archery-target/asset.json",
-      "descriptor_sha256": "db9e507530d7fa4282b37e507d32e26212be92a2ca0b4e0c73d9f2deb0ed6008",
+      "descriptor_sha256": "c2c37c05a85bc168b10d4306623f026f64e16b0a424c633b21c715d5ddda5ad1",
       "id": "sherwood-west-archery-target"
     },
     {
