@@ -54,6 +54,22 @@ def main():
     constraints = SourceMaskConstraints(config['source_mask_manifest'], 'exterior', sha(config['source_path']), source.size)
     domain_path = workspace / 'inspection/ground-source-domain-full.png'
     domain = np.array(Image.open(domain_path).convert('L')) > 127
+    # Reviewed exclusions on the ground row (e.g. approved foliage domains) leave the receiver.
+    masks = json.loads(Path(config['source_mask_manifest']).read_text())
+    inventory_path = Path(config['source_mask_manifest']).parent / masks['mask_inventory']
+    records = {r['index']: r for r in json.loads(inventory_path.read_text())['masks']}
+    row, = [r for r in masks['projections']['exterior']['assignments'] if r.get('source_node') == 'ground']
+    excluded = np.zeros(domain.shape, bool)
+    for index in row.get('exclude_mask_indices', []):
+        record = records[index]
+        png = Path(record['png'])
+        png = png if png.is_absolute() else inventory_path.parent / png
+        bitmap = np.array(Image.open(png).convert('L')) > 0
+        x0, y0 = record['box_top_left']
+        h, w = bitmap.shape
+        excluded[max(0, y0):y0 + h, max(0, x0):x0 + w] |= bitmap[max(0, -y0):domain.shape[0] - y0, max(0, -x0):domain.shape[1] - x0]
+    excluded_pixels = int((domain & excluded).sum())
+    domain &= ~excluded
     material = ground.data.materials[ground.data.polygons[0].material_index]
     image = next(n.image for n in material.node_tree.nodes if n.type == 'TEX_IMAGE')
     w, h = image.size
@@ -103,6 +119,7 @@ def main():
     report = {'version': 1, 'model_sha256': sha(workspace / 'model.blend'),
               'modified_views_sha256': sha(workspace / 'modified/views.json'),
               'domain_bitmap_sha256': sha(domain_path), 'expected_source_pixels': int(domain.sum()),
+              'ground_row_exclusions': row.get('exclude_mask_indices', []), 'excluded_domain_pixels': excluded_pixels,
               'counts': dict(counts), 'witnesses': dict(witnesses),
               'atlas_observed_texels': int((atlas[..., 3] == 255).sum()),
               'method': ('Every authored ground-domain pixel centre: source-camera ray into the complete saved scene '

@@ -132,16 +132,25 @@ def install_ground_source_material(ground, source_path, mask_path, output):
     """Store the observed-source ground atlas (UV = source pixel) without draping scenery."""
     from PIL import Image, ImageChops
     masks = json.loads(Path(mask_path).read_text())
-    inventory = json.loads(Path(masks['mask_inventory']).read_text())
+    inventory_path = Path(mask_path).parent / masks['mask_inventory']
+    inventory = json.loads(inventory_path.read_text())
     entries = {row['index']: row for row in inventory['masks']}
     assignment, = [row for row in masks['projections']['exterior']['assignments'] if row.get('source_node') == 'ground']
     source = Image.open(source_path).convert('RGB')
+
+    def layer(index):
+        row = entries[index]
+        png = Path(row['png'])
+        png = png if png.is_absolute() else inventory_path.parent / png
+        image = Image.new('L', source.size)
+        image.paste(Image.open(png).convert('L').point(lambda v: 255 if v else 0), tuple(row['box_top_left']))
+        return image
     known = Image.new('L', source.size)
     for index in assignment['mask_indices']:
-        row = entries[index]
-        layer = Image.new('L', source.size)
-        layer.paste(Image.open(row['png']).convert('L'), tuple(row['box_top_left']))
-        known = ImageChops.lighter(known, layer)
+        known = ImageChops.lighter(known, layer(index))
+    # Reviewed exclusions (e.g. approved foliage asset domains) leave the observed atlas.
+    for index in assignment.get('exclude_mask_indices', []):
+        known = ImageChops.subtract(known, layer(index))
     atlas = Image.new('RGB', source.size, (128, 128, 128))
     atlas.paste(source, mask=known)
     atlas.putalpha(known)
