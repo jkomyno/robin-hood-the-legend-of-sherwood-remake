@@ -316,55 +316,55 @@ async function untilLoaded(check: () => boolean) {
   assert.fail("Timed out waiting for controlled model loads");
 }
 
-test("external assets load four at a time and preserve document order", async (t) => {
-  const f = parallelFixture(7);
+test("external assets load eight at a time and preserve document order", async (t) => {
+  const f = parallelFixture(11);
   t.mock.method(GLTFLoader.prototype, "parseAsync", f.parse);
   const load = prepareMapCandidate("York", f.directory, null);
-  await untilLoaded(() => f.pending.size === 4);
+  await untilLoaded(() => f.pending.size === 8);
   assert.deepEqual(
     [...f.started].sort((a, b) => a - b),
-    [0, 1, 2, 3],
+    [0, 1, 2, 3, 4, 5, 6, 7],
   );
   f.pending.get(2)!.resolve();
-  await untilLoaded(() => f.pending.has(4));
-  f.pending.get(4)!.resolve();
-  await untilLoaded(() => f.pending.has(5));
-  f.pending.get(5)!.resolve();
-  await untilLoaded(() => f.pending.has(6));
+  await untilLoaded(() => f.pending.has(8));
+  f.pending.get(8)!.resolve();
+  await untilLoaded(() => f.pending.has(9));
+  f.pending.get(9)!.resolve();
+  await untilLoaded(() => f.pending.has(10));
   for (const job of f.pending.values()) job.resolve();
   const candidate = await load;
-  assert.equal(f.peak(), 4);
+  assert.equal(f.peak(), 8);
   assert.deepEqual(
     [...candidate.sources.keys()].slice(1),
-    Array.from({ length: 7 }, (_, i) => `asset:asset-${i}:building-000`),
+    Array.from({ length: 11 }, (_, i) => `asset:asset-${i}:building-000`),
   );
   assert.equal(f.retired.length, 0);
   disposeObjectResources([candidate.asset]);
   assert.deepEqual(
     f.retired.sort((a, b) => a - b),
-    [0, 1, 2, 3, 4, 5, 6],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   );
 });
 
 test("failed parallel loads stop scheduling and retire late completions before rejecting", async (t) => {
-  const f = parallelFixture(7);
+  const f = parallelFixture(11);
   t.mock.method(GLTFLoader.prototype, "parseAsync", f.parse);
   let settled = false;
   const load = prepareMapCandidate("York", f.directory, null);
   const rejected = assert.rejects(load, /model decode failed/).then(() => {
     settled = true;
   });
-  await untilLoaded(() => f.pending.size === 4);
+  await untilLoaded(() => f.pending.size === 8);
   f.pending.get(1)!.reject(new Error("model decode failed"));
   await new Promise((resolve) => setTimeout(resolve, 10));
   assert.equal(settled, false, "in-flight assets must settle before resource retirement");
   for (const [i, job] of f.pending) if (i !== 1) job.resolve();
   await rejected;
-  assert.equal(f.started.length, 4);
+  assert.equal(f.started.length, 8);
   assert.equal(f.disposals(), 1);
   assert.deepEqual(
     f.retired.sort((a, b) => a - b),
-    [0, 2, 3],
+    [0, 2, 3, 4, 5, 6, 7],
   );
 });
 
