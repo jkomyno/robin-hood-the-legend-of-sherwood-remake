@@ -163,6 +163,13 @@ ground still requires state ownership. Overlapping projections are checked using
 height priority and source-order ties; unresolved overlaps are reported rather
 than permanently cutting another asset's footprint into a surface.
 
+When a source surface has been split into several editor assets, recovery uses
+their asset-local collision footprints to assign disjoint pieces. It reports
+uncovered and overlapping portions for review, retaining separate ownership
+even when several parts belong to the same asset. Connection errors include the
+endpoint position and nearby containing surfaces to distinguish missing coverage,
+height mismatches and blocked geometry.
+
 ## Verification
 
 From `level-editor/`:

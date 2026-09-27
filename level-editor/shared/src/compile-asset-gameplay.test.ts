@@ -204,6 +204,17 @@ test("passages without click polygons retain their navigation endpoints", () => 
   ];
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid gameplay polygon/);
 });
+
+test("connection errors distinguish blocked geometry from a height mismatch", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  hut.gameplay!.doors[0]!.outside = [45, 45, 0];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /projected \[345,345\].*"blocked":true/,
+  );
+  hut.gameplay!.doors[0]!.outside = [20, 20, 1];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /"height":0,"blocked":false/);
+});
 test("door transition lock rules remain asset-local and survive placement", () => {
   const { document, assets, hut } = assetCompilerFixture();
   const door = hut.gameplay!.doors[0]!;

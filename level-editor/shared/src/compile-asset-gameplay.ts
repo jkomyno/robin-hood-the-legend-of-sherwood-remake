@@ -396,10 +396,19 @@ export function compileAssetGameplay(
         inside(project(point), a.polygon) &&
         !a.blockers.some((b) => inside(project(point), b)),
     );
-    if (matches.length !== 1)
+    if (matches.length !== 1) {
+      const containing = areas.filter((a) => inside(project(point), a.polygon));
+      const details = containing.slice(0, 8).map((a) => ({
+        sector: a.sector,
+        layer: a.layer,
+        lift: a.lift,
+        height: planeHeight(a.plane, [point[0], point[1] - point[2]]),
+        blocked: a.blockers.some((b) => inside(project(point), b)),
+      }));
       throw new Error(
-        `${label} must resolve to exactly one unblocked walkable surface (found ${matches.length})`,
+        `${label} must resolve to exactly one unblocked walkable surface (found ${matches.length}); world point ${JSON.stringify(point)}, projected ${JSON.stringify(project(point))}; containing areas (${containing.length}, showing up to 8) ${JSON.stringify(details)}`,
       );
+    }
     return matches[0]!;
   };
   // Runtime construction order is motion, projection planes, then buildings.

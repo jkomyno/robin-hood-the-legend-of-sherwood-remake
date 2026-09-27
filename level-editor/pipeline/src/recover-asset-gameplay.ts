@@ -7,6 +7,7 @@ import {
   gameToScene,
   sceneToGame,
   partMatrix,
+  transformedObstacle,
   type Level3DObject,
   type Vec3,
   type Point,
@@ -25,6 +26,7 @@ import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { recoveryDoorGroups } from "./recovery-door-groups.ts";
 import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantization.ts";
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
+import { recoverSurfaceOwners } from "./recovery-surface-owners.ts";
 
 const { values } = parseArgs({
   options: {
@@ -50,7 +52,7 @@ for (const part of document.objects) {
   const match = /^asset:([^:]+):(.+)$/.exec(part.node);
   if (!match || part.source.obstacle === undefined) continue;
   const list = locals.get(part.source.obstacle) ?? [];
-  if (!list.some((item) => item.asset === match[1]))
+  if (!list.some((item) => item.asset === match[1] && item.node === match[2]))
     list.push({ asset: match[1]!, node: match[2]!, part });
   locals.set(part.source.obstacle, list);
 }
@@ -206,7 +208,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
     );
     for (const [supportIndex, { obstacle, index }] of supports.entries()) {
       const owners = locals.get(index) ?? [];
-      if (owners.length !== 1) {
+      if (!owners.length) {
         unresolved.push({
           kind: "surface-owner",
           sector: identity,
@@ -216,7 +218,6 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         });
         continue;
       }
-      const owner = owners[0]!;
       let regions = polygonClipping.intersection(
         close(motion.polygon.points),
         close(obstacle.points.map((p) => [p.x, p.y - p.z_top])),
@@ -232,56 +233,90 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
           kind: "projection-priority",
           sector: identity,
           layer,
-          asset: owner.asset,
-          node: owner.node,
+          obstacle: index,
           overlapArea,
           reason:
             "Overlapping surfaces need placement-time priority; do not freeze another asset's footprint into this surface",
         });
       }
-      for (const [regionIndex, generated] of regions.entries()) {
-        const region = quantizeGeneratedMotionPolygon(
-          generated,
-          Math.round,
-          `${owner.node}-walk-${regionIndex}`,
-          packet(owner.asset).issues,
+      let owned = [regions];
+      if (owners.length > 1) {
+        const split = recoverSurfaceOwners(
+          regions,
+          owners.map((owner) => {
+            const definition = descriptors
+              .get(owner.asset)!
+              .parts.find((p) => p.node === owner.node);
+            if (!definition?.obstacle_local_game) return [];
+            const shape = transformedObstacle(document, {
+              ...owner.part,
+              obstacle: definition.obstacle_local_game,
+            });
+            return close(shape.points.map((p) => [p.x, p.y - p.z_top]));
+          }),
         );
-        quantizationDifferenceArea += region
-          ? polygonArea(polygonClipping.xor(generated, region))
-          : polygonArea([generated]);
-        if (!region) continue;
-        const points = region[0]!.slice(0, -1).map(([x, y]) => [x, y] as Point);
-        recoveredArea += polygonArea([region]);
-        const vertices = points.map(([x, y]) =>
-          localize(owner.part, [
-            x,
-            y + planeHeight(obstacle.points, x, y),
-            planeHeight(obstacle.points, x, y),
-          ]),
-        );
-        packet(owner.asset).surfaces.push({
-          id: `${owner.node}-walk-${regionIndex}`,
-          node: owner.node,
-          vertices,
-          kind: motion.is_lift ? "lift" : "walkable",
-          holes: region
-            .slice(1)
-            .map((hole) =>
-              hole
-                .slice(0, -1)
-                .map(([x, y]) =>
-                  localize(owner.part, [
-                    x,
-                    y + planeHeight(obstacle.points, x, y),
-                    planeHeight(obstacle.points, x, y),
-                  ]),
-                ),
-            ),
+        owned = split.owned;
+        coverage.push({
+          kind: "split-surface-ownership",
+          obstacle: index,
+          candidates: owners.map((o) => ({ asset: o.asset, node: o.node })),
+          unresolvedArea: split.unresolvedArea,
         });
-        if (motion.is_lift)
-          packet(owner.asset).issues.push(
-            "Review lift surface coverage and endpoint ownership before publishing",
+        if (split.unresolvedArea > 1e-6)
+          unresolved.push({
+            kind: "surface-owner",
+            sector: identity,
+            layer,
+            obstacle: index,
+            unresolvedArea: split.unresolvedArea,
+            candidates: owners.map((o) => o.asset),
+          });
+      }
+      for (const [ownerIndex, owner] of owners.entries()) {
+        for (const [regionIndex, generated] of owned[ownerIndex]!.entries()) {
+          const region = quantizeGeneratedMotionPolygon(
+            generated,
+            Math.round,
+            `${owner.node}-walk-${regionIndex}`,
+            packet(owner.asset).issues,
           );
+          quantizationDifferenceArea += region
+            ? polygonArea(polygonClipping.xor(generated, region))
+            : polygonArea([generated]);
+          if (!region) continue;
+          const points = region[0]!.slice(0, -1).map(([x, y]) => [x, y] as Point);
+          recoveredArea += polygonArea([region]);
+          const vertices = points.map(([x, y]) =>
+            localize(owner.part, [
+              x,
+              y + planeHeight(obstacle.points, x, y),
+              planeHeight(obstacle.points, x, y),
+            ]),
+          );
+          packet(owner.asset).surfaces.push({
+            id: `${owner.node}-walk-${regionIndex}`,
+            node: owner.node,
+            vertices,
+            kind: motion.is_lift ? "lift" : "walkable",
+            holes: region
+              .slice(1)
+              .map((hole) =>
+                hole
+                  .slice(0, -1)
+                  .map(([x, y]) =>
+                    localize(owner.part, [
+                      x,
+                      y + planeHeight(obstacle.points, x, y),
+                      planeHeight(obstacle.points, x, y),
+                    ]),
+                  ),
+              ),
+          });
+          if (motion.is_lift)
+            packet(owner.asset).issues.push(
+              "Review lift surface coverage and endpoint ownership before publishing",
+            );
+        }
       }
     }
     coverage.push({
