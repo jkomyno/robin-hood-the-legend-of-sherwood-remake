@@ -9,7 +9,16 @@ Nottingham, York, Sherwood, and Croisement01–03. Natural banks and bridge rail
 are named explicitly. Round corner models are selected from standalone towers.
 
 `recipes.json` records source model IDs, selected components, spatial cuts,
-longitudinal direction and trims. Triangle clipping interpolates the original UVs
+longitudinal direction and trims. For modeled battlements/posts, `feature_height`
+sets a reviewed horizontal slice above the rail or crenel floor. Extraction snaps
+both trims inward to gap midpoints. This retains complete features, and the join
+gap is the average of the two original end gaps. Descriptors record the feature
+count and measured seam/internal gaps. A window with fewer than two gaps fails.
+The final clipped mesh is measured again to reject truncated or missing features.
+`level_feature_tops` removes the source's longitudinal height slope while retaining
+crenel depth. Texture-only sources use reviewed scene-unit `interval` cuts and
+`repeat_note` documents the visible landmarks; `level_top` removes height jumps.
+Triangle clipping interpolates the original UVs
 and vertex attributes. Solid-wall copies can straighten their cross-sections;
 low banks can level their ends. Fences retain the thickness differences between
 posts and rails. Every output descriptor records the source model/descriptor
@@ -26,9 +35,10 @@ TMPDIR=/home/phire/.cache node refinement/walls/render-audit.mjs --segments --fo
 python3 refinement/walls/report.py
 ```
 
-Inspect `work/wall-presets/review.html`, `all-strips.jpg` and `overview.jpg`.
+Inspect `work/wall-presets/review.html`, `repeat-joins.jpg`, `all-strips.jpg` and `overview.jpg`.
 Each full-model comparison has game-camera and angled views of the original,
-prepared strip, three repeats, an S-curve and a corner. The browser checks that
+prepared strip, three repeats, an S-curve, a corner and an enlarged join centered
+in the frame. The browser checks that
 the repeated and curved wall meshes are nonempty and finite. `--ids=id1,id2` limits a render run.
 
 After reviewing those images:
@@ -43,6 +53,11 @@ catalog, and generates `app/src/assets/wall-presets.json`. Generated library
 models and review images remain in the repository's existing ignored output
 directories; the recipes and tools are versioned.
 
+For a focused revision, both Python build/publish commands accept `--ids id1 id2`;
+other staged/published presets are preserved. Render uses `--ids=id1,id2`.
+`texture_profile.py id1 id2` renders an unlit source front with scene-unit X labels
+for checking painted features that cannot be detected from the mesh silhouette.
+
 The gallery compares segments, not complete reconstructions of every original
 level wall. Some projection-only source models retain baked shadows, coarse
 back faces and visible texture repetition. No new texture painting is applied.
@@ -52,6 +67,7 @@ work; these derived source descriptors do not invent obstacle footprints.
 Verification:
 
 ```sh
+python3 -m unittest discover -s refinement/walls -p 'test_*.py'
 pnpm --filter app typecheck
 pnpm --filter pipeline exec node --test ../app/src/spline-geometry.test.ts ../app/src/editor-viewport.test.ts
 TMPDIR=/home/phire/.cache CHROME=chromium TEST_PAGE=spline-picker.html node app/tests/run-lifecycle.mjs http://127.0.0.1:5181

@@ -11,8 +11,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 56.38542158329244,
-    "repeatLength": 135.5011814438157
+    "width": 58.14027135941211,
+    "repeatLength": 444.36045912610234
   },
   {
     "name": "Derby \u00b7 Lower bailey stone wall",
@@ -26,8 +26,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 55.23786984633483,
-    "repeatLength": 206.57340997978713
+    "width": 58.41558920674152,
+    "repeatLength": 442.4877267349061
   },
   {
     "name": "Derby \u00b7 Timber yard fence",
@@ -38,8 +38,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 4.561974813361097,
-    "repeatLength": 92.43775625213354
+    "width": 4.376985520206993,
+    "repeatLength": 88.6307162790677
   },
   {
     "name": "Leicester \u00b7 Castle curtain",
@@ -77,8 +77,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 12.884941947880456,
-    "repeatLength": 185.12003706227566
+    "width": 15.313814421569887,
+    "repeatLength": 268.0105338354831
   },
   {
     "name": "Lincoln \u00b7 Crenellated curtain",
@@ -92,8 +92,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 44.97610795988936,
-    "repeatLength": 243.11081895197273
+    "width": 44.945614826011266,
+    "repeatLength": 247.52779015129386
   },
   {
     "name": "Lincoln \u00b7 Garden boundary",
@@ -116,8 +116,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 3.090288014238439,
-    "repeatLength": 276.5706986511442
+    "width": 3.0902878240971177,
+    "repeatLength": 235.59832731294378
   },
   {
     "name": "Nottingham \u00b7 Town battlements",
@@ -131,8 +131,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 65.9027249402933,
-    "repeatLength": 303.5383436345561
+    "width": 65.9631010459209,
+    "repeatLength": 252.0659420269977
   },
   {
     "name": "Nottingham \u00b7 Castle courtyard wall",
@@ -146,8 +146,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 61.663397931925104,
-    "repeatLength": 153.7723175519148
+    "width": 61.51240924900323,
+    "repeatLength": 82.40876492496815
   },
   {
     "name": "Nottingham \u00b7 Dry-stone field wall",
@@ -170,8 +170,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 8.817688498669256,
-    "repeatLength": 178.0239167628959
+    "width": 7.4458551871795216,
+    "repeatLength": 111.0
   },
   {
     "name": "York \u00b7 Inner bailey wall",
@@ -182,8 +182,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 6.999984985330566,
-    "repeatLength": 321.6017082988658
+    "width": 6.999985237378239,
+    "repeatLength": 351.0
   },
   {
     "name": "Croisement02 \u00b7 Woodland dry-stone wall",
@@ -206,8 +206,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 8.466246022218403,
-    "repeatLength": 244.37895055423166
+    "width": 8.000036133681476,
+    "repeatLength": 250.0
   },
   {
     "name": "Sherwood \u00b7 Bridge railing",
@@ -218,8 +218,8 @@
     "sourceAngle": 0,
     "sourceStart": 0,
     "sourceEnd": 1,
-    "width": 12.536736440113101,
-    "repeatLength": 109.74888451534457
+    "width": 5.066836255941283,
+    "repeatLength": 57.0
   },
   {
     "name": "Croisement01 \u00b7 Mossy rock bank",

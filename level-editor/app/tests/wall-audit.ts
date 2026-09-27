@@ -20,9 +20,14 @@ async function main() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   const canvas = document.createElement("canvas");
   canvas.width = 1000;
-  canvas.height = params.has("splines") ? 1700 : 340;
+  canvas.height = params.has("splines") ? 2040 : 340;
   const context = canvas.getContext("2d")!;
-  function render(asset: THREE.Object3D, row: number, label = "Source asset") {
+  function render(
+    asset: THREE.Object3D,
+    row: number,
+    label = "Source asset",
+    focus?: THREE.Box3,
+  ) {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x252b32);
     scene.add(asset, new THREE.HemisphereLight(0xffffff, 0x8c93aa, 2.5));
@@ -30,8 +35,9 @@ async function main() {
     light.position.set(3, 8, 5);
     scene.add(light);
     const bounds = new THREE.Box3().setFromObject(asset);
-    const center = bounds.getCenter(new THREE.Vector3());
-    const radius = bounds.getBoundingSphere(new THREE.Sphere()).radius;
+    const frame = focus ?? bounds;
+    const center = frame.getCenter(new THREE.Vector3());
+    const radius = frame.getBoundingSphere(new THREE.Sphere()).radius;
     for (const [index, direction] of [
       new THREE.Vector3(0, Math.sin((35 * Math.PI) / 180), Math.cos((35 * Math.PI) / 180)),
       new THREE.Vector3(0.8, 0.8, 1),
@@ -118,6 +124,19 @@ async function main() {
           wrapper.add(wall);
           generated.push(wrapper);
           render(wrapper, curved ? 3 : 2, curved ? "Curved spline" : "Three repeats");
+          if (!curved) {
+            const height = bounds.max[1] - bounds.min[1];
+            const span = Math.min(repeat * 0.45, Math.max(60, height * 0.55));
+            render(
+              wrapper,
+              5,
+              "Repeat join at center",
+              new THREE.Box3(
+                new THREE.Vector3(repeat - span, height * 0.65, -recipe.width / 2),
+                new THREE.Vector3(repeat + span, height, recipe.width / 2),
+              ),
+            );
+          }
         }
         const cornerEntry = originalEntries.find((entry) => entry.id === recipe.cornerAsset);
         let corner: Awaited<ReturnType<typeof prepareProjectionAsset>> | undefined;

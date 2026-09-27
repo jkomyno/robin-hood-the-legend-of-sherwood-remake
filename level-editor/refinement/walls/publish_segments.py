@@ -4,13 +4,18 @@ Existing source assets and scenes are never rewritten. Run build_segments.py,
 then render-audit.mjs --segments --force, and inspect the comparison images first.
 """
 import json
+import argparse
 import shutil
 
 from build_segments import ROOT, LIB, STAGE, sha, write_asset_index
 
 
-def publish():
+def publish(ids=None):
     rows = json.loads((ROOT / 'work/wall-presets/segments.json').read_text())
+    all_rows = rows
+    if ids:
+        if set(ids)-{row['id'] for row in rows}:raise ValueError('Unknown preset id')
+        rows = [row for row in rows if row['id'] in ids]
     entries = {entry['id']: entry for entry in json.loads((LIB / 'index.json').read_text())['assets']}
     for row in rows:
         folder = STAGE / row['id']
@@ -36,10 +41,15 @@ def publish():
     fields = {'name', 'asset', 'width', 'repeatLength', 'axis', 'sourceAngle',
               'sourceStraight', 'sourceStart', 'sourceEnd', 'source_map',
               'cornerAsset', 'cornerScale', 'cornerMinAngle'}
-    catalog = [{key: value for key, value in row.items() if key in fields} for row in rows]
+    catalog_path = ROOT / 'app/src/assets/wall-presets.json'
+    previous = {row['asset']: row for row in json.loads(catalog_path.read_text())} if ids else {}
+    catalog = [previous[row['id']] if ids and row['id'] not in ids else
+               {key: value for key, value in row.items() if key in fields} for row in all_rows]
     (ROOT / 'app/src/assets/wall-presets.json').write_text(json.dumps(catalog, indent=2) + '\n')
     print(f"Published {len(rows)} reviewed copies; original assets and scenes unchanged.")
 
 
 if __name__ == '__main__':
-    publish()
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--ids',nargs='+',help='Publish only these reviewed presets')
+    publish(parser.parse_args().ids)

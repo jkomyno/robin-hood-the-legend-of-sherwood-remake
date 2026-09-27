@@ -3,8 +3,9 @@
     "id": "spline-derby-upper-curtain",
     "name": "Derby \u00b7 Upper bailey battlements",
     "source": "derby-upper-east-curtain",
-    "start": 0.22,
-    "end": 0.43,
+    "start": 0.1,
+    "end": 0.84,
+    "feature_height": 170,
     "straighten": true,
     "cornerAsset": "derby-lower-west-wall-turret",
     "cornerScale": 1.4,
@@ -14,8 +15,9 @@
     "id": "spline-derby-lower-curtain",
     "name": "Derby \u00b7 Lower bailey stone wall",
     "source": "derby-lower-east-curtain",
-    "start": 0.15,
-    "end": 0.35,
+    "start": 0.21,
+    "end": 0.65,
+    "feature_height": 210,
     "straighten": true,
     "cornerAsset": "derby-lower-west-wall-turret",
     "cornerScale": 1.7,
@@ -25,6 +27,7 @@
     "id": "spline-derby-yard-fence",
     "name": "Derby \u00b7 Timber yard fence",
     "source": "derby-lower-northwest-yard-fence",
+    "feature_height": 30,
     "start": 0.08,
     "end": 0.92,
     "include_nodes": [
@@ -67,15 +70,17 @@
     "id": "spline-leicester-rail-fence",
     "name": "Leicester \u00b7 Timber rail fence",
     "source": "leicester-roadside-rail-fence",
-    "start": 0.2,
-    "end": 0.7
+    "start": 0.1,
+    "end": 0.85,
+    "feature_height": 34
   },
   {
     "id": "spline-lincoln-east-curtain",
     "name": "Lincoln \u00b7 Crenellated curtain",
     "source": "lincoln-east-curtain-wall-middle",
-    "start": 0.15,
-    "end": 0.85,
+    "start": 0.06,
+    "end": 0.92,
+    "feature_height": 190,
     "include_nodes": [
       "component 141",
       "component 151",
@@ -100,6 +105,7 @@
     "id": "spline-lincoln-wattle-fence",
     "name": "Lincoln \u00b7 Wattle fence",
     "source": "lincoln-village-field-wattle-fence",
+    "feature_height": 38,
     "start": 0.1,
     "end": 0.9,
     "include_nodes": [
@@ -110,6 +116,8 @@
     "id": "spline-nottingham-curtain",
     "name": "Nottingham \u00b7 Town battlements",
     "source": "nottingham-south-curtain-wall-3",
+    "feature_height": 252,
+    "level_feature_tops": true,
     "start": 0.08,
     "end": 0.92,
     "straighten": true,
@@ -121,8 +129,9 @@
     "id": "spline-nottingham-castle-wall",
     "name": "Nottingham \u00b7 Castle courtyard wall",
     "source": "nottingham-castle-east-courtyard-wall",
-    "start": 0.2,
-    "end": 0.64,
+    "start": 0.05,
+    "end": 0.34,
+    "feature_height": 350,
     "include_nodes": [
       "component 325",
       "volume 326"
@@ -167,17 +176,18 @@
     "id": "spline-york-curtain",
     "name": "York \u00b7 Town curtain",
     "source": "york-group-251",
-    "start": 0.05,
-    "end": 0.95,
+    "interval": [-110, 1],
+    "repeat_note": "Three painted battlements; gap-to-gap crop before the perpendicular return at X=11.",
     "straighten": true
   },
   {
     "id": "spline-york-inner-wall",
     "name": "York \u00b7 Inner bailey wall",
     "source": "york-group-872",
-    "start": 0.1,
-    "end": 0.9,
-    "straighten": true
+    "interval": [-174, 177],
+    "repeat_note": "Nine painted battlements, with cuts halfway between adjacent caps; level the source's sloping top.",
+    "straighten": true,
+    "level_top": true
   },
   {
     "id": "spline-croisement02-stone-wall",
@@ -192,15 +202,19 @@
     "id": "spline-croisement02-wattle",
     "name": "Croisement02 \u00b7 Woven field fence",
     "source": "croisement02-group-020",
-    "start": 0.1,
-    "end": 0.9
+    "interval": [-130, 120],
+    "repeat_note": "Cuts between the painted posts at approximately -144/-116 and 106/134.",
+    "straighten": true,
+    "level_top": true
   },
   {
     "id": "spline-sherwood-rail",
     "name": "Sherwood \u00b7 Bridge railing",
     "source": "sherwood-group-121",
-    "start": 0.2,
-    "end": 0.7
+    "interval": [-45, 12],
+    "repeat_note": "Two painted rail bays on the straight middle run, excluding the banks and both angled returns.",
+    "straighten": true,
+    "level_top": true
   },
   {
     "id": "spline-croisement01-bank",

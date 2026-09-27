@@ -24,7 +24,7 @@ def main():
         cards.append(f'''<article data-map="{escape(row['source_map'])}">
           <h2>{escape(row['name'])}</h2><p>Source: <code>{escape(row['source'])}</code><br>
           Width {row['width']:.1f} · Repeat {row['repeatLength']:.1f} · Height {row['height']:.1f}</p>
-          <details><summary>Original, prepared strip, repeats, curve, and corner — both cameras</summary>
+          <details><summary>Original, strip, repeats, curve, corner, and join close-up — both cameras</summary>
           <img loading="lazy" src="{uri}" alt="{escape(row['name'])} comparison"></details></article>''')
         representatives.setdefault(row['source_map'], image)
     maps = sorted(representatives)
@@ -37,7 +37,7 @@ def main():
     <h1>Wall, fence, bank and railing presets</h1>
     <p>{len(rows)} prepared types from {len(maps)} maps. Wychford is excluded. Each comparison uses the full models,
     in the game camera and an angled view. Rows show the original source asset, the dedicated strip,
-    three repeats, an S-curve, and a corner. Source UVs/materials are retained; strip straightening
+    three repeats, an S-curve, a corner, and an enlarged repeat join. Source UVs/materials are retained; strip straightening
     and leveling are confined to copies. Original shared assets and map placements are unchanged.</p>
     <p>These are segment and spline comparisons, not reconstructions of every wall in the original levels.
     Projection-only woodland/York assets retain their source texture limitations; repeating shadows
@@ -63,6 +63,16 @@ def main():
         strips.paste(image.crop((0, 1020, 1000, 1360)).resize((500, 170)), (x, y + 35))
         labels.text((x + 8, y + 7), row['name'], font=font, fill='#ecf0e5')
     strips.save(WORK / 'all-strips.jpg', quality=94)
+    joins = Image.new('RGB', (1000, len(rows) * 375), '#20272e')
+    labels = ImageDraw.Draw(joins)
+    for index,row in enumerate(rows):
+        image = Image.open(WORK / 'segments' / (row['id'] + '.webp'))
+        if image.height < 2040:raise ValueError('Join close-up missing: '+row['id'])
+        crop = image.crop((0,1700,1000,2040))
+        crop.save(WORK / 'segments' / (row['id'] + '-join.png'))
+        joins.paste(crop,(0,index*375+35))
+        labels.text((12,index*375+8),row['name'],font=font,fill='#ecf0e5')
+    joins.save(WORK / 'repeat-joins.jpg',quality=94)
     print(WORK / 'review.html')
 
 

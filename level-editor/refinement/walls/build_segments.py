@@ -4,6 +4,7 @@ Outputs are independent derived assets. Original map models and placements are u
 The receipt records clipping, orientation, translation and any copy-only straightening.
 """
 import copy
+import argparse
 import hashlib
 import json
 import math
@@ -50,7 +51,7 @@ def clip(poly, axis, boundary, above):
             t=(boundary-av)/(bv-av);out.append({k:a[k]+(b[k]-a[k])*t for k in a})
     return out
 
-def build(recipe, entries):
+def source_geometry(recipe, entries):
     entry=entries[recipe['source']];path=LIB/entry['model'];doc,buffers,_=read_glb(path)
     descriptor=json.loads((LIB/entry['descriptor']).read_text())
     hidden_nodes={part['node'] for part in descriptor.get('parts',[]) if part.get('default_hidden')}
@@ -79,12 +80,65 @@ def build(recipe, entries):
     if angle>90:angle-=180
     if angle<=-90:angle+=180
     a=math.radians(angle);rot=np.array([[math.cos(a),math.sin(a),0],[-math.sin(a),math.cos(a),0],[0,0,1]])
-    points=points@rot.T;lo=points.min(axis=0);hi=points.max(axis=0)
-    start=lo[0]+(hi[0]-lo[0])*recipe.get('start',.2);end=lo[0]+(hi[0]-lo[0])*recipe.get('end',.8)
-    output=[]
-    for attrs,triangles,material,name in parts:
+    for attrs,_,_,_ in parts:
         attrs['POSITION']=attrs['POSITION']@rot.T
         if 'NORMAL' in attrs:attrs['NORMAL']=attrs['NORMAL']@rot.T
+    return entry,path,doc,buffers,parts,angle
+
+def feature_intervals(parts, height):
+    """Project geometry above a reviewed height onto the longitudinal axis."""
+    intervals=[]
+    for attrs,triangles,_,_ in parts:
+        for tri in triangles:
+            polygon=clip([{'POSITION':attrs['POSITION'][i]} for i in tri],2,height,True)
+            if polygon:
+                xs=[v['POSITION'][0] for v in polygon]
+                intervals.append((min(xs),max(xs)))
+    merged=[]
+    for start,end in sorted(intervals):
+        if merged and start<=merged[-1][1]+1e-4:
+            merged[-1][1]=max(merged[-1][1],end)
+        else:merged.append([start,end])
+    return merged
+
+def repeat_interval(features, start, end):
+    """Cut at gap midpoints, retaining whole features and a natural seam gap.
+
+    At the join, the two half gaps sum to the mean of the source gaps. This
+    preserves irregular masonry instead of forcing every merlon to one pitch.
+    """
+    gaps=[(a[1]+b[0])/2 for a,b in zip(features,features[1:]) if b[0]-a[1]>1e-3]
+    gaps=[x for x in gaps if start<=x<=end]
+    if len(gaps)<2:raise ValueError('Repeat window needs at least two complete feature gaps')
+    start,end=gaps[0],gaps[-1]
+    inside=[(a,b) for a,b in features if start<a and b<end]
+    if not inside:raise ValueError('Repeat contains no complete features')
+    return start,end,{'features':len(inside),
+                    'seam_gap':end-inside[-1][1]+inside[0][0]-start,
+                    'internal_gaps':[b[0]-a[1] for a,b in zip(inside,inside[1:])]}
+
+def build(recipe, entries):
+    entry,path,doc,buffers,parts,angle=source_geometry(recipe,entries)
+    points=np.concatenate([p[0]['POSITION'] for p in parts]);lo=points.min(axis=0);hi=points.max(axis=0)
+    start=lo[0]+(hi[0]-lo[0])*recipe.get('start',.2);end=lo[0]+(hi[0]-lo[0])*recipe.get('end',.8)
+    if 'interval' in recipe:start,end=recipe['interval']
+    if not lo[0]<=start<end<=hi[0]:raise ValueError('Repeat interval outside source geometry')
+    repeat_check=None
+    if 'feature_height' in recipe:
+        features=feature_intervals(parts,recipe['feature_height'])
+        start,end,repeat_check=repeat_interval(features,start,end)
+        if recipe.get('level_feature_tops'):
+            tops=[((a+b)/2,points[(points[:,0]>=a)&(points[:,0]<=b),2].max())
+                  for a,b in features if start<a and b<end]
+            if len(tops)<2:raise ValueError('Leveling requires two complete features')
+            xs,zs=np.array(tops).T
+            slope,intercept=np.polyfit(xs,zs,1)
+            target=slope*(start+end)/2+intercept-lo[2]
+            for attrs,_,_,_ in parts:
+                p=attrs['POSITION']
+                p[:,2]=lo[2]+(p[:,2]-lo[2])*target/(slope*p[:,0]+intercept-lo[2])
+    output=[]
+    for attrs,triangles,material,name in parts:
         values={k:[] for k in attrs}
         for tri in triangles:
             poly=[{k:v[i].copy() for k,v in attrs.items()} for i in tri]
@@ -120,6 +174,16 @@ def build(recipe, entries):
     vertices=np.concatenate([x[0]['POSITION'] for x in output]);lo=vertices.min(axis=0);hi=vertices.max(axis=0)
     anchor=np.array([(start+end)/2,(lo[1]+hi[1])/2,lo[2]])
     for attrs,_,_ in output:attrs['POSITION']-=anchor
+    if repeat_check:
+        final_parts=[(attrs,np.arange(len(attrs['POSITION'])).reshape(-1,3),material,name)
+                     for attrs,material,name in output]
+        final_features=feature_intervals(final_parts,recipe['feature_height']-anchor[2])
+        seam=(end-start)-final_features[-1][1]+final_features[0][0] if final_features else -1
+        if (len(final_features)!=repeat_check['features'] or
+                abs(seam-repeat_check['seam_gap'])>1e-3 or
+                final_features[0][0]<=start-anchor[0]+1e-4 or
+                final_features[-1][1]>=end-anchor[0]-1e-4):
+            raise ValueError('Generated strip no longer preserves complete repeat features: '+recipe['id'])
     binary=bytearray();views=[];accessors=[]
     def blob(data):
         while len(binary)%4:binary.append(0)
@@ -161,15 +225,24 @@ def build(recipe, entries):
                 'bounds_local_scene':{'min':(lo-anchor).tolist(),'max':(hi-anchor).tolist()},
                 'provenance':{'source':recipe['source'],'model_sha256':sha(path),'descriptor_sha256':sha(LIB/entry['descriptor']),
                               'recipe':recipe,'angle':angle,'anchor':anchor.tolist(),'interval':[start,end],
+                              'repeat_check':repeat_check,
                               'method':('Dedicated copy: clipped original UVs/materials, straightened cross-sections'+('; leveled top' if recipe.get('level_top') else '') if recipe.get('straighten') else 'Triangle clipping with interpolated original attributes; rigid normalization only.')}}
     (folder/'asset.json').write_text(json.dumps(descriptor,indent=2)+'\n')
     return {**recipe,'source_map':entry['source_map'],'asset':recipe['id'],'axis':'x','sourceStraight':True,'sourceAngle':0,'sourceStart':0,'sourceEnd':1,
             'width':float(hi[1]-lo[1]),'repeatLength':float(end-start),'height':float(hi[2]-lo[2]),'source_angle':angle}
 
 if __name__=='__main__':
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--ids',nargs='+',help='Rebuild only these presets, preserving other staged receipts')
+    args=parser.parse_args()
     recipes=json.loads((Path(__file__).parent/'recipes.json').read_text());entries={x['id']:x for x in json.loads((LIB/'index.json').read_text())['assets']}
+    receipts=ROOT/'work/wall-presets/segments.json'
+    previous={row['id']:row for row in json.loads(receipts.read_text())} if args.ids else {}
+    if args.ids and set(args.ids)-{r['id'] for r in recipes}:raise ValueError('Unknown preset id')
     results=[]
     for recipe in recipes:
+        if args.ids and recipe['id'] not in args.ids:
+            results.append(previous[recipe['id']]);continue
         result=build(recipe,entries);results.append(result);print(recipe['id'],round(result['repeatLength']),round(result['width']),round(result['height']))
     write_asset_index(STAGE)
     scenes=STAGE.parent/'scenes';scenes.mkdir(exist_ok=True)
