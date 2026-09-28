@@ -125,3 +125,19 @@ test("cutout interpolation stays on the authored sloping mesh", () => {
       assert.ok(x <= 2);
     }
 });
+
+test("uniform vertex alpha merges accepted texels regardless of their stored alpha", () => {
+  const texture = {
+    width: 4,
+    height: 4,
+    alpha: Uint8Array.from({ length: 16 }, (_, i) => 128 + i * 7),
+  };
+  assert.deepEqual(maskAlphaCoverage(a, uv(a), [0.75, 0.75, 0.75], 0.375, texture), [a]);
+  assert.deepEqual(maskAlphaCoverage(a, uv(a), [0, 0, 0], 0, texture), [a]);
+});
+
+test("varying vertex alpha retains texel-specific clip boundaries", () => {
+  const texture = { width: 2, height: 1, alpha: new Uint8Array([128, 255]) };
+  const triangles = maskAlphaCoverage(a, uv(a), [1, 0.5, 1], 0.5, texture);
+  assert.equal(area(triangles), 2.12451171875);
+});

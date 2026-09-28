@@ -93,6 +93,13 @@ export function maskAlphaCoverage(
   const top = Math.min(height - 1, Math.floor(Math.min(...uv.map((p) => p[1])) * height));
   const bottom = Math.min(height, Math.floor(Math.max(...uv.map((p) => p[1])) * height) + 1);
   const maximumAlpha = Math.max(...vertexAlpha);
+  // With uniform vertex alpha, accepted texels all produce the same solid
+  // geometry. Keep raw alpha only when it changes an interpolated boundary.
+  const constantAlpha = vertexAlpha.every((value) => value === vertexAlpha[0]);
+  const coverage = (x: number, y: number): number => {
+    const value = alpha[y * width + x]!;
+    return constantAlpha ? ((value / 255) * maximumAlpha >= cutoff ? 255 : 0) : value;
+  };
   type Rectangle = { left: number; right: number; top: number; bottom: number; alpha: number };
   const rectangles: Rectangle[] = [];
   let previous = new Map<string, Rectangle>();
@@ -100,13 +107,13 @@ export function maskAlphaCoverage(
     const current = new Map<string, Rectangle>();
     let x = left;
     while (x < right) {
-      const value = alpha[y * width + x]!;
+      const value = coverage(x, y);
       if ((value / 255) * maximumAlpha < cutoff) {
         x++;
         continue;
       }
       const start = x++;
-      while (x < right && alpha[y * width + x] === value) x++;
+      while (x < right && coverage(x, y) === value) x++;
       const key = `${start}:${x}:${value}`;
       let rectangle = previous.get(key);
       if (rectangle) rectangle.bottom++;

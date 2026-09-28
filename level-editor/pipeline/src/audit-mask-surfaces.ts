@@ -54,6 +54,11 @@ const model = await loadSceneModel(values.library, {
   resources: reference.resources ?? [],
 });
 const textures = await maskRecoveryTextures(model);
+const bounds = indices.map((index) => {
+  const mask = proto.masks[index]!;
+  const [left, top] = mask.box_top_left;
+  return { left, top, right: left + mask.box_size[0], bottom: top + mask.box_size[1] };
+});
 const surfaces = parts.flatMap((part) => {
   const matrix = partMatrix(document.camera, document, part);
   return maskRecoveryMesh(
@@ -61,6 +66,7 @@ const surfaces = parts.flatMap((part) => {
     part.node.slice(prefix.length),
     (p) => sceneToGame(document.camera, applyAffineMatrix(matrix, gltfToScene(p))),
     textures,
+    bounds,
   );
 });
 const tiles = surfaces.length ? rasterizeMaskGeometry(surfaces, proto.masks[indices[0]!]!) : [];

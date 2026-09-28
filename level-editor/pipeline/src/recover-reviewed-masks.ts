@@ -57,6 +57,12 @@ export async function recoverReviewedMasks(
       resources: reference.resources ?? [],
     });
     const textures = await maskRecoveryTextures(model);
+    const bounds = recipe.entries.map((entry) => {
+      const mask = proto.masks[entry.source];
+      if (!mask) throw new Error(`Missing reviewed mask: ${entry.source}`);
+      const [left, top] = mask.box_top_left;
+      return { left, top, right: left + mask.box_size[0], bottom: top + mask.box_size[1] };
+    });
     const surfaces = parts.flatMap((part) =>
       maskRecoveryMesh(
         model,
@@ -67,6 +73,7 @@ export async function recoverReviewedMasks(
             applyAffineMatrix(partMatrix(document.camera, document, part), gltfToScene(point)),
           ),
         textures,
+        bounds,
       ),
     );
     for (const entry of recipe.entries) {

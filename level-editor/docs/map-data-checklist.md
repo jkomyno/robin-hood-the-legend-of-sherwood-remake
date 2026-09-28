@@ -550,8 +550,19 @@ The central Sherwood oak now passes through the alpha-aware support audit:
 to 660,698 triangles. Of seven nearby mask probes, record 150 has complete support
 for all 375 pixels; records 32/34/62/70/151/153 still lack coverage. This probe does
 not establish ownership or recover a complete mask definition, so the reviewed
-mask total remains 72. Broader tree recovery, geometry size reduction and visual
-filtering fidelity remain unfinished.
+mask total remains 72. Reviewed recovery now discards mesh triangles outside the
+union of the requested masks' projected bounds before expanding texture alpha.
+For these seven probes it reduces the candidate geometry from 660,698 to 3,327
+triangles (99.5%) with identical complete support/gap reports, recorded in
+`work/map-compile/sherwood-central-oak-alpha-bounded-support.json`. Accepted texels
+also merge regardless of stored alpha when vertex alpha is uniform; varying
+vertex alpha retains distinct clipping thresholds. Full-tree silhouette hashes
+remain identical at baseline and 45-degree rotation. This does not simplify or
+alter the published tree model. A fresh Croisement03 recovery also produces
+identical gameplay candidates for all 93 assets, including its recovered mask
+and state geometry (`work/map-compile/croisement03-bounded-mask-recovery`).
+Broader tree recovery and visual filtering
+fidelity remain unfinished.
 
 Asset character/projectile boundaries can now be explicitly open, independently
 of one another; existing authored boundaries remain closed by default. This

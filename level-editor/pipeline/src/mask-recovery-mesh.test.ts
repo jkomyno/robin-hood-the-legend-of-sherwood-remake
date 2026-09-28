@@ -133,3 +133,38 @@ test("cutout mesh recovery decodes alpha and keeps foliage ownership separate", 
   material.setAlphaMode("OPAQUE");
   assert.equal(maskRecoveryMesh(model, "part", (p) => p).length, 1);
 });
+
+test("review bounds discard only triangles outside the placed projection", () => {
+  const { model, primitive } = fixture();
+  primitive
+    .getAttribute("POSITION")!
+    .setArray(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0, 100, 0, 0, 101, 0, 0, 100, 1, 0]));
+  primitive.getIndices()!.setArray(new Uint16Array([2, 1, 0, 3, 4, 5]));
+  const place = ([x, y, z]: [number, number, number]): [number, number, number] => [
+    x,
+    y + 50,
+    z + 50,
+  ];
+  const full = maskRecoveryMesh(model, "part", place);
+  assert.equal(full.length, 2);
+  const bounds = [{ left: 10, top: 2, right: 11, bottom: 3 }];
+  assert.deepEqual(maskRecoveryMesh(model, "part", place, undefined, bounds), [full[0]]);
+  assert.deepEqual(
+    maskRecoveryMesh(model, "part", place, undefined, [
+      { left: 10, top: 52, right: 11, bottom: 53 },
+    ]),
+    [],
+  );
+  assert.deepEqual(
+    maskRecoveryMesh(model, "part", place, undefined, [
+      ...bounds,
+      { left: 210, top: 2, right: 211, bottom: 3 },
+    ]),
+    full,
+  );
+  assert.throws(
+    () =>
+      maskRecoveryMesh(model, "part", place, undefined, [{ left: 1, top: 0, right: 0, bottom: 1 }]),
+    /Invalid mask recovery bounds/,
+  );
+});

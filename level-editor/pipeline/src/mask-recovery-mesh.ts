@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { maskAlphaCoverage, type MaskAlphaImage } from "./mask-alpha-coverage.ts";
 import type { Vec3 } from "../../shared/src/scene.ts";
 import type { MaskTriangle } from "../../shared/src/compile-mask-geometry.ts";
+import type { MaskCoverageRectangle } from "./recover-mask-bitmap.ts";
 
 /** Decode physical alpha only; opaque atlas alpha may instead encode provenance. */
 export async function maskRecoveryTextures(model: Document): Promise<Map<Texture, MaskAlphaImage>> {
@@ -36,7 +37,17 @@ export function maskRecoveryMesh(
   part: string,
   place: (point: Vec3) => Vec3,
   textures?: ReadonlyMap<Texture, MaskAlphaImage>,
+  projectedBounds?: readonly MaskCoverageRectangle[],
 ): MaskTriangle[] {
+  if (
+    projectedBounds?.some(
+      (b) =>
+        ![b.left, b.top, b.right, b.bottom].every(Number.isFinite) ||
+        b.left >= b.right ||
+        b.top >= b.bottom,
+    )
+  )
+    throw new Error("Invalid mask recovery bounds");
   const scene = model.getRoot().getDefaultScene();
   if (!scene) throw new Error("Mask recovery model has no selected scene");
   const matches: Node[] = [];
@@ -112,6 +123,18 @@ export function maskRecoveryMesh(
       };
       for (let offset = 0; offset < count; offset += 3) {
         const triangle: MaskTriangle = [point(offset), point(offset + 1), point(offset + 2)];
+        if (projectedBounds) {
+          const left = Math.min(...triangle.map((p) => p[0]));
+          const right = Math.max(...triangle.map((p) => p[0]));
+          const top = Math.min(...triangle.map((p) => p[1] - p[2]));
+          const bottom = Math.max(...triangle.map((p) => p[1] - p[2]));
+          if (
+            !projectedBounds.some(
+              (b) => left < b.right && right > b.left && top < b.bottom && bottom > b.top,
+            )
+          )
+            continue;
+        }
         if (mode === "OPAQUE") {
           triangles.push(triangle);
           continue;
