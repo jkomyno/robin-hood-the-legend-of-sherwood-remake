@@ -79,7 +79,26 @@ export async function stageVolumePartitions(options: {
       }
     }
     const entries = index.assets.filter((a: { id: string }) => a.id === entry.id);
-    if (entries.length !== 1) throw new Error(`Expected one indexed asset: ${entry.id}`);
+    if (entries.length > 1) throw new Error(`Expected one indexed asset: ${entry.id}`);
+    if (!entries.length) {
+      if (
+        !reference.descriptor.startsWith("3d-assets/") ||
+        !reference.model.startsWith("3d-assets/")
+      )
+        throw new Error(`Scene asset cannot be indexed under 3d-assets: ${entry.id}`);
+      const added = {
+        id: entry.id,
+        name: descriptor.name,
+        source_map: descriptor.source_map,
+        descriptor: reference.descriptor.slice("3d-assets/".length),
+        model: reference.model.slice("3d-assets/".length),
+        descriptor_sha256: reference.descriptor_sha256,
+        model_sha256: reference.model_sha256,
+        ...(reference.model_scene ? { model_scene: reference.model_scene } : {}),
+      };
+      index.assets.push(added);
+      entries.push(added);
+    }
     if (
       `3d-assets/${entries[0].descriptor}` !== reference.descriptor ||
       `3d-assets/${entries[0].model}` !== reference.model ||

@@ -69,6 +69,23 @@ test("partition overlays reopen corrected metadata without changing source files
   assert.deepEqual(defs.get("hut")!.parts, f.corrected.parts);
   await assert.rejects(stageVolumePartitions(f), /EEXIST/);
 });
+test("scene-pinned assets absent from the palette become indexed in the draft overlay", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "partition-overlay-index-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const f = await fixture(root);
+  const indexPath = path.join(f.library, "3d-assets/index.json");
+  await fs.writeFile(indexPath, JSON.stringify({ version: 1, assets: [] }));
+  const result = await stageVolumePartitions(f);
+  const index = JSON.parse(
+    await fs.readFile(path.join(result.library, "3d-assets/index.json"), "utf8"),
+  );
+  assert.equal(index.assets.length, 1);
+  assert.equal(index.assets[0].id, "hut");
+  assert.equal(index.assets[0].model, "hut/hut.glb");
+  assert.deepEqual(index.assets[0].editor.parts, f.corrected.parts);
+  assert.deepEqual(JSON.parse(await fs.readFile(indexPath, "utf8")).assets, []);
+});
+
 test("partition staging rejects stale pins and explicit scene collision overrides", async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "partition-overlay-reject-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));

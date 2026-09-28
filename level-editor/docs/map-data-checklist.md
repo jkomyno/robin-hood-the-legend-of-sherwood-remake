@@ -1469,3 +1469,31 @@ separate. Moving only the north wall east causes conflicting receiving surfaces;
 moving it west leaves the separate stair's landing unsupported. Those failures
 remain explicit. This does not certify arbitrary detached wall/stair placements,
 receiving-surface parity, appearance or publication.
+
+York records 213 and 876 now have reviewed partition recipes in
+`york-arcade-volume-partitions.json` and
+`york-precinct-parapet-volume-partitions.json`. Each follows the existing component
+seam, projected onto the exact outer contour. Record 213 restores ground-level
+bottoms beneath the arcade/gallery volume instead of the roughly 89.9-unit gap
+in component bounds. Record 876 restores the bastion's inner arc instead of
+filling it, and corrects its slightly negative bottoms and raised top. Both retain
+independent assets and assemble only when their local seams coincide.
+
+The combined overlay is `work/map-compile/york-flat-volume-stage`, with definitions
+in `york-flat-volume-recovery` and diagnostics in `york-flat-volume-native`.
+It also retains the earlier correction for record 650. The baseline constructs
+192 movement areas, 1,195 sight obstacles, 254 doors and 72 jump pairs. Each of
+the four assets also constructs after an independent one-unit eastward move,
+with 1,196 sight obstacles. Moving the arcade house separates two external door
+and jump connections; the other three tested placements retain baseline counts.
+Each assembled volume reproduces its reference vertices at engine precision and
+passes 100,000 exact native sight/impact comparisons. The twenty reviewed York
+masks remain present; 808 masks and the other listed gaps remain pending.
+These are draft geometry/query checks, not publication or complete map parity.
+
+Some scene-pinned York assets are absent from the older palette index. Partition
+staging now registers those verified descriptors in the new overlay's index;
+duplicate entries or conflicts with existing scene pins still fail. Tests verify
+that the source index remains unchanged. Five of the twenty-six audited split
+records now have correction drafts; the other twenty-one remain uncorrected in
+that audit, including receiving volumes and more complex ownership cases.
