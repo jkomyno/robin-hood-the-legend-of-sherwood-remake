@@ -1,0 +1,21 @@
+{
+  "source_sha256": "1d39600d880f96dbd13bff1cda94778d867eabf4d6ed76b00fc92a70f646fc07",
+  "obstacle": 99,
+  "review": "The southeast curtain and corner turret meet between boundary vertices 2 and 13, matching their existing component seam near x=2330. Retain the complete turret contour and straight curtain instead of the approximate component hulls. Restore bottom 0 and top 363.001 rather than bottom 350/top 380. The independent assets join only along the directed local seam; visuals remain separate. No masks, receiving geometry, materials or state patches reference this volume.",
+  "parts": [
+    {
+      "asset": "lincoln-southeast-corner-turret",
+      "node": "building-099--component-southeast-corner-turret-parapet",
+      "model_sha256": "9296da844f453c515f1117fec13180866907773fb57d99a5f895c5f71e30f7ec",
+      "descriptor_sha256": "5319bec90ac2709a26b912249d7b275e610e645b4c4725306823ea09de841b20",
+      "vertices": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    },
+    {
+      "asset": "lincoln-southeast-curtain-wall",
+      "node": "building-099--component-southeast-parapet-straight",
+      "model_sha256": "669b0fb19eba1d2151da1cfc2aba1139a67ad4b5575dd013bf5236f5b265f75e",
+      "descriptor_sha256": "a2132c7be0cbaa8cc7a6534fd4b1dc6e0c3f38e00fd5604ee734cc4786ee5ade",
+      "vertices": [0, 1, 2, 13]
+    }
+  ]
+}

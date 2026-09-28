@@ -1497,3 +1497,26 @@ duplicate entries or conflicts with existing scene pins still fail. Tests verify
 that the source index remains unchanged. Five of the twenty-six audited split
 records now have correction drafts; the other twenty-one remain uncorrected in
 that audit, including receiving volumes and more complex ownership cases.
+
+Lincoln records 99 and 110 now have reviewed recipes in
+`lincoln-southeast-parapet-volume-partitions.json` and
+`lincoln-south-parapet-volume-partitions.json`. The existing turret/curtain and
+bastion/curtain seams coincide with boundary vertices, so each asset retains an
+exact portion of the contour and explicit local joining edges. Record 99 now
+runs from ground to 363.001 instead of component bounds at 350–380. Record 110
+runs from ground to 340.001 instead of bottom 320 and mismatched tops 355/364.
+Their assembled reference vertices match at engine precision, and each passes
+100,000 exact native sight and impact comparisons.
+
+The overlay is `work/map-compile/lincoln-parapet-volume-stage`; recovery uses the
+matching `-recovery` directory and retains four reviewed masks, with 424 still
+pending. The baseline constructs 113 areas, 567 sight obstacles, 89 doors and 10
+jump pairs. Both curtain-wall assets independently moved one unit east also
+construct in Rust with 568 sight obstacles and unchanged door/jump counts. Their
+successful batch is `lincoln-parapet-volume-walls-native`. The complete movement
+attempt batch, `lincoln-parapet-volume-native`, remains marked incomplete:
+moving either the corner turret or angle bastion triggers conflicting receiving
+materials. The baseline-only query inputs are under
+`lincoln-parapet-volume-baseline-native`. These placement errors, visual parity
+and publication remain unresolved. Seven of the twenty-six audited split records
+now have correction drafts; nineteen remain uncorrected in that audit.
