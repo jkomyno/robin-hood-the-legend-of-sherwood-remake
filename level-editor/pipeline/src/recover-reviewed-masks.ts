@@ -4,7 +4,10 @@ import type { ProtoLevel, Point } from "../../shared/src/level.ts";
 import { gameToScene, type Vec3 } from "../../shared/src/scene.ts";
 import { applyAffineMatrix, gltfToScene, sceneToGame } from "../../shared/src/geometry.ts";
 import { heightPlane, planeHeight } from "../../shared/src/gameplay-plane.ts";
-import { maskReferenceResolver } from "../../shared/src/mask-references.ts";
+import {
+  reviewedMaskStateBindings,
+  type RecoveredMaskTransition,
+} from "./reviewed-mask-state-bindings.ts";
 import { loadSceneModel } from "./scene-assets.ts";
 import { maskRecoveryMesh } from "./mask-recovery-mesh.ts";
 import { recoverOcclusionMask } from "./recover-occlusion-mask.ts";
@@ -23,9 +26,7 @@ export interface ReviewedMaskRecipe {
   }[];
 }
 
-/** One-time migration of explicitly reviewed static masks. Source patch masks
- * cannot be inserted as always-active geometry; their state binding is required
- * separately before this migration can support them. */
+/** One-time migration of reviewed masks, requiring complete local state ownership. */
 export async function recoverReviewedMasks(
   library: string,
   document: Level3D,
@@ -33,11 +34,9 @@ export async function recoverReviewedMasks(
     patches: Pick<ProtoLevel["patches"][number], "old_masks" | "new_masks">[];
   },
   recipes: ReviewedMaskRecipe[],
+  transitions: readonly RecoveredMaskTransition[] = [],
 ) {
-  const resolve = maskReferenceResolver(proto.masks);
-  const controlled = new Set(
-    proto.patches.flatMap((p) => [...resolve(p.old_masks), ...resolve(p.new_masks)]),
-  );
+  const bindings = reviewedMaskStateBindings(proto.masks, proto.patches, recipes, transitions);
   const seen = new Set<number>();
   const recovered = [];
   for (const recipe of recipes) {
@@ -72,8 +71,6 @@ export async function recoverReviewedMasks(
       const mask = proto.masks[entry.source];
       const part = parts.find((p) => p.node === prefix + entry.node);
       if (!mask || !part) throw new Error(`Missing reviewed mask or frame: ${entry.source}`);
-      if (controlled.has(entry.source))
-        throw new Error(`Mask ${entry.source} requires state recovery`);
       const projected: Point = [entry.anchor[0], entry.anchor[1] - entry.anchor[2]];
       if (
         !proto.motion_data.layers[mask.layer]?.some(
@@ -120,6 +117,7 @@ export async function recoverReviewedMasks(
       recovered.push({
         asset: recipe.asset,
         source: entry.source,
+        ...(bindings.has(entry.source) ? { state: bindings.get(entry.source)! } : {}),
         definition: recoverOcclusionMask(mask, { ...entry, surfaces, obstacles, localize }),
       });
     }

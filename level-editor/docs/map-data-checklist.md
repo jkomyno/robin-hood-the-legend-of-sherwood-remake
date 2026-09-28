@@ -558,6 +558,21 @@ layers and independent links after asset duplication. All 518 state references
 across the nine source maps resolve; none reuses a mask within/across patches.
 This does not mean those masks have recovered coverage or published state links.
 
+Reviewed mask migration now accepts state-controlled masks only when the whole
+patch mask set belongs to one asset and one recovered local transition. It writes
+the local IDs into that transition's initial/applied mask lists after geometry
+recovery succeeds. Missing masks, competing controllers and cross-asset ownership
+remain errors. Tests cover both phases, duplicate transition discovery and invalid
+ownership; the mesh-backed migration test also exercises a controlled mask.
+
+Croisement03's staged southwest assembly owns all three applied masks of patch 8
+(global records 128–130; layer-local records 122–124), but its mesh lacks support
+for 981, 803 and 5 covered pixels respectively, including 661 and 520 interior
+pixels in the first two masks. The reproducible `audit-mask-surfaces.ts` report is
+`work/map-compile/croisement03-state-assembly-mask-audit.json`. These masks need
+authored surface geometry and remain unrecovered; state ownership alone does not
+establish mask parity. The reviewed static-mask total remains 64.
+
 `pipeline/src/verify-reviewed-mask-recovery.ts` reproduces the reviewed-mask
 checks from a scene, pinned library, recovery packets and source-pinned recipes.
 It compares exact covered pixels, flags, both optional polylines and obstacle-link
@@ -1108,7 +1123,7 @@ Ambiguous matches and conflicting jump rules still fail. A ten-pixel move also
 intersects a neighboring stairway and fails the existing traversal-connectivity
 check; this verification does not establish arbitrary-placement or full visual parity.
 
-The twenty-one recovered movement-changing transitions pass native initialization, apply and reset checks:
+The earlier twenty-one-transition recovery batch passed native initialization, apply and reset checks:
 movement-state bits, obstacle-sector activation and sight flags change and restore.
 Transition reference points may lie inside static blockers; they must still resolve
 to a unique surface at the authored height. Doors resolve their optional receiving
@@ -1120,9 +1135,11 @@ Diagnostic batches fail if any map fails or no maps are exported. Each run inval
 the previous manifest and removes each map's stale output before attempting recovery;
 native checks reject failed entries instead of silently skipping them. A successful
 batch still proves only the explicitly checked static geometry and state behavior.
-Croisement03's remaining elevated navigation-only change has approximately 24.49
-square pixels inside its movement area but outside every receiving surface. This
-requires explicit asset authoring; recovery must not silently invent a receiving height.
+Croisement03's elevated navigation-only change has approximately 24.49 square
+pixels inside its movement area but outside every receiving surface. The reviewed
+transition-plane recipe described above now supplies its boundary height without
+adding receiving coverage. Its later southwest assembly recovery brings that
+map's movement-group recovery to nine of nine; mask and visual state remain incomplete.
 `omittedMovementTransitions` makes missing transition definitions explicit
 in the static diagnostic and prevents it from certifying full compilation.
 Ground recovery uses fixed-point polygon operations and reports reconstruction

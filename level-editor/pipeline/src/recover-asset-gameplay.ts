@@ -1682,9 +1682,22 @@ if (values["mask-definitions"]) {
   );
   if (createHash("sha256").update(sourceBytes).digest("hex") !== definitions.source_sha256)
     throw new Error("Reviewed mask source changed");
-  maskRecovery = await recoverReviewedMasks(values.library, document, proto, definitions.recipes);
-  for (const recovered of maskRecovery)
-    (packet(recovered.asset).masks ??= []).push(recovered.definition);
+  maskRecovery = await recoverReviewedMasks(values.library, document, proto, definitions.recipes, [
+    ...movementTransitionRecovery,
+    ...doorTransitionRecovery,
+  ]);
+  for (const recovered of maskRecovery) {
+    const p = packet(recovered.asset);
+    const state = recovered.state;
+    if (state) {
+      const targets = p.movementTransitions?.filter((t) => t.id === state.transition) ?? [];
+      if (targets.length !== 1)
+        throw new Error(`Recovered mask ${recovered.source} needs one local transition`);
+      const key = state.phase === "initial" ? "initialMasks" : "appliedMasks";
+      (targets[0]![key] ??= []).push(recovered.definition.id);
+    }
+    (p.masks ??= []).push(recovered.definition);
+  }
 }
 const pending = {
   doorTransitionBindings:
@@ -1745,10 +1758,11 @@ const report = {
     asset,
     sources: sourceIndices,
   })),
-  maskRecovery: maskRecovery.map(({ asset, source, definition }) => ({
+  maskRecovery: maskRecovery.map(({ asset, source, definition, state }) => ({
     asset,
     source,
     id: definition.id,
+    ...(state ? { state } : {}),
   })),
   movementStateInventory,
   projectionRecovery,
