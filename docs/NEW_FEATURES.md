@@ -73,7 +73,7 @@
   into local state IDs after ownership is established, with independent compiled
   references for duplicated assets.
   Reviewed static-mask recipes now run in the asset migration with pinned source
-  and model hashes. Two Derby postern masks have exact coverage and boundary
+  and model hashes. Three Derby postern/gatehouse masks have exact coverage and boundary
   round-trips, including placement and native registration checks; full-map
   recovery and publication remain incomplete.
 

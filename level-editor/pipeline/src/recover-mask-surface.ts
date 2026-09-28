@@ -67,6 +67,13 @@ export function recoverMaskSurface(
       if (!visible.length) continue;
       for (const [otherIndex, other] of candidates.entries()) {
         if (index === otherIndex || !visible.length) continue;
+        if (
+          other.left >= face.right ||
+          other.right <= face.left ||
+          other.top >= face.bottom ||
+          other.bottom <= face.top
+        )
+          continue;
         const difference: HeightPlane = [
           other.plane[0] - face.plane[0],
           other.plane[1] - face.plane[1],

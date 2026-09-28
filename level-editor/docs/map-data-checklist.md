@@ -176,17 +176,19 @@ layers and independent links after asset duplication. All 518 state references
 across the nine source maps resolve; none reuses a mask within/across patches.
 This does not mean those masks have recovered coverage or published state links.
 
-The first real static masks are recovered for Derby's southwest postern: records
-70 and 71, with 385 and 884 covered pixels. The reviewed recipe is
+Three real static masks are recovered for Derby: southwest postern records
+70 and 71, with 385 and 884 covered pixels, and upper gatehouse record 105,
+with 4,124 covered pixels. Record 105 is not referenced by any patch; the
+gatehouse's separate changing masks still require state recovery. The reviewed recipe is
 `refinement/catalogs/derby-masks.json`; pass it to `recover-asset-gameplay.ts` with
 `--mask-definitions`. Source and model hashes pin the authoring evidence. The
 migration checks source receiving layers/elevations, local obstacle ownership and
 exact mesh-backed coverage, and rejects changing masks until their state recovery
-is supplied. Both definitions compile from asset data only and preserve pixel
-coverage and projectile boundaries when the postern moves one pixel east.
+is supplied. All three definitions compile from asset data only and preserve pixel
+coverage and projectile boundaries when their owning asset moves one pixel east.
 Native construction verifies their bitmap coverage and layer registration. The
 drafts are under `work/map-compile/reviewed-mask-recovery/derby` and the native
-descriptor under `work/map-compile/reviewed-mask-native`. Derby still has 234
+descriptor under `work/map-compile/reviewed-mask-native`. Derby still has 233
 unrecovered masks; neither the complete asset nor map is publication-certified.
 
 Material recovery stores ground regions on terrain, obstacle regions on their

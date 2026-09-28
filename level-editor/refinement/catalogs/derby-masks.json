@@ -22,6 +22,20 @@
           "review": "Platform obstacle belongs to the postern. Full coverage lifts onto the published postern mesh. The receiving anchor is on adjacent ground, not the elevated platform; projectile boundaries use the world XY datum."
         }
       ]
+    },
+    {
+      "asset": "derby-upper-gatehouse",
+      "model_sha256": "db30b2e76a1b710ea488ea9b582f3b0960c994d7326b2ab211603aad27cd1691",
+      "entries": [
+        {
+          "source": 105,
+          "id": "gatehouse-tower-projectile-occlusion",
+          "node": "building-258",
+          "anchor": [780, 1640, 0],
+          "projectileHeights": [0, 0, 0, 0, 0],
+          "review": "Both linked tower obstacles belong to the upper gatehouse. This static mask has no patch references. Coverage lifts onto the gatehouse assembly mesh; the receiving anchor is on adjacent ground. Projectile boundaries use the world XY datum."
+        }
+      ]
     }
   ]
 }
