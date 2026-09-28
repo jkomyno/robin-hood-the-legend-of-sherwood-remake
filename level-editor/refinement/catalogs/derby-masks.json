@@ -2,6 +2,36 @@
   "source_sha256": "14698dffeeb1316563b4f91b883961298c58323ac799ab2c8a099d99487b8a46",
   "recipes": [
     {
+      "asset": "derby-lower-east-curtain",
+      "model_sha256": "0d933f55eb3fe4611fbee2071b05d6385219e76931ad52bf49e9b936f116800e",
+      "entries": [
+        {
+          "source": 39,
+          "id": "east-curtain-walk-occlusion",
+          "node": "building-044",
+          "anchor": [1050, 2150.001, 150.001],
+          "characterHeights": [150.001, 150.001, 150.001, 150.001],
+          "projectileHeights": [0, 0, 0, 0],
+          "review": "The mask follows the east curtain's inner parapet; only this asset fully supports its bitmap among the audited building meshes. Its receiving navigation and flat 150.001-unit surface belong to the same curtain. Character thresholds use that plane, including their extension beyond navigation. This static mask has no obstacle links or patch references. Projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "derby-lower-west-curtain",
+      "model_sha256": "709c2706aaff8a760eccd51dc508fc072b16657e9d4603c25ecb62f4de45e61c",
+      "entries": [
+        {
+          "source": 44,
+          "id": "west-curtain-walk-occlusion",
+          "node": "building-045",
+          "anchor": [350, 1750.001, 150.001],
+          "characterHeights": [150.001, 150.001, 150.001],
+          "projectileHeights": [0, 0, 0, 0, 0],
+          "review": "The mask follows the west curtain's inner parapet; only this asset fully supports its bitmap among the audited building meshes. Its receiving navigation and flat 150.001-unit surface belong to the same curtain. Character thresholds use that plane, including their extension beyond navigation. This static mask has no obstacle links or patch references. Projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
       "asset": "derby-southwest-postern",
       "model_sha256": "3b03292e8411111b1db5992168fe57b749de7d180851e35118e3bdbc099bb61d",
       "entries": [

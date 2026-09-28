@@ -204,19 +204,27 @@ layers and independent links after asset duplication. All 518 state references
 across the nine source maps resolve; none reuses a mask within/across patches.
 This does not mean those masks have recovered coverage or published state links.
 
-Three real static masks are recovered for Derby: southwest postern records
+Five real static masks are recovered for Derby: southwest postern records
 70 and 71, with 385 and 884 covered pixels, and upper gatehouse record 105,
-with 4,124 covered pixels. Record 105 is not referenced by any patch; the
+with 4,124 covered pixels, plus lower east/west curtain records 39/44 with
+5,753/8,112 covered pixels. The curtain masks have no obstacle links; their
+inner-parapet coverage is fully supported by the respective wall meshes and
+their receivers use each wall's own flat 150.001-unit navigation surface.
+Other fully supported unlinked candidates still require ownership review;
+several keep masks have support from multiple overlapping assets.
+Record 105 is not referenced by any patch; the
 gatehouse's separate changing masks still require state recovery. The reviewed recipe is
 `refinement/catalogs/derby-masks.json`; pass it to `recover-asset-gameplay.ts` with
 `--mask-definitions`. Source and model hashes pin the authoring evidence. The
 migration checks source receiving layers/elevations, local obstacle ownership and
 exact mesh-backed coverage, and rejects changing masks until their state recovery
-is supplied. All three definitions compile from asset data only and preserve pixel
-coverage and projectile boundaries when their owning asset moves one pixel east.
+is supplied. All five definitions compile from asset data only and preserve pixel
+coverage and character/projectile boundaries when their owning asset moves one pixel east.
 Native construction verifies their bitmap coverage and layer registration. The
-drafts are under `work/map-compile/reviewed-mask-recovery/derby` and the native
-descriptor under `work/map-compile/reviewed-mask-native`. Derby still has 233
+baseline and all four independently moved scenes load natively. Baseline non-mask
+geometry is unchanged. Updated drafts are under
+`work/map-compile/derby-curtain-mask-recovery`, with native descriptors under
+`work/map-compile/derby-curtain-mask-native`. Derby still has 231
 unrecovered masks; neither the complete asset nor map is publication-certified.
 
 Leicester has seven reviewed static masks in
