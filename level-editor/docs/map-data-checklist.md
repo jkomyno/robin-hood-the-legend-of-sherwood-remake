@@ -227,15 +227,16 @@ node --max-old-space-size=1536 pipeline/src/verify-reviewed-mask-recovery.ts \
   --out work/map-compile/reviewed-mask-verification/derby
 ```
 
-The current six-map batch verifies all 61 reviewed masks and 42 independent asset
-moves. All 48 baseline/moved descriptors load natively. Adding the latest masks
+The current six-map batch verifies all 64 reviewed masks and 45 independent asset
+moves. All 51 baseline/moved descriptors load natively. Adding the latest masks
 leaves baseline non-mask geometry unchanged. Outputs are under
 `work/map-compile/reviewed-mask-verification/<map>`. This broader check caught a
 fractional-anchor regression on Derby's postern: mask receiver elevation now uses
 the authored floating-point position, while polygon membership uses the movement
 grid. A sloped fractional-anchor regression test protects this distinction.
-The tile-aware verifier rerun is under `work/map-compile/tile-mask-verification`;
-all 61 source records pass and all 48 native-tested descriptors are unchanged.
+The earlier tile-aware verifier rerun is under `work/map-compile/tile-mask-verification`;
+all 61 then-reviewed source records pass and all 48 native-tested descriptors are unchanged.
+The current batch also uses that verifier, including three additional Lincoln masks.
 Horizontal/vertical multi-tile tests reject missing pixels, overlaps and mixed
 bindings. All ten oversized source bitmaps also pass a format-only split/reassembly
 check (`work/map-compile/oversized-mask-roundtrip.json`): Derby 129/168/172/173,
@@ -339,14 +340,27 @@ strict walkability checks for doors/jumps. The compiler change leaves the comple
 baseline unchanged. The east move gets past the mask check but still fails because
 the moved house's door is outside walkable ground; that placement is not certified.
 
-Lincoln's reviewed recipe (`refinement/catalogs/lincoln-masks.json`) recovers keep
-mask 390 (16,407 pixels). Its character threshold extends beyond navigation in
-the keep's flat 800.00104-unit receiving plane; bitmap coverage remains entirely
-mesh-supported. Coverage, boundaries and obstacle links match exactly before and
-after moving the keep one pixel east. Both scenes load natively, and baseline
-non-mask geometry is unchanged. Drafts and native checks are under
-`work/map-compile/lincoln-mask-recovery` and `work/map-compile/lincoln-mask-native`.
-There are 427 unrecovered Lincoln masks.
+Lincoln's reviewed recipe (`refinement/catalogs/lincoln-masks.json`) recovers four
+masks: keep 390 (16,407 pixels), lower east curtain 192 (4,910), west south curtain
+203 (4,652) and northeast square tower 207 (11,503). Their character thresholds use
+the owning asset's flat receiving plane: 800.00104, 350.001, 350.001 and 415.001
+units respectively, including where thresholds extend beyond navigation. Anchors
+are inside both the owning recovered surface and the source receiving layer;
+the split east curtain uses its own surface component. Bitmap coverage remains
+entirely mesh-supported. Coverage, boundaries and obstacle links match exactly
+before and after moving each owner independently one pixel east. All five scenes
+load natively, and baseline non-mask geometry is unchanged. Current drafts and
+native checks are under `work/map-compile/lincoln-curtain-mask-recovery` and
+`work/map-compile/reviewed-mask-verification/lincoln`.
+There are 424 unrecovered Lincoln masks.
+
+Annex view-only mask 398 matches all 7,593 pixels at baseline, but remains outside
+the reviewed recipe: moving its owner one pixel east makes the annex stair's lower
+endpoint disagree with the neighboring slope's height by approximately 0.121 units.
+The receiving slope belongs to another asset. Endpoint validation correctly
+rejects the traversal connection after this placement.
+The failed placement diagnostic is retained under
+`work/map-compile/lincoln-raised-mask-native` with `complete: false`.
 
 York's reviewed recipe (`refinement/catalogs/york-masks.json`) recovers twenty static
 masks: scaffolded corner house 79/86 (2,777/747 pixels), southwest square corner house
