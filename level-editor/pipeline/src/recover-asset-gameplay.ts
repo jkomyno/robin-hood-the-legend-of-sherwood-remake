@@ -26,7 +26,11 @@ import {
 import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
-import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
+import {
+  recoverSoundSource,
+  containsSoundPolyline,
+  uniqueSoundOwner,
+} from "./recover-sound-source.ts";
 import { recoverAuthoredSounds } from "./recover-authored-sounds.ts";
 import { containsLightPolygon, recoverLightField } from "./recover-light-region.ts";
 import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry.ts";
@@ -1379,7 +1383,8 @@ for (const [index, sound] of proto.sound_sources.entries()) {
       )
     );
   });
-  if (owners.length !== 1) {
+  const soundOwner = uniqueSoundOwner(owners);
+  if (!soundOwner) {
     unresolved.push({
       kind: "sound-owner",
       source: index,
@@ -1389,7 +1394,7 @@ for (const [index, sound] of proto.sound_sources.entries()) {
     });
     continue;
   }
-  const owner = owners[0]!;
+  const owner = soundOwner;
   const p = packet(owner.asset);
   (p.sounds ??= []).push(
     recoverSoundSource(sound, `ambient-sound-${index}`, owner.node, (point) =>

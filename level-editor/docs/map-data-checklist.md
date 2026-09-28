@@ -242,9 +242,19 @@ regions instead of discarding a polygon whose signed area cancels. Nottingham's
 hidden prison part retains its gameplay frame and passes the static check.
 
 Sound recovery attaches global emitters to terrain and local emitters only when
-their complete geometry has one containing asset part. Ambiguous/unowned sources
+their complete geometry has one containing asset. Overlapping parts within that
+asset use a stable local frame; containment spanning different assets remains
+ambiguous. Ambiguous/unowned sources
 remain explicit gaps; they are not silently attached to terrain. Shared audio
 samples are referenced from the base installation, rather than bundled in the ZIP.
+
+Leicester's west moat tower owns source records 12/13 and its southeast cottage
+owns record 15 despite overlapping part footprints. All three compile exactly;
+moving either asset independently by one pixel preserves the corresponding
+emitter displacement and all acoustic parameters. Native construction passes for
+the baseline and both moved scenes (85 areas, 503 sight obstacles, 105 doors,
+23 jump pairs). Baseline non-sound geometry is unchanged. This staged recovery
+accounts for 10 of 24 Leicester sound sources; 14 remain unresolved.
 
 Reviewed environmental lines can also be authored as independent sound-region
 assets with a non-rendering gameplay frame. This is an explicit asset-authoring

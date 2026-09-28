@@ -1,8 +1,22 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
+import {
+  recoverSoundSource,
+  containsSoundPolyline,
+  uniqueSoundOwner,
+} from "./recover-sound-source.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import { soundAssetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
+
+test("overlapping parts share sound ownership only within the same asset", () => {
+  const first = { asset: "tower", node: "building-001", frame: [10, 20] };
+  const second = { asset: "tower", node: "building-002", frame: [30, 40] };
+  assert.equal(uniqueSoundOwner([second, first]), first);
+  assert.equal(uniqueSoundOwner([first, second]), first);
+  assert.equal(uniqueSoundOwner([first]), first);
+  assert.equal(uniqueSoundOwner([]), undefined);
+  assert.equal(uniqueSoundOwner([first, second, { ...first, asset: "terrain" }]), undefined);
+});
 
 test("sound ownership checks segment interiors, not just vertices inside a concave part", () => {
   const boundary: [number, number][] = [

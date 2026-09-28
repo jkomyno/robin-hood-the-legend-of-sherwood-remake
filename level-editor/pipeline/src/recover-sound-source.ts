@@ -2,6 +2,16 @@ import type { AssetSoundSource } from "../../shared/src/asset-gameplay.ts";
 import type { Point, SoundSource } from "../../shared/src/level.ts";
 import { distanceToPolygon } from "./recovery-elevation.ts";
 
+/** Overlapping parts of one asset share ownership. Pick a stable local frame;
+ * separate assets still require an explicit authoring decision. */
+export function uniqueSoundOwner<T extends { asset: string; node: string }>(
+  candidates: readonly T[],
+): T | undefined {
+  if (!candidates.length || new Set(candidates.map((owner) => owner.asset)).size !== 1)
+    return undefined;
+  return [...candidates].sort((a, b) => (a.node < b.node ? -1 : a.node > b.node ? 1 : 0))[0];
+}
+
 /** Check segment interiors between boundary crossings of concave footprints. */
 export function containsSoundPolyline(points: Point[], boundary: Point[]): boolean {
   if (
