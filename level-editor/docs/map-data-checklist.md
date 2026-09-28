@@ -230,20 +230,37 @@ geometry is unchanged. Updated drafts are under
 `work/map-compile/derby-hall-mask-native`. Derby still has 229
 unrecovered masks; neither the complete asset nor map is publication-certified.
 
-Leicester has seven reviewed static masks in
+Leicester has sixteen reviewed static masks in
 `refinement/catalogs/leicester-masks.json`. Projectile-only records 288 (church
 side tower, 20,011 pixels) and 415 (great keep, 4,552 pixels) are joined by five
 character/projectile/view masks: northeast gabled house 120 (4,433 pixels), south
 stilt shed 182 (1,184 pixels), and great keep 399/402/404 (2,570/2,590/3,323 pixels).
 The keep's character boundaries receive on its flat 140.001-unit surface; the
 shed's boundary heights follow its own sloped surface. The house uses ground.
-All seven preserve exact coverage, flags, open boundaries and local obstacle
+Nine additional unlinked masks belong to the village houses: northeast gabled
+house 122/123/124 (621/265/897 pixels), northeast longhouse 132/133 (539/271),
+north village cottage 141/155 (4,167/476), mill north cottage 154 (432), and mill
+south cottage 166 (2,135). These receive on ground. Records 123 and 132 are
+view-only and correctly export without character or projectile boundaries.
+All sixteen preserve exact coverage, flags, open boundaries and local obstacle
 links after each asset moves one pixel east. Native loading passes for the
-baseline and all four independently moved scenes; baseline non-mask data is
-unchanged. Moving the tower detaches one jump pair and its gate. Drafts are under
-`work/map-compile/leicester-mask-recovery`, with native diagnostics in
-`work/map-compile/leicester-mask-native`. Leicester still has 459 unrecovered
+baseline and all eight independently moved scenes; baseline non-mask data matches
+the same-library jump-anchor diagnostic. Moving the tower detaches one jump pair
+and its gate. Updated drafts are under `work/map-compile/leicester-village-mask-recovery`,
+with native diagnostics in `work/map-compile/leicester-village-mask-native`.
+Leicester still has 450 unrecovered
 masks; these assets do not have complete mask coverage or mask-controlled depth enabled.
+
+A broader unlinked static-mask support audit is recorded in
+`work/map-compile/<map>-unlinked-mask-candidates.json`. It found 13 supported
+records on Croisement01, none on Croisement02/03, 9 on Derby, 75 on Leicester,
+157 on Lincoln, 44 on Nottingham, 1 on Sherwood and 140 on York. These are
+candidate counts, including overlapping terrain/building support and already
+recovered records; they do not establish ownership or parity. The audit excludes
+patch-controlled masks and name-filtered terrain/ground/region assets. It also
+records unsupported transparent meshes and missing or non-rendering frames
+(6/6/4 errors on the crossings, 5 on Leicester and 16 on Sherwood). Those cases
+remain unassessed, rather than being counted as evidence of absent coverage.
 
 Nottingham's reviewed recipe (`refinement/catalogs/nottingham-masks.json`)
 recovers four static masks: west green shop 52/55 (2,523/1,862 pixels), upper red
