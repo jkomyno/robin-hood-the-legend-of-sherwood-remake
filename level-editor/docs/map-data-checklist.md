@@ -1657,3 +1657,19 @@ authored physical pieces before assembly. Compiled static drafts are in
 verification. All nine drafts pass native geometry construction with their rebuilt
 mask and state references. This migration does not certify the other maps' remaining geometry,
 state, mask or full-scene query differences.
+
+Sherwood's scene-query diagnostic now also constructs native fast-find grids.
+`sherwood-ordered-owner-native/sight-grid-scene.json` supplies 30×17 map cells
+(1920×1088 game units), plus the source and compiled conventional layer counts.
+Each obstacle is registered with its ground bounds and optional receiving layer;
+the native grid adds its normal padded rows and special layers. Across 200,000
+solid/opaque segment queries, 164,460 produce nonempty candidate lists. Ordered
+candidate lists and resulting impact positions match exactly. The same run also retains the full-list sight/impact
+comparison. This verifies obstacle indexing and candidate order for the sampled
+Sherwood rays, not navigation graph connectivity, mask queries, mouse selection,
+material ties, receiving-height queries, world-boundary exits or complete fast-find-grid parity.
+
+The ignored native test accepts optional `grid_size`, `source_layers` and
+`compiled_layers` alongside its `source`/`compiled` obstacle arrays through
+`ROBIN_SIGHT_SCENE_CASE`. Grid sizes are in 64-unit cells, not pixels. It also
+requires nonempty candidate lists to ensure the grid path is exercised.

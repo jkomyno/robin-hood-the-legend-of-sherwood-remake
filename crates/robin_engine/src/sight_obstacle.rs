@@ -3067,6 +3067,37 @@ mod tests {
         let source = make("source");
         let compiled = make("compiled");
         assert!(!source.is_empty() && !compiled.is_empty());
+        let grids = value.get("grid_size").map(|size| {
+            let width = u16::try_from(size[0].as_u64().unwrap()).unwrap();
+            let height = u16::try_from(size[1].as_u64().unwrap()).unwrap();
+            let make_grid = |name: &str, obstacles: &[SightObstacle]| {
+                let mut grid = crate::fast_find_grid::FastFindGrid::new();
+                grid.size_map(width, height);
+                grid.allocate_layers(
+                    u16::try_from(value[format!("{name}_layers")].as_u64().unwrap()).unwrap(),
+                );
+                for (index, obstacle) in obstacles.iter().enumerate() {
+                    let layer = value[name][index]["projection_area"]
+                        .as_array()
+                        .map(|area| {
+                            crate::position_interface::Layer::new(
+                                u16::try_from(area[1].as_u64().unwrap()).unwrap(),
+                            )
+                            .unwrap()
+                        });
+                    grid.add_obstacle_index(
+                        SightObstacleIndex::new(u32::try_from(index).unwrap()).unwrap(),
+                        layer,
+                        &obstacle.box_ground,
+                    );
+                }
+                grid
+            };
+            (
+                make_grid("source", &source),
+                make_grid("compiled", &compiled),
+            )
+        });
         let low: [f32; 3] = std::array::from_fn(|axis| {
             source
                 .iter()
@@ -3090,6 +3121,9 @@ mod tests {
         };
         let mut sight_differences = 0;
         let mut impact_differences = 0;
+        let mut grid_candidate_differences = 0;
+        let mut grid_impact_differences = 0;
+        let mut grid_queries_with_candidates = 0;
         for _ in 0..100_000 {
             let a = point();
             let b = point();
@@ -3122,12 +3156,64 @@ mod tests {
                 if impact(&source) != impact(&compiled) {
                     impact_differences += 1;
                 }
+                if let Some((source_grid, compiled_grid)) = &grids {
+                    let candidates =
+                        |grid: &crate::fast_find_grid::FastFindGrid,
+                         obstacles: &[SightObstacle]| {
+                            grid.impact_obstacle_candidates(
+                                MapPoint::new(a[0], a[1]),
+                                MapPoint::new(b[0], b[1]),
+                                ObstacleList::from_slice_all_active(obstacles),
+                                mask,
+                            )
+                        };
+                    let expected = candidates(source_grid, &source);
+                    let actual = candidates(compiled_grid, &compiled);
+                    if !expected.is_empty() {
+                        grid_queries_with_candidates += 1;
+                    }
+                    if expected != actual {
+                        grid_candidate_differences += 1;
+                    }
+                    let grid_impact = |obstacles: &[SightObstacle], candidates: &[usize]| {
+                        is_reachable_impact_3d(
+                            WorldPoint3D {
+                                x: a[0],
+                                y: a[1],
+                                z: a[2],
+                            },
+                            WorldPoint3D {
+                                x: b[0],
+                                y: b[1],
+                                z: b[2],
+                            },
+                            mask,
+                            ObstacleList::from_slice_all_active(obstacles),
+                            None,
+                            Some(candidates),
+                        )
+                        .map(|result| result.impact)
+                    };
+                    if grid_impact(&source, &expected) != grid_impact(&compiled, &actual) {
+                        grid_impact_differences += 1;
+                    }
+                }
             }
         }
         println!(
             "200000 scene queries: {sight_differences} sight differences, {impact_differences} impact differences"
         );
         assert_eq!((sight_differences, impact_differences), (0, 0));
+        if grids.is_some() {
+            assert!(grid_queries_with_candidates > 0);
+            println!(
+                "200000 grid queries: {grid_queries_with_candidates} nonempty candidate lists, {grid_candidate_differences} candidate-order differences, {grid_impact_differences} impact differences"
+            );
+            assert_eq!(
+                (grid_candidate_differences, grid_impact_differences),
+                (0, 0)
+            );
+        }
     }
 
     /// Impact reachability collects impacts per
