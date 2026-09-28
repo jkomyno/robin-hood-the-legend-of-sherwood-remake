@@ -2,6 +2,30 @@
   "source_sha256": "14698dffeeb1316563b4f91b883961298c58323ac799ab2c8a099d99487b8a46",
   "recipes": [
     {
+      "asset": "derby-keep-west-tower",
+      "model_sha256": "275066ae3238a4aafd527350f586138a3f8c550fc5ff23b0511289c11f543534",
+      "entries": [
+        {
+          "source": 200,
+          "id": "west-tower-applied-front-cover",
+          "node": "building-239",
+          "anchor": [480, 1080, 249.167],
+          "characterHeights": [249.167, 249.167],
+          "projectileHeights": [0, 0, 0, 0, 0, 0],
+          "review": "Together with record 201 this is the complete applied mask set of patch 1, owned by the west tower assembly. Coverage is supported by its mesh. Character thresholds are authored on the flat receiving platform of part 239; projectile thresholds retain the world XY datum. The patch has no sight, movement or door changes."
+        },
+        {
+          "source": 201,
+          "id": "west-tower-applied-side-cover",
+          "node": "building-239",
+          "anchor": [480, 1080, 249.167],
+          "characterHeights": [249.167, 249.167],
+          "projectileHeights": [0, 0, 0],
+          "review": "This is the second applied mask of the same local tower state as record 200. Its complete coverage is supported by the assembly mesh, with the same receiving platform and world XY projectile datum."
+        }
+      ]
+    },
+    {
       "asset": "derby-east-hall",
       "model_sha256": "44f101f4933c8a3f0b445dda7b70ce647fc561fb3b87b0cb55eb583808245354",
       "entries": [

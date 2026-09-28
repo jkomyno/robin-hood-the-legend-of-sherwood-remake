@@ -101,6 +101,15 @@
       "model_sha256": "35111663282fafd6bddcdf2afa47c1b0370bf890c6d90c03b094602989e3fbbf",
       "entries": [
         {
+          "source": 436,
+          "id": "keep-initial-roof-cover",
+          "node": "building-375",
+          "anchor": [623, 797.001, 140.001],
+          "characterHeights": [140.001, 140.001, 140.001, 140.001, 140.001],
+          "projectileHeights": [0, 0, 0, 0, 0],
+          "review": "The keep owns the complete initial mask and sight set of patch 5. Coverage is supported by its mesh, and linked roof obstacles 283, 287 and 288 are local parts. Character thresholds use the flat receiving floor of part 280 at height 140.001; projectile thresholds retain world XY. The receiving anchor is the patch waypoint lifted onto that floor. There are no movement changes or door links."
+        },
+        {
           "source": 399,
           "id": "keep-raised-occlusion-a",
           "node": "building-309",

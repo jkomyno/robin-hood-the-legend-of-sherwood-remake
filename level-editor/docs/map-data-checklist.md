@@ -564,6 +564,10 @@ the local IDs into that transition's initial/applied mask lists after geometry
 recovery succeeds. Missing masks, competing controllers and cross-asset ownership
 remain errors. Tests cover both phases, duplicate transition discovery and invalid
 ownership; the mesh-backed migration test also exercises a controlled mask.
+When a reviewed set has no movement changes or door links, recovery can create
+its local mask/sight transition directly. Every referenced sight obstacle must
+belong to the same asset. Unrecovered movement or door behavior is an error;
+this path cannot silently replace either with a mask-only state.
 
 Croisement03's staged southwest assembly owns all three applied masks of patch 8
 (global records 128–130; layer-local records 122–124), but its mesh lacks support
@@ -583,9 +587,24 @@ transition links; baseline non-mask geometry is unchanged. Drafts are under
 `work/map-compile/croisement03-controlled-mask-native`. Both scenes pass native
 apply/reset checks for all nine transitions, now including mask activation and
 unchanged unrelated masks. The map still has 130 unrecovered masks. This brings
-reviewed recovery to 65 masks across seven maps, including 64 static masks;
+reviewed recovery at that stage to 65 masks across seven maps, including 64 static masks;
 publication, receiving-layer fidelity and changing visual/depth integration remain
 unfinished.
+
+Derby's west tower now contributes two applied masks (records 200/201, with
+36,837/8,192 pixels), as one local mask-only transition. Leicester's great keep
+contributes initial roof mask 436 and its local sight obstacle 375 as one
+mask/sight transition, retaining three local roof-obstacle mask links. Both use
+their authored receiving floors for character thresholds and preserve projectile
+world XY. These additions bring reviewed recovery to 68 masks: 64 static and
+four changing masks across seven maps. Derby has nine reviewed masks and 227
+remaining; Leicester has seventeen reviewed masks and 449 remaining.
+Drafts and baseline/moved diagnostics are under
+`work/map-compile/{derby,leicester}-controlled-mask-{recovery,native}`. Derby's
+baseline and six independently moved assets pass exact mask and native state
+checks; Leicester's baseline and eight independently moved assets do likewise.
+Visual patch effects, complete receiving-layer fidelity and publication are still
+unfinished; these checks do not certify full map parity.
 
 `pipeline/src/verify-reviewed-mask-recovery.ts` reproduces the reviewed-mask
 checks from a scene, pinned library, recovery packets and source-pinned recipes.

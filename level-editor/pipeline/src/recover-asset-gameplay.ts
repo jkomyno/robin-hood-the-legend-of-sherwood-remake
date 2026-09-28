@@ -4,6 +4,8 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { createHash } from "node:crypto";
 import { recoverReviewedMasks, type ReviewedMaskRecipe } from "./recover-reviewed-masks.ts";
+import { maskReferenceResolver } from "../../shared/src/mask-references.ts";
+import { recoverMaskStateLinks } from "./recover-mask-state-links.ts";
 import {
   recoverReviewedProjections,
   type ReviewedProjections,
@@ -1676,15 +1678,90 @@ if (values["projection-definitions"]) {
   );
 }
 let maskRecovery: Awaited<ReturnType<typeof recoverReviewedMasks>> = [];
+const maskTransitionRecovery: { patch: number; asset: string; transition: string }[] = [];
 if (values["mask-definitions"]) {
   const definitions: { source_sha256: string; recipes: ReviewedMaskRecipe[] } = JSON.parse(
     await fs.readFile(values["mask-definitions"], "utf8"),
   );
   if (createHash("sha256").update(sourceBytes).digest("hex") !== definitions.source_sha256)
     throw new Error("Reviewed mask source changed");
+  const maskOwners = new Map<number, { asset: string; id: string; node: string }>();
+  for (const recipe of definitions.recipes)
+    for (const entry of recipe.entries) {
+      if (maskOwners.has(entry.source)) throw new Error("Duplicate reviewed mask index");
+      maskOwners.set(entry.source, { asset: recipe.asset, id: entry.id, node: entry.node });
+    }
+  const resolveMask = maskReferenceResolver(proto.masks);
+  for (const [index, source] of proto.patches.entries()) {
+    const masks = [...resolveMask(source.old_masks), ...resolveMask(source.new_masks)];
+    const owner = masks.map((mask) => maskOwners.get(mask)).find((entry) => entry !== undefined);
+    if (
+      !owner ||
+      [...movementTransitionRecovery, ...doorTransitionRecovery].some((t) => t.patch === index)
+    )
+      continue;
+    if (
+      source.door_indices.length ||
+      movementStateInventory.some((area) =>
+        area.transitions.some((change) => change.patches.includes(index)),
+      )
+    )
+      throw new Error(`Mask transition ${index} has unrecovered movement or door behavior`);
+    recoverMaskStateLinks(proto.masks, source, owner.asset, maskOwners);
+    const parts = document.objects.filter(
+      (part) => part.node === `asset:${owner.asset}:${owner.node}`,
+    );
+    if (parts.length !== 1)
+      throw new Error(`Mask transition ${index} needs one pinned asset frame`);
+    const part = parts[0]!;
+    const sightRef = (ref: number) => {
+      const matches = locals.get(ref) ?? [];
+      if (matches.length !== 1 || matches[0]!.asset !== owner.asset)
+        throw new Error(`Mask transition ${index} needs local sight ownership for ${ref}`);
+      return matches[0]!.collisionId ?? matches[0]!.node;
+    };
+    const initialSight = source.old_sight_obstacles.map(sightRef);
+    const appliedSight = source.new_sight_obstacles.map(sightRef);
+    const waypoint = endpointBinding(
+      `patch-waypoint/${index}`,
+      source.sector,
+      source.layer,
+      source.waypoint,
+    );
+    const transition = recoverMovementTransition({
+      id: `mask-change-${index}`,
+      node: owner.node,
+      patch: source,
+      initial: [],
+      applied: [],
+      initialSight,
+      appliedSight,
+      receivers: [],
+      groundLayer: source.layer === 0,
+      waypointHeight: waypoint.height,
+      localize: (point) => localize(part, point),
+    });
+    if (waypoint.anchor) transition.waypointAnchor = localize(part, waypoint.anchor);
+    const p = packet(owner.asset);
+    if ((initialSight.length || appliedSight.length) && p.movementBlockers === undefined) {
+      const descriptor = descriptors.get(owner.asset)!;
+      const controlled = new Set([...initialSight, ...appliedSight]);
+      const solids = p.movementSolids ?? [
+        ...descriptor.parts
+          .filter((part) => part.obstacle_local_game?.solid)
+          .map((part) => part.node),
+        ...(p.volumes ?? []).filter((volume) => volume.shape.solid).map((volume) => volume.id),
+      ];
+      p.movementSolids = solids.filter((ref) => !controlled.has(ref));
+    }
+    (p.movementTransitions ??= []).push(transition);
+    p.issues.push("Mask/sight state recovered; visual states and effects need separate authoring");
+    maskTransitionRecovery.push({ patch: index, asset: owner.asset, transition: transition.id });
+  }
   maskRecovery = await recoverReviewedMasks(values.library, document, proto, definitions.recipes, [
     ...movementTransitionRecovery,
     ...doorTransitionRecovery,
+    ...maskTransitionRecovery,
   ]);
   for (const recovered of maskRecovery) {
     const p = packet(recovered.asset);
@@ -1768,6 +1845,7 @@ const report = {
   projectionRecovery,
   movementTransitionRecovery,
   doorTransitionRecovery,
+  maskTransitionRecovery,
   doorStateOwnershipRecovery,
   declaredEndpointBindings: [...endpointBindings.values()],
   declaredInteriorRecovery: [...interiorSources].map(([building, pieces]) => ({
