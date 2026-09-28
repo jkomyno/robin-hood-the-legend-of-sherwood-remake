@@ -3031,6 +3031,105 @@ mod tests {
         println!("100000 sight/impact rays matched; maximum impact error {maximum_impact_error}");
     }
 
+    #[test]
+    #[ignore = "requires source/compiled obstacle arrays via ROBIN_SIGHT_SCENE_CASE"]
+    fn recovered_scene_preserves_native_sight_and_impact_queries() {
+        use crate::coordinates::WorldPoint3D;
+        let path = std::env::var("ROBIN_SIGHT_SCENE_CASE").expect("scene fixture path");
+        let value: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        let make = |name: &str| -> Vec<SightObstacle> {
+            value[name]
+                .as_array()
+                .unwrap()
+                .iter()
+                .enumerate()
+                .map(|(index, raw)| {
+                    let mut obstacle = SightObstacle::new_default(index as u32);
+                    obstacle.obstacle_type = 0;
+                    if raw["solid"].as_bool().unwrap() {
+                        obstacle.obstacle_type |= SIGHTOBSTACLE_SOLID;
+                    }
+                    if raw["opaque"].as_bool().unwrap() {
+                        obstacle.obstacle_type |= SIGHTOBSTACLE_OPAQUE;
+                    }
+                    obstacle.obstacle_points =
+                        serde_json::from_value(raw["points"].clone()).unwrap();
+                    let p = &obstacle.obstacle_points;
+                    obstacle.top_plane_points = [1, 2, 0].map(|i| [p[i].x, p[i].y, p[i].z_top]);
+                    obstacle.bottom_plane_points =
+                        [1, 2, 0].map(|i| [p[i].x, p[i].y, p[i].z_bottom]);
+                    obstacle.rebuild_geometry();
+                    obstacle
+                })
+                .collect()
+        };
+        let source = make("source");
+        let compiled = make("compiled");
+        assert!(!source.is_empty() && !compiled.is_empty());
+        let low: [f32; 3] = std::array::from_fn(|axis| {
+            source
+                .iter()
+                .map(|s| s.box_3d_min[axis])
+                .fold(f32::INFINITY, f32::min)
+                - 100.0
+        });
+        let high: [f32; 3] = std::array::from_fn(|axis| {
+            source
+                .iter()
+                .map(|s| s.box_3d_max[axis])
+                .fold(f32::NEG_INFINITY, f32::max)
+                + 100.0
+        });
+        let mut state = 0x517a_b39du32;
+        let mut point = || -> [f32; 3] {
+            std::array::from_fn(|axis| {
+                state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+                low[axis] + (state >> 8) as f32 / 16777216.0 * (high[axis] - low[axis])
+            })
+        };
+        let mut sight_differences = 0;
+        let mut impact_differences = 0;
+        for _ in 0..100_000 {
+            let a = point();
+            let b = point();
+            for mask in [SIGHTOBSTACLE_SOLID, SIGHTOBSTACLE_OPAQUE] {
+                let reachable = |obstacles: &[SightObstacle]| {
+                    is_reachable_3d(ObstacleList::from_slice_all_active(obstacles), a, b, mask)
+                };
+                if reachable(&source) != reachable(&compiled) {
+                    sight_differences += 1;
+                }
+                let impact = |obstacles: &[SightObstacle]| {
+                    is_reachable_impact_3d(
+                        WorldPoint3D {
+                            x: a[0],
+                            y: a[1],
+                            z: a[2],
+                        },
+                        WorldPoint3D {
+                            x: b[0],
+                            y: b[1],
+                            z: b[2],
+                        },
+                        mask,
+                        ObstacleList::from_slice_all_active(obstacles),
+                        None,
+                        None,
+                    )
+                    .map(|result| result.impact)
+                };
+                if impact(&source) != impact(&compiled) {
+                    impact_differences += 1;
+                }
+            }
+        }
+        println!(
+            "200000 scene queries: {sight_differences} sight differences, {impact_differences} impact differences"
+        );
+        assert_eq!((sight_differences, impact_differences), (0, 0));
+    }
+
     /// Impact reachability collects impacts per
     /// bbox-overlap group, walks the groups in ray-sorted order, and
     /// stops after the first group that produced any impact — even when

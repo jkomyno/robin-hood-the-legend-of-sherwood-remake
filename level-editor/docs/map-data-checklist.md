@@ -1592,3 +1592,39 @@ sight/impact comparisons match exactly. The recovery still has 166 pending masks
 one shadow region and five sound sources. No Sherwood masks are certified here.
 Ten of the original twenty-six split records now have correction drafts; sixteen
 remain, alongside publication, visuals, states and traversal verification.
+
+Sherwood record 102 now has a reviewed physical owner in
+`sherwood-central-treehouse-physical-owner.json`. Its six-point concave hut body,
+including the doorway notch, spans heights 284.001–351.001. The complete volume
+belongs to the treehouse's first wall-plank frame. Ninety-three other wall planks
+and twenty-two platform rails, posts, rungs and braces retain their visuals with
+collision disabled. The separate platform retains its walking surfaces and
+traversal volumes 97/98; the treehouse retains its interior entrance.
+
+Apply `author-owned-volume.ts` to `sherwood-ladder-oak-owner-stage` using this recipe,
+then stage into `sherwood-central-treehouse-owner-stage`. The corresponding
+`-draft`, `-recovery` and `-native` directories contain authoring output, recovered
+candidates and native checks. Baseline construction has 29 areas, 143 sight
+obstacles, 15 doors and one jump pair. Moving the treehouse one unit east, the
+platform independently one unit east, or both together 100 units east preserves
+those counts and constructs successfully. All 48 directed lift callbacks across
+the four cases preserve sectors/layers. Record 102 also passes 100,000 exact native
+sight/impact comparisons. Recovery still has 166 missing masks, one shadow region
+and five sound sources.
+
+All 127 source Sherwood obstacle records now have exact ordered vertex/flag matches
+at binary32 precision in the baseline. Sixteen additional records are non-solid,
+non-opaque receiving surfaces. This does **not** prove full-scene collision parity:
+`recovered_scene_preserves_native_sight_and_impact_queries`, using the baseline
+`sight-scene.json` through `ROBIN_SIGHT_SCENE_CASE`, finds zero sight differences but
+1,298 impact-position differences across 200,000 deterministic solid/opaque
+queries. The compiler changes the order of 126 of the 127 matched records; native
+impact grouping depends on candidate order. A diagnostic-only control,
+`sight-scene-ordered-control.json`, changes only the compiled obstacle order to
+match the source order and produces zero differences across the same 200,000
+queries. This confirms the ordering cause; it is not a compiler fix or an allowed
+source-dependent export path. The diagnostic deliberately remains
+failing for this export. It compares full obstacle lists without a fast-find grid,
+and does not certify receiving layers, mouse selection, materials or actor routing.
+Eleven of the twenty-six audited split records have correction drafts; fifteen
+remain. Full-scene impact order must also be recovered as asset-owned behavior.
