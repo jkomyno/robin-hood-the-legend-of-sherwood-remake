@@ -606,6 +606,29 @@ checks; Leicester's baseline and eight independently moved assets do likewise.
 Visual patch effects, complete receiving-layer fidelity and publication are still
 unfinished; these checks do not certify full map parity.
 
+Nottingham adds two complete prison-door mask swaps: upper prison records
+365/366 (1,444/1,812 pixels) and southwest prison records 407/408 (2,422/338 pixels).
+Both pairs bind to existing asset-local door-triggered sight transitions. Upper
+prison character thresholds use its 250.001-unit platform; southwest thresholds
+receive on ground. The updated pinned mask catalog verifies twenty source masks
+at baseline and after fifteen independent asset moves, with 507 masks remaining.
+Drafts and diagnostics are under `work/map-compile/nottingham-controlled-mask-recovery`
+and `work/map-compile/nottingham-controlled-mask-native`.
+All sixteen descriptors pass native apply/reset checks. The diagnostic additionally
+passes a test actor through each mask-controlled door in both directions, checking
+destination sector/layer and the triggered mask/sight changes. These are passage
+callback checks, not approach routing, lock-authorisation or animation playback.
+Reviewed recovery now totals 72 masks across seven maps: 64 static and eight changing.
+
+The nine-map changing-mask support audit is recorded in
+`work/map-compile/controlled-mask-support-summary.json`. It found complete mesh
+support for the recovered Derby, Leicester, Nottingham and Croisement03 sets,
+plus five Lincoln candidates requiring ownership review. Support from terrain
+alone does not assign a building mask to that terrain. The audit is incomplete
+for textured-alpha tree meshes, some terrain frame selections and non-rendering
+frames; it also filters candidate names and bounding boxes. Its zero-candidate
+results therefore do not establish missing geometry or absence of recoverable masks.
+
 `pipeline/src/verify-reviewed-mask-recovery.ts` reproduces the reviewed-mask
 checks from a scene, pinned library, recovery packets and source-pinned recipes.
 It compares exact covered pixels, flags, both optional polylines and obstacle-link

@@ -1256,6 +1256,82 @@ mod tests {
                     engine.world.fast_grid.sector_active, before_sectors,
                     "{file}"
                 );
+                if (!transition.initial_masks.is_empty() || !transition.applied_masks.is_empty())
+                    && let Some(links) = &transition.door_links
+                    && matches!(
+                        links.mode,
+                        crate::level_data::CompiledDoorLinkMode::TriggerTransition
+                    )
+                {
+                    for &door_index in &links.indices {
+                        // Exercise the passage callback with a test actor; this does
+                        // not simulate approach routing or animation playback.
+                        let (mut passage, passage_assets) = load_compiled_transition(
+                            &bytes,
+                            (
+                                dims[0].as_f64().unwrap() as f32 + 1.,
+                                dims[1].as_f64().unwrap() as f32 + 1.,
+                            ),
+                        );
+                        let door =
+                            passage.script_domains.interactables.doors[door_index as usize].clone();
+                        let actor = passage.add_test_entity(
+                            crate::engine::test_support::actors::TestActor::pc(
+                                crate::element::Posture::Upright,
+                            )
+                            .sector(u16::from(door.sector_out))
+                            .map_position(door.point_out)
+                            .build(),
+                        );
+                        passage
+                            .get_entity_mut(actor)
+                            .unwrap()
+                            .element_data_mut()
+                            .set_layer(door.layer_out);
+                        let door_index =
+                            crate::gate::DoorIndex::new(u32::from(door_index)).unwrap();
+                        passage.execute_pass_door(
+                            TickCtx::new(&sim, &passage_assets),
+                            actor,
+                            door_index,
+                            true,
+                        );
+                        let element = passage.get_entity(actor).unwrap().element_data();
+                        assert_eq!(
+                            element.sector().map(u16::from),
+                            Some(u16::from(door.sector_in)),
+                            "{file}"
+                        );
+                        assert_eq!(element.layer(), door.layer_in, "{file}");
+                        assert_eq!(
+                            mask_states(&passage),
+                            expected_masks,
+                            "{file}: door {door_index}"
+                        );
+                        assert!(passage.script_domains.interactables.patches[index].applied);
+                        for &sight in &transition.initial_sight {
+                            assert!(!passage.world.static_sight_obstacle_active[sight as usize]);
+                        }
+                        for &sight in &transition.applied_sight {
+                            assert!(passage.world.static_sight_obstacle_active[sight as usize]);
+                        }
+                        passage.execute_pass_door(
+                            TickCtx::new(&sim, &passage_assets),
+                            actor,
+                            door_index,
+                            false,
+                        );
+                        let element = passage.get_entity(actor).unwrap().element_data();
+                        assert_eq!(
+                            element.sector().map(u16::from),
+                            Some(u16::from(door.sector_out)),
+                            "{file}"
+                        );
+                        assert_eq!(element.layer(), door.layer_out, "{file}");
+                        passage.reset_patch(TickCtx::new(&sim, &passage_assets), patch);
+                        assert_eq!(mask_states(&passage), before_masks, "{file}: door reset");
+                    }
+                }
                 checked += 1;
             }
             println!(

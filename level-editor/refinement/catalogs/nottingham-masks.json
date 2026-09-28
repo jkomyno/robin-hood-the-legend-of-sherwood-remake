@@ -2,6 +2,54 @@
   "source_sha256": "19dfa4dc18c5fd63f1581974862c7bdcc1573e0a1c9546b386ce6e26e55c6898",
   "recipes": [
     {
+      "asset": "nottingham-upper-prison",
+      "model_sha256": "3ce87e80da48a06d49635ebe49af1c081a5fb76bd4f68cde6a321f24fb4ff809",
+      "entries": [
+        {
+          "source": 365,
+          "id": "prison-door-initial-cover",
+          "node": "building-453",
+          "anchor": [981, 1092.001, 250.001],
+          "characterHeights": [250.001, 250.001, 250.001, 250.001],
+          "projectileHeights": [0, 0],
+          "review": "The upper prison owns both door sight states and the complete mask set of patch 1. The initial mask is fully supported by its mesh. Character thresholds use the flat receiving platform at height 250.001; the anchor is the patch waypoint on part 435. Projectile thresholds retain world XY."
+        },
+        {
+          "source": 366,
+          "id": "prison-door-applied-cover",
+          "node": "building-455",
+          "anchor": [981, 1092.001, 250.001],
+          "characterHeights": [250.001, 250.001, 250.001, 250.001],
+          "projectileHeights": [0, 0, 0],
+          "review": "Applied mask paired with record 365 in the same prison door state. Coverage is fully supported by the assembly mesh, with the same platform elevation and world XY projectile datum."
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-southwest-prison",
+      "model_sha256": "89769e13ed23187b85b8291285e5270e05a5434f67721b18c26aba653ac22b12",
+      "entries": [
+        {
+          "source": 407,
+          "id": "southwest-prison-door-initial-cover",
+          "node": "building-476",
+          "anchor": [572, 2203, 0],
+          "characterHeights": [0, 0],
+          "projectileHeights": [0, 0, 0, 0],
+          "review": "The southwest prison owns both door sight states and the complete mask set of patch 6. Mesh coverage is complete. Character thresholds and the patch waypoint receive on ground; projectile thresholds retain world XY."
+        },
+        {
+          "source": 408,
+          "id": "southwest-prison-door-applied-cover",
+          "node": "building-477",
+          "anchor": [572, 2203, 0],
+          "characterHeights": [0, 0, 0, 0],
+          "projectileHeights": [0, 0, 0, 0],
+          "review": "Applied mask paired with record 407 in the same local door state. Coverage is fully supported by the assembly mesh, with ground character thresholds and world XY projectile thresholds."
+        }
+      ]
+    },
+    {
       "asset": "nottingham-north-stone-house",
       "model_sha256": "2c98374ffed78b104d15b19a1b1e0957fffe2c49a6a1a72ad0ef22ae9c1ef4ca",
       "entries": [
