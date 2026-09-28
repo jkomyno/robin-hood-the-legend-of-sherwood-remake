@@ -106,6 +106,22 @@ test("reviewed static-mask migration verifies model, receiving anchor and state 
       ),
       /requires state recovery/,
     );
+    const duplicate = structuredClone(
+      document.objects.find((p) => p.node === `asset:${hut.id}:${authored.node}`)!,
+    );
+    duplicate.id += "-copy";
+    duplicate.transform.dx += 500;
+    // A copy without an obstacle binding must still not supply migration geometry.
+    duplicate.source = { map: document.map };
+    await assert.rejects(
+      recoverReviewedMasks(
+        root,
+        { ...document, objects: [...document.objects, duplicate] },
+        proto,
+        [recipe],
+      ),
+      /needs one placement/,
+    );
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }

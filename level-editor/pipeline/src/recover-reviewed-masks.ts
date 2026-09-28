@@ -46,6 +46,12 @@ export async function recoverReviewedMasks(
       throw new Error(`Reviewed mask model changed: ${recipe.asset}`);
     const prefix = `asset:${recipe.asset}:`;
     const parts = document.objects.filter((p) => p.node.startsWith(prefix));
+    const frames = new Set<string>();
+    for (const part of parts) {
+      if (frames.has(part.node))
+        throw new Error(`Reviewed mask recovery needs one placement of ${recipe.asset}`);
+      frames.add(part.node);
+    }
     const model = await loadSceneModel(library, {
       ...reference,
       role: "objects",
