@@ -921,6 +921,7 @@ export function compileAssetGameplay(
       return [id, area] as const;
     }),
   );
+  const omittedDoors = new Set<string>();
   const compiledDoors = doors.map((door) => {
     // Ordinary passages can meet traversal surfaces; lift doors retain their explicit owner.
     const outside = resolve(
@@ -931,8 +932,18 @@ export function compileAssetGameplay(
       inside = door.interior
         ? interiorAreas.get(door.interior)!
         : resolve(door.insideAnchor, `${door.name} inside`, door.lift ?? null);
-    if (outside.sector === inside.sector)
-      throw new Error(`${door.name} does not connect distinct motion areas`);
+    if (outside.sector === inside.sector) {
+      if (
+        !door.definition.allowContinuous ||
+        transitions.some((t) => t.doorLinks?.ids.includes(door.name))
+      )
+        throw new Error(`${door.name} does not connect distinct motion areas`);
+      omittedDoors.add(door.name);
+      warnings.push(
+        `${door.name}: omitted unrestricted passage because both endpoints now share a movement area`,
+      );
+      return null;
+    }
     const d = door.definition;
     return {
       door_type: d.type,
@@ -957,11 +968,13 @@ export function compileAssetGameplay(
       layer_in: inside.layer,
     };
   });
+  const selectDoors = (predicate: (door: (typeof doors)[number]) => boolean) =>
+    compiledDoors.flatMap((compiled, i) => (compiled && predicate(doors[i]!) ? [compiled] : []));
   // Native non-lift door allocation follows interiors, then standalone passages.
   const patchDoors = [
     ...interiors.flatMap((id) => doors.filter((door) => door.interior === id)),
     ...doors.filter((door) => !door.lift && !door.interior),
-  ];
+  ].filter((door) => !omittedDoors.has(door.name));
   const doorIndices = new Map(patchDoors.map((door, index) => [door.name, index]));
   return {
     ...(warnings.length ? { warnings } : {}),
@@ -1062,12 +1075,12 @@ export function compileAssetGameplay(
     ...(materials.length
       ? { material_sectors: materials, sight_material_indices: groundMaterials }
       : {}),
-    doors: compiledDoors.filter((_, i) => !doors[i]!.lift && !doors[i]!.interior),
+    doors: selectDoors((door) => !door.lift && !door.interior),
     ...(interiors.length
       ? {
           buildings: interiors.map((id) => ({
             Building: {
-              doors: compiledDoors.filter((_, i) => doors[i]!.interior === id),
+              doors: selectDoors((door) => door.interior === id),
             },
           })),
         }
@@ -1077,7 +1090,7 @@ export function compileAssetGameplay(
           lifts: lifts.map((lift) => {
             const area = areas.find((a) => a.lift === lift.id);
             if (!area) throw new Error(`Missing lift motion area ${lift.id}`);
-            const endpoints = compiledDoors.filter((_, i) => doors[i]!.lift === lift.id);
+            const endpoints = selectDoors((door) => door.lift === lift.id);
             if (endpoints.length < 2 || !endpoints.some((d) => d.door_type === 5))
               throw new Error(
                 `Lift ${lift.id} needs at least two traversal doors including a low door`,

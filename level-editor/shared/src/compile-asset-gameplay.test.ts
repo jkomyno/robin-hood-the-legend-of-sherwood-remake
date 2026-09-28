@@ -162,6 +162,78 @@ test("receiving anchors validate coordinates and cannot replace a virtual interi
   assert.throws(() => validateAssetGameplay(interior.hut.gameplay, interior.hut), /shared room/);
 });
 
+test("optional unrestricted passages disappear only after their walkable areas join", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const door = hut.gameplay!.doors[0]!;
+  door.polygon = [];
+  door.allowContinuous = true;
+  const separated = compileAssetGameplay(document, assets, bounds);
+  assert.equal(separated.doors.length, 1);
+  hut.gameplay!.surfaces.push({
+    id: "connector",
+    node: door.node,
+    height: 0,
+    polygon: [
+      [80, 0],
+      [120, 0],
+      [120, 100],
+      [80, 100],
+    ],
+  });
+  const joined = compileAssetGameplay(document, assets, bounds);
+  assert.equal(joined.doors.length, 0);
+  assert.ok(joined.warnings?.some((w) => w.includes("omitted unrestricted passage")));
+  door.allowContinuous = false;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /distinct motion areas/);
+  door.allowContinuous = true;
+  for (const key of ["locked", "unlockable", "lockedVillains", "lockedCivilians"] as const) {
+    door[key] = true;
+    assert.throws(() => compileAssetGameplay(document, assets, bounds), /cannot allow continuous/);
+    door[key] = false;
+  }
+  door.active = false;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /cannot allow continuous/);
+  door.active = true;
+  door.afterTransition = {
+    locked: true,
+    unlockable: false,
+    lockedVillains: false,
+    lockedCivilians: false,
+  };
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /cannot allow continuous/);
+  delete door.afterTransition;
+  door.polygon = [
+    [90, 40],
+    [110, 40],
+    [110, 60],
+    [90, 60],
+  ];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /cannot allow continuous/);
+});
+
+test("omitting a redundant passage preserves remaining native door bindings", () => {
+  const { document, assets, hut } = doorTransitionCompilerFixture();
+  const original = compileAssetGameplay(document, assets, bounds);
+  hut.gameplay!.doors.unshift({
+    id: "redundant",
+    node: "building-999",
+    type: 0,
+    polygon: [],
+    outside: [10, 10, 0],
+    inside: [20, 20, 0],
+    middle: [15, 15, 0],
+    locked: false,
+    unlockable: false,
+    allowContinuous: true,
+  });
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(compiled.doors, original.doors);
+  assert.deepEqual(compiled.buildings, original.buildings);
+  assert.deepEqual(compiled.movement_transitions, original.movement_transitions);
+  hut.gameplay!.movementTransitions![0]!.doorLinks!.ids = ["redundant"];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /distinct motion areas/);
+});
+
 test("door-only transitions resolve native interior-first indices independently for each placement", () => {
   const { document, assets, hut } = doorTransitionCompilerFixture();
   const compiled = compileAssetGameplay(document, assets, bounds);

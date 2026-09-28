@@ -19,6 +19,14 @@ import {
 import type { AssetGameplay, AssetDoor } from "../../shared/src/asset-gameplay.ts";
 import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
 
+test("unrestricted passage continuity survives authoring conversion", () => {
+  const { hut } = assetCompilerFixture();
+  hut.gameplay!.doors[0]!.polygon = [];
+  hut.gameplay!.doors[0]!.allowContinuous = true;
+  const recovered = recoveredGameplayDefinition(packetFromFixture(hut.gameplay!), hut);
+  assert.equal(recovered.doors[0]!.allowContinuous, true);
+});
+
 function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
   const door = (d: AssetDoor) => ({
     ...d,

@@ -28,6 +28,7 @@ export interface RecoveredDoor {
   insideAnchor?: Vec3;
   type: number;
   active: boolean;
+  allowContinuous?: boolean;
   locked?: boolean;
   unlockable?: boolean;
   lockedVillains?: boolean;
@@ -136,6 +137,7 @@ export function recoveredGameplayDefinition(
       ...(d.insideAnchor ? { insideAnchor: d.insideAnchor } : {}),
       type: d.type,
       active: d.active,
+      ...(d.allowContinuous !== undefined ? { allowContinuous: d.allowContinuous } : {}),
       locked: d.locks?.player ?? d.locked!,
       unlockable: d.locks?.unlockable ?? d.unlockable!,
       lockedVillains: d.locks?.villains ?? d.lockedVillains,

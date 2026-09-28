@@ -39,6 +39,8 @@ export interface AssetDoor {
   locked: boolean;
   unlockable: boolean;
   active?: boolean;
+  /** An unrestricted, non-clickable passage may disappear when its areas join. */
+  allowContinuous?: boolean;
   lockedVillains?: boolean;
   lockedCivilians?: boolean;
   /** Alternate lock rules; activation still requires an authored state transition. */
@@ -707,7 +709,7 @@ export function validateAssetGameplay(
       if (door[key] !== undefined && !point(door[key], 3)) fail(`invalid door ${door.id} ${key}`);
     if (kind === "interior" && door.insideAnchor !== undefined)
       fail(`interior door ${door.id} cannot override its shared room with an inside anchor`);
-    for (const key of ["active", "lockedVillains", "lockedCivilians"] as const)
+    for (const key of ["active", "lockedVillains", "lockedCivilians", "allowContinuous"] as const)
       if (door[key] !== undefined && typeof door[key] !== "boolean")
         fail(`invalid door ${door.id} ${key}`);
     if (door.afterTransition !== undefined) {
@@ -717,6 +719,19 @@ export function validateAssetGameplay(
         if (typeof door.afterTransition[key] !== "boolean")
           fail(`invalid door ${door.id} transition ${key}`);
     }
+    if (
+      door.allowContinuous &&
+      (kind !== "ordinary" ||
+        door.type !== 0 ||
+        door.polygon.length ||
+        door.active === false ||
+        door.locked ||
+        door.unlockable ||
+        door.lockedVillains ||
+        door.lockedCivilians ||
+        Object.values(door.afterTransition ?? {}).some(Boolean))
+    )
+      fail(`door ${door.id} cannot allow continuous navigation with interaction or restrictions`);
   };
   for (const door of data.doors) validateDoor(door, "ordinary");
   if (data.lifts !== undefined && !Array.isArray(data.lifts)) fail("invalid lifts");

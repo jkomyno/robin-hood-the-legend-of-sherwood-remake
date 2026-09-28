@@ -279,8 +279,19 @@ registration and activation for ambience masks 1, 2 and 4. Updated Leicester,
 Lincoln and York drafts are in `work/map-compile/receiver-light-recovery`, with
 descriptors in `work/map-compile/receiver-light-native`. Independent receiver
 movement and duplicate-layer handling pass compiler tests. Moving the large York
-terrain asset alone by one pixel currently fails a bridge passage connectivity
-check, so real-scene independent movement remains unverified.
+terrain asset alone by one pixel merges a bridge passage's two areas. Unrestricted,
+non-clickable passages can now carry `allowContinuous` in their asset definition:
+they remain ordinary doors while their areas are distinct and are omitted with a
+diagnostic when both endpoints share one area. Recovery sets this flag only when
+both sets of access rules are unrestricted and no patch refers to the door.
+Interactive, restricted and state-controlled doors cannot be omitted this way;
+remaining door/state indices are rebuilt after omission. York's original-placement
+output remains identical, including all door references.
+
+The independent terrain move now passes that bridge check but fails another
+passage's receiving-height check: its outside endpoint is at height 46.2952 while
+the receiving slope at the moved position is 47.8476. This is retained as an error;
+independent full-scene terrain movement is still not verified.
 Translating the entire York scene one pixel east preserves both regions' exact
 contours and ambience on both receiving layers; that check preserves existing
 connections and does not replace the independent terrain-movement check.

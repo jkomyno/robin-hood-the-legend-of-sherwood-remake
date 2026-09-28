@@ -85,6 +85,9 @@
   Asset-local light receiving anchors can instead preserve one exact contour across
   several elevations. The compiler resolves their layers after placement and emits
   the contour once per layer, retaining ambience filters without fractional cuts.
+  Unrestricted non-clickable passages can opt into continuous navigation: when
+  placement joins their two areas, compilation omits the redundant gate and
+  rebuilds remaining door bindings. Restricted and state-linked doors remain required.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits

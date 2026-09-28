@@ -1118,6 +1118,21 @@ for (const [index, entry] of proto.buildings.entries()) {
           middle: local(door.point_mid),
           type: door.door_type,
           active: door.active,
+          ...(!isInterior &&
+          door.door_type === 0 &&
+          door.active &&
+          !door.door_sector.points.length &&
+          !door.locked_pc &&
+          !door.unlockable &&
+          !door.locked_npc_villain &&
+          !door.locked_npc_civilian &&
+          !door.locked_pc_after_patch &&
+          !door.unlockable_after_patch &&
+          !door.locked_npc_villain_after_patch &&
+          !door.locked_npc_civilian_after_patch &&
+          !proto.patches.some((patch) => patch.door_indices.includes(doorIndices.get(door)!))
+            ? { allowContinuous: true }
+            : {}),
           locks: {
             player: door.locked_pc,
             unlockable: door.unlockable,
