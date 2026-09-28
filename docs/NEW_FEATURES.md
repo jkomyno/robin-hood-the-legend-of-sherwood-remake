@@ -86,6 +86,11 @@
   Rotated/duplicated assemblies and native reachability across the resulting
   multi-plane region are tested. Recovered-map join authoring and publication
   remain unfinished.
+  Reviewed join recipes can now be applied by the one-time asset migration with
+  source/model pins, source-region ownership checks and complete seam validation.
+  Lincoln's north curtain pair reproduces its baseline exactly and retains native
+  construction after either asset is independently moved; its definitions remain
+  unpublished while the map's other parity gaps are resolved.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

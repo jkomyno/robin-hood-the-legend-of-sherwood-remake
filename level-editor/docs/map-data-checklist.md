@@ -107,9 +107,32 @@ A staged Lincoln north-curtain pair uses this metadata on the east and west wall
 assets. Its complete baseline geometry is unchanged; moving either wall one pixel
 east detaches the join and increases movement areas from 113 to 114. All three
 descriptors load natively with 654 sight obstacles, 89 doors and ten jump pairs.
-The authored surface drafts and diagnostics are under
-`work/map-compile/lincoln-navigation-join-native`. These definitions are not yet
-integrated into repeatable recovery or published assets. A full-edge candidate
+The initial authored surface drafts and diagnostics are under
+`work/map-compile/lincoln-navigation-join-native`. Repeatable migration now uses
+`refinement/catalogs/lincoln-navigation-joins.json`, pinned to the source and both
+asset models. Recovery validates each named surface and source owner, requires
+one shared ordinary source movement region and checks the complete assembled seam
+before modifying any packets. Stale pins, conflicting authoring, detached edges
+and attempts to join distinct source regions fail. Source indices remain confined
+to the migration recipe/report; generated asset definitions contain local edges
+and local region labels only.
+
+From `level-editor`, regenerate the current Lincoln drafts with:
+
+```sh
+node --max-old-space-size=1536 pipeline/src/recover-asset-gameplay.ts \
+  --library work/map-compile/projection-material-library \
+  --map work/map-compile/projection-material-library/scenes/lincoln.rhlos-map.json \
+  --source library/game-data/Data/Levels/Lincoln.rhp.json \
+  --mask-definitions refinement/catalogs/lincoln-masks.json \
+  --navigation-definitions refinement/catalogs/lincoln-navigation-joins.json \
+  --out work/map-compile/lincoln-navigation-join-recovery
+```
+
+Freshly recovered definitions reproduce the previous baseline exactly and both
+independent wall moves pass native construction again. Those diagnostics are under
+`work/map-compile/lincoln-reviewed-navigation-native`. The definitions remain
+unpublished; recovery of the other maps' joins is unfinished. A full-edge candidate
 audit found no exact Derby seam in the tested drafts; boundary/height differences
 still require authoring work. This does not certify full-map connectivity or actor
 traversal on recovered maps.

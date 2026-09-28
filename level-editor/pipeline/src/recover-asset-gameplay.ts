@@ -4,6 +4,10 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { createHash } from "node:crypto";
 import { recoverReviewedMasks, type ReviewedMaskRecipe } from "./recover-reviewed-masks.ts";
+import {
+  recoverReviewedNavigationJoins,
+  type ReviewedNavigationJoins,
+} from "./recover-reviewed-navigation-joins.ts";
 import polygonClipping, { type Polygon, type MultiPolygon } from "polygon-clipping";
 import {
   gameToScene,
@@ -70,6 +74,7 @@ const { values } = parseArgs({
     out: { type: "string" },
     ownership: { type: "string" },
     "mask-definitions": { type: "string" },
+    "navigation-definitions": { type: "string" },
   },
 });
 if (!values.map || !values.source || !values.out)
@@ -1594,6 +1599,25 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
     unresolved.push({ kind: "jump-geometry", source: index, error: String(error) });
   }
 }
+let navigationJoinRecovery: { asset: string; surface: string; region: string; edges: number }[] =
+  [];
+if (values["navigation-definitions"]) {
+  const definitions: ReviewedNavigationJoins = JSON.parse(
+    await fs.readFile(values["navigation-definitions"], "utf8"),
+  );
+  const updates = recoverReviewedNavigationJoins(
+    document,
+    proto,
+    createHash("sha256").update(sourceBytes).digest("hex"),
+    definitions,
+    packets,
+  );
+  navigationJoinRecovery = updates.map(({ asset, surface, region, edges }) => {
+    surface.navigationRegion = region;
+    surface.navigationJoins = edges;
+    return { asset, surface: surface.id, region, edges: edges.length };
+  });
+}
 let maskRecovery: Awaited<ReturnType<typeof recoverReviewedMasks>> = [];
 if (values["mask-definitions"]) {
   const definitions: { source_sha256: string; recipes: ReviewedMaskRecipe[] } = JSON.parse(
@@ -1658,6 +1682,7 @@ const report = {
     0,
   ),
   definitionValidation,
+  navigationJoinRecovery,
   lightRecovery,
   authoredSoundRecovery: authoredSounds.map(({ asset, sourceIndices }) => ({
     asset,
