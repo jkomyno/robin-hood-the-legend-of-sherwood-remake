@@ -2,6 +2,28 @@
   "source_sha256": "14698dffeeb1316563b4f91b883961298c58323ac799ab2c8a099d99487b8a46",
   "recipes": [
     {
+      "asset": "derby-east-hall",
+      "model_sha256": "44f101f4933c8a3f0b445dda7b70ce647fc561fb3b87b0cb55eb583808245354",
+      "entries": [
+        {
+          "source": 153,
+          "id": "east-hall-south-roof-projectile-occlusion",
+          "node": "building-204",
+          "anchor": [1298, 1337, 0],
+          "projectileHeights": [0, 0, 0],
+          "review": "The boundary follows the hall's south roof end; only the hall supports its complete bitmap among the audited building meshes. The receiving anchor is on adjacent ground. This static projectile-only mask has no character threshold, obstacle links or patch references. Projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 154,
+          "id": "east-hall-north-roof-projectile-occlusion",
+          "node": "building-205",
+          "anchor": [1268, 1276, 0],
+          "projectileHeights": [0, 0, 0],
+          "review": "The boundary follows the hall's north roof end; only the hall supports its complete bitmap among the audited building meshes. The receiving anchor is on adjacent ground. This static projectile-only mask has no character threshold, obstacle links or patch references. Projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
       "asset": "derby-lower-east-curtain",
       "model_sha256": "0d933f55eb3fe4611fbee2071b05d6385219e76931ad52bf49e9b936f116800e",
       "entries": [
