@@ -109,6 +109,9 @@ export interface AssetGameplay {
   sounds?: AssetSoundSource[];
   lights?: AssetLightRegion[];
   masks?: AssetOcclusionMask[];
+  /** Parts whose complete sprite occlusion is authored by typed masks, including states.
+   * Keep their color geometry but omit their contribution from the static depth bake. */
+  maskOcclusionNodes?: string[];
   jumpZones?: AssetJumpZone[];
   jumpPairs?: AssetJumpPair[];
   jumpSegments?: AssetJumpSegment[];
@@ -328,6 +331,14 @@ export function validateAssetGameplay(
     p.length === length &&
     p.every((v) => typeof v === "number" && Number.isFinite(v));
   const nodes = new Set(descriptor.parts.map((part) => part.node));
+  if (
+    data.maskOcclusionNodes !== undefined &&
+    (!Array.isArray(data.maskOcclusionNodes) ||
+      !data.masks?.length ||
+      new Set(data.maskOcclusionNodes).size !== data.maskOcclusionNodes.length ||
+      data.maskOcclusionNodes.some((node) => !nodes.has(node)))
+  )
+    fail("mask occlusion nodes require typed masks and unique existing part frames");
   const ids = new Set<string>();
   const feature = (f: { id: string; node: string }) => {
     if (!f || typeof f.id !== "string" || !f.id || ids.has(f.id))

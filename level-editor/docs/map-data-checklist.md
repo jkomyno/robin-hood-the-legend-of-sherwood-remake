@@ -118,9 +118,19 @@ ZIP retention. An editor-generated fixture verifies native coverage, masking
 rules and apply/reset behavior without source-level files or mission actors.
 Existing map assets still need recovered/authored coverage and boundaries;
 automatic extraction from textured meshes, visual-state resources and coordinated
-depth-buffer changes remain unfinished. Static depth can otherwise continue
-occluding a character after a typed mask is deactivated, so these tests do not
-certify complete visual-state behavior or full-map mask parity.
+depth-buffer changes remain unfinished. Assets can explicitly declare
+`maskOcclusionNodes` for parts whose complete sprite occlusion is controlled by
+their typed masks. Color baking retains those parts; depth baking omits only
+their geometry and renders the surfaces behind them. Other parts retain their
+depth contribution. This prevents static mesh depth from overriding mask
+deactivation for the declared parts. It requires complete authored coverage:
+the compiler does not infer this declaration from a partial mask set. Existing
+assets have not yet been certified or opted in, and visual-state resources still
+need integration, so this does not establish full-map mask parity.
+The browser GPU test verifies identical color pixels, exposed underlying ground
+depth for a declared part, and unchanged depth for an unrelated part. Unit tests
+also verify declaration validation, packet conversion and visibility restoration
+after a failed bake.
 
 The one-time bitmap recovery helper strictly decodes source scanlines and merges
 coverage into nonoverlapping screen-space rectangles without filling cutouts.

@@ -89,9 +89,12 @@ test("asset mask coverage and state links survive recovery packet conversion ind
   const { hut } = maskAssetCompilerFixture();
   const packet = packetFromFixture(hut.gameplay!);
   packet.masks = hut.gameplay!.masks;
+  packet.maskOcclusionNodes = ["building-999"];
   packet.movementTransitions = hut.gameplay!.movementTransitions;
   const result = recoveredGameplayDefinition(packet, hut);
   assert.deepEqual(result.masks, packet.masks);
+  assert.deepEqual(result.maskOcclusionNodes, packet.maskOcclusionNodes);
+  assert.notEqual(result.maskOcclusionNodes, packet.maskOcclusionNodes);
   assert.deepEqual(result.movementTransitions, packet.movementTransitions);
   result.masks![0]!.triangles[0]![0][0] += 10;
   result.movementTransitions![0]!.initialMasks!.push("extra");

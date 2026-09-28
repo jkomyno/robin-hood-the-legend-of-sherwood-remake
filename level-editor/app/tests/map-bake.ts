@@ -57,7 +57,9 @@ try {
   };
   // Nonzero crop origin exercises camera rebasing and ground-depth normalization.
   root.add(surface([-20, -10, 1100, 128], 0x808080));
-  root.add(surface([0, 30, 40, 40], 0xff0000, 20));
+  const maskOwned = surface([0, 30, 40, 40], 0xff0000, 20);
+  maskOwned.userData.map_bake_object_id = "mask-owned-wall";
+  root.add(maskOwned);
   // This surface crosses the tile boundary at output X=1024.
   root.add(surface([990, 30, 60, 40], 0x00ff00, 20));
   const alphaTexture = new THREE.DataTexture(new Uint8Array([255, 255, 255, 0]), 1, 1);
@@ -108,6 +110,26 @@ try {
     "ground depth",
   );
   const archive = await packageCompiledMap(compiled, rendered);
+  const maskControlled = renderMapBake(
+    bakeScene([root]),
+    camera,
+    compiled.bounds,
+    undefined,
+    undefined,
+    new Set(["mask-owned-wall"]),
+  );
+  check(
+    maskControlled.color.every((value, index) => value === rendered.color[index]),
+    "mask ownership must preserve every color pixel",
+  );
+  check(
+    Math.abs(maskControlled.depth[30 * 1100 + 30]! - Math.round((30.5 / 128) * 65535)) <= 2,
+    "mask-controlled wall must reveal underlying ground depth",
+  );
+  check(
+    maskControlled.depth[30 * 1100 + 1024] === rendered.depth[30 * 1100 + 1024],
+    "unrelated wall must retain depth occlusion",
+  );
   const files = unzipSync(archive);
   const depth = decode(files["Data/Levels/Day/editor-bake-contract.occlusion-depth.png"]!);
   check(
@@ -119,7 +141,7 @@ try {
   // Acceptance runner can retain this real GPU-produced mod for the Rust loader test.
   (window as unknown as { __bakeZip: number[] }).__bakeZip = [...archive];
   documentResult(
-    "PASS map bake: crop, tile seam, hidden geometry, sRGB color, ground depth, ZIP/PNG roundtrip",
+    "PASS map bake: crop, tile seam, hidden geometry, sRGB color, ground depth, mask-owned depth, ZIP/PNG roundtrip",
   );
 } catch (error) {
   documentResult(`FAIL ${error instanceof Error ? error.stack : String(error)}`);

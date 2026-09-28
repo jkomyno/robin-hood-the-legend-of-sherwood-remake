@@ -5,6 +5,41 @@ import { TextureDisplay } from "./texture-display.ts";
 import { SunLighting } from "./sun-lighting.ts";
 import { PatchDisplay } from "./patch-display.ts";
 import { validateBakeBounds, type BakeBounds, type BakePixels } from "./map-compile.ts";
+import type { GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
+
+export function maskOcclusionObjects(
+  document: import("@rle/shared").Level3D,
+  assets?: ReadonlyMap<string, GameplayAssetDescriptor>,
+): Set<string> {
+  return new Set(
+    document.objects
+      .filter((part) => {
+        const match = /^asset:([^:]+):(.+)$/.exec(part.node);
+        return match && assets?.get(match[1]!)?.gameplay?.maskOcclusionNodes?.includes(match[2]!);
+      })
+      .map((part) => part.id),
+  );
+}
+
+/** Omit only explicitly mask-owned parts; underlying meshes still write depth. */
+export function withDepthOcclusion<T>(
+  root: THREE.Object3D,
+  excluded: ReadonlySet<string>,
+  render: () => T,
+): T {
+  const hidden: THREE.Object3D[] = [];
+  root.traverse((node) => {
+    if (node.visible && excluded.has(node.userData.map_bake_object_id)) {
+      hidden.push(node);
+      node.visible = false;
+    }
+  });
+  try {
+    return render();
+  } finally {
+    for (const node of hidden) node.visible = true;
+  }
+}
 
 /** Sources are in the editor's Z-up map frame. Only visible meshes are copied;
  * geometry/textures are borrowed until synchronous rendering finishes. */
@@ -91,6 +126,7 @@ export function renderMapBake(
   bounds: BakeBounds,
   lighting?: import("@rle/shared").Level3D["lighting"],
   ground?: THREE.Object3D | null,
+  depthExcludedObjects: ReadonlySet<string> = new Set(),
 ): BakePixels {
   const [, , width, height] = validateBakeBounds(bounds);
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
@@ -208,7 +244,7 @@ export function renderMapBake(
       };
       node.material = Array.isArray(source) ? source.map(convert) : convert(source);
     }
-    renderPass(true);
+    withDepthOcclusion(root, depthExcludedObjects, () => renderPass(true));
     return { color, depth };
   } finally {
     sunlight.dispose();

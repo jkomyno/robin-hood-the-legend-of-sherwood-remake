@@ -5,7 +5,12 @@ import { unzipSync, strFromU8 } from "fflate";
 import * as THREE from "three";
 import { type Level3D, gameToScene, parseStoredMap } from "@rle/shared";
 import { compileMap, packageCompiledMap, validateBakeBounds } from "./map-compile.ts";
-import { bakeScene, contentBakeBounds } from "./map-bake-render.ts";
+import {
+  bakeScene,
+  contentBakeBounds,
+  maskOcclusionObjects,
+  withDepthOcclusion,
+} from "./map-bake-render.ts";
 import {
   assetCompilerFixture,
   maskAssetCompilerFixture,
@@ -388,6 +393,55 @@ test("bake snapshot resets patch previews without changing editor objects", () =
   const snapshot = bakeScene([root]);
   assert.equal(snapshot.children[0]!.children[0]!.visible, true);
   assert.equal(node.visible, false);
+});
+
+test("mask-owned parts retain color visibility but reveal underlying depth geometry", () => {
+  const { document, assets, hut } = maskAssetCompilerFixture();
+  hut.gameplay!.maskOcclusionNodes = ["building-999"];
+  const owner = document.objects.find((p) => p.node.endsWith(":building-999"))!;
+  const excluded = maskOcclusionObjects(document, assets);
+  assert.deepEqual([...excluded], [owner.id]);
+  const root = new THREE.Group(),
+    foreground = new THREE.Group(),
+    background = new THREE.Group();
+  foreground.userData.map_bake_object_id = owner.id;
+  foreground.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()));
+  background.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial()));
+  root.add(foreground, background);
+  const snapshot = bakeScene([root]);
+  const visibleMeshes = () => {
+    let count = 0;
+    snapshot.traverseVisible((n) => {
+      if (n instanceof THREE.Mesh) count++;
+    });
+    return count;
+  };
+  assert.equal(visibleMeshes(), 2);
+  withDepthOcclusion(snapshot, excluded, () => assert.equal(visibleMeshes(), 1));
+  assert.equal(visibleMeshes(), 2);
+  assert.equal(foreground.visible, true);
+  assert.throws(
+    () =>
+      withDepthOcclusion(snapshot, excluded, () => {
+        throw new Error("render failed");
+      }),
+    /render failed/,
+  );
+  assert.equal(visibleMeshes(), 2);
+  compileMap(document, [0, 0, 2000, 2000], assets);
+  hut.gameplay!.maskOcclusionNodes = ["missing"];
+  assert.throws(() => compileMap(document, [0, 0, 2000, 2000], assets), /mask occlusion nodes/);
+  hut.gameplay!.maskOcclusionNodes = ["building-999", "building-999"];
+  assert.throws(() => compileMap(document, [0, 0, 2000, 2000], assets), /mask occlusion nodes/);
+  hut.gameplay!.maskOcclusionNodes = ["building-999"];
+  delete hut.gameplay!.masks;
+  assert.throws(() => compileMap(document, [0, 0, 2000, 2000], assets), /mask occlusion nodes/);
+  root.traverse((n) => {
+    if (n instanceof THREE.Mesh) {
+      n.geometry.dispose();
+      (n.material as THREE.Material).dispose();
+    }
+  });
 });
 
 test("mod ZIP has root metadata, a playable descriptor and lossless 16-bit depth", async () => {

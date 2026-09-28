@@ -1,5 +1,10 @@
 import { stableOpaqueSort } from "./render-order.ts";
-import { bakeScene, contentBakeBounds, renderMapBake } from "./map-bake-render.ts";
+import {
+  bakeScene,
+  contentBakeBounds,
+  renderMapBake,
+  maskOcclusionObjects,
+} from "./map-bake-render.ts";
 import { compileMap } from "./map-compile.ts";
 import { SunLighting } from "./sun-lighting.ts";
 import { SplineLayer, type SplineEditMode } from "./spline-layer.ts";
@@ -82,6 +87,7 @@ export class EditorViewport {
       compiled.bounds,
       document.lighting,
       this.ground,
+      maskOcclusionObjects(document, assets),
     );
     return { compiled, pixels };
   }
@@ -1063,6 +1069,7 @@ export class EditorViewport {
         const src = this.sourceNodes.get(o.node);
         if (!src) throw new Error(`Missing source node ${o.node} for ${o.id}`);
         v = this.makeView(o.id);
+        v.wrapper.userData.map_bake_object_id = o.id;
         const node = src.clone(true);
         applyPlacementPatches(node, d, o, availableNodes);
         node.traverse((c) => {

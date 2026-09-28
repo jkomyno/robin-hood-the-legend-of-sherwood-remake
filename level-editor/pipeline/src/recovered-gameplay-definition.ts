@@ -60,6 +60,7 @@ export interface RecoveredGameplayPacket {
   sounds?: AssetGameplay["sounds"];
   lights?: AssetGameplay["lights"];
   masks?: AssetGameplay["masks"];
+  maskOcclusionNodes?: AssetGameplay["maskOcclusionNodes"];
   jumpZones?: AssetGameplay["jumpZones"];
   jumpPairs?: AssetGameplay["jumpPairs"];
   jumpSegments?: AssetGameplay["jumpSegments"];
@@ -163,6 +164,7 @@ export function recoveredGameplayDefinition(
     ...(packet.sounds ? { sounds: structuredClone(packet.sounds) } : {}),
     ...(packet.lights ? { lights: structuredClone(packet.lights) } : {}),
     ...(packet.masks ? { masks: structuredClone(packet.masks) } : {}),
+    ...(packet.maskOcclusionNodes ? { maskOcclusionNodes: [...packet.maskOcclusionNodes] } : {}),
     ...(packet.jumpZones ? { jumpZones: structuredClone(packet.jumpZones) } : {}),
     ...(packet.jumpPairs ? { jumpPairs: structuredClone(packet.jumpPairs) } : {}),
     ...(packet.jumpSegments ? { jumpSegments: structuredClone(packet.jumpSegments) } : {}),

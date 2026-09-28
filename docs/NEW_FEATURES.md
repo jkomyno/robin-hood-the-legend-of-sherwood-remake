@@ -1,5 +1,12 @@
 # Post-port Features
 
+- **Mask-controlled depth baking.** Asset gameplay can declare
+  `maskOcclusionNodes` for parts whose complete occlusion is authored by typed
+  masks. Export keeps their color geometry while baking the depth of surfaces
+  behind them, so static mesh depth cannot override mask deactivation. Other
+  parts retain depth occlusion. Existing assets require complete mask authoring
+  before opting in; visual-state color resources remain separate work.
+
 - **Asset-local interior connections.** Independently placed buildings can share
   a virtual room through matching passage sockets. Sockets carry local positions
   and opposing directions; moving a building or connector away separates the
