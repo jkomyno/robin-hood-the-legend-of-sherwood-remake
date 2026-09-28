@@ -9,8 +9,16 @@
           "source": 86,
           "id": "scaffolded-house-platform-projectile-occlusion",
           "node": "building-133",
-          "anchor": [1600, 1612.001, 152.001],
-          "projectileHeights": [0, 0, 0],
+          "anchor": [
+            1600,
+            1612.001,
+            152.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
           "review": "The receiving anchor lies inside the owning house's flat 152.001-unit platform and its navigation layer. This projectile/view mask has no character threshold. Complete bitmap coverage is mesh-supported, obstacle 133 belongs to this asset, and no patch controls the mask. Projectile boundaries use the world XY datum."
         },
         {
@@ -185,6 +193,275 @@
             0
           ],
           "review": "Character threshold extends beyond navigation and is authored in the owning asset's flat 160.001-unit receiving plane. The anchor is inside that plane and source layer. Complete mask coverage is supported by the mesh; obstacle links are asset-local and no patch controls this mask. Projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "york-southwest-square-rear-house",
+      "model_sha256": "4bc96948e2b3280285a44a2899ffd555d461c77ddfa964411e3499dd20e44ad8",
+      "entries": [
+        {
+          "source": 202,
+          "id": "town-occlusion-202",
+          "node": "building-307",
+          "anchor": [
+            708,
+            1349.00101,
+            90.00101
+          ],
+          "characterHeights": [
+            90.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 215,
+          "id": "town-occlusion-215",
+          "node": "building-307",
+          "anchor": [
+            750,
+            1476.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "york-southwest-square-west-house",
+      "model_sha256": "e20554954f091107f052c33ea9a8e83b522c9b617a88a2cb242f0c3e1e85c41f",
+      "entries": [
+        {
+          "source": 204,
+          "id": "town-occlusion-204",
+          "node": "building-309",
+          "anchor": [
+            656,
+            1512.00101,
+            90.00101
+          ],
+          "characterHeights": [
+            90.00101,
+            90.00101
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 218,
+          "id": "town-occlusion-218",
+          "node": "building-309",
+          "anchor": [
+            701,
+            1549.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "york-southwest-square-narrow-gable-house",
+      "model_sha256": "f18c252ce573ae1ef68404d89452ad448a38caf7036d04ef8b1e92d9f69ec2ff",
+      "entries": [
+        {
+          "source": 205,
+          "id": "town-occlusion-205",
+          "node": "building-296",
+          "anchor": [
+            835,
+            1500.00101,
+            90.00101
+          ],
+          "characterHeights": [
+            90.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 207,
+          "id": "town-occlusion-207",
+          "node": "building-296",
+          "anchor": [
+            884,
+            1519.00101,
+            90.00101
+          ],
+          "characterHeights": [
+            90.00101,
+            90.00101,
+            90.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "york-southwest-square-east-timber-house",
+      "model_sha256": "ffbb5d23fe5b12a6130c419ee515cc28f7ddde5895c6bbad7f4332ae07cab416",
+      "entries": [
+        {
+          "source": 213,
+          "id": "town-occlusion-213",
+          "node": "building-301",
+          "anchor": [
+            860,
+            1365.00101,
+            90.00101
+          ],
+          "characterHeights": [
+            90.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "york-southwest-lane-west-jettied-house",
+      "model_sha256": "1bdba733c774b7bc4051f98a54a3d382f44e7d1e3585b35c3050f059423d4b44",
+      "entries": [
+        {
+          "source": 295,
+          "id": "town-occlusion-295",
+          "node": "building-444",
+          "anchor": [
+            664,
+            2066.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "york-southwest-lane-north-courtyard-house",
+      "model_sha256": "e6f67c28f21f45ebccee67d924c4b4a8513835c46e2b6c7000091cda107d752b",
+      "entries": [
+        {
+          "source": 297,
+          "id": "town-occlusion-297",
+          "node": "building-449",
+          "anchor": [
+            839,
+            2054.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "york-market-southwest-east-timber-house",
+      "model_sha256": "8b4c638c01a91d72ce6f825c4cb30670150168fdb749b39885d8bf8111c09991",
+      "entries": [
+        {
+          "source": 325,
+          "id": "town-occlusion-325",
+          "node": "building-468",
+          "anchor": [
+            582,
+            1603.00101,
+            90.00101
+          ],
+          "characterHeights": [
+            90.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "york-southwest-market-northwest-house",
+      "model_sha256": "db87d1a20c8711afa48529dd986a8910ffd9b3aaf1d5310f9fba3a3b0f8263f6",
+      "entries": [
+        {
+          "source": 353,
+          "id": "town-occlusion-353",
+          "node": "building-519",
+          "anchor": [
+            240,
+            1801.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 354,
+          "id": "town-occlusion-354",
+          "node": "building-519",
+          "anchor": [
+            5,
+            1901.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and any character thresholds lie on the flat 90.00101-unit town surface. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
         }
       ]
     }

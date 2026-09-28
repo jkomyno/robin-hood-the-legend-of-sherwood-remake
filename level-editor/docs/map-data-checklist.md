@@ -224,9 +224,9 @@ node --max-old-space-size=1536 pipeline/src/verify-reviewed-mask-recovery.ts \
   --out work/map-compile/reviewed-mask-verification/derby
 ```
 
-The current six-map batch verifies all 49 reviewed masks and 34 independent asset
-moves. All 40 baseline/moved descriptors load natively. Complete baseline geometry
-matches the earlier diagnostics. Outputs are under
+The current six-map batch verifies all 61 reviewed masks and 42 independent asset
+moves. All 48 baseline/moved descriptors load natively. Adding the latest masks
+leaves baseline non-mask geometry unchanged. Outputs are under
 `work/map-compile/reviewed-mask-verification/<map>`. This broader check caught a
 fractional-anchor regression on Derby's postern: mask receiver elevation now uses
 the authored floating-point position, while polygon membership uses the movement
@@ -338,19 +338,25 @@ non-mask geometry is unchanged. Drafts and native checks are under
 `work/map-compile/lincoln-mask-recovery` and `work/map-compile/lincoln-mask-native`.
 There are 427 unrecovered Lincoln masks.
 
-York's reviewed recipe (`refinement/catalogs/york-masks.json`) recovers eight static
+York's reviewed recipe (`refinement/catalogs/york-masks.json`) recovers twenty static
 masks: scaffolded corner house 79/86 (2,777/747 pixels), southwest square corner house
 201 (392), central south golden timber house 227/238 (2,126/5,856), southeast lane
 eastern timber house 269 (687), south gate lane front timber house 280 (1,036),
-and outer east wall stair passage 164 (7,305). Mask 269 receives at ground level;
+and outer east wall stair passage 164 (7,305), plus twelve town-house records:
+southwest square rear house 202/215 (421/2,097), west house 204/218 (298/515),
+narrow gable house 205/207 (8,244/1,752), east timber house 213 (355), southwest
+lane west jettied house 295 (685), north courtyard house 297 (820), market southwest
+east timber house 325 (310), and southwest market northwest house 353/354
+(2,239/1,078). Record 204 preserves its character/view rules without inventing a
+projectile boundary. Mask 269 receives at ground level;
 164 uses its owning passage's flat 160.001-unit plane, including the character
 threshold beyond navigation. Mask 86 has no character threshold and receives on
 the owning house's flat 152.001-unit platform. The remaining receivers use the
-flat 90.00101-unit town surface. All eight match in the baseline and after independent one-pixel
-asset moves. Native loading passes for the baseline and all six moved scenes.
-Adding masks 164 and 86 leaves baseline non-mask geometry unchanged. Updated drafts and
-native checks are under `work/map-compile/york-platform-mask-recovery` and
-`work/map-compile/york-platform-mask-native`. York still has 820 unrecovered masks.
+flat 90.00101-unit town surface. All twenty match in the baseline and after independent one-pixel
+asset moves. Native loading passes for the baseline and all fourteen moved scenes.
+Adding the town-house masks leaves baseline non-mask geometry unchanged. Updated drafts and
+native checks are under `work/map-compile/york-town-mask-recovery` and
+`work/map-compile/york-town-mask-native`. York still has 808 unrecovered masks.
 These assets have incomplete mask coverage and do not enable mask-controlled
 depth. None of these maps is certified for complete gameplay or publication.
 
