@@ -79,6 +79,9 @@
   A surface-support audit reports missing pixels, interior gaps and repair bounds
   for reviewed mask sets, including whether both sides of a state change have
   full pixel support. Migration rejects unsupported coverage before surface clipping.
+  Light-region migration supports splitting across receiving planes while preserving
+  holes and ambience filters. It rejects splits whose integer output changes any
+  receiving contour, and records source-to-local region IDs in the recovery report.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits

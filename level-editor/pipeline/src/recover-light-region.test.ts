@@ -4,7 +4,9 @@ import {
   containsLightPolygon,
   recoverLightPlane,
   recoverLightRegion,
+  recoverLightRegions,
 } from "./recover-light-region.ts";
+import { fixedClipping } from "../../shared/src/fixed-polygon-boolean.ts";
 import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
 import type { LightSector, MotionArea, SightObstacle } from "../../shared/src/level.ts";
 
@@ -63,6 +65,73 @@ test("ground light recovery localizes geometry and retains ambience without laye
       [0, 10, 0],
     ],
   });
+});
+
+test("multi-plane lights preserve projected union, holes, priority and local elevation", () => {
+  const { hut } = assetCompilerFixture();
+  const support = (left: number, right: number, z: number): SightObstacle => ({
+    ...hut.parts[0]!.obstacle_local_game!,
+    projection_area: [0, 0],
+    points: [
+      [left, left],
+      [right, left],
+      [right, right],
+      [left, right],
+    ].map(([x, y]) => ({
+      x: x!,
+      y: y! + z,
+      z_top: z,
+      z_bottom: 0,
+    })),
+  });
+  const pieces = recoverLightRegions(
+    light,
+    "light",
+    "wall",
+    [support(15, 25, 40), support(18, 22, 60)],
+    undefined,
+    ([x, y, z]) => [x - 100, y - 200, z - 5],
+  );
+  assert.equal(new Set(pieces.map((p) => p.id)).size, pieces.length);
+  const projected = pieces.map((p) => {
+    assert.equal(p.node, "wall");
+    assert.equal(p.ambiences, light.ambience);
+    const points = p.polygon.map(([x, y, z]): [number, number] => [x + 100, y + 200 - (z + 5)]);
+    const cx = points.reduce((s, p) => s + p[0], 0) / 3;
+    const cy = points.reduce((s, p) => s + p[1], 0) / 3;
+    const inside = (a: number, b: number) => cx > a && cx < b && cy > a && cy < b;
+    const elevation = inside(18, 22) ? 60 : inside(15, 25) ? 40 : 0;
+    assert.ok(p.polygon.every((p) => Math.abs(p[2] + 5 - elevation) < 1e-7));
+    return [[...points, points[0]!]];
+  });
+  const union = fixedClipping.union(projected[0]!, ...projected.slice(1));
+  const original = [[...light.polygon.points, light.polygon.points[0]!]];
+  assert.equal(fixedClipping.difference(original, union).length, 0);
+  assert.equal(fixedClipping.difference(union, original).length, 0);
+  const area = pieces.reduce((sum, p) => {
+    const [a, b, c] = p.polygon.map(([x, y, z]) => [x, y - z]);
+    return (
+      sum +
+      Math.abs((b![0]! - a![0]!) * (c![1]! - a![1]!) - (b![1]! - a![1]!) * (c![0]! - a![0]!)) / 2
+    );
+  }, 0);
+  assert.equal(area, 400, "pieces cover the contour once without filling holes twice");
+  assert.throws(
+    () =>
+      recoverLightRegions(light, "light", "wall", [support(15.3, 25.3, 40)], undefined, (p) => p),
+    /changes after integer quantization/,
+  );
+});
+
+test("multi-plane recovery preserves single-plane contours and refuses missing elevated geometry", () => {
+  assert.deepEqual(
+    recoverLightRegions(light, "light", "wall", [], undefined, (p) => p),
+    [recoverLightRegion(light, "light", "wall", [0, 0, 0], (p) => p)],
+  );
+  assert.throws(
+    () => recoverLightRegions({ ...light, layer: 1 }, "light", "wall", [], undefined, (p) => p),
+    /uncovered elevated/,
+  );
 });
 test("light recovery uses projected elevation and refuses mixed or unsupported planes", () => {
   const { hut } = assetCompilerFixture();

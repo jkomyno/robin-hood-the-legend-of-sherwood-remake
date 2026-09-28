@@ -27,11 +27,7 @@ import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/as
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
-import {
-  containsLightPolygon,
-  recoverLightPlane,
-  recoverLightRegion,
-} from "./recover-light-region.ts";
+import { containsLightPolygon, recoverLightRegions } from "./recover-light-region.ts";
 import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry.ts";
 import { terrainOwnsJump } from "./terrain-jump-ownership.ts";
 import { jumpEdgeOwners } from "./jump-edge-ownership.ts";
@@ -1384,15 +1380,18 @@ for (const [index, sound] of proto.sound_sources.entries()) {
   recoveredSounds++;
 }
 let recoveredLights = 0;
+const lightRecovery: { source: number; asset: string; ids: string[] }[] = [];
 for (const [index, light] of proto.light_sectors.entries()) {
   try {
-    const plane = recoverLightPlane(
+    const regions = recoverLightRegions(
       light,
+      `light-${index}`,
+      "$root",
       proto.sight_obstacles,
       proto.motion_data.layers[light.layer],
+      (p) => p,
     );
-    const world = recoverLightRegion(light, `light-${index}`, "$root", plane, (p) => p);
-    const contour = world.polygon.map(([x, y]): Point => [x, y]);
+    const contours = regions.map((region) => region.polygon.map(([x, y]): Point => [x, y]));
     const allOwners = [...locals.values()].flat();
     const owners = [...new Set(allOwners.map((owner) => owner.asset))].flatMap((asset) => {
       const parts = allOwners.filter((owner) => owner.asset === asset);
@@ -1402,7 +1401,9 @@ for (const [index, light] of proto.light_sectors.entries()) {
           p.y,
         ]),
       );
-      return containsLightPolygon(contour, footprints) ? [parts[0]!] : [];
+      return contours.every((contour) => containsLightPolygon(contour, footprints))
+        ? [parts[0]!]
+        : [];
     });
     if (owners.length !== 1) {
       unresolved.push({
@@ -1416,10 +1417,17 @@ for (const [index, light] of proto.light_sectors.entries()) {
     const owner = owners[0]!,
       p = packet(owner.asset);
     (p.lights ??= []).push(
-      recoverLightRegion(light, `light-${index}`, owner.node, plane, (point) =>
-        localize(owner.part, point),
-      ),
+      ...regions.map((region) => ({
+        ...region,
+        node: owner.node,
+        polygon: region.polygon.map((point) => localize(owner.part, point)),
+      })),
     );
+    lightRecovery.push({
+      source: index,
+      asset: owner.asset,
+      ids: regions.map((region) => region.id),
+    });
     p.issues.push("Review light-region ownership inferred from unique geometric containment");
     recoveredLights++;
   } catch (error) {
@@ -1602,6 +1610,7 @@ const report = {
     0,
   ),
   definitionValidation,
+  lightRecovery,
   maskRecovery: maskRecovery.map(({ asset, source, definition }) => ({
     asset,
     source,

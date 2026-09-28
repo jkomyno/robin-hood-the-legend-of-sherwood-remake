@@ -264,6 +264,17 @@ All nine static diagnostics construct successfully. The other 114 regions need
 receiving-geometry fixes, ownership review or multi-plane authoring; they are not
 silently assigned to terrain. These drafts remain unpublished.
 
+Multi-plane recovery can now partition a contour by receiving-surface priority,
+triangulate holes, and store each planar piece in the same owning asset. It also
+checks each receiving portion after integer quantization: loading successfully
+does not establish contour fidelity. All eleven current multi-plane candidates
+(Leicester 1/4, Lincoln 5, York 1/6/12/14/18/20/24/28) change shape when split
+vertices are rounded and remain rejected. In particular, York 12/14 initially
+produced loadable descriptors but failed the projected-union comparison. The
+verified recovery count therefore remains 35/149, not 37/149. Rechecked drafts
+are under `work/map-compile/split-light-recovery`; they retain all previously
+recovered light regions for those three maps and pass static compilation.
+
 Jump recovery produces asset-local drafts for all 173 pairs across nine maps.
 `compare-jump-geometry.ts` verifies exact endpoint coordinates, polygon boundaries,
 helper flags and long-jump flags against the reference records, allowing rebuilt
