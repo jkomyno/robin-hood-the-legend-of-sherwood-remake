@@ -140,8 +140,10 @@
   can link to explicit local receiving volumes, preserving thickness, physical flags,
   material references and sight-state bindings through placement and duplication.
   The exported fixture verifies top/underside collision and opaque-ray blocking in
-  the native runtime. Existing-map recovery, shared controllers and state visuals
-  remain open.
+  the native runtime. Receiving links can also reuse physical asset parts. One-time
+  recovery restores Leicester's three map-patch receivers with exact ordered
+  float32 geometry and flags; its five recovered transitions pass native apply/reset
+  checks. Publication, shared controllers, state visuals and traversal remain open.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

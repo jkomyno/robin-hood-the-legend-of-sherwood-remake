@@ -79,7 +79,47 @@ test("receiving volumes retain thickness, materials and state links after placem
   assert.notDeepEqual(receivers[0]!.material_indices, receivers[1]!.material_indices);
 });
 
-test("receiving volume links reject missing, conflicting and uncovered definitions", () => {
+test("receiving part links reuse physical geometry and preserve state references", () => {
+  const { document, assets, hut } = projectionVolumeCompilerFixture();
+  const gameplay = hut.gameplay!;
+  const volume = gameplay.volumes![0]!;
+  const part = hut.parts.find((p) => p.node === volume.node)!;
+  part.obstacle_local_game = { ...volume.shape, projection_area: null, material_indices: [] };
+  gameplay.collision = "parts";
+  gameplay.surfaces[0]!.projectionVolume = part.node;
+  gameplay.materials![0]!.obstacles = [part.node];
+  gameplay.movementTransitions![0]!.appliedSight = [part.node];
+  delete gameplay.volumes;
+  // Navigation and receiving footprints are independent: an uncovered navigation
+  // margin must not invent additional receiving geometry.
+  gameplay.surfaces[0]!.polygon[0]![0] -= 1;
+  const result = compileAssetGameplay(document, assets, bounds);
+  assert.equal(result.sight_obstacles.length, 2);
+  assert.deepEqual(result.movement_transitions![0]!.applied_sight, [0]);
+  assert.deepEqual(result.sight_obstacles[0]!.projection_area, [1, 1]);
+  assert.equal(Math.min(...result.sight_obstacles[0]!.points.map((p) => p.x)), 300);
+  delete gameplay.movementTransitions;
+  const instance = document.objects.find((p) => p.node.endsWith(":building-999"))!;
+  const visible = structuredClone(instance);
+  visible.id = "receiver-frame";
+  visible.node = "asset:hut:visible-frame";
+  hut.parts.push({ node: "visible-frame", name: "Visible frame", scenery: true });
+  document.objects.push(visible);
+  instance.hidden = true;
+  assert.deepEqual(
+    compileAssetGameplay(document, assets, bounds).sight_obstacles[0]!.projection_area,
+    [1, 1],
+  );
+  gameplay.collision = "none";
+  gameplay.materials![0]!.obstacles = [];
+  gameplay.materials![0]!.ground = true;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /sight obstacle|projection volume/,
+  );
+});
+
+test("receiving volume links reject missing, conflicting and disjoint definitions", () => {
   const { document, assets, hut } = projectionVolumeCompilerFixture();
   const surface = hut.gameplay!.surfaces[0]!;
   surface.projectionVolume = "missing";
@@ -94,9 +134,9 @@ test("receiving volume links reject missing, conflicting and uncovered definitio
     /top must lie on the surface/,
   );
   surface.height = 20;
-  surface.polygon[0]![0] -= 1;
-  assert.throws(() => compileAssetGameplay(document, assets, bounds), /does not cover/);
-  surface.polygon[0]![0] += 1;
+  surface.polygon = surface.polygon.map(([x, y]) => [x + 200, y]);
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /does not overlap/);
+  surface.polygon = surface.polygon.map(([x, y]) => [x - 200, y]);
   const adjacent = hut.gameplay!.surfaces[1]!;
   const saved = structuredClone(adjacent.polygon);
   adjacent.polygon = structuredClone(surface.polygon);

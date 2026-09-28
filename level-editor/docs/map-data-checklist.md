@@ -317,16 +317,30 @@ in initial/applied sight lists, with the same missing-reference and duplicate-co
 validation as other obstacles. Runtime tests cover activation, swapping and reset:
 collision follows activation, while elevation/material lookup retains all registered
 receivers, including inactive ones, and navigation storage remains unchanged.
-Assets can now link a walkable surface to a local `projectionVolume`, replacing
+Assets can now link a walkable surface to a local part or volume with `projectionVolume`, replacing
 its generated thin receiver with that volume's full geometry, thickness, flags and
 material links. Existing initial/applied sight lists control its activation. Tests
 cover movement, rotation, duplication, export into the native fixture, and native
 top/underside collision plus opaque-ray blocking through activation and reset.
-Missing links, mismatched heights, uncovered walking contours and multiple receiving
-areas are rejected. Overlapping physical/generated receivers require explicit
-volumes on both surfaces, avoiding ambiguous overlap ordering. Recovery and
-publication for existing maps, shared controllers, state visuals and actor traversal
-remain incomplete; no Leicester patch has been certified by this synthetic fixture.
+Missing links, mismatched heights, disjoint walking contours and multiple receiving
+areas are rejected. Navigation can extend beyond its receiver without inventing
+extra receiving coverage, matching their independent authored boundaries.
+Overlapping physical/generated receivers require explicit
+volumes on both surfaces, avoiding ambiguous overlap ordering.
+
+One-time recovery now links uniquely owned, state-controlled projection surfaces
+to their existing physical parts or local volumes. Across all nine source maps,
+the three affected map-patch receivers are Leicester 384, 389 and 390. Fresh
+Leicester recovery in `work/map-compile/projection-volume-recovery/leicester`
+retains their ordered float32 vertices, top/bottom heights, physical flags and
+default materials exactly. Compiled receiver indices 93, 56 and 243 respectively
+bind their owning drawbridges' applied sight states. The diagnostic in
+`work/map-compile/projection-volume-native` constructs successfully in Rust and
+applies/resets all five recovered Leicester transitions, checking sight activation,
+door rights and movement state restoration. This is not actor-traversal or visual
+parity: the full scene still rejects unsupported visual states, 450 masks remain
+unrecovered, and these candidates remain unpublished. Mission-carried projection
+effects and shared controllers still need separate ownership and recovery work.
 Mission-carried records also include traps, hiding places and
 York gate effects; their presence in a mission file does not establish permanent
 map ownership. The earlier recovered transition counts cover map-source recovery,

@@ -327,6 +327,9 @@ export function compileAssetGameplay(
     const movementSolid = (id: string) =>
       gameplay.movementSolids?.includes(id) ?? gameplay.movementBlockers === undefined;
     const explicitSight = new Set([
+      ...gameplay.surfaces.flatMap((surface) =>
+        surface.projectionVolume === undefined ? [] : [surface.projectionVolume],
+      ),
       ...(gameplay.movementTransitions ?? []).flatMap((t) => [
         ...(t.initialSight ?? []),
         ...(t.appliedSight ?? []),
@@ -565,8 +568,8 @@ export function compileAssetGameplay(
           `${surface.id} projection volume`,
         );
         const walking = points.map(([x, y, z]): Point => [x, y - z]);
-        if (fixedPolygonBoolean("difference", polygon(walking), [polygon(coverage)]).length)
-          throw new Error(`${surface.id}: projection volume does not cover its walking surface`);
+        if (!fixedPolygonBoolean("intersection", polygon(walking), [polygon(coverage)]).length)
+          throw new Error(`${surface.id}: projection volume does not overlap its walking surface`);
       }
       if (gameplay.surfaces.includes(surface))
         projectionSupports.push({

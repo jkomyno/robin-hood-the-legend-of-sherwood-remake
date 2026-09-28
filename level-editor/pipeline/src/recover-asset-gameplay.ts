@@ -119,6 +119,9 @@ const packets = new Map<
 >();
 const recoveredMaterials = new Set<number>();
 const recoveredProjectionMaterials = new Set<number>();
+const stateSightReferences = new Set(
+  proto.patches.flatMap((patch) => [...patch.old_sight_obstacles, ...patch.new_sight_obstacles]),
+);
 const packet = (asset: string) => {
   let p = packets.get(asset);
   if (!p) {
@@ -437,6 +440,10 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
             ]),
           );
           const surfaceId = `${owner.collisionId ?? owner.node}-walk-${regionIndex}`;
+          const projectionVolume =
+            owners.length === 1 && stateSightReferences.has(index)
+              ? (owner.collisionId ?? owner.node)
+              : undefined;
           const materialRegions = obstacle.material_indices.map((material, materialIndex) => {
             const source = proto.material_sectors[material];
             if (!source) throw new Error(`Missing material region ${material}`);
@@ -446,7 +453,7 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
               node: owner.node,
               material: source.material,
               ground: false,
-              obstacles: [],
+              obstacles: projectionVolume === undefined ? [] : [projectionVolume],
               polygon: source.polygon.points.map(([x, y]) => {
                 const z = planeHeight(obstacle.points, x, y);
                 return localize(owner.part, [x, y + z, z]);
@@ -460,32 +467,44 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
             id: surfaceId,
             node: owner.node,
             navigationRegion,
-            projectionMaterials: {
-              defaultMaterial: obstacle.default_material,
-              regions: materialRegions,
-              planePoints: [obstacle.points[1]!, obstacle.points[2]!, obstacle.points[0]!].map(
-                (point) => localize(owner.part, [point.x, point.y, point.z_top]),
-              ) as [Vec3, Vec3, Vec3],
-              priority: -index,
-              footprint:
-                owners.length === 1
-                  ? obstacle.points.map((point) =>
-                      localize(owner.part, [point.x, point.y, point.z_top]),
-                    )
-                  : descriptors
-                      .get(owner.asset)!
-                      .parts.find((part) => part.node === owner.node)!
-                      .obstacle_local_game!.points.map((point): Vec3 => [
-                        point.x,
-                        point.y,
-                        point.z_top,
-                      ]),
-              priorityHeight: localize(owner.part, [
-                0,
-                0,
-                Math.max(...obstacle.points.map((point) => Math.max(point.z_top, point.z_bottom))),
-              ])[2],
-            },
+            ...(projectionVolume === undefined
+              ? {
+                  projectionMaterials: {
+                    defaultMaterial: obstacle.default_material,
+                    regions: materialRegions,
+                    planePoints: [
+                      obstacle.points[1]!,
+                      obstacle.points[2]!,
+                      obstacle.points[0]!,
+                    ].map((point) => localize(owner.part, [point.x, point.y, point.z_top])) as [
+                      Vec3,
+                      Vec3,
+                      Vec3,
+                    ],
+                    priority: -index,
+                    footprint:
+                      owners.length === 1
+                        ? obstacle.points.map((point) =>
+                            localize(owner.part, [point.x, point.y, point.z_top]),
+                          )
+                        : descriptors
+                            .get(owner.asset)!
+                            .parts.find((part) => part.node === owner.node)!
+                            .obstacle_local_game!.points.map((point): Vec3 => [
+                              point.x,
+                              point.y,
+                              point.z_top,
+                            ]),
+                    priorityHeight: localize(owner.part, [
+                      0,
+                      0,
+                      Math.max(
+                        ...obstacle.points.map((point) => Math.max(point.z_top, point.z_bottom)),
+                      ),
+                    ])[2],
+                  },
+                }
+              : { projectionVolume }),
             vertices,
             kind: motion.is_lift ? "lift" : "walkable",
             holes: region

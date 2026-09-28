@@ -15,7 +15,7 @@ export interface AssetWalkableSurface {
   /** Local 3D outer-edge sockets joining navigation regions of separately placed assets.
    * Both endpoints must coincide; unmatched edges leave independent regions. */
   navigationJoins?: import("./assemble-navigation-joins.ts").NavigationJoin[];
-  /** Local gameplay volume supplying receiving geometry, physical flags and materials.
+  /** Local part or gameplay volume supplying receiving geometry, physical flags and materials.
    * Replaces the generated thin receiver; activation uses the volume's sight-state links. */
   projectionVolume?: string;
   /** Receiving-surface material and ordered asset-local material-region references. */
@@ -671,7 +671,16 @@ export function validateAssetGameplay(
     if (
       surface.projectionVolume !== undefined &&
       (!data.surfaces.includes(surface) ||
-        !volumes.has(surface.projectionVolume) ||
+        !(
+          volumes.has(surface.projectionVolume) ||
+          (data.collision === "parts" &&
+            descriptor.parts.some(
+              (part) =>
+                part.node === surface.projectionVolume &&
+                part.obstacle_local_game &&
+                part.mission_profile === undefined,
+            ))
+        ) ||
         surface.projectionMaterials !== undefined)
     )
       fail(`invalid projection volume on ${surface.id}`);
