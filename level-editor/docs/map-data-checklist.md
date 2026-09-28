@@ -247,18 +247,25 @@ masks: scaffolded corner house 79 (2,777 pixels), southwest square corner house
 201 (392), central south golden timber house 227/238 (2,126/5,856), southeast lane
 eastern timber house 269 (687), and south gate lane front timber house 280 (1,036).
 Except for ground-level 269, receivers lie on the flat 90.00101-unit town surface.
-All six match in the baseline, whose non-mask data is unchanged. Masks
-201/227/238/269/280 also match after independent asset moves, and native loading
-passes for the baseline and those four moved scenes.
+All six match in the baseline and after independent one-pixel asset moves.
+Native loading passes for the baseline and all five moved scenes. York still
+has 822 unrecovered masks. Neither map is certified for complete gameplay or
+publication.
 
-Moving the scaffolded corner house one pixel east still fails a neighboring
-east-gable-house jump landing anchor: its height is 251.952949563 while the
-moved receiving surface is 251.918508693 at projected `[1504,1230]`. The
-compiler rejects the mismatch; mask 79 has baseline fidelity only, not verified
-whole-asset movement. York still has 822 unrecovered masks. These diagnostics
-are staged under `work/map-compile/{nottingham,york}-mask-recovery` and
-`work/map-compile/{nottingham,york}-mask-native`; neither map is certified for
-complete gameplay or publication.
+The scaffolded-house movement check exposed a landing anchor selected from a
+neighboring asset's portion of a shared jump zone. Recovery now intersects the
+unblocked landing region with the owning asset's receiving footprints before
+choosing an anchor. It selects a point on the integer movement grid before
+evaluating elevation, avoiding fractional-point/rounded-point slope mismatches.
+Zone polygons, jump edges and helper rules are preserved. York's baseline now
+uses corrected receiving-sector references for two zones; all other compiled
+fields remain unchanged. Moving the scaffolded house detaches two jump pairs
+and their gates without invalidating its neighbor's remaining landing anchor.
+All nine maps retain all 173 recovered pairs, pass static compilation, and load
+natively in the jump-anchor regression batch. Updated York recovery is under
+`work/map-compile/jump-anchor-recovery/york`, with baseline/moved native checks
+under `work/map-compile/york-jump-anchor-native`. Traversal fidelity and complete
+map publication remain separate requirements.
 
 Recovery discards faces outside a mask's bounds before fitting their depth
 planes. This avoids numerical failures from unrelated nearly edge-on faces

@@ -82,8 +82,9 @@
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. Three Derby, seven Leicester, four Nottingham and six York
   masks have exact baseline coverage and boundary round-trips with native
-  registration checks. Independent placement checks pass except for York's
-  scaffolded corner house, whose move exposes a neighboring jump-height mismatch.
+  registration and independent placement checks. Jump landing anchors use their
+  owning asset's receiving footprints and evaluate height at the integer movement
+  point, preventing a moved neighbor from invalidating an unrelated landing zone.
   Full-map recovery and publication remain incomplete.
   A surface-support audit reports missing pixels, interior gaps and repair bounds
   for reviewed mask sets, including whether both sides of a state change have

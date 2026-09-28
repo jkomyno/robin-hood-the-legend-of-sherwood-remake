@@ -1463,6 +1463,26 @@ for (const [index, light] of proto.light_sectors.entries()) {
 let recoveredJumps = 0;
 type JumpOwner = { asset: string; node: string; part?: Level3DObject };
 const jumpPoint = (owner: JumpOwner, p: Vec3) => (owner.part ? localize(owner.part, p) : p);
+const jumpReceivingFootprints = (asset: string, zone: ProtoLevel["jump_zones"][number]) => {
+  const footprints = proto.sight_obstacles.flatMap((obstacle, index) => {
+    if (
+      !Array.isArray(obstacle.projection_area) ||
+      obstacle.projection_area[0] !== zone.sector ||
+      obstacle.projection_area[1] !== zone.layer
+    )
+      return [];
+    return (locals.get(index) ?? [])
+      .filter((owner) => owner.asset === asset)
+      .map((owner) =>
+        (owner.sourceShape ?? transformedObstacle(document, owner.part)).points.map((p): Point => [
+          p.x,
+          p.y - p.z_top,
+        ]),
+      );
+  });
+  // Ground-only landing zones have no obstacle-backed projection footprint.
+  return footprints.length ? footprints : undefined;
+};
 for (const [index, pair] of proto.jump_line_pairs.entries()) {
   try {
     const sideCandidates = [pair.line1, pair.line2].map((line, side): JumpOwner[] => {
@@ -1519,6 +1539,7 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
             owner.node,
             (point) => jumpPoint(owner, point),
             (zone, point) => heightAt(zone.sector, zone.layer, point),
+            (zone) => jumpReceivingFootprints(owner.asset, zone),
           ),
         };
       });
@@ -1555,6 +1576,7 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
       owner.node,
       (point) => jumpPoint(owner, point),
       (zone, point) => heightAt(zone.sector, zone.layer, point),
+      (zone) => jumpReceivingFootprints(owner.asset, zone),
     );
     for (const zone of recovered.zones) {
       const previous = p.jumpZones?.find((z) => z.id === zone.id);
