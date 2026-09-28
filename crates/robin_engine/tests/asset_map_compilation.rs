@@ -200,6 +200,145 @@ fn compiled_masks_reject_unresolved_links_invalid_types_and_malformed_bitmaps() 
     assert!(error.contains("obstacle links"), "{error}");
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ProjectionComparison {
+    before: String,
+    after: String,
+    cases: Vec<ProjectionComparisonCase>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ProjectionComparisonCase {
+    before_sector: u16,
+    after_sector: u16,
+    layer: u16,
+    bounds: [i32; 4],
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ProjectionQueryReport {
+    queries: usize,
+    receiving: usize,
+    height_differences: usize,
+    material_differences: usize,
+    coverage_differences: usize,
+    maximum_height_difference: f32,
+    first_differences: Vec<String>,
+}
+
+#[test]
+#[ignore = "requires paired compiled descriptors via ROBIN_PROJECTION_COMPARISON"]
+fn recovered_projection_partitions_preserve_sampled_runtime_queries() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::fast_find_grid::SectorIndex;
+    use robin_engine::position_interface::SectorHandle;
+    use robin_engine::sector::SectorNumber;
+
+    let manifest_path = std::path::PathBuf::from(
+        std::env::var("ROBIN_PROJECTION_COMPARISON").expect("comparison manifest"),
+    );
+    let manifest: ProjectionComparison =
+        serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    assert!(!manifest.cases.is_empty(), "no projection comparisons");
+    let directory = manifest_path.parent().unwrap();
+    let load = |file: &str, assets: &mut LevelAssets| {
+        let bytes = std::fs::read(directory.join(file)).unwrap();
+        let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let dimensions = &descriptor["walkable_polygon"][2];
+        construct_with_dimensions(
+            LoadedLevel::hackable_from_json(&bytes).unwrap(),
+            assets,
+            (
+                dimensions[0].as_f64().unwrap() as f32 + 1.,
+                dimensions[1].as_f64().unwrap() as f32 + 1.,
+            ),
+        )
+    };
+    let mut before_assets = LevelAssets::new();
+    let before = load(&manifest.before, &mut before_assets);
+    let mut after_assets = LevelAssets::new();
+    let after = load(&manifest.after, &mut after_assets);
+    let handle = |engine: &Engine, number: u16| {
+        let index = engine.fast_grid().level.sector_number_map
+            [&SectorNumber::new(i16::try_from(number).unwrap())];
+        SectorHandle::new(number)
+            .unwrap()
+            .with_arena_index(SectorIndex::new(u32::try_from(index).unwrap()).unwrap())
+    };
+    let sample = |engine: &Engine, assets: &LevelAssets, sector, layer, point: MapPoint| {
+        engine
+            .get_projection_area_index(assets, sector, layer, point)
+            .map(|index| {
+                let obstacle = &assets.environment.static_sight_obstacles[usize::from(index)];
+                (
+                    obstacle.compute_top_z_from_projection(point.x, point.y),
+                    assets
+                        .environment
+                        .material_sectors
+                        .material_at_with_obstacle(Some(obstacle), point),
+                )
+            })
+    };
+    let mut report = ProjectionQueryReport {
+        queries: 0,
+        receiving: 0,
+        height_differences: 0,
+        material_differences: 0,
+        coverage_differences: 0,
+        maximum_height_difference: 0.,
+        first_differences: vec![],
+    };
+    for case in manifest.cases {
+        let a = handle(&before, case.before_sector);
+        let b = handle(&after, case.after_sector);
+        let [min_x, min_y, max_x, max_y] = case.bounds;
+        assert!(min_x < max_x && min_y < max_y, "empty probe bounds");
+        let mut receiving = 0;
+        // Include integer boundaries and half-pixel interiors. This is a sampled
+        // comparison, not proof about every continuous actor position.
+        for y in min_y * 2..=max_y * 2 {
+            for x in min_x * 2..=max_x * 2 {
+                let point = MapPoint::new(x as f32 / 2., y as f32 / 2.);
+                let old = sample(&before, &before_assets, a, case.layer, point);
+                let new = sample(&after, &after_assets, b, case.layer, point);
+                if old != new && report.first_differences.len() < 8 {
+                    report.first_differences.push(format!(
+                        "{point:?}, layer {}: {old:?} -> {new:?}",
+                        case.layer
+                    ));
+                }
+                match (old, new) {
+                    (Some((old_height, old_material)), Some((new_height, new_material))) => {
+                        report.height_differences += usize::from(old_height != new_height);
+                        report.material_differences += usize::from(old_material != new_material);
+                        report.maximum_height_difference = report
+                            .maximum_height_difference
+                            .max((old_height - new_height).abs());
+                    }
+                    (None, None) => {}
+                    _ => report.coverage_differences += 1,
+                }
+                report.queries += 1;
+                receiving += usize::from(old.is_some());
+            }
+        }
+        assert!(receiving > 0, "probe never reached a projection surface");
+        report.receiving += receiving;
+    }
+    let report_json = serde_json::to_string_pretty(&report).unwrap();
+    std::fs::write(manifest_path.with_extension("report.json"), &report_json).unwrap();
+    println!("{report_json}");
+    assert_eq!(
+        report.coverage_differences, 0,
+        "projection coverage changed"
+    );
+    assert_eq!(
+        report.material_differences, 0,
+        "projection material changed"
+    );
+    assert_eq!(report.height_differences, 0, "projection elevation changed");
+}
+
 #[test]
 #[ignore = "requires static diagnostic exports via ROBIN_ASSET_MAP_DIAGNOSTICS"]
 fn recovered_static_exports_construct_native_geometry() {

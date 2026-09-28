@@ -215,8 +215,25 @@ The isolated York inner-east curtain join reduces projection records by 25 while
 preserving every compared coverage group exactly. Its non-projection data also
 matches after motion/interior reference remapping, and both variants load natively
 with 192 movement areas, 254 doors and 72 jump pairs. The native probes are under
-`work/map-compile/york-inner-wall-partition-native`; the join remains outside the
-reviewed catalog until receiving-priority and traversal behavior are verified.
+`work/map-compile/york-inner-wall-partition-native`. Native receiving queries now
+expose a real elevation difference despite the exact coverage comparison: 51,381
+half-pixel samples include 28,285 receiving points, of which 28,268 differ by up to
+0.000015258789 in height. Coverage and material selection match. Comparing the
+baseline with itself gives zero differences. The native loader constructs planes
+from the first three polygon vertices, so a different subdivision can change
+float32 arithmetic even for mathematically identical planes. The join remains
+outside the reviewed catalog. Preserving authored receiving planes independently
+of subdivision, receiving-priority checks and actor traversal remain necessary.
+
+The ignored native test
+`recovered_projection_partitions_preserve_sampled_runtime_queries` reads a
+`ROBIN_PROJECTION_COMPARISON` manifest with `before`/`after` descriptor paths and
+`cases` containing `before_sector`, `after_sector`, `layer` and inclusive
+`bounds: [min_x, min_y, max_x, max_y]`. It queries the runtime receiver, elevation
+and material at integer and half-pixel positions, writes a sibling `.report.json`
+file, and fails on any difference. This is a sampled check, not continuous-space
+or actor-traversal certification. The York manifest is `projection-comparison.json`;
+`projection-self-comparison.json` supplies the passing control.
 The east bridge terrace candidate instead changes material bindings across
 1.366211 square pixels. The riverside wall and middle outer bastion candidates
 retain smaller nonzero coverage differences; no tolerance was used to accept them.

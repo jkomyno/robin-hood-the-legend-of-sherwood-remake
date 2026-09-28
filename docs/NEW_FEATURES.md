@@ -105,6 +105,11 @@
   independently of rebuilt motion/material indices. It identifies York's inner
   curtain subdivision as coverage-equivalent while retaining the terrace's material
   difference. Overlapping-plane priority and traversal require separate checks.
+  A native receiving-query probe additionally compares sampled coverage, float32
+  elevation and material selection. York's inner curtain candidate passes coverage
+  and material checks but changes elevation by one float32 step at 28,268 sampled
+  points; its baseline self-comparison passes. This candidate remains unreviewed
+  until receiving-plane arithmetic is preserved independently of subdivision.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York
