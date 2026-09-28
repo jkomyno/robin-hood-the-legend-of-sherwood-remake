@@ -204,6 +204,17 @@ layers and independent links after asset duplication. All 518 state references
 across the nine source maps resolve; none reuses a mask within/across patches.
 This does not mean those masks have recovered coverage or published state links.
 
+Croisement01 has one reviewed static mask in
+`refinement/catalogs/croisement01-masks.json`: record 25 (6,258 pixels), owned
+by `croisement01-group-007`. Its projectile boundary follows scenery part 074;
+character threshold heights follow the owning assembly's sloped part 007.
+The receiving anchor is on adjacent navigable terrain. Coverage and both open
+boundaries match exactly, including after moving the assembly one pixel east.
+Both scenes load natively, and baseline non-mask geometry matches the jump-anchor
+diagnostic. Drafts and native checks are under `work/map-compile/croisement01-mask-recovery`
+and `work/map-compile/croisement01-mask-native`. There are 102 unrecovered masks;
+complete asset coverage, mask-controlled depth and publication remain unfinished.
+
 Seven real static masks are recovered for Derby: southwest postern records
 70 and 71, with 385 and 884 covered pixels, and upper gatehouse record 105,
 with 4,124 covered pixels, plus lower east/west curtain records 39/44 with

@@ -1,0 +1,20 @@
+{
+  "source_sha256": "b911f02362668350b016ebb406846a56d65fdf06fb4782441d5913eeef2198e6",
+  "recipes": [
+    {
+      "asset": "croisement01-group-007",
+      "model_sha256": "d6c4bbbf17f971fc21515a50333d6ce9176ebe8821db02282ded8661d96216e1",
+      "entries": [
+        {
+          "source": 25,
+          "id": "northwest-slope-scenery-occlusion",
+          "node": "building-074",
+          "anchor": [135, 423.00101, 110.00101],
+          "characterHeights": [120.68404324970827, 49.39481061007092],
+          "projectileHeights": [0, 0, 0, 0, 0, 0],
+          "review": "The projectile boundary follows scenery part 074 and complete coverage is supported by this assembly's mesh. Both character threshold endpoints lie on the owning assembly's projected slope (part 007); heights use its three-point top plane. The receiving anchor is on adjacent navigable terrain in the source layer. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    }
+  ]
+}
