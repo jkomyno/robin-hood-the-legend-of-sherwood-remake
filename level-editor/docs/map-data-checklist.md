@@ -204,6 +204,34 @@ layers and independent links after asset duplication. All 518 state references
 across the nine source maps resolve; none reuses a mask within/across patches.
 This does not mean those masks have recovered coverage or published state links.
 
+`pipeline/src/verify-reviewed-mask-recovery.ts` reproduces the reviewed-mask
+checks from a scene, pinned library, recovery packets and source-pinned recipes.
+It compares exact covered pixels, flags, both optional polylines and obstacle-link
+counts, rejecting ambiguous matches rather than choosing one. Each owning asset
+then moves independently; bitmap bytes, dimensions, translated boundaries and
+compiled obstacle links must remain exact. A failed run invalidates the previous
+manifest, records placement errors and exits unsuccessfully. These are static
+diagnostics, not ownership, receiving-layer, visual or full-gameplay certificates.
+For example, from `level-editor`:
+
+```sh
+node --max-old-space-size=1536 pipeline/src/verify-reviewed-mask-recovery.ts \
+  --library work/map-compile/projection-material-library \
+  --map work/map-compile/projection-material-library/scenes/derby.rhlos-map.json \
+  --source library/game-data/Data/Levels/Derby.rhp.json \
+  --recovery work/map-compile/derby-hall-mask-recovery \
+  --mask-definitions refinement/catalogs/derby-masks.json \
+  --out work/map-compile/reviewed-mask-verification/derby
+```
+
+The current six-map batch verifies all 49 reviewed masks and 34 independent asset
+moves. All 40 baseline/moved descriptors load natively. Complete baseline geometry
+matches the earlier diagnostics. Outputs are under
+`work/map-compile/reviewed-mask-verification/<map>`. This broader check caught a
+fractional-anchor regression on Derby's postern: mask receiver elevation now uses
+the authored floating-point position, while polygon membership uses the movement
+grid. A sloped fractional-anchor regression test protects this distinction.
+
 Croisement01 has one reviewed static mask in
 `refinement/catalogs/croisement01-masks.json`: record 25 (6,258 pixels), owned
 by `croisement01-group-007`. Its projectile boundary follows scenery part 074;

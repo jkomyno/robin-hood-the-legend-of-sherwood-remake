@@ -7,6 +7,22 @@ import { IDENTITY_TRANSFORM } from "./level3d.ts";
 import type { AssetGameplay } from "./asset-gameplay.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("sloped mask receivers evaluate elevation at the fractional authored point", () => {
+  const { document, assets, hut } = maskAssetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.doors = [];
+  gameplay.movementTransitions = [];
+  gameplay.collision = "none";
+  gameplay.surfaces = [{ ...gameplay.surfaces[0]!, height: [0, 90, 90, 0] }];
+  for (const mask of gameplay.masks!) {
+    mask.anchor = [45.25, 80.5, 45.25];
+    mask.obstacles = [];
+  }
+  assert.equal(compileAssetGameplay(document, assets, bounds).masks!.length, 2);
+  gameplay.masks![0]!.anchor[2] += 1;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /receiving anchor/);
+});
+
 test("mask receivers survive movement exclusions but require authored surface support", () => {
   const { document, assets, hut } = maskAssetCompilerFixture();
   const gameplay = hut.gameplay!;

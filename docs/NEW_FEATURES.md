@@ -89,6 +89,10 @@
   Mask receiving layers remain resolvable when movement collision covers their
   anchors, provided authored surface support identifies one surviving layer.
   Door and jump destinations continue to require walkable receiving positions.
+  A repeatable mask-recovery verifier checks source/model pins, exact coverage and
+  rules, independent translations and native diagnostic descriptors. Failed runs
+  invalidate earlier success manifests. Fractional receiving anchors retain their
+  authored position for slope elevation checks.
   Full-map recovery and publication remain incomplete.
   A surface-support audit reports missing pixels, interior gaps and repair bounds
   for reviewed mask sets, including whether both sides of a state change have

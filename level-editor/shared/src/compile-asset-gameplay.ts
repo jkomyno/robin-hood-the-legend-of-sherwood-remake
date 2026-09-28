@@ -854,9 +854,10 @@ export function compileAssetGameplay(
     // Masks select a receiving layer, not a movement destination. A placed
     // obstacle may cover their anchor without removing the authored receiver.
     const point = project(mask.anchor);
+    const heightPoint: Point = [mask.anchor[0], mask.anchor[1] - mask.anchor[2]];
     const receivers = groups.filter(
       (group) =>
-        Math.abs(planeHeight(group.plane, point) - mask.anchor[2]) < 1e-4 &&
+        Math.abs(planeHeight(group.plane, heightPoint) - mask.anchor[2]) < 1e-4 &&
         group.surfaces.some(
           (surface) =>
             inside(point, surface.polygon) && !surface.holes.some((hole) => inside(point, hole)),
@@ -866,7 +867,7 @@ export function compileAssetGameplay(
       areas
         .filter(
           (area) =>
-            Math.abs(planeHeight(area.plane, point) - mask.anchor[2]) < 1e-4 &&
+            Math.abs(planeHeight(area.plane, heightPoint) - mask.anchor[2]) < 1e-4 &&
             inside(point, area.polygon),
         )
         .map((area) => area.layer),
