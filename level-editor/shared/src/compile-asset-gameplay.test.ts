@@ -17,6 +17,7 @@ import {
   jumpAssetCompilerFixture,
   compoundLiftCompilerFixture,
   multiPlaneRegionCompilerFixture,
+  joinedNavigationCompilerFixture,
   crossAssetJumpCompilerFixture,
   doorTransitionCompilerFixture,
   doorAnchorCompilerFixture,
@@ -534,6 +535,45 @@ test("non-rendering asset volumes preserve collision and sight without a mesh pa
   Object.assign(hut.gameplay!.volumes[0]!.shape, { projection_area: [123, 1] });
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid gameplay volume/);
 });
+test("separate navigation assets reproduce one continuous region and detach after movement", () => {
+  const { document, assets, hut } = joinedNavigationCompilerFixture();
+  const local = multiPlaneRegionCompilerFixture();
+  const joined = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(joined, compileAssetGameplay(local.document, local.assets, bounds));
+  document.groups.find((g) => g.id === "upper")!.transform.dx = 20;
+  const detached = compileAssetGameplay(document, assets, bounds);
+  assert.equal(detached.motion_data.layers.flat().length, 2);
+  assert.equal(detached.warnings!.filter((w) => w.includes("no matching boundary")).length, 2);
+  document.groups.find((g) => g.id === "upper")!.transform.dx = 0;
+  hut.gameplay!.surfaces[0]!.navigationJoins![0]![0][2] += 1;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /outer surface edge/);
+  delete hut.gameplay!.surfaces[0]!.navigationRegion;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /navigation joins/);
+});
+
+test("separate navigation assemblies rotate and duplicate without joining unrelated copies", () => {
+  const { document, assets } = joinedNavigationCompilerFixture();
+  const groups = [...document.groups],
+    parts = [...document.objects];
+  for (const group of groups)
+    document.groups.push({
+      id: `${group.id}-copy`,
+      transform: { ...IDENTITY_TRANSFORM, dx: 1000, dy: 100, rot_deg: 90 },
+    });
+  for (const part of parts.filter((p) => p.group))
+    document.objects.push({
+      ...structuredClone(part),
+      id: `${part.id}-copy`,
+      group: `${part.group}-copy`,
+    });
+  const result = compileAssetGameplay(document, assets, bounds);
+  assert.equal(result.motion_data.layers.flat().length, 2);
+  assert.equal(result.sight_obstacles.length, 4);
+  assert.equal((result.warnings ?? []).filter((w) => w.includes("no matching boundary")).length, 0);
+  const bindings = result.sight_obstacles.map((s) => JSON.stringify(s.projection_area));
+  assert.equal(new Set(bindings).size, 2);
+});
+
 test("ordinary local navigation regions join height planes without lift behavior", () => {
   const { document, assets, hut } = multiPlaneRegionCompilerFixture();
   const compiled = compileAssetGameplay(document, assets, bounds);

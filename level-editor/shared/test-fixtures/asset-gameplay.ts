@@ -681,6 +681,27 @@ export function liftLightCompilerFixture() {
   return fixture;
 }
 
+export function joinedNavigationCompilerFixture() {
+  const fixture = compoundLiftCompilerFixture();
+  for (const asset of [fixture.hut, fixture.upper]) {
+    const gameplay = asset.gameplay!;
+    const surface = gameplay.surfaces.find((s) => s.id === gameplay.lifts![0]!.surface)!;
+    surface.navigationRegion = "roof";
+    surface.navigationJoins = [
+      [
+        [100, 0, 40],
+        [100, 100, 40],
+      ],
+    ];
+    gameplay.surfaces = [surface];
+    gameplay.collision = "none";
+    gameplay.lifts = [];
+    gameplay.doors = [];
+  }
+  fixture.document.map = "Multi-plane navigation fixture";
+  return fixture;
+}
+
 export function multiPlaneRegionCompilerFixture() {
   const fixture = compoundLiftCompilerFixture();
   const gameplay = fixture.hut.gameplay!;

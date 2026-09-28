@@ -9,6 +9,7 @@ import {
   doorAnchorCompilerFixture,
   projectionMaterialCompilerFixture,
   maskAssetCompilerFixture,
+  joinedNavigationCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import {
@@ -25,6 +26,18 @@ test("unrestricted passage continuity survives authoring conversion", () => {
   hut.gameplay!.doors[0]!.allowContinuous = true;
   const recovered = recoveredGameplayDefinition(packetFromFixture(hut.gameplay!), hut);
   assert.equal(recovered.doors[0]!.allowContinuous, true);
+});
+
+test("navigation joins survive packet conversion as independent local geometry", () => {
+  const { hut } = joinedNavigationCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  const recovered = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(
+    recovered.surfaces[0]!.navigationJoins,
+    hut.gameplay!.surfaces[0]!.navigationJoins,
+  );
+  packet.surfaces[0]!.navigationJoins![0]![0][0] += 1;
+  assert.notDeepEqual(recovered.surfaces[0]!.navigationJoins, packet.surfaces[0]!.navigationJoins);
 });
 
 function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
@@ -47,6 +60,8 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
     surfaces: gameplay.surfaces.map((s) => ({
       id: s.id,
       node: s.node,
+      navigationRegion: s.navigationRegion,
+      navigationJoins: s.navigationJoins,
       projectionMaterials: s.projectionMaterials,
       kind: gameplay.lifts?.some((l) => l.surface === s.id) ? "lift" : "walkable",
       vertices: s.polygon.map(([x, y], i) => [

@@ -79,6 +79,13 @@
   Patch mask references are validated as layer-local pairs and can be recovered
   into local state IDs after ownership is established, with independent compiled
   references for duplicated assets.
+  Ordinary navigation regions can join across separately placed assets through
+  explicit local 3D boundary edges. Coincident opposing edges share one movement
+  region while retaining their receiving planes and materials; detached edges
+  remain independent. Validation rejects ambiguous or overlapping connections.
+  Rotated/duplicated assemblies and native reachability across the resulting
+  multi-plane region are tested. Recovered-map join authoring and publication
+  remain unfinished.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

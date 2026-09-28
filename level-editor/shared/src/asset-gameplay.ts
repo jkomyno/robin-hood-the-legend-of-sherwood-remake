@@ -12,6 +12,9 @@ export interface AssetWalkableSurface {
   holes?: Point[][];
   /** Asset-local navigation region, optionally spanning height planes; distinct regions never merge. */
   navigationRegion?: string;
+  /** Local 3D outer-edge sockets joining navigation regions of separately placed assets.
+   * Both endpoints must coincide; unmatched edges leave independent regions. */
+  navigationJoins?: import("./assemble-navigation-joins.ts").NavigationJoin[];
   /** Receiving-surface material and ordered asset-local material-region references. */
   projectionMaterials?: {
     defaultMaterial: number;
@@ -688,6 +691,16 @@ export function validateAssetGameplay(
         data.lifts?.some((lift) => lift.surface === surface.id))
     )
       fail("navigation regions require nonempty labels on ordinary walkable surfaces");
+    if (
+      surface.navigationJoins !== undefined &&
+      (!surface.navigationRegion ||
+        !Array.isArray(surface.navigationJoins) ||
+        !surface.navigationJoins.length ||
+        surface.navigationJoins.some(
+          (edge) => !Array.isArray(edge) || edge.length !== 2 || !edge.every((p) => point(p, 3)),
+        ))
+    )
+      fail("navigation joins require 3D edge sockets on labelled ordinary surfaces");
     if (
       !(typeof surface.height === "number" && Number.isFinite(surface.height)) &&
       !(

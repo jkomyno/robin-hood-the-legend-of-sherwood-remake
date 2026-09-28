@@ -30,6 +30,7 @@ import {
   navigationRegionCompilerFixture,
   compoundLiftCompilerFixture,
   multiPlaneRegionCompilerFixture,
+  joinedNavigationCompilerFixture,
   nonrenderingVolumeCompilerFixture,
   crossAssetJumpCompilerFixture,
   detachedJumpCompilerFixture,
@@ -143,6 +144,11 @@ test("ordinary multi-plane export matches the native traversal fixture", async (
     ),
   );
   assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+  const joined = joinedNavigationCompilerFixture();
+  assert.deepEqual(
+    compileMap(joined.document, [0, 0, 2000, 2000], joined.assets).descriptor,
+    fixture,
+  );
 });
 
 test("compound lift export matches the native multi-plane traversal fixture", async () => {

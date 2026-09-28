@@ -2,6 +2,11 @@ import polygonClipping, { type Polygon } from "polygon-clipping";
 import { compileSoundSource } from "./compile-sound-source.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
+import {
+  assembleNavigationJoins,
+  orientNavigationJoin,
+  type PlacedNavigationJoin,
+} from "./assemble-navigation-joins.ts";
 import { assembleJumpSegments, type PlacedJumpSegment } from "./assemble-jump-segments.ts";
 import { assembleLiftSegments, type PlacedLiftSegment } from "./assemble-lift-segments.ts";
 import { assembleInteriors, type PlacedInterior } from "./assemble-interiors.ts";
@@ -174,6 +179,7 @@ export function compileAssetGameplay(
     navigationRegion?: string;
   }[] = [];
   const movementBlockers: typeof surfaces = [];
+  const navigationJoins: PlacedNavigationJoin[] = [];
   const movementSolids: { owner: string; shape: SightObstacle }[] = [];
   const movementClearances: typeof surfaces = [];
   const transitionBlockers: PlacedTransitionBlocker[] = [];
@@ -491,6 +497,15 @@ export function compileAssetGameplay(
       ]);
       const localPlane = heightPlane(local);
       const points = local.map((p) => transform(surface.node, p));
+      for (const edge of surface.navigationJoins ?? [])
+        navigationJoins.push({
+          region: `${placement.id}/${surface.navigationRegion}`,
+          owner: placement.id,
+          edge: orientNavigationJoin(points, [
+            transform(surface.node, edge[0]),
+            transform(surface.node, edge[1]),
+          ]),
+        });
       // Fit before integer quantization so height remains exact after placement.
       const plane = heightPlane(points.map(([x, y, z]) => [x, y - z, z]));
       const target = gameplay.movementClearances?.includes(surface)
@@ -612,6 +627,15 @@ export function compileAssetGameplay(
     doors.some((door) => door.interior === id),
   );
   const assembledLifts = assembleLiftSegments(lifts);
+  const assembledNavigation = assembleNavigationJoins(navigationJoins);
+  for (const surface of [...surfaces, ...projectionSupports])
+    if (surface.navigationRegion)
+      surface.navigationRegion =
+        assembledNavigation.identities.get(surface.navigationRegion) ?? surface.navigationRegion;
+  for (const join of assembledNavigation.unmatched)
+    warnings.push(
+      `Navigation region ${join.region}: no matching boundary edge after placement; region remains independent.`,
+    );
   const assembledJumps = assembleJumpSegments(jumpSegments);
   jumpPairs.push(...assembledJumps.pairs);
   for (const segment of assembledJumps.unmatched)

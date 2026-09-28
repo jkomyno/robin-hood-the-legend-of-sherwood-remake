@@ -14,7 +14,7 @@ intended construction, not functionality available today.
 | Background image and minimap | Render placed models/textures; downsample the minimap. | Working |
 | Character occlusion | Bake a 16-bit depth PNG from scene geometry. | Working for static scenes |
 | Projectile/view/obstacle masks and masking polylines | Rasterize asset-local coverage triangles after placement; rebuild masking boundaries, receiving layers and obstacle/state links. A depth PNG alone does **not** replace all these semantics. | Partial: explicit mask authoring, raster compilation, ZIP packaging and native state links tested; recovery/publication and visual/depth state integration remain unfinished |
-| Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions or explicit local regions spanning several planes, then assign fresh sectors/layers. | Partial: flat/sloped surfaces, holes and ordinary multi-plane regions tested; cross-asset multi-plane joins and full-map connectivity unfinished |
+| Walkable regions and layers | Transform asset-local surface polygons and heights; join coplanar regions, local multi-plane regions or matching authored boundary edges across assets, then assign fresh sectors/layers. | Partial: flat/sloped surfaces, holes and cross-asset multi-plane joins tested; join recovery/publication and full-map connectivity unfinished |
 | Movement blockers | Transform explicit asset-local movement contours; optionally select permanent part/volume solids and intersect them with walkable surfaces. Sight states stay independent. | Working in synthetic tests; recovered ownership still needs review |
 | Openings in movement collision | Asset-local clearances remove only the owning asset's derived collision on the matching plane; sight geometry and other assets remain intact. | Working in compiler/runtime tests; recovery geometry failures remain explicit gaps |
 | Navigation graph and fast-find grid | Engine constructs routing and spatial lookup structures from compiled geometry. No copied grids or graph bytes. | Working on synthetic maps |
@@ -90,6 +90,29 @@ These are unpublished drafts, not completed map exports or in-game round-trip
 parity results. All nine recovered maps have now passed static construction;
 no map has yet been certified at full parity, and authored maps still require
 published gameplay definitions for their assets.
+
+Ordinary walkable surfaces can declare `navigationJoins`: pairs of local 3D
+endpoints on an outer edge, alongside an asset-local `navigationRegion` label.
+Compilation validates each edge against its surface, transforms it with the
+asset and joins only coincident, opposing boundary edges from different placements.
+The assembled region retains each receiving plane and material definition.
+Unmatched edges leave independent regions and produce a diagnostic; overlapping
+copies, multiple matches and sockets away from the surface boundary fail.
+Rotation and duplication tests preserve independent assemblies. Two separate
+assets export exactly the existing multi-plane native fixture, whose reachability
+check crosses the plane boundary without a door or lift. Packet conversion retains
+the local edge definitions without runtime sector identities.
+
+A staged Lincoln north-curtain pair uses this metadata on the east and west wall
+assets. Its complete baseline geometry is unchanged; moving either wall one pixel
+east detaches the join and increases movement areas from 113 to 114. All three
+descriptors load natively with 654 sight obstacles, 89 doors and ten jump pairs.
+The authored surface drafts and diagnostics are under
+`work/map-compile/lincoln-navigation-join-native`. These definitions are not yet
+integrated into repeatable recovery or published assets. A full-edge candidate
+audit found no exact Derby seam in the tested drafts; boundary/height differences
+still require authoring work. This does not certify full-map connectivity or actor
+traversal on recovered maps.
 
 The native compiler interchange accepts typed mask bitmaps with character and
 projectile polylines, view flags and regenerated sight-obstacle references.
