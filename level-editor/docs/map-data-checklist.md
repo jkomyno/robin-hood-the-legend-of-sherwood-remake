@@ -246,6 +246,24 @@ give identical sampled native heights. Full receiving-priority and traversal
 verification is still required; the candidate remains outside the reviewed catalog
 and the regenerated definitions remain unpublished.
 
+The receiving-plane migration was also checked across all nine source maps.
+`work/map-compile/all-plane-anchor-native/diagnostics.json` records nine successful
+native constructions. `pipeline/src/compare-receiving-plane-anchors.ts` compares
+ordered anchor triples at float32 bit precision, including the export-frame
+offset, and reports receivers without anchors separately. Its baseline audit
+(`anchor-roundtrip.json` in the same directory) finds all 698 explicit receiver
+triples unchanged: Croisement01 27, Croisement02 21, Croisement03 14, Derby 78,
+Leicester 63, Lincoln 118, Nottingham 106, Sherwood 17 and York 254. This checks
+anchor values, not whether the correct source receiver owns each point.
+
+Another 413 elevated receivers still use polygon-derived planes and default
+material 0. These are generated fallback coverage outside the explicit material
+supports; they need separate coverage/ownership review. Their total projected
+area is not uniformly negligible: approximately 4,744.89 pixels squared in
+Leicester, 3,501.57 in Sherwood, 1,331.40 in Lincoln and 735.89 in Derby. Passing
+construction and anchor-value checks therefore does not establish full receiving
+coverage or material parity. All recovered definitions remain unpublished.
+
 The ignored native test
 `recovered_projection_partitions_preserve_sampled_runtime_queries` reads a
 `ROBIN_PROJECTION_COMPARISON` manifest with `before`/`after` descriptor paths and

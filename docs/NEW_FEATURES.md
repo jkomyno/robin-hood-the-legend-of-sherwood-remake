@@ -116,6 +116,10 @@
   A small difference in which authored plane owns coverage still needs review.
   Shipping datadir 19 / mission 10 preserve these anchors; older binary shipping
   bundles require regeneration. Existing hackable JSON remains compatible.
+  All nine recovered static maps construct natively with the new anchors. An
+  ordered float32 anchor audit finds 698 exact source matches and separately
+  reports 413 fallback receivers without explicit anchors. Those receivers still
+  need coverage/material ownership review; these checks do not certify full parity.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York
