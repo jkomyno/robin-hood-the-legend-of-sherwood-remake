@@ -31,6 +31,21 @@ export function recoverMaskSurface(
     if (triangle.some((p) => p.length !== 3 || !p.every(Number.isFinite)))
       throw new Error("Invalid mask recovery surface");
     const projected: Point[] = triangle.map(([x, y, z]) => [x, y - z]);
+    const bounds = {
+      left: Math.min(...projected.map((p) => p[0])),
+      right: Math.max(...projected.map((p) => p[0])),
+      top: Math.min(...projected.map((p) => p[1])),
+      bottom: Math.max(...projected.map((p) => p[1])),
+    };
+    // Unrelated faces cannot contribute coverage or compete for visible depth.
+    // Reject them before fitting potentially ill-conditioned edge-on planes.
+    if (
+      bounds.left >= mask.box_top_left[0] + mask.box_size[0] ||
+      bounds.right <= mask.box_top_left[0] ||
+      bounds.top >= mask.box_top_left[1] + mask.box_size[1] ||
+      bounds.bottom <= mask.box_top_left[1]
+    )
+      return [];
     const [a, b, c] = projected;
     const determinant = (b![0] - a![0]) * (c![1] - a![1]) - (c![0] - a![0]) * (b![1] - a![1]);
     if (Math.abs(determinant) < 1e-8) return [];
@@ -40,10 +55,7 @@ export function recoverMaskSurface(
         triangle,
         projected,
         plane,
-        left: Math.min(...projected.map((p) => p[0])),
-        right: Math.max(...projected.map((p) => p[0])),
-        top: Math.min(...projected.map((p) => p[1])),
-        bottom: Math.max(...projected.map((p) => p[1])),
+        ...bounds,
       },
     ];
   });

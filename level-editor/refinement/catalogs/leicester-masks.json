@@ -1,0 +1,50 @@
+{
+  "source_sha256": "b908102046d94d6029ec7144156499a89f225834f9d27953f4202dee05bdeb53",
+  "recipes": [
+    {
+      "asset": "leicester-church-side-tower",
+      "model_sha256": "1c2a831d839e0bf5132722e7d743a6b419d1ade2b2a87543ecbd65dc861a40c4",
+      "entries": [
+        {
+          "source": 288,
+          "id": "tower-projectile-occlusion",
+          "node": "building-198",
+          "anchor": [
+            1630,
+            580,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0
+          ],
+          "review": "Static projectile mask; all linked obstacles belong to this asset and the complete bitmap is supported by its mesh. Projectile boundaries use the world XY datum; the receiving anchor is verified against the source navigation layer."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-great-keep",
+      "model_sha256": "35111663282fafd6bddcdf2afa47c1b0370bf890c6d90c03b094602989e3fbbf",
+      "entries": [
+        {
+          "source": 415,
+          "id": "keep-west-projectile-occlusion",
+          "node": "building-324",
+          "anchor": [
+            630,
+            650.001,
+            140.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Static projectile mask; all linked obstacles belong to this asset and the complete bitmap is supported by its mesh. Projectile boundaries use the world XY datum; the receiving anchor is verified against the source navigation layer."
+        }
+      ]
+    }
+  ]
+}

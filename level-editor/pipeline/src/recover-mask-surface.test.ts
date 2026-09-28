@@ -49,6 +49,23 @@ test("partial edge cells recover only when compiler pixel samples remain exact",
   assert.throws(() => recoverMaskSurface(source, inset(0.6), identity), /no owner surface/);
 });
 
+test("unrelated nearly edge-on faces do not invalidate supported mask recovery", () => {
+  const source = mask(["1111", "1111", "1111", "1111"]);
+  const remote: MaskTriangle = [
+    [1644, 574.9998508236176, 231.00012309998974],
+    [1641.886962890625, 575.3520057407106, 226.0062138972354],
+    [1641.8128662109375, 575.364354567705, 230.63561939019456],
+  ].map(([x, y, z]) => [x!, y! + z!, z!]) as MaskTriangle;
+  assert.deepEqual(
+    recoverMaskSurface(source, [...surface(() => 0), remote], identity),
+    recoverMaskSurface(
+      source,
+      surface(() => 0),
+      identity,
+    ),
+  );
+});
+
 test("surface recovery preserves cutouts on sloped geometry and localizes once", () => {
   const source = mask(["1111", "1001", "1001", "1111"]);
   const recovered = recoverMaskSurface(

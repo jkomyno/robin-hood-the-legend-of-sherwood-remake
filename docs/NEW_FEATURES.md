@@ -80,8 +80,9 @@
   into local state IDs after ownership is established, with independent compiled
   references for duplicated assets.
   Reviewed static-mask recipes now run in the asset migration with pinned source
-  and model hashes. Three Derby postern/gatehouse masks have exact coverage and boundary
-  round-trips, including placement and native registration checks; full-map
+  and model hashes. Three Derby postern/gatehouse masks and two Leicester
+  church-tower/keep masks have exact coverage and boundary round-trips,
+  including placement and native registration checks; full-map
   recovery and publication remain incomplete.
   A surface-support audit reports missing pixels, interior gaps and repair bounds
   for reviewed mask sets, including whether both sides of a state change have

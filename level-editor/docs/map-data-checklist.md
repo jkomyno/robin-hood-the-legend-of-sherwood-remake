@@ -219,6 +219,23 @@ drafts are under `work/map-compile/reviewed-mask-recovery/derby` and the native
 descriptor under `work/map-compile/reviewed-mask-native`. Derby still has 233
 unrecovered masks; neither the complete asset nor map is publication-certified.
 
+Leicester has two reviewed static projectile masks in
+`refinement/catalogs/leicester-masks.json`: church side tower record 288 (20,011
+covered pixels, three local obstacle links) and great keep record 415 (4,552
+pixels, one obstacle link). Their receiving anchors are respectively on nearby
+ground and the keep's 140.001-unit-high walking surface. Both preserve exact
+coverage, flags, open projectile boundaries and obstacle links after each asset
+moves one pixel east. Native loading passes for the baseline and both moved
+scenes; baseline non-mask data is unchanged. Moving the tower detaches one jump
+pair and its gate; the keep move retains its connections. Drafts are under
+`work/map-compile/leicester-mask-recovery`, with native diagnostics in
+`work/map-compile/leicester-mask-native`. Leicester still has 464 unrecovered
+masks; neither asset has complete mask coverage or mask-controlled depth enabled.
+
+Recovery discards faces outside a mask's bounds before fitting their depth
+planes. This avoids numerical failures from unrelated nearly edge-on faces
+without relaxing planarity or coverage checks for contributing surfaces.
+
 `pipeline/src/audit-mask-surfaces.ts` checks pixel support for an explicitly
 selected asset and mask indices. It pins source/model/scene hashes, reports missing
 pixel counts and repair bounds, and checks whether every mask in each affected
