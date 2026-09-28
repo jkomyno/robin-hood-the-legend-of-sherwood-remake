@@ -27,6 +27,7 @@ import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/as
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
+import { recoverAuthoredSounds } from "./recover-authored-sounds.ts";
 import { containsLightPolygon, recoverLightField } from "./recover-light-region.ts";
 import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry.ts";
 import { terrainOwnsJump } from "./terrain-jump-ownership.ts";
@@ -1356,8 +1357,12 @@ for (const [index, obstacle] of proto.sight_obstacles.entries()) {
     recoveredMaterials.add(material);
   }
 }
-let recoveredSounds = 0;
+const authoredSounds = recoverAuthoredSounds(document, descriptors, proto.sound_sources);
+const authoredSoundSources = new Set(authoredSounds.flatMap((asset) => asset.sourceIndices));
+for (const asset of authoredSounds) packet(asset.asset).sounds = asset.sounds;
+let recoveredSounds = authoredSoundSources.size;
 for (const [index, sound] of proto.sound_sources.entries()) {
+  if (authoredSoundSources.has(index)) continue;
   if (sound.global && groundMaterialOwners.length === 1) {
     const p = packet(groundMaterialOwners[0]!.id);
     (p.sounds ??= []).push(recoverSoundSource(sound, `ambient-sound-${index}`, "$root", (p) => p));
@@ -1627,6 +1632,10 @@ const report = {
   ),
   definitionValidation,
   lightRecovery,
+  authoredSoundRecovery: authoredSounds.map(({ asset, sourceIndices }) => ({
+    asset,
+    sources: sourceIndices,
+  })),
   maskRecovery: maskRecovery.map(({ asset, source, definition }) => ({
     asset,
     source,

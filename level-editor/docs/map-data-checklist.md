@@ -251,8 +251,10 @@ assets with a non-rendering gameplay frame. This is an explicit asset-authoring
 step, not an automatic fallback for unowned emitters. Derby's west and north edge
 emitters (source records 4/5) are authored this way by
 `refinement/catalogs/derby-ambient-sounds.json`. The authoring command checks the
-source hash and writes standalone descriptors, empty frame models and pinned
-placement references; compilation reads only those assets.
+source hash and writes standalone descriptors, empty frame models, identical
+runtime derivatives with hash receipts, and pinned placement references;
+compilation reads only those assets. Catalog publication preserves the
+non-rendering gameplay-frame marker and acoustic definitions.
 
 ```sh
 node pipeline/src/author-ambient-sound-assets.ts \
@@ -268,8 +270,11 @@ pixels east changes only its emitter geometry. Native construction checks sample
 selection, preserved source handles, polylines and delay parameters before/after
 the move. This composed Derby diagnostic accounts for 5 of 12 sound sources;
 seven remain unresolved. Assets and the composed diagnostic remain staged, not
-published as a complete map. The normal recovery report does not yet include this
-separate authoring step.
+published as a complete map. Recovery recognizes the placed sound-region assets,
+matches their compiled definitions to exactly one unclaimed source each, and
+preserves their asset-local definitions. Duplicate or mismatched sources fail
+instead of being counted twice. The integrated Derby report contains 43 assets
+and seven pending sound sources.
 
 Light recovery preserves projection priority and fits receiving planes from the
 leading three vertices. Elevated light contours may extend outside navigation

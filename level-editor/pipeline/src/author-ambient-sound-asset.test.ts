@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { NodeIO } from "@gltf-transform/core";
 import { authorAmbientSoundAsset } from "./author-ambient-sound-asset.ts";
+import { recoverAuthoredSounds } from "./recover-authored-sounds.ts";
 import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import type { SoundSource } from "../../shared/src/level.ts";
@@ -45,7 +46,17 @@ test("standalone ambient assets compile exactly, remain invisible, and move inde
   const bounds: [number, number, number, number] = [0, 0, 3000, 3000];
   const original = compileAssetGameplay(document, assets, bounds);
   assert.deepEqual(original.sound_sources, [sound]);
+  const recovered = recoverAuthoredSounds(document, assets, [sound]);
+  assert.equal(recovered.length, 1);
+  assert.deepEqual(recovered[0]!.sourceIndices, [0]);
+  recovered[0]!.sounds[0]!.spatial!.polyline[0]![0] = 999;
+  assert.equal(descriptor.gameplay!.sounds![0]!.spatial!.polyline[0]![0], 0);
+  assert.throws(
+    () => recoverAuthoredSounds(document, assets, [sound, sound]),
+    /exactly one unclaimed/,
+  );
   placement.transform.dx += 100;
+  assert.throws(() => recoverAuthoredSounds(document, assets, [sound]), /exactly one unclaimed/);
   const moved = compileAssetGameplay(document, assets, bounds);
   assert.deepEqual(moved.sound_sources, [
     { ...sound, polyline: sound.polyline!.map(([x, y]) => [x + 100, y]) },
@@ -59,6 +70,15 @@ test("standalone ambient assets compile exactly, remain invisible, and move inde
     transform: { ...placement.transform, dx: 200 },
   });
   assert.equal(compileAssetGameplay(document, assets, bounds).sound_sources!.length, 2);
+  assert.throws(
+    () => recoverAuthoredSounds(document, assets, [sound]),
+    /exactly one placed instance/,
+  );
+  document.objects = document.objects.filter((p) => !p.node.startsWith(`asset:${descriptor.id}:`));
+  assert.throws(
+    () => recoverAuthoredSounds(document, assets, [sound]),
+    /exactly one placed instance/,
+  );
 });
 
 test("ambient authoring rejects global, incomplete and invalid definitions", async () => {

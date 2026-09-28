@@ -1,4 +1,5 @@
 import polygonClipping, { type Polygon } from "polygon-clipping";
+import { compileSoundSource } from "./compile-sound-source.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
 import { assembleJumpSegments, type PlacedJumpSegment } from "./assemble-jump-segments.ts";
@@ -315,26 +316,7 @@ export function compileAssetGameplay(
           : {}),
       });
     }
-    for (const sound of gameplay.sounds ?? []) {
-      const s = sound.spatial;
-      // Global emitters still require their owning part to be present.
-      if (!s) transform(sound.node, [0, 0, 0]);
-      sounds.push({
-        id: sound.sample,
-        active: sound.active,
-        source_kind: sound.kind,
-        delayed_params: sound.delay ? [...sound.delay] : null,
-        global: !s,
-        polyline: s ? s.polyline.map((p) => project(transform(sound.node, p))) : null,
-        inner_distance: s?.innerDistance ?? null,
-        outer_distance: s?.outerDistance ?? null,
-        inner_volume: s?.innerVolume ?? null,
-        outer_volume: s?.outerVolume ?? null,
-        noise_covering_distance: s?.noiseCoveringDistance ?? null,
-        altitude: sound.altitude,
-        ambience_filter: sound.ambiences,
-      });
-    }
+    for (const sound of gameplay.sounds ?? []) sounds.push(compileSoundSource(sound, transform));
     const partSight = new Map<string, SightObstacle>();
     const movementSolid = (id: string) =>
       gameplay.movementSolids?.includes(id) ?? gameplay.movementBlockers === undefined;

@@ -58,6 +58,18 @@ for (const asset of assets) {
   await fs.mkdir(path.join(values.out, root), { recursive: true });
   await fs.writeFile(path.join(values.out, root, "asset.json"), descriptor);
   await fs.writeFile(path.join(values.out, root, "model.glb"), asset.model);
+  // Empty gameplay-frame models are already minimal; the runtime derivative is identical.
+  await fs.writeFile(path.join(values.out, root, "lossy.glb"), asset.model);
+  await fs.writeFile(
+    path.join(values.out, root, "lossy.glb.receipt.json"),
+    JSON.stringify({
+      source: hash(asset.model),
+      output: hash(asset.model),
+      producer: "author-ambient-sound-assets",
+      mode: "identity-gameplay-frame",
+      version: 1,
+    }) + "\n",
+  );
   assetSources.push({
     id: asset.descriptor.id,
     descriptor: `${root}/asset.json`,

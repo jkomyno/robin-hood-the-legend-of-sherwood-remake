@@ -68,6 +68,21 @@ class PublishLibraryTest(unittest.TestCase):
         self.assertNotIn('scenes/unrelated.webp', report['payloads'])
         self.assertEqual((self.root/'deploy/site/editor/library/scenes/test.webp').read_bytes(), b'thumbnail')
 
+    def test_nonrendering_sound_frames_survive_publication(self):
+        descriptor = json.loads((self.asset/'asset.json').read_bytes())
+        descriptor['parts'] = [{'node': 'scenery-emitter', 'scenery': True,
+                                'gameplay_only': True}]
+        descriptor['gameplay'] = {'version': 1, 'collision': 'none',
+            'surfaces': [], 'doors': [], 'sounds': [{'id': 'ambient',
+            'node': 'scenery-emitter', 'sample': 54, 'active': True,
+            'kind': 2, 'delay': [150, 500, 5], 'altitude': 1, 'ambiences': 255}]}
+        (self.asset/'asset.json').write_text(json.dumps(descriptor))
+        self.stage()
+        index = json.loads((self.root/'deploy/site/editor/library/3d-assets/index.json').read_bytes())
+        editor = index['assets'][0]['editor']
+        self.assertEqual(editor['parts'], descriptor['parts'])
+        self.assertEqual(editor['gameplay'], descriptor['gameplay'])
+
     def test_indexed_game_data_is_shipped(self):
         game_data = self.library/'game-data'
         files = {'Data/Levels/Mission.rhm.json': b'{"mission":1}',
