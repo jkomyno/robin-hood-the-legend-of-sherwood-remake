@@ -6603,6 +6603,16 @@
   },
   "grouping_policy": "One asset per distinct building, including adjoining houses. Towers and gatehouses are independent assets even when attached. Roofs, walls and details stay with their individual building.",
   "review_scope": "Complete imported static geometry ownership; state-only sprites and absent geometry are separately inventoried.",
+  "physical_volume_sources": [
+    {
+      "obstacle": 650,
+      "owner": "york-west-market-frontage-shared-occlusion-volume",
+      "node": "building-650--component-front-shop",
+      "source_sha256": "6a3a1ee8105bf9614bc4daf1f32aa19a7afaacfadd9cbf5ec250239b502fee97",
+      "model_sha256": "dab0394b30c4c4472d4142f65158f9e2b8fc01532953742d88ec8002ce81ad7e",
+      "reason": "All five components belong to this dedicated shared occlusion asset. Their individual bounds change the shared footprint and bottom/top planes. Preserve the single physical volume independently of the visual components."
+    }
+  ],
   "nonrendering_sources": [
     {
       "obstacle": 115,

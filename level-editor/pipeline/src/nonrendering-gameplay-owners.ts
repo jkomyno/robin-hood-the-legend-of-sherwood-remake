@@ -4,6 +4,14 @@ import type { InteriorSourceDeclaration } from "./recovery-interior-sources.ts";
 export interface GameplayOwnershipCatalog {
   groups: { id: string; parts: { obstacle?: number }[] }[];
   nonrendering_sources?: { obstacle: number; owner: string }[];
+  /** Restore one physical volume spanning all physical parts of a dedicated asset. */
+  physical_volume_sources?: {
+    obstacle: number;
+    owner: string;
+    node: string;
+    source_sha256: string;
+    model_sha256: string;
+  }[];
   /** Offline ownership only; compiled assets retain no patch indices. */
   movement_transitions?: { patch: number; owner: string; node: string }[];
   door_sources?: { doors: number[]; owner: string; node: string; reason: string }[];

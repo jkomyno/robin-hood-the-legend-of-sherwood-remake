@@ -1366,3 +1366,30 @@ jump corridor prevents that assignment. Split-asset ownership uses each actual
 part footprint, allowing an edge to span multiple planes of one asset while
 rejecting gaps between them. York's staged stone-shop roof resolves the final two
 pairs. Recovery coverage is not a connectivity parity proof.
+
+The physical-volume audit also checks whether visual component bounds preserve
+the shared sight footprint and ordered bottom/top planes. Twenty-six split
+records across Lincoln, Nottingham, Sherwood and York differ in footprint or
+height; these are not certified equivalent merely because every record has an
+asset owner. The audit is `work/map-compile/sight-partition-audit.json`.
+
+York record 650 is wholly owned by the dedicated west-market shared occlusion
+asset. Its five visual component bounds add about 1,154 square game units and
+change the height planes. A reviewed `physical_volume_sources` declaration now
+restores one asset-local volume and disables collision from the component bounds.
+Recovery checks source/model hashes and exclusive ownership of every physical
+part; receiving geometry or material regions require separate authoring. The
+compiler reads only the resulting local definition, which moves with the asset.
+The visual model remains intact. Other split records span separate assets and
+still require ownership and geometry work; they cannot use this whole-asset fix.
+
+`work/map-compile/york-whole-volume-recovery` retains the twenty reviewed masks.
+The baseline and translated drafts reproduce the shared volume's ordered points
+and flags at engine precision and construct 192 movement areas, 1,197 sight
+obstacles, 254 doors and 72 jump pairs in Rust. Duplicating the complete asset
+retains the first volume and adds exactly one independently translated volume;
+the resulting 1,198-obstacle draft also constructs in Rust. Unit tests cover
+rotation and duplication through the recovery-to-compiler path.
+This is scoped geometry validation;
+808 York masks and other previously listed gaps remain pending. No asset or map
+is certified or published by this recovery.

@@ -68,6 +68,7 @@ import { quantizeGeneratedMotionPolygon } from "../../shared/src/motion-quantiza
 import { partitionRecoverySurfaces } from "./recovery-surface-partition.ts";
 import { recoverSurfaceOwners } from "./recovery-surface-owners.ts";
 import { recoverMovementClearance } from "./recover-movement-clearance.ts";
+import { recoverWholeAssetVolume } from "./recover-whole-asset-volume.ts";
 import { normalizeGameplayStateViews } from "../../shared/src/gameplay-state-views.ts";
 import { declaredEndpointBindings, recoverDeclaredEndpoint } from "./recovery-endpoint-binding.ts";
 import {
@@ -242,6 +243,40 @@ if (ownership)
       `Non-rendering gameplay restored from explicit ownership: ${entry.declaredOwner}`,
     );
   }
+for (const entry of ownership?.physical_volume_sources ?? []) {
+  const descriptor = descriptors.get(entry.owner);
+  const source = proto.sight_obstacles[entry.obstacle];
+  const owners = locals.get(entry.obstacle) ?? [];
+  const frames = owners.filter((owner) => owner.node === entry.node);
+  const pin = inputDocument.assetSources?.find((asset) => asset.id === entry.owner);
+  if (
+    !descriptor ||
+    !source ||
+    frames.length !== 1 ||
+    owners.some((owner) => owner.asset !== entry.owner) ||
+    pin?.model_sha256 !== entry.model_sha256 ||
+    createHash("sha256").update(sourceBytes).digest("hex") !== entry.source_sha256
+  )
+    throw new Error(`Whole-volume ownership or source pins changed: ${entry.owner}`);
+  const owner = frames[0]!;
+  const draft = packet(entry.owner);
+  if (draft.collision !== undefined || draft.volumes?.length)
+    throw new Error(`Whole-volume recovery would replace existing definitions: ${entry.owner}`);
+  const recovered = recoverWholeAssetVolume({
+    descriptor,
+    source,
+    sourceIndex: entry.obstacle,
+    node: entry.node,
+    localize: (point) => localize(owner.part, point),
+  });
+  Object.assign(draft, recovered);
+  locals.set(entry.obstacle, [
+    { ...owner, collisionId: recovered.volumes[0].id, sourceShape: source },
+  ]);
+  draft.issues.push(
+    "Reviewed whole physical volume replaces visual component bounds; verify placement before publication",
+  );
+}
 const coverage: unknown[] = [];
 const movementStateInventory: {
   sector: number;
