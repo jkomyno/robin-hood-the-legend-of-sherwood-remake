@@ -1393,3 +1393,28 @@ rotation and duplication through the recovery-to-compiler path.
 This is scoped geometry validation;
 808 York masks and other previously listed gaps remain pending. No asset or map
 is certified or published by this recovery.
+
+Nottingham's front-market record 12 now has an explicitly reviewed partition
+recipe in `refinement/catalogs/nottingham-market-volume-partitions.json`.
+`pipeline/src/author-volume-partitions.ts` verifies source, model and descriptor
+hashes, assigns every owner once, and writes independent draft descriptors. It
+preserves the outer contour and constant bottom/top heights while removing the
+east-green stall's extra collision across a notch. The four original meshes and
+all other physical parts remain unchanged. Sloped, receiving, material-linked,
+mask-linked and changing volumes require separate authoring and are rejected.
+
+The reopened overlay is `work/map-compile/nottingham-market-volume-stage-v3`;
+its recovered definitions are in `nottingham-market-volume-recovery`. The four
+compiled pieces differ from the reference footprint by 0.000056 square game
+units under fixed-point clipping, compared with roughly 2,512 extra square units
+before correction. All bottom heights are exactly zero and top heights match at
+engine precision. The baseline constructs 114 areas, 671 sight obstacles, 172
+doors and 38 jump pairs in Rust. Each stall also compiles and constructs when
+independently moved one unit east, with the other three volumes unchanged.
+Those movements separate navigation sockets and therefore change connection
+counts; they are placement checks, not baseline connectivity parity claims.
+Trial translations of 100 units east/south blocked nearby entrances and were
+rejected without suppressing collision. Full sight-query equivalence across
+partition seams, visual parity and publication remain unverified. These drafts
+retain sixteen reviewed static masks; 507 Nottingham masks remain pending in
+this recovery. The diagnostic manifest is `nottingham-market-volume-native`.

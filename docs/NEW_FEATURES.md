@@ -1,5 +1,11 @@
 # Post-port Features
 
+- **Reviewed physical-volume partitions.** Offline asset authoring can divide a
+  constant-height volume along explicit asset seams while checking coverage and
+  overlap. Source, model and descriptor hashes guard the extraction. Each piece
+  becomes local collision in its own asset; map compilation needs no source-level
+  lookup. Linked or sloped geometry requires separate authoring.
+
 - **Independent physical asset drafts.** Offline authoring can restore a reviewed
   missing object as a separate editor asset with local collision and a volume
   preview mesh. Source hashes and ownership recipes are checked before extraction;
