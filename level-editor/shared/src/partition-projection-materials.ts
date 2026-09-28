@@ -3,6 +3,7 @@ import { fixedClipping as clipping } from "./fixed-polygon-boolean.ts";
 import earcut, { flatten } from "earcut";
 import type { Point, SightObstacle } from "./level.ts";
 import { simplifyMotionRing } from "./motion-quantization.ts";
+import { equivalentProjectionPlanes } from "./native-projection-plane.ts";
 
 export interface ProjectionMaterialSupport {
   polygon: Point[];
@@ -74,13 +75,20 @@ export function partitionProjectionMaterials(
         (member.support.priority ?? 0) === (other.support.priority ?? 0) &&
         (member.support.tiePriority ?? 0) === (other.support.tiePriority ?? 0) &&
         (member.support.defaultMaterial !== other.support.defaultMaterial ||
-          JSON.stringify(member.support.planePoints) !==
-            JSON.stringify(other.support.planePoints) ||
+          !equivalentProjectionPlanes(member.support.planePoints, other.support.planePoints) ||
           (member.support.materialSignature ?? JSON.stringify(member.support.materialIndices)) !==
             (other.support.materialSignature ?? JSON.stringify(other.support.materialIndices))) &&
         overlap > 1e-7
       )
-        throw new Error("Overlapping receiving surfaces have conflicting projection materials");
+        throw new Error(
+          `Overlapping receiving surfaces have conflicting projection materials: ${member.support.owner ?? "unnamed"} and ${other.support.owner ?? "unnamed"}`,
+          {
+            cause: {
+              overlap,
+              supports: [structuredClone(member.support), structuredClone(other.support)],
+            },
+          },
+        );
     }
   members.sort(
     (a, b) =>

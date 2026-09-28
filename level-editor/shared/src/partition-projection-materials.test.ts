@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import clipping from "polygon-clipping";
 import { partitionProjectionMaterials } from "./partition-projection-materials.ts";
-import type { Point } from "./level.ts";
+import type { Point, SightObstacle } from "./level.ts";
 
 const square = (low: number, high: number): Point[] => [
   [low, low],
@@ -101,4 +101,48 @@ test("equivalent region definitions do not conflict merely because their indices
   ]);
   assert.equal(pieces.length, 1);
   assert.deepEqual(pieces[0]!.materialIndices, [3]);
+});
+
+test("equivalent native receiving planes retain authored anchors across an overlap", () => {
+  const boundary = square(0, 100);
+  const anchors: NonNullable<SightObstacle["projection_plane"]> = [
+    [0, 0, 20],
+    [100, 0, 20],
+    [0, 100, 20],
+  ];
+  const translated: typeof anchors = [
+    [1, 0, 20],
+    [101, 0, 20],
+    [1, 100, 20],
+  ];
+  const first = {
+    polygon: boundary,
+    defaultMaterial: 2,
+    materialIndices: [],
+    explicit: true,
+    owner: "wall",
+    planePoints: anchors,
+  };
+  const second = { ...first, owner: "tower", planePoints: translated };
+  const pieces = partitionProjectionMaterials(boundary, [first, second]);
+  assert.equal(pieces.length, 1);
+  assert.deepEqual(pieces[0]!.planePoints, anchors);
+  assert.deepEqual(second.planePoints, translated);
+  const conflict = { ...second, defaultMaterial: 4 };
+  assert.throws(
+    () => partitionProjectionMaterials(boundary, [first, conflict]),
+    (error) => {
+      assert(error instanceof Error);
+      assert.match(error.message, /wall and tower/);
+      assert(error.cause && typeof error.cause === "object" && "overlap" in error.cause);
+      assert.equal(error.cause.overlap, 10000);
+      return true;
+    },
+  );
+  second.planePoints = [
+    [1, 0, 20],
+    [101, 0, 21],
+    [1, 100, 20],
+  ];
+  assert.throws(() => partitionProjectionMaterials(boundary, [first, second]), /conflicting/);
 });

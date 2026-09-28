@@ -1120,6 +1120,39 @@ mod tests {
     use crate::position_interface::PlaneZCoeffs;
 
     #[test]
+    #[ignore = "requires editor coefficient fixtures via ROBIN_PROJECTION_PLANE_CASES"]
+    fn editor_receiving_plane_coefficients_match_native_initialization() {
+        #[derive(serde::Serialize, serde::Deserialize)]
+        struct Case {
+            points: [[f32; 3]; 3],
+            expected: [u32; 3],
+        }
+        let path = std::env::var("ROBIN_PROJECTION_PLANE_CASES").expect("coefficient fixture path");
+        let cases: Vec<Case> = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        assert!(!cases.is_empty());
+        for (index, case) in cases.iter().enumerate() {
+            let mut top = case.points;
+            let mut bottom = top;
+            orient_sight_obstacle_planes_like_original(&mut top, &mut bottom);
+            let coefficients = PlaneZCoeffs::from_plane_points(&top);
+            assert_eq!(
+                [
+                    coefficients.az.to_bits(),
+                    coefficients.bz.to_bits(),
+                    coefficients.dz.to_bits()
+                ],
+                case.expected,
+                "receiving plane {index}: {:?}",
+                case.points
+            );
+        }
+        println!(
+            "{} editor receiving-plane coefficient cases matched exactly",
+            cases.len()
+        );
+    }
+
+    #[test]
     fn downward_flat_sight_plane_preserves_original_signed_zero_increment() {
         // S01_Not_VL projection obstacle 81, on which interactive Soldier146
         // starts moving at frame 416. Its authored winding points down.

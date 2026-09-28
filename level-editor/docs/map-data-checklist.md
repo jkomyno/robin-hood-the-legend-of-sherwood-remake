@@ -1465,9 +1465,10 @@ recovery and native diagnostics use the matching `-recovery` and `-native`
 directories. The baseline constructs 114 areas, 667 sight obstacles, 172 doors
 and 38 jump pairs. Moving both wall assets and the attached southwest stair one
 unit west also constructs, with 171 doors and 37 jump pairs as external sockets
-separate. Moving only the north wall east causes conflicting receiving surfaces;
-moving it west leaves the separate stair's landing unsupported. Those failures
-remain explicit. This does not certify arbitrary detached wall/stair placements,
+separate. After correcting comparison of equivalent receiving planes, moving only
+the north wall east now reaches the separate stair's unsupported landing check;
+moving it west also leaves that landing unsupported. Those failures remain
+explicit. This does not certify arbitrary detached wall/stair placements,
 receiving-surface parity, appearance or publication.
 
 York records 213 and 876 now have reviewed partition recipes in
@@ -1511,12 +1512,26 @@ Their assembled reference vertices match at engine precision, and each passes
 The overlay is `work/map-compile/lincoln-parapet-volume-stage`; recovery uses the
 matching `-recovery` directory and retains four reviewed masks, with 424 still
 pending. The baseline constructs 113 areas, 567 sight obstacles, 89 doors and 10
-jump pairs. Both curtain-wall assets independently moved one unit east also
-construct in Rust with 568 sight obstacles and unchanged door/jump counts. Their
-successful batch is `lincoln-parapet-volume-walls-native`. The complete movement
-attempt batch, `lincoln-parapet-volume-native`, remains marked incomplete:
-moving either the corner turret or angle bastion triggers conflicting receiving
-materials. The baseline-only query inputs are under
-`lincoln-parapet-volume-baseline-native`. These placement errors, visual parity
-and publication remain unresolved. Seven of the twenty-six audited split records
-now have correction drafts; nineteen remain uncorrected in that audit.
+jump pairs. All four assets independently moved one unit east now compile and
+construct in Rust. The corner turret produces 569 sight obstacles; the other
+three produce 568, with unchanged door/jump counts throughout. The complete
+successful batch is `lincoln-parapet-volume-native`. The baseline-only query
+inputs are also retained under `lincoln-parapet-volume-baseline-native`.
+Visual parity and publication remain unresolved. Seven of the twenty-six audited
+split records now have correction drafts; nineteen remain uncorrected in that audit.
+
+Receiving-material conflict checks compare the native binary32 height-plane
+coefficients after winding correction, rather than requiring identical anchor
+coordinates. Moving a flat surface can change its anchors without changing its
+runtime plane. The compiler retains authored anchors and still rejects different
+materials or coefficients, including signed-zero differences. Regression tests
+cover these distinctions; 10,000 deterministic flat/sloped triangles matched Rust
+initialization bit-for-bit using `editor_receiving_plane_coefficients_match_native_initialization`
+and `ROBIN_PROJECTION_PLANE_CASES`. This fixes the false Lincoln conflicts without
+claiming complete receiving coverage, traversal or map parity.
+
+To reproduce the coefficient comparison, run
+`node --test shared/src/native-projection-plane.test.ts` from `level-editor` with
+`ROBIN_PROJECTION_PLANE_CASES` set to an absolute output JSON path. Then use the
+same environment variable from the repository root with
+`cargo test -j 1 -p robin_engine --lib editor_receiving_plane_coefficients_match_native_initialization -- --ignored --nocapture`.
