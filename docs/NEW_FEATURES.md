@@ -1,5 +1,12 @@
 # Post-port Features
 
+- **Asset-owned obstacle query order.** Gameplay definitions can assign query
+  precedence to physical part and volume IDs. Compilation preserves this order
+  after placement and volume assembly, rebuilding mask and sight-state indices.
+  Equal priorities retain placement order; incompatible priorities on joined
+  volumes fail. Offline recovery extracts precedence into assets, so export
+  requires no source-level lookup.
+
 - **Explicit visual-component collision ownership.** Asset parts can retain their
   visual bounds and provenance while disabling physical collision. Offline
   `author-owned-volume.ts` assigns a reviewed unlinked volume to one asset frame,

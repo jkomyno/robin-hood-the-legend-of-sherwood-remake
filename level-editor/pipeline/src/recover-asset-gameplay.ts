@@ -1860,6 +1860,15 @@ const pending = {
   shadowRegions: proto.light_sectors.length - recoveredLights,
   soundSources: proto.sound_sources.length - recoveredSounds,
 };
+for (const [order, owners] of locals)
+  for (const owner of owners) {
+    const p = packet(owner.asset);
+    const id = owner.collisionId ?? owner.node;
+    const orders = (p.sightOrder ??= {});
+    if (orders[id] !== undefined && orders[id] !== order)
+      throw new Error(`Ambiguous physical query order: ${owner.asset}/${id}`);
+    orders[id] = order;
+  }
 await fs.mkdir(values.out, { recursive: true });
 const definitionValidation: { asset: string; valid: boolean; error?: string }[] = [];
 for (const [asset, p] of packets) {

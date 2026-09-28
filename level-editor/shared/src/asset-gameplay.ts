@@ -95,6 +95,8 @@ export interface AssetGameplay {
   version: 1;
   /** Reuse part obstacles or disable them; explicit gameplay volumes remain independent. */
   collision: "parts" | "none";
+  /** Query precedence for local physical part/volume IDs; lower values run first. */
+  sightOrder?: Record<string, number>;
   /** Gameplay volumes attached to an existing frame; no rendered mesh is required. */
   volumes?: {
     id: string;
@@ -327,6 +329,24 @@ export function validateAssetGameplay(
   );
   if (data.version !== 1 || !["parts", "none"].includes(data.collision))
     fail("invalid gameplay version or collision mode");
+  if (data.sightOrder !== undefined) {
+    if (!data.sightOrder || typeof data.sightOrder !== "object" || Array.isArray(data.sightOrder))
+      fail("invalid sight query order");
+    for (const [id, order] of Object.entries(data.sightOrder))
+      if (
+        !Number.isSafeInteger(order) ||
+        order < 0 ||
+        disabledParts.has(id) ||
+        !(
+          data.volumes?.some((v) => v.id === id) ||
+          (data.collision === "parts" &&
+            descriptor.parts.some(
+              (p) => p.node === id && p.obstacle_local_game && p.mission_profile === undefined,
+            ))
+        )
+      )
+        fail(`invalid sight query order for ${id}`);
+  }
   if (
     data.environment !== undefined &&
     (descriptor.editor_usage !== "map-background" ||

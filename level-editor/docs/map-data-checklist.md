@@ -1627,4 +1627,33 @@ source-dependent export path. The diagnostic deliberately remains
 failing for this export. It compares full obstacle lists without a fast-find grid,
 and does not certify receiving layers, mouse selection, materials or actor routing.
 Eleven of the twenty-six audited split records have correction drafts; fifteen
-remain. Full-scene impact order must also be recovered as asset-owned behavior.
+remain. The ordering correction below addresses the demonstrated impact gap.
+
+`AssetGameplay.sightOrder` now maps local part/volume IDs to explicit query
+precedence. Offline recovery writes this metadata into each asset candidate;
+compilation reads only these asset definitions. It orders the final physical
+volumes after assembly and rebuilds every mask and initial/applied sight-state
+reference. Joined pieces must agree on explicit precedence. Equal values retain
+placement order, while unranked authored volumes retain their relative order
+after ranked volumes. Movement and duplication carry the metadata with the asset.
+
+The corrected Sherwood candidates are in `sherwood-ordered-owner-recovery`, with
+compiled diagnostics in `sherwood-ordered-owner-native`. The actual compiler output
+now passes the same 200,000 whole-scene solid/opaque queries with zero sight or
+impact differences, without diagnostic reordering. Baseline and all three moved
+treehouse/platform cases construct 29 areas, 143 sight obstacles, 15 doors and
+one jump pair in Rust. Tests also cover remapping masks/state links, stable ties,
+invalid asset references and conflicting assembly precedence. This closes the
+observed full-list impact-order gap; fast-find-grid candidate behavior, material
+ties, receiving geometry, visuals and full actor traversal still need verification.
+
+The metadata migration also validates and compiles for all nine maps with source
+level data. `work/map-compile/query-order-recovery/validation.json` records their
+input libraries and zero invalid candidates. Local priority counts are
+Croisement01 85, Croisement02 150, Croisement03 106, Derby 271, Leicester 392,
+Lincoln 474, Nottingham 565, Sherwood 127 and York 993. These count independently
+authored physical pieces before assembly. Compiled static drafts are in
+`work/map-compile/query-order-native`; Wychford remains outside this source-backed
+verification. All nine drafts pass native geometry construction with their rebuilt
+mask and state references. This migration does not certify the other maps' remaining geometry,
+state, mask or full-scene query differences.

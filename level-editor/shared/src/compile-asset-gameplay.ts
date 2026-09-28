@@ -1,5 +1,6 @@
 import polygonClipping, { type Polygon } from "polygon-clipping";
 import { assembleSightVolumes } from "./assemble-sight-volumes.ts";
+import { orderSightVolumes } from "./order-sight-volumes.ts";
 import { compileSoundSource } from "./compile-sound-source.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
@@ -238,6 +239,7 @@ export function compileAssetGameplay(
   }[] = [];
   const sight: SightObstacle[] = [];
   const sightJoins: import("./assemble-sight-volumes.ts").PlacedSightJoin[] = [];
+  const sightOrders = new Map<number, number>();
   const sightCaps: import("./assemble-sight-volumes.ts").PlacedSightCap[] = [];
   const materials: NonNullable<CompiledAssetGeometry["material_sectors"]> = [];
   const groundMaterials: number[] = [];
@@ -251,6 +253,7 @@ export function compileAssetGameplay(
   };
   for (const placement of placements) {
     const gameplay = placement.descriptor.gameplay!;
+    const queryOrder = new Map(Object.entries(gameplay.sightOrder ?? {}));
     validateAssetGameplay(gameplay, placement.descriptor);
     if (gameplay.environment) {
       const settings = {
@@ -369,6 +372,8 @@ export function compileAssetGameplay(
           material_indices: [],
         });
         partSight.set(node, sight.at(-1)!);
+        const order = queryOrder.get(node);
+        if (order !== undefined) sightOrders.set(sight.length - 1, order);
         for (const cap of placement.descriptor.parts.find((p) => p.node === node)
           ?.sight_join_caps ?? []) {
           if (explicitSight.has(node))
@@ -401,6 +406,8 @@ export function compileAssetGameplay(
       };
       sight.push(shape);
       partSight.set(volume.id, shape);
+      const order = queryOrder.get(volume.id);
+      if (order !== undefined) sightOrders.set(sight.length - 1, order);
       if (movementSolid(volume.id)) movementSolids.push({ owner: placement.id, shape });
     }
     for (const id of gameplay.movementSolids ?? [])
@@ -1258,6 +1265,7 @@ export function compileAssetGameplay(
         }
       : {}),
   };
-  assembleSightVolumes(compiled, sightJoins, sightCaps);
+  const assembled = assembleSightVolumes(compiled, sightJoins, sightCaps);
+  orderSightVolumes(compiled, sightOrders, assembled);
   return compiled;
 }

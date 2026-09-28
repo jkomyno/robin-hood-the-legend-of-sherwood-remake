@@ -18,8 +18,8 @@ export function assembleSightVolumes(
   geometry: CompiledAssetGeometry,
   joins: PlacedSightJoin[],
   caps: PlacedSightCap[] = [],
-): void {
-  if (!joins.length && !caps.length) return;
+): Map<number, number> {
+  if (!joins.length && !caps.length) return new Map(geometry.sight_obstacles.map((_, i) => [i, i]));
   const sight = geometry.sight_obstacles;
   const near = (a: Vec3, b: Vec3) => Math.hypot(...a.map((v, i) => v - b[i]!)) < 1e-5;
   const parent = sight.map((_, i) => i);
@@ -205,4 +205,5 @@ export function assembleSightVolumes(
     if (transition.initial_sight) transition.initial_sight = transition.initial_sight.map(remap);
     if (transition.applied_sight) transition.applied_sight = transition.applied_sight.map(remap);
   }
+  return indices;
 }

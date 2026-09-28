@@ -21,6 +21,16 @@ import {
 import type { AssetGameplay, AssetDoor } from "../../shared/src/asset-gameplay.ts";
 import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
 
+test("recovery converts query precedence into independent asset definitions", () => {
+  const { hut } = assetCompilerFixture();
+  const packet = descriptorGameplayPacket(hut);
+  packet.sightOrder = { [hut.parts[0]!.node]: 7 };
+  const definition = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(definition.sightOrder, packet.sightOrder);
+  packet.sightOrder[hut.parts[0]!.node] = 99;
+  assert.equal(definition.sightOrder![hut.parts[0]!.node], 7);
+});
+
 test("unrestricted passage continuity survives authoring conversion", () => {
   const { hut } = assetCompilerFixture();
   hut.gameplay!.doors[0]!.polygon = [];
