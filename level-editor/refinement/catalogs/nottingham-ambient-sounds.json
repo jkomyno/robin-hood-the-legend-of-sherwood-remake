@@ -1,0 +1,27 @@
+{
+  "source_sha256": "19dfa4dc18c5fd63f1581974862c7bdcc1573e0a1c9546b386ce6e26e55c6898",
+  "entries": [
+    {
+      "source": 0,
+      "id": "nottingham-north-ambient-zone",
+      "name": "Nottingham north ambient zone",
+      "origin": [
+        487,
+        62,
+        0
+      ],
+      "review": "A two-point air-altitude acoustic line spans the north boundary (y=62..108); independent daytime environmental region."
+    },
+    {
+      "source": 2,
+      "id": "nottingham-northwest-ambient-zone",
+      "name": "Nottingham northwest ambient zone",
+      "origin": [
+        756,
+        68,
+        0
+      ],
+      "review": "A three-point air-altitude acoustic line follows the north and west edges; independent delayed environmental region."
+    }
+  ]
+}

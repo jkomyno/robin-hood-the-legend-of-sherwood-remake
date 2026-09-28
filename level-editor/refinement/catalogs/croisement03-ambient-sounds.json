@@ -1,0 +1,16 @@
+{
+  "source_sha256": "1658cd3c148ed45c78dbee42a2e06883fb02e5d7c709af1876a027b00be77c4a",
+  "entries": [
+    {
+      "source": 4,
+      "id": "croisement03-north-ambient-zone",
+      "name": "Croisement03 north ambient zone",
+      "origin": [
+        168,
+        135,
+        0
+      ],
+      "review": "A two-point air-altitude acoustic line follows the north boundary (y=46..135); author as an independent environmental region."
+    }
+  ]
+}

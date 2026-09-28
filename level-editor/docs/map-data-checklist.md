@@ -286,6 +286,23 @@ preserves their asset-local definitions. Duplicate or mismatched sources fail
 instead of being counted twice. The integrated Derby report contains 43 assets
 and seven pending sound sources.
 
+Additional source-pinned ambient recipes cover Croisement03's north edge,
+Leicester's northwest edge, and Nottingham's north and northwest edges:
+`croisement03-ambient-sounds.json`, `leicester-ambient-sounds.json`, and
+`nottingham-ambient-sounds.json` under `refinement/catalogs/`. These four
+air-altitude environmental lines have standalone local frames. Their authored
+scenes reopen with pinned descriptors and retain the input scenes' state metadata.
+Static diagnostic exports preserve every source field and pass native loading
+before and after moving each region independently by 50 pixels. Non-sound
+compiled geometry stays identical for each move. All four asset definitions and
+runtime derivatives also pass offline publication staging.
+
+The staged boundary-sound recovery accounts for 1/6 Croisement03, 11/24 Leicester,
+and 6/24 Nottingham emitters. Five, thirteen and eighteen respectively remain
+unresolved. These checks do not establish complete map parity or publication:
+changing geometry, masks, lighting and remaining emitter ownership still have
+separate outstanding requirements.
+
 Light recovery preserves projection priority and fits receiving planes from the
 leading three vertices. Elevated light contours may extend outside navigation
 when their intersecting receivers agree on one plane, including raised terrain

@@ -1,0 +1,16 @@
+{
+  "source_sha256": "b908102046d94d6029ec7144156499a89f225834f9d27953f4202dee05bdeb53",
+  "entries": [
+    {
+      "source": 5,
+      "id": "leicester-northwest-ambient-zone",
+      "name": "Leicester northwest ambient zone",
+      "origin": [
+        67,
+        423,
+        0
+      ],
+      "review": "A three-point air-altitude acoustic line follows the west and north boundary, ending along y=39; independent daytime environmental region."
+    }
+  ]
+}
