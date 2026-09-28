@@ -185,6 +185,7 @@ export function compileAssetGameplay(
   const transitionBlockers: PlacedTransitionBlocker[] = [];
   const projectionSupports: (ProjectionMaterialSupport & {
     plane: HeightPlane;
+    holes: Point[][];
     navigationRegion?: string;
     lift?: string;
   })[] = [];
@@ -879,15 +880,17 @@ export function compileAssetGameplay(
         (support) =>
           support.lift === piece.lift &&
           support.navigationRegion === piece.navigationRegion &&
-          support.plane.every((n, i) => Math.abs(n - piece.plane[i]!) < 1e-7),
+          support.plane.every((n, i) => Math.abs(n - piece.plane[i]!) < 1e-7) &&
+          // Receiving footprints may extend into blocked space, but ownership
+          // comes from walkable coverage, excluding separate islands in holes.
+          fixedPolygonBoolean(
+            "intersection",
+            [polygon(support.polygon)[0]!, ...support.holes.map((h) => polygon(h)[0]!)],
+            [[polygon(piece.polygon)[0]!, ...piece.blockers.map((h) => polygon(h)[0]!)]],
+          ).length > 0,
       );
       for (const support of supports) {
-        if (
-          support.obstacleIndex === undefined ||
-          !fixedPolygonBoolean("intersection", polygon(piece.polygon), [polygon(support.polygon)])
-            .length
-        )
-          continue;
+        if (support.obstacleIndex === undefined) continue;
         const receiver = sight[support.obstacleIndex]!;
         if (
           Array.isArray(receiver.projection_area) &&

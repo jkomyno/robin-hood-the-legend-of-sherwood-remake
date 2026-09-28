@@ -358,6 +358,23 @@ on overlapping receiving-material priority. Fixing these requires navigation and
 overlap authoring, not duplicating a physical obstacle across areas or flattening
 its geometry. Native construction does not yet prove receiving-query, visual or
 actor-traversal parity for Croisement03.
+
+Receiver ownership now intersects authored walkable coverage with the compiled
+area **including holes and blockers**. Outer-boundary overlap alone incorrectly
+assigned a surrounding platform's receiver to a separate island inside its hole.
+The editor/native island fixture verifies distinct receiver references, correct
+stone/leaves material lookup, retained height and no direct walking route across
+the gap. Physical receiving footprints themselves remain intact.
+
+Recompilation in `work/map-compile/receiver-ownership-native` removes 96 wrongly
+assigned generated receiver records from the previous static diagnostics: 2 in
+Croisement01, 6 in Croisement02, 12 in Derby, 2 in Leicester, 23 in Lincoln, 1 in
+Sherwood and 50 in York. Other geometry fields outside sight/building references
+and warnings are unchanged; all nine diagnostics construct natively. A repeat of
+the physical-part candidate audit still rejects eight maps. Derby now reaches a
+real split of the east-hall receiver between two movement areas; York still first
+fails material-priority checks. These remaining errors must be resolved through
+navigation/overlap authoring before those candidate links can be published.
 Mission-carried records also include traps, hiding places and
 York gate effects; their presence in a mission file does not establish permanent
 map ownership. The earlier recovered transition counts cover map-source recovery,

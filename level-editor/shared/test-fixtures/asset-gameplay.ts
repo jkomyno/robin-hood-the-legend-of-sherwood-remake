@@ -420,6 +420,27 @@ export function projectionVolumeCompilerFixture() {
   return fixture;
 }
 
+export function receivingIslandCompilerFixture() {
+  const fixture = projectionVolumeCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  gameplay.surfaces[0]!.holes = [
+    [
+      [20, 20],
+      [80, 20],
+      [80, 80],
+      [20, 80],
+    ],
+  ];
+  gameplay.surfaces[1]!.polygon = [
+    [30, 30],
+    [70, 30],
+    [70, 70],
+    [30, 70],
+  ];
+  gameplay.movementTransitions![0]!.waypoint = [10, 10, 20];
+  return fixture;
+}
+
 export function receivingGapCompilerFixture() {
   const fixture = projectionMaterialCompilerFixture();
   const gameplay = fixture.hut.gameplay!;

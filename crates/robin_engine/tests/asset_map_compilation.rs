@@ -201,6 +201,56 @@ fn compiled_masks_reject_unresolved_links_invalid_types_and_malformed_bitmaps() 
 }
 
 #[test]
+fn receiving_island_keeps_its_material_separate_from_the_surrounding_volume() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::element::GameMaterial;
+    use robin_engine::fast_find_grid::SectorIndex;
+    use robin_engine::position_interface::SectorHandle;
+    use robin_engine::sector::SectorNumber;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-receiving-island.level.json"),
+        &mut assets,
+    );
+    let receiver = |number, point| {
+        let index = engine.fast_grid().level.sector_number_map[&SectorNumber::new(number)];
+        let sector = SectorHandle::new(number.try_into().unwrap())
+            .unwrap()
+            .with_arena_index(SectorIndex::new(index as u32).unwrap());
+        engine
+            .get_projection_area_index(&assets, sector, 1, point)
+            .unwrap()
+    };
+    let outer_point = MapPoint::new(310., 330.);
+    let island_point = MapPoint::new(350., 330.);
+    let outer = receiver(1, outer_point);
+    let island = receiver(3, island_point);
+    assert_ne!(outer, island);
+    for (index, point, material) in [
+        (outer, outer_point, GameMaterial::Stone),
+        (island, island_point, GameMaterial::Leaves),
+    ] {
+        let obstacle = &assets.environment.static_sight_obstacles[usize::from(index)];
+        assert_eq!(
+            obstacle.compute_top_z_from_projection(point.x, point.y),
+            20.
+        );
+        assert_eq!(
+            assets
+                .environment
+                .material_sectors
+                .material_at_with_obstacle(Some(obstacle), point),
+            material
+        );
+    }
+    assert!(
+        !engine
+            .fast_grid()
+            .is_reachable_thin(outer_point, island_point, 1)
+    );
+}
+
+#[test]
 fn merged_platform_keeps_its_opening_without_an_invented_receiver() {
     use robin_engine::coordinates::MapPoint;
     use robin_engine::fast_find_grid::SectorIndex;

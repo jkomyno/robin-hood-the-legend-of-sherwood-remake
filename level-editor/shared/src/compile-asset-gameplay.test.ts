@@ -23,6 +23,7 @@ import {
   doorAnchorCompilerFixture,
   projectionMaterialCompilerFixture,
   projectionVolumeCompilerFixture,
+  receivingIslandCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
@@ -77,6 +78,16 @@ test("receiving volumes retain thickness, materials and state links after placem
   const receivers = transitions.map((t) => duplicated.sight_obstacles[t.applied_sight![0]!]!);
   assert.notDeepEqual(receivers[0]!.projection_area, receivers[1]!.projection_area);
   assert.notDeepEqual(receivers[0]!.material_indices, receivers[1]!.material_indices);
+});
+
+test("receiving ownership excludes a separate island inside a navigation hole", () => {
+  const { document, assets } = receivingIslandCompilerFixture();
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  const physical = geometry.sight_obstacles[0]!;
+  const islandReceiver = geometry.sight_obstacles.find((o) => o.default_material === 4)!;
+  assert.notDeepEqual(physical.projection_area, islandReceiver.projection_area);
+  assert.equal(geometry.sight_obstacles.length, 2);
+  assert.deepEqual(geometry.movement_transitions![0]!.applied_sight, [0]);
 });
 
 test("physical receiving planes use the first three vertices without flattening later heights", () => {

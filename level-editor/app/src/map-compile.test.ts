@@ -24,6 +24,7 @@ import {
   projectionMaterialCompilerFixture,
   projectionVolumeCompilerFixture,
   receivingGapCompilerFixture,
+  receivingIslandCompilerFixture,
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
   sightTransitionCompilerFixture,
@@ -40,6 +41,20 @@ import {
   doorAnchorCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("receiving island export preserves native area and material ownership", async () => {
+  const { document, assets } = receivingIslandCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-receiving-island.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("merged platform export preserves the opening checked by native receiving queries", async () => {
   const { document, assets } = receivingGapCompilerFixture();

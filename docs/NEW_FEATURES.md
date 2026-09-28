@@ -148,6 +148,11 @@
   plane while preserving later vertex heights. A broader static audit constructs
   Croisement03 with 14 physical receiver links; other candidate maps still need
   navigation-region and material-priority fixes before migration.
+  Receiver ownership now excludes navigation holes and blockers when assigning
+  areas, preventing a surrounding platform from supplying an island's materials.
+  The exported island fixture verifies native material/height queries and the
+  disconnected walking route. All nine static diagnostics construct after removal
+  of 96 receiver records incorrectly assigned across disconnected areas.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York
