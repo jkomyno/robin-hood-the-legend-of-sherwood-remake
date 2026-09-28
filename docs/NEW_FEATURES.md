@@ -163,6 +163,11 @@
   recipe restores its upper-terrace boundary; eight recovered transitions pass
   native apply/reset checks, leaving one multi-asset movement group unresolved.
   Staging also retains inherited ownership catalogs without symlink write collisions.
+  A reviewed Croisement03 assembly groups the four southwest obstacle pieces that
+  change together. All nine map movement groups now recover; native apply/reset
+  checks pass before and after moving the assembly, with exact physical geometry
+  and flags retained. Its three state-controlled masks and visual resources remain
+  unrecovered, so this is not yet full patch parity.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

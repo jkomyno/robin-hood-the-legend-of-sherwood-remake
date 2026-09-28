@@ -1,0 +1,14 @@
+{
+  "review": "Four adjacent southwest obstacle pieces are activated together by one map patch. Keep the complete physical parts and model resources in one movable state assembly. Mask coverage and visual state resources require separate authoring.",
+  "groups": [
+    {
+      "id": "croisement03-southwest-state-assembly",
+      "parts": [
+        { "obstacle": 102 },
+        { "obstacle": 103 },
+        { "obstacle": 104 },
+        { "obstacle": 105 }
+      ]
+    }
+  ]
+}

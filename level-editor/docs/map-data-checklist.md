@@ -409,6 +409,23 @@ previous sight geometry, flags and material links, with regenerated area referen
 All eight recovered transitions pass native apply/reset state checks. Masks,
 shared state ownership, navigation coverage, visuals and actor traversal still
 require verification before publication or a full-parity claim.
+
+The remaining Croisement03 movement group now has one physical asset owner.
+`refinement/catalogs/croisement03-state-assembly.json` groups complete obstacle
+parts 102–105 into `croisement03-southwest-state-assembly`; one map patch enables
+all four, and no other map patch controls them. The canonical staging tool retains
+the complete model resources and part geometry in a common movable frame.
+The staged library is `work/map-compile/croisement03-state-assembly-stage` and
+fresh recovery is `work/map-compile/croisement03-state-assembly-recovery`.
+
+All nine map movement groups now recover for this scene. The baseline and a
+one-pixel eastward assembly move preserve the four parts' exact ordered float32
+vertices and flags, and both pass native apply/reset checks for all nine transitions
+in `work/map-compile/croisement03-state-assembly-native`. The assembly waypoint
+moves with its geometry. This verifies movement/sight state binding only: patch 8
+also controls layer-0 masks 122–124 (global mask records 128–130), which remain
+unrecovered, along with visual states. The candidates remain unpublished and do
+not yet certify actor traversal or full patch/map parity.
 Mission-carried records also include traps, hiding places and
 York gate effects; their presence in a mission file does not establish permanent
 map ownership. The earlier recovered transition counts cover map-source recovery,
