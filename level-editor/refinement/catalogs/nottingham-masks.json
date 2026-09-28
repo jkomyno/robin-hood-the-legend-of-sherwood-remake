@@ -2,6 +2,21 @@
   "source_sha256": "19dfa4dc18c5fd63f1581974862c7bdcc1573e0a1c9546b386ce6e26e55c6898",
   "recipes": [
     {
+      "asset": "nottingham-north-stone-house",
+      "model_sha256": "2c98374ffed78b104d15b19a1b1e0957fffe2c49a6a1a72ad0ef22ae9c1ef4ca",
+      "entries": [
+        {
+          "source": 78,
+          "id": "stone-house-raised-landing-occlusion",
+          "node": "building-126",
+          "anchor": [1700, 700, 66.957],
+          "characterHeights": [66.957, 66.957, 66.957],
+          "projectileHeights": [0, 0, 0, 0],
+          "review": "The projectile boundary follows the house's raised landing. This asset is the only fully supporting building candidate. The receiver is the owning house's flat 66.957-unit landing, with an anchor inside its navigation polygon. Character thresholds use that plane beyond navigation. The mask has no obstacle links or patch references; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
       "asset": "nottingham-west-green-shop",
       "model_sha256": "3e7d905c352405face77b7eb63b1c87f1ca00af9b66026d52655206ffa955a44",
       "entries": [

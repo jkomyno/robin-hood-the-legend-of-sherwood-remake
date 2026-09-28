@@ -263,22 +263,32 @@ records unsupported transparent meshes and missing or non-rendering frames
 remain unassessed, rather than being counted as evidence of absent coverage.
 
 Nottingham's reviewed recipe (`refinement/catalogs/nottingham-masks.json`)
-recovers fifteen static masks: west green shop 52/55 (2,523/1,862 pixels), upper red
+recovers sixteen static masks: west green shop 52/55 (2,523/1,862 pixels), upper red
 house 103 (4,428 pixels), and village small hut 210 (6,932 pixels), plus eleven
 unlinked records: east boarded house 21/22 (12,351/917), northeast timber house
 94 (562), north dormer house 79 (1,042), south gate house 47 (32,663), southwest
 wall house 75 (1,269), upper green house 109 (1,189), upper west lean-to 112
 (1,494), village east cottage 138 (683), small hut 211 (5,852), and village mill
-155 (4,112). Their receivers are ground-level. All coverage and boundary rules
+155 (4,112). These receivers are ground-level. North stone house 78 adds 948
+pixels receiving on its own flat 66.957-unit landing. All coverage and boundary rules
 match exactly and follow independent one-pixel asset moves. Native loading passes
-for the baseline and twelve moved scenes. Non-mask geometry matches the current
+for the baseline and thirteen moved scenes. Non-mask geometry matches the current
 jump-anchor diagnostic; sound sources match the previous same-library mask
 baseline. Four jump-zone receiving references differ from that older baseline
 because of the already verified owner-anchor fix, with polygons and helper rules
 unchanged. Some moved jump connections detach. Updated drafts and native checks
-are under `work/map-compile/nottingham-ground-mask-recovery` and
-`work/map-compile/nottingham-ground-mask-native`. There are 512 unrecovered
+are under `work/map-compile/nottingham-landing-mask-recovery` and
+`work/map-compile/nottingham-landing-mask-native`. There are 511 unrecovered
 Nottingham masks; complete asset coverage and mask-controlled depth remain pending.
+
+Moving the north stone house 32 pixels west also preserves its mask exactly and
+loads natively (`work/map-compile/nottingham-landing-west-native`). A 32-pixel
+east move exposed a neighboring mask receiver covered by movement collision.
+Mask compilation now retains a uniquely identified authored receiving layer
+under such exclusions, while requiring actual asset surface support and retaining
+strict walkability checks for doors/jumps. The compiler change leaves the complete
+baseline unchanged. The east move gets past the mask check but still fails because
+the moved house's door is outside walkable ground; that placement is not certified.
 
 Lincoln's reviewed recipe (`refinement/catalogs/lincoln-masks.json`) recovers keep
 mask 390 (16,407 pixels). Its character threshold extends beyond navigation in

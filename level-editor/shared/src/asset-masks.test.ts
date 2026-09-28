@@ -7,6 +7,35 @@ import { IDENTITY_TRANSFORM } from "./level3d.ts";
 import type { AssetGameplay } from "./asset-gameplay.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("mask receivers survive movement exclusions but require authored surface support", () => {
+  const { document, assets, hut } = maskAssetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.doors = [];
+  gameplay.movementTransitions = [];
+  const before = compileAssetGameplay(document, assets, bounds).masks;
+  gameplay.movementBlockers = [
+    {
+      id: "covered-ground",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [0, 0],
+        [55, 0],
+        [55, 100],
+        [0, 100],
+      ],
+    },
+  ];
+  assert.deepEqual(compileAssetGameplay(document, assets, bounds).masks, before);
+  gameplay.surfaces[0]!.polygon = [
+    [55, 0],
+    [90, 0],
+    [90, 100],
+    [55, 100],
+  ];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /authored receiving layer/);
+});
+
 test("open asset boundaries compile separate character and projectile rules", () => {
   const { document, assets, hut } = maskAssetCompilerFixture();
   const mask = hut.gameplay!.masks![0]!;

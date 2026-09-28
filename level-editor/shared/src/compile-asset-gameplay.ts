@@ -668,6 +668,7 @@ export function compileAssetGameplay(
   const areas: {
     plane: HeightPlane;
     lift?: string;
+    navigationRegion?: string;
     sector: number;
     layer: number;
     polygon: Point[];
@@ -850,7 +851,45 @@ export function compileAssetGameplay(
   const masks: NonNullable<CompiledAssetGeometry["masks"]> = [];
   const maskIndices = new Map<string, number[]>();
   for (const mask of placedMasks) {
-    const layer = resolve(mask.anchor, `${mask.id} receiving anchor`, null, true).layer;
+    // Masks select a receiving layer, not a movement destination. A placed
+    // obstacle may cover their anchor without removing the authored receiver.
+    const point = project(mask.anchor);
+    const receivers = groups.filter(
+      (group) =>
+        Math.abs(planeHeight(group.plane, point) - mask.anchor[2]) < 1e-4 &&
+        group.surfaces.some(
+          (surface) =>
+            inside(point, surface.polygon) && !surface.holes.some((hole) => inside(point, hole)),
+        ),
+    );
+    let receivingLayers = new Set(
+      areas
+        .filter(
+          (area) =>
+            Math.abs(planeHeight(area.plane, point) - mask.anchor[2]) < 1e-4 &&
+            inside(point, area.polygon),
+        )
+        .map((area) => area.layer),
+    );
+    if (!receivingLayers.size)
+      receivingLayers = new Set(
+        receivers.flatMap((group) =>
+          areas
+            .filter(
+              (area) =>
+                area.lift === group.lift &&
+                area.navigationRegion === group.navigationRegion &&
+                (group.navigationRegion !== undefined ||
+                  area.plane.every((n, i) => Math.abs(n - group.plane[i]!) < 1e-7)),
+            )
+            .map((area) => area.layer),
+        ),
+      );
+    if (receivingLayers.size !== 1)
+      throw new Error(
+        `${mask.id} receiving anchor must resolve to exactly one authored receiving layer (found ${receivingLayers.size})`,
+      );
+    const layer = [...receivingLayers][0]!;
     const tiles = rasterizeMaskGeometry(mask.triangles, { ...mask.rules, layer });
     maskIndices.set(
       mask.id,

@@ -80,11 +80,14 @@
   into local state IDs after ownership is established, with independent compiled
   references for duplicated assets.
   Reviewed static-mask recipes now run in the asset migration with pinned source
-  and model hashes. Seven Derby, sixteen Leicester, one Lincoln, fifteen Nottingham and eight York
+  and model hashes. Seven Derby, sixteen Leicester, one Lincoln, sixteen Nottingham and eight York
   masks have exact baseline coverage and boundary round-trips with native
   registration and independent placement checks. Jump landing anchors use their
   owning asset's receiving footprints and evaluate height at the integer movement
   point, preventing a moved neighbor from invalidating an unrelated landing zone.
+  Mask receiving layers remain resolvable when movement collision covers their
+  anchors, provided authored surface support identifies one surviving layer.
+  Door and jump destinations continue to require walkable receiving positions.
   Full-map recovery and publication remain incomplete.
   A surface-support audit reports missing pixels, interior gaps and repair bounds
   for reviewed mask sets, including whether both sides of a state change have
