@@ -68,7 +68,7 @@ export interface RecoveredGameplayPacket {
   connections: RecoveredConnection[];
 }
 
-/** Seed geometry that is already authored in the asset, before recovering additional gameplay. */
+/** Start recovery from validated asset frames; gameplay features are recovered separately. */
 export function descriptorGameplayPacket(
   descriptor: ProjectionAssetDescriptor,
 ): RecoveredGameplayPacket {
@@ -76,24 +76,15 @@ export function descriptorGameplayPacket(
     throw new Error(`${descriptor.id}: terrain needs authored movement boundaries`);
   if (!descriptor.parts.length)
     throw new Error(`${descriptor.id}: asset has no geometry definitions`);
-  const surfaces: RecoveredSurface[] = [];
   for (const part of descriptor.parts) {
     const node = part.node;
     if (part.scenery) continue;
     if (!part.obstacle_local_game)
       throw new Error(`${descriptor.id}/${node}: missing local collision shape`);
-    // Mission-authored surfaces have no extracted obstacle identity. Their
-    // local geometry is authoritative; map-wide projection indices are discarded.
-    if (part.mission_profile && part.obstacle_local_game.projection_area !== null)
-      surfaces.push({
-        id: `${part.node}-surface`,
-        node: part.node,
-        kind: "walkable",
-        vertices: part.obstacle_local_game.points.map((p) => [p.x, p.y, p.z_top]),
-        holes: [],
-      });
   }
-  return { asset: descriptor.id, surfaces, connections: [] };
+  // Part bounds and preview projection placeholders do not author navigation.
+  // Walkable surfaces must come from explicit gameplay definitions or recovery.
+  return { asset: descriptor.id, surfaces: [], connections: [] };
 }
 
 /** Convert authoring drafts to the compiler schema. This does not certify recovery completeness. */

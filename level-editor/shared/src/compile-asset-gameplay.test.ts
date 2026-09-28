@@ -484,6 +484,30 @@ test("detached edges do not remove landing zones used by another complete jump",
     1,
   );
 });
+test("preview bounds are not collision, while separately authored gameplay remains usable", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const part = hut.parts[0]!;
+  const obstacle = part.obstacle_local_game!;
+  hut.parts = [
+    {
+      node: part.node,
+      name: part.name,
+      mission_profile: "preview-only",
+      obstacle_local_game: obstacle,
+    },
+  ];
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.sight_obstacles.filter((o) => o.projection_area === null).length, 0);
+  assert.equal(compiled.doors.length, 1, "authored passage remains available");
+  hut.gameplay!.movementSolids = [part.node];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /preview bounds require/);
+  delete hut.gameplay!.movementSolids;
+  const { projection_area: _projection, material_indices: _materials, ...shape } = obstacle;
+  hut.gameplay!.volumes = [{ id: "authored-wall", node: part.node, shape }];
+  const authored = compileAssetGameplay(document, assets, bounds);
+  assert.equal(authored.sight_obstacles.filter((o) => o.projection_area === null).length, 1);
+});
+
 test("non-rendering asset volumes preserve collision and sight without a mesh part", () => {
   const { hut, document, assets } = assetCompilerFixture();
   const expected = compileAssetGameplay(document, assets, bounds);

@@ -125,7 +125,10 @@
   receivers while preserving anchored receivers and other geometry after interior
   constructor reference remapping. Native
   platform queries verify the opening remains empty. Derby's explicitly authored
-  second drawbridge surface remains pending receiving-material review.
+  second drawbridge's remaining receiver was subsequently traced to editor preview
+  bounds. Recovery no longer invents a walkable surface from that placeholder, and
+  compilation excludes preview bounds from automatic collision. Explicitly authored
+  surfaces and volumes still work; the bridge's actual state behavior remains open.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

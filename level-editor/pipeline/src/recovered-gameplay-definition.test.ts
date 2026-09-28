@@ -206,7 +206,7 @@ test("selected permanent solids survive authoring conversion without sharing the
   assert.deepEqual(gameplay.movementSolids, ["building-999"]);
 });
 
-test("mission surface recovery uses local geometry without retaining projection references", () => {
+test("preview bounds cannot create a walkable surface from a projection placeholder", () => {
   const { hut } = assetCompilerFixture();
   const shape = structuredClone(hut.parts[0]!.obstacle_local_game!);
   shape.projection_area = [123, 45];
@@ -219,13 +219,7 @@ test("mission surface recovery uses local geometry without retaining projection 
     },
   ];
   const gameplay = recoveredGameplayDefinition(descriptorGameplayPacket(hut), hut);
-  assert.deepEqual(gameplay.surfaces[0]!.height, [30, 30, 30, 30]);
-  assert.deepEqual(gameplay.surfaces[0]!.polygon, [
-    [40, 40],
-    [50, 40],
-    [50, 50],
-    [40, 50],
-  ]);
+  assert.deepEqual(gameplay.surfaces, []);
   assert.ok(!JSON.stringify(gameplay).includes("projection_area"));
   hut.editor_usage = "map-background";
   assert.throws(() => descriptorGameplayPacket(hut), /terrain needs authored movement boundaries/);

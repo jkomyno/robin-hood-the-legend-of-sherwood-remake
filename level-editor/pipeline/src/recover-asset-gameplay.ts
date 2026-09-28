@@ -142,7 +142,7 @@ for (const descriptor of descriptors.values()) {
   );
   if (descriptor.parts.some((p) => p.mission_profile))
     packet(descriptor.id).issues.push(
-      "Mission-authored geometry retained; recover associated state transitions and behaviours separately",
+      "Preview part bounds do not establish navigation; author associated walkable surfaces, state transitions and behaviours separately",
     );
 }
 const localize = (part: Level3DObject, point: Vec3): Vec3 => {

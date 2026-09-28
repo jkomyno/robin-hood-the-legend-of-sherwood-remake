@@ -66,8 +66,9 @@ mean all gameplay was recovered or that the assembled map compiles; drafts stay
 separate from the published asset library until their missing information is resolved.
 
 Recovery includes geometry-only assets: local collision shapes remain active
-unless explicitly replaced by authored movement contours. Mission-authored
-surface geometry is retained without map-wide projection references. Standalone
+unless explicitly replaced by authored movement contours. Preview-only part bounds
+do not create navigation or collision; those parts require separately authored
+gameplay. Standalone
 passages are assigned independently; an interior's entrances remain grouped.
 `staticGeometryDiagnostic` checks a disposable copy of the current visible
 geometry without state/population behaviours. Its success does not authorize
@@ -275,11 +276,24 @@ with elevation preserved on its surrounding edges.
 Recompilation into `work/map-compile/receiving-gap-native` removes 412 unsupported
 receivers across the nine maps. All nine descriptors construct natively; their
 non-sight geometry is unchanged after remapping interior constructor references,
-and all 698 anchored receivers are unchanged. One unanchored
-receiver remains: Derby's `derby-second-drawbridge` asset explicitly authors a
-731-square-pixel surface without receiving material metadata. It requires asset
-review rather than deletion. These checks still do not certify whole-map
+and all 698 anchored receivers are unchanged. That diagnostic retained one
+unanchored receiver on Derby's `derby-second-drawbridge`, covering 731 square pixels.
+These checks still do not certify whole-map
 receiving priority, source coverage or actor traversal.
+
+Further inspection found that last receiver was incorrectly inferred from an
+editor preview bounding box, whose asset metadata explicitly says it has no sight
+association. Recovery now creates no walkable surface from preview projection
+placeholders. Compilation also excludes preview bounds from automatic part
+collision, while explicit asset surfaces, passages and volumes remain usable.
+Referencing a preview box as a gameplay obstacle requires an authored volume
+instead. The bridge's actual state geometry and behavior still need asset authoring;
+removing the fabricated surface does not complete that work.
+The batch under `work/map-compile/preview-bounds-native` passes native construction
+for all nine maps. Derby now has 60 movement areas, 348 sight records, 70 doors and
+two jump pairs; the other eight compiled geometries are unchanged. No unanchored
+receivers remain in this recovered static batch. This does not certify the
+unrecovered state geometry or publication readiness.
 
 The ignored native test
 `recovered_projection_partitions_preserve_sampled_runtime_queries` reads a

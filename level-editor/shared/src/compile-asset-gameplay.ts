@@ -336,6 +336,15 @@ export function compileAssetGameplay(
     if (gameplay.collision === "parts")
       for (const [node, part] of placement.frames) {
         if (!placement.parts.has(node) && !explicitSight.has(node)) continue;
+        if (
+          placement.descriptor.parts.find((p) => p.node === node)?.mission_profile !== undefined
+        ) {
+          if (explicitSight.has(node) || gameplay.movementSolids?.includes(node))
+            throw new Error(
+              `${placement.id}/${node}: preview bounds require an authored gameplay volume`,
+            );
+          continue;
+        }
         if (!part.obstacle) continue;
         const shape = transformedObstacle(document, part);
         // Keep per-vertex heights and flags, but rebuild all map-wide references.

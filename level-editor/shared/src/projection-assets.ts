@@ -59,6 +59,8 @@ export interface ProjectionAssetDescriptor {
     | {
         source_obstacle?: never;
         source_components?: never;
+        /** Preview appearance reference. obstacle_local_game is editor bounds,
+         * not collision or navigation; gameplay must be authored separately. */
         mission_profile: string;
         scenery?: never;
         obstacle_local_game: SightObstacle;
