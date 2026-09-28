@@ -814,9 +814,8 @@ export function compileAssetGameplay(
             !plane.every((n, i) => Math.abs(n - clearance.plane[i]!) < 1e-7)
           )
             continue;
-          regions = polygonClipping.difference(regions, [
-            polygon(clearance.polygon)[0]!,
-            ...clearance.holes.map((h) => polygon(h)[0]!),
+          regions = fixedPolygonBoolean("difference", regions, [
+            [polygon(clearance.polygon)[0]!, ...clearance.holes.map((h) => polygon(h)[0]!)],
           ]);
         }
         if (regions.length) merged = polygonClipping.difference(merged, regions);

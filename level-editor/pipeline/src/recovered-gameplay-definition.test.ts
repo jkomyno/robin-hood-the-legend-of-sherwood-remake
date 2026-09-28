@@ -258,6 +258,29 @@ for (const fixture of [
     assert.ok(!JSON.stringify(hut.gameplay).includes("sourceMap"));
   });
 
+test("lift surfaces sharing a frame require explicit independent bindings", () => {
+  const { hut } = liftAssetCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  const first = packet.surfaces.find((s) => s.kind === "lift")!;
+  const second = { ...structuredClone(first), id: "second-ladder-surface" };
+  packet.surfaces.push(second);
+  const connection = packet.connections.find((c) => c.kind === "lift")!;
+  const another = structuredClone(connection);
+  another.id = "second-ladder";
+  for (const endpoint of another.endpoints) endpoint.id = `second-${endpoint.id}`;
+  packet.connections.push(another);
+  assert.throws(() => recoveredGameplayDefinition(packet, hut), /found 2/);
+  connection.surface = first.id;
+  another.surface = second.id;
+  const recovered = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(
+    recovered.lifts!.map((lift) => lift.surface),
+    [first.id, second.id],
+  );
+  another.surface = "missing-surface";
+  assert.throws(() => recoveredGameplayDefinition(packet, hut), /found 0/);
+});
+
 test("interior passage sockets survive authoring conversion without sharing draft data", () => {
   const { document, assets, hut, annex, passage } = joinedInteriorCompilerFixture();
   for (const descriptor of [hut, annex]) descriptor.gameplay!.movementBlockers = [];

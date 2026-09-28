@@ -42,6 +42,7 @@ export interface RecoveredConnection {
   id: string;
   node: string;
   kind: "lift" | "building-interior" | "passage";
+  surface?: string;
   type?: number;
   direction?: Point;
   joins?: Vec3[];
@@ -193,7 +194,10 @@ export function recoveredGameplayDefinition(
       });
     else {
       const candidates = packet.surfaces.filter(
-        (s) => s.node === connection.node && s.kind === "lift",
+        (s) =>
+          s.node === connection.node &&
+          s.kind === "lift" &&
+          (connection.surface === undefined || s.id === connection.surface),
       );
       if (candidates.length !== 1)
         throw new Error(

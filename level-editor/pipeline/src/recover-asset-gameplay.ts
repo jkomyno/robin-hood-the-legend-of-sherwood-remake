@@ -463,7 +463,8 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
           );
           const surfaceId = `${owner.collisionId ?? owner.node}-walk-${regionIndex}`;
           const projectionVolume =
-            owners.length === 1 && stateSightReferences.has(index)
+            owners.length === 1 &&
+            (stateSightReferences.has(index) || (motion.is_lift && owner.collisionId !== undefined))
               ? (owner.collisionId ?? owner.node)
               : undefined;
           const materialRegions = obstacle.material_indices.map((material, materialIndex) => {
@@ -650,7 +651,7 @@ for (const [sourceIndex, source] of clearanceSources.entries()) {
         regions = recoverMovementClearance(source.regions, source.plane, solid, 1);
         regions = quantizeRecoveredMotion(
           regions,
-          `${owner.node}-clearance-${sourceIndex}`,
+          `${owner.collisionId ?? owner.node}-clearance-${sourceIndex}`,
           packet(owner.asset).issues,
         );
       } catch (error) {
@@ -664,7 +665,7 @@ for (const [sourceIndex, source] of clearanceSources.entries()) {
         continue;
       }
       for (const [regionIndex, region] of regions.entries()) {
-        const id = `${owner.node}-clearance-${sourceIndex}-${regionIndex}`;
+        const id = `${owner.collisionId ?? owner.node}-clearance-${sourceIndex}-${regionIndex}`;
         const local = (ring: Point[]) =>
           ring.slice(0, -1).map(([x, y]) => {
             const z = evaluateHeight(source.plane, [x, y]);
@@ -883,12 +884,13 @@ for (const [index, lift] of proto.lifts.entries()) {
     });
     for (const [supportIndex, support] of supports.entries()) {
       const owner = support.owners[0]!;
+      const supportId = owner.collisionId ?? owner.node;
       const doors = (lift.doors as SourceDoor[]).flatMap((door, i) =>
         endpointOwners[i] !== supportIndex
           ? []
           : [
               {
-                id: `${owner.node}-endpoint-${i}`,
+                id: `${supportId}-endpoint-${i}`,
                 node: owner.node,
                 polygon: door.door_sector.points.map((point) => {
                   const z = heightAt(door.sector_out, door.layer_out, door.point_out);
@@ -922,9 +924,10 @@ for (const [index, lift] of proto.lifts.entries()) {
             ],
       );
       packet(owner.asset).connections.push({
-        id: `${owner.node}-lift`,
+        id: `${supportId}-lift`,
         node: owner.node,
         kind: "lift",
+        surface: `${supportId}-walk-0`,
         type: lift.lift_type,
         direction: (() => {
           const angle = (lift.direction * Math.PI) / 8;
@@ -1776,7 +1779,36 @@ if (values["mask-definitions"]) {
     (p.masks ??= []).push(recovered.definition);
   }
 }
+// A scene frame or preview box is not proof that its physical volume migrated.
+// Inventory all source records, including ones only referenced by masks.
+const unownedSightObstacles = proto.sight_obstacles.flatMap((shape, index) => {
+  const physicalOwners = (locals.get(index) ?? []).filter((owner) => {
+    if (owner.collisionId)
+      return packets.get(owner.asset)?.volumes?.some((volume) => volume.id === owner.collisionId);
+    const part = descriptors.get(owner.asset)?.parts.find((part) => part.node === owner.node);
+    return part?.obstacle_local_game && part.mission_profile === undefined;
+  });
+  if (physicalOwners.length) return [];
+  return [
+    {
+      obstacle: index,
+      solid: shape.solid,
+      opaque: shape.opaque,
+      mouse: shape.mouse,
+      masks: proto.masks.flatMap((mask, maskIndex) =>
+        mask.obstacle_indices.includes(index) ? [maskIndex] : [],
+      ),
+      patches: proto.patches.flatMap((patch, patchIndex) =>
+        [...patch.old_sight_obstacles, ...patch.new_sight_obstacles].includes(index)
+          ? [patchIndex]
+          : [],
+      ),
+    },
+  ];
+});
+for (const entry of unownedSightObstacles) unresolved.push({ kind: "sight-owner", ...entry });
 const pending = {
+  sightObstacleOwners: unownedSightObstacles.length,
   doorTransitionBindings:
     proto.patches.filter((patch) => patch.door_indices.length > 0).length -
     doorTransitionRecovery.length,
@@ -1865,6 +1897,7 @@ const report = {
   candidateCompilation: diagnostics.compilation,
   staticGeometryDiagnostic: diagnostics.staticGeometry,
   coverage,
+  unownedSightObstacles,
   unresolved,
   pending,
 };

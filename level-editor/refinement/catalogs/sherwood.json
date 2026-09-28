@@ -1167,6 +1167,23 @@
       ]
     }
   ],
+  "nonrendering_sources": [
+    {
+      "obstacle": 97,
+      "owner": "sherwood-central-oak-platform",
+      "review": "The lower connecting ladder belongs to the platform assembly, whose ring-ladder stiles and rungs connect the 220-unit ring to the 261-unit landing. Restore its zero-thickness traversal surface as local gameplay geometry."
+    },
+    {
+      "obstacle": 98,
+      "owner": "sherwood-central-oak-platform",
+      "review": "The upper connecting ladder belongs to the same assembly; its porch-ladder stiles and rungs connect the 261-unit landing to the 286-unit porch. Restore the omitted traversal surface independently of the rendered timber."
+    },
+    {
+      "obstacle": 101,
+      "owner": "sherwood-ladder-oak-platform",
+      "review": "This assembly contains the below-platform, above-platform and long rope-ladder stiles and rungs. Its gameplay surface spans ground, the 278-unit platform and the upper attachment around 333 units; the foliage asset is a separate owner."
+    }
+  ],
   "legacy_migration": {
     "source": "work/sherwood-refinement/sherwood-refinement.blend",
     "previously_unexported_obstacles": [
@@ -1175,7 +1192,7 @@
       98,
       101
     ],
-    "limitations": "Legacy reconstruction, not a new geometry review. Zero-thickness omitted source obstacles remain unchanged; reconstructed ladder visuals belong to their treehouse. Foliage uses its first authored frame.",
+    "limitations": "Legacy visual reconstruction, not a new geometry review. Gameplay ownership for omitted ladder obstacles 97/98/101 is now declared above for the platform assemblies; obstacle 13 remains unowned. Recovered traversal still needs placement and actor verification. Foliage uses its first authored frame.",
     "export_partitions": {
       "building-048": "Existing building-032 trunk triangles above the lower obstacle height, z=221.001; geometry and collision payloads retained."
     }

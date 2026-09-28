@@ -549,8 +549,11 @@ The central Sherwood oak now passes through the alpha-aware support audit:
 `work/map-compile/sherwood-central-oak-alpha-support.json`. Its cutout mesh expands
 to 660,698 triangles. Of seven nearby mask probes, record 150 has complete support
 for all 375 pixels; records 32/34/62/70/151/153 still lack coverage. This probe does
-not establish ownership or recover a complete mask definition, so the reviewed
-mask total remains 72. Reviewed recovery now discards mesh triangles outside the
+not establish ownership or recover a complete mask definition. Subsequent asset
+review places record 150 on the central platform's lower ladder, not the tree.
+The platform mesh still misses 146 of its 375 pixels (24 interior pixels); records
+151 and 153 also lack platform coverage. Do not recover these masks onto the
+overlapping tree. The reviewed mask total remains 72. Reviewed recovery now discards mesh triangles outside the
 union of the requested masks' projected bounds before expanding texture alpha.
 For these seven probes it reduces the candidate geometry from 660,698 to 3,327
 triangles (99.5%) with identical complete support/gap reports, recorded in
@@ -563,6 +566,26 @@ identical gameplay candidates for all 93 assets, including its recovered mask
 and state geometry (`work/map-compile/croisement03-bounded-mask-recovery`).
 Broader tree recovery and visual filtering
 fidelity remain unfinished.
+
+Sherwood recovery now restores three omitted physical ladder volumes (97/98/101)
+into the central-oak and ladder-oak platform assets. Their authored local volumes
+also supply receiving geometry, preserving thickness and ordered height planes.
+Lift connections explicitly select their local traversal surface, so two ladders
+can share a part frame without ambiguous bindings; volume clearance IDs are also
+independent. Clearance subtraction uses fixed-point clipping for near-coincident
+edges that otherwise fail to close a polygon.
+
+`work/map-compile/sherwood-ladder-volume-recovery` validates all 81 asset drafts.
+The baseline and central-platform translation construct native maps with 29 areas,
+294 sight obstacles, 15 doors and one jump pair; the three restored volume shapes
+and flags match the source at float32 precision. See
+`work/map-compile/sherwood-ladder-volume-native`. A one-pixel translation of the
+ladder-oak platform still fails to resolve an inside ladder endpoint; its movement
+and clearance ownership need investigation. These checks do not certify actor
+traversal or full parity. Recovery now inventories every sight record lacking a
+physical asset owner: Sherwood retains record 13 (referenced by mask 76), plus
+166 unrecovered masks, one light region and five sound sources. Counts of owned
+sight records establish metadata presence only, not geometric fidelity.
 
 Asset character/projectile boundaries can now be explicitly open, independently
 of one another; existing authored boundaries remain closed by default. This
