@@ -9,7 +9,7 @@ import {
   type RecoveredMaskTransition,
 } from "./reviewed-mask-state-bindings.ts";
 import { loadSceneModel } from "./scene-assets.ts";
-import { maskRecoveryMesh } from "./mask-recovery-mesh.ts";
+import { maskRecoveryMesh, maskRecoveryTextures } from "./mask-recovery-mesh.ts";
 import { recoverOcclusionMask } from "./recover-occlusion-mask.ts";
 import { distanceToPolygon, recoverEndpointElevation } from "./recovery-elevation.ts";
 
@@ -56,12 +56,17 @@ export async function recoverReviewedMasks(
       role: "objects",
       resources: reference.resources ?? [],
     });
+    const textures = await maskRecoveryTextures(model);
     const surfaces = parts.flatMap((part) =>
-      maskRecoveryMesh(model, part.node.slice(prefix.length), (point) =>
-        sceneToGame(
-          document.camera,
-          applyAffineMatrix(partMatrix(document.camera, document, part), gltfToScene(point)),
-        ),
+      maskRecoveryMesh(
+        model,
+        part.node.slice(prefix.length),
+        (point) =>
+          sceneToGame(
+            document.camera,
+            applyAffineMatrix(partMatrix(document.camera, document, part), gltfToScene(point)),
+          ),
+        textures,
       ),
     );
     for (const entry of recipe.entries) {

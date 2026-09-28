@@ -522,8 +522,8 @@ cutouts, crossing surfaces, duplicate faces and foreground islands. This helper
 is used by explicit reviewed recipes in the batch asset migration; these
 synthetic tests alone do not certify existing-map mask recovery.
 The mesh reader handles indexed/unindexed triangles and nested transforms in a
-selected model part. Skinned/animated geometry and transparent materials reject
-until their state or texture coverage is explicitly handled. Surface clipping
+selected model part. Skinned/animated geometry and blended materials reject
+until their state or coverage is explicitly handled. Surface clipping
 uses fixed-point polygon operations; recovery then rerasterizes with the map
 compiler and requires exact source pixel coverage, allowing partially covered
 edge cells only when their pixel samples match. Four Derby probes (mask records
@@ -532,6 +532,26 @@ assets' published meshes. They are not recovered or published as gameplay masks.
 Those four candidates lack 175, 323, 72 and 332 covered pixels respectively;
 the gaps include interior pixels, so accepting boundary rounding alone is
 insufficient. Reviewed cottage associations also require geometry work.
+
+Cutout (`MASK`) materials can now supply physical alpha coverage to reviewed
+recovery and `audit-mask-surfaces.ts`. The reader decodes pinned asset textures,
+clips mesh triangles in UV space against nearest-sampled base-level alpha, and
+interpolates the original surface positions and vertex alpha. Uniform material
+alpha and degenerate UV mappings are supported. Opaque provenance atlases remain
+opaque; foliage's explicitly declared vertex ownership channel does not multiply
+physical opacity. Tests cover holes, cutoff equality, sloping geometry, vertex
+alpha, degenerate UVs and the foliage metadata contract.
+UVs outside the unit square, texture transforms, linear magnification and blended
+materials still reject; mipmap/minification silhouettes are not certified by this
+base-level authoring geometry.
+
+The central Sherwood oak now passes through the alpha-aware support audit:
+`work/map-compile/sherwood-central-oak-alpha-support.json`. Its cutout mesh expands
+to 660,698 triangles. Of seven nearby mask probes, record 150 has complete support
+for all 375 pixels; records 32/34/62/70/151/153 still lack coverage. This probe does
+not establish ownership or recover a complete mask definition, so the reviewed
+mask total remains 72. Broader tree recovery, geometry size reduction and visual
+filtering fidelity remain unfinished.
 
 Asset character/projectile boundaries can now be explicitly open, independently
 of one another; existing authored boundaries remain closed by default. This

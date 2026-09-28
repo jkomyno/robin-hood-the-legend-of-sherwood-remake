@@ -9,7 +9,7 @@ import { applyAffineMatrix, gltfToScene, sceneToGame } from "../../shared/src/ge
 import { rasterizeMaskGeometry } from "../../shared/src/compile-mask-geometry.ts";
 import { readStoredMap } from "./stored-map.ts";
 import { loadSceneModel } from "./scene-assets.ts";
-import { maskRecoveryMesh } from "./mask-recovery-mesh.ts";
+import { maskRecoveryMesh, maskRecoveryTextures } from "./mask-recovery-mesh.ts";
 import { maskSurfaceCoverage } from "./mask-surface-coverage.ts";
 
 const { values } = parseArgs({
@@ -53,10 +53,14 @@ const model = await loadSceneModel(values.library, {
   role: "objects",
   resources: reference.resources ?? [],
 });
+const textures = await maskRecoveryTextures(model);
 const surfaces = parts.flatMap((part) => {
   const matrix = partMatrix(document.camera, document, part);
-  return maskRecoveryMesh(model, part.node.slice(prefix.length), (p) =>
-    sceneToGame(document.camera, applyAffineMatrix(matrix, gltfToScene(p))),
+  return maskRecoveryMesh(
+    model,
+    part.node.slice(prefix.length),
+    (p) => sceneToGame(document.camera, applyAffineMatrix(matrix, gltfToScene(p))),
+    textures,
   );
 });
 const tiles = surfaces.length ? rasterizeMaskGeometry(surfaces, proto.masks[indices[0]!]!) : [];

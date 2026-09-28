@@ -1,0 +1,127 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { maskAlphaCoverage } from "./mask-alpha-coverage.ts";
+import {
+  rasterizeMaskGeometry,
+  type MaskTriangle,
+} from "../../shared/src/compile-mask-geometry.ts";
+import { maskCoverage } from "./mask-roundtrip.ts";
+
+const a: MaskTriangle = [
+  [0, 0, 0],
+  [4, 0, 0],
+  [0, 4, 0],
+];
+const b: MaskTriangle = [
+  [4, 0, 0],
+  [4, 4, 0],
+  [0, 4, 0],
+];
+const uv = (triangle: MaskTriangle): [number, number][] => triangle.map(([x, y]) => [x / 4, y / 4]);
+const area = (triangles: MaskTriangle[]) =>
+  triangles.reduce(
+    (sum, [a, b, c]) =>
+      sum + Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) / 2,
+    0,
+  );
+
+test("nearest alpha clips holes and retains cutoff equality exactly", () => {
+  const texture = {
+    width: 4,
+    height: 4,
+    alpha: Uint8Array.from([255, 255, 0, 0, 255, 0, 0, 0, 255, 0, 255, 255, 255, 255, 255, 255]),
+  };
+  const triangles = [a, b].flatMap((t) =>
+    maskAlphaCoverage(t, uv(t), [0.5, 0.5, 0.5], 0.5, texture),
+  );
+  assert.equal(area(triangles), 10);
+  const pixels = new Set(
+    rasterizeMaskGeometry(triangles, {
+      layer: 0,
+      mask_type: 4,
+      character_polyline: null,
+      projectile_polyline: null,
+      obstacle_indices: [],
+    }).flatMap((m) => [...maskCoverage(m)]),
+  );
+  assert.deepEqual(
+    pixels,
+    new Set(["0,0", "1,0", "0,1", "0,2", "2,2", "3,2", "0,3", "1,3", "2,3", "3,3"]),
+  );
+  assert.equal(maskAlphaCoverage(a, uv(a), [0.49, 0.49, 0.49], 0.5, texture).length, 0);
+});
+
+test("vertex alpha clips geometry independently of texture UV degeneracy", () => {
+  assert.equal(area(maskAlphaCoverage(a, uv(a), [1, 0, 1], 0.5)), 6);
+  const texture = { width: 2, height: 1, alpha: new Uint8Array([0, 255]) };
+  assert.deepEqual(
+    maskAlphaCoverage(
+      a,
+      [
+        [0.75, 0.5],
+        [0.75, 0.5],
+        [0.75, 0.5],
+      ],
+      [1, 1, 1],
+      0.5,
+      texture,
+    ),
+    [a],
+  );
+  assert.deepEqual(
+    maskAlphaCoverage(
+      a,
+      [
+        [0.25, 0.5],
+        [0.25, 0.5],
+        [0.25, 0.5],
+      ],
+      [1, 1, 1],
+      0.5,
+      texture,
+    ),
+    [],
+  );
+});
+
+test("alpha recovery rejects unsupported UV range and corrupt alpha images", () => {
+  assert.throws(
+    () =>
+      maskAlphaCoverage(
+        a,
+        [
+          [-1, 0],
+          [1, 0],
+          [0, 1],
+        ],
+        [1, 1, 1],
+        0.5,
+      ),
+    /in-range/,
+  );
+  assert.throws(() => maskAlphaCoverage(a, uv(a), [1, NaN, 1], 0.5), /in-range/);
+  assert.throws(
+    () =>
+      maskAlphaCoverage(a, uv(a), [1, 1, 1], 0.5, {
+        width: 2,
+        height: 2,
+        alpha: new Uint8Array(1),
+      }),
+    /dimensions/,
+  );
+});
+
+test("cutout interpolation stays on the authored sloping mesh", () => {
+  const sloped: MaskTriangle = a.map(([x, y]) => [x, y + 2 * x + 7, 2 * x + 7]) as MaskTriangle;
+  const triangles = maskAlphaCoverage(sloped, uv(a), [1, 1, 1], 0.5, {
+    width: 2,
+    height: 1,
+    alpha: new Uint8Array([255, 0]),
+  });
+  assert.ok(triangles.length);
+  for (const triangle of triangles)
+    for (const [x, , z] of triangle) {
+      assert.equal(z, 2 * x + 7);
+      assert.ok(x <= 2);
+    }
+});

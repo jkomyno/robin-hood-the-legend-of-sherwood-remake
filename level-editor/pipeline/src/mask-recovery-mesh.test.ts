@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Document } from "@gltf-transform/core";
-import { maskRecoveryMesh } from "./mask-recovery-mesh.ts";
+import sharp from "sharp";
+import { maskRecoveryMesh, maskRecoveryTextures } from "./mask-recovery-mesh.ts";
 
 function fixture(indexed = true) {
   const model = new Document();
@@ -55,7 +56,7 @@ test("mesh recovery requires an unambiguous part in the selected scene", () => {
 });
 
 test("mesh recovery rejects unsupported coverage and malformed geometry", () => {
-  for (const alpha of ["MASK", "BLEND"] as const) {
+  for (const alpha of ["BLEND"] as const) {
     const { model, primitive } = fixture();
     primitive.setMaterial(model.createMaterial().setAlphaMode(alpha));
     assert.throws(() => maskRecoveryMesh(model, "part", (p) => p), /texture coverage/);
@@ -69,4 +70,66 @@ test("mesh recovery rejects unsupported coverage and malformed geometry", () => 
   assert.throws(() => maskRecoveryMesh(model, "part", () => [NaN, 0, 0]), /Invalid placed/);
   model.createAnimation();
   assert.throws(() => maskRecoveryMesh(model, "part", (p) => p), /static model state/);
+});
+
+test("cutout mesh recovery decodes alpha and keeps foliage ownership separate", async () => {
+  const { model, primitive } = fixture(false);
+  const texture = model.createTexture().setImage(
+    await sharp({
+      create: {
+        width: 2,
+        height: 2,
+        channels: 4,
+        background: { r: 255, g: 255, b: 255, alpha: 1 },
+      },
+    })
+      .png()
+      .toBuffer(),
+  );
+  const material = model
+    .createMaterial()
+    .setAlphaMode("MASK")
+    .setBaseColorTexture(texture)
+    .setAlphaCutoff(0.5);
+  material.getBaseColorTextureInfo()!.setMagFilter(9728);
+  primitive.setMaterial(material);
+  const buffer = model.getRoot().listBuffers()[0]!;
+  primitive.setAttribute(
+    "TEXCOORD_0",
+    model
+      .createAccessor()
+      .setBuffer(buffer)
+      .setType("VEC2")
+      .setArray(new Float32Array([0, 0, 1, 0, 0, 1])),
+  );
+  primitive.setAttribute(
+    "COLOR_0",
+    model.createAccessor().setBuffer(buffer).setType("VEC4").setArray(new Float32Array(12)),
+  );
+  assert.throws(() => maskRecoveryMesh(model, "part", (p) => p), /texture coverage/);
+  const textures = await maskRecoveryTextures(model);
+  assert.deepEqual(
+    maskRecoveryMesh(model, "part", (p) => p, textures),
+    [],
+  );
+  material.setExtras({
+    foliage_physical_opacity: true,
+    opacity_semantics: "physical-coverage",
+    source_ownership_semantics: "separate-mask",
+    source_ownership_channel: "vertex-color-r",
+  });
+  assert.deepEqual(
+    maskRecoveryMesh(model, "part", (p) => p, textures),
+    [
+      [
+        [10, 2, 0],
+        [12, 2, 0],
+        [10, 5, 0],
+      ],
+    ],
+  );
+  material.getBaseColorTextureInfo()!.setMagFilter(9729);
+  assert.throws(() => maskRecoveryMesh(model, "part", (p) => p, textures), /nearest/);
+  material.setAlphaMode("OPAQUE");
+  assert.equal(maskRecoveryMesh(model, "part", (p) => p).length, 1);
 });
