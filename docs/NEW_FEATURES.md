@@ -136,8 +136,12 @@
   compilation remain unfinished.
   Native interchange accepts projection obstacles in sight-state transitions.
   Activation, swap and reset tests verify changing collision with stable receiving
-  height/material lookup, which includes inactive projection surfaces. Editor
-  authoring and shared-controller dependencies remain open.
+  height/material lookup, which includes inactive projection surfaces. Asset surfaces
+  can link to explicit local receiving volumes, preserving thickness, physical flags,
+  material references and sight-state bindings through placement and duplication.
+  The exported fixture verifies top/underside collision and opaque-ray blocking in
+  the native runtime. Existing-map recovery, shared controllers and state visuals
+  remain open.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

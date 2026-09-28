@@ -380,6 +380,46 @@ export function projectionMaterialCompilerFixture() {
   return fixture;
 }
 
+export function projectionVolumeCompilerFixture() {
+  const fixture = projectionMaterialCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  const surface = gameplay.surfaces[0]!;
+  delete surface.projectionMaterials;
+  surface.projectionVolume = "platform-volume";
+  gameplay.volumes = [
+    {
+      id: "platform-volume",
+      node: surface.node,
+      shape: {
+        points: surface.polygon.map(([x, y]) => ({ x, y, z_bottom: 15, z_top: 20 })),
+        solid: true,
+        opaque: true,
+        mouse: true,
+        show_shadow_polygon: true,
+        default_material: 2,
+      },
+    },
+  ];
+  gameplay.materials![0]!.obstacles = ["platform-volume"];
+  gameplay.movementSolids = [];
+  gameplay.movementTransitions = [
+    {
+      id: "platform-state",
+      node: surface.node,
+      waypoint: [50, 50, 20],
+      active: true,
+      definitive: false,
+      initial: [],
+      applied: [],
+      initialSight: [],
+      appliedSight: ["platform-volume"],
+      applyPolygon: [],
+      noApplyPolygon: [],
+    },
+  ];
+  return fixture;
+}
+
 export function receivingGapCompilerFixture() {
   const fixture = projectionMaterialCompilerFixture();
   const gameplay = fixture.hut.gameplay!;

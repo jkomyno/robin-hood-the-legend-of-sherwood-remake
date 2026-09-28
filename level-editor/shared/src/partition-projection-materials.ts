@@ -6,6 +6,8 @@ import { simplifyMotionRing } from "./motion-quantization.ts";
 
 export interface ProjectionMaterialSupport {
   polygon: Point[];
+  /** Existing physical receiver; partitioning must not replace it with thin geometry. */
+  obstacleIndex?: number;
   planePoints?: SightObstacle["projection_plane"];
   footprint?: Point[];
   defaultMaterial: number;
@@ -57,7 +59,16 @@ export function partitionProjectionMaterials(
     members.push({ support, geometry });
   }
   for (const [index, member] of members.entries())
-    for (const other of members.slice(index + 1))
+    for (const other of members.slice(index + 1)) {
+      const overlap = area(clipping.intersection(member.geometry, other.geometry));
+      if (
+        (member.support.obstacleIndex !== undefined) !==
+          (other.support.obstacleIndex !== undefined) &&
+        overlap > 1e-7
+      )
+        throw new Error(
+          "Overlapping physical and generated receivers require explicit volumes for both surfaces",
+        );
       if (
         !(member.support.owner && member.support.owner === other.support.owner) &&
         (member.support.priority ?? 0) === (other.support.priority ?? 0) &&
@@ -67,9 +78,10 @@ export function partitionProjectionMaterials(
             JSON.stringify(other.support.planePoints) ||
           (member.support.materialSignature ?? JSON.stringify(member.support.materialIndices)) !==
             (other.support.materialSignature ?? JSON.stringify(other.support.materialIndices))) &&
-        area(clipping.intersection(member.geometry, other.geometry)) > 1e-7
+        overlap > 1e-7
       )
         throw new Error("Overlapping receiving surfaces have conflicting projection materials");
+    }
   members.sort(
     (a, b) =>
       (b.support.priority ?? 0) - (a.support.priority ?? 0) ||

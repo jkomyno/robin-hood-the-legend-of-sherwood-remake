@@ -22,11 +22,97 @@ import {
   doorTransitionCompilerFixture,
   doorAnchorCompilerFixture,
   projectionMaterialCompilerFixture,
+  projectionVolumeCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("receiving volumes retain thickness, materials and state links after placement", () => {
+  const { document, assets } = projectionVolumeCompilerFixture();
+  const compile = () => compileAssetGameplay(document, assets, bounds);
+  const baseline = compile();
+  const receiver = baseline.sight_obstacles[0]!;
+  assert.deepEqual(receiver.projection_area, [1, 1]);
+  assert.equal(receiver.solid, true);
+  assert.equal(receiver.opaque, true);
+  assert.equal(receiver.show_shadow_polygon, true);
+  assert.equal(receiver.default_material, 2);
+  assert.deepEqual(receiver.material_indices, [0]);
+  assert.ok(
+    receiver.points.every((p) => Math.fround(p.z_bottom) === 15 && Math.fround(p.z_top) === 20),
+  );
+  assert.equal(baseline.sight_obstacles.length, 2);
+  assert.deepEqual(baseline.movement_transitions![0]!.applied_sight, [0]);
+  const part = document.objects.find((p) => p.node.endsWith(":building-999"))!;
+  part.transform.dx += 100;
+  const moved = compile();
+  const coordinates = (points: typeof receiver.points) =>
+    points.map((p) => [p.x, p.y, p.z_bottom, p.z_top].map(Math.fround));
+  assert.deepEqual(
+    coordinates(moved.sight_obstacles[0]!.points),
+    coordinates(receiver.points.map((p) => ({ ...p, x: p.x + 100 }))),
+  );
+  assert.deepEqual(moved.movement_transitions![0]!.applied_sight, [0]);
+  part.transform.rot_deg = 90;
+  const rotated = compile();
+  assert.ok(
+    rotated.sight_obstacles[0]!.points.every(
+      (p) => Math.fround(p.z_bottom) === 15 && Math.fround(p.z_top) === 20,
+    ),
+  );
+  assert.deepEqual(rotated.movement_transitions![0]!.applied_sight, [0]);
+  const copy = structuredClone(part);
+  copy.id = "projection-copy";
+  copy.group = "projection-copy";
+  copy.transform.dx += 600;
+  document.groups.push({ id: "projection-copy", transform: { ...IDENTITY_TRANSFORM } });
+  document.objects.push(copy);
+  const duplicated = compile();
+  const transitions = duplicated.movement_transitions!;
+  assert.deepEqual(
+    transitions.map((t) => t.applied_sight),
+    [[0], [1]],
+  );
+  const receivers = transitions.map((t) => duplicated.sight_obstacles[t.applied_sight![0]!]!);
+  assert.notDeepEqual(receivers[0]!.projection_area, receivers[1]!.projection_area);
+  assert.notDeepEqual(receivers[0]!.material_indices, receivers[1]!.material_indices);
+});
+
+test("receiving volume links reject missing, conflicting and uncovered definitions", () => {
+  const { document, assets, hut } = projectionVolumeCompilerFixture();
+  const surface = hut.gameplay!.surfaces[0]!;
+  surface.projectionVolume = "missing";
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid projection volume/);
+  surface.projectionVolume = "platform-volume";
+  surface.projectionMaterials = { defaultMaterial: 2, regions: [] };
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid projection volume/);
+  delete surface.projectionMaterials;
+  surface.height = 21;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /top must lie on the surface/,
+  );
+  surface.height = 20;
+  surface.polygon[0]![0] -= 1;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /does not cover/);
+  surface.polygon[0]![0] += 1;
+  const adjacent = hut.gameplay!.surfaces[1]!;
+  const saved = structuredClone(adjacent.polygon);
+  adjacent.polygon = structuredClone(surface.polygon);
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /physical and generated receivers/,
+  );
+  adjacent.polygon = saved;
+  const other = structuredClone(surface);
+  other.id = "other-area";
+  surface.navigationRegion = "one";
+  other.navigationRegion = "two";
+  hut.gameplay!.surfaces.push(other);
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /multiple receiving areas/);
+});
+
 test("independent interiors join through a placed passage and separate when it moves", () => {
   const { document, assets, passage } = joinedInteriorCompilerFixture();
   const joined = compileAssetGameplay(document, assets, bounds);

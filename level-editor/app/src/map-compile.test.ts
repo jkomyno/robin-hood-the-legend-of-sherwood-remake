@@ -22,6 +22,7 @@ import {
   clearanceAssetCompilerFixture,
   materialAssetCompilerFixture,
   projectionMaterialCompilerFixture,
+  projectionVolumeCompilerFixture,
   receivingGapCompilerFixture,
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
@@ -267,6 +268,20 @@ test("asset environmental sound export matches the native source fixture", async
     await readFile(
       new URL(
         "../../../crates/robin_engine/tests/fixtures/asset-sound.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("receiving volume export matches the native state fixture", async () => {
+  const { document, assets } = projectionVolumeCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-projection-volume.level.json",
         import.meta.url,
       ),
       "utf8",

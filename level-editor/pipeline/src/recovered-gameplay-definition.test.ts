@@ -8,6 +8,7 @@ import {
   doorTransitionCompilerFixture,
   doorAnchorCompilerFixture,
   projectionMaterialCompilerFixture,
+  projectionVolumeCompilerFixture,
   maskAssetCompilerFixture,
   joinedNavigationCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
@@ -63,6 +64,7 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
       navigationRegion: s.navigationRegion,
       navigationJoins: s.navigationJoins,
       projectionMaterials: s.projectionMaterials,
+      projectionVolume: s.projectionVolume,
       kind: gameplay.lifts?.some((l) => l.surface === s.id) ? "lift" : "walkable",
       vertices: s.polygon.map(([x, y], i) => [
         x,
@@ -99,6 +101,20 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
     ],
   };
 }
+
+test("receiving volumes and state bindings survive authoring conversion", () => {
+  const { hut } = projectionVolumeCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  packet.volumes = hut.gameplay!.volumes;
+  packet.movementSolids = [];
+  packet.movementTransitions = hut.gameplay!.movementTransitions;
+  const restored = recoveredGameplayDefinition(packet, hut);
+  assert.equal(restored.surfaces[0]!.projectionVolume, "platform-volume");
+  assert.deepEqual(restored.volumes, packet.volumes);
+  assert.deepEqual(restored.movementTransitions, packet.movementTransitions);
+  packet.volumes![0]!.shape.points[0]!.z_bottom = 5;
+  assert.equal(restored.volumes![0]!.shape.points[0]!.z_bottom, 15);
+});
 
 test("asset mask coverage and state links survive recovery packet conversion independently", () => {
   const { hut } = maskAssetCompilerFixture();

@@ -735,6 +735,45 @@ mod tests {
     }
 
     #[test]
+    fn editor_projection_volume_preserves_physical_state_and_receiving_geometry() {
+        use crate::coordinates::WorldPoint3D;
+        use crate::sight_obstacle::{
+            SIGHTOBSTACLE_OPAQUE, SIGHTOBSTACLE_SOLID, is_reachable_impact_3d,
+        };
+        let (mut engine, assets) = load_compiled_transition(
+            include_bytes!("../../tests/fixtures/asset-projection-volume.level.json"),
+            (2000., 2000.),
+        );
+        let receiver = &assets.environment.static_sight_obstacles[0];
+        assert!(receiver.projection_area_ref().is_some());
+        assert_eq!(receiver.compute_top_z(350., 350.), 20.);
+        let impact = |engine: &EngineInner, filter, upward| {
+            is_reachable_impact_3d(
+                WorldPoint3D::new(350., 350., if upward { 1. } else { 100. }),
+                WorldPoint3D::new(350., 350., if upward { 100. } else { 1. }),
+                filter,
+                engine.sight_obstacles(&assets),
+                None,
+                None,
+            )
+            .map(|hit| hit.impact.z)
+        };
+        let patch = crate::patch::PatchIndex::new(0).unwrap();
+        let sim = crate::sim_rng::test_context();
+        for applied in [false, true, false] {
+            if applied {
+                engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+            } else {
+                engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+            }
+            for filter in [SIGHTOBSTACLE_SOLID, SIGHTOBSTACLE_OPAQUE] {
+                assert_eq!(impact(&engine, filter, false), applied.then_some(20.));
+                assert_eq!(impact(&engine, filter, true), applied.then_some(15.));
+            }
+        }
+    }
+
+    #[test]
     fn compiled_projection_states_toggle_collision_without_changing_elevation_lookup() {
         use crate::coordinates::MapPoint;
         use crate::fast_find_grid::SectorIndex;

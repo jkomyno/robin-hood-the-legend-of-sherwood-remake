@@ -312,14 +312,21 @@ The second bridge's visual elevation also differs between mission variants (1 vs
 110), and its old preview source hash no longer matches the current JSON. No state
 recipe has been approved from that stale pin.
 
-Leicester's map patches activate projections 389, 384 and 390. Projection-state
-activation remains an editor compiler gap: current sight-transition authoring
-rejects receiving surfaces. Native interchange now accepts projection obstacles
+Leicester's map patches activate projections 389, 384 and 390. Native interchange accepts projection obstacles
 in initial/applied sight lists, with the same missing-reference and duplicate-control
 validation as other obstacles. Runtime tests cover activation, swapping and reset:
 collision follows activation, while elevation/material lookup retains all registered
 receivers, including inactive ones, and navigation storage remains unchanged.
-This does not yet supply asset-local state authoring or shared-controller support.
+Assets can now link a walkable surface to a local `projectionVolume`, replacing
+its generated thin receiver with that volume's full geometry, thickness, flags and
+material links. Existing initial/applied sight lists control its activation. Tests
+cover movement, rotation, duplication, export into the native fixture, and native
+top/underside collision plus opaque-ray blocking through activation and reset.
+Missing links, mismatched heights, uncovered walking contours and multiple receiving
+areas are rejected. Overlapping physical/generated receivers require explicit
+volumes on both surfaces, avoiding ambiguous overlap ordering. Recovery and
+publication for existing maps, shared controllers, state visuals and actor traversal
+remain incomplete; no Leicester patch has been certified by this synthetic fixture.
 Mission-carried records also include traps, hiding places and
 York gate effects; their presence in a mission file does not establish permanent
 map ownership. The earlier recovered transition counts cover map-source recovery,

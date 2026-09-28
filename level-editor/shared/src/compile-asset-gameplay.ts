@@ -549,9 +549,29 @@ export function compileAssetGameplay(
         ),
       };
       const change = dynamic.find((d) => d.surface === surface);
+      const receiver =
+        surface.projectionVolume === undefined
+          ? undefined
+          : partSight.get(surface.projectionVolume);
+      if (surface.projectionVolume !== undefined && !receiver)
+        throw new Error(`${surface.id}: missing projection volume ${surface.projectionVolume}`);
+      if (receiver) {
+        const top = receiver.points.map((p): Vec3 => [p.x, p.y - p.z_top, p.z_top]);
+        heightPlane(top);
+        if (top.some(([x, y, z]) => Math.abs(planeHeight(plane, [x, y]) - z) > 1e-4))
+          throw new Error(`${surface.id}: projection volume top must lie on the surface`);
+        const coverage = ring(
+          top.map(([x, y]): Point => [x, y]),
+          `${surface.id} projection volume`,
+        );
+        const walking = points.map(([x, y, z]): Point => [x, y - z]);
+        if (fixedPolygonBoolean("difference", polygon(walking), [polygon(coverage)]).length)
+          throw new Error(`${surface.id}: projection volume does not cover its walking surface`);
+      }
       if (gameplay.surfaces.includes(surface))
         projectionSupports.push({
           ...placed,
+          ...(receiver ? { obstacleIndex: sight.indexOf(receiver) } : {}),
           ...(anchors
             ? {
                 planePoints: [
@@ -561,25 +581,30 @@ export function compileAssetGameplay(
                 ] as [Vec3, Vec3, Vec3],
               }
             : {}),
-          footprint: surface.projectionMaterials?.footprint
-            ? ring(
-                surface.projectionMaterials.footprint.map((point): Point => {
-                  const [x, y, z] = transform(surface.node, point);
-                  return [x, y - z];
-                }),
-                `${placement.id}/${surface.id} receiving footprint`,
-              )
-            : undefined,
-          defaultMaterial: surface.projectionMaterials?.defaultMaterial ?? 0,
-          materialIndices: (surface.projectionMaterials?.regions ?? []).map((id) =>
-            materialIndices.get(id)!,
-          ),
+          footprint: receiver
+            ? ring(receiver.points.map((p): Point => [p.x, p.y - p.z_top]))
+            : surface.projectionMaterials?.footprint
+              ? ring(
+                  surface.projectionMaterials.footprint.map((point): Point => {
+                    const [x, y, z] = transform(surface.node, point);
+                    return [x, y - z];
+                  }),
+                  `${placement.id}/${surface.id} receiving footprint`,
+                )
+              : undefined,
+          defaultMaterial:
+            receiver?.default_material ?? surface.projectionMaterials?.defaultMaterial ?? 0,
+          materialIndices:
+            receiver?.material_indices ??
+            (surface.projectionMaterials?.regions ?? []).map((id) => materialIndices.get(id)!),
           materialSignature: JSON.stringify(
-            (surface.projectionMaterials?.regions ?? []).map(
-              (id) => materials[materialIndices.get(id)!],
-            ),
+            receiver
+              ? receiver.material_indices.map((id) => materials[id])
+              : (surface.projectionMaterials?.regions ?? []).map(
+                  (id) => materials[materialIndices.get(id)!],
+                ),
           ),
-          explicit: surface.projectionMaterials !== undefined,
+          explicit: receiver !== undefined || surface.projectionMaterials !== undefined,
           tiePriority: surface.projectionMaterials?.priority ?? 0,
           priority: Math.fround(
             surface.projectionMaterials?.priorityHeight === undefined
@@ -845,16 +870,31 @@ export function compileAssetGameplay(
     // Projection surfaces provide layer-aware elevation and picking.
     for (const piece of pieces) {
       areas.push({ ...piece, sector, layer, blockers: [...piece.blockers, ...changing.initial] });
-      for (const material of partitionProjectionMaterials(
-        piece.polygon,
-        projectionSupports.filter(
-          (support) =>
-            support.lift === piece.lift &&
-            support.navigationRegion === piece.navigationRegion &&
-            support.plane.every((n, i) => Math.abs(n - piece.plane[i]!) < 1e-7),
-        ),
-        warnings,
-      )) {
+      const supports = projectionSupports.filter(
+        (support) =>
+          support.lift === piece.lift &&
+          support.navigationRegion === piece.navigationRegion &&
+          support.plane.every((n, i) => Math.abs(n - piece.plane[i]!) < 1e-7),
+      );
+      for (const support of supports) {
+        if (
+          support.obstacleIndex === undefined ||
+          !fixedPolygonBoolean("intersection", polygon(piece.polygon), [polygon(support.polygon)])
+            .length
+        )
+          continue;
+        const receiver = sight[support.obstacleIndex]!;
+        if (
+          Array.isArray(receiver.projection_area) &&
+          (receiver.projection_area[0] !== sector || receiver.projection_area[1] !== layer)
+        )
+          throw new Error(
+            "A projection volume spans multiple receiving areas; split its asset definition",
+          );
+        receiver.projection_area = [sector, layer];
+      }
+      for (const material of partitionProjectionMaterials(piece.polygon, supports, warnings)) {
+        if (material.obstacleIndex !== undefined) continue;
         if (!lift && !material.explicit && !piece.plane.some((n) => Math.abs(n) > 1e-7)) continue;
         const receivingPlane = material.planePoints
           ? heightPlane(material.planePoints.map(([x, y, z]) => [x, y - z, z]))
@@ -877,6 +917,9 @@ export function compileAssetGameplay(
     }
     sector += 1 + blockers.length + changing.obstacles.length;
   }
+  for (const support of projectionSupports)
+    if (support.obstacleIndex !== undefined && !sight[support.obstacleIndex]!.projection_area)
+      throw new Error("Projection volume has no compiled receiving area");
   const resolve = (point: Vec3, label: string, lift?: string | null, allowBlocked = false) => {
     const matches = areas.filter(
       (a) =>
