@@ -258,7 +258,7 @@ unblocked landing region with the owning asset's receiving footprints before
 choosing an anchor. It selects a point on the integer movement grid before
 evaluating elevation, avoiding fractional-point/rounded-point slope mismatches.
 Zone polygons, jump edges and helper rules are preserved. York's baseline now
-uses corrected receiving-sector references for two zones; all other compiled
+uses a corrected receiving-sector reference for one zone; all other compiled
 fields remain unchanged. Moving the scaffolded house detaches two jump pairs
 and their gates without invalidating its neighbor's remaining landing anchor.
 All nine maps retain all 173 recovered pairs, pass static compilation, and load
