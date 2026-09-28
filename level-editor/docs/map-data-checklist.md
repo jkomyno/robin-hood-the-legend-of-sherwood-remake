@@ -242,15 +242,29 @@ follow independent one-pixel asset moves. Native loading passes for the baseline
 and three moved scenes; baseline non-mask data is unchanged. Some moved jump
 connections detach. There are 523 unrecovered Nottingham masks.
 
-York's reviewed recipe (`refinement/catalogs/york-masks.json`) recovers six static
+Lincoln's reviewed recipe (`refinement/catalogs/lincoln-masks.json`) recovers keep
+mask 390 (16,407 pixels). Its character threshold extends beyond navigation in
+the keep's flat 800.00104-unit receiving plane; bitmap coverage remains entirely
+mesh-supported. Coverage, boundaries and obstacle links match exactly before and
+after moving the keep one pixel east. Both scenes load natively, and baseline
+non-mask geometry is unchanged. Drafts and native checks are under
+`work/map-compile/lincoln-mask-recovery` and `work/map-compile/lincoln-mask-native`.
+There are 427 unrecovered Lincoln masks.
+
+York's reviewed recipe (`refinement/catalogs/york-masks.json`) recovers seven static
 masks: scaffolded corner house 79 (2,777 pixels), southwest square corner house
 201 (392), central south golden timber house 227/238 (2,126/5,856), southeast lane
-eastern timber house 269 (687), and south gate lane front timber house 280 (1,036).
-Except for ground-level 269, receivers lie on the flat 90.00101-unit town surface.
-All six match in the baseline and after independent one-pixel asset moves.
-Native loading passes for the baseline and all five moved scenes. York still
-has 822 unrecovered masks. Neither map is certified for complete gameplay or
-publication.
+eastern timber house 269 (687), south gate lane front timber house 280 (1,036),
+and outer east wall stair passage 164 (7,305). Mask 269 receives at ground level;
+164 uses its owning passage's flat 160.001-unit plane, including the character
+threshold beyond navigation. The remaining receivers use the flat 90.00101-unit
+town surface. All seven match in the baseline and after independent one-pixel
+asset moves. Native loading passes for the baseline and all six moved scenes.
+Adding mask 164 leaves baseline non-mask geometry unchanged. Updated drafts and
+native checks are under `work/map-compile/york-raised-mask-recovery` and
+`work/map-compile/york-raised-mask-native`. York still has 821 unrecovered masks.
+These assets have incomplete mask coverage and do not enable mask-controlled
+depth. None of these maps is certified for complete gameplay or publication.
 
 The scaffolded-house movement check exposed a landing anchor selected from a
 neighboring asset's portion of a shared jump zone. Recovery now intersects the

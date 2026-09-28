@@ -149,6 +149,36 @@
           ]
         }
       ]
+    },
+    {
+      "asset": "york-outer-east-wall-stair-passage",
+      "model_sha256": "dbc5a328493118c93840f7f21ef9f843c9ab746ae3941a71381d38a3c4efc1e7",
+      "entries": [
+        {
+          "source": 164,
+          "id": "raised-passage-occlusion",
+          "node": "building-236",
+          "anchor": [
+            2660,
+            2110.001,
+            160.001
+          ],
+          "characterHeights": [
+            160.001,
+            160.001,
+            160.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Character threshold extends beyond navigation and is authored in the owning asset's flat 160.001-unit receiving plane. The anchor is inside that plane and source layer. Complete mask coverage is supported by the mesh; obstacle links are asset-local and no patch controls this mask. Projectile boundaries use the world XY datum."
+        }
+      ]
     }
   ]
 }

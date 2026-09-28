@@ -80,7 +80,7 @@
   into local state IDs after ownership is established, with independent compiled
   references for duplicated assets.
   Reviewed static-mask recipes now run in the asset migration with pinned source
-  and model hashes. Three Derby, seven Leicester, four Nottingham and six York
+  and model hashes. Three Derby, seven Leicester, one Lincoln, four Nottingham and seven York
   masks have exact baseline coverage and boundary round-trips with native
   registration and independent placement checks. Jump landing anchors use their
   owning asset's receiving footprints and evaluate height at the integer movement

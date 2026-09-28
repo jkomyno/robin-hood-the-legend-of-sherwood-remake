@@ -1,0 +1,32 @@
+{
+  "source_sha256": "1d39600d880f96dbd13bff1cda94778d867eabf4d6ed76b00fc92a70f646fc07",
+  "recipes": [
+    {
+      "asset": "lincoln-keep",
+      "model_sha256": "eca0f74d71cd3a0bff41e6345834b7478f23016ef5c44600826dc3f13bf4b189",
+      "entries": [
+        {
+          "source": 390,
+          "id": "keep-upper-roof-occlusion",
+          "node": "building-218",
+          "anchor": [
+            1566,
+            1076.00104,
+            800.00104
+          ],
+          "characterHeights": [
+            800.00104,
+            800.00104
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Character threshold extends beyond navigation and is authored in the owning asset's flat 800.00104-unit receiving plane. The anchor is inside that plane and source layer. Complete mask coverage is supported by the mesh; obstacle links are asset-local and no patch controls this mask. Projectile boundaries use the world XY datum."
+        }
+      ]
+    }
+  ]
+}
