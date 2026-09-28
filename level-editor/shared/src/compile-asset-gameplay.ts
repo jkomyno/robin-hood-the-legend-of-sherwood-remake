@@ -560,8 +560,10 @@ export function compileAssetGameplay(
         throw new Error(`${surface.id}: missing projection volume ${surface.projectionVolume}`);
       if (receiver) {
         const top = receiver.points.map((p): Vec3 => [p.x, p.y - p.z_top, p.z_top]);
-        heightPlane(top);
-        if (top.some(([x, y, z]) => Math.abs(planeHeight(plane, [x, y]) - z) > 1e-4))
+        // Physical receivers retain every vertex, but their receiving plane is
+        // defined only by the first three, independently of later vertex heights.
+        const receiverPlane = heightPlane(top.slice(0, 3));
+        if (points.some(([x, y, z]) => Math.abs(planeHeight(receiverPlane, [x, y - z]) - z) > 1e-4))
           throw new Error(`${surface.id}: projection volume top must lie on the surface`);
         const coverage = ring(
           top.map(([x, y]): Point => [x, y]),
@@ -892,7 +894,7 @@ export function compileAssetGameplay(
           (receiver.projection_area[0] !== sector || receiver.projection_area[1] !== layer)
         )
           throw new Error(
-            "A projection volume spans multiple receiving areas; split its asset definition",
+            `Projection volume ${support.owner}/${support.obstacleIndex} spans multiple receiving areas (${receiver.projection_area.join(":")} and ${sector}:${layer}); author its navigation region before export`,
           );
         receiver.projection_area = [sector, layer];
       }

@@ -341,6 +341,23 @@ door rights and movement state restoration. This is not actor-traversal or visua
 parity: the full scene still rejects unsupported visual states, 450 masks remain
 unrecovered, and these candidates remain unpublished. Mission-carried projection
 effects and shared controllers still need separate ownership and recovery work.
+Physical receiving-plane validation now uses the first three ordered volume
+vertices, retaining later vertex heights instead of requiring the whole volume
+top to be planar. The authored walking surface must still agree with that plane;
+degenerate first triples and height mismatches remain errors.
+
+An all-map candidate audit in `work/map-compile/static-receiver-audit/audit.json`
+found 557 static surface links whose uniquely owned physical parts exactly match
+source float32 vertices and flags; 32 other surfaces lack that ownership/geometry
+evidence. These are proposed links, not published definitions. Croisement03's 14
+links compile and construct natively as 30 movement areas, 106 sight obstacles,
+15 doors and 10 jump pairs. The other eight candidate maps remain rejected:
+Croisement01/02, Leicester, Lincoln, Nottingham and Sherwood have physical
+receivers spanning multiple generated movement areas; Derby and York first fail
+on overlapping receiving-material priority. Fixing these requires navigation and
+overlap authoring, not duplicating a physical obstacle across areas or flattening
+its geometry. Native construction does not yet prove receiving-query, visual or
+actor-traversal parity for Croisement03.
 Mission-carried records also include traps, hiding places and
 York gate effects; their presence in a mission file does not establish permanent
 map ownership. The earlier recovered transition counts cover map-source recovery,

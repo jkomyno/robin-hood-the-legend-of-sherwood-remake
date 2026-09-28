@@ -144,6 +144,10 @@
   recovery restores Leicester's three map-patch receivers with exact ordered
   float32 geometry and flags; its five recovered transitions pass native apply/reset
   checks. Publication, shared controllers, state visuals and traversal remain open.
+  Physical receivers use their first three ordered vertices for the receiving
+  plane while preserving later vertex heights. A broader static audit constructs
+  Croisement03 with 14 physical receiver links; other candidate maps still need
+  navigation-region and material-priority fixes before migration.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

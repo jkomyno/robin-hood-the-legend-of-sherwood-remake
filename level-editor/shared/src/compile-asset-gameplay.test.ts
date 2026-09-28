@@ -79,6 +79,28 @@ test("receiving volumes retain thickness, materials and state links after placem
   assert.notDeepEqual(receivers[0]!.material_indices, receivers[1]!.material_indices);
 });
 
+test("physical receiving planes use the first three vertices without flattening later heights", () => {
+  const { document, assets, hut } = projectionVolumeCompilerFixture();
+  const points = hut.gameplay!.volumes![0]!.shape.points;
+  points[3]!.z_top = 22;
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    geometry.sight_obstacles[0]!.points.map((p) => Math.fround(p.z_top)),
+    [20, 20, 20, 22],
+  );
+  hut.gameplay!.surfaces[0]!.height = 22;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /top must lie on the surface/,
+  );
+  hut.gameplay!.surfaces[0]!.height = 20;
+  points[2] = { ...points[1]! };
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /no nondegenerate height plane/,
+  );
+});
+
 test("receiving part links reuse physical geometry and preserve state references", () => {
   const { document, assets, hut } = projectionVolumeCompilerFixture();
   const gameplay = hut.gameplay!;
