@@ -7,6 +7,8 @@
   lookup. Explicit local seam edges let matching flat pieces compile into one
   sight volume, removing artificial internal faces. Moving the pieces apart
   leaves independent volumes. Linked or sloped geometry requires separate authoring.
+  Draft staging preserves model/resource paths in an isolated library overlay,
+  checks input hashes and scene overrides, and reopens the resulting editor scene.
 
 - **Independent physical asset drafts.** Offline authoring can restore a reviewed
   missing object as a separate editor asset with local collision and a volume

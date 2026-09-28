@@ -1443,3 +1443,29 @@ coordinates and ray parameter; all match exactly. Its input is
 `nottingham-market-volume-seams-native/sight-query-case.json` under
 `work/map-compile`. This verifies sampled queries against this assembled volume,
 not full-scene impact ordering, all placements, visual behavior or map parity.
+
+The southwest parapet's flat record 219 uses a second reviewed partition recipe,
+`refinement/catalogs/nottingham-southwest-parapet-volume-partitions.json`. Its north
+and south assets now meet at the true bend, retain the southern inner corner and
+have exactly ground-level bottoms. Their former component bounds added about
+9,470 square game units and raised the bottoms by 0.00035–0.00044 units. The new
+assembled footprint has zero difference under the clipping audit, and its eight
+vertices match the reference at engine precision. Another 100,000 native sight
+and impact queries match exactly.
+
+`stage-volume-partitions.ts` stages draft descriptors in a new library overlay,
+preserving model/resource paths and unchanged files. It verifies draft hashes,
+input model/descriptor pins and the asset index, rejects conflicting per-instance
+collision overrides, updates scene/index hashes and reopens the compact scene.
+Its tests verify unchanged source files and model bytes, reload fidelity, stale
+pin rejection, override rejection and exclusive creation of the output directory.
+
+The combined market/parapet overlay is `work/map-compile/nottingham-parapet-volume-stage`;
+recovery and native diagnostics use the matching `-recovery` and `-native`
+directories. The baseline constructs 114 areas, 667 sight obstacles, 172 doors
+and 38 jump pairs. Moving both wall assets and the attached southwest stair one
+unit west also constructs, with 171 doors and 37 jump pairs as external sockets
+separate. Moving only the north wall east causes conflicting receiving surfaces;
+moving it west leaves the separate stair's landing unsupported. Those failures
+remain explicit. This does not certify arbitrary detached wall/stair placements,
+receiving-surface parity, appearance or publication.
