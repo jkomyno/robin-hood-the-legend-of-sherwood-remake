@@ -137,8 +137,8 @@ owner mesh triangles, splits overlaps where their depth order changes, and
 stores only the frontmost surface in asset-local coordinates. It rejects coverage
 outside the mesh instead of extrapolating height. Tests cover sloped faces,
 cutouts, crossing surfaces, duplicate faces and foreground islands. This helper
-is not yet connected to source-mask ownership or the batch asset migration;
-no existing-map mask is certified recovered by these tests.
+is used by explicit reviewed recipes in the batch asset migration; these
+synthetic tests alone do not certify existing-map mask recovery.
 The mesh reader handles indexed/unindexed triangles and nested transforms in a
 selected model part. Skinned/animated geometry and transparent materials reject
 until their state or texture coverage is explicitly handled. Surface clipping
@@ -175,6 +175,19 @@ state IDs or implicit cross-asset coordination. Tests cover interleaved source
 layers and independent links after asset duplication. All 518 state references
 across the nine source maps resolve; none reuses a mask within/across patches.
 This does not mean those masks have recovered coverage or published state links.
+
+The first real static masks are recovered for Derby's southwest postern: records
+70 and 71, with 385 and 884 covered pixels. The reviewed recipe is
+`refinement/catalogs/derby-masks.json`; pass it to `recover-asset-gameplay.ts` with
+`--mask-definitions`. Source and model hashes pin the authoring evidence. The
+migration checks source receiving layers/elevations, local obstacle ownership and
+exact mesh-backed coverage, and rejects changing masks until their state recovery
+is supplied. Both definitions compile from asset data only and preserve pixel
+coverage and projectile boundaries when the postern moves one pixel east.
+Native construction verifies their bitmap coverage and layer registration. The
+drafts are under `work/map-compile/reviewed-mask-recovery/derby` and the native
+descriptor under `work/map-compile/reviewed-mask-native`. Derby still has 234
+unrecovered masks; neither the complete asset nor map is publication-certified.
 
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.

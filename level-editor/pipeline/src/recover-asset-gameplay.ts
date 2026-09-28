@@ -2,6 +2,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { createHash } from "node:crypto";
+import { recoverReviewedMasks, type ReviewedMaskRecipe } from "./recover-reviewed-masks.ts";
 import polygonClipping, { type Polygon, type MultiPolygon } from "polygon-clipping";
 import {
   gameToScene,
@@ -66,6 +68,7 @@ const { values } = parseArgs({
     source: { type: "string" },
     out: { type: "string" },
     ownership: { type: "string" },
+    "mask-definitions": { type: "string" },
   },
 });
 if (!values.map || !values.source || !values.out)
@@ -79,7 +82,8 @@ const inputDescriptors = await pinnedDescriptors(
   inputDocument.sceneAssets,
 );
 const { document, descriptors } = normalizeGameplayStateViews(inputDocument, inputDescriptors);
-const proto: ProtoLevel = JSON.parse(await fs.readFile(values.source, "utf8"));
+const sourceBytes = await fs.readFile(values.source);
+const proto: ProtoLevel = JSON.parse(sourceBytes.toString());
 const locals = new Map<
   number,
   {
@@ -1534,6 +1538,17 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
     unresolved.push({ kind: "jump-geometry", source: index, error: String(error) });
   }
 }
+let maskRecovery: Awaited<ReturnType<typeof recoverReviewedMasks>> = [];
+if (values["mask-definitions"]) {
+  const definitions: { source_sha256: string; recipes: ReviewedMaskRecipe[] } = JSON.parse(
+    await fs.readFile(values["mask-definitions"], "utf8"),
+  );
+  if (createHash("sha256").update(sourceBytes).digest("hex") !== definitions.source_sha256)
+    throw new Error("Reviewed mask source changed");
+  maskRecovery = await recoverReviewedMasks(values.library, document, proto, definitions.recipes);
+  for (const recovered of maskRecovery)
+    (packet(recovered.asset).masks ??= []).push(recovered.definition);
+}
 const pending = {
   doorTransitionBindings:
     proto.patches.filter((patch) => patch.door_indices.length > 0).length -
@@ -1542,7 +1557,7 @@ const pending = {
     movementStateInventory.reduce((sum, area) => sum + area.transitions.length, 0) -
     movementTransitionRecovery.length,
   buildingEntries: proto.buildings.length - recoveredBuildings,
-  maskRecords: proto.masks.length,
+  maskRecords: proto.masks.length - maskRecovery.length,
   patches: proto.patches.length,
   jumpPairs: proto.jump_line_pairs.length - recoveredJumps,
   materialRegions: proto.material_sectors.length - recoveredMaterials.size,
@@ -1587,6 +1602,11 @@ const report = {
     0,
   ),
   definitionValidation,
+  maskRecovery: maskRecovery.map(({ asset, source, definition }) => ({
+    asset,
+    source,
+    id: definition.id,
+  })),
   movementStateInventory,
   movementTransitionRecovery,
   doorTransitionRecovery,

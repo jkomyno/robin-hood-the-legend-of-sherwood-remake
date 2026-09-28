@@ -72,6 +72,10 @@
   Patch mask references are validated as layer-local pairs and can be recovered
   into local state IDs after ownership is established, with independent compiled
   references for duplicated assets.
+  Reviewed static-mask recipes now run in the asset migration with pinned source
+  and model hashes. Two Derby postern masks have exact coverage and boundary
+  round-trips, including placement and native registration checks; full-map
+  recovery and publication remain incomplete.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits

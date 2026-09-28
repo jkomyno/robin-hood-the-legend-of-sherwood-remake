@@ -225,6 +225,7 @@ fn recovered_static_exports_construct_native_geometry() {
         let level = LoadedLevel::hackable_from_json(&bytes).unwrap();
         let jump_pairs = level.proto.jump_line_pairs.clone();
         let jump_zones = level.proto.jump_zones.clone();
+        let expected_masks = level.proto.masks.clone();
         let mut assets = LevelAssets::new();
         let engine = construct_with_dimensions(
             level,
@@ -259,6 +260,41 @@ fn recovered_static_exports_construct_native_geometry() {
         );
         assert!(!engine.fast_grid().level.blocks.is_empty(), "{file}");
         let grid = engine.fast_grid();
+        assert_eq!(grid.level.masks.len(), expected_masks.len(), "{file}");
+        for (index, (actual, expected)) in grid.level.masks.iter().zip(&expected_masks).enumerate()
+        {
+            assert_eq!(actual.mask_type, expected.mask_type, "{file}: mask {index}");
+            assert_eq!(actual.layer, expected.layer, "{file}: mask {index}");
+            assert_eq!(
+                actual
+                    .obstacle_indices
+                    .iter()
+                    .map(|i| i.get())
+                    .collect::<Vec<_>>(),
+                expected
+                    .obstacle_indices
+                    .iter()
+                    .map(|&i| u32::from(i))
+                    .collect::<Vec<_>>(),
+                "{file}: mask {index} obstacle links"
+            );
+            assert_eq!(
+                actual.bitmap,
+                robin_engine::mask::decode_mask_bitmap(
+                    &expected.mask_data,
+                    expected.box_size.0 as u16,
+                    expected.box_size.1 as u16,
+                ),
+                "{file}: mask {index}"
+            );
+            assert!(
+                grid.level.layers[usize::from(actual.layer)]
+                    .mask_indices
+                    .iter()
+                    .any(|&i| usize::from(i) == index),
+                "{file}: unregistered mask {index}"
+            );
+        }
         assert_eq!(grid.level.jump_lines.len(), jump_pairs.len() * 2, "{file}");
         for (pair_index, pair) in jump_pairs.iter().enumerate() {
             for (side, (raw, opposite)) in [(&pair.line1, &pair.line2), (&pair.line2, &pair.line1)]

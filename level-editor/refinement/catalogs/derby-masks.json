@@ -1,0 +1,27 @@
+{
+  "source_sha256": "14698dffeeb1316563b4f91b883961298c58323ac799ab2c8a099d99487b8a46",
+  "recipes": [
+    {
+      "asset": "derby-southwest-postern",
+      "model_sha256": "3b03292e8411111b1db5992168fe57b749de7d180851e35118e3bdbc099bb61d",
+      "entries": [
+        {
+          "source": 70,
+          "id": "postern-stair-occlusion",
+          "node": "building-040",
+          "anchor": [593.033515, 2458.006575, 127.501005],
+          "projectileHeights": [0, 0, 0],
+          "review": "Stair obstacle and receiving surface belong to the postern. Full coverage lifts onto the published postern mesh. The anchor is the stair top-plane centroid; projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 71,
+          "id": "postern-platform-occlusion",
+          "node": "building-034",
+          "anchor": [615, 2470, 0],
+          "projectileHeights": [0, 0],
+          "review": "Platform obstacle belongs to the postern. Full coverage lifts onto the published postern mesh. The receiving anchor is on adjacent ground, not the elevated platform; projectile boundaries use the world XY datum."
+        }
+      ]
+    }
+  ]
+}
