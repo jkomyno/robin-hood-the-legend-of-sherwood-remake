@@ -6,6 +6,14 @@
       "model_sha256": "3e9a64b7556c5ccb0e4c05cfd8866f186d2d86249b7448aab75db0bec555fdeb",
       "entries": [
         {
+          "source": 86,
+          "id": "scaffolded-house-platform-projectile-occlusion",
+          "node": "building-133",
+          "anchor": [1600, 1612.001, 152.001],
+          "projectileHeights": [0, 0, 0],
+          "review": "The receiving anchor lies inside the owning house's flat 152.001-unit platform and its navigation layer. This projectile/view mask has no character threshold. Complete bitmap coverage is mesh-supported, obstacle 133 belongs to this asset, and no patch controls the mask. Projectile boundaries use the world XY datum."
+        },
+        {
           "source": 79,
           "id": "bridge-square-scaffolded-corner-house-occlusion-1",
           "node": "building-130",

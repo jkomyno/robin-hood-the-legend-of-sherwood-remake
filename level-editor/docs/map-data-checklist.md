@@ -251,18 +251,19 @@ non-mask geometry is unchanged. Drafts and native checks are under
 `work/map-compile/lincoln-mask-recovery` and `work/map-compile/lincoln-mask-native`.
 There are 427 unrecovered Lincoln masks.
 
-York's reviewed recipe (`refinement/catalogs/york-masks.json`) recovers seven static
-masks: scaffolded corner house 79 (2,777 pixels), southwest square corner house
+York's reviewed recipe (`refinement/catalogs/york-masks.json`) recovers eight static
+masks: scaffolded corner house 79/86 (2,777/747 pixels), southwest square corner house
 201 (392), central south golden timber house 227/238 (2,126/5,856), southeast lane
 eastern timber house 269 (687), south gate lane front timber house 280 (1,036),
 and outer east wall stair passage 164 (7,305). Mask 269 receives at ground level;
 164 uses its owning passage's flat 160.001-unit plane, including the character
-threshold beyond navigation. The remaining receivers use the flat 90.00101-unit
-town surface. All seven match in the baseline and after independent one-pixel
+threshold beyond navigation. Mask 86 has no character threshold and receives on
+the owning house's flat 152.001-unit platform. The remaining receivers use the
+flat 90.00101-unit town surface. All eight match in the baseline and after independent one-pixel
 asset moves. Native loading passes for the baseline and all six moved scenes.
-Adding mask 164 leaves baseline non-mask geometry unchanged. Updated drafts and
-native checks are under `work/map-compile/york-raised-mask-recovery` and
-`work/map-compile/york-raised-mask-native`. York still has 821 unrecovered masks.
+Adding masks 164 and 86 leaves baseline non-mask geometry unchanged. Updated drafts and
+native checks are under `work/map-compile/york-platform-mask-recovery` and
+`work/map-compile/york-platform-mask-native`. York still has 820 unrecovered masks.
 These assets have incomplete mask coverage and do not enable mask-controlled
 depth. None of these maps is certified for complete gameplay or publication.
 
