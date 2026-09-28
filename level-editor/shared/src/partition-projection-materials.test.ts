@@ -34,6 +34,7 @@ test("overlap priority follows authored height then tie precedence across placem
 test("a material island leaves a disjoint surrounding receiver with the same height plane", () => {
   const boundary = square(0, 100);
   const pieces = partitionProjectionMaterials(boundary, [
+    { polygon: boundary, defaultMaterial: 0, materialIndices: [], explicit: false },
     {
       polygon: square(20, 80),
       defaultMaterial: 4,
@@ -55,6 +56,34 @@ test("a material island leaves a disjoint surrounding receiver with the same hei
         { polygon: square(20, 80), defaultMaterial: 4, materialIndices: [], explicit: true },
       ]),
     /conflicting projection materials/,
+  );
+});
+
+test("explicit receivers leave unsupported parts of a merged boundary uncovered", () => {
+  const boundary = square(0, 100);
+  const support = {
+    polygon: square(20, 80),
+    defaultMaterial: 4,
+    materialIndices: [],
+    explicit: true,
+  };
+  const pieces = partitionProjectionMaterials(boundary, [support]);
+  assert.equal(pieces.length, 1);
+  assert.deepEqual(clipping.xor([pieces[0]!.polygon], [support.polygon]), []);
+  const implicit = {
+    polygon: square(0, 30),
+    defaultMaterial: 0,
+    materialIndices: [],
+    explicit: false,
+  };
+  const mixed = partitionProjectionMaterials(boundary, [support, implicit]);
+  const shapes = mixed.map((piece) => [piece.polygon]);
+  assert.deepEqual(
+    clipping.xor(
+      clipping.union(shapes[0]!, ...shapes.slice(1)),
+      clipping.union([support.polygon], [implicit.polygon]),
+    ),
+    [],
   );
 });
 

@@ -201,6 +201,38 @@ fn compiled_masks_reject_unresolved_links_invalid_types_and_malformed_bitmaps() 
 }
 
 #[test]
+fn merged_platform_keeps_its_opening_without_an_invented_receiver() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::fast_find_grid::SectorIndex;
+    use robin_engine::position_interface::SectorHandle;
+    use robin_engine::sector::SectorNumber;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-receiving-gap.level.json"),
+        &mut assets,
+    );
+    let index = engine.fast_grid().level.sector_number_map[&SectorNumber::new(1)];
+    let sector = SectorHandle::new(1)
+        .unwrap()
+        .with_arena_index(SectorIndex::new(index as u32).unwrap());
+    assert!(
+        engine
+            .get_projection_area_index(&assets, sector, 1, MapPoint::new(350., 330.))
+            .is_none()
+    );
+    for point in [MapPoint::new(350., 290.), MapPoint::new(390., 330.)] {
+        let receiver = engine
+            .get_projection_area_index(&assets, sector, 1, point)
+            .unwrap();
+        let obstacle = &assets.environment.static_sight_obstacles[usize::from(receiver)];
+        assert_eq!(
+            obstacle.compute_top_z_from_projection(point.x, point.y),
+            20.
+        );
+    }
+}
+
+#[test]
 fn authored_receiving_plane_survives_polygon_vertex_changes() {
     let mut descriptor: serde_json::Value = serde_json::from_slice(include_bytes!(
         "fixtures/asset-projection-material.level.json"

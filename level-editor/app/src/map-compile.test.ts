@@ -22,6 +22,7 @@ import {
   clearanceAssetCompilerFixture,
   materialAssetCompilerFixture,
   projectionMaterialCompilerFixture,
+  receivingGapCompilerFixture,
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
   sightTransitionCompilerFixture,
@@ -38,6 +39,20 @@ import {
   doorAnchorCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("merged platform export preserves the opening checked by native receiving queries", async () => {
+  const { document, assets } = receivingGapCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-receiving-gap.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("asset mask geometry exports the native state fixture and survives ZIP packaging", async () => {
   const { document, assets } = maskAssetCompilerFixture();

@@ -80,10 +80,21 @@ export function partitionProjectionMaterials(
     member.geometry = clipping.intersection(remaining, member.geometry);
     remaining = clipping.difference(remaining, member.geometry);
   }
-  members.push({
-    support: { polygon: boundary, defaultMaterial: 0, materialIndices: [], explicit: false },
-    geometry: remaining,
-  });
+  // A merged motion boundary can enclose gaps between receiving supports.
+  // Default material is supplied only by an authored implicit surface, not by
+  // the absence of an explicit receiver (which must remain uncovered).
+  const implicit = supports.filter((support) => !support.explicit);
+  if (implicit.length)
+    members.push({
+      support: { polygon: boundary, defaultMaterial: 0, materialIndices: [], explicit: false },
+      geometry: clipping.intersection(
+        remaining,
+        clipping.union(
+          shape(implicit[0]!.polygon),
+          ...implicit.slice(1).map((s) => shape(s.polygon)),
+        ),
+      ),
+    });
   return members.flatMap(({ support, geometry }) =>
     geometry.flatMap((polygon) => {
       const rings = polygon.map(simplifyMotionRing);

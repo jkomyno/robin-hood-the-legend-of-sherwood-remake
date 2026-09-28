@@ -380,6 +380,41 @@ export function projectionMaterialCompilerFixture() {
   return fixture;
 }
 
+export function receivingGapCompilerFixture() {
+  const fixture = projectionMaterialCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  const ground = gameplay.surfaces[2]!;
+  gameplay.materials = [];
+  gameplay.surfaces = [
+    [0, 0, 100, 20],
+    [0, 80, 100, 100],
+    [0, 20, 20, 80],
+    [80, 20, 100, 80],
+  ].map(([x0, y0, x1, y1], index) => ({
+    id: `platform-edge-${index}`,
+    node: "building-999",
+    height: 20,
+    polygon: [
+      [x0!, y0!],
+      [x1!, y0!],
+      [x1!, y1!],
+      [x0!, y1!],
+    ],
+    projectionMaterials: {
+      defaultMaterial: 2,
+      regions: [],
+      planePoints: [
+        [100, 0, 20],
+        [100, 100, 20],
+        [0, 0, 20],
+      ],
+    },
+  }));
+  gameplay.surfaces.push(ground);
+  fixture.document.map = "Receiving gap fixture";
+  return fixture;
+}
+
 export function materialAssetCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.materials = [

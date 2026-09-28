@@ -120,6 +120,12 @@
   ordered float32 anchor audit finds 698 exact source matches and separately
   reports 413 fallback receivers without explicit anchors. Those receivers still
   need coverage/material ownership review; these checks do not certify full parity.
+  The compiler now preserves gaps between explicit receiving supports instead of
+  filling them with default material. Recompiling all nine maps removes 412 such
+  receivers while preserving anchored receivers and other geometry after interior
+  constructor reference remapping. Native
+  platform queries verify the opening remains empty. Derby's explicitly authored
+  second drawbridge surface remains pending receiving-material review.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

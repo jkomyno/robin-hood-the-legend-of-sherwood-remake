@@ -256,13 +256,30 @@ triples unchanged: Croisement01 27, Croisement02 21, Croisement03 14, Derby 78,
 Leicester 63, Lincoln 118, Nottingham 106, Sherwood 17 and York 254. This checks
 anchor values, not whether the correct source receiver owns each point.
 
-Another 413 elevated receivers still use polygon-derived planes and default
+That baseline also contained 413 elevated receivers using polygon-derived planes and default
 material 0. These are generated fallback coverage outside the explicit material
 supports; they need separate coverage/ownership review. Their total projected
 area is not uniformly negligible: approximately 4,744.89 pixels squared in
 Leicester, 3,501.57 in Sherwood, 1,331.40 in Lincoln and 735.89 in Derby. Passing
 construction and anchor-value checks therefore does not establish full receiving
 coverage or material parity. All recovered definitions remain unpublished.
+
+The compiler no longer fills unsupported portions of a merged movement boundary
+with default-material receivers when explicit receiving supports are present.
+Implicit default coverage is restricted to the surfaces that actually author it.
+This preserves openings such as the Sherwood platform hole, where the reference
+receiving polygons provide no receiver. An exported synthetic platform fixture
+verifies the same behavior through native queries: no receiver in the opening,
+with elevation preserved on its surrounding edges.
+
+Recompilation into `work/map-compile/receiving-gap-native` removes 412 unsupported
+receivers across the nine maps. All nine descriptors construct natively; their
+non-sight geometry is unchanged after remapping interior constructor references,
+and all 698 anchored receivers are unchanged. One unanchored
+receiver remains: Derby's `derby-second-drawbridge` asset explicitly authors a
+731-square-pixel surface without receiving material metadata. It requires asset
+review rather than deletion. These checks still do not certify whole-map
+receiving priority, source coverage or actor traversal.
 
 The ignored native test
 `recovered_projection_partitions_preserve_sampled_runtime_queries` reads a
