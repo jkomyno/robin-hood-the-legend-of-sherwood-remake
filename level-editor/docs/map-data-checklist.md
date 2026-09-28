@@ -191,6 +191,35 @@ drafts are under `work/map-compile/reviewed-mask-recovery/derby` and the native
 descriptor under `work/map-compile/reviewed-mask-native`. Derby still has 233
 unrecovered masks; neither the complete asset nor map is publication-certified.
 
+`pipeline/src/audit-mask-surfaces.ts` checks pixel support for an explicitly
+selected asset and mask indices. It pins source/model/scene hashes, reports missing
+pixel counts and repair bounds, and checks whether every mask in each affected
+state set was selected and supported. This is geometry evidence only, not ownership
+or gameplay certification. Recovery now checks this support before expensive
+surface clipping and reports interior gaps separately from silhouette edges.
+
+The Derby upper gatehouse state set (patch 3, records 217–229) is not recoverable
+from its current mesh: 217/218/219/221/223/224/225/226 lack respectively
+362/960/219/565/121/70/65/206 covered pixels. Every failing record includes interior
+gaps. Records 220/222/227/228/229 have full pixel support, but this does not justify
+publishing a partial state set. Repair the asset geometry or add reviewed local
+occlusion surfaces before recovering that state. The reproducible audit is:
+
+```sh
+node pipeline/src/audit-mask-surfaces.ts \
+  --library work/map-compile/projection-material-library \
+  --map work/map-compile/projection-material-library/scenes/derby.rhlos-map.json \
+  --source library/game-data/Data/Levels/Derby.rhp.json \
+  --asset derby-upper-gatehouse \
+  --masks 217,218,219,220,221,222,223,224,225,226,227,228,229 \
+  --out work/map-compile/gatehouse-mask-state-audit.json
+```
+
+A separate probe adding the same asset's existing obstacle-volume faces closes
+record 225's pixel gap, but seven other records still have missing interior
+coverage. Those volumes therefore cannot complete the state set either; no
+supplemental surfaces or partial state bindings have been published.
+
 Material recovery stores ground regions on terrain, obstacle regions on their
 owning parts, and receiving defaults/region references on asset-local surfaces.
 Receiving footprints retain material across blocked portions omitted from walking

@@ -13,6 +13,7 @@ import {
   type HeightPlane,
 } from "../../shared/src/gameplay-plane.ts";
 import { decodeRecoveryMask, recoveryMaskRectangles } from "./recover-mask-bitmap.ts";
+import { maskSurfaceCoverage } from "./mask-surface-coverage.ts";
 
 const closed = (points: Point[]) => [[...points, points[0]!]];
 
@@ -36,6 +37,7 @@ export function recoverMaskSurface(
     const plane = heightPlane(triangle.map(([x, y, z]): Vec3 => [x, y - z, z]));
     return [
       {
+        triangle,
         projected,
         plane,
         left: Math.min(...projected.map((p) => p[0])),
@@ -45,6 +47,23 @@ export function recoverMaskSurface(
       },
     ];
   });
+  const support = faces
+    .filter(
+      (f) =>
+        f.left < mask.box_top_left[0] + mask.box_size[0] &&
+        f.right > mask.box_top_left[0] &&
+        f.top < mask.box_top_left[1] + mask.box_size[1] &&
+        f.bottom > mask.box_top_left[1],
+    )
+    .map((f) => f.triangle);
+  const coverage = maskSurfaceCoverage(
+    mask,
+    support.length ? rasterizeMaskGeometry(support, mask) : [],
+  );
+  if (coverage.firstMissing)
+    throw new Error(
+      `Mask coverage has no owner surface near ${coverage.firstMissing.join(",")}: ${coverage.missingPixels} unsupported pixels (${coverage.interiorMissingPixels} interior)`,
+    );
   const triangles: MaskTriangle[] = [];
   for (const rectangle of recoveryMaskRectangles(mask)) {
     const region: Point[] = [

@@ -76,6 +76,9 @@
   and model hashes. Three Derby postern/gatehouse masks have exact coverage and boundary
   round-trips, including placement and native registration checks; full-map
   recovery and publication remain incomplete.
+  A surface-support audit reports missing pixels, interior gaps and repair bounds
+  for reviewed mask sets, including whether both sides of a state change have
+  full pixel support. Migration rejects unsupported coverage before surface clipping.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits
