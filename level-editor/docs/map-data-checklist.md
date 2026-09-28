@@ -391,6 +391,24 @@ of all 13 owning assets compile and construct natively in
 change when moved endpoints detach. These definitions are still unpublished:
 Croisement03 retains 131 unrecovered masks, two missing movement transition
 groups, and unverified visuals and actor traversal.
+
+Croisement03's upper-terrace navigation boundary now has an explicit authoring
+plane for the portion outside receiving coverage. The source-pinned recipe
+`refinement/catalogs/croisement03-transition-planes.json` selects the associated
+terrace receiver's plane for placing that changing contour only; it adds no
+walkable or receiving surface. Recovery accepts it via `--transition-planes`;
+`stage-navigation-state-assets.ts` accepts the same recipe after its ownership
+argument. Missing coverage still fails when no explicit plane is supplied.
+
+Staging created `croisement03-navigation-boundary-004` in
+`work/map-compile/croisement03-transition-plane-stage-v2`. Fresh recovery into
+`work/map-compile/croisement03-transition-plane-recovery` now has eight recovered
+movement groups and one missing group (the multi-asset sight change). The export
+in `work/map-compile/croisement03-transition-plane-native` retains exactly the
+previous sight geometry, flags and material links, with regenerated area references.
+All eight recovered transitions pass native apply/reset state checks. Masks,
+shared state ownership, navigation coverage, visuals and actor traversal still
+require verification before publication or a full-parity claim.
 Mission-carried records also include traps, hiding places and
 York gate effects; their presence in a mission file does not establish permanent
 map ownership. The earlier recovered transition counts cover map-source recovery,

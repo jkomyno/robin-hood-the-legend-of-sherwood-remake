@@ -158,6 +158,11 @@
   links. Croisement03's 14-link recipe reproduces the audited baseline; the baseline
   and 13 independently moved asset cases construct natively. Publication and full
   gameplay verification remain incomplete.
+  Navigation-only state assets can use a reviewed plane to place changing contours
+  outside receiving coverage without inventing a receiver. A pinned Croisement03
+  recipe restores its upper-terrace boundary; eight recovered transitions pass
+  native apply/reset checks, leaving one multi-asset movement group unresolved.
+  Staging also retains inherited ownership catalogs without symlink write collisions.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

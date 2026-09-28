@@ -4,8 +4,12 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { Document, NodeIO } from "@gltf-transform/core";
 import { IDENTITY_TRANSFORM, type ProtoLevel, type Vec3 } from "@rle/shared";
-import { heightPlane, planeHeight } from "../../shared/src/gameplay-plane.ts";
+import { heightPlane, planeHeight, type HeightPlane } from "../../shared/src/gameplay-plane.ts";
 import { navigationStateAsset } from "./navigation-state-asset.ts";
+import {
+  reviewedTransitionPlanes,
+  type ReviewedTransitionPlanes,
+} from "./reviewed-transition-planes.ts";
 import { recoverMotionStates } from "./recover-motion-states.ts";
 import { recoverEndpointElevation, distanceToPolygon } from "./recovery-elevation.ts";
 import { compactStoredMap, readStoredMap } from "./stored-map.ts";
@@ -18,13 +22,21 @@ export async function stageNavigationStateAssets(options: {
   source: string;
   out: string;
   ownership?: string;
+  transitionPlanes?: string;
 }) {
   const library = path.resolve(options.library),
     out = path.resolve(options.out);
   if (out === library || out.startsWith(`${library}${path.sep}`))
     throw new Error("Output must be outside the input library");
   const document = await readStoredMap(options.map, library);
-  const proto: ProtoLevel = JSON.parse(await fs.readFile(options.source, "utf8"));
+  const sourceBytes = await fs.readFile(options.source);
+  const proto: ProtoLevel = JSON.parse(sourceBytes.toString());
+  const planeDefinitions: ReviewedTransitionPlanes | undefined = options.transitionPlanes
+    ? JSON.parse(await fs.readFile(options.transitionPlanes, "utf8"))
+    : undefined;
+  const planes = planeDefinitions
+    ? reviewedTransitionPlanes(proto, sha256(sourceBytes), planeDefinitions)
+    : new Map<number, HeightPlane>();
   const catalog: GameplayOwnershipCatalog = options.ownership
     ? JSON.parse(await fs.readFile(options.ownership, "utf8"))
     : { groups: [] };
@@ -96,6 +108,7 @@ export async function stageNavigationStateAssets(options: {
             applied: change.applied,
             waypointHeight,
             groundLayer: layer === 0,
+            uncoveredPlane: planes.get(index),
             receivers: proto.sight_obstacles.filter(
               (obstacle) =>
                 Array.isArray(obstacle.projection_area) &&
@@ -120,7 +133,7 @@ export async function stageNavigationStateAssets(options: {
   await fs.mkdir(path.join(out, "3d-assets"));
   await fs.mkdir(path.join(out, "scenes"));
   for (const entry of await fs.readdir(library))
-    if (!["3d-assets", "scenes"].includes(entry))
+    if (!["3d-assets", "scenes", `${map}-navigation-ownership.json`].includes(entry))
       await fs.symlink(path.join(library, entry), path.join(out, entry));
   for (const entry of await fs.readdir(path.join(library, "3d-assets"))) {
     if (entry === "index.json") continue;
@@ -201,14 +214,14 @@ export async function stageNavigationStateAssets(options: {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const [library, map, source, out, ownership] = process.argv.slice(2);
+  const [library, map, source, out, ownership, transitionPlanes] = process.argv.slice(2);
   if (!library || !map || !source || !out)
     throw new Error(
-      "Usage: stage-navigation-state-assets.ts LIBRARY MAP SOURCE_JSON OUT [OWNERSHIP_JSON]",
+      "Usage: stage-navigation-state-assets.ts LIBRARY MAP SOURCE_JSON OUT [OWNERSHIP_JSON] [TRANSITION_PLANES_JSON]",
     );
   console.log(
     JSON.stringify(
-      await stageNavigationStateAssets({ library, map, source, out, ownership }),
+      await stageNavigationStateAssets({ library, map, source, out, ownership, transitionPlanes }),
       null,
       2,
     ),

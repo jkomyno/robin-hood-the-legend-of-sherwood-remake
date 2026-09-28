@@ -17,10 +17,15 @@ export function recoverMovementTransition(options: {
   appliedSight: string[];
   receivers: SightObstacle[];
   groundLayer: boolean;
+  /** Explicit authoring plane for changing contours outside receiving coverage.
+   * This places navigation geometry only; it never creates receiving surfaces. */
+  uncoveredPlane?: HeightPlane;
   waypointHeight: number;
   localize: (point: Vec3) => Vec3;
 }): AssetMovementTransition {
   const { id, node, patch, localize } = options;
+  if (options.uncoveredPlane && !options.uncoveredPlane.every(Number.isFinite))
+    throw new Error("Authored transition plane must be finite");
   const surface = (
     obstacle: MotionObstacle,
     state: string,
@@ -37,7 +42,7 @@ export function recoverMovementTransition(options: {
         ),
       })),
     );
-    if (partition.ground.length && !options.groundLayer)
+    if (partition.ground.length && !options.groundLayer && !options.uncoveredPlane)
       throw new Error("Changing obstacle has uncovered elevated receiving geometry");
     const pieces = options.receivers.flatMap((receiver, receiverIndex) => {
       const regions = partition.surfaces[receiverIndex]!;
@@ -51,7 +56,12 @@ export function recoverMovementTransition(options: {
       );
       return regions.map((region) => ({ region, plane }));
     });
-    pieces.push(...partition.ground.map((region) => ({ region, plane: [0, 0, 0] as HeightPlane })));
+    pieces.push(
+      ...partition.ground.map((region) => ({
+        region,
+        plane: options.uncoveredPlane ?? ([0, 0, 0] as HeightPlane),
+      })),
+    );
     return pieces.map(({ region, plane }, piece) => {
       const vertices = region[0]!.slice(0, -1).map(([x, y]) => {
         const z = planeHeight(plane, [x, y]);

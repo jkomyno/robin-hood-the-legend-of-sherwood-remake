@@ -46,6 +46,10 @@ import { terrainOwnsJump } from "./terrain-jump-ownership.ts";
 import { jumpEdgeOwners } from "./jump-edge-ownership.ts";
 import { recoverMotionStates } from "./recover-motion-states.ts";
 import { recoverMovementTransition } from "./recover-movement-transition.ts";
+import {
+  reviewedTransitionPlanes,
+  type ReviewedTransitionPlanes,
+} from "./reviewed-transition-planes.ts";
 import { recoverLiftJoins } from "./recover-lift-joins.ts";
 import {
   nonrenderingGameplayOwners,
@@ -80,6 +84,7 @@ const { values } = parseArgs({
     "mask-definitions": { type: "string" },
     "navigation-definitions": { type: "string" },
     "projection-definitions": { type: "string" },
+    "transition-planes": { type: "string" },
   },
 });
 if (!values.map || !values.source || !values.out)
@@ -95,6 +100,16 @@ const inputDescriptors = await pinnedDescriptors(
 const { document, descriptors } = normalizeGameplayStateViews(inputDocument, inputDescriptors);
 const sourceBytes = await fs.readFile(values.source);
 const proto: ProtoLevel = JSON.parse(sourceBytes.toString());
+const planeDefinitions: ReviewedTransitionPlanes | undefined = values["transition-planes"]
+  ? JSON.parse(await fs.readFile(values["transition-planes"], "utf8"))
+  : undefined;
+const transitionPlanes = planeDefinitions
+  ? reviewedTransitionPlanes(
+      proto,
+      createHash("sha256").update(sourceBytes).digest("hex"),
+      planeDefinitions,
+    )
+  : new Map<number, HeightPlane>();
 const locals = new Map<
   number,
   {
@@ -786,6 +801,7 @@ for (const area of movementStateInventory)
         applied: change.applied,
         initialSight,
         appliedSight,
+        uncoveredPlane: transitionPlanes.get(change.patches[0]!),
         receivers: proto.sight_obstacles.filter(
           (obstacle) =>
             Array.isArray(obstacle.projection_area) &&
