@@ -132,6 +132,24 @@ depth for a declared part, and unchanged depth for an unrelated part. Unit tests
 also verify declaration validation, packet conversion and visibility restoration
 after a failed bake.
 
+The Derby southwest postern is not yet eligible for mask-controlled depth. Its
+other linked masks, 67/68, lack 72/98 pixels of mesh support (14/19 interior).
+The coverage audit reports 11/18 separate connected repair regions, including a
+33-pixel gap at `[471,2319,484,2326]` and a 32-pixel gap at
+`[581,2469,591,2480]` (exclusive upper bounds). Adding the postern's collision
+volume surfaces in a diagnostic probe still leaves 70/7 pixels unsupported.
+Masks 70/71 remain fully supported. No depth declaration has been added to this
+asset; completing two masks does not certify its other parts.
+
+```sh
+node pipeline/src/audit-mask-surfaces.ts \
+  --library work/map-compile/projection-material-library \
+  --map work/map-compile/projection-material-library/scenes/derby.rhlos-map.json \
+  --source library/game-data/Data/Levels/Derby.rhp.json \
+  --asset derby-southwest-postern --masks 67,68,70,71 \
+  --out work/map-compile/postern-mask-coverage.json
+```
+
 The one-time bitmap recovery helper strictly decodes source scanlines and merges
 coverage into nonoverlapping screen-space rectangles without filling cutouts.
 `node --max-old-space-size=1536 pipeline/src/audit-mask-bitmaps.ts library/game-data/Data/Levels/*.rhp.json`

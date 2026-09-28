@@ -44,5 +44,54 @@ export function maskSurfaceCoverage(mask: Mask, tiles: readonly Mask[]) {
     )
       interiorMissingPixels++;
   }
-  return { coveredPixels, missingPixels, interiorMissingPixels, firstMissing, missingBounds };
+  // Separate disconnected gaps so authoring can repair the actual surfaces,
+  // rather than treating their combined bounding rectangle as missing geometry.
+  const missingRegions: { pixels: number; bounds: [number, number, number, number] }[] = [];
+  for (let seed = 0; seed < remaining.length; seed++) {
+    if (!remaining[seed]) continue;
+    remaining[seed] = 0;
+    const stack = [seed];
+    let pixels = 0,
+      left = width,
+      top = height,
+      right = 0,
+      bottom = 0;
+    while (stack.length) {
+      const index = stack.pop()!;
+      const x = index % width,
+        y = Math.floor(index / width);
+      pixels++;
+      left = Math.min(left, x);
+      top = Math.min(top, y);
+      right = Math.max(right, x + 1);
+      bottom = Math.max(bottom, y + 1);
+      const visit = (neighbor: number) => {
+        if (remaining[neighbor]) {
+          remaining[neighbor] = 0;
+          stack.push(neighbor);
+        }
+      };
+      if (x > 0) visit(index - 1);
+      if (x + 1 < width) visit(index + 1);
+      if (y > 0) visit(index - width);
+      if (y + 1 < height) visit(index + width);
+    }
+    missingRegions.push({
+      pixels,
+      bounds: [
+        left + mask.box_top_left[0],
+        top + mask.box_top_left[1],
+        right + mask.box_top_left[0],
+        bottom + mask.box_top_left[1],
+      ],
+    });
+  }
+  return {
+    coveredPixels,
+    missingPixels,
+    interiorMissingPixels,
+    firstMissing,
+    missingBounds,
+    missingRegions,
+  };
 }
