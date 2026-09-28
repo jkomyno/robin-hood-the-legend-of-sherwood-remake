@@ -322,6 +322,9 @@ export function validateAssetGameplay(
   };
   if (!value || typeof value !== "object") fail("missing gameplay definition");
   const data = value as AssetGameplay;
+  const disabledParts = new Set(
+    descriptor.parts.filter((part) => part.collision === "none").map((part) => part.node),
+  );
   if (data.version !== 1 || !["parts", "none"].includes(data.collision))
     fail("invalid gameplay version or collision mode");
   if (
@@ -401,6 +404,7 @@ export function validateAssetGameplay(
     for (const ref of mask.obstacles)
       if (
         typeof ref !== "string" ||
+        disabledParts.has(ref) ||
         !(
           data.volumes?.some((volume) => volume.id === ref) ||
           (data.collision === "parts" &&
@@ -468,6 +472,7 @@ export function validateAssetGameplay(
         if (
           typeof ref !== "string" ||
           changingSight.has(ref) ||
+          disabledParts.has(ref) ||
           !(
             data.volumes?.some((v) => v.id === ref) ||
             (data.collision === "parts" && nodes.has(ref))
@@ -489,6 +494,7 @@ export function validateAssetGameplay(
     for (const ref of data.movementSolids)
       if (
         typeof ref !== "string" ||
+        disabledParts.has(ref) ||
         !(
           data.volumes?.some((volume) => volume.id === ref && volume.shape.solid) ||
           (data.collision === "parts" &&
@@ -653,7 +659,11 @@ export function validateAssetGameplay(
         ))
     )
       fail(`invalid material region ${region.id}`);
-    if (region.obstacles.some((node) => nodes.has(node)) && data.collision !== "parts")
+    if (
+      region.obstacles.some(
+        (node) => disabledParts.has(node) || (nodes.has(node) && data.collision !== "parts"),
+      )
+    )
       fail(`material region ${region.id} references disabled obstacles`);
   }
   if (data.movementBlockers !== undefined && !Array.isArray(data.movementBlockers))
@@ -670,7 +680,8 @@ export function validateAssetGameplay(
     polygon(surface.polygon);
     if (
       surface.projectionVolume !== undefined &&
-      (!data.surfaces.includes(surface) ||
+      (disabledParts.has(surface.projectionVolume) ||
+        !data.surfaces.includes(surface) ||
         !(
           volumes.has(surface.projectionVolume) ||
           (data.collision === "parts" &&

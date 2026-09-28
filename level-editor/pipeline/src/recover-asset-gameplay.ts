@@ -126,6 +126,8 @@ const locals = new Map<
 for (const part of document.objects) {
   const match = /^asset:([^:]+):(.+)$/.exec(part.node);
   if (!match || part.source.obstacle === undefined) continue;
+  if (descriptors.get(match[1]!)?.parts.find((p) => p.node === match[2])?.collision === "none")
+    continue;
   const list = locals.get(part.source.obstacle) ?? [];
   if (!list.some((item) => item.asset === match[1] && item.node === match[2]))
     list.push({ asset: match[1]!, node: match[2]!, part });

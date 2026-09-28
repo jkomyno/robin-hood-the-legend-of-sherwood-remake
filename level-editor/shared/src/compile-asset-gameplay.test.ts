@@ -1,4 +1,5 @@
 import test from "node:test";
+
 import assert from "node:assert/strict";
 import { compileAssetGameplay } from "./compile-asset-gameplay.ts";
 import { validateAssetGameplay } from "./asset-gameplay.ts";
@@ -27,6 +28,29 @@ import {
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
+
+test("visual component bounds can opt out of physical collision while retaining their frame", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const part = hut.parts[0]!;
+  const before = structuredClone(part.obstacle_local_game);
+  part.collision = "none";
+  hut.gameplay!.doors = [];
+  const compiled = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  assert.equal(compiled.sight_obstacles.length, 0);
+  assert.deepEqual(part.obstacle_local_game, before);
+  assert(document.objects.some((o) => o.obstacle));
+  hut.gameplay!.movementSolids = [part.node];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, [0, 0, 2000, 2000]),
+    /permanent movement solid/,
+  );
+  delete hut.gameplay!.movementSolids;
+  hut.gameplay!.surfaces[0]!.projectionVolume = part.node;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, [0, 0, 2000, 2000]),
+    /projection volume/,
+  );
+});
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
 test("receiving volumes retain thickness, materials and state links after placement", () => {

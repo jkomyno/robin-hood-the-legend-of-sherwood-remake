@@ -42,6 +42,7 @@ async function fixture(root: string) {
   await fs.writeFile(map, JSON.stringify(document));
   const corrected = structuredClone(hut);
   corrected.parts[0]!.obstacle_local_game!.points[0]!.x -= 1;
+  corrected.parts[0]!.collision = "none";
   const replacement = JSON.stringify(corrected);
   await fs.writeFile(path.join(draft, "asset.json"), replacement);
   const manifest = {

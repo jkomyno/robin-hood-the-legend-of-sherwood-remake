@@ -1566,3 +1566,29 @@ east (113/567/89/10). Four reviewed masks remain recovered, with 424 masks pendi
 Nine of the twenty-six audited split records now have correction drafts; seventeen
 remain. Publication, full state behavior, visual and actor traversal parity are
 still incomplete.
+
+Sherwood record 24 now has explicit physical ownership in
+`sherwood-ladder-oak-physical-owner.json`. Its single four-point trunk volume was
+previously expanded into 38 component obstacles: four tree components and 34
+ladder-platform components. `author-owned-volume.ts` restores the complete ordered
+trunk volume on the oak's trunk frame and marks the other 37 parts with
+`collision: "none"`. Their meshes, editor bounds and visual provenance remain
+intact. This is independent of the ladder platform's own traversal geometry and
+volume 101. Source/model/descriptor hashes and an exhaustive component list guard
+the one-time authoring step; linked or receiving volumes require separate migration.
+Compiler validation rejects mask, state, material, receiver or movement links to
+disabled component collision.
+
+The input is `sherwood-canopy-post-stage`. Its stale palette descriptor hashes are
+reconciled against the checked scene pins in an isolated `sherwood-owner-input-stage`
+overlay; the source library remains unchanged. The corrected definitions and scene
+are in `sherwood-ladder-oak-owner-draft` and `sherwood-ladder-oak-owner-stage`.
+Matching `-recovery` and `-native` directories contain the recovered candidates and
+native diagnostics. Baseline construction has 29 areas, 258 sight obstacles, 15
+doors and one jump pair. Moving the oak 100 units east, the ladder independently
+100 units east, or both together also constructs, with unchanged door/jump counts.
+The trunk's ordered vertices and flags match at engine precision; 100,000 native
+sight/impact comparisons match exactly. The recovery still has 166 pending masks,
+one shadow region and five sound sources. No Sherwood masks are certified here.
+Ten of the original twenty-six split records now have correction drafts; sixteen
+remain, alongside publication, visuals, states and traversal verification.

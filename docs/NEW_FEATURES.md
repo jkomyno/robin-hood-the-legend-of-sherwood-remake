@@ -1,5 +1,12 @@
 # Post-port Features
 
+- **Explicit visual-component collision ownership.** Asset parts can retain their
+  visual bounds and provenance while disabling physical collision. Offline
+  `author-owned-volume.ts` assigns a reviewed unlinked volume to one asset frame,
+  verifies source/model/descriptor pins and accounts for every visual component.
+  Compilation rejects obstacle links to disabled parts and uses only the resulting
+  asset definitions. Models and independent traversal geometry remain intact.
+
 - **Reviewed physical-volume partitions.** Offline asset authoring can divide a
   constant-height volume along explicit asset seams while checking coverage and
   overlap. Source, model and descriptor hashes guard the extraction. Each piece

@@ -932,6 +932,14 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     nodes.add(part.node);
     if (part.default_hidden !== undefined)
       check(typeof part.default_hidden === "boolean", part.node, "invalid default_hidden");
+    if (part.collision !== undefined)
+      check(
+        part.collision === "none" &&
+          !part.sight_join_edges?.length &&
+          !part.sight_join_caps?.length,
+        part.node,
+        "invalid disabled part collision",
+      );
     if (part.sight_join_caps !== undefined)
       check(
         part.mission_profile === undefined &&

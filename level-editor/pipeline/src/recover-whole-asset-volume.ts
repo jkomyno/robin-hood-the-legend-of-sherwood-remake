@@ -10,7 +10,7 @@ export function recoverWholeAssetVolume(options: {
   localize: (point: Vec3) => Vec3;
 }): { collision: "none"; volumes: [NonNullable<AssetGameplay["volumes"]>[number]] } {
   const { descriptor, source, sourceIndex, node, localize } = options;
-  const parts = descriptor.parts.filter((p) => p.obstacle_local_game);
+  const parts = descriptor.parts.filter((p) => p.obstacle_local_game && p.collision !== "none");
   if (
     !Number.isInteger(sourceIndex) ||
     sourceIndex < 0 ||

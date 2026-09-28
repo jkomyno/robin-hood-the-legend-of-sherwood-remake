@@ -343,6 +343,13 @@ export function compileAssetGameplay(
     if (gameplay.collision === "parts")
       for (const [node, part] of placement.frames) {
         if (!placement.parts.has(node) && !explicitSight.has(node)) continue;
+        if (placement.descriptor.parts.find((p) => p.node === node)?.collision === "none") {
+          if (explicitSight.has(node) || gameplay.movementSolids?.includes(node))
+            throw new Error(
+              `${placement.id}/${node}: disabled part collision cannot supply gameplay obstacle links`,
+            );
+          continue;
+        }
         if (
           placement.descriptor.parts.find((p) => p.node === node)?.mission_profile !== undefined
         ) {
