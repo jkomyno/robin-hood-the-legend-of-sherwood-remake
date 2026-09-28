@@ -91,6 +91,11 @@
   Lincoln's north curtain pair reproduces its baseline exactly and retains native
   construction after either asset is independently moved; its definitions remain
   unpublished while the map's other parity gaps are resolved.
+  Nottingham has reviewed definitions for four seams across seven assets, including
+  a sloped wall pair. A repeatable placement verifier checks recovered definitions,
+  pins, baseline assembly and independent moves, preserving failures in its report.
+  Six Nottingham owners pass westward movement and native construction; one still
+  invalidates a neighboring stair connection. Full-map connectivity remains open.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

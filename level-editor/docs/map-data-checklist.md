@@ -137,6 +137,47 @@ audit found no exact Derby seam in the tested drafts; boundary/height difference
 still require authoring work. This does not certify full-map connectivity or actor
 traversal on recovered maps.
 
+`pipeline/src/verify-reviewed-navigation-recovery.ts` checks the recovered packet
+and compiler candidate against every reviewed edge definition, revalidates pins
+and source ownership, compiles the baseline, then moves each owner independently.
+It writes native descriptors for successful cases and retains placement failures;
+any failure leaves `complete: false` and returns a nonzero exit status. Existing
+success manifests are invalidated before inputs are read. This checks assembly
+and detachment, not full source-map topology or actor traversal. For example:
+
+```sh
+node --max-old-space-size=1536 pipeline/src/verify-reviewed-navigation-recovery.ts \
+  --library work/map-compile/projection-material-library \
+  --map work/map-compile/projection-material-library/scenes/lincoln.rhlos-map.json \
+  --source library/game-data/Data/Levels/Lincoln.rhp.json \
+  --recovery work/map-compile/lincoln-navigation-join-recovery \
+  --navigation-definitions refinement/catalogs/lincoln-navigation-joins.json \
+  --out work/map-compile/lincoln-navigation-cli-native
+```
+
+Nottingham's `refinement/catalogs/nottingham-navigation-joins.json` supplies four
+exact seams in three groups across seven assets: south gate/tower/curtain wall 2,
+the sloped curtain walls 3/4, and the southwest curtain's north/south segments.
+Its recovered baseline preserves all geometry and bindings after remapping sector
+identities and projection-array order. Drafts are under
+`work/map-compile/nottingham-navigation-join-recovery`. The baseline and six
+independent one-pixel westward moves construct natively, with 114 movement areas,
+741 sight obstacles, 172 doors and 38 jump pairs at baseline.
+
+The north segment of the southwest curtain still fails movement checks in either
+direction because the neighboring stair's inside endpoint loses its receiving
+surface. Wall 4 also cannot move east within the existing export frame. Both
+directional verifier manifests remain incomplete under
+`work/map-compile/nottingham-reviewed-navigation-native` and
+`work/map-compile/nottingham-reviewed-navigation-west-native`. The seven successful
+westward/baseline construction cases are retained separately under
+`work/map-compile/nottingham-navigation-construction-native`, with the excluded
+placement failure recorded explicitly. These definitions remain unpublished.
+The full-edge audit also found eleven candidate edges in York; none are yet
+reviewed recipes. Leicester, Sherwood and the three crossing maps had no matches
+in the tested drafts. This audit does not cover partial-edge overlaps or certify
+that unmatched regions should remain disconnected.
+
 The native compiler interchange accepts typed mask bitmaps with character and
 projectile polylines, view flags and regenerated sight-obstacle references.
 Mask-state transitions reference the compiled array; loading rebuilds the native
