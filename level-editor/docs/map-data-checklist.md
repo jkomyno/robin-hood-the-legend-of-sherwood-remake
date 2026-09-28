@@ -577,15 +577,43 @@ edges that otherwise fail to close a polygon.
 
 `work/map-compile/sherwood-ladder-volume-recovery` validates all 81 asset drafts.
 The baseline and central-platform translation construct native maps with 29 areas,
-294 sight obstacles, 15 doors and one jump pair; the three restored volume shapes
-and flags match the source at float32 precision. See
-`work/map-compile/sherwood-ladder-volume-native`. A one-pixel translation of the
-ladder-oak platform still fails to resolve an inside ladder endpoint; its movement
-and clearance ownership need investigation. These checks do not certify actor
-traversal or full parity. Recovery now inventories every sight record lacking a
+294 sight obstacles, 15 doors and one jump pair. The ladder-oak platform also
+compiles independently when translated 100 units away, or one unit together with
+its separate oak asset. Across all four cases the three restored volume shapes
+and flags match the source at float32 precision, and all four lift endpoint sets,
+directions, types and lock rules match after translation. See
+`work/map-compile/sherwood-ladder-volume-native` and its generator
+`work/map-compile/verify-sherwood-ladders.mjs`.
+
+The one-unit platform-only move still fails: isolating collision for each of the
+81 assets identifies the unmoved oak as the only owner whose collision removal
+makes it pass. Its recovered openings lie on the original traversal planes; they
+remain with the tree when the ladder moves. This is a cross-asset collision and
+clearance limitation, not missing ladder metadata. Do not erase neighbouring
+collision to force a successful export. Native passage callbacks pass for all
+12 directed lift endpoint pairs in each of the four successful scenes (48 pairs),
+with a test actor entering and leaving the expected sector and layer. These checks
+do not simulate approach routing, authorization or climb animation, and do not
+certify full traversal or map parity. Recovery now inventories every sight record lacking a
 physical asset owner: Sherwood retains record 13 (referenced by mask 76), plus
 166 unrecovered masks, one light region and five sound sources. Counts of owned
 sight records establish metadata presence only, not geometric fidelity.
+
+The same passage-callback check passes across the nine earlier static drafts in
+`work/map-compile/receiver-ownership-native`: Derby 32 directed pairs, Leicester
+38, Lincoln 24, Nottingham 92, York 170 and the older Sherwood draft two. The
+three crossing drafts contain no recovered lifts, so they exercise no callbacks.
+The updated Sherwood cases above cover its additional restored ladders.
+
+`work/map-compile/all-sight-owner-audit/audit.json` inventories all nine source
+maps against their pinned assets and current explicit ownership declarations.
+Only two source sight records still have no physical asset owner: Derby 35
+(referenced by mask 6) and Sherwood 13 (referenced by mask 76). Both are solid,
+opaque and mouse-active and neither belongs to a state patch. The other seven
+inventories have no missing owner, but that does not prove the owned geometry is
+equivalent, correctly grouped, published or complete in other gameplay features.
+This audit omits mask recovery and is not a publication candidate. Wychford has
+no corresponding source map for this comparison.
 
 Asset character/projectile boundaries can now be explicitly open, independently
 of one another; existing authored boundaries remain closed by default. This

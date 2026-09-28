@@ -1066,6 +1066,98 @@ mod tests {
 
     #[test]
     #[ignore = "requires recovered diagnostics via ROBIN_ASSET_MAP_DIAGNOSTICS"]
+    fn recovered_lift_passage_callbacks_preserve_sector_and_layer() {
+        let directory = std::path::PathBuf::from(
+            std::env::var("ROBIN_ASSET_MAP_DIAGNOSTICS").expect("diagnostic directory"),
+        );
+        let manifest: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(directory.join("diagnostics.json")).unwrap())
+                .unwrap();
+        assert_eq!(manifest["complete"], true, "incomplete diagnostic batch");
+        let sim = crate::sim_rng::test_context();
+        let mut checked = 0;
+        for result in manifest["results"].as_array().unwrap() {
+            assert!(result["error"].is_null(), "failed diagnostic: {result}");
+            let file = result["file"].as_str().unwrap();
+            let bytes = std::fs::read(directory.join(file)).unwrap();
+            let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            let dims = &descriptor["walkable_polygon"][2];
+            let (mut engine, assets) = load_compiled_transition(
+                &bytes,
+                (
+                    dims[0].as_f64().unwrap() as f32 + 1.,
+                    dims[1].as_f64().unwrap() as f32 + 1.,
+                ),
+            );
+            let doors: Vec<_> = engine
+                .script_domains
+                .interactables
+                .doors
+                .iter()
+                .enumerate()
+                .filter(|(_, door)| {
+                    engine.world.fast_grid.level.sectors[usize::from(door.sector_in_index.unwrap())]
+                        .sector_type
+                        .is_lift()
+                })
+                .map(|(index, door)| (index, door.clone()))
+                .collect();
+            let mut passages = 0;
+            for (entry_index, entry) in &doors {
+                for (exit_index, exit) in &doors {
+                    if entry_index == exit_index || entry.sector_in_index != exit.sector_in_index {
+                        continue;
+                    }
+                    // Exercise each directed endpoint pair through passage callbacks.
+                    // Approach routing and climb animation are separate checks.
+                    let actor = engine.add_test_entity(
+                        crate::engine::test_support::actors::TestActor::pc(Posture::Upright)
+                            .sector(u16::from(entry.sector_out))
+                            .map_position(entry.point_out)
+                            .build(),
+                    );
+                    engine
+                        .get_entity_mut(actor)
+                        .unwrap()
+                        .element_data_mut()
+                        .set_layer(entry.layer_out);
+                    engine.execute_pass_door(
+                        TickCtx::new(&sim, &assets),
+                        actor,
+                        crate::gate::DoorIndex::new(*entry_index as u32).unwrap(),
+                        true,
+                    );
+                    let element = engine.get_entity(actor).unwrap().element_data();
+                    assert_eq!(
+                        element.sector().map(u16::from),
+                        Some(u16::from(entry.sector_in)),
+                        "{file}"
+                    );
+                    assert_eq!(element.layer(), entry.layer_in, "{file}");
+                    engine.execute_pass_door(
+                        TickCtx::new(&sim, &assets),
+                        actor,
+                        crate::gate::DoorIndex::new(*exit_index as u32).unwrap(),
+                        false,
+                    );
+                    let element = engine.get_entity(actor).unwrap().element_data();
+                    assert_eq!(
+                        element.sector().map(u16::from),
+                        Some(u16::from(exit.sector_out)),
+                        "{file}"
+                    );
+                    assert_eq!(element.layer(), exit.layer_out, "{file}");
+                    passages += 1;
+                }
+            }
+            println!("{file}: checked {passages} directed lift passage callbacks");
+            checked += passages;
+        }
+        assert!(checked > 0, "No recovered lift passages were tested");
+    }
+
+    #[test]
+    #[ignore = "requires recovered diagnostics via ROBIN_ASSET_MAP_DIAGNOSTICS"]
     fn recovered_asset_transitions_apply_and_reset_native_geometry() {
         let directory = std::path::PathBuf::from(
             std::env::var("ROBIN_ASSET_MAP_DIAGNOSTICS").expect("diagnostic directory"),
