@@ -17,7 +17,14 @@ const proto: ProtoLevel = JSON.parse(source.toString());
 const recipe: {
   map: string;
   source_sha256: string;
-  entries: { source: number; id: string; name: string; origin: Vec3; review: string }[];
+  entries: {
+    source: number;
+    id: string;
+    name: string;
+    origin: Vec3;
+    review: string;
+    visualPoles?: { bottom: Vec3; top: Vec3; radius: number }[];
+  }[];
 } = JSON.parse(await fs.readFile(values.recipe, "utf8"));
 if (recipe.source_sha256 !== sha256(source)) throw new Error("Obstacle authoring source changed");
 if (!recipe.entries.length) throw new Error("Obstacle draft recipe is empty");

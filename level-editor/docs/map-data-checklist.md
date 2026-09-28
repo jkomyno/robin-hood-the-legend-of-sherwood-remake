@@ -641,6 +641,19 @@ remain required. Saving/reopening also now restores an empty resource list for
 scene assets whose descriptor omits that optional field, avoiding a validation
 failure after compact serialization removes the redundant saved list.
 
+Canopy drafts now accept explicitly authored visual support posts beneath the
+roof. The posts are model children in the same local asset frame and add no
+gameplay collision. Derby's visible front post reduces mask 6's unsupported
+pixels from 87 to 32 (no interior gaps); Sherwood's three visible posts reduce
+mask 76's gaps from 1,311 to 805 (381 interior pixels). These measurements are in
+`derby-canopy-pole-mask-audit.json` and `sherwood-canopy-post-mask-audit.json`
+under `work/map-compile`. Remaining thatch, roof-edge and timber detail gaps
+still require geometry authoring; neither mask is recovered yet.
+`verify-canopy-drafts.mjs --posts` verifies the complete compiled gameplay output
+is unchanged for both maps at baseline and after moving each canopy 100 units.
+The newer scenes are `derby-canopy-pole-stage` and `sherwood-canopy-post-stage`;
+textures and completed appearances remain unfinished.
+
 Asset character/projectile boundaries can now be explicitly open, independently
 of one another; existing authored boundaries remain closed by default. This
 preserves source polylines without inventing a closing edge across a concavity.

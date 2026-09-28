@@ -92,3 +92,43 @@ test("obstacle drafts reject receiving metadata and invalid physical volumes", a
   );
   await assert.rejects(authorObstacleDraft(shape, { ...options, id: "../bad" }), /stable ID/);
 });
+
+test("reviewed support poles add visual geometry without changing physical gameplay", async () => {
+  const base = await authorObstacleDraft(shape, options);
+  const visualPoles = [
+    {
+      bottom: [640, 620, 0] as [number, number, number],
+      top: [640, 620, 34] as [number, number, number],
+      radius: 2,
+    },
+  ];
+  const detailed = await authorObstacleDraft(shape, { ...options, visualPoles });
+  assert.deepEqual(detailed.descriptor, base.descriptor);
+  assert.deepEqual(detailed.placement, base.placement);
+  const gltf = await new NodeIO().readBinary(detailed.model);
+  const pole = gltf
+    .getRoot()
+    .listNodes()
+    .find((n) => n.getName() === "visual-pole-1")!;
+  assert.equal(pole.getParentNode()!.getName(), base.descriptor.parts[0]!.node);
+  const primitive = pole.getMesh()!.listPrimitives()[0]!;
+  assert.equal(primitive.getAttribute("POSITION")!.getCount(), 16);
+  assert.equal(primitive.getIndices()!.getCount(), 84);
+  const { document, assets } = assetCompilerFixture();
+  document.objects.push(detailed.placement);
+  assets.set(base.descriptor.id, base.descriptor);
+  const expected = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  assets.set(detailed.descriptor.id, detailed.descriptor);
+  assert.deepEqual(compileAssetGameplay(document, assets, [0, 0, 2000, 2000]), expected);
+  await assert.rejects(
+    authorObstacleDraft(shape, { ...options, visualPoles: [{ ...visualPoles[0]!, radius: 0 }] }),
+    /Visual pole/,
+  );
+  await assert.rejects(
+    authorObstacleDraft(shape, {
+      ...options,
+      visualPoles: [{ ...visualPoles[0]!, top: [640, 620, 0] }],
+    }),
+    /Visual pole/,
+  );
+});

@@ -8,7 +8,10 @@
       "id": "derby-lower-west-canvas-shelter",
       "name": "Lower Bailey West Canvas Shelter",
       "origin": [442, 2117, 0],
-      "review": "Independent small canvas shelter beside the west curtain, visible around source pixels [423,2065,52,58] and linked by mask 6. The model inventory contains only the neighbouring wall and cottage in this area; neither owns this shelter. Author the thin sloped physical roof as its own asset. Texture, support poles and mask coverage remain unfinished."
+      "visualPoles": [
+        { "bottom": [472, 2122, 0], "top": [471.2955, 2121.6348, 31.001001], "radius": 2 }
+      ],
+      "review": "Independent small canvas shelter beside the west curtain, visible around source pixels [423,2065,52,58] and linked by mask 6. The model inventory contains only the neighbouring wall and cottage in this area; neither owns this shelter. The thin sloped physical roof is independent. The visible front pole extends from the roof's eastern corner to the ground; its visual geometry adds no collision. Texture, remaining timber details and roof-edge mask coverage remain unfinished."
     }
   ]
 }

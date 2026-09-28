@@ -18,6 +18,7 @@ export async function authorObstacleDraft(
     sourceIndex: number;
     origin: Vec3;
     camera: MapCamera;
+    visualPoles?: { bottom: Vec3; top: Vec3; radius: number }[];
   },
 ) {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(options.id) || !options.name.trim())
@@ -112,6 +113,56 @@ export async function authorObstacleDraft(
   const frame = model
     .createNode(node)
     .setMesh(model.createMesh(options.name).addPrimitive(primitive));
+  for (const [index, pole] of (options.visualPoles ?? []).entries()) {
+    if (
+      pole.bottom.length !== 3 ||
+      pole.top.length !== 3 ||
+      ![...pole.bottom, ...pole.top, pole.radius].every(Number.isFinite) ||
+      pole.radius <= 0 ||
+      pole.top[2] <= pole.bottom[2]
+    )
+      throw new Error("Visual pole needs finite endpoints, positive radius and increasing height");
+    const vertices = [pole.bottom, pole.top].flatMap(([x, y, z]) =>
+      Array.from({ length: 8 }, (_, i) => {
+        const angle = (i * Math.PI) / 4;
+        return gameToScene(
+          options.camera,
+          x - options.origin[0] + pole.radius * Math.cos(angle),
+          y - options.origin[1] + pole.radius * Math.sin(angle),
+          z - options.origin[2],
+        );
+      }).flat(),
+    );
+    const triangles: number[] = [];
+    for (let i = 0; i < 8; i++) {
+      const j = (i + 1) % 8;
+      triangles.push(i, j, j + 8, i, j + 8, i + 8);
+    }
+    for (let i = 1; i < 7; i++) triangles.push(0, i + 1, i, 8, i + 8, i + 9);
+    const timber = model
+      .createPrimitive()
+      .setMaterial(material)
+      .setAttribute(
+        "POSITION",
+        model
+          .createAccessor()
+          .setType("VEC3")
+          .setBuffer(buffer)
+          .setArray(new Float32Array(vertices)),
+      )
+      .setIndices(
+        model
+          .createAccessor()
+          .setType("SCALAR")
+          .setBuffer(buffer)
+          .setArray(new Uint32Array(triangles)),
+      );
+    frame.addChild(
+      model
+        .createNode(`visual-pole-${index + 1}`)
+        .setMesh(model.createMesh("Reviewed support pole").addPrimitive(timber)),
+    );
+  }
   const wrapper = model.createNode("map").setRotation([-Math.SQRT1_2, 0, 0, Math.SQRT1_2]);
   wrapper.addChild(
     model.createNode(options.id).setExtras({ asset_group: options.id }).addChild(frame),
