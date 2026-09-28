@@ -207,7 +207,10 @@ This does not mean those masks have recovered coverage or published state links.
 `pipeline/src/verify-reviewed-mask-recovery.ts` reproduces the reviewed-mask
 checks from a scene, pinned library, recovery packets and source-pinned recipes.
 It compares exact covered pixels, flags, both optional polylines and obstacle-link
-counts, rejecting ambiguous matches rather than choosing one. Each owning asset
+counts, rejecting ambiguous matches rather than choosing one. A source mask
+may compile into multiple bitmap tiles. Their coverage must form
+an exact disjoint union with consistent layer and obstacle links, and every
+compiled mask must be accounted for by a reviewed recipe. Each owning asset
 then moves independently; bitmap bytes, dimensions, translated boundaries and
 compiled obstacle links must remain exact. A failed run invalidates the previous
 manifest, records placement errors and exits unsuccessfully. These are static
@@ -231,6 +234,13 @@ leaves baseline non-mask geometry unchanged. Outputs are under
 fractional-anchor regression on Derby's postern: mask receiver elevation now uses
 the authored floating-point position, while polygon membership uses the movement
 grid. A sloped fractional-anchor regression test protects this distinction.
+The tile-aware verifier rerun is under `work/map-compile/tile-mask-verification`;
+all 61 source records pass and all 48 native-tested descriptors are unchanged.
+Horizontal/vertical multi-tile tests reject missing pixels, overlaps and mixed
+bindings. All ten oversized source bitmaps also pass a format-only split/reassembly
+check (`work/map-compile/oversized-mask-roundtrip.json`): Derby 129/168/172/173,
+Leicester 24, Lincoln 268 and Nottingham 126/127/449/504. This does not recover
+their asset ownership, geometry, receiving surfaces or state bindings.
 
 Croisement01 has one reviewed static mask in
 `refinement/catalogs/croisement01-masks.json`: record 25 (6,258 pixels), owned

@@ -93,6 +93,8 @@
   rules, independent translations and native diagnostic descriptors. Failed runs
   invalidate earlier success manifests. Fractional receiving anchors retain their
   authored position for slope elevation checks.
+  Verification supports masks split into bitmap tiles, checking their exact
+  combined coverage and consistent bindings while rejecting unaccounted records.
   Full-map recovery and publication remain incomplete.
   A surface-support audit reports missing pixels, interior gaps and repair bounds
   for reviewed mask sets, including whether both sides of a state change have

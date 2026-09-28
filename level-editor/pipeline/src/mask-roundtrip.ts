@@ -17,20 +17,38 @@ export function maskCoverage(mask: Mask): Set<string> {
 /** Layer and obstacle IDs are rebuilt, so source IDs cannot identify compiled
  * masks. Require an unambiguous pixel/rule match, including view-only records.
  * This comparison does not certify receiving-layer or obstacle ownership. */
-export function matchRecoveredMask(expected: Mask, compiled: Mask[]): number {
+export function matchRecoveredMasks(expected: Mask, compiled: Mask[]): number[] {
   const coverage = maskCoverage(expected);
   assert.ok(coverage.size, "Cannot identify an empty source mask");
-  const matches = compiled.flatMap((mask, index) =>
-    mask.mask_type === expected.mask_type &&
-    mask.obstacle_indices.length === expected.obstacle_indices.length &&
-    isDeepStrictEqual(mask.character_polyline, expected.character_polyline) &&
-    isDeepStrictEqual(mask.projectile_polyline, expected.projectile_polyline) &&
-    isDeepStrictEqual(maskCoverage(mask), coverage)
-      ? [index]
-      : [],
-  );
-  assert.equal(matches.length, 1, "Expected one compiled pixel/rule match for source mask");
-  return matches[0]!;
+  const matches = compiled.flatMap((mask, index) => {
+    if (
+      mask.mask_type !== expected.mask_type ||
+      mask.obstacle_indices.length !== expected.obstacle_indices.length ||
+      !isDeepStrictEqual(mask.character_polyline, expected.character_polyline) ||
+      !isDeepStrictEqual(mask.projectile_polyline, expected.projectile_polyline)
+    )
+      return [];
+    const pixels = maskCoverage(mask);
+    return pixels.size && [...pixels].every((point) => coverage.has(point))
+      ? [{ index, pixels }]
+      : [];
+  });
+  const combined = new Set<string>();
+  for (const { index, pixels } of matches) {
+    const first = compiled[matches[0]!.index]!;
+    assert.equal(compiled[index]!.layer, first.layer, "Mask tiles have different receiving layers");
+    assert.deepEqual(
+      compiled[index]!.obstacle_indices,
+      first.obstacle_indices,
+      "Mask tiles have different obstacle links",
+    );
+    for (const point of pixels) {
+      assert.ok(!combined.has(point), "Ambiguous overlapping compiled mask tiles");
+      combined.add(point);
+    }
+  }
+  assert.equal(combined.size, coverage.size, "Expected complete compiled mask coverage");
+  return matches.map((match) => match.index);
 }
 
 export function verifyMaskTranslation(before: Mask, after: Mask, dx: number): void {

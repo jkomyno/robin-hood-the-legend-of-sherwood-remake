@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { Mask } from "../../shared/src/level.ts";
 import { encodeMaskBitmap } from "../../shared/src/encode-mask-bitmap.ts";
-import { matchRecoveredMask, verifyMaskTranslation } from "./mask-roundtrip.ts";
+import { matchRecoveredMasks, verifyMaskTranslation } from "./mask-roundtrip.ts";
+import { rasterizeMaskGeometry } from "../../shared/src/compile-mask-geometry.ts";
 
 const mask = (): Mask => ({
   layer: 0,
@@ -19,14 +20,17 @@ test("view-only masks match by actual pixels despite different empty padding and
   const expected = mask();
   const compiled = { ...mask(), layer: 9, box_size: [1, 1] as [number, number] };
   compiled.mask_data = encodeMaskBitmap(new Uint8Array([1]), 1, 1);
-  assert.equal(matchRecoveredMask(expected, [{ ...mask(), box_top_left: [50, 20] }, compiled]), 1);
-  assert.throws(() => matchRecoveredMask(expected, [compiled, compiled]), /one compiled/);
+  assert.deepEqual(
+    matchRecoveredMasks(expected, [{ ...mask(), box_top_left: [50, 20] }, compiled]),
+    [1],
+  );
+  assert.throws(() => matchRecoveredMasks(expected, [compiled, compiled]), /overlapping/);
   assert.throws(
-    () => matchRecoveredMask(expected, [{ ...compiled, mask_type: 5 }]),
-    /one compiled/,
+    () => matchRecoveredMasks(expected, [{ ...compiled, mask_type: 5 }]),
+    /complete compiled/,
   );
   compiled.mask_data = encodeMaskBitmap(new Uint8Array([0]), 1, 1);
-  assert.throws(() => matchRecoveredMask(expected, [compiled]), /one compiled/);
+  assert.throws(() => matchRecoveredMasks(expected, [compiled]), /complete compiled/);
 });
 
 test("mask comparisons detect boundary, bitmap and obstacle-link regressions", () => {
@@ -41,10 +45,13 @@ test("mask comparisons detect boundary, bitmap and obstacle-link regressions", (
     [12, 30],
   ];
   before.obstacle_indices = [7];
-  assert.equal(matchRecoveredMask(before, [{ ...before, layer: 8, obstacle_indices: [15] }]), 0);
+  assert.deepEqual(
+    matchRecoveredMasks(before, [{ ...before, layer: 8, obstacle_indices: [15] }]),
+    [0],
+  );
   assert.throws(
-    () => matchRecoveredMask(before, [{ ...before, obstacle_indices: [] }]),
-    /one compiled/,
+    () => matchRecoveredMasks(before, [{ ...before, obstacle_indices: [] }]),
+    /complete compiled/,
   );
   const after: Mask = {
     ...before,
@@ -70,4 +77,58 @@ test("mask comparisons detect boundary, bitmap and obstacle-link regressions", (
   assert.throws(() => verifyMaskTranslation(before, { ...after, mask_data: [0] }, 32));
   const view = mask();
   verifyMaskTranslation(view, { ...view, box_top_left: [-22, 20] }, -32);
+});
+
+test("large recovered masks match every compiler tile without accepting gaps or mixed bindings", () => {
+  for (const [width, height] of [
+    [2050, 1],
+    [1, 2050],
+  ] as const) {
+    const expected: Mask = {
+      ...mask(),
+      mask_type: 22,
+      projectile_polyline: [],
+      obstacle_indices: [3],
+      box_top_left: [0, 0],
+      box_size: [width, height],
+      mask_data: encodeMaskBitmap(new Uint8Array(width * height).fill(1), width, height),
+    };
+    const tiles = rasterizeMaskGeometry(
+      [
+        [
+          [0, 0, 0],
+          [width, 0, 0],
+          [width, height, 0],
+        ],
+        [
+          [0, 0, 0],
+          [width, height, 0],
+          [0, height, 0],
+        ],
+      ],
+      { ...expected, layer: 7, obstacle_indices: [9] },
+    );
+    assert.equal(tiles.length, 3);
+    assert.deepEqual(matchRecoveredMasks(expected, tiles), [0, 1, 2]);
+    assert.throws(() => matchRecoveredMasks(expected, tiles.slice(0, 2)), /complete compiled/);
+    assert.throws(() => matchRecoveredMasks(expected, [...tiles, tiles[0]!]), /overlapping/);
+    assert.throws(
+      () => matchRecoveredMasks(expected, [tiles[0]!, { ...tiles[1]!, layer: 8 }, tiles[2]!]),
+      /receiving layers/,
+    );
+    assert.throws(
+      () =>
+        matchRecoveredMasks(expected, [
+          tiles[0]!,
+          { ...tiles[1]!, obstacle_indices: [10] },
+          tiles[2]!,
+        ]),
+      /obstacle links/,
+    );
+    const broken = structuredClone(tiles);
+    const pixels = new Uint8Array(1024).fill(1);
+    pixels[1023] = 0;
+    broken[0]!.mask_data = encodeMaskBitmap(pixels, ...broken[0]!.box_size);
+    assert.throws(() => matchRecoveredMasks(expected, broken), /complete compiled/);
+  }
 });

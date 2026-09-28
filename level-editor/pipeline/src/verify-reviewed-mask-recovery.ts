@@ -11,7 +11,7 @@ import { normalizeGameplayStateViews } from "../../shared/src/gameplay-state-vie
 import { readStoredMap, pinnedDescriptors } from "./stored-map.ts";
 import { staticGameplaySnapshot } from "./diagnose-gameplay-candidates.ts";
 import type { ReviewedMaskRecipe } from "./recover-reviewed-masks.ts";
-import { maskCoverage, matchRecoveredMask, verifyMaskTranslation } from "./mask-roundtrip.ts";
+import { maskCoverage, matchRecoveredMasks, verifyMaskTranslation } from "./mask-roundtrip.ts";
 
 const { values } = parseArgs({
   options: {
@@ -43,7 +43,7 @@ const manifest = {
   complete: false,
   movement: { dx },
   results: [] as { map: string; file: string }[],
-  masks: [] as { asset: string; source: number; compiled: number; pixels: number }[],
+  masks: [] as { asset: string; source: number; compiled: number[]; pixels: number }[],
   movementFailures: [] as { asset: string; error: string }[],
 };
 const manifestPath = path.join(values.out, "diagnostics.json");
@@ -112,21 +112,23 @@ for (const recipe of reviewed.recipes) {
     `Reviewed model changed: ${recipe.asset}`,
   );
   assert.ok(recipe.entries.length, `Empty recipe: ${recipe.asset}`);
-  const indices = recipe.entries.map((entry) => {
+  const indices = recipe.entries.flatMap((entry) => {
     assert.ok(!sourceIndices.has(entry.source), "Repeated source mask");
     sourceIndices.add(entry.source);
     const expected = source.masks[entry.source];
     assert.ok(expected, `Missing source mask ${entry.source}`);
-    const index = matchRecoveredMask(expected, baseline.masks ?? []);
-    assert.ok(!used.has(index), "Source masks cannot share one compiled record");
-    used.add(index);
+    const indices = matchRecoveredMasks(expected, baseline.masks ?? []);
+    for (const index of indices) {
+      assert.ok(!used.has(index), "Source masks cannot share one compiled record");
+      used.add(index);
+    }
     manifest.masks.push({
       asset: recipe.asset,
       source: entry.source,
-      compiled: index,
+      compiled: indices,
       pixels: maskCoverage(expected).size,
     });
-    return index;
+    return indices;
   });
   const movedDocument = structuredClone(document);
   const parts = movedDocument.objects.filter((p) => p.node.startsWith(`asset:${recipe.asset}:`));
@@ -148,12 +150,19 @@ for (const recipe of reviewed.recipes) {
       verifyMaskTranslation(baseline.masks![index]!, mask, dx);
     }
     await write(recipe.asset, moved);
-    console.log(`${recipe.asset}: ${indices.length} masks verified at baseline and dx=${dx}`);
+    console.log(
+      `${recipe.asset}: ${recipe.entries.length} source masks (${indices.length} compiled tiles) verified at baseline and dx=${dx}`,
+    );
   } catch (error) {
     manifest.movementFailures.push({ asset: recipe.asset, error: String(error) });
   }
   await save();
 }
+assert.equal(
+  used.size,
+  baseline.masks?.length ?? 0,
+  "Compiled masks not covered by reviewed recipes",
+);
 manifest.complete = manifest.movementFailures.length === 0;
 await save();
 assert.ok(
