@@ -234,6 +234,32 @@ unchanged. Moving the tower detaches one jump pair and its gate. Drafts are unde
 `work/map-compile/leicester-mask-native`. Leicester still has 459 unrecovered
 masks; these assets do not have complete mask coverage or mask-controlled depth enabled.
 
+Nottingham's reviewed recipe (`refinement/catalogs/nottingham-masks.json`)
+recovers four static masks: west green shop 52/55 (2,523/1,862 pixels), upper red
+house 103 (4,428 pixels), and village small hut 210 (6,932 pixels). Their
+receivers are ground-level. All coverage and boundary rules match exactly and
+follow independent one-pixel asset moves. Native loading passes for the baseline
+and three moved scenes; baseline non-mask data is unchanged. Some moved jump
+connections detach. There are 523 unrecovered Nottingham masks.
+
+York's reviewed recipe (`refinement/catalogs/york-masks.json`) recovers six static
+masks: scaffolded corner house 79 (2,777 pixels), southwest square corner house
+201 (392), central south golden timber house 227/238 (2,126/5,856), southeast lane
+eastern timber house 269 (687), and south gate lane front timber house 280 (1,036).
+Except for ground-level 269, receivers lie on the flat 90.00101-unit town surface.
+All six match in the baseline, whose non-mask data is unchanged. Masks
+201/227/238/269/280 also match after independent asset moves, and native loading
+passes for the baseline and those four moved scenes.
+
+Moving the scaffolded corner house one pixel east still fails a neighboring
+east-gable-house jump landing anchor: its height is 251.952949563 while the
+moved receiving surface is 251.918508693 at projected `[1504,1230]`. The
+compiler rejects the mismatch; mask 79 has baseline fidelity only, not verified
+whole-asset movement. York still has 822 unrecovered masks. These diagnostics
+are staged under `work/map-compile/{nottingham,york}-mask-recovery` and
+`work/map-compile/{nottingham,york}-mask-native`; neither map is certified for
+complete gameplay or publication.
+
 Recovery discards faces outside a mask's bounds before fitting their depth
 planes. This avoids numerical failures from unrelated nearly edge-on faces
 without relaxing planarity or coverage checks for contributing surfaces.

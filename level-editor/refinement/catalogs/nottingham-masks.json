@@ -1,0 +1,105 @@
+{
+  "source_sha256": "19dfa4dc18c5fd63f1581974862c7bdcc1573e0a1c9546b386ce6e26e55c6898",
+  "recipes": [
+    {
+      "asset": "nottingham-west-green-shop",
+      "model_sha256": "3e7d905c352405face77b7eb63b1c87f1ca00af9b66026d52655206ffa955a44",
+      "entries": [
+        {
+          "source": 52,
+          "id": "west-green-shop-occlusion-1",
+          "node": "building-086",
+          "anchor": [
+            1145,
+            1657,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "The receiving layer is ground, with no raised projection under the character boundary. Coverage is fully supported by this asset mesh, all linked obstacles have one asset owner, and the source mask is static. Projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 55,
+          "id": "west-green-shop-occlusion-2",
+          "node": "building-082",
+          "anchor": [
+            1145,
+            1657,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "The receiving layer is ground, with no raised projection under the character boundary. Coverage is fully supported by this asset mesh, all linked obstacles have one asset owner, and the source mask is static. Projectile boundaries use the world XY datum.",
+          "characterHeights": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-upper-red-house",
+      "model_sha256": "192b436ba2a3ca03d8ece8df00be240555ee9f95b4b56ebda438b53606730f17",
+      "entries": [
+        {
+          "source": 103,
+          "id": "upper-red-house-occlusion-1",
+          "node": "building-145",
+          "anchor": [
+            1312,
+            865,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "The receiving layer is ground, with no raised projection under the character boundary. Coverage is fully supported by this asset mesh, all linked obstacles have one asset owner, and the source mask is static. Projectile boundaries use the world XY datum.",
+          "characterHeights": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-village-small-hut",
+      "model_sha256": "88e916fa58f366f3dc24c9ab2a7a00e66ca07b8da9b4cd0bf5b06d83125fa68f",
+      "entries": [
+        {
+          "source": 210,
+          "id": "village-small-hut-occlusion-1",
+          "node": "building-282",
+          "anchor": [
+            316,
+            2890,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "The receiving layer is ground, with no raised projection under the character boundary. Coverage is fully supported by this asset mesh, all linked obstacles have one asset owner, and the source mask is static. Projectile boundaries use the world XY datum.",
+          "characterHeights": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ]
+}

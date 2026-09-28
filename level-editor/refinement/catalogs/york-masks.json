@@ -1,0 +1,154 @@
+{
+  "source_sha256": "6a3a1ee8105bf9614bc4daf1f32aa19a7afaacfadd9cbf5ec250239b502fee97",
+  "recipes": [
+    {
+      "asset": "york-bridge-square-scaffolded-corner-house",
+      "model_sha256": "3e9a64b7556c5ccb0e4c05cfd8866f186d2d86249b7448aab75db0bec555fdeb",
+      "entries": [
+        {
+          "source": 79,
+          "id": "bridge-square-scaffolded-corner-house-occlusion-1",
+          "node": "building-130",
+          "anchor": [
+            1515,
+            1628.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Receiving geometry lies on the flat 90.00101-unit town surface; character boundary vertices are supported by its projection. Coverage is fully supported by this asset mesh, all linked obstacles have one asset owner, and the source mask is static. Projectile boundaries use the world XY datum.",
+          "characterHeights": [
+            90.00101,
+            90.00101,
+            90.00101
+          ]
+        }
+      ]
+    },
+    {
+      "asset": "york-southwest-square-corner-house",
+      "model_sha256": "c830b6f02ca5f1a43800ddebd7cba5141c9d08a6c8bca289538a23ea1e8a3cbf",
+      "entries": [
+        {
+          "source": 201,
+          "id": "southwest-square-corner-house-occlusion-1",
+          "node": "building-294",
+          "anchor": [
+            828,
+            1567.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Receiving geometry lies on the flat 90.00101-unit town surface; character boundary vertices are supported by its projection. Coverage is fully supported by this asset mesh, all linked obstacles have one asset owner, and the source mask is static. Projectile boundaries use the world XY datum.",
+          "characterHeights": [
+            90.00101,
+            90.00101,
+            90.00101
+          ]
+        }
+      ]
+    },
+    {
+      "asset": "york-central-south-golden-timber-house",
+      "model_sha256": "f6fd8cf6b401c5c549f56edbce1a4b6f2ffde41840a9fd8dcd80c51c860e65df",
+      "entries": [
+        {
+          "source": 227,
+          "id": "central-south-golden-timber-house-occlusion-1",
+          "node": "building-328",
+          "anchor": [
+            1131.5,
+            1681.50101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0
+          ],
+          "review": "Receiving geometry lies on the flat 90.00101-unit town surface; character boundary vertices are supported by its projection. Coverage is fully supported by this asset mesh, all linked obstacles have one asset owner, and the source mask is static. Projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 238,
+          "id": "central-south-golden-timber-house-occlusion-2",
+          "node": "building-343",
+          "anchor": [
+            1081,
+            1865.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Receiving geometry lies on the flat 90.00101-unit town surface; character boundary vertices are supported by its projection. Coverage is fully supported by this asset mesh, all linked obstacles have one asset owner, and the source mask is static. Projectile boundaries use the world XY datum.",
+          "characterHeights": [
+            90.00101,
+            90.00101
+          ]
+        }
+      ]
+    },
+    {
+      "asset": "york-southeast-lane-eastern-timber-house",
+      "model_sha256": "99c80272b761701720c3e2add927b38783b9c80751d328d1b164c036de67df45",
+      "entries": [
+        {
+          "source": 269,
+          "id": "southeast-lane-eastern-timber-house-occlusion-1",
+          "node": "building-387",
+          "anchor": [
+            2098,
+            1975,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0
+          ],
+          "review": "The receiving layer is ground, with no raised projection under the character boundary. Coverage is fully supported by this asset mesh, all linked obstacles have one asset owner, and the source mask is static. Projectile boundaries use the world XY datum.",
+          "characterHeights": [
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "asset": "york-south-gate-lane-front-timber-house",
+      "model_sha256": "ce7ae5974ce9fa18f9d0531cbd2a74edec2671447b96f822fd7dbfe107c6d6ae",
+      "entries": [
+        {
+          "source": 280,
+          "id": "south-gate-lane-front-timber-house-occlusion-1",
+          "node": "building-425",
+          "anchor": [
+            1210,
+            2289.00101,
+            90.00101
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Receiving geometry lies on the flat 90.00101-unit town surface; character boundary vertices are supported by its projection. Coverage is fully supported by this asset mesh, all linked obstacles have one asset owner, and the source mask is static. Projectile boundaries use the world XY datum.",
+          "characterHeights": [
+            90.00101,
+            90.00101
+          ]
+        }
+      ]
+    }
+  ]
+}

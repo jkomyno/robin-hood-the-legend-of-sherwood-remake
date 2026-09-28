@@ -80,10 +80,11 @@
   into local state IDs after ownership is established, with independent compiled
   references for duplicated assets.
   Reviewed static-mask recipes now run in the asset migration with pinned source
-  and model hashes. Three Derby postern/gatehouse masks and seven Leicester
-  tower/keep/house/shed masks have exact coverage and boundary round-trips,
-  including placement and native registration checks; full-map
-  recovery and publication remain incomplete.
+  and model hashes. Three Derby, seven Leicester, four Nottingham and six York
+  masks have exact baseline coverage and boundary round-trips with native
+  registration checks. Independent placement checks pass except for York's
+  scaffolded corner house, whose move exposes a neighboring jump-height mismatch.
+  Full-map recovery and publication remain incomplete.
   A surface-support audit reports missing pixels, interior gaps and repair bounds
   for reviewed mask sets, including whether both sides of a state change have
   full pixel support. Migration rejects unsupported coverage before surface clipping.
