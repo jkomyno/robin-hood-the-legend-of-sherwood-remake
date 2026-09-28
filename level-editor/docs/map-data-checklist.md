@@ -615,6 +615,32 @@ equivalent, correctly grouped, published or complete in other gameplay features.
 This audit omits mask recovery and is not a publication candidate. Wychford has
 no corresponding source map for this comparison.
 
+Visual inspection identifies both missing records as separate canopies, not
+non-rendering pieces of neighbouring buildings: Derby's small canvas shelter
+beside the lower west curtain and Sherwood's thatched preparation-table canopy.
+The reviewed `derby-obstacle-drafts.json` and `sherwood-obstacle-drafts.json`
+recipes pin their source data and record that ownership. Run
+`pipeline/src/author-obstacle-drafts.ts --source LEVEL_JSON --recipe RECIPE_JSON
+--out NEW_DIRECTORY` to author independent assets with local physical volumes
+and visible volume-preview meshes. These are explicitly unfinished appearance
+drafts; they contain no mission actors, invented navigation or source-map lookup.
+
+The staged `derby-canopy-stage` and `sherwood-canopy-stage` scenes under
+`work/map-compile` reopen successfully and recover 42/82 asset definitions with
+zero unowned sight records. Baseline and 100-unit canopy translations match each
+restored volume's ordered vertices and flags at float32 precision and construct
+native maps (`canopy-draft-native`): Derby has 60 areas, 337 sight obstacles,
+70 doors and two jump pairs; Sherwood has 29/295/15/1. This does not certify the
+other geometry or promote these drafts to published complete assets.
+
+Roof-volume geometry alone still lacks 87 mask pixels for Derby record 6 and
+1,311 for Sherwood record 76, including support poles and silhouette details.
+The `derby-canopy-mask-audit.json` and `sherwood-canopy-mask-audit.json` reports
+retain these gaps; neither mask is recovered. Textures and appearance completion
+remain required. Saving/reopening also now restores an empty resource list for
+scene assets whose descriptor omits that optional field, avoiding a validation
+failure after compact serialization removes the redundant saved list.
+
 Asset character/projectile boundaries can now be explicitly open, independently
 of one another; existing authored boundaries remain closed by default. This
 preserves source polylines without inventing a closing edge across a concavity.

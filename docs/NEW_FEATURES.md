@@ -1,5 +1,11 @@
 # Post-port Features
 
+- **Independent physical asset drafts.** Offline authoring can restore a reviewed
+  missing object as a separate editor asset with local collision and a volume
+  preview mesh. Source hashes and ownership recipes are checked before extraction;
+  compilation then uses the asset alone. Drafts explicitly retain unfinished
+  appearance and mask status instead of assigning missing props to nearby buildings.
+
 - **Mask-controlled depth baking.** Asset gameplay can declare
   `maskOcclusionNodes` for parts whose complete occlusion is authored by typed
   masks. Export keeps their color geometry while baking the depth of surfaces
