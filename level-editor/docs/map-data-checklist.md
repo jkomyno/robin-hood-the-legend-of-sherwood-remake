@@ -295,6 +295,30 @@ two jump pairs; the other eight compiled geometries are unchanged. No unanchored
 receivers remain in this recovered static batch. This does not certify the
 unrecovered state geometry or publication readiness.
 
+`pipeline/src/inventory-patch-dependencies.ts` audits shared sight, mask and door
+references across supplied patches and flags sight changes that activate receiving
+projection surfaces. It keeps each patch and initial/applied role distinct, checks
+for stale sight indices, and distinguishes masks by layer plus index. It does not
+assign asset ownership, recover motion changes or import mission actors/scripts.
+
+The authoring inventory in `work/map-compile/mission-map-effects.json` covers all
+39 retained mission files and records hashes of each mission and its map source.
+Derby's three missions all link both drawbridge patches to initial sight obstacle
+267; the second additionally activates projection 268 and binds doors 37/38.
+Obstacle 267 lies at the first bridge, so assigning both geometries to the second
+asset would break independent placement. This shared dependency needs an explicit
+map/mission ownership decision in the implementation, not an inferred asset merge.
+The second bridge's visual elevation also differs between mission variants (1 vs
+110), and its old preview source hash no longer matches the current JSON. No state
+recipe has been approved from that stale pin.
+
+Leicester's map patches activate projections 389, 384 and 390. Projection-state
+activation remains a compiler gap: current sight-transition authoring rejects
+receiving surfaces. Mission-carried records also include traps, hiding places and
+York gate effects; their presence in a mission file does not establish permanent
+map ownership. The earlier recovered transition counts cover map-source recovery,
+not this additional inventory. No mission population or scripts were added to maps.
+
 The ignored native test
 `recovered_projection_partitions_preserve_sampled_runtime_queries` reads a
 `ROBIN_PROJECTION_COMPARISON` manifest with `before`/`after` descriptor paths and

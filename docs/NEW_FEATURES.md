@@ -129,6 +129,11 @@
   bounds. Recovery no longer invents a walkable surface from that placeholder, and
   compilation excludes preview bounds from automatic collision. Explicitly authored
   surfaces and volumes still work; the bridge's actual state behavior remains open.
+  A patch-dependency audit now identifies shared sight/mask/door references and
+  receiving-surface state changes without importing mission actors or scripts.
+  The retained mission inventory exposes a shared Derby bridge obstacle and
+  Leicester's changing projection surfaces; ownership and projection-state
+  compilation remain unfinished.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York
