@@ -238,6 +238,7 @@ export function compileAssetGameplay(
   }[] = [];
   const sight: SightObstacle[] = [];
   const sightJoins: import("./assemble-sight-volumes.ts").PlacedSightJoin[] = [];
+  const sightCaps: import("./assemble-sight-volumes.ts").PlacedSightCap[] = [];
   const materials: NonNullable<CompiledAssetGeometry["material_sectors"]> = [];
   const groundMaterials: number[] = [];
   const sounds: NonNullable<CompiledAssetGeometry["sound_sources"]> = [];
@@ -361,6 +362,12 @@ export function compileAssetGameplay(
           material_indices: [],
         });
         partSight.set(node, sight.at(-1)!);
+        for (const cap of placement.descriptor.parts.find((p) => p.node === node)
+          ?.sight_join_caps ?? []) {
+          if (explicitSight.has(node))
+            throw new Error(`Linked sight volume cannot declare assembly caps: ${node}`);
+          sightCaps.push({ index: sight.length - 1, cap });
+        }
         for (const edge of placement.descriptor.parts.find((p) => p.node === node)
           ?.sight_join_edges ?? []) {
           if (explicitSight.has(node))
@@ -1244,6 +1251,6 @@ export function compileAssetGameplay(
         }
       : {}),
   };
-  assembleSightVolumes(compiled, sightJoins);
+  assembleSightVolumes(compiled, sightJoins, sightCaps);
   return compiled;
 }

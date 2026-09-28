@@ -8,12 +8,18 @@ export interface PlacedSightJoin {
   edge: [Vec3, Vec3];
 }
 
+export interface PlacedSightCap {
+  index: number;
+  cap: "top" | "bottom";
+}
+
 /** Remove explicitly authored internal faces only when their placed seams match. */
 export function assembleSightVolumes(
   geometry: CompiledAssetGeometry,
   joins: PlacedSightJoin[],
+  caps: PlacedSightCap[] = [],
 ): void {
-  if (!joins.length) return;
+  if (!joins.length && !caps.length) return;
   const sight = geometry.sight_obstacles;
   const near = (a: Vec3, b: Vec3) => Math.hypot(...a.map((v, i) => v - b[i]!)) < 1e-5;
   const parent = sight.map((_, i) => i);
@@ -26,7 +32,7 @@ export function assembleSightVolumes(
     ]),
   ]);
   const firstPoint = (shape: SightObstacle) => shape.points[0]!;
-  for (const join of joins) {
+  for (const join of [...joins, ...caps]) {
     const shape = sight[join.index];
     if (
       !shape ||
@@ -48,6 +54,7 @@ export function assembleSightVolumes(
     )
       throw new Error("Sight seams require flat top and bottom planes");
     if (
+      "edge" in join &&
       !shape.points.some((p, i) => {
         const q = shape.points[(i + 1) % shape.points.length]!;
         return (
@@ -56,6 +63,42 @@ export function assembleSightVolumes(
       })
     )
       throw new Error("Sight seam must follow a complete directed volume edge");
+  }
+  const sameFootprint = (a: SightObstacle, b: SightObstacle) =>
+    a.points.length === b.points.length &&
+    b.points.some((_, start) =>
+      [1, -1].some((direction) =>
+        a.points.every((p, i) => {
+          const q = b.points[(start + direction * i + b.points.length) % b.points.length]!;
+          return Math.fround(p.x) === Math.fround(q.x) && Math.fround(p.y) === Math.fround(q.y);
+        }),
+      ),
+    );
+  const capHeight = (cap: PlacedSightCap) =>
+    Math.fround(firstPoint(sight[cap.index]!)[cap.cap === "top" ? "z_top" : "z_bottom"]);
+  const flags = ["opaque", "solid", "mouse", "show_shadow_polygon", "default_material"] as const;
+  for (const [i, a] of caps.entries()) {
+    const shape = sight[a.index]!;
+    if (joins.some((join) => join.index === a.index))
+      throw new Error("A sight volume cannot combine edge and cap seams");
+    if (a.cap !== "top" && a.cap !== "bottom") throw new Error("Invalid sight cap");
+    if (Math.fround(firstPoint(shape).z_top) <= Math.fround(firstPoint(shape).z_bottom))
+      throw new Error("Sight cap requires positive volume thickness");
+    if (caps.some((b, j) => j !== i && b.index === a.index && b.cap === a.cap))
+      throw new Error("Duplicate sight cap");
+    const matches = caps.filter(
+      (b) =>
+        b.index !== a.index &&
+        b.cap !== a.cap &&
+        capHeight(a) === capHeight(b) &&
+        sameFootprint(shape, sight[b.index]!),
+    );
+    if (matches.length > 1) throw new Error("Ambiguous sight cap across overlapping placements");
+    const b = matches[0];
+    if (!b) continue;
+    if (flags.some((key) => shape[key] !== sight[b.index]![key]))
+      throw new Error("Matching sight caps disagree on physical flags");
+    parent[root(b.index)] = root(a.index);
   }
   for (const [i, a] of joins.entries()) {
     const matches = joins.flatMap((b, j) =>
@@ -91,6 +134,27 @@ export function assembleSightVolumes(
     for (const index of group) indices.set(index, assembled.length);
     if (group.length === 1) {
       assembled.push(shape);
+      continue;
+    }
+    if (caps.some((cap) => group.includes(cap.index))) {
+      const stack = group
+        .map((index) => sight[index]!)
+        .sort((a, b) => firstPoint(a).z_bottom - firstPoint(b).z_bottom);
+      for (let i = 1; i < stack.length; i++)
+        if (
+          Math.fround(firstPoint(stack[i - 1]!).z_top) !==
+            Math.fround(firstPoint(stack[i]!).z_bottom) ||
+          !sameFootprint(stack[0]!, stack[i]!)
+        )
+          throw new Error("Joined sight caps must form one contiguous stack");
+      assembled.push({
+        ...shape,
+        points: shape.points.map((p) => ({
+          ...p,
+          z_bottom: firstPoint(stack[0]!).z_bottom,
+          z_top: firstPoint(stack.at(-1)!).z_top,
+        })),
+      });
       continue;
     }
     const canonical: SightObstacle["points"] = [];

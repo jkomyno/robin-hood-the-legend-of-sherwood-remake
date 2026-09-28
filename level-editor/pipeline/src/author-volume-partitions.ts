@@ -33,6 +33,7 @@ const recipe: {
     model_sha256: string;
     descriptor_sha256: string;
     vertices: VolumeVertex[];
+    height_range?: [number, number];
   }[];
 } = JSON.parse(await fs.readFile(values.recipe, "utf8"));
 if (sha256(bytes) !== recipe.source_sha256 || !recipe.review.trim())
@@ -49,6 +50,12 @@ if (
 const shapes = partitionFlatVolume(
   source,
   recipe.parts.map((p) => p.vertices),
+  recipe.parts.some((p) => p.height_range)
+    ? recipe.parts.map((p) => {
+        if (!p.height_range) throw new Error("Every stacked partition requires a height range");
+        return p.height_range;
+      })
+    : undefined,
 );
 const document = await readStoredMap(values.map, values.library);
 const descriptors = await pinnedDescriptors(
@@ -110,18 +117,28 @@ for (const [i, entry] of recipe.parts.entries()) {
       return { x: top[0], y: top[1], z_bottom: bottom[2], z_top: top[2] };
     }),
   };
-  part.sight_join_edges = shape.points.flatMap((p, j): [Vec3, Vec3][] => {
-    const q = shape.points[(j + 1) % shape.points.length]!;
-    const matched = shapes.some(
-      (other, k) =>
-        k !== i &&
-        other.points.some((a, n) => {
-          const b = other.points[(n + 1) % other.points.length]!;
-          return p.x === b.x && p.y === b.y && q.x === a.x && q.y === a.y;
-        }),
-    );
-    return matched ? [[localize([p.x, p.y, p.z_bottom]), localize([q.x, q.y, q.z_bottom])]] : [];
-  });
+  delete part.sight_join_caps;
+  part.sight_join_edges = entry.height_range
+    ? []
+    : shape.points.flatMap((p, j): [Vec3, Vec3][] => {
+        const q = shape.points[(j + 1) % shape.points.length]!;
+        const matched = shapes.some(
+          (other, k) =>
+            k !== i &&
+            other.points.some((a, n) => {
+              const b = other.points[(n + 1) % other.points.length]!;
+              return p.x === b.x && p.y === b.y && q.x === a.x && q.y === a.y;
+            }),
+        );
+        return matched
+          ? [[localize([p.x, p.y, p.z_bottom]), localize([q.x, q.y, q.z_bottom])]]
+          : [];
+      });
+  if (entry.height_range) {
+    part.sight_join_caps = [];
+    if (entry.height_range[0] !== source.points[0]!.z_bottom) part.sight_join_caps.push("bottom");
+    if (entry.height_range[1] !== source.points[0]!.z_top) part.sight_join_caps.push("top");
+  }
   outputs.set(entry.asset, JSON.stringify({ ...authored, ...descriptor }, null, 2) + "\n");
 }
 await fs.mkdir(values.out);

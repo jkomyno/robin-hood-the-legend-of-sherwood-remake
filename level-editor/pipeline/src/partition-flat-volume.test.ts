@@ -20,6 +20,52 @@ const source: SightObstacle = {
 };
 const seamA = { edge: 0, fraction: 0.4 },
   seamB = { edge: 2, fraction: 0.6 };
+test("stacked partitions preserve ordered contours and reject gaps or overlap", () => {
+  const contours = [
+    [0, 1, 2, 3],
+    [0, 1, 2, 3],
+  ];
+  const pieces = partitionFlatVolume(source, contours, [
+    [0, 20],
+    [20, 50],
+  ]);
+  assert.deepEqual(
+    pieces.map((s) => s.points.map((p) => [p.z_bottom, p.z_top])),
+    [Array.from({ length: 4 }, () => [0, 20]), Array.from({ length: 4 }, () => [20, 50])],
+  );
+  assert.equal(source.points[0]!.z_top, 50);
+  assert.throws(
+    () =>
+      partitionFlatVolume(source, contours, [
+        [0, 19],
+        [20, 50],
+      ]),
+    /complete height/,
+  );
+  assert.throws(
+    () =>
+      partitionFlatVolume(source, contours, [
+        [0, 21],
+        [20, 50],
+      ]),
+    /complete height/,
+  );
+  assert.throws(
+    () =>
+      partitionFlatVolume(
+        source,
+        [
+          [0, 1, 2],
+          [0, 1, 2, 3],
+        ],
+        [
+          [0, 20],
+          [20, 50],
+        ],
+      ),
+    /complete ordered/,
+  );
+});
 test("explicit seams retain footprint, flags, heights and independent points", () => {
   const pieces = partitionFlatVolume(source, [
     [0, seamA, seamB, 3],

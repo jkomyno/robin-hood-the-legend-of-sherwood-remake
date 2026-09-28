@@ -932,6 +932,17 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     nodes.add(part.node);
     if (part.default_hidden !== undefined)
       check(typeof part.default_hidden === "boolean", part.node, "invalid default_hidden");
+    if (part.sight_join_caps !== undefined)
+      check(
+        part.mission_profile === undefined &&
+          part.scenery === undefined &&
+          Array.isArray(part.sight_join_caps) &&
+          part.sight_join_caps.every((cap: unknown) => cap === "top" || cap === "bottom") &&
+          new Set(part.sight_join_caps).size === part.sight_join_caps.length &&
+          !part.sight_join_edges?.length,
+        part.node,
+        "invalid physical sight seam caps",
+      );
     if (part.sight_join_edges !== undefined)
       check(
         part.mission_profile === undefined &&

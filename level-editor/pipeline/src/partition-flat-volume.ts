@@ -8,6 +8,7 @@ export type VolumeVertex = number | { edge: number; fraction: number };
 export function partitionFlatVolume(
   source: SightObstacle,
   partitions: VolumeVertex[][],
+  heightRanges?: [number, number][],
 ): SightObstacle[] {
   const first = source.points[0];
   if (
@@ -39,6 +40,37 @@ export function partitionFlatVolume(
   }));
   if (pieces.length < 2 || pieces.some((piece) => piece.points.length < 3))
     throw new Error("At least two nonempty volume partitions are required");
+  if (heightRanges) {
+    if (
+      heightRanges.length !== pieces.length ||
+      partitions.some(
+        (partition) =>
+          partition.length !== source.points.length || partition.some((vertex, i) => vertex !== i),
+      )
+    )
+      throw new Error("Stacked partitions must retain the complete ordered footprint");
+    const ordered = [...heightRanges].sort((a, b) => a[0] - b[0]);
+    if (
+      ordered.some(
+        ([bottom, top], i) =>
+          !Number.isFinite(bottom) ||
+          !Number.isFinite(top) ||
+          bottom >= top ||
+          (i > 0 && bottom !== ordered[i - 1]![1]),
+      ) ||
+      ordered[0]![0] !== first.z_bottom ||
+      ordered.at(-1)![1] !== first.z_top
+    )
+      throw new Error("Stacked partitions must cover the complete height without gaps or overlap");
+    return pieces.map((piece, i) => ({
+      ...piece,
+      points: piece.points.map((p) => ({
+        ...p,
+        z_bottom: heightRanges[i]![0],
+        z_top: heightRanges[i]![1],
+      })),
+    }));
+  }
   const ring = (shape: SightObstacle): Point[][] => [shape.points.map((p) => [p.x, p.y])];
   const area = (polygons: MultiPolygon) =>
     polygons.reduce(

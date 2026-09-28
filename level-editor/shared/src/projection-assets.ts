@@ -50,6 +50,8 @@ export interface ProjectionAssetDescriptor {
     gameplay_only?: true;
     /** Directed local bottom edges joining flat, static physical volumes after placement. */
     sight_join_edges?: [import("./scene.ts").Vec3, import("./scene.ts").Vec3][];
+    /** Whole horizontal faces that may join an adjacent stacked physical volume. */
+    sight_join_caps?: ("top" | "bottom")[];
   } & (
     | {
         source_obstacle: number;

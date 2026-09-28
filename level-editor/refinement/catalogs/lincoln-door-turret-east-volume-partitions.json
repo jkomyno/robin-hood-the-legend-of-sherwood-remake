@@ -1,0 +1,23 @@
+{
+  "source_sha256": "1d39600d880f96dbd13bff1cda94778d867eabf4d6ed76b00fc92a70f646fc07",
+  "obstacle": 104,
+  "review": "The curtain wall fill ends at height 320 and the independently placed door turret begins there. Restore the complete ordered concave contour in both horizontal slabs, with wall collision from ground to 320 and turret collision from 320 to 373.001. Matching cap seams remove the internal face only while both pieces coincide. No receiving geometry, material regions, masks or state patches reference this volume.",
+  "parts": [
+    {
+      "asset": "lincoln-south-curtain-wall-angle",
+      "node": "building-104--component-wall-fill-below-door-turret",
+      "model_sha256": "9a9a31e6a97c8f602e7a366dc5a959061d63279e03c232be27c7e24dbdcf93a5",
+      "descriptor_sha256": "dc83e22cb7f52ba1e222e4cb9ef4e8f99c1a5541219257415bc61f0da9b60a65",
+      "vertices": [0, 1, 2, 3, 4, 5],
+      "height_range": [0, 320]
+    },
+    {
+      "asset": "lincoln-south-wall-cone-turret",
+      "node": "building-104--component-door-turret-wall",
+      "model_sha256": "0b4f4048509301c0176e2478f954c69defef63299344df4efd6348725edd739e",
+      "descriptor_sha256": "4c6ca22d5c1d6783fe6f03265af8a5b16ebf6eede19f3688a93f2919c9f2b258",
+      "vertices": [0, 1, 2, 3, 4, 5],
+      "height_range": [320, 373.001]
+    }
+  ]
+}

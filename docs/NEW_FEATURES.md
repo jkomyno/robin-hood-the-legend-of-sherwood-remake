@@ -7,6 +7,10 @@
   lookup. Explicit local seam edges let matching flat pieces compile into one
   sight volume, removing artificial internal faces. Moving the pieces apart
   leaves independent volumes. Linked or sloped geometry requires separate authoring.
+  Stacked pieces can retain a complete ordered footprint with explicit height
+  ranges and top/bottom cap seams. Matching full faces assemble into one volume;
+  detached pieces retain their own heights. Gaps, overlapping height ranges,
+  ambiguous matches and incompatible physical flags are rejected.
   Draft staging preserves model/resource paths in an isolated library overlay,
   checks input hashes and scene overrides, and reopens the resulting editor scene.
 

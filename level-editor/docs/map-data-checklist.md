@@ -1518,7 +1518,8 @@ three produce 568, with unchanged door/jump counts throughout. The complete
 successful batch is `lincoln-parapet-volume-native`. The baseline-only query
 inputs are also retained under `lincoln-parapet-volume-baseline-native`.
 Visual parity and publication remain unresolved. Seven of the twenty-six audited
-split records now have correction drafts; nineteen remain uncorrected in that audit.
+split records had correction drafts at this stage; the stacked-volume work below
+brings that count to nine.
 
 Receiving-material conflict checks compare the native binary32 height-plane
 coefficients after winding correction, rather than requiring identical anchor
@@ -1535,3 +1536,33 @@ To reproduce the coefficient comparison, run
 `ROBIN_PROJECTION_PLANE_CASES` set to an absolute output JSON path. Then use the
 same environment variable from the repository root with
 `cargo test -j 1 -p robin_engine --lib editor_receiving_plane_coefficients_match_native_initialization -- --ignored --nocapture`.
+
+Lincoln records 104 and 127 now have reviewed stacked partitions in
+`lincoln-door-turret-east-volume-partitions.json` and
+`lincoln-door-turret-west-volume-partitions.json`. Existing component ownership
+places the curtain-wall fill below height 320 and the separate cone turret above
+it. Each piece retains the complete ordered concave footprint, with wall collision
+from ground to 320 and turret collision from 320 to 373.001. This restores missing
+ground-level collision and removes the enlarged component footprints. Visual
+meshes remain unchanged; their appearance is not certified by this correction.
+
+Asset parts opt into whole horizontal joins through `sight_join_caps`. The compiler
+assembles matching top/bottom faces only when footprints, native heights and flags
+agree, preserving the outer contour and removing the internal face. Detached
+pieces remain independent. Mixed edge/cap joins, ambiguous placements and linked
+receiving/material/mask/state volumes remain rejected. Authoring requires complete
+height coverage without gaps or overlap. Regression tests exercise rotated stacks,
+copies, detached caps and invalid definitions.
+
+The recipes apply sequentially to `lincoln-parapet-volume-stage`, first producing
+`lincoln-door-turret-east-draft`/`-stage`, then `lincoln-door-turret-west-draft` and
+the combined `lincoln-door-turret-volume-stage`. Recovery and native diagnostics
+use the combined name with `-recovery` and `-native`. The baseline reconstructs
+both volumes' ordered vertices and flags at engine precision, and each passes
+100,000 exact native sight/impact ray comparisons. Native construction passes for
+the baseline (113 areas, 565 sight obstacles, 89 doors, 10 jump pairs), the wall
+moved one unit east (114/567/89/10), and the turret independently moved one unit
+east (113/567/89/10). Four reviewed masks remain recovered, with 424 masks pending.
+Nine of the twenty-six audited split records now have correction drafts; seventeen
+remain. Publication, full state behavior, visual and actor traversal parity are
+still incomplete.
