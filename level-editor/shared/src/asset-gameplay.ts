@@ -19,6 +19,8 @@ export interface AssetWalkableSurface {
   projectionMaterials?: {
     defaultMaterial: number;
     regions: string[];
+    /** Ordered local plane anchors, retained through clipping for native height arithmetic. */
+    planePoints?: [[number, number, number], [number, number, number], [number, number, number]];
     /** Local bounding height for overlap priority; equal heights use surface order within the asset. */
     priorityHeight?: number;
     /** Higher values win equal-height overlaps across independent placements. */
@@ -673,6 +675,10 @@ export function validateAssetGameplay(
         projection.defaultMaterial > 9 ||
         (projection.priorityHeight !== undefined && !Number.isFinite(projection.priorityHeight)) ||
         (projection.priority !== undefined && !Number.isFinite(projection.priority)) ||
+        (projection.planePoints !== undefined &&
+          (!Array.isArray(projection.planePoints) ||
+            projection.planePoints.length !== 3 ||
+            !projection.planePoints.every((p) => point(p, 3)))) ||
         (projection.footprint !== undefined &&
           (!Array.isArray(projection.footprint) ||
             projection.footprint.length < 3 ||

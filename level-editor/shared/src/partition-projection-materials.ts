@@ -1,11 +1,12 @@
 import type { Polygon, MultiPolygon } from "polygon-clipping";
 import { fixedClipping as clipping } from "./fixed-polygon-boolean.ts";
 import earcut, { flatten } from "earcut";
-import type { Point } from "./level.ts";
+import type { Point, SightObstacle } from "./level.ts";
 import { simplifyMotionRing } from "./motion-quantization.ts";
 
 export interface ProjectionMaterialSupport {
   polygon: Point[];
+  planePoints?: SightObstacle["projection_plane"];
   footprint?: Point[];
   defaultMaterial: number;
   materialIndices: number[];
@@ -62,6 +63,8 @@ export function partitionProjectionMaterials(
         (member.support.priority ?? 0) === (other.support.priority ?? 0) &&
         (member.support.tiePriority ?? 0) === (other.support.tiePriority ?? 0) &&
         (member.support.defaultMaterial !== other.support.defaultMaterial ||
+          JSON.stringify(member.support.planePoints) !==
+            JSON.stringify(other.support.planePoints) ||
           (member.support.materialSignature ?? JSON.stringify(member.support.materialIndices)) !==
             (other.support.materialSignature ?? JSON.stringify(other.support.materialIndices))) &&
         area(clipping.intersection(member.geometry, other.geometry)) > 1e-7

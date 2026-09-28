@@ -544,6 +544,10 @@ impl EngineInner {
                         [p2.x, p2.y, p2.z_bottom],
                         [p0.x, p0.y, p0.z_bottom],
                     ];
+                    if let Some(plane) = raw.projection_plane {
+                        obs.top_plane_points = plane;
+                        obs.bottom_plane_points = plane;
+                    }
                     orient_sight_obstacle_planes_like_original(
                         &mut obs.top_plane_points,
                         &mut obs.bottom_plane_points,

@@ -1048,8 +1048,61 @@ test("receiving materials preserve a joined walking area and follow asset placem
   );
 });
 
+test("receiving plane anchors survive clipping and follow asset placement", () => {
+  const { document, assets, hut } = projectionMaterialCompilerFixture();
+  const surface = hut.gameplay!.surfaces[0]!;
+  surface.projectionMaterials!.planePoints = [
+    [100, 0, 20],
+    [100, 100, 20],
+    [0, 0, 20],
+  ];
+  const inset = hut.gameplay!.surfaces[1]!;
+  inset.polygon = [
+    [40, 40],
+    [60, 40],
+    [60, 60],
+    [40, 60],
+  ];
+  inset.projectionMaterials!.priority = 1;
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  const receivers = compiled.sight_obstacles.filter((o) => o.projection_plane);
+  assert.ok(receivers.length > 1, "hole should subdivide the receiver");
+  const expected = [
+    [400, 300, 20],
+    [400, 400, 20],
+    [300, 300, 20],
+  ];
+  for (const receiver of receivers) {
+    assert.deepEqual(receiver.projection_plane, receivers[0]!.projection_plane);
+    assert.deepEqual(
+      receiver.projection_plane!.map((p) => p.map(Math.fround)),
+      expected,
+    );
+  }
+  for (const part of document.objects) part.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  for (const receiver of moved.sight_obstacles.filter((o) => o.projection_plane))
+    assert.deepEqual(
+      receiver.projection_plane!.map((p) => p.map(Math.fround)),
+      expected.map(([x, y, z]) => [x! + 100, y, z]),
+    );
+  surface.projectionMaterials!.planePoints[0][2] = 21;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /anchors must lie/);
+  surface.projectionMaterials!.planePoints = [
+    [0, 0, 20],
+    [0, 0, 20],
+    [0, 0, 20],
+  ];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /nondegenerate/);
+});
+
 test("rotated copies keep receiving material references local to each placement", () => {
-  const { document, assets } = projectionMaterialCompilerFixture();
+  const { document, assets, hut } = projectionMaterialCompilerFixture();
+  hut.gameplay!.surfaces[0]!.projectionMaterials!.planePoints = [
+    [100, 0, 20],
+    [100, 100, 20],
+    [0, 0, 20],
+  ];
   const group = document.groups[0]!;
   group.transform.rot_deg = 90;
   group.transform.dx = 800;
@@ -1069,6 +1122,14 @@ test("rotated copies keep receiving material references local to each placement"
     [[0], [1]],
   );
   assert.notDeepEqual(linked[0]!.projection_area, linked[1]!.projection_area);
+  const anchors = linked.map((receiver) =>
+    receiver.projection_plane!.map((p) => p.map(Math.fround)),
+  );
+  assert.deepEqual(
+    anchors[1],
+    linked[0]!.projection_plane!.map(([x, y, z]) => [x + 600, y, z].map(Math.fround)),
+  );
+  assert.notEqual(anchors[0]![0]![0], anchors[0]![1]![0], "rotation must affect the anchors");
   const [first, second] = compiled.material_sectors!;
   assert.deepEqual(
     second!.polygon.points,

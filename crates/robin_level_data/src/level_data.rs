@@ -1524,6 +1524,10 @@ pub struct RawObstaclePoint {
 )]
 pub struct RawSightObstacle {
     pub points: Vec<RawObstaclePoint>,
+    /// Ordered world-space plane anchors for a thin receiving surface. Polygon
+    /// clipping must not change the anchors used for float32 height evaluation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub projection_plane: Option<[[f32; 3]; 3]>,
     /// Projection area (sector, layer) if this is a projection area.
     pub projection_area: Option<(u16, u16)>,
     pub opaque: bool,
@@ -2527,6 +2531,7 @@ impl LoadedLevel {
                 continue;
             }
             level.proto.sight_obstacles.push(RawSightObstacle {
+                projection_plane: None,
                 points: volume
                     .footprint
                     .iter()
@@ -2893,6 +2898,39 @@ impl LoadedLevel {
                 return Err("invalid asset material geometry or unresolved reference".into());
             }
             for obstacle in &geometry.sight_obstacles {
+                if let Some(points) = obstacle.projection_plane {
+                    let [a, b, c] = points.map(|point| point.map(f64::from));
+                    let u = std::array::from_fn::<_, 3, _>(|i| b[i] - a[i]);
+                    let v = std::array::from_fn::<_, 3, _>(|i| c[i] - a[i]);
+                    let normal = [
+                        u[1] * v[2] - u[2] * v[1],
+                        u[2] * v[0] - u[0] * v[2],
+                        u[0] * v[1] - u[1] * v[0],
+                    ];
+                    if obstacle.projection_area.is_none()
+                        || points.iter().flatten().any(|value| !value.is_finite())
+                        || normal[2].abs() < 1e-8
+                        || (normal[1] + normal[2]).abs() < 1e-8
+                        || obstacle.points.iter().any(|point| {
+                            let position = [point.x, point.y, point.z_top].map(f64::from);
+                            let residual = (0..3)
+                                .map(|i| normal[i] * (position[i] - a[i]))
+                                .sum::<f64>()
+                                / normal[2];
+                            // Input coordinates have already been rounded to f32.
+                            // Bound their accumulated quantization error, not gameplay queries.
+                            let tolerance = 8.
+                                * f64::from(f32::EPSILON)
+                                * position
+                                    .iter()
+                                    .chain(a.iter())
+                                    .fold(1_f64, |m, v| m.max(v.abs()));
+                            point.z_top != point.z_bottom || residual.abs() > tolerance
+                        })
+                    {
+                        return Err("invalid asset receiving plane".into());
+                    }
+                }
                 if obstacle.points.len() < 3
                     || obstacle.points.iter().any(|p| {
                         !p.x.is_finite()
@@ -4835,6 +4873,7 @@ fn read_one_sight_obstacle(reader: &mut ChunkReader) -> Result<RawSightObstacle,
 
     Ok(RawSightObstacle {
         points,
+        projection_plane: None,
         projection_area,
         opaque,
         solid,

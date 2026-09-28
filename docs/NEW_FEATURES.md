@@ -109,7 +109,13 @@
   elevation and material selection. York's inner curtain candidate passes coverage
   and material checks but changes elevation by one float32 step at 28,268 sampled
   points; its baseline self-comparison passes. This candidate remains unreviewed
-  until receiving-plane arithmetic is preserved independently of subdivision.
+  until receiving-plane arithmetic and traversal are verified.
+  Receiving materials now carry optional ordered local plane anchors through
+  recovery, placement and clipping into native height calculations. Regenerating
+  the York pair removes every sampled height difference, with no query tolerance.
+  A small difference in which authored plane owns coverage still needs review.
+  Shipping datadir 19 / mission 10 preserve these anchors; older binary shipping
+  bundles require regeneration. Existing hackable JSON remains compatible.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

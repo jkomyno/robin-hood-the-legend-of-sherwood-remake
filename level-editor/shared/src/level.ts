@@ -20,6 +20,8 @@ export interface ObstaclePoint {
 
 export interface SightObstacle {
   points: ObstaclePoint[];
+  /** Ordered world-space anchors, independent of a thin receiver's clipped polygon. */
+  projection_plane?: [[number, number, number], [number, number, number], [number, number, number]];
   projection_area: unknown;
   opaque: boolean;
   solid: boolean;

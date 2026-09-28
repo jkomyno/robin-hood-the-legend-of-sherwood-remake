@@ -200,6 +200,71 @@ fn compiled_masks_reject_unresolved_links_invalid_types_and_malformed_bitmaps() 
     assert!(error.contains("obstacle links"), "{error}");
 }
 
+#[test]
+fn authored_receiving_plane_survives_polygon_vertex_changes() {
+    let mut descriptor: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "fixtures/asset-projection-material.level.json"
+    ))
+    .unwrap();
+    let obstacle = &mut descriptor["asset_geometry"]["sight_obstacles"][0];
+    for point in obstacle["points"].as_array_mut().unwrap() {
+        let previous = point["z_top"].as_f64().unwrap();
+        point["y"] = (point["y"].as_f64().unwrap() + 200.001 - previous).into();
+        point["z_top"] = 200.001.into();
+        point["z_bottom"] = 200.001.into();
+    }
+    let mut baseline_assets = LevelAssets::new();
+    construct(
+        &serde_json::to_vec(&descriptor).unwrap(),
+        &mut baseline_assets,
+    );
+    let baseline = &baseline_assets.environment.static_sight_obstacles[0];
+    let anchors = baseline.top_plane_points;
+    descriptor["asset_geometry"]["sight_obstacles"][0]["projection_plane"] =
+        serde_json::json!(anchors);
+    descriptor["asset_geometry"]["sight_obstacles"][0]["points"]
+        .as_array_mut()
+        .unwrap()
+        .rotate_left(1);
+    let mut assets = LevelAssets::new();
+    construct(&serde_json::to_vec(&descriptor).unwrap(), &mut assets);
+    let receiver = &assets.environment.static_sight_obstacles[0];
+    assert_eq!(receiver.top_plane_points, anchors);
+    assert_eq!(receiver.bottom_plane_points, anchors);
+    for x in 300..=400 {
+        for y in 280..=380 {
+            assert_eq!(
+                receiver.compute_top_z_from_projection(x as f32, y as f32),
+                baseline.compute_top_z_from_projection(x as f32, y as f32)
+            );
+        }
+    }
+    let mut invalid = descriptor.clone();
+    invalid["asset_geometry"]["sight_obstacles"][0]["projection_plane"] =
+        serde_json::json!([[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]);
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&invalid).unwrap())
+            .err()
+            .unwrap()
+            .contains("receiving plane")
+    );
+    let mut invalid = descriptor.clone();
+    invalid["asset_geometry"]["sight_obstacles"][0]["projection_plane"][0][2] = 201.into();
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&invalid).unwrap())
+            .err()
+            .unwrap()
+            .contains("receiving plane")
+    );
+    descriptor["asset_geometry"]["sight_obstacles"][0]["projection_area"] = serde_json::Value::Null;
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap())
+            .err()
+            .unwrap()
+            .contains("receiving plane")
+    );
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 struct ProjectionComparison {
     before: String,

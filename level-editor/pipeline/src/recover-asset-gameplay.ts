@@ -463,6 +463,9 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
             projectionMaterials: {
               defaultMaterial: obstacle.default_material,
               regions: materialRegions,
+              planePoints: [obstacle.points[1]!, obstacle.points[2]!, obstacle.points[0]!].map(
+                (point) => localize(owner.part, [point.x, point.y, point.z_top]),
+              ) as [Vec3, Vec3, Vec3],
               priority: -index,
               footprint:
                 owners.length === 1

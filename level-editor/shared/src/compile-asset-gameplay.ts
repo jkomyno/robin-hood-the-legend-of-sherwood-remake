@@ -496,6 +496,12 @@ export function compileAssetGameplay(
         typeof surface.height === "number" ? surface.height : surface.height[i]!,
       ]);
       const localPlane = heightPlane(local);
+      const anchors = surface.projectionMaterials?.planePoints;
+      if (anchors) {
+        heightPlane(anchors);
+        if (anchors.some(([x, y, z]) => Math.abs(planeHeight(localPlane, [x, y]) - z) > 1e-4))
+          throw new Error(`${surface.id}: receiving plane anchors must lie on the surface`);
+      }
       const points = local.map((p) => transform(surface.node, p));
       for (const edge of surface.navigationJoins ?? [])
         navigationJoins.push({
@@ -537,6 +543,15 @@ export function compileAssetGameplay(
       if (gameplay.surfaces.includes(surface))
         projectionSupports.push({
           ...placed,
+          ...(anchors
+            ? {
+                planePoints: [
+                  transform(surface.node, anchors[0]),
+                  transform(surface.node, anchors[1]),
+                  transform(surface.node, anchors[2]),
+                ] as [Vec3, Vec3, Vec3],
+              }
+            : {}),
           footprint: surface.projectionMaterials?.footprint
             ? ring(
                 surface.projectionMaterials.footprint.map((point): Point => {
@@ -832,9 +847,13 @@ export function compileAssetGameplay(
         warnings,
       )) {
         if (!lift && !material.explicit && !piece.plane.some((n) => Math.abs(n) > 1e-7)) continue;
+        const receivingPlane = material.planePoints
+          ? heightPlane(material.planePoints.map(([x, y, z]) => [x, y - z, z]))
+          : piece.plane;
         sight.push({
+          ...(material.planePoints ? { projection_plane: material.planePoints } : {}),
           points: material.polygon.map(([x, y]) => {
-            const height = planeHeight(piece.plane, [x, y]);
+            const height = planeHeight(receivingPlane, [x, y]);
             return { x, y: y + height, z_bottom: height, z_top: height };
           }),
           projection_area: [sector, layer],

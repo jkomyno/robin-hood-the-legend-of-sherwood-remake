@@ -122,6 +122,11 @@ test("receiving material references survive recovery without sharing draft metad
   const packet = packetFromFixture(hut.gameplay!);
   packet.surfaces[0]!.projectionMaterials!.priorityHeight = 25;
   packet.surfaces[0]!.projectionMaterials!.priority = 3;
+  packet.surfaces[0]!.projectionMaterials!.planePoints = [
+    [100, 0, 20],
+    [100, 100, 20],
+    [0, 0, 20],
+  ];
   const restored = recoveredGameplayDefinition(packet, hut);
   assert.deepEqual(
     restored.surfaces[0]!.projectionMaterials,
@@ -129,6 +134,8 @@ test("receiving material references survive recovery without sharing draft metad
   );
   assert.deepEqual(restored.materials, packet.materials);
   packet.surfaces[0]!.projectionMaterials!.regions.length = 0;
+  packet.surfaces[0]!.projectionMaterials!.planePoints[0][0] = 999;
+  assert.equal(restored.surfaces[0]!.projectionMaterials!.planePoints![0][0], 100);
   assert.deepEqual(restored.surfaces[0]!.projectionMaterials!.regions, ["inlay"]);
 });
 

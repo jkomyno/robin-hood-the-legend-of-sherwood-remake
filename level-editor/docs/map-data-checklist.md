@@ -222,8 +222,29 @@ half-pixel samples include 28,285 receiving points, of which 28,268 differ by up
 baseline with itself gives zero differences. The native loader constructs planes
 from the first three polygon vertices, so a different subdivision can change
 float32 arithmetic even for mathematically identical planes. The join remains
-outside the reviewed catalog. Preserving authored receiving planes independently
-of subdivision, receiving-priority checks and actor traversal remain necessary.
+outside the reviewed catalog. This exposed the need to preserve authored receiving
+planes independently of subdivision and to verify receiving priority and traversal.
+
+Receiving materials now support ordered asset-local `planePoints`. One-time
+recovery copies the three plane-defining anchors into each owned surface;
+compilation transforms them with the asset and carries them unchanged through
+material clipping as `projection_plane`. Native loading validates thin, planar
+receivers and uses those anchors for top/bottom height evaluation. Assets without
+this metadata retain polygon-derived planes. Tests cover clipping, translation,
+rotation, duplicated placements, invalid anchors and native/shipping round-trips.
+The binary shipping schema advances to datadir 19 / mission 10; older binary
+bundles must be regenerated. Existing source files and hackable JSON without the
+optional field retain their loading behavior.
+
+York was recovered again into `work/map-compile/york-plane-anchor-recovery` and
+both variants compiled into `work/map-compile/york-plane-anchor-native`. The same
+51,381 native queries now have zero coverage, material or elevation differences.
+This fixes the observed float32 subdivision mismatch, without accepting a height
+tolerance. Exact coverage grouping still detects approximately 2.777463 square
+pixels assigned to different ordered plane anchors, even though those flat planes
+give identical sampled native heights. Full receiving-priority and traversal
+verification is still required; the candidate remains outside the reviewed catalog
+and the regenerated definitions remain unpublished.
 
 The ignored native test
 `recovered_projection_partitions_preserve_sampled_runtime_queries` reads a
