@@ -173,10 +173,33 @@ directional verifier manifests remain incomplete under
 westward/baseline construction cases are retained separately under
 `work/map-compile/nottingham-navigation-construction-native`, with the excluded
 placement failure recorded explicitly. These definitions remain unpublished.
-The full-edge audit also found eleven candidate edges in York; none are yet
-reviewed recipes. Leicester, Sherwood and the three crossing maps had no matches
-in the tested drafts. This audit does not cover partial-edge overlaps or certify
-that unmatched regions should remain disconnected.
+The full-edge audit also found eleven candidate edges in York. Leicester,
+Sherwood and the three crossing maps had no matches in the tested drafts. This
+audit does not cover partial-edge overlaps or certify that unmatched regions
+should remain disconnected.
+
+York's `refinement/catalogs/york-navigation-joins.json` recovers three reviewed
+groups across six assets: castle east round tower/great hall, cathedral precinct
+terrain/stone causeway, and the west precinct footbridge/city wall. Their combined
+baseline retains all geometry and bindings after sector identity remapping:
+192 movement areas, 1,373 sight obstacles, 254 doors and 72 jump pairs. Drafts are
+under `work/map-compile/york-reviewed-join-recovery`; the verifier output is under
+`work/map-compile/york-selected-navigation-native`. Five independent one-pixel
+eastward moves pass compilation. Moving the causeway fails its doorway's outside
+receiving-height check (157.9875 authored versus 158.0735 on the neighboring
+slope), so the placement manifest remains incomplete. The baseline and five
+successful moves load natively; their construction manifest explicitly records
+the excluded failure in `work/map-compile/york-navigation-construction-native`.
+
+Seven other candidate York groups remain unreviewed. Applying all ten groups
+changed movement areas from 192 to 195 and projection/sight records from 1,373 to
+1,330. Isolated probes show three groups change motion topology, while four change
+projection partitions and associated references. Exact edge coincidence alone
+therefore does not establish complete region ownership or equivalent gameplay.
+The probes and comparisons remain under `work/map-compile/york-navigation-group-probes`.
+These differences need comparison against intended source topology; they are not
+automatically improvements or regressions. No York join definitions are published,
+and full-map connectivity/state/actor traversal remain unverified.
 
 The native compiler interchange accepts typed mask bitmaps with character and
 projectile polylines, view flags and regenerated sight-obstacle references.

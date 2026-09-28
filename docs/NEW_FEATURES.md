@@ -96,6 +96,10 @@
   pins, baseline assembly and independent moves, preserving failures in its report.
   Six Nottingham owners pass westward movement and native construction; one still
   invalidates a neighboring stair connection. Full-map connectivity remains open.
+  York has three reviewed groups across six assets, preserving baseline geometry
+  and bindings after reference remapping. Five independent moves construct
+  natively; moving the causeway invalidates a neighboring slope connection.
+  Seven additional candidate groups still need topology and projection review.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York
