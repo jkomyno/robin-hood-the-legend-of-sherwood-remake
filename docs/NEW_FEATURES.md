@@ -153,6 +153,11 @@
   The exported island fixture verifies native material/height queries and the
   disconnected walking route. All nine static diagnostics construct after removal
   of 96 receiver records incorrectly assigned across disconnected areas.
+  Reviewed physical-receiver recipes now migrate through `--projection-definitions`,
+  checking source/model pins and exact geometry before atomically creating local
+  links. Croisement03's 14-link recipe reproduces the audited baseline; the baseline
+  and 13 independently moved asset cases construct natively. Publication and full
+  gameplay verification remain incomplete.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

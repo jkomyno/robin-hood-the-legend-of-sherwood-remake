@@ -5,6 +5,10 @@ import { parseArgs } from "node:util";
 import { createHash } from "node:crypto";
 import { recoverReviewedMasks, type ReviewedMaskRecipe } from "./recover-reviewed-masks.ts";
 import {
+  recoverReviewedProjections,
+  type ReviewedProjections,
+} from "./recover-reviewed-projections.ts";
+import {
   recoverReviewedNavigationJoins,
   type ReviewedNavigationJoins,
 } from "./recover-reviewed-navigation-joins.ts";
@@ -75,6 +79,7 @@ const { values } = parseArgs({
     ownership: { type: "string" },
     "mask-definitions": { type: "string" },
     "navigation-definitions": { type: "string" },
+    "projection-definitions": { type: "string" },
   },
 });
 if (!values.map || !values.source || !values.out)
@@ -1640,6 +1645,20 @@ if (values["navigation-definitions"]) {
     return { asset, surface: surface.id, region, edges: edges.length };
   });
 }
+let projectionRecovery: ReturnType<typeof recoverReviewedProjections> = [];
+if (values["projection-definitions"]) {
+  const definitions: ReviewedProjections = JSON.parse(
+    await fs.readFile(values["projection-definitions"], "utf8"),
+  );
+  projectionRecovery = recoverReviewedProjections(
+    document,
+    descriptors,
+    proto,
+    createHash("sha256").update(sourceBytes).digest("hex"),
+    definitions,
+    packets,
+  );
+}
 let maskRecovery: Awaited<ReturnType<typeof recoverReviewedMasks>> = [];
 if (values["mask-definitions"]) {
   const definitions: { source_sha256: string; recipes: ReviewedMaskRecipe[] } = JSON.parse(
@@ -1716,6 +1735,7 @@ const report = {
     id: definition.id,
   })),
   movementStateInventory,
+  projectionRecovery,
   movementTransitionRecovery,
   doorTransitionRecovery,
   doorStateOwnershipRecovery,

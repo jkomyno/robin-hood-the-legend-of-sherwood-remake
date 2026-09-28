@@ -375,6 +375,22 @@ the physical-part candidate audit still rejects eight maps. Derby now reaches a
 real split of the east-hall receiver between two movement areas; York still first
 fails material-priority checks. These remaining errors must be resolved through
 navigation/overlap authoring before those candidate links can be published.
+
+The 14 Croisement03 links now have a repeatable one-time recovery recipe in
+`refinement/catalogs/croisement03-projections.json`. Run recovery with
+`--projection-definitions refinement/catalogs/croisement03-projections.json`.
+It validates the source/model pins, unique physical ownership, ordered float32
+geometry and flags, and material references before changing any packet. Output
+uses local part IDs; recipe source indices do not become runtime links. Stale pins,
+changed shapes, missing material definitions and duplicate recipes fail atomically.
+
+Fresh output in `work/map-compile/reviewed-projection-recovery/croisement03`
+matches the prior audited baseline. The baseline plus independent one-pixel moves
+of all 13 owning assets compile and construct natively in
+`work/map-compile/reviewed-projection-native` (14 cases). Connection counts can
+change when moved endpoints detach. These definitions are still unpublished:
+Croisement03 retains 131 unrecovered masks, two missing movement transition
+groups, and unverified visuals and actor traversal.
 Mission-carried records also include traps, hiding places and
 York gate effects; their presence in a mission file does not establish permanent
 map ownership. The earlier recovered transition counts cover map-source recovery,
