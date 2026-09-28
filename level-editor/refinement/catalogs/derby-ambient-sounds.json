@@ -1,0 +1,19 @@
+{
+  "source_sha256": "14698dffeeb1316563b4f91b883961298c58323ac799ab2c8a099d99487b8a46",
+  "entries": [
+    {
+      "source": 4,
+      "id": "derby-west-ambient-zone",
+      "name": "Derby west ambient zone",
+      "origin": [-14, 508, 0],
+      "review": "A three-point acoustic line follows the west map edge from north to south. It is an independently placeable environmental region, not a building emitter."
+    },
+    {
+      "source": 5,
+      "id": "derby-north-ambient-zone",
+      "name": "Derby north ambient zone",
+      "origin": [150, 410, 0],
+      "review": "A two-point acoustic line spans the north map edge. It is an independently placeable environmental region, not a building emitter."
+    }
+  ]
+}

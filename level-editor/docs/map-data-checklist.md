@@ -246,6 +246,31 @@ their complete geometry has one containing asset part. Ambiguous/unowned sources
 remain explicit gaps; they are not silently attached to terrain. Shared audio
 samples are referenced from the base installation, rather than bundled in the ZIP.
 
+Reviewed environmental lines can also be authored as independent sound-region
+assets with a non-rendering gameplay frame. This is an explicit asset-authoring
+step, not an automatic fallback for unowned emitters. Derby's west and north edge
+emitters (source records 4/5) are authored this way by
+`refinement/catalogs/derby-ambient-sounds.json`. The authoring command checks the
+source hash and writes standalone descriptors, empty frame models and pinned
+placement references; compilation reads only those assets.
+
+```sh
+node pipeline/src/author-ambient-sound-assets.ts \
+  --source library/game-data/Data/Levels/Derby.rhp.json \
+  --recipe refinement/catalogs/derby-ambient-sounds.json \
+  --map Derby --out work/map-compile/ambient-authoring-library
+```
+
+The staged scene `ambient-authoring-library/derby-ambient.rhlos-map.json` reopens
+with the two new assets. Both sound definitions compile exactly, including
+polylines, delays, attenuation, altitude and ambience. Moving the west zone 50
+pixels east changes only its emitter geometry. Native construction checks sample
+selection, preserved source handles, polylines and delay parameters before/after
+the move. This composed Derby diagnostic accounts for 5 of 12 sound sources;
+seven remain unresolved. Assets and the composed diagnostic remain staged, not
+published as a complete map. The normal recovery report does not yet include this
+separate authoring step.
+
 Light recovery preserves projection priority and fits receiving planes from the
 leading three vertices. Elevated light contours may extend outside navigation
 when their intersecting receivers agree on one plane, including raised terrain

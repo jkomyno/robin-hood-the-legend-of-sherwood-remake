@@ -88,6 +88,9 @@
   Unrestricted non-clickable passages can opt into continuous navigation: when
   placement joins their two areas, compilation omits the redundant gate and
   rebuilds remaining door bindings. Restricted and state-linked doors remain required.
+  Reviewed ambient regions can be authored as standalone non-rendering assets with
+  local sound geometry and pinned editor placements. Derby's north and west zones
+  retain exact sound definitions and move independently without changing navigation.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits

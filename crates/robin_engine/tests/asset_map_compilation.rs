@@ -226,6 +226,8 @@ fn recovered_static_exports_construct_native_geometry() {
         let jump_pairs = level.proto.jump_line_pairs.clone();
         let jump_zones = level.proto.jump_zones.clone();
         let expected_masks = level.proto.masks.clone();
+        let expected_sounds = level.proto.sound_sources.clone();
+        let expected_ambience = level.mission.header.ambiance;
         let mut assets = LevelAssets::new();
         let engine = construct_with_dimensions(
             level,
@@ -260,6 +262,57 @@ fn recovered_static_exports_construct_native_geometry() {
         );
         assert!(!engine.fast_grid().level.blocks.is_empty(), "{file}");
         let grid = engine.fast_grid();
+        assert_eq!(
+            assets.audio.sound_source_required_ids,
+            expected_sounds
+                .iter()
+                .filter(|s| s.ambience_filter & expected_ambience != 0)
+                .map(|s| u32::try_from(s.id).unwrap())
+                .collect(),
+            "{file}: required sound samples"
+        );
+        let snapshot = serde_json::to_value(engine.capture_persisted_state().unwrap()).unwrap();
+        let sounds = snapshot["feedback"]["sound_sim"]["sources"]["sources"]
+            .as_array()
+            .unwrap();
+        assert_eq!(
+            sounds.len(),
+            expected_sounds.len(),
+            "{file}: sound source handles"
+        );
+        for (index, expected) in expected_sounds.iter().enumerate() {
+            let actual = &sounds[index];
+            if expected.ambience_filter & expected_ambience == 0 {
+                assert!(actual.is_null(), "{file}: filtered sound {index}");
+                continue;
+            }
+            let shape: Vec<_> = expected
+                .polyline
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .map(|&(x, y)| robin_engine::coordinates::MapPoint::new(x as f32, y as f32))
+                .collect();
+            assert_eq!(
+                actual["shape"],
+                serde_json::to_value(shape).unwrap(),
+                "{file}: sound {index} geometry"
+            );
+            let (min, max, step) = expected.delayed_params.unwrap_or((0, 0, 0));
+            assert_eq!(
+                actual["min_delay"], min,
+                "{file}: sound {index} minimum delay"
+            );
+            assert_eq!(
+                actual["max_delay"], max,
+                "{file}: sound {index} maximum delay"
+            );
+            assert_eq!(
+                actual["delay_stepping"],
+                step + 1,
+                "{file}: sound {index} stepping"
+            );
+        }
         assert_eq!(grid.level.masks.len(), expected_masks.len(), "{file}");
         for (index, (actual, expected)) in grid.level.masks.iter().zip(&expected_masks).enumerate()
         {
