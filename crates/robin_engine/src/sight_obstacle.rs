@@ -2960,6 +2960,77 @@ mod tests {
         obs
     }
 
+    #[test]
+    fn artificial_partition_seams_change_interior_ray_blocking() {
+        let whole = make_box_obstacle(0, 0.0, 20.0, 0.0, 10.0, 5.0);
+        let left = make_box_obstacle(1, 0.0, 10.0, 0.0, 10.0, 5.0);
+        let right = make_box_obstacle(2, 10.0, 20.0, 0.0, 10.0, 5.0);
+        let origin = [5.0, 5.0, 2.0];
+        let destination = [15.0, 5.0, 2.0];
+        // An interior segment crosses no external face of the assembled volume.
+        assert!(!whole.is_blocking_ray_3d(origin, destination));
+        assert!(left.is_blocking_ray_3d(origin, destination));
+        assert!(right.is_blocking_ray_3d(origin, destination));
+    }
+
+    #[test]
+    #[ignore = "requires ROBIN_SIGHT_ASSEMBLY_CASE from the editor geometry diagnostic"]
+    fn recovered_sight_assembly_preserves_native_ray_queries() {
+        let path = std::env::var("ROBIN_SIGHT_ASSEMBLY_CASE").expect("diagnostic case path");
+        let value: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        let make = |name: &str| {
+            let mut obstacle = SightObstacle::new_default(0);
+            obstacle.obstacle_points =
+                serde_json::from_value(value[name]["points"].clone()).unwrap();
+            let p = &obstacle.obstacle_points;
+            obstacle.top_plane_points = [1, 2, 0].map(|i| [p[i].x, p[i].y, p[i].z_top]);
+            obstacle.bottom_plane_points = [1, 2, 0].map(|i| [p[i].x, p[i].y, p[i].z_bottom]);
+            obstacle.rebuild_geometry();
+            obstacle
+        };
+        let expected = make("source");
+        let actual = make("compiled");
+        let mut state = 0x517a_b39du32;
+        let mut sample = || {
+            state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+            (state >> 8) as f32 / 16777216.0
+        };
+        let mut maximum_impact_error = 0.0f32;
+        for index in 0..100_000 {
+            let mut point = || {
+                [0, 1, 2].map(|axis| {
+                    let low = expected.box_3d_min[axis] - 100.0;
+                    let high = expected.box_3d_max[axis] + 100.0;
+                    low + sample() * (high - low)
+                })
+            };
+            let origin = point();
+            let destination = point();
+            assert_eq!(
+                expected.is_blocking_ray_3d(origin, destination),
+                actual.is_blocking_ray_3d(origin, destination),
+                "ray {index}: {origin:?} -> {destination:?}"
+            );
+            let a = expected.blocking_ray_3d_impact(origin, destination);
+            let b = actual.blocking_ray_3d_impact(origin, destination);
+            assert_eq!(a.is_some(), b.is_some(), "impact presence {index}");
+            if let (Some(a), Some(b)) = (a, b) {
+                let error = (a.point.x - b.point.x)
+                    .abs()
+                    .max((a.point.y - b.point.y).abs())
+                    .max((a.point.z - b.point.z).abs());
+                maximum_impact_error = maximum_impact_error.max(error);
+                assert_eq!(
+                    (a.point.x, a.point.y, a.point.z, a.t),
+                    (b.point.x, b.point.y, b.point.z, b.t),
+                    "impact {index}: {a:?} != {b:?}"
+                );
+            }
+        }
+        println!("100000 sight/impact rays matched; maximum impact error {maximum_impact_error}");
+    }
+
     /// Impact reachability collects impacts per
     /// bbox-overlap group, walks the groups in ray-sorted order, and
     /// stops after the first group that produced any impact — even when

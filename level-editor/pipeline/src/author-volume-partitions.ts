@@ -110,6 +110,18 @@ for (const [i, entry] of recipe.parts.entries()) {
       return { x: top[0], y: top[1], z_bottom: bottom[2], z_top: top[2] };
     }),
   };
+  part.sight_join_edges = shape.points.flatMap((p, j): [Vec3, Vec3][] => {
+    const q = shape.points[(j + 1) % shape.points.length]!;
+    const matched = shapes.some(
+      (other, k) =>
+        k !== i &&
+        other.points.some((a, n) => {
+          const b = other.points[(n + 1) % other.points.length]!;
+          return p.x === b.x && p.y === b.y && q.x === a.x && q.y === a.y;
+        }),
+    );
+    return matched ? [[localize([p.x, p.y, p.z_bottom]), localize([q.x, q.y, q.z_bottom])]] : [];
+  });
   outputs.set(entry.asset, JSON.stringify({ ...authored, ...descriptor }, null, 2) + "\n");
 }
 await fs.mkdir(values.out);

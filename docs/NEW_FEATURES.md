@@ -4,7 +4,9 @@
   constant-height volume along explicit asset seams while checking coverage and
   overlap. Source, model and descriptor hashes guard the extraction. Each piece
   becomes local collision in its own asset; map compilation needs no source-level
-  lookup. Linked or sloped geometry requires separate authoring.
+  lookup. Explicit local seam edges let matching flat pieces compile into one
+  sight volume, removing artificial internal faces. Moving the pieces apart
+  leaves independent volumes. Linked or sloped geometry requires separate authoring.
 
 - **Independent physical asset drafts.** Offline authoring can restore a reviewed
   missing object as a separate editor asset with local collision and a volume

@@ -48,6 +48,8 @@ export interface ProjectionAssetDescriptor {
     default_hidden?: boolean;
     /** Non-rendering coordinate frame for asset-local gameplay. */
     gameplay_only?: true;
+    /** Directed local bottom edges joining flat, static physical volumes after placement. */
+    sight_join_edges?: [import("./scene.ts").Vec3, import("./scene.ts").Vec3][];
   } & (
     | {
         source_obstacle: number;

@@ -1414,7 +1414,32 @@ independently moved one unit east, with the other three volumes unchanged.
 Those movements separate navigation sockets and therefore change connection
 counts; they are placement checks, not baseline connectivity parity claims.
 Trial translations of 100 units east/south blocked nearby entrances and were
-rejected without suppressing collision. Full sight-query equivalence across
-partition seams, visual parity and publication remain unverified. These drafts
+rejected without suppressing collision. These separated-volume drafts did not
+establish sight-query equivalence across partition seams; see the assembly check
+below. Visual parity and publication remain unverified. These drafts
 retain sixteen reviewed static masks; 507 Nottingham masks remain pending in
 this recovery. The diagnostic manifest is `nottingham-market-volume-native`.
+
+Native ray checks confirmed that an artificial partition face blocks a ray whose
+endpoints are both inside the shared volume, while the complete volume leaves it
+clear. Asset parts now support directed, local `sight_join_edges`. Compilation
+joins matching placed edges only for compatible flat, static volumes; unmatched
+edges leave independent pieces. Ambiguous matches, overlapping pieces, holes,
+different flags/heights, or receiving/material/mask/state links are rejected.
+Movement geometry stays owned by each asset. Sight references on unrelated masks
+and transitions are rebuilt after joining, and duplicated or moved assets match
+only their current geometric neighbors. No map identifiers or source indices
+participate in seam matching.
+
+The Nottingham authoring recipe now emits these seams. The reopened
+`nottingham-market-volume-seams-stage` overlay and its `-seams-recovery` definitions
+compile the four touching stalls into one volume with the reference vertices at
+engine precision. The baseline constructs 114 areas, 668 sight obstacles, 172
+doors and 38 jump pairs. Four independently moved drafts also construct, leaving
+669 or 670 sight volumes as their seams separate. The native
+`recovered_sight_assembly_preserves_native_ray_queries` diagnostic compares 100,000
+deterministic rays against the reference volume, including impact presence,
+coordinates and ray parameter; all match exactly. Its input is
+`nottingham-market-volume-seams-native/sight-query-case.json` under
+`work/map-compile`. This verifies sampled queries against this assembled volume,
+not full-scene impact ordering, all placements, visual behavior or map parity.

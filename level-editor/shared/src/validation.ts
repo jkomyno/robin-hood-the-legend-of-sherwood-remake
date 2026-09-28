@@ -932,6 +932,25 @@ export function parseProjectionAssetDescriptor(value: unknown): ProjectionAssetD
     nodes.add(part.node);
     if (part.default_hidden !== undefined)
       check(typeof part.default_hidden === "boolean", part.node, "invalid default_hidden");
+    if (part.sight_join_edges !== undefined)
+      check(
+        part.mission_profile === undefined &&
+          part.scenery === undefined &&
+          Array.isArray(part.sight_join_edges) &&
+          part.sight_join_edges.every(
+            (edge: unknown) =>
+              Array.isArray(edge) &&
+              edge.length === 2 &&
+              edge.every(
+                (p) =>
+                  Array.isArray(p) &&
+                  p.length === 3 &&
+                  p.every((v) => typeof v === "number" && Number.isFinite(v)),
+              ),
+          ),
+        part.node,
+        "invalid physical sight seam edges",
+      );
     if (part.scenery === undefined) {
       obstacle(part.obstacle_local_game, part.node);
       check(

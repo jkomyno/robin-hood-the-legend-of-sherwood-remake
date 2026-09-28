@@ -1,4 +1,5 @@
 import polygonClipping, { type Polygon } from "polygon-clipping";
+import { assembleSightVolumes } from "./assemble-sight-volumes.ts";
 import { compileSoundSource } from "./compile-sound-source.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
@@ -236,6 +237,7 @@ export function compileAssetGameplay(
     polygon: Point[];
   }[] = [];
   const sight: SightObstacle[] = [];
+  const sightJoins: import("./assemble-sight-volumes.ts").PlacedSightJoin[] = [];
   const materials: NonNullable<CompiledAssetGeometry["material_sectors"]> = [];
   const groundMaterials: number[] = [];
   const sounds: NonNullable<CompiledAssetGeometry["sound_sources"]> = [];
@@ -359,6 +361,15 @@ export function compileAssetGameplay(
           material_indices: [],
         });
         partSight.set(node, sight.at(-1)!);
+        for (const edge of placement.descriptor.parts.find((p) => p.node === node)
+          ?.sight_join_edges ?? []) {
+          if (explicitSight.has(node))
+            throw new Error(`Linked sight volume cannot declare assembly seams: ${node}`);
+          sightJoins.push({
+            index: sight.length - 1,
+            edge: [transform(node, edge[0]), transform(node, edge[1])],
+          });
+        }
         if (movementSolid(node)) movementSolids.push({ owner: placement.id, shape: sight.at(-1)! });
       }
     for (const volume of gameplay.volumes ?? []) {
@@ -1100,7 +1111,7 @@ export function compileAssetGameplay(
     ...doors.filter((door) => !door.lift && !door.interior),
   ].filter((door) => !omittedDoors.has(door.name));
   const doorIndices = new Map(patchDoors.map((door, index) => [door.name, index]));
-  return {
+  const compiled: CompiledAssetGeometry = {
     ...(warnings.length ? { warnings } : {}),
     motion_data: { layers, graph_bytes: [] },
     ...(masks.length ? { masks } : {}),
@@ -1233,4 +1244,6 @@ export function compileAssetGameplay(
         }
       : {}),
   };
+  assembleSightVolumes(compiled, sightJoins);
+  return compiled;
 }
