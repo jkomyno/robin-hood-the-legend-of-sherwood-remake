@@ -219,18 +219,20 @@ drafts are under `work/map-compile/reviewed-mask-recovery/derby` and the native
 descriptor under `work/map-compile/reviewed-mask-native`. Derby still has 233
 unrecovered masks; neither the complete asset nor map is publication-certified.
 
-Leicester has two reviewed static projectile masks in
-`refinement/catalogs/leicester-masks.json`: church side tower record 288 (20,011
-covered pixels, three local obstacle links) and great keep record 415 (4,552
-pixels, one obstacle link). Their receiving anchors are respectively on nearby
-ground and the keep's 140.001-unit-high walking surface. Both preserve exact
-coverage, flags, open projectile boundaries and obstacle links after each asset
-moves one pixel east. Native loading passes for the baseline and both moved
-scenes; baseline non-mask data is unchanged. Moving the tower detaches one jump
-pair and its gate; the keep move retains its connections. Drafts are under
+Leicester has seven reviewed static masks in
+`refinement/catalogs/leicester-masks.json`. Projectile-only records 288 (church
+side tower, 20,011 pixels) and 415 (great keep, 4,552 pixels) are joined by five
+character/projectile/view masks: northeast gabled house 120 (4,433 pixels), south
+stilt shed 182 (1,184 pixels), and great keep 399/402/404 (2,570/2,590/3,323 pixels).
+The keep's character boundaries receive on its flat 140.001-unit surface; the
+shed's boundary heights follow its own sloped surface. The house uses ground.
+All seven preserve exact coverage, flags, open boundaries and local obstacle
+links after each asset moves one pixel east. Native loading passes for the
+baseline and all four independently moved scenes; baseline non-mask data is
+unchanged. Moving the tower detaches one jump pair and its gate. Drafts are under
 `work/map-compile/leicester-mask-recovery`, with native diagnostics in
-`work/map-compile/leicester-mask-native`. Leicester still has 464 unrecovered
-masks; neither asset has complete mask coverage or mask-controlled depth enabled.
+`work/map-compile/leicester-mask-native`. Leicester still has 459 unrecovered
+masks; these assets do not have complete mask coverage or mask-controlled depth enabled.
 
 Recovery discards faces outside a mask's bounds before fitting their depth
 planes. This avoids numerical failures from unrelated nearly edge-on faces

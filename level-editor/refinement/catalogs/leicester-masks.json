@@ -27,6 +27,72 @@
       "model_sha256": "35111663282fafd6bddcdf2afa47c1b0370bf890c6d90c03b094602989e3fbbf",
       "entries": [
         {
+          "source": 399,
+          "id": "keep-raised-occlusion-a",
+          "node": "building-309",
+          "anchor": [
+            894,
+            647.001,
+            140.001
+          ],
+          "characterHeights": [
+            140.001,
+            140.001,
+            140.001,
+            140.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Every character boundary point receives on the keep-owned flat 140.001-unit surface (building-280). Full coverage is supported by this asset mesh; linked obstacles have one local owner and no patch controls the mask. Projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 402,
+          "id": "keep-raised-occlusion-b",
+          "node": "building-310",
+          "anchor": [
+            814,
+            614.001,
+            140.001
+          ],
+          "characterHeights": [
+            140.001,
+            140.001,
+            140.001,
+            140.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Every character boundary point receives on the keep-owned flat 140.001-unit surface (building-280). Full coverage is supported by this asset mesh; linked obstacles have one local owner and no patch controls the mask. Projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 404,
+          "id": "keep-raised-occlusion-c",
+          "node": "building-313",
+          "anchor": [
+            754,
+            684.001,
+            140.001
+          ],
+          "characterHeights": [
+            140.001,
+            140.001,
+            140.001,
+            140.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Every character boundary point receives on the keep-owned flat 140.001-unit surface (building-280). Full coverage is supported by this asset mesh; linked obstacles have one local owner and no patch controls the mask. Projectile boundaries use the world XY datum."
+        },
+        {
           "source": 415,
           "id": "keep-west-projectile-occlusion",
           "node": "building-324",
@@ -43,6 +109,61 @@
             0
           ],
           "review": "Static projectile mask; all linked obstacles belong to this asset and the complete bitmap is supported by its mesh. Projectile boundaries use the world XY datum; the receiving anchor is verified against the source navigation layer."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-northeast-gabled-house",
+      "model_sha256": "0b148ca23e32eac4a33137fcac277d050fe2c150527cc6b03a408228990a98f2",
+      "entries": [
+        {
+          "source": 120,
+          "id": "house-ground-occlusion",
+          "node": "building-011",
+          "anchor": [
+            2798,
+            552,
+            0
+          ],
+          "characterHeights": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Ground-layer character boundary has no raised receiving projection. Full coverage is supported by this asset mesh; linked obstacles have one local owner and no patch controls the mask. Projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-south-stilt-shed",
+      "model_sha256": "bf68168185cc1ec733ba389a6bc0cd3691a16bc481836ac691d0f2770edde626",
+      "entries": [
+        {
+          "source": 182,
+          "id": "stilt-shed-slope-occlusion",
+          "node": "building-134",
+          "anchor": [
+            1876,
+            1905.2306886657475,
+            37.23068866574761
+          ],
+          "characterHeights": [
+            37.23068866574761,
+            25.951633570778313,
+            18.672730239064435
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Character boundary heights follow the asset-owned sloped receiving surface (building-126). Full coverage is supported by this asset mesh; linked obstacles have one local owner and no patch controls the mask. Projectile boundaries use the world XY datum."
         }
       ]
     }
