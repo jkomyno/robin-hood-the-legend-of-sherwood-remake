@@ -98,6 +98,261 @@
             0,
             0
           ]
+        },
+        {
+          "source": 211,
+          "id": "ground-occlusion-211",
+          "node": "building-282",
+          "anchor": [
+            349,
+            2879,
+            0
+          ],
+          "characterHeights": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-east-boarded-house",
+      "model_sha256": "33e9c73e54bef752509f75c4ab74654726b418460fc8a76e597a00ff61b4f2e4",
+      "entries": [
+        {
+          "source": 21,
+          "id": "ground-occlusion-21",
+          "node": "building-074",
+          "anchor": [
+            1972,
+            1497,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        },
+        {
+          "source": 22,
+          "id": "ground-occlusion-22",
+          "node": "building-074",
+          "anchor": [
+            2064,
+            1475,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-northeast-timber-house",
+      "model_sha256": "73688ecc2f828914166092653aa3ab4208d64591421c88bec81851b98df684d9",
+      "entries": [
+        {
+          "source": 94,
+          "id": "ground-occlusion-94",
+          "node": "building-136",
+          "anchor": [
+            2194,
+            642,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-north-dormer-house",
+      "model_sha256": "96cd7559bb29fe6a028bf8abfd059aa74f91d0737eb37b4ef655452fe4fec918",
+      "entries": [
+        {
+          "source": 79,
+          "id": "ground-occlusion-79",
+          "node": "building-554",
+          "anchor": [
+            1733,
+            678,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-south-gate-house",
+      "model_sha256": "e40847a982508b30a05205f4f4663ffbcacd764815fe1ba54b2b1541aecf519a",
+      "entries": [
+        {
+          "source": 47,
+          "id": "ground-occlusion-47",
+          "node": "building-024",
+          "anchor": [
+            1385,
+            2062,
+            0
+          ],
+          "characterHeights": [
+            0,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-southwest-wall-house",
+      "model_sha256": "12c7533cba22854c67b7a06cab95c02b5bb97be41971d034b3b38c0662f40587",
+      "entries": [
+        {
+          "source": 75,
+          "id": "ground-occlusion-75",
+          "node": "building-108",
+          "anchor": [
+            1140,
+            2030,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-upper-green-house",
+      "model_sha256": "f03f7daa4c4a7fd8beddfa6adaca6cf24d810469149be42d7093709ae610a7f8",
+      "entries": [
+        {
+          "source": 109,
+          "id": "ground-occlusion-109",
+          "node": "building-157",
+          "anchor": [
+            1351,
+            710,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-upper-west-lean-to",
+      "model_sha256": "c1453f52744a9c45a0f5ea2c825c0cfc4ea67090f2795200db8093c62c4c16a3",
+      "entries": [
+        {
+          "source": 112,
+          "id": "ground-occlusion-112",
+          "node": "building-166",
+          "anchor": [
+            1201,
+            724,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-village-east-cottage",
+      "model_sha256": "c635df4478ad9ff727700262b3f6737d6f3491b57d6cf6205be8317b0df6ebbd",
+      "entries": [
+        {
+          "source": 138,
+          "id": "ground-occlusion-138",
+          "node": "building-224",
+          "anchor": [
+            1923,
+            2538,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "nottingham-village-mill",
+      "model_sha256": "ac7069b88a77c29c8ae6f24621e1d9b8434318022650865522897f78c96adfbc",
+      "entries": [
+        {
+          "source": 155,
+          "id": "ground-occlusion-155",
+          "node": "building-236",
+          "anchor": [
+            1613,
+            2753,
+            0
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Complete coverage is supported by this house mesh among the audited building candidates. The receiving anchor and character thresholds use ground with no raised projection. No obstacle links or patch references are present; projectile boundaries use the world XY datum."
         }
       ]
     }
