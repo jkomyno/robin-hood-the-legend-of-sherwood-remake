@@ -201,6 +201,27 @@ These differences need comparison against intended source topology; they are not
 automatically improvements or regressions. No York join definitions are published,
 and full-map connectivity/state/actor traversal remain unverified.
 
+`pipeline/src/compare-projection-coverage.ts` compares the union of receiving
+polygons on the compiler's fixed coordinate grid, grouped by exact top/bottom
+planes, receiving motion area, flags and ordered material definitions. It resolves
+rebuilt motion/material indices, including blocker constructor slots, and rejects
+ambiguous or invalid receiving references. It preserves differences in height,
+materials or coverage even when record counts happen to agree. Tests distinguish
+an equivalent quad subdivision from a missing triangle and changed receiving rules.
+This comparison excludes overlapping-plane priority, non-projection geometry,
+state references and actor traversal.
+
+The isolated York inner-east curtain join reduces projection records by 25 while
+preserving every compared coverage group exactly. Its non-projection data also
+matches after motion/interior reference remapping, and both variants load natively
+with 192 movement areas, 254 doors and 72 jump pairs. The native probes are under
+`work/map-compile/york-inner-wall-partition-native`; the join remains outside the
+reviewed catalog until receiving-priority and traversal behavior are verified.
+The east bridge terrace candidate instead changes material bindings across
+1.366211 square pixels. The riverside wall and middle outer bastion candidates
+retain smaller nonzero coverage differences; no tolerance was used to accept them.
+Detailed comparisons are under `work/map-compile/york-navigation-group-probes/verified-coverage-*.json`.
+
 The native compiler interchange accepts typed mask bitmaps with character and
 projectile polylines, view flags and regenerated sight-obstacle references.
 Mask-state transitions reference the compiled array; loading rebuilds the native

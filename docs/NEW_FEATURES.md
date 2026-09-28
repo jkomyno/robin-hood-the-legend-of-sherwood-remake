@@ -100,6 +100,11 @@
   and bindings after reference remapping. Five independent moves construct
   natively; moving the causeway invalidates a neighboring slope connection.
   Seven additional candidate groups still need topology and projection review.
+  A projection-coverage comparator distinguishes equivalent polygon subdivisions
+  from changed receiving geometry, exact height planes, flags or material rules,
+  independently of rebuilt motion/material indices. It identifies York's inner
+  curtain subdivision as coverage-equivalent while retaining the terrace's material
+  difference. Overlapping-plane priority and traversal require separate checks.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York
