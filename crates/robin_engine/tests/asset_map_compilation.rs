@@ -602,6 +602,72 @@ fn compiled_light_regions_follow_mission_ambience_without_changing_interior_link
 }
 
 #[test]
+#[ignore = "requires ROBIN_ASSET_MAP_DIAGNOSTICS"]
+fn recovered_light_exports_preserve_contours_layers_and_ambience() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::sector::SectorType;
+    let directory = std::path::PathBuf::from(std::env::var("ROBIN_ASSET_MAP_DIAGNOSTICS").unwrap());
+    let manifest: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(directory.join("diagnostics.json")).unwrap())
+            .unwrap();
+    assert_eq!(manifest["complete"], true);
+    for result in manifest["results"].as_array().unwrap() {
+        let file = result["file"].as_str().unwrap();
+        let bytes = std::fs::read(directory.join(file)).unwrap();
+        let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let dimensions = &descriptor["walkable_polygon"][2];
+        for ambience in [1, 2, 4] {
+            let mut level = LoadedLevel::hackable_from_json(&bytes).unwrap();
+            level.mission.header.ambiance = ambience;
+            let lights = level.proto.light_sectors.clone();
+            let mut assets = LevelAssets::new();
+            let engine = construct_with_dimensions(
+                level,
+                &mut assets,
+                (
+                    dimensions[0].as_f64().unwrap() as f32 + 1.,
+                    dimensions[1].as_f64().unwrap() as f32 + 1.,
+                ),
+            );
+            let grid = engine.fast_grid();
+            for light in &lights {
+                let points: Vec<_> = light
+                    .polygon
+                    .points
+                    .iter()
+                    .map(|&(x, y)| MapPoint::new(x as f32, y as f32))
+                    .collect();
+                let expected = lights.iter().any(|other| {
+                    other.layer == light.layer
+                        && other.polygon.points == light.polygon.points
+                        && other.ambience & ambience != 0
+                });
+                let active = grid
+                    .level
+                    .sectors
+                    .iter()
+                    .enumerate()
+                    .any(|(index, sector)| {
+                        sector.sector_type.contains(SectorType::SHADOW)
+                            && sector.layer == light.layer
+                            && sector.points == points
+                            && grid.is_sector_active(index as u32)
+                    });
+                assert_eq!(
+                    active, expected,
+                    "{file}: light layer {} ambience {ambience}",
+                    light.layer
+                );
+            }
+            eprintln!(
+                "{file}: checked {} light contours for ambience {ambience}",
+                lights.len()
+            );
+        }
+    }
+}
+
+#[test]
 fn compiled_traversal_light_uses_the_lift_layer_and_mission_ambience() {
     use robin_engine::coordinates::MapPoint;
     for mask in [1, 2] {

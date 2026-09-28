@@ -653,6 +653,47 @@ test("light regions follow placement and preserve ambience without shifting inte
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid light region/);
 });
 
+test("light receiver anchors preserve one contour across elevations and move with the asset", () => {
+  const { hut, document, assets } = lightAssetCompilerFixture();
+  hut.gameplay!.surfaces.push({
+    id: "upper-light-receiver",
+    node: "building-999",
+    height: 40,
+    polygon: [
+      [0, 40],
+      [90, 40],
+      [90, 140],
+      [0, 140],
+    ],
+  });
+  const light = hut.gameplay!.lights![0]!;
+  light.receivers = [
+    [20, 20, 0],
+    [20, 60, 40],
+    [25, 65, 40],
+  ];
+  const first = compileAssetGameplay(document, assets, bounds).light_sectors!.filter(
+    (l) => l.ambience === 1,
+  );
+  assert.equal(first.length, 2);
+  assert.notEqual(first[0]!.layer, first[1]!.layer);
+  assert.deepEqual(first[0]!.polygon, first[1]!.polygon);
+  document.groups[0]!.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds).light_sectors!.filter(
+    (l) => l.ambience === 1,
+  );
+  assert.deepEqual(
+    moved.map((l) => l.polygon.points),
+    first.map((l) => l.polygon.points.map(([x, y]) => [x + 100, y])),
+  );
+  light.receivers = [[20, 70, 50]];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /walkable surface/);
+  light.receivers = [[1000, 1000, 0]];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /outside the light contour/);
+  light.receivers = [];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid light receivers/);
+});
+
 test("light regions resolve on sloped traversal areas and follow their asset", () => {
   const { document, assets } = liftLightCompilerFixture();
   const geometry = compileAssetGameplay(document, assets, bounds);

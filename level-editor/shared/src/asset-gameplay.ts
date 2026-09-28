@@ -135,8 +135,10 @@ export interface AssetOcclusionMask {
 export interface AssetLightRegion {
   id: string;
   node: string;
-  /** Planar local 3D contour; the receiving surface determines its compiled layer. */
+  /** Planar local 3D contour; defaults to receivers on the same plane. */
   polygon: [number, number, number][];
+  /** Optional local anchors selecting receiving layers independently of the contour plane. */
+  receivers?: [number, number, number][];
   /** Mission ambience bit mask controlling this region, not a mission selection. */
   ambiences: number;
 }
@@ -537,6 +539,13 @@ export function validateAssetGameplay(
       !light.polygon.every((p) => point(p, 3))
     )
       fail(`invalid light region ${light.id}`);
+    if (
+      light.receivers !== undefined &&
+      (!Array.isArray(light.receivers) ||
+        !light.receivers.length ||
+        !light.receivers.every((p) => point(p, 3)))
+    )
+      fail(`invalid light receivers ${light.id}`);
   }
   if (data.sounds !== undefined && !Array.isArray(data.sounds)) fail("invalid sound sources");
   for (const sound of data.sounds ?? []) {

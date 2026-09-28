@@ -27,7 +27,7 @@ import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/as
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
 import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import { recoverSoundSource, containsSoundPolyline } from "./recover-sound-source.ts";
-import { containsLightPolygon, recoverLightRegions } from "./recover-light-region.ts";
+import { containsLightPolygon, recoverLightField } from "./recover-light-region.ts";
 import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry.ts";
 import { terrainOwnsJump } from "./terrain-jump-ownership.ts";
 import { jumpEdgeOwners } from "./jump-edge-ownership.ts";
@@ -1383,15 +1383,13 @@ let recoveredLights = 0;
 const lightRecovery: { source: number; asset: string; ids: string[] }[] = [];
 for (const [index, light] of proto.light_sectors.entries()) {
   try {
-    const regions = recoverLightRegions(
+    const { region, footprints: contours } = recoverLightField(
       light,
       `light-${index}`,
-      "$root",
       proto.sight_obstacles,
-      proto.motion_data.layers[light.layer],
-      (p) => p,
+      proto.motion_data.layers[light.layer] ?? [],
     );
-    const contours = regions.map((region) => region.polygon.map(([x, y]): Point => [x, y]));
+    const regions = [region];
     const allOwners = [...locals.values()].flat();
     const owners = [...new Set(allOwners.map((owner) => owner.asset))].flatMap((asset) => {
       const parts = allOwners.filter((owner) => owner.asset === asset);
@@ -1421,6 +1419,9 @@ for (const [index, light] of proto.light_sectors.entries()) {
         ...region,
         node: owner.node,
         polygon: region.polygon.map((point) => localize(owner.part, point)),
+        ...(region.receivers
+          ? { receivers: region.receivers.map((point) => localize(owner.part, point)) }
+          : {}),
       })),
     );
     lightRecovery.push({

@@ -77,6 +77,18 @@ export function recoverLightRegions(
   motionAreas: MotionArea[] | undefined,
   localize: (point: Vec3) => Vec3,
 ): AssetLightRegion[] {
+  return recoverLightPieces(light, id, node, obstacles, motionAreas, localize, true);
+}
+
+function recoverLightPieces(
+  light: LightSector,
+  id: string,
+  node: string,
+  obstacles: SightObstacle[],
+  motionAreas: MotionArea[] | undefined,
+  localize: (point: Vec3) => Vec3,
+  verifyIntegerContours: boolean,
+): AssetLightRegion[] {
   try {
     const plane = recoverLightPlane(light, obstacles, motionAreas);
     return [recoverLightRegion(light, id, node, plane, localize)];
@@ -124,17 +136,76 @@ export function recoverLightRegions(
           ),
         );
       }
-      const rounded = projectedPieces.map(close);
-      const union = fixedClipping.union(rounded[0]!, ...rounded.slice(1));
-      if (
-        fixedClipping.difference(polygon, union).length ||
-        fixedClipping.difference(union, polygon).length
-      )
-        throw new Error(
-          "Light region changes after integer quantization; needs an authored receiving split",
-        );
+      if (verifyIntegerContours) {
+        const rounded = projectedPieces.map(close);
+        const union = fixedClipping.union(rounded[0]!, ...rounded.slice(1));
+        if (
+          fixedClipping.difference(polygon, union).length ||
+          fixedClipping.difference(union, polygon).length
+        )
+          throw new Error(
+            "Light region changes after integer quantization; needs an authored receiving split",
+          );
+      }
     }
   return result;
+}
+
+/** Preserve one projected contour across all receiving elevations. Partitioning
+ * supplies ownership footprints and interior anchors, never output contour vertices. */
+export function recoverLightField(
+  light: LightSector,
+  id: string,
+  obstacles: SightObstacle[],
+  motionAreas: MotionArea[],
+): { region: AssetLightRegion; footprints: Point[][] } {
+  try {
+    const plane = recoverLightPlane(light, obstacles, motionAreas);
+    const region = recoverLightRegion(light, id, "$root", plane, (p) => p);
+    return { region, footprints: [region.polygon.map(([x, y]): Point => [x, y])] };
+  } catch (error) {
+    if (!(error instanceof MultipleLightPlanesError)) throw error;
+  }
+  const pieces = recoverLightPieces(light, id, "$root", obstacles, motionAreas, (p) => p, false);
+  const receivingAreas = new Map<string, { size: number; point: Vec3 }>();
+  const close = (points: Point[]) => [[...points, points[0]!]];
+  for (const piece of pieces) {
+    const projected = piece.polygon.map(([x, y, z]): Point => [x, y - z]);
+    const plane = heightPlane(piece.polygon.map(([x, y, z]): Vec3 => [x, y - z, z]));
+    for (const [areaIndex, area] of motionAreas.entries()) {
+      const intersections = fixedClipping.intersection(
+        close(projected),
+        close(area.polygon.points),
+      );
+      for (const polygon of intersections) {
+        const { vertices, holes, dimensions } = flatten(polygon);
+        const indices = earcut(vertices, holes, dimensions);
+        if (!indices.length) throw new Error("Cannot locate light receiving anchor");
+        for (let i = 0; i < indices.length; i += 3) {
+          const triangle = indices
+            .slice(i, i + 3)
+            .map((j) => [vertices[j * 2]!, vertices[j * 2 + 1]!] as Point);
+          const [a, b, c] = triangle;
+          const size = Math.abs(
+            (b![0] - a![0]) * (c![1] - a![1]) - (b![1] - a![1]) * (c![0] - a![0]),
+          );
+          const key = `${areaIndex}/${plane.map((n) => n.toFixed(7)).join(",")}`;
+          if (size <= (receivingAreas.get(key)?.size ?? 0)) continue;
+          const x = triangle.reduce((sum, p) => sum + p[0], 0) / 3;
+          const y = triangle.reduce((sum, p) => sum + p[1], 0) / 3;
+          const z = planeHeight(plane, [x, y]);
+          receivingAreas.set(key, { size, point: [x, y + z, z] });
+        }
+      }
+    }
+  }
+  const receivers = [...receivingAreas.values()].map((value) => value.point);
+  if (!receivers.length) throw new Error("Light region has no receiving anchors");
+  const plane = heightPlane(pieces[0]!.polygon.map(([x, y, z]): Vec3 => [x, y - z, z]));
+  return {
+    region: { ...recoverLightRegion(light, id, "$root", plane, (p) => p), receivers },
+    footprints: pieces.map((piece) => piece.polygon.map(([x, y]): Point => [x, y])),
+  };
 }
 
 /** Convert projected contours to an explicit owner's local world coordinates. */

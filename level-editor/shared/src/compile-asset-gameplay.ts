@@ -181,7 +181,13 @@ export function compileAssetGameplay(
     navigationRegion?: string;
     lift?: string;
   })[] = [];
-  const lights: { id: string; polygon: Point[]; plane: HeightPlane; ambiences: number }[] = [];
+  const lights: {
+    id: string;
+    polygon: Point[];
+    plane: HeightPlane;
+    ambiences: number;
+    receivers?: Vec3[];
+  }[] = [];
   const placedMasks: {
     id: string;
     anchor: Vec3;
@@ -304,6 +310,9 @@ export function compileAssetGameplay(
         polygon: ring(points.map(project), `${placement.id}/${light.id}`),
         plane: heightPlane(points.map(([x, y, z]): Vec3 => [x, y - z, z])),
         ambiences: light.ambiences,
+        ...(light.receivers
+          ? { receivers: light.receivers.map((p) => transform(light.node, p)) }
+          : {}),
       });
     }
     for (const sound of gameplay.sounds ?? []) {
@@ -963,7 +972,23 @@ export function compileAssetGameplay(
       : {}),
     ...(lights.length
       ? {
-          light_sectors: lights.map((light) => {
+          light_sectors: lights.flatMap((light) => {
+            if (light.receivers) {
+              const layers = new Set(
+                light.receivers.map((point, index) => {
+                  if (!inside(project(point), light.polygon))
+                    throw new Error(
+                      `${light.id}: receiver ${index} lies outside the light contour`,
+                    );
+                  return resolve(point, `${light.id} receiver ${index}`, null, true).layer;
+                }),
+              );
+              return [...layers].map((layer) => ({
+                layer,
+                polygon: { points: light.polygon },
+                ambience: light.ambiences,
+              }));
+            }
             const matchingLayers = new Set(
               areas
                 .filter(

@@ -5,6 +5,7 @@ import {
   recoverLightPlane,
   recoverLightRegion,
   recoverLightRegions,
+  recoverLightField,
 } from "./recover-light-region.ts";
 import { fixedClipping } from "../../shared/src/fixed-polygon-boolean.ts";
 import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
@@ -121,6 +122,27 @@ test("multi-plane lights preserve projected union, holes, priority and local ele
       recoverLightRegions(light, "light", "wall", [support(15.3, 25.3, 40)], undefined, (p) => p),
     /changes after integer quantization/,
   );
+  const field = recoverLightField(
+    light,
+    "light",
+    [support(15.3, 25.3, 40)],
+    [
+      {
+        is_lift: false,
+        state_id: 0,
+        flags: 0,
+        skeleton_segments: [],
+        obstacles: [],
+        polygon: light.polygon,
+      },
+    ],
+  );
+  assert.deepEqual(
+    field.region.polygon.map(([x, y, z]) => [x, y - z]),
+    light.polygon.points,
+  );
+  assert.equal(field.region.ambiences, light.ambience);
+  assert.deepEqual(new Set(field.region.receivers!.map((p) => p[2])), new Set([0, 40]));
 });
 
 test("multi-plane recovery preserves single-plane contours and refuses missing elevated geometry", () => {

@@ -82,6 +82,9 @@
   Light-region migration supports splitting across receiving planes while preserving
   holes and ambience filters. It rejects splits whose integer output changes any
   receiving contour, and records source-to-local region IDs in the recovery report.
+  Asset-local light receiving anchors can instead preserve one exact contour across
+  several elevations. The compiler resolves their layers after placement and emits
+  the contour once per layer, retaining ambience filters without fractional cuts.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits

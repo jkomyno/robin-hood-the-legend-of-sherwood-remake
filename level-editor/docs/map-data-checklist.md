@@ -254,26 +254,36 @@ ground plane; uncovered potentially walkable portions still require a valid
 plane, including areas opened by state changes. Ownership can span several parts
 of one asset, but their combined footprints must cover the entire light polygon,
 including its interior; enclosed gaps and competing asset owners remain errors.
-The latest all-map pass recovers 35 of 149 light/shadow regions into asset-local
+The previous all-map pass recovered 35 of 149 light/shadow regions into asset-local
 drafts, including six additional regions on Leicester's keep, west wing and moat
 towers. All 35 exported contours and ambience masks match source records, and
 the previously recovered regions remain covered. Light regions
 also resolve onto stair/lift traversal surfaces; a native test verifies ambience
 filtering on the traversal layer without affecting the ground layer or door links.
-All nine static diagnostics construct successfully. The other 114 regions need
+All nine static diagnostics constructed successfully. The other 114 regions then needed
 receiving-geometry fixes, ownership review or multi-plane authoring; they are not
 silently assigned to terrain. These drafts remain unpublished.
 
-Multi-plane recovery can now partition a contour by receiving-surface priority,
-triangulate holes, and store each planar piece in the same owning asset. It also
-checks each receiving portion after integer quantization: loading successfully
-does not establish contour fidelity. All eleven current multi-plane candidates
-(Leicester 1/4, Lincoln 5, York 1/6/12/14/18/20/24/28) change shape when split
-vertices are rounded and remain rejected. In particular, York 12/14 initially
-produced loadable descriptors but failed the projected-union comparison. The
-verified recovery count therefore remains 35/149, not 37/149. Rechecked drafts
-are under `work/map-compile/split-light-recovery`; they retain all previously
-recovered light regions for those three maps and pass static compilation.
+Splitting multi-plane contours introduced rounding errors in all eleven current
+candidates, including loadable York 12/14 descriptors. Recovery now preserves the
+complete integer contour and records asset-local receiving anchors independently
+of its reference plane. Compilation copies that contour to each resolved layer,
+deduplicating repeated anchors on the same layer. Surface partitions establish
+ownership and locate anchors; their fractional cut vertices are not exported.
+The strict piecewise recovery helper still rejects contour changes after rounding.
+
+York regions 12/14 now recover to the west-town terrain asset with exact original
+contours on layers 30/68 and 30/92 respectively. This raises the recovery evidence
+to 37/149 regions; 112 remain pending. The native diagnostic checks contour
+registration and activation for ambience masks 1, 2 and 4. Updated Leicester,
+Lincoln and York drafts are in `work/map-compile/receiver-light-recovery`, with
+descriptors in `work/map-compile/receiver-light-native`. Independent receiver
+movement and duplicate-layer handling pass compiler tests. Moving the large York
+terrain asset alone by one pixel currently fails a bridge passage connectivity
+check, so real-scene independent movement remains unverified.
+Translating the entire York scene one pixel east preserves both regions' exact
+contours and ambience on both receiving layers; that check preserves existing
+connections and does not replace the independent terrain-movement check.
 
 Jump recovery produces asset-local drafts for all 173 pairs across nine maps.
 `compare-jump-geometry.ts` verifies exact endpoint coordinates, polygon boundaries,
