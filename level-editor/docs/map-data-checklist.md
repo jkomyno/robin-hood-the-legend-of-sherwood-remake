@@ -573,6 +573,20 @@ pixels in the first two masks. The reproducible `audit-mask-surfaces.ts` report 
 authored surface geometry and remain unrecovered; state ownership alone does not
 establish mask parity. The reviewed static-mask total remains 64.
 
+Croisement03 also has one recovered changing mask: western platform record 126,
+with all 2,592 pixels supported by `croisement03-group-062`. The pinned recipe in
+`refinement/catalogs/croisement03-masks.json` uses the platform's 82.00001-unit
+receiving elevation and binds its initial cover to local `movement-change-5`.
+Baseline and a one-unit asset move preserve exact coverage, masking rules and
+transition links; baseline non-mask geometry is unchanged. Drafts are under
+`work/map-compile/croisement03-controlled-mask-recovery`, and diagnostics under
+`work/map-compile/croisement03-controlled-mask-native`. Both scenes pass native
+apply/reset checks for all nine transitions, now including mask activation and
+unchanged unrelated masks. The map still has 130 unrecovered masks. This brings
+reviewed recovery to 65 masks across seven maps, including 64 static masks;
+publication, receiving-layer fidelity and changing visual/depth integration remain
+unfinished.
+
 `pipeline/src/verify-reviewed-mask-recovery.ts` reproduces the reviewed-mask
 checks from a scene, pinned library, recovery packets and source-pinned recipes.
 It compares exact covered pixels, flags, both optional polylines and obstacle-link
@@ -582,7 +596,9 @@ an exact disjoint union with consistent layer and obstacle links, and every
 compiled mask must be accounted for by a reviewed recipe. Each owning asset
 then moves independently; bitmap bytes, dimensions, translated boundaries and
 compiled obstacle links must remain exact. A failed run invalidates the previous
-manifest, records placement errors and exits unsuccessfully. These are static
+manifest, records placement errors and exits unsuccessfully. For recovered
+changing masks it also checks complete initial/applied mask sets against exactly
+one compiled transition, before and after movement. These are geometry/state
 diagnostics, not ownership, receiving-layer, visual or full-gameplay certificates.
 For example, from `level-editor`:
 
@@ -596,7 +612,7 @@ node --max-old-space-size=1536 pipeline/src/verify-reviewed-mask-recovery.ts \
   --out work/map-compile/reviewed-mask-verification/derby
 ```
 
-The current six-map batch verifies all 64 reviewed masks and 45 independent asset
+The six-map static batch verifies its 64 reviewed masks and 45 independent asset
 moves. All 51 baseline/moved descriptors load natively. Adding the latest masks
 leaves baseline non-mask geometry unchanged. Outputs are under
 `work/map-compile/reviewed-mask-verification/<map>`. This broader check caught a

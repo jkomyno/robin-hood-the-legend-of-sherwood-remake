@@ -1149,6 +1149,29 @@ mod tests {
                 let before_states = engine.world.pathfinder.states.clone();
                 let before_sight = engine.world.static_sight_obstacle_active.clone();
                 let before_sectors = engine.world.fast_grid.sector_active.clone();
+                let mask_count = descriptor["asset_geometry"]["masks"]
+                    .as_array()
+                    .map_or(0, Vec::len);
+                let mask_states = |engine: &EngineInner| {
+                    (0..mask_count)
+                        .map(|i| {
+                            engine
+                                .world
+                                .fast_grid
+                                .is_mask_active(crate::mask::MaskIndex::new(i as u32).unwrap())
+                        })
+                        .collect::<Vec<_>>()
+                };
+                let before_masks = mask_states(&engine);
+                let mut expected_masks = before_masks.clone();
+                for &mask in &transition.initial_masks {
+                    assert!(before_masks[mask as usize], "{file}: {}", transition.id);
+                    expected_masks[mask as usize] = false;
+                }
+                for &mask in &transition.applied_masks {
+                    assert!(!before_masks[mask as usize], "{file}: {}", transition.id);
+                    expected_masks[mask as usize] = true;
+                }
                 let mut expected_states = before_states.clone();
                 for change in &transition.motion_changes {
                     let area = engine
@@ -1171,6 +1194,12 @@ mod tests {
                     assert!(!before_sight[sight as usize]);
                 }
                 engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+                assert_eq!(
+                    mask_states(&engine),
+                    expected_masks,
+                    "{file}: {}",
+                    transition.id
+                );
                 assert_eq!(
                     rights(&engine),
                     expected_rights,
@@ -1211,6 +1240,12 @@ mod tests {
                     }
                 }
                 engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+                assert_eq!(
+                    mask_states(&engine),
+                    before_masks,
+                    "{file}: {}",
+                    transition.id
+                );
                 assert_eq!(rights(&engine), before_rights, "{file}: {}", transition.id);
                 assert_eq!(engine.world.pathfinder.states, before_states, "{file}");
                 assert_eq!(

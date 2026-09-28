@@ -1,10 +1,11 @@
-/** Offline static mask checks. Successful diagnostics are not publishable maps. */
+/** Offline mask geometry/state checks. Diagnostics are not publishable maps. */
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { parseArgs } from "node:util";
 import type { ProtoLevel } from "../../shared/src/level.ts";
+import { maskReferenceResolver } from "../../shared/src/mask-references.ts";
 import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import { normalizeGameplayStateViews } from "../../shared/src/gameplay-state-views.ts";
@@ -82,6 +83,49 @@ const bounds =
   (document.size ? ([0, 0, ...document.size] as [number, number, number, number]) : undefined);
 assert.ok(bounds, "Missing export bounds");
 const baseline = compileAssetGameplay(document, assets, bounds);
+const recoveredIndices = new Map(
+  reviewed.recipes.flatMap((recipe) =>
+    recipe.entries.map((entry) => {
+      const mask = source.masks[entry.source];
+      assert.ok(mask, `Missing source mask ${entry.source}`);
+      return [entry.source, matchRecoveredMasks(mask, baseline.masks ?? [])] as const;
+    }),
+  ),
+);
+const resolveMask = maskReferenceResolver(source.masks);
+const verifyStates = (geometry: typeof baseline) => {
+  for (const [index, patch] of source.patches.entries()) {
+    const initial = resolveMask(patch.old_masks),
+      applied = resolveMask(patch.new_masks);
+    if (![...initial, ...applied].some((mask) => recoveredIndices.has(mask))) continue;
+    const compiled = (indices: number[]) =>
+      indices
+        .flatMap((mask) => {
+          const result = recoveredIndices.get(mask);
+          assert.ok(result, `Patch ${index} has an unrecovered mask`);
+          return result;
+        })
+        .sort((a, b) => a - b);
+    const oldMasks = compiled(initial),
+      newMasks = compiled(applied);
+    const controlled = new Set([...oldMasks, ...newMasks]);
+    const owners = (geometry.movement_transitions ?? []).filter((transition) =>
+      [...(transition.initial_masks ?? []), ...(transition.applied_masks ?? [])].some((mask) =>
+        controlled.has(mask),
+      ),
+    );
+    assert.equal(owners.length, 1, `Patch ${index} needs one mask controller`);
+    assert.deepEqual(
+      [...(owners[0]!.initial_masks ?? [])].sort((a, b) => a - b),
+      oldMasks,
+    );
+    assert.deepEqual(
+      [...(owners[0]!.applied_masks ?? [])].sort((a, b) => a - b),
+      newMasks,
+    );
+  }
+};
+verifyStates(baseline);
 const write = async (map: string, geometry: typeof baseline) => {
   const file = `case-${manifest.results.length}.level.json`;
   await fs.writeFile(
@@ -144,6 +188,7 @@ for (const recipe of reviewed.recipes) {
   group.transform.dx += dx;
   try {
     const moved = compileAssetGameplay(movedDocument, assets, bounds);
+    verifyStates(moved);
     for (const index of indices) {
       const mask = moved.masks?.[index];
       assert.ok(mask, "Moved mask disappeared");
