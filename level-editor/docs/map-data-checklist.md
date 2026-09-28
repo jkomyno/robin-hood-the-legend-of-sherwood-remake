@@ -313,8 +313,14 @@ The second bridge's visual elevation also differs between mission variants (1 vs
 recipe has been approved from that stale pin.
 
 Leicester's map patches activate projections 389, 384 and 390. Projection-state
-activation remains a compiler gap: current sight-transition authoring rejects
-receiving surfaces. Mission-carried records also include traps, hiding places and
+activation remains an editor compiler gap: current sight-transition authoring
+rejects receiving surfaces. Native interchange now accepts projection obstacles
+in initial/applied sight lists, with the same missing-reference and duplicate-control
+validation as other obstacles. Runtime tests cover activation, swapping and reset:
+collision follows activation, while elevation/material lookup retains all registered
+receivers, including inactive ones, and navigation storage remains unchanged.
+This does not yet supply asset-local state authoring or shared-controller support.
+Mission-carried records also include traps, hiding places and
 York gate effects; their presence in a mission file does not establish permanent
 map ownership. The earlier recovered transition counts cover map-source recovery,
 not this additional inventory. No mission population or scripts were added to maps.

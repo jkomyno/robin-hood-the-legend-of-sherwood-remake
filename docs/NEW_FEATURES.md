@@ -134,6 +134,10 @@
   The retained mission inventory exposes a shared Derby bridge obstacle and
   Leicester's changing projection surfaces; ownership and projection-state
   compilation remain unfinished.
+  Native interchange accepts projection obstacles in sight-state transitions.
+  Activation, swap and reset tests verify changing collision with stable receiving
+  height/material lookup, which includes inactive projection surfaces. Editor
+  authoring and shared-controller dependencies remain open.
   Reviewed static-mask recipes now run in the asset migration with pinned source
   and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
   sixteen Nottingham and twenty York

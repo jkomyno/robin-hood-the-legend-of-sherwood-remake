@@ -735,6 +735,99 @@ mod tests {
     }
 
     #[test]
+    fn compiled_projection_states_toggle_collision_without_changing_elevation_lookup() {
+        use crate::coordinates::MapPoint;
+        use crate::fast_find_grid::SectorIndex;
+        use crate::position_interface::SectorHandle;
+        use crate::sector::SectorNumber;
+        for swap in [false, true] {
+            let mut descriptor: serde_json::Value = serde_json::from_slice(include_bytes!(
+                "../../tests/fixtures/asset-projection-material.level.json"
+            ))
+            .unwrap();
+            descriptor["asset_geometry"]["sight_obstacles"][0]["solid"] = true.into();
+            let applied = if swap {
+                let mut upper = descriptor["asset_geometry"]["sight_obstacles"][0].clone();
+                for point in upper["points"].as_array_mut().unwrap() {
+                    point["y"] = (point["y"].as_f64().unwrap() + 20.).into();
+                    point["z_top"] = 40.into();
+                    point["z_bottom"] = 40.into();
+                }
+                upper["default_material"] = 4.into();
+                upper["material_indices"] = serde_json::json!([]);
+                descriptor["asset_geometry"]["sight_obstacles"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(upper);
+                2
+            } else {
+                0
+            };
+            descriptor["asset_geometry"]["movement_transitions"] = serde_json::json!([{
+                "id":"receiver-state", "waypoint":[300,300], "sector":0,"layer":0,
+                "active":true,"definitive":false,
+                "apply_polygon":{"points":[]},"no_apply_polygon":{"points":[]},
+                "motion_changes":[], "initial_sight":if swap {vec![0]} else {vec![]},
+                "applied_sight":[applied]
+            }]);
+            let (mut engine, assets) =
+                load_compiled_transition(&serde_json::to_vec(&descriptor).unwrap(), (2000., 2000.));
+            let level = engine.world.fast_grid.level.clone();
+            let index = level.sector_number_map[&SectorNumber::new(1)];
+            let sector = SectorHandle::new(1)
+                .unwrap()
+                .with_arena_index(SectorIndex::new(index as u32).unwrap());
+            let point = MapPoint::new(350., 330.);
+            let receive = |engine: &EngineInner| {
+                engine
+                    .get_projection_area_index(&assets, sector, 1, point)
+                    .map(|index| {
+                        let obstacle =
+                            &assets.environment.static_sight_obstacles[usize::from(index)];
+                        (
+                            obstacle.compute_top_z_from_projection(point.x, point.y),
+                            assets
+                                .environment
+                                .material_sectors
+                                .material_at_with_obstacle(Some(obstacle), point),
+                        )
+                    })
+            };
+            let collision = |engine: &EngineInner| {
+                use crate::coordinates::WorldPoint3D;
+                use crate::sight_obstacle::{SIGHTOBSTACLE_SOLID, is_reachable_impact_3d};
+                is_reachable_impact_3d(
+                    WorldPoint3D::new(350., 350., 100.),
+                    WorldPoint3D::new(350., 350., 1.),
+                    SIGHTOBSTACLE_SOLID,
+                    engine.sight_obstacles(&assets),
+                    None,
+                    None,
+                )
+                .map(|hit| hit.impact.z)
+            };
+            let receiving = Some((
+                if swap { 40. } else { 20. },
+                crate::element::GameMaterial::from_u32(if swap { 4 } else { 2 }),
+            ));
+            assert_eq!(receive(&engine), receiving);
+            assert_eq!(collision(&engine), if swap { Some(20.) } else { None });
+            let patch = crate::patch::PatchIndex::new(0).unwrap();
+            let sim = crate::sim_rng::test_context();
+            engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+            assert_eq!(receive(&engine), receiving);
+            assert_eq!(collision(&engine), Some(if swap { 40. } else { 20. }));
+            engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+            assert_eq!(receive(&engine), receiving);
+            assert_eq!(collision(&engine), if swap { Some(20.) } else { None });
+            assert!(std::sync::Arc::ptr_eq(
+                &level,
+                &engine.world.fast_grid.level
+            ));
+        }
+    }
+
+    #[test]
     fn compiled_mask_only_transition_resolves_layer_indices_and_resets() {
         let mut descriptor: serde_json::Value =
             serde_json::from_slice(include_bytes!("../../tests/fixtures/asset-lift.level.json"))

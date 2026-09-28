@@ -1005,7 +1005,7 @@ fn compiled_light_regions_reject_missing_layers_and_degenerate_contours() {
 }
 
 #[test]
-fn sight_transitions_reject_missing_duplicate_and_projection_obstacles() {
+fn sight_transitions_reject_missing_duplicate_and_invalid_receiving_references() {
     let source: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-sight-transition.level.json"))
             .unwrap();
@@ -1016,7 +1016,7 @@ fn sight_transitions_reject_missing_duplicate_and_projection_obstacles() {
         assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap()).is_err());
     }
     let mut bad = source;
-    bad["asset_geometry"]["sight_obstacles"][0]["projection_area"] = serde_json::json!([0, 0]);
+    bad["asset_geometry"]["sight_obstacles"][0]["projection_area"] = serde_json::json!([999, 0]);
     assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap()).is_err());
 }
 

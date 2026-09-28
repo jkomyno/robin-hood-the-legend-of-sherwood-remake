@@ -2780,10 +2780,10 @@ impl LoadedLevel {
                     .iter()
                     .chain(&transition.applied_sight)
                 {
-                    let Some(obstacle) = geometry.sight_obstacles.get(usize::from(*index)) else {
+                    if geometry.sight_obstacles.get(usize::from(*index)).is_none() {
                         return Err("transition references missing sight obstacle".into());
-                    };
-                    if obstacle.projection_area.is_some() || !transition_sight.insert(*index) {
+                    }
+                    if !transition_sight.insert(*index) {
                         return Err(
                             "invalid or multiply controlled transition sight obstacle".into()
                         );
