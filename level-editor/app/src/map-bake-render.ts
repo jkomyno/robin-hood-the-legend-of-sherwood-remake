@@ -145,6 +145,8 @@ export function renderMapBake(
   scene.background = new THREE.Color(0);
   const frame = new THREE.Group();
   frame.quaternion.set(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
+  const parent = root.parent;
+  const siblingIndex = parent?.children.indexOf(root);
   frame.add(root);
   scene.add(frame);
   const sunlight = new SunLighting();
@@ -165,8 +167,8 @@ export function renderMapBake(
         colorMaterials.set(source, material);
         return material;
       };
-      node.material = Array.isArray(node.material) ? node.material.map(copy) : copy(node.material);
       original.set(node, node.material);
+      node.material = Array.isArray(node.material) ? node.material.map(copy) : copy(node.material);
     });
     scene.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(root);
@@ -238,7 +240,8 @@ export function renderMapBake(
     sunlight.root.visible = false;
     renderer.shadowMap.enabled = false;
     const depthMaterials = new Map<THREE.Material, THREE.Material>();
-    for (const [node, source] of original) {
+    for (const node of original.keys()) {
+      const source = node.material;
       const convert = (material: THREE.Material) => {
         const cached = depthMaterials.get(material);
         if (cached) return cached;
@@ -253,9 +256,15 @@ export function renderMapBake(
     return { color, depth };
   } finally {
     sunlight.dispose();
+    for (const [node, material] of original) node.material = material;
     for (const material of materials) material.dispose();
     renderer.dispose();
     renderer.forceContextLoss();
     root.removeFromParent();
+    if (parent && siblingIndex !== undefined) {
+      parent.add(root);
+      parent.children.splice(parent.children.indexOf(root), 1);
+      parent.children.splice(siblingIndex, 0, root);
+    }
   }
 }

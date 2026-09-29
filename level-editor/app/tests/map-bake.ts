@@ -4,6 +4,7 @@ import { decode } from "fast-png";
 import { unzipSync } from "fflate";
 import { bakeScene, renderMapBake } from "../src/map-bake-render.ts";
 import { compileMap, packageCompiledMap } from "../src/map-compile.ts";
+import { PatchDisplay } from "../src/patch-display.ts";
 
 function check(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -130,6 +131,87 @@ try {
     maskControlled.depth[30 * 1100 + 1024] === rendered.depth[30 * 1100 + 1024],
     "unrelated wall must retain depth occlusion",
   );
+  // Reuse one snapshot across state changes, including meshes hidden on its first pass.
+  const stateRoot = new THREE.Group();
+  const stateGround = surface([0, 0, 1100, 128], 0x808080);
+  const initialSurface = surface([990, 30, 60, 40], 0x00ff00, 20);
+  initialSurface.userData.reveal_hide_when_applied = ["gate"];
+  const appliedSurface = surface([990, 30, 60, 40], 0xff0000, 10);
+  appliedSurface.userData.reveal_show_when_applied = ["gate"];
+  appliedSurface.visible = false;
+  stateRoot.add(stateGround, initialSurface, appliedSurface);
+  const snapshot = bakeScene([stateRoot]);
+  const parent = new THREE.Group();
+  const before = new THREE.Group();
+  const after = new THREE.Group();
+  parent.add(before, snapshot, after);
+  const originalMaterials = [
+    stateGround.material,
+    initialSurface.material,
+    appliedSurface.material,
+  ];
+  let borrowedDisposals = 0;
+  for (const material of originalMaterials)
+    material.addEventListener("dispose", () => borrowedDisposals++);
+  const verifyOwnership = () => {
+    check(snapshot.parent === parent, "bake must restore its scene parent");
+    check(parent.children[1] === snapshot, "bake must restore its sibling order");
+    snapshot.children[0]!.children.forEach((node, index) => {
+      check(
+        (node as THREE.Mesh).material === originalMaterials[index],
+        "bake must restore borrowed materials",
+      );
+    });
+    check(borrowedDisposals === 0, "bake must not dispose borrowed materials");
+  };
+  const stateBounds: [number, number, number, number] = [0, 0, 1100, 128];
+  const initialPixels = renderMapBake(snapshot, camera, stateBounds);
+  verifyOwnership();
+  const display = new PatchDisplay();
+  display.set("gate", true);
+  display.apply(snapshot);
+  const appliedPixels = renderMapBake(snapshot, camera, stateBounds);
+  verifyOwnership();
+  for (const x of [1023, 1024]) {
+    const offset = 40 * 1100 + x;
+    check(
+      initialPixels.color.slice(offset * 4, offset * 4 + 3).join() === "0,255,0" &&
+        appliedPixels.color.slice(offset * 4, offset * 4 + 3).join() === "255,0,0",
+      "state color must change on both sides of the tile seam",
+    );
+    check(
+      Math.abs(initialPixels.depth[offset]! - Math.round((60.5 / 128) * 65535)) <= 2 &&
+        Math.abs(appliedPixels.depth[offset]! - Math.round((50.5 / 128) * 65535)) <= 2,
+      "state depth must change together with its visible surface",
+    );
+  }
+  display.clear();
+  display.apply(snapshot);
+  const resetPixels = renderMapBake(snapshot, camera, stateBounds);
+  verifyOwnership();
+  check(
+    resetPixels.color.every((value, index) => value === initialPixels.color[index]) &&
+      resetPixels.depth.every((value, index) => value === initialPixels.depth[index]),
+    "state reset must restore every color and depth pixel",
+  );
+  // A depth-pass failure must leave the snapshot usable too.
+  const failingNode = snapshot.children[0]!.children[1] as THREE.Mesh;
+  const unsupported = new THREE.MeshPhongMaterial();
+  failingNode.material = unsupported;
+  let failed = false;
+  try {
+    renderMapBake(snapshot, camera, stateBounds);
+  } catch (error) {
+    failed = error instanceof Error && error.message.includes("Cannot compile depth");
+  }
+  check(failed && failingNode.material === unsupported, "failed bake must restore materials");
+  failingNode.material = initialSurface.material;
+  verifyOwnership();
+  unsupported.dispose();
+  for (const mesh of [stateGround, initialSurface, appliedSurface]) {
+    mesh.geometry.dispose();
+    mesh.material.dispose();
+  }
   const files = unzipSync(archive);
   const depth = decode(files["Data/Levels/Day/editor-bake-contract.occlusion-depth.png"]!);
   check(
@@ -141,7 +223,7 @@ try {
   // Acceptance runner can retain this real GPU-produced mod for the Rust loader test.
   (window as unknown as { __bakeZip: number[] }).__bakeZip = [...archive];
   documentResult(
-    "PASS map bake: crop, tile seam, hidden geometry, sRGB color, ground depth, mask-owned depth, ZIP/PNG roundtrip",
+    "PASS map bake: crop, tile seam, hidden geometry, sRGB color, ground depth, mask-owned depth, state apply/reset, resource restoration, ZIP/PNG roundtrip",
   );
 } catch (error) {
   documentResult(`FAIL ${error instanceof Error ? error.stack : String(error)}`);

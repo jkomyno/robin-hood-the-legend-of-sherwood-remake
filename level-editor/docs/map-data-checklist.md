@@ -26,6 +26,10 @@ The scene baker can now select explicit combinations of appearance patches,
 independently of viewport previews, for color/depth rendering. State-image ZIP
 packaging and runtime depth switching are still missing; the full-scene export
 guard remains in place for unsupported appearance bindings.
+The browser bake acceptance test now verifies an initial/applied/reset sequence
+on one reused scene: color and depth change across a render-tile boundary, reset
+restores every pixel, and successful/failed bakes restore borrowed materials and
+scene parenting. This verifies generated state pixels, not runtime switching.
 
 Ground-boundary compilation now supports an explicit asset-local
 `preserveMovementBoundary` setting on a labelled ordinary surface. It retains
