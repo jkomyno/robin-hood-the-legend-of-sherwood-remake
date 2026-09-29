@@ -20,6 +20,8 @@ also match full walkable coverage in both states. Actor traversal remains unveri
 No map is yet published or certified at full gameplay parity.
 The combined `editor-field-model-library` drafts now contain regenerated light/sound
 field models and repinned scenes; older diagnostic libraries retain their old pins.
+The nine source-backed `embedded-gameplay-library` drafts now embed 1,121 recovered
+definitions in pinned asset descriptors. They remain incomplete local drafts.
 
 Ground-boundary compilation now supports an explicit asset-local
 `preserveMovementBoundary` setting on a labelled ordinary surface. It retains
@@ -2941,3 +2943,35 @@ This resolves the generated-model hierarchy and pinning problem for these combin
 drafts. It does not publish the remaining recovered gameplay packets, refresh older
 flat-light definitions with new attachments, remove pending masks or visual states,
 or establish an in-game ZIP round trip.
+
+### Reopened scenes compile from embedded asset definitions
+
+`work/map-compile/embedded-gameplay-library/<map>` now embeds recovered gameplay in
+the actual asset descriptors for nine source-backed maps: Derby 69, Leicester 100,
+Lincoln 118, Nottingham 165, York 271, Sherwood 88, Croisement01 61, Croisement02 150
+and Croisement03 99. Scene descriptor hashes and palette entries are updated together.
+Placements and other scene content remain unchanged. The asset models and resources
+remain linked to the preceding staged libraries; this is not a distributable bundle.
+
+Each scene is serialized, reopened and compiled using only its pinned descriptors.
+The compiler reads neither recovery packets nor source levels. A separate comparison
+with the packet-injection workflow verifies identical static geometry under the
+current compiler. Eight outputs also match their preceding native JSON snapshots
+(with JSON's negative-zero normalization). York has an additional receiving layer
+from the newer allocation logic; its refreshed comparison passes 10,298,961 lighting
+query evaluations on mapped common walkable coverage, with zero differences.
+
+Rust loads all nine exports in `work/map-compile/embedded-gameplay-native` and
+applies/resets all 56 compiled transitions. Full-scene compilation still rejects
+Derby, Leicester, Lincoln and Nottingham because of unsupported scene state
+transitions. York, Sherwood and the three crossings pass that compiler gate, but
+the recovery inventory still records 2,953 pending masks across the nine drafts
+and incomplete visual patch definitions. Passing that gate does not certify parity.
+Wychford's gameplay definitions remain separately unfinished.
+
+Each staged library contains `gameplay-staging-report.json` with the pending
+inventory, original review issues and full-scene compiler result. The local script
+`work/map-compile/stage-derby-gameplay-definitions.mjs <map>` reproduces the staging
+and comparisons. No pending items were waived and no map is marked published or
+fully playable at parity. Visual/depth state integration, gameplay publication and
+actual in-game ZIP round trips remain outstanding.
