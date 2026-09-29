@@ -13,6 +13,17 @@
       "review": "A two-point air-altitude acoustic line spans the north boundary (y=62..108); independent daytime environmental region."
     },
     {
+      "source": 1,
+      "id": "nottingham-ambient-440-69",
+      "name": "Nottingham ambient region at 440, 69",
+      "origin": [
+        440,
+        69,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
       "source": 2,
       "id": "nottingham-northwest-ambient-zone",
       "name": "Nottingham northwest ambient zone",
@@ -22,6 +33,193 @@
         0
       ],
       "review": "A three-point air-altitude acoustic line follows the north and west edges; independent delayed environmental region."
+    },
+    {
+      "source": 3,
+      "id": "nottingham-ambient-2198-2712",
+      "name": "Nottingham ambient region at 2198, 2712",
+      "origin": [
+        2198,
+        2712,
+        0
+      ],
+      "review": "Independent polyline acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 4,
+      "id": "nottingham-ambient-1398-3366",
+      "name": "Nottingham ambient region at 1398, 3366",
+      "origin": [
+        1398,
+        3366,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 5,
+      "id": "nottingham-ambient-337-2546",
+      "name": "Nottingham ambient region at 337, 2546",
+      "origin": [
+        337,
+        2546,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 6,
+      "id": "nottingham-ambient-545-2832",
+      "name": "Nottingham ambient region at 545, 2832",
+      "origin": [
+        545,
+        2832,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 7,
+      "id": "nottingham-ambient-439-3414",
+      "name": "Nottingham ambient region at 439, 3414",
+      "origin": [
+        439,
+        3414,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 8,
+      "id": "nottingham-ambient-720-3282",
+      "name": "Nottingham ambient region at 720, 3282",
+      "origin": [
+        720,
+        3282,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 9,
+      "id": "nottingham-ambient-1290-2737",
+      "name": "Nottingham ambient region at 1290, 2737",
+      "origin": [
+        1290,
+        2737,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 10,
+      "id": "nottingham-ambient-1342-2535",
+      "name": "Nottingham ambient region at 1342, 2535",
+      "origin": [
+        1342,
+        2535,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 11,
+      "id": "nottingham-ambient-53-2522",
+      "name": "Nottingham ambient region at 53, 2522",
+      "origin": [
+        53,
+        2522,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 12,
+      "id": "nottingham-ambient-2305-2316",
+      "name": "Nottingham ambient region at 2305, 2316",
+      "origin": [
+        2305,
+        2316,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 13,
+      "id": "nottingham-ambient-1628-3031",
+      "name": "Nottingham ambient region at 1628, 3031",
+      "origin": [
+        1628,
+        3031,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 14,
+      "id": "nottingham-ambient-2106-2972",
+      "name": "Nottingham ambient region at 2106, 2972",
+      "origin": [
+        2106,
+        2972,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 15,
+      "id": "nottingham-ambient-1768-10",
+      "name": "Nottingham ambient region at 1768, 10",
+      "origin": [
+        1768,
+        10,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 17,
+      "id": "nottingham-ambient-1795-2706",
+      "name": "Nottingham ambient region at 1795, 2706",
+      "origin": [
+        1795,
+        2706,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 20,
+      "id": "nottingham-ambient-1916-759",
+      "name": "Nottingham ambient region at 1916, 759",
+      "origin": [
+        1916,
+        759,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 21,
+      "id": "nottingham-ambient-2370-2882",
+      "name": "Nottingham ambient region at 2370, 2882",
+      "origin": [
+        2370,
+        2882,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 23,
+      "id": "nottingham-ambient-1169-2756",
+      "name": "Nottingham ambient region at 1169, 2756",
+      "origin": [
+        1169,
+        2756,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
     }
   ]
 }

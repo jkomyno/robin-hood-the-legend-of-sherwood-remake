@@ -51,7 +51,7 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
 | Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering, stair shadows and interior links; multi-plane regions, receiving gaps and ownership remain unfinished |
-| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: staged definitions cover all emitters in Croisement02/03, Derby, Leicester and Sherwood; other maps still have pending ownership and publication remains outstanding |
+| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: staged definitions cover all emitters in Croisement02/03, Derby, Leicester, Nottingham and Sherwood; other maps still have pending ownership and publication remains outstanding |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
 | Map settings | Scene identity/export bounds; terrain assets supply forest behaviour and default material. Ambience is selected by the mission. | Working in compiler/runtime tests; recovered terrain metadata unpublished |
@@ -2479,3 +2479,31 @@ These check required sample selection, emitter handles, shape and delay settings
 All compiled transitions also apply/reset successfully (Derby two, Leicester
 six, Sherwood zero). Audible playback, publication and full ZIP round-trip
 parity remain unverified.
+
+### Nottingham environmental regions
+
+`nottingham-ambient-sounds.json` now defines twenty independent sound regions,
+including the two previously authored northern boundary lines. The eighteen new
+regions have no containing visual asset; the other four emitters retain their
+existing asset owners. Several independent emitters use the same sample ID, so
+comparisons retain record multiplicity and full geometry rather than treating
+sample IDs as unique emitter identifiers.
+
+`work/map-compile/nottingham-sound-library/nottingham` extends the current
+movement-assembly scene, retaining its existing sound pins. Combined recovery
+uses the state ownership, state mask, ground receiver, state projection and
+complete state contour catalogs with precise ground ownership and the movement
+coverage gate. The report in `work/map-compile/nottingham-sound-recovery/nottingham`
+has zero pending sound sources; 507 masks and 23 shadow regions remain pending.
+All 24 baseline emitter records match exactly, and non-sound geometry is identical
+to the preceding precise-contour draft.
+
+The native batch in `work/map-compile/nottingham-sound-native` contains 22 exports:
+the baseline, twenty independent 50-pixel region moves, and a duplicated emitter
+whose sample is also used by other regions. All variants preserve non-sound
+geometry; duplication adds exactly one correctly placed emitter. Twenty-nine Rust
+construction cases pass, including the baseline under all eight ambience bits.
+Every case also applies and resets all nine compiled transitions. The geometry
+remains 95 movement areas, 659 sight obstacles, 172 doors and 38 jump pairs.
+Audible playback, visual completeness, publication and ZIP round trips are still
+outstanding; this does not certify full map parity.
