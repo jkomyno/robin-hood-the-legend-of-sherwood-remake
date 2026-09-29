@@ -116,3 +116,26 @@ export function mergeStaticAssetMetadata(inputs: { metadata: Metadata; offset: V
   }
   return result;
 }
+
+/** Partition descriptive annotations without leaving references to another asset's parts. */
+export function splitStaticAssetMetadata(
+  metadata: Metadata,
+  parts: ReadonlySet<string>,
+  bounds: { min: Vec3; max: Vec3 },
+): Metadata {
+  const result = structuredClone(metadata);
+  if (result.anchor) result.anchor = "Origin of the source asset";
+  if (result.components)
+    result.components = result.components.filter((component) => {
+      const source = parts.has(String(component.source_node));
+      const editor = parts.has(String(component.editor_part_node ?? component.source_node));
+      if (source !== editor) throw new Error("Component metadata crosses asset partitions");
+      return source;
+    });
+  if (result.bounds_local_scene) {
+    if (![...bounds.min, ...bounds.max].every(Number.isFinite))
+      throw new Error("Split asset needs finite model bounds");
+    result.bounds_local_scene = structuredClone(bounds);
+  }
+  return result;
+}

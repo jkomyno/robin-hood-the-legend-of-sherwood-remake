@@ -9,11 +9,12 @@ with it. Global indices and connections are rebuilt after placement.
 with Derby/York. “Partial” identifies a remaining gap. “Planned” describes the
 intended construction, not functionality available today.
 
-Current combined drafts recover 23 of the 27 map-source movement transitions.
-The four missing groups span assets in Croisement01, Croisement02, Nottingham
-and York. Croisement03 has all nine after combining its staged state assets
+Current combined drafts recover 24 of the 27 map-source movement transitions.
+The three missing groups span assets in Croisement01, Croisement02 and York.
+Nottingham has both after assembling its four changing northern facade parts.
+Croisement03 has all nine after combining its staged state assets
 with the ground-receiver recovery; older ground-only batches omit two of them.
-Twenty-two recovered transitions have matching initial/applied coverage on matching
+Twenty-three recovered transitions have matching initial/applied coverage on matching
 movement envelopes; Nottingham's remaining recovered transition still requires
 comparison across compiled partitions.
 No map is yet published or certified at full gameplay parity.
@@ -2063,9 +2064,10 @@ found about 31.028 square units of difference in Croisement02; the precise
 ownership extraction below removes that difference.
 
 This evidence is limited to recovered transitions. Each crossing map still has
-one transition spanning assets that is not recovered. Croisement03 and Nottingham
-each retain one unmatched recovered movement envelope; the total six missing
-source transitions remain outstanding. The new catalogs and candidates do not
+one transition spanning assets that is not recovered. At that stage, Croisement03
+and Nottingham each retained one unmatched recovered movement envelope and six
+source transitions were missing; the current combined counts are at the top of
+this document. The new catalogs and candidates do not
 constitute published asset definitions or full map certification.
 
 ### Precise ownership extraction for shared contour edges
@@ -2090,7 +2092,7 @@ This extraction mode is opt-in, not a globally certified replacement for the
 fixed-grid authoring path. Trials on other maps exposed near-coincident polygon
 failures and a Sherwood contour discrepancy; those maps retain their existing
 recovery mode. The default compiler algorithm is unchanged. Neither these scans
-nor the permanent-ground comparisons cover the six unrecovered transitions,
+nor the permanent-ground comparisons cover unrecovered transitions,
 visual states, all traversal behavior, or asset publication.
 Re-running the default recovery path for all nine source-backed maps produces
 valid candidates and native geometry; its 40 previously verified static ground
@@ -2190,3 +2192,35 @@ and apply/reset all nine transitions. These checks establish geometry and state
 binding fidelity for this draft, not complete gameplay parity. Actor routing and
 traversal, masks, visual states, environmental sounds, and publishing the combined
 asset definitions remain outstanding.
+
+### Nottingham northern facade state assembly
+
+`nottingham-state-assembly.json` assigns the four facade parts controlled by one
+movement change to a single movable asset. Static splitting retains their complete
+mesh subtrees, exact small transforms and component provenance, while recalculating
+partition bounds. Declared owners cannot overlap and component references cannot
+cross partitions. The remaining house structures retain their door ownership and
+static mask support through `nottingham-state-ownership.json` and
+`nottingham-state-masks.json`.
+
+The staged scene is `work/map-compile/nottingham-state-assembly-stage`; recovery
+uses those two catalogs, `nottingham-ground-receivers.json`, preserved ground
+boundaries and the complete movement-coverage gate. The resulting candidate is
+`work/map-compile/nottingham-state-assembly-recovery`. Compilation reads only
+that scene and the recovered asset definitions.
+
+The baseline and a one-pixel assembly move construct in Rust with 101 movement
+areas, 666 sight obstacles, 172 doors and 38 jump pairs. Both apply/reset all nine
+compiled transitions (two movement changes and seven door-only changes). The four
+changing physical shapes retain their ordered vertices and flags, and their
+waypoint follows the assembly. Source movement change 10 has exactly matching
+initial and applied blocked coverage. Both movement changes are recovered, but
+change 9 still needs navigation-boundary assembly before an envelope comparison
+can pass.
+
+The sloped receiver 168 stays attached to the shared ground navigation region.
+Its Rust comparison passes 67,521 queries with zero height, material or coverage
+differences. All twenty compiled mask records are unchanged from the preceding
+draft. This does not recover the facade change's visual masks 378–384: 507 masks,
+23 shadow regions and 18 sound sources remain pending in this candidate. Actor
+traversal, visual-state fidelity and asset publication also remain unverified.

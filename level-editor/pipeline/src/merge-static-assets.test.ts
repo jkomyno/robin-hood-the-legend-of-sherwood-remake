@@ -315,3 +315,52 @@ test("split preserves nested model transforms and assigns every part once", asyn
     /every rendered node/,
   );
 });
+
+test("split retains owned mesh subtrees, tiny transforms and component provenance", async () => {
+  const { document, inputs } = fixture();
+  const merged = await mergeStaticAssets(document, "whole-building", [0, 1], inputs);
+  const model = await new NodeIO().readBinary(merged.bytes);
+  const part = model
+    .getRoot()
+    .listNodes()
+    .find((n) => n.getName() === "building-0")!;
+  const child = model
+    .createNode("facade-detail")
+    .setMesh(part.getMesh())
+    .setTranslation([1e-7, 0, 0]);
+  part.setMesh(null).addChild(child);
+  const descriptor = Object.assign(merged.descriptor, {
+    coordinates: "Z-up mesh children; Y-up glTF map wrapper; units are map pixels",
+    anchor: "Original bounds centre",
+    bounds_local_scene: { min: [-1000, -1000, -1000], max: [1000, 1000, 1000] },
+    components: [0, 1].map((i) => ({
+      name: `part-${i}`,
+      source_node: `building-${i}`,
+      editor_part_node: `building-${i}`,
+      reprojection_source_sha256: "source-proof",
+    })),
+  });
+  const before = JSON.stringify(descriptor);
+  const partitions = [
+    { id: "first-part", obstacles: [0] },
+    { id: "second-part", obstacles: [1] },
+  ];
+  const result = await splitStaticAsset(merged.document, { descriptor, model }, partitions);
+  assert.equal(JSON.stringify(descriptor), before);
+  for (const [i, output] of result.outputs.entries()) {
+    const metadata = readStaticAssetMetadata(output.descriptor);
+    assert.deepEqual(metadata.components, [descriptor.components[i]]);
+    assert.equal(metadata.anchor, "Origin of the source asset");
+    assert(metadata.bounds_local_scene!.max[0] - metadata.bounds_local_scene!.min[0] < 100);
+  }
+  const detail = result.outputs[0]!.model.getRoot()
+    .listNodes()
+    .find((n) => n.getName() === "facade-detail")!;
+  assert(detail.getMesh());
+  assert.deepEqual(detail.getTranslation(), [1e-7, 0, 0]);
+  descriptor.components[0]!.editor_part_node = "building-1";
+  await assert.rejects(
+    splitStaticAsset(merged.document, { descriptor, model }, partitions),
+    /crosses asset partitions/,
+  );
+});

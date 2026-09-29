@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "map": "nottingham",
+  "groups": [
+    {
+      "id": "nottingham-castle-hall-and-watchtower",
+      "name": "Castle hall and watchtower",
+      "parts": [
+        {
+          "obstacle": 378,
+          "name": "Front-right hall shaft378"
+        },
+        {
+          "obstacle": 488,
+          "name": "Roof or surface projection component 488"
+        },
+        {
+          "obstacle": 499,
+          "name": "Roof or surface projection component 499"
+        },
+        {
+          "obstacle": 500,
+          "name": "Roof or surface projection component 500"
+        },
+        {
+          "obstacle": 512,
+          "name": "Roof or surface projection component 512"
+        },
+        {
+          "obstacle": 490,
+          "name": "Sloped structural component 490"
+        },
+        {
+          "obstacle": 508,
+          "name": "Sloped structural component 508"
+        },
+        {
+          "obstacle": 525,
+          "name": "Sloped structural component 525"
+        },
+        {
+          "obstacle": 489,
+          "name": "Structural volume 489"
+        },
+        {
+          "obstacle": 503,
+          "name": "Structural volume 503"
+        },
+        {
+          "obstacle": 504,
+          "name": "Structural volume 504"
+        },
+        {
+          "obstacle": 510,
+          "name": "Structural volume 510"
+        },
+        {
+          "obstacle": 511,
+          "name": "Structural volume 511"
+        },
+        {
+          "obstacle": 513,
+          "name": "Structural volume 513"
+        },
+        {
+          "obstacle": 526,
+          "name": "Structural volume 526"
+        },
+        {
+          "obstacle": 529,
+          "name": "Structural volume 529"
+        },
+        {
+          "obstacle": 533,
+          "name": "Structural volume 533"
+        },
+        {
+          "obstacle": 534,
+          "name": "Structural volume 534"
+        },
+        {
+          "obstacle": 535,
+          "name": "Structural volume 535"
+        },
+        {
+          "obstacle": 497,
+          "name": "Upper terrace parapet"
+        },
+        {
+          "obstacle": 501,
+          "name": "Roof or surface projection component 501"
+        },
+        {
+          "obstacle": 502,
+          "name": "Structural volume 502"
+        },
+        {
+          "obstacle": 505,
+          "name": "Sloped structural component 505"
+        },
+        {
+          "obstacle": 506,
+          "name": "Sloped structural component 506"
+        },
+        {
+          "obstacle": 507,
+          "name": "Sloped structural component 507"
+        },
+        {
+          "obstacle": 527,
+          "name": "Sloped structural component 527"
+        },
+        {
+          "obstacle": 528,
+          "name": "Sloped structural component 528"
+        },
+        {
+          "obstacle": 530,
+          "name": "Structural volume 530"
+        },
+        {
+          "obstacle": 531,
+          "name": "Structural volume 531"
+        },
+        {
+          "obstacle": 532,
+          "name": "Structural volume 532"
+        },
+        {
+          "obstacle": 537,
+          "name": "Roof or surface projection component 537"
+        },
+        {
+          "obstacle": 536,
+          "name": "Structural volume 536"
+        },
+        {
+          "obstacle": 538,
+          "name": "Structural volume 538"
+        },
+        {
+          "obstacle": 539,
+          "name": "Structural volume 539"
+        },
+        {
+          "obstacle": 540,
+          "name": "Structural volume 540"
+        }
+      ]
+    }
+  ],
+  "door_sources": [
+    {
+      "doors": [
+        87,
+        88,
+        89
+      ],
+      "owner": "nottingham-castle-hall-and-watchtower",
+      "node": "building-378",
+      "reason": "These entrances share one interior spanning the hall and its high watchtower. The complete combined asset owns the room, so the tower entrance cannot remain behind when the building moves."
+    },
+    {
+      "doors": [
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ],
+      "owner": "nottingham-north-gate-gallery",
+      "node": "building-184",
+      "reason": "These parallel passage lanes cross the opening beneath the north gate gallery. The opening's empty middle lies beyond the solid-geometry ownership radius; all lanes move with the gallery."
+    },
+    {
+      "doors": [
+        51,
+        52,
+        53
+      ],
+      "owner": "nottingham-village-stream-wall",
+      "node": "building-280",
+      "reason": "All three parallel passage lanes cross the stream-wall opening. Its empty doorway, rather than the nearby courtyard well, owns this connection."
+    },
+    {
+      "doors": [
+        95,
+        96,
+        97,
+        98,
+        99
+      ],
+      "owner": "nottingham-south-gate-arch",
+      "node": "building-212",
+      "reason": "The five parallel lanes form the south gate arch passage. The arch owns its open span even where a flanking tower is closer to an endpoint."
+    },
+    {
+      "doors": [
+        0
+      ],
+      "owner": "nottingham-market-front-west-green",
+      "node": "building-000",
+      "reason": "The west green market frontage owns this entrance; its interior waypoint extends behind the split frontage footprint."
+    },
+    {
+      "doors": [
+        3
+      ],
+      "owner": "nottingham-market-front-east-green",
+      "node": "building-009",
+      "reason": "The east green market frontage owns this entrance; the interior waypoint lies behind its facade rather than on the nearby roof or rear-building footprint."
+    },
+    {
+      "doors": [
+        20
+      ],
+      "owner": "nottingham-north-dormer-house-remainder",
+      "node": "building-122",
+      "reason": "The inside endpoint is within the dormer house footprint; the neighboring stone house is close enough to fail the generic ownership margin."
+    },
+    {
+      "doors": [
+        79,
+        80
+      ],
+      "owner": "nottingham-castle-hall-and-watchtower",
+      "node": "building-378",
+      "reason": "Both entrances serve the main-hall interior; the upper curtain wall beside the hall does not own this room."
+    }
+  ]
+}

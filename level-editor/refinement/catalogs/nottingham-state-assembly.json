@@ -1,0 +1,14 @@
+{
+  "review": "The four adjacent parts share one initial-state removal and no other map patch controls them. Extract the complete parts into one movable assembly while retaining the other parts of their source assets. Masks and visual state resources require separate authoring.",
+  "groups": [
+    {
+      "id": "nottingham-north-state-assembly",
+      "parts": [
+        { "obstacle": 551 },
+        { "obstacle": 552 },
+        { "obstacle": 553 },
+        { "obstacle": 554 }
+      ]
+    }
+  ]
+}
