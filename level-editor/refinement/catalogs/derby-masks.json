@@ -2,6 +2,29 @@
   "source_sha256": "14698dffeeb1316563b4f91b883961298c58323ac799ab2c8a099d99487b8a46",
   "recipes": [
     {
+      "asset": "derby-keep-main-hall",
+      "model_sha256": "721311bf83222e0aad0ce8d53c433fcc644a6a36b035c8f57cbfdcee75eae1f5",
+      "entries": [
+        {
+          "source": 134,
+          "id": "main-hall-west-gallery-cover",
+          "node": "building-233",
+          "anchor": [700, 1125.001, 465.001],
+          "projectileHeights": [0, 0, 0],
+          "review": "The main hall uniquely supports the complete bitmap among audited building meshes. This static view/projectile mask receives on the adjacent 465.001-unit gallery platform. Projectile thresholds retain the world XY datum; there are no character thresholds, obstacle links or state references."
+        },
+        {
+          "source": 135,
+          "id": "main-hall-east-gallery-cover",
+          "node": "building-233",
+          "anchor": [780, 985.001, 465.001],
+          "characterHeights": [465.001, 465.001],
+          "projectileHeights": [0, 0, 0],
+          "review": "The main hall uniquely supports the complete bitmap among audited building meshes. Its character threshold continues the adjacent flat 465.001-unit gallery receiving plane beyond the navigation boundary. Projectile thresholds retain the world XY datum. This static character/view/projectile mask has no obstacle links or state references."
+        }
+      ]
+    },
+    {
       "asset": "derby-keep-west-tower",
       "model_sha256": "275066ae3238a4aafd527350f586138a3f8c550fc5ff23b0511289c11f543534",
       "entries": [

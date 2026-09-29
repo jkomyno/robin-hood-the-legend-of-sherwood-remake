@@ -2851,3 +2851,26 @@ and 10 jump pairs and applies/resets all nine compiled transitions. This verifie
 mapped shared walkable coverage, not missing geometry, unmapped layers, changed
 placements or rendered appearance. Lincoln still has 424 pending masks and
 incomplete visual patches; publication and complete ZIP round trips remain open.
+
+### Derby main-hall static masks
+
+`derby-masks.json` now includes the main hall's west/east gallery cover records
+134 and 135. A fresh audit of the pinned hall mesh supports every covered pixel
+of both records; neither belongs to a state patch or has obstacle links. Their
+receiving anchors select the adjacent 465.001-unit gallery platform. The east
+mask's character threshold continues that plane, and projectile thresholds retain
+the world XY datum.
+
+`work/map-compile/derby-main-hall-mask-recovery` recovers eleven mask records,
+reducing Derby's pending count from 227 to 225. In the baseline export, the two
+added records reproduce all 4,692 and 23,708 covered pixels respectively, plus
+their character/projectile polylines and application flags. Rust constructs the
+combined export's 60 areas, 337 sight obstacles, 70 doors and two jump pairs and
+applies/resets its two transitions.
+
+Whole-hall relocation remains unverified: moving the hall by +1 X fails because
+its `light-19` anchor moves over the neighbouring sloped gallery without acquiring
+the slope's changed height (authored 495.4359517424076 versus receiving
+495.60863123076155). This failure is separate from the mask pixel comparison and
+must be resolved before claiming movable-hall parity. The baseline evidence does
+not certify mask-layer semantics, visual rendering, publication or ZIP round trips.
