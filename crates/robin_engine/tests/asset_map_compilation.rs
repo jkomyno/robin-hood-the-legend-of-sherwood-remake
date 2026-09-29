@@ -1214,6 +1214,134 @@ fn recovered_light_exports_preserve_contours_layers_and_ambience() {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+struct LightQueryComparison {
+    source: String,
+    after: String,
+    cases: Vec<LightQueryCase>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct LightQueryCase {
+    source_layer: u16,
+    compiled_layer: u16,
+    bounds: [i32; 4],
+    coverage: Vec<Vec<Vec<(f32, f32)>>>,
+}
+
+#[test]
+#[ignore = "requires ROBIN_LIGHT_COMPARISON"]
+fn recovered_lights_match_source_queries_on_shared_walkable_coverage() {
+    use robin_engine::coordinates::{MapBBox, MapPoint};
+    use robin_engine::fast_find_grid::GridSector;
+    let manifest_path = std::path::PathBuf::from(std::env::var("ROBIN_LIGHT_COMPARISON").unwrap());
+    let directory = manifest_path.parent().unwrap();
+    let manifest: LightQueryComparison =
+        serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    assert!(!manifest.cases.is_empty());
+    let mut source = LoadedLevel::empty();
+    source.proto =
+        serde_json::from_slice(&std::fs::read(directory.join(&manifest.source)).unwrap()).unwrap();
+    let polygon = |points: &[(f32, f32)]| {
+        assert!(points.len() >= 3);
+        GridSector {
+            points: points.iter().map(|&(x, y)| MapPoint::new(x, y)).collect(),
+            bounding_box: MapBBox::from_coords(
+                points.iter().map(|p| p.0).fold(f32::INFINITY, f32::min),
+                points.iter().map(|p| p.1).fold(f32::INFINITY, f32::min),
+                points.iter().map(|p| p.0).fold(f32::NEG_INFINITY, f32::max),
+                points.iter().map(|p| p.1).fold(f32::NEG_INFINITY, f32::max),
+            ),
+            ..Default::default()
+        }
+    };
+    let source_lights: Vec<_> = source
+        .proto
+        .light_sectors
+        .iter()
+        .map(|light| {
+            (
+                light.layer,
+                light.ambience,
+                polygon(
+                    &light
+                        .polygon
+                        .points
+                        .iter()
+                        .map(|&(x, y)| (x as f32, y as f32))
+                        .collect::<Vec<_>>(),
+                ),
+            )
+        })
+        .collect();
+    let bytes = std::fs::read(directory.join(&manifest.after)).unwrap();
+    let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let dims = &descriptor["walkable_polygon"][2];
+    let mut queries = 0usize;
+    let mut differences = 0usize;
+    let mut examples = Vec::new();
+    for ambience in [1, 2, 4] {
+        let mut level = LoadedLevel::hackable_from_json(&bytes).unwrap();
+        level.mission.header.ambiance = ambience;
+        let mut assets = LevelAssets::new();
+        let engine = construct_with_dimensions(
+            level,
+            &mut assets,
+            (
+                dims[0].as_f64().unwrap() as f32 + 1.,
+                dims[1].as_f64().unwrap() as f32 + 1.,
+            ),
+        );
+        for (index, case) in manifest.cases.iter().enumerate() {
+            let coverage: Vec<Vec<_>> = case
+                .coverage
+                .iter()
+                .map(|rings| rings.iter().map(|ring| polygon(ring)).collect())
+                .collect();
+            assert!(!coverage.is_empty());
+            let mut sampled = 0usize;
+            for y in case.bounds[1] * 2..=case.bounds[3] * 2 {
+                for x in case.bounds[0] * 2..=case.bounds[2] * 2 {
+                    let point = MapPoint::new(x as f32 / 2., y as f32 / 2.);
+                    if !coverage.iter().any(|rings| {
+                        rings[0].contains_point(point)
+                            && !rings[1..].iter().any(|hole| hole.contains_point(point))
+                    }) {
+                        continue;
+                    }
+                    sampled += 1;
+                    let expected = source_lights.iter().any(|(layer, mask, shape)| {
+                        *layer == case.source_layer
+                            && mask & ambience != 0
+                            && shape.contains_point(point)
+                    });
+                    let actual = engine
+                        .fast_grid()
+                        .is_in_shadow_sector(point, case.compiled_layer);
+                    if expected != actual {
+                        differences += 1;
+                        if examples.len() < 20 {
+                            examples.push(format!("case {index}, ambience {ambience}, ({},{}), layers {}->{}, expected {expected}, actual {actual}",point.x,point.y,case.source_layer,case.compiled_layer));
+                        }
+                    }
+                }
+            }
+            assert!(sampled > 0, "empty query case {index}");
+            queries += sampled;
+        }
+    }
+    std::fs::write(
+        manifest_path.with_extension("report.json"),
+        serde_json::to_vec_pretty(
+            &serde_json::json!({"queries":queries,"differences":differences,"examples":examples}),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    eprintln!("{queries} lighting queries; {differences} differences");
+    assert_eq!(differences, 0, "{examples:?}");
+}
+
 #[test]
 fn compiled_traversal_light_uses_the_lift_layer_and_mission_ambience() {
     use robin_engine::coordinates::MapPoint;

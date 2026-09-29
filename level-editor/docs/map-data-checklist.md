@@ -2685,3 +2685,26 @@ This establishes complete staged contour coverage and successful native queries
 on the emitted layers. It does not yet establish source-versus-compiled lighting
 equivalence for every actor position, rendered appearance, publication or ZIP
 round-trip parity.
+
+### Derby source-defined lighting query comparison
+
+The native diagnostic
+`recovered_lights_match_source_queries_on_shared_walkable_coverage` compares
+source contour membership against the compiled engine's actual light queries.
+Its `ROBIN_LIGHT_COMPARISON` manifest specifies source/compiled layer pairs and
+their common navigation coverage, excluding permanent obstacles. It samples an
+integer/half-pixel grid under ambience bits 1, 2 and 4 and writes a query report.
+
+Derby's `work/map-compile/derby-complete-light-native/light-query-comparison.json`
+has thirty nonempty query windows covering the full bounds of the relevant source
+and compiled contours, expanded by two pixels. The windows include potentially
+unwanted light from other source layers sharing a rebuilt layer; candidate windows
+without common walkable coverage are recorded separately. All 4,177,323 query
+evaluations match. Counts include repeated positions across windows and ambiences.
+Changing one exported field's ambience in a separate negative-control descriptor
+produces 305,058 differences, confirming that the comparison detects a real error.
+
+This adds positional evidence beyond matching contour records. It uses the known
+light-layer mappings and common navigation domains, so it does not certify missing
+walkable coverage, unmapped layer pairs, altered placements, mission transitions
+or rendered appearance. Full-map publication and ZIP round trips remain unfinished.
