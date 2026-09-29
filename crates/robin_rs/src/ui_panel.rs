@@ -594,15 +594,11 @@ fn blit_to_screen_widget(
 /// with the health gauge visible. Fully dead PCs have life_points<=0
 /// and are NOT in coma — their scrolls are hidden entirely.
 fn is_pc_in_coma(engine: &PresentationView<'_>, entity: &Entity) -> bool {
-    let profile_idx = match entity.pc_data() {
-        Some(pc) => pc.profile_index,
-        None => return false,
+    let Some(pc) = entity.pc_data() else {
+        return false;
     };
-    let Some(desc) = engine.campaign().characters.get(usize::from(profile_idx)) else {
-        tracing::warn!(
-            ?profile_idx,
-            "portrait PC is missing its campaign character descriptor"
-        );
+    let Some(desc) = engine.pc_description_for_pc_data(pc) else {
+        // The identity lookup logs malformed or absent campaign references.
         return false;
     };
     desc.status.in_coma

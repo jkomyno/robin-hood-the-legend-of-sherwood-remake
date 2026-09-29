@@ -2,6 +2,38 @@ use super::*;
 use crate::engine::SimCommand;
 
 #[test]
+fn presentation_coma_status_uses_exact_campaign_identity() {
+    let (mut engine, _) = frame_api_fixture();
+    let profile = crate::profiles::CharacterProfileIdx(6);
+    engine.inner.mission_domain.campaign.characters = vec![
+        crate::campaign::PcDescription {
+            character_profile_idx: Some(profile),
+            ..Default::default()
+        },
+        crate::campaign::PcDescription {
+            character_profile_idx: Some(profile),
+            status: crate::pc_status::PcStatus {
+                in_coma: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+    ];
+    let mut pc = crate::element::PcData {
+        profile_index: profile,
+        campaign_description_index: Some(1),
+        list_index: 0,
+        ..Default::default()
+    };
+    let view = engine.presentation_view();
+    assert!(view.pc_description_for_pc_data(&pc).unwrap().status.in_coma);
+    pc.campaign_description_index = Some(0);
+    assert!(!view.pc_description_for_pc_data(&pc).unwrap().status.in_coma);
+    pc.campaign_description_index = None;
+    assert!(view.pc_description_for_pc_data(&pc).is_none());
+}
+
+#[test]
 fn engine_serde_facade_preserves_exact_wire_shape_and_roundtrip_hash() {
     let (engine, assets) = frame_api_fixture();
     let historical_bytes = serde_json::to_vec(&engine.inner).expect("historical inner codec");

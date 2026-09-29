@@ -9,12 +9,27 @@ use winit::window::Window;
 
 use super::{GameWindow, GpuContext, HostCmd, HostMsg, SharedSurface};
 
+pub(super) type PreparedWindow =
+    Result<(Arc<Window>, wgpu::Instance, wgpu::Surface<'static>), String>;
+
+/// Window-backed surface creation must run on the event-loop thread: Metal
+/// accesses NSView while attaching its layer. Adapter/device requests can then
+/// run asynchronously on the game thread without blocking the event loop.
+pub(super) fn prepare_window(window: Arc<Window>) -> PreparedWindow {
+    let instance = wgpu::Instance::new(instance_descriptor());
+    let surface = instance
+        .create_surface(window.clone())
+        .map_err(|e| format!("create_surface: {e}"))?;
+    Ok((window, instance, surface))
+}
+
 /// Create a wgpu surface for `window` from the game thread.
 ///
 /// On Windows, winit only hands out the window handle on the event-loop
 /// thread, so the plain `create_surface` fails there. Use winit's
 /// documented any-thread escape hatch and build the surface from the raw
 /// handles instead. Every other platform uses the safe owning path.
+#[cfg(not(target_os = "macos"))]
 pub(super) fn create_surface_any_thread(
     instance: &wgpu::Instance,
     window: Arc<Window>,
@@ -207,21 +222,18 @@ fn configure_initial_surface(
 }
 
 /// Async wgpu bring-up: runs on the game side after `resumed()` ships
-/// us the bare winit window.  `request_adapter` and `request_device`
+/// us the window and its surface. `request_adapter` and `request_device`
 /// genuinely yield on wasm, so they have to live on the async path
 /// (not behind `pollster::block_on`).
 pub(super) async fn build_game_window_async(
-    window: Arc<Window>,
+    prepared: PreparedWindow,
     logical_w: u32,
     logical_h: u32,
     events_rx: async_channel::Receiver<HostMsg>,
     cmd_tx: async_channel::Sender<HostCmd>,
     lifecycle_autosave_requested: Arc<AtomicBool>,
 ) -> Result<GameWindow, String> {
-    let instance = wgpu::Instance::new(instance_descriptor());
-
-    let surface = create_surface_any_thread(&instance, window.clone())
-        .map_err(|e| format!("create_surface: {e}"))?;
+    let (window, instance, surface) = prepared?;
 
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions {

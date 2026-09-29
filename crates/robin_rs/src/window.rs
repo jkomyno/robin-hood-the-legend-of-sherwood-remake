@@ -49,7 +49,9 @@ mod android;
 mod gpu;
 mod input_map;
 
-use gpu::{build_game_window_async, create_surface_any_thread};
+use gpu::build_game_window_async;
+#[cfg(not(target_os = "macos"))]
+use gpu::create_surface_any_thread;
 use input_map::{is_android_back_key, physical_key_to_key_code, physical_key_to_keycode};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -323,6 +325,7 @@ impl SharedSurface {
             .get_current_texture()
     }
 
+    #[cfg(not(target_os = "macos"))]
     fn replace(&self, surface: wgpu::Surface<'static>) {
         let mut guard = lock(&self.inner);
         #[cfg(target_os = "android")]
@@ -370,13 +373,9 @@ enum HostMsg {
     /// [`SurfaceConfiguration`] are computed on the main thread and
     /// pushed through.  The game side calls `surface.configure` to
     /// apply.
-    Resized {
-        width: u32,
-        height: u32,
-    },
-    SurfaceReady {
-        window: Arc<Window>,
-    },
+    Resized { width: u32, height: u32 },
+    #[cfg(not(target_os = "macos"))]
+    SurfaceReady { window: Arc<Window> },
     /// Native window focus loss is an autosave boundary. Browser page
     /// lifecycle events signal the same atomic directly because a throttled
     /// page may not run another winit event drain first.
@@ -662,6 +661,7 @@ impl GameWindow {
                         events.push(event);
                     }
                 }
+                #[cfg(not(target_os = "macos"))]
                 HostMsg::SurfaceReady { window } => {
                     match create_surface_any_thread(&self.gpu.instance, window) {
                         Ok(surface) => {
@@ -884,8 +884,8 @@ pub struct AppHandler {
     /// Sender the handler pushes events into.
     events_tx: async_channel::Sender<HostMsg>,
     cmd_rx: async_channel::Receiver<HostCmd>,
-    /// User callback that gets the bare winit `Window` once the OS
-    /// window is up.  All wgpu init happens on the game side, async.
+    /// User callback that prepares the window surface on the event-loop thread
+    /// before handing off asynchronous adapter/device initialization.
     on_window_ready: WindowReadyFn,
     window: Option<Arc<Window>>,
     last_cursor: (i32, i32),
@@ -1206,6 +1206,9 @@ impl ApplicationHandler for AppHandler {
                 // window on the same channel used for first creation.
                 (self.on_window_ready)(window.clone());
             }
+            // macOS retains its window and Metal layer across resume. Reuse
+            // that surface rather than accessing NSView from the game thread.
+            #[cfg(not(target_os = "macos"))]
             report_window_send(self.events_tx.try_send(HostMsg::SurfaceReady {
                 window: window.clone(),
             }));
@@ -1261,8 +1264,8 @@ impl ApplicationHandler for AppHandler {
         self.window = Some(window.clone());
         GAME_WINDOW.set(window.clone());
 
-        // Hand the bare window to the game future.  All wgpu init
-        // (`request_adapter`, `request_device`) happens *async* on the
+        // Prepare the surface here, then hand it to the game future.
+        // `request_adapter` and `request_device` happen *async* on the
         // game side: on wasm those futures genuinely yield to the JS
         // event loop, and `pollster::block_on` would deadlock on the
         // condvar wait.  Native runs the same async init on its
@@ -1511,15 +1514,13 @@ where
     #[cfg(target_os = "android")]
     android::install_back_sender(events_tx.clone());
 
-    // The game future receives the bare winit window through this
-    // oneshot-style channel.  All wgpu init (instance / surface /
-    // adapter / device) happens *async* on the game side so the
-    // wasm executor can yield while `request_adapter` etc. resolve.
-    let (window_tx, window_rx) = async_channel::unbounded::<Arc<Window>>();
+    // Prepare the surface here so platform UI access stays on the event-loop
+    // thread. The game side awaits adapter/device initialization separately.
+    let (window_tx, window_rx) = async_channel::unbounded::<gpu::PreparedWindow>();
     let event_loop_proxy = event_loop.create_proxy();
 
     let on_ready: WindowReadyFn = Box::new(move |w: Arc<Window>| {
-        report_window_send(window_tx.try_send(w));
+        report_window_send(window_tx.try_send(gpu::prepare_window(w)));
     });
 
     let logical_w = width;
@@ -1587,11 +1588,11 @@ where
     }
 }
 
-/// Game-side startup: wait for `resumed()` to ship the bare winit window and
-/// bring up wgpu on it. Failures are logged here; `None` means the caller must
+/// Game-side startup: wait for `resumed()` to prepare the window surface and
+/// bring up its adapter/device. Failures are logged here; `None` means the caller must
 /// publish a failing exit code.
 async fn await_game_window(
-    window_rx: async_channel::Receiver<Arc<Window>>,
+    window_rx: async_channel::Receiver<gpu::PreparedWindow>,
     logical_w: u32,
     logical_h: u32,
     events_rx: async_channel::Receiver<HostMsg>,
@@ -1633,7 +1634,7 @@ async fn await_game_window(
     }
     #[cfg(not(target_os = "android"))]
     {
-        // Wait for `resumed()` to ship us the bare winit window.  On
+        // Wait for `resumed()` to ship us the prepared window surface. On
         // native this blocks the dedicated thread; on wasm this
         // `.await`s on the channel, yielding back to the JS event loop
         // until winit fires resumed().

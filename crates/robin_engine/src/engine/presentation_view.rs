@@ -152,6 +152,7 @@ impl<'world> PresentationView<'world> {
         fn is_men_to_blazon_conversion_mode(&self) -> bool;
         fn active_blinking_blazons(&self) -> u32;
         fn campaign(&self) -> &crate::campaign::Campaign;
+        fn pc_description_for_pc_data(&self, pc_data: &crate::element::PcData) -> Option<&crate::campaign::PcDescription>;
         fn pc_character_kind(&self, pc_id: EntityId) -> Option<crate::character_kind::CharacterKind>;
         fn doors(&self) -> &[crate::gate::Door];
         fn patches(&self) -> &[crate::patch::Patch];
