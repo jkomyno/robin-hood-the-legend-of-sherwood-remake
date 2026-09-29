@@ -1545,6 +1545,7 @@ fn render_world_pass(
         renderer.clear_frozen_scene();
     }
 
+    renderer.sync_map_appearance(engine.patches());
     draw_background(host.viewport(), renderer);
     crate::blit_to_map::render_background_decals(host.frontend, host.viewport(), renderer);
 

@@ -337,6 +337,35 @@ test("movement transition export matches native apply/reset fixture", async () =
   assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
 });
 
+test("map ZIP includes paired appearance resources bound to compiled patch indices", async () => {
+  const { document, assets } = movementTransitionCompilerFixture();
+  const compiled = compileMap(document, [0, 0, 2000, 2000], assets);
+  const transition = compiled.descriptor.asset_geometry!.movement_transitions![0]!;
+  const pixels = {
+    color: new Uint8Array(2000 * 2000 * 4).fill(255),
+    depth: new Uint16Array(2000 * 2000).fill(10),
+  };
+  const files = unzipSync(
+    await packageCompiledMap(compiled, pixels, [
+      {
+        bounds: [1, 1, 1, 1],
+        patches: [transition.id],
+        states: [
+          { color: Uint8Array.of(255, 255, 255, 255), depth: Uint16Array.of(10) },
+          { color: Uint8Array.of(255, 0, 0, 255), depth: Uint16Array.of(40000) },
+        ],
+      },
+    ]),
+  );
+  const prefix = `Data/Levels/Day/${compiled.name}`;
+  const manifest = JSON.parse(strFromU8(files[`${prefix}.appearance.json`]!));
+  assert.deepEqual(manifest.regions[0].patches, [0]);
+  assert.equal(manifest.regions[0].states[0], null);
+  const state = manifest.regions[0].states[1];
+  assert.deepEqual([...decode(files[state.color]!).data], [255, 0, 0, 255]);
+  assert.deepEqual([...decode(files[state.depth]!).data], [40000]);
+});
+
 test("asset environmental sound export matches the native source fixture", async () => {
   const { document, assets } = soundAssetCompilerFixture();
   const fixture = JSON.parse(

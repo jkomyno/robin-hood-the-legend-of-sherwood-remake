@@ -3,6 +3,7 @@ import { encode } from "fast-png";
 import { strToU8, zip } from "fflate";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import type { ProjectionAssetDescriptor } from "@rle/shared";
+import { packageAppearanceRegions, type BakedAppearanceRegion } from "./map-appearance.ts";
 
 export type BakeBounds = [number, number, number, number];
 export interface CompiledVolume {
@@ -141,6 +142,7 @@ export type CompiledMap = ReturnType<typeof compileMap>;
 export async function packageCompiledMap(
   compiled: CompiledMap,
   pixels: BakePixels,
+  appearance: readonly BakedAppearanceRegion[] = [],
 ): Promise<Uint8Array> {
   const {
     name,
@@ -174,6 +176,14 @@ export async function packageCompiledMap(
   const json = (value: unknown) => strToU8(JSON.stringify(value, null, 2) + "\n");
   const prefix = `Data/Levels/Day/${name}`;
   const files = {
+    ...packageAppearanceRegions(
+      prefix,
+      width,
+      height,
+      pixels,
+      appearance,
+      compiled.descriptor.asset_geometry?.movement_transitions ?? [],
+    ),
     "details.json": json(compiled.details),
     [`editor/${name}.rhlos-map.json`]: json(compiled.editorDocument),
     [`Data/Levels/${name}.level.json`]: json(compiled.descriptor),

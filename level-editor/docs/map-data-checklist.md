@@ -23,13 +23,20 @@ field models and repinned scenes; older diagnostic libraries retain their old pi
 The nine source-backed `embedded-gameplay-library` drafts now embed 1,121 recovered
 definitions in pinned asset descriptors. They remain incomplete local drafts.
 The scene baker can now select explicit combinations of appearance patches,
-independently of viewport previews, for color/depth rendering. State-image ZIP
-packaging and runtime depth switching are still missing; the full-scene export
-guard remains in place for unsupported appearance bindings.
+independently of viewport previews, for color/depth rendering. ZIP packaging and
+the Rust loader/renderer now support paired color/depth state images in disjoint
+regions. Overlapping changes share complete combination tables; reset uses the
+base map pixels. The editor still needs to derive these regions and their native
+patch bindings from asset definitions, so the full-scene export guard remains.
 The browser bake acceptance test now verifies an initial/applied/reset sequence
 on one reused scene: color and depth change across a render-tile boundary, reset
 restores every pixel, and successful/failed bakes restore borrowed materials and
-scene parenting. This verifies generated state pixels, not runtime switching.
+scene parenting. The separate cross-language fixture checks combined patch states
+and reset through editor PNG encoding, Rust decoding and CPU composition. Native
+GPU coverage checks background color and sprite occlusion during state changes.
+These synthetic checks do not certify existing-map visual parity. The current
+renderer replaces both full textures on a state change; regional GPU updates and
+automatic state-region generation remain unfinished.
 
 Ground-boundary compilation now supports an explicit asset-local
 `preserveMovementBoundary` setting on a labelled ordinary surface. It retains

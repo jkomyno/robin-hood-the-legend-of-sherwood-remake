@@ -382,6 +382,7 @@ pub struct Renderer {
     /// Shared GPU context (device/queue/surface format).
     pub(crate) gpu: GpuContext,
     resources: GpuResources,
+    map_appearance: Option<crate::map_appearance::MapAppearance>,
     pipelines: PipelineStore,
     frame: FrameState,
     // Keep the optional second frame out of frontend construction futures.
@@ -697,6 +698,7 @@ impl Renderer {
             owned_surfaces: Default::default(),
             gpu,
             resources,
+            map_appearance: None,
             pipelines,
             frame,
             capture_frame: None,
@@ -952,6 +954,38 @@ impl Renderer {
     pub fn upload_background_texture(&mut self, width: u32, height: u32, pixels: &[u16]) -> bool {
         self.resources
             .upload_background_texture(&self.gpu, width, height, pixels)
+    }
+
+    pub(crate) fn install_map_appearance(
+        &mut self,
+        background: &robin_engine::engine::level_loading::PreDecodedBackground,
+        patch_count: usize,
+    ) -> Result<(), String> {
+        self.map_appearance = crate::map_appearance::MapAppearance::new(background, patch_count)?;
+        Ok(())
+    }
+
+    pub(crate) fn sync_map_appearance(&mut self, patches: &[robin_engine::patch::Patch]) {
+        let Some(mut appearance) = self.map_appearance.take() else {
+            return;
+        };
+        if appearance.sync(|index| {
+            let patch = &patches[usize::from(index)];
+            patch.applied && !patch.in_transition
+        }) {
+            // TODO: Update changed GPU rectangles instead of replacing both full textures.
+            assert!(
+                self.upload_background_texture(
+                    u32::from(appearance.width),
+                    u32::from(appearance.height),
+                    &appearance.color
+                ),
+                "failed to upload map appearance color"
+            );
+            self.upload_occlusion_depth(&appearance.depth, appearance.width, appearance.height)
+                .expect("valid map appearance depth");
+        }
+        self.map_appearance = Some(appearance);
     }
 
     /// Terrain and replacement sprites use the same screen-to-map pixel lookup.

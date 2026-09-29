@@ -1915,3 +1915,8 @@ cutouts aligned with terrain instead of rounding each piece separately.
 - Editor terrain now uses bundled seamless grass, dirt, water and paving art synthesized from game map samples. Roads and rivers share the dirt/water art. Paved ground is selectable in the terrain panel and exports with stone surface material. A regeneration script records the donor crops and texture-synthesis CLI settings.
 
 - Path authoring separates saved-path browsing from focused editing, keeps finish/cancel and width/elevation controls prominent, and groups texture, point coordinates, and wall tuning in collapsible sections. Footpaths and rivers can be drawn without an asset library.
+
+- Compiled map resources can carry paired color/depth PNG states in disjoint image
+  regions, with complete tables for overlapping patch combinations. The renderer
+  selects both fields from current native patch state, including reset and timeline
+  changes. Automatic generation of these regions from editor assets is still pending.
