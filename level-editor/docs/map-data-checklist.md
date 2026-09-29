@@ -9,12 +9,12 @@ with it. Global indices and connections are rebuilt after placement.
 with Derby/York. “Partial” identifies a remaining gap. “Planned” describes the
 intended construction, not functionality available today.
 
-Current combined drafts recover 26 of the 27 map-source movement transitions.
-The remaining missing group spans assets in York.
+Current combined drafts recover all 27 map-source movement transitions.
+York's market assembly completes the movement-state ownership inventory.
 Nottingham has both after assembling its four changing northern facade parts.
 Croisement03 has all nine after combining its staged state assets
 with the ground-receiver recovery; older ground-only batches omit two of them.
-All twenty-six recovered transitions have matching initial/applied changing-obstacle
+All twenty-seven recovered transitions have matching initial/applied changing-obstacle
 coverage on matching movement envelopes. Nottingham's two stateful regions now
 also match full walkable coverage in both states. Actor traversal remains unverified.
 No map is yet published or certified at full gameplay parity.
@@ -2386,3 +2386,38 @@ receiving-region coverage for all 22/12 receivers. This is a structural regressi
 check, not a new native query scan. Croisement01 still has 102 pending masks;
 Croisement02 has 142 pending masks and five sound sources. Visual state masks,
 complete actor traversal and publication remain outstanding.
+
+### York market movement-state assembly
+
+`york-state-assembly.json` stages the 47 rendered market parts controlled by one
+shared state change. Static structural parts remain in separate remainder assets.
+`york-state-ownership.json` moves the two additional non-rendering volumes to the
+same assembly while retaining the other explicit volume, door and interior owners.
+The stage preserves model content and transforms and reopens its pinned scene.
+
+`york-state-ground-receivers.json` binds seventeen physical receivers to their
+shared ground regions, including twelve on the stateful market region. Their
+physical heights and materials remain independent of navigation. Without these
+bindings, separate receiving footprints incorrectly replaced large portions of
+the ground movement envelope. Recovery also uses the unchanged York mask catalog,
+`--preserve-ground-boundaries --precise-ground-ownership --require-movement-coverage`.
+Use `work/map-compile/york-state-assembly-stage` for the library/scene and
+`work/map-compile/york-state-ground-recovery` for the combined candidate output.
+
+The baseline market envelope, permanent coverage and full initial/applied walkable
+coverage now match exactly. All eight ordinary ground regions retain exact
+envelopes and permanent coverage; the two lift regions are outside that comparison.
+The baseline and one-pixel assembly move preserve all 39 initial and 10 applied
+physical shapes and flags, including the non-rendering volumes. The waypoint moves
+with the assembly. Both exports construct 161 movement areas, 1,180 sight obstacles,
+254 doors and 72 jump pairs in Rust and apply/reset all six compiled transitions
+(one movement change and five door-only changes).
+
+Native receiving checks cover 168 windows around every receiver vertex and reviewed
+navigation anchor: 433,568 queries have zero height, material or coverage differences.
+This is targeted sampling, not a full-footprint scan. All twenty existing mask
+contents remain unchanged, with layer indices rebuilt for the new topology; complete
+mask-layer/visual fidelity remains unverified. The candidate still has 808 pending
+masks, sixteen shadow regions and eight sound sources. Actor traversal, visual state
+assets and publication remain outstanding. Completing movement-state ownership
+does not certify any map at full gameplay parity.
