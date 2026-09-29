@@ -1874,3 +1874,31 @@ all nine maps. All nine `ground-boundary-empty-native` descriptors now compile
 and construct in Rust, including York. The complete static-loading manifest
 therefore supersedes the earlier three export failures; it does not certify
 navigation fidelity, missing visual/state coverage, or publication.
+
+### Independent exclusion contours
+
+Preserved movement boundaries now accept `holeContours` alongside their holes;
+explicit asset movement blockers can carry matching `movementContour` labels.
+Labels identify fragments that should be unioned after placement and before
+integer rounding. Different labels retain separate obstacle contours, preserving
+their implicit fractional intersections. Labels are shared authoring metadata,
+not runtime sector indices; recovery namespaces them by the terrain asset.
+Unlabelled exclusions retain their existing union behavior. Moving a fragment
+uses its transformed local geometry and does not restore its earlier placement.
+
+The compiler-generated native overlap fixture verifies both a reachable strip
+and an obstruction that disappear when overlapping contours are merged and
+rounded together. Recovery retains each exclusion's separate ownership cuts in
+the opt-in boundary mode. In the dedicated `sherwood-contour-native` draft,
+flat-ground difference decreases from about 185.70 to 115.42 square units.
+Comparison against independently quantized complete contours isolates 14.5
+square units in three remaining fragment-assembly kinks; the other roughly
+100.92 comes from the separately represented sloped bluff. Those differences
+still require fixes before boundary recovery can replace the default or claim
+full-map fidelity. Publication remains unfinished.
+
+All nine fresh `ground-contours-recovery` candidate sets validate, and all nine
+`ground-contours-native` descriptors compile and construct in Rust. Their area,
+sight, door and jump counts match the preceding empty-ownership batch. The
+dedicated Sherwood treehouse/platform placement cases also compile. These checks
+establish export/loading and the targeted overlap behavior, not full-map parity.

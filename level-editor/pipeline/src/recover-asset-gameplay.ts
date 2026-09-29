@@ -628,7 +628,12 @@ if (groundAreas.length) {
     const terrain = packet(grounds[0]!.id);
     terrain.issues.push(...ground.warnings);
     for (const section of ground.sections) {
-      if (values["preserve-ground-boundaries"])
+      if (values["preserve-ground-boundaries"]) {
+        const holes = section.movementContours.flatMap((contour) =>
+          contour.regions
+            .flatMap((region) => partitionMovementObstacles(region, true))
+            .map((points) => ({ id: `${grounds[0]!.id}/${contour.id}`, points })),
+        );
         terrain.surfaces.push({
           id: `${section.navigationRegion}-0`,
           preserveMovementPrecision: true,
@@ -637,11 +642,10 @@ if (groundAreas.length) {
           node: "$root",
           kind: "walkable",
           vertices: section.movementBoundary.map(([x, y]) => [x, y, 0]),
-          holes: section.movementObstacles
-            .flatMap((region) => partitionMovementObstacles(region, true))
-            .map((hole) => hole.map(([x, y]) => [x, y, 0])),
+          holes: holes.map((hole) => hole.points.map(([x, y]) => [x, y, 0])),
+          holeContours: holes.map((hole) => hole.id),
         });
-      else
+      } else
         for (const [index, region] of section.terrain.entries())
           terrain.surfaces.push({
             id: `${section.navigationRegion}-${index}`,
@@ -656,17 +660,22 @@ if (groundAreas.length) {
     for (const [index, blocker] of ground.blockers.entries()) {
       const owner = owners.find((o) => o.asset === blocker.asset && o.node === blocker.node)!;
       const ownedBlockers = (packet(owner.asset).movementBlockers ??= []);
-      for (const [regionIndex, region] of blocker.regions.entries()) {
-        const local = (ring: Point[]) =>
-          ring.slice(0, -1).map(([x, y]) => localize(owner.part, [x, y, 0]));
-        ownedBlockers.push({
-          preserveMovementPrecision: true,
-          id: `${owner.node}-ground-blocker-${index}-${regionIndex}`,
-          node: owner.node,
-          vertices: local(region[0]!),
-          holes: region.slice(1).map(local),
-        });
-      }
+      const contours = blocker.contours ?? [{ id: undefined, regions: blocker.regions }];
+      for (const [contourIndex, contour] of contours.entries())
+        for (const [regionIndex, region] of contour.regions.entries()) {
+          const local = (ring: Point[]) =>
+            ring.slice(0, -1).map(([x, y]) => localize(owner.part, [x, y, 0]));
+          ownedBlockers.push({
+            preserveMovementPrecision: true,
+            id: `${owner.node}-ground-blocker-${index}-${contour.id === undefined ? "" : `${contourIndex}-`}${regionIndex}`,
+            ...(contour.id === undefined
+              ? {}
+              : { movementContour: `${grounds[0]!.id}/${contour.id}` }),
+            node: owner.node,
+            vertices: local(region[0]!),
+            holes: region.slice(1).map(local),
+          });
+        }
       packet(owner.asset).issues.push(
         "Review movement contour ownership: footprint intersections can split exclusions shared by adjacent assets",
       );

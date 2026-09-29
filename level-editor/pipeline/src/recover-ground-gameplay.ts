@@ -54,6 +54,16 @@ export function recoverGroundGameplay(
         walkable,
       )
     : [];
+  const contours = preserveBoundary
+    ? areas.flatMap((area, areaIndex) =>
+        area.obstacles.map((obstacle, obstacleIndex) => ({
+          id: `ground-section-${areaIndex}/exclusion-${obstacleIndex}`,
+          areaIndex,
+          polygon: closedPolygon(obstacle.polygon.points),
+          excluded: clipping.difference(closedPolygon(obstacle.polygon.points), walkable),
+        })),
+      )
+    : [];
   // Only recover the excluded portion of an asset footprint. Sight geometry
   // and movement contours are not interchangeable: replacing one with the
   // other would change clearances even at the unchanged placement.
@@ -68,7 +78,25 @@ export function recoverGroundGameplay(
     // An empty authored result is meaningful: omitting it would enable derived
     // part collision again, including on the asset's elevated surfaces.
     return regions.length || preserveBoundary
-      ? [{ asset: owner.asset, node: owner.node, regions }]
+      ? [
+          {
+            asset: owner.asset,
+            node: owner.node,
+            regions,
+            ...(preserveBoundary
+              ? {
+                  contours: contours
+                    .map((contour) => ({
+                      id: contour.id,
+                      regions: clean(
+                        clipping.intersection(closedPolygon(owner.footprint), contour.excluded),
+                      ),
+                    }))
+                    .filter((contour) => contour.regions.length),
+                }
+              : {}),
+          },
+        ]
       : [];
   });
   const additions = blockers.flatMap((b) => b.regions);
@@ -97,10 +125,27 @@ export function recoverGroundGameplay(
     );
     const terrain = clean(remaining.length ? clipping.difference(boundary, remaining) : [boundary]);
     const reconstructed = excluded.length ? clipping.difference(terrain, excluded) : terrain;
+    const movementContours = contours
+      .filter((contour) => contour.areaIndex === index)
+      .map((contour) => {
+        const owned = blockers.flatMap(
+          (blocker) =>
+            blocker.contours?.filter((c) => c.id === contour.id).flatMap((c) => c.regions) ?? [],
+        );
+        return {
+          id: contour.id,
+          regions: clean(
+            owned.length
+              ? clipping.difference(contour.polygon, clipping.union(owned))
+              : [contour.polygon],
+          ),
+        };
+      });
     return {
       navigationRegion: `ground-section-${index}`,
       movementBoundary: area.polygon.points,
       movementObstacles,
+      movementContours,
       terrain,
       differenceArea: polygonArea(clipping.xor(areaFree[index]!, reconstructed)),
     };

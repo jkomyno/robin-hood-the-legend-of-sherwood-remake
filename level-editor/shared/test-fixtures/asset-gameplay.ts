@@ -37,6 +37,34 @@ export function preservedBoundaryCompilerFixture() {
   return fixture;
 }
 
+export function preservedContoursCompilerFixture() {
+  const fixture = preservedBoundaryCompilerFixture();
+  const surface = fixture.hut.gameplay!.surfaces[0]!;
+  surface.polygon = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  surface.holes = [
+    [
+      [0, 0],
+      [100, 0],
+      [0, 71],
+    ],
+  ];
+  surface.holeContours = ["assembly/slope"];
+  const wall = fixture.hut.gameplay!.movementBlockers![0]!;
+  wall.polygon = [
+    [40, -10],
+    [60, -10],
+    [60, 100],
+    [40, 100],
+  ];
+  wall.movementContour = "assembly/wall";
+  return fixture;
+}
+
 export function maskAssetCompilerFixture() {
   const fixture = assetCompilerFixture();
   const g = fixture.hut.gameplay!;

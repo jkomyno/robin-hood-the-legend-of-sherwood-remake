@@ -181,6 +181,8 @@ export function compileAssetGameplay(
     lift?: string;
     navigationRegion?: string;
     preserveMovementBoundary?: boolean;
+    holeContours?: string[];
+    movementContour?: string;
   }[] = [];
   const movementBlockers: typeof surfaces = [];
   const navigationJoins: PlacedNavigationJoin[] = [];
@@ -576,6 +578,8 @@ export function compileAssetGameplay(
       const placed = {
         owner: placement.id,
         preserveMovementBoundary: surface.preserveMovementBoundary,
+        holeContours: surface.holeContours,
+        movementContour: surface.movementContour,
         navigationRegion:
           surface.navigationRegion === undefined
             ? undefined
@@ -805,6 +809,9 @@ export function compileAssetGameplay(
         "Preserved movement boundary needs one ordinary surface per navigation region",
       );
     const cutouts: Polygon[] = preserve ? group[0]!.holes.map((h) => polygon(h)) : [];
+    const contourGroups: (string | undefined)[] = cutouts.map(
+      (_, index) => group[0]!.holeContours?.[index],
+    );
     const input = group.map((s): Polygon => [
       polygon(s.polygon)[0]!,
       ...s.holes.map((h) => polygon(h)[0]!),
@@ -816,6 +823,7 @@ export function compileAssetGameplay(
       if (!plane.every((n, i) => Math.abs(n - blocker.plane[i]!) < 1e-7)) continue;
       if (preserve) {
         cutouts.push([polygon(blocker.polygon)[0]!, ...blocker.holes.map((h) => polygon(h)[0]!)]);
+        contourGroups.push(blocker.movementContour);
         continue;
       }
       merged = polygonClipping.difference(merged, [
@@ -871,8 +879,10 @@ export function compileAssetGameplay(
             [polygon(clearance.polygon)[0]!, ...clearance.holes.map((h) => polygon(h)[0]!)],
           ]);
         }
-        if (preserve) cutouts.push(...regions);
-        else if (regions.length) merged = polygonClipping.difference(merged, regions);
+        if (preserve) {
+          cutouts.push(...regions);
+          contourGroups.push(...regions.map(() => undefined));
+        } else if (regions.length) merged = polygonClipping.difference(merged, regions);
       }
     }
     if (preserve) {
@@ -881,7 +891,7 @@ export function compileAssetGameplay(
         plane,
         navigationRegion,
         preserveMovementBoundary: true,
-        ...preserveMovementBoundary(group[0]!.polygon, cutouts, warnings),
+        ...preserveMovementBoundary(group[0]!.polygon, cutouts, warnings, contourGroups),
       });
       continue;
     }

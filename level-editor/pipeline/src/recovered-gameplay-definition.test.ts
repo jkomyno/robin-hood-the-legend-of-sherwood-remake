@@ -37,9 +37,20 @@ test("recovery retains independently authored movement envelopes", () => {
   packet.surfaces[0]!.navigationRegion = "ground";
   packet.surfaces[0]!.preserveMovementPrecision = true;
   packet.surfaces[0]!.preserveMovementBoundary = true;
+  packet.surfaces[0]!.holes = [
+    [
+      [10, 10, 0],
+      [20, 10, 0],
+      [10, 20, 0],
+    ],
+  ];
+  packet.surfaces[0]!.holeContours = ["assembly/wall"];
   const definition = recoveredGameplayDefinition(packet, hut);
   assert.equal(definition.surfaces[0]!.preserveMovementBoundary, true);
   assert.equal(definition.surfaces[0]!.preserveMovementPrecision, true);
+  assert.deepEqual(definition.surfaces[0]!.holeContours, ["assembly/wall"]);
+  packet.surfaces[0]!.holeContours[0] = "changed";
+  assert.deepEqual(definition.surfaces[0]!.holeContours, ["assembly/wall"]);
   packet.surfaces[0]!.vertices[0]![0] += 1;
   assert.notEqual(definition.surfaces[0]!.polygon[0]![0], packet.surfaces[0]!.vertices[0]![0]);
 });

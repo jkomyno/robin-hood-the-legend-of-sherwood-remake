@@ -1,4 +1,4 @@
-import type { MultiPolygon } from "polygon-clipping";
+import clipping, { type MultiPolygon } from "polygon-clipping";
 import type { Point } from "./level.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
@@ -11,6 +11,7 @@ export function preserveMovementBoundary(
   boundary: Point[],
   cutouts: MultiPolygon,
   warnings: string[],
+  contourGroups?: (string | undefined)[],
 ) {
   const quantized = quantizeGeneratedMotionPolygon(
     [boundary],
@@ -20,11 +21,26 @@ export function preserveMovementBoundary(
   );
   if (!quantized) throw new Error("Preserved movement boundary collapsed on the movement grid");
   const outer = simplifyMotionRing(quantized[0]!);
-  const blocked = cutouts.length ? fixedPolygonBoolean("union", cutouts) : [];
+  if (contourGroups && contourGroups.length !== cutouts.length)
+    throw new Error("Movement contour labels do not match the cutouts");
+  const groups = new Map<string | undefined, MultiPolygon>();
+  for (const [index, cutout] of cutouts.entries()) {
+    const key = contourGroups?.[index];
+    const group = groups.get(key) ?? [];
+    group.push(cutout);
+    groups.set(key, group);
+  }
   const blockers: Point[][] = [];
-  for (const region of normalizeGeneratedMotion(blocked, "Preserved movement obstacle", warnings)) {
-    if (!fixedPolygonBoolean("intersection", [outer], [region]).length) continue;
-    blockers.push(...partitionMovementObstacles(region));
+  for (const group of groups.values()) {
+    const blocked = clipping.union(group);
+    for (const region of normalizeGeneratedMotion(
+      blocked,
+      "Preserved movement obstacle",
+      warnings,
+    )) {
+      if (!fixedPolygonBoolean("intersection", [outer], [region]).length) continue;
+      blockers.push(...partitionMovementObstacles(region));
+    }
   }
   return { polygon: outer, blockers };
 }

@@ -3,6 +3,70 @@ import assert from "node:assert/strict";
 import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
 import type { Point } from "./level.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
+import clipping, { type MultiPolygon } from "polygon-clipping";
+
+test("distinct integer contours retain fractional overlap intersections without rounding", () => {
+  const cutouts: MultiPolygon = [
+    [
+      [
+        [0, 0],
+        [100, 0],
+        [0, 71],
+      ],
+    ],
+    [
+      [
+        [40, -10],
+        [60, -10],
+        [60, 100],
+        [40, 100],
+      ],
+    ],
+  ];
+  const preserved = preserveMovementBoundary(boundary, cutouts, [], ["slope", "wall"]);
+  assert.equal(preserved.blockers.length, 2);
+  const free = (blockers: MultiPolygon) => clipping.difference([boundary], blockers);
+  const expected = free(cutouts);
+  assert.deepEqual(clipping.xor(expected, free(preserved.blockers.map((b) => [b]))), []);
+  const merged = preserveMovementBoundary(boundary, cutouts, []);
+  assert.notDeepEqual(clipping.xor(expected, free(merged.blockers.map((b) => [b]))), []);
+});
+
+test("matching contour fragments assemble before snapping and follow independent placement", () => {
+  const left: Point[] = [
+    [0, 0],
+    [37.3, 0],
+    [37.3, 44.517],
+    [0, 71],
+  ];
+  const right: Point[] = [
+    [37.3, 0],
+    [100, 0],
+    [37.3, 44.517],
+  ];
+  const assembled = preserveMovementBoundary(boundary, [[left], [right]], [], ["slope", "slope"]);
+  assert.deepEqual(
+    clipping.xor(
+      [
+        [
+          [0, 0],
+          [100, 0],
+          [0, 71],
+        ],
+      ],
+      assembled.blockers.map((b) => [b]),
+    ),
+    [],
+  );
+  const moved = preserveMovementBoundary(
+    boundary,
+    [[left], [right.map(([x, y]) => [x + 50, y])]],
+    [],
+    ["slope", "slope"],
+  );
+  assert.equal(moved.blockers.length, 2);
+  assert.throws(() => preserveMovementBoundary(boundary, [[left]], [], []), /labels do not match/);
+});
 
 const boundary: Point[] = [
   [0, 0],

@@ -18,6 +18,8 @@ export interface RecoveredSurface {
   navigationJoinHeightTolerance?: number;
   preserveMovementPrecision?: boolean;
   preserveMovementBoundary?: boolean;
+  movementContour?: string;
+  holeContours?: string[];
   projectionMaterials?: AssetWalkableSurface["projectionMaterials"];
   projectionVolume?: string;
 }
@@ -123,6 +125,8 @@ export function recoveredGameplayDefinition(
       ...(draft.preserveMovementBoundary === undefined
         ? {}
         : { preserveMovementBoundary: draft.preserveMovementBoundary }),
+      ...(draft.movementContour === undefined ? {} : { movementContour: draft.movementContour }),
+      ...(draft.holeContours === undefined ? {} : { holeContours: [...draft.holeContours] }),
       ...(draft.projectionMaterials === undefined
         ? {}
         : { projectionMaterials: structuredClone(draft.projectionMaterials) }),

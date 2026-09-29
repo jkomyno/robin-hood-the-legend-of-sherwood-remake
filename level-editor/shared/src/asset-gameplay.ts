@@ -14,6 +14,10 @@ export interface AssetWalkableSurface {
   preserveMovementBoundary?: boolean;
   /** Holes lie on the same plane, in the same local XY frame. */
   holes?: Point[][];
+  /** Shared assembly labels for preserved hole contours, aligned with holes. */
+  holeContours?: string[];
+  /** Shared assembly label for fragments of one movement exclusion across assets. */
+  movementContour?: string;
   /** Asset-local navigation region, optionally spanning height planes; distinct regions never merge. */
   navigationRegion?: string;
   /** Local 3D outer-edge sockets joining navigation regions of separately placed assets.
@@ -797,6 +801,21 @@ export function validateAssetGameplay(
       if (!Array.isArray(surface.holes)) fail("invalid surface holes");
       for (const hole of surface.holes) polygon(hole);
     }
+    if (
+      surface.movementContour !== undefined &&
+      (typeof surface.movementContour !== "string" ||
+        !surface.movementContour.trim() ||
+        !data.movementBlockers?.includes(surface))
+    )
+      fail("movement contour labels require explicit movement blockers");
+    if (
+      surface.holeContours !== undefined &&
+      (!surface.preserveMovementBoundary ||
+        !Array.isArray(surface.holeContours) ||
+        surface.holeContours.length !== surface.holes?.length ||
+        surface.holeContours.some((id) => typeof id !== "string" || !id.trim()))
+    )
+      fail("hole contour labels must match preserved boundary holes");
   }
   const validateDoor = (door: AssetDoor, kind: "ordinary" | "lift" | "interior") => {
     const lift = kind === "lift";

@@ -39,7 +39,7 @@ test("boundary recovery retains explicit empty movement ownership", () => {
     ],
     true,
   );
-  assert.deepEqual(result.blockers, [{ asset: "stairs", node: "body", regions: [] }]);
+  assert.deepEqual(result.blockers, [{ asset: "stairs", node: "body", regions: [], contours: [] }]);
   assert.equal(result.differenceArea, 0);
 });
 

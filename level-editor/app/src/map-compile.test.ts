@@ -14,6 +14,7 @@ import {
 import {
   assetCompilerFixture,
   preservedBoundaryCompilerFixture,
+  preservedContoursCompilerFixture,
   maskAssetCompilerFixture,
   slopedAssetCompilerFixture,
   liftAssetCompilerFixture,
@@ -170,6 +171,20 @@ test("preserved boundary export matches the native thin corridor fixture", async
     await readFile(
       new URL(
         "../../../crates/robin_engine/tests/fixtures/asset-preserved-boundary.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
+
+test("preserved contour export matches the native overlap fixture", async () => {
+  const { document, assets } = preservedContoursCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-preserved-contours.level.json",
         import.meta.url,
       ),
       "utf8",

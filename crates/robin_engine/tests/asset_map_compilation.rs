@@ -914,6 +914,39 @@ fn crossing_obstacles_preserve_fractional_walkable_boundary_intersections() {
 }
 
 #[test]
+fn overlapping_integer_contours_keep_native_fractional_intersections() {
+    use robin_engine::coordinates::MapPoint;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-preserved-contours.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    let obstacles: Vec<_> = grid
+        .level
+        .sectors
+        .iter()
+        .filter(|sector| sector.sector_type.is_motion() && !sector.sector_type.is_area())
+        .collect();
+    assert_eq!(obstacles.len(), 2);
+    let free = MapPoint::new(339.5, 343.1);
+    assert!(
+        obstacles
+            .iter()
+            .all(|obstacle| !obstacle.contains_point(free))
+    );
+    assert!(grid.is_reachable_thin(free, MapPoint::new(339.5, 350.), 0));
+    let blocked = MapPoint::new(360.5, 327.9);
+    assert!(
+        obstacles
+            .iter()
+            .any(|obstacle| obstacle.contains_point(blocked))
+    );
+    assert!(!grid.is_reachable_thin(blocked, MapPoint::new(360.5, 340.), 0));
+    assert!(!grid.is_reachable_thin(MapPoint::new(339., 380.), MapPoint::new(350., 380.), 0));
+}
+
+#[test]
 fn touching_navigation_regions_keep_native_boundaries_and_gate_links() {
     let mut assets = LevelAssets::new();
     let engine = construct(

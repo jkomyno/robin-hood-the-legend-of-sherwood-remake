@@ -56,6 +56,46 @@ test("preserved boundaries retain crossing obstacle contours without rounding th
   );
 });
 
+test("asset contour labels preserve separate overlapping exclusions through placement", () => {
+  const { document, assets, hut } = preservedBoundaryCompilerFixture();
+  const surface = hut.gameplay!.surfaces[0]!;
+  surface.polygon = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  surface.holes = [
+    [
+      [0, 0],
+      [100, 0],
+      [0, 71],
+    ],
+  ];
+  surface.holeContours = ["assembly/slope"];
+  const wall = hut.gameplay!.movementBlockers![0]!;
+  wall.polygon = [
+    [40, -10],
+    [60, -10],
+    [60, 100],
+    [40, 100],
+  ];
+  wall.movementContour = "assembly/wall";
+  const area = compileAssetGameplay(document, assets, bounds).motion_data.layers[0]![0]!;
+  assert.equal(area.obstacles.length, 2);
+  assert.deepEqual(area.obstacles[0]!.polygon.points, [
+    [300, 300],
+    [400, 300],
+    [300, 371],
+  ]);
+  assert.equal(area.obstacles[1]!.polygon.points.length, 4);
+  surface.holeContours = [];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /hole contour labels/);
+  surface.holeContours = ["assembly/slope"];
+  wall.movementContour = "";
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /movement contour labels/);
+});
+
 test("visual component bounds can opt out of physical collision while retaining their frame", () => {
   const { document, assets, hut } = assetCompilerFixture();
   const part = hut.parts[0]!;

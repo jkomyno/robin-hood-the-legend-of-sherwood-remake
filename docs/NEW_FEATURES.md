@@ -244,6 +244,9 @@
   this mode. Offline recovery exposes `--preserve-ground-boundaries` for comparison
   drafts, without changing default recovery. Full-map parity and publication
   remain incomplete.
+  Shared contour labels let separately placed asset fragments reconstruct one
+  exclusion while retaining distinct overlapping contours. Exported native tests
+  verify the fractional intersections without rounding them into new vertices.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits
