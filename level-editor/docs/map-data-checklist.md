@@ -51,7 +51,7 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
 | Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering, stair shadows and interior links; multi-plane regions, receiving gaps and ownership remain unfinished |
-| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: compiler/runtime coverage; ambiguous local ownership remains in recovery reports |
+| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: Croisement02/03 staged definitions cover all six emitters each; other maps still have pending ownership and publication remains outstanding |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
 | Map settings | Scene identity/export bounds; terrain assets supply forest behaviour and default material. Ambience is selected by the mission. | Working in compiler/runtime tests; recovered terrain metadata unpublished |
@@ -2421,3 +2421,31 @@ mask-layer/visual fidelity remains unverified. The candidate still has 808 pendi
 masks, sixteen shadow regions and eight sound sources. Actor traversal, visual state
 assets and publication remain outstanding. Completing movement-state ownership
 does not certify any map at full gameplay parity.
+
+### Complete crossing-map environmental sound definitions
+
+`croisement02-ambient-sounds.json` authors five independent acoustic regions;
+the sixth emitter already belongs to a visual asset. The expanded
+`croisement03-ambient-sounds.json` authors all six regions. Each recipe pins the
+source document for one-time authoring. Generated definitions store emitter
+geometry in asset-local coordinates, together with sample IDs, timing, falloff,
+volume, acoustic altitude and ambience filters. Compilation needs only the
+placed assets and scene, not the extraction source.
+
+The combined stages in `work/map-compile/crossing-sound-library/{croisement02,croisement03}`
+extend the latest movement-assembly scenes and reopen their pinned documents.
+Recovery retains the movement coverage gate, ground receivers and, for
+Croisement03, the terrace navigation joins, transition planes, projections and
+mask definitions. Both reports now have zero pending sound sources; their
+142/130 pending masks remain unchanged.
+
+Both baselines reproduce all six source emitters exactly and retain identical
+non-sound geometry to their preceding movement drafts. Eleven additional
+exports move each newly authored region independently by 50 pixels: the selected
+emitter follows its placement and all non-sound compiled geometry stays identical.
+All thirteen exports load and construct in Rust, including sound sample selection,
+emitter handles, spatial geometry and delay settings. Every export also applies
+and resets all nine compiled transitions. These diagnostics are in
+`work/map-compile/crossing-sound-native`; they do not verify audible playback,
+complete visual state fidelity or a published ZIP round trip. Neither map is
+certified or published at full parity.
