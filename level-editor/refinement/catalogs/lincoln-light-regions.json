@@ -1,0 +1,16 @@
+{
+  "source_sha256": "1d39600d880f96dbd13bff1cda94778d867eabf4d6ed76b00fc92a70f646fc07",
+  "entries": [
+    {
+      "source": 11,
+      "id": "lincoln-elevated-light-field",
+      "name": "Lincoln elevated lighting field",
+      "origin": [
+        738,
+        1452,
+        0
+      ],
+      "review": "Independent elevated lighting field crossing physical receiving boundaries. Retain every contour vertex and preserve the supporting planes for tiny clipped anchor pieces."
+    }
+  ]
+}

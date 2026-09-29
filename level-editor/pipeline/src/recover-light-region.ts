@@ -80,7 +80,14 @@ export function recoverLightRegions(
   motionAreas: MotionArea[] | undefined,
   localize: (point: Vec3) => Vec3,
 ): AssetLightRegion[] {
-  return recoverLightPieces(light, id, node, obstacles, motionAreas, localize, true);
+  return recoverLightPieces(light, id, node, obstacles, motionAreas, localize, true).map(
+    (piece) => piece.region,
+  );
+}
+
+interface LightPiece {
+  region: AssetLightRegion;
+  plane: HeightPlane;
 }
 
 function recoverLightPieces(
@@ -92,10 +99,10 @@ function recoverLightPieces(
   localize: (point: Vec3) => Vec3,
   verifyIntegerContours: boolean,
   anchorOnly = false,
-): AssetLightRegion[] {
+): LightPiece[] {
   try {
     const plane = recoverLightPlane(light, obstacles, motionAreas);
-    return [recoverLightRegion(light, id, node, plane, localize)];
+    return [{ region: recoverLightRegion(light, id, node, plane, localize), plane }];
   } catch (error) {
     if (
       !(error instanceof MultipleLightPlanesError) &&
@@ -122,7 +129,7 @@ function recoverLightPieces(
     plane: heightPlane(o.points.slice(0, 3).map((p): Vec3 => [p.x, p.y - p.z_top, p.z_top])),
   }));
   if (light.layer === 0) pieces.push({ polygons: partition.ground, plane: [0, 0, 0] });
-  const result: AssetLightRegion[] = [];
+  const result: LightPiece[] = [];
   for (const { polygons, plane } of pieces)
     for (const polygon of polygons) {
       const { vertices, holes, dimensions } = flatten(polygon);
@@ -134,15 +141,16 @@ function recoverLightPieces(
           .slice(i, i + 3)
           .map((j) => [vertices[j * 2]!, vertices[j * 2 + 1]!]);
         projectedPieces.push(points.map(([x, y]): Point => [Math.round(x), Math.round(y)]));
-        result.push(
-          recoverLightRegion(
+        result.push({
+          region: recoverLightRegion(
             { ...light, polygon: { points } },
             `${id}-piece-${result.length}`,
             node,
             plane,
             localize,
           ),
-        );
+          plane,
+        });
       }
       if (verifyIntegerContours) {
         const rounded = projectedPieces.map(close);
@@ -194,9 +202,8 @@ export function recoverLightField(
   );
   const receivingAreas = new Map<string, { size: number; point: Vec3 }>();
   const close = (points: Point[]) => [[...points, points[0]!]];
-  for (const piece of pieces) {
+  for (const { region: piece, plane } of pieces) {
     const projected = piece.polygon.map(([x, y, z]): Point => [x, y - z]);
-    const plane = heightPlane(piece.polygon.map(([x, y, z]): Vec3 => [x, y - z, z]));
     for (const [areaIndex, area] of motionAreas.entries()) {
       const intersections = fixedClipping.intersection(
         close(projected),
@@ -226,13 +233,15 @@ export function recoverLightField(
   }
   const receivers = [...receivingAreas.values()].map((value) => value.point);
   if (!receivers.length) throw new Error("Light region has no receiving anchors");
-  const plane = heightPlane(pieces[0]!.polygon.map(([x, y, z]): Vec3 => [x, y - z, z]));
+  // Clipping can produce tiny valid triangles that cannot stably define a new
+  // plane. Preserve the receiving plane from which each piece was constructed.
+  const plane = pieces[0]!.plane;
   const region = { ...recoverLightRegion(light, id, "$root", plane, (p) => p), receivers };
   return {
     region,
     footprints: [
       ...(uncovered ? [region.polygon.map(([x, y]): Point => [x, y])] : []),
-      ...pieces.map((piece) => piece.polygon.map(([x, y]): Point => [x, y])),
+      ...pieces.map(({ region }) => region.polygon.map(([x, y]): Point => [x, y])),
     ],
   };
 }

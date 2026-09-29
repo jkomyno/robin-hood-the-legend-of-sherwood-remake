@@ -10,6 +10,41 @@ import {
 import { fixedClipping } from "../../shared/src/fixed-polygon-boolean.ts";
 import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
 import type { LightSector, MotionArea, SightObstacle } from "../../shared/src/level.ts";
+import { heightPlane } from "../../shared/src/gameplay-plane.ts";
+
+test("light fields retain the supporting plane for tiny clipped receiving triangles", () => {
+  const { hut } = assetCompilerFixture();
+  const support: SightObstacle = {
+    ...hut.parts[0]!.obstacle_local_game!,
+    projection_area: [0, 1],
+    points: [
+      [30 - 4 / 1048576, 30],
+      [40, 20],
+      [40, 40],
+    ].map(([x, y]) => ({ x: x!, y: y! + 40, z_bottom: 0, z_top: 40 })),
+  };
+  const area: MotionArea = {
+    is_lift: false,
+    state_id: 0,
+    flags: 0,
+    skeleton_segments: [],
+    obstacles: [],
+    polygon: light.polygon,
+  };
+  const field = recoverLightField({ ...light, layer: 1 }, "small-intersection", [support], [area]);
+  assert.deepEqual(
+    field.region.polygon.map(([x, y, z]) => [x, y - z]),
+    light.polygon.points,
+  );
+  assert.equal(field.region.receivers!.length, 1);
+  assert.equal(field.region.receivers![0]![2], 40);
+  const triangle = field.footprints.find((points) => points.length === 3)!;
+  assert.ok(triangle);
+  assert.throws(
+    () => heightPlane(triangle.map(([x, y]) => [x, y - 40, 40])),
+    /no nondegenerate height plane/,
+  );
+});
 
 const light: LightSector = {
   layer: 0,

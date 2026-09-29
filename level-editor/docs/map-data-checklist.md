@@ -2633,3 +2633,26 @@ step plane. The diagnostic in `work/map-compile/derby-light-field-native` contai
 three light regions and preserves all non-light geometry and metadata. Native
 queries pass under ambience bits 1, 2 and 4. This is one additional compiled field,
 not a fully recovered or published Derby map.
+
+### Receiving planes survive tiny light-field intersections
+
+Field recovery now carries each physical receiving plane through clipping instead
+of reconstructing it from a clipped triangle. Very small valid triangles can fall
+below the plane solver's nondegeneracy threshold even when their original support
+has a well-defined plane. Their coverage and receiving anchors are retained;
+the fix does not discard pieces or simplify the light contour.
+
+The regression test includes a tiny receiving triangle whose vertices cannot
+independently define a stable plane. Its field still preserves the full contour
+and the correct elevated anchor. The geometry-only audit now succeeds for all
+148 contours across Derby, Leicester, Lincoln, Nottingham and York, including
+Lincoln source 11. This supersedes the one remaining geometry error above;
+ownership and compiled receiving-layer validation are still incomplete overall.
+
+`lincoln-light-regions.json` authors that previously failing elevated field into
+`work/map-compile/lincoln-light-field-stage`. It compiles alongside the complete
+Lincoln sound definitions into `work/map-compile/lincoln-light-field-native`, with
+seven light contours and unchanged non-light data. The added contour and ambience
+match exactly, with source layer 2 resolved to rebuilt layer 10. Native light
+queries pass under ambience bits 1, 2 and 4. Publication and full map/ZIP parity
+remain outstanding.
