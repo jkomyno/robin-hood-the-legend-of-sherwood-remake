@@ -52,6 +52,41 @@ test("flat light fields retain receiving anchors and reject absent navigation", 
   assert.throws(() => recoverLightField(light, "flat", [], []), /no receiving anchors/);
 });
 
+test("light anchors use their movement area's receivers despite overlapping higher footprints", () => {
+  const { hut } = assetCompilerFixture();
+  const points: [number, number][] = [
+    [10, 10],
+    [30, 10],
+    [30, 30],
+    [10, 30],
+  ];
+  const supports: SightObstacle[] = [10, 20].map((height, sector) => ({
+    ...hut.parts[0]!.obstacle_local_game!,
+    projection_area: [sector, 1],
+    points: points.map(([x, y]) => ({ x, y: y + height, z_bottom: 0, z_top: height })),
+  }));
+  const light: LightSector = { layer: 1, ambience: 4, polygon: { points } };
+  const area: MotionArea = {
+    is_lift: false,
+    state_id: 0,
+    flags: 0,
+    skeleton_segments: [],
+    obstacles: [],
+    polygon: { points },
+  };
+  const { region } = recoverLightField(light, "overlap", supports, [area], [0]);
+  assert.ok(region.receivers!.length);
+  assert.ok(region.receivers!.every((point) => point[2] === 10));
+  assert.deepEqual(
+    region.polygon.map(([x, y, z]) => [x, y - z]),
+    points,
+  );
+  assert.throws(
+    () => recoverLightField(light, "overlap", supports, [area], []),
+    /identities must match/,
+  );
+});
+
 test("light fields retain the supporting plane for tiny clipped receiving triangles", () => {
   const { hut } = assetCompilerFixture();
   const support: SightObstacle = {

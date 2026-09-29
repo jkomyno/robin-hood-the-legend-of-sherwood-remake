@@ -1681,6 +1681,9 @@ for (const [index, light] of proto.light_sectors.entries()) {
       `light-${index}`,
       proto.sight_obstacles,
       proto.motion_data.layers[light.layer] ?? [],
+      [...sourceMotionAreas]
+        .filter(([, area]) => area.layer === light.layer)
+        .map(([sector]) => sector),
     );
     const regions = [region];
     const allOwners = [...locals.values()].flat();

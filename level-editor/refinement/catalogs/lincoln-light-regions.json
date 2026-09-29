@@ -2,15 +2,125 @@
   "source_sha256": "1d39600d880f96dbd13bff1cda94778d867eabf4d6ed76b00fc92a70f646fc07",
   "entries": [
     {
-      "source": 11,
-      "id": "lincoln-elevated-light-field",
-      "name": "Lincoln elevated lighting field",
+      "source": 0,
+      "id": "lincoln-light-region-0",
+      "name": "Lincoln lighting field at 2748, 811",
       "origin": [
-        738,
-        1452,
+        2748,
+        811,
         0
       ],
-      "review": "Independent elevated lighting field crossing physical receiving boundaries. Retain every contour vertex and preserve the supporting planes for tiny clipped anchor pieces."
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 1,
+      "id": "lincoln-light-region-1",
+      "name": "Lincoln lighting field at 1961, 1293",
+      "origin": [
+        1961,
+        1293,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 5,
+      "id": "lincoln-light-region-5",
+      "name": "Lincoln lighting field at 517, 1642",
+      "origin": [
+        517,
+        1642,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 8,
+      "id": "lincoln-light-region-8",
+      "name": "Lincoln lighting field at 1193, 1379",
+      "origin": [
+        1193,
+        1379,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 14,
+      "id": "lincoln-light-region-14",
+      "name": "Lincoln lighting field at 1431, 1084",
+      "origin": [
+        1431,
+        1084,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 16,
+      "id": "lincoln-light-region-16",
+      "name": "Lincoln lighting field at 1933, 1006",
+      "origin": [
+        1933,
+        1006,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 17,
+      "id": "lincoln-light-region-17",
+      "name": "Lincoln lighting field at 729, 1372",
+      "origin": [
+        729,
+        1372,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 20,
+      "id": "lincoln-light-region-20",
+      "name": "Lincoln lighting field at 1677, 926",
+      "origin": [
+        1677,
+        926,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 21,
+      "id": "lincoln-light-region-21",
+      "name": "Lincoln lighting field at 1361, 1021",
+      "origin": [
+        1361,
+        1021,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 24,
+      "id": "lincoln-light-region-24",
+      "name": "Lincoln lighting field at 1445, 966",
+      "origin": [
+        1445,
+        966,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 29,
+      "id": "lincoln-light-region-29",
+      "name": "Lincoln lighting field at 1748, 283",
+      "origin": [
+        1748,
+        283,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
     }
   ]
 }

@@ -13,14 +13,20 @@ export async function authorLightRegionAsset(
   light: LightSector,
   obstacles: SightObstacle[],
   motionAreas: MotionArea[],
-  options: { id: string; name: string; map: string; origin: Vec3 },
+  options: { id: string; name: string; map: string; origin: Vec3; motionSectors?: number[] },
 ) {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(options.id) || !options.name.trim())
     throw new Error("Light asset needs a stable ID and name");
   if (options.origin.length !== 3 || !options.origin.every(Number.isFinite))
     throw new Error("Light asset origin must be finite");
   const node = "scenery-light";
-  const { region } = recoverLightField(light, "environment", obstacles, motionAreas);
+  const { region } = recoverLightField(
+    light,
+    "environment",
+    obstacles,
+    motionAreas,
+    options.motionSectors,
+  );
   const localize = ([x, y, z]: Vec3): Vec3 => [
     x - options.origin[0],
     y - options.origin[1],

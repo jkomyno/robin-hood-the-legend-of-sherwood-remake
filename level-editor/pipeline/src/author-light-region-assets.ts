@@ -31,6 +31,14 @@ if (recipe.source_sha256 !== hash(bytes)) throw new Error("Light-region authorin
 const indices = new Set<number>(),
   ids = new Set<string>();
 const assets = [];
+let sector = 0;
+const motionSectors = proto.motion_data.layers.map((areas) =>
+  areas.map((area) => {
+    const identity = sector;
+    sector += 1 + area.obstacles.length;
+    return identity;
+  }),
+);
 for (const entry of recipe.entries) {
   if (
     !Number.isInteger(entry.source) ||
@@ -50,6 +58,7 @@ for (const entry of recipe.entries) {
       {
         ...entry,
         map: values.map,
+        motionSectors: motionSectors[proto.light_sectors[entry.source]!.layer],
       },
     ),
   );

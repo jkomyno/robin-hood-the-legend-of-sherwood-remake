@@ -50,7 +50,7 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
-| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. Conflicting anchored receivers receive separate runtime layers. | Derby's 26 contours, Nottingham's 24, York's 37, Leicester's 30 and Sherwood's night field compile; Leicester's detected shared-layer leakage is fixed; remaining ownership, unrestricted query equivalence and publication remain unfinished |
+| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. Conflicting anchored receivers receive separate runtime layers. | All 148 contours across the five town drafts and Sherwood's night field compile; unrestricted query equivalence, refreshed older drafts and publication remain unfinished |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | All 119 emitter records match across nine source-backed staged maps; publication, audible playback and Wychford authoring remain outstanding |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
@@ -2819,3 +2819,35 @@ generated projection records; mask payloads compare without their rebuilt layer
 numbers. Rust still constructs 55 areas, 444 sight obstacles, 105 doors and 23 jump
 pairs and applies/resets all six transitions. This does not establish mask-layer
 or visual parity, publication, or complete ZIP round trips.
+
+### Complete Lincoln lighting and receiving-area anchor recovery
+
+`lincoln-light-regions.json` now authors eleven independent environmental fields.
+`lincoln-light-ownership.json` preserves Lincoln's existing ownership definitions
+and explicitly assigns two elevated fields to the great hall and keep, where
+their footprints also overlap the underlying plateau. Eighteen other fields
+recover onto existing assets, including the west slate tower field previously
+tested as an independent prototype. The combined stage extends the sound-complete
+library and retains its ground receivers and reviewed masks.
+
+This exposed an anchor-recovery error: an overlapping sloped projection belonging
+to another motion area supplied a terrace anchor's height. Offline light recovery
+now uses each source motion area's receiving-sector identity when selecting its
+anchor support. The emitted assets retain local coordinates, not source sector
+indices. A regression covers overlapping higher footprints, and all 148 town
+contours still recover with receiving identities enabled.
+
+`work/map-compile/lincoln-light-recovery` has zero pending light or sound records
+and passes the movement coverage gate. Its 31 contours and ambience filters
+compile into 33 runtime regions in `work/map-compile/lincoln-complete-light-native`.
+Non-light records compare equal after resolving sector/layer references to
+receiving geometry and sorting generated projection records; mask payloads
+compare without their rebuilt layer numbers.
+
+All 5,749,329 Rust lighting query evaluations match across 36 nonempty windows
+on known layer pairs under ambience bits 1, 2 and 4. Empty common-coverage windows
+are recorded separately. Rust constructs 62 areas, 541 sight obstacles, 89 doors
+and 10 jump pairs and applies/resets all nine compiled transitions. This verifies
+mapped shared walkable coverage, not missing geometry, unmapped layers, changed
+placements or rendered appearance. Lincoln still has 424 pending masks and
+incomplete visual patches; publication and complete ZIP round trips remain open.

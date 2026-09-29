@@ -174,7 +174,10 @@ export function recoverLightField(
   id: string,
   obstacles: SightObstacle[],
   motionAreas: MotionArea[],
+  motionSectors?: number[],
 ): { region: AssetLightRegion; footprints: Point[][] } {
+  if (motionSectors && motionSectors.length !== motionAreas.length)
+    throw new Error("Light receiving sector identities must match motion areas");
   let uncovered = false;
   try {
     recoverLightPlane(light, obstacles, motionAreas);
@@ -201,9 +204,29 @@ export function recoverLightField(
   );
   const receivingAreas = new Map<string, { size: number; point: Vec3 }>();
   const close = (points: Point[]) => [[...points, points[0]!]];
-  for (const { region: piece, plane } of pieces) {
-    const projected = piece.polygon.map(([x, y, z]): Point => [x, y - z]);
-    for (const [areaIndex, area] of motionAreas.entries()) {
+  for (const [areaIndex, area] of motionAreas.entries()) {
+    if (!fixedClipping.intersection(close(light.polygon.points), close(area.polygon.points)).length)
+      continue;
+    // Overlapping projection footprints can belong to different movement areas.
+    // Their relative height is not an ownership rule for a receiving anchor.
+    const areaPieces = motionSectors
+      ? recoverLightPieces(
+          light,
+          id,
+          "$root",
+          obstacles.filter(
+            (obstacle) =>
+              Array.isArray(obstacle.projection_area) &&
+              obstacle.projection_area[0] === motionSectors[areaIndex],
+          ),
+          [area],
+          (point) => point,
+          false,
+          true,
+        )
+      : pieces;
+    for (const { region: piece, plane } of areaPieces) {
+      const projected = piece.polygon.map(([x, y, z]): Point => [x, y - z]);
       const intersections = fixedClipping.intersection(
         close(projected),
         fixedClipping.difference(
