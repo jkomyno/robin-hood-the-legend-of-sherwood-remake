@@ -36,7 +36,6 @@ import {
 } from "./recovered-gameplay-definition.ts";
 import type { AssetGameplay, GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
 import { diagnoseGameplayCandidates } from "./diagnose-gameplay-candidates.ts";
-import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
 import {
   recoverSoundSource,
   containsSoundPolyline,
@@ -733,11 +732,6 @@ for (const [sourceIndex, source] of clearanceSources.entries()) {
       let regions: MultiPolygon;
       try {
         regions = recoverMovementClearance(source.regions, source.plane, solid, 1);
-        regions = quantizeRecoveredMotion(
-          regions,
-          `${owner.collisionId ?? owner.node}-clearance-${sourceIndex}`,
-          packet(owner.asset).issues,
-        );
       } catch (error) {
         unresolved.push({
           kind: "movement-clearance",

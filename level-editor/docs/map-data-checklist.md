@@ -1718,7 +1718,29 @@ compilation. In `work/map-compile/sherwood-navigation-native`, all 701,438 nativ
 receiving samples now match exactly: zero coverage, height or material differences.
 Baseline and treehouse-only movement construct 23 areas; central-platform-only and
 combined movement construct 24. All four have 129 sight volumes, 15 doors and one
-jump pair. The final compiled connected movement contour still has 36.4714285714
-square game units of symmetric difference in seven small boundary regions, despite
-preserving all three holes. That boundary discrepancy, ground bluff 111, full actor
-traversal, visuals and publication remain open; this does not certify full parity.
+jump pair. The first compiled connected movement contour had 36.4714285714
+square game units of symmetric difference in seven small boundary regions.
+
+Clearance precision recovery now removes that discrepancy. Offline recovery retains
+fractional clearance intersections, and the compiler clips those intermediate cutouts
+before rounding the final movement boundaries. Straight-edge cleanup of generated
+boolean output tolerates two fixed-point clipping units, preventing numerical noise
+from turning a redundant intersection into a whole-pixel kink. Authored surface
+validation remains strict. The platform-92 recipe also removes a rounded intersection
+that extended its redundant movement surface into a source movement hole.
+The rebuilt `sherwood-navigation-native` baseline has zero polygon symmetric
+difference for this connected region: the same 66 outer vertices and all three holes.
+The 701,438 sampled native receiving queries still match exactly. Ground bluff 111,
+other navigation areas, full actor traversal, visuals and publication remain open;
+this does not certify full map parity.
+
+The precision change was also applied through fresh recovery of all nine maps in
+`work/map-compile/clearance-precision-recovery`: every asset candidate validates,
+and all nine static exports in `clearance-precision-native` construct in Rust.
+The resulting area counts are 46/32/30 for the crossings, 60 Derby, 82 Leicester,
+112 Lincoln, 114 Nottingham, 29 Sherwood and 198 York. This broad batch uses the
+existing query-order authoring configuration, without the separate Sherwood physical
+receiver/navigation recipes. Counts changed on several maps, including three extra
+York receiving records; those topology changes still require source comparisons.
+Native construction is a regression check, not a full parity certificate. The
+dedicated Sherwood navigation batch additionally passes all 48 directed lift callbacks.

@@ -29,6 +29,33 @@ test("rounding a clipped straight edge does not introduce a false navigation sea
   assert.equal(warnings.length, 0);
 });
 
+test("fixed-point intersection noise does not turn a straight boundary into a pixel kink", () => {
+  const warnings: string[] = [];
+  const result = quantizeGeneratedMotionPolygon(
+    [
+      [
+        [119, 160],
+        [126.31428527832031, 176],
+        [135, 195],
+        [160, 150],
+        [119, 160],
+      ],
+    ],
+    Math.round,
+    "fixed-point seam",
+    warnings,
+  );
+  assert.deepEqual(result, [
+    [
+      [119, 160],
+      [135, 195],
+      [160, 150],
+      [119, 160],
+    ],
+  ]);
+  assert.equal(warnings.length, 0);
+});
+
 test("generated subpixel fragments collapse explicitly without emitting degenerate motion areas", () => {
   const warnings: string[] = [];
   assert.equal(

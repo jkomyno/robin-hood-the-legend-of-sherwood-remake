@@ -1470,6 +1470,40 @@ test("movement clearances follow their owner and cannot erase another asset's co
   );
 });
 
+test("fractional clearance intersections preserve an integer sloping movement boundary", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.doors = [];
+  gameplay.surfaces = [
+    {
+      id: "slope-edge",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [0, 0],
+        [100, 90],
+        [100, 0],
+      ],
+    },
+  ];
+  gameplay.collision = "none";
+  const expected = compileAssetGameplay(document, assets, bounds).motion_data;
+  gameplay.collision = "parts";
+  gameplay.movementClearances = [
+    {
+      id: "clipped-opening",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [130 / 3, 39],
+        [51, 39],
+        [51, 45.9],
+      ],
+    },
+  ];
+  assert.deepEqual(compileAssetGameplay(document, assets, bounds).motion_data, expected);
+});
+
 test("an enclosed clearance retains a walkable island inside derived collision", () => {
   const { document, assets, hut } = assetCompilerFixture();
   hut.gameplay!.movementClearances = [

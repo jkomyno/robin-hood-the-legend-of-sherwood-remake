@@ -54,11 +54,11 @@ const signedArea = (ring: Point[]) =>
     const b = ring[(i + 1) % ring.length]!;
     return sum + a[0] * b[1] - b[0] * a[1];
   }, 0) / 2;
-function ring(points: Point[], label = "Gameplay polygon"): Point[] {
+function ring(points: Point[], label = "Gameplay polygon", minimumArea = 0.5): Point[] {
   // Plane construction in the runtime uses the first three vertices.
   // Remove straight-edge vertices introduced by polygon unions and clipping.
   const result = simplifyMotionRing(points);
-  if (result.length < 3 || Math.abs(signedArea(result)) < 0.5)
+  if (result.length < 3 || Math.abs(signedArea(result)) < minimumArea)
     throw new Error(
       `${label} collapses after coordinate quantization (${JSON.stringify(points.slice(0, 8))})`,
     );
@@ -565,13 +565,18 @@ export function compileAssetGameplay(
         : gameplay.movementBlockers?.includes(surface)
           ? movementBlockers
           : surfaces;
+      // Clearances are intermediate cutouts. Snapping their intersections before
+      // clipping solids bends otherwise straight movement boundaries.
+      const clearance = target === movementClearances;
+      const projectMovement = clearance ? ([x, y, z]: Vec3): Point => [x, y - z] : project;
+      const minimumArea = clearance ? 1e-8 : 0.5;
       const placed = {
         owner: placement.id,
         navigationRegion:
           surface.navigationRegion === undefined
             ? undefined
             : `${placement.id}/${surface.navigationRegion}`,
-        polygon: ring(points.map(project), `${placement.id}/${surface.id}`),
+        polygon: ring(points.map(projectMovement), `${placement.id}/${surface.id}`, minimumArea),
         plane,
         ...(gameplay.lifts?.find((l) => l.surface === surface.id)
           ? { lift: `${placement.id}/${gameplay.lifts.find((l) => l.surface === surface.id)!.id}` }
@@ -579,9 +584,10 @@ export function compileAssetGameplay(
         holes: (surface.holes ?? []).map((hole) =>
           ring(
             hole.map((p) =>
-              project(transform(surface.node, [p[0], p[1], planeHeight(localPlane, p)])),
+              projectMovement(transform(surface.node, [p[0], p[1], planeHeight(localPlane, p)])),
             ),
             `${placement.id}/${surface.id} hole`,
+            minimumArea,
           ),
         ),
       };
