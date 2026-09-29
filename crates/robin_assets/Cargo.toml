@@ -27,6 +27,14 @@ name = "split_cinematics"
 required-features = ["engine-adapters"]
 
 [[example]]
+name = "mission_opacity_digest"
+required-features = ["engine-adapters"]
+
+[[example]]
+name = "vq_codec_verify"
+required-features = ["engine-adapters"]
+
+[[example]]
 name = "jxl_sprite_probe"
 required-features = ["engine-adapters", "research"]
 
