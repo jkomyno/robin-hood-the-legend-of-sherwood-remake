@@ -355,6 +355,8 @@ impl MissionRuntime {
     /// Network ingress remains a driver concern and must run before this
     /// method. That ordering is observable for late multiplayer inputs.
     pub(super) fn begin_frame(&mut self, now_ms: u32) -> MissionFrame {
+        #[cfg(not(target_arch = "wasm32"))]
+        crate::diagnostic_context::frame(self.timeline.frame_number());
         self.timeline.lifecycle.reset_execution_trace();
         let mut frame = MissionFrame::new(now_ms);
         self.timeline

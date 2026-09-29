@@ -271,6 +271,8 @@ async fn run_mission_headless_body(
         .profile(profiles)
         .mission_filename
         .clone();
+    #[cfg(not(target_arch = "wasm32"))]
+    crate::diagnostic_context::begin_mission(&mission_name, &args);
     let has_decoded_saved_world = pending_decoded_saved_world(callbacks);
     let archive_restored = args
         .content
@@ -295,6 +297,8 @@ async fn run_mission_headless_body(
         .as_ref()
         .map(|_| (campaign.clone(), rng_seed, sim_config));
     loop {
+        #[cfg(not(target_arch = "wasm32"))]
+        crate::diagnostic_context::begin_mission(&mission_name, &args);
         campaign = establish_mission_restart_boundary(campaign, rng_seed, sim_config);
         let outcome = match HeadlessMissionBuilder::build(
             callbacks,
@@ -888,6 +892,13 @@ async fn run_mission_with_seed(
     args: &crate::main_entry::MissionRequest,
     multiplayer_setup_failure_policy: MultiplayerSetupFailurePolicy,
 ) -> MissionOutcome {
+    #[cfg(not(target_arch = "wasm32"))]
+    crate::diagnostic_context::begin_mission(
+        &campaign.missions[start.mission_idx]
+            .profile(profiles)
+            .mission_filename,
+        args,
+    );
     let outcome = match InteractiveMissionBuilder::build(
         window,
         callbacks,

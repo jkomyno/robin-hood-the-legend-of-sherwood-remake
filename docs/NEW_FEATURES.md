@@ -1737,6 +1737,17 @@ debug log (up to 32 MiB), and active replay JSON files (up to 224 MiB decoded). 
 oversized replay attachments are explicitly reported. Logs and replays can
 contain player names, local paths and gameplay.
 
+Native reports also attach versioned `native-context.json`: the last observed
+lifecycle stage, mission and timeline frame, headless/replay/multiplayer mode,
+selected datadir and core overlay path, successfully mounted mod overlay paths,
+GPU/backend/driver, process ID, uptime, and capture thread name. Context is
+recorded as the game progresses; capture never queries the live engine. A busy
+or poisoned context lock produces an explicit unavailable reason instead of
+blocking a panic hook. Strings and overlay counts are bounded, and the context
+shares the existing attachment budget. Mission/frame and replay tracking reset
+on a new mission or return to the main menu. Raw launch arguments, invitation
+credentials, and connection endpoints are not added to this attachment.
+
 The VPS stores diagnostics privately, separately from ranked evidence. Its
 existing operator bearer token protects list, detail and deletion endpoints:
 `GET /api/v1/operator/diagnostics`,

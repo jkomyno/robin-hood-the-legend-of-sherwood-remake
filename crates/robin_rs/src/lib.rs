@@ -26,6 +26,8 @@ pub mod gameplay_settings;
 pub(crate) use leaderboard::signing as leaderboard_signing;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod bug_report;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod diagnostic_context;
 pub mod localization;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod native_game_identity;

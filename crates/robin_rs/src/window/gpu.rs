@@ -100,6 +100,8 @@ fn instance_descriptor() -> wgpu::InstanceDescriptor {
 
 fn log_adapter_info(adapter: &wgpu::Adapter) {
     let info = adapter.get_info();
+    #[cfg(not(target_arch = "wasm32"))]
+    crate::diagnostic_context::gpu(&info);
     tracing::info!(
         "wgpu adapter: {:?} backend={:?} type={:?} driver={:?}",
         info.name,
