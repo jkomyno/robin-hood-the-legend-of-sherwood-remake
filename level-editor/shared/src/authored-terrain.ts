@@ -13,7 +13,7 @@ export interface GroundRegion {
   name: string;
   bounds: [number, number, number, number];
   height: number;
-  material: "grass" | "dirt" | "water";
+  material: "grass" | "dirt" | "water" | "paved";
 }
 export interface TerrainPatch {
   id: string;
@@ -33,7 +33,7 @@ export function validateGroundRegions(value: unknown): asserts value is GroundRe
       ids.has(region.id) ||
       typeof region.name !== "string" ||
       !Number.isFinite(region.height) ||
-      !["grass", "dirt", "water"].includes(region.material) ||
+      !["grass", "dirt", "water", "paved"].includes(region.material) ||
       !Array.isArray(region.bounds) ||
       region.bounds.length !== 4 ||
       !region.bounds.every(Number.isFinite) ||
@@ -146,7 +146,7 @@ function materialPolygons(patch: TerrainPatch): Point[][] {
 export function terrainGameplay(document: Level3D): GameplayAssetDescriptor | undefined {
   const patches = terrainPatches(document);
   if (!patches.length) return undefined;
-  const material = { grass: 3, dirt: 0, water: 5 };
+  const material = { grass: 3, dirt: 0, water: 5, paved: 2 };
   const surface = (p: TerrainPatch): AssetWalkableSurface => ({
     id: p.id,
     node: "$root",

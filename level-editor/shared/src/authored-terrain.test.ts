@@ -147,3 +147,16 @@ test("an exterior navigation socket joins an asset to surrounding terrain", () =
   assert.equal(compiled.motion_data.layers.flat().length, 1);
   assert.ok(!compiled.warnings?.some((w) => w.includes("no matching boundary")));
 });
+
+test("paved terrain survives save/load and exports as walkable stone", () => {
+  const d = terrainFixture();
+  d.terrain = [
+    { id: "plaza", name: "Plaza", bounds: [100, 100, 300, 300], height: 0, material: "paved" },
+  ];
+  const reopened = parseLevel3D(JSON.parse(JSON.stringify(d)));
+  assert.equal(reopened.terrain![0]!.material, "paved");
+  const compiled = compileAssetGameplay(reopened, new Map(), [0, 0, 500, 500]);
+  assert.ok(compiled.sight_obstacles.some((o) => o.default_material === 2));
+  assert.equal(compiled.motion_data.layers.flat().length, 1);
+  assert.ok(!compiled.material_sectors?.some((o) => o.material === 5));
+});

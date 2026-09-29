@@ -139,6 +139,7 @@ export default function TerrainPanel(props: {
                 >
                   <option value="grass">Grass</option>
                   <option value="dirt">Dirt</option>
+                  <option value="paved">Paved</option>
                   <option value="water">Water</option>
                 </select>
               </label>

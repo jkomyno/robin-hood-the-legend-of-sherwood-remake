@@ -1,44 +1,20 @@
 import * as THREE from "three";
-import { gameToScene, terrainPatches, noise, type GroundRegion, type Level3D } from "@rle/shared";
+import { gameToScene, terrainPatches, type GroundRegion, type Level3D } from "@rle/shared";
 
-function groundTexture(material: GroundRegion["material"]) {
-  const size = 256,
-    data = new Uint8Array(size * size * 4);
-  const base =
-    material === "grass" ? [78, 101, 43] : material === "water" ? [49, 87, 101] : [139, 121, 84];
-  for (let y = 0; y < size; y++)
-    for (let x = 0; x < size; x++) {
-      const grain = Math.sin(x * 73.1 + y * 91.7) * 8;
-      const u = x / size,
-        v = y / size;
-      const seamless = (scale: number) => {
-        const a = noise(x, y, scale) * (1 - u) + noise(x - size, y, scale) * u;
-        const b = noise(x, y - size, scale) * (1 - u) + noise(x - size, y - size, scale) * u;
-        return a * (1 - v) + b * v - 0.5;
-      };
-      const shade = seamless(75) * 22 + seamless(19) * 14 + seamless(5) * 9 + grain * 0.55;
-      const i = (y * size + x) * 4;
-      for (let c = 0; c < 3; c++) data[i + c] = base[c]! + shade;
-      data[i + 3] = 255;
-    }
-  const texture = new THREE.DataTexture(data, size, size);
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}
+import { terrainTexture } from "./terrain-texture.ts";
+
 export class TerrainLayer {
   readonly root = new THREE.Group();
   private readonly materials = new Map<GroundRegion["material"], THREE.MeshBasicMaterial>();
   private readonly bankMaterial = new THREE.MeshBasicMaterial({
-    color: 0x776345,
+    color: 0xb5a58d,
+    map: terrainTexture("dirt"),
     side: THREE.DoubleSide,
   });
   private material(kind: GroundRegion["material"]) {
     let material = this.materials.get(kind);
     if (!material) {
-      material = new THREE.MeshBasicMaterial({ map: groundTexture(kind), side: THREE.DoubleSide });
+      material = new THREE.MeshBasicMaterial({ map: terrainTexture(kind), side: THREE.DoubleSide });
       this.materials.set(kind, material);
     }
     return material;
@@ -74,7 +50,7 @@ export class TerrainLayer {
           const x = positions.getX(i),
             y = positions.getY(i);
           positions.setXYZ(i, ...gameToScene(document.camera, x, y, patch.height));
-          uv.setXY(i, x / 512, y / 512);
+          uv.setXY(i, x / 256, y / 256);
         }
         geometry.computeVertexNormals();
         const mesh = new THREE.Mesh(geometry, this.material(patch.material));
@@ -85,7 +61,8 @@ export class TerrainLayer {
         mesh.userData.noSunShadow = true;
         next.add(mesh);
         if (patch.height > floor) {
-          const vertices: number[] = [];
+          const vertices: number[] = [],
+            bankUvs: number[] = [];
           for (const ring of [patch.polygon, ...patch.holes])
             for (let i = 0; i < ring.length; i++) {
               const a = ring[i]!,
@@ -95,9 +72,14 @@ export class TerrainLayer {
               const lowA = gameToScene(document.camera, ...a, floor),
                 lowB = gameToScene(document.camera, ...b, floor);
               vertices.push(...topA, ...lowA, ...topB, ...topB, ...lowA, ...lowB);
+              const span = Math.hypot(b[0] - a[0], b[1] - a[1]) / 256;
+              const top = patch.height / 256,
+                bottom = floor / 256;
+              bankUvs.push(0, top, 0, bottom, span, top, span, top, 0, bottom, span, bottom);
             }
           const sides = new THREE.BufferGeometry();
           sides.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+          sides.setAttribute("uv", new THREE.Float32BufferAttribute(bankUvs, 2));
           const bank = new THREE.Mesh(sides, this.bankMaterial);
           bank.userData.noSunShadow = true;
           next.add(bank);
@@ -120,6 +102,7 @@ export class TerrainLayer {
       material.dispose();
     }
     this.materials.clear();
+    this.bankMaterial.map?.dispose();
     this.bankMaterial.dispose();
     this.terrain = undefined;
     this.splines = undefined;

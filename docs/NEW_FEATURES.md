@@ -1897,3 +1897,5 @@ Asset movement surfaces and cutouts can retain fractional boundaries through boo
 assembly with `preserveMovementPrecision`. The final movement regions still use the
 engine's integer grid. Ground recovery uses this to keep independently movable
 cutouts aligned with terrain instead of rounding each piece separately.
+
+- Editor terrain now uses bundled seamless grass, dirt, water and paving art synthesized from game map samples. Roads and rivers share the dirt/water art. Paved ground is selectable in the terrain panel and exports with stone surface material. A regeneration script records the donor crops and texture-synthesis CLI settings.

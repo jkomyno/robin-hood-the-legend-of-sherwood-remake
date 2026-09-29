@@ -108,6 +108,13 @@ async function run() {
   assert(zip.length > 1000, "Missing baked map ZIP");
   await click("Delete region");
   assert(current.terrain?.length === 1, "Delete did not commit");
+  await set("Ground region", current.terrain![0]!.id);
+  await set("Terrain material", "paved");
+  const paved = viewport.bakeMap(current, new Map());
+  assert(
+    paved.compiled.descriptor.asset_geometry!.sight_obstacles.some((o) => o.default_material === 2),
+    "Paved terrain must bake as stone",
+  );
   assert(errors.length === 0, errors.join("\n"));
   Object.assign(window, {
     __migrationImages: { before, after: viewport.captureThumbnail().toDataURL() },
