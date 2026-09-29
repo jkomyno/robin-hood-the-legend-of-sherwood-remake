@@ -2042,20 +2042,47 @@ shared ground navigation plane; receiving height and material remain attached to
 the physical volume. No source lookup is added to compilation.
 
 The pinned Croisement01 and Croisement02 ground-receiver catalogs recover 15 and
-7 receivers respectively. A further Croisement02 receiver (136) has no verified
-integer anchor inside its footprint that is free in every state and remains
-unmigrated. Recovered drafts compile from scenes and asset candidates alone.
+8 receivers respectively. Croisement02 receiver 136 uses a nearby asset-local
+navigation anchor outside its footprint, verified free in every movement state.
+Recovered drafts compile from scenes and asset candidates alone.
 All 13 recovered movement transitions across these two drafts now have identical
 initial and applied blocked coverage on matching movement envelopes, removing
 all four previously measured state differences and three envelope mismatches.
 The Rust diagnostic applies and resets all 13 successfully.
-Both drafts also construct native geometry. A separate permanent-coverage check
-on the matching ground envelope is exact for Croisement01; Croisement02 retains
-about 31.028 square units of permanent-coverage difference. Matching changing
-obstacles therefore does not establish equivalence of the complete walkable area.
+Both drafts also construct native geometry. The initial permanent-coverage check
+found about 31.028 square units of difference in Croisement02; the precise
+ownership extraction below removes that difference.
 
 This evidence is limited to recovered transitions. Each crossing map still has
 one transition spanning assets that is not recovered. Croisement03 and Nottingham
 each retain one unmatched recovered movement envelope; the total six missing
 source transitions remain outstanding. The new catalogs and candidates do not
 constitute published asset definitions or full map certification.
+
+### Precise ownership extraction for shared contour edges
+
+The one-time recovery command supports `--precise-ground-ownership` alongside
+`--preserve-ground-boundaries`. It preserves floating intersections while
+splitting contours among assets, postponing grid rounding until compilation.
+Repeated extraction-grid operations previously separated coincident ownership
+edges and produced whole-pixel kinks when the fragments were reassembled.
+The recovery report records whether this mode was used; exported assets require
+no special runtime mode and no source lookup.
+
+Both crossing drafts use this option. Their matching ground envelopes now have
+zero permanent-coverage difference, while all 13 recovered movement transitions
+retain exact initial/applied blocked coverage. Native receiving scans pass
+5,806,347 queries for Croisement01 and 3,759,568 for Croisement02 with zero height,
+material or coverage differences. The latter includes the previously missing
+receiver 136; before binding it, the scan found 540 coverage and three height
+differences around that receiver.
+
+This extraction mode is opt-in, not a globally certified replacement for the
+fixed-grid authoring path. Trials on other maps exposed near-coincident polygon
+failures and a Sherwood contour discrepancy; those maps retain their existing
+recovery mode. The default compiler algorithm is unchanged. Neither these scans
+nor the permanent-ground comparisons cover the six unrecovered transitions,
+visual states, all traversal behavior, or asset publication.
+Re-running the default recovery path for all nine source-backed maps produces
+valid candidates and native geometry; its 40 previously verified static ground
+areas remain geometrically exact.

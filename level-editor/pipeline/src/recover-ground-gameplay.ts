@@ -1,5 +1,5 @@
-import type { MultiPolygon, Polygon } from "polygon-clipping";
-import { recoveryClipping as clipping } from "./recovery-polygon-boolean.ts";
+import preciseClipping, { type MultiPolygon, type Polygon } from "polygon-clipping";
+import { recoveryClipping } from "./recovery-polygon-boolean.ts";
 import type { Point } from "@rle/shared";
 import { simplifyMotionRing } from "../../shared/src/motion-quantization.ts";
 
@@ -26,9 +26,15 @@ export function recoverGroundGameplay(
   areas: { polygon: { points: Point[] }; obstacles: { polygon: { points: Point[] } }[] }[],
   owners: { asset: string; node: string; footprint: Point[] }[],
   preserveBoundary = false,
+  preserveOwnershipIntersections = false,
 ) {
   if (!areas.length) throw new Error("No authored ground movement regions");
+  if (preserveOwnershipIntersections && !preserveBoundary)
+    throw new Error("Precise ownership intersections require preserved movement boundaries");
+  // Keep ownership seams on the same edges until their fragments are reassembled.
+  // Repeated grid rounding during extraction can move an intersection along an edge.
   const warnings: string[] = [];
+  const clipping = preserveOwnershipIntersections ? preciseClipping : recoveryClipping;
   const clean = (regions: MultiPolygon): MultiPolygon =>
     regions.flatMap((region) => {
       const rings = region.map((ring) => simplifyMotionRing(ring, 2 / 1048576));

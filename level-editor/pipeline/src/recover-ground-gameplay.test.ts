@@ -119,6 +119,99 @@ test("touching ground regions retain independent topology and per-region fidelit
   assert.equal(recovered.differenceArea, 0);
 });
 
+test("overlapping ownership cuts retain exact contour edges through extraction and compilation", () => {
+  const boundary: Point[] = [
+    [1200, 250],
+    [1600, 250],
+    [1600, 400],
+    [1200, 400],
+  ];
+  const obstacle: Point[] = [
+    [1268, 350],
+    [1260, 342],
+    [1350, 315],
+    [1451, 298],
+    [1511, 325],
+    [1492, 359],
+    [1452, 346],
+    [1346, 366],
+    [1324, 356],
+    [1315, 338],
+  ];
+  assert.throws(
+    () =>
+      recoverGroundGameplay([{ polygon: { points: boundary }, obstacles: [] }], [], false, true),
+    /require preserved movement boundaries/,
+  );
+  const footprints: Point[][] = [
+    [
+      [1346.1488, 365.8396],
+      [1324.3048, 355.68484],
+      [1345.7267, 340.52466],
+      [1367.5707, 350.6794],
+    ],
+    [
+      [1466.0311, 290.62598],
+      [1470.933, 296.9099],
+      [1267.0817, 349.224],
+      [1262.1798, 342.94006],
+    ],
+    [
+      [1346.117, 287.11295],
+      [1368.1544, 316.1233],
+      [1291.001, 335.405],
+      [1268.9635, 306.39465],
+    ],
+    [
+      [1268.964, 306.3947],
+      [1291.0013, 335.40506],
+      [1265.4781, 341.78363],
+      [1243.4408, 312.7733],
+    ],
+    [
+      [1454.2942, 336.14197],
+      [1452.02, 352.75903],
+      [1430.5603, 351.79285],
+      [1432.8345, 335.17578],
+    ],
+  ];
+  const recovered = recoverGroundGameplay(
+    [{ polygon: { points: boundary }, obstacles: [{ polygon: { points: obstacle } }] }],
+    footprints.map((footprint, index) => ({ asset: `wall-${index}`, node: "body", footprint })),
+    true,
+    true,
+  );
+  const section = recovered.sections[0]!;
+  const fragments = [
+    ...section.movementContours.flatMap((contour) =>
+      contour.regions.flatMap((region) =>
+        partitionMovementObstacles(region, true).map((points) => ({
+          id: contour.id,
+          polygon: [points],
+        })),
+      ),
+    ),
+    ...recovered.blockers.flatMap((blocker) =>
+      blocker.contours!.flatMap((contour) =>
+        contour.regions.map((polygon) => ({ id: contour.id, polygon })),
+      ),
+    ),
+  ];
+  const assembled = preserveMovementBoundary(
+    boundary,
+    fragments.map((fragment) => fragment.polygon),
+    [],
+    fragments.map((fragment) => fragment.id),
+  );
+  assert.deepEqual(
+    clipping.xor(
+      [obstacle],
+      assembled.blockers.map((points) => [points]),
+    ),
+    [],
+  );
+});
+
 test("ground recovery transfers building cutouts to assets without losing terrain holes", () => {
   const rectangle = (x: number, y: number, w: number, h: number): Point[] => [
     [x, y],

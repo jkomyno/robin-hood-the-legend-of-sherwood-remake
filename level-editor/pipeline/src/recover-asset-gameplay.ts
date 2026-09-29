@@ -95,6 +95,7 @@ const { values } = parseArgs({
     "ground-receivers": { type: "string" },
     "transition-planes": { type: "string" },
     "preserve-ground-boundaries": { type: "boolean", default: false },
+    "precise-ground-ownership": { type: "boolean", default: false },
   },
 });
 if (!values.map || !values.source || !values.out)
@@ -687,7 +688,12 @@ if (groundAreas.length) {
         return [{ ...candidates[0]!, footprint: obstacle.points.map((p): Point => [p.x, p.y]) }];
       })
       .concat(groundProjectionOwners);
-    const ground = recoverGroundGameplay(groundAreas, owners, values["preserve-ground-boundaries"]);
+    const ground = recoverGroundGameplay(
+      groundAreas,
+      owners,
+      values["preserve-ground-boundaries"],
+      values["precise-ground-ownership"],
+    );
     transferredGroundExclusions = ground.blockers.flatMap((b) => b.regions);
     const terrain = packet(grounds[0]!.id);
     terrain.issues.push(...ground.warnings);
@@ -750,6 +756,7 @@ if (groundAreas.length) {
     coverage.push({
       kind: "ground-decomposition",
       preservedBoundaries: values["preserve-ground-boundaries"],
+      preciseOwnershipIntersections: values["precise-ground-ownership"],
       sourceArea: ground.sourceArea,
       recoveredArea: ground.reconstructedArea,
       differenceArea: ground.differenceArea,

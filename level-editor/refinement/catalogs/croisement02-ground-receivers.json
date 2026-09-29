@@ -62,6 +62,13 @@
       ]
     },
     {
+      "asset": "croisement02-group-136",
+      "node": "building-136",
+      "model_sha256": "412e5aba881fc51affdaf25e7bebd7bc4bdfc3d8027f6f607d71d01eec7aae5a",
+      "source_obstacle": 136,
+      "anchor": [448, 873]
+    },
+    {
       "asset": "croisement02-group-137",
       "node": "building-137",
       "model_sha256": "485f8d57d0318d97006c23b446f6d09cdf785e6346437bccb389b20784033441",
