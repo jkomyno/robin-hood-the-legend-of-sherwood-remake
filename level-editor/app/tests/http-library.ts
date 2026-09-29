@@ -46,7 +46,7 @@ export async function checkHttpLibrary() {
     );
     await storedMaps.removeEntry("Old forest.rhlos-map.json");
     assert(
-      (await connection.mapLabels()).get("York") === "York",
+      (await connection.mapLabels()).get("York") === "York (WIP)",
       "Published map incorrectly marked modified",
     );
     let maps = await library.getDirectoryHandle("scenes");
@@ -60,7 +60,7 @@ export async function checkHttpLibrary() {
       JSON.stringify({ map: "York", revision: "edited" }),
     );
     assert(
-      (await connection.mapLabels()).get("York (Modified)") === "York (Modified)",
+      (await connection.mapLabels()).get("York (Modified)") === "York (WIP) (Modified)",
       "Saving did not expose the modified copy",
     );
     await writeText(
@@ -71,7 +71,7 @@ export async function checkHttpLibrary() {
     connection = await openHttpLibrary("/library/", storage);
     library = connection.handle;
     assert(
-      (await connection.mapLabels()).get("York (Modified)") === "York (Modified)",
+      (await connection.mapLabels()).get("York (Modified)") === "York (WIP) (Modified)",
       "Modified label did not survive reopening",
     );
     maps = await library.getDirectoryHandle("scenes");

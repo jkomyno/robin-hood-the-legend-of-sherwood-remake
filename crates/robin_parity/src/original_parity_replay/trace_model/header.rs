@@ -203,6 +203,8 @@ impl TraceSimConfig {
     ) -> robin_engine::engine::SimConfig {
         robin_engine::engine::SimConfig {
             difficulty: self.difficulty.into(),
+            // Recorded sessions have one player controlling the complete roster.
+            coop: robin_engine::coop::CoopRules::default(),
             // Original-parity traces deliberately retain the shipped bug.
             fix_hard_reaction_times: false,
             // Untying is a post-port extension and stays off in Original traces.
