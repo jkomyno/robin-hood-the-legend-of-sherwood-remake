@@ -1,15 +1,13 @@
 import earcut, { flatten } from "earcut";
-import type { Polygon } from "polygon-clipping";
+import polygonClipping, { type Polygon } from "polygon-clipping";
 import type { Point } from "./level.ts";
 import { simplifyMotionRing } from "./motion-quantization.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 
 function coverageError(region: Polygon, pieces: Point[][]): number {
-  const delta = fixedPolygonBoolean(
-    "xor",
-    region,
-    pieces.map((p) => [p]),
-  );
+  // Union shared triangle edges before comparison. Fixed-point XOR can create
+  // duplicate slivers when many coincident cuts meet a narrow hole.
+  const delta = polygonClipping.xor(region, polygonClipping.union(pieces.map((p) => [p])));
   return delta.reduce(
     (sum, polygon) =>
       sum +
@@ -57,7 +55,7 @@ export function partitionMovementObstacles(
     // TODO: handle touching islands that cannot be triangulated faithfully on
     // the final integer grid without introducing new fractional vertices.
     if (!allowNewVertices || rings.length < 2 || depth >= 16)
-      throw new Error(`Movement partition changed coverage by ${area}`);
+      throw new Error(`Movement partition changed coverage by ${area}`, { cause: region });
     // Near-touching fractional holes can defeat triangulation. Recovery may
     // split through a hole; these intermediate cuts are unioned before snapping.
     const xs = rings[1]!.map((p) => p[0]);

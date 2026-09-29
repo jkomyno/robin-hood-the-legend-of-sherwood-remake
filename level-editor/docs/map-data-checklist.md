@@ -1839,3 +1839,15 @@ marking the nine-map batch complete. A source-contour diagnostic produces about
 100.92 square units of error from union-and-rounding alone, before asset ownership
 splits or physical collision cuts; obstacle-intersection preservation therefore
 needs its own treatment in addition to the outer-boundary work.
+
+The Lincoln and Nottingham partition failures above were subsequently traced to
+false differences from fixed-point XOR on coincident triangle edges around
+narrow holes. Partition verification now unions the triangles and compares
+coverage with the floating-point polygon operation, retaining the real
+nearly-touching-hole failure regression. The reduced integer regression has zero
+symmetric difference and introduces no fractional vertices. Both fresh exports
+in `ground-boundary-partition-native` construct in Rust: Lincoln has 82 areas,
+565 sight obstacles, 89 doors and 10 jump pairs; Nottingham has 102 areas,
+667 sight obstacles, 172 doors and 38 jump pairs. This resolves those two export
+failures, without certifying their map fidelity. York's lift failure and the
+overlapping-obstacle rounding differences remain unresolved.
