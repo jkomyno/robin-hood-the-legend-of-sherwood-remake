@@ -1899,3 +1899,5 @@ engine's integer grid. Ground recovery uses this to keep independently movable
 cutouts aligned with terrain instead of rounding each piece separately.
 
 - Editor terrain now uses bundled seamless grass, dirt, water and paving art synthesized from game map samples. Roads and rivers share the dirt/water art. Paved ground is selectable in the terrain panel and exports with stone surface material. A regeneration script records the donor crops and texture-synthesis CLI settings.
+
+- Path authoring separates saved-path browsing from focused editing, keeps finish/cancel and width/elevation controls prominent, and groups texture, point coordinates, and wall tuning in collapsible sections. Footpaths and rivers can be drawn without an asset library.

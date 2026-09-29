@@ -43,6 +43,7 @@ async function main() {
   const editing = (): SplineEditMode | null => mode;
   let current!: () => Level3D;
   let error = "";
+  const [hasLibrary, setHasLibrary] = createSignal(true);
   const dispose = render(() => {
     const [doc, setDoc] = createSignal<Level3D>({
       version: 1,
@@ -77,7 +78,7 @@ async function main() {
       <aside style={{ width: "360px", padding: "18px" }}>
         <SplinePanel
           document={doc}
-          library={() => library.handle}
+          library={() => (hasLibrary() ? library.handle : null)}
           entries={() => entries}
           viewport={viewport}
           commit={(next) => setDoc(next)}
@@ -90,6 +91,7 @@ async function main() {
   }, document.querySelector("#fixture")!);
   try {
     await tick();
+    document.querySelector<HTMLDetailsElement>(".spline-settings")!.open = true;
     const select = document.querySelector<HTMLSelectElement>('[aria-label="Preset source map"]')!;
     select.value = "Croisement01";
     select.dispatchEvent(new Event("change", { bubbles: true }));
@@ -104,19 +106,28 @@ async function main() {
     click("Lincoln · Wattle fence");
     await waitFor(
       () =>
-        !!mode && !document.querySelector<HTMLButtonElement>(".spline-actions button")?.disabled,
+        !!mode &&
+        !Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find(
+          (b) => b.textContent?.trim() === "Change wall type",
+        )?.disabled,
     );
     assert(editing()?.path.sourceStraight, "Prepared strip must retain its section shape");
     const retainedGesture = editing()!;
     retainedGesture.append([0, 0, 0]);
     retainedGesture.append([250, 0, 0]);
     await tick();
-    assert(editing()?.path.points.length === 2, "Rapid appends must use the live draft, including from a retained gesture callback");
+    assert(
+      editing()?.path.points.length === 2,
+      "Rapid appends must use the live draft, including from a retained gesture callback",
+    );
     retainedGesture.append([500, 0, 0]);
     click("Finish path");
     await tick();
     assert(current().splines?.length === 1, "Finished spline must publish into the document");
-    assert(current().splines![0]!.points.length === 3, "Finishing must include the last pending point");
+    assert(
+      current().splines![0]!.points.length === 3,
+      "Finishing must include the last pending point",
+    );
     click("Change wall type");
     await tick();
     let dialog = document.querySelector<HTMLDialogElement>("dialog[open]")!;
@@ -142,9 +153,13 @@ async function main() {
     );
     for (const id of excludedCornerAssetIds) {
       const entry = entries.find((entry) => entry.id === id);
-      if (entry) assert(!Array.from(dialog.querySelectorAll("strong")).some(
-        (label) => label.textContent === entry.name,
-      ), `Rejected corner ${id} must not appear in the picker`);
+      if (entry)
+        assert(
+          !Array.from(dialog.querySelectorAll("strong")).some(
+            (label) => label.textContent === entry.name,
+          ),
+          `Rejected corner ${id} must not appear in the picker`,
+        );
     }
     dialog.querySelector<HTMLButtonElement>(".asset-card")!.click();
     await waitFor(() => !!current().splines?.[0]?.cornerAsset);
@@ -157,6 +172,8 @@ async function main() {
     assert(!error, error);
     click("Done editing");
     await tick();
+    setHasLibrary(false);
+    await tick();
     click("River");
     await tick();
     assert(editing()?.path.kind === "river", "River is a gallery preset");
@@ -165,11 +182,58 @@ async function main() {
     click("Footpath");
     await tick();
     assert(editing()?.path.kind === "road", "Footpath is a gallery preset");
+    assert(!document.querySelector(".spline-list"), "Saved paths must not interrupt drawing");
+    assert(
+      !document.querySelector('[aria-label="Path repeat length"]'),
+      "Built-in surfaces must not show an ineffective repeat control",
+    );
+    assert(
+      !document.querySelector('[aria-label="Path elevation"]'),
+      "Elevation appears once a ground height is established",
+    );
+    editing()!.append([10, 10, 40]);
+    editing()!.append([210, 10, 80]);
+    await tick();
+    assert(
+      editing()!.path.points.every((p) => p[2] === 40),
+      "Surface path stays at its first ground height",
+    );
+    click("Finish path");
+    await tick();
+    assert(current().splines?.length === 2, "Footpath must save without a library");
+    assert(
+      !document.querySelector('[aria-label="Control point Z"]'),
+      "Surface elevations are edited together",
+    );
+    click("Insert point");
+    await tick();
+    assert(editing()!.path.points.length === 3, "Insert adds a point");
+    click("Remove point");
+    await tick();
+    assert(editing()!.path.points.length === 2, "Remove restores two points");
+    assert(
+      Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find(
+        (b) => b.textContent === "Remove point",
+      )!.disabled,
+      "Minimum path points are protected",
+    );
+    click("Done editing");
+    await tick();
+    assert(
+      document.querySelectorAll(".spline-list button").length === 2,
+      "Done returns to saved paths",
+    );
+    document.querySelector<HTMLButtonElement>(".spline-list button:last-child")!.click();
+    await tick();
+    assert(editing()!.path.kind === "road", "Saved path reopens for editing");
+    assert(!error, error);
     result.textContent =
       "PASS preset filters, drawing, switching wall dimensions, corner gallery, continuous joins, document round-trip, river and footpath";
   } finally {
-    dispose();
-    viewport.dispose();
+    if (!new URLSearchParams(location.search).has("preview")) {
+      dispose();
+      viewport.dispose();
+    }
   }
 }
 void main().catch((error) => {
