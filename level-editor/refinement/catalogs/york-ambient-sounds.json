@@ -1,0 +1,71 @@
+{
+  "source_sha256": "6a3a1ee8105bf9614bc4daf1f32aa19a7afaacfadd9cbf5ec250239b502fee97",
+  "entries": [
+    {
+      "source": 0,
+      "id": "york-ambient-330-257",
+      "name": "York ambient region at 330, 257",
+      "origin": [
+        330,
+        257,
+        0
+      ],
+      "review": "Independent polyline acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 1,
+      "id": "york-ambient-3071-541",
+      "name": "York ambient region at 3071, 541",
+      "origin": [
+        3071,
+        541,
+        0
+      ],
+      "review": "Independent polyline acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 5,
+      "id": "york-ambient-602-579",
+      "name": "York ambient region at 602, 579",
+      "origin": [
+        602,
+        579,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 7,
+      "id": "york-ambient-2213-2336",
+      "name": "York ambient region at 2213, 2336",
+      "origin": [
+        2213,
+        2336,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 9,
+      "id": "york-ambient-2155-885",
+      "name": "York ambient region at 2155, 885",
+      "origin": [
+        2155,
+        885,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 13,
+      "id": "york-ambient-2522-1897",
+      "name": "York ambient region at 2522, 1897",
+      "origin": [
+        2522,
+        1897,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    }
+  ]
+}

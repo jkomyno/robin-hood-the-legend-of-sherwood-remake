@@ -1,0 +1,82 @@
+{
+  "source_sha256": "1d39600d880f96dbd13bff1cda94778d867eabf4d6ed76b00fc92a70f646fc07",
+  "entries": [
+    {
+      "source": 0,
+      "id": "lincoln-ambient-1387-811",
+      "name": "Lincoln ambient region at 1387, 811",
+      "origin": [
+        1387,
+        811,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 3,
+      "id": "lincoln-ambient-3015-120",
+      "name": "Lincoln ambient region at 3015, 120",
+      "origin": [
+        3015,
+        120,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 5,
+      "id": "lincoln-ambient-1244-381",
+      "name": "Lincoln ambient region at 1244, 381",
+      "origin": [
+        1244,
+        381,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 6,
+      "id": "lincoln-ambient-476-736",
+      "name": "Lincoln ambient region at 476, 736",
+      "origin": [
+        476,
+        736,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 7,
+      "id": "lincoln-ambient-1389-65",
+      "name": "Lincoln ambient region at 1389, 65",
+      "origin": [
+        1389,
+        65,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 8,
+      "id": "lincoln-ambient-647-689",
+      "name": "Lincoln ambient region at 647, 689",
+      "origin": [
+        647,
+        689,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    },
+    {
+      "source": 11,
+      "id": "lincoln-ambient--79-347",
+      "name": "Lincoln ambient region at -79, 347",
+      "origin": [
+        -79,
+        347,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve complete geometry and ambience settings in a movable local frame."
+    }
+  ]
+}

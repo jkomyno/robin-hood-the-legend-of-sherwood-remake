@@ -2507,3 +2507,30 @@ Every case also applies and resets all nine compiled transitions. The geometry
 remains 95 movement areas, 659 sight obstacles, 172 doors and 38 jump pairs.
 Audible playback, visual completeness, publication and ZIP round trips are still
 outstanding; this does not certify full map parity.
+
+### Lincoln and York independent environmental regions
+
+`lincoln-ambient-sounds.json` defines seven independent regions and
+`york-ambient-sounds.json` defines six. These emitters have no containing visual
+asset. The remaining four ambiguous emitters have not been assigned arbitrarily:
+Lincoln sources 1/13 overlap the west tower/hillside and great hall/plateau;
+York sources 12/20 overlap a house/raised terrain and market frontage/shared
+volume/raised terrain. They still require explicit asset ownership.
+
+The combined stages in `work/map-compile/lincoln-york-sound-library` retain
+Lincoln's door-turret volume scene and York's market movement assembly scene.
+Recovery uses their mask and ground-receiver definitions; York also retains
+its state ownership catalog and precise ground ownership. Both pass the
+movement coverage gate. Reports in `work/map-compile/lincoln-york-sound-recovery`
+now recover 12/14 Lincoln and 21/23 York emitters, with exactly those four
+ownership gaps. Pending masks remain 424/808 and shadow regions 25/16.
+
+All recovered emitter records match exactly, including repeated sample IDs.
+Thirteen independent 50-pixel moves affect only the selected sound region.
+Non-sound geometry also matches the preceding Lincoln ground-receiver and York
+state-ground drafts exactly. Fifteen exports in
+`work/map-compile/lincoln-york-sound-native` pass 29 native construction cases,
+including both baselines under all eight ambience bits. These are partial
+sound-definition checks, not audible playback or full-map parity certification.
+All nine Lincoln and six York compiled transitions also apply/reset successfully
+in every case. Publication and complete ZIP round trips remain outstanding.
