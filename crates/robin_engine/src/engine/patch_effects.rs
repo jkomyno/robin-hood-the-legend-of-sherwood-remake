@@ -960,6 +960,53 @@ mod tests {
     }
 
     #[test]
+    fn editor_appearance_only_transition_toggles_without_geometry_side_effects() {
+        let bytes = include_bytes!("../../tests/fixtures/asset-appearance-only.level.json");
+        let (mut engine, assets) = load_compiled_transition(bytes, (2000., 2000.));
+        let index = crate::patch::PatchIndex::new(0).unwrap();
+        assert_eq!(engine.script_domains.interactables.patches.len(), 1);
+        let patch = &engine.script_domains.interactables.patches[0];
+        assert!(!patch.use_changing_obstacles);
+        assert!(patch.additional_motion_changes.is_empty());
+        assert!(patch.door_indices.is_empty());
+        assert!(patch.old_mask_indices.is_empty() && patch.new_mask_indices.is_empty());
+        assert!(
+            patch.old_sight_obstacle_indices.is_empty()
+                && patch.new_sight_obstacle_indices.is_empty()
+        );
+        let grid = serde_json::to_value(&engine.world.fast_grid).unwrap();
+        let doors = serde_json::to_value(&engine.script_domains.interactables.doors).unwrap();
+        let sim = crate::sim_rng::test_context();
+        for expected in [true, false, true] {
+            engine.apply_patch(TickCtx::new(&sim, &assets), index);
+            assert_eq!(
+                engine.script_domains.interactables.patches[0].applied,
+                expected
+            );
+            assert_eq!(serde_json::to_value(&engine.world.fast_grid).unwrap(), grid);
+            assert_eq!(
+                serde_json::to_value(&engine.script_domains.interactables.doors).unwrap(),
+                doors
+            );
+        }
+        engine.reset_patch(TickCtx::new(&sim, &assets), index);
+        assert!(!engine.script_domains.interactables.patches[0].applied);
+        assert_eq!(serde_json::to_value(&engine.world.fast_grid).unwrap(), grid);
+        assert_eq!(
+            serde_json::to_value(&engine.script_domains.interactables.doors).unwrap(),
+            doors
+        );
+        let mut invalid: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+        invalid["asset_geometry"]["movement_transitions"][0]["has_appearance"] = false.into();
+        let error = crate::level_data::LoadedLevel::hackable_from_json(
+            &serde_json::to_vec(&invalid).unwrap(),
+        )
+        .err()
+        .unwrap();
+        assert!(error.contains("invalid compiled movement transition"));
+    }
+
+    #[test]
     fn editor_asset_mask_transition_switches_baked_coverage_and_resets() {
         let (mut engine, assets) = load_compiled_transition(
             include_bytes!("../../tests/fixtures/asset-mask.level.json"),

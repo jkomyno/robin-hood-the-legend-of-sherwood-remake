@@ -15,8 +15,14 @@ export function packageAppearanceRegions(
   height: number,
   base: BakePixels,
   regions: readonly BakedAppearanceRegion[],
-  transitions: readonly { id: string }[],
+  transitions: readonly { id: string; has_appearance?: boolean }[],
 ): Record<string, Uint8Array> {
+  const rendered = new Set(regions.flatMap((region) => region.patches));
+  for (const transition of transitions)
+    if (transition.has_appearance && !rendered.has(transition.id))
+      throw new Error(
+        `Missing rendered appearance states for ${transition.id}; check model bindings and the export frame`,
+      );
   if (!regions.length) return {};
   const files: Record<string, Uint8Array> = {};
   const manifest = regions.map((region, index) => {

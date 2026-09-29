@@ -2172,6 +2172,9 @@ pub struct CompiledAssetGeometry {
 #[serde(deny_unknown_fields)]
 pub struct CompiledMovementTransition {
     pub id: String,
+    /// The map's paired image resources may be this transition's only effect.
+    #[serde(default)]
+    pub has_appearance: bool,
     pub waypoint: (i16, i16),
     pub sector: u16,
     pub layer: u16,
@@ -2746,6 +2749,7 @@ impl LoadedLevel {
                         && transition.applied_sight.is_empty()
                         && transition.initial_masks.is_empty()
                         && transition.applied_masks.is_empty()
+                        && !transition.has_appearance
                         && transition.door_links.is_none())
                     || [&transition.apply_polygon, &transition.no_apply_polygon]
                         .iter()

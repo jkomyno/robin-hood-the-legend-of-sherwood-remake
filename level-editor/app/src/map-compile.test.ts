@@ -31,6 +31,7 @@ import {
   receivingIslandCompilerFixture,
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
+  appearanceOnlyCompilerFixture,
   sightTransitionCompilerFixture,
   lightAssetCompilerFixture,
   jumpAssetCompilerFixture,
@@ -323,6 +324,32 @@ test("sight transition export matches native apply/reset fixture", async () => {
   assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
 });
 
+test("appearance-only export matches native apply/reset without fabricated gameplay changes", async () => {
+  const { document, assets, hut } = appearanceOnlyCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-appearance-only.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  const compiled = compileMap(document, [0, 0, 2000, 2000], assets);
+  assert.deepEqual(compiled.descriptor, fixture);
+  const transition = compiled.descriptor.asset_geometry!.movement_transitions![0]!;
+  assert.equal(transition.has_appearance, true);
+  assert.deepEqual(transition.motion_changes, []);
+  assert.equal(transition.door_links, undefined);
+  assert.equal(transition.initial_sight, undefined);
+  assert.equal(transition.initial_masks, undefined);
+  delete hut.gameplay!.movementTransitions![0]!.appearances;
+  assert.throws(
+    () => compileMap(document, [0, 0, 2000, 2000], assets),
+    /invalid movement transition/,
+  );
+});
+
 test("movement transition export matches native apply/reset fixture", async () => {
   const { document, assets } = movementTransitionCompilerFixture();
   const fixture = JSON.parse(
@@ -338,9 +365,10 @@ test("movement transition export matches native apply/reset fixture", async () =
 });
 
 test("map ZIP includes paired appearance resources bound to compiled patch indices", async () => {
-  const { document, assets } = movementTransitionCompilerFixture();
+  const { document, assets } = appearanceOnlyCompilerFixture();
   const compiled = compileMap(document, [0, 0, 2000, 2000], assets);
   const transition = compiled.descriptor.asset_geometry!.movement_transitions![0]!;
+  assert.equal(transition.has_appearance, true);
   const pixels = {
     color: new Uint8Array(2000 * 2000 * 4).fill(255),
     depth: new Uint16Array(2000 * 2000).fill(10),

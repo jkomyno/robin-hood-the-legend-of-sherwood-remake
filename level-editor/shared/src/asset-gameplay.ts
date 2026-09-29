@@ -294,6 +294,7 @@ export interface CompiledAssetGeometry {
   }[];
   movement_transitions?: {
     id: string;
+    has_appearance?: boolean;
     waypoint: Point;
     sector: number;
     layer: number;
@@ -486,6 +487,7 @@ export function validateAssetGameplay(
         !transition.appliedSight?.length &&
         !transition.initialMasks?.length &&
         !transition.appliedMasks?.length &&
+        !transition.appearances?.length &&
         !transition.doorLinks)
     )
       fail(`invalid movement transition ${transition.id}`);

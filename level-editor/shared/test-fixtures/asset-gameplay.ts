@@ -337,6 +337,15 @@ export function preservedStateBoundaryCompilerFixture() {
   return fixture;
 }
 
+export function appearanceOnlyCompilerFixture() {
+  const fixture = movementTransitionCompilerFixture();
+  const transition = fixture.hut.gameplay!.movementTransitions![0]!;
+  transition.initial = [];
+  transition.applied = [];
+  transition.appearances = ["roof"];
+  return fixture;
+}
+
 export function movementTransitionCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.movementBlockers = [];

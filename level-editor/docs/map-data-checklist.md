@@ -33,7 +33,14 @@ explicit 64-megapixel state-image budget. Dynamic shadows conservatively require
 full-frame combinations. Automatic framing includes applied variants too.
 Existing assets still need these local bindings restored. Unbound preview names,
 shared aliases without a joined gameplay transition, and unsupported endpoint
-groups remain export errors; purely visual transitions still need compilation support.
+groups remain export errors. Purely visual transitions now compile when an asset
+declares local appearances: the native `has_appearance` flag permits an otherwise
+empty effect list, without inventing movement, sight, mask or door changes.
+ZIP packaging rejects declared appearance transitions without rendered state regions,
+including unresolved model bindings or geometry outside the export frame.
+The shared editor/native fixture verifies apply, toggle and reset while grid flags
+and door data stay unchanged. Animated mechanisms still need authored animation
+resources; mission-only placeholder profiles remain excluded.
 The browser bake acceptance test now verifies an initial/applied/reset sequence
 on one reused scene: color and depth change across a render-tile boundary, reset
 restores every pixel, and successful/failed bakes restore borrowed materials and

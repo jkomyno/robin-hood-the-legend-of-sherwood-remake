@@ -230,6 +230,7 @@ export function compileAssetGameplay(
     [];
   const transitions: {
     id: string;
+    hasAppearance: boolean;
     waypoint: Vec3;
     waypointAnchor: Vec3;
     active: boolean;
@@ -547,6 +548,7 @@ export function compileAssetGameplay(
           : [];
       transitions.push({
         id: `${placement.id}/${t.id}`,
+        hasAppearance: !!t.appearances?.length,
         waypoint: transform(t.node, t.waypoint),
         waypointAnchor: transform(t.node, t.waypointAnchor ?? t.waypoint),
         active: t.active,
@@ -1382,6 +1384,7 @@ export function compileAssetGameplay(
               !t.appliedSight.length &&
               !t.initialMasks.length &&
               !t.appliedMasks.length &&
+              !t.hasAppearance &&
               !t.doorLinks
             )
               throw new Error(`${t.id}: movement transition affects no walkable area`);
@@ -1390,6 +1393,7 @@ export function compileAssetGameplay(
             const area = resolve(t.waypointAnchor, `${t.id} waypoint`, undefined, true);
             return {
               id: t.id,
+              ...(t.hasAppearance ? { has_appearance: true } : {}),
               waypoint: project(t.waypoint),
               sector: area.sector,
               layer: area.layer,

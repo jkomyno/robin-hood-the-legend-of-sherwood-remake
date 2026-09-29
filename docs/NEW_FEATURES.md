@@ -1921,4 +1921,5 @@ cutouts aligned with terrain instead of rounding each piece separately.
   selects both fields from current native patch state, including reset and timeline
   changes. Asset transitions can name local model appearances; editor export resolves
   fresh placement bindings, groups overlapping geometry and bakes the paired images.
-  Existing asset recovery and purely visual/shared transitions remain incomplete.
+  Purely visual transitions need no fabricated collision or door changes. Existing
+  asset recovery, animated states and shared transitions remain incomplete.

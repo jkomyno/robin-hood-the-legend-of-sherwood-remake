@@ -56,6 +56,18 @@ test("paired appearance PNG files match the Rust decoder and compositor fixture"
 });
 
 test("appearance packaging rejects incomplete or conflicting state tables", () => {
+  assert.throws(
+    () => packageAppearanceRegions(prefix, 2, 2, base, [], [{ id: "roof", has_appearance: true }]),
+    /Missing rendered appearance states/,
+  );
+  assert.throws(
+    () =>
+      packageAppearanceRegions(prefix, 2, 2, base, regions.slice(1), [
+        { id: "gate" },
+        { id: "roof", has_appearance: true },
+      ]),
+    /Missing rendered appearance states/,
+  );
   const invalid: [string, (regions: BakedAppearanceRegion[]) => void][] = [
     [
       "outside",
