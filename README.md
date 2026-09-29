@@ -18,7 +18,7 @@ I took a set of 500 savegames of the original game (from the internet and myself
 
 The engine mostly works. Most gameplay works exactly like the original. I have some perf problems and some bugs especially with the UI and save handling.
 
-Some new features are already added, some incomplete, some TODO or "maybe later. Multiplayer for example - the basics work but it's not extensively tested. See [NEW_FEATURES.md](docs/NEW_FEATURES.md).
+Some new features are already added, some incomplete, some TODO or "maybe later". Multiplayer for example - the basics work but it's not extensively tested. See [NEW_FEATURES.md](docs/NEW_FEATURES.md).
 
 ## Building
 
