@@ -15,8 +15,8 @@ Nottingham has both after assembling its four changing northern facade parts.
 Croisement03 has all nine after combining its staged state assets
 with the ground-receiver recovery; older ground-only batches omit two of them.
 All twenty-four recovered transitions have matching initial/applied changing-obstacle
-coverage on matching movement envelopes. This does not prove complete walkability:
-Nottingham still has a permanent-coverage difference in its courtyard region.
+coverage on matching movement envelopes. Nottingham's two stateful regions now
+also match full walkable coverage in both states. Actor traversal remains unverified.
 No map is yet published or certified at full gameplay parity.
 
 Ground-boundary compilation now supports an explicit asset-local
@@ -2330,3 +2330,27 @@ The baseline and moved facade still apply/reset all nine compiled transitions.
 The six-receiver Rust scan passes 2,170,166 queries with zero differences, all
 twenty mask records are unchanged, and the nine-map regression retains exact
 coverage for its forty checked static ground regions.
+
+### Complete Nottingham stateful walkable coverage
+
+Reviewed navigation boundaries already carry explicit blocked contours. Their
+one-time clearance recovery now clears derived solid slices across the entire
+authored outer boundary, including those exclusions. The explicit contours remain
+blocked; duplicate rounded collision slices no longer add false stair seams.
+Physical volumes and their collision away from the reviewed surfaces remain intact.
+
+The combined precise draft now has zero full walkable-coverage difference for both
+Nottingham movement changes, initially and after application. Both outer envelopes
+and changing-obstacle coverages also match exactly. The independent twenty-unit
+stair move retains all four physical shapes and flags and separates their shared
+receiving region from the courtyard. Baseline, moved facade and moved stairs all
+construct in Rust and apply/reset all nine compiled transitions. Their native
+area counts are 95, 95 and 96 respectively; each retains 172 doors and 38 jump pairs.
+The six-receiver Rust scan passes all 2,170,166 queries with zero height, material
+or receiving-coverage differences, and all twenty compiled mask records are unchanged.
+
+Re-running Croisement03 recovery with this change retains exact permanent coverage
+for all eleven movement regions and exact initial/applied changing coverage for all
+nine transitions. Nottingham still has 507 unrecovered masks, 23 shadow regions,
+18 sound sources, and unverified actor traversal and visual-state behavior. These
+drafts remain unpublished and are not certified at full map parity.

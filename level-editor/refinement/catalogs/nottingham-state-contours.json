@@ -671,5 +671,5 @@
       ]
     }
   ],
-  "review": "Experimental complete movement contours for the courtyard. Both transition envelopes and changing states match; permanent free coverage remains under verification. Uses nottingham-state-projections.json for the physical receiving bindings."
+  "review": "Complete courtyard movement contours. Both transition envelopes, changing states and permanent free coverage match after reviewed-boundary clearance recovery. Uses nottingham-state-projections.json for physical receiving bindings. This geometry evidence does not certify traversal, visuals or full map parity."
 }

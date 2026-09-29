@@ -815,12 +815,11 @@ if (values["navigation-definitions"]) {
           });
         const outer = placed(vertices);
         const boundary = close(outer.map(([x, y]) => [x, y]));
-        // Exclusions may cross the outer boundary; they are not necessarily holes.
-        const exclusions = (holes ?? []).map((h) => close(placed(h).map(([x, y]) => [x, y])));
+        // These surfaces already carry explicit exclusions. Clear derived solid
+        // slices across the whole boundary so rounded duplicates cannot expand
+        // an authored exclusion or leave a false seam between receiving planes.
         clearanceSources.push({
-          regions: exclusions.length
-            ? polygonClipping.difference(boundary, ...exclusions)
-            : [boundary],
+          regions: [boundary],
           plane: fitHeightPlane(outer),
         });
       }
