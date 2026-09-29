@@ -4,9 +4,14 @@ import { decode } from "fast-png";
 import { unzipSync } from "fflate";
 import { bakeScene, renderMapBake } from "../src/map-bake-render.ts";
 import { compileMap, packageCompiledMap } from "../src/map-compile.ts";
-import { PatchDisplay } from "../src/patch-display.ts";
-import { planAppearanceRegions, bakeAppearanceRegions } from "../src/map-appearance-bake.ts";
+import { PatchDisplay, applyPlacementPatches } from "../src/patch-display.ts";
+import {
+  planAppearanceRegions,
+  bakeAppearanceRegions,
+  bindBakeAppearances,
+} from "../src/map-appearance-bake.ts";
 import { packageAppearanceRegions } from "../src/map-appearance.ts";
+import { endpointAppearanceCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
 
 function check(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -137,12 +142,24 @@ try {
   const stateRoot = new THREE.Group();
   const stateGround = surface([0, 0, 1100, 128], 0x808080);
   const initialSurface = surface([990, 30, 60, 40], 0x00ff00, 20);
-  initialSurface.userData.reveal_hide_when_applied = ["gate"];
   const appliedSurface = surface([990, 30, 60, 40], 0xff0000, 10);
-  appliedSurface.userData.reveal_show_when_applied = ["gate"];
+  const endpoint = endpointAppearanceCompilerFixture();
+  const transitions = compileMap(endpoint.document, [0, 0, 2000, 2000], endpoint.assets).descriptor
+    .asset_geometry!.movement_transitions!;
+  const stateId = transitions[0]!.id;
+  const available = new Set(endpoint.document.objects.map((part) => part.node));
+  for (const [mesh, id] of [
+    [initialSurface, "hut-a-body"],
+    [appliedSurface, "hut-a-open"],
+  ] as const) {
+    const part = endpoint.document.objects.find((part) => part.id === id)!;
+    mesh.userData.map_bake_object_id = id;
+    applyPlacementPatches(mesh, endpoint.document, part, available);
+  }
   appliedSurface.visible = false;
   stateRoot.add(stateGround, initialSurface, appliedSurface);
   const snapshot = bakeScene([stateRoot]);
+  bindBakeAppearances(snapshot, endpoint.document, endpoint.assets, transitions);
   const parent = new THREE.Group();
   const before = new THREE.Group();
   const after = new THREE.Group();
@@ -170,7 +187,7 @@ try {
   const initialPixels = renderMapBake(snapshot, camera, stateBounds);
   verifyOwnership();
   const display = new PatchDisplay();
-  display.set("gate", true);
+  display.set(stateId, true);
   display.apply(snapshot);
   const appliedPixels = renderMapBake(snapshot, camera, stateBounds);
   verifyOwnership();
@@ -196,9 +213,9 @@ try {
       resetPixels.depth.every((value, index) => value === initialPixels.depth[index]),
     "state reset must restore every color and depth pixel",
   );
-  const plans = planAppearanceRegions(snapshot, camera, stateBounds, [{ id: "gate" }], false);
+  const plans = planAppearanceRegions(snapshot, camera, stateBounds, transitions, false);
   check(
-    plans.length === 1 && plans[0]!.patches.join() === "gate",
+    plans.length === 1 && plans[0]!.patches.join() === stateId,
     "automatic appearance region bindings",
   );
   const regions = bakeAppearanceRegions(snapshot, plans, 1100, initialPixels, () =>
@@ -206,9 +223,14 @@ try {
   );
   const [regionX, regionY, regionWidth, regionHeight] = regions[0]!.bounds;
   check(regionWidth * regionHeight < 1100 * 128, "state images should crop unaffected map pixels");
-  const stateFiles = packageAppearanceRegions("state", 1100, 128, initialPixels, regions, [
-    { id: "gate" },
-  ]);
+  const stateFiles = packageAppearanceRegions(
+    "state",
+    1100,
+    128,
+    initialPixels,
+    regions,
+    transitions,
+  );
   const stateDepth = decode(stateFiles["state.appearance-0-1.depth.png"]!).data;
   const stateColor = decode(stateFiles["state.appearance-0-1.png"]!).data;
   for (const x of [1023, 1024]) {

@@ -32,8 +32,8 @@ patch IDs. Export renders and packages every overlapping combination, with an
 explicit 64-megapixel state-image budget. Dynamic shadows conservatively require
 full-frame combinations. Automatic framing includes applied variants too.
 Existing assets still need these local bindings restored. Unbound preview names,
-shared aliases without a joined gameplay transition, and unsupported endpoint
-groups remain export errors. Purely visual transitions now compile when an asset
+shared aliases across different assets without a joined gameplay transition, and
+manual group state overrides remain export errors. Purely visual transitions now compile when an asset
 declares local appearances: the native `has_appearance` flag permits an otherwise
 empty effect list, without inventing movement, sight, mask or door changes.
 ZIP packaging rejects declared appearance transitions without rendered state regions,
@@ -63,6 +63,16 @@ Pinned model inspection found all 15 direct appearance names; the other three
 bindings use Leicester drawbridge endpoint variants whose applied definitions
 are present. This does not verify endpoint baking. Native apply/reset still passes
 for all 56 staged gameplay transitions across the nine libraries.
+The baker now resolves applied model views through the same pinned primary asset
+identity as gameplay compilation. Endpoint visibility and local material controls
+therefore use one native switch per placement. Copies may retain the same preview
+name while switching independently; sharing a name across different assets still
+requires an explicit join. Model-metadata checks on all three Leicester drawbridges
+confirm their initial/applied parts bind to their existing door switches and reset
+exactly (3/2/2 visibility changes). A synthetic GPU bake exercises the complete
+endpoint binding path, color/depth changes across a tile boundary and exact reset.
+This does not certify the actual drawbridge pixels or animations, nor synthesize
+missing visual variants for an incomplete scene insertion.
 All four full-scene export gates still fail on remaining missing bindings; these
 are metadata recovery results, not successful full-map bakes or parity evidence.
 The placement regression suite also replaces a walkway or roof-jump neighbor

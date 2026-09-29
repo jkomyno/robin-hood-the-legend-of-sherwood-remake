@@ -7,6 +7,8 @@
   One-time gameplay recovery also restores local appearance bindings from exported
   preview provenance, requiring a unique recovered switch on the owning asset.
   Mission names and unresolved cross-asset ownership remain explicit errors.
+  The baker resolves initial/applied model views to their pinned primary switch;
+  duplicated placements retain independent switches even with identical preview names.
 
 - **Independent light receivers on shared height planes.** Map compilation separates
   navigation layers when an anchored light would spill onto an unrelated receiver.

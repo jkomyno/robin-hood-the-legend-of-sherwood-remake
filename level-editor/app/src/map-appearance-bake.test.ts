@@ -5,6 +5,7 @@ import { gameToScene } from "@rle/shared";
 import {
   movementTransitionCompilerFixture,
   joinedTransitionCompilerFixture,
+  endpointAppearanceCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { validateAssetGameplay } from "../../shared/src/asset-gameplay.ts";
 import {
@@ -14,8 +15,59 @@ import {
 } from "./map-appearance-bake.ts";
 import { compileMap, type BakeBounds } from "./map-compile.ts";
 import { contentBakeBounds } from "./map-bake-render.ts";
+import { PatchDisplay, applyPlacementPatches } from "./patch-display.ts";
 
 const camera = movementTransitionCompilerFixture().document.camera;
+
+test("endpoint models and duplicated placements use one independent switch per asset", () => {
+  const { document, assets, alias } = endpointAppearanceCompilerFixture();
+  const originals = document.objects.filter((p) => p.group);
+  document.groups.push({ ...structuredClone(document.groups[0]!), id: "hut-b" });
+  for (const part of originals) {
+    const copy = structuredClone(part);
+    copy.id = copy.id.replace("hut-a", "hut-b");
+    copy.group = "hut-b";
+    copy.transform.dx += 500;
+    document.objects.push(copy);
+  }
+  const transitions = compileMap(document, [0, 0, 2000, 2000], assets).descriptor.asset_geometry!
+    .movement_transitions!;
+  assert.equal(transitions.length, 2);
+  const root = new THREE.Group();
+  const available = new Set(["asset:hut:building-999", `asset:${alias}:scenery-open`]);
+  for (const part of document.objects.filter((p) => p.group)) {
+    const wrapper = new THREE.Group();
+    wrapper.userData.map_bake_object_id = part.id;
+    const model = new THREE.Group();
+    applyPlacementPatches(model, document, part, available);
+    // Applied model material rules retain their unremapped local name.
+    if (part.node.includes(alias)) {
+      const material = new THREE.Group();
+      material.userData.reveal_material_patch = "state";
+      material.userData.reveal_material_state = "revealed";
+      model.add(material);
+    }
+    wrapper.add(model);
+    root.add(wrapper);
+  }
+  bindBakeAppearances(root, document, assets, transitions);
+  const display = new PatchDisplay();
+  const visibility = () => root.children.map((wrapper) => wrapper.children[0]!.visible);
+  display.apply(root);
+  assert.deepEqual(visibility(), [true, false, true, false]);
+  display.set("hut-a/hut/barriers", true);
+  display.apply(root);
+  assert.deepEqual(visibility(), [false, true, true, false]);
+  assert.equal(root.children[1]!.children[0]!.children[0]!.visible, true);
+  display.set("hut-b/hut/barriers", true);
+  display.apply(root);
+  assert.deepEqual(visibility(), [false, true, false, true]);
+  display.clear();
+  display.apply(root);
+  assert.deepEqual(visibility(), [true, false, true, false]);
+  document.assetSources!.find((ref) => ref.id === alias)!.descriptor_sha256 = "1".repeat(64);
+  assert.throws(() => bindBakeAppearances(root, document, assets, transitions), /pinned primary/);
+});
 const bounds: BakeBounds = [0, 0, 100, 100];
 function mesh(x: number, y: number, patch: string) {
   const geometry = new THREE.BufferGeometry().setFromPoints(
@@ -145,9 +197,10 @@ test("asset-local appearance bindings follow duplicated placements and reject mi
     [["hut-a/hut/barriers"], ["hut-b/hut/barriers"]],
   );
   document.groups[1]!.patches = { hut: { roof: "preview-a" } };
-  assert.throws(
-    () => compileMap(document, [0, 0, 2000, 2000], assets),
-    /joined gameplay transition/,
+  assert.equal(
+    compileMap(document, [0, 0, 2000, 2000], assets).descriptor.asset_geometry!
+      .movement_transitions!.length,
+    2,
   );
   delete hut.gameplay!.movementTransitions![0]!.appearances;
   assert.throws(
@@ -211,4 +264,14 @@ test("asset contact joins bind both appearances and detach when a member moves",
   assert.throws(compile, /identical world triggers/);
   wing.gameplay!.movementTransitions![0]!.join!.point[0] = NaN;
   assert.throws(compile, /invalid transition join anchor/);
+});
+
+test("different assets cannot share a preview alias without explicit join definitions", () => {
+  const { document, assets, hut, wing } = joinedTransitionCompilerFixture();
+  delete hut.gameplay!.movementTransitions![0]!.join;
+  delete wing.gameplay!.movementTransitions![0]!.join;
+  assert.throws(
+    () => compileMap(document, [0, 0, 2000, 2000], assets),
+    /joined gameplay transition/,
+  );
 });

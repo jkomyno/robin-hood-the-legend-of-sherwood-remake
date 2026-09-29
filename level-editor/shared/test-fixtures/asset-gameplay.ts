@@ -346,6 +346,39 @@ export function appearanceOnlyCompilerFixture() {
   return fixture;
 }
 
+export function endpointAppearanceCompilerFixture() {
+  const fixture = appearanceOnlyCompilerFixture();
+  const { hut, document, assets } = fixture;
+  hut.gameplay!.movementTransitions![0]!.appearances = ["state"];
+  const applied: GameplayAssetDescriptor["parts"][number] = {
+    node: "scenery-open",
+    name: "Applied roof",
+    scenery: true,
+  };
+  hut.state_variants = {
+    initial: { name: "Initial", model: hut.model, parts: hut.parts },
+    applied: { name: "Applied", model: hut.model, parts: [applied] },
+  };
+  const alias = `${hut.id}--state-applied`;
+  assets.set(alias, { ...hut, id: alias, parts: [applied] });
+  document.assetSources!.push({
+    ...document.assetSources![0]!,
+    id: alias,
+    state_variant: "applied",
+  });
+  const body = document.objects[0]!;
+  document.objects.push({
+    id: "hut-a-open",
+    node: `asset:${alias}:scenery-open`,
+    group: body.group,
+    kind: "scenery",
+    source: { map: "ignored" },
+    transform: { ...body.transform },
+  });
+  document.groups[0]!.patches = { hut: { state: "preview-bridge" } };
+  return { ...fixture, alias };
+}
+
 export function joinedTransitionCompilerFixture() {
   const fixture = sightTransitionCompilerFixture();
   const { hut, document, assets } = fixture;

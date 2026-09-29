@@ -59,7 +59,7 @@ export class PatchDisplay {
 }
 
 /**
- * Bind one placed part's asset-local appearance IDs to mission patch IDs, exactly as the
+ * Bind one placed part's asset-local appearance IDs to placement preview IDs, exactly as the
  * editor viewport does: the placement's (or its group's) `patches` mapping for the part's
  * asset renames every reveal trigger below `node`, and grouped endpoint variants gain their
  * hide/show rule. `node` must be this placement's own copy of the source node.
