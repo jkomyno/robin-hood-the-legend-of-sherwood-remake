@@ -228,18 +228,21 @@ export async function checkSharedLibrary() {
       ],
     });
   }
-  const digest = async (file: File) => Array.from(
-    new Uint8Array(await crypto.subtle.digest("SHA-256", await file.arrayBuffer())),
-    byte => byte.toString(16).padStart(2, "0"),
-  ).join("");
+  const digest = async (file: File) =>
+    Array.from(
+      new Uint8Array(await crypto.subtle.digest("SHA-256", await file.arrayBuffer())),
+      (byte) => byte.toString(16).padStart(2, "0"),
+    ).join("");
   json("3d-assets/index.json", {
     version: 1,
-    assets: await Promise.all(entries.map(async entry => ({
-      ...entry,
-      editor: JSON.parse(await files.get(`3d-assets/${entry.descriptor}`)!.text()),
-      descriptor_sha256: await digest(files.get(`3d-assets/${entry.descriptor}`)!),
-      model_sha256: await digest(files.get(`3d-assets/${entry.model}`)!),
-    }))),
+    assets: await Promise.all(
+      entries.map(async (entry) => ({
+        ...entry,
+        editor: JSON.parse(await files.get(`3d-assets/${entry.descriptor}`)!.text()),
+        descriptor_sha256: await digest(files.get(`3d-assets/${entry.descriptor}`)!),
+        model_sha256: await digest(files.get(`3d-assets/${entry.model}`)!),
+      })),
+    ),
   });
   const publishedMaps = new Map(
     [...files].filter(([name]) => name.startsWith("scenes/") && name.endsWith(".rhlos-map.json")),
@@ -596,7 +599,9 @@ export async function checkSharedLibrary() {
     // The resize checks leave only ~100 px of canvas. Give control-point hit
     // targets room so the next click appends instead of moving the first point.
     document.querySelector<HTMLButtonElement>('[aria-label="Hide asset library"]')!.click();
-    await until(() => !(document.querySelector(".library-content") as HTMLElement).checkVisibility());
+    await until(
+      () => !(document.querySelector(".library-content") as HTMLElement).checkVisibility(),
+    );
     click("Draw");
     await until(() => (document.querySelector(".spline-panel") as HTMLElement).checkVisibility());
     click("River");
@@ -634,7 +639,9 @@ export async function checkSharedLibrary() {
     await drawPoint(0.5, 0.5);
     await drawPoint(0.75, 0.65);
     click("Finish path");
-    await until(() => [...document.querySelectorAll("button")].some((b) => b.textContent === "Done editing"));
+    await until(() =>
+      [...document.querySelectorAll("button")].some((b) => b.textContent === "Done editing"),
+    );
     click("Done editing");
     await until(() => document.querySelectorAll(".spline-list button").length === 1);
     click("Save *");
@@ -673,9 +680,15 @@ export async function checkSharedLibrary() {
     flip.checked = true;
     flip.dispatchEvent(new Event("change", { bubbles: true }));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    await until(() => [...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Finish path" && !button.disabled));
+    await until(() =>
+      [...document.querySelectorAll("button")].some(
+        (button) => button.textContent?.trim() === "Finish path" && !button.disabled,
+      ),
+    );
     click("Finish path");
-    await until(() => [...document.querySelectorAll("button")].some((b) => b.textContent === "Done editing"));
+    await until(() =>
+      [...document.querySelectorAll("button")].some((b) => b.textContent === "Done editing"),
+    );
     await until(() =>
       [...document.querySelectorAll("button")].some((b) => b.textContent === "Save as wall preset"),
     );
@@ -691,7 +704,9 @@ export async function checkSharedLibrary() {
     await drawPoint(0.2, 0.25);
     await drawPoint(0.8, 0.8);
     click("Finish path");
-    await until(() => [...document.querySelectorAll("button")].some((b) => b.textContent === "Done editing"));
+    await until(() =>
+      [...document.querySelectorAll("button")].some((b) => b.textContent === "Done editing"),
+    );
     click("Done editing");
     await until(() => document.querySelectorAll(".spline-list button").length === 3);
     click("View");
@@ -823,8 +838,8 @@ export async function checkSharedLibrary() {
       "New map assets were not restored",
     );
     assert(
-      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).valueAsNumber ===
-        10,
+      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement)
+        .valueAsNumber === 10,
       "Export frame was not restored",
     );
     const dropJson = (text: string, filename = "download_2026-09-26T16-30-12.rhlos-map.json") => {
@@ -841,8 +856,8 @@ export async function checkSharedLibrary() {
     dropJson(JSON.stringify(imported));
     await until(
       () =>
-        (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement)?.valueAsNumber ===
-        77,
+        (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement)
+          ?.valueAsNumber === 77,
     );
     assert(
       document.querySelector(".document-state")?.textContent?.includes("Unsaved changes"),
@@ -857,8 +872,8 @@ export async function checkSharedLibrary() {
     await until(() => errors.length > 0);
     errors.pop();
     assert(
-      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).valueAsNumber ===
-        77,
+      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement)
+        .valueAsNumber === 77,
       "Invalid import replaced the open map",
     );
     dropJson(JSON.stringify({ ...imported, map: "York" }));
@@ -893,8 +908,8 @@ export async function checkSharedLibrary() {
         "York (Modified)",
     );
     assert(
-      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).valueAsNumber ===
-        77,
+      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement)
+        .valueAsNumber === 77,
       "Imported map failed to save and reload",
     );
     dropJson(JSON.stringify({ ...imported, map: "Dropped forest" }));

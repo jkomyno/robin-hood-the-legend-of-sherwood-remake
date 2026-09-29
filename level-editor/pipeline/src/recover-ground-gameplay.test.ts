@@ -70,6 +70,7 @@ test("boundary recovery reassembles crossing exclusions without inventing off-ma
       },
     ],
     true,
+    true,
   );
   const section = recovered.sections[0]!;
   assert.deepEqual(section.movementBoundary, boundary);
@@ -78,15 +79,26 @@ test("boundary recovery reassembles crossing exclusions without inventing off-ma
       ([x, y]) => x >= 40 && x <= 60 && y >= -10 && y <= 76,
     ),
   );
+  const fragments = [
+    ...section.movementContours.flatMap((contour) =>
+      contour.regions.flatMap((region) =>
+        partitionMovementObstacles(region, true).map((points) => ({
+          id: contour.id,
+          polygon: [points],
+        })),
+      ),
+    ),
+    ...recovered.blockers.flatMap((blocker) =>
+      blocker.contours!.flatMap((contour) =>
+        contour.regions.map((polygon) => ({ id: contour.id, polygon })),
+      ),
+    ),
+  ];
   const assembled = preserveMovementBoundary(
     section.movementBoundary,
-    [
-      ...section.movementObstacles
-        .flatMap((region) => partitionMovementObstacles(region, true))
-        .map((p) => [p]),
-      ...recovered.blockers.flatMap((b) => b.regions),
-    ],
+    fragments.map((fragment) => fragment.polygon),
     [],
+    fragments.map((fragment) => fragment.id),
   );
   assert.deepEqual(assembled.polygon, boundary);
   assert.equal(assembled.blockers.length, 1);
