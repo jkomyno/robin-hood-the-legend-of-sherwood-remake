@@ -13,8 +13,9 @@ Current combined drafts recover 23 of the 27 map-source movement transitions.
 The four missing groups span assets in Croisement01, Croisement02, Nottingham
 and York. Croisement03 has all nine after combining its staged state assets
 with the ground-receiver recovery; older ground-only batches omit two of them.
-Twenty-one recovered transitions have matching initial/applied coverage on matching
-movement envelopes; two still require comparison across compiled partitions.
+Twenty-two recovered transitions have matching initial/applied coverage on matching
+movement envelopes; Nottingham's remaining recovered transition still requires
+comparison across compiled partitions.
 No map is yet published or certified at full gameplay parity.
 
 Ground-boundary compilation now supports an explicit asset-local
@@ -2167,3 +2168,25 @@ in the baseline, southwest-assembly move, and independent 20-unit eastward moves
 of either access slope. Each detached slope keeps its physical receiver and
 becomes a separate navigation area. Actor approach/traversal, the other elevated
 transition's area coverage, visual states and publication remain unverified.
+
+### Complete Croisement03 movement boundaries
+
+Reviewed navigation recovery now also accepts a single physical owner with an
+explicit planar boundary and no join sockets. This covers walking regions that
+extend outside their receiving footprint without inventing additional receiving
+geometry or a second owner. Model/source pins and local-plane validation remain
+required, and a single entry without a boundary or with a join socket fails.
+
+The navigation catalog restores the western platform's complete boundary and
+the seven other single-receiver elevated boundaries. All eleven source movement
+areas now have exactly one matching compiled envelope and zero difference in
+permanent walkable coverage; the compiled baseline has no extra movement areas.
+All nine transitions match both initial and applied obstacle coverage on those
+envelopes. The fourteen-receiver scan still passes 792,816 native queries with
+zero differences after the boundary restoration.
+
+The baseline and the three moved/detached diagnostic scenes construct in Rust
+and apply/reset all nine transitions. These checks establish geometry and state
+binding fidelity for this draft, not complete gameplay parity. Actor routing and
+traversal, masks, visual states, environmental sounds, and publishing the combined
+asset definitions remain outstanding.

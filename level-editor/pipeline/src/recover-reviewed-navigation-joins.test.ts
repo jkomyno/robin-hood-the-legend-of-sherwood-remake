@@ -137,3 +137,19 @@ test("reviewed navigation contour overrides retain the height plane and independ
   entry.heightTolerance = -1;
   assert.throws(f.recover, /height tolerance/);
 });
+
+test("standalone navigation recovery requires an explicit planar boundary without join sockets", () => {
+  const f = fixture(),
+    entry = f.definitions.regions[0]!.entries[0]!;
+  f.definitions.regions[0]!.entries = [entry];
+  entry.edges = [];
+  assert.throws(f.recover, /explicit boundary/);
+  entry.vertices = structuredClone(f.packets.get(entry.asset)!.surfaces[0]!.vertices);
+  const before = JSON.stringify([...f.packets]);
+  const update = f.recover()[0]!;
+  assert.deepEqual(update.vertices, entry.vertices);
+  assert.deepEqual(update.edges, []);
+  assert.equal(JSON.stringify([...f.packets]), before);
+  entry.edges = [[entry.vertices[0]!, entry.vertices[1]!]];
+  assert.throws(f.recover, /no join edges/);
+});

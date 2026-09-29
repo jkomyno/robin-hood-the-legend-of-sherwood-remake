@@ -61,9 +61,9 @@ export function recoverReviewedNavigationJoins(
       !region.id.trim() ||
       seenRegions.has(region.id) ||
       !Array.isArray(region.entries) ||
-      region.entries.length < 2
+      region.entries.length < 1
     )
-      throw new Error("Reviewed navigation region needs a unique label and multiple surfaces");
+      throw new Error("Reviewed navigation region needs a unique label and surfaces");
     seenRegions.add(region.id);
     let receiving: string | undefined;
     const joins: PlacedNavigationJoin[] = [];
@@ -170,6 +170,14 @@ export function recoverReviewedNavigationJoins(
         vertices: entry.vertices === undefined ? undefined : structuredClone(entry.vertices),
         holes: entry.vertices === undefined ? undefined : structuredClone(entry.holes ?? []),
       });
+    }
+    if (region.entries.length === 1) {
+      const entry = region.entries[0]!;
+      if (!entry.vertices || entry.edges.length)
+        throw new Error(
+          "Standalone navigation recovery requires an explicit boundary and no join edges",
+        );
+      continue;
     }
     const assembled = assembleNavigationJoins(joins);
     if (

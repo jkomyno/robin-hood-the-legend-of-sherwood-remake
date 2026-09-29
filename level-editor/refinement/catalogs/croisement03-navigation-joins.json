@@ -298,6 +298,407 @@
           "heightTolerance": 4
         }
       ]
+    },
+    {
+      "id": "walk-region-26",
+      "review": "Retain the complete western platform navigation boundary, including the narrow strip outside its physical receiving footprint. Receiving geometry remains unchanged.",
+      "entries": [
+        {
+          "asset": "croisement03-group-062",
+          "node": "building-086",
+          "model_sha256": "5518b203e4beaffcd6ad698656a055818de9b0c39776d00e36204958f81fd90e",
+          "surface": "building-086-walk-0",
+          "source_obstacle": 86,
+          "vertices": [
+            [
+              47,
+              14.13886091916316,
+              82.00001
+            ],
+            [
+              -34,
+              33.13886091916315,
+              82.00001
+            ],
+            [
+              -34,
+              -56.861139080836885,
+              82.00001
+            ],
+            [
+              16,
+              -42.86113908083688,
+              82.00001
+            ],
+            [
+              49,
+              -32.861139080836836,
+              82.00001
+            ],
+            [
+              61,
+              -15.861139080836894,
+              82.00001
+            ]
+          ],
+          "holes": [],
+          "edges": []
+        }
+      ]
+    },
+    {
+      "id": "walk-region-28",
+      "review": "The sole physical receiver owns the complete navigation boundary; its receiving footprint and height anchors are retained separately.",
+      "entries": [
+        {
+          "asset": "croisement03-group-068",
+          "node": "building-068",
+          "model_sha256": "c49fc3f2ba8841ade0cab90e2787efc4a2e9872a06b3daab36169149a57fba5d",
+          "surface": "building-068-walk-0",
+          "source_obstacle": 68,
+          "vertices": [
+            [
+              -27,
+              54.63635547343087,
+              78.00101
+            ],
+            [
+              -32,
+              29.636355473430935,
+              78.00101
+            ],
+            [
+              -61,
+              -9.363644526569072,
+              78.00101
+            ],
+            [
+              -94,
+              -28.36364452656913,
+              78.00101
+            ],
+            [
+              -55,
+              -68.36364452656916,
+              78.00101
+            ],
+            [
+              -16,
+              -71.3636445265691,
+              78.00101
+            ],
+            [
+              38,
+              -1.3636445265691441,
+              78.00101
+            ]
+          ],
+          "holes": [],
+          "edges": []
+        }
+      ]
+    },
+    {
+      "id": "walk-region-29",
+      "review": "The sole physical receiver owns the complete navigation boundary; its receiving footprint and height anchors are retained separately.",
+      "entries": [
+        {
+          "asset": "croisement03-group-063",
+          "node": "building-063",
+          "model_sha256": "d5ab86e670fb209a79c413a6b4bcb17ba33aaebb1b0a68eed26e9b1a95eda52a",
+          "surface": "building-063-walk-0",
+          "source_obstacle": 63,
+          "vertices": [
+            [
+              3,
+              16.44221573121885,
+              27.556716370857483
+            ],
+            [
+              -24,
+              5.638820740735477,
+              46.75332138037402
+            ],
+            [
+              -26,
+              -3.7187070221312823,
+              53.39579361750731
+            ],
+            [
+              -6,
+              -18.213547601151156,
+              52.900953038487444
+            ],
+            [
+              9,
+              -22.563205384952155,
+              48.55129525468635
+            ],
+            [
+              34,
+              -9.93767075654022,
+              29.17682988309832
+            ]
+          ],
+          "holes": [],
+          "edges": []
+        }
+      ]
+    },
+    {
+      "id": "walk-region-30",
+      "review": "The sole physical receiver owns the complete navigation boundary; its receiving footprint and height anchors are retained separately.",
+      "entries": [
+        {
+          "asset": "croisement03-group-065",
+          "node": "building-065",
+          "model_sha256": "a98857066068d196139275588c786a76e1084633f0b9ad544a57c1aa65e258f9",
+          "surface": "building-065-walk-0",
+          "source_obstacle": 65,
+          "vertices": [
+            [
+              7,
+              20.33435432220999,
+              28.001001000000002
+            ],
+            [
+              -28,
+              14.334354322209979,
+              28.001001000000002
+            ],
+            [
+              -39,
+              -0.6656456777899841,
+              28.001001000000002
+            ],
+            [
+              -9,
+              -23.665645677790003,
+              28.001001000000002
+            ],
+            [
+              30,
+              -13.66564567779003,
+              28.001001000000002
+            ],
+            [
+              34,
+              6.33435432221005,
+              28.001001000000002
+            ]
+          ],
+          "holes": [],
+          "edges": []
+        }
+      ]
+    },
+    {
+      "id": "walk-region-31",
+      "review": "The sole physical receiver owns the complete navigation boundary; its receiving footprint and height anchors are retained separately.",
+      "entries": [
+        {
+          "asset": "croisement03-group-066",
+          "node": "building-066",
+          "model_sha256": "9d0236039ade6da2767c440f8f05072f98ee75eb1a4641d5780a67ecd8d77002",
+          "surface": "building-066-walk-0",
+          "source_obstacle": 66,
+          "vertices": [
+            [
+              -8,
+              20.672782161538557,
+              32.951715095309254
+            ],
+            [
+              -27,
+              6.814363006273817,
+              49.0932959400445
+            ],
+            [
+              -26,
+              -9.00711577212393,
+              61.27181716164688
+            ],
+            [
+              -3,
+              -16.468439673756453,
+              60.8104932600142
+            ],
+            [
+              20,
+              -7.702843713467921,
+              47.576089220302805
+            ],
+            [
+              22,
+              11.01360519776836,
+              32.292538131539146
+            ]
+          ],
+          "holes": [],
+          "edges": []
+        }
+      ]
+    },
+    {
+      "id": "walk-region-32",
+      "review": "The sole physical receiver owns the complete navigation boundary; its receiving footprint and height anchors are retained separately.",
+      "entries": [
+        {
+          "asset": "croisement03-group-068",
+          "node": "building-069",
+          "model_sha256": "c49fc3f2ba8841ade0cab90e2787efc4a2e9872a06b3daab36169149a57fba5d",
+          "surface": "building-069-walk-0",
+          "source_obstacle": 69,
+          "vertices": [
+            [
+              -63,
+              7.686614046713374,
+              22.051268573282414
+            ],
+            [
+              -93,
+              -17.51654028651848,
+              21.848114240050506
+            ],
+            [
+              -81,
+              -28.481092020309518,
+              35.88356250625958
+            ],
+            [
+              -70,
+              -25.954552109051143,
+              40.41010241751792
+            ],
+            [
+              -41,
+              0.713514745182206,
+              39.07816927175128
+            ]
+          ],
+          "holes": [],
+          "edges": []
+        }
+      ]
+    },
+    {
+      "id": "walk-region-33",
+      "review": "The sole physical receiver owns the complete navigation boundary; its receiving footprint and height anchors are retained separately.",
+      "entries": [
+        {
+          "asset": "croisement03-group-057",
+          "node": "building-057",
+          "model_sha256": "2449e91b5ae810f076e5d44febae63e35a3dd14f7252cac38d50144f5ab9657f",
+          "surface": "building-057-walk-0",
+          "source_obstacle": 57,
+          "vertices": [
+            [
+              42,
+              6.681515613877673,
+              52.00140273425093
+            ],
+            [
+              39,
+              25.682403501236955,
+              52.00229062161019
+            ],
+            [
+              20,
+              35.682924999097786,
+              52.002812119471024
+            ],
+            [
+              -18,
+              21.68239584239559,
+              52.002282962768874
+            ],
+            [
+              -42,
+              -9.318962937952467,
+              52.00092418242074
+            ],
+            [
+              -27,
+              -26.319795672129526,
+              52.000091448243744
+            ],
+            [
+              16,
+              -27.319975664739918,
+              51.999911455633296
+            ]
+          ],
+          "holes": [],
+          "edges": []
+        }
+      ]
+    },
+    {
+      "id": "walk-region-34",
+      "review": "The sole physical receiver owns the complete navigation boundary; its receiving footprint and height anchors are retained separately.",
+      "entries": [
+        {
+          "asset": "croisement03-group-056",
+          "node": "building-056",
+          "model_sha256": "eb4956c0e58da044175611b469ee182f2e14fd5ecf543f4f37e3bb7b9ea26f32",
+          "surface": "building-056-walk-0",
+          "source_obstacle": 56,
+          "vertices": [
+            [
+              10,
+              27.61418694585209,
+              31.156402211214026
+            ],
+            [
+              -23,
+              35.89324889822354,
+              31.435464163585486
+            ],
+            [
+              -44,
+              23.553020994815572,
+              32.09523626017751
+            ],
+            [
+              -17,
+              -3.1301158679606353,
+              32.41209939740132
+            ],
+            [
+              -5,
+              -6.229169890204473,
+              32.31304537515748
+            ],
+            [
+              -8,
+              -20.784612738987175,
+              32.7576025263748
+            ],
+            [
+              1,
+              -34.545723869228006,
+              32.996491396133955
+            ],
+            [
+              15,
+              -36.70126724238449,
+              32.840948022977436
+            ],
+            [
+              25,
+              -29.063674691358624,
+              32.47854057400333
+            ],
+            [
+              26,
+              14.721996999425837,
+              31.264212264787773
+            ]
+          ],
+          "holes": [],
+          "edges": []
+        }
+      ]
     }
   ]
 }
