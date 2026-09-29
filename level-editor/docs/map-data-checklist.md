@@ -52,6 +52,23 @@ Compiler and native fixtures cover two joined assets, moved/duplicated placement
 combined navigation and sight apply/reset, and invalid aliases. Existing maps
 still need reviewed join definitions recovered into their assets; this feature
 does not resolve their outstanding shared ownership or certify map parity.
+One-time recovery now preserves exported map-appearance provenance when exactly
+one recovered gameplay switch belongs to the same asset. Duplicate recovery
+evidence is deduplicated; conflicting placements, mission preview names, absent
+definitions and cross-asset ownership remain explicit unresolved records.
+The staged Derby/Leicester/Lincoln/Nottingham libraries now contain respectively
+1/5/8/4 restored local appearance bindings (18 total), with 3/8/7/2 still unresolved.
+Their compiled geometry is unchanged apart from the 18 `has_appearance` flags.
+Pinned model inspection found all 15 direct appearance names; the other three
+bindings use Leicester drawbridge endpoint variants whose applied definitions
+are present. This does not verify endpoint baking. Native apply/reset still passes
+for all 56 staged gameplay transitions across the nine libraries.
+All four full-scene export gates still fail on remaining missing bindings; these
+are metadata recovery results, not successful full-map bakes or parity evidence.
+The placement regression suite also replaces a walkway or roof-jump neighbor
+with an independently identified asset: geometry reconnects the new neighbor
+while the displaced old one remains disconnected. Existing tests separately
+cover rotated and duplicated connections; real-map actor traversal remains open.
 The browser bake acceptance test now verifies an initial/applied/reset sequence
 on one reused scene: color and depth change across a render-tile boundary, reset
 restores every pixel, and successful/failed bakes restore borrowed materials and

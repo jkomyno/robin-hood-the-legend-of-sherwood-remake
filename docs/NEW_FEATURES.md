@@ -4,6 +4,9 @@
   placed parts into one map switch, combining their gameplay and appearance changes.
   Moving the contacts apart creates independent switches; duplicated assemblies
   remain independent. Compilation rejects incompatible trigger and door rules.
+  One-time gameplay recovery also restores local appearance bindings from exported
+  preview provenance, requiring a unique recovered switch on the owning asset.
+  Mission names and unresolved cross-asset ownership remain explicit errors.
 
 - **Independent light receivers on shared height planes.** Map compilation separates
   navigation layers when an anchored light would spill onto an unrelated receiver.

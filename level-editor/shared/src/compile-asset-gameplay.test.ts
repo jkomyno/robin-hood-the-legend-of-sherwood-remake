@@ -788,6 +788,44 @@ test("cross-asset jumps detach and reconnect with independently placed assets", 
     ),
   );
 });
+
+test("walkways and roof jumps reconnect to replacement assets without original neighbor identities", () => {
+  for (const kind of ["walkway", "jump"] as const) {
+    const fixture =
+      kind === "walkway" ? joinedNavigationCompilerFixture() : crossAssetJumpCompilerFixture();
+    const { document, assets, upper } = fixture;
+    const original = compileAssetGameplay(document, assets, bounds);
+    const part = document.objects.find((p) => p.node.startsWith(`asset:${upper.id}:`))!;
+    const group = document.groups.find((g) => g.id === part.group)!;
+    group.transform.dx += 30;
+    const detached = compileAssetGameplay(document, assets, bounds);
+    if (kind === "jump") assert.equal(detached.jump_line_pairs, undefined);
+    else assert.equal(detached.motion_data.layers.flat().length, 2);
+    const replacement = structuredClone(upper);
+    replacement.id = "newly-authored-replacement";
+    replacement.source_map = "unrelated-authoring-provenance";
+    assets.set(replacement.id, replacement);
+    document.assetSources!.push({
+      ...document.assetSources!.find((ref) => ref.id === upper.id)!,
+      id: replacement.id,
+    });
+    const replacementPart = structuredClone(part);
+    replacementPart.id = "new-neighbor-body";
+    replacementPart.group = "new-neighbor";
+    replacementPart.node = part.node.replace(`asset:${upper.id}:`, `asset:${replacement.id}:`);
+    document.objects.push(replacementPart);
+    document.groups.push({ id: "new-neighbor", transform: { ...IDENTITY_TRANSFORM } });
+    const rebuilt = compileAssetGameplay(document, assets, bounds);
+    if (kind === "jump") {
+      assert.deepEqual(rebuilt.jump_line_pairs, original.jump_line_pairs);
+      assert.equal(rebuilt.jump_zones!.length, 2);
+    } else {
+      // The detached old neighbor remains separate; the replacement joins the walkway.
+      assert.equal(rebuilt.motion_data.layers.flat().length, 2);
+      assert.equal(rebuilt.warnings!.filter((w) => w.includes("no matching boundary")).length, 1);
+    }
+  }
+});
 test("detached edges do not remove landing zones used by another complete jump", () => {
   const { document, assets, hut } = jumpAssetCompilerFixture();
   const expected = compileAssetGameplay(document, assets, bounds);

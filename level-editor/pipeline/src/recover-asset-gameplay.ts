@@ -55,6 +55,7 @@ import { terrainOwnsJump } from "./terrain-jump-ownership.ts";
 import { jumpEdgeOwners } from "./jump-edge-ownership.ts";
 import { recoverMotionStates } from "./recover-motion-states.ts";
 import { recoverMovementTransition } from "./recover-movement-transition.ts";
+import { recoverAppearanceBindings } from "./recover-appearance-bindings.ts";
 import {
   reviewedTransitionPlanes,
   type ReviewedTransitionPlanes,
@@ -1988,6 +1989,20 @@ if (values["mask-definitions"]) {
     (p.masks ??= []).push(recovered.definition);
   }
 }
+const appearanceRecovery = recoverAppearanceBindings(
+  inputDocument,
+  proto.patches.length,
+  [...movementTransitionRecovery, ...doorTransitionRecovery, ...maskTransitionRecovery],
+  new Map([...packets].map(([id, p]) => [id, p.movementTransitions ?? []])),
+);
+for (const binding of appearanceRecovery.bindings) {
+  const transition = packet(binding.asset).movementTransitions!.find(
+    (t) => t.id === binding.transition,
+  )!;
+  transition.appearances = [...new Set([...(transition.appearances ?? []), binding.appearance])];
+}
+for (const entry of appearanceRecovery.unresolved)
+  unresolved.push({ kind: "appearance-binding", ...entry });
 // A scene frame or preview box is not proof that its physical volume migrated.
 // Inventory all source records, including ones only referenced by masks.
 const unownedSightObstacles = proto.sight_obstacles.flatMap((shape, index) => {
@@ -2017,6 +2032,7 @@ const unownedSightObstacles = proto.sight_obstacles.flatMap((shape, index) => {
 });
 for (const entry of unownedSightObstacles) unresolved.push({ kind: "sight-owner", ...entry });
 const pending = {
+  appearanceBindings: appearanceRecovery.unresolved.length,
   sightObstacleOwners: unownedSightObstacles.length,
   doorTransitionBindings:
     proto.patches.filter((patch) => patch.door_indices.length > 0).length -
@@ -2101,6 +2117,7 @@ const report = {
   movementTransitionRecovery,
   doorTransitionRecovery,
   maskTransitionRecovery,
+  appearanceRecovery,
   doorStateOwnershipRecovery,
   declaredEndpointBindings: [...endpointBindings.values()],
   declaredInteriorRecovery: [...interiorSources].map(([building, pieces]) => ({
