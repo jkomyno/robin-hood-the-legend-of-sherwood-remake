@@ -1,0 +1,170 @@
+{
+  "source_sha256": "b908102046d94d6029ec7144156499a89f225834f9d27953f4202dee05bdeb53",
+  "entries": [
+    {
+      "source": 0,
+      "id": "leicester-light-region-0",
+      "name": "Leicester lighting field at 1168, 1303",
+      "origin": [
+        1168,
+        1303,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 1,
+      "id": "leicester-light-region-1",
+      "name": "Leicester lighting field at 917, 1262",
+      "origin": [
+        917,
+        1262,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 2,
+      "id": "leicester-light-region-2",
+      "name": "Leicester lighting field at 2875, 1687",
+      "origin": [
+        2875,
+        1687,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 3,
+      "id": "leicester-light-region-3",
+      "name": "Leicester lighting field at 2983, 1721",
+      "origin": [
+        2983,
+        1721,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 4,
+      "id": "leicester-light-region-4",
+      "name": "Leicester lighting field at 837, 1067",
+      "origin": [
+        837,
+        1067,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 5,
+      "id": "leicester-light-region-5",
+      "name": "Leicester lighting field at 964, 851",
+      "origin": [
+        964,
+        851,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 6,
+      "id": "leicester-light-region-6",
+      "name": "Leicester lighting field at 2435, 880",
+      "origin": [
+        2435,
+        880,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 8,
+      "id": "leicester-light-region-8",
+      "name": "Leicester lighting field at 982, 722",
+      "origin": [
+        982,
+        722,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 9,
+      "id": "leicester-light-region-9",
+      "name": "Leicester lighting field at 1057, 540",
+      "origin": [
+        1057,
+        540,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 11,
+      "id": "leicester-light-region-11",
+      "name": "Leicester lighting field at 316, 914",
+      "origin": [
+        316,
+        914,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 13,
+      "id": "leicester-light-region-13",
+      "name": "Leicester lighting field at 793, 406",
+      "origin": [
+        793,
+        406,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 17,
+      "id": "leicester-light-region-17",
+      "name": "Leicester lighting field at 803, 369",
+      "origin": [
+        803,
+        369,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 22,
+      "id": "leicester-light-region-22",
+      "name": "Leicester lighting field at 861, 282",
+      "origin": [
+        861,
+        282,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 25,
+      "id": "leicester-light-region-25",
+      "name": "Leicester lighting field at 1612, 689",
+      "origin": [
+        1612,
+        689,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 29,
+      "id": "leicester-light-region-29",
+      "name": "Leicester lighting field at 1995, 722",
+      "origin": [
+        1995,
+        722,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    }
+  ]
+}

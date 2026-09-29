@@ -50,7 +50,7 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
-| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Derby's 26 contours, Nottingham's 24, York's 37 and Sherwood's night field compile; other maps' ownership, unrestricted query equivalence and publication remain unfinished |
+| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Derby's 26 contours, Nottingham's 24, York's 37 and Sherwood's night field compile; Leicester's 30 compile but shared-layer shadow leakage fails runtime comparison; remaining ownership, unrestricted query equivalence and publication remain unfinished |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | All 119 emitter records match across nine source-backed staged maps; publication, audible playback and Wychford authoring remain outstanding |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
@@ -2757,3 +2757,33 @@ coverage are recorded separately. This verifies mapped common navigation domains
 not missing geometry, unmapped layer pairs, altered placements or rendered
 appearance. York still has 808 pending masks and incomplete visual patch
 definitions; publication and complete ZIP round trips remain outstanding.
+
+### Leicester light definitions and detected layer leakage
+
+`leicester-light-regions.json` authors fifteen independent environmental fields;
+fifteen additional regions recover onto existing assets. The explicit field
+owners are in `leicester-light-ownership.json`. The combined scene in
+`work/map-compile/leicester-light-stage` extends the sound-complete draft and
+retains its ground receivers and reviewed mask definitions. Recovery has zero
+pending light or sound records and passes the movement coverage gate.
+
+All 30 source contours and ambience filters compile into 34 runtime regions in
+`work/map-compile/leicester-complete-light-native`; some contours receive on
+multiple rebuilt layers. Non-light data matches the preceding sound-complete
+draft. Rust constructs 55 areas, 444 sight obstacles, 105 doors and 23 jump pairs,
+and applies/resets all six compiled transitions.
+
+**Lighting query parity fails.** The source-query comparison checks 39 nonempty
+windows on known layer pairs under ambience bits 1, 2 and 4. Of 4,283,946
+integer/half-pixel evaluations, 1,436 differ. For example, at `(279, 920)` under
+ambience 4, source layer 4 is unshadowed but compiled layer 7 is shadowed. The
+compiler groups equal-height planes onto the same layer: this combines receiving
+regions from source layers 2 and 4, allowing a contour belonging to one region
+to shadow its neighbour. The contour and filter inventory is therefore complete,
+but layer allocation must preserve independently authored light receivers before
+this draft can pass. The comparison manifest and failure report retain the
+reproduction; empty shared-coverage windows are recorded separately.
+
+Leicester also retains 449 pending masks and incomplete visual patch definitions.
+These staged definitions are not published or certified, and complete ZIP round
+trips remain outstanding.
