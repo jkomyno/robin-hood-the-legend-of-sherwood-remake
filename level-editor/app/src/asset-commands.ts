@@ -6,6 +6,7 @@ import {
   parseLevel3D,
   parseProjectionAssetDescriptor,
   type ExternalAssetSource,
+  type GameplayAssetDescriptor,
   type Level3D,
   type Level3DObject,
   type ProjectionAssetDescriptor,
@@ -59,6 +60,14 @@ export function insertProjectionAsset(
     name: part.name,
     ...(part.default_hidden ? { hidden: true } : {}),
   }));
+  // Place the lowest authored surface or collision base on the terrain. Some
+  // reusable models retain an elevated local origin after extraction.
+  const surfaces = (descriptor as GameplayAssetDescriptor).gameplay?.surfaces ?? [];
+  const heights = [
+    ...surfaces.flatMap((s) => (typeof s.height === "number" ? [s.height] : s.height)),
+    ...descriptor.parts.flatMap((p) => p.obstacle_local_game?.points.map((v) => v.z_bottom) ?? []),
+  ];
+  const baseHeight = heights.length ? Math.min(...heights) : 0;
   const next: Level3D = {
     ...document,
     assetSources: existing
@@ -78,7 +87,12 @@ export function insertProjectionAsset(
               },
             }
           : {}),
-        transform: { dx: placement[0], dy: placement[1], dz: placement[2], rot_deg: 0 },
+        transform: {
+          dx: placement[0],
+          dy: placement[1],
+          dz: placement[2] - baseHeight,
+          rot_deg: 0,
+        },
       },
     ],
     objects: [...document.objects, ...parts],

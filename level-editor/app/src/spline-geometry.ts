@@ -1,17 +1,8 @@
 import * as THREE from "three";
 import { excludedCornerAssetIds } from "./spline-corners.ts";
-import { gameToScene, type LevelSpline, type MapCamera } from "@rle/shared";
+import { terrainSplineCurve, gameToScene, type LevelSpline, type MapCamera } from "@rle/shared";
 
-export function splineCurve(path: LevelSpline, camera: MapCamera) {
-  const curve = new THREE.CatmullRomCurve3(
-    path.points.map((point) => new THREE.Vector3(...gameToScene(camera, ...point))),
-    path.closed,
-    "centripetal",
-  );
-  curve.arcLengthDivisions = Math.max(256, path.points.length * 40);
-  curve.updateArcLengths();
-  return curve;
-}
+export const splineCurve = terrainSplineCurve;
 
 export function riverGeometry(path: LevelSpline, camera: MapCamera) {
   const curve = splineCurve(path, camera),

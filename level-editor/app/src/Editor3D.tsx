@@ -1,3 +1,4 @@
+import TerrainPanel from "./TerrainPanel";
 // Edit JSON maps assembled from pinned library assets, with game and orbit cameras.
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, untrack } from "solid-js";
 import type { JSX } from "@solidjs/web";
@@ -924,7 +925,7 @@ export default function Editor3D(props: EditorProps) {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       props.onStatus(
-        `Exported ${compiled.name}.zip — gameplay geometry compiled from placed assets. See the compile report for supported features.`,
+        `Exported ${compiled.name}.zip. Put it in the game’s configured mods directory, then choose ${compiled.details.title} in Custom Missions. The ZIP includes a compile report and editable map.`,
       );
     } catch (error) {
       if (!disposed) {
@@ -1189,7 +1190,9 @@ export default function Editor3D(props: EditorProps) {
               }}
             >
               <option value="">Map only</option>
-              <For each={missionsForMap(props.index(), doc()?.sourceMap ?? doc()?.map ?? mapName())}>
+              <For
+                each={missionsForMap(props.index(), doc()?.sourceMap ?? doc()?.map ?? mapName())}
+              >
                 {(mission) => <option value={mission.id}>{mission.label}</option>}
               </For>
             </select>
@@ -1218,7 +1221,9 @@ export default function Editor3D(props: EditorProps) {
             Download
           </button>
           <button
-            disabled={!doc() || compiling() || editingPath() || addingAsset() || !!mapLoadProgress()}
+            disabled={
+              !doc() || compiling() || editingPath() || addingAsset() || !!mapLoadProgress()
+            }
             onClick={() => void exportMod()}
             title="Compile geometry and connections from placed asset definitions"
           >
@@ -1497,6 +1502,12 @@ export default function Editor3D(props: EditorProps) {
               Draw walls, rivers and paths directly in the scene. Finish or cancel a path before
               switching tools.
             </p>
+            <TerrainPanel
+              document={doc}
+              commit={pushHistory}
+              onError={props.onError}
+              disabled={editingPath()}
+            />
             <SplinePanel
               document={doc}
               library={() => props.library()?.handle ?? null}
@@ -1696,11 +1707,18 @@ export default function Editor3D(props: EditorProps) {
             </section>
             <LightingPanel document={doc} commit={pushHistory} />
             <section class="view-settings export-settings">
+              <h2>Test your map</h2>
+              <p class="hint">
+                Choose Export mod ZIP, put the downloaded ZIP in the game’s configured mods
+                directory, then select your map in Custom Missions. Use the base game data for
+                characters and shared resources. The editor’s population preview does not run
+                mission scripts.
+              </p>
               <h2>Export frame</h2>
               <p class="hint">
-                Gameplay is compiled from asset-local definitions. Assets need authored walkable
-                surfaces and door connections. Player spawns belong to missions. Missing map
-                definitions stop export.
+                Terrain generates walking areas and height layers automatically. Asset gameplay is
+                compiled from local definitions. Assets need authored walkable surfaces and door
+                connections. Player spawns belong to missions. Missing map definitions stop export.
                 Mission scripts, lifts, jumps and interactive state changes are not supported yet.
               </p>
               <p class="hint">
@@ -1825,10 +1843,18 @@ export default function Editor3D(props: EditorProps) {
                     <button
                       class="asset-action"
                       aria-label="Hidden"
-                      aria-pressed={(selectedGroup()?.hidden ?? selectedPart()?.hidden) ? "true" : "false"}
-                      title={(selectedGroup()?.hidden ?? selectedPart()?.hidden) ? "Show asset" : "Hide asset"}
+                      aria-pressed={
+                        (selectedGroup()?.hidden ?? selectedPart()?.hidden) ? "true" : "false"
+                      }
+                      title={
+                        (selectedGroup()?.hidden ?? selectedPart()?.hidden)
+                          ? "Show asset"
+                          : "Hide asset"
+                      }
                       disabled={!!selectedStatePart()}
-                      onClick={() => setHidden(!(selectedGroup()?.hidden ?? selectedPart()?.hidden))}
+                      onClick={() =>
+                        setHidden(!(selectedGroup()?.hidden ?? selectedPart()?.hidden))
+                      }
                     >
                       <svg
                         width="18"

@@ -92,7 +92,10 @@ export function compileMap(
       .replace(/^-+|-+$/g, "") || "map";
   // Namespace map and mission names so installation cannot replace a base-game map.
   const name = `editor-${slug}`;
-  const assetGeometry = assets ? compileAssetGameplay(document, assets, bounds) : undefined;
+  const assetGeometry =
+    assets || document.terrain?.length || document.splines?.some((p) => p.kind !== "wall")
+      ? compileAssetGameplay(document, assets ?? new Map(), bounds)
+      : undefined;
   const volumes = assetGeometry ? [] : compileVolumes(document, bounds);
   const warnings = assetGeometry
     ? [

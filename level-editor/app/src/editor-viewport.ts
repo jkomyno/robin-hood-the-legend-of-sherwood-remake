@@ -1,3 +1,4 @@
+import { TerrainLayer } from "./terrain-layer.ts";
 import { stableOpaqueSort } from "./render-order.ts";
 import {
   bakeScene,
@@ -74,12 +75,16 @@ export class EditorViewport {
       this.objectsRoot,
       ...(this.ground ? [this.ground] : []),
       ...this.splines.bakeObjects(),
+      this.terrain.root,
     ]);
     const bounds =
       document.exportBounds ??
       (document.size
         ? ([0, 0, ...document.size] as [number, number, number, number])
-        : contentBakeBounds(root, document.camera));
+        : (() => {
+            const bounds = contentBakeBounds(root, document.camera);
+            return [bounds[0], bounds[1], bounds[2] + 1, bounds[3] + 1] as typeof bounds;
+          })());
     const compiled = compileMap(document, bounds, assets);
     const pixels = renderMapBake(
       root,
@@ -310,6 +315,7 @@ export class EditorViewport {
   private readonly mapRoot = new THREE.Group();
   private readonly objectsRoot = new THREE.Group();
   private readonly overlayRoot = new THREE.Group();
+  private readonly terrain = new TerrainLayer();
   private readonly splines = new SplineLayer();
   private readonly sunlight = new SunLighting();
   private splineMode: SplineEditMode | null = null;
@@ -344,7 +350,13 @@ export class EditorViewport {
     this.exportFrame.visible = false;
     this.exportFrame.renderOrder = 1000;
     this.mapRoot.add(this.exportFrame);
-    this.mapRoot.add(this.objectsRoot, this.overlayRoot, this.splines.root, this.sunlight.root);
+    this.mapRoot.add(
+      this.terrain.root,
+      this.objectsRoot,
+      this.overlayRoot,
+      this.splines.root,
+      this.sunlight.root,
+    );
     this.selectionBox.visible = false;
     this.scene.add(this.selectionBox);
   }
@@ -534,6 +546,7 @@ export class EditorViewport {
     this.sunlight.setGround(null);
     this.sunlight.root.visible = false;
     this.splines.clear();
+    this.terrain.clear();
     this.cancelPointerGesture?.();
     this.replaceEntities(null);
     this.flight = null;
@@ -928,6 +941,7 @@ export class EditorViewport {
     if (this.groundNode) box.expandByObject(this.groundNode);
     box.expandByObject(this.objectsRoot);
     box.expandByObject(this.splines.root);
+    box.expandByObject(this.terrain.root);
     // Initial camera framing is a viewport preference, never an authored boundary.
     if (box.isEmpty() && this.bindings.document()?.size === null)
       box.set(new THREE.Vector3(-500, 0, -500), new THREE.Vector3(500, 0, 500));
@@ -1017,12 +1031,13 @@ export class EditorViewport {
     return [
       x,
       y,
-      Math.max(1, Math.ceil(projected.max.x) - x),
-      Math.max(1, Math.ceil(projected.max.y) - y),
+      Math.max(1, Math.ceil(projected.max.x) - x + 1),
+      Math.max(1, Math.ceil(projected.max.y) - y + 1),
     ];
   }
 
   syncViews(d: Level3D, rebuildFraming = true) {
+    this.terrain.sync(d);
     this.exportFrame.visible = !!d.exportBounds;
     if (d.exportBounds) {
       const [x, y, w, h] = d.exportBounds;
@@ -1108,7 +1123,12 @@ export class EditorViewport {
     this.framingKey = "";
     // Perspective extrema lie at triangle vertices. Empty bounding-box corners
     // must not influence lens compensation as the viewing angle changes.
-    for (const root of [this.objectsRoot, ...(this.groundNode ? [this.groundNode] : [])]) {
+    for (const root of [
+      this.objectsRoot,
+      this.terrain.root,
+      this.splines.root,
+      ...(this.groundNode ? [this.groundNode] : []),
+    ]) {
       root.updateWorldMatrix(true, true);
       root.traverseVisible((node) => {
         if (!(node instanceof THREE.Mesh)) return;
@@ -1207,6 +1227,7 @@ export class EditorViewport {
         if (!point) return;
         const index = this.splines.hitHandle(this.raycaster);
         if (!mode.drawing && index === null) return;
+        if (index !== null) point[2] = mode.path.points[index]![2];
         gesture = {
           mode,
           index,
@@ -1235,6 +1256,7 @@ export class EditorViewport {
         consume(event);
         const point = this.assetDropPosition(event.clientX, event.clientY);
         if (!point) return;
+        if (gesture.index !== null) point[2] = gesture.mode.path.points[gesture.index]![2];
         gesture.point = point;
         if (gesture.index !== null) {
           const points = gesture.mode.path.points.map((p, i) => (i === gesture!.index ? point : p));
@@ -1284,9 +1306,14 @@ export class EditorViewport {
     );
     this.scene.updateMatrixWorld(true);
     setViewportRay(this.raycaster, ndc, this.activeCamera());
-    const hit = this.groundNode
-      ? this.raycaster.intersectObject(this.groundNode, true).find(visibleSurface)
-      : undefined;
+    const terrainHit = this.raycaster
+      .intersectObject(this.terrain.root, true)
+      .find((hit) => hit.object.userData.terrainSurface && visibleSurface(hit));
+    const hit =
+      terrainHit ??
+      (this.groundNode
+        ? this.raycaster.intersectObject(this.groundNode, true).find(visibleSurface)
+        : undefined);
     let point = hit?.point ?? null;
     if (!point) {
       const ray = this.raycaster.ray;

@@ -856,3 +856,53 @@ test("incremental edits rebuild changed wall assets and undo restores their geom
   assert.ok(Math.abs(height() - originalHeight) < 1e-5, "Undo restores the prior wall");
   viewport.dispose();
 });
+
+test("asset placement hits raised authored ground and lower regions replace its surface", () => {
+  const { viewport, publish } = fixture();
+  const document = {
+    ...documentFixture(),
+    objects: [],
+    groups: [],
+    size: null,
+    terrain: [
+      {
+        id: "land",
+        name: "Land",
+        bounds: [0, 0, 400, 400] as [number, number, number, number],
+        height: 80,
+        material: "grass" as const,
+      },
+      {
+        id: "low",
+        name: "Low",
+        bounds: [100, 100, 200, 200] as [number, number, number, number],
+        height: 20,
+        material: "dirt" as const,
+      },
+    ],
+  };
+  publish(document);
+  const local = gameToScene(document.camera, 200, 200, 20);
+  const target = new THREE.Vector3(local[0], local[2], -local[1]);
+  const camera = new THREE.OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
+  camera.position.copy(target).add(new THREE.Vector3(0, 500, 0));
+  camera.up.set(0, 0, -1);
+  camera.lookAt(target);
+  camera.updateMatrixWorld();
+  Object.assign(viewport, {
+    camera,
+    frustum: 100,
+    container: { clientWidth: 400, clientHeight: 400 },
+    orbit: { target, update() {} },
+    renderer: {
+      domElement: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 400 }) },
+    },
+  });
+  const position = viewport.assetDropPosition(200, 200)!;
+  assert.ok(Math.abs(position[2] - 20) < 1e-4, `expected lower region, got ${position}`);
+  assert.ok(Math.abs(position[0] - 200) < 1e-4);
+  const bounds = viewport.fitExportBounds();
+  assert.ok(bounds[2] >= 401);
+  Object.assign(viewport, { renderer: null, orbit: null });
+  viewport.dispose();
+});

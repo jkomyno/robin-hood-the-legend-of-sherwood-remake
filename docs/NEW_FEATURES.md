@@ -1,5 +1,18 @@
 # Post-port Features
 
+- **Terrain authoring in the level editor.** The Draw tab creates continuous
+  rectangular ground regions with grass, dirt or water and an elevation in one
+  panel. Later regions replace earlier ground, including lower river beds. Paths
+  and rivers can set a whole-path elevation; their curved footprints carve the
+  ground consistently in the viewport and export. New placements use the terrain
+  height and compensate for elevated local asset bases. Export derives navigation
+  layers and connected areas, excludes water, retains asset floor/door ownership
+  and joins explicit exterior navigation sockets to surrounding terrain. Terrain
+  is saved with the map, rendered into mod ZIPs and included in camera framing.
+  In-editor instructions explain how to test an exported ZIP in Custom Missions.
+  Terrain regions are flat; road/river export currently requires a uniform
+  elevation. Walls and scripted mission authoring retain their existing limits.
+
 - **Physical receivers sharing navigation.** Asset gameplay can bind a physical
   receiver to an existing navigation area through an asset-local anchor. Sloped
   elevation and physical geometry remain independent of the movement boundary;

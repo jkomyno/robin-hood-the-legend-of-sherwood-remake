@@ -1,3 +1,4 @@
+import { validateGroundRegions } from "./authored-terrain.ts";
 import {
   componentIdentityMatches,
   isSceneryNode,
@@ -596,6 +597,7 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
   }
   if (d.population !== undefined) validatePopulation(d.population);
   const splineIds = new Set<string>();
+  if (d.terrain !== undefined) validateGroundRegions(d.terrain);
   if (d.splines !== undefined)
     for (const spline of array(d.splines, "splines")) {
       object(spline, "spline");

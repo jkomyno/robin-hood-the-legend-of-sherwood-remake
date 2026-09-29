@@ -173,12 +173,16 @@ export default function SplinePanel(props: {
       };
       if (draft()) {
         pendingSources = pendingSources.filter((s) => s.id !== id).concat(reference);
-        setDraft((latest) => latest?.id === current.id ? {
-          ...latest,
-          cornerAsset: id,
-          cornerMinAngle: latest.cornerMinAngle ?? 35,
-          cornerScale: latest.cornerScale ?? 1,
-        } : latest);
+        setDraft((latest) =>
+          latest?.id === current.id
+            ? {
+                ...latest,
+                cornerAsset: id,
+                cornerMinAngle: latest.cornerMinAngle ?? 35,
+                cornerScale: latest.cornerScale ?? 1,
+              }
+            : latest,
+        );
       } else
         publish({
           ...document,
@@ -242,7 +246,7 @@ export default function SplinePanel(props: {
         cornerDisabled: latest.cornerDisabled,
       });
       if (draft())
-        setDraft((latest) => latest?.id === current.id ? replaceSource(latest) : latest);
+        setDraft((latest) => (latest?.id === current.id ? replaceSource(latest) : latest));
       else
         publish({
           ...document,
@@ -394,7 +398,11 @@ export default function SplinePanel(props: {
                       return latest;
                     }
                     setPoint(latest.points.length);
-                    return { ...latest, points: [...latest.points, position] };
+                    const height = latest.points[0]?.[2] ?? position[2];
+                    return {
+                      ...latest,
+                      points: [...latest.points, [position[0], position[1], height]],
+                    };
                   });
                 },
                 move,
@@ -514,12 +522,15 @@ export default function SplinePanel(props: {
           entries={
             picker() === "wall"
               ? sources()
-              : props
-                  .entries()
-                  .filter((entry) => cornerAssetIds.has(entry.id))
+              : props.entries().filter((entry) => cornerAssetIds.has(entry.id))
           }
-          selected={picker() === "wall" ? path()?.asset :
-            cornerAssetIds.has(path()?.cornerAsset ?? "") ? path()?.cornerAsset : undefined}
+          selected={
+            picker() === "wall"
+              ? path()?.asset
+              : cornerAssetIds.has(path()?.cornerAsset ?? "")
+                ? path()?.cornerAsset
+                : undefined
+          }
           emptyLabel={picker() === "corner" ? "Continuous join — no corner model" : undefined}
           onClose={() => setPicker(null)}
           onSelect={(id) => {
@@ -739,6 +750,19 @@ export default function SplinePanel(props: {
                 </label>
               </div>
             </Show>
+            <label>
+              Set elevation for whole path
+              <input
+                aria-label="Path elevation"
+                type="number"
+                value={current().points[0]?.[2] ?? 0}
+                onChange={(e) => {
+                  const z = e.currentTarget.valueAsNumber;
+                  if (Number.isFinite(z))
+                    patch({ points: current().points.map((p) => [p[0], p[1], z]) });
+                }}
+              />
+            </label>
             <Show when={current().kind !== "wall"}>
               <label>
                 Surface texture tile
