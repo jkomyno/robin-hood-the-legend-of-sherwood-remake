@@ -712,6 +712,132 @@
       "descriptor": "3d-assets/lincoln/lincoln-west-upper-curtain-wall/asset.json",
       "descriptor_sha256": "21cf8d2c20fef1e5346834b143b17c3df4ddb03d431d1d00f5693c6492663157",
       "id": "lincoln-west-upper-curtain-wall"
+    },
+    {
+      "id": "lincoln-ambient-1387-811",
+      "descriptor": "3d-assets/lincoln-ambient-1387-811/asset.json",
+      "model": "3d-assets/lincoln-ambient-1387-811/model.glb",
+      "descriptor_sha256": "9ba0c571622fc0c7163053be74961dbd57c13dc8ec5e7f1a6d1b35fa350a118b",
+      "model_sha256": "ad3b5349830eb3697a17cade08ca5ab93ec6c1186c52a664590e94f7d5187dbb"
+    },
+    {
+      "id": "lincoln-ambient-3015-120",
+      "descriptor": "3d-assets/lincoln-ambient-3015-120/asset.json",
+      "model": "3d-assets/lincoln-ambient-3015-120/model.glb",
+      "descriptor_sha256": "53fe7221535d90d1c09800918627a2df51e86a871ff9f244337187a8ffb3bc86",
+      "model_sha256": "d7c6f0a744bdca90f8f3c1e06c7daa7f6ac9202d615ee203a1773a0d52d8b022"
+    },
+    {
+      "id": "lincoln-ambient-1244-381",
+      "descriptor": "3d-assets/lincoln-ambient-1244-381/asset.json",
+      "model": "3d-assets/lincoln-ambient-1244-381/model.glb",
+      "descriptor_sha256": "22ac030ad0fde5dcf65d7a4fe6a9c7ff7470efbfd86e09af7c8ca35ee762eadb",
+      "model_sha256": "8c015de8b1f2a5b92471cbd0a08324d702cad6cb0becec9acef4b32940bc0e7d"
+    },
+    {
+      "id": "lincoln-ambient-476-736",
+      "descriptor": "3d-assets/lincoln-ambient-476-736/asset.json",
+      "model": "3d-assets/lincoln-ambient-476-736/model.glb",
+      "descriptor_sha256": "435aa50df0e852dcb2c3101b8070f85fe0d1b4842c20be254fca11dff0fb30c5",
+      "model_sha256": "e74f69d7a9182ca5ddb9b921337296de3415f124f7e47b17df37251f78243a86"
+    },
+    {
+      "id": "lincoln-ambient-1389-65",
+      "descriptor": "3d-assets/lincoln-ambient-1389-65/asset.json",
+      "model": "3d-assets/lincoln-ambient-1389-65/model.glb",
+      "descriptor_sha256": "ff916fcdccb2a1946f1dbd912b2642c8ab55fa25cdf9428af9c80134fa44f370",
+      "model_sha256": "be026c079b59baaf25495cbb54ac46e81b9bd7129868ba9493a2aef18cd8b457"
+    },
+    {
+      "id": "lincoln-ambient-647-689",
+      "descriptor": "3d-assets/lincoln-ambient-647-689/asset.json",
+      "model": "3d-assets/lincoln-ambient-647-689/model.glb",
+      "descriptor_sha256": "97890988640d03616fd8ca802e5adb0665d3a07c2ac55bba81d6bb275c768c1c",
+      "model_sha256": "022ba4901802c217d9245b3a9542cd1da6bd8347570f62073c32760253630ac9"
+    },
+    {
+      "id": "lincoln-ambient--79-347",
+      "descriptor": "3d-assets/lincoln-ambient--79-347/asset.json",
+      "model": "3d-assets/lincoln-ambient--79-347/model.glb",
+      "descriptor_sha256": "f901e0777854fd744ac2365cc961d08349dfb3b764572e03d8581db97269ccda",
+      "model_sha256": "b361f61a34ff81c1c9c5cfdb8b0af6c6e6b63dcb7710212b3c97a783d8fd29ae"
+    },
+    {
+      "id": "lincoln-light-region-0",
+      "descriptor": "3d-assets/lincoln-light-region-0/asset.json",
+      "model": "3d-assets/lincoln-light-region-0/model.glb",
+      "descriptor_sha256": "f3e3b61aff256878c81eb4f580d2dc28538af07fb419d9103703a36bac95af90",
+      "model_sha256": "80846f9c0543ab09ea0215b571bd94c5d7933ada44dbd765a81cc86756986b76"
+    },
+    {
+      "id": "lincoln-light-region-1",
+      "descriptor": "3d-assets/lincoln-light-region-1/asset.json",
+      "model": "3d-assets/lincoln-light-region-1/model.glb",
+      "descriptor_sha256": "aeaa6be887459f5734597fb1de27126010a518c4ab0a382e5e1491279af97304",
+      "model_sha256": "83448cd3ce4f6faba92d4f4d44487dcc3675cc7d28861e28ba4caf4dca873d4a"
+    },
+    {
+      "id": "lincoln-light-region-5",
+      "descriptor": "3d-assets/lincoln-light-region-5/asset.json",
+      "model": "3d-assets/lincoln-light-region-5/model.glb",
+      "descriptor_sha256": "bf242a4330e8a421ad2a6c200b674f35e9d8ade8eea9c2339bc4fd1b47ca460b",
+      "model_sha256": "b8f27428b019807c46dc50bd86699b4bffef790fcee112bdf87962d7d384275c"
+    },
+    {
+      "id": "lincoln-light-region-8",
+      "descriptor": "3d-assets/lincoln-light-region-8/asset.json",
+      "model": "3d-assets/lincoln-light-region-8/model.glb",
+      "descriptor_sha256": "9532e81a88b3643e45b604903a8e14a7081813211f635d5d757aefb64ea52735",
+      "model_sha256": "6e2fb56b6f5381b22b6d372497d437735ccc5c5ad163e61376965fbf7df60771"
+    },
+    {
+      "id": "lincoln-light-region-14",
+      "descriptor": "3d-assets/lincoln-light-region-14/asset.json",
+      "model": "3d-assets/lincoln-light-region-14/model.glb",
+      "descriptor_sha256": "b8c3ae41b1752c2ae20ab4311a8110b6413f901e5d41faf8dbf35f6a59b4025c",
+      "model_sha256": "4f9340e14f29a00d0b23c6b5a804aa5d2908e82ce49b23a5126cae3211a0408a"
+    },
+    {
+      "id": "lincoln-light-region-16",
+      "descriptor": "3d-assets/lincoln-light-region-16/asset.json",
+      "model": "3d-assets/lincoln-light-region-16/model.glb",
+      "descriptor_sha256": "ded13f1073c6a4f1c18b467007529674538cfce153d4ec097448ab4547b95203",
+      "model_sha256": "d51bbd909240bf973ed10bccad45db28c21957ef3652a6a1109d17cbc3658c2a"
+    },
+    {
+      "id": "lincoln-light-region-17",
+      "descriptor": "3d-assets/lincoln-light-region-17/asset.json",
+      "model": "3d-assets/lincoln-light-region-17/model.glb",
+      "descriptor_sha256": "b37cfac0c757f827cf155ecb247467ca078b9a6c4510f444f1ec20ddd223f8b5",
+      "model_sha256": "8589c5d660939a7e8b592d7ef6529c2ec40ea213c16a6deec7792c854fcb478d"
+    },
+    {
+      "id": "lincoln-light-region-20",
+      "descriptor": "3d-assets/lincoln-light-region-20/asset.json",
+      "model": "3d-assets/lincoln-light-region-20/model.glb",
+      "descriptor_sha256": "8758565f0dec86e7cb68233352ff75a7df7c486798c376d266aaeca56bb55ce0",
+      "model_sha256": "72e85a0b9f7d56d21a7fb415c359f84694aa563be72b551bf6065416ed872d3d"
+    },
+    {
+      "id": "lincoln-light-region-21",
+      "descriptor": "3d-assets/lincoln-light-region-21/asset.json",
+      "model": "3d-assets/lincoln-light-region-21/model.glb",
+      "descriptor_sha256": "438d542a38f2983fd3586136f8b5c3eb5794799b4bffd7132c4015124f107f95",
+      "model_sha256": "c5ad2497c263573652cfbcc4eca234f537a42a9b026c85586018ce60c3d593f6"
+    },
+    {
+      "id": "lincoln-light-region-24",
+      "descriptor": "3d-assets/lincoln-light-region-24/asset.json",
+      "model": "3d-assets/lincoln-light-region-24/model.glb",
+      "descriptor_sha256": "25813915f06c45808214fb871a9e48a6cf872bd2baf89e9c95d9619307682933",
+      "model_sha256": "d42edcb7c5bab3fe5b58cb295d0ab1cb1fd206c685daaef55bd1c7c9b39b2a98"
+    },
+    {
+      "id": "lincoln-light-region-29",
+      "descriptor": "3d-assets/lincoln-light-region-29/asset.json",
+      "model": "3d-assets/lincoln-light-region-29/model.glb",
+      "descriptor_sha256": "d42b3e0a037be2f5e798a27f5fd9c2b43996e038752b5233ab99277ff9090a7f",
+      "model_sha256": "b7982c38cfdf5d8b1c15efe5284c64abce47a00732be612aa478497d73d662bc"
     }
   ],
   "sceneMetadata": {
@@ -2065,6 +2191,438 @@
       "assets": [
         "lincoln-west-upper-curtain-wall"
       ]
+    },
+    {
+      "id": "lincoln-ambient-1387-811",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-ambient-1387-811"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "lincoln-ambient-1387-811",
+          "transform": {
+            "dx": 1387,
+            "dy": 811,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-ambient-3015-120",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-ambient-3015-120"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "lincoln-ambient-3015-120",
+          "transform": {
+            "dx": 3015,
+            "dy": 120,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-ambient-1244-381",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-ambient-1244-381"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "lincoln-ambient-1244-381",
+          "transform": {
+            "dx": 1244,
+            "dy": 381,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-ambient-476-736",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-ambient-476-736"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "lincoln-ambient-476-736",
+          "transform": {
+            "dx": 476,
+            "dy": 736,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-ambient-1389-65",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-ambient-1389-65"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "lincoln-ambient-1389-65",
+          "transform": {
+            "dx": 1389,
+            "dy": 65,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-ambient-647-689",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-ambient-647-689"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "lincoln-ambient-647-689",
+          "transform": {
+            "dx": 647,
+            "dy": 689,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-ambient--79-347",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-ambient--79-347"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "lincoln-ambient--79-347",
+          "transform": {
+            "dx": -79,
+            "dy": 347,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-0",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-0"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-0",
+          "transform": {
+            "dx": 2748,
+            "dy": 811,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-1",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-1"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-1",
+          "transform": {
+            "dx": 1961,
+            "dy": 1293,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-5",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-5"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-5",
+          "transform": {
+            "dx": 517,
+            "dy": 1642,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-8",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-8"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-8",
+          "transform": {
+            "dx": 1193,
+            "dy": 1379,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-14",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-14"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-14",
+          "transform": {
+            "dx": 1431,
+            "dy": 1084,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-16",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-16"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-16",
+          "transform": {
+            "dx": 1933,
+            "dy": 1006,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-17",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-17"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-17",
+          "transform": {
+            "dx": 729,
+            "dy": 1372,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-20",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-20"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-20",
+          "transform": {
+            "dx": 1677,
+            "dy": 926,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-21",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-21"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-21",
+          "transform": {
+            "dx": 1361,
+            "dy": 1021,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-24",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-24"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-24",
+          "transform": {
+            "dx": 1445,
+            "dy": 966,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "lincoln-light-region-29",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "lincoln-light-region-29"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "lincoln-light-region-29",
+          "transform": {
+            "dx": 1748,
+            "dy": 283,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
     }
   ]
 }

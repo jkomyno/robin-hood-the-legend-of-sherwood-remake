@@ -414,6 +414,41 @@
       "descriptor": "3d-assets/croisement01/croisement01-terrace-000/asset.json",
       "descriptor_sha256": "5646695da882a5f7ade2e94ae5fc1abbfe8c525b2b01453a8fcd78291ceed0a5",
       "id": "croisement01-terrace-000"
+    },
+    {
+      "id": "croisement01-navigation-boundary-002",
+      "descriptor": "3d-assets/croisement01-navigation-boundary-002/asset.json",
+      "descriptor_sha256": "28eebf30ab6f1aba2023482971c72b835f36044fd94fa86d15fc8c78eba356ec",
+      "model": "3d-assets/croisement01-navigation-boundary-002/model.glb",
+      "model_sha256": "30ebc4463969ae404d39787e7a4119cc6b08cbbac410a5ca151b97f1fb5a7130"
+    },
+    {
+      "id": "croisement01-navigation-boundary-003",
+      "descriptor": "3d-assets/croisement01-navigation-boundary-003/asset.json",
+      "descriptor_sha256": "29d244002b45c995f81f3435d5a64aa44eb5ca48490d9442be7d1d67370740cf",
+      "model": "3d-assets/croisement01-navigation-boundary-003/model.glb",
+      "model_sha256": "c48dc275fa5bc488d763a212e6b5f8d497329e4352ae4a45043283ff81ddcb4a"
+    },
+    {
+      "id": "croisement01-navigation-boundary-006",
+      "descriptor": "3d-assets/croisement01-navigation-boundary-006/asset.json",
+      "descriptor_sha256": "82e00c193a172dcf6ed53d87d0ca707e8335ffdb830861b9d309dc513a328a21",
+      "model": "3d-assets/croisement01-navigation-boundary-006/model.glb",
+      "model_sha256": "186349c5ed4ae764a5257dbde6d3289d2824a001da1ff915fc71a45abed5110f"
+    },
+    {
+      "id": "croisement01-navigation-boundary-005",
+      "descriptor": "3d-assets/croisement01-navigation-boundary-005/asset.json",
+      "descriptor_sha256": "5485b299b166eb7c2f5075e1fd22904434dc32235127c5abae0063a077144189",
+      "model": "3d-assets/croisement01-navigation-boundary-005/model.glb",
+      "model_sha256": "c1823dcff3300e88f7446dd6f953f33e8fd15b1cc3109444957a8b8cb0d532d1"
+    },
+    {
+      "id": "croisement01-navigation-boundary-004",
+      "descriptor": "3d-assets/croisement01-navigation-boundary-004/asset.json",
+      "descriptor_sha256": "1143b310076656b3f2d75265cf6a00642c2892e86ab3e9c45aaeb8d2c6260b29",
+      "model": "3d-assets/croisement01-navigation-boundary-004/model.glb",
+      "model_sha256": "8171a1d38c3127524193619f0b4edf5fd254844c72db3357a23fc2cdf9cbeff6"
     }
   ],
   "sceneMetadata": {},
@@ -1099,6 +1134,96 @@
             "dz": 0,
             "rot_deg": 0
           }
+        }
+      }
+    },
+    {
+      "id": "croisement01-navigation-boundary-002",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 586.5,
+        "dy": 508.5005005,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement01-navigation-boundary-002"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement01-navigation-boundary-002-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement01-navigation-boundary-003",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 390,
+        "dy": 505.83226238832265,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement01-navigation-boundary-003"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement01-navigation-boundary-003-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement01-navigation-boundary-006",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 60.5,
+        "dy": 853.5,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement01-navigation-boundary-006"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement01-navigation-boundary-006-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement01-navigation-boundary-005",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 1158,
+        "dy": 914,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement01-navigation-boundary-005"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement01-navigation-boundary-005-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement01-navigation-boundary-004",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 1333,
+        "dy": 305.0718423954853,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement01-navigation-boundary-004"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement01-navigation-boundary-004-frame"
         }
       }
     }

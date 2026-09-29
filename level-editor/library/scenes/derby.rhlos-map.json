@@ -302,6 +302,202 @@
       "descriptor": "3d-assets/derby/derby-second-drawbridge/asset.json",
       "descriptor_sha256": "04263f6e71e71cbd78e8c0fe4b8c96c9c0749e84de81c007eeaa43d7c7f614f4",
       "id": "derby-second-drawbridge"
+    },
+    {
+      "id": "derby-lower-west-canvas-shelter",
+      "descriptor": "3d-assets/derby-lower-west-canvas-shelter/asset.json",
+      "descriptor_sha256": "cbecf6e410aaff6fa37c00cc5f66139fd27209cff8f674062c380088b872931d",
+      "model": "3d-assets/derby-lower-west-canvas-shelter/model.glb",
+      "model_sha256": "1b669fbbbf9a7f61f7297b29455091489810622fd08cce6aec8dd44d8154956a"
+    },
+    {
+      "id": "derby-ambient-281-687",
+      "descriptor": "3d-assets/derby-ambient-281-687/asset.json",
+      "model": "3d-assets/derby-ambient-281-687/model.glb",
+      "descriptor_sha256": "3582a8faf00d905c09b4dfb8793337b5c03fb3ec906ed3e185e9c4fac6be63c8",
+      "model_sha256": "0b3c564a404666bd1a8b8a8a7002ff527c10eadb6747d359b296ec56e87b44bd"
+    },
+    {
+      "id": "derby-ambient-1323-627",
+      "descriptor": "3d-assets/derby-ambient-1323-627/asset.json",
+      "model": "3d-assets/derby-ambient-1323-627/model.glb",
+      "descriptor_sha256": "a509b32622cef3ad7c66cac87e239f57443d13e09ba48323cf9044e94b02de8f",
+      "model_sha256": "171bf76fa72e29667561beec1414814e56118992a0ff459824371dc52c694366"
+    },
+    {
+      "id": "derby-west-ambient-zone",
+      "descriptor": "3d-assets/derby-west-ambient-zone/asset.json",
+      "model": "3d-assets/derby-west-ambient-zone/model.glb",
+      "descriptor_sha256": "fed8f8219fe660e4bc790b23c29e2d06caaf403b5e05a24fc55006fcb3989de2",
+      "model_sha256": "84292b326ab8bf36f3f24305d3fa2f265280c267caa0eaf4ef8dabd9653927ac"
+    },
+    {
+      "id": "derby-north-ambient-zone",
+      "descriptor": "3d-assets/derby-north-ambient-zone/asset.json",
+      "model": "3d-assets/derby-north-ambient-zone/model.glb",
+      "descriptor_sha256": "e7c327331df40359b00707571870ed0987e880e37269874b41be9b99d406359b",
+      "model_sha256": "7aae8ca61c81bba5ba6de941e16a3d8a48a42be8770d534eed09c6a62cce1cb3"
+    },
+    {
+      "id": "derby-ambient-305-839",
+      "descriptor": "3d-assets/derby-ambient-305-839/asset.json",
+      "model": "3d-assets/derby-ambient-305-839/model.glb",
+      "descriptor_sha256": "7a4931e6d23be85e9eb9c64045a022aa801ea9eada45a51f45fac0ec50317d11",
+      "model_sha256": "a239992ed883fb02da02950be7ad4c4f653ef118a4bd0cd1aa028c2be9dbf704"
+    },
+    {
+      "id": "derby-ambient-298-716",
+      "descriptor": "3d-assets/derby-ambient-298-716/asset.json",
+      "model": "3d-assets/derby-ambient-298-716/model.glb",
+      "descriptor_sha256": "f3f333d0208a34511df6f013958ec0ee79c74374e9ad872f786aa78a9db1e0fb",
+      "model_sha256": "07da7638670b1393d394c3b7107b78118afadd7588705d6ce0b9efa7318e50c3"
+    },
+    {
+      "id": "derby-ambient-1671-943",
+      "descriptor": "3d-assets/derby-ambient-1671-943/asset.json",
+      "model": "3d-assets/derby-ambient-1671-943/model.glb",
+      "descriptor_sha256": "06dc192c12b663bf2640aedebe489611f2de13943b5f6c6f9cc31b35a3b81d58",
+      "model_sha256": "d7b9902a40bbba6b8b644ca1bd3024c85aa25aa2f4df68ae2e3fffdf4ef731d8"
+    },
+    {
+      "id": "derby-ambient-1653-2351",
+      "descriptor": "3d-assets/derby-ambient-1653-2351/asset.json",
+      "model": "3d-assets/derby-ambient-1653-2351/model.glb",
+      "descriptor_sha256": "7b7a4dc978efdbfae5a4f427972eeca5007c3863634243999d72b096f175f015",
+      "model_sha256": "af75cfdb8cf82597ce1d6df4388166a071161efeded8e29d5c47e104dc21ef13"
+    },
+    {
+      "id": "derby-ambient-459-2026",
+      "descriptor": "3d-assets/derby-ambient-459-2026/asset.json",
+      "model": "3d-assets/derby-ambient-459-2026/model.glb",
+      "descriptor_sha256": "1ea1277c2ec3295fcf40295eb1ea5e84adcd5ca5f5ee8d6347813dce9a1ceffc",
+      "model_sha256": "3ccc6bb0fbf2ca505df42c9dcada1b5ec336a7009e5966fcf93da5e20d670d0b"
+    },
+    {
+      "id": "derby-light-region-0",
+      "descriptor": "3d-assets/derby-light-region-0/asset.json",
+      "model": "3d-assets/derby-light-region-0/model.glb",
+      "descriptor_sha256": "9474f105347c3fa495a4a815edcdecceebe882fa76e5b0bda702e64b33789e50",
+      "model_sha256": "e68f8a8a29400f036c11e83f8dc23681efb70f7fe5e85f5b29dad218def30a69"
+    },
+    {
+      "id": "derby-light-region-1",
+      "descriptor": "3d-assets/derby-light-region-1/asset.json",
+      "model": "3d-assets/derby-light-region-1/model.glb",
+      "descriptor_sha256": "6096d9ecf793658ab9791a0060083c2f66e116509529d917a4ffda331b1d97bc",
+      "model_sha256": "66a55cc5ee8b258e91f7c2d83fbe3a8dcc59f887575b6c47aaf1c448dc69cbf4"
+    },
+    {
+      "id": "derby-light-region-2",
+      "descriptor": "3d-assets/derby-light-region-2/asset.json",
+      "model": "3d-assets/derby-light-region-2/model.glb",
+      "descriptor_sha256": "c0f3fb5b29df74d21d15c89e160b3fc367aeb0c588c9b1e3563ef3106de71f61",
+      "model_sha256": "e7c980cbcb5197d2e69ce042612349b4d8149ff3cee7accb442ba4aabeafa440"
+    },
+    {
+      "id": "derby-light-region-3",
+      "descriptor": "3d-assets/derby-light-region-3/asset.json",
+      "model": "3d-assets/derby-light-region-3/model.glb",
+      "descriptor_sha256": "b9797adce3ec866df76141caa6d87229d12f8e265c5d8d823c14b36738aa3333",
+      "model_sha256": "caa95ea7cb1a78ed3d54ffbba7ad37d179de9fc6c0a129650af3d639c8bb31a0"
+    },
+    {
+      "id": "derby-west-steps-night-light-region",
+      "descriptor": "3d-assets/derby-west-steps-night-light-region/asset.json",
+      "model": "3d-assets/derby-west-steps-night-light-region/model.glb",
+      "descriptor_sha256": "cb92726247843063d7e272561a86ad654de7f7e28b5234153cbcc3d4fc7c261b",
+      "model_sha256": "7fb0fdd145f5c87d599c14aab7c026f4f16317eb623535e38a0eca3abda8551a"
+    },
+    {
+      "id": "derby-light-region-5",
+      "descriptor": "3d-assets/derby-light-region-5/asset.json",
+      "model": "3d-assets/derby-light-region-5/model.glb",
+      "descriptor_sha256": "2c0f86c038d9157336043676184ddc9e70842c18059a6a6cb17445db2d55af23",
+      "model_sha256": "3e1356f9b336804fde901aa3fd8948a05d02bb9ea5e590951e9701681da4a4bc"
+    },
+    {
+      "id": "derby-light-region-6",
+      "descriptor": "3d-assets/derby-light-region-6/asset.json",
+      "model": "3d-assets/derby-light-region-6/model.glb",
+      "descriptor_sha256": "24fd577d1b0eef55cc3e2806652999e13c237984e6c76fc525b86ba995d44109",
+      "model_sha256": "5d7871239442faa2880c88f04e3c69061e643f1d870447f1c502b926a597cb44"
+    },
+    {
+      "id": "derby-light-region-8",
+      "descriptor": "3d-assets/derby-light-region-8/asset.json",
+      "model": "3d-assets/derby-light-region-8/model.glb",
+      "descriptor_sha256": "39f6ef647595143c36d9dc9031922579450a00a7d5895a8b3b87302a2d42f2ae",
+      "model_sha256": "39dac695318543a6a78a1b5acd3538f37251f511ab9de25c3408620d392009c4"
+    },
+    {
+      "id": "derby-light-region-11",
+      "descriptor": "3d-assets/derby-light-region-11/asset.json",
+      "model": "3d-assets/derby-light-region-11/model.glb",
+      "descriptor_sha256": "3f471b61dc22fc68ff99dadd44091ea63133ecf02111a71163499dbaaf5cf068",
+      "model_sha256": "368c899ae020336d68c11775c9134e263f4a9909f28f820428435a681e72baff"
+    },
+    {
+      "id": "derby-light-region-13",
+      "descriptor": "3d-assets/derby-light-region-13/asset.json",
+      "model": "3d-assets/derby-light-region-13/model.glb",
+      "descriptor_sha256": "9ff86c7daca4eca91d2b7996c2fc5f17ef265033052ffea6e6c8de4be3fedd21",
+      "model_sha256": "ad81f599a4a55eeff3367567cf33dfb7bc42e7f5e9d1a3d0342e85a6c052da7a"
+    },
+    {
+      "id": "derby-light-region-14",
+      "descriptor": "3d-assets/derby-light-region-14/asset.json",
+      "model": "3d-assets/derby-light-region-14/model.glb",
+      "descriptor_sha256": "eb60c1e3225ba101e6cc4190515e1f95e3115e4b1eed0fb9be2311863bf6c130",
+      "model_sha256": "4f527db5c80263db1fda472ba20881e9ed3ba9da1458cebe7941c3498e8324b4"
+    },
+    {
+      "id": "derby-light-region-15",
+      "descriptor": "3d-assets/derby-light-region-15/asset.json",
+      "model": "3d-assets/derby-light-region-15/model.glb",
+      "descriptor_sha256": "fc2569ef4ae86c4d23fa73318351a2a048237e4055b9a2cbd095de0411879cc6",
+      "model_sha256": "2416899ba49b39b873be6ac8035a390e2f7d80fb968096aaf300b4cae9e9d542"
+    },
+    {
+      "id": "derby-light-region-16",
+      "descriptor": "3d-assets/derby-light-region-16/asset.json",
+      "model": "3d-assets/derby-light-region-16/model.glb",
+      "descriptor_sha256": "3e3aa6c4e61ef621cc744e535ba8d554508f8bb72f659f2adf74c4f5f5be2034",
+      "model_sha256": "7a19595ff64a554e567db0466495c579011b608d87d2fd898c470dbcf6ae753e"
+    },
+    {
+      "id": "derby-light-region-18",
+      "descriptor": "3d-assets/derby-light-region-18/asset.json",
+      "model": "3d-assets/derby-light-region-18/model.glb",
+      "descriptor_sha256": "2a59e0853bd0455dc80ac0a7ec80788b68cf91c9830fdf83a8e8d9e098573aa4",
+      "model_sha256": "486934f1676ca2183b5badad637b01226a8ae545136c351809d85f8a16e46c66"
+    },
+    {
+      "id": "derby-light-region-20",
+      "descriptor": "3d-assets/derby-light-region-20/asset.json",
+      "model": "3d-assets/derby-light-region-20/model.glb",
+      "descriptor_sha256": "786e1527c683779901bb68f529d7265f7d1b5b1ad6fbac1d077ac79de4b80d39",
+      "model_sha256": "f797a7c9028c46e3b73b5fa22644880e226bed5cb08cecb3c44f68c4fec5c105"
+    },
+    {
+      "id": "derby-light-region-22",
+      "descriptor": "3d-assets/derby-light-region-22/asset.json",
+      "model": "3d-assets/derby-light-region-22/model.glb",
+      "descriptor_sha256": "13c372b89e8cec52f74d287c5bc7de02be7f89284cbcec84c23cd391410de332",
+      "model_sha256": "3d203984c5fe2b13e07a40f30eb8a94e8ad3a47576ea462c9983866cf2a92300"
+    },
+    {
+      "id": "derby-light-region-24",
+      "descriptor": "3d-assets/derby-light-region-24/asset.json",
+      "model": "3d-assets/derby-light-region-24/model.glb",
+      "descriptor_sha256": "2e4257c43705fd3cca59b692a4778736c2c556e8ecbc87709eaa86739501ae21",
+      "model_sha256": "36387ed307bac690e5f80837c4ab73d9c24e48f9a84fce2c5079db525e304cdc"
+    },
+    {
+      "id": "derby-light-region-25",
+      "descriptor": "3d-assets/derby-light-region-25/asset.json",
+      "model": "3d-assets/derby-light-region-25/model.glb",
+      "descriptor_sha256": "d7e48349569e65f902bb4c2e504cb175cfaf584b53e249270d0590f0f3c06557",
+      "model_sha256": "994fcb8e7a28a34c87896b8157f0f7d9a7f9bc2097d2a615e3f49f0672f99e6a"
     }
   ],
   "sceneMetadata": {
@@ -880,6 +1076,678 @@
       "assets": [
         "derby-second-drawbridge"
       ]
+    },
+    {
+      "id": "derby-lower-west-canvas-shelter",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-lower-west-canvas-shelter"
+      ],
+      "parts": {
+        "building-035": {
+          "id": "derby-lower-west-canvas-shelter",
+          "transform": {
+            "dx": 442,
+            "dy": 2117,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-281-687",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-281-687"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-281-687",
+          "transform": {
+            "dx": 281,
+            "dy": 687,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-1323-627",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-1323-627"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-1323-627",
+          "transform": {
+            "dx": 1323,
+            "dy": 627,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-west-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-west-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-west-ambient-zone",
+          "transform": {
+            "dx": -14,
+            "dy": 508,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-north-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-north-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-north-ambient-zone",
+          "transform": {
+            "dx": 150,
+            "dy": 410,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-305-839",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-305-839"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-305-839",
+          "transform": {
+            "dx": 305,
+            "dy": 839,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-298-716",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-298-716"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-298-716",
+          "transform": {
+            "dx": 298,
+            "dy": 716,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-1671-943",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-1671-943"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-1671-943",
+          "transform": {
+            "dx": 1671,
+            "dy": 943,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-1653-2351",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-1653-2351"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-1653-2351",
+          "transform": {
+            "dx": 1653,
+            "dy": 2351,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-459-2026",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-459-2026"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-459-2026",
+          "transform": {
+            "dx": 459,
+            "dy": 2026,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-0",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-0"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-0",
+          "transform": {
+            "dx": 918,
+            "dy": 2377,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-1",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-1"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-1",
+          "transform": {
+            "dx": 1070,
+            "dy": 1746,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-2",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-2"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-2",
+          "transform": {
+            "dx": 719,
+            "dy": 1561,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-3",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-3"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-3",
+          "transform": {
+            "dx": 795,
+            "dy": 1092,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-west-steps-night-light-region",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-west-steps-night-light-region"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-west-steps-night-light-region",
+          "transform": {
+            "dx": 754,
+            "dy": 1077,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-5",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-5"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-5",
+          "transform": {
+            "dx": 1378,
+            "dy": 1291,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-6",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-6"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-6",
+          "transform": {
+            "dx": 1288,
+            "dy": 1219,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-8",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-8"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-8",
+          "transform": {
+            "dx": 855,
+            "dy": 923,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-11",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-11"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-11",
+          "transform": {
+            "dx": 1572,
+            "dy": 1168,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-13",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-13"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-13",
+          "transform": {
+            "dx": 864,
+            "dy": 956,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-14",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-14"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-14",
+          "transform": {
+            "dx": 1781,
+            "dy": 984,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-15",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-15"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-15",
+          "transform": {
+            "dx": 1420,
+            "dy": 1061,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-16",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-16"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-16",
+          "transform": {
+            "dx": 317,
+            "dy": 624,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-18",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-18"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-18",
+          "transform": {
+            "dx": 424,
+            "dy": 488,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-20",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-20"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-20",
+          "transform": {
+            "dx": 1278,
+            "dy": 831,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-22",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-22"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-22",
+          "transform": {
+            "dx": 356,
+            "dy": 411,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-24",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-24"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-24",
+          "transform": {
+            "dx": 907,
+            "dy": 478,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-25",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-25"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-25",
+          "transform": {
+            "dx": 1041,
+            "dy": 318,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
     }
   ]
 }

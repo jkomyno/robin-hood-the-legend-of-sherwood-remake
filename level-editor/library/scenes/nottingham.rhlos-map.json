@@ -897,6 +897,279 @@
       "descriptor": "3d-assets/nottingham/nottingham-village-stream-wall/asset.json",
       "descriptor_sha256": "59e0eae15fb3235f36036f7c95b4ce6c601a6160b8ef95c9dd0c7067b4ef466b",
       "id": "nottingham-village-stream-wall"
+    },
+    {
+      "id": "nottingham-north-ambient-zone",
+      "descriptor": "3d-assets/nottingham-north-ambient-zone/asset.json",
+      "model": "3d-assets/nottingham-north-ambient-zone/model.glb",
+      "descriptor_sha256": "e446f6e428b9670377fa3e0d682cb68ae163c045e8cf9dd84c176406c11f2a25",
+      "model_sha256": "bc39359bd53e55d3e971a90e2ec93e790d9f144db346630a3e1b390132f95e05"
+    },
+    {
+      "id": "nottingham-northwest-ambient-zone",
+      "descriptor": "3d-assets/nottingham-northwest-ambient-zone/asset.json",
+      "model": "3d-assets/nottingham-northwest-ambient-zone/model.glb",
+      "descriptor_sha256": "e779c983359ffb85a0f2150a2e982bc0928a04e7aaec6395fec9aa94d6ba0c83",
+      "model_sha256": "33486096af275af2608e8548198891cdbe0482ad55028e36b00ced9406d570d4"
+    },
+    {
+      "id": "nottingham-ambient-440-69",
+      "descriptor": "3d-assets/nottingham-ambient-440-69/asset.json",
+      "model": "3d-assets/nottingham-ambient-440-69/model.glb",
+      "descriptor_sha256": "08111416651bc87e77cd70e0c3c86b3f03e26c280cd9438ca0645a7c7ea29e7a",
+      "model_sha256": "12b6ed031f4ffefa158af98efe71c79d0a9a26b6c513aceee1b846c8fdedd887"
+    },
+    {
+      "id": "nottingham-ambient-2198-2712",
+      "descriptor": "3d-assets/nottingham-ambient-2198-2712/asset.json",
+      "model": "3d-assets/nottingham-ambient-2198-2712/model.glb",
+      "descriptor_sha256": "94e14cc37de856327f8970b4729525fd4b95cb0e5666c9eb7f44235144a5be5e",
+      "model_sha256": "2e0eb8305b21f4e44b371d140764b9435aa22f1ac2aca863a8d028ec3e742069"
+    },
+    {
+      "id": "nottingham-ambient-1398-3366",
+      "descriptor": "3d-assets/nottingham-ambient-1398-3366/asset.json",
+      "model": "3d-assets/nottingham-ambient-1398-3366/model.glb",
+      "descriptor_sha256": "f9ff2ebe1f957fe0f25cb4e77263b852f10031511dfb7e2cfd76a683a97e1806",
+      "model_sha256": "a29431812cfcf23d1f63c9d4824ac1a1cdbd6708b8312a1268fe77c798914f40"
+    },
+    {
+      "id": "nottingham-ambient-337-2546",
+      "descriptor": "3d-assets/nottingham-ambient-337-2546/asset.json",
+      "model": "3d-assets/nottingham-ambient-337-2546/model.glb",
+      "descriptor_sha256": "f6a0eb3efdf82391d061e01a5b4a9810010aee6f712389a05bee044f9bab0df1",
+      "model_sha256": "1ac16f29524cbc6ba127fe5caa5a659222a257025d93582f81b2bcefad9504b5"
+    },
+    {
+      "id": "nottingham-ambient-545-2832",
+      "descriptor": "3d-assets/nottingham-ambient-545-2832/asset.json",
+      "model": "3d-assets/nottingham-ambient-545-2832/model.glb",
+      "descriptor_sha256": "11eb9cca916fc00885f31f4d0cce0747176dc1700de0c9ca6124d3d5dc3efe0a",
+      "model_sha256": "821aaf1299e8af393a12ea23ddbb597da11bed7097ef739da2ce4119001b06f2"
+    },
+    {
+      "id": "nottingham-ambient-439-3414",
+      "descriptor": "3d-assets/nottingham-ambient-439-3414/asset.json",
+      "model": "3d-assets/nottingham-ambient-439-3414/model.glb",
+      "descriptor_sha256": "5ca53fe224a25eacaca0c3f3127f425191ec641da4f3c4e1648e188337dbd927",
+      "model_sha256": "b7d43dbe5d6ba7607f6f72ffe8d3baf84c07b76508aa8d8a2b37967cc0c7f2b0"
+    },
+    {
+      "id": "nottingham-ambient-720-3282",
+      "descriptor": "3d-assets/nottingham-ambient-720-3282/asset.json",
+      "model": "3d-assets/nottingham-ambient-720-3282/model.glb",
+      "descriptor_sha256": "57262a97e92b6360df19ce68c6193bedacaa2c470cc2fdbc08062149116f2f74",
+      "model_sha256": "d763f1e1bcbcefd0f07ffb35e8890b47abd23617329950fca79c1abbfa1d8429"
+    },
+    {
+      "id": "nottingham-ambient-1290-2737",
+      "descriptor": "3d-assets/nottingham-ambient-1290-2737/asset.json",
+      "model": "3d-assets/nottingham-ambient-1290-2737/model.glb",
+      "descriptor_sha256": "b7be0d2872749b727a87379f3ea94de3b8c8aaffe1e352d4aee51e356938afb4",
+      "model_sha256": "1bc677a074311ebfe0d3a106cf950018395343ea62eabe5391558997e9356930"
+    },
+    {
+      "id": "nottingham-ambient-1342-2535",
+      "descriptor": "3d-assets/nottingham-ambient-1342-2535/asset.json",
+      "model": "3d-assets/nottingham-ambient-1342-2535/model.glb",
+      "descriptor_sha256": "653fb89cbcff9e9ad97a48b757503dbeffe9b31b292d94d2842634f089a2d2ae",
+      "model_sha256": "57abd3f7ce2774d45578b89a021cd14f6f8ac193a2cac759babe471a0b449c22"
+    },
+    {
+      "id": "nottingham-ambient-53-2522",
+      "descriptor": "3d-assets/nottingham-ambient-53-2522/asset.json",
+      "model": "3d-assets/nottingham-ambient-53-2522/model.glb",
+      "descriptor_sha256": "03a657434cabd09f9ad55fa049876aba69a063c06dca169f80456a6a1d7d504e",
+      "model_sha256": "1de0a302523f510bfac62149bc487b551113dc297f92112250c4f7b52e4ae2c9"
+    },
+    {
+      "id": "nottingham-ambient-2305-2316",
+      "descriptor": "3d-assets/nottingham-ambient-2305-2316/asset.json",
+      "model": "3d-assets/nottingham-ambient-2305-2316/model.glb",
+      "descriptor_sha256": "12737bb363b50fd0c2af18da7bdc760dbd64e223023cebec0bc71e68bea70848",
+      "model_sha256": "9de9c68faf096a5a1416eee9cc7224bc225f64e66c878699538dff00c194a7d5"
+    },
+    {
+      "id": "nottingham-ambient-1628-3031",
+      "descriptor": "3d-assets/nottingham-ambient-1628-3031/asset.json",
+      "model": "3d-assets/nottingham-ambient-1628-3031/model.glb",
+      "descriptor_sha256": "38c0a01d06e339678939f54ee12522f3180f4cbf6d441fed3fd8f6866e2e8a2d",
+      "model_sha256": "1d676432c223b1b92c7dd3c602ff7cf63ddf642c8e6f12c2c6ca2179df56697c"
+    },
+    {
+      "id": "nottingham-ambient-2106-2972",
+      "descriptor": "3d-assets/nottingham-ambient-2106-2972/asset.json",
+      "model": "3d-assets/nottingham-ambient-2106-2972/model.glb",
+      "descriptor_sha256": "4cb508dac830ddf0602084541959553e791585e062cfcc1b604c86824f8915f1",
+      "model_sha256": "d6d184b6bcbbbf30fdb01c8574dceabe772b1f1f50cf987e26f67c92149b263f"
+    },
+    {
+      "id": "nottingham-ambient-1768-10",
+      "descriptor": "3d-assets/nottingham-ambient-1768-10/asset.json",
+      "model": "3d-assets/nottingham-ambient-1768-10/model.glb",
+      "descriptor_sha256": "9096971ca45d0a7cd076536e28078c51928ab907e2e494ba5b41a9fd7fd32daa",
+      "model_sha256": "889f59937631c44769720e262e1e239aa9dc17e9f639540d35eb8591cdca50cd"
+    },
+    {
+      "id": "nottingham-ambient-1795-2706",
+      "descriptor": "3d-assets/nottingham-ambient-1795-2706/asset.json",
+      "model": "3d-assets/nottingham-ambient-1795-2706/model.glb",
+      "descriptor_sha256": "04c3f76ed95b5761d3fc642f9fb500d95314080613277ff737f7881de142e24d",
+      "model_sha256": "820f61a7d2e150b55af99aa805e3a077fafe4bd3ca69b2c87d6c08e25b218b2f"
+    },
+    {
+      "id": "nottingham-ambient-1916-759",
+      "descriptor": "3d-assets/nottingham-ambient-1916-759/asset.json",
+      "model": "3d-assets/nottingham-ambient-1916-759/model.glb",
+      "descriptor_sha256": "84bdc11b9b65976fbb5c5808cdb8a2a82b554fd866460d53934de55c8220bb61",
+      "model_sha256": "0eaeae9fc8322174786527b8ff7668eb9c8d761fe7f765c34a32eb8edcfbfcf8"
+    },
+    {
+      "id": "nottingham-ambient-2370-2882",
+      "descriptor": "3d-assets/nottingham-ambient-2370-2882/asset.json",
+      "model": "3d-assets/nottingham-ambient-2370-2882/model.glb",
+      "descriptor_sha256": "48d616115b2afa7bd4092b51d0325178911da95cb91a769f288378b78b7b56d1",
+      "model_sha256": "ac138c9ab8b3e0cf6ecc993e0c08a2efcca767f4e0262ade304afea0063e97bd"
+    },
+    {
+      "id": "nottingham-ambient-1169-2756",
+      "descriptor": "3d-assets/nottingham-ambient-1169-2756/asset.json",
+      "model": "3d-assets/nottingham-ambient-1169-2756/model.glb",
+      "descriptor_sha256": "72eb35f2757014dbde083010dc3688a7b3ed4d8dd446bf342af7145268372a2f",
+      "model_sha256": "89d3013a6ed2347d5974c66d98875ec920823221deeabf4c649cfcaf22c804a2"
+    },
+    {
+      "id": "nottingham-light-region-0",
+      "descriptor": "3d-assets/nottingham-light-region-0/asset.json",
+      "model": "3d-assets/nottingham-light-region-0/model.glb",
+      "descriptor_sha256": "d215ba843d97f474c5edd6e2300b69fe150faf928ede0bc273a764eae79d607c",
+      "model_sha256": "39bfdfc78c8454d2fd589b3f3c8264d5e40b59c9f556db8cc3f9bb767ba72d81"
+    },
+    {
+      "id": "nottingham-light-region-1",
+      "descriptor": "3d-assets/nottingham-light-region-1/asset.json",
+      "model": "3d-assets/nottingham-light-region-1/model.glb",
+      "descriptor_sha256": "572ea574c111f90e1d5630cf3e254e6cc36fc9322611e70d3e8b307657dee125",
+      "model_sha256": "c9868e14504b75f6f7c021a88b2a3e0f5af32afe1c2c598749116353a11da852"
+    },
+    {
+      "id": "nottingham-light-region-2",
+      "descriptor": "3d-assets/nottingham-light-region-2/asset.json",
+      "model": "3d-assets/nottingham-light-region-2/model.glb",
+      "descriptor_sha256": "293645140f1bf44e174e0dc474a244294aba25d621161b558e96c1371087d81b",
+      "model_sha256": "55d545e059fb6c1d9bbf9fae26447a97f29c843719e2ff021aa625ae6844afa5"
+    },
+    {
+      "id": "nottingham-light-region-3",
+      "descriptor": "3d-assets/nottingham-light-region-3/asset.json",
+      "model": "3d-assets/nottingham-light-region-3/model.glb",
+      "descriptor_sha256": "f7ef15abc134eea98a89a4fcc7f08bf4d690a5f83aa816de7b75b1ba19cc080d",
+      "model_sha256": "0364e4d6c0230b34b473fa969256df689f3b0509937f929b6a3caa829e470118"
+    },
+    {
+      "id": "nottingham-light-region-4",
+      "descriptor": "3d-assets/nottingham-light-region-4/asset.json",
+      "model": "3d-assets/nottingham-light-region-4/model.glb",
+      "descriptor_sha256": "eaea148ee30aea1e1f9ee65b0b84629b290cb07a714ffd2d2f93ab77212bf2ec",
+      "model_sha256": "d0dabdfa0f8e1441b661b98ada4ed1b0bd00d423df74984f6343a519ef0eae7c"
+    },
+    {
+      "id": "nottingham-light-region-5",
+      "descriptor": "3d-assets/nottingham-light-region-5/asset.json",
+      "model": "3d-assets/nottingham-light-region-5/model.glb",
+      "descriptor_sha256": "e74b52290d15661a0746d4cf610fcdd5a5967eaeead003434e172cd98f4ed839",
+      "model_sha256": "fb21a107d7c572dfd071e3b0330f4a43a5f612799745123e9bac8348d55ddcda"
+    },
+    {
+      "id": "nottingham-light-region-6",
+      "descriptor": "3d-assets/nottingham-light-region-6/asset.json",
+      "model": "3d-assets/nottingham-light-region-6/model.glb",
+      "descriptor_sha256": "d3c00ea265d1182a03ee9a73bd46ecfc78661dd7fd2da0ea89aee018ca49be0b",
+      "model_sha256": "bd37f04b7e046c719f8a18808361c7c4f2402cff1d969f41775fb1600cd3135b"
+    },
+    {
+      "id": "nottingham-light-region-7",
+      "descriptor": "3d-assets/nottingham-light-region-7/asset.json",
+      "model": "3d-assets/nottingham-light-region-7/model.glb",
+      "descriptor_sha256": "d728349b5f62e6f7d98140d2a1cee4fb837c28575500371190ad2a5c2f83eea6",
+      "model_sha256": "f6420570cc866868f3d475952c746fd7630be626c0791f0c88e45940212ef394"
+    },
+    {
+      "id": "nottingham-light-region-8",
+      "descriptor": "3d-assets/nottingham-light-region-8/asset.json",
+      "model": "3d-assets/nottingham-light-region-8/model.glb",
+      "descriptor_sha256": "0b66c02f24b438a2fd8bd398f0a24911764e29ec66e45c977388ec01562fd6aa",
+      "model_sha256": "0c8510c6c58a3694b1d8a39aac8c8d8ce085d20a595e19a56934d9ca00c586e1"
+    },
+    {
+      "id": "nottingham-light-region-9",
+      "descriptor": "3d-assets/nottingham-light-region-9/asset.json",
+      "model": "3d-assets/nottingham-light-region-9/model.glb",
+      "descriptor_sha256": "e7122bb4e9e415c3dffe9a8d98a3d6dd5cdee1ce903587fa356e79b5c0c94605",
+      "model_sha256": "f760fa5e0c11f80d725861419572222f34041b57cc0247d76fa43fe4dd3902ea"
+    },
+    {
+      "id": "nottingham-light-region-10",
+      "descriptor": "3d-assets/nottingham-light-region-10/asset.json",
+      "model": "3d-assets/nottingham-light-region-10/model.glb",
+      "descriptor_sha256": "989cc05c44ceb704c4c83bd2ac10b525079b2def606ec41e50bb68f6a87cd58a",
+      "model_sha256": "4659c5eceade9fd8ca10fa719bce881078403cbed158b920559545541a415ce7"
+    },
+    {
+      "id": "nottingham-light-region-12",
+      "descriptor": "3d-assets/nottingham-light-region-12/asset.json",
+      "model": "3d-assets/nottingham-light-region-12/model.glb",
+      "descriptor_sha256": "38bac53ccda32ede6b153aabbf3cc2c2a83ed71b6f4f9253da19f66c2d4085e7",
+      "model_sha256": "0f54f852a906e5b93ef1bcc364c43e2048687e7479da8022d2ceecd1171550e5"
+    },
+    {
+      "id": "nottingham-light-region-14",
+      "descriptor": "3d-assets/nottingham-light-region-14/asset.json",
+      "model": "3d-assets/nottingham-light-region-14/model.glb",
+      "descriptor_sha256": "6f9642db10acb4c9d0d9078fa182d2b2540a0945e14792a5f7102c39284cbe0e",
+      "model_sha256": "588b3465d0b55c8058278470890b74c74e51b8d92c8147180d0fb92c8b419864"
+    },
+    {
+      "id": "nottingham-light-region-15",
+      "descriptor": "3d-assets/nottingham-light-region-15/asset.json",
+      "model": "3d-assets/nottingham-light-region-15/model.glb",
+      "descriptor_sha256": "0f28fd66822cc4cf13bfeabb45a5929f49bb0e7dc929d9a7576364ee15d197bb",
+      "model_sha256": "0a482fbda067bb40790fe5f17b424f33e69a497006239c010f909ba4619ac8ce"
+    },
+    {
+      "id": "nottingham-light-region-17",
+      "descriptor": "3d-assets/nottingham-light-region-17/asset.json",
+      "model": "3d-assets/nottingham-light-region-17/model.glb",
+      "descriptor_sha256": "cdf3f20d05c06b9b69e27d058fbaf6662d98ecd3ea968ab17c95ec05ada57d05",
+      "model_sha256": "0a77bea2c82b953f5c188c6a327c745eb308a83a529145e83be623d19c4a633d"
+    },
+    {
+      "id": "nottingham-light-region-18",
+      "descriptor": "3d-assets/nottingham-light-region-18/asset.json",
+      "model": "3d-assets/nottingham-light-region-18/model.glb",
+      "descriptor_sha256": "e2874215977a19c42d5285e0905524c2567ca5de168cefba6ddf723ac59ea731",
+      "model_sha256": "707a618266df99ab420e16447294d8df50e51db7df7025765c531d81e6f17e1a"
+    },
+    {
+      "id": "nottingham-light-region-19",
+      "descriptor": "3d-assets/nottingham-light-region-19/asset.json",
+      "model": "3d-assets/nottingham-light-region-19/model.glb",
+      "descriptor_sha256": "e81d12a30d863a4cea57e21f2ec06e2c5e7d35176cb6fc060b4f6026fe33be0b",
+      "model_sha256": "c46b60974ce07fcde36b94b841a70c9e42a1720185f7a4f56e9752fb44f9b8c6"
+    },
+    {
+      "id": "nottingham-light-region-20",
+      "descriptor": "3d-assets/nottingham-light-region-20/asset.json",
+      "model": "3d-assets/nottingham-light-region-20/model.glb",
+      "descriptor_sha256": "f0d7138110b403e2874130ae41ee524f609cfcc55cc14372522829a039c240e4",
+      "model_sha256": "3a7a3d002806a13798a2775c963e63429cbabfbe222819022b7e1106e884c8c2"
+    },
+    {
+      "id": "nottingham-light-region-22",
+      "descriptor": "3d-assets/nottingham-light-region-22/asset.json",
+      "model": "3d-assets/nottingham-light-region-22/model.glb",
+      "descriptor_sha256": "a20646c40779ee4c63bb91080b063764c20db55360bed9798e55d3e620369975",
+      "model_sha256": "3ba1108a0ec555958baca2d125bdce6c9da687f83b5708b30c66509fec491d9b"
     }
   ],
   "sceneMetadata": {
@@ -2560,6 +2833,942 @@
       "assets": [
         "nottingham-village-stream-wall"
       ]
+    },
+    {
+      "id": "nottingham-north-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-north-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-north-ambient-zone",
+          "transform": {
+            "dx": 487,
+            "dy": 62,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-northwest-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-northwest-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-northwest-ambient-zone",
+          "transform": {
+            "dx": 756,
+            "dy": 68,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-440-69",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-440-69"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-440-69",
+          "transform": {
+            "dx": 440,
+            "dy": 69,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-2198-2712",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-2198-2712"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-2198-2712",
+          "transform": {
+            "dx": 2198,
+            "dy": 2712,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-1398-3366",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-1398-3366"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-1398-3366",
+          "transform": {
+            "dx": 1398,
+            "dy": 3366,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-337-2546",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-337-2546"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-337-2546",
+          "transform": {
+            "dx": 337,
+            "dy": 2546,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-545-2832",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-545-2832"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-545-2832",
+          "transform": {
+            "dx": 545,
+            "dy": 2832,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-439-3414",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-439-3414"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-439-3414",
+          "transform": {
+            "dx": 439,
+            "dy": 3414,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-720-3282",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-720-3282"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-720-3282",
+          "transform": {
+            "dx": 720,
+            "dy": 3282,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-1290-2737",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-1290-2737"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-1290-2737",
+          "transform": {
+            "dx": 1290,
+            "dy": 2737,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-1342-2535",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-1342-2535"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-1342-2535",
+          "transform": {
+            "dx": 1342,
+            "dy": 2535,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-53-2522",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-53-2522"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-53-2522",
+          "transform": {
+            "dx": 53,
+            "dy": 2522,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-2305-2316",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-2305-2316"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-2305-2316",
+          "transform": {
+            "dx": 2305,
+            "dy": 2316,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-1628-3031",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-1628-3031"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-1628-3031",
+          "transform": {
+            "dx": 1628,
+            "dy": 3031,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-2106-2972",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-2106-2972"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-2106-2972",
+          "transform": {
+            "dx": 2106,
+            "dy": 2972,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-1768-10",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-1768-10"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-1768-10",
+          "transform": {
+            "dx": 1768,
+            "dy": 10,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-1795-2706",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-1795-2706"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-1795-2706",
+          "transform": {
+            "dx": 1795,
+            "dy": 2706,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-1916-759",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-1916-759"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-1916-759",
+          "transform": {
+            "dx": 1916,
+            "dy": 759,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-2370-2882",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-2370-2882"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-2370-2882",
+          "transform": {
+            "dx": 2370,
+            "dy": 2882,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-ambient-1169-2756",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-ambient-1169-2756"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "nottingham-ambient-1169-2756",
+          "transform": {
+            "dx": 1169,
+            "dy": 2756,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-0",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-0"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-0",
+          "transform": {
+            "dx": 1394,
+            "dy": 2265,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-1",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-1"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-1",
+          "transform": {
+            "dx": 1741,
+            "dy": 1530,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-2",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-2"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-2",
+          "transform": {
+            "dx": 1519,
+            "dy": 1466,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-3",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-3"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-3",
+          "transform": {
+            "dx": 1889,
+            "dy": 1266,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-4",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-4"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-4",
+          "transform": {
+            "dx": 1792,
+            "dy": 869,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-5",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-5"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-5",
+          "transform": {
+            "dx": 1532,
+            "dy": 456,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-6",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-6"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-6",
+          "transform": {
+            "dx": 1233,
+            "dy": 663,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-7",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-7"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-7",
+          "transform": {
+            "dx": 1779,
+            "dy": 1880,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-8",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-8"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-8",
+          "transform": {
+            "dx": 2218,
+            "dy": 630,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-9",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-9"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-9",
+          "transform": {
+            "dx": 2119,
+            "dy": 1150,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-10",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-10"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-10",
+          "transform": {
+            "dx": 654,
+            "dy": 2202,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-12",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-12"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-12",
+          "transform": {
+            "dx": 619,
+            "dy": 1149,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-14",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-14"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-14",
+          "transform": {
+            "dx": 1078,
+            "dy": 1353,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-15",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-15"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-15",
+          "transform": {
+            "dx": 2268,
+            "dy": 394,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-17",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-17"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-17",
+          "transform": {
+            "dx": 1569,
+            "dy": 245,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-18",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-18"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-18",
+          "transform": {
+            "dx": 934,
+            "dy": 886,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-19",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-19"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-19",
+          "transform": {
+            "dx": 935,
+            "dy": 885,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-20",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-20"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-20",
+          "transform": {
+            "dx": 712,
+            "dy": 803,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "nottingham-light-region-22",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "nottingham-light-region-22"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "nottingham-light-region-22",
+          "transform": {
+            "dx": 305,
+            "dy": 665,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
     }
   ]
 }

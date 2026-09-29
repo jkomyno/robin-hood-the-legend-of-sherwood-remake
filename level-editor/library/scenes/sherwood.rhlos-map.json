@@ -663,6 +663,55 @@
       "descriptor": "3d-assets/sherwood/sherwood-woodland-stump/asset.json",
       "descriptor_sha256": "4f3927cc0f0329c39e0effeccc041bfee60714762e344ee4cd0bc5051e743351",
       "resources": []
+    },
+    {
+      "id": "sherwood-preparation-table-canopy",
+      "descriptor": "3d-assets/sherwood-preparation-table-canopy/asset.json",
+      "descriptor_sha256": "f046ca16bb33b8d3d085c0f36df5b2e58b8b70de7b315a30b0deac8dce4f1635",
+      "model": "3d-assets/sherwood-preparation-table-canopy/model-with-frame-metadata.glb",
+      "model_sha256": "745e1fffd50d01244a90e2fbbcf1d367a8bdc9803dd39881ab5caf9e8fbb5207"
+    },
+    {
+      "id": "sherwood-ambient-1214-127",
+      "descriptor": "3d-assets/sherwood-ambient-1214-127/asset.json",
+      "model": "3d-assets/sherwood-ambient-1214-127/model.glb",
+      "descriptor_sha256": "fc06c68a7f3c411944c5203e500da8848a6f4341da8323bcb34d91835c372ec5",
+      "model_sha256": "d5a9655755aa8f7e97cab14a33dfd102492c525924a200d50b876a2435874d7c"
+    },
+    {
+      "id": "sherwood-ambient-1661-922",
+      "descriptor": "3d-assets/sherwood-ambient-1661-922/asset.json",
+      "model": "3d-assets/sherwood-ambient-1661-922/model.glb",
+      "descriptor_sha256": "bd0c601e4cf24dad42bf2828f08daeecfc77b850d590646baa85d9fa3db61cd8",
+      "model_sha256": "2613b8a05e4ed8b2629cb078ce53fe79b593b4885578b018d39428e415b26c5f"
+    },
+    {
+      "id": "sherwood-ambient-1281-318",
+      "descriptor": "3d-assets/sherwood-ambient-1281-318/asset.json",
+      "model": "3d-assets/sherwood-ambient-1281-318/model.glb",
+      "descriptor_sha256": "c8ee8d50e1d781247d62eadea7820e20f89a482b575aa9afcdc729424fdbc95c",
+      "model_sha256": "5cbc0a817ce4f5e33c6275e72d379716fa2350342e562484314c8742328a7e7a"
+    },
+    {
+      "id": "sherwood-ambient-309-675",
+      "descriptor": "3d-assets/sherwood-ambient-309-675/asset.json",
+      "model": "3d-assets/sherwood-ambient-309-675/model.glb",
+      "descriptor_sha256": "f3564b83ad3388dd81df46c9c515b1bd643e81b35de9c639d75d5402067c82b4",
+      "model_sha256": "a35531603db5b9701b1e4580953ab96a819d4f99f438ed7850714274e1f399e8"
+    },
+    {
+      "id": "sherwood-ambient-634-569",
+      "descriptor": "3d-assets/sherwood-ambient-634-569/asset.json",
+      "model": "3d-assets/sherwood-ambient-634-569/model.glb",
+      "descriptor_sha256": "9cd4288fb5087b7b7443419db60227bb26e18b22ccd1861a1fb2812eaff26420",
+      "model_sha256": "79239d216eb0878595a32c1f4aa7590195d71460f086c0ce5f72ac5e460bd4d6"
+    },
+    {
+      "id": "sherwood-west-night-light-region",
+      "descriptor": "3d-assets/sherwood-west-night-light-region/asset.json",
+      "model": "3d-assets/sherwood-west-night-light-region/model.glb",
+      "descriptor_sha256": "72dce3f3785f73b0c532f9ece1b166da63d4188515d009a444536fa62c88957a",
+      "model_sha256": "7450435a40ae8529b6644409dae3cdb608701248e2c4d5662246f3cb4f03ef17"
     }
   ],
   "sceneMetadata": {},
@@ -1626,6 +1675,174 @@
         "dy": 356.1909669739996,
         "dz": 0,
         "rot_deg": 0
+      }
+    },
+    {
+      "id": "sherwood-preparation-table-canopy",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "sherwood-preparation-table-canopy"
+      ],
+      "parts": {
+        "building-013": {
+          "id": "sherwood-preparation-table-canopy",
+          "transform": {
+            "dx": 533,
+            "dy": 596,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "sherwood-ambient-1214-127",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "sherwood-ambient-1214-127"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "sherwood-ambient-1214-127",
+          "transform": {
+            "dx": 1214,
+            "dy": 127,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "sherwood-ambient-1661-922",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "sherwood-ambient-1661-922"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "sherwood-ambient-1661-922",
+          "transform": {
+            "dx": 1661,
+            "dy": 922,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "sherwood-ambient-1281-318",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "sherwood-ambient-1281-318"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "sherwood-ambient-1281-318",
+          "transform": {
+            "dx": 1281,
+            "dy": 318,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "sherwood-ambient-309-675",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "sherwood-ambient-309-675"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "sherwood-ambient-309-675",
+          "transform": {
+            "dx": 309,
+            "dy": 675,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "sherwood-ambient-634-569",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "sherwood-ambient-634-569"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "sherwood-ambient-634-569",
+          "transform": {
+            "dx": 634,
+            "dy": 569,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "sherwood-west-night-light-region",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "sherwood-west-night-light-region"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "sherwood-west-night-light-region",
+          "transform": {
+            "dx": 412,
+            "dy": 231,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
       }
     }
   ]

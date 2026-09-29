@@ -8,6 +8,7 @@ import {
   liftAssetCompilerFixture,
   maskAssetCompilerFixture,
   interiorAssetCompilerFixture,
+  lightAssetCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
@@ -151,4 +152,58 @@ test("best effort removes empty interiors before allocating runtime room sectors
   const geometry = compileAssetGameplay(document, assets, bounds, { bestEffort: true });
   assert.equal(geometry.buildings, undefined);
   assert.ok(geometry.motion_data.layers.some((layer) => layer.length > 0));
+});
+
+test("best effort keeps valid light receivers and warns for disconnected points and segments", () => {
+  const { document, assets, hut } = lightAssetCompilerFixture();
+  const light = hut.gameplay!.lights![0]!;
+  light.receivers = [
+    [20, 20, 0],
+    [20, 25, 5],
+  ];
+  light.receiverSegments = [
+    [
+      [25, 20, -1],
+      [25, 22, 1],
+    ],
+    [
+      [25, 25, 5],
+      [25, 27, 7],
+    ],
+  ];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /receiving segment/);
+  const result = compileAssetGameplay(document, assets, bounds, { bestEffort: true });
+  assert.equal(result.light_sectors!.length, 2);
+  assert.equal(result.light_sectors![0]!.ambience, 1);
+  assert.equal(
+    result.warnings!.filter((message) => message.startsWith("Light receiver omitted:")).length,
+    2,
+  );
+  light.receivers = [[20, 25, 5]];
+  delete light.receiverSegments;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /receiver 0 must resolve/);
+  assert.equal(
+    compileAssetGameplay(document, assets, bounds, { bestEffort: true }).light_sectors!.length,
+    1,
+  );
+  light.receivers = [[200, 20, 0]];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds, { bestEffort: true }),
+    /outside the light contour/,
+  );
+});
+
+test("best effort omits an unanchored light region without a matching receiving plane", () => {
+  const { document, assets, hut } = lightAssetCompilerFixture();
+  for (const point of hut.gameplay!.lights![0]!.polygon) point[2] = 5;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /overlap at least one receiving layer/,
+  );
+  const result = compileAssetGameplay(document, assets, bounds, { bestEffort: true });
+  assert.equal(result.light_sectors!.length, 1);
+  assert.equal(result.light_sectors![0]!.ambience, 2);
+  assert.ok(
+    result.warnings!.some((message) => message.startsWith("Light region hut-a/hut/day-shadow:")),
+  );
 });

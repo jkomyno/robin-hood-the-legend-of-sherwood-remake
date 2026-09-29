@@ -1480,21 +1480,23 @@ function compileAssetGameplayAttempt(
       ? {
           light_sectors: lights.flatMap((light) => {
             if (light.receivers || light.receiverSegments) {
-              const segmentReceivers = (light.receiverSegments ?? []).map((segment, index) => {
+              const segmentReceivers = (light.receiverSegments ?? []).flatMap((segment, index) => {
                 const matches = areas.flatMap((area) => {
                   const point = lightReceiverIntersection(segment, area.plane);
                   return point && inside([point[0], point[1] - point[2]], area.polygon)
                     ? [{ area, point }]
                     : [];
                 });
-                if (new Set(matches.map(({ area }) => area.sector)).size !== 1)
-                  throw new Error(
-                    `${light.id}: receiving segment ${index} must intersect exactly one walkable surface`,
-                  );
-                return matches[0]!.point;
+                if (new Set(matches.map(({ area }) => area.sector)).size !== 1) {
+                  const message = `${light.id}: receiving segment ${index} must intersect exactly one walkable surface`;
+                  if (!options.bestEffort) throw new Error(message);
+                  warnings.push(`Light receiver omitted: ${message}.`);
+                  return [];
+                }
+                return [matches[0]!.point];
               });
               const layers = new Set(
-                [...(light.receivers ?? []), ...segmentReceivers].map((point, index) => {
+                [...(light.receivers ?? []), ...segmentReceivers].flatMap((point, index) => {
                   // These anchors select a layer and are not serialized as integer
                   // geometry. Rounding can move a valid interior anchor outside.
                   const projected: Point = [point[0], point[1] - point[2]];
@@ -1502,8 +1504,15 @@ function compileAssetGameplayAttempt(
                     throw new Error(
                       `${light.id}: receiver ${index} lies outside the light contour`,
                     );
-                  return resolve(point, `${light.id} receiver ${index}`, null, true, projected)
-                    .layer;
+                  try {
+                    return [
+                      resolve(point, `${light.id} receiver ${index}`, null, true, projected).layer,
+                    ];
+                  } catch (error) {
+                    if (!options.bestEffort || !(error instanceof UnresolvedSurface)) throw error;
+                    warnings.push(`Light receiver omitted: ${error.message}`);
+                    return [];
+                  }
                 }),
               );
               return [...layers].map((layer) => ({
@@ -1521,10 +1530,17 @@ function compileAssetGameplayAttempt(
                 )
                 .map((area) => area.layer),
             );
-            if (matchingLayers.size === 0)
+            if (matchingLayers.size === 0) {
+              if (options.bestEffort) {
+                warnings.push(
+                  `Light region ${light.id}: omitted because no receiving layer overlaps its contour.`,
+                );
+                return [];
+              }
               throw new Error(
                 `${light.id}: light region must overlap at least one receiving layer (found ${matchingLayers.size})`,
               );
+            }
             return [...matchingLayers].map((layer) => ({
               layer,
               polygon: { points: light.polygon },

@@ -19,7 +19,7 @@ coverage on matching movement envelopes. Nottingham's two stateful regions now
 also match full walkable coverage in both states. Actor traversal remains unverified.
 No map is yet published or certified at full gameplay parity.
 
-Draft gameplay is now available in the main editor library: 932 structurally
+Draft gameplay is now available in the main editor library: 1,101 structurally
 validated definitions were installed, and descriptor pins in all ten saved scenes
 were updated without changing their placements. All ten scenes reopen successfully.
 This includes 17 legacy Sherwood assets whose recovered definitions were rebased
@@ -27,6 +27,20 @@ to their existing pivots. Definitions carry explicit draft issues; publication i
 not parity certification. Assets with changed physical frames or without a matching
 recovery were not overwritten. The publication tool retains before/after snapshots
 and a report under `work/map-compile/main-library-draft-publication`.
+A further 169 additive assets and their placements are installed in the nine
+recovered map scenes: 80 lighting fields, 72 sound fields and 17 navigation or
+physical assets. All existing placements, references and scene settings are
+preserved; Wychford is unchanged by this addition. Models are copied into the
+library with verified resource hashes, not linked to work directories. The
+transaction backup is `work/map-compile/additive-gameplay-publication`. Eighteen
+replacement-family assets remain deferred because they overlap existing parts.
+Light bindings whose receiving geometry is still missing produce best-effort
+warnings; available receivers remain active and strict mode still rejects gaps.
+After this addition, all ten maps compile and construct in Rust. Native apply/reset
+checks cover 47 switches, up from 32 before the added navigation assets. Sherwood's
+main-library browser bake also passes at 1920×1088 with 115 sight obstacles and an
+8,246,241-byte ZIP. That archive loads in Rust with seven door projections and
+5,040 grid blocks; this differs from the more complete staged-library bake below.
 Wychford's terrain adds 1,804 sloped receiving triangles derived from its authored
 mesh, simplified with a one-unit error budget. Native construction passes. Water
 exclusion, impassable slopes and material regions are not yet authored, so this
@@ -55,8 +69,8 @@ Export displays phase progress and cancellation. Compilation and image/ZIP
 encoding run in a worker; rendering yields between 512-pixel tiles. Browser tests
 check worker responsiveness, transferred buffer ownership, cancellation cleanup
 and exact synchronous/asynchronous color/depth equality. All ten saved main-library
-maps pass best-effort compilation; only Wychford's complete published-library ZIP
-was native-loaded in this publication batch.
+maps pass best-effort compilation; Wychford and Sherwood's complete published-library
+ZIPs were native-loaded in this publication batch.
 The combined `editor-field-model-library` drafts now contain regenerated light/sound
 field models and repinned scenes; older diagnostic libraries retain their old pins.
 The nine source-backed `embedded-gameplay-library` drafts now embed 1,121 recovered

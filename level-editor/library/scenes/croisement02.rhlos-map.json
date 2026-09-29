@@ -1023,6 +1023,76 @@
       "descriptor": "3d-assets/croisement02/croisement02-terrace-000/asset.json",
       "descriptor_sha256": "8cef90b8938778992c587bdd0aa7b3767223c6ca822a0a9f323aa0aad19f3bf8",
       "id": "croisement02-terrace-000"
+    },
+    {
+      "id": "croisement02-navigation-boundary-001",
+      "descriptor": "3d-assets/croisement02-navigation-boundary-001/asset.json",
+      "descriptor_sha256": "2b2960da4cb814240ba3582a6fdc86c5ff7a47860d9469f4653b96c9d4839616",
+      "model": "3d-assets/croisement02-navigation-boundary-001/model.glb",
+      "model_sha256": "0155078f6582def5775e6ea6feb594af4d7a7864066a3d3c6cdac2676582faa4"
+    },
+    {
+      "id": "croisement02-navigation-boundary-005",
+      "descriptor": "3d-assets/croisement02-navigation-boundary-005/asset.json",
+      "descriptor_sha256": "ba5d252fb47becd2d63825e92f8ba0590714c0bef6ccd5c45b7d228362c03690",
+      "model": "3d-assets/croisement02-navigation-boundary-005/model.glb",
+      "model_sha256": "f7bfa28ae8a4d5035c4f9bfa441b5d0ebbc7b29ba52ee122f08ee80200d9720f"
+    },
+    {
+      "id": "croisement02-navigation-boundary-004",
+      "descriptor": "3d-assets/croisement02-navigation-boundary-004/asset.json",
+      "descriptor_sha256": "f5f255cf7952d93edfdda25df6e4331d6ef133e900b366cb05e22a7be1f0b888",
+      "model": "3d-assets/croisement02-navigation-boundary-004/model.glb",
+      "model_sha256": "66507cc953a3c05542947dfffdb733adbe74f91c86f46ec11c698100c27e7b26"
+    },
+    {
+      "id": "croisement02-navigation-boundary-003",
+      "descriptor": "3d-assets/croisement02-navigation-boundary-003/asset.json",
+      "descriptor_sha256": "a32e23a0fbcf749385772bf910252143d7cf02b9147f861a6550277ec419ea53",
+      "model": "3d-assets/croisement02-navigation-boundary-003/model.glb",
+      "model_sha256": "9dbc507c475415c2932bf0a3b826a6eb053b857708b5d658b6523abfc0f31293"
+    },
+    {
+      "id": "croisement02-navigation-boundary-002",
+      "descriptor": "3d-assets/croisement02-navigation-boundary-002/asset.json",
+      "descriptor_sha256": "6eb517163f4f53ef6a2fcad7a96cf52195ea82690505045f8e8cb29e8e7b8d84",
+      "model": "3d-assets/croisement02-navigation-boundary-002/model.glb",
+      "model_sha256": "3a0b4b738430245e489756979333dde4a9982dd853b00d1facfd60914d68fd03"
+    },
+    {
+      "id": "croisement02-northeast-ambient-zone",
+      "descriptor": "3d-assets/croisement02-northeast-ambient-zone/asset.json",
+      "model": "3d-assets/croisement02-northeast-ambient-zone/model.glb",
+      "descriptor_sha256": "0894e888f6b338dbd80d08c5a27169a576dcf8fdddee647ebd1bd67649bb2c7d",
+      "model_sha256": "d1e31a2488c6077152d14611db4e72feeb57017af91d351d24008c2118703466"
+    },
+    {
+      "id": "croisement02-east-ambient-zone",
+      "descriptor": "3d-assets/croisement02-east-ambient-zone/asset.json",
+      "model": "3d-assets/croisement02-east-ambient-zone/model.glb",
+      "descriptor_sha256": "71ccbf87ac12b843524e7fca71455a58953516ab08ed239a3f0570bf93567191",
+      "model_sha256": "11deeb41f7543a1bd1b8a2cc49435fd6d87061cfd2c4ac11ad1e97f5cda7555a"
+    },
+    {
+      "id": "croisement02-southeast-ambient-zone",
+      "descriptor": "3d-assets/croisement02-southeast-ambient-zone/asset.json",
+      "model": "3d-assets/croisement02-southeast-ambient-zone/model.glb",
+      "descriptor_sha256": "daf315c13edf4d53349dfc0bdaf6d323f58512004a42849a1295beab3684cd08",
+      "model_sha256": "2230693fa09ddb20ca404290b0f71f4eb93997efe23d5d8e0f4ee4e6639ecbd3"
+    },
+    {
+      "id": "croisement02-central-line-ambient-zone",
+      "descriptor": "3d-assets/croisement02-central-line-ambient-zone/asset.json",
+      "model": "3d-assets/croisement02-central-line-ambient-zone/model.glb",
+      "descriptor_sha256": "c218c047887ab021ac7fe6a4c4f18595eec0a86e084e4cbf423f179d851516b1",
+      "model_sha256": "7532a422b5166c7082529f8af4ac19d025e562c5f6049ceba9456c7c67697ad0"
+    },
+    {
+      "id": "croisement02-southwest-line-ambient-zone",
+      "descriptor": "3d-assets/croisement02-southwest-line-ambient-zone/asset.json",
+      "model": "3d-assets/croisement02-southwest-line-ambient-zone/model.glb",
+      "descriptor_sha256": "67efda3ee48ddb36a9406f36cfeb1352583b887836f0bc27c51330fbf315f65c",
+      "model_sha256": "414354bc4279f44467eb0e9f7b775d3acf7db84b79c192bea909cbff8bcc9cd9"
     }
   ],
   "sceneMetadata": {},
@@ -2749,6 +2819,216 @@
           "transform": {
             "dx": 543,
             "dy": 340.1308267561703,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "croisement02-navigation-boundary-001",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 147.5,
+        "dy": 201.501003,
+        "dz": 36.001003,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-navigation-boundary-001"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement02-navigation-boundary-001-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement02-navigation-boundary-005",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 157.5,
+        "dy": 99.001003,
+        "dz": 36.001003,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-navigation-boundary-005"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement02-navigation-boundary-005-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement02-navigation-boundary-004",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 62.5,
+        "dy": 945.5,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-navigation-boundary-004"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement02-navigation-boundary-004-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement02-navigation-boundary-003",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 1565.5,
+        "dy": 205,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-navigation-boundary-003"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement02-navigation-boundary-003-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement02-navigation-boundary-002",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 528.5,
+        "dy": 104.501003,
+        "dz": 36.001003,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement02-navigation-boundary-002"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement02-navigation-boundary-002-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement02-northeast-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement02-northeast-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement02-northeast-ambient-zone",
+          "transform": {
+            "dx": 1791,
+            "dy": 198,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "croisement02-east-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement02-east-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement02-east-ambient-zone",
+          "transform": {
+            "dx": 1856,
+            "dy": 796,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "croisement02-southeast-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement02-southeast-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement02-southeast-ambient-zone",
+          "transform": {
+            "dx": 1810,
+            "dy": 981,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "croisement02-central-line-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement02-central-line-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement02-central-line-ambient-zone",
+          "transform": {
+            "dx": 1008,
+            "dy": 599,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "croisement02-southwest-line-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement02-southwest-line-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement02-southwest-line-ambient-zone",
+          "transform": {
+            "dx": 78,
+            "dy": 894,
             "dz": 0,
             "rot_deg": 0
           }

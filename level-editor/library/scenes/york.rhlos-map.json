@@ -1783,6 +1783,160 @@
       "descriptor": "3d-assets/york/york-west-town-raised-terrain/asset.json",
       "descriptor_sha256": "66f8d7d0a8f972b637c738ce68da90fb7a2e56eb9660e18a047f58c012cfacd5",
       "id": "york-west-town-raised-terrain"
+    },
+    {
+      "id": "york-ambient-330-257",
+      "descriptor": "3d-assets/york-ambient-330-257/asset.json",
+      "model": "3d-assets/york-ambient-330-257/model.glb",
+      "descriptor_sha256": "91d1ddb25b24dc7c30b6c294c7b0a27aa30e8d70c0c805031107c6d2ca0fdba0",
+      "model_sha256": "1735c362966129306fb436d933e7ced88876263503471011deea4065ea542702"
+    },
+    {
+      "id": "york-ambient-3071-541",
+      "descriptor": "3d-assets/york-ambient-3071-541/asset.json",
+      "model": "3d-assets/york-ambient-3071-541/model.glb",
+      "descriptor_sha256": "6c0e2a0f1687beb3551244d360f8f080b38f16405dc9121bc53c9f219a448c88",
+      "model_sha256": "1a718adacc8c9928c4699203fe0d97cf8e6b50c4e5b4067bd4f1b19d4b8dafb2"
+    },
+    {
+      "id": "york-ambient-602-579",
+      "descriptor": "3d-assets/york-ambient-602-579/asset.json",
+      "model": "3d-assets/york-ambient-602-579/model.glb",
+      "descriptor_sha256": "e45cfaebc9bc1e90107cfb2ada02454db679c1b5525187ffa0244e7e404bc323",
+      "model_sha256": "addc39029e3a76e78d703f92cdf5ad8108eee99df3a13d03ae320dbec6aee93d"
+    },
+    {
+      "id": "york-ambient-2213-2336",
+      "descriptor": "3d-assets/york-ambient-2213-2336/asset.json",
+      "model": "3d-assets/york-ambient-2213-2336/model.glb",
+      "descriptor_sha256": "159de90123764a369a45141494f820153f09c12140385ad08f9c7b608b1825be",
+      "model_sha256": "fc34a2ec9364a94a83f828f3bb6e7bb787c158a2448e0aa87148c842adf48aff"
+    },
+    {
+      "id": "york-ambient-2155-885",
+      "descriptor": "3d-assets/york-ambient-2155-885/asset.json",
+      "model": "3d-assets/york-ambient-2155-885/model.glb",
+      "descriptor_sha256": "73ac8b3296e2023553399c13c2da3f3e32d3a16417a3a68068f22a57f4ab82b4",
+      "model_sha256": "2d3c7320e0ff016247fb0a00612d9261cc841f96bfa636d2b878921daeadc819"
+    },
+    {
+      "id": "york-ambient-2522-1897",
+      "descriptor": "3d-assets/york-ambient-2522-1897/asset.json",
+      "model": "3d-assets/york-ambient-2522-1897/model.glb",
+      "descriptor_sha256": "a2c0c47edd1621c18ac05fb9466ee38236f61a040d3b758fae973c7859e1ad3a",
+      "model_sha256": "e612a3b2c56ba95610b0b67c960d7132ddd021fd7201f41b42abeae24a143de3"
+    },
+    {
+      "id": "york-light-region-1",
+      "descriptor": "3d-assets/york-light-region-1/asset.json",
+      "model": "3d-assets/york-light-region-1/model.glb",
+      "descriptor_sha256": "2416d5dbfa11ab13a5ea5ca832a15cb5a51935a35d34c342f3655b78ebc95311",
+      "model_sha256": "6fa9f2ecde0e639c5e3718ecdead1d9081b392637406a1bfc4be21e1e36bb93d"
+    },
+    {
+      "id": "york-light-region-6",
+      "descriptor": "3d-assets/york-light-region-6/asset.json",
+      "model": "3d-assets/york-light-region-6/model.glb",
+      "descriptor_sha256": "c427795cf5f0d4d115e0433bedaca1e50882fcd23e01a9c86e104f0b024849b0",
+      "model_sha256": "f89ef7cc662bc6912bedbb231425b8a54ca81221eff183918c96b08c0c7de4be"
+    },
+    {
+      "id": "york-light-region-7",
+      "descriptor": "3d-assets/york-light-region-7/asset.json",
+      "model": "3d-assets/york-light-region-7/model.glb",
+      "descriptor_sha256": "ad5d61543d32919d4ca0ac7d20177e4595578a4488e30f2f9c1124345296ff60",
+      "model_sha256": "868ca11a9a33540562a32608327cb2dcd7afcd7f3ba6010b990157b5f6f32dd1"
+    },
+    {
+      "id": "york-light-region-18",
+      "descriptor": "3d-assets/york-light-region-18/asset.json",
+      "model": "3d-assets/york-light-region-18/model.glb",
+      "descriptor_sha256": "488b37dd3a6ef8caf3ad44c00c4c76d222cfb4ee728e19b1fdd43ef4980b04d9",
+      "model_sha256": "e91b9dd6abb4e5eecc0d407076d0430209bf7d4d26e9b6bcdbd3332b66b25f9f"
+    },
+    {
+      "id": "york-light-region-20",
+      "descriptor": "3d-assets/york-light-region-20/asset.json",
+      "model": "3d-assets/york-light-region-20/model.glb",
+      "descriptor_sha256": "895e5d307fb7bb9a61c8fc7c0f0f31f39f678c6a9ed402ca0399fcf678a3a1cd",
+      "model_sha256": "e8433245e5201405012b42e8028aa8698d90dedbf036c3718a2ff811d0419787"
+    },
+    {
+      "id": "york-light-region-22",
+      "descriptor": "3d-assets/york-light-region-22/asset.json",
+      "model": "3d-assets/york-light-region-22/model.glb",
+      "descriptor_sha256": "5a4de1978a7cb2790fb30f2bb3d10f7911ff38fe91db77e2023c1e0a009f51ab",
+      "model_sha256": "219bb2c93b2a9a1c3c498279db2fd74e95095671355ae8f88e109069ff917f6e"
+    },
+    {
+      "id": "york-light-region-23",
+      "descriptor": "3d-assets/york-light-region-23/asset.json",
+      "model": "3d-assets/york-light-region-23/model.glb",
+      "descriptor_sha256": "82af313fa188cd6ee5e73b818faa4ade7dddde28eb2fb4aa58177e4621df2620",
+      "model_sha256": "251bab9077f626f21f94bcc3b419a31717d7b5833046cbec8bde81a50b87d671"
+    },
+    {
+      "id": "york-light-region-24",
+      "descriptor": "3d-assets/york-light-region-24/asset.json",
+      "model": "3d-assets/york-light-region-24/model.glb",
+      "descriptor_sha256": "11de27598971f65b9442ccbe815dbca8136a2ad920ab4b3c0e16e430b2d46b09",
+      "model_sha256": "2424bd8bd3a336e38c6bd8162e89606eb21189dfc748362d5cdd00068c44e01e"
+    },
+    {
+      "id": "york-light-region-25",
+      "descriptor": "3d-assets/york-light-region-25/asset.json",
+      "model": "3d-assets/york-light-region-25/model.glb",
+      "descriptor_sha256": "2d7497a6004f5f5860d18b4d7437270fc948220bddd7fa30b5001deb9c4a2eb3",
+      "model_sha256": "d233944677b172bbf6f997dafac8f0f0dd3c263ca40debaa2ab9ca9b5899f853"
+    },
+    {
+      "id": "york-light-region-26",
+      "descriptor": "3d-assets/york-light-region-26/asset.json",
+      "model": "3d-assets/york-light-region-26/model.glb",
+      "descriptor_sha256": "9b79e720734a033c0dfcd9d3cd3ebb8b5398412c26b3f51a2430c3d66554f082",
+      "model_sha256": "413c905e44122df8548fa6f09ecf224c6a4653b525609cde516904f1b6bcbdbc"
+    },
+    {
+      "id": "york-light-region-28",
+      "descriptor": "3d-assets/york-light-region-28/asset.json",
+      "model": "3d-assets/york-light-region-28/model.glb",
+      "descriptor_sha256": "877a3ab62647fa4d2695fa8c0f0d22ddf95798faf02840856904f0dc5c12ce89",
+      "model_sha256": "3c3865d3e1d15921eef97fca538e27696b93d8b284b3ca797e670e74f630c028"
+    },
+    {
+      "id": "york-light-region-29",
+      "descriptor": "3d-assets/york-light-region-29/asset.json",
+      "model": "3d-assets/york-light-region-29/model.glb",
+      "descriptor_sha256": "30ea7f328a428af6b67ba3759420509a2c7fbe973a8bd3b891a2ae34fb2f7221",
+      "model_sha256": "9c226cba9778147957eb7a034a752b02a6cec72b98d8c1d86265cb154fdbc547"
+    },
+    {
+      "id": "york-light-region-30",
+      "descriptor": "3d-assets/york-light-region-30/asset.json",
+      "model": "3d-assets/york-light-region-30/model.glb",
+      "descriptor_sha256": "2ac361e5ada38c4f1a430edfeb544f596a99c29e2442286ed3c5f3ad047a5724",
+      "model_sha256": "2638b213269570196cf168c49614a3d7c81e69d3c2b54478ce68f256668da0b5"
+    },
+    {
+      "id": "york-light-region-33",
+      "descriptor": "3d-assets/york-light-region-33/asset.json",
+      "model": "3d-assets/york-light-region-33/model.glb",
+      "descriptor_sha256": "b20843d9aceb0ee18193ddd3297f36e415b62c7adc5bb82de4e6c7348b70b29b",
+      "model_sha256": "4dc99d27bd24575a8e5510b8c888f4c41701369159b34dbf2eeb2e86c7e7721a"
+    },
+    {
+      "id": "york-light-region-35",
+      "descriptor": "3d-assets/york-light-region-35/asset.json",
+      "model": "3d-assets/york-light-region-35/model.glb",
+      "descriptor_sha256": "7ef5d9ea868a22595278fec7f9e1caf0348d82d3a8000294e75ccfc9f8ff874f",
+      "model_sha256": "a35fce9d4a36d40f795f542b8c02474ff6877dd01cdf8760eddc1daffa30c0c7"
+    },
+    {
+      "id": "york-light-region-36",
+      "descriptor": "3d-assets/york-light-region-36/asset.json",
+      "model": "3d-assets/york-light-region-36/model.glb",
+      "descriptor_sha256": "98e3eafc81c9a6323eb8c6e6cdb6803819066f1e99f753fb75763acbb2d49d84",
+      "model_sha256": "7735d91503e2283446d8bcb3a6cb3f4431096abf0e8693e99e0762d569dcb1aa"
     }
   ],
   "sceneMetadata": {},
@@ -5067,6 +5221,534 @@
       "assets": [
         "york-west-town-raised-terrain"
       ]
+    },
+    {
+      "id": "york-ambient-330-257",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-ambient-330-257"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "york-ambient-330-257",
+          "transform": {
+            "dx": 330,
+            "dy": 257,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-ambient-3071-541",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-ambient-3071-541"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "york-ambient-3071-541",
+          "transform": {
+            "dx": 3071,
+            "dy": 541,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-ambient-602-579",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-ambient-602-579"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "york-ambient-602-579",
+          "transform": {
+            "dx": 602,
+            "dy": 579,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-ambient-2213-2336",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-ambient-2213-2336"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "york-ambient-2213-2336",
+          "transform": {
+            "dx": 2213,
+            "dy": 2336,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-ambient-2155-885",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-ambient-2155-885"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "york-ambient-2155-885",
+          "transform": {
+            "dx": 2155,
+            "dy": 885,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-ambient-2522-1897",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-ambient-2522-1897"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "york-ambient-2522-1897",
+          "transform": {
+            "dx": 2522,
+            "dy": 1897,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-1",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-1"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-1",
+          "transform": {
+            "dx": 337,
+            "dy": 2225,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-6",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-6"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-6",
+          "transform": {
+            "dx": 2023,
+            "dy": 1953,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-7",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-7"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-7",
+          "transform": {
+            "dx": 2310,
+            "dy": 2014,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-18",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-18"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-18",
+          "transform": {
+            "dx": 656,
+            "dy": 654,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-20",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-20"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-20",
+          "transform": {
+            "dx": 1667,
+            "dy": 1115,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-22",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-22"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-22",
+          "transform": {
+            "dx": 2818,
+            "dy": 1271,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-23",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-23"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-23",
+          "transform": {
+            "dx": 2760,
+            "dy": 2066,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-24",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-24"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-24",
+          "transform": {
+            "dx": 1943,
+            "dy": 949,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-25",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-25"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-25",
+          "transform": {
+            "dx": 2194,
+            "dy": 337,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-26",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-26"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-26",
+          "transform": {
+            "dx": 2135,
+            "dy": 1226,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-28",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-28"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-28",
+          "transform": {
+            "dx": 1575,
+            "dy": 1920,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-29",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-29"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-29",
+          "transform": {
+            "dx": 2075,
+            "dy": 1206,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-30",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-30"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-30",
+          "transform": {
+            "dx": 1960,
+            "dy": 1118,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-33",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-33"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-33",
+          "transform": {
+            "dx": 2436,
+            "dy": 1000,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-35",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-35"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-35",
+          "transform": {
+            "dx": 2477,
+            "dy": 745,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "york-light-region-36",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "york-light-region-36"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "york-light-region-36",
+          "transform": {
+            "dx": 3015,
+            "dy": 754,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
     }
   ]
 }

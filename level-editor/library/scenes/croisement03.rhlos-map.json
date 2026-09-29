@@ -659,6 +659,83 @@
       "descriptor": "3d-assets/croisement03/croisement03-group-105/asset.json",
       "descriptor_sha256": "583daf05cd879b76dc63f8d6ece687f2a7f7e97f74659a8ed12144920079f4ac",
       "id": "croisement03-group-105"
+    },
+    {
+      "id": "croisement03-navigation-boundary-001",
+      "descriptor": "3d-assets/croisement03-navigation-boundary-001/asset.json",
+      "descriptor_sha256": "9e29155054fff038c502a823db95c1d3908b34d6a69fc0292c6ce0b3c6b5cb3c",
+      "model": "3d-assets/croisement03-navigation-boundary-001/model.glb",
+      "model_sha256": "024463bb71275476d2b0ea8a445282389fa7e68967e26d288bd6925eea366763"
+    },
+    {
+      "id": "croisement03-navigation-boundary-002",
+      "descriptor": "3d-assets/croisement03-navigation-boundary-002/asset.json",
+      "descriptor_sha256": "13061193a28e4c2bbad820cf977043709e1f21f073586ab999b145805c384f07",
+      "model": "3d-assets/croisement03-navigation-boundary-002/model.glb",
+      "model_sha256": "d880621eed80e478d60e2bf4bf70105c30285f703fdf727a05f8667562dc82ab"
+    },
+    {
+      "id": "croisement03-navigation-boundary-003",
+      "descriptor": "3d-assets/croisement03-navigation-boundary-003/asset.json",
+      "descriptor_sha256": "7663485ca8598c80cc44ca2c5b41e1cbc66fec9229ef0fdc7a02419dc75496f5",
+      "model": "3d-assets/croisement03-navigation-boundary-003/model.glb",
+      "model_sha256": "8be270de19f76da4383ca3f4956bb53f72c58d8510e755f39dfbef6abd90af7f"
+    },
+    {
+      "id": "croisement03-navigation-boundary-007",
+      "descriptor": "3d-assets/croisement03-navigation-boundary-007/asset.json",
+      "descriptor_sha256": "035d1c5d67d8caf9d6af169e6c307bd8a15331d6ae7ca3f9c63cab2750843f95",
+      "model": "3d-assets/croisement03-navigation-boundary-007/model.glb",
+      "model_sha256": "74e7f665f283e98e7fd2b8322b8702e12b07c11466421ef7a3d6d27abf979b62"
+    },
+    {
+      "id": "croisement03-navigation-boundary-004",
+      "descriptor": "3d-assets/croisement03-navigation-boundary-004/asset.json",
+      "descriptor_sha256": "6b4c895ad358e712a7af8ea9873feb17bb135e194412e09abe848f0ff036d10b",
+      "model": "3d-assets/croisement03-navigation-boundary-004/model.glb",
+      "model_sha256": "052fa44aa85582776ff59f29053aefaaa632b2fa6bf158d9df6ac2d5242faba5"
+    },
+    {
+      "id": "croisement03-south-ambient-zone",
+      "descriptor": "3d-assets/croisement03-south-ambient-zone/asset.json",
+      "model": "3d-assets/croisement03-south-ambient-zone/model.glb",
+      "descriptor_sha256": "a62303a698f561bc817b1eae1f7e2618b8c029dec168f5a4b2e51465cf400a83",
+      "model_sha256": "c23d9600c38e9586ecbd46078a5e424ae8427bbec7c52edc80e4196b7723fcfc"
+    },
+    {
+      "id": "croisement03-central-ambient-zone",
+      "descriptor": "3d-assets/croisement03-central-ambient-zone/asset.json",
+      "model": "3d-assets/croisement03-central-ambient-zone/model.glb",
+      "descriptor_sha256": "35a9c199d448cd1387e862a2409e6f53a586274f5b519ff44f13f370240ede2b",
+      "model_sha256": "8ce53285171aedd27d0f76555c5f309c9eddde629509a803a71ab909574d06a5"
+    },
+    {
+      "id": "croisement03-northeast-ambient-zone",
+      "descriptor": "3d-assets/croisement03-northeast-ambient-zone/asset.json",
+      "model": "3d-assets/croisement03-northeast-ambient-zone/model.glb",
+      "descriptor_sha256": "bbebf55f0968230f36455311e5fac0cba9ba30e6300c816969ea71440ee83cf0",
+      "model_sha256": "41d5ba9721de288a46d1369bdb540aa6f4aeb26637af6af3d28db9ba83d4cdcd"
+    },
+    {
+      "id": "croisement03-west-ambient-zone",
+      "descriptor": "3d-assets/croisement03-west-ambient-zone/asset.json",
+      "model": "3d-assets/croisement03-west-ambient-zone/model.glb",
+      "descriptor_sha256": "c8f126554eb885ffc14504bc42f42b4d1537d01712e1fab9165e811ffac92d7d",
+      "model_sha256": "5d3778edeec6180a72ba49bbe71ba3e5ae5705e69fe77f4f5f73e329bdf2ebcd"
+    },
+    {
+      "id": "croisement03-north-ambient-zone",
+      "descriptor": "3d-assets/croisement03-north-ambient-zone/asset.json",
+      "model": "3d-assets/croisement03-north-ambient-zone/model.glb",
+      "descriptor_sha256": "351657bf024e1763d51db7f42df8bf0c703bbeaf2da2832814cbd3a0abfdab13",
+      "model_sha256": "a446eca591bb3cbc95243361f429f55d6ab47f50f922a7909e34744da3be4fc7"
+    },
+    {
+      "id": "croisement03-east-ambient-zone",
+      "descriptor": "3d-assets/croisement03-east-ambient-zone/asset.json",
+      "model": "3d-assets/croisement03-east-ambient-zone/model.glb",
+      "descriptor_sha256": "87185dc12e66f03d499052dad6a6c5b731ef539b44e93599ed9e0700746073e1",
+      "model_sha256": "2f502dc27e7487b94199c3f4a3615cd9a502761cf80fc50d03559844b0a676a2"
     }
   ],
   "sceneMetadata": {},
@@ -1755,6 +1832,240 @@
       "assets": [
         "croisement03-group-105"
       ]
+    },
+    {
+      "id": "croisement03-navigation-boundary-001",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 229.5,
+        "dy": 621.5,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement03-navigation-boundary-001"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement03-navigation-boundary-001-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement03-navigation-boundary-002",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 685,
+        "dy": 699.5,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement03-navigation-boundary-002"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement03-navigation-boundary-002-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement03-navigation-boundary-003",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 1049.5,
+        "dy": 173,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement03-navigation-boundary-003"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement03-navigation-boundary-003-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement03-navigation-boundary-007",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 54.5,
+        "dy": 462.50001,
+        "dz": 82.00001,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement03-navigation-boundary-007"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement03-navigation-boundary-007-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement03-navigation-boundary-004",
+      "name": "Conditional navigation boundary",
+      "transform": {
+        "dx": 370.5,
+        "dy": 259.50174317182467,
+        "dz": 85.00075107717062,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement03-navigation-boundary-004"
+      ],
+      "parts": {
+        "scenery-navigation-frame": {
+          "id": "croisement03-navigation-boundary-004-frame"
+        }
+      }
+    },
+    {
+      "id": "croisement03-south-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement03-south-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement03-south-ambient-zone",
+          "transform": {
+            "dx": 743,
+            "dy": 822,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "croisement03-central-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement03-central-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement03-central-ambient-zone",
+          "transform": {
+            "dx": 1126,
+            "dy": 659,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "croisement03-northeast-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement03-northeast-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement03-northeast-ambient-zone",
+          "transform": {
+            "dx": 1349,
+            "dy": 201,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "croisement03-west-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement03-west-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement03-west-ambient-zone",
+          "transform": {
+            "dx": 350,
+            "dy": 657,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "croisement03-north-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement03-north-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement03-north-ambient-zone",
+          "transform": {
+            "dx": 168,
+            "dy": 135,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "croisement03-east-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "croisement03-east-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "croisement03-east-ambient-zone",
+          "transform": {
+            "dx": 1503,
+            "dy": 469,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
     }
   ]
 }

@@ -542,6 +542,209 @@
       "descriptor": "3d-assets/leicester/leicester-west-wing/asset.json",
       "descriptor_sha256": "84acd370387fea48dfc04e52a006fe60ea8630d38e4c3c6f892000b01eb047fb",
       "id": "leicester-west-wing"
+    },
+    {
+      "id": "leicester-ambient-2553-1013",
+      "descriptor": "3d-assets/leicester-ambient-2553-1013/asset.json",
+      "model": "3d-assets/leicester-ambient-2553-1013/model.glb",
+      "descriptor_sha256": "2af79088d2656edfb1937cfbc330085d76c2daccd12d945298a53f33f7c2a446",
+      "model_sha256": "18a4c572900be7d185e89c418227a090777261f4bc9706160991c4d94f8a79ba"
+    },
+    {
+      "id": "leicester-ambient-2321-1017",
+      "descriptor": "3d-assets/leicester-ambient-2321-1017/asset.json",
+      "model": "3d-assets/leicester-ambient-2321-1017/model.glb",
+      "descriptor_sha256": "b33a87b6b968f7264e2e643024f7ba106517bc625d1be5d65a257b1baba63d3c",
+      "model_sha256": "ff904dc5dca6cefd30d30510c65e3a781c8b599bbef6a1d5fa540ad1f9e6fcf1"
+    },
+    {
+      "id": "leicester-ambient-1960-1672",
+      "descriptor": "3d-assets/leicester-ambient-1960-1672/asset.json",
+      "model": "3d-assets/leicester-ambient-1960-1672/model.glb",
+      "descriptor_sha256": "f2f9d50b99263622b435006e901c2666c45edb334b3a18ea7f6b5648ae0601bf",
+      "model_sha256": "a614a021312fb0f06134b6680100c620f1d799c89bd441e802a7d90202f6c8d3"
+    },
+    {
+      "id": "leicester-ambient-2994-2009",
+      "descriptor": "3d-assets/leicester-ambient-2994-2009/asset.json",
+      "model": "3d-assets/leicester-ambient-2994-2009/model.glb",
+      "descriptor_sha256": "6c8f7b8917da8f7c86fed0810d42e33dacddb569e30b6661732ed39569a4acf1",
+      "model_sha256": "dd1a4b200b51a4e52b7dcd8360cf26ea826a75cf8dc169eecd867c88d979778c"
+    },
+    {
+      "id": "leicester-northwest-ambient-zone",
+      "descriptor": "3d-assets/leicester-northwest-ambient-zone/asset.json",
+      "model": "3d-assets/leicester-northwest-ambient-zone/model.glb",
+      "descriptor_sha256": "851b0c3f4ea3b70702ad6a1381557984488433b293c7e8ae79136f966c5a3fda",
+      "model_sha256": "2070029e75b64a0cbf859773b78dea7ca0dbea95a65d31337711c0904de08c5a"
+    },
+    {
+      "id": "leicester-ambient--113-1402",
+      "descriptor": "3d-assets/leicester-ambient--113-1402/asset.json",
+      "model": "3d-assets/leicester-ambient--113-1402/model.glb",
+      "descriptor_sha256": "0631e31fe97f66d0f9b95fe17c98f588fc33a6756ba5a00a1f917c318324e4e4",
+      "model_sha256": "ef2102a7d5ec8a2c70008b55997fb976e7be1078b80a7f252c89ded137d87753"
+    },
+    {
+      "id": "leicester-ambient-2804-916",
+      "descriptor": "3d-assets/leicester-ambient-2804-916/asset.json",
+      "model": "3d-assets/leicester-ambient-2804-916/model.glb",
+      "descriptor_sha256": "34ca4240285ea96183e28f757c5259770d28f94e5561a81bf11382388d386c80",
+      "model_sha256": "ead5a913167b4f43d55086985c17288f952da2eb752d925e1bb6c0f67394a5a0"
+    },
+    {
+      "id": "leicester-ambient-3089-1470",
+      "descriptor": "3d-assets/leicester-ambient-3089-1470/asset.json",
+      "model": "3d-assets/leicester-ambient-3089-1470/model.glb",
+      "descriptor_sha256": "8b757dba1af09bd316d374a4136ec2d5ec645cce7d170083ce1cede90064710a",
+      "model_sha256": "e2cac98aeddb18bb2458524d9b85e64d4d20e217594fae657eaf7c07a891ef9f"
+    },
+    {
+      "id": "leicester-ambient-952-424",
+      "descriptor": "3d-assets/leicester-ambient-952-424/asset.json",
+      "model": "3d-assets/leicester-ambient-952-424/model.glb",
+      "descriptor_sha256": "875f3e12a68178ad840d75493c65ccd15dc0acaa3e16ae08febba4ff3127ae51",
+      "model_sha256": "681b5e960ce69f6846755e100dc1bcc5d6cda8768f32f7f7d1a8400713618420"
+    },
+    {
+      "id": "leicester-ambient-318-516",
+      "descriptor": "3d-assets/leicester-ambient-318-516/asset.json",
+      "model": "3d-assets/leicester-ambient-318-516/model.glb",
+      "descriptor_sha256": "58fb3ff4297cb9ece9e587b20ef8c7a9b82de39fd20fc10d5a8f472a02a3f54d",
+      "model_sha256": "77fa0c71364f29630338f30af35b585a3b88739a6d66d0ccfa14ce30c2d8e407"
+    },
+    {
+      "id": "leicester-ambient-2068-234",
+      "descriptor": "3d-assets/leicester-ambient-2068-234/asset.json",
+      "model": "3d-assets/leicester-ambient-2068-234/model.glb",
+      "descriptor_sha256": "583f1457460ff1b69e23c4f229c550857dedde853c8f8fbb47725c40ca5bf07e",
+      "model_sha256": "619ff7633dfe83d56aa15f3ce063f7048c6608527837ef2f01f7eca2396f2cb1"
+    },
+    {
+      "id": "leicester-ambient-2992-212",
+      "descriptor": "3d-assets/leicester-ambient-2992-212/asset.json",
+      "model": "3d-assets/leicester-ambient-2992-212/model.glb",
+      "descriptor_sha256": "69c6361f6d245a675be097805882dff560d3e6b5e7b8c046e12b9adf63582095",
+      "model_sha256": "6ec0c4dbdec922b23c36d98fa2ce6e71407bb393d8676dbd6c241ccfa93246d7"
+    },
+    {
+      "id": "leicester-ambient-3090-1582",
+      "descriptor": "3d-assets/leicester-ambient-3090-1582/asset.json",
+      "model": "3d-assets/leicester-ambient-3090-1582/model.glb",
+      "descriptor_sha256": "be31fdc7a23f5f08228185062570c6d41e6f38370c50b22ababcdcfb18e20cd6",
+      "model_sha256": "7219aad1ab408b9cae9e7c743de517382671d840dcc2583d4f55de99925f3ffd"
+    },
+    {
+      "id": "leicester-ambient-86--16",
+      "descriptor": "3d-assets/leicester-ambient-86--16/asset.json",
+      "model": "3d-assets/leicester-ambient-86--16/model.glb",
+      "descriptor_sha256": "7d2218c72545d2f08689133c09a17242f0a12d12bc72cc4d9c5439e0f9eeba66",
+      "model_sha256": "3771d20f2b581a67673b6e4a2601a2b606b5c5f09a8df0df0877b53227902b96"
+    },
+    {
+      "id": "leicester-light-region-0",
+      "descriptor": "3d-assets/leicester-light-region-0/asset.json",
+      "model": "3d-assets/leicester-light-region-0/model.glb",
+      "descriptor_sha256": "83badb9d71e3dc5ef7df54e087e714d02e06f94f67925e05704310c661979b60",
+      "model_sha256": "196ceb310754a12616a7cac9c341ed7d64baaf13411a0b8cfe499533a2401539"
+    },
+    {
+      "id": "leicester-light-region-1",
+      "descriptor": "3d-assets/leicester-light-region-1/asset.json",
+      "model": "3d-assets/leicester-light-region-1/model.glb",
+      "descriptor_sha256": "3fa590b99eb501a394b8885dafa96dcd7e9fa2e1088d2fb52f0ca7143e2c967a",
+      "model_sha256": "dbcad66449266096181590348d16003d7c11bb428b77b672f7f462d08aa51eee"
+    },
+    {
+      "id": "leicester-light-region-2",
+      "descriptor": "3d-assets/leicester-light-region-2/asset.json",
+      "model": "3d-assets/leicester-light-region-2/model.glb",
+      "descriptor_sha256": "4e2e8dadcc1c6c18e04fba4bb0282a52983ef6ebb4740d649e52b87899826534",
+      "model_sha256": "bc0f52c8cf61ba98b338abbd1e16ff5bdf2f3510c12400f274f35d6f535d45d3"
+    },
+    {
+      "id": "leicester-light-region-3",
+      "descriptor": "3d-assets/leicester-light-region-3/asset.json",
+      "model": "3d-assets/leicester-light-region-3/model.glb",
+      "descriptor_sha256": "5f8abf889d625f1ac3662816a7c1bd11b94f4768ec7990072086bdb11e1867b6",
+      "model_sha256": "3a656c7b757f0921c56ef83b2b960be01bb4975ac8789d3f41fd32821bbac093"
+    },
+    {
+      "id": "leicester-light-region-4",
+      "descriptor": "3d-assets/leicester-light-region-4/asset.json",
+      "model": "3d-assets/leicester-light-region-4/model.glb",
+      "descriptor_sha256": "4dbef6e35e7017a9c3e6032c80e8627abfe58f29d6075b2c5b1cb4dcaac2b235",
+      "model_sha256": "3df5e55eb0b66f3fefa49a9b08d95322f7c374b439b8cf532686921b49b1fb9d"
+    },
+    {
+      "id": "leicester-light-region-5",
+      "descriptor": "3d-assets/leicester-light-region-5/asset.json",
+      "model": "3d-assets/leicester-light-region-5/model.glb",
+      "descriptor_sha256": "47ef0c1651d82c8b87c0b49b219b851abfc6e34208cbf518c7b0edd844683044",
+      "model_sha256": "cf3e12085890aa3233b4c8f28f85e67cf6e5e143d460b6512e02e41f0add9d90"
+    },
+    {
+      "id": "leicester-light-region-6",
+      "descriptor": "3d-assets/leicester-light-region-6/asset.json",
+      "model": "3d-assets/leicester-light-region-6/model.glb",
+      "descriptor_sha256": "09ee2af56b019d6d75d97b562e449dc4c897a9a4074539ad2ca9c9e161a342f9",
+      "model_sha256": "326bbca5f5c98cc9435b0550b3ea3d8b3034796e3585c0daa31e3dbcea4f396e"
+    },
+    {
+      "id": "leicester-light-region-8",
+      "descriptor": "3d-assets/leicester-light-region-8/asset.json",
+      "model": "3d-assets/leicester-light-region-8/model.glb",
+      "descriptor_sha256": "e8604ab1c4cce3e372203802d24583fc92539b2444e8d1e15249e124640c4e6d",
+      "model_sha256": "40192caa7d5d697323d5acc9a884e127e8daafde44d4b6adcfa6918df5e61fa8"
+    },
+    {
+      "id": "leicester-light-region-9",
+      "descriptor": "3d-assets/leicester-light-region-9/asset.json",
+      "model": "3d-assets/leicester-light-region-9/model.glb",
+      "descriptor_sha256": "f309783154ca722f9bfa2eaecb442189769a48acdeb8c18ec061cffc1b662657",
+      "model_sha256": "f60cfa84504800c657bdf2eeba44c3f7e4dc7af8cd403ffe682f525dc3bcc7f1"
+    },
+    {
+      "id": "leicester-light-region-11",
+      "descriptor": "3d-assets/leicester-light-region-11/asset.json",
+      "model": "3d-assets/leicester-light-region-11/model.glb",
+      "descriptor_sha256": "495a8965d18f73d57258949bd837a9c6581a1f614130a0363b6c8a71384675be",
+      "model_sha256": "16c54b380c88afe4f5bccae5d2d7c69b12310c3400816676842bd93166212a6c"
+    },
+    {
+      "id": "leicester-light-region-13",
+      "descriptor": "3d-assets/leicester-light-region-13/asset.json",
+      "model": "3d-assets/leicester-light-region-13/model.glb",
+      "descriptor_sha256": "e37e7a3973f5cd9005b112693323d112ba2e4231c699e53bf3bdebd11e7c6571",
+      "model_sha256": "02223c092839bc09d2dc8db192d143854e0f19cd8c5e8c901888cfbc6fdf43cd"
+    },
+    {
+      "id": "leicester-light-region-17",
+      "descriptor": "3d-assets/leicester-light-region-17/asset.json",
+      "model": "3d-assets/leicester-light-region-17/model.glb",
+      "descriptor_sha256": "d4e4c39668f2d87bfcd7afd28ea1526a3b8f6f4a9a7ac1ced165dc3fcd69689b",
+      "model_sha256": "d3d0fd13c265e998e0a95f0a7355d4d3319aa7e85ba5737671335704813e60d7"
+    },
+    {
+      "id": "leicester-light-region-22",
+      "descriptor": "3d-assets/leicester-light-region-22/asset.json",
+      "model": "3d-assets/leicester-light-region-22/model.glb",
+      "descriptor_sha256": "01c4976ee4fb83080e08f2773a393adf16397e2c3f121a97bdb2d018b46ec57b",
+      "model_sha256": "a2d178b7c5a6235f3ca74ba14f0525074e0a17f691e50a70c311cd65c6434f2f"
+    },
+    {
+      "id": "leicester-light-region-25",
+      "descriptor": "3d-assets/leicester-light-region-25/asset.json",
+      "model": "3d-assets/leicester-light-region-25/model.glb",
+      "descriptor_sha256": "0e654372cbd1bdea8d54e4edb1e32955156095840efd9112ab5eb4f1e24f7694",
+      "model_sha256": "c314ed1812847cd6203a9dbfdbae72fc5a9d2653b994b7e60a9d137eb5e5c372"
+    },
+    {
+      "id": "leicester-light-region-29",
+      "descriptor": "3d-assets/leicester-light-region-29/asset.json",
+      "model": "3d-assets/leicester-light-region-29/model.glb",
+      "descriptor_sha256": "3b575ddf24192f1e9f8c2ea8faad58f6ca30f5d956ce739e97bc6ad7ac191371",
+      "model_sha256": "4534724cf3f11210ca9bca680ba5ef729c3b3c8497d07e5cf009749bba42e254"
     }
   ],
   "sceneMetadata": {
@@ -1536,6 +1739,702 @@
       "assets": [
         "leicester-west-wing"
       ]
+    },
+    {
+      "id": "leicester-ambient-2553-1013",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-2553-1013"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-2553-1013",
+          "transform": {
+            "dx": 2553,
+            "dy": 1013,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-2321-1017",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-2321-1017"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-2321-1017",
+          "transform": {
+            "dx": 2321,
+            "dy": 1017,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-1960-1672",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-1960-1672"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-1960-1672",
+          "transform": {
+            "dx": 1960,
+            "dy": 1672,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-2994-2009",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-2994-2009"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-2994-2009",
+          "transform": {
+            "dx": 2994,
+            "dy": 2009,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-northwest-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-northwest-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-northwest-ambient-zone",
+          "transform": {
+            "dx": 67,
+            "dy": 423,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient--113-1402",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient--113-1402"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient--113-1402",
+          "transform": {
+            "dx": -113,
+            "dy": 1402,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-2804-916",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-2804-916"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-2804-916",
+          "transform": {
+            "dx": 2804,
+            "dy": 916,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-3089-1470",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-3089-1470"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-3089-1470",
+          "transform": {
+            "dx": 3089,
+            "dy": 1470,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-952-424",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-952-424"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-952-424",
+          "transform": {
+            "dx": 952,
+            "dy": 424,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-318-516",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-318-516"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-318-516",
+          "transform": {
+            "dx": 318,
+            "dy": 516,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-2068-234",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-2068-234"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-2068-234",
+          "transform": {
+            "dx": 2068,
+            "dy": 234,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-2992-212",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-2992-212"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-2992-212",
+          "transform": {
+            "dx": 2992,
+            "dy": 212,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-3090-1582",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-3090-1582"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-3090-1582",
+          "transform": {
+            "dx": 3090,
+            "dy": 1582,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-ambient-86--16",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-ambient-86--16"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "leicester-ambient-86--16",
+          "transform": {
+            "dx": 86,
+            "dy": -16,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-0",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-0"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-0",
+          "transform": {
+            "dx": 1168,
+            "dy": 1303,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-1",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-1"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-1",
+          "transform": {
+            "dx": 917,
+            "dy": 1262,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-2",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-2"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-2",
+          "transform": {
+            "dx": 2875,
+            "dy": 1687,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-3",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-3"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-3",
+          "transform": {
+            "dx": 2983,
+            "dy": 1721,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-4",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-4"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-4",
+          "transform": {
+            "dx": 837,
+            "dy": 1067,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-5",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-5"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-5",
+          "transform": {
+            "dx": 964,
+            "dy": 851,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-6",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-6"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-6",
+          "transform": {
+            "dx": 2435,
+            "dy": 880,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-8",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-8"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-8",
+          "transform": {
+            "dx": 982,
+            "dy": 722,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-9",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-9"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-9",
+          "transform": {
+            "dx": 1057,
+            "dy": 540,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-11",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-11"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-11",
+          "transform": {
+            "dx": 316,
+            "dy": 914,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-13",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-13"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-13",
+          "transform": {
+            "dx": 793,
+            "dy": 406,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-17",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-17"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-17",
+          "transform": {
+            "dx": 803,
+            "dy": 369,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-22",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-22"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-22",
+          "transform": {
+            "dx": 861,
+            "dy": 282,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-25",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-25"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-25",
+          "transform": {
+            "dx": 1612,
+            "dy": 689,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "leicester-light-region-29",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "leicester-light-region-29"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "leicester-light-region-29",
+          "transform": {
+            "dx": 1995,
+            "dy": 722,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
     }
   ]
 }
