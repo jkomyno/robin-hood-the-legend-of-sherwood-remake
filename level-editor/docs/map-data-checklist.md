@@ -51,7 +51,7 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
 | Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering, stair shadows and interior links; multi-plane regions, receiving gaps and ownership remain unfinished |
-| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: staged definitions cover all emitters in Croisement02/03, Derby, Leicester, Nottingham and Sherwood; other maps still have pending ownership and publication remains outstanding |
+| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | All 119 emitter records match across nine source-backed staged maps; publication, audible playback and Wychford authoring remain outstanding |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
 | Map settings | Scene identity/export bounds; terrain assets supply forest behaviour and default material. Ambience is selected by the mission. | Working in compiler/runtime tests; recovered terrain metadata unpublished |
@@ -2534,3 +2534,40 @@ including both baselines under all eight ambience bits. These are partial
 sound-definition checks, not audible playback or full-map parity certification.
 All nine Lincoln and six York compiled transitions also apply/reset successfully
 in every case. Publication and complete ZIP round trips remain outstanding.
+
+### Explicit building-owned environmental sounds
+
+Ownership catalogs now accept `sound_sources` declarations with a source record,
+asset, node and review reason. Recovery validates the complete pinned sound record,
+requires exactly one placed frame, and rejects duplicate declarations or conflicts
+with independently authored sound assets. Only the localized emitter definition
+is written into the asset gameplay packet; compilation does not read the catalog
+or extraction source.
+
+`lincoln.json` attaches the tower and hall emitters to those building assemblies.
+`york-state-ownership.json` attaches the two remaining emitters to the jettied house
+and visible market-frontage house. These are explicit authoring decisions: their
+underlying terrain and shared volumes retain separate ownership. Combined reports
+in `work/map-compile/declared-sound-recovery` now recover all 14 Lincoln and 23 York
+emitters with zero pending sound sources. Baseline non-sound geometry is unchanged.
+
+Six diagnostics in `work/map-compile/declared-sound-native` cover both complete
+baselines and four acoustic probes using building frames translated by 50 pixels.
+All emitter values match, with only the selected emitter moving. Twenty Rust
+construction cases pass, including both baselines under all eight ambience bits.
+The moved acoustic probes retain baseline physical geometry and do not establish
+full-building relocation parity. Moving the entire Lincoln west tower by 50 pixels
+detaches its elevated door from its walkable landing; full compilation correctly
+rejects the missing exterior surface instead of inventing a connection.
+
+The ownership tests cover changed source records, duplicate claims, global sources,
+missing/ambiguous frames and empty review reasons. Complete visual assets,
+valid relocated traversal assemblies, publication, audible playback and ZIP round
+trips remain outstanding.
+
+The consolidated `work/map-compile/complete-sound-definition-audit.json` compares
+the complete emitter-record multisets for all nine source-backed staged maps:
+Croisement01/02/03 2/6/6, Derby 12, Leicester 24, Lincoln 14, Nottingham 24,
+Sherwood 8 and York 23. All 119 records match exactly, including duplicate sample
+IDs. This closes staged sound-record coverage, not playback, publication or
+Wychford authoring. Other map compilation categories remain incomplete.

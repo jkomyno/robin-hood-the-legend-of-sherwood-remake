@@ -45,6 +45,7 @@ import {
   recoverSoundSource,
   containsSoundPolyline,
   uniqueSoundOwner,
+  declaredSoundOwners,
 } from "./recover-sound-source.ts";
 import { recoverAuthoredSounds } from "./recover-authored-sounds.ts";
 import { containsLightPolygon, recoverLightField } from "./recover-light-region.ts";
@@ -1609,6 +1610,13 @@ for (const [index, obstacle] of proto.sight_obstacles.entries()) {
 }
 const authoredSounds = recoverAuthoredSounds(document, descriptors, proto.sound_sources);
 const authoredSoundSources = new Set(authoredSounds.flatMap((asset) => asset.sourceIndices));
+const declaredSounds = declaredSoundOwners(
+  ownership?.sound_sources ?? [],
+  proto.sound_sources,
+  (asset, node) =>
+    [...locals.values()].flat().filter((owner) => owner.asset === asset && owner.node === node),
+  authoredSoundSources,
+);
 for (const asset of authoredSounds) packet(asset.asset).sounds = asset.sounds;
 let recoveredSounds = authoredSoundSources.size;
 for (const [index, sound] of proto.sound_sources.entries()) {
@@ -1629,7 +1637,7 @@ for (const [index, sound] of proto.sound_sources.entries()) {
       )
     );
   });
-  const soundOwner = uniqueSoundOwner(owners);
+  const soundOwner = declaredSounds.get(index) ?? uniqueSoundOwner(owners);
   if (!soundOwner) {
     unresolved.push({
       kind: "sound-owner",
@@ -1647,7 +1655,10 @@ for (const [index, sound] of proto.sound_sources.entries()) {
       localize(owner.part, point),
     ),
   );
-  p.issues.push("Review environmental sound ownership inferred from unique geometric containment");
+  if (!declaredSounds.has(index))
+    p.issues.push(
+      "Review environmental sound ownership inferred from unique geometric containment",
+    );
   recoveredSounds++;
 }
 let recoveredLights = 0;

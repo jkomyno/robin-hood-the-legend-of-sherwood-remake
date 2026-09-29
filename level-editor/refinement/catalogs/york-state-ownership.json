@@ -1,4 +1,62 @@
 {
+  "sound_sources": [
+    {
+      "source": 12,
+      "owner": "york-southwest-lane-west-jettied-house",
+      "node": "building-445",
+      "reason": "Attach this house-footprint emitter to the jettied house; the shared raised ground remains an independent asset.",
+      "sound": {
+        "id": 68,
+        "active": true,
+        "source_kind": 1,
+        "delayed_params": null,
+        "global": false,
+        "inner_distance": 80,
+        "outer_distance": 450,
+        "polyline": [
+          [
+            757,
+            1978
+          ]
+        ],
+        "inner_volume": 80,
+        "outer_volume": 0,
+        "noise_covering_distance": 0,
+        "altitude": 0,
+        "ambience_filter": 4
+      }
+    },
+    {
+      "source": 20,
+      "owner": "york-west-market-frontage-gabled-house",
+      "node": "building-647",
+      "reason": "Attach the frontage emitter to the visible gabled house, independently of the shared occlusion volume and raised terrain.",
+      "sound": {
+        "id": 70,
+        "active": true,
+        "source_kind": 2,
+        "delayed_params": [
+          70,
+          110,
+          5
+        ],
+        "global": false,
+        "inner_distance": 80,
+        "outer_distance": 350,
+        "polyline": [
+          [
+            348,
+            781
+          ]
+        ],
+        "inner_volume": 80,
+        "outer_volume": 0,
+        "noise_covering_distance": 0,
+        "altitude": 0,
+        "ambience_filter": 1
+      }
+    }
+  ],
   "groups": [
     {
       "id": "york-bridge-square-west-gable-house",

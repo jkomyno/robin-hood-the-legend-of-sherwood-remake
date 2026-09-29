@@ -1,6 +1,50 @@
 import type { AssetSoundSource } from "../../shared/src/asset-gameplay.ts";
 import type { Point, SoundSource } from "../../shared/src/level.ts";
 import { distanceToPolygon } from "./recovery-elevation.ts";
+import { isDeepStrictEqual } from "node:util";
+
+export interface SoundOwnerDeclaration {
+  source: number;
+  owner: string;
+  node: string;
+  reason: string;
+  /** Pin the complete source record for this one-time ownership decision. */
+  sound: SoundSource;
+}
+
+/** Resolve reviewed acoustic ownership without storing source indices in runtime assets. */
+export function declaredSoundOwners<T>(
+  entries: SoundOwnerDeclaration[],
+  sources: SoundSource[],
+  frames: (asset: string, node: string) => T[],
+  claimed: ReadonlySet<number> = new Set(),
+): Map<number, T> {
+  const result = new Map<number, T>();
+  for (const entry of entries) {
+    const source = sources[entry.source];
+    if (
+      !Number.isInteger(entry.source) ||
+      entry.source < 0 ||
+      !source ||
+      source.global ||
+      !entry.owner.trim() ||
+      !entry.node.trim() ||
+      !entry.reason.trim() ||
+      result.has(entry.source) ||
+      claimed.has(entry.source)
+    )
+      throw new Error(
+        "Sound ownership needs one unclaimed local source and a reviewed asset frame",
+      );
+    if (!isDeepStrictEqual(source, entry.sound))
+      throw new Error(`Sound ownership source changed: ${entry.source}`);
+    const matches = frames(entry.owner, entry.node);
+    if (matches.length !== 1)
+      throw new Error(`Sound ownership needs one pinned frame: ${entry.owner}:${entry.node}`);
+    result.set(entry.source, matches[0]!);
+  }
+  return result;
+}
 
 /** Overlapping parts of one asset share ownership. Pick a stable local frame;
  * separate assets still require an explicit authoring decision. */
