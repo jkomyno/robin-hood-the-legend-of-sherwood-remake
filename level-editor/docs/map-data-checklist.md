@@ -18,8 +18,8 @@ All twenty-seven recovered transitions have matching initial/applied changing-ob
 coverage on matching movement envelopes. Nottingham's two stateful regions now
 also match full walkable coverage in both states. Actor traversal remains unverified.
 No map is yet published or certified at full gameplay parity.
-Older generated light/sound field models also need regeneration and scene repinning:
-the authoring tools now emit the standalone hierarchy required by the editor loader.
+The combined `editor-field-model-library` drafts now contain regenerated light/sound
+field models and repinned scenes; older diagnostic libraries retain their old pins.
 
 Ground-boundary compilation now supports an explicit asset-local
 `preserveMovementBoundary` setting on a labelled ordinary surface. It retains
@@ -2917,3 +2917,27 @@ finite receiving segment. The authoring/compiler tests continue to verify sound
 records and light contours after placement. This closes an editor insertion/reload
 gap, not map publication or in-game ZIP round-trip parity. Previously staged field
 GLBs and their saved model hashes must be regenerated together before publication.
+
+### Refreshed environmental field model libraries
+
+`work/map-compile/editor-field-model-library/<map>` now contains isolated refreshed
+libraries for all ten editor scenes. The refresh reads existing asset definitions,
+regenerates only their invisible field models with the corrected hierarchy, and
+updates model hashes in the saved scene. Descriptor bytes, gameplay definitions,
+all placements and other scene content remain unchanged. Visual asset files remain
+linked to the preceding staged libraries; these are local working libraries, not
+published self-contained packages.
+
+All 152 regenerated fields pass the actual editor asset loader with pinned model
+and descriptor hashes: Derby 27, Leicester 29, Lincoln 18, Nottingham 39, York 22,
+Sherwood 6, Croisement02 5 and Croisement03 6. Croisement01 and Wychford have no
+standalone fields to refresh. All ten saved scenes reopen with equivalent content;
+the comparison normalizes only absent versus empty resource lists. A fresh palette
+index is written for each scene's assets. The report is
+`work/map-compile/editor-field-model-library/refresh-report.json` and the local
+reproduction script is `work/map-compile/refresh-editor-field-models.mjs`.
+
+This resolves the generated-model hierarchy and pinning problem for these combined
+drafts. It does not publish the remaining recovered gameplay packets, refresh older
+flat-light definitions with new attachments, remove pending masks or visual states,
+or establish an in-game ZIP round trip.
