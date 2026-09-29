@@ -29,6 +29,10 @@ import {
 import { recoverEndpointElevation, distanceToPolygon } from "./recovery-elevation.ts";
 import { readStoredMap, pinnedDescriptors } from "./stored-map.ts";
 import { recoverGroundGameplay, polygonArea } from "./recover-ground-gameplay.ts";
+import {
+  recoverGroundReceivers,
+  type ReviewedGroundReceivers,
+} from "./recover-ground-receivers.ts";
 import { partitionMovementObstacles } from "../../shared/src/partition-movement-obstacles.ts";
 import {
   recoveredGameplayDefinition,
@@ -88,6 +92,7 @@ const { values } = parseArgs({
     "mask-definitions": { type: "string" },
     "navigation-definitions": { type: "string" },
     "projection-definitions": { type: "string" },
+    "ground-receivers": { type: "string" },
     "transition-planes": { type: "string" },
     "preserve-ground-boundaries": { type: "boolean", default: false },
   },
@@ -287,6 +292,22 @@ const movementStateInventory: {
   layer: number;
   transitions: ReturnType<typeof recoverMotionStates>["transitions"];
 }[] = [];
+const groundReceiverDefinitions: ReviewedGroundReceivers | undefined = values["ground-receivers"]
+  ? JSON.parse(await fs.readFile(values["ground-receivers"], "utf8"))
+  : undefined;
+const groundReceivers = new Map(
+  (groundReceiverDefinitions
+    ? recoverGroundReceivers(
+        document,
+        descriptors,
+        proto,
+        createHash("sha256").update(sourceBytes).digest("hex"),
+        groundReceiverDefinitions,
+        localize,
+      )
+    : []
+  ).map((entry) => [entry.source_obstacle, entry]),
+);
 const groundAreas: Parameters<typeof recoverGroundGameplay>[0] = [];
 const groundAreaSectors = new Set<number>();
 let transferredGroundExclusions: MultiPolygon = [];
@@ -330,11 +351,13 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
         motion.obstacles.every((o) => o.state_id === 0) &&
         raised.every(({ index }) => locals.get(index)?.length === 1)
       ) {
-        const exclusions = raised.map(({ obstacle, index }) => {
-          const footprint = obstacle.points.map((p): Point => [p.x, p.y - p.z_top]);
-          groundProjectionOwners.push({ ...locals.get(index)![0]!, footprint });
-          return { polygon: { points: footprint } };
-        });
+        const exclusions = raised
+          .filter(({ index }) => !groundReceivers.has(index))
+          .map(({ obstacle, index }) => {
+            const footprint = obstacle.points.map((p): Point => [p.x, p.y - p.z_top]);
+            groundProjectionOwners.push({ ...locals.get(index)![0]!, footprint });
+            return { polygon: { points: footprint } };
+          });
         groundAreas.push({
           polygon: motion.polygon,
           obstacles: [...motion.obstacles, ...exclusions],
@@ -402,6 +425,35 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
     if (layer === 0 && staticMotion)
       clearanceSources.push({ regions: partition.ground, plane: [0, 0, 0] });
     for (const [supportIndex, { obstacle, index }] of supports.entries()) {
+      const binding = groundReceivers.get(index);
+      if (binding) {
+        const target = packet(binding.asset);
+        (target.projectionReceivers ??= []).push({
+          id: `${binding.node}-receiver`,
+          node: binding.node,
+          volume: binding.node,
+          anchor: binding.localAnchor,
+        });
+        for (const [materialIndex, material] of obstacle.material_indices.entries()) {
+          const source = proto.material_sectors[material];
+          if (!source) throw new Error(`Missing material region ${material}`);
+          (target.materials ??= []).push({
+            id: `${binding.node}-receiver-material-${materialIndex}`,
+            node: binding.node,
+            material: source.material,
+            ground: false,
+            obstacles: [binding.node],
+            polygon: source.polygon.points.map(([x, y]) => {
+              const z = planeHeight(obstacle.points, x, y);
+              return localize(locals.get(index)![0]!.part, [x, y + z, z]);
+            }),
+          });
+          recoveredMaterials.add(material);
+        }
+        recoveredProjectionMaterials.add(index);
+        recoveredArea += polygonArea(partition.surfaces[supportIndex]!);
+        continue;
+      }
       const owners = locals.get(index) ?? [];
       if (!owners.length) {
         unresolved.push({

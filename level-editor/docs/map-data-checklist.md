@@ -19,8 +19,10 @@ subtract crossing obstacles explicitly. Enclosed walkable islands are partitione
 into ordinary obstacles with coverage checks. This mode currently requires one
 surface per navigation region; joined pieces still fail explicitly. The offline
 recovery flag `--preserve-ground-boundaries` enables draft boundary recovery;
-it is not the default and is not published. Full-map ground geometry parity
-remains unverified.
+it is not the default and is not published. The Sherwood draft now exactly
+matches the reference ground walkable area after restoring its bluff as an
+independent physical receiver. Its fifteen reviewed receivers match 1,023,981
+sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 
 | Original map information | Construction from the editor | Status |
 |---|---|---|
@@ -1931,7 +1933,23 @@ native receiving queries. Editor tests move, rotate and duplicate the receiver
 without changing ground navigation, and reject dangling or conflicting links.
 Offline authoring packets preserve these bindings as independent asset metadata.
 
-This supplies the representation needed for the Sherwood bluff; its existing
-recovery recipe has not yet been migrated, so the approximately 100.92-square-unit
-draft discrepancy remains. Full-map recovery, related receiving anchors and
-publication still require validation before this can establish map parity.
+The offline `--ground-receivers` recipe now migrates the Sherwood bluff into this
+representation. It verifies source/model pins, unique physical ownership, ordered
+binary32 geometry and flags, and a static unblocked ground anchor before writing
+asset-local metadata. Recovery retains the full ground movement area instead of
+subtracting the receiver footprint or generating replacement walking surfaces.
+
+In `sherwood-anchored-ground-native`, the outer ground contour matches all 115
+vertices and an independent polygon comparison reports zero walkable-area
+difference. This resolves the previous approximately 100.92-square-unit error.
+All 1,023,981 sampled Rust receiving queries across fifteen physical receivers,
+including the bluff, match height, material and coverage. The baseline constructs
+11 areas, 127 sight obstacles, 15 doors and one jump pair. The four treehouse
+placement cases and a 50-unit bluff translation compile successfully.
+All five descriptors construct in Rust, and all 60 directed lift passage
+callbacks retain their expected sector and layer. These callbacks do not test
+actor approach routing or traversal animations.
+
+This is targeted ground/receiving evidence, not full-map certification. The draft
+still has 166 pending masks, one light region and five sound sources, and full
+actor traversal, related receiving anchors and publication remain unfinished.

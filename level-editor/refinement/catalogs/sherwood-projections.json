@@ -1,6 +1,6 @@
 {
   "source_sha256": "3cf71efe5d7f248f44d87d478fa2cf51631025c6c54e97ab5dfd6b10672ad414",
-  "review": "Each entry has one physical owner, retains the ordered binary32 vertices and flags, and resolves to one receiving area. Reuse the full physical receiving footprint instead of a clipped replacement surface. Ground bluff 111 remains excluded because it spans two compiled receiving areas; traversal volumes 97,98,101 are already explicitly linked.",
+  "review": "Each entry has one physical owner, retains the ordered binary32 vertices and flags, and resolves to one receiving area. Reuse the full physical receiving footprint instead of a clipped replacement surface. Ground bluff 111 uses the separate sherwood-ground-receivers recipe to share ground navigation; traversal volumes 97,98,101 are already explicitly linked.",
   "entries": [
     {
       "asset": "sherwood-central-oak-platform",

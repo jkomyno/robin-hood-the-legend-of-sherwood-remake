@@ -1,0 +1,12 @@
+{
+  "source_sha256": "3cf71efe5d7f248f44d87d478fa2cf51631025c6c54e97ab5dfd6b10672ad414",
+  "entries": [
+    {
+      "asset": "sherwood-river-bluff",
+      "model_sha256": "64f4d948436c00ffe1484f5bd4d807481fa4f21f85bcbb9e0ed85a432b7b4c73",
+      "node": "building-111",
+      "source_obstacle": 111,
+      "anchor": [1500, 700]
+    }
+  ]
+}
