@@ -23,6 +23,10 @@ name = "trim_browser_boot"
 required-features = ["engine-adapters"]
 
 [[example]]
+name = "split_cinematics"
+required-features = ["engine-adapters"]
+
+[[example]]
 name = "jxl_sprite_probe"
 required-features = ["engine-adapters", "research"]
 
