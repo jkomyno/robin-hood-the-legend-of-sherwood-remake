@@ -13,8 +13,10 @@ export interface AssetWalkableSurface {
   /** Asset-local navigation region, optionally spanning height planes; distinct regions never merge. */
   navigationRegion?: string;
   /** Local 3D outer-edge sockets joining navigation regions of separately placed assets.
-   * Both endpoints must coincide; unmatched edges leave independent regions. */
+   * Both endpoints must coincide, subject to explicit height tolerance; unmatched edges stay separate. */
   navigationJoins?: import("./assemble-navigation-joins.ts").NavigationJoin[];
+  /** Explicit maximum height step at coincident projected sockets. Both assets must allow it. */
+  navigationJoinHeightTolerance?: number;
   /** Local part or gameplay volume supplying receiving geometry, physical flags and materials.
    * Replaces the generated thin receiver; activation uses the volume's sight-state links. */
   projectionVolume?: string;
@@ -757,6 +759,13 @@ export function validateAssetGameplay(
         ))
     )
       fail("navigation joins require 3D edge sockets on labelled ordinary surfaces");
+    if (
+      surface.navigationJoinHeightTolerance !== undefined &&
+      (!surface.navigationJoins ||
+        !Number.isFinite(surface.navigationJoinHeightTolerance) ||
+        surface.navigationJoinHeightTolerance < 0)
+    )
+      fail("navigation join height tolerance requires sockets and a nonnegative finite height");
     if (
       !(typeof surface.height === "number" && Number.isFinite(surface.height)) &&
       !(

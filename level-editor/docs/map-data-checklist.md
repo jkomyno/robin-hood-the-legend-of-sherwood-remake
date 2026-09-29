@@ -1685,8 +1685,8 @@ per sector pair with the selected obstacle indices. Comparing the 14 restored
 receivers in `work/map-compile/sherwood-physical-receiver-native` samples 701,438
 integer/half-pixel positions: seven cases match exactly; the other seven have
 19,664 coverage differences and 27 height differences (maximum 1.9894714), with
-zero material differences. The parity assertion deliberately remains failing.
-All differences belong to source receiving area 31, which the compiler currently
+zero material differences. That batch fails the parity assertion.
+All differences belong to source receiving area 31, which that batch
 splits across bridge/platform areas. Samples cover each receiver's bounding rectangle,
 so differences can include neighboring receivers in the shared source area; these
 counts are not a count of missing physical polygons. The recovered boundaries have
@@ -1698,3 +1698,27 @@ The ignored native test accepts optional `grid_size`, `source_layers` and
 `compiled_layers` alongside its `source`/`compiled` obstacle arrays through
 `ROBIN_SIGHT_SCENE_CASE`. Grid sizes are in 64-unit cells, not pixels. It also
 requires nonempty candidate lists to ensure the grid path is exercised.
+
+The subsequent `sherwood-navigation-joins.json` recipe restores the complete
+treehouse movement contour as seven asset-local planar pieces, retaining all three
+holes and the independent receiving footprints. Six explicit bridge/platform seams
+join those pieces. An eighth existing surface shares its owner's local region.
+Ordinary sockets still require coincident 3D edges by default; an asset may explicitly
+allow a maximum height step via `navigationJoinHeightTolerance`. Both sides must
+permit the step and their projected endpoints must coincide. Same-side overlaps,
+ambiguous matches and same-owner joins remain errors. These Sherwood seams allow
+four game units (largest authored endpoint step 3.6302); moving a socket away
+detaches its navigation region. Receiving heights and geometry are not flattened.
+
+Reviewed recovery can now replace a surface's movement contour while retaining its
+height plane. It generates owned collision clearances from the restored contours
+before other geometry recovery; the compiler needs no source map. The authored
+piece union exactly reproduces the source movement polygon and its holes before
+compilation. In `work/map-compile/sherwood-navigation-native`, all 701,438 native
+receiving samples now match exactly: zero coverage, height or material differences.
+Baseline and treehouse-only movement construct 23 areas; central-platform-only and
+combined movement construct 24. All four have 129 sight volumes, 15 doors and one
+jump pair. The final compiled connected movement contour still has 36.4714285714
+square game units of symmetric difference in seven small boundary regions, despite
+preserving all three holes. That boundary discrepancy, ground bluff 111, full actor
+traversal, visuals and publication remain open; this does not certify full parity.

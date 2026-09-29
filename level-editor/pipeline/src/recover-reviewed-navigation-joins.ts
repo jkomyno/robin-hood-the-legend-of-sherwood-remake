@@ -10,6 +10,7 @@ import {
   type PlacedNavigationJoin,
 } from "../../shared/src/assemble-navigation-joins.ts";
 import type { RecoveredGameplayPacket, RecoveredSurface } from "./recovered-gameplay-definition.ts";
+import { heightPlane, planeHeight } from "../../shared/src/gameplay-plane.ts";
 
 export interface ReviewedNavigationJoins {
   source_sha256: string;
@@ -22,6 +23,10 @@ export interface ReviewedNavigationJoins {
       node: string;
       source_obstacle: number;
       edges: NavigationJoin[];
+      heightTolerance?: number;
+      /** Reviewed asset-local movement boundary, independent of its receiving footprint. */
+      vertices?: Vec3[];
+      holes?: Vec3[][];
     }[];
   }[];
 }
@@ -46,6 +51,9 @@ export function recoverReviewedNavigationJoins(
     surface: RecoveredSurface;
     region: string;
     edges: NavigationJoin[];
+    heightTolerance?: number;
+    vertices?: Vec3[];
+    holes?: Vec3[][];
   }[] = [];
   for (const region of definitions.regions) {
     if (
@@ -102,8 +110,33 @@ export function recoverReviewedNavigationJoins(
         );
       receiving = binding;
       if (
+        entry.heightTolerance !== undefined &&
+        (!Number.isFinite(entry.heightTolerance) || entry.heightTolerance < 0)
+      )
+        throw new Error(`Invalid reviewed navigation height tolerance: ${key}`);
+      if (entry.vertices !== undefined || entry.holes !== undefined) {
+        const rings = [entry.vertices, ...(entry.holes ?? [])];
+        const plane = heightPlane(surface.vertices);
+        if (
+          rings.some(
+            (ring) =>
+              !Array.isArray(ring) ||
+              ring.length < 3 ||
+              ring.some(
+                (p) =>
+                  !Array.isArray(p) ||
+                  p.length !== 3 ||
+                  !p.every(Number.isFinite) ||
+                  Math.abs(planeHeight(plane, [p[0], p[1]]) - p[2]) > 1e-4,
+              ),
+          )
+        )
+          throw new Error(
+            `Reviewed navigation contour must retain its receiving height plane: ${key}`,
+          );
+      }
+      if (
         !Array.isArray(entry.edges) ||
-        !entry.edges.length ||
         entry.edges.some(
           (edge) =>
             !Array.isArray(edge) ||
@@ -122,17 +155,28 @@ export function recoverReviewedNavigationJoins(
         joins.push({
           region: `${entry.asset}/${region.id}`,
           owner: entry.asset,
-          edge: orientNavigationJoin(surface.vertices.map(place), [place(edge[0]), place(edge[1])]),
+          heightTolerance: entry.heightTolerance,
+          edge: orientNavigationJoin((entry.vertices ?? surface.vertices).map(place), [
+            place(edge[0]),
+            place(edge[1]),
+          ]),
         });
       updates.push({
         asset: entry.asset,
         surface,
         region: region.id,
         edges: structuredClone(entry.edges),
+        heightTolerance: entry.heightTolerance,
+        vertices: entry.vertices === undefined ? undefined : structuredClone(entry.vertices),
+        holes: entry.vertices === undefined ? undefined : structuredClone(entry.holes ?? []),
       });
     }
     const assembled = assembleNavigationJoins(joins);
-    if (assembled.unmatched.length || new Set(assembled.identities.values()).size !== 1)
+    if (
+      assembled.unmatched.length ||
+      new Set(assembled.identities.values()).size !== 1 ||
+      region.entries.some((entry) => !assembled.identities.has(`${entry.asset}/${region.id}`))
+    )
       throw new Error(`Reviewed navigation region has detached edges or components: ${region.id}`);
   }
   // Validate the whole catalog before the caller mutates any authoring packets.

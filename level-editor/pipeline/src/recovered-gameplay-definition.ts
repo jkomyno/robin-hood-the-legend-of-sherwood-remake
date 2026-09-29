@@ -15,6 +15,7 @@ export interface RecoveredSurface {
   kind?: "walkable" | "lift";
   navigationRegion?: string;
   navigationJoins?: AssetWalkableSurface["navigationJoins"];
+  navigationJoinHeightTolerance?: number;
   projectionMaterials?: AssetWalkableSurface["projectionMaterials"];
   projectionVolume?: string;
 }
@@ -111,6 +112,9 @@ export function recoveredGameplayDefinition(
       ...(draft.navigationJoins === undefined
         ? {}
         : { navigationJoins: structuredClone(draft.navigationJoins) }),
+      ...(draft.navigationJoinHeightTolerance === undefined
+        ? {}
+        : { navigationJoinHeightTolerance: draft.navigationJoinHeightTolerance }),
       ...(draft.projectionMaterials === undefined
         ? {}
         : { projectionMaterials: structuredClone(draft.projectionMaterials) }),

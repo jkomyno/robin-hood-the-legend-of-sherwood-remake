@@ -70,3 +70,38 @@ test("navigation sockets reject ambiguous, overlapping and same-owner connection
   const raised = { ...b, edge: b.edge.map((p) => [p[0], p[1], p[2] + 1] as Vec3) as [Vec3, Vec3] };
   assert.equal(assembleNavigationJoins([a, raised]).unmatched.length, 2);
 });
+
+test("projected seams require both assets to explicitly allow their height step", () => {
+  const a: PlacedNavigationJoin = {
+    owner: "platform",
+    region: "platform/walk",
+    heightTolerance: 2,
+    edge: [
+      [10, 20, 20],
+      [10, 40, 20],
+    ],
+  };
+  const b: PlacedNavigationJoin = {
+    owner: "bridge",
+    region: "bridge/walk",
+    heightTolerance: 2,
+    edge: [
+      [10, 41, 21],
+      [10, 21.5, 21.5],
+    ],
+  };
+  const joined = assembleNavigationJoins([a, b]);
+  assert.equal(joined.identities.get(a.region), joined.identities.get(b.region));
+  assert.equal(joined.unmatched.length, 0);
+  assert.equal(
+    assembleNavigationJoins([a, { ...b, heightTolerance: undefined }]).unmatched.length,
+    2,
+  );
+  assert.equal(assembleNavigationJoins([a, { ...b, heightTolerance: 1 }]).unmatched.length, 2);
+  const shifted = { ...b, edge: b.edge.map(([x, y, z]) => [x + 1, y, z] as Vec3) as [Vec3, Vec3] };
+  assert.equal(assembleNavigationJoins([a, shifted]).unmatched.length, 2);
+  assert.throws(
+    () => assembleNavigationJoins([a, { ...b, edge: [b.edge[1], b.edge[0]] }]),
+    /overlapping/,
+  );
+});

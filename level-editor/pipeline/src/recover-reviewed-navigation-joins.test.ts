@@ -117,3 +117,23 @@ test("reviewed navigation validates the entire catalog before updating any surfa
   );
   assert.throws(repeated.recover, /one ordinary surface/);
 });
+
+test("reviewed navigation contour overrides retain the height plane and independent storage", () => {
+  const f = fixture();
+  const entry = f.definitions.regions[0]!.entries[0]!;
+  const surface = f.packets.get(entry.asset)!.surfaces[0]!;
+  entry.vertices = structuredClone(surface.vertices);
+  entry.holes = [];
+  entry.heightTolerance = 2;
+  const update = f.recover()[0]!;
+  assert.equal(update.heightTolerance, 2);
+  assert.deepEqual(update.vertices, surface.vertices);
+  assert.notEqual(update.vertices, entry.vertices);
+  assert.notEqual(update.holes, entry.holes);
+  entry.vertices[0]![2] += 1;
+  assert.throws(f.recover, /retain its receiving height plane/);
+  assert.deepEqual(update.vertices, surface.vertices);
+  entry.vertices[0]![2] -= 1;
+  entry.heightTolerance = -1;
+  assert.throws(f.recover, /height tolerance/);
+});

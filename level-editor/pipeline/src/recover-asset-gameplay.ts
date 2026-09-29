@@ -15,6 +15,7 @@ import {
   type ReviewedNavigationJoins,
 } from "./recover-reviewed-navigation-joins.ts";
 import polygonClipping, { type Polygon, type MultiPolygon } from "polygon-clipping";
+import { applyAffineMatrix } from "../../shared/src/geometry.ts";
 import {
   gameToScene,
   sceneToGame,
@@ -667,6 +668,52 @@ if (groundAreas.length) {
       })),
     });
   }
+}
+let navigationJoinRecovery: { asset: string; surface: string; region: string; edges: number }[] =
+  [];
+if (values["navigation-definitions"]) {
+  const definitions: ReviewedNavigationJoins = JSON.parse(
+    await fs.readFile(values["navigation-definitions"], "utf8"),
+  );
+  const updates = recoverReviewedNavigationJoins(
+    document,
+    proto,
+    createHash("sha256").update(sourceBytes).digest("hex"),
+    definitions,
+    packets,
+  );
+  navigationJoinRecovery = updates.map(
+    ({ asset, surface, region, edges, heightTolerance, vertices, holes }) => {
+      surface.navigationRegion = region;
+      surface.navigationJoins = edges.length ? edges : undefined;
+      surface.navigationJoinHeightTolerance = heightTolerance;
+      if (vertices) {
+        surface.vertices = vertices;
+        surface.holes = holes ?? [];
+        const part = document.objects.find((p) => p.node === `asset:${asset}:${surface.node}`)!;
+        const matrix = partMatrix(document.camera, document, part);
+        const placed = (points: Vec3[]) =>
+          points.map((p) => {
+            const [x, y, z] = sceneToGame(
+              document.camera,
+              applyAffineMatrix(matrix, gameToScene(document.camera, ...p)),
+            );
+            return [x, y - z, z] as Vec3;
+          });
+        const outer = placed(vertices);
+        clearanceSources.push({
+          regions: [
+            [
+              close(outer.map(([x, y]) => [x, y]))[0]!,
+              ...(holes ?? []).map((h) => close(placed(h).map(([x, y]) => [x, y]))[0]!),
+            ],
+          ],
+          plane: fitHeightPlane(outer),
+        });
+      }
+      return { asset, surface: surface.id, region, edges: edges.length };
+    },
+  );
 }
 // Restore openings only in each placed asset's own derived collision. These
 // local contours move with the asset; no assembled-map override is exported.
@@ -1683,25 +1730,6 @@ for (const [index, pair] of proto.jump_line_pairs.entries()) {
   } catch (error) {
     unresolved.push({ kind: "jump-geometry", source: index, error: String(error) });
   }
-}
-let navigationJoinRecovery: { asset: string; surface: string; region: string; edges: number }[] =
-  [];
-if (values["navigation-definitions"]) {
-  const definitions: ReviewedNavigationJoins = JSON.parse(
-    await fs.readFile(values["navigation-definitions"], "utf8"),
-  );
-  const updates = recoverReviewedNavigationJoins(
-    document,
-    proto,
-    createHash("sha256").update(sourceBytes).digest("hex"),
-    definitions,
-    packets,
-  );
-  navigationJoinRecovery = updates.map(({ asset, surface, region, edges }) => {
-    surface.navigationRegion = region;
-    surface.navigationJoins = edges;
-    return { asset, surface: surface.id, region, edges: edges.length };
-  });
 }
 let projectionRecovery: ReturnType<typeof recoverReviewedProjections> = [];
 if (values["projection-definitions"]) {

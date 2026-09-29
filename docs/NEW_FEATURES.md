@@ -1837,3 +1837,10 @@ manifest and install referenced resources before replacing the map document.
 `pipeline/src/import-scene.ts` explicitly converts older published snapshots.
 No mesh quantization, texture recompression, or collision regrouping occurs during
 conversion.
+
+Map asset navigation sockets support an explicit maximum height step at matching
+projected edges. Both assets must permit the step; detached sockets remain separate.
+This lets independently placed bridges and platforms share navigation while keeping
+their authored receiving planes and height discontinuities. Offline reviewed recovery
+can restore movement contours independently of receiving footprints and generates
+the corresponding asset-owned collision clearances.

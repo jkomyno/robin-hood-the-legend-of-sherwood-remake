@@ -758,6 +758,29 @@ test("separate navigation assets reproduce one continuous region and detach afte
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /navigation joins/);
 });
 
+test("explicit height steps join projected navigation boundaries and reject invalid tolerances", () => {
+  const { document, assets, hut, upper } = joinedNavigationCompilerFixture();
+  const surface = upper.gameplay!.surfaces[0]!;
+  surface.polygon = surface.polygon.map(([x, y]) => [x, y + 1]);
+  surface.height =
+    typeof surface.height === "number" ? surface.height + 1 : surface.height.map((z) => z + 1);
+  for (const edge of surface.navigationJoins!)
+    for (const point of edge) {
+      point[1] += 1;
+      point[2] += 1;
+    }
+  assert.equal(compileAssetGameplay(document, assets, bounds).motion_data.layers.flat().length, 2);
+  surface.navigationJoinHeightTolerance = 1.01;
+  hut.gameplay!.surfaces[0]!.navigationJoinHeightTolerance = 1.01;
+  assert.equal(compileAssetGameplay(document, assets, bounds).motion_data.layers.flat().length, 1);
+  document.groups.find((g) => g.id === "upper")!.transform.dx = 10;
+  assert.equal(compileAssetGameplay(document, assets, bounds).motion_data.layers.flat().length, 2);
+  for (const invalid of [-1, Infinity, NaN]) {
+    surface.navigationJoinHeightTolerance = invalid;
+    assert.throws(() => compileAssetGameplay(document, assets, bounds), /height tolerance/);
+  }
+});
+
 test("separate navigation assemblies rotate and duplicate without joining unrelated copies", () => {
   const { document, assets } = joinedNavigationCompilerFixture();
   const groups = [...document.groups],

@@ -5,8 +5,11 @@ export interface PlacedNavigationJoin {
   region: string;
   owner: string;
   edge: NavigationJoin;
+  heightTolerance?: number;
 }
 const near = (a: Vec3, b: Vec3) => Math.hypot(...a.map((n, i) => n - b[i]!)) < 1e-4;
+const projectedNear = (a: Vec3, b: Vec3) =>
+  Math.hypot(a[0] - b[0], a[1] - a[2] - (b[1] - b[2])) < 1e-4;
 
 /** A socket is a real outer boundary segment, oriented with its surface on the left
  * in projected space. Matching opposite edges therefore cannot join overlapping copies. */
@@ -39,8 +42,8 @@ export function orientNavigationJoin(polygon: Vec3[], edge: NavigationJoin): Nav
   throw new Error("Navigation join must lie on one outer surface edge at its authored height");
 }
 
-/** Only explicitly authored, coincident 3D edges join regions across placements.
- * Detached edges retain independent navigation; multiple matches are an authoring error. */
+/** Explicit sockets must coincide in projection and height unless both owners allow
+ * a height step. Detached edges retain independent navigation; multiple matches are errors. */
 export function assembleNavigationJoins(joins: PlacedNavigationJoin[]) {
   const identities = new Map(joins.map((join) => [join.region, join.region]));
   const root = (id: string): string => {
@@ -52,15 +55,21 @@ export function assembleNavigationJoins(joins: PlacedNavigationJoin[]) {
   };
   const unmatched: PlacedNavigationJoin[] = [];
   for (const join of joins) {
+    const meets = (other: PlacedNavigationJoin, a: Vec3, b: Vec3) =>
+      near(a, b) ||
+      (projectedNear(a, b) &&
+        Math.abs(a[2] - b[2]) <= Math.min(join.heightTolerance ?? 0, other.heightTolerance ?? 0));
     const matches = joins.filter(
       (other) =>
         other !== join &&
-        ((near(join.edge[0], other.edge[1]) && near(join.edge[1], other.edge[0])) ||
-          (near(join.edge[0], other.edge[0]) && near(join.edge[1], other.edge[1]))),
+        ((meets(other, join.edge[0], other.edge[1]) && meets(other, join.edge[1], other.edge[0])) ||
+          (meets(other, join.edge[0], other.edge[0]) && meets(other, join.edge[1], other.edge[1]))),
     );
     if (
       matches.length > 1 ||
-      matches.some((other) => other.owner === join.owner || near(join.edge[0], other.edge[0]))
+      matches.some(
+        (other) => other.owner === join.owner || projectedNear(join.edge[0], other.edge[0]),
+      )
     )
       throw new Error(`Navigation region ${join.region}: ambiguous or overlapping join`);
     const match = matches[0];

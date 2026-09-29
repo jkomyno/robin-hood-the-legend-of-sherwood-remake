@@ -552,6 +552,7 @@ export function compileAssetGameplay(
         navigationJoins.push({
           region: `${placement.id}/${surface.navigationRegion}`,
           owner: placement.id,
+          heightTolerance: surface.navigationJoinHeightTolerance,
           edge: orientNavigationJoin(points, [
             transform(surface.node, edge[0]),
             transform(surface.node, edge[1]),
