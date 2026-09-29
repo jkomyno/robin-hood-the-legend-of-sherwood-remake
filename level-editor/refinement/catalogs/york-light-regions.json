@@ -1,0 +1,181 @@
+{
+  "source_sha256": "6a3a1ee8105bf9614bc4daf1f32aa19a7afaacfadd9cbf5ec250239b502fee97",
+  "entries": [
+    {
+      "source": 1,
+      "id": "york-light-region-1",
+      "name": "York lighting field at 337, 2225",
+      "origin": [
+        337,
+        2225,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 6,
+      "id": "york-light-region-6",
+      "name": "York lighting field at 2023, 1953",
+      "origin": [
+        2023,
+        1953,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 7,
+      "id": "york-light-region-7",
+      "name": "York lighting field at 2310, 2014",
+      "origin": [
+        2310,
+        2014,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 18,
+      "id": "york-light-region-18",
+      "name": "York lighting field at 656, 654",
+      "origin": [
+        656,
+        654,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 20,
+      "id": "york-light-region-20",
+      "name": "York lighting field at 1667, 1115",
+      "origin": [
+        1667,
+        1115,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 22,
+      "id": "york-light-region-22",
+      "name": "York lighting field at 2818, 1271",
+      "origin": [
+        2818,
+        1271,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 23,
+      "id": "york-light-region-23",
+      "name": "York lighting field at 2760, 2066",
+      "origin": [
+        2760,
+        2066,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 24,
+      "id": "york-light-region-24",
+      "name": "York lighting field at 1943, 949",
+      "origin": [
+        1943,
+        949,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 25,
+      "id": "york-light-region-25",
+      "name": "York lighting field at 2194, 337",
+      "origin": [
+        2194,
+        337,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 26,
+      "id": "york-light-region-26",
+      "name": "York lighting field at 2135, 1226",
+      "origin": [
+        2135,
+        1226,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 28,
+      "id": "york-light-region-28",
+      "name": "York lighting field at 1575, 1920",
+      "origin": [
+        1575,
+        1920,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 29,
+      "id": "york-light-region-29",
+      "name": "York lighting field at 2075, 1206",
+      "origin": [
+        2075,
+        1206,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 30,
+      "id": "york-light-region-30",
+      "name": "York lighting field at 1960, 1118",
+      "origin": [
+        1960,
+        1118,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 33,
+      "id": "york-light-region-33",
+      "name": "York lighting field at 2436, 1000",
+      "origin": [
+        2436,
+        1000,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 35,
+      "id": "york-light-region-35",
+      "name": "York lighting field at 2477, 745",
+      "origin": [
+        2477,
+        745,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 36,
+      "id": "york-light-region-36",
+      "name": "York lighting field at 3015, 754",
+      "origin": [
+        3015,
+        754,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter."
+    }
+  ]
+}
