@@ -33,8 +33,9 @@ export function bindBakeAppearances(
   document: Level3D,
   assets: ReadonlyMap<string, GameplayAssetDescriptor>,
   transitions: readonly { id: string; aliases?: string[] }[],
+  warn?: (message: string) => void,
 ) {
-  const bindings = compileAppearanceBindings(document, assets, transitions);
+  const bindings = compileAppearanceBindings(document, assets, transitions, warn);
   const compiled = new Set(transitions.map((transition) => transition.id));
   root.traverse((wrapper) => {
     const part = wrapper.userData.map_bake_object_id;
@@ -43,9 +44,36 @@ export function bindBakeAppearances(
     for (const id of Object.values(mapping))
       if (!compiled.has(id)) throw new Error(`Appearance has no compiled transition: ${id}`);
     wrapper.traverse((node) => {
+      let hiddenInitially = false;
       for (const id of patchIds(node))
-        if (!Object.hasOwn(mapping, id))
-          throw new Error(`Missing asset gameplay binding for appearance ${id} on ${part}`);
+        if (!Object.hasOwn(mapping, id)) {
+          const message = `Missing asset gameplay binding for appearance ${id} on ${part}`;
+          if (!warn) throw new Error(message);
+          warn(`${message}; exported in its initial visual state.`);
+          if (node.userData.reveal_material_patch === id) {
+            hiddenInitially ||= node.userData.reveal_material_state === "revealed";
+            delete node.userData.reveal_material_patch;
+            delete node.userData.reveal_material_state;
+          }
+          for (const key of ["reveal_hide_when_applied", "reveal_show_when_applied"])
+            if (Array.isArray(node.userData[key])) {
+              node.userData[key] = node.userData[key].filter((value: unknown) => value !== id);
+              if (!node.userData[key].length) {
+                hiddenInitially ||= key === "reveal_show_when_applied";
+                delete node.userData[key];
+              }
+            }
+        }
+      if (hiddenInitially) {
+        node.visible = false;
+        for (const key of [
+          "reveal_material_patch",
+          "reveal_material_state",
+          "reveal_hide_when_applied",
+          "reveal_show_when_applied",
+        ])
+          delete node.userData[key];
+      }
       node.userData = remapPatchExtras(node.userData, mapping);
     });
   });
@@ -176,6 +204,34 @@ export function bakeAppearanceRegions(
       }
       return { ...plan, states };
     });
+  } finally {
+    display.clear();
+    display.apply(root);
+  }
+}
+
+/** Async state rendering preserves the same reset guarantee if rendering is interrupted. */
+export async function bakeAppearanceRegionsAsync(
+  root: THREE.Object3D,
+  plans: readonly AppearancePlan[],
+  width: number,
+  initial: BakePixels,
+  render: () => Promise<BakePixels>,
+): Promise<BakedAppearanceRegion[]> {
+  const display = new PatchDisplay();
+  try {
+    const regions: BakedAppearanceRegion[] = [];
+    for (const plan of plans) {
+      const states = [crop(initial, width, plan.bounds)];
+      for (let state = 1; state < 2 ** plan.patches.length; state++) {
+        display.clear();
+        plan.patches.forEach((patch, bit) => display.set(patch, (state & (1 << bit)) !== 0));
+        display.apply(root);
+        states.push(crop(await render(), width, plan.bounds));
+      }
+      regions.push({ ...plan, states });
+    }
+    return regions;
   } finally {
     display.clear();
     display.apply(root);

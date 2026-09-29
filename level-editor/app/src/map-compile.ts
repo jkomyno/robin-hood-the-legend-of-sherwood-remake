@@ -83,6 +83,7 @@ export function compileMap(
   document: Level3D,
   requestedBounds: BakeBounds,
   assets?: ReadonlyMap<string, ProjectionAssetDescriptor>,
+  options: { bestEffort?: boolean } = {},
 ) {
   // TODO: Compile visual/depth state resources and recover remaining asset mask definitions.
   const bounds = validateBakeBounds(requestedBounds);
@@ -95,7 +96,7 @@ export function compileMap(
   const name = `editor-${slug}`;
   const assetGeometry =
     assets || document.terrain?.length || document.splines?.some((p) => p.kind !== "wall")
-      ? compileAssetGameplay(document, assets ?? new Map(), bounds)
+      ? compileAssetGameplay(document, assets ?? new Map(), bounds, options)
       : undefined;
   const volumes = assetGeometry ? [] : compileVolumes(document, bounds);
   const warnings = assetGeometry

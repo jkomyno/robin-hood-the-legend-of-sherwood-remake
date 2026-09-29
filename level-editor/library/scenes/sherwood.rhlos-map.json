@@ -15,7 +15,7 @@
       "model": "3d-assets/sherwood/sherwood-terrain/model.glb",
       "model_sha256": "2e8d91a5f74be21147708a1454f967d095d0745dacbca61cd4e534b3cc69d230",
       "descriptor": "3d-assets/sherwood/sherwood-terrain/asset.json",
-      "descriptor_sha256": "0ac1591a55c090e71d58904deb5d14bbccfc27a7ebdddb9de3a5c542b0a12e6d",
+      "descriptor_sha256": "9ee7e3c35f6a04aa4129567b7ed9568dcb74ed9dfa3c72b5ddba72626cbe3ea1",
       "role": "ground",
       "resources": []
     }
@@ -29,7 +29,7 @@
       "model": "3d-assets/sherwood/sherwood-broad-woodland-oak/model.glb",
       "model_sha256": "64d3d0a318259af84655ea4ae394aa5ae8469065eabb9d475d71e9643b9edd7d",
       "descriptor": "3d-assets/sherwood/sherwood-broad-woodland-oak/asset.json",
-      "descriptor_sha256": "89893ea8e580e84660ad79f250756bf111ebdbe383cca2376e1eeacafc45da03",
+      "descriptor_sha256": "c8f08da3551969516b694e7be4189ec44c54e073ab098f8aae07a1fae6125ebe",
       "resources": []
     },
     {
@@ -37,7 +37,7 @@
       "model": "3d-assets/sherwood/sherwood-camp-barrel/model.glb",
       "model_sha256": "bcb9d9dc2343de3720a2453717561c827974b24c71e2b53f09eb319f02f0ae1b",
       "descriptor": "3d-assets/sherwood/sherwood-camp-barrel/asset.json",
-      "descriptor_sha256": "146ef19a3412915a3915643f2b8e1c17f36fe42d2d649d2cec06c179f63e9567",
+      "descriptor_sha256": "23a122bb1e35fdbe015c67403f0e7f3a8cf4d0a4d577e65d9909cbc40bf05318",
       "resources": []
     },
     {
@@ -45,7 +45,7 @@
       "model": "3d-assets/sherwood/sherwood-camp-baskets/model.glb",
       "model_sha256": "4056b11f26c8ef811452e78dc67c36de9c4261fb1cfd411e4280c5d0c51f2772",
       "descriptor": "3d-assets/sherwood/sherwood-camp-baskets/asset.json",
-      "descriptor_sha256": "e4d59b21a80c931c20968e0886a975b36b185bea82c9d558400b9cea735dd635",
+      "descriptor_sha256": "8b1bec3a105ef6e3d1c39500e02752f2ce5686d3ae3bc15f5b7e4819163a6d4c",
       "resources": []
     },
     {
@@ -53,7 +53,7 @@
       "model": "3d-assets/sherwood/sherwood-camp-cut-timber/model.glb",
       "model_sha256": "039d9e7fe0e4d3600ed82f66a26730a5abdf0900581d5763d1afc40e954b01a4",
       "descriptor": "3d-assets/sherwood/sherwood-camp-cut-timber/asset.json",
-      "descriptor_sha256": "bdc6237b9d87bad90d27af53ab6f9f35ad2954717980148cd22e8db9704827ab",
+      "descriptor_sha256": "20d976a1804816095b03cd8ac0ff1e355445f0cbdcbfa6e195fede6dae00a85e",
       "resources": []
     },
     {
@@ -61,7 +61,7 @@
       "model": "3d-assets/sherwood/sherwood-camp-dining-shelter/model.glb",
       "model_sha256": "1da68e807b29e06b108c8fb9623d61d1d54cb0972659e1a7e5a1f4e46f755abe",
       "descriptor": "3d-assets/sherwood/sherwood-camp-dining-shelter/asset.json",
-      "descriptor_sha256": "11d00202568f9fc494ebb6545263b7cd3db7728bf6508921167668abf4eab117",
+      "descriptor_sha256": "5c557b71ca521cd1e7a3af0b19415a6eb9a99cd691996750c1bacb4c351eadb5",
       "resources": []
     },
     {
@@ -69,7 +69,7 @@
       "model": "3d-assets/sherwood/sherwood-camp-preparation-table-set/model.glb",
       "model_sha256": "747bf864025c410bb89fc15451c1ec60dc427a53d3c5ff4a1670ab5053fe8897",
       "descriptor": "3d-assets/sherwood/sherwood-camp-preparation-table-set/asset.json",
-      "descriptor_sha256": "b4eb1716d1a4bec91f00e2287baff19b0571219b26a68f2548aa1101d6739cfa",
+      "descriptor_sha256": "93e04539c9124526a419d9ffadcbfbd3bc6c36f0f01d48508fe56fcc00927a27",
       "resources": []
     },
     {
@@ -77,7 +77,7 @@
       "model": "3d-assets/sherwood/sherwood-camp-serving-stool/model.glb",
       "model_sha256": "d90c20a4dc64175e7720c924bf295ce6eda308befb36b70f9cf0e8a9c96a1597",
       "descriptor": "3d-assets/sherwood/sherwood-camp-serving-stool/asset.json",
-      "descriptor_sha256": "453422efd04e432074a4b43736a7e8f037507b49d77d433d2ea25ba0337b20fe",
+      "descriptor_sha256": "c54ec3d41e970b0771f2994117fae5aa8a00e37e24651a05dc790b1d574ead1a",
       "resources": []
     },
     {
@@ -85,7 +85,7 @@
       "model": "3d-assets/sherwood/sherwood-camp-wash-stand/model.glb",
       "model_sha256": "b704d2121b261ddbe48f70da9bf568ef9aa6a528f0fb1b4e57ba21b92d4fcbd5",
       "descriptor": "3d-assets/sherwood/sherwood-camp-wash-stand/asset.json",
-      "descriptor_sha256": "47e1fe36f7592c853ab019ad3f4dcb3667e9c137923916ca06129b78e0c4218f",
+      "descriptor_sha256": "b0cdc44f50716d5cbf74493baeec557f2b89c88cca0df9a8dd36f4b4f6e81424",
       "resources": []
     },
     {
@@ -93,7 +93,7 @@
       "model": "3d-assets/sherwood/sherwood-camp-woodpile/model.glb",
       "model_sha256": "590f75613d47119e5e946b2ce4c8e9ab38688cd59142901dead3f2acf7d854a0",
       "descriptor": "3d-assets/sherwood/sherwood-camp-woodpile/asset.json",
-      "descriptor_sha256": "4df3a6b305792928d51a21b48b6c7293a69a1b264490e47346288eb05dfa9b6c",
+      "descriptor_sha256": "f34e2f5f2dc1bca7efda5a60944e39544c2bd22a7c8832d9639ac7616f0a9857",
       "resources": []
     },
     {
@@ -101,7 +101,7 @@
       "model": "3d-assets/sherwood/sherwood-central-oak/model.glb",
       "model_sha256": "28323731205203ba1101299e96c0886fac1c9cfd1dea446c2868a69439be75ef",
       "descriptor": "3d-assets/sherwood/sherwood-central-oak/asset.json",
-      "descriptor_sha256": "a12b3d5e6d320ad557bae1c8c5f0c25c77e6430fdd1f55fd782ebf80811948ce",
+      "descriptor_sha256": "e06b4ce32d8656bf27e3d18c4d5a1fd3a2cee0afc43469d5d3cb428ac37eff1a",
       "resources": []
     },
     {
@@ -117,7 +117,7 @@
       "model": "3d-assets/sherwood/sherwood-central-oak-rock-outcrop/model.glb",
       "model_sha256": "92c64fe9bb38aed3320205559d0ce3ef03076772fc057ec2b2ed58ae7c07e9f3",
       "descriptor": "3d-assets/sherwood/sherwood-central-oak-rock-outcrop/asset.json",
-      "descriptor_sha256": "92b677d4fb0b5eeec5b1ba27c8f154a41a4f7153ad60c5c2ace0ee61723a549f",
+      "descriptor_sha256": "cc1902d755c56d50f6aeccc18500ccc2bef3dcd9acad93a58457f91f06986753",
       "resources": []
     },
     {
@@ -133,7 +133,7 @@
       "model": "3d-assets/sherwood/sherwood-central-suspension-bridge/model.glb",
       "model_sha256": "23fceeefef1e7604a4aee362bb963683fb78fb5b51d63d71362b7b5b76354e7f",
       "descriptor": "3d-assets/sherwood/sherwood-central-suspension-bridge/asset.json",
-      "descriptor_sha256": "36c01964b54bc27b3c93d9f35c49ee80694accf07d71cd20c1a0a19dcc5c1ea0",
+      "descriptor_sha256": "16e36caa1ca3cd1add8f2a7d20d0d9e00002c30af4a027a95ea127d2a5a5dff8",
       "resources": []
     },
     {
@@ -141,7 +141,7 @@
       "model": "3d-assets/sherwood/sherwood-central-west-treehouse/model.glb",
       "model_sha256": "b8ecfb05bf3a747e2fbb2d1829af9dd96359d05e46ebbfb27484c8722c2d2104",
       "descriptor": "3d-assets/sherwood/sherwood-central-west-treehouse/asset.json",
-      "descriptor_sha256": "415064a45fbdf9283184a5a21b6a4bd693bb0fc81839695845a6c157912d2c5e",
+      "descriptor_sha256": "8c706de6934b7223ba03e324918f9325afc9240c48a99da5297e082084f637d4",
       "resources": []
     },
     {
@@ -149,7 +149,7 @@
       "model": "3d-assets/sherwood/sherwood-central-west-treehouse-oak/model.glb",
       "model_sha256": "d5ae186222ffff79911f7596cd3e7b3a2660b118f5b6d4f8be77fbd04e730b0f",
       "descriptor": "3d-assets/sherwood/sherwood-central-west-treehouse-oak/asset.json",
-      "descriptor_sha256": "431ebd3933d206265d65f5de3d5b93bdcfd9a43f130a74a5aa3184c6996c0d4d",
+      "descriptor_sha256": "6593a8ac56ce5a1cd51f2e68aa8481da5b83f269f28a3efa728c5e51c1c70b40",
       "resources": []
     },
     {
@@ -157,7 +157,7 @@
       "model": "3d-assets/sherwood/sherwood-central-west-treehouse-platform/model.glb",
       "model_sha256": "f7c8959261504cb458372b9a12a559524ddc4f3aeaf2d1222a1777651df21fcf",
       "descriptor": "3d-assets/sherwood/sherwood-central-west-treehouse-platform/asset.json",
-      "descriptor_sha256": "a45cef7766d0745426f1253f88b3872fb85001eeae62ebfa1d173aa9e0cb1f14",
+      "descriptor_sha256": "aa1efaa268c10e8fd3c150aba077b5c6ac3feecf78e03eb1935437bcf4051d65",
       "resources": []
     },
     {
@@ -165,7 +165,7 @@
       "model": "3d-assets/sherwood/sherwood-cooking-stool/model.glb",
       "model_sha256": "fd5f9367b9ac2408c0ca7c6732947825b4c50a2611b37a271034afbdd0ef4add",
       "descriptor": "3d-assets/sherwood/sherwood-cooking-stool/asset.json",
-      "descriptor_sha256": "8a0d4fa8d04f705d08e6b008336479133ff7163d1f0dcfac7ba50a651aee0b72",
+      "descriptor_sha256": "36bb03c655550a42827a5a090f527856ce38f899a199109c967cd51e0c66323c",
       "resources": []
     },
     {
@@ -173,7 +173,7 @@
       "model": "3d-assets/sherwood/sherwood-east-archery-target/model.glb",
       "model_sha256": "bdcb22509b05974980a12e9b9d6c99c37c2947b4b74af530e5a7c83e2f1a6396",
       "descriptor": "3d-assets/sherwood/sherwood-east-archery-target/asset.json",
-      "descriptor_sha256": "e626a91bba2534ba4cfcd11dac2b67bbd3d98ce963e8cef260607d82196a4a99",
+      "descriptor_sha256": "075264eb2b830c24b88b643ae05b74e3b267d82a63de646bcd713edf9bd799e8",
       "resources": []
     },
     {
@@ -181,7 +181,7 @@
       "model": "3d-assets/sherwood/sherwood-east-border-oak/model.glb",
       "model_sha256": "5a953ee854cdb694c0b4bad5f03787910335dc040ac603b9947af20f20ba9c0b",
       "descriptor": "3d-assets/sherwood/sherwood-east-border-oak/asset.json",
-      "descriptor_sha256": "496d3485596a2ec7da85c0988fd0d80210d9a6d9f14d3e7069bd03819346142a",
+      "descriptor_sha256": "efc8f1b5cf5c7629af9e2f9cd5f099fe4212ef5d8ace4870ddda835a1d71a318",
       "resources": []
     },
     {
@@ -189,7 +189,7 @@
       "model": "3d-assets/sherwood/sherwood-east-riverbank-rock-outcrop/model.glb",
       "model_sha256": "74e2a01bffd9363a87232b03430db894935e078cf79dbc2de691fa503ddd1783",
       "descriptor": "3d-assets/sherwood/sherwood-east-riverbank-rock-outcrop/asset.json",
-      "descriptor_sha256": "f6c03a6925fa91b18157ce6d108f8b44faa50254d38251e458f709f6ba942192",
+      "descriptor_sha256": "a382c1bb2d0ab82886e83513d296466c9979d32cf3eb99fc7cb794134bdfbb1c",
       "resources": []
     },
     {
@@ -197,7 +197,7 @@
       "model": "3d-assets/sherwood/sherwood-fallen-camp-branch/model.glb",
       "model_sha256": "b2f3f91f2000b063331d81a84be24d6dd039ffa16f7c3035d3993bf178787714",
       "descriptor": "3d-assets/sherwood/sherwood-fallen-camp-branch/asset.json",
-      "descriptor_sha256": "47b87fa76667bf2b70179b0d6563ff6afeddab367de3c9fdd6006f38d16a05fd",
+      "descriptor_sha256": "b201080a624c55096c60e9dcc876a633c206aea4058526ca4b37cb9ac3971103",
       "resources": []
     },
     {
@@ -205,7 +205,7 @@
       "model": "3d-assets/sherwood/sherwood-foreground-oak/model.glb",
       "model_sha256": "f0e4720ec8e14be1caf32eef6e5389ac33f6ad1cbcc427d99e68e9be8c90e0b2",
       "descriptor": "3d-assets/sherwood/sherwood-foreground-oak/asset.json",
-      "descriptor_sha256": "23ed275d8bf756abf1d93320b3d1e724ecabdde229b55b8adcf6c9126fbcc399",
+      "descriptor_sha256": "3ca57d0ddfff7d26c5e0a64431e012ea68d1e093fa8c77387b72d68ceb997868",
       "resources": []
     },
     {
@@ -213,7 +213,7 @@
       "model": "3d-assets/sherwood/sherwood-horizontal-supply-barrel/model.glb",
       "model_sha256": "9116ec7f52f73218d3bb3d2f15b9fb04163bcdef25734935505551313611dfba",
       "descriptor": "3d-assets/sherwood/sherwood-horizontal-supply-barrel/asset.json",
-      "descriptor_sha256": "7d0e33f0c73380acf0f058381a3d22d01da6d4dec4afb34049e30129be3643a1",
+      "descriptor_sha256": "bb540495c5a4f9fb2174c373531a4ff4016a948bd44301bf2d7489c52e7ab142",
       "resources": []
     },
     {
@@ -221,7 +221,7 @@
       "model": "3d-assets/sherwood/sherwood-iron-cooking-cauldron/model.glb",
       "model_sha256": "166906c16dea428efa1a0314a355f1905a2fe27cdc44e4bbaa579eac149f20a9",
       "descriptor": "3d-assets/sherwood/sherwood-iron-cooking-cauldron/asset.json",
-      "descriptor_sha256": "50b174696d6aaba470f00ca7ee62a53275d563251d8428fd573b5c02fd196e05",
+      "descriptor_sha256": "7f4d63518e11a24030e5d0b15e6b6ae04b0a2ace551abc25251b00960d62a5e5",
       "resources": []
     },
     {
@@ -245,7 +245,7 @@
       "model": "3d-assets/sherwood/sherwood-ladder-oak-rock-cluster/model.glb",
       "model_sha256": "370fb3a8826c50edec6b5c576f5e4a87ea841c30a435696a65e72effbb5c2006",
       "descriptor": "3d-assets/sherwood/sherwood-ladder-oak-rock-cluster/asset.json",
-      "descriptor_sha256": "f9505e30c64530daa61fce7b81c74cef2bd7d4281985b2a9b69d9f42ff751f12",
+      "descriptor_sha256": "6bcce66af5a97119edb7695724a2a1ce19ce05c297d013a89a509566a0719866",
       "resources": []
     },
     {
@@ -253,7 +253,7 @@
       "model": "3d-assets/sherwood/sherwood-leaning-woodland-tree/model.glb",
       "model_sha256": "544f98590a96471bdfe9e6e87013e0f9a4696aaa65dc8f69d8fe19da72ab52ca",
       "descriptor": "3d-assets/sherwood/sherwood-leaning-woodland-tree/asset.json",
-      "descriptor_sha256": "bd5457701141a1ff0542645f33dd33f92c08ccad03f0a524d0fd906bafb06adc",
+      "descriptor_sha256": "4789c6463c01bae6f30ecbb9e223a2aa88a83de77c3bc0da7c1743573e925d6f",
       "resources": []
     },
     {
@@ -261,7 +261,7 @@
       "model": "3d-assets/sherwood/sherwood-long-suspension-bridge/model.glb",
       "model_sha256": "91e00409fff66322759c3012c776ddb0d11a504a01051cac2dbc63571a54f143",
       "descriptor": "3d-assets/sherwood/sherwood-long-suspension-bridge/asset.json",
-      "descriptor_sha256": "a07114483c1b0ae796f51250f2b96f07df9508c6c69079045a57256af7eb8792",
+      "descriptor_sha256": "639521bbaec4989601d0e500bc22423e1d7aa0ebf8138f22460eab2f8f9fcd84",
       "resources": []
     },
     {
@@ -269,7 +269,7 @@
       "model": "3d-assets/sherwood/sherwood-north-border-branch/model.glb",
       "model_sha256": "f3265f73f813789e0baede1cadd49bf911af5667b73f80094180263639ff9c3b",
       "descriptor": "3d-assets/sherwood/sherwood-north-border-branch/asset.json",
-      "descriptor_sha256": "0e0925faa62000e021fafadc98ae5befe5a665c5014178e5038ab34a156e70e4",
+      "descriptor_sha256": "65756a1f8c1c309f4ca06584510c52ba121490246f7aa6f2ef167f346792ac50",
       "resources": []
     },
     {
@@ -277,7 +277,7 @@
       "model": "3d-assets/sherwood/sherwood-north-border-oak/model.glb",
       "model_sha256": "4957242f37c27ca423693173ecc6387f64bfc2affd0335b333655ef4360447a9",
       "descriptor": "3d-assets/sherwood/sherwood-north-border-oak/asset.json",
-      "descriptor_sha256": "f9036613855a7ddb1aae593f504256f84fef9cb6d9b81db375bddecb69220e3f",
+      "descriptor_sha256": "7b05cf08d7f4cb76eb7e11e41f2285c81444b1269fa91802aecfe39af9591c2f",
       "resources": []
     },
     {
@@ -285,7 +285,7 @@
       "model": "3d-assets/sherwood/sherwood-north-camp-hut/model.glb",
       "model_sha256": "b50bc898ad1871cd41019bb6e1914f399312f0e4b97d6e3f2405b895c1392278",
       "descriptor": "3d-assets/sherwood/sherwood-north-camp-hut/asset.json",
-      "descriptor_sha256": "be0e3fa23e6911d844bb31f6472275f71caabbe5118cc2594ad74bd1dcbfb60e",
+      "descriptor_sha256": "e8d6b8403cc87f72b5ec50afa6f80d67ceabe820cd111a0958ff1bbb8426f0c3",
       "resources": []
     },
     {
@@ -293,7 +293,7 @@
       "model": "3d-assets/sherwood/sherwood-north-woodland-oak/model.glb",
       "model_sha256": "188866fe02221d6d7c5f92481f9d3c4c1ce319351122424f6cfb78a73188179b",
       "descriptor": "3d-assets/sherwood/sherwood-north-woodland-oak/asset.json",
-      "descriptor_sha256": "11054e28e4d6346f22ed7aa9038ae810de91ef13483068f2bf7f46681b9b7d26",
+      "descriptor_sha256": "c35827e8ecf0ef19930a6c2dc6c851852825808046bfa4b694603582d914d66e",
       "resources": []
     },
     {
@@ -301,7 +301,7 @@
       "model": "3d-assets/sherwood/sherwood-north-woodland-shelter/model.glb",
       "model_sha256": "653d6422ad68e8141e670c5b34f54662a7b16831feade011308a59f2254ffd37",
       "descriptor": "3d-assets/sherwood/sherwood-north-woodland-shelter/asset.json",
-      "descriptor_sha256": "ccf7add4b3b54dab3befdafb63d1548b98d7043d6f609b83b9fd4f7f53fea731",
+      "descriptor_sha256": "3a3987793c402d6499a04fdc2e5625c3c049ecadf62b648d4372e37d32cd4e45",
       "resources": []
     },
     {
@@ -309,7 +309,7 @@
       "model": "3d-assets/sherwood/sherwood-north-woodland-trunk/model.glb",
       "model_sha256": "3816a1202177bb2ac823e673290d57f32cf8d5d4d9e8e94b8f54b98d08fbf237",
       "descriptor": "3d-assets/sherwood/sherwood-north-woodland-trunk/asset.json",
-      "descriptor_sha256": "c0edff7f2d92956d9f167ac59dcfd0233b0a42ce374420a73d102dcbaad9583c",
+      "descriptor_sha256": "a3304ccb3bf619db8b4e87b3709089491865a5afec9defcabbe3cbb8e5697cbf",
       "resources": []
     },
     {
@@ -317,7 +317,7 @@
       "model": "3d-assets/sherwood/sherwood-northeast-border-oak/model.glb",
       "model_sha256": "462f1f69a33eec112b2c7240ce288bc6dfe36450896b37022b01b54e84d7819f",
       "descriptor": "3d-assets/sherwood/sherwood-northeast-border-oak/asset.json",
-      "descriptor_sha256": "76cd8a5385c95d909e843f621f1c85365a03b1daea2f16591e207e0919490396",
+      "descriptor_sha256": "fda99aa240b6fcad9bf8f9261626838b2d8d7a3d527732016c4e43ca2a699fb7",
       "resources": []
     },
     {
@@ -325,7 +325,7 @@
       "model": "3d-assets/sherwood/sherwood-northeast-forked-oak/model.glb",
       "model_sha256": "62e0b0616013fe1e9339ede2831cba07b56f24b851fc0d7aab45915662601f5e",
       "descriptor": "3d-assets/sherwood/sherwood-northeast-forked-oak/asset.json",
-      "descriptor_sha256": "a5c6161fd17911c545d70e20bb9a59e663e04d057dff88941279165f5140c62c",
+      "descriptor_sha256": "87d3134d5da3fbf04d1869b62609e00b3b0e38c0c421fdcdfacb8e27fed87eaf",
       "resources": []
     },
     {
@@ -333,7 +333,7 @@
       "model": "3d-assets/sherwood/sherwood-northeast-woodland-oak/model.glb",
       "model_sha256": "5cd42b8e00486bd70fdfb1e39c52e5a8bacda0c58a6eb85515d6c9d93ffa2a33",
       "descriptor": "3d-assets/sherwood/sherwood-northeast-woodland-oak/asset.json",
-      "descriptor_sha256": "db341e3f398ee656801f73ce1082911e1bbc4af054e73727d9ad68942d33d25f",
+      "descriptor_sha256": "fb4580542ffe603c0fdd028059a376578d5219a04c37ba4d90b7db83a244d93f",
       "resources": []
     },
     {
@@ -341,7 +341,7 @@
       "model": "3d-assets/sherwood/sherwood-northwest-woodland-oak/model.glb",
       "model_sha256": "0cacaab5ec63dd18472f9c19ce4c9ef413584b8bd7453fbecd23e2fe29bcd0cb",
       "descriptor": "3d-assets/sherwood/sherwood-northwest-woodland-oak/asset.json",
-      "descriptor_sha256": "866b9fdd05d9d4aa3b354c3069d3cae11d5c3cf83caa40260b0ef75a4ce9bff8",
+      "descriptor_sha256": "1925d8f127f3412903cc2ff72571b1efb12e4a65cf81cf1befc8df4bdff0480a",
       "resources": []
     },
     {
@@ -349,7 +349,7 @@
       "model": "3d-assets/sherwood/sherwood-northwest-woodland-tree/model.glb",
       "model_sha256": "5551c194318ff34319332a73df1347e2f26f289771476e1311ff69a6e3be211e",
       "descriptor": "3d-assets/sherwood/sherwood-northwest-woodland-tree/asset.json",
-      "descriptor_sha256": "b959304c6f0d21ab2ed70457c65810e6d4c7d44e8fab474e81eade00abd52371",
+      "descriptor_sha256": "877c8a279dc0be2c171249c353ab102bf6355bd6c51c917c18023469a7896792",
       "resources": []
     },
     {
@@ -357,7 +357,7 @@
       "model": "3d-assets/sherwood/sherwood-river-bluff/model.glb",
       "model_sha256": "64f4d948436c00ffe1484f5bd4d807481fa4f21f85bcbb9e0ed85a432b7b4c73",
       "descriptor": "3d-assets/sherwood/sherwood-river-bluff/asset.json",
-      "descriptor_sha256": "c7d64f80c10452e2e8cf963d595b90f3a42ddddb48a6b4b7b56feed6b6148fd3",
+      "descriptor_sha256": "aa7d1ae4391b07a22677a2b812f2f252a36c0c18a25d6c849af6eff4aa1e8d63",
       "resources": []
     },
     {
@@ -365,7 +365,7 @@
       "model": "3d-assets/sherwood/sherwood-river-driftwood/model.glb",
       "model_sha256": "3f51737656a2c83156acc34814250cfa36d255256138a8d332ce23671f76dd24",
       "descriptor": "3d-assets/sherwood/sherwood-river-driftwood/asset.json",
-      "descriptor_sha256": "e80ce15e7eeb0c107c1f4bd4654474b33e4fc6f325835fdba09c634440e62b91",
+      "descriptor_sha256": "c69a054908716a4232a0662da577e61157cb510647152e3b672caecd963d10df",
       "resources": []
     },
     {
@@ -373,7 +373,7 @@
       "model": "3d-assets/sherwood/sherwood-river-oak/model.glb",
       "model_sha256": "96e30775d799e84bebcdbdf91d5631bb8c71ed89649c39df1bf95511418f45a5",
       "descriptor": "3d-assets/sherwood/sherwood-river-oak/asset.json",
-      "descriptor_sha256": "4f6dfe727031c96d4d51bd4f80a43d79e297c34249e21b4309979b477794dceb",
+      "descriptor_sha256": "0f2149e0fc2e29292326f3b06ef61db40f9db74bd0ec0c3742f904493a0b041b",
       "resources": []
     },
     {
@@ -381,7 +381,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-10/model.glb",
       "model_sha256": "51ca8d605932d57a4ce75daca8a17f7820ad204c612c3666c7afeb3597455403",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-10/asset.json",
-      "descriptor_sha256": "6deb65cbf65e7b4ef893664af1dc63ddfc432d5975d3413b5c7a232193a397cd",
+      "descriptor_sha256": "45d71343a40e89bb29eb7edae55ce78a744903af3a9ee77f9f2a4097a00cfb01",
       "resources": []
     },
     {
@@ -389,7 +389,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-11/model.glb",
       "model_sha256": "5b835adb1c52f7a850e5af249547a9d25915432f087bce2d9d3ae2e9edeba648",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-11/asset.json",
-      "descriptor_sha256": "b83e9b6e4b50970372fcdd3d743837b45eb7a95e7a557a0d1a424505d88580e3",
+      "descriptor_sha256": "20242bcde1fffed1718642628e6444f8cb905774dd0f13d953bd0ff396dbc537",
       "resources": []
     },
     {
@@ -397,7 +397,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-12/model.glb",
       "model_sha256": "ca9c83507adfe25670321e5ce39675c1b4c1f1283c77d2c29ee1dfcc37d74203",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-12/asset.json",
-      "descriptor_sha256": "98c179068758b88d0bd7dc58ce0975a78c87eb9fccba2b32ac7c24659d06c272",
+      "descriptor_sha256": "7078dfb3cec19db5c306deb0e2d70f8a9afecb2179272330ce26a07fbe5432d2",
       "resources": []
     },
     {
@@ -405,7 +405,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-13/model.glb",
       "model_sha256": "04f631f4c87b8de7d2e24f9680f42af5fd4f73c7a156f2de13757ce405673a81",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-13/asset.json",
-      "descriptor_sha256": "e148249a681cd169a5b6362aa92222c1c4602730ea51d174d4f255a2f4775878",
+      "descriptor_sha256": "1acd7c493328d69e104cd2286fd2401e2a8368886d7127e6b105911db463b073",
       "resources": []
     },
     {
@@ -413,7 +413,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-14/model.glb",
       "model_sha256": "ce6e2148f34702071fd1ca609e2e593feaf731f6aefba9727588f9a016baeb6f",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-14/asset.json",
-      "descriptor_sha256": "dadc22e5e4adb9b98211c0f63b4aa260c8716ee4d43e293f39f97b87a7de23f5",
+      "descriptor_sha256": "ffd97417ad202a7b47bc7a5c9567899e7cf5dfe99cc252d32543f1034ed1d955",
       "resources": []
     },
     {
@@ -421,7 +421,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-15/model.glb",
       "model_sha256": "f7116f1b886f0c9b6c1fec11398160170e6bcbbd2f51f84a47b6791ee3df6e4f",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-15/asset.json",
-      "descriptor_sha256": "14170a435057a50986888161eaeccdd747f0197cb3ad4b46a27453aa83f3ebae",
+      "descriptor_sha256": "f70e2a960bb6c13a47ed6def3e379efee3c3cd85f8f5518ed872ca3080fa849c",
       "resources": []
     },
     {
@@ -429,7 +429,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-16/model.glb",
       "model_sha256": "aeb580ed65efc1de189eeba3f6bc712e391be61a4e32d8345edd5d706eca3a57",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-16/asset.json",
-      "descriptor_sha256": "078e0b98fe1cb548d8376a216dbc333edaaaba668b9f70b024213f1329687a9f",
+      "descriptor_sha256": "8edfd9ce2f34362ec03fcd90c4bc19455ed70493f7710fee25e20f907d5b64aa",
       "resources": []
     },
     {
@@ -437,7 +437,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-17/model.glb",
       "model_sha256": "590e35801f6f75291c56a6bbf9f5d82cac85cb489df76e4928c1102563f67289",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-17/asset.json",
-      "descriptor_sha256": "117ffc22656bc26d0461f62578598d40d971f65a30e2a3a790022a570a497547",
+      "descriptor_sha256": "c67ec28cc5e332022636b3741cd15dabd35caee342ecc7d4d0d6eb6f18f922ab",
       "resources": []
     },
     {
@@ -445,7 +445,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-18/model.glb",
       "model_sha256": "536691e8ab3a5aa897f918dc34e5b6f54ef7a22c6f576286432708dcc2572b74",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-18/asset.json",
-      "descriptor_sha256": "2f8a0e1ba297f8c643086a693c2e541fedfaa692258001883013967fe39f7fb0",
+      "descriptor_sha256": "7f710cf8b36dae4a632ddc4b2c9fadac160a592f305e53ea646448baee6e283b",
       "resources": []
     },
     {
@@ -453,7 +453,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-22/model.glb",
       "model_sha256": "c953bf2491e9fefa1003d5b47a51d0746b4bbe7e41376c7dc185b7ba8f04f621",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-22/asset.json",
-      "descriptor_sha256": "43c894d82ea6a9e2c8ef376c96b9157a6081a5af42f472a48f96120c666acb21",
+      "descriptor_sha256": "fbecaa74b751cd5d30597c9756633e39d0310d7318a4bdd818cc6c2a82a0505e",
       "resources": []
     },
     {
@@ -461,7 +461,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-boulder-26/model.glb",
       "model_sha256": "abca7b5c667f1e5e1678146d0718a10fcfb914958535e9b887a05f7c74823d80",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-boulder-26/asset.json",
-      "descriptor_sha256": "0be9267552c816dcd2fdcc6f5bd8219c8e20984c7560cc3e9f6d4e00d448373d",
+      "descriptor_sha256": "985b437cb54ad9615a63cb5d4ac30a3477ee7b418f59b1bec0720cd51d86731a",
       "resources": []
     },
     {
@@ -469,7 +469,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-rock/model.glb",
       "model_sha256": "7a9b378b671d675441a3b106ea4e7996dee22ee090d8fac671b75e0477fe6dfa",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-rock/asset.json",
-      "descriptor_sha256": "6f9026754c62b57130aa1dd922e640c15dfe7cf8d218502a06aec8bd2a6d68b4",
+      "descriptor_sha256": "35076a6aee0d324ea981f93e7214bd79f79ea5607f6675ad47a26d78958d5c3e",
       "resources": []
     },
     {
@@ -477,7 +477,7 @@
       "model": "3d-assets/sherwood/sherwood-riverbank-timber-fence/model.glb",
       "model_sha256": "ccda997f610ec89c2117bf0b6c5b7bf1897b51e7b9067e86684a3da9a6419b5b",
       "descriptor": "3d-assets/sherwood/sherwood-riverbank-timber-fence/asset.json",
-      "descriptor_sha256": "39341cb2266d63adfc0b66d863e2a27d29c68543a4e1b3cf693e4838147d462f",
+      "descriptor_sha256": "3c25ee49b7561f6bdf22b337a99da0e588342c27c063087e698ede323db44293",
       "resources": []
     },
     {
@@ -485,7 +485,7 @@
       "model": "3d-assets/sherwood/sherwood-roasting-spit/model.glb",
       "model_sha256": "a3ad417cf45aed19750a350ce8d5896ac363243970be6c94486ea5fdb5018ec7",
       "descriptor": "3d-assets/sherwood/sherwood-roasting-spit/asset.json",
-      "descriptor_sha256": "7bf8fbe35156449d0f5a4d545117e49f93fa576d125de60ffd81a5d2c9ab5162",
+      "descriptor_sha256": "e125df023458b138f48a000e3da6571a4e10cfc4c026dcc637acdefc4a74eaae",
       "resources": []
     },
     {
@@ -493,7 +493,7 @@
       "model": "3d-assets/sherwood/sherwood-round-camp-stool/model.glb",
       "model_sha256": "ff9b10dbf4c93c72f10c8cca3b26df1c76e8e7a352967a3f9055cd9d86187459",
       "descriptor": "3d-assets/sherwood/sherwood-round-camp-stool/asset.json",
-      "descriptor_sha256": "53cabb3e76ef3a4b938d50e3c73512edc185ab687b9d17c30b6619365761f531",
+      "descriptor_sha256": "b7aa3852c4ffbbfa9e60a6f3410ebc88317732a24fe54db4ccf8aca9a6a33532",
       "resources": []
     },
     {
@@ -501,7 +501,7 @@
       "model": "3d-assets/sherwood/sherwood-south-river-driftwood/model.glb",
       "model_sha256": "cfff71c6053e8315bdbe88e515c24caa24af71ecf19768b750e5827fcd5ed8d1",
       "descriptor": "3d-assets/sherwood/sherwood-south-river-driftwood/asset.json",
-      "descriptor_sha256": "2c82b39a53e7322a2e492cd81c1ea48c1c82d985b7fcf485c418180f522e1e56",
+      "descriptor_sha256": "d9907987b70d451bc6b29966ac7f1befd9de7d63790fcff4311c9cadc8155641",
       "resources": []
     },
     {
@@ -509,7 +509,7 @@
       "model": "3d-assets/sherwood/sherwood-south-riverbank-rock-outcrop/model.glb",
       "model_sha256": "aa4720e06166e5fbe7e58c235680f3eadef7a2e399bf437545de41e80c751db6",
       "descriptor": "3d-assets/sherwood/sherwood-south-riverbank-rock-outcrop/asset.json",
-      "descriptor_sha256": "a09a84ae3e027307f4d618a876c4e03cf7a655148cf4512f9ae3147fc2fc13ac",
+      "descriptor_sha256": "94413c7bfb0435618bc32463891f9e51ac8d6c9edb8343782d584498fe669518",
       "resources": []
     },
     {
@@ -517,7 +517,7 @@
       "model": "3d-assets/sherwood/sherwood-southwest-work-shelter/model.glb",
       "model_sha256": "89233cc3df1da920a2d46864a31d773f76714d64f8781617c643a0437adfcb23",
       "descriptor": "3d-assets/sherwood/sherwood-southwest-work-shelter/asset.json",
-      "descriptor_sha256": "f2d7ba571c95d20cefa2bda14254d50a00c0cde5c9d7618c095862089d7c9c21",
+      "descriptor_sha256": "4320913d83df8f478455a4b7ac86a4878d5ba0d9f9c3eb1c41dbe4820c126479",
       "resources": []
     },
     {
@@ -525,7 +525,7 @@
       "model": "3d-assets/sherwood/sherwood-southwest-worktable/model.glb",
       "model_sha256": "b93ec36817e647edd3c5feea77f75208f3384929614d50b186f5f5ac5227e703",
       "descriptor": "3d-assets/sherwood/sherwood-southwest-worktable/asset.json",
-      "descriptor_sha256": "c3f5d2706237e70b790aa51a5ef77b81445aee5dae26e7dadf9d9b5c4032b733",
+      "descriptor_sha256": "ae126b0572c55bcba2192e9bcacca96686c45535b93251f6395179dfbd6a5ef8",
       "resources": []
     },
     {
@@ -533,7 +533,7 @@
       "model": "3d-assets/sherwood/sherwood-spreading-woodland-oak/model.glb",
       "model_sha256": "194185f7b19d56e26838927212ea76a95027195bccc8546a9151481786b9f565",
       "descriptor": "3d-assets/sherwood/sherwood-spreading-woodland-oak/asset.json",
-      "descriptor_sha256": "e076e87cb1a415cfb10c8a5c03e9d21195691cf968c14e9f632ac7a3720949bb",
+      "descriptor_sha256": "0a3b8ba4c84da28f435c6ee8a672663a9c1bc55d581fe969235941e79e239ac1",
       "resources": []
     },
     {
@@ -541,7 +541,7 @@
       "model": "3d-assets/sherwood/sherwood-west-archery-target/model.glb",
       "model_sha256": "631a3080d48b8c59b5d2da772922fbcd1759fbb57ad0eed3a36b878ec2a21f42",
       "descriptor": "3d-assets/sherwood/sherwood-west-archery-target/asset.json",
-      "descriptor_sha256": "8e6c3969a9146f33943ab9ecdf3b8e7f6eb92512d6ad7288932319e70064cf92",
+      "descriptor_sha256": "6a9a3d1fbadd607b37947e4d5c5a8291daacc88d897d8890ba836da752d4381b",
       "resources": []
     },
     {
@@ -549,7 +549,7 @@
       "model": "3d-assets/sherwood/sherwood-west-border-treehouse/model.glb",
       "model_sha256": "c556f5baa6dd6d4c5aa11a18903778246a21baba2aa9d7ce9bdd9bdf85b58a2b",
       "descriptor": "3d-assets/sherwood/sherwood-west-border-treehouse/asset.json",
-      "descriptor_sha256": "e02b3478f0404fd97e385e76b71ff4ea1a50723bb7c0b7596b0c888d82761dec",
+      "descriptor_sha256": "8c2b6bb94be84e671653f387d6420c3b6bfc7830cd999421f4045585b46d549e",
       "resources": []
     },
     {
@@ -557,7 +557,7 @@
       "model": "3d-assets/sherwood/sherwood-west-border-treehouse-oak/model.glb",
       "model_sha256": "d24967b7562529a7fd3568fd88f1fac76d8f43aa752a7ccd9a60d746cdf4657a",
       "descriptor": "3d-assets/sherwood/sherwood-west-border-treehouse-oak/asset.json",
-      "descriptor_sha256": "763be04c054905fdf0396692a6bd4b2fb2a054d18f3980ed01b2aed0afb146fe",
+      "descriptor_sha256": "177e119c069d3a85f3a090fb3b649612b63bfbc2ebcffc6b39757f212394057a",
       "resources": []
     },
     {
@@ -565,7 +565,7 @@
       "model": "3d-assets/sherwood/sherwood-west-border-woodland-oak/model.glb",
       "model_sha256": "81c2e6c6911011281b9d0d781cc58b6cbfada536ee4cb3846a5582dd1df0beae",
       "descriptor": "3d-assets/sherwood/sherwood-west-border-woodland-oak/asset.json",
-      "descriptor_sha256": "1235424d4873af02f539431c2d5ded02234e60d19f0523f72d57ddf9884d94c2",
+      "descriptor_sha256": "e70f996f62ce01856ef588292a0e19661281caad0cb03d7cd62f39e53d40573d",
       "resources": []
     },
     {
@@ -573,7 +573,7 @@
       "model": "3d-assets/sherwood/sherwood-west-camp-barrel/model.glb",
       "model_sha256": "a8c9ba38ed34121e7b8d157e570676e316b9488be1027111db0681a7c34323da",
       "descriptor": "3d-assets/sherwood/sherwood-west-camp-barrel/asset.json",
-      "descriptor_sha256": "db1754b2003c6148fd16489485a4fcd0382e527fd27cf50be872c5277c3469b7",
+      "descriptor_sha256": "3b28b2389a181bdfc10afb74deadc63fbdf297d752f7408824cf1928c412c409",
       "resources": []
     },
     {
@@ -581,7 +581,7 @@
       "model": "3d-assets/sherwood/sherwood-west-camp-hut/model.glb",
       "model_sha256": "d8defca99979521aefd1739a68f78bc8f0c61af0de8e38eaefc8e00241c10659",
       "descriptor": "3d-assets/sherwood/sherwood-west-camp-hut/asset.json",
-      "descriptor_sha256": "c7675993dfbd79029c37b5086b3201449431d1249e174931f41351d062685c10",
+      "descriptor_sha256": "3b5b2974f602708338002d34c07fe652075df8d393151a0c082316d7755a6473",
       "resources": []
     },
     {
@@ -589,7 +589,7 @@
       "model": "3d-assets/sherwood/sherwood-west-camp-lookout-shelter/model.glb",
       "model_sha256": "38199bb86fa1f6cb02631bd1826e6d6af7df2b181b7e0166510410cd56a20b5b",
       "descriptor": "3d-assets/sherwood/sherwood-west-camp-lookout-shelter/asset.json",
-      "descriptor_sha256": "3c41783f6976f6d00a706004b7fa014c4f7d4eef22403e429d7b3478bebfac0a",
+      "descriptor_sha256": "abf3e07aa485dd090d56b710102a04eae6e6f51c707f7bdd6ed87012c3c2c43e",
       "resources": []
     },
     {
@@ -597,7 +597,7 @@
       "model": "3d-assets/sherwood/sherwood-west-camp-rock-cluster/model.glb",
       "model_sha256": "38a2bc7594a6e61965c949e59af91fd08d2f8c939b833856fb3b6b59785efe5a",
       "descriptor": "3d-assets/sherwood/sherwood-west-camp-rock-cluster/asset.json",
-      "descriptor_sha256": "b649704eb9e983e9c82b557813fe8453fe2d1424163493a4449306f5b704eef3",
+      "descriptor_sha256": "a14d341c96e8b3d02de25fb939db613fc226002d07e15cda02b66ddb74a88159",
       "resources": []
     },
     {
@@ -605,7 +605,7 @@
       "model": "3d-assets/sherwood/sherwood-west-camp-tub/model.glb",
       "model_sha256": "ed8f52eada95c3d13381032632b6d0ea27d9d1610ceed30abd9936446952818b",
       "descriptor": "3d-assets/sherwood/sherwood-west-camp-tub/asset.json",
-      "descriptor_sha256": "f2cd631ed8981d08f437854c34601b072fb8c7cfc8ded8487c61ffc45181846a",
+      "descriptor_sha256": "ad941934717a84db9e4bffbd7b72ed0c6e94ac647d3f480772767427a89fd194",
       "resources": []
     },
     {
@@ -613,7 +613,7 @@
       "model": "3d-assets/sherwood/sherwood-west-suspension-bridge/model.glb",
       "model_sha256": "71273d86a6d7cbf72b3aad8615b9944a784f8aa2475e3f50210f1c7838269e96",
       "descriptor": "3d-assets/sherwood/sherwood-west-suspension-bridge/asset.json",
-      "descriptor_sha256": "6ab3e418cd202f5e216bd22fa4179277de631791f5a95c0f38d89aae535f6ba1",
+      "descriptor_sha256": "47124ed1f101228b4d30cf8cf3427cb357f418037128d56a12697ff5e7eafb74",
       "resources": []
     },
     {
@@ -621,7 +621,7 @@
       "model": "3d-assets/sherwood/sherwood-west-treehouse/model.glb",
       "model_sha256": "e648c97398bcd7e214de70040be1e5036d0d5c77e32c5515ecb5dcdb4c12d11a",
       "descriptor": "3d-assets/sherwood/sherwood-west-treehouse/asset.json",
-      "descriptor_sha256": "d118764c710e4d9a3fb7878952665ebcf1ec342f37aa40a041934cfba7cef06d",
+      "descriptor_sha256": "21dad87f0ba826c53d832feebc53fb77fb1d5d732ccf0cb6ce883e4cef522df5",
       "resources": []
     },
     {
@@ -629,7 +629,7 @@
       "model": "3d-assets/sherwood/sherwood-west-treehouse-oak/model.glb",
       "model_sha256": "f3a353df2cc86b3c27cd3eeaccd88fb07aa57e5053cd823ad0eefbfc2521ae74",
       "descriptor": "3d-assets/sherwood/sherwood-west-treehouse-oak/asset.json",
-      "descriptor_sha256": "09280b8afec9c48da1e3b64a26286178e1109141a7234786414b8f9393cac28c",
+      "descriptor_sha256": "1a0b5032c1d4c8345ac5bc32ae6edb6aa36712a73cc3c1bcf01d205ba73b300f",
       "resources": []
     },
     {
@@ -637,7 +637,7 @@
       "model": "3d-assets/sherwood/sherwood-west-woodland-branch/model.glb",
       "model_sha256": "ddeb2d5e800bb1769d37faa31c110b1290d47c00dd909aed2116115cfd71a357",
       "descriptor": "3d-assets/sherwood/sherwood-west-woodland-branch/asset.json",
-      "descriptor_sha256": "2a4e9122781ee09bd7412cfcbe3d07b65f6b4cd894b63107901bc31ac5570b01",
+      "descriptor_sha256": "50e33aa8b9f14292f8ef094b92862d19b75cc1ebfb84dd7fb05c7b598f6812da",
       "resources": []
     },
     {
@@ -645,7 +645,7 @@
       "model": "3d-assets/sherwood/sherwood-west-woodland-oak/model.glb",
       "model_sha256": "5b0a777d16a6d9e6269d74161c9a7c2843f71ad290fd4c87369ac1487a6a5612",
       "descriptor": "3d-assets/sherwood/sherwood-west-woodland-oak/asset.json",
-      "descriptor_sha256": "257d5893ca965c7406b79ec1e9f02d4e553e5983fb698382dd66a74b804282a9",
+      "descriptor_sha256": "afaab861c2dea8cc332ab8565be2cd419a58fb43d96410d17b7358abf6640c24",
       "resources": []
     },
     {
@@ -653,7 +653,7 @@
       "model": "3d-assets/sherwood/sherwood-west-woodland-tree/model.glb",
       "model_sha256": "a766b01e56677f9010a577bb85ba923ea5f8623ec719b77fbdc18337adac2d4b",
       "descriptor": "3d-assets/sherwood/sherwood-west-woodland-tree/asset.json",
-      "descriptor_sha256": "aa7d1ace6723c3c1c489f385135f236c77c5b92620cfa1f85cad1748ff2824de",
+      "descriptor_sha256": "06cccf438da67e2cfa82f8886f7a873848611b042c7b91e1e458dda7a479ff88",
       "resources": []
     },
     {
@@ -661,7 +661,7 @@
       "model": "3d-assets/sherwood/sherwood-woodland-stump/model.glb",
       "model_sha256": "e52e2290ef5e1cb873568979eb85bf5dd187073d65d9d598dd0ca3084df6650d",
       "descriptor": "3d-assets/sherwood/sherwood-woodland-stump/asset.json",
-      "descriptor_sha256": "271d6768605f3f6798b6ac63eb98992d7537573bad595793f382ef9cf0fa4ee6",
+      "descriptor_sha256": "4f3927cc0f0329c39e0effeccc041bfee60714762e344ee4cd0bc5051e743351",
       "resources": []
     }
   ],
@@ -676,7 +676,7 @@
       "transform": {
         "dx": 1778,
         "dy": 492.1285823891975,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -688,7 +688,7 @@
       "transform": {
         "dx": 622,
         "dy": 663.6279368581603,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -700,7 +700,7 @@
       "transform": {
         "dx": 617,
         "dy": 602.2552581685984,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -712,7 +712,7 @@
       "transform": {
         "dx": 553,
         "dy": 847.7459729268461,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -724,7 +724,7 @@
       "transform": {
         "dx": 446.1579895019531,
         "dy": 628.4214885159083,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -736,7 +736,7 @@
       "transform": {
         "dx": 586.3966674804688,
         "dy": 616.2601424438641,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -748,7 +748,7 @@
       "transform": {
         "dx": 522,
         "dy": 618.3153983864277,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -760,7 +760,7 @@
       "transform": {
         "dx": 573,
         "dy": 578.7386242782054,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -772,7 +772,7 @@
       "transform": {
         "dx": 175,
         "dy": 588.4894236961733,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -784,7 +784,7 @@
       "transform": {
         "dx": 1083.5669860839844,
         "dy": 630.5205091102453,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -796,7 +796,7 @@
       "transform": {
         "dx": 978,
         "dy": 654.4507138765435,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -808,7 +808,7 @@
       "transform": {
         "dx": 1102.9342041015625,
         "dy": 612.2053249862066,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -820,7 +820,7 @@
       "transform": {
         "dx": 1012,
         "dy": 620.0361276954808,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -832,7 +832,7 @@
       "transform": {
         "dx": 868.9363403320312,
         "dy": 560.7764116153185,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -844,7 +844,7 @@
       "transform": {
         "dx": 808.9524841308594,
         "dy": 471.09459904569616,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -856,7 +856,7 @@
       "transform": {
         "dx": 793,
         "dy": 478.3627479167724,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -868,7 +868,7 @@
       "transform": {
         "dx": 798.6111145019531,
         "dy": 476.83720988186894,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -880,7 +880,7 @@
       "transform": {
         "dx": 416,
         "dy": 830.5386798363147,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -892,7 +892,7 @@
       "transform": {
         "dx": 1763,
         "dy": 502.4529582435163,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -904,7 +904,7 @@
       "transform": {
         "dx": 1859,
         "dy": 561.531331187674,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -916,7 +916,7 @@
       "transform": {
         "dx": 1884.76708984375,
         "dy": 721.0109965389674,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -928,7 +928,7 @@
       "transform": {
         "dx": 1168,
         "dy": 387.1640945369561,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -939,8 +939,8 @@
       ],
       "transform": {
         "dx": 445,
-        "dy": 1120.0,
-        "dz": 0.0,
+        "dy": 1120,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -952,7 +952,7 @@
       "transform": {
         "dx": 174,
         "dy": 895.926393580334,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -964,7 +964,7 @@
       "transform": {
         "dx": 432,
         "dy": 794.4033643461988,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -976,7 +976,7 @@
       "transform": {
         "dx": 426,
         "dy": 407.81284624559373,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -988,7 +988,7 @@
       "transform": {
         "dx": 434,
         "dy": 407.23926980924267,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1000,7 +1000,7 @@
       "transform": {
         "dx": 360.3935089111328,
         "dy": 200.43316819131684,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1012,7 +1012,7 @@
       "transform": {
         "dx": 804,
         "dy": 974.5063653604273,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1024,7 +1024,7 @@
       "transform": {
         "dx": 604,
         "dy": 455.9932668990816,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1036,7 +1036,7 @@
       "transform": {
         "dx": 1305,
         "dy": 45.31253847173264,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1048,7 +1048,7 @@
       "transform": {
         "dx": 1496,
         "dy": 129.05469817898535,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1060,7 +1060,7 @@
       "transform": {
         "dx": 544.1331176757812,
         "dy": 387.1141201495726,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1072,7 +1072,7 @@
       "transform": {
         "dx": 1421,
         "dy": 84.31573614360377,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1084,7 +1084,7 @@
       "transform": {
         "dx": 636.0724792480469,
         "dy": 117.59530851286306,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1096,7 +1096,7 @@
       "transform": {
         "dx": 569,
         "dy": 321.77638079293683,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1108,7 +1108,7 @@
       "transform": {
         "dx": 1563,
         "dy": 115.28886370656025,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1120,7 +1120,7 @@
       "transform": {
         "dx": 1668,
         "dy": 210.5025521408339,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1132,7 +1132,7 @@
       "transform": {
         "dx": 1598,
         "dy": 234.59276246757784,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1144,7 +1144,7 @@
       "transform": {
         "dx": 697,
         "dy": 310.3048520659159,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1156,7 +1156,7 @@
       "transform": {
         "dx": 315,
         "dy": 211.07612857718493,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1168,7 +1168,7 @@
       "transform": {
         "dx": 1539,
         "dy": 722.1327333659669,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1180,7 +1180,7 @@
       "transform": {
         "dx": 1845,
         "dy": 969.9177538696189,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1192,7 +1192,7 @@
       "transform": {
         "dx": 525,
         "dy": 347.5873204287339,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1204,7 +1204,7 @@
       "transform": {
         "dx": 41,
         "dy": 902.2357343801955,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1216,7 +1216,7 @@
       "transform": {
         "dx": 36,
         "dy": 994.0079641963628,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1228,7 +1228,7 @@
       "transform": {
         "dx": 308,
         "dy": 247.21144406730085,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1240,7 +1240,7 @@
       "transform": {
         "dx": 1432,
         "dy": 988.2721998328524,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1252,7 +1252,7 @@
       "transform": {
         "dx": 1505,
         "dy": 998.5965756871711,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1264,7 +1264,7 @@
       "transform": {
         "dx": 1744,
         "dy": 856.9231959084628,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1276,7 +1276,7 @@
       "transform": {
         "dx": 1845,
         "dy": 868.9683010718347,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1288,7 +1288,7 @@
       "transform": {
         "dx": 1804,
         "dy": 856.3496194721117,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1300,7 +1300,7 @@
       "transform": {
         "dx": 1808,
         "dy": 760.5623546014871,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1312,7 +1312,7 @@
       "transform": {
         "dx": 1298,
         "dy": 985.9778940874481,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1324,7 +1324,7 @@
       "transform": {
         "dx": 1509,
         "dy": 215.6647400679933,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1336,7 +1336,7 @@
       "transform": {
         "dx": 1881,
         "dy": 633.8019621679059,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1348,7 +1348,7 @@
       "transform": {
         "dx": 1591,
         "dy": 850.6138551086013,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1360,7 +1360,7 @@
       "transform": {
         "dx": 477,
         "dy": 800.1391287097092,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1372,7 +1372,7 @@
       "transform": {
         "dx": 602,
         "dy": 651.0092552584373,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1384,7 +1384,7 @@
       "transform": {
         "dx": 1862,
         "dy": 1015.2302923413515,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1396,7 +1396,7 @@
       "transform": {
         "dx": 1402.366943359375,
         "dy": 890.6772099595507,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1408,7 +1408,7 @@
       "transform": {
         "dx": 134.10209274291992,
         "dy": 956.2234764184279,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1420,7 +1420,7 @@
       "transform": {
         "dx": 147.91167831420898,
         "dy": 1031.7911436124484,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1432,7 +1432,7 @@
       "transform": {
         "dx": 1323,
         "dy": 383.7226359188498,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1444,7 +1444,7 @@
       "transform": {
         "dx": 1811,
         "dy": 497.29077031635694,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1456,7 +1456,7 @@
       "transform": {
         "dx": 22.76886558532715,
         "dy": 595.0184523643712,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1468,7 +1468,7 @@
       "transform": {
         "dx": 20,
         "dy": 595.9459173687369,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1480,7 +1480,7 @@
       "transform": {
         "dx": 46,
         "dy": 421.57868071801886,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1492,7 +1492,7 @@
       "transform": {
         "dx": 380,
         "dy": 521.9545570794519,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1504,7 +1504,7 @@
       "transform": {
         "dx": 265,
         "dy": 530.5582036247176,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1516,7 +1516,7 @@
       "transform": {
         "dx": 134.37636375427246,
         "dy": 762.0694971503177,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1528,7 +1528,7 @@
       "transform": {
         "dx": 223.2327423095703,
         "dy": 832.5839713488231,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1540,7 +1540,7 @@
       "transform": {
         "dx": 332,
         "dy": 520.2338277703988,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1552,7 +1552,7 @@
       "transform": {
         "dx": 869,
         "dy": 560.957754751323,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1564,7 +1564,7 @@
       "transform": {
         "dx": 192.50003814697266,
         "dy": 470.3355515701088,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1576,7 +1576,7 @@
       "transform": {
         "dx": 191,
         "dy": 472.62698355326194,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1588,7 +1588,7 @@
       "transform": {
         "dx": 609,
         "dy": 148.55629701492091,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1600,7 +1600,7 @@
       "transform": {
         "dx": 137,
         "dy": 336.689368138064,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1612,7 +1612,7 @@
       "transform": {
         "dx": 544,
         "dy": 348.16089686508496,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     },
@@ -1624,7 +1624,7 @@
       "transform": {
         "dx": 1690,
         "dy": 356.1909669739996,
-        "dz": 0.0,
+        "dz": 0,
         "rot_deg": 0
       }
     }

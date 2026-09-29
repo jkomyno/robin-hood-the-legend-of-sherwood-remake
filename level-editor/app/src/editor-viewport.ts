@@ -5,13 +5,17 @@ import {
   bakeScene,
   contentBakeBounds,
   renderMapBake,
+  renderMapBakeAsync,
+  yieldBakeFrame,
+  type BakeProgress,
   maskOcclusionObjects,
 } from "./map-bake-render.ts";
-import { compileMap } from "./map-compile.ts";
+import { compileMap, type BakeBounds, type CompiledMap } from "./map-compile.ts";
 import {
   bindBakeAppearances,
   planAppearanceRegions,
   bakeAppearanceRegions,
+  bakeAppearanceRegionsAsync,
 } from "./map-appearance-bake.ts";
 import { SunLighting } from "./sun-lighting.ts";
 import { SplineLayer, type SplineEditMode } from "./spline-layer.ts";
@@ -69,10 +73,7 @@ export interface ViewportBindings {
  * selection are borrowed from the session/UI, never copied into another model.
  * Editable clones share source resources; only source roots own their disposal. */
 export class EditorViewport {
-  bakeMap(
-    document: Level3D,
-    assets?: ReadonlyMap<string, import("@rle/shared").ProjectionAssetDescriptor>,
-  ) {
+  private prepareMapBake(document: Level3D) {
     if (this.disposed || this.bindings.document() !== document)
       throw new Error("The map changed before compilation started. Export the current map again.");
     // Reapply committed transforms so an in-progress numeric preview cannot leak into export.
@@ -91,9 +92,18 @@ export class EditorViewport {
             const bounds = contentBakeBounds(root, document.camera, true);
             return [bounds[0], bounds[1], bounds[2] + 1, bounds[3] + 1] as typeof bounds;
           })());
-    const compiled = compileMap(document, bounds, assets);
+    return { root, bounds };
+  }
+  bakeMap(
+    document: Level3D,
+    assets?: ReadonlyMap<string, import("@rle/shared").ProjectionAssetDescriptor>,
+  ) {
+    const { root, bounds } = this.prepareMapBake(document);
+    const compiled = compileMap(document, bounds, assets, { bestEffort: true });
     const transitions = compiled.descriptor.asset_geometry?.movement_transitions ?? [];
-    bindBakeAppearances(root, document, assets ?? new Map(), transitions);
+    bindBakeAppearances(root, document, assets ?? new Map(), transitions, (message) => {
+      if (!compiled.warnings.includes(message)) compiled.warnings.push(message);
+    });
     const plans = planAppearanceRegions(
       root,
       document.camera,
@@ -112,6 +122,71 @@ export class EditorViewport {
       );
     const pixels = render();
     const appearance = bakeAppearanceRegions(root, plans, compiled.bounds[2], pixels, render);
+    return { compiled, pixels, appearance };
+  }
+  async bakeMapAsync(
+    document: Level3D,
+    assets?: ReadonlyMap<string, import("@rle/shared").ProjectionAssetDescriptor>,
+    progress: (progress: BakeProgress) => void = () => {},
+    compiler?: (bounds: BakeBounds) => Promise<CompiledMap>,
+  ) {
+    const checkCurrent = () => {
+      if (this.disposed || this.bindings.document() !== document)
+        throw new Error("The map changed during compilation. Export the current map again.");
+    };
+    progress({ stage: "Preparing map geometry", completed: 0, total: 0 });
+    await yieldBakeFrame();
+    checkCurrent();
+    const { root, bounds } = this.prepareMapBake(document);
+    progress({ stage: "Compiling gameplay", completed: 0, total: 0 });
+    await yieldBakeFrame();
+    checkCurrent();
+    const compiled = compiler
+      ? await compiler(bounds)
+      : compileMap(document, bounds, assets, { bestEffort: true });
+    checkCurrent();
+    const transitions = compiled.descriptor.asset_geometry?.movement_transitions ?? [];
+    bindBakeAppearances(root, document, assets ?? new Map(), transitions, (message) => {
+      if (!compiled.warnings.includes(message)) compiled.warnings.push(message);
+    });
+    const plans = planAppearanceRegions(
+      root,
+      document.camera,
+      compiled.bounds,
+      transitions,
+      !!document.lighting?.enabled,
+    );
+    const total = 1 + plans.reduce((sum, plan) => sum + 2 ** plan.patches.length - 1, 0);
+    const excluded = maskOcclusionObjects(document, assets);
+    let completed = 0;
+    const render = async () => {
+      const pixels = await renderMapBakeAsync(
+        root,
+        document.camera,
+        compiled.bounds,
+        document.lighting,
+        this.ground,
+        excluded,
+        (tile) =>
+          progress({
+            stage: `${tile.stage}${completed ? ` (appearance ${completed}/${total - 1})` : ""}`,
+            completed: completed + tile.completed / tile.total,
+            total,
+          }),
+        checkCurrent,
+      );
+      completed++;
+      return pixels;
+    };
+    const pixels = await render();
+    const appearance = await bakeAppearanceRegionsAsync(
+      root,
+      plans,
+      compiled.bounds[2],
+      pixels,
+      render,
+    );
+    checkCurrent();
     return { compiled, pixels, appearance };
   }
   private readonly patchDisplay = new PatchDisplay();

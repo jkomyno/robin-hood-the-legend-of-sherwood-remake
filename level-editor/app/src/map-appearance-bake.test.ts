@@ -12,12 +12,83 @@ import {
   bindBakeAppearances,
   planAppearanceRegions,
   bakeAppearanceRegions,
+  bakeAppearanceRegionsAsync,
 } from "./map-appearance-bake.ts";
 import { compileMap, type BakeBounds } from "./map-compile.ts";
 import { contentBakeBounds } from "./map-bake-render.ts";
 import { PatchDisplay, applyPlacementPatches } from "./patch-display.ts";
 
 const camera = movementTransitionCompilerFixture().document.camera;
+
+test("async appearance rendering resets state after cancellation between frames", async () => {
+  const root = new THREE.Group();
+  const child = new THREE.Group();
+  child.userData.reveal_hide_when_applied = ["gate"];
+  root.add(child);
+  const initial = { color: new Uint8Array(4), depth: new Uint16Array(1) };
+  await assert.rejects(
+    bakeAppearanceRegionsAsync(
+      root,
+      [{ bounds: [0, 0, 1, 1], patches: ["gate"] }],
+      1,
+      initial,
+      async () => {
+        assert.equal(child.visible, false);
+        await Promise.resolve();
+        throw new Error("cancelled rendering");
+      },
+    ),
+    /cancelled rendering/,
+  );
+  assert.equal(child.visible, true);
+});
+
+test("best effort freezes missing appearance controls while preserving available combinations", () => {
+  const { document, assets, hut } = movementTransitionCompilerFixture();
+  hut.gameplay!.movementTransitions![0]!.appearances = ["roof"];
+  const transitions = compileMap(document, [0, 0, 2000, 2000], assets).descriptor.asset_geometry!
+    .movement_transitions!;
+  const root = new THREE.Group();
+  root.userData.map_bake_object_id = document.objects[0]!.id;
+  const rules = [
+    { reveal_material_patch: "missing", reveal_material_state: "covered" },
+    {
+      reveal_material_patch: "missing",
+      reveal_material_state: "revealed",
+      reveal_hide_when_applied: ["roof"],
+    },
+    { reveal_show_when_applied: ["missing"] },
+    { reveal_show_when_applied: ["missing", "roof"] },
+    { reveal_hide_when_applied: ["missing", "roof"] },
+  ];
+  for (const rule of rules) {
+    const node = new THREE.Group();
+    node.userData = rule;
+    root.add(node);
+  }
+  const display = new PatchDisplay();
+  display.apply(root);
+  const warnings: string[] = [];
+  bindBakeAppearances(root, document, assets, transitions, (message) => warnings.push(message));
+  display.apply(root);
+  assert.deepEqual(
+    root.children.map((node) => node.visible),
+    [true, false, false, false, true],
+  );
+  display.set("hut-a/hut/barriers", true);
+  display.apply(root);
+  assert.deepEqual(
+    root.children.map((node) => node.visible),
+    [true, false, false, true, false],
+  );
+  display.clear();
+  display.apply(root);
+  assert.deepEqual(
+    root.children.map((node) => node.visible),
+    [true, false, false, false, true],
+  );
+  assert.ok(warnings.length >= 5);
+});
 
 test("endpoint models and duplicated placements use one independent switch per asset", () => {
   const { document, assets, alias } = endpointAppearanceCompilerFixture();

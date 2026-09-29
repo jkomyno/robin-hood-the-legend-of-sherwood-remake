@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { NodeIO } from "@gltf-transform/core";
+import { KHRMaterialsUnlit } from "@gltf-transform/extensions";
 import { authorObstacleDraft } from "./author-obstacle-draft.ts";
 import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
@@ -34,7 +35,20 @@ test("independent obstacle drafts retain physical flags and move without a level
   const { descriptor, model, placement, review } = await authorObstacleDraft(shape, options);
   assert.equal(review.appearanceComplete, false);
   assert.equal(review.masksComplete, false);
-  const gltf = await new NodeIO().readBinary(model);
+  const gltf = await new NodeIO().registerExtensions([KHRMaterialsUnlit]).readBinary(model);
+  assert.ok(
+    gltf
+      .getRoot()
+      .listMaterials()
+      .every((m) => m.getExtension("KHR_materials_unlit")),
+  );
+  const wrapper = gltf.getRoot().getDefaultScene()!.listChildren()[0]!;
+  const group = wrapper.listChildren()[0]!;
+  assert.equal(wrapper.getName(), "map");
+  assert.equal(group.getExtras().asset_group, descriptor.id);
+  const part = group.listChildren()[0]!;
+  assert.equal(part.getName(), descriptor.parts[0]!.node);
+  assert.equal(part.getExtras().source_obstacle, descriptor.parts[0]!.source_obstacle);
   assert.equal(gltf.getRoot().listMeshes().length, 1);
   assert.equal(gltf.getRoot().listTextures().length, 0);
   assert.equal(gltf.getRoot().listMeshes()[0]!.listPrimitives()[0]!.getIndices()!.getCount(), 36);
@@ -105,7 +119,9 @@ test("reviewed support poles add visual geometry without changing physical gamep
   const detailed = await authorObstacleDraft(shape, { ...options, visualPoles });
   assert.deepEqual(detailed.descriptor, base.descriptor);
   assert.deepEqual(detailed.placement, base.placement);
-  const gltf = await new NodeIO().readBinary(detailed.model);
+  const gltf = await new NodeIO()
+    .registerExtensions([KHRMaterialsUnlit])
+    .readBinary(detailed.model);
   const pole = gltf
     .getRoot()
     .listNodes()

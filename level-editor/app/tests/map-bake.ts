@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { gameToScene, type Level3D } from "@rle/shared";
 import { decode } from "fast-png";
 import { unzipSync } from "fflate";
-import { bakeScene, renderMapBake } from "../src/map-bake-render.ts";
+import { bakeScene, renderMapBake, renderMapBakeAsync } from "../src/map-bake-render.ts";
 import { compileMap, packageCompiledMap } from "../src/map-compile.ts";
 import { PatchDisplay, applyPlacementPatches } from "../src/patch-display.ts";
 import {
@@ -90,6 +90,66 @@ try {
   root.add(hidden);
   const compiled = compileMap(document, [-20, -10, 1100, 128]);
   const rendered = renderMapBake(bakeScene([root]), camera, compiled.bounds);
+  let heartbeats = 0;
+  let progressTiles = 0;
+  const heartbeat = setInterval(() => heartbeats++, 0);
+  let asynchronous;
+  try {
+    asynchronous = await renderMapBakeAsync(
+      bakeScene([root]),
+      camera,
+      compiled.bounds,
+      undefined,
+      null,
+      new Set(),
+      (progress) => {
+        progressTiles++;
+        check(progress.completed <= progress.total, "tile progress exceeded total");
+      },
+    );
+  } finally {
+    clearInterval(heartbeat);
+  }
+  check(heartbeats >= 2 && progressTiles === 6, "async tiles must let browser input run");
+  check(
+    asynchronous.color.every((value, i) => value === rendered.color[i]),
+    "async color differs from sync bake",
+  );
+  check(
+    asynchronous.depth.every((value, i) => value === rendered.depth[i]),
+    "async depth differs from sync bake",
+  );
+  const interruptedRoot = bakeScene([root]);
+  const borrowed = new Map<THREE.Mesh, THREE.Material | THREE.Material[]>();
+  interruptedRoot.traverse((node) => {
+    if (node instanceof THREE.Mesh) borrowed.set(node, node.material);
+  });
+  let interrupt = false;
+  let interruptionCaught = false;
+  try {
+    await renderMapBakeAsync(
+      interruptedRoot,
+      camera,
+      compiled.bounds,
+      undefined,
+      null,
+      new Set(),
+      () => {
+        interrupt = true;
+      },
+      () => {
+        if (interrupt) throw new Error("test cancellation");
+      },
+    );
+  } catch (error) {
+    interruptionCaught = error instanceof Error && error.message === "test cancellation";
+  }
+  check(
+    interruptionCaught && interruptedRoot.parent === null,
+    "cancelled bake must restore root ownership",
+  );
+  for (const [node, material] of borrowed)
+    check(node.material === material, "cancelled bake must restore borrowed materials");
   const pixel = (x: number, y: number) =>
     rendered.color.slice((y * 1100 + x) * 4, (y * 1100 + x) * 4 + 3);
   check(

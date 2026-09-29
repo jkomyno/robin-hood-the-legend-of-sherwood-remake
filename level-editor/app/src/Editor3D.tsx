@@ -47,7 +47,8 @@ import { PopulationView, type SceneEntities } from "./population-view";
 import type { DatadirIndex } from "./datadir";
 import { missionsForMap } from "./mission-catalog.ts";
 import { downloadMap } from "./http-library.ts";
-import { packageCompiledMap } from "./map-compile.ts";
+import { MapExportWorker } from "./map-export-client.ts";
+import type { BakeProgress } from "./map-bake-render.ts";
 
 export type { Selection } from "./document-commands";
 
@@ -136,6 +137,14 @@ export default function Editor3D(props: EditorProps) {
   });
   let saving = false;
   const [compiling, setCompiling] = createSignal(false);
+  const [exportProgress, setExportProgress] = createSignal<BakeProgress | null>(null);
+  let exportWorker: MapExportWorker | undefined;
+  let exportCancelled = false;
+  function cancelExport() {
+    exportCancelled = true;
+    exportWorker?.dispose();
+  }
+  onCleanup(cancelExport);
   let disposed = false;
   const [selected, setSelected] = createSignal<Selection>(null);
   const [revealSelectionInList, setRevealSelectionInList] = createSignal(false);
@@ -921,7 +930,13 @@ export default function Editor3D(props: EditorProps) {
     const document = doc();
     if (!document || compiling()) return;
     setCompiling(true);
-    props.onStatus("Compiling map and sprite occlusion…", true);
+    exportCancelled = false;
+    const progress = (value: BakeProgress) => {
+      if (disposed || exportCancelled) throw new Error("Map export was cancelled.");
+      setExportProgress(value);
+    };
+    progress({ stage: "Reading asset definitions…", completed: 0, total: 0 });
+    props.onStatus("Exporting map…", true);
     try {
       // Let the busy state paint before borrowing the viewport's GPU resources.
       await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
@@ -932,9 +947,17 @@ export default function Editor3D(props: EditorProps) {
         document.assetSources ?? [],
         document.sceneAssets,
       );
-      const { compiled, pixels, appearance } = viewport.bakeMap(document, assets);
-      props.onStatus("Packaging mod ZIP…", true);
-      const bytes = await packageCompiledMap(compiled, pixels, appearance);
+      progress({ stage: "Compiling gameplay and connections…", completed: 0, total: 0 });
+      const worker = new MapExportWorker();
+      exportWorker = worker;
+      const { compiled, pixels, appearance } = await viewport.bakeMapAsync(
+        document,
+        assets,
+        progress,
+        (bounds) => worker.compile(document, bounds, assets),
+      );
+      progress({ stage: "Encoding images and packaging ZIP…", completed: 0, total: 0 });
+      const bytes = await worker.package(compiled, pixels, appearance);
       if (disposed) return;
       const url = URL.createObjectURL(
         new Blob([new Uint8Array(bytes)], { type: "application/zip" }),
@@ -945,15 +968,20 @@ export default function Editor3D(props: EditorProps) {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       props.onStatus(
-        `Exported ${compiled.name}.zip. Put it in the game’s configured mods directory, then choose ${compiled.details.title} in Custom Missions. The ZIP includes a compile report and editable map.`,
+        `Exported ${compiled.name}.zip with ${compiled.warnings.length} warnings; see compile-report.json in the ZIP for omitted or incomplete gameplay. Put it in the game’s configured mods directory, then choose ${compiled.details.title} in Custom Missions. The editable map is included.`,
       );
     } catch (error) {
       if (!disposed) {
         props.onStatus(null);
-        props.onError(`Map compilation failed: ${String(error)}`);
+        if (!exportCancelled) props.onError(`Map compilation failed: ${String(error)}`);
       }
     } finally {
-      if (!disposed) setCompiling(false);
+      exportWorker?.dispose();
+      exportWorker = undefined;
+      if (!disposed) {
+        setCompiling(false);
+        setExportProgress(null);
+      }
     }
   }
 
@@ -1264,6 +1292,40 @@ export default function Editor3D(props: EditorProps) {
           </button>
         </Show>
       </header>
+      <Show when={exportProgress()}>
+        {(progress) => (
+          <dialog
+            class="map-load-dialog"
+            aria-label="Exporting map"
+            ref={(dialog) =>
+              queueMicrotask(() => {
+                if (dialog.isConnected) dialog.showModal();
+              })
+            }
+            onCancel={(event) => {
+              event.preventDefault();
+              cancelExport();
+            }}
+          >
+            <h2>Exporting map</h2>
+            <div class="map-load-progress" role="status" aria-live="polite">
+              <div class="map-load-progress-label">
+                <span>{progress().stage}</span>
+                <span>
+                  {progress().total > 0
+                    ? `${Math.round((progress().completed / progress().total) * 100)}%`
+                    : ""}
+                </span>
+              </div>
+              <progress
+                max={Math.max(1, progress().total)}
+                value={progress().total > 0 ? progress().completed : undefined}
+              />
+            </div>
+            <button onClick={cancelExport}>Cancel export</button>
+          </dialog>
+        )}
+      </Show>
       <Show when={mapLoadProgress()}>
         {(progress) => (
           <dialog

@@ -731,6 +731,63 @@ test("asset export retains a reopenable pinned scene and matches the Rust runtim
   assert.deepEqual(reopened, expected);
 });
 
+test("best effort ZIP retains omitted mission and wall authoring and reports missing gameplay", async () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  delete hut.gameplay;
+  document.splines = [
+    {
+      id: "wall",
+      name: "Wall",
+      kind: "wall",
+      asset: "hut",
+      axis: "x",
+      points: [
+        [0, 0, 0],
+        [100, 0, 0],
+      ],
+      closed: false,
+      width: 10,
+      repeatLength: 20,
+    },
+  ];
+  document.population = {
+    version: 1,
+    spriteCatalog: "catalog.json",
+    actors: [],
+    routes: [],
+    items: [
+      {
+        id: "item",
+        name: "Item",
+        sprite: "apple",
+        position: [10, 10, 0],
+        quantity: 1,
+        purpose: "Preview",
+      },
+    ],
+  };
+  const expected = structuredClone(document);
+  const compiled = compileMap(document, [0, 0, 512, 512], assets, { bestEffort: true });
+  assert.ok(compiled.warnings.some((message) => message.includes("Mission population omitted")));
+  const files = unzipSync(
+    await packageCompiledMap(compiled, {
+      color: new Uint8Array(512 * 512 * 4),
+      depth: new Uint16Array(512 * 512),
+    }),
+  );
+  const reopened = parseStoredMap(
+    JSON.parse(strFromU8(files[`editor/${compiled.name}.rhlos-map.json`]!)),
+    assets,
+  );
+  assert.deepEqual(reopened, expected);
+  assert.deepEqual(document, expected);
+  assert.deepEqual(
+    JSON.parse(strFromU8(files["compile-report.json"]!)).warnings,
+    compiled.warnings,
+  );
+  assert.equal(compiled.descriptor.spawn_player, false);
+});
+
 test("sloped asset export matches the native elevation/navigation fixture", async () => {
   const { document, assets } = slopedAssetCompilerFixture();
   const fixture = JSON.parse(

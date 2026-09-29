@@ -104,6 +104,9 @@ export interface AssetMaterialRegion {
 }
 export interface AssetGameplay {
   version: 1;
+  /** Publish usable definitions while retaining known gaps in every compilation report.
+   * Absence does not certify parity; it only means no draft issues were recorded. */
+  draft?: { issues: string[] };
   /** Reuse part obstacles or disable them; explicit gameplay volumes remain independent. */
   collision: "parts" | "none";
   /** Query precedence for local physical part/volume IDs; lower values run first. */
@@ -357,6 +360,17 @@ export function validateAssetGameplay(
   );
   if (data.version !== 1 || !["parts", "none"].includes(data.collision))
     fail("invalid gameplay version or collision mode");
+  if (
+    data.draft !== undefined &&
+    (!data.draft ||
+      typeof data.draft !== "object" ||
+      Array.isArray(data.draft) ||
+      !Array.isArray(data.draft.issues) ||
+      data.draft.issues.length === 0 ||
+      data.draft.issues.some((issue) => typeof issue !== "string" || !issue.trim()) ||
+      new Set(data.draft.issues).size !== data.draft.issues.length)
+  )
+    fail("invalid gameplay draft issues");
   if (data.sightOrder !== undefined) {
     if (!data.sightOrder || typeof data.sightOrder !== "object" || Array.isArray(data.sightOrder))
       fail("invalid sight query order");

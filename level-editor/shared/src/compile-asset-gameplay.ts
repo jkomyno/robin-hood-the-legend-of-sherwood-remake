@@ -142,7 +142,46 @@ export function compileAssetGameplay(
   document: Level3D,
   descriptors: ReadonlyMap<string, ProjectionAssetDescriptor>,
   bounds: [number, number, number, number],
+  options: { bestEffort?: boolean } = {},
 ): CompiledAssetGeometry {
+  const omitted = new Set<string>();
+  const omissions: string[] = [];
+  for (;;) {
+    try {
+      const result = compileAssetGameplayAttempt(document, descriptors, bounds, options, omitted);
+      if (omissions.length) result.warnings = [...omissions, ...(result.warnings ?? [])];
+      return result;
+    } catch (error) {
+      if (
+        !options.bestEffort ||
+        !(error instanceof UnavailableLiftPlacement) ||
+        omitted.has(error.placement)
+      )
+        throw error;
+      omitted.add(error.placement);
+      omissions.push(
+        `Placement ${error.placement}: gameplay omitted because its lift assembly cannot connect after placement; ${error.message}`,
+      );
+    }
+  }
+}
+
+class UnavailableLiftPlacement extends Error {
+  readonly placement: string;
+  constructor(placement: string, message: string) {
+    super(message);
+    this.placement = placement;
+  }
+}
+
+function compileAssetGameplayAttempt(
+  document: Level3D,
+  descriptors: ReadonlyMap<string, ProjectionAssetDescriptor>,
+  bounds: [number, number, number, number],
+  options: { bestEffort?: boolean },
+  omitted: ReadonlySet<string>,
+): CompiledAssetGeometry {
+  const warnings: string[] = [];
   ({ document, descriptors } = normalizeGameplayStateViews(document, descriptors));
   // Saved placements may contain old obstacle snapshots. Geometry authority is
   // the pinned asset; scene instances supply identity, visibility and transforms.
@@ -156,7 +195,9 @@ export function compileAssetGameplay(
       return { ...part, obstacle: definition.obstacle_local_game };
     }),
   };
-  const placements = instances(document, descriptors);
+  let placements = instances(document, descriptors).filter(
+    (placement) => !omitted.has(placement.id),
+  );
   const terrain = terrainGameplay(document);
   if (terrain)
     placements.push({
@@ -169,25 +210,46 @@ export function compileAssetGameplay(
   const missing = [
     ...new Set(placements.filter((p) => !p.descriptor.gameplay).map((p) => p.descriptor.id)),
   ];
-  if (missing.length)
+  if (missing.length && !options.bestEffort)
     throw new Error(
       `Missing asset gameplay definitions (${missing.length}): ${missing.join(", ")}. Add local surfaces and door definitions to these assets; no source-level fallback is available.`,
     );
+  if (options.bestEffort) {
+    for (const id of missing)
+      warnings.push(`Asset ${id}: gameplay omitted because no local gameplay definition exists.`);
+    placements = placements.filter((placement) => placement.descriptor.gameplay);
+    for (const path of document.splines ?? [])
+      if (path.kind === "wall")
+        warnings.push(
+          `Wall spline ${path.id}: visual geometry exported; collision and navigation are not yet supported.`,
+        );
+    if (document.population?.actors.length || document.population?.items.length)
+      warnings.push(
+        "Mission population omitted from map gameplay; retained in the embedded editor document.",
+      );
+  }
   if (
-    document.splines?.some((path) => path.kind === "wall") ||
-    document.population?.actors.length ||
-    document.population?.items.length
+    !options.bestEffort &&
+    (document.splines?.some((path) => path.kind === "wall") ||
+      document.population?.actors.length ||
+      document.population?.items.length)
   )
     throw new Error(
       "Map compilation does not support wall spline gameplay or embedded mission population; keep NPCs and items in a separate mission",
     );
-  if (document.groups.some((g) => g.states))
+  if (document.groups.some((g) => g.states) && !options.bestEffort)
     throw new Error(
       "Asset state transitions need gameplay compilation support before this map can be exported",
     );
+  if (options.bestEffort)
+    for (const group of document.groups)
+      if (group.states)
+        warnings.push(
+          `Group ${group.id}: manually authored state controls are unsupported; exported in its initial visual state.`,
+        );
   const transitionJoins = new Map<string, PlacedTransitionJoin>();
   const project = (p: Vec3): Point => [quantize(p[0]), quantize(p[1] - p[2])];
-  const warnings: string[] = [];
+  const warnedDraftAssets = new Set<string>();
   const surfaces: {
     owner: string;
     polygon: Point[];
@@ -277,6 +339,11 @@ export function compileAssetGameplay(
     const gameplay = placement.descriptor.gameplay!;
     const queryOrder = new Map(Object.entries(gameplay.sightOrder ?? {}));
     validateAssetGameplay(gameplay, placement.descriptor);
+    if (gameplay.draft && !warnedDraftAssets.has(placement.descriptor.id)) {
+      warnedDraftAssets.add(placement.descriptor.id);
+      for (const issue of gameplay.draft.issues)
+        warnings.push(`Draft gameplay asset ${placement.descriptor.id}: ${issue}`);
+    }
     if (gameplay.environment) {
       const settings = {
         forest_level: gameplay.environment.forest,
@@ -820,7 +887,7 @@ export function compileAssetGameplay(
   for (const door of doors)
     if (door.interior) door.interior = interiorIdentities.get(door.interior)!;
   // A disconnected passage with no entrance needs no runtime room.
-  const interiors = [...new Set(interiorIdentities.values())].filter((id) =>
+  let interiors = [...new Set(interiorIdentities.values())].filter((id) =>
     doors.some((door) => door.interior === id),
   );
   const assembledLifts = assembleLiftSegments(lifts);
@@ -845,16 +912,25 @@ export function compileAssetGameplay(
   for (const support of projectionSupports)
     if (support.lift) support.lift = assembledLifts.identities.get(support.lift)!;
   for (const door of doors) if (door.lift) door.lift = assembledLifts.identities.get(door.lift)!;
-  if (!surfaces.length)
+  if (!surfaces.length && !options.bestEffort)
     throw new Error(
       "Assets define no walkable surfaces; a map rectangle is not a substitute for authored ground",
+    );
+  if (!surfaces.length)
+    warnings.push(
+      "No authored walkable surfaces are available. This export has no traversable ground.",
     );
   if (
     surfaces.some((s) =>
       s.polygon.some((p) => p[0] < 0 || p[1] < 0 || p[0] >= bounds[2] || p[1] >= bounds[3]),
     )
-  )
-    throw new Error("Export frame cuts authored walkable surfaces; enlarge it before compiling");
+  ) {
+    if (!options.bestEffort)
+      throw new Error("Export frame cuts authored walkable surfaces; enlarge it before compiling");
+    warnings.push(
+      "Authored walkable surfaces extend outside the export image; navigation is retained beyond its visible frame.",
+    );
+  }
   const planes: HeightPlane[] = [];
   for (const surface of surfaces.filter((s) => !s.lift)) {
     if (!planes.some((p) => p.every((n, i) => Math.abs(n - surface.plane[i]!) < 1e-7)))
@@ -1113,6 +1189,7 @@ export function compileAssetGameplay(
   for (const support of projectionSupports)
     if (support.obstacleIndex !== undefined && !sight[support.obstacleIndex]!.projection_area)
       throw new Error("Projection volume has no compiled receiving area");
+  class UnresolvedSurface extends Error {}
   const resolve = (
     point: Vec3,
     label: string,
@@ -1136,14 +1213,21 @@ export function compileAssetGameplay(
         height: planeHeight(a.plane, [point[0], point[1] - point[2]]),
         blocked: a.blockers.some((b) => inside(projected, b)),
       }));
-      throw new Error(
+      throw new UnresolvedSurface(
         `${label} must resolve to exactly one ${allowBlocked ? "" : "unblocked "}walkable surface (found ${matches.length}); world point ${JSON.stringify(point)}, projected ${JSON.stringify(projected)}; containing areas (${containing.length}, showing up to 8) ${JSON.stringify(details)}`,
       );
     }
     return matches[0]!;
   };
-  const boundReceivers = projectionReceivers.map((receiver) => {
-    const area = resolve(receiver.anchor, `${receiver.id} navigation anchor`);
+  const boundReceivers = projectionReceivers.flatMap((receiver) => {
+    let area;
+    try {
+      area = resolve(receiver.anchor, `${receiver.id} navigation anchor`);
+    } catch (error) {
+      if (!options.bestEffort || !(error instanceof UnresolvedSurface)) throw error;
+      warnings.push(`Receiver ${receiver.id}: navigation binding omitted; ${error.message}`);
+      return [];
+    }
     if (receiver.shape.projection_area)
       throw new Error(`${receiver.id}: projection volume already has a receiving area`);
     receiver.shape.projection_area = [area.sector, area.layer];
@@ -1205,10 +1289,18 @@ export function compileAssetGameplay(
             .map((area) => area.layer),
         ),
       );
-    if (receivingLayers.size !== 1)
+    if (receivingLayers.size !== 1) {
+      if (options.bestEffort) {
+        warnings.push(
+          `Mask ${mask.id}: omitted because its receiving layer is unavailable or ambiguous (found ${receivingLayers.size}); sprite occlusion is incomplete.`,
+        );
+        maskIndices.set(mask.id, []);
+        continue;
+      }
       throw new Error(
         `${mask.id} receiving anchor must resolve to exactly one authored receiving layer (found ${receivingLayers.size})`,
       );
+    }
     const layer = [...receivingLayers][0]!;
     const tiles = rasterizeMaskGeometry(mask.triangles, { ...mask.rules, layer });
     maskIndices.set(
@@ -1225,6 +1317,25 @@ export function compileAssetGameplay(
       return indices;
     });
   // Detached edges have no runtime connection. Retain zones used by any remaining pair.
+  if (options.bestEffort) {
+    const unavailable = new Set<string>();
+    for (const zone of jumpZones) {
+      try {
+        resolve(zone.anchor, `${zone.id} landing anchor`);
+      } catch (error) {
+        if (!(error instanceof UnresolvedSurface)) throw error;
+        unavailable.add(zone.id);
+      }
+    }
+    for (let index = jumpPairs.length - 1; index >= 0; index--) {
+      const pair = jumpPairs[index]!;
+      if (!pair.edges.some((edge) => unavailable.has(edge.zone))) continue;
+      warnings.push(
+        `Jump ${pair.id}: connection omitted because a landing surface is unavailable.`,
+      );
+      jumpPairs.splice(index, 1);
+    }
+  }
   const usedJumpZones = new Set(jumpPairs.flatMap((pair) => pair.edges.map((edge) => edge.zone)));
   const activeJumpZones = jumpZones.filter((zone) => usedJumpZones.has(zone.id));
   const compiledJumpZones = activeJumpZones.map((zone) => {
@@ -1253,6 +1364,49 @@ export function compileAssetGameplay(
   });
   // Runtime construction order is motion, materials, projection planes, then buildings.
   // Motion adds an out-of-map sector; each door also consumes a constructor slot.
+  const omittedDoors = new Set<string>();
+  if (options.bestEffort) {
+    for (const door of doors.filter((door) => door.lift)) {
+      try {
+        resolve(door.outsideAnchor, `${door.name} outside`);
+        resolve(door.insideAnchor, `${door.name} inside`, door.lift);
+      } catch (error) {
+        if (!(error instanceof UnresolvedSurface)) throw error;
+        const owner = placements
+          .filter((placement) => door.name.startsWith(`${placement.id}/`))
+          .sort((a, b) => b.id.length - a.id.length)[0];
+        if (!owner) throw error;
+        throw new UnavailableLiftPlacement(owner.id, error.message);
+      }
+    }
+    for (let index = doors.length - 1; index >= 0; index--) {
+      const door = doors[index]!;
+      // Lift door counts and reserved areas form one assembly and remain strict.
+      if (door.lift) continue;
+      let reason: string | undefined;
+      try {
+        const outside = resolve(door.outsideAnchor, `${door.name} outside`, null);
+        if (
+          !door.interior &&
+          outside.sector === resolve(door.insideAnchor, `${door.name} inside`, null).sector
+        )
+          reason = "both endpoints share a movement area";
+      } catch (error) {
+        if (!(error instanceof UnresolvedSurface)) throw error;
+        reason = error.message;
+      }
+      if (!reason) continue;
+      warnings.push(`Door ${door.name}: omitted because ${reason}.`);
+      omittedDoors.add(door.name);
+      doors.splice(index, 1);
+    }
+    for (const transition of transitions) {
+      if (!transition.doorLinks) continue;
+      transition.doorLinks.ids = transition.doorLinks.ids.filter((id) => !omittedDoors.has(id));
+      if (!transition.doorLinks.ids.length) delete transition.doorLinks;
+    }
+    interiors = interiors.filter((id) => doors.some((door) => door.interior === id));
+  }
   let nextInteriorSector =
     sector + 1 + materials.length + sight.filter((o) => o.projection_area !== null).length;
   const interiorAreas = new Map(
@@ -1262,7 +1416,6 @@ export function compileAssetGameplay(
       return [id, area] as const;
     }),
   );
-  const omittedDoors = new Set<string>();
   const compiledDoors = doors.map((door) => {
     // Ordinary passages can meet traversal surfaces; lift doors retain their explicit owner.
     const outside = resolve(
@@ -1383,20 +1536,36 @@ export function compileAssetGameplay(
       : {}),
     ...(transitions.length
       ? {
-          movement_transitions: transitions.map((t) => {
+          movement_transitions: transitions.flatMap((t) => {
+            const initialMasks = maskRefs(t.initialMasks);
+            const appliedMasks = maskRefs(t.appliedMasks);
             if (
               !t.changes.length &&
               !t.initialSight.length &&
               !t.appliedSight.length &&
-              !t.initialMasks.length &&
-              !t.appliedMasks.length &&
+              !initialMasks.length &&
+              !appliedMasks.length &&
               !t.hasAppearance &&
               !t.doorLinks
-            )
+            ) {
+              if (options.bestEffort) {
+                warnings.push(
+                  `Transition ${t.id}: omitted because none of its gameplay effects are available.`,
+                );
+                return [];
+              }
               throw new Error(`${t.id}: movement transition affects no walkable area`);
+            }
             // State reference points identify a surface even inside its collision contours.
             // Door receiving anchors and jump landing anchors require an unblocked position.
-            const area = resolve(t.waypointAnchor, `${t.id} waypoint`, undefined, true);
+            let area;
+            try {
+              area = resolve(t.waypointAnchor, `${t.id} waypoint`, undefined, true);
+            } catch (error) {
+              if (!options.bestEffort || !(error instanceof UnresolvedSurface)) throw error;
+              warnings.push(`Transition ${t.id}: omitted; ${error.message}`);
+              return [];
+            }
             return {
               id: t.id,
               ...(t.hasAppearance ? { has_appearance: true } : {}),
@@ -1410,8 +1579,8 @@ export function compileAssetGameplay(
               motion_changes: t.changes,
               ...(t.initialSight.length ? { initial_sight: t.initialSight } : {}),
               ...(t.appliedSight.length ? { applied_sight: t.appliedSight } : {}),
-              ...(t.initialMasks.length ? { initial_masks: maskRefs(t.initialMasks) } : {}),
-              ...(t.appliedMasks.length ? { applied_masks: maskRefs(t.appliedMasks) } : {}),
+              ...(initialMasks.length ? { initial_masks: initialMasks } : {}),
+              ...(appliedMasks.length ? { applied_masks: appliedMasks } : {}),
               ...(t.doorLinks
                 ? {
                     door_links: {
@@ -1476,6 +1645,12 @@ export function compileAssetGameplay(
       compiled.movement_transitions,
       transitionJoins,
     );
-  compileAppearanceBindings(document, descriptors, compiled.movement_transitions);
+  compileAppearanceBindings(
+    document,
+    descriptors,
+    compiled.movement_transitions,
+    options.bestEffort ? (message) => warnings.push(message) : undefined,
+  );
+  if (warnings.length) compiled.warnings = warnings;
   return compiled;
 }

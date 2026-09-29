@@ -7,6 +7,16 @@ import { PatchDisplay } from "./patch-display.ts";
 import { validateBakeBounds, type BakeBounds, type BakePixels } from "./map-compile.ts";
 import type { GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
 
+export interface BakeProgress {
+  stage: string;
+  completed: number;
+  total: number;
+}
+
+/** Let progress paint and pending input run before borrowing the GPU again. */
+export const yieldBakeFrame = () =>
+  new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+
 export function maskOcclusionObjects(
   document: import("@rle/shared").Level3D,
   assets?: ReadonlyMap<string, GameplayAssetDescriptor>,
@@ -27,6 +37,15 @@ export function withDepthOcclusion<T>(
   excluded: ReadonlySet<string>,
   render: () => T,
 ): T {
+  const restore = hideDepthOcclusion(root, excluded);
+  try {
+    return render();
+  } finally {
+    restore();
+  }
+}
+
+function hideDepthOcclusion(root: THREE.Object3D, excluded: ReadonlySet<string>) {
   const hidden: THREE.Object3D[] = [];
   root.traverse((node) => {
     if (node.visible && excluded.has(node.userData.map_bake_object_id)) {
@@ -34,11 +53,9 @@ export function withDepthOcclusion<T>(
       node.visible = false;
     }
   });
-  try {
-    return render();
-  } finally {
+  return () => {
     for (const node of hidden) node.visible = true;
-  }
+  };
 }
 
 /** Sources are in the editor's Z-up map frame. Copy the full hierarchy so applied
@@ -136,16 +153,16 @@ function depthMaterial(source: THREE.Material, camera: MapCamera, bounds: BakeBo
   return material;
 }
 
-/** Render in bounded tiles so export resolution does not depend on screen size
- * or MAX_TEXTURE_SIZE. The caller must not yield while borrowed assets are used. */
-export function renderMapBake(
+/** Both drivers share the same tile pipeline and guaranteed GPU resource cleanup. */
+function* mapBakeTiles(
   root: THREE.Group,
   cameraModel: MapCamera,
   bounds: BakeBounds,
   lighting?: import("@rle/shared").Level3D["lighting"],
   ground?: THREE.Object3D | null,
   depthExcludedObjects: ReadonlySet<string> = new Set(),
-): BakePixels {
+  tileLimit = 1024,
+): Generator<BakeProgress, BakePixels> {
   const [, , width, height] = validateBakeBounds(bounds);
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
   renderer.setPixelRatio(1);
@@ -190,6 +207,9 @@ export function renderMapBake(
     sunlight.sync(lighting, [root], box);
     renderer.shadowMap.enabled = !!lighting?.enabled;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // Every tile sees the same scene and full-map light camera; rebuild once per appearance.
+    renderer.shadowMap.autoUpdate = false;
+    renderer.shadowMap.needsUpdate = true;
     const angle = (cameraModel.elevation_deg * Math.PI) / 180;
     const center = new THREE.Vector3(
       bounds[0] + width / 2,
@@ -213,10 +233,12 @@ export function renderMapBake(
       .add(new THREE.Vector3(0, Math.sin(angle), Math.cos(angle)).multiplyScalar(distance));
     camera.lookAt(center);
     camera.updateMatrixWorld(true);
-    const tile = Math.min(1024, renderer.capabilities.maxTextureSize);
+    const tile = Math.min(tileLimit, renderer.capabilities.maxTextureSize);
     const color = new Uint8Array(width * height * 4),
       depth = new Uint16Array(width * height);
-    const renderPass = (isDepth: boolean) => {
+    const total = Math.ceil(width / tile) * Math.ceil(height / tile) * 2;
+    let completed = 0;
+    const renderPass = function* (isDepth: boolean): Generator<BakeProgress> {
       for (let y = 0; y < height; y += tile)
         for (let x = 0; x < width; x += tile) {
           const w = Math.min(tile, width - x),
@@ -247,9 +269,14 @@ export function renderMapBake(
           } finally {
             target.dispose();
           }
+          yield {
+            stage: isDepth ? "Rendering depth" : "Rendering color",
+            completed: ++completed,
+            total,
+          };
         }
     };
-    renderPass(false);
+    yield* renderPass(false);
     sunlight.root.visible = false;
     renderer.shadowMap.enabled = false;
     const depthMaterials = new Map<THREE.Material, THREE.Material>();
@@ -265,7 +292,12 @@ export function renderMapBake(
       };
       node.material = Array.isArray(source) ? source.map(convert) : convert(source);
     }
-    withDepthOcclusion(root, depthExcludedObjects, () => renderPass(true));
+    const restoreVisibility = hideDepthOcclusion(root, depthExcludedObjects);
+    try {
+      yield* renderPass(true);
+    } finally {
+      restoreVisibility();
+    }
     return { color, depth };
   } finally {
     sunlight.dispose();
@@ -279,5 +311,47 @@ export function renderMapBake(
       parent.children.splice(parent.children.indexOf(root), 1);
       parent.children.splice(siblingIndex, 0, root);
     }
+  }
+}
+
+/** Synchronous driver for callers that already own the uninterrupted render lifetime. */
+export function renderMapBake(...args: Parameters<typeof mapBakeTiles>): BakePixels {
+  const tiles = mapBakeTiles(...args);
+  let result = tiles.next();
+  while (!result.done) result = tiles.next();
+  return result.value;
+}
+
+/** Render a bounded tile at a time so progress updates and cancellation can run. */
+export async function renderMapBakeAsync(
+  root: THREE.Group,
+  cameraModel: MapCamera,
+  bounds: BakeBounds,
+  lighting?: import("@rle/shared").Level3D["lighting"],
+  ground?: THREE.Object3D | null,
+  depthExcludedObjects: ReadonlySet<string> = new Set(),
+  progress: (progress: BakeProgress) => void = () => {},
+  checkCurrent: () => void = () => {},
+): Promise<BakePixels> {
+  const tiles = mapBakeTiles(
+    root,
+    cameraModel,
+    bounds,
+    lighting,
+    ground,
+    depthExcludedObjects,
+    512,
+  );
+  try {
+    while (true) {
+      checkCurrent();
+      const result = tiles.next();
+      if (result.done) return result.value;
+      progress(result.value);
+      await yieldBakeFrame();
+    }
+  } finally {
+    // Closing a suspended generator restores materials, visibility, parents, and GPU resources.
+    tiles.return(undefined as never);
   }
 }

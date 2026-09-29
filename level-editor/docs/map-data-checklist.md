@@ -18,6 +18,42 @@ All twenty-seven recovered transitions have matching initial/applied changing-ob
 coverage on matching movement envelopes. Nottingham's two stateful regions now
 also match full walkable coverage in both states. Actor traversal remains unverified.
 No map is yet published or certified at full gameplay parity.
+
+Draft gameplay is now available in the main editor library: 932 structurally
+validated definitions were installed, and descriptor pins in all ten saved scenes
+were updated without changing their placements. All ten scenes reopen successfully.
+This includes 17 legacy Sherwood assets whose recovered definitions were rebased
+to their existing pivots. Definitions carry explicit draft issues; publication is
+not parity certification. Assets with changed physical frames or without a matching
+recovery were not overwritten. The publication tool retains before/after snapshots
+and a report under `work/map-compile/main-library-draft-publication`.
+Wychford's terrain adds 1,804 sloped receiving triangles derived from its authored
+mesh, simplified with a one-unit error budget. Native construction passes. Water
+exclusion, impassable slopes and material regions are not yet authored, so this
+terrain is explicitly provisional rather than a finished traversal definition.
+Its separate publication snapshot is `work/map-compile/main-library-terrain-publication`.
+The combined Wychford best-effort descriptor constructs in Rust with 13 movement
+areas, 2,216 sight obstacles, six doors and no jump pairs. Disconnected connections
+and incomplete states are reported as omissions; this is not traversal parity.
+Its complete 3600×2400 browser export now produces a 35,842,113-byte ZIP with 370
+warnings. The actual archive loads color, depth, minimap and gameplay into Rust
+without a base datadir. Its editor JSON preserves 46 preview actors and 14 items;
+none become runtime map population. The generated grid currently has 3,691,968
+blocks because many receiving planes retain separate layer slots; this needs
+compaction before calling the terrain export efficient.
+
+Editor export now requests best-effort compilation: missing definitions,
+unsupported walls, unavailable door/jump connections and unbound appearance
+controls produce omission warnings. An invalid lift connection omits that placed
+asset's gameplay; its artwork remains. Mission population is excluded from map
+gameplay but preserved in the embedded editor JSON. Strict compiler mode remains
+available for parity checks; best-effort export does not establish full parity.
+Export displays phase progress and cancellation. Compilation and image/ZIP
+encoding run in a worker; rendering yields between 512-pixel tiles. Browser tests
+check worker responsiveness, transferred buffer ownership, cancellation cleanup
+and exact synchronous/asynchronous color/depth equality. All ten saved main-library
+maps pass best-effort compilation; only Wychford's complete published-library ZIP
+was native-loaded in this publication batch.
 The combined `editor-field-model-library` drafts now contain regenerated light/sound
 field models and repinned scenes; older diagnostic libraries retain their old pins.
 The nine source-backed `embedded-gameplay-library` drafts now embed 1,121 recovered
@@ -83,8 +119,23 @@ also no longer lists its three applied views as separate base assets; all nine
 staged palette indexes validate. These checks do not certify actual drawbridge
 pixels, animations, traversal or a complete map ZIP round trip. Existing incomplete
 placements are not automatically repaired.
-All four full-scene export gates still fail on remaining missing bindings; these
+The four town full-scene export gates still fail on remaining missing bindings; these
 are metadata recovery results, not successful full-map bakes or parity evidence.
+Croisement01 now has a complete browser-baked draft ZIP (1408×960, 4,812,420 bytes)
+from its saved editor scene and pinned assets. The Rust mod scanner, archive
+mount and native engine constructor load it with an empty base filesystem:
+color/depth/minimap resources, embedded editor JSON, 92 sight obstacles, one mask,
+16 door projections and 4,180 navigation-grid blocks pass. The archive contains
+no mission actors or scripts. This is a real export/load check, not actor-traversal,
+audio-playback or visual-parity certification; 102 masks remain pending.
+The full-map browser runner accepts a staged library URL. Its Sherwood run found
+that authored physical draft models omitted their part identifier; the generator
+now retains it and the staged canopy is repaired and repinned. Import validation
+remains strict. The generator also emits the unlit material required by depth
+baking. Sherwood subsequently completed a 1920×1088 browser bake (7,626,337-byte
+ZIP) and native loading without a base datadir: 127 sight obstacles, 15 door
+projections and 9,450 navigation-grid blocks. Its 166 pending masks and unfinished
+canopy appearance remain explicit gaps.
 The placement regression suite also replaces a walkway or roof-jump neighbor
 with an independently identified asset: geometry reconnects the new neighbor
 while the displaced old one remains disconnected. Existing tests separately

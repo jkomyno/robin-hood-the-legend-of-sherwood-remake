@@ -1,5 +1,13 @@
 # Post-port Features
 
+- **Best-effort editor map exports.** Published draft gameplay definitions retain
+  explicit issues. Editor export includes available geometry and reports omitted
+  unsupported features or disconnected connections in the ZIP's compile report;
+  strict compilation remains available for validation. The editable scene remains
+  embedded, including mission previews excluded from runtime map gameplay.
+  Export progress separates worker-based compilation and packaging from tiled
+  image rendering, with cancellation between rendering steps.
+
 - **Asset contact switches.** Explicit asset-local transition anchors join matching
   placed parts into one map switch, combining their gameplay and appearance changes.
   Moving the contacts apart creates independent switches; duplicated assemblies

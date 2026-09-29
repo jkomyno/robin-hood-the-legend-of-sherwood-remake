@@ -7,6 +7,7 @@ export function compileAppearanceBindings(
   document: Level3D,
   assets: ReadonlyMap<string, GameplayAssetDescriptor>,
   transitions: readonly { id: string; aliases?: string[] }[] = [],
+  warn?: (message: string) => void,
 ): Map<string, Record<string, string>> {
   const result = new Map<string, Record<string, string>>();
   const aliases = new Map<
@@ -32,6 +33,13 @@ export function compileAppearanceBindings(
     const joins = new Map<string, string>();
     for (const transition of assets.get(asset)?.gameplay?.movementTransitions ?? []) {
       const placed = `${part.group ?? part.id}/${asset}/${transition.id}`;
+      if (warn && !canonical.has(placed)) {
+        for (const appearance of transition.appearances ?? [])
+          warn(
+            `Appearance ${appearance} on ${part.id}: transition omitted; exported in its initial visual state.`,
+          );
+        continue;
+      }
       const id = canonical.get(placed) ?? placed;
       for (const appearance of transition.appearances ?? []) {
         if (local.has(appearance))
@@ -43,10 +51,12 @@ export function compileAppearanceBindings(
     const preview = part.group ? group?.patches?.[asset] : part.patches?.[asset];
     for (const [appearance, alias] of Object.entries(preview ?? {})) {
       const id = local.get(appearance);
-      if (!id)
-        throw new Error(
-          `Missing asset gameplay binding for appearance ${appearance} on ${part.id}`,
-        );
+      if (!id) {
+        const message = `Missing asset gameplay binding for appearance ${appearance} on ${part.id}`;
+        if (!warn) throw new Error(message);
+        warn(`${message}; exported in its initial visual state.`);
+        continue;
+      }
       const previous = aliases.get(alias);
       const join = joins.get(appearance);
       if (

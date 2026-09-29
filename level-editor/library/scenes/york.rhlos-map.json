@@ -16,7 +16,7 @@
       "model": "3d-assets/york/york-terrain/model.glb",
       "model_sha256": "a54d425c2a44a2836e9e1c615a6a5daf92e631c57b53452e0de56e4e877d3965",
       "descriptor": "3d-assets/york/york-terrain/asset.json",
-      "descriptor_sha256": "fbf99020dc47b7b20a8c6f327447b9a455e7b92c06acd8e26efa83ee91eb452f"
+      "descriptor_sha256": "a190e48d63a0170941fd75177fa0eaafff0ccd8e3953bf5be2288bba43559ba3"
     }
   ],
   "assetSources": [
@@ -24,259 +24,259 @@
       "model": "3d-assets/york/york-bridge-square-central-timber-house/model.glb",
       "model_sha256": "27fea41c91c8811ed821f5937cbe11d558af0efc8570f9ecb91ba39e4bc8b03d",
       "descriptor": "3d-assets/york/york-bridge-square-central-timber-house/asset.json",
-      "descriptor_sha256": "cb3db078e6dbd3f8b1b085e9c45349db801d18dc356f20c239107f321db51470",
+      "descriptor_sha256": "adfaa28c04ed8ebc4f61773cca0dfaee0e29c47aed09b6d2e74751aa9801c65e",
       "id": "york-bridge-square-central-timber-house"
     },
     {
       "model": "3d-assets/york/york-bridge-square-east-gable-house/model.glb",
       "model_sha256": "5ee5afb9dab74941751d9398e72ac38d636cc6ce5e299e862846b498f1a4e513",
       "descriptor": "3d-assets/york/york-bridge-square-east-gable-house/asset.json",
-      "descriptor_sha256": "d7fc1ec28a29e9a24dfd126cc2d2d638dbb7ab6108b4eae467cabb5251e48353",
+      "descriptor_sha256": "363c0d4f48c16f086b3551a52daff8b88c0669a25f0f58cfa234d7bf09901942",
       "id": "york-bridge-square-east-gable-house"
     },
     {
       "model": "3d-assets/york/york-bridge-square-round-tower/model.glb",
       "model_sha256": "54d484d4bf741952925bc003e3cd03371353ea556ce2f3d0525b37e18e90058b",
       "descriptor": "3d-assets/york/york-bridge-square-round-tower/asset.json",
-      "descriptor_sha256": "c00e592094ad22376335131125c5814031968b9488e0b0f69ad3528b98dd67e5",
+      "descriptor_sha256": "d6ae201fb52a408a08b6e7459e4df3324dafcfd84cc5698f6231dc65e4360dd3",
       "id": "york-bridge-square-round-tower"
     },
     {
       "model": "3d-assets/york/york-bridge-square-scaffolded-corner-house/model.glb",
       "model_sha256": "3e9a64b7556c5ccb0e4c05cfd8866f186d2d86249b7448aab75db0bec555fdeb",
       "descriptor": "3d-assets/york/york-bridge-square-scaffolded-corner-house/asset.json",
-      "descriptor_sha256": "c0044211b5cb46b69ea8ec8c14e6b897596e7a7d3c06e615ba54830b3afed123",
+      "descriptor_sha256": "09fe4eea27253999128ba01840953dc990b72548416bddf05041d8313c3c01da",
       "id": "york-bridge-square-scaffolded-corner-house"
     },
     {
       "model": "3d-assets/york/york-bridge-square-west-gable-house/model.glb",
       "model_sha256": "c32922b7465452c21fd528e80d0e9eff419a187d5500d3d1512d8a7440831c0d",
       "descriptor": "3d-assets/york/york-bridge-square-west-gable-house/asset.json",
-      "descriptor_sha256": "eb9834dde0f9e1db38d3cb947b3de6fbc77058ebba34d60e9a10b859b536b317",
+      "descriptor_sha256": "ec8121df18eb4cdaf581f4e8fe6a017702db7c757ebb43d8b7066d8e7f157997",
       "id": "york-bridge-square-west-gable-house"
     },
     {
       "model": "3d-assets/york/york-castle-courtyard-east-lodge/model.glb",
       "model_sha256": "aee4713628b1f446f3170bc50d640b69e63c24b44027d88e31c01bf0656ac09d",
       "descriptor": "3d-assets/york/york-castle-courtyard-east-lodge/asset.json",
-      "descriptor_sha256": "06317d4fa9435865bb6280c3378972b2dbc48c4a5ff513d50ddce4b84b49f378",
+      "descriptor_sha256": "2f904eebaca6fb180da970109889e92083ca17f20c8b05e5a11713a857826d89",
       "id": "york-castle-courtyard-east-lodge"
     },
     {
       "model": "3d-assets/york/york-castle-courtyard-lodge-stairs/model.glb",
       "model_sha256": "21282b50163c72379a18119b78db19a44b3de644f15ab837ed60264adfc5c073",
       "descriptor": "3d-assets/york/york-castle-courtyard-lodge-stairs/asset.json",
-      "descriptor_sha256": "2a5b699010bc4e267a707115ce9d74065f3a07d3b16483566aec84c7ebada4ca",
+      "descriptor_sha256": "cdc4e8e9df71f99e138d52660aeb2121119b9ef2e685b9f237f20095cd4ad354",
       "id": "york-castle-courtyard-lodge-stairs"
     },
     {
       "model": "3d-assets/york/york-castle-courtyard-raised-terrain/model.glb",
       "model_sha256": "565ae1d668a96962fab2cc0b7eee1dadff0e10be4b42196c132d52d52fd5820c",
       "descriptor": "3d-assets/york/york-castle-courtyard-raised-terrain/asset.json",
-      "descriptor_sha256": "31ce0672c93e9fd2fdf8fe953ef9738c92fba562563d587c88910d6cca0ec3df",
+      "descriptor_sha256": "0a32990bb71fc61c7293940e676c167c619150cd28b92328e5d70f6d0fb14458",
       "id": "york-castle-courtyard-raised-terrain"
     },
     {
       "model": "3d-assets/york/york-castle-courtyard-rear-curtain-wall/model.glb",
       "model_sha256": "dc350bb1e51e0642e0453c39c6a2382c4ea22dca1cbfc3951eeed457d343ecd6",
       "descriptor": "3d-assets/york/york-castle-courtyard-rear-curtain-wall/asset.json",
-      "descriptor_sha256": "2e0993fc5a3c8d9a4c5be225a334fec10ae337f64ce11252d4ca38cac9e6bbf1",
+      "descriptor_sha256": "d76a9996fe887590dcaef6d2a2753c0830af2a57f40e6fa5ee9bfd5d4cb5f5ae",
       "id": "york-castle-courtyard-rear-curtain-wall"
     },
     {
       "model": "3d-assets/york/york-castle-courtyard-rear-walkway/model.glb",
       "model_sha256": "6d50b624f2caf130d49633055e58ab02bbd53d0ace32e6311abedf708896406c",
       "descriptor": "3d-assets/york/york-castle-courtyard-rear-walkway/asset.json",
-      "descriptor_sha256": "efac94e260a5fa0e4a8381b0cba7aa06273e9c4079baf11b5186068e823d1d73",
+      "descriptor_sha256": "3ac4a1b485a8b28a17ec61923a0cbd3483526d9fa294087655b77d70aa31867a",
       "id": "york-castle-courtyard-rear-walkway"
     },
     {
       "model": "3d-assets/york/york-castle-courtyard-west-lodge/model.glb",
       "model_sha256": "8d688baff1ba09b475fa452154d99780a18bc2e589dfeb432e86ecfe1f5e6a47",
       "descriptor": "3d-assets/york/york-castle-courtyard-west-lodge/asset.json",
-      "descriptor_sha256": "4e8b67988e80861889651f672c04ec0b7eb4e57f0b8c6587adca64da342c9026",
+      "descriptor_sha256": "8bebb2e069f3ab51546bf18d38eac32bac156bab4b36ff6af6f3e3eb3c0ba048",
       "id": "york-castle-courtyard-west-lodge"
     },
     {
       "model": "3d-assets/york/york-castle-east-round-tower/model.glb",
       "model_sha256": "c7f0d77e72108ed43efae366ed35d9bb95d28e41e31b1371673424c6ba59a093",
       "descriptor": "3d-assets/york/york-castle-east-round-tower/asset.json",
-      "descriptor_sha256": "9f9bc16215dfe0c72334e23873db64ee05898ce277d987a3872e4c76553e9c99",
+      "descriptor_sha256": "95a78ebfccb78553c9468027dd1c157a6b4dfe7bc0c9516513d7079102576478",
       "id": "york-castle-east-round-tower"
     },
     {
       "model": "3d-assets/york/york-castle-great-hall/model.glb",
       "model_sha256": "cc65b3c35c3f2254411137ed78f3a067efcd12b780245ec37ab92493d7abb0c8",
       "descriptor": "3d-assets/york/york-castle-great-hall/asset.json",
-      "descriptor_sha256": "84bb054794167a609e2671f04934050db48ab7165a8896d09c1481b1a2feb467",
+      "descriptor_sha256": "6c4e02db87bd2225f68b11550b01fcf7d86272d0f0528ca8263ea06dd865f6b9",
       "id": "york-castle-great-hall"
     },
     {
       "model": "3d-assets/york/york-castle-main-keep/model.glb",
       "model_sha256": "f96cd72b9e87bfbf41e4aece9fc7b8cd8708ca696737d2f2e42b228f812dce76",
       "descriptor": "3d-assets/york/york-castle-main-keep/asset.json",
-      "descriptor_sha256": "e6aa51df7f5a3b527dd4dcdd93cbd73d999cf86d7c7369cc0be3445a13b11e67",
+      "descriptor_sha256": "54ee9d02186d58e3e0fcc672feea669ee54509da640220a0e323ce78840d6012",
       "id": "york-castle-main-keep"
     },
     {
       "model": "3d-assets/york/york-castle-north-approach-gateway/model.glb",
       "model_sha256": "e5f39c917e6256f735f3fb51bfe7467a35457ee423d82bbe284de27a17e3c1d7",
       "descriptor": "3d-assets/york/york-castle-north-approach-gateway/asset.json",
-      "descriptor_sha256": "44f886b7e12b432395f4a9e01e56cf8fc4cd2a9d755ae437fbf7663a02b7929b",
+      "descriptor_sha256": "eaeb6a5110e9d4161feee746276ae11b01300bc4db2fb43ea5de89cb7d824547",
       "id": "york-castle-north-approach-gateway"
     },
     {
       "model": "3d-assets/york/york-castle-north-approach-wall-stair/model.glb",
       "model_sha256": "cd9d595fb9d76ed620bdabeb57de868a10aca3cc146ecfc969ae0025e69cce36",
       "descriptor": "3d-assets/york/york-castle-north-approach-wall-stair/asset.json",
-      "descriptor_sha256": "490cffaa6909dcdedafb81ac1c853c92815dbefed40b0bffc24e21f71985d4a3",
+      "descriptor_sha256": "ea6badbf95b06c647becb37e74fd511010497c55691df32ab99f101d9ea07943",
       "id": "york-castle-north-approach-wall-stair"
     },
     {
       "model": "3d-assets/york/york-castle-north-round-watchtower/model.glb",
       "model_sha256": "f495b0a0981e0bad5b97a73693f2d7024d3df42792119ac036392e125a63012b",
       "descriptor": "3d-assets/york/york-castle-north-round-watchtower/asset.json",
-      "descriptor_sha256": "a9507fe27c5a8049cead86431755bd3fd69ace4ebc2a41a07509b2e635a7f321",
+      "descriptor_sha256": "b7389bc15ac3585c85a018e949c8fc2e68f029ed29aaac569708b16c104483ff",
       "id": "york-castle-north-round-watchtower"
     },
     {
       "model": "3d-assets/york/york-castle-northeast-square-watchtower/model.glb",
       "model_sha256": "1d4bc578d0735ab39db3204d8e58dbd4a5e7324402b449de04a96157c7befbba",
       "descriptor": "3d-assets/york/york-castle-northeast-square-watchtower/asset.json",
-      "descriptor_sha256": "76dab16fd4dc02ac4a70ddc72aee6c7b71147eb775f238bc0f73f9bfc307add3",
+      "descriptor_sha256": "2574d4c4a9f61d34d0b0fbfd1f07b375354f4bb31e9bc1bbcf8129cdc3ad1b21",
       "id": "york-castle-northeast-square-watchtower"
     },
     {
       "model": "3d-assets/york/york-castle-northwest-bastion/model.glb",
       "model_sha256": "ab0bb7befed62fafef4bbee3159d3e8584f3ed0d2b7ee39aa1320c4c6a5228c6",
       "descriptor": "3d-assets/york/york-castle-northwest-bastion/asset.json",
-      "descriptor_sha256": "eeb56d47244cb86888c3497351ea07e797d3b4af4fac7e2d035991e881c1f413",
+      "descriptor_sha256": "103941fc6ae8a30495ed07b06da4994ed45870ca0eb083fdb3f935e1be1d72a3",
       "id": "york-castle-northwest-bastion"
     },
     {
       "model": "3d-assets/york/york-castle-south-curtain-wall/model.glb",
       "model_sha256": "eb8bbd5b8f9c4b59bdbf625eac97a0ebac841164d1a69db11c853597e04c459e",
       "descriptor": "3d-assets/york/york-castle-south-curtain-wall/asset.json",
-      "descriptor_sha256": "7fc33df2fe0d56667afa529b706f8a6e9b0ab96645ac6a8c39574e73851b4d14",
+      "descriptor_sha256": "627296ef85c485475a342c99b24d5b7138a8ad62e92e2e63478561e3b5e1c94e",
       "id": "york-castle-south-curtain-wall"
     },
     {
       "model": "3d-assets/york/york-castle-south-round-tower/model.glb",
       "model_sha256": "91abcc2e2e3f344189036ea3db641285eb625e952488b42003a5a7e1a76f2548",
       "descriptor": "3d-assets/york/york-castle-south-round-tower/asset.json",
-      "descriptor_sha256": "9c3d780c026d3bbcf2c51f693d32707e9fad815876bdd06f413ab253ff3d044e",
+      "descriptor_sha256": "fa388aa17c273688f94222e0ddd1b5ac0bd9f11bf23eda2513631527ced79b82",
       "id": "york-castle-south-round-tower"
     },
     {
       "model": "3d-assets/york/york-castle-southwest-bastion/model.glb",
       "model_sha256": "b78a9f96782ef870f73f5904f6d6c4eb960a06087b9f5faf7e9a8b4c59cface5",
       "descriptor": "3d-assets/york/york-castle-southwest-bastion/asset.json",
-      "descriptor_sha256": "12bc2c850223905a0872ebdd0ae119f26a8d71b8563d14e5e520429a5c209ade",
+      "descriptor_sha256": "16c0871c974ab0703a6709e143e7d1407aa01e67eb7121a6fbcdcad16f8f71c7",
       "id": "york-castle-southwest-bastion"
     },
     {
       "model": "3d-assets/york/york-castle-west-gatehouse/model.glb",
       "model_sha256": "5520034762a1cdd26e8ba1cc0f8731c58a756c2f1d389102128c15345995af02",
       "descriptor": "3d-assets/york/york-castle-west-gatehouse/asset.json",
-      "descriptor_sha256": "6c3e2b555d47b02abfdbe6496cc2c3e4e8ac5e880c19bde95354e84242e86c70",
+      "descriptor_sha256": "2d5cd1e6199fa226a4661e9a394a81090a275b571c10bddc36206c116a666146",
       "id": "york-castle-west-gatehouse"
     },
     {
       "model": "3d-assets/york/york-castle-west-lane-front-timber-house/model.glb",
       "model_sha256": "a45ae3f64ed1516c7a2d02e6de8e7fdf6080924939227cc577f53468c2330b74",
       "descriptor": "3d-assets/york/york-castle-west-lane-front-timber-house/asset.json",
-      "descriptor_sha256": "1c244f3df19d89944c7623673731d28706293b4a71718776cb69b20ce6297fb1",
+      "descriptor_sha256": "b781bdbfb1bdde890352ce06c3c098dfa47d056e47271f70e81b4da86891edbd",
       "id": "york-castle-west-lane-front-timber-house"
     },
     {
       "model": "3d-assets/york/york-castle-west-lane-gable-house/model.glb",
       "model_sha256": "add372887ddd8129ada7a478629b3b4a6a96ba11fe1101831c528bfc5180b52e",
       "descriptor": "3d-assets/york/york-castle-west-lane-gable-house/asset.json",
-      "descriptor_sha256": "1f5eee777eaf8af5cdb08663114acd1f2c1b2f8ce53cc8044af285e2ab91c8e1",
+      "descriptor_sha256": "e24eafbadf2ecd70a2a1f20ca5cf09d435d2b22aa95c08db4c9dbca01ea92d3b",
       "id": "york-castle-west-lane-gable-house"
     },
     {
       "model": "3d-assets/york/york-castle-west-lane-rear-timber-house/model.glb",
       "model_sha256": "de86c8043aad1c55f8ccada35e7f4d7ad28fdfa3ed812dc469c24205fea0c7c9",
       "descriptor": "3d-assets/york/york-castle-west-lane-rear-timber-house/asset.json",
-      "descriptor_sha256": "bf022e1f3ab223b2db0efe0bfbc0b45277ec46fe60fb72f0482e7e6f352eb0cf",
+      "descriptor_sha256": "ff56edd022f8b33dabddb23ab07087c14a061d52d6c52edc2c04b5eea0ad0663",
       "id": "york-castle-west-lane-rear-timber-house"
     },
     {
       "model": "3d-assets/york/york-cathedral-nave-and-aisles/model.glb",
       "model_sha256": "804e6798af0da1d621d4b3b7ffd7a861ddc005e7d3566d686567d3e05cf08992",
       "descriptor": "3d-assets/york/york-cathedral-nave-and-aisles/asset.json",
-      "descriptor_sha256": "f834d18c7c8cbb49d25a0ac473d09208657ee5b4f583d2942b1137dd15676850",
+      "descriptor_sha256": "f180a84d6f388d53173043a81978ae38ee44825a85c3c66b996308b27f70a4f4",
       "id": "york-cathedral-nave-and-aisles"
     },
     {
       "model": "3d-assets/york/york-cathedral-northwest-tower/model.glb",
       "model_sha256": "bbb9d102fee7776bce469653b699dbe7b2ded3df6753a6e4506c17b635d55fc6",
       "descriptor": "3d-assets/york/york-cathedral-northwest-tower/asset.json",
-      "descriptor_sha256": "73d45e84b427eed60743ae230d16599389f13432f9ebd0465a1761ba987748e6",
+      "descriptor_sha256": "7696d646ffd86b6aded3147e9595337f06aa91681eb2ef144241d945d7055a8e",
       "id": "york-cathedral-northwest-tower"
     },
     {
       "model": "3d-assets/york/york-cathedral-precinct-raised-terrain/model.glb",
       "model_sha256": "b566e3352d9e7d5cdc63e54af74334528c1ae35cbfb9c42e78642a98c02a3afb",
       "descriptor": "3d-assets/york/york-cathedral-precinct-raised-terrain/asset.json",
-      "descriptor_sha256": "8fd55d3e0b2b9226b3389d725ef30e40e84e5eac768b14710832103018abba9f",
+      "descriptor_sha256": "dd1a77f519fb55db76a3bca9f0676b134f5951b9aef77e523a50cfa4fd2ee2d2",
       "id": "york-cathedral-precinct-raised-terrain"
     },
     {
       "model": "3d-assets/york/york-cathedral-southwest-tower/model.glb",
       "model_sha256": "079e0c099da83cabf87e190288dcbf79982df49367cfaf8aac34845d0e0e1b7a",
       "descriptor": "3d-assets/york/york-cathedral-southwest-tower/asset.json",
-      "descriptor_sha256": "077b4cbb748731c8b9197fcd31b033bc21d6d58dd85b21d0dee72a079b0b7920",
+      "descriptor_sha256": "d3a7e3c948209a95da576bf7cc230805d1e85354037f0ff68a7f478b4d170a68",
       "id": "york-cathedral-southwest-tower"
     },
     {
       "model": "3d-assets/york/york-central-lane-cross-gable-house/model.glb",
       "model_sha256": "b27e02c2ac743837594f9f5cae2d575c7a2b552ddb4a2da4300e1feadb078946",
       "descriptor": "3d-assets/york/york-central-lane-cross-gable-house/asset.json",
-      "descriptor_sha256": "f21b648be49ab666da6afa7886047f47e164b5b5beaf160ee1e7f2ab1c99caae",
+      "descriptor_sha256": "c4616c01efafd7dc6ab2e863b8e125a0595635d882d9e806421e30c8fdf06ff1",
       "id": "york-central-lane-cross-gable-house"
     },
     {
       "model": "3d-assets/york/york-central-lane-north-roof-house/model.glb",
       "model_sha256": "8552079cea05e7a3122b7e99706f63880339343b2bbdc8fd767c24cddae547fe",
       "descriptor": "3d-assets/york/york-central-lane-north-roof-house/asset.json",
-      "descriptor_sha256": "b2647f6304afe86d8a2c23ac8d4b4be0cf5a96df71a1ea0aa8f1ee401d7b638c",
+      "descriptor_sha256": "45d06b4a30d1604457c8773d1d3750bcac4bafcb51e611bf9c2d3787c31f6201",
       "id": "york-central-lane-north-roof-house"
     },
     {
       "model": "3d-assets/york/york-central-lane-polygonal-corner-house/model.glb",
       "model_sha256": "5291e2956aab3d5be0e8630334ece0579b8ebaa9f5148ce475dc382c4f5c0ece",
       "descriptor": "3d-assets/york/york-central-lane-polygonal-corner-house/asset.json",
-      "descriptor_sha256": "08eb933aa088c528435a72c3944422fe1ea4c5420f3143a984f8f41279740e2f",
+      "descriptor_sha256": "deef7ad11889a1faee37b2edb2ddad0c99c6955c5b1d96efa6d5b9f6f3e5bd07",
       "id": "york-central-lane-polygonal-corner-house"
     },
     {
       "model": "3d-assets/york/york-central-lane-rear-gable-house/model.glb",
       "model_sha256": "2fdbb5b2845b9ad98a1577cefc93f51f12b421aa07b6de44af93e879ab904ed3",
       "descriptor": "3d-assets/york/york-central-lane-rear-gable-house/asset.json",
-      "descriptor_sha256": "4b2a8376df36900eaf785135831e2b4e434d44046aa7ec2e547052a8ea48bfc7",
+      "descriptor_sha256": "5a598ea9b58d8e29c39ea330000f238d5cdd7fe69a1226f7a13851f175a7ac5e",
       "id": "york-central-lane-rear-gable-house"
     },
     {
       "model": "3d-assets/york/york-central-lane-stone-gable-house/model.glb",
       "model_sha256": "3de07817326d9bc01784e4273f7fc0335d37371a7e48c0f1af0f6861dcbc40b7",
       "descriptor": "3d-assets/york/york-central-lane-stone-gable-house/asset.json",
-      "descriptor_sha256": "5e82abe4405f758ae6b2b57622f2133e59e10082809c8a7375f1fcf98ae15cbf",
+      "descriptor_sha256": "2756cb2a18a88a4f241c7f04a4bd7abb9aa3ec1d8093460e8af626eb8be09979",
       "id": "york-central-lane-stone-gable-house"
     },
     {
       "model": "3d-assets/york/york-central-lane-timber-lean-to/model.glb",
       "model_sha256": "80b6b1c0e7fa5264b8bbc22037d36317c28ffe673460cf44d7ea4729c6bf5859",
       "descriptor": "3d-assets/york/york-central-lane-timber-lean-to/asset.json",
-      "descriptor_sha256": "f52c152dca45daf734fbd3e6cb23a68ae6f4fab80862325d70e58b8df4c9541a",
+      "descriptor_sha256": "478e11546e74ae217264396050e4a88c0edae3d386178bf382abe326cdcbda15",
       "id": "york-central-lane-timber-lean-to"
     },
     {
       "model": "3d-assets/york/york-central-south-golden-timber-house/model.glb",
       "model_sha256": "f6fd8cf6b401c5c549f56edbce1a4b6f2ffde41840a9fd8dcd80c51c860e65df",
       "descriptor": "3d-assets/york/york-central-south-golden-timber-house/asset.json",
-      "descriptor_sha256": "fe6f34ebf39611b777a084af312592434d39f58c8b5e65f5f3c176dcaa29ccaf",
+      "descriptor_sha256": "229f169ee9fd4d3bf81ffa94616b19c3aec591a85f49ade1ddf5205b6ad84331",
       "id": "york-central-south-golden-timber-house"
     },
     {
@@ -290,245 +290,245 @@
       "model": "3d-assets/york/york-central-south-jettied-corner-house/model.glb",
       "model_sha256": "f06d4d08dce0ca277dd9ad6e0f0e0b36c94cb28a30b3cdfde0b5214bff11a637",
       "descriptor": "3d-assets/york/york-central-south-jettied-corner-house/asset.json",
-      "descriptor_sha256": "7e4e21eae38f3c9cde05210a37064956c54959f89030799c4a46c272caeb301b",
+      "descriptor_sha256": "c6bdfb263c8e52099eb2cf13e75d82c29bb23a2e4e54a016f1b5005de5bd0211",
       "id": "york-central-south-jettied-corner-house"
     },
     {
       "model": "3d-assets/york/york-central-south-narrow-arch-house/model.glb",
       "model_sha256": "180398d2517e315fb11990ed59f06cc1423da7622d70e83fa13b88cad919c10f",
       "descriptor": "3d-assets/york/york-central-south-narrow-arch-house/asset.json",
-      "descriptor_sha256": "f0ab9c5bc1c2cf56dd2f8f73670ed5f13e32f24c75d2fea6d54ea286146b99eb",
+      "descriptor_sha256": "ed2824cdac0d1f541c64d86af90fe26008ebcab1e0fc71daeccd80ff40a7a2a8",
       "id": "york-central-south-narrow-arch-house"
     },
     {
       "model": "3d-assets/york/york-central-south-rear-courtyard-wall/model.glb",
       "model_sha256": "a233154ff066e2157deabbf3861b6b870c29557ce39630627c41a5df5e00844b",
       "descriptor": "3d-assets/york/york-central-south-rear-courtyard-wall/asset.json",
-      "descriptor_sha256": "40c93e1ee72a058b4dfc00cc10aef2f6f1f4a863a94000efd5bba81ac420f815",
+      "descriptor_sha256": "46cb7940145a9f714fd70b456ad5d9a8d63511d4695b0b7cb53712c247cd4f10",
       "id": "york-central-south-rear-courtyard-wall"
     },
     {
       "model": "3d-assets/york/york-central-south-rear-timber-house/model.glb",
       "model_sha256": "2995705cd04a3029c5efab28fe4b5c198431dc318eaa6313ec91bf82ed2fece2",
       "descriptor": "3d-assets/york/york-central-south-rear-timber-house/asset.json",
-      "descriptor_sha256": "b53ad6c8f703d1fef0083f18ea935565ce4de6e9218a4d2f899b7b38c3369b44",
+      "descriptor_sha256": "fefb64b22032b4ae2b85c3a7a24317c859e402857b13b1fd4beab96bfb824a8b",
       "id": "york-central-south-rear-timber-house"
     },
     {
       "model": "3d-assets/york/york-central-south-red-timber-house/model.glb",
       "model_sha256": "2cb7b0e64d26cccb095d9fecaec0dd193054b6361cf753d7fd0b7d409976a3a7",
       "descriptor": "3d-assets/york/york-central-south-red-timber-house/asset.json",
-      "descriptor_sha256": "a4be206b2afb6ffd83633b20ff675033ce41ac65f5bc9b056a804f2ece2785e8",
+      "descriptor_sha256": "96a474402e9ca78133519365314916974212d322bed20492fd0599e4a587e055",
       "id": "york-central-south-red-timber-house"
     },
     {
       "model": "3d-assets/york/york-central-south-street-barrel/model.glb",
       "model_sha256": "921870f1f0aa26c8f4aa859930d1136d50e6f04ffcf40c057c804c9385c9a60f",
       "descriptor": "3d-assets/york/york-central-south-street-barrel/asset.json",
-      "descriptor_sha256": "d43a360ddfceb8cf04e9d977aebfbf2d53f09b452091cfb39ce5be5c724a4c1e",
+      "descriptor_sha256": "3fe2ce572bf9979d7c5d49dfd466e41512e1a67a0ff586f91ce3cf9b52715726",
       "id": "york-central-south-street-barrel"
     },
     {
       "model": "3d-assets/york/york-east-bridge-cargo-stack/model.glb",
       "model_sha256": "b3910dc6624424459a481a601efc96a2f5398ef0ec80bbaea613d9545ca6ea0a",
       "descriptor": "3d-assets/york/york-east-bridge-cargo-stack/asset.json",
-      "descriptor_sha256": "9a7ea130404aa47b15b79c8470ab0017080f5b116133ec618592f605021f7f47",
+      "descriptor_sha256": "9327900dddb774a73a64585361ff9c679b60e8dbeaf7d5cc811f6e8978977539",
       "id": "york-east-bridge-cargo-stack"
     },
     {
       "model": "3d-assets/york/york-east-bridge-mooring-buttress/model.glb",
       "model_sha256": "5f9f1af70060c7071e903dfc0604a41f492bf8d92d8ffdee2c0349389bc1d788",
       "descriptor": "3d-assets/york/york-east-bridge-mooring-buttress/asset.json",
-      "descriptor_sha256": "786322f32881f9641deb544b1728e751c08ee037df9214dcb654b929b14368f1",
+      "descriptor_sha256": "6c5fbdab623505fc8b8d0afeb43d74ca42dfb8d857301265eb5dac4d3fa24d39",
       "id": "york-east-bridge-mooring-buttress"
     },
     {
       "model": "3d-assets/york/york-east-bridge-raised-terrace/model.glb",
       "model_sha256": "3dfad389423c07eaf7d1c3042ed37618bb634b88764149fd609da646c8e2a2a1",
       "descriptor": "3d-assets/york/york-east-bridge-raised-terrace/asset.json",
-      "descriptor_sha256": "8300c0bde772762876fa1a2ee9249a328843bef3bc12493f38e63ea4412a9f6a",
+      "descriptor_sha256": "0f24232768b9508a1c1e7de6720ff7e108fde44a5234fdfeb9504df2c41b2796",
       "id": "york-east-bridge-raised-terrace"
     },
     {
       "model": "3d-assets/york/york-east-bridge-street-central-timber-house/model.glb",
       "model_sha256": "d9933b0d51776b824d5deaae9e2f89072954765f262d9f9a8be36f12d989473b",
       "descriptor": "3d-assets/york/york-east-bridge-street-central-timber-house/asset.json",
-      "descriptor_sha256": "4bd158bff8160d1800bd27982610e0c336a6e6a9bb66d62947b96f8b7bfcc361",
+      "descriptor_sha256": "43672db09ec93e17965f82fa0126e76ccda81803e79e835edaa45bec77c5ed49",
       "id": "york-east-bridge-street-central-timber-house"
     },
     {
       "model": "3d-assets/york/york-east-bridge-street-courtyard-wall/model.glb",
       "model_sha256": "a98a735d821c5fe10d57adf4f9a70b89c5b137c0ec7a283d12e405e7f482327b",
       "descriptor": "3d-assets/york/york-east-bridge-street-courtyard-wall/asset.json",
-      "descriptor_sha256": "b5ab1df935a9fc5f08a1b7740f0608d140c72771c61226d11135d0fe043e5c9a",
+      "descriptor_sha256": "5964b6964e16e9dbaaebc04f49987ba5ad4b8c44a079545eb12d6a333f2f1d6f",
       "id": "york-east-bridge-street-courtyard-wall"
     },
     {
       "model": "3d-assets/york/york-east-bridge-street-narrow-gable-house/model.glb",
       "model_sha256": "5ac10e76eaebc081d6d9a8d9963be85d9465b98c639739026bacbca7c401f2e4",
       "descriptor": "3d-assets/york/york-east-bridge-street-narrow-gable-house/asset.json",
-      "descriptor_sha256": "95aa814ecd804763f06394286a0ce913e8f5273c2c80e9b01125790cce7e1923",
+      "descriptor_sha256": "66f18bf1c0e0180b341f21843d5b1b48506d7dd098920c4ad2c8cb2f3bd227dd",
       "id": "york-east-bridge-street-narrow-gable-house"
     },
     {
       "model": "3d-assets/york/york-east-bridge-street-northern-timber-house/model.glb",
       "model_sha256": "2d0043a68d87d4dd3d8d8904d8b6102c2d1a32eccd5cb70d862a84403bbd0102",
       "descriptor": "3d-assets/york/york-east-bridge-street-northern-timber-house/asset.json",
-      "descriptor_sha256": "b6350f6e768dd7165a44c72d99cedef8eaabdfb1844c96081ac0c0110681b7cf",
+      "descriptor_sha256": "af7bafc053ad6a67ff0e98410e8121f5316f0fd4d380153eb750fe39e538d11b",
       "id": "york-east-bridge-street-northern-timber-house"
     },
     {
       "model": "3d-assets/york/york-east-bridge-street-stair-side-timber-house/model.glb",
       "model_sha256": "5a011468a3dbb85c25ad1d791b9dfccb6b83f2fb412d4bf2b34baaacbbe4e419",
       "descriptor": "3d-assets/york/york-east-bridge-street-stair-side-timber-house/asset.json",
-      "descriptor_sha256": "a1cc8d77920e8915f6c825c81622c05a179dfd4e9a6b1aefccf0046798b50e8a",
+      "descriptor_sha256": "70a89f69e0603ad5c482af33dfbf8e8da12bb791a7fb390472f2b654c96ae2b6",
       "id": "york-east-bridge-street-stair-side-timber-house"
     },
     {
       "model": "3d-assets/york/york-east-bridge-street-stone-fronted-house/model.glb",
       "model_sha256": "2811e1641012361162117906a53ff760a2fdd56cbcc3563842e778d606b12004",
       "descriptor": "3d-assets/york/york-east-bridge-street-stone-fronted-house/asset.json",
-      "descriptor_sha256": "6391d19c246cf101fe30a6793cb8500d45e00ea15f0dd31fcdf68157afa48010",
+      "descriptor_sha256": "4e62380f324e2aeb3db18ade87b0d6e09c9acfdf1e0b6e04501c9f058c996ff3",
       "id": "york-east-bridge-street-stone-fronted-house"
     },
     {
       "model": "3d-assets/york/york-east-quay-front-timber-house/model.glb",
       "model_sha256": "3ebff6b29ef9de6be015096f10998a8f6b9ae62898ac2f45c1d59eb5a0251d82",
       "descriptor": "3d-assets/york/york-east-quay-front-timber-house/asset.json",
-      "descriptor_sha256": "2774f26bb672780f62f0e994f1bbe7d78f51fb314d53a7b2af86977114cf8f76",
+      "descriptor_sha256": "fff9a95a1015fb456f7987966fbd8754bf0a463a81a856eb8afe7ef037dc6030",
       "id": "york-east-quay-front-timber-house"
     },
     {
       "model": "3d-assets/york/york-east-quay-ground-landing/model.glb",
       "model_sha256": "3db15a451e4abed65d06be9022b2e76f36a0e5c26d01c79af1d6653d4fce6f01",
       "descriptor": "3d-assets/york/york-east-quay-ground-landing/asset.json",
-      "descriptor_sha256": "8adb38454ca803c9db9139f9a054d67fbe32b6e9b23aa1f75dc0e6c9680201cb",
+      "descriptor_sha256": "94f47830476befe01c14e0cf91b9312d95babe114efe1acbfaacf5c97549ce16",
       "id": "york-east-quay-ground-landing"
     },
     {
       "model": "3d-assets/york/york-east-quay-rear-timber-house/model.glb",
       "model_sha256": "a649b1062a9891f183d39d6cb3b2bff83ac96901a16cc016426483ecda4d1aca",
       "descriptor": "3d-assets/york/york-east-quay-rear-timber-house/asset.json",
-      "descriptor_sha256": "9ca90bec7a65ffeee1dcfca00a4ade0c44264393980b390775e7e93c35f5f480",
+      "descriptor_sha256": "f50eaaf3dd68a133d52183c409c6ac3497f8884c396040b7fec323e37d00621b",
       "id": "york-east-quay-rear-timber-house"
     },
     {
       "model": "3d-assets/york/york-east-riverside-corner-house/model.glb",
       "model_sha256": "98bdb9671b2ce8b22e461941ee7167422661768ea687aaf8033b8a4e5669c156",
       "descriptor": "3d-assets/york/york-east-riverside-corner-house/asset.json",
-      "descriptor_sha256": "892efd82162e7f223f60903816743726425681b6c1afd7e88010f4a405e2d3fa",
+      "descriptor_sha256": "cba1f5406f768468d6816f18904b3d221da02e260fe595c00d6276678bc6ad19",
       "id": "york-east-riverside-corner-house"
     },
     {
       "model": "3d-assets/york/york-east-riverside-curtain-wall/model.glb",
       "model_sha256": "400a1b186937c3e83422741677213bd85b04284854e9a433150b93543985fc1a",
       "descriptor": "3d-assets/york/york-east-riverside-curtain-wall/asset.json",
-      "descriptor_sha256": "42485922f17f10c9bec84136eb05c24d33f1eb10d011065181e34ef60dd2d0bf",
+      "descriptor_sha256": "126134bc4839651724bcda20a53417f641330e375b1895a5b7a89eda77e2cd1a",
       "id": "york-east-riverside-curtain-wall"
     },
     {
       "model": "3d-assets/york/york-east-riverside-low-courtyard-wall/model.glb",
       "model_sha256": "596ef7e786b83452abec535f515311a2bc57de800543789aef636d3933fd88a1",
       "descriptor": "3d-assets/york/york-east-riverside-low-courtyard-wall/asset.json",
-      "descriptor_sha256": "49aa258f98aed7cd54dcaeff203e0674c9e48a1384b6de2d52f116f8bd62449d",
+      "descriptor_sha256": "31fba6b8adc1d503c9489e57f7e0cce1f4aa89b12b3a69dee91bbe7f568471a9",
       "id": "york-east-riverside-low-courtyard-wall"
     },
     {
       "model": "3d-assets/york/york-east-riverside-northern-boundary-wall/model.glb",
       "model_sha256": "9bfad78186b7e54ced45d515dc29853157478fa7298b9d560f3f63b1b93e06ed",
       "descriptor": "3d-assets/york/york-east-riverside-northern-boundary-wall/asset.json",
-      "descriptor_sha256": "8001bc615f9e67eb8287854f15bd9921eccadaf0873f68899ef2ac3f575cb92f",
+      "descriptor_sha256": "eaa841f84a0b7e38300f3aa07048366aad69749fa29e7f2de644df135e3984c0",
       "id": "york-east-riverside-northern-boundary-wall"
     },
     {
       "model": "3d-assets/york/york-east-riverside-northern-wall-stair/model.glb",
       "model_sha256": "cc9992d6b20eeb65c402b1e7f42d333aa9ec29f0cca83460b44bc69339d919ea",
       "descriptor": "3d-assets/york/york-east-riverside-northern-wall-stair/asset.json",
-      "descriptor_sha256": "daf642b2e30aa490cf142968830019e0bd6ec414161a8fea812d07635c0d3359",
+      "descriptor_sha256": "34a4b63725416c234f81594797b1c8f07e9fee89d6c30a08b29834a5e9e4b644",
       "id": "york-east-riverside-northern-wall-stair"
     },
     {
       "model": "3d-assets/york/york-east-riverside-rear-house/model.glb",
       "model_sha256": "11ff0ead3ce45f9e6b92a64480e013752555bdc9e62cdefc07c634a0914577c1",
       "descriptor": "3d-assets/york/york-east-riverside-rear-house/asset.json",
-      "descriptor_sha256": "9ed23882c3f8797595f93d3585e2cd0dc0b81b42bf421c69c8a5c1ba752410d3",
+      "descriptor_sha256": "e9f54e27f0b82a3dab3dc51ef532f3472db26f8493d3490fe4cd758bed60dab3",
       "id": "york-east-riverside-rear-house"
     },
     {
       "model": "3d-assets/york/york-east-riverside-roofed-gatehouse/model.glb",
       "model_sha256": "2cec95e4d70c5ef6c29a1a4684dd3a67e469bac6e3c5861f3f311e01a25aed00",
       "descriptor": "3d-assets/york/york-east-riverside-roofed-gatehouse/asset.json",
-      "descriptor_sha256": "a3939d52af49768acd8f6f1c569aea19e4ed882954a167fcfc3d4fc7d070aba6",
+      "descriptor_sha256": "37854c4d0446cb6520939489f63f23df9a2896dcea64d6cc7290dadd5ba61696",
       "id": "york-east-riverside-roofed-gatehouse"
     },
     {
       "model": "3d-assets/york/york-east-riverside-roofed-link/model.glb",
       "model_sha256": "48195385b4abda3ed531435b58095a9cf1caecede3a65db577935999f769ff00",
       "descriptor": "3d-assets/york/york-east-riverside-roofed-link/asset.json",
-      "descriptor_sha256": "a02b62e399137e1068f1ddf48fb4463456d72ba66e430338776965a51da3c49d",
+      "descriptor_sha256": "72365ff1229e1fcbb7a56be208a19aa200afe39d41ce3cebc5292b14808c35f4",
       "id": "york-east-riverside-roofed-link"
     },
     {
       "model": "3d-assets/york/york-east-riverside-southern-wall-stair/model.glb",
       "model_sha256": "3346a67a1db427b9c5c1d8eb7e3d0fc07dc777417ace9030ff20c5014f1fb1f2",
       "descriptor": "3d-assets/york/york-east-riverside-southern-wall-stair/asset.json",
-      "descriptor_sha256": "b0ecc3c926972426b7fa212da2603f835a896212828292c03d0ab8fc23735264",
+      "descriptor_sha256": "57ce4a50959098b41e5b891269afb74b370a8f088903cd513ec7f024bd71a75d",
       "id": "york-east-riverside-southern-wall-stair"
     },
     {
       "model": "3d-assets/york/york-east-riverside-wooden-walkway/model.glb",
       "model_sha256": "ae32c43ac259e8cc07a5dcc25d41c1f8d02dfdd12366334ad2feb9d234d598c4",
       "descriptor": "3d-assets/york/york-east-riverside-wooden-walkway/asset.json",
-      "descriptor_sha256": "81239a4f4afaccacd570f0b0da9038f8dc087dbd869e045669e6ff0e4144d392",
+      "descriptor_sha256": "8deaeb6c8ccfed81133a78f8e20b053e749ebb39728e9e85729fe497ddeae4a0",
       "id": "york-east-riverside-wooden-walkway"
     },
     {
       "model": "3d-assets/york/york-east-water-gate/model.glb",
       "model_sha256": "ac41d89e696e548e814c9ff10544ef871816d1ab7a09a542bb54ee17d540e3cf",
       "descriptor": "3d-assets/york/york-east-water-gate/asset.json",
-      "descriptor_sha256": "164405caed054b1a66d184eb9eeb4e4f92c5fe6bd7b117c7da73147e9f7c4753",
+      "descriptor_sha256": "bc8148f96b31582b04aac6302a0b70d7ca7a76807e0aa8b6881970490d6d0b76",
       "id": "york-east-water-gate"
     },
     {
       "model": "3d-assets/york/york-east-water-gate-north-bastion/model.glb",
       "model_sha256": "1533c75f797c6214b59ddacb8f9d8860541e04617fec3431236fd304836107c6",
       "descriptor": "3d-assets/york/york-east-water-gate-north-bastion/asset.json",
-      "descriptor_sha256": "158bb97dabf531512f9baa2cf7788d7a012b8757703a5e833ea4d220f87d9108",
+      "descriptor_sha256": "a9eb53d0ed8a9e87b752d82e7d082258a53142160fe139dfbdbafca4ed44f9d1",
       "id": "york-east-water-gate-north-bastion"
     },
     {
       "model": "3d-assets/york/york-east-water-gate-south-bastion/model.glb",
       "model_sha256": "89b79b004ad00f5ad9c2c459f2c9f037996c8bb914844c6c4cc1a0533136fc13",
       "descriptor": "3d-assets/york/york-east-water-gate-south-bastion/asset.json",
-      "descriptor_sha256": "090ada244a70eca984ef739b7d5d73fb4c6bfef09820a926737a8746b67e01fd",
+      "descriptor_sha256": "ec1cb71fe266a22939fdd2894150f2628af9367b5c4f684a93ddf27546dee6a4",
       "id": "york-east-water-gate-south-bastion"
     },
     {
       "model": "3d-assets/york/york-inner-east-blue-roof-watchtower/model.glb",
       "model_sha256": "8adb02674d48053d4df5a84450a7df1cc3a77856721de72b8a3fff19d53e324e",
       "descriptor": "3d-assets/york/york-inner-east-blue-roof-watchtower/asset.json",
-      "descriptor_sha256": "bb9551806f716064bdd9ed78cf2f772682649fea96d1fe019c86a198d4bd903a",
+      "descriptor_sha256": "38e5d3e31e1b6a0b4a6b4104db7e40e459629fa1bd10113dd326b4ffd802c9e8",
       "id": "york-inner-east-blue-roof-watchtower"
     },
     {
       "model": "3d-assets/york/york-inner-east-curtain-wall-and-stair/model.glb",
       "model_sha256": "c6e05105e347c41c32aa3fd36f3822ba6be34880f97edba1d680ef87071a072c",
       "descriptor": "3d-assets/york/york-inner-east-curtain-wall-and-stair/asset.json",
-      "descriptor_sha256": "2a4d269a4be570c142587690465a6bac87883babbf53a2b61052d75ce917eead",
+      "descriptor_sha256": "139a3bdc1e70d67cfc5a30dcf9697d12d02b257df3feb0d6991e53b030365bc8",
       "id": "york-inner-east-curtain-wall-and-stair"
     },
     {
       "model": "3d-assets/york/york-inner-southeast-curtain-wall/model.glb",
       "model_sha256": "351c54e78a8f9906be32cdc906dd98176a12f63ff7ffcf8a22c62ccf011e14c6",
       "descriptor": "3d-assets/york/york-inner-southeast-curtain-wall/asset.json",
-      "descriptor_sha256": "087e559d9b92c89569c8fd1358183e5a549bc01c2c06039cd382d20d6a374068",
+      "descriptor_sha256": "a15ab4f1b46a8e40ed2d0c9830445b36b42a86d69c6ee2df22afd9f1231f27a9",
       "id": "york-inner-southeast-curtain-wall"
     },
     {
       "model": "3d-assets/york/york-market-cream-canopy-stall/model.glb",
       "model_sha256": "83327c6e0b8d0d4553d3b3b4f8bc94ffcd60a8a7492de6eba92bcca6271c0a2b",
       "descriptor": "3d-assets/york/york-market-cream-canopy-stall/asset.json",
-      "descriptor_sha256": "40842883844f6e92bd9c571ea7faa218e3834fa70cd2daa722886a938374428a",
+      "descriptor_sha256": "be0e5ee816e871c9723f7f3f35909f3183ce4c22ebb4afee0f206f1dfff08b84",
       "id": "york-market-cream-canopy-stall"
     },
     {
@@ -563,14 +563,14 @@
       "model": "3d-assets/york/york-market-north-square-tower/model.glb",
       "model_sha256": "a131e36a69c06d7cc60eec2a2994f66f771411a27fc8ca808a576546a55d5ccd",
       "descriptor": "3d-assets/york/york-market-north-square-tower/asset.json",
-      "descriptor_sha256": "90bf1e00f5cbb524b8da11ec7a598a61bf1becfb1e144fc9d3ba15e299879e6f",
+      "descriptor_sha256": "1259a13fc20111c5e867d849e5f3a2e4c5006cb92fae6546bfe8529f351ab6cf",
       "id": "york-market-north-square-tower"
     },
     {
       "model": "3d-assets/york/york-market-north-stone-house/model.glb",
       "model_sha256": "4440d9cbf3f91515f4b59c8f30fc39b94b5ea3c59f2ee005b2ba2d2d3963f6ea",
       "descriptor": "3d-assets/york/york-market-north-stone-house/asset.json",
-      "descriptor_sha256": "ae7791c585c1042490eb7201f317cc7e29a665139f1f7e04dfa6ccb106ec7abe",
+      "descriptor_sha256": "9120ed48c7947e1074b945cfa6efda01a56d897529173cf1c3f1513975943c22",
       "id": "york-market-north-stone-house"
     },
     {
@@ -584,7 +584,7 @@
       "model": "3d-assets/york/york-market-roofed-stone-well/model.glb",
       "model_sha256": "69bdd1658e0b8789dba8a15971f249665be3f5f1df6414dcfe992d0e92c50707",
       "descriptor": "3d-assets/york/york-market-roofed-stone-well/asset.json",
-      "descriptor_sha256": "d5e4e9d5207f8001a24b6d72b2d3f745ccec2ec8291232b4221c7470eff023dc",
+      "descriptor_sha256": "42b37f5f056585c82b8ff5c4b2bf25c6e4ac1d1fbbf31707f0c4e4459f9e3216",
       "id": "york-market-roofed-stone-well"
     },
     {
@@ -605,84 +605,84 @@
       "model": "3d-assets/york/york-market-southeast-tall-narrow-house/model.glb",
       "model_sha256": "b0a5cea7b6fbc096efee3da5e28fc385d198c49920514068ad172ffd0bc20040",
       "descriptor": "3d-assets/york/york-market-southeast-tall-narrow-house/asset.json",
-      "descriptor_sha256": "eed4140090d520cd0d698dc6bf424301421078a876328b7f5943b28dcc25354a",
+      "descriptor_sha256": "cad1dca85a8f941bbae440fa570d5fd729a84e208a82c42d8b3d4362194380c3",
       "id": "york-market-southeast-tall-narrow-house"
     },
     {
       "model": "3d-assets/york/york-market-southwest-central-hipped-house/model.glb",
       "model_sha256": "73b98d74963a8800582f99011c01448a8a11d2761f015b0e235d79d1e4833574",
       "descriptor": "3d-assets/york/york-market-southwest-central-hipped-house/asset.json",
-      "descriptor_sha256": "bef4370c4e79be7de15989c8bed76231375e69a3e1cb12ec1e82fc5350f00eaf",
+      "descriptor_sha256": "198fd5ad0c1943c2de203ef057f5c76851c86a85bfc849e88622fb6f72de8ab5",
       "id": "york-market-southwest-central-hipped-house"
     },
     {
       "model": "3d-assets/york/york-market-southwest-connecting-stairs/model.glb",
       "model_sha256": "b1c7a0392c5eee9f812cf6020c66815fe1a3a855e86be54ef3703aa95626c395",
       "descriptor": "3d-assets/york/york-market-southwest-connecting-stairs/asset.json",
-      "descriptor_sha256": "357809e1c806ba54ddc9ee1ad31812ee1d2e7c68e47512abdf44ea3725580bf4",
+      "descriptor_sha256": "55654d1f2950a13de65b3712f2c664362bb8a42a7e03cc9b071d1bbdb6d8a069",
       "id": "york-market-southwest-connecting-stairs"
     },
     {
       "model": "3d-assets/york/york-market-southwest-east-stone-annex/model.glb",
       "model_sha256": "c60ec19e307ed7dfb382c02914864f6b8d9afe8178029c2e08af5b9e81e2c0c9",
       "descriptor": "3d-assets/york/york-market-southwest-east-stone-annex/asset.json",
-      "descriptor_sha256": "61f6d89cdb0d7dc7f8f89a2c813a7a444ba4453122dd0fed74f94107bc6efc80",
+      "descriptor_sha256": "41a4dc52311ab34aecaa58638d0ab98d67ea20d57999ed6eaf74a3643e0aee37",
       "id": "york-market-southwest-east-stone-annex"
     },
     {
       "model": "3d-assets/york/york-market-southwest-east-timber-house/model.glb",
       "model_sha256": "8b4c638c01a91d72ce6f825c4cb30670150168fdb749b39885d8bf8111c09991",
       "descriptor": "3d-assets/york/york-market-southwest-east-timber-house/asset.json",
-      "descriptor_sha256": "5549f6cc050de8b041e295b0f7ab785fad33d09e3444947c859770f41fe443b1",
+      "descriptor_sha256": "81c2965f2dee315df2fe2c00c2a1857af60536903e191ab2708b447a9680487c",
       "id": "york-market-southwest-east-timber-house"
     },
     {
       "model": "3d-assets/york/york-market-southwest-front-square-tower/model.glb",
       "model_sha256": "9d85715c77efc353f82d14aa5d1837d094c81f96f0f4c4603c804630153fbecb",
       "descriptor": "3d-assets/york/york-market-southwest-front-square-tower/asset.json",
-      "descriptor_sha256": "23ca770fce429d69bd2cd3a331d11e7689b0c204517b35678f73faaa14e0f0af",
+      "descriptor_sha256": "510b623a83cdeee5c4f2069c1739fa252b3290d1f59ee7e43fcc0aae16eefc84",
       "id": "york-market-southwest-front-square-tower"
     },
     {
       "model": "3d-assets/york/york-market-southwest-rear-gable-house/model.glb",
       "model_sha256": "515b02a4b008bab7c9fabf0c22d96c1828da5237180d2b8b83afeccbf3034d93",
       "descriptor": "3d-assets/york/york-market-southwest-rear-gable-house/asset.json",
-      "descriptor_sha256": "f1d40cabf403461af775cd5c14e803da38015cc00412286aa259197c84f7d56c",
+      "descriptor_sha256": "0fd3db9029b6c63487b9fac21ef071323acaf57fb9329f0e7857c97f309ca0ea",
       "id": "york-market-southwest-rear-gable-house"
     },
     {
       "model": "3d-assets/york/york-market-southwest-rear-square-tower/model.glb",
       "model_sha256": "400fa8ea63cadef0ca5bea7a57631fde7f585784c7953be0ff82115aa4609ac5",
       "descriptor": "3d-assets/york/york-market-southwest-rear-square-tower/asset.json",
-      "descriptor_sha256": "a1f837a3f493acd06d37fbc88c1f52a9101d54a155703655c515f9fca8b6c424",
+      "descriptor_sha256": "352ce22dee9b285dcd6804dc4cbe011dd07809e1f945e96704e61e01fffe973f",
       "id": "york-market-southwest-rear-square-tower"
     },
     {
       "model": "3d-assets/york/york-market-southwest-round-tower/model.glb",
       "model_sha256": "5dd697406afc3535df80833979387d508159ceb326f309117131a7bdc71ca329",
       "descriptor": "3d-assets/york/york-market-southwest-round-tower/asset.json",
-      "descriptor_sha256": "23d3c7ddfe11ef5ebc0b0b3cae5f94e3abbb8ebe0b41a58db4450b3a0e15c948",
+      "descriptor_sha256": "724923edac4c3ed6ae0831b43549e3ee88e52f5ab64d00cc0fb6c7546fdedfc5",
       "id": "york-market-southwest-round-tower"
     },
     {
       "model": "3d-assets/york/york-market-southwest-stair-landing-turret/model.glb",
       "model_sha256": "3943e7f2507837bb6a3e4b35a7e29fcc36ae56d87bbd1976477be17432ea1fe5",
       "descriptor": "3d-assets/york/york-market-southwest-stair-landing-turret/asset.json",
-      "descriptor_sha256": "d2cdb16662744ee976e361900f4fd2de4977a5dbe920f7d22eafac8519243591",
+      "descriptor_sha256": "779b44d1560a13c00cf4b3f5bd2c01a993702720f72acf54de0a1d636b18e8a4",
       "id": "york-market-southwest-stair-landing-turret"
     },
     {
       "model": "3d-assets/york/york-market-southwest-stone-arch/model.glb",
       "model_sha256": "44739f320164c164a379f2bb5337bb1b4626b0bc49e7e6fe3fa37251f20d1b36",
       "descriptor": "3d-assets/york/york-market-southwest-stone-arch/asset.json",
-      "descriptor_sha256": "3e02ecda7932f4f9e454b4be836f946f036f5cc05e30955ee220aace4dde612b",
+      "descriptor_sha256": "dc48603170348a1da3028f0a6e0054e25a21b69fc83d19d2cf25f82396d55559",
       "id": "york-market-southwest-stone-arch"
     },
     {
       "model": "3d-assets/york/york-market-stepped-green-canopy-stall/model.glb",
       "model_sha256": "28466bf4f2c51555a7602b70ad0c86a4985f8952edadb37200c3d64ee571a5fc",
       "descriptor": "3d-assets/york/york-market-stepped-green-canopy-stall/asset.json",
-      "descriptor_sha256": "93e0f5adc6752aa2774c54b8d221ba7e10a194b4d1c56bd6805eb4990e13434c",
+      "descriptor_sha256": "58aab1680730d8b0549dc496721fd3e56aec0f67193dcd6b934db45475e931ff",
       "id": "york-market-stepped-green-canopy-stall"
     },
     {
@@ -696,7 +696,7 @@
       "model": "3d-assets/york/york-market-street-barrel/model.glb",
       "model_sha256": "c443ab3f96fbcb6cab6d59e110aa2cecd18e3b5bff10402ee840a51bdc4c1a9d",
       "descriptor": "3d-assets/york/york-market-street-barrel/asset.json",
-      "descriptor_sha256": "9c9691a38730e859e27368ac8e4ad0c3e17973f3872469a858b4bd065f3e4a8a",
+      "descriptor_sha256": "83ada2213fa355034ea9ebf1866185cc20a3c0d4c6dbaf85b920bf0b51fa076a",
       "id": "york-market-street-barrel"
     },
     {
@@ -724,14 +724,14 @@
       "model": "3d-assets/york/york-market-wall-display-table/model.glb",
       "model_sha256": "25dab95c59a3c84c9b7fd72f0360e5f22876189c02f842b44def1b1e0452ae5a",
       "descriptor": "3d-assets/york/york-market-wall-display-table/asset.json",
-      "descriptor_sha256": "cfad1c46ad77818b5753ecfe5453bf58b08b61650e1af8d9da8a130dfabbfe7d",
+      "descriptor_sha256": "81b8366b149ed9d842b26579524634d532769536a7f6494bc6094116c93ee8f1",
       "id": "york-market-wall-display-table"
     },
     {
       "model": "3d-assets/york/york-market-west-display-table/model.glb",
       "model_sha256": "84f88cd6e6431b0e45157fd8185d0f909ad51c61ed2ed9991b3a63a9e7c0baf8",
       "descriptor": "3d-assets/york/york-market-west-display-table/asset.json",
-      "descriptor_sha256": "20648ee44384ad946f5572d3972c0da31f003992c5c20996d60cafcf5b1b51fb",
+      "descriptor_sha256": "9f4b49ae332d5277a5f9548003cd4ca9aaa751d50cd2925f3f1467c607422844",
       "id": "york-market-west-display-table"
     },
     {
@@ -745,301 +745,301 @@
       "model": "3d-assets/york/york-north-garden-central-vegetable-enclosure/model.glb",
       "model_sha256": "edabfc1c2d1391b29877178ceb696e240b02699306482fbf3b53e56977875581",
       "descriptor": "3d-assets/york/york-north-garden-central-vegetable-enclosure/asset.json",
-      "descriptor_sha256": "389c4ef24b3ab15d1c3929258ca01b46b7040f3ba3bf5eea0d0f4e5a2154ec18",
+      "descriptor_sha256": "014563177c38c4bd4b8548952569fd0d849c566f7b9b967d2ea3507c40ad38f8",
       "id": "york-north-garden-central-vegetable-enclosure"
     },
     {
       "model": "3d-assets/york/york-north-garden-fence-barrel/model.glb",
       "model_sha256": "00a58ade28e8b00e91e71c4a8a67e399a0c804cd717f053d4707358dfa0bb26c",
       "descriptor": "3d-assets/york/york-north-garden-fence-barrel/asset.json",
-      "descriptor_sha256": "5862bf08e8622cc5e15c63da98d2c6dc2c0f55655aee498c577dcafd1a7f5fcf",
+      "descriptor_sha256": "0690ef009b67fe4ac5b7ce686689c9138a7578f96024d337df8e1a2281e0c7fd",
       "id": "york-north-garden-fence-barrel"
     },
     {
       "model": "3d-assets/york/york-north-garden-front-fence/model.glb",
       "model_sha256": "a9a52ca1f8debbde6663fc9b9c21f453260bbadea0ab8e7dd3ebe5724e547927",
       "descriptor": "3d-assets/york/york-north-garden-front-fence/asset.json",
-      "descriptor_sha256": "d127397ca76cec5f6721cf1b639470f09774a98d07d169f7b8b508695d9bdac2",
+      "descriptor_sha256": "41b10abf11553d39f955bb723b6660864e60dca6d935d3464e5d349f78336a67",
       "id": "york-north-garden-front-fence"
     },
     {
       "model": "3d-assets/york/york-north-garden-rear-wall/model.glb",
       "model_sha256": "57bf42e3036c4303b9278ad5d7cbbe5e0644a7f0ce7b5843dc97c56fde0224a6",
       "descriptor": "3d-assets/york/york-north-garden-rear-wall/asset.json",
-      "descriptor_sha256": "e9a6b68706d5f8d02457d32677ccea11662d6eb3d513fa2d2c91a9f5827d1e40",
+      "descriptor_sha256": "95c3d9a61e7b8054f91bfa875b08fe93f17fa92f87b4956333a5a0d1284ab65f",
       "id": "york-north-garden-rear-wall"
     },
     {
       "model": "3d-assets/york/york-north-garden-shed-barrel/model.glb",
       "model_sha256": "ff0efb9557ecb1f56ff302fc9fa0d32e57e529e65477b8f6a94081af3f0193c1",
       "descriptor": "3d-assets/york/york-north-garden-shed-barrel/asset.json",
-      "descriptor_sha256": "3e1de564dc77fd28d781ead371ce69b9c38970554357c6592f390d06ab4abf60",
+      "descriptor_sha256": "bc1d9ddf91f61be36ac00afdf24f2b0e83894947f007b7c4b3600bc81801769c",
       "id": "york-north-garden-shed-barrel"
     },
     {
       "model": "3d-assets/york/york-north-garden-shed-barrel-pair/model.glb",
       "model_sha256": "48037d610e9d68ad05111c126666525ca8b812e8e64b8428c6d6b3f9db46d764",
       "descriptor": "3d-assets/york/york-north-garden-shed-barrel-pair/asset.json",
-      "descriptor_sha256": "87eb08729a60f29c6c072309e22f44a3d98bde5db2c6e01e2e030713376bbf92",
+      "descriptor_sha256": "88747db632b2ea54b08e4ad2ef3a242d23392500eb0264d1a542d3ee3289b08a",
       "id": "york-north-garden-shed-barrel-pair"
     },
     {
       "model": "3d-assets/york/york-north-garden-square-watchtower/model.glb",
       "model_sha256": "67242da485706b3b2353e773110a3b475a6c79c8138848c510b14d35bbe7985f",
       "descriptor": "3d-assets/york/york-north-garden-square-watchtower/asset.json",
-      "descriptor_sha256": "6b1edb8974a9b0a0ce1720bae1cd0a23f0f4c6fcf139a4b396227628cd4cee10",
+      "descriptor_sha256": "3defef57bfe4a4dec6cbd9c119f3e184b81ea141dfe87cb61758a8983d19ac52",
       "id": "york-north-garden-square-watchtower"
     },
     {
       "model": "3d-assets/york/york-north-garden-timber-shed/model.glb",
       "model_sha256": "9d0b8b16a4b1ea31805e8cbe943e5470bfc483a9fbd06cb14a146695d8602a03",
       "descriptor": "3d-assets/york/york-north-garden-timber-shed/asset.json",
-      "descriptor_sha256": "dcb854f1aee6fc3b4397dbf99ab0bc65bf27e7da172f2a6ab8f3b29ed8991226",
+      "descriptor_sha256": "e128d11b132d1c6ba1d8133dcc8146b259b52629ac3c572973bd5b2daa57d4c3",
       "id": "york-north-garden-timber-shed"
     },
     {
       "model": "3d-assets/york/york-north-garden-tree-enclosure/model.glb",
       "model_sha256": "a227d2d80c62e39966a954b2f9a3b318c0268314b568914c6ee6c686b7183954",
       "descriptor": "3d-assets/york/york-north-garden-tree-enclosure/asset.json",
-      "descriptor_sha256": "8b0e547a9e4b753621e25cd6c662d22dab8ddaad5f5e29aa7639a569394298cb",
+      "descriptor_sha256": "7df114daa3812f52826b16b6197ffbc0648d01c4b87c72456bf0660369ba1636",
       "id": "york-north-garden-tree-enclosure"
     },
     {
       "model": "3d-assets/york/york-north-garden-wall-and-stair/model.glb",
       "model_sha256": "cfa370436b4929f0d54fde04770f398450d6d9f220eef187b02cf9206367c574",
       "descriptor": "3d-assets/york/york-north-garden-wall-and-stair/asset.json",
-      "descriptor_sha256": "46a5ba7d92ef7540a8124864b3b7fef58e54c5575654376fdab01365a7a7abd5",
+      "descriptor_sha256": "d1646fd276ad59491e4bc02cf378650c6d9e8e6b35860250e910d7f398eb554f",
       "id": "york-north-garden-wall-and-stair"
     },
     {
       "model": "3d-assets/york/york-north-garden-west-vegetable-enclosure/model.glb",
       "model_sha256": "527723c5af308c02545c40fb48cd9714994761c16c71a0bdbf2b9d525a0ed493",
       "descriptor": "3d-assets/york/york-north-garden-west-vegetable-enclosure/asset.json",
-      "descriptor_sha256": "b7e2cfbc7270e3aa6b3083762de1d540b40d059458d1914e81a7e154fa27e146",
+      "descriptor_sha256": "2c68ad2d27796212324e5786fc750f88b563339a1157079786a266fc7a525ea1",
       "id": "york-north-garden-west-vegetable-enclosure"
     },
     {
       "model": "3d-assets/york/york-north-garden-workbench/model.glb",
       "model_sha256": "e0998daa2cdda4695a79608df35b377c642066c8ac1a0ee95d20777f9a848231",
       "descriptor": "3d-assets/york/york-north-garden-workbench/asset.json",
-      "descriptor_sha256": "05d90588044e73deb237c2d9174f756cc3215b6c3a16276126d68b8b8a10c327",
+      "descriptor_sha256": "03c7967025731c3c17a0c56e299fddc03eb03f6a44ace14c302b61000f2beff8",
       "id": "york-north-garden-workbench"
     },
     {
       "model": "3d-assets/york/york-north-precinct-boundary/model.glb",
       "model_sha256": "c8371b9ef626f316eb2f0f32ffc397a7490fc5c27825145d6b2db0ad3dd91cdd",
       "descriptor": "3d-assets/york/york-north-precinct-boundary/asset.json",
-      "descriptor_sha256": "20c19dbd299578534dd9f1854ef246ad16b5a66a3b0b8d06b6ea5b25b445ee23",
+      "descriptor_sha256": "d97a25c2dda56cb5a4de0af6c4c0d9d71dde0289f1d07da63c7a65f2c16af1ba",
       "id": "york-north-precinct-boundary"
     },
     {
       "model": "3d-assets/york/york-north-river-lane-barrel-on-stand/model.glb",
       "model_sha256": "b8c5e1ad0a3173a7f918a864179aa890fb501efdcf1a0f27d3288cfa6094acf0",
       "descriptor": "3d-assets/york/york-north-river-lane-barrel-on-stand/asset.json",
-      "descriptor_sha256": "e35c8f78bde15d0115587a2d77aa46ac090eee5758b7160314b9b06cabf4eff1",
+      "descriptor_sha256": "547a892181ccf466c78203c9d3ee160d3590bab9295b464c67b13da5ded54127",
       "id": "york-north-river-lane-barrel-on-stand"
     },
     {
       "model": "3d-assets/york/york-north-river-lane-barrel-pair/model.glb",
       "model_sha256": "e5f94eb31bc1f76ad511b737b22236d1b962d26edc87445c0f61005484ea4b04",
       "descriptor": "3d-assets/york/york-north-river-lane-barrel-pair/asset.json",
-      "descriptor_sha256": "9c2e2fbf757756ea1cd24046cdbee2903260a5890096ff6d77a7ee562f095929",
+      "descriptor_sha256": "b6e36d6f65c4a7a72bda289c6bc5fde4ced5dc4578b2067c7759b5b8e469367a",
       "id": "york-north-river-lane-barrel-pair"
     },
     {
       "model": "3d-assets/york/york-north-river-lane-cargo-stack/model.glb",
       "model_sha256": "9844343d6681c1e685955270c4f51da7601d4b33559940400331ee0180bdf67f",
       "descriptor": "3d-assets/york/york-north-river-lane-cargo-stack/asset.json",
-      "descriptor_sha256": "c6455d9206fecedc0ce02eca58414d6378fbc58e8fc1aa5abd2b740fdd5a17f5",
+      "descriptor_sha256": "d19e32bb419d3dfa4a9908a8cf61bbd34a5b69e3c5c58a0fe12eb1944e19405a",
       "id": "york-north-river-lane-cargo-stack"
     },
     {
       "model": "3d-assets/york/york-north-river-lane-northern-timber-house/model.glb",
       "model_sha256": "f2127f542aec768863df7f0c92b5eea811b986824ac98485e43ccdca8ac29d16",
       "descriptor": "3d-assets/york/york-north-river-lane-northern-timber-house/asset.json",
-      "descriptor_sha256": "7dd4f7810e08d48fa18d1ee34384f7eb3e5acff6c54b1f7322e633970eaa6891",
+      "descriptor_sha256": "0e56c2c083b900cf33b161cee5227aec1d0286cb1333f877424f0977d746ac37",
       "id": "york-north-river-lane-northern-timber-house"
     },
     {
       "model": "3d-assets/york/york-north-river-lane-northwest-house/model.glb",
       "model_sha256": "2546fa9d41d6944340ba6f9a70d49b7f6b5955163bb6d0db7af3be29f5d178f1",
       "descriptor": "3d-assets/york/york-north-river-lane-northwest-house/asset.json",
-      "descriptor_sha256": "2667eda755e6f88f16e821d05a70cc1c239ee9ed51446b2fab6ee13ab4bfd628",
+      "descriptor_sha256": "2953fa1d0553eca045d0c6e6335717a3b52824b1358bda960d331edb94824d1c",
       "id": "york-north-river-lane-northwest-house"
     },
     {
       "model": "3d-assets/york/york-north-river-lane-rear-timber-house/model.glb",
       "model_sha256": "33b6c326e3a056a7821a1510906302eaf04e931d4bee05d600e7dc7e416da51a",
       "descriptor": "3d-assets/york/york-north-river-lane-rear-timber-house/asset.json",
-      "descriptor_sha256": "89d9a40ff0aca3ec1402b7f2653976a15c480420a6abab7404baf4fbff3eba60",
+      "descriptor_sha256": "65c9409b3e7af85d1b5efb8f36d4b7c6d849821fc20d7bd54043fdd9027bd1be",
       "id": "york-north-river-lane-rear-timber-house"
     },
     {
       "model": "3d-assets/york/york-north-river-lane-round-tower/model.glb",
       "model_sha256": "b6c21ba0c29a9844f5b9ee3de550e79d064c6e478d45ca127a0246f8be7da5f2",
       "descriptor": "3d-assets/york/york-north-river-lane-round-tower/asset.json",
-      "descriptor_sha256": "3460e52e53315411605e2791727d131f7b6168857df3dbeca8a477012b244aea",
+      "descriptor_sha256": "b7f7047e535f9e85d63e42920f8308b8d6305d83f44455b031a761ab6aece80b",
       "id": "york-north-river-lane-round-tower"
     },
     {
       "model": "3d-assets/york/york-north-river-lane-shelf-and-chest/model.glb",
       "model_sha256": "fd239846094427a6b5074407d5f9af8802fb1aa48601581d7fce8983edb39d53",
       "descriptor": "3d-assets/york/york-north-river-lane-shelf-and-chest/asset.json",
-      "descriptor_sha256": "93b2c5351216c846ed5b1e02a56511ee46c7921f9e94874cf581321c4f886c84",
+      "descriptor_sha256": "fe47ef70f50b0a814285d7cc904fa9df65c7337cf4daafb588b2d4d770ed623b",
       "id": "york-north-river-lane-shelf-and-chest"
     },
     {
       "model": "3d-assets/york/york-north-river-lane-stone-house/model.glb",
       "model_sha256": "c94862761a7684fa5a736d181618589a53b25c87ad8101169ff09ef07e1f939b",
       "descriptor": "3d-assets/york/york-north-river-lane-stone-house/asset.json",
-      "descriptor_sha256": "f5427049e9d7ee25ad79cee27ba08737473330c3b5f40bee2a3c1489ec7b7667",
+      "descriptor_sha256": "2f93ee723f092f5d0918dad5abaf3dffb22aa6da5d961a23f269e3c27ae31779",
       "id": "york-north-river-lane-stone-house"
     },
     {
       "model": "3d-assets/york/york-north-river-lane-west-low-house/model.glb",
       "model_sha256": "11908856936bf9173e235b9cd57a7a05e52aa5ea1184c502af4c99b08121110e",
       "descriptor": "3d-assets/york/york-north-river-lane-west-low-house/asset.json",
-      "descriptor_sha256": "e489ed3f1184436945de0030e0aad6200bb12d9da84d0c84124ea01746e72c3a",
+      "descriptor_sha256": "ba85dce566794c6728f379fecb725060bee52216257c5e55786fe65bfe77300e",
       "id": "york-north-river-lane-west-low-house"
     },
     {
       "model": "3d-assets/york/york-outer-east-conical-watchtower/model.glb",
       "model_sha256": "2cfa277c6b00a7fb9fb7b665a476638dccaba109311c097d91981008861d0e9d",
       "descriptor": "3d-assets/york/york-outer-east-conical-watchtower/asset.json",
-      "descriptor_sha256": "0aa4ef727f1b0197007e513f48761f8a7d38cbeb96143de8d63fbcf1cbf6823a",
+      "descriptor_sha256": "a387cfb9222cbb5134a1f17ddd7c8ff8cc6e65679b72941c50e5a3d485500f5b",
       "id": "york-outer-east-conical-watchtower"
     },
     {
       "model": "3d-assets/york/york-outer-east-middle-round-bastion/model.glb",
       "model_sha256": "e2c20b6bb7bd001068130ebc597ccb4650fc31c7cf978bbc9e130888d982f6b3",
       "descriptor": "3d-assets/york/york-outer-east-middle-round-bastion/asset.json",
-      "descriptor_sha256": "c5216fa79118e709a785578ce83bcbd93dfd6a01a5f4bac14ba1c61d6f403a5d",
+      "descriptor_sha256": "bb00774b0692b41d55e3f353dcc2ddb1ad07adc6e732f38210b4e285ec15a6a0",
       "id": "york-outer-east-middle-round-bastion"
     },
     {
       "model": "3d-assets/york/york-outer-east-upper-curtain-wall/model.glb",
       "model_sha256": "f7bd3b0784ea9e2e8a2ca020d92d0350c3ad238d90fc803c30994ecdb17faecd",
       "descriptor": "3d-assets/york/york-outer-east-upper-curtain-wall/asset.json",
-      "descriptor_sha256": "e8ffb004e32c1ebd968bf1dbb7dfd1765b67a56a46d078fc08cc89520467e69c",
+      "descriptor_sha256": "a68562a8caddaf160c2d7c51a6ffd8effd79c06523ca9cdaecc4165b1a9c933e",
       "id": "york-outer-east-upper-curtain-wall"
     },
     {
       "model": "3d-assets/york/york-outer-east-upper-wall-stair/model.glb",
       "model_sha256": "e57afd58a3afcfcfc0e99d25aa8b804d67842865a33a90fe7db3c5baede8c821",
       "descriptor": "3d-assets/york/york-outer-east-upper-wall-stair/asset.json",
-      "descriptor_sha256": "6548236a40c5a46f703743eda751558263232aa6b2ce18795fd2acab47ab3369",
+      "descriptor_sha256": "7ee27156b7a692db975a7e7e6adabbec5cfb6384a9d7212347249166172f624a",
       "id": "york-outer-east-upper-wall-stair"
     },
     {
       "model": "3d-assets/york/york-outer-east-wall-stair-passage/model.glb",
       "model_sha256": "dbc5a328493118c93840f7f21ef9f843c9ab746ae3941a71381d38a3c4efc1e7",
       "descriptor": "3d-assets/york/york-outer-east-wall-stair-passage/asset.json",
-      "descriptor_sha256": "e5a0ee36626a5bd8b609bb6fa76f40c16eff18cef9650d5d72e0cbeb97bb1a9e",
+      "descriptor_sha256": "1e6725d0bef24b453c4b5e395f689d972a59ecfb23439b35fedbb269bbd08da5",
       "id": "york-outer-east-wall-stair-passage"
     },
     {
       "model": "3d-assets/york/york-outer-southeast-round-bastion/model.glb",
       "model_sha256": "b5aeb8b71132ae4fddf48744e592eaadc1b04df657f93ca706d1e232db5cd5fb",
       "descriptor": "3d-assets/york/york-outer-southeast-round-bastion/asset.json",
-      "descriptor_sha256": "40c01ee620fadc28886c3075cc5be19c90551ddc4b7c1603898a1e4bf7fa0184",
+      "descriptor_sha256": "f2ff28a2622541f2657cefaa6ae1cf2fce34725c244b5ddc8a4a9c42c5f2b7d0",
       "id": "york-outer-southeast-round-bastion"
     },
     {
       "model": "3d-assets/york/york-outer-southeast-wall-stair/model.glb",
       "model_sha256": "7dca6897205bfc197e4972df19f3c6bbb6744439c9845d3c7a0ec7a97ffa5317",
       "descriptor": "3d-assets/york/york-outer-southeast-wall-stair/asset.json",
-      "descriptor_sha256": "47391a94b9ef271bab7b81f4b2fd1dc00b096d6e7b4ad055cf3e102e59162ae2",
+      "descriptor_sha256": "01b7624d86147fcf1604a2dec32b003fab8f83ac01b41bbcde201bbeb88f3bb7",
       "id": "york-outer-southeast-wall-stair"
     },
     {
       "model": "3d-assets/york/york-precinct-causeway-ivy-covered-house/model.glb",
       "model_sha256": "8eb9e64c0c1d237fcc9a1567e8f995ac1deb1bbf1a93ad5c88569b31194579dc",
       "descriptor": "3d-assets/york/york-precinct-causeway-ivy-covered-house/asset.json",
-      "descriptor_sha256": "7585a049ec32e43cff43f7e8354c37402d1e5d61fdda10a52740838dadf5cc74",
+      "descriptor_sha256": "9c57277ecf713d4ee93817505012bc3dbbbee29e00e01e51105a5103c094fad2",
       "id": "york-precinct-causeway-ivy-covered-house"
     },
     {
       "model": "3d-assets/york/york-precinct-causeway-stone-annex/model.glb",
       "model_sha256": "7635642814e18c01f89897b148265615577034da7451beb533c48c06a6df7d1f",
       "descriptor": "3d-assets/york/york-precinct-causeway-stone-annex/asset.json",
-      "descriptor_sha256": "5b4eb286aad4f40c327160dca9ed3cf1b1b2d3c272b4f9c4679648e4bbf99f47",
+      "descriptor_sha256": "326d623d52060c96cfb0c1107ad8b080a736227a957518f62fa13501c0c3860c",
       "id": "york-precinct-causeway-stone-annex"
     },
     {
       "model": "3d-assets/york/york-precinct-east-curtain-wall/model.glb",
       "model_sha256": "ee1eca4c5462e6e1e8eb399c3796927a08151ac69450c72b48eed0f0edb5d76a",
       "descriptor": "3d-assets/york/york-precinct-east-curtain-wall/asset.json",
-      "descriptor_sha256": "9b3ac57795c66e7cb1998eee6c64027383eda136acec39a47a012785a6c64d4a",
+      "descriptor_sha256": "71c78db29f62e3ac63547bca42e678f05546a0a664d46c731797b7ea44060490",
       "id": "york-precinct-east-curtain-wall"
     },
     {
       "model": "3d-assets/york/york-precinct-east-gate-boundary-wall/model.glb",
       "model_sha256": "966d30693f625a6cff158e1368c1870cb0bed41144f711e19e5d9b72e66f6969",
       "descriptor": "3d-assets/york/york-precinct-east-gate-boundary-wall/asset.json",
-      "descriptor_sha256": "5ed19899ae772cb1108e3823268dedf0cc2e2fbf0b4e5556d7c7b815047c9583",
+      "descriptor_sha256": "d639192845ce6b50c27930d28cfd8dab414eb25934020248d2a9df2791a78553",
       "id": "york-precinct-east-gate-boundary-wall"
     },
     {
       "model": "3d-assets/york/york-precinct-east-gate-passage/model.glb",
       "model_sha256": "f431aba8cf01182a226298648c3583afd5701cb9cd2d150b667348b9217520f0",
       "descriptor": "3d-assets/york/york-precinct-east-gate-passage/asset.json",
-      "descriptor_sha256": "6b9c0630abf92e9d18c43353877a335c558bd7a2a460a4406e16d3eead80c918",
+      "descriptor_sha256": "ea83584787302334e2c6906d40353cc7840d3fd026b3faea1225facad959384f",
       "id": "york-precinct-east-gate-passage"
     },
     {
       "model": "3d-assets/york/york-precinct-east-roofed-gatehouse/model.glb",
       "model_sha256": "06dc16198b66ae4370bc6da8af34933b4493a6ff8bb9972543119c6dc06e4722",
       "descriptor": "3d-assets/york/york-precinct-east-roofed-gatehouse/asset.json",
-      "descriptor_sha256": "d01073d17f46a532c18d8212cb2bf2a6af971484afc899359fbe1de3fd613991",
+      "descriptor_sha256": "52705cf3ad6f9269a9a6eac357ffb46d3863da6183ce7eeaff94fb1325977986",
       "id": "york-precinct-east-roofed-gatehouse"
     },
     {
       "model": "3d-assets/york/york-precinct-east-tall-square-tower/model.glb",
       "model_sha256": "21fbeed8594f6af795219c846780ca227d7651fe2df37c38e8ad6613c3fecc51",
       "descriptor": "3d-assets/york/york-precinct-east-tall-square-tower/asset.json",
-      "descriptor_sha256": "5c4899d873aa1c8a1b17b97d4f24085319dbd8fa29402c02ed90e5c202f68fa7",
+      "descriptor_sha256": "5e161e42835c3d93315e3d874f8d5750d779c46dd5ce0ab83289692abaaae162",
       "id": "york-precinct-east-tall-square-tower"
     },
     {
       "model": "3d-assets/york/york-precinct-east-timber-crowned-watchtower/model.glb",
       "model_sha256": "99360dc7617464941b6f01fa2bf68592cc1d845e8a41cc121771ba5d31507636",
       "descriptor": "3d-assets/york/york-precinct-east-timber-crowned-watchtower/asset.json",
-      "descriptor_sha256": "e5de4a250d99d8865d6ab6826a18582be23dcb4055c233cf9dc93e3bea81476c",
+      "descriptor_sha256": "c3ddc4ffacf06ff14dd7b042e5168bf601907ae87b1ce9cd30b6df83cbabc45e",
       "id": "york-precinct-east-timber-crowned-watchtower"
     },
     {
       "model": "3d-assets/york/york-precinct-east-wall-stair/model.glb",
       "model_sha256": "7067d46f61bf48aa415da78a88fff2e1f604b12187cc5de5f3780dd26e4b803f",
       "descriptor": "3d-assets/york/york-precinct-east-wall-stair/asset.json",
-      "descriptor_sha256": "b0acc64a8128f8a740e9729f35f2b01f52cf8ef65539645371bbd665e362e9da",
+      "descriptor_sha256": "624c2136df7e49fa294238c0c60f0fd9c1e3814975c7bb792271d06e78106b0e",
       "id": "york-precinct-east-wall-stair"
     },
     {
       "model": "3d-assets/york/york-precinct-hall-east-tower/model.glb",
       "model_sha256": "a7a992dba80940de69544fef45821eb8512617a653868e14b5b3e07538844c9e",
       "descriptor": "3d-assets/york/york-precinct-hall-east-tower/asset.json",
-      "descriptor_sha256": "a8afe9f8fcef29988c20232b74e4120b3b63d345a6b53010c4b09509fa6890b8",
+      "descriptor_sha256": "268cdc8465e6f706fdf15be7496b73b0f5bdac57ac53e42f7d1cc19924c841bc",
       "id": "york-precinct-hall-east-tower"
     },
     {
       "model": "3d-assets/york/york-precinct-hall-west-tower/model.glb",
       "model_sha256": "2d7828108810035a762187dc5e18b2b0d7b415f4e7f2ab150f10427aa3ce79f9",
       "descriptor": "3d-assets/york/york-precinct-hall-west-tower/asset.json",
-      "descriptor_sha256": "de2948667542dd87662bf4460cb2e8e6c712da42d9878318d1d360aab42fb1d3",
+      "descriptor_sha256": "f8e340b5129d4ccd9139422bc3f4e7124d9e81fb3f2f4bff5b22387307eb5dfc",
       "id": "york-precinct-hall-west-tower"
     },
     {
       "model": "3d-assets/york/york-precinct-north-connecting-gateway/model.glb",
       "model_sha256": "0763d8dcf52f437e544b0f10c88839ec66aa2abf39a090fa5df17d7e2ce7e0a2",
       "descriptor": "3d-assets/york/york-precinct-north-connecting-gateway/asset.json",
-      "descriptor_sha256": "0a941b4f6143bc2d1e7181316e119237b18adfa7a42a90cb0242c51c6525a03c",
+      "descriptor_sha256": "d0b806cf53d6afb547d285c0a5aa5659145191931543a4b120d914c25b67695f",
       "id": "york-precinct-north-connecting-gateway"
     },
     {
       "model": "3d-assets/york/york-precinct-north-hall/model.glb",
       "model_sha256": "461b5590d282e3c41181775acfae5a46aae3bc85626d53ca044752c692334f0d",
       "descriptor": "3d-assets/york/york-precinct-north-hall/asset.json",
-      "descriptor_sha256": "bcca3e884509fb92934eea7c06ea89f2d8efdf9d138c12f71ab915a399f383db",
+      "descriptor_sha256": "c8114a03f1bc101e2707fb46be913c1c5d83dfef7ef8c38193b4a00d27b15bca",
       "id": "york-precinct-north-hall"
     },
     {
@@ -1053,14 +1053,14 @@
       "model": "3d-assets/york/york-precinct-south-curtain-wall/model.glb",
       "model_sha256": "306a58df2e97badd5df1cb925e2d6edea5564c832fc6af74de1ab8f66602bdeb",
       "descriptor": "3d-assets/york/york-precinct-south-curtain-wall/asset.json",
-      "descriptor_sha256": "14d15565ed2356013e9169fa785a4210402c3feeb3c9a2944c8ad8f3fe6869e0",
+      "descriptor_sha256": "90050e98c049d263e54bdf2a9508dbfd2192b83ee13362b4eb9d96c39da22892",
       "id": "york-precinct-south-curtain-wall"
     },
     {
       "model": "3d-assets/york/york-precinct-southeast-bastion/model.glb",
       "model_sha256": "45e3dc4e5955166db8fdb0698296b42957ec549fbb1af3cbe9c5b62a6d27d475",
       "descriptor": "3d-assets/york/york-precinct-southeast-bastion/asset.json",
-      "descriptor_sha256": "0c9f16433411e35031b244864167d241d883b0ffd594c6696a422520d9266937",
+      "descriptor_sha256": "e89ed62d64b5e286ed7cfcddacc643d3b8a3128cbf630acace4005c97ab50586",
       "id": "york-precinct-southeast-bastion"
     },
     {
@@ -1074,553 +1074,553 @@
       "model": "3d-assets/york/york-precinct-southwest-round-bastion/model.glb",
       "model_sha256": "93939dc224b0721d4f4b55a721f5a81c9e91e5334afacc4d80daee1eeecdaf57",
       "descriptor": "3d-assets/york/york-precinct-southwest-round-bastion/asset.json",
-      "descriptor_sha256": "ae591be9d4168114182522212fce1f22e762ea2c2a2a5a765e0adb9d0a5be4ad",
+      "descriptor_sha256": "0e5773c632b004d68d051eb033a7b27b03ee9756930104244049a7ff7cae69cc",
       "id": "york-precinct-southwest-round-bastion"
     },
     {
       "model": "3d-assets/york/york-precinct-southwest-wall-ramp/model.glb",
       "model_sha256": "b9f7876329608f354189e2609c35577fec7ad1e9726f4379821576ea9ea9abd8",
       "descriptor": "3d-assets/york/york-precinct-southwest-wall-ramp/asset.json",
-      "descriptor_sha256": "ac8b39b9f161889e449eb85962519681a6dc75cb3ca104ce5c6b397405af3229",
+      "descriptor_sha256": "4008ec200943d544678e9df17cffcffbc0193b2278edf6116fbbd8231fa6366e",
       "id": "york-precinct-southwest-wall-ramp"
     },
     {
       "model": "3d-assets/york/york-precinct-stone-causeway/model.glb",
       "model_sha256": "ae64290bb5936fc65edcd25584eb8bf0e77b6531feab84a420c141f73cdfffd1",
       "descriptor": "3d-assets/york/york-precinct-stone-causeway/asset.json",
-      "descriptor_sha256": "23197eef9aee6c9b300a3a97b204d55518d98488bf6c3cb1e2ce9c1949ab8b5c",
+      "descriptor_sha256": "d6098e7c20c535cc6cfbc3d058beeeff11463a8ede88329aa82dcfd38a362584",
       "id": "york-precinct-stone-causeway"
     },
     {
       "model": "3d-assets/york/york-precinct-west-great-hall/model.glb",
       "model_sha256": "70bab68e9d4aa0fb5f2dd64bdb5bd43ecdc5b3a434ea3d754a7e744fe40a84b9",
       "descriptor": "3d-assets/york/york-precinct-west-great-hall/asset.json",
-      "descriptor_sha256": "7b993bd986afb30e6b7c4ce3e504452e661f4ed6a5212f98de68feeeb1ee2ffb",
+      "descriptor_sha256": "bc3864171e527a02538cf5594e915ae373b945a9324038d31ef7d2064ae12253",
       "id": "york-precinct-west-great-hall"
     },
     {
       "model": "3d-assets/york/york-precinct-west-suspended-footbridge/model.glb",
       "model_sha256": "6b136cd5ebbf4f553306630ff0c0ce2d7d660c17bb814f9125b71b72f7bcbe09",
       "descriptor": "3d-assets/york/york-precinct-west-suspended-footbridge/asset.json",
-      "descriptor_sha256": "a3c52963da015c952684fe1bb34e359b4d7833d9e102a31f4c7b55c24bcdc64b",
+      "descriptor_sha256": "347b40bce9eedd3230c45b45af7eb96b8e7128cb3d373e6d6d39311fcbd6ae15",
       "id": "york-precinct-west-suspended-footbridge"
     },
     {
       "model": "3d-assets/york/york-precinct-west-terrace-parapet/model.glb",
       "model_sha256": "c070246ebaac35825c2603fad7b3cc9c4db7e256dea71b675b1f3f24b15ec19e",
       "descriptor": "3d-assets/york/york-precinct-west-terrace-parapet/asset.json",
-      "descriptor_sha256": "66f1b695ccc967ce0318f3574555d4b824006e9e5e83faf4cb3f00575b3205cf",
+      "descriptor_sha256": "c16f544f3f5ef74ec04e5de3be0d3cb5a3781a131795fe73f275b4042cd1cca8",
       "id": "york-precinct-west-terrace-parapet"
     },
     {
       "model": "3d-assets/york/york-river-east-moored-boat/model.glb",
       "model_sha256": "5de97bcdb75d44459b7dc6fc64926d51e9bce25279bc10999eb63a3cc37318e5",
       "descriptor": "3d-assets/york/york-river-east-moored-boat/asset.json",
-      "descriptor_sha256": "6a04aa6beb0e0d3ef38aa86b29a9438e6130ec2355822180b995b18bfa9e3df6",
+      "descriptor_sha256": "b1cb0225c8a465338c377a5738d21ea95504e737974366545a2b8cc881d16507",
       "id": "york-river-east-moored-boat"
     },
     {
       "model": "3d-assets/york/york-river-north-bank-beached-boat/model.glb",
       "model_sha256": "7eb9f3db769ec6ad175ed50bd703bac623142f59a80a4bfee8caff8aa37072da",
       "descriptor": "3d-assets/york/york-river-north-bank-beached-boat/asset.json",
-      "descriptor_sha256": "401b5fdcb118dd32826c7320584cd12a1376f0ddf9abc3dec47f26593892e128",
+      "descriptor_sha256": "74c0d8357b9d7ff0d129bc69a11569bd66d5494701147359e4b14470dc4513f9",
       "id": "york-river-north-bank-beached-boat"
     },
     {
       "model": "3d-assets/york/york-river-timber-jetty/model.glb",
       "model_sha256": "b5d86b7885a0093ef7556c3d719d45d703778e3cd37e975c2ebfdf92b8d91e19",
       "descriptor": "3d-assets/york/york-river-timber-jetty/asset.json",
-      "descriptor_sha256": "7102e4be769f41066b08d761f77f44c720f12766b64c47cf8e201b590e5af9ae",
+      "descriptor_sha256": "e509c359a6c7ce4c77a870594f75c0c0fffe864847e8d3009243a966b85d6f4e",
       "id": "york-river-timber-jetty"
     },
     {
       "model": "3d-assets/york/york-river-west-moored-boat/model.glb",
       "model_sha256": "09763f58b9d4a3ab0cf76258bb7b9db8b26999083cd9d3e593c3e969dfb1c217",
       "descriptor": "3d-assets/york/york-river-west-moored-boat/asset.json",
-      "descriptor_sha256": "7db499bd980ace54a29f2a1c6bcfa705a25db6c9dee375d4b3755669c08943c0",
+      "descriptor_sha256": "a135488e7a6dcefa690ea78009cf85de2a9f9772d9ae57ec90f1ff8569c007a4",
       "id": "york-river-west-moored-boat"
     },
     {
       "model": "3d-assets/york/york-riverbank-stone-landing-steps/model.glb",
       "model_sha256": "ef3dffa9b900fcad677fd3caa7a34fc252e85dd612cdca7b3f269bce492ef96f",
       "descriptor": "3d-assets/york/york-riverbank-stone-landing-steps/asset.json",
-      "descriptor_sha256": "ee5716d4148120b6ee99c6ec6e59da0cb66cb3ab88123a8f492570d3091d2775",
+      "descriptor_sha256": "1c03b3a66e7272411be0ce4e0d382e20db03e78d1a603902d25c0f2c6bfdef59",
       "id": "york-riverbank-stone-landing-steps"
     },
     {
       "model": "3d-assets/york/york-riverbank-wooden-landing-steps/model.glb",
       "model_sha256": "98c294698b21a06dad394438bb0e3fdc3c79078002164d4b00e5513ac26d6787",
       "descriptor": "3d-assets/york/york-riverbank-wooden-landing-steps/asset.json",
-      "descriptor_sha256": "8e006d6203e0cce1042d00cfdde38d999922f1fe45e6063ef43bd649d57de00c",
+      "descriptor_sha256": "b8638fec211ae5e6f98bc4aa70bdc40b6a6fa14ff7dc10eafcc22dced9c9dbcf",
       "id": "york-riverbank-wooden-landing-steps"
     },
     {
       "model": "3d-assets/york/york-riverside-loose-planks/model.glb",
       "model_sha256": "aafc75171ff047b122c5c319db903a8aad44328f1a17db251d766e2036986e5c",
       "descriptor": "3d-assets/york/york-riverside-loose-planks/asset.json",
-      "descriptor_sha256": "1861a034bf16f61d32abead988162a19c899cdab04823a4097e59865b9cf7343",
+      "descriptor_sha256": "933f368b6fd84d8b081dd83e04dc3be46eaf8b824665e94074593c329273848d",
       "id": "york-riverside-loose-planks"
     },
     {
       "model": "3d-assets/york/york-riverside-stone-storehouse/model.glb",
       "model_sha256": "24d0ae8611a482a94326a15c95b0131e76ff5cad4ba4ba56466bb675bfe0ac3c",
       "descriptor": "3d-assets/york/york-riverside-stone-storehouse/asset.json",
-      "descriptor_sha256": "8320997becc722e95e5041cb7fb78100f3f9db5ea9d8d5dbf5dd01d01a92cc5e",
+      "descriptor_sha256": "0496dd1da1558033148300439a5e6e5066eb9027e6d0d1c9a25875089040f908",
       "id": "york-riverside-stone-storehouse"
     },
     {
       "model": "3d-assets/york/york-riverside-storehouse-timber-shed/model.glb",
       "model_sha256": "743ee1db59cfec95982b6a25f82cf4ed851343032eb44dc131d52e8769603346",
       "descriptor": "3d-assets/york/york-riverside-storehouse-timber-shed/asset.json",
-      "descriptor_sha256": "fc5c4668cd5976390c9f39ea4281f4f597fd4fa55195cf00bec95c84210fe2c1",
+      "descriptor_sha256": "ce5e7cb54988a07b0e20bb69fed1278d2c4caf1429b694c92061ccf5662c27dc",
       "id": "york-riverside-storehouse-timber-shed"
     },
     {
       "model": "3d-assets/york/york-riverside-timber-stack/model.glb",
       "model_sha256": "3005a7605221f98109c6af31b6443623d451c32f536c31ac2ea63e0e14ebee93",
       "descriptor": "3d-assets/york/york-riverside-timber-stack/asset.json",
-      "descriptor_sha256": "be1e80712bbe8f794066e4aaaca6a2f72c6938aab85c2b044e6ce2986620f9c8",
+      "descriptor_sha256": "3793fd0013c675aea82b2a6cfc601e78f524b1b429f3db5a698c61897a22d25d",
       "id": "york-riverside-timber-stack"
     },
     {
       "model": "3d-assets/york/york-south-city-east-gate-tower/model.glb",
       "model_sha256": "40c697ed6e88a4bb238fd924240af5989f99e87888aba54585f22bce94451264",
       "descriptor": "3d-assets/york/york-south-city-east-gate-tower/asset.json",
-      "descriptor_sha256": "69cc51551eea42899c98472fce1cab3f1d11f6839a91157a720cba0aead3f71d",
+      "descriptor_sha256": "f013fed60c67f1221f417d8110a89015651915a69d846311da780767ee527697",
       "id": "york-south-city-east-gate-tower"
     },
     {
       "model": "3d-assets/york/york-south-city-gate-bridge/model.glb",
       "model_sha256": "5074aeffc06ac83ae9579fc1ca8a2164cfeba29c7dd5ff24224e6000c53b2d22",
       "descriptor": "3d-assets/york/york-south-city-gate-bridge/asset.json",
-      "descriptor_sha256": "344f47e5b9e9165f5662b1413073ac91aab20553bd40354a52fadc01ce5b534c",
+      "descriptor_sha256": "02f3a382ef928c95b4fda95f5170a42d302ad2324e413c4a7aeb62cc9e3a8df2",
       "id": "york-south-city-gate-bridge"
     },
     {
       "model": "3d-assets/york/york-south-city-gate-east-wall/model.glb",
       "model_sha256": "38e77ec73b18bcc9883a91061c6e71cb2fe06512c81731dcc5f1c7184cc2d0de",
       "descriptor": "3d-assets/york/york-south-city-gate-east-wall/asset.json",
-      "descriptor_sha256": "0f3f649fe6827d53bceddf0f443fa65084de363999a2133844a323d9fba0ca2a",
+      "descriptor_sha256": "a54f08d60109c82ca60efb05203ad171a4eec564a0f75e66e7e98112e5eab60a",
       "id": "york-south-city-gate-east-wall"
     },
     {
       "model": "3d-assets/york/york-south-city-gatehouse/model.glb",
       "model_sha256": "23c23094940941d67ad66420357660962a5593ccb047e1aa34a79f62ae931084",
       "descriptor": "3d-assets/york/york-south-city-gatehouse/asset.json",
-      "descriptor_sha256": "0fe8294fb1951861159f4daadb2cd8a436007b332d61358e8f61d50673ee498f",
+      "descriptor_sha256": "a0fa52647f64ab89142a273f67e27458fd774b430a5f6ee134af2186a3f7cd83",
       "id": "york-south-city-gatehouse"
     },
     {
       "model": "3d-assets/york/york-south-city-wall-eastern-curtain/model.glb",
       "model_sha256": "90c2fbca703a45e6c4cabd7b262311e8168a8b4b6a8db88b422f294469a1f846",
       "descriptor": "3d-assets/york/york-south-city-wall-eastern-curtain/asset.json",
-      "descriptor_sha256": "36364bdb3c30d4d412f80c8c757fc7526bffce1facbcaeda9d6197f3f37d0aab",
+      "descriptor_sha256": "02224c89c2cb3a043da0567cfa0ad9a3ed86436e4695409dd2eb330b8059a351",
       "id": "york-south-city-wall-eastern-curtain"
     },
     {
       "model": "3d-assets/york/york-south-city-wall-eastern-roofed-tower/model.glb",
       "model_sha256": "df39aaad693003b748ee3de13e41058b3fad7cba25944ea4e2701ca898d6f252",
       "descriptor": "3d-assets/york/york-south-city-wall-eastern-roofed-tower/asset.json",
-      "descriptor_sha256": "1a1c8e01c9d6be108bfc795fa718baaac447d38f63c10fb788fc0f0a40b1a30c",
+      "descriptor_sha256": "6302159b3c6bc6cb893573a78eea721abad4f142c1b6aca23d8996d59b9a5300",
       "id": "york-south-city-wall-eastern-roofed-tower"
     },
     {
       "model": "3d-assets/york/york-south-city-wall-long-central-curtain/model.glb",
       "model_sha256": "bd7f54e98e3f459b40c7e314abc45a1362b20af50c31a3bdb720d489ddeeef56",
       "descriptor": "3d-assets/york/york-south-city-wall-long-central-curtain/asset.json",
-      "descriptor_sha256": "cb639a7e236f3c80df44bf074f5034579c782cf3ab2a17ac0dc02da4f84aa446",
+      "descriptor_sha256": "e68a3ae602fe5c5128cdd02df10292d4ce20c0fbef89ac4170de1bf08e2c630a",
       "id": "york-south-city-wall-long-central-curtain"
     },
     {
       "model": "3d-assets/york/york-south-city-wall-western-curtain/model.glb",
       "model_sha256": "bb3cd47fa6a9151ef93302430adb1d729b00ea83dfe17edec898727667c439dc",
       "descriptor": "3d-assets/york/york-south-city-wall-western-curtain/asset.json",
-      "descriptor_sha256": "731f77a5a548c42e82fb02a7c0af58183fa91c0b4adaf626a14c34395239c33e",
+      "descriptor_sha256": "633aa30379b6697f3feec697e918c61954e86fc310eccababe82cee67b11450a",
       "id": "york-south-city-wall-western-curtain"
     },
     {
       "model": "3d-assets/york/york-south-city-wall-western-roofed-tower/model.glb",
       "model_sha256": "a7cd62a54d8244f1fdba817fda36b2e71a6d51f89d472913d64e80d39aacaf0e",
       "descriptor": "3d-assets/york/york-south-city-wall-western-roofed-tower/asset.json",
-      "descriptor_sha256": "a647eebdad8b6f3dedac08fd62c01425744b96bf555ced740f9059a19ef6bda6",
+      "descriptor_sha256": "a04761dc589393991cda014a56ecbaa60365a282f5ff5bef6a4e668ebaddee1f",
       "id": "york-south-city-wall-western-roofed-tower"
     },
     {
       "model": "3d-assets/york/york-south-city-west-gate-tower/model.glb",
       "model_sha256": "eea58984dbd0b747851cd87e2a2f81e5b705ea5101cd900fac2ec3ee2a7d442c",
       "descriptor": "3d-assets/york/york-south-city-west-gate-tower/asset.json",
-      "descriptor_sha256": "31769556263f9c0e8be30acb8a23134b8c60251312668a009e2e57ff89097bf4",
+      "descriptor_sha256": "915a77f60f3af1ae02837938b46385788de96c8dbee83f0944c428951d055bca",
       "id": "york-south-city-west-gate-tower"
     },
     {
       "model": "3d-assets/york/york-south-gate-lane-conical-tower/model.glb",
       "model_sha256": "26b036551eddcff00485269ef89a208abd104733b1016a782afaf4deb3113c41",
       "descriptor": "3d-assets/york/york-south-gate-lane-conical-tower/asset.json",
-      "descriptor_sha256": "d3cbbbd3dc39242271aa30ba99963708472a3bf31d4d4c2ad636f1829afbbacb",
+      "descriptor_sha256": "7495fdffe30dbad57e8ffa456894fa00aca9539892d6ba0ff1129666f36828ef",
       "id": "york-south-gate-lane-conical-tower"
     },
     {
       "model": "3d-assets/york/york-south-gate-lane-courtyard-boundary-wall/model.glb",
       "model_sha256": "abb8cabee5062e1674a974f0a290e12d77be75729144dd0a76616e432bc342b8",
       "descriptor": "3d-assets/york/york-south-gate-lane-courtyard-boundary-wall/asset.json",
-      "descriptor_sha256": "e79f470f2598d432c9e3adcb0574be0d0b543384cc9b1e0f3ec8619fd8d6ea8b",
+      "descriptor_sha256": "4ea3ab334ae4e8a99c9ec9a6a8fe780c651e8b4325323b49d5954eae777acbe5",
       "id": "york-south-gate-lane-courtyard-boundary-wall"
     },
     {
       "model": "3d-assets/york/york-south-gate-lane-front-timber-house/model.glb",
       "model_sha256": "ce7ae5974ce9fa18f9d0531cbd2a74edec2671447b96f822fd7dbfe107c6d6ae",
       "descriptor": "3d-assets/york/york-south-gate-lane-front-timber-house/asset.json",
-      "descriptor_sha256": "557acf07aa10204f389640c967ce270add45b260a3bb4f90210a44ef95984a90",
+      "descriptor_sha256": "888a10f9af6d1f944fd2270c73fbce34c0bb24ca939b423af6a7edc8d1c575ba",
       "id": "york-south-gate-lane-front-timber-house"
     },
     {
       "model": "3d-assets/york/york-south-gate-lane-link-roof/model.glb",
       "model_sha256": "262f171e55e0133cba3b7bd157ab058f5de9e11c2e1d7d13b25382c0a4d22249",
       "descriptor": "3d-assets/york/york-south-gate-lane-link-roof/asset.json",
-      "descriptor_sha256": "c07e8f442b8e10bcd97b6e27bbfc84d36e948bd141deabc0b41a15f96fd9d604",
+      "descriptor_sha256": "bc2aa4142a19de6ef031ccda5c68449e4e441dfb2da31c07204c27aee0cc8d42",
       "id": "york-south-gate-lane-link-roof"
     },
     {
       "model": "3d-assets/york/york-south-gate-lane-rear-house/model.glb",
       "model_sha256": "99102091456a0478f7db511b256ed84fcb11ca2c8d8c4510af6fcf0bafbfbd76",
       "descriptor": "3d-assets/york/york-south-gate-lane-rear-house/asset.json",
-      "descriptor_sha256": "dd054656665cf4677a7574782b863cfe86134949f3f338a421494789cc499298",
+      "descriptor_sha256": "09562f1919ba7d78b0b379913e0e42a9e8c3852cf2258fa86231314f649a8329",
       "id": "york-south-gate-lane-rear-house"
     },
     {
       "model": "3d-assets/york/york-south-gate-lane-rear-timber-house/model.glb",
       "model_sha256": "abc1ef46b7a994ad766935f2a18e6fdd5c6d45efa1fcbb80d8c7b4762fd0e520",
       "descriptor": "3d-assets/york/york-south-gate-lane-rear-timber-house/asset.json",
-      "descriptor_sha256": "d55e4f9fd4883d95716f3b1be647404c6befc3b126f9b2ce21f965c3e73b69e4",
+      "descriptor_sha256": "97e39fb9a0f1a239d17e01622955125c53862f30011d1e7a08ad8d5c68ae65ec",
       "id": "york-south-gate-lane-rear-timber-house"
     },
     {
       "model": "3d-assets/york/york-south-gate-lane-round-tower/model.glb",
       "model_sha256": "1a886b22769364d588faba830af4dd72ff715a1b7135e93f003a48d8ba16d700",
       "descriptor": "3d-assets/york/york-south-gate-lane-round-tower/asset.json",
-      "descriptor_sha256": "6cee58ade52cb4b8e1543db4491c7013283cc35fb4925f00d677b2b6f682fbd2",
+      "descriptor_sha256": "72f74d746a536d4f132b5236f8a3af43bf903ef2fc1437e038a0a2ee46d57226",
       "id": "york-south-gate-lane-round-tower"
     },
     {
       "model": "3d-assets/york/york-south-gate-lane-stone-house/model.glb",
       "model_sha256": "1a56967610955ea8eaf2e21c04498e8165f8f033be55545ace72db49fe0dab48",
       "descriptor": "3d-assets/york/york-south-gate-lane-stone-house/asset.json",
-      "descriptor_sha256": "b15ea6e776209dceea3425c6f3adc2d121d886f7f2f17816b67055ae76640871",
+      "descriptor_sha256": "ed06c8d82e0433d9e92c92f9a9d5aab2eda1aaab5cd048123b6f144d60209a80",
       "id": "york-south-gate-lane-stone-house"
     },
     {
       "model": "3d-assets/york/york-south-gate-lane-tall-timber-house/model.glb",
       "model_sha256": "08ef12d5abe9147cc35c91e85fd77d43ca3bde15e7aab880e33ab720b67e0045",
       "descriptor": "3d-assets/york/york-south-gate-lane-tall-timber-house/asset.json",
-      "descriptor_sha256": "2bf63d709ba9cb06cb93d5e5b1686b100402f5377c41eceb2a5a32ca284eabea",
+      "descriptor_sha256": "062947f07b1abfaf5a9359fb29a9bab6595e78973e58045ab5ef312d12a48d25",
       "id": "york-south-gate-lane-tall-timber-house"
     },
     {
       "model": "3d-assets/york/york-south-gate-lane-terrace-stairs/model.glb",
       "model_sha256": "5eef167614c73400d5b3a84194b4fdd68300080bc2d623d8f27fa1201418c6d6",
       "descriptor": "3d-assets/york/york-south-gate-lane-terrace-stairs/asset.json",
-      "descriptor_sha256": "7f9db25752abf97a11c1471992a449615c8cad1a67789d737bb8ab2607720c8a",
+      "descriptor_sha256": "b0449f513b622ae1260c8120a34e234fc69acd3ba8e064606bdad90a3fa9696e",
       "id": "york-south-gate-lane-terrace-stairs"
     },
     {
       "model": "3d-assets/york/york-south-riverbank-retaining-wall/model.glb",
       "model_sha256": "9cf5503a41039a0efe79399f6195c93d197ad40e45bfcf3173297782c1beb513",
       "descriptor": "3d-assets/york/york-south-riverbank-retaining-wall/asset.json",
-      "descriptor_sha256": "7e58e1af50632c6814b9524bbffb8abc542521c581d13c60ca6e967125c21b1b",
+      "descriptor_sha256": "7aee9481be3388c070917d5ad75a1d2406b18309ac76c9b4d43212c766e99293",
       "id": "york-south-riverbank-retaining-wall"
     },
     {
       "model": "3d-assets/york/york-south-terrace-dark-timber-house/model.glb",
       "model_sha256": "fede792965b34b2665dea7ad1143632c76280181ed3c5538fd33d843e742bd98",
       "descriptor": "3d-assets/york/york-south-terrace-dark-timber-house/asset.json",
-      "descriptor_sha256": "2f137bea949078e72ddb979d873733c078a2c4fae7528fcb4a5fa6d4fbc2370d",
+      "descriptor_sha256": "a71f80d222c39ad05438e6b98fff731b51049125db23f0f6515848c3aec31f83",
       "id": "york-south-terrace-dark-timber-house"
     },
     {
       "model": "3d-assets/york/york-south-terrace-east-low-timber-house/model.glb",
       "model_sha256": "6bc6df7f769c6cdbc52bc5078d1f9b469a724ad7da84bd65ab3f9ea37437597b",
       "descriptor": "3d-assets/york/york-south-terrace-east-low-timber-house/asset.json",
-      "descriptor_sha256": "96bf305bedfd3a50e59dd2b5907988311630a1c59bd4e7cccaffb78486654ad2",
+      "descriptor_sha256": "ece18ccab3b3323ee0e2608661f9092d8a4363f95bb14379061b7fd4884f8bd6",
       "id": "york-south-terrace-east-low-timber-house"
     },
     {
       "model": "3d-assets/york/york-south-terrace-pale-timber-shop/model.glb",
       "model_sha256": "4c31c7cbc2cfb125c1c1855c9ef806f2b9c9b2c22900e23862d52c371b03d145",
       "descriptor": "3d-assets/york/york-south-terrace-pale-timber-shop/asset.json",
-      "descriptor_sha256": "8fb24f72fc494b42dfc738bf98c910aa4dc31f35bd7e0342a9031395073754bd",
+      "descriptor_sha256": "27f65daa018f27666dab3f4f4da2f8dabf1c15d8a210f7c1e0f6dfa55bb98a3a",
       "id": "york-south-terrace-pale-timber-shop"
     },
     {
       "model": "3d-assets/york/york-south-terrace-retaining-wall-and-stairs/model.glb",
       "model_sha256": "c74ca823951ce04b43e490eb19fc249468188ff77a1bc529bf5d18db9a89c7ae",
       "descriptor": "3d-assets/york/york-south-terrace-retaining-wall-and-stairs/asset.json",
-      "descriptor_sha256": "d89a4112491744c9150312a820501f2cad733dc9d6603ceae01dc2cdf90a5bee",
+      "descriptor_sha256": "9108a2575fb0c7bb82893d5976f82e61044dca241a3fbec6fb8465059c95a3bb",
       "id": "york-south-terrace-retaining-wall-and-stairs"
     },
     {
       "model": "3d-assets/york/york-south-terrace-riverside-wall/model.glb",
       "model_sha256": "c4cf7e4920f4fa219fd10e085b168a1f7feebea61316e2676d9f8bee73056ddf",
       "descriptor": "3d-assets/york/york-south-terrace-riverside-wall/asset.json",
-      "descriptor_sha256": "1873550b7c3f74239ace8997bed2a04fa747bb4ff8e34530fe78bff0b3da7d64",
+      "descriptor_sha256": "8361f2b6fe892291082997efa3d2dcc6894e4b33fbd7d5efe221212ca3ec517f",
       "id": "york-south-terrace-riverside-wall"
     },
     {
       "model": "3d-assets/york/york-south-terrace-thatched-round-turret/model.glb",
       "model_sha256": "c31a2a84cb495e449503bfbecf370ffb6fa332126a08a8a40e38fee3b22c6208",
       "descriptor": "3d-assets/york/york-south-terrace-thatched-round-turret/asset.json",
-      "descriptor_sha256": "26016db49890608dfa15c87e14869764cef0a8bfcfd898ddef1ac4c79f9cb2dd",
+      "descriptor_sha256": "5dedf4f64efc4602b5e2f32dd92b9a56ed8b64bdefc341777d4b045d937e3061",
       "id": "york-south-terrace-thatched-round-turret"
     },
     {
       "model": "3d-assets/york/york-south-terrace-west-low-timber-house/model.glb",
       "model_sha256": "099045c1251aa1b75d96577cff345d6d7823d54da1f2f6196cdd67606416fbe9",
       "descriptor": "3d-assets/york/york-south-terrace-west-low-timber-house/asset.json",
-      "descriptor_sha256": "4e91d68d995551bf530f8dd159d0897125fbf24d5e2516f791066aa52d80f381",
+      "descriptor_sha256": "7cd16a77d9a869f8f788beaa19e2afb0d18e774a8a7a0cdae16e92af42ade4ac",
       "id": "york-south-terrace-west-low-timber-house"
     },
     {
       "model": "3d-assets/york/york-south-town-raised-terrace/model.glb",
       "model_sha256": "d612c96f043e29d59462023f533fe9f7cfd06561a9e0158f680abdc21a42fb3c",
       "descriptor": "3d-assets/york/york-south-town-raised-terrace/asset.json",
-      "descriptor_sha256": "0b065d4b65166de1aa295ab96b146dfe8f8f382a050dc6d0c12ccc1cf6cc9a6e",
+      "descriptor_sha256": "47ef732e9b04740afc1d815bd05b725b5299ec43fd7fc32bf2a477be6acc9260",
       "id": "york-south-town-raised-terrace"
     },
     {
       "model": "3d-assets/york/york-south-wall-lane-north-house/model.glb",
       "model_sha256": "ec8cdf1056ef119c7e854164dafcfb4ec54a03dd79b7fde15f507396636536c4",
       "descriptor": "3d-assets/york/york-south-wall-lane-north-house/asset.json",
-      "descriptor_sha256": "a854f777d9f14818dbad18d8901362ef5be9861081ef5ae3e697d89cbef9b27b",
+      "descriptor_sha256": "ec1164eec9942b6bf8902cb3aecae78774608fd811dfe271b55e053e9a214331",
       "id": "york-south-wall-lane-north-house"
     },
     {
       "model": "3d-assets/york/york-south-wall-lane-rear-stone-house/model.glb",
       "model_sha256": "2c81c5b0bf480afed8ea91ec65012516083eb09f10315abb1546855cc1504cde",
       "descriptor": "3d-assets/york/york-south-wall-lane-rear-stone-house/asset.json",
-      "descriptor_sha256": "4578ee04ccb3747fadb0fdd12ec3d828e5b590159b25dc6677fcb03da6795f93",
+      "descriptor_sha256": "48d7f19d7465c8fb9aa62f6e83e0a3463b479496214b054704dcfd512d4f5925",
       "id": "york-south-wall-lane-rear-stone-house"
     },
     {
       "model": "3d-assets/york/york-south-wall-lane-square-stone-tower/model.glb",
       "model_sha256": "ae4eca1bd7ec4164004e0594a2ef2d7727582a0b5547072e0888395936bda68e",
       "descriptor": "3d-assets/york/york-south-wall-lane-square-stone-tower/asset.json",
-      "descriptor_sha256": "1ab7bdceba684d0f23f3bc1b3d89db17ada475e864446f70a509b3f3a6b1781b",
+      "descriptor_sha256": "54ef6be31a9ccff2b8ca00b61950a0fa5a6dc1c0d1150a3e9f2d7198c169ce60",
       "id": "york-south-wall-lane-square-stone-tower"
     },
     {
       "model": "3d-assets/york/york-south-wall-lane-stone-tower/model.glb",
       "model_sha256": "5b37d919f04d701dde481b1756bf2929ebd61dd84696f78e78edaf42d25a97b9",
       "descriptor": "3d-assets/york/york-south-wall-lane-stone-tower/asset.json",
-      "descriptor_sha256": "8314988743f6a40430891b8050b6b7c09a5eb9bd90e6fb4476807447e86a9553",
+      "descriptor_sha256": "778364014adc826bcb1d58b2855fb7966821e79ce101bb4b1638fa90199fb986",
       "id": "york-south-wall-lane-stone-tower"
     },
     {
       "model": "3d-assets/york/york-south-wall-lane-timber-house/model.glb",
       "model_sha256": "e1179408dfea9084d5e43c611d90f6b58b13608f4a517c619376973dc3c5d81f",
       "descriptor": "3d-assets/york/york-south-wall-lane-timber-house/asset.json",
-      "descriptor_sha256": "0878bf8cec148fe9c266e77f587fe35ece0dd6200130f4878e8f5d806034f0c3",
+      "descriptor_sha256": "555daa795cd420724c075114cbb954a2a36e2540ab0d31dc34cb6b40d864090d",
       "id": "york-south-wall-lane-timber-house"
     },
     {
       "model": "3d-assets/york/york-southeast-lane-eastern-timber-house/model.glb",
       "model_sha256": "99c80272b761701720c3e2add927b38783b9c80751d328d1b164c036de67df45",
       "descriptor": "3d-assets/york/york-southeast-lane-eastern-timber-house/asset.json",
-      "descriptor_sha256": "76d766bdd619dc3dde755c5a51b99ecfae274f4df6b3539855f5cdbe22a1c397",
+      "descriptor_sha256": "ea593511582e23d33d7430fe9342480782a1166034b969bc85c2759d92d1bfdb",
       "id": "york-southeast-lane-eastern-timber-house"
     },
     {
       "model": "3d-assets/york/york-southeast-lane-western-timber-house/model.glb",
       "model_sha256": "5d479fdaaebf5e8c16e96bab9e56624f7f28cbaef1f8edb947ab8b5506a7bc74",
       "descriptor": "3d-assets/york/york-southeast-lane-western-timber-house/asset.json",
-      "descriptor_sha256": "7991145cff7ad3816ca4ea522e8703b04ef0e3143010b166427f2d4fd5347e31",
+      "descriptor_sha256": "37c82a28022751bde26c3374c47d5ca1a4ecd1bc2178550e7a520fe68d74b367",
       "id": "york-southeast-lane-western-timber-house"
     },
     {
       "model": "3d-assets/york/york-southeast-riverside-raised-terrace/model.glb",
       "model_sha256": "96e6513041fc9d75578e2d390b51a91d96671d69fe68943d8e708231cdc3de14",
       "descriptor": "3d-assets/york/york-southeast-riverside-raised-terrace/asset.json",
-      "descriptor_sha256": "df143c7fe84937a721bc82f3a4f320296e4f5f30922b2b00b3bd9336a7f42398",
+      "descriptor_sha256": "277d2a4caf6350f7a4a1a3fd6bfc078998cbcf5f4d59955a4dc14a4cb0647e70",
       "id": "york-southeast-riverside-raised-terrace"
     },
     {
       "model": "3d-assets/york/york-southeast-wall-lane-front-house/model.glb",
       "model_sha256": "2c9b030dbcd4bea344bc797cdea5c414b5924d01e09beb538a82e1dce5dd7dec",
       "descriptor": "3d-assets/york/york-southeast-wall-lane-front-house/asset.json",
-      "descriptor_sha256": "a00eb2b138c3c119ea772a2035d41df75ffa23b474ba03de84ea7490a45e48a2",
+      "descriptor_sha256": "11f74a56a46fc3da4b2a207222c1cead66a82935d4c0cbb26ce96b83bc0bba2a",
       "id": "york-southeast-wall-lane-front-house"
     },
     {
       "model": "3d-assets/york/york-southeast-wall-lane-rear-gable-house/model.glb",
       "model_sha256": "84bcddf667dbacb949420d9bfe1033ce9a61706946148bf54c68ed88fbd4c8db",
       "descriptor": "3d-assets/york/york-southeast-wall-lane-rear-gable-house/asset.json",
-      "descriptor_sha256": "73a9d9efd110f8962e4212e4a2f0f8317304b1a8320f8adc64593f56c5622a78",
+      "descriptor_sha256": "80a864799e4121ce5b5fe72e74d890a56b0c56688afe78fae53cef8540de6686",
       "id": "york-southeast-wall-lane-rear-gable-house"
     },
     {
       "model": "3d-assets/york/york-southeast-wall-lane-roofed-arch/model.glb",
       "model_sha256": "6d777c2a39a82518fe90ebcb2e1431fffa2c507ab4f29dbcf7a4fa94e2180ce1",
       "descriptor": "3d-assets/york/york-southeast-wall-lane-roofed-arch/asset.json",
-      "descriptor_sha256": "8e376bb23c6b5bcf2ba5fa2ce951a1261316adbd23f7fce8e631f707c91f7749",
+      "descriptor_sha256": "d3262e1ab761febd047a91026392172a9c5be982408ac8ced05617b8b3d1b55f",
       "id": "york-southeast-wall-lane-roofed-arch"
     },
     {
       "model": "3d-assets/york/york-southeast-wall-lane-gable-house/model.glb",
       "model_sha256": "9c14791ef75502bb3cdbe8f0489125eb48c44958f82c0228d007e1e2f85d3b73",
       "descriptor": "3d-assets/york/york-southeast-wall-lane-gable-house/asset.json",
-      "descriptor_sha256": "04682f9a2313b32bd10e186d13dcdb77059b4a9339d9bdf78a13e6d39cbbb21d",
+      "descriptor_sha256": "c78e17f2d7e57d30e299b6f5186044ccbcc0cf339be9063ca14444d87252bacc",
       "id": "york-southeast-wall-lane-gable-house"
     },
     {
       "model": "3d-assets/york/york-southwest-east-gatehouse/model.glb",
       "model_sha256": "c016c5e48287dc4dc28e28eb78a69d99d48ff11665b9fa06e94260155c8586b3",
       "descriptor": "3d-assets/york/york-southwest-east-gatehouse/asset.json",
-      "descriptor_sha256": "06d2da759ea80048b7b04981a130f6aa78559fe6035944c9402f61f6bef11e21",
+      "descriptor_sha256": "86cdea4bc0ab0c3c557d31d82a13e878361e8ebc26b11670d3e268f8ec56a7d4",
       "id": "york-southwest-east-gatehouse"
     },
     {
       "model": "3d-assets/york/york-southwest-gatehouse-west-boundary-wall/model.glb",
       "model_sha256": "bda583713ac9f0f8e074389d40234bba55c45b49dc0fdc0df981ff44c4af80b5",
       "descriptor": "3d-assets/york/york-southwest-gatehouse-west-boundary-wall/asset.json",
-      "descriptor_sha256": "dfd868a855b9faaed99ec79ac44a51e7d61f6a9b516677cf7de9f61fb9e76c3e",
+      "descriptor_sha256": "1082b44ebcfc17d8a936cd906d25ac1ca60cbf53c5781149b3b8da0deaeb2b60",
       "id": "york-southwest-gatehouse-west-boundary-wall"
     },
     {
       "model": "3d-assets/york/york-southwest-ivy-covered-square-tower/model.glb",
       "model_sha256": "c58fc20cd4adf0d6f587f04793b03e1a6c2d95746b993dc1ae1f4d839f0355d4",
       "descriptor": "3d-assets/york/york-southwest-ivy-covered-square-tower/asset.json",
-      "descriptor_sha256": "6f634047413d084777eeee0e1b2887cb519e73aed85e2515aa5d0fba650c942b",
+      "descriptor_sha256": "6f80849fa1f725783407da42a685760309f4c6234ecf1d8a3773cd9c3575c145",
       "id": "york-southwest-ivy-covered-square-tower"
     },
     {
       "model": "3d-assets/york/york-southwest-lane-east-timber-house/model.glb",
       "model_sha256": "ad59c0268bbbfe4812aab540d9c2066fa7c934e14b548d402f77cd2425daa7ac",
       "descriptor": "3d-assets/york/york-southwest-lane-east-timber-house/asset.json",
-      "descriptor_sha256": "47d97a992be7fbae38b045a58c17fc7c8be4fbad6f62fe596b79979da1fea0d0",
+      "descriptor_sha256": "2e2d0e09473ea4b1cb1af0296c461b9f6bf248c43a7b2e681459861532d45999",
       "id": "york-southwest-lane-east-timber-house"
     },
     {
       "model": "3d-assets/york/york-southwest-lane-north-courtyard-house/model.glb",
       "model_sha256": "e6f67c28f21f45ebccee67d924c4b4a8513835c46e2b6c7000091cda107d752b",
       "descriptor": "3d-assets/york/york-southwest-lane-north-courtyard-house/asset.json",
-      "descriptor_sha256": "b69e1874d1a463cb4fbf10c3770eebd601f58bba6abbb09116153f2f08b1c188",
+      "descriptor_sha256": "fa5067188f3080a0823ae2d97aec163baca8ba9183ce21fb10d10c24a74eb5b2",
       "id": "york-southwest-lane-north-courtyard-house"
     },
     {
       "model": "3d-assets/york/york-southwest-lane-west-jettied-house/model.glb",
       "model_sha256": "1bdba733c774b7bc4051f98a54a3d382f44e7d1e3585b35c3050f059423d4b44",
       "descriptor": "3d-assets/york/york-southwest-lane-west-jettied-house/asset.json",
-      "descriptor_sha256": "85d780e2f483a540dc6fe9f4452215168e72c37aeed9b26a23f893d593a4633f",
+      "descriptor_sha256": "4db5360ce9c77823a3ed365c0abebfcea224c8ad28c4dd0b323790222f427bc0",
       "id": "york-southwest-lane-west-jettied-house"
     },
     {
       "model": "3d-assets/york/york-southwest-market-corner-house/model.glb",
       "model_sha256": "5b833a3910f574fd9622acb5c9b0ff6e943ad8e2fb657ec3a059a97515582ace",
       "descriptor": "3d-assets/york/york-southwest-market-corner-house/asset.json",
-      "descriptor_sha256": "930b036797c1c43d993ac633e7caa2c41b384fef173dcae10a81d56245226fdb",
+      "descriptor_sha256": "e2e5d88cfd9e259275d608594cb3ffdcfde992d0174ace90035aa76964a45a48",
       "id": "york-southwest-market-corner-house"
     },
     {
       "model": "3d-assets/york/york-southwest-market-north-house/model.glb",
       "model_sha256": "31a67ae98fbc8b873b766642b7292e8fc033b9d88d7d1ab7e7453b6ff33432b5",
       "descriptor": "3d-assets/york/york-southwest-market-north-house/asset.json",
-      "descriptor_sha256": "be77491cf48a7f458f6d9e8a98c9108d9c634af9527ac57cf89fdb002b5a1d8c",
+      "descriptor_sha256": "6b67216c621a450e882ad4ee3bb0a0113300f6a9effdff15d442a392f554893f",
       "id": "york-southwest-market-north-house"
     },
     {
       "model": "3d-assets/york/york-southwest-market-northwest-house/model.glb",
       "model_sha256": "db87d1a20c8711afa48529dd986a8910ffd9b3aaf1d5310f9fba3a3b0f8263f6",
       "descriptor": "3d-assets/york/york-southwest-market-northwest-house/asset.json",
-      "descriptor_sha256": "f2bcb7cf0c2fd99b5402031a2fbf69ed8098a7bf6cf51e162cba2d28b0395ec5",
+      "descriptor_sha256": "e1872eeb86da64b5ac10f7591ab900355ded92735ea7c75c134af3919aeb4ff5",
       "id": "york-southwest-market-northwest-house"
     },
     {
       "model": "3d-assets/york/york-southwest-market-square-tower/model.glb",
       "model_sha256": "91094bfb85195571268edc1d3be5affbc48333747603967571ecc4088c229ada",
       "descriptor": "3d-assets/york/york-southwest-market-square-tower/asset.json",
-      "descriptor_sha256": "3ad650a11ab770f0de46e4dc6910094f99cafc419f2a5e319a05491d2fe4fae4",
+      "descriptor_sha256": "1afeff6dbd7de212766793106508a5b5d401a03fb66bca8c781f14369d539bce",
       "id": "york-southwest-market-square-tower"
     },
     {
       "model": "3d-assets/york/york-southwest-market-west-courtyard-wall/model.glb",
       "model_sha256": "fa0f0f86a04949e5b589b67aa526158d3818f4aa4dda1eb4679ecc652b88f608",
       "descriptor": "3d-assets/york/york-southwest-market-west-courtyard-wall/asset.json",
-      "descriptor_sha256": "db67f69ee9839195cd28de46ecfdce09749df3025815282e81ad87ddd2aa8140",
+      "descriptor_sha256": "ad0610bf455c07f7c107c0e84f847b1c64d854bb6a9a63e72ad267c299c66020",
       "id": "york-southwest-market-west-courtyard-wall"
     },
     {
       "model": "3d-assets/york/york-southwest-market-west-low-house/model.glb",
       "model_sha256": "fdc8bb6cc4f0fb3065a27d1a2bbbf34dd7fb4638a0b9c36d9fc89a02fe4ed9d5",
       "descriptor": "3d-assets/york/york-southwest-market-west-low-house/asset.json",
-      "descriptor_sha256": "6c54988aaefe3a6b68d9710aa06994a395d271156c4d49e837cb3398330e5700",
+      "descriptor_sha256": "76bf7bfb428f7c36e5be65b0867c9e13c7fe4aa57e686b54dcecf29650689a7b",
       "id": "york-southwest-market-west-low-house"
     },
     {
       "model": "3d-assets/york/york-southwest-square-corner-house/model.glb",
       "model_sha256": "c830b6f02ca5f1a43800ddebd7cba5141c9d08a6c8bca289538a23ea1e8a3cbf",
       "descriptor": "3d-assets/york/york-southwest-square-corner-house/asset.json",
-      "descriptor_sha256": "785a9c9625998d560288ab35f3b56df5dfd3bdb400d52ee05db3335da46111a0",
+      "descriptor_sha256": "410411401cd1f65b3b2adcb9571fb358dd5b4e9ff344631cd2c84c058ab3775a",
       "id": "york-southwest-square-corner-house"
     },
     {
       "model": "3d-assets/york/york-southwest-square-east-timber-house/model.glb",
       "model_sha256": "ffbb5d23fe5b12a6130c419ee515cc28f7ddde5895c6bbad7f4332ae07cab416",
       "descriptor": "3d-assets/york/york-southwest-square-east-timber-house/asset.json",
-      "descriptor_sha256": "7a527109584960d4ed550a10e60e03d606c3df9215b367570a07f40ab0f94223",
+      "descriptor_sha256": "ca2af1f74ee37cc2851f98f13d56a4ada2bb6ce172bd9ae896457f97bc6c775a",
       "id": "york-southwest-square-east-timber-house"
     },
     {
       "model": "3d-assets/york/york-southwest-square-narrow-gable-house/model.glb",
       "model_sha256": "f18c252ce573ae1ef68404d89452ad448a38caf7036d04ef8b1e92d9f69ec2ff",
       "descriptor": "3d-assets/york/york-southwest-square-narrow-gable-house/asset.json",
-      "descriptor_sha256": "b66eed10c6121be47e8a6a3a9df2fae5c01e9088c5061cf34427f6a0862d6ecf",
+      "descriptor_sha256": "e5a781abe25298a94751379df8a223b2c52f8bfd857497bead6ad99ec4a652d6",
       "id": "york-southwest-square-narrow-gable-house"
     },
     {
       "model": "3d-assets/york/york-southwest-square-rear-house/model.glb",
       "model_sha256": "4bc96948e2b3280285a44a2899ffd555d461c77ddfa964411e3499dd20e44ad8",
       "descriptor": "3d-assets/york/york-southwest-square-rear-house/asset.json",
-      "descriptor_sha256": "eeb1821f79e5243c3bf97ee8edd0a88b6ec198e315201bc67f5d7b1a6d3559d5",
+      "descriptor_sha256": "bc20c5a1b784933301867764a3fdaf0dd8dce7a6dfd9d034dbf57c482cd50cec",
       "id": "york-southwest-square-rear-house"
     },
     {
       "model": "3d-assets/york/york-southwest-square-west-house/model.glb",
       "model_sha256": "e20554954f091107f052c33ea9a8e83b522c9b617a88a2cb242f0c3e1e85c41f",
       "descriptor": "3d-assets/york/york-southwest-square-west-house/asset.json",
-      "descriptor_sha256": "9397706415d81af0864ac7e25df17b9056dc15bce87d8c538ae14f0dd1a1a58e",
+      "descriptor_sha256": "1f5ed26aca10040f532ee2fa8fd151313928713da483806eb1c11b0c8024b697",
       "id": "york-southwest-square-west-house"
     },
     {
       "model": "3d-assets/york/york-stone-river-bridge-and-approach-stairs/model.glb",
       "model_sha256": "7fd6471a56318fdad24e709ccd7d8082cfd76267e89907af9377e267c74be973",
       "descriptor": "3d-assets/york/york-stone-river-bridge-and-approach-stairs/asset.json",
-      "descriptor_sha256": "8f75f06f1447009aef04ef36769ef47694b3aad7f6a3301c3318ac902f800665",
+      "descriptor_sha256": "74a8ff81f757b5be1e3c86a94bda013f718a7611e6bdaba785b6ab0c76dfa51b",
       "id": "york-stone-river-bridge-and-approach-stairs"
     },
     {
       "model": "3d-assets/york/york-west-bridge-approach-gatehouse/model.glb",
       "model_sha256": "ef9dea57904999ef3a217b8ce4d7b11dff5721425d67e45edfe966f486c3041c",
       "descriptor": "3d-assets/york/york-west-bridge-approach-gatehouse/asset.json",
-      "descriptor_sha256": "4252d5e4ba7bd9a327451107ad31e68ee47ec8ee3f539ba5a8889f23c1dd36ba",
+      "descriptor_sha256": "30f2526784577f6b4070f90350bffecdeb52efe1fc18db5d11dc86d0dbdbfa0b",
       "id": "york-west-bridge-approach-gatehouse"
     },
     {
       "model": "3d-assets/york/york-west-bridge-approach-round-tower/model.glb",
       "model_sha256": "27ada7ae1ffd315934454e069febad17ff7e8b7fe64c37d8bc0e53592f660f35",
       "descriptor": "3d-assets/york/york-west-bridge-approach-round-tower/asset.json",
-      "descriptor_sha256": "0c3883ef2d6b83a03c1c48ba933202335a5ee94f8724affd4d167d6c700f2715",
+      "descriptor_sha256": "10e2daddadb550d78e7ce9f01a8f793c8d9c6ac20244a705dcc103c056ade5a1",
       "id": "york-west-bridge-approach-round-tower"
     },
     {
       "model": "3d-assets/york/york-west-bridge-approach-stone-shop/model.glb",
       "model_sha256": "10a502f8917e1065d50190e0a16c5d69102faef1ab9b4101dc3c685568d89311",
       "descriptor": "3d-assets/york/york-west-bridge-approach-stone-shop/asset.json",
-      "descriptor_sha256": "3a7884d47f454353f57fe41b811f0df6a26cfa12479d29b6f0028eda4c473214",
+      "descriptor_sha256": "61ea36b66c2b7e31cc42631b34d208c51ec2c7d1078a45839cfaa494e2d13bcd",
       "id": "york-west-bridge-approach-stone-shop"
     },
     {
       "model": "3d-assets/york/york-west-bridge-approach-tall-timber-house/model.glb",
       "model_sha256": "260953f32ffc87f4eca55962d2c44281fb0c413bfdf31f7da3b41c8042635f45",
       "descriptor": "3d-assets/york/york-west-bridge-approach-tall-timber-house/asset.json",
-      "descriptor_sha256": "8cf92ff7386c903f262b9ca025ecfb7ce4a3af6a578d092f9a3a560d1a523fc1",
+      "descriptor_sha256": "ce50d72dfade1a6e1491f8398967ed5a1a7506af32564e1c4df3d2073824861c",
       "id": "york-west-bridge-approach-tall-timber-house"
     },
     {
@@ -1641,147 +1641,147 @@
       "model": "3d-assets/york/york-west-bridge-street-rear-gable-house/model.glb",
       "model_sha256": "561a4b45348dc233b173cc2fdc53da9dcf7f03b6c152b0a2b480b30e806db0b1",
       "descriptor": "3d-assets/york/york-west-bridge-street-rear-gable-house/asset.json",
-      "descriptor_sha256": "e0481749acec0a96da276a41c3be9677d53f7239c9bac4d4d9af4f54c557bb00",
+      "descriptor_sha256": "a6e541bca27b97746c04cc9e3a444d5675b482088c7ff3370929c2cf20bae921",
       "id": "york-west-bridge-street-rear-gable-house"
     },
     {
       "model": "3d-assets/york/york-west-bridge-street-tall-timber-house/model.glb",
       "model_sha256": "1264994ab5638dc80e07ed17fd14dfa2572d74c41c88e0706c08373d5aeb5ad5",
       "descriptor": "3d-assets/york/york-west-bridge-street-tall-timber-house/asset.json",
-      "descriptor_sha256": "bc358e4c29197101e3a5c0736cf5787ab10316a98945bc3a88da1bb82c4f224c",
+      "descriptor_sha256": "c7cb1f8d9c16adb6b96207d083d5d8ac99ba673048053659759ce2c852b5787a",
       "id": "york-west-bridge-street-tall-timber-house"
     },
     {
       "model": "3d-assets/york/york-west-city-wall-and-access-stair/model.glb",
       "model_sha256": "b0991662f9b8c4b362fac6f94fabab4fbec349e7cb2ca9b16a5b6d4a77b90af9",
       "descriptor": "3d-assets/york/york-west-city-wall-and-access-stair/asset.json",
-      "descriptor_sha256": "e16286c4a7559066737229dc6523b4ddb2e6ad92c90bc1d9239bcb1250f4dfec",
+      "descriptor_sha256": "e88bd246cbf34b7ab008896e9f70ee517106bbc5f7efcad4a728c05889e9b5d8",
       "id": "york-west-city-wall-and-access-stair"
     },
     {
       "model": "3d-assets/york/york-west-city-wall-roofed-stair-turret/model.glb",
       "model_sha256": "4c4555df13c3133fe9c859994b80364d4d7e298ad64522690eb9bb14d0bfe35f",
       "descriptor": "3d-assets/york/york-west-city-wall-roofed-stair-turret/asset.json",
-      "descriptor_sha256": "14a993da6418719a2e9a8d85814e63bfb5e7b51be3d418ff220c472c04312e21",
+      "descriptor_sha256": "0b6a7d49332f45afebeae1fc346b6bc691d608bf6875c40c02e7ab64e8ae1882",
       "id": "york-west-city-wall-roofed-stair-turret"
     },
     {
       "model": "3d-assets/york/york-west-lane-access-steps/model.glb",
       "model_sha256": "fc044dfe9a56fa5d791cc8a6a334b6061aa51e9c90dd980eba12fc3f9e97f1dd",
       "descriptor": "3d-assets/york/york-west-lane-access-steps/asset.json",
-      "descriptor_sha256": "b49fea50bcdec0f61232c6ada0cd81b180f23a4ea8297bca21570b7700045ce3",
+      "descriptor_sha256": "89f38d814599169794af2308ebb5dfd777a3fabe9805dd5594f30cf0c2a4d6b2",
       "id": "york-west-lane-access-steps"
     },
     {
       "model": "3d-assets/york/york-west-market-frontage-corner-shop/model.glb",
       "model_sha256": "e3a604e98456e35ae59c0385a778d85f4086f974e44d08c2e46de8c09912ed00",
       "descriptor": "3d-assets/york/york-west-market-frontage-corner-shop/asset.json",
-      "descriptor_sha256": "d6c3f39bda18f4f53175e21b604e3b5f9b6fafa6e3eab3171a6e7917431aa8b4",
+      "descriptor_sha256": "2602563994d1edd69b24ea0644d0fce24c00cce8d6ba3370bc5caa81f8aa37e5",
       "id": "york-west-market-frontage-corner-shop"
     },
     {
       "model": "3d-assets/york/york-west-market-frontage-dormer-house/model.glb",
       "model_sha256": "46113b26f0881004c9058ddf356948905186b26b7ce04bce07b5e36685e79714",
       "descriptor": "3d-assets/york/york-west-market-frontage-dormer-house/asset.json",
-      "descriptor_sha256": "c706b64e831920a057da7d6093fc713405db19d7423b948a46398766991106ac",
+      "descriptor_sha256": "9af2ffb840221addf76857a60f2949834073283840c9d8622403ead67fa97c68",
       "id": "york-west-market-frontage-dormer-house"
     },
     {
       "model": "3d-assets/york/york-west-market-frontage-gabled-house/model.glb",
       "model_sha256": "1ec3524fff711089288aa7d11d75ad003005d3c410185e8ae8f1593191957072",
       "descriptor": "3d-assets/york/york-west-market-frontage-gabled-house/asset.json",
-      "descriptor_sha256": "345f03d5619171e496076a38655d2e9478cf988723d08d52b7596906ca413d51",
+      "descriptor_sha256": "06971849d612c5842a9cc262143d1d701cb10cc0949f6a5f0577fdc17eb68c14",
       "id": "york-west-market-frontage-gabled-house"
     },
     {
       "model": "3d-assets/york/york-west-market-frontage-north-end-house/model.glb",
       "model_sha256": "b4f7cfe9e2b44b7272c8443c5c7191c4e55cc075ec83b35b755ddbe3e5ec34e3",
       "descriptor": "3d-assets/york/york-west-market-frontage-north-end-house/asset.json",
-      "descriptor_sha256": "9eb99cbf47e7cf4aad46c1c1ba62db40c0f671face425225abd0e4bb3f6fd47b",
+      "descriptor_sha256": "edd10fa337831b7e9277d7f50faabfbb99b854b2fdca5e23b85e5adf9b6604fe",
       "id": "york-west-market-frontage-north-end-house"
     },
     {
       "model": "3d-assets/york/york-west-market-frontage-rear-gable-house/model.glb",
       "model_sha256": "b95a04334a6df02730933158ff32d6dbd18341f9e7a34f32a184103058af7ede",
       "descriptor": "3d-assets/york/york-west-market-frontage-rear-gable-house/asset.json",
-      "descriptor_sha256": "657664e14b58b1b602bf95ec57c5bee583fdf2388e364b0e353837d28c62f880",
+      "descriptor_sha256": "cfdb0271898d3be5cd2892dd34e03e5f31ec0f328daa47a17cc92990b792cc9c",
       "id": "york-west-market-frontage-rear-gable-house"
     },
     {
       "model": "3d-assets/york/york-west-market-frontage-red-roof-house/model.glb",
       "model_sha256": "f6cc1587c823aad5b464267813d95e0450b1996067d0117b40c61b43e6ee608e",
       "descriptor": "3d-assets/york/york-west-market-frontage-red-roof-house/asset.json",
-      "descriptor_sha256": "d76f6b08352dc1b6ce4237dfc20f2eaa20d7db2d529587707e247411bb0ef84a",
+      "descriptor_sha256": "2e281669a11e58d1e20ae056d74d168da6c1a9fecc1c6946e9cc3562f617657d",
       "id": "york-west-market-frontage-red-roof-house"
     },
     {
       "model": "3d-assets/york/york-west-market-frontage-shared-occlusion-volume/model.glb",
       "model_sha256": "dab0394b30c4c4472d4142f65158f9e2b8fc01532953742d88ec8002ce81ad7e",
       "descriptor": "3d-assets/york/york-west-market-frontage-shared-occlusion-volume/asset.json",
-      "descriptor_sha256": "7c94a495dc3ed0bbd8a623efea68efb40669f6632d2ce75346ff4a37dcba441c",
+      "descriptor_sha256": "2c89911759e9e578c7d23fa793a39a6cd4f0ec68d2c0052bcdd140cd8152661e",
       "id": "york-west-market-frontage-shared-occlusion-volume"
     },
     {
       "model": "3d-assets/york/york-west-riverbank-retaining-wall/model.glb",
       "model_sha256": "de5af2b9ccd7dea58775d5b528cfa229ea59dea1fe93c1ed8eee6490ef834ec8",
       "descriptor": "3d-assets/york/york-west-riverbank-retaining-wall/asset.json",
-      "descriptor_sha256": "e399e4d95a8880d450a27dfde7b558547e188bddda510f5f90aa2f15eb3630f5",
+      "descriptor_sha256": "4d19eecfc3010486853fbc87f951ebde3ce500d36328f181b81b1c1959e4c662",
       "id": "york-west-riverbank-retaining-wall"
     },
     {
       "model": "3d-assets/york/york-west-town-lane-broad-timber-house/model.glb",
       "model_sha256": "5597d4993c2650dc275f3bfdb1995ca9e4a89187b2333005fc46ce2808e7a6dc",
       "descriptor": "3d-assets/york/york-west-town-lane-broad-timber-house/asset.json",
-      "descriptor_sha256": "3e8ec6207caf6495a1b1affe944a31301e9dec2a2253d1e83ebc53e0b8e1fa23",
+      "descriptor_sha256": "227f215f160c4e5de857c64ebb3429d6ddb4d82643c464f5d6d4b27b04839b7d",
       "id": "york-west-town-lane-broad-timber-house"
     },
     {
       "model": "3d-assets/york/york-west-town-lane-central-timber-house/model.glb",
       "model_sha256": "f56f352f21cfe7c55afbbcf2199c286d77a14beab37db8542d7b93ae05753abd",
       "descriptor": "3d-assets/york/york-west-town-lane-central-timber-house/asset.json",
-      "descriptor_sha256": "06b79d7511898a0dc6fd2ae4a17d56fe9bf01613e098fdb8b8cbb7c0337f7fab",
+      "descriptor_sha256": "b49477148861a944efb96e8d3351ce10db86eaab940882494cfb31310545cdba",
       "id": "york-west-town-lane-central-timber-house"
     },
     {
       "model": "3d-assets/york/york-west-town-lane-courtyard-boundary/model.glb",
       "model_sha256": "5e78953271e85a7b71bd53fed3cb3e59dcd403e764a742810024611220b4de60",
       "descriptor": "3d-assets/york/york-west-town-lane-courtyard-boundary/asset.json",
-      "descriptor_sha256": "29d3cb50fdfd0becb1d3f1f3327b901039a32d854d92bf0625a289d3e46d6913",
+      "descriptor_sha256": "e2ed06510b71312035874395f12e4640af111801767ff94d35e537775f18599a",
       "id": "york-west-town-lane-courtyard-boundary"
     },
     {
       "model": "3d-assets/york/york-west-town-lane-narrow-timber-house/model.glb",
       "model_sha256": "4e2b05d2db4b09771fd1c0b8dd0a133597f91f45f12be1e87f888754b17592f7",
       "descriptor": "3d-assets/york/york-west-town-lane-narrow-timber-house/asset.json",
-      "descriptor_sha256": "5e5b5e63a3af8a933123feacb61f8d99bb1fe844d3d2e033416a3d5d10951830",
+      "descriptor_sha256": "6137b33dadcc9c561b4d190d326b6ff0358c4f51b94adefa74b92f40e133d073",
       "id": "york-west-town-lane-narrow-timber-house"
     },
     {
       "model": "3d-assets/york/york-west-town-lane-rear-timber-house/model.glb",
       "model_sha256": "caa9fea7c65dda2c165ea0f24e7cdab350ab12b24345d4fbe83e814598b79dd2",
       "descriptor": "3d-assets/york/york-west-town-lane-rear-timber-house/asset.json",
-      "descriptor_sha256": "c67bc9648ce29b31093036d93c0de28b2b93a426e5e1533f25a4115f65647bcc",
+      "descriptor_sha256": "7560681ffe92837c255d3eff7aefb1efc42f0ca8c3383bb6bde35e2418d3d02e",
       "id": "york-west-town-lane-rear-timber-house"
     },
     {
       "model": "3d-assets/york/york-west-town-lane-stone-tower/model.glb",
       "model_sha256": "761d6264d92234e10f0ed91fa89c1c53123c235b759a1953830c85bb83dc7d32",
       "descriptor": "3d-assets/york/york-west-town-lane-stone-tower/asset.json",
-      "descriptor_sha256": "d886f9c6fc208be4740bd3e0dc5f059eefec84e4f02e79c84c33bb0be96abb92",
+      "descriptor_sha256": "e5743779ef2dc54e67af487df7e6d8ffcd93a29d87d51c5dd67054ff6e64a79c",
       "id": "york-west-town-lane-stone-tower"
     },
     {
       "model": "3d-assets/york/york-west-town-raised-lane/model.glb",
       "model_sha256": "cf8a3ce0d45a2f87de4e6b70fb4db58651fc15191b37134d980050ec4b4f39a4",
       "descriptor": "3d-assets/york/york-west-town-raised-lane/asset.json",
-      "descriptor_sha256": "0bd3856095d1aa68c0c89d0badb5899b733446318213a174bb755c90ec57b96c",
+      "descriptor_sha256": "56f297949a400d245a5d8556130065094280d785438c1c64f2e34962f46d46ca",
       "id": "york-west-town-raised-lane"
     },
     {
       "model": "3d-assets/york/york-west-town-raised-terrain/model.glb",
       "model_sha256": "7f57b26d29a173d91eccf1793db58304331ca32b4276f95d72ed1f78c7945d02",
       "descriptor": "3d-assets/york/york-west-town-raised-terrain/asset.json",
-      "descriptor_sha256": "ac9b2756c4d9889f0ee6b08de93c6cb456e3edb305d82ceba3e6cca7057a8297",
+      "descriptor_sha256": "66f8d7d0a8f972b637c738ce68da90fb7a2e56eb9660e18a047f58c012cfacd5",
       "id": "york-west-town-raised-terrain"
     }
   ],
@@ -3553,7 +3553,7 @@
       "transform": {
         "dx": 1796,
         "dy": 492.70215882554857,
-        "dz": 7.018875844902709e-05,
+        "dz": 0.00007018875844902709,
         "rot_deg": 0
       },
       "assets": [
@@ -3592,7 +3592,7 @@
       "transform": {
         "dx": 1835,
         "dy": 304.56908770240545,
-        "dz": 4.433892075628578e-05,
+        "dz": 0.00004433892075628578,
         "rot_deg": 0
       },
       "assets": [
@@ -3787,7 +3787,7 @@
       "transform": {
         "dx": 604,
         "dy": 344.71943824697865,
-        "dz": 3.5515482248795254e-05,
+        "dz": 0.000035515482248795254,
         "rot_deg": 0
       },
       "assets": [
@@ -3813,7 +3813,7 @@
       "transform": {
         "dx": 773,
         "dy": 590.7837294415774,
-        "dz": 9.480262313891086e-05,
+        "dz": 0.00009480262313891086,
         "rot_deg": 0
       },
       "assets": [

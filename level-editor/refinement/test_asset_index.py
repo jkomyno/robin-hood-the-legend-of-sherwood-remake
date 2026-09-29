@@ -86,6 +86,24 @@ class AssetIndexTest(unittest.TestCase):
         (self.asset/'model.glb').write_bytes(b'republished')
         self.reject('house: lossy receipt does not bind the current model')
 
+    def test_gameplay_collision_and_join_metadata_survive_all_catalog_views(self):
+        part = {'node': 'building-000', 'name': 'Visual shell', 'source_obstacle': 0,
+                'obstacle_local_game': {'points': []}, 'collision': 'none',
+                'sight_join_edges': [[[0, 0, 0], [10, 0, 0]]],
+                'sight_join_caps': ['top', 'bottom']}
+        variant = {'name': 'Alternate', 'model': 'model.glb', 'parts': [part]}
+        descriptor = {**self.descriptor, 'parts': [part],
+                      'state_variants': {'applied': variant},
+                      'standalone_variants': {'initial': variant},
+                      'gameplay': {'version': 1, 'collision': 'parts', 'surfaces': [],
+                                   'doors': [], 'draft': {'issues': ['Mask recovery incomplete.']}}}
+        (self.asset/'asset.json').write_text(json.dumps(descriptor))
+        editor = write_asset_index(self.root)['assets'][0]['editor']
+        self.assertEqual(editor['parts'], [part])
+        self.assertEqual(editor['state_variants']['applied']['parts'], [part])
+        self.assertEqual(editor['standalone_variants']['initial']['parts'], [part])
+        self.assertEqual(editor['gameplay'], descriptor['gameplay'])
+
     def test_corrupt_output_is_rejected(self):
         (self.asset/'lossy.glb').write_bytes(b'corrupt')
         self.reject('house: lossy model bytes differ')

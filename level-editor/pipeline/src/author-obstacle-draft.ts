@@ -1,4 +1,5 @@
 import { Document, NodeIO } from "@gltf-transform/core";
+import { KHRMaterialsUnlit } from "@gltf-transform/extensions";
 import earcut from "earcut";
 import { gameToScene, type MapCamera, type Vec3 } from "../../shared/src/scene.ts";
 import type { SightObstacle } from "../../shared/src/level.ts";
@@ -94,6 +95,7 @@ export async function authorObstacleDraft(
   }
   const material = model
     .createMaterial("Unfinished volume preview")
+    .setExtension("KHR_materials_unlit", model.createExtension(KHRMaterialsUnlit).createUnlit())
     .setBaseColorFactor([0.55, 0.45, 0.3, 1])
     .setDoubleSided(true);
   const primitive = model
@@ -112,6 +114,7 @@ export async function authorObstacleDraft(
     );
   const frame = model
     .createNode(node)
+    .setExtras({ source_obstacle: options.sourceIndex })
     .setMesh(model.createMesh(options.name).addPrimitive(primitive));
   for (const [index, pole] of (options.visualPoles ?? []).entries()) {
     if (
@@ -180,7 +183,7 @@ export async function authorObstacleDraft(
   return {
     descriptor,
     placement,
-    model: await new NodeIO().writeBinary(model),
+    model: await new NodeIO().registerExtensions([KHRMaterialsUnlit]).writeBinary(model),
     review: { status: "needs-review", appearanceComplete: false, masksComplete: false },
   };
 }

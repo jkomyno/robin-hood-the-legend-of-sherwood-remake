@@ -12,6 +12,106 @@ use robin_rs::mod_pack::{enumerate_missions, mount_mod_overlay, scan_mods_dir};
 use robin_util::asset_fs::AssetVfs;
 
 #[test]
+#[ignore = "requires ROBIN_EDITOR_MAP_ZIP from a full editor bake"]
+fn full_editor_archive_constructs_native_map_without_base_datadir() {
+    use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimConfig};
+    let archive = std::path::PathBuf::from(std::env::var("ROBIN_EDITOR_MAP_ZIP").unwrap());
+    let directory = tempfile::tempdir().unwrap();
+    let installed = directory.path().join("compiled-map.zip");
+    std::fs::copy(&archive, &installed).unwrap();
+    let mods = scan_mods_dir(directory.path());
+    assert_eq!(mods.len(), 1);
+    assert_eq!(mods[0].details.hackable_missions.len(), 1);
+    let name = &mods[0].details.hackable_missions[0];
+    let files = SbFileSystem::new(Arc::new(AssetVfs::new()));
+    mount_mod_overlay(&files, &installed).unwrap();
+    assert_eq!(enumerate_missions(&mods, &files).len(), 1);
+    let bytes = files
+        .read_shared(&format!("Data/Levels/{name}.level.json"))
+        .unwrap();
+    let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(descriptor["spawn_player"], false);
+    let editor = files
+        .read_shared(&format!("editor/{name}.rhlos-map.json"))
+        .unwrap();
+    let scene: serde_json::Value = serde_json::from_slice(&editor).unwrap();
+    assert_eq!(scene["map"], descriptor["title"]);
+    assert!(
+        scene["assetSources"]
+            .as_array()
+            .is_some_and(|a| !a.is_empty())
+    );
+    let loaded = LoadedLevel::hackable_from_json(&bytes).unwrap();
+    assert_eq!(&loaded.mission.header.map_filename, name);
+    assert!(loaded.mission.beam_mes.is_empty());
+    assert!(loaded.mission.soldiers.is_empty());
+    assert!(loaded.mission.civilians.is_empty());
+    assert!(loaded.mission.bonuses.is_empty());
+    assert!(loaded.mission.pcs_to_rescue.is_empty());
+    assert!(loaded.mission.scrolls.is_empty());
+    assert!(loaded.mission.script_objects.is_none());
+    assert!(loaded.mission.hiking_paths.is_empty());
+    let background =
+        pre_decode_background_map_with_files(name, "Day", "Data/Levels", None, &mut |_| {}, &files)
+            .unwrap()
+            .unwrap();
+    let dimensions = (background.width, background.height);
+    let pixel_count = usize::from(dimensions.0) * usize::from(dimensions.1);
+    assert_eq!(background.pixels.len(), pixel_count);
+    assert_eq!(
+        background.occlusion_depth.as_ref().unwrap().len(),
+        pixel_count
+    );
+    assert!(
+        background.pixels.windows(2).any(|p| p[0] != p[1]),
+        "map image is constant"
+    );
+    let minimap =
+        pre_decode_minimap_with_files(name, "Day", "Data/Levels", None, &mut |_| {}, &files)
+            .unwrap();
+    assert!(minimap.width > 0 && minimap.height > 0);
+    let mut assets = LevelAssets::new();
+    let mut profiles = robin_engine::profiles::ProfileManager::new();
+    let mut campaign = robin_engine::campaign::Campaign::new();
+    let index = campaign
+        .force_next_mission_by_name(&mut profiles, name, name, true)
+        .unwrap();
+    campaign.current_mission_idx = Some(index);
+    assets.profile_manager = Arc::new(profiles);
+    let engine = Engine::new(EngineArgs {
+        campaign,
+        level: LevelLoadArgs {
+            assets: &mut assets,
+            level_directory: "",
+            progress: &mut |_| {},
+            loaded,
+            bg_pixel_dims: (f32::from(dimensions.0), f32::from(dimensions.1)),
+        },
+        ground_mark_sprite: None,
+        titbit_row_frame_counts: vec![],
+        rng_seed: 0,
+        original_rng_replay: None,
+        sim_config: SimConfig {
+            script_enabled: false,
+            ..Default::default()
+        },
+    })
+    .expect("construct ZIP map without a base datadir");
+    let grid = engine.fast_grid();
+    assert!(!grid.level.blocks.is_empty());
+    assert!(!grid.level.sectors.is_empty());
+    eprintln!(
+        "{name}: {}x{}, {} sight obstacles, {} masks, {} door projections, {} grid blocks; color/depth/minimap and editor scene loaded without a base datadir",
+        dimensions.0,
+        dimensions.1,
+        assets.environment.static_sight_obstacles.len(),
+        grid.level.masks.len(),
+        grid.level.door_projection_infos.len(),
+        grid.level.blocks.len()
+    );
+}
+
+#[test]
 fn browser_compiled_map_loads_geometry_without_mission_spawns() {
     let directory = tempfile::tempdir().unwrap();
     let archive = directory.path().join("editor-bake-contract.zip");
