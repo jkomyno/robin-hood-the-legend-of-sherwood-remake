@@ -9,12 +9,12 @@ with it. Global indices and connections are rebuilt after placement.
 with Derby/York. “Partial” identifies a remaining gap. “Planned” describes the
 intended construction, not functionality available today.
 
-Current combined drafts recover 24 of the 27 map-source movement transitions.
-The three missing groups span assets in Croisement01, Croisement02 and York.
+Current combined drafts recover 26 of the 27 map-source movement transitions.
+The remaining missing group spans assets in York.
 Nottingham has both after assembling its four changing northern facade parts.
 Croisement03 has all nine after combining its staged state assets
 with the ground-receiver recovery; older ground-only batches omit two of them.
-All twenty-four recovered transitions have matching initial/applied changing-obstacle
+All twenty-six recovered transitions have matching initial/applied changing-obstacle
 coverage on matching movement envelopes. Nottingham's two stateful regions now
 also match full walkable coverage in both states. Actor traversal remains unverified.
 No map is yet published or certified at full gameplay parity.
@@ -2354,3 +2354,35 @@ for all eleven movement regions and exact initial/applied changing coverage for 
 nine transitions. Nottingham still has 507 unrecovered masks, 23 shadow regions,
 18 sound sources, and unverified actor traversal and visual-state behavior. These
 drafts remain unpublished and are not certified at full map parity.
+
+### Complete crossing-map movement state ownership
+
+`croisement01-state-assembly.json` groups the two physical parts of its missing
+change, and `croisement02-state-assembly.json` groups the four parts of its missing
+change. Each set has one shared state controller and no other controlling change.
+Staging retains exact mesh content, transforms and collision shapes and reopens
+the pinned scenes. The committed `croisement01-navigation-ownership.json` and
+`croisement02-navigation-ownership.json` retain the other asset-local navigation
+state owners.
+
+Recovery uses each new staged scene, its ownership and ground-receiver catalogs,
+and `--preserve-ground-boundaries --precise-ground-ownership --require-movement-coverage`.
+Croisement01 also retains its existing mask catalog; Croisement02 has no reviewed
+mask catalog yet. Staged libraries, candidates and native diagnostics use the
+`work/map-compile/croisement01-state-assembly-*` and
+`work/map-compile/croisement02-state-assembly-*` prefixes.
+
+All six Croisement01 transitions and all nine Croisement02 transitions now recover.
+For all fifteen, the baseline envelopes, permanent coverage and initial/applied
+full walkable coverage match exactly. Both maps construct in Rust and apply/reset
+every transition in baseline and one-pixel assembly-move variants. The moved parts
+retain exact ordered physical vertices and flags, and their waypoints follow them.
+The native exports contain respectively 8/5 movement areas, 92/154 sight obstacles,
+16/5 doors and 13/4 jump pairs.
+
+Comparison with the previously scanned drafts confirms unchanged ordered physical
+sight geometry, receiving planes, materials, masks, receiving layers and initial
+receiving-region coverage for all 22/12 receivers. This is a structural regression
+check, not a new native query scan. Croisement01 still has 102 pending masks;
+Croisement02 has 142 pending masks and five sound sources. Visual state masks,
+complete actor traversal and publication remain outstanding.
