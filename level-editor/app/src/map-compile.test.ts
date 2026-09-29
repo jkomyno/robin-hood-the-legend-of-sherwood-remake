@@ -506,6 +506,50 @@ test("bake snapshot resets patch previews without changing editor objects", () =
   assert.equal(node.visible, false);
 });
 
+test("bake snapshots select combined appearance states without leaking previews or depth exclusions", () => {
+  const root = new THREE.Group();
+  const covered = new THREE.Group();
+  covered.userData = { reveal_material_patch: "roof", reveal_material_state: "covered" };
+  const revealed = new THREE.Group();
+  revealed.userData = { reveal_material_patch: "roof", reveal_material_state: "revealed" };
+  revealed.visible = false;
+  const receiver = new THREE.Group();
+  receiver.userData = {
+    reveal_show_when_applied: ["roof"],
+    reveal_hide_when_applied: ["gate"],
+    map_bake_object_id: "receiver",
+  };
+  receiver.visible = false;
+  const hiddenParent = new THREE.Group();
+  hiddenParent.visible = false;
+  hiddenParent.add(revealed.clone());
+  root.add(covered, revealed, receiver, hiddenParent);
+  const peer = new THREE.Group();
+  peer.userData = { reveal_hide_when_applied: ["roof"] };
+  const snapshot = bakeScene([root, peer], new Set(["roof"]));
+  const visibility = () => snapshot.children[0]!.children.map((node) => node.visible);
+  assert.deepEqual(visibility(), [false, true, true, false]);
+  assert.equal(snapshot.children[1]!.visible, false);
+  withDepthOcclusion(snapshot, new Set(["receiver"]), () => {
+    assert.deepEqual(visibility(), [false, true, false, false]);
+  });
+  assert.deepEqual(visibility(), [false, true, true, false]);
+  const combined = bakeScene([root, peer], new Set(["roof", "gate"]));
+  assert.deepEqual(
+    combined.children[0]!.children.map((node) => node.visible),
+    [false, true, false, false],
+  );
+  assert.deepEqual(
+    root.children.map((node) => node.visible),
+    [true, false, false, false],
+  );
+  assert.equal(peer.visible, true);
+  assert.deepEqual(
+    bakeScene([root]).children[0]!.children.map((node) => node.visible),
+    [true, false, false, false],
+  );
+});
+
 test("mask-owned parts retain color visibility but reveal underlying depth geometry", () => {
   const { document, assets, hut } = maskAssetCompilerFixture();
   hut.gameplay!.maskOcclusionNodes = ["building-999"];

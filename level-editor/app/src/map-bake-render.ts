@@ -41,14 +41,19 @@ export function withDepthOcclusion<T>(
   }
 }
 
-/** Sources are in the editor's Z-up map frame. Only visible meshes are copied;
- * geometry/textures are borrowed until synchronous rendering finishes. */
-export function bakeScene(roots: THREE.Object3D[]): THREE.Group {
+/** Sources are in the editor's Z-up map frame. Copy the full hierarchy so applied
+ * states can reveal hidden meshes. Geometry/textures are borrowed during rendering. */
+export function bakeScene(
+  roots: THREE.Object3D[],
+  appliedPatches: ReadonlySet<string> = new Set(),
+): THREE.Group {
   const scene = new THREE.Group();
+  const display = new PatchDisplay();
+  for (const patch of appliedPatches) display.set(patch, true);
   for (const source of roots) {
     const clone = source.clone(true);
-    // Always compile the initial patch state, independently of preview switches.
-    new PatchDisplay().apply(clone);
+    // Export state is explicit and independent of viewport preview switches.
+    display.apply(clone);
     scene.add(clone);
   }
   return scene;

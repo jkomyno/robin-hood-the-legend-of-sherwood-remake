@@ -22,6 +22,10 @@ The combined `editor-field-model-library` drafts now contain regenerated light/s
 field models and repinned scenes; older diagnostic libraries retain their old pins.
 The nine source-backed `embedded-gameplay-library` drafts now embed 1,121 recovered
 definitions in pinned asset descriptors. They remain incomplete local drafts.
+The scene baker can now select explicit combinations of appearance patches,
+independently of viewport previews, for color/depth rendering. State-image ZIP
+packaging and runtime depth switching are still missing; the full-scene export
+guard remains in place for unsupported appearance bindings.
 
 Ground-boundary compilation now supports an explicit asset-local
 `preserveMovementBoundary` setting on a labelled ordinary surface. It retains
