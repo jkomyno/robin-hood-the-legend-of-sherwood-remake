@@ -111,7 +111,10 @@ export function recoverReviewedNavigationJoins(
       receiving = binding;
       if (
         entry.heightTolerance !== undefined &&
-        (!Number.isFinite(entry.heightTolerance) || entry.heightTolerance < 0)
+        (!Number.isFinite(entry.heightTolerance) ||
+          entry.heightTolerance < 0 ||
+          !Array.isArray(entry.edges) ||
+          !entry.edges.length)
       )
         throw new Error(`Invalid reviewed navigation height tolerance: ${key}`);
       if (entry.vertices !== undefined || entry.holes !== undefined) {

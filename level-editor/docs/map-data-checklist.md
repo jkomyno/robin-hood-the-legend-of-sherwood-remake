@@ -2224,3 +2224,32 @@ differences. All twenty compiled mask records are unchanged from the preceding
 draft. This does not recover the facade change's visual masks 378–384: 507 masks,
 23 shadow regions and 18 sound sources remain pending in this candidate. Actor
 traversal, visual-state fidelity and asset publication also remain unverified.
+
+### Nottingham courtyard receiving assembly (movement fidelity pending)
+
+`nottingham-state-navigation.json` partitions the courtyard and raised entry
+walkway among their five physical surfaces. The four stair surfaces belong to
+one asset and share a local region; only the three courtyard/stair boundary
+edges need cross-asset sockets. The eastern seam allows an endpoint height step
+below six units, and the other two allow less than one. These tolerances affect
+socket matching only; the physical receiving planes retain their original values.
+`nottingham-state-projections.json` binds all five physical volumes directly to
+their surfaces, replacing synthesized receiving geometry.
+
+The combined draft adds both catalogs to the northern facade recovery above.
+Artifacts are under `work/map-compile/nottingham-state-navigation-recovery` and
+`work/map-compile/nottingham-state-navigation-native`. Its six-receiver Rust scan
+(the courtyard five plus ground receiver 168) passes 2,170,166 queries with zero
+height, material or coverage differences. All twenty compiled masks remain
+unchanged.
+
+This is not movement parity. The courtyard's free coverage differs by about
+7.921 square units initially and 17.748 after its change. The source keeps a
+permanent obstacle crossing the outer boundary as a separate contour; this draft
+clips it into the outer boundary and rounds intersections. Small extra corners
+also appear along the raised walkway. Exact separate-contour handling across
+joined navigation pieces is still needed. The overall verified transition count
+therefore remains unchanged.
+
+Recovery now rejects a join height tolerance without sockets before producing
+asset packets, rather than emitting a packet that later fails gameplay validation.

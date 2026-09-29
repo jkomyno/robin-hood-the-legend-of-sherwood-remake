@@ -150,6 +150,10 @@ test("standalone navigation recovery requires an explicit planar boundary withou
   assert.deepEqual(update.vertices, entry.vertices);
   assert.deepEqual(update.edges, []);
   assert.equal(JSON.stringify([...f.packets]), before);
+  entry.heightTolerance = 0;
+  assert.throws(f.recover, /height tolerance/);
+  assert.equal(JSON.stringify([...f.packets]), before);
+  delete entry.heightTolerance;
   entry.edges = [[entry.vertices[0]!, entry.vertices[1]!]];
   assert.throws(f.recover, /no join edges/);
 });
