@@ -222,6 +222,39 @@ for (const layer of [0, 1])
       () => recoverLightPlane(upper, [support], [area]),
       /uncovered elevated|crosses receiving/,
     );
+    if (layer === 1) {
+      const field = recoverLightField(upper, "field", [support], [area]);
+      assert.deepEqual(
+        field.region.polygon.map(([x, y, z]) => [x, y - z]),
+        light.polygon.points,
+      );
+      assert.ok(field.region.receivers!.length > 0);
+      assert.ok(
+        field.region.receivers!.every(
+          ([x, y, z]) => x >= 0 && x <= 20 && y - z >= 0 && y - z <= 100 && z === 40,
+        ),
+      );
+      assert.deepEqual(
+        field.footprints[0],
+        field.region.polygon.map(([x, y]) => [x, y]),
+      );
+      assert.throws(() => recoverLightField(upper, "field", [], [area]), /no receiving anchors/);
+      const unsupportedArea = {
+        ...area,
+        polygon: {
+          points: [
+            [25, 0],
+            [40, 0],
+            [40, 100],
+            [25, 100],
+          ] as [number, number][],
+        },
+      };
+      assert.throws(
+        () => recoverLightField(upper, "field", [support], [unsupportedArea]),
+        /no receiving anchors/,
+      );
+    }
     area.obstacles = [
       {
         state_id: 0,

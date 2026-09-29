@@ -7,6 +7,7 @@ import { fixedClipping } from "../../shared/src/fixed-polygon-boolean.ts";
 import earcut, { flatten } from "earcut";
 
 class MultipleLightPlanesError extends Error {}
+class UncoveredLightGeometryError extends Error {}
 
 /** Complete region coverage by one asset's parts, including interior gaps. */
 export function containsLightPolygon(points: Point[], footprints: Point[][]): boolean {
@@ -56,7 +57,9 @@ export function recoverLightPlane(
     if (light.layer === 0) {
       if (!planes.length || uncoveredWalkable) planes.push([0, 0, 0]);
     } else if (uncoveredWalkable)
-      throw new Error("Light region has uncovered elevated receiving geometry");
+      throw new UncoveredLightGeometryError(
+        "Light region has uncovered elevated receiving geometry",
+      );
   }
   const plane = planes[0];
   if (!plane) throw new Error("Light region has no receiving geometry");
@@ -88,12 +91,17 @@ function recoverLightPieces(
   motionAreas: MotionArea[] | undefined,
   localize: (point: Vec3) => Vec3,
   verifyIntegerContours: boolean,
+  anchorOnly = false,
 ): AssetLightRegion[] {
   try {
     const plane = recoverLightPlane(light, obstacles, motionAreas);
     return [recoverLightRegion(light, id, node, plane, localize)];
   } catch (error) {
-    if (!(error instanceof MultipleLightPlanesError)) throw error;
+    if (
+      !(error instanceof MultipleLightPlanesError) &&
+      !(anchorOnly && error instanceof UncoveredLightGeometryError)
+    )
+      throw error;
   }
   const supports = obstacles.filter(
     (o) => Array.isArray(o.projection_area) && o.projection_area[1] === light.layer,
@@ -107,13 +115,13 @@ function recoverLightPieces(
       maximumHeight: Math.max(...o.points.map((p) => Math.max(p.z_top, p.z_bottom))),
     })),
   );
-  if (partition.ground.length && light.layer !== 0)
+  if (partition.ground.length && light.layer !== 0 && !anchorOnly)
     throw new Error("Multi-plane light region has uncovered elevated receiving geometry");
   const pieces = supports.map((o, i) => ({
     polygons: partition.surfaces[i]!,
     plane: heightPlane(o.points.slice(0, 3).map((p): Vec3 => [p.x, p.y - p.z_top, p.z_top])),
   }));
-  pieces.push({ polygons: partition.ground, plane: [0, 0, 0] });
+  if (light.layer === 0) pieces.push({ polygons: partition.ground, plane: [0, 0, 0] });
   const result: AssetLightRegion[] = [];
   for (const { polygons, plane } of pieces)
     for (const polygon of polygons) {
@@ -159,14 +167,31 @@ export function recoverLightField(
   obstacles: SightObstacle[],
   motionAreas: MotionArea[],
 ): { region: AssetLightRegion; footprints: Point[][] } {
+  let uncovered = false;
   try {
     const plane = recoverLightPlane(light, obstacles, motionAreas);
     const region = recoverLightRegion(light, id, "$root", plane, (p) => p);
     return { region, footprints: [region.polygon.map(([x, y]): Point => [x, y])] };
   } catch (error) {
-    if (!(error instanceof MultipleLightPlanesError)) throw error;
+    if (
+      !(error instanceof MultipleLightPlanesError) &&
+      !(error instanceof UncoveredLightGeometryError)
+    )
+      throw error;
+    uncovered = error instanceof UncoveredLightGeometryError;
   }
-  const pieces = recoverLightPieces(light, id, "$root", obstacles, motionAreas, (p) => p, false);
+  // Layer-wide contours can extend beyond physical coverage. Only their anchors
+  // need receiving geometry; the complete contour remains intact on the layer.
+  const pieces = recoverLightPieces(
+    light,
+    id,
+    "$root",
+    obstacles,
+    motionAreas,
+    (p) => p,
+    false,
+    true,
+  );
   const receivingAreas = new Map<string, { size: number; point: Vec3 }>();
   const close = (points: Point[]) => [[...points, points[0]!]];
   for (const piece of pieces) {
@@ -202,9 +227,13 @@ export function recoverLightField(
   const receivers = [...receivingAreas.values()].map((value) => value.point);
   if (!receivers.length) throw new Error("Light region has no receiving anchors");
   const plane = heightPlane(pieces[0]!.polygon.map(([x, y, z]): Vec3 => [x, y - z, z]));
+  const region = { ...recoverLightRegion(light, id, "$root", plane, (p) => p), receivers };
   return {
-    region: { ...recoverLightRegion(light, id, "$root", plane, (p) => p), receivers },
-    footprints: pieces.map((piece) => piece.polygon.map(([x, y]): Point => [x, y])),
+    region,
+    footprints: [
+      ...(uncovered ? [region.polygon.map(([x, y]): Point => [x, y])] : []),
+      ...pieces.map((piece) => piece.polygon.map(([x, y]): Point => [x, y])),
+    ],
   };
 }
 

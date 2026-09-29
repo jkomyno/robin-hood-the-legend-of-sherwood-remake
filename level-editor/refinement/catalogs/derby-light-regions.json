@@ -1,0 +1,12 @@
+{
+  "source_sha256": "14698dffeeb1316563b4f91b883961298c58323ac799ab2c8a099d99487b8a46",
+  "entries": [
+    {
+      "source": 4,
+      "id": "derby-west-steps-night-light-region",
+      "name": "Derby west steps night lighting",
+      "origin": [754, 1077, 0],
+      "review": "Independent night lighting field around the west steps. Preserve the complete contour across the small difference between physical receiving coverage and navigation, with explicit receiving anchors."
+    }
+  ]
+}

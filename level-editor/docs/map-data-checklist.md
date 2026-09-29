@@ -2608,3 +2608,28 @@ pass for both exports under ambience bits 1, 2 and 4. Unit tests cover independe
 movement/duplication, invisible geometry and rejected ownership declarations.
 This verifies an environmental field, not baked image lighting, rendered visual
 parity, publication or a complete ZIP round trip.
+
+### Elevated lighting fields with incomplete physical coverage
+
+Lighting fields retain a complete 2D contour on their resolved navigation layer;
+the contour need not be physically supported at every point. Field recovery now
+uses supported interior anchors when an elevated contour extends beyond physical
+receiving coverage. It never invents a ground plane for that uncovered portion.
+Strict per-plane recovery still rejects missing elevated geometry, and field
+recovery fails if it cannot establish receiving anchors. Ownership checks retain
+the full contour footprint so uncovered margins do not silently acquire an owner.
+
+The geometry-only audit in `work/map-compile/light-field-audit.json` now preserves
+147 of 148 complete contours across Derby (26), Leicester (30), Lincoln (30/31),
+Nottingham (24) and York (37). Lincoln source 11 still fails with a degenerate
+height plane. This audit does not assign owners or prove compiled receiving-layer
+equivalence for every field; the earlier per-map pending reports remain in force.
+
+`derby-light-regions.json` authors the previously rejected west-steps night field
+(source 4). Its asset in `work/map-compile/derby-light-field-stage` compiles alongside
+the existing Derby gameplay definitions. The complete contour and ambience match;
+its source layer 1 resolves to rebuilt layer 23, whose receiving plane matches the
+step plane. The diagnostic in `work/map-compile/derby-light-field-native` contains
+three light regions and preserves all non-light geometry and metadata. Native
+queries pass under ambience bits 1, 2 and 4. This is one additional compiled field,
+not a fully recovered or published Derby map.
