@@ -80,7 +80,6 @@ export function recoverGroundReceivers(
       !area ||
       area.is_lift ||
       area.state_id !== 0 ||
-      area.obstacles.some((o) => o.state_id !== 0) ||
       !Array.isArray(entry.anchor) ||
       entry.anchor.length !== 2 ||
       !entry.anchor.every(Number.isFinite) ||
@@ -88,7 +87,7 @@ export function recoverGroundReceivers(
       area.obstacles.some((o) => distanceToPolygon(entry.anchor, o.polygon.points) === 0)
     )
       throw new Error(
-        `Ground receiver requires a static unblocked ground anchor: ${entry.asset}/${entry.node}`,
+        `Ground receiver requires a persistent ground anchor unblocked in every state: ${entry.asset}/${entry.node}`,
       );
     return { ...entry, localAnchor: localize(part, [...entry.anchor, 0]) };
   });

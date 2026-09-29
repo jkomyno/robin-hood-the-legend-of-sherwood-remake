@@ -2020,10 +2020,11 @@ fractional route in Rust through the initial, applied and reset states.
 This removes three measured contour discrepancies: Croisement02 patch 6's
 applied blocker (about 0.494 square units), Croisement03 patch 0's initial blocker
 (about 9.489), and Croisement03 patch 5's applied blocker (about 0.102).
-The independent state-coverage comparison currently finds matching initial and
+The first independent state-coverage comparison found matching initial and
 applied blocker coverage for 12 of 21 recovered movement-transition records on
-matching source-area envelopes. Four records still differ, and five need a
-comparison across separately compiled area partitions. Six additional source
+matching source-area envelopes. The shared-receiver recovery below raises that
+to 19 of 21; two still need comparison across separately compiled area partitions.
+Six additional source
 movement transitions remain unrecovered: five span assets, and one lacks an
 explicit owner. These are not covered by the 40-area static-ground result.
 
@@ -2031,3 +2032,30 @@ All nine current draft exports apply and reset their 50 compiled transitions in
 the Rust diagnostic, including door-only transitions. That verifies exported
 bindings and runtime state changes; it does not prove coverage of missing source
 transitions or equivalence of the remaining movement geometry.
+
+### Shared receivers on stateful ground
+
+Ground receiver authoring now accepts a persistent movement area with changing
+obstacles, provided the selected anchor lies outside every initial and applied
+obstacle. State geometry beneath these physical receivers is recovered on the
+shared ground navigation plane; receiving height and material remain attached to
+the physical volume. No source lookup is added to compilation.
+
+The pinned Croisement01 and Croisement02 ground-receiver catalogs recover 15 and
+7 receivers respectively. A further Croisement02 receiver (136) has no verified
+integer anchor inside its footprint that is free in every state and remains
+unmigrated. Recovered drafts compile from scenes and asset candidates alone.
+All 13 recovered movement transitions across these two drafts now have identical
+initial and applied blocked coverage on matching movement envelopes, removing
+all four previously measured state differences and three envelope mismatches.
+The Rust diagnostic applies and resets all 13 successfully.
+Both drafts also construct native geometry. A separate permanent-coverage check
+on the matching ground envelope is exact for Croisement01; Croisement02 retains
+about 31.028 square units of permanent-coverage difference. Matching changing
+obstacles therefore does not establish equivalence of the complete walkable area.
+
+This evidence is limited to recovered transitions. Each crossing map still has
+one transition spanning assets that is not recovered. Croisement03 and Nottingham
+each retain one unmatched recovered movement envelope; the total six missing
+source transitions remain outstanding. The new catalogs and candidates do not
+constitute published asset definitions or full map certification.

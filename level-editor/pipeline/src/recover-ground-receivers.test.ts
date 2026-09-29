@@ -40,6 +40,30 @@ test("ground receiver recovery validates physical ownership and localizes the na
   assert.deepEqual(recover()[0]!.localAnchor, [50, 50, 0]);
 });
 
+test("ground receiver anchors remain valid beside changing obstacles but never inside either state", () => {
+  const f = fixture();
+  const area = f.source.motion_data.layers[0]![0]!;
+  for (const state_id of [1, 2]) {
+    area.obstacles = [
+      {
+        state_id,
+        polygon: {
+          points: [
+            [310, 310],
+            [330, 310],
+            [330, 330],
+            [310, 330],
+          ],
+        },
+      },
+    ];
+    assert.deepEqual(f.recover()[0]!.localAnchor, [50, 50, 0]);
+    f.definitions.entries[0]!.anchor = [320, 320];
+    assert.throws(f.recover, /unblocked in every state/);
+    f.definitions.entries[0]!.anchor = [350, 350];
+  }
+});
+
 test("ground receiver recovery rejects stale geometry, ownership and blocked navigation", () => {
   const changes: ((f: ReturnType<typeof fixture>) => void)[] = [
     (f) => {

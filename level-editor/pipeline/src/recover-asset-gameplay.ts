@@ -978,8 +978,10 @@ for (const area of movementStateInventory)
         initialSight,
         appliedSight,
         uncoveredPlane: transitionPlanes.get(change.patches[0]!),
+        // Shared physical receivers retain the ground navigation plane for states.
         receivers: proto.sight_obstacles.filter(
-          (obstacle) =>
+          (obstacle, index) =>
+            !groundReceivers.has(index) &&
             Array.isArray(obstacle.projection_area) &&
             obstacle.projection_area[0] === area.sector &&
             obstacle.projection_area[1] === area.layer,
