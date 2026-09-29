@@ -1,0 +1,55 @@
+{
+  "source_sha256": "b908102046d94d6029ec7144156499a89f225834f9d27953f4202dee05bdeb53",
+  "entries": [
+    {
+      "asset": "leicester-watermill",
+      "node": "building-076",
+      "model_sha256": "ba0b9fc1d5047e0bffc876e357408270651414e3d31c8190bee86466a133dc11",
+      "source_obstacle": 76,
+      "anchor": [
+        2387,
+        948
+      ]
+    },
+    {
+      "asset": "leicester-lower-bailey-terrace",
+      "node": "building-123",
+      "model_sha256": "54bf7dfc7fe331735e3f98c6cfebe51970d036494298efed3d631a5de7eae080",
+      "source_obstacle": 123,
+      "anchor": [
+        1089,
+        1083
+      ]
+    },
+    {
+      "asset": "leicester-southwest-edge-bank",
+      "node": "building-382",
+      "model_sha256": "fd421f54a1e523dd64be6dd7379e168a0a18992e71a76fd8937e35ba0951fa09",
+      "source_obstacle": 382,
+      "anchor": [
+        28,
+        1600
+      ]
+    },
+    {
+      "asset": "leicester-southwest-woodland-bank",
+      "node": "building-383",
+      "model_sha256": "48ce68ecbe58ea6b1db1f27c05cb829fa10fc8f99154bf1cb5abd71fc7c68b32",
+      "source_obstacle": 383,
+      "anchor": [
+        18,
+        1313
+      ]
+    },
+    {
+      "asset": "leicester-east-village-footbridge",
+      "node": "building-385",
+      "model_sha256": "0612d8742eff8b8fff4dd72af8e68becdb88ed282ac8144592bf45bdbcb9a822",
+      "source_obstacle": 385,
+      "anchor": [
+        2187,
+        840
+      ]
+    }
+  ]
+}

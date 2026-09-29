@@ -1,0 +1,35 @@
+{
+  "source_sha256": "1658cd3c148ed45c78dbee42a2e06883fb02e5d7c709af1876a027b00be77c4a",
+  "entries": [
+    {
+      "asset": "croisement03-group-094",
+      "node": "building-094",
+      "model_sha256": "9d8f806b3f2821ca2789417fed5a0ee097ddc064d87913ada6c0854c90e4c9f4",
+      "source_obstacle": 94,
+      "anchor": [
+        101,
+        417
+      ]
+    },
+    {
+      "asset": "croisement03-group-095",
+      "node": "building-095",
+      "model_sha256": "94216152069094d66ec172bae67f2c1fa4ae2003f8860735d08e90cd85ef404e",
+      "source_obstacle": 95,
+      "anchor": [
+        47,
+        326
+      ]
+    },
+    {
+      "asset": "croisement03-group-096",
+      "node": "building-096",
+      "model_sha256": "d02fd2be6ba06e3fba23b4329dc1580d6aba532b81969372b875685dbf7acfd6",
+      "source_obstacle": 96,
+      "anchor": [
+        28,
+        325
+      ]
+    }
+  ]
+}

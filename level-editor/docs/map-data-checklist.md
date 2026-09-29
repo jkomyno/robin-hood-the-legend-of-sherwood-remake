@@ -1953,3 +1953,41 @@ actor approach routing or traversal animations.
 This is targeted ground/receiving evidence, not full-map certification. The draft
 still has 166 pending masks, one light region and five sound sources, and full
 actor traversal, related receiving anchors and publication remain unfinished.
+
+### Ground receiver recovery across maps
+
+Pinned recipes now cover 33 uniquely owned physical receivers: Croisement03 (3),
+Leicester (5), Lincoln (19), Sherwood (1) and York (5). Nottingham's two candidate
+receivers have no unblocked integer anchor inside their footprints and remain
+unmigrated. Export resolves feature anchors at a bound receiver's elevation while
+retaining the same navigation sector; a regression checks a sloped passage and
+rejects an elevated anchor outside the receiver footprint.
+
+The nine-map `ground-receivers-native` batch compiles and constructs in Rust.
+Leicester's five migrated receivers match all 6,180,807 sampled native height,
+material and coverage queries. The comparison harness now creates empty tenant
+records only for actual buildings, excluding standalone door groups. These are
+test-harness mission records, not content added to exported maps.
+
+Restoring receiver footprints also requires restoring ground collision clearance
+coverage. Without that, nearby physical parts introduce blocked ground despite
+the shared navigation binding. After this correction, the
+`ground-receivers-clearance-native` comparison reports:
+
+| Map | Matching static ground areas | Remaining walkable-area difference |
+| --- | --- | --- |
+| Croisement03 | 1/1 | 0 |
+| Derby | 4/4 | 0 |
+| Leicester | 10/10 | 0 |
+| Lincoln | 8/8 | 0 |
+| Nottingham | 9/9 | 0 |
+| Sherwood | 1/1 | 0 |
+| York | 3/7 | Approximately 56.11, 4.40, 0.60 and 0.45 square units |
+
+This compares polygon coverage, allowing removal of collinear vertices. It covers
+36 of 40 static ground areas exactly; Croisement01/02 have no areas meeting this
+static-ground filter. Stateful navigation and other layers require separate
+verification. Only Lincoln and York have been regenerated with the clearance
+correction in this batch; the other maps retain their earlier receiver drafts.
+Broader receiving-query comparisons, remaining York contours, map publication
+and full gameplay parity remain unfinished.

@@ -469,6 +469,12 @@ fn recovered_projection_partitions_preserve_sampled_runtime_queries() {
             .proto
             .buildings
             .iter()
+            .filter(|entry| {
+                matches!(
+                    entry,
+                    robin_engine::level_data::RawBuildingEntry::Building { .. }
+                )
+            })
             .map(|_| robin_engine::level_data::RawBuildingTenants {
                 tenant_element_indices: Vec::new(),
                 arrow_reserve: false,

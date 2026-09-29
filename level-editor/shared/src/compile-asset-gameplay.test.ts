@@ -172,6 +172,29 @@ test("physical receiver anchors reject dangling and conflicting ownership", () =
   );
 });
 
+test("feature anchors use the physical receiver's elevation within shared ground navigation", () => {
+  const { document, assets, hut } = anchoredReceiverCompilerFixture();
+  hut.gameplay!.doors = [
+    {
+      id: "slope-passage",
+      node: hut.parts[0]!.node,
+      polygon: [],
+      outside: [10, 25, 5],
+      inside: [90, 50, 45],
+      middle: [50, 50, 25],
+      type: 0,
+      locked: false,
+      unlockable: false,
+      allowContinuous: true,
+    },
+  ];
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.motion_data.layers.flat().length, 1);
+  assert.equal(compiled.doors.length, 0);
+  hut.gameplay!.doors[0]!.outside = [150, 25, 75];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /outside must resolve/);
+});
+
 test("receiving volumes retain thickness, materials and state links after placement", () => {
   const { document, assets } = projectionVolumeCompilerFixture();
   const compile = () => compileAssetGameplay(document, assets, bounds);

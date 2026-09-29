@@ -422,8 +422,20 @@ for (const [layer, areas] of proto.motion_data.layers.entries())
       })),
     );
     const staticMotion = motion.state_id === 0 && motion.obstacles.every((o) => o.state_id === 0);
-    if (layer === 0 && staticMotion)
-      clearanceSources.push({ regions: partition.ground, plane: [0, 0, 0] });
+    if (layer === 0 && staticMotion) {
+      // Shared receivers retain ground navigation beneath their receiving footprint.
+      // Include that coverage when recovering clearances for nearby collision parts.
+      const groundCoverage = [
+        ...partition.ground,
+        ...supports.flatMap(({ index }, supportIndex) =>
+          groundReceivers.has(index) ? partition.surfaces[supportIndex]! : [],
+        ),
+      ];
+      clearanceSources.push({
+        regions: groundCoverage.length ? polygonClipping.union(groundCoverage) : [],
+        plane: [0, 0, 0],
+      });
+    }
     for (const [supportIndex, { obstacle, index }] of supports.entries()) {
       const binding = groundReceivers.get(index);
       if (binding) {

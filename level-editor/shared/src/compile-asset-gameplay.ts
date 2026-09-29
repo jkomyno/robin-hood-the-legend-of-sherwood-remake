@@ -1044,11 +1044,30 @@ export function compileAssetGameplay(
     }
     return matches[0]!;
   };
-  for (const receiver of projectionReceivers) {
+  const boundReceivers = projectionReceivers.map((receiver) => {
     const area = resolve(receiver.anchor, `${receiver.id} navigation anchor`);
     if (receiver.shape.projection_area)
       throw new Error(`${receiver.id}: projection volume already has a receiving area`);
     receiver.shape.projection_area = [area.sector, area.layer];
+    return { receiver, area };
+  });
+  // Receiving heights also resolve doors, masks and other local feature anchors.
+  // These are lookup aliases for the same sector, never extra movement polygons.
+  for (const { receiver, area } of boundReceivers) {
+    const top = receiver.shape.points.map((p): Vec3 => [p.x, p.y - p.z_top, p.z_top]);
+    const plane = heightPlane(top.slice(0, 3));
+    const coverage = fixedPolygonBoolean(
+      "intersection",
+      [area.polygon],
+      [[top.map(([x, y]): Point => [x, y])]],
+    );
+    for (const region of coverage)
+      areas.push({
+        ...area,
+        plane,
+        polygon: region[0]!,
+        blockers: [...area.blockers, ...region.slice(1)],
+      });
   }
   const masks: NonNullable<CompiledAssetGeometry["masks"]> = [];
   const maskIndices = new Map<string, number[]>();
