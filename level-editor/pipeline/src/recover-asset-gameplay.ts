@@ -29,6 +29,7 @@ import {
 import { recoverEndpointElevation, distanceToPolygon } from "./recovery-elevation.ts";
 import { readStoredMap, pinnedDescriptors } from "./stored-map.ts";
 import { recoverGroundGameplay, polygonArea } from "./recover-ground-gameplay.ts";
+import { partitionMovementObstacles } from "../../shared/src/partition-movement-obstacles.ts";
 import {
   recoveredGameplayDefinition,
   descriptorGameplayPacket,
@@ -88,6 +89,7 @@ const { values } = parseArgs({
     "navigation-definitions": { type: "string" },
     "projection-definitions": { type: "string" },
     "transition-planes": { type: "string" },
+    "preserve-ground-boundaries": { type: "boolean", default: false },
   },
 });
 if (!values.map || !values.source || !values.out)
@@ -621,21 +623,36 @@ if (groundAreas.length) {
         return [{ ...candidates[0]!, footprint: obstacle.points.map((p): Point => [p.x, p.y]) }];
       })
       .concat(groundProjectionOwners);
-    const ground = recoverGroundGameplay(groundAreas, owners);
+    const ground = recoverGroundGameplay(groundAreas, owners, values["preserve-ground-boundaries"]);
     transferredGroundExclusions = ground.blockers.flatMap((b) => b.regions);
     const terrain = packet(grounds[0]!.id);
     terrain.issues.push(...ground.warnings);
-    for (const section of ground.sections)
-      for (const [index, region] of section.terrain.entries())
+    for (const section of ground.sections) {
+      if (values["preserve-ground-boundaries"])
         terrain.surfaces.push({
-          id: `${section.navigationRegion}-${index}`,
+          id: `${section.navigationRegion}-0`,
           preserveMovementPrecision: true,
+          preserveMovementBoundary: true,
           navigationRegion: section.navigationRegion,
           node: "$root",
           kind: "walkable",
-          vertices: region[0]!.slice(0, -1).map(([x, y]) => [x, y, 0]),
-          holes: region.slice(1).map((hole) => hole.slice(0, -1).map(([x, y]) => [x, y, 0])),
+          vertices: section.movementBoundary.map(([x, y]) => [x, y, 0]),
+          holes: section.movementObstacles
+            .flatMap((region) => partitionMovementObstacles(region, true))
+            .map((hole) => hole.map(([x, y]) => [x, y, 0])),
         });
+      else
+        for (const [index, region] of section.terrain.entries())
+          terrain.surfaces.push({
+            id: `${section.navigationRegion}-${index}`,
+            preserveMovementPrecision: true,
+            navigationRegion: section.navigationRegion,
+            node: "$root",
+            kind: "walkable",
+            vertices: region[0]!.slice(0, -1).map(([x, y]) => [x, y, 0]),
+            holes: region.slice(1).map((hole) => hole.slice(0, -1).map(([x, y]) => [x, y, 0])),
+          });
+    }
     for (const [index, blocker] of ground.blockers.entries()) {
       const owner = owners.find((o) => o.asset === blocker.asset && o.node === blocker.node)!;
       for (const [regionIndex, region] of blocker.regions.entries()) {
@@ -658,6 +675,7 @@ if (groundAreas.length) {
     );
     coverage.push({
       kind: "ground-decomposition",
+      preservedBoundaries: values["preserve-ground-boundaries"],
       sourceArea: ground.sourceArea,
       recoveredArea: ground.reconstructedArea,
       differenceArea: ground.differenceArea,

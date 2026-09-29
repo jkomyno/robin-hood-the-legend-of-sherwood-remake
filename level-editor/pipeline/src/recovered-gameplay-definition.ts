@@ -17,6 +17,7 @@ export interface RecoveredSurface {
   navigationJoins?: AssetWalkableSurface["navigationJoins"];
   navigationJoinHeightTolerance?: number;
   preserveMovementPrecision?: boolean;
+  preserveMovementBoundary?: boolean;
   projectionMaterials?: AssetWalkableSurface["projectionMaterials"];
   projectionVolume?: string;
 }
@@ -119,6 +120,9 @@ export function recoveredGameplayDefinition(
       ...(draft.preserveMovementPrecision === undefined
         ? {}
         : { preserveMovementPrecision: draft.preserveMovementPrecision }),
+      ...(draft.preserveMovementBoundary === undefined
+        ? {}
+        : { preserveMovementBoundary: draft.preserveMovementBoundary }),
       ...(draft.projectionMaterials === undefined
         ? {}
         : { projectionMaterials: structuredClone(draft.projectionMaterials) }),

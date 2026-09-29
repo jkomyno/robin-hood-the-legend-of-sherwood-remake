@@ -3,6 +3,58 @@ import assert from "node:assert/strict";
 import clipping, { type MultiPolygon } from "polygon-clipping";
 import { closedPolygon, polygonArea, recoverGroundGameplay } from "./recover-ground-gameplay.ts";
 import type { Point } from "@rle/shared";
+import { preserveMovementBoundary } from "../../shared/src/preserve-movement-boundary.ts";
+import { partitionMovementObstacles } from "../../shared/src/partition-movement-obstacles.ts";
+
+test("boundary recovery reassembles crossing exclusions without inventing off-map asset collision", () => {
+  const boundary: Point[] = [
+    [0, 0],
+    [100, 0],
+    [100, 70],
+  ];
+  const obstacle: Point[] = [
+    [0, -10],
+    [110, -10],
+    [110, 76],
+    [0, -1],
+  ];
+  const recovered = recoverGroundGameplay(
+    [{ polygon: { points: boundary }, obstacles: [{ polygon: { points: obstacle } }] }],
+    [
+      {
+        asset: "wall",
+        node: "body",
+        footprint: [
+          [40, -30],
+          [60, -30],
+          [60, 90],
+          [40, 90],
+        ],
+      },
+    ],
+    true,
+  );
+  const section = recovered.sections[0]!;
+  assert.deepEqual(section.movementBoundary, boundary);
+  assert(
+    recovered.blockers[0]!.regions.flat(2).every(
+      ([x, y]) => x >= 40 && x <= 60 && y >= -10 && y <= 76,
+    ),
+  );
+  const assembled = preserveMovementBoundary(
+    section.movementBoundary,
+    [
+      ...section.movementObstacles
+        .flatMap((region) => partitionMovementObstacles(region, true))
+        .map((p) => [p]),
+      ...recovered.blockers.flatMap((b) => b.regions),
+    ],
+    [],
+  );
+  assert.deepEqual(assembled.polygon, boundary);
+  assert.equal(assembled.blockers.length, 1);
+  assert.deepEqual(clipping.xor([obstacle], [assembled.blockers[0]!]), []);
+});
 
 test("touching ground regions retain independent topology and per-region fidelity", () => {
   const areas = [0, 100].map((x) => ({

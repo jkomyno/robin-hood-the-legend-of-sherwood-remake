@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
 import type { Point } from "./level.ts";
+import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 
 const boundary: Point[] = [
   [0, 0],
@@ -43,31 +44,35 @@ test("preserved movement boundaries discard unrelated blockers but retain crossi
   assert.deepEqual(result.polygon, boundary);
 });
 
-test("preserved movement boundaries reject unrepresentable blocker islands and collapsed envelopes", () => {
-  assert.throws(
-    () =>
-      preserveMovementBoundary(
-        boundary,
-        [
-          [
-            [
-              [10, 10],
-              [90, 10],
-              [90, 90],
-              [10, 90],
-            ],
-            [
-              [30, 30],
-              [70, 30],
-              [70, 70],
-              [30, 70],
-            ],
-          ],
-        ],
-        [],
-      ),
-    /enclosed walkable islands/,
+test("preserved movement boundaries retain enclosed walkable islands", () => {
+  const obstacles: Point[][] = [
+    [
+      [10, 10],
+      [90, 10],
+      [90, 90],
+      [10, 90],
+    ],
+    [
+      [30, 30],
+      [70, 30],
+      [70, 70],
+      [30, 70],
+    ],
+  ];
+  const result = preserveMovementBoundary(boundary, [obstacles], []);
+  assert.equal(result.blockers.length, 8);
+  assert.deepEqual(
+    fixedPolygonBoolean(
+      "xor",
+      obstacles,
+      result.blockers.map((p) => [p]),
+    ),
+    [],
   );
+  assert(result.blockers.flat().every((p) => p.every(Number.isInteger)));
+});
+
+test("preserved movement boundaries reject collapsed envelopes", () => {
   assert.throws(
     () =>
       preserveMovementBoundary(

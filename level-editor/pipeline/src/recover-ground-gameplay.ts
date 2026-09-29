@@ -25,6 +25,7 @@ export function polygonArea(regions: MultiPolygon): number {
 export function recoverGroundGameplay(
   areas: { polygon: { points: Point[] }; obstacles: { polygon: { points: Point[] } }[] }[],
   owners: { asset: string; node: string; footprint: Point[] }[],
+  preserveBoundary = false,
 ) {
   if (!areas.length) throw new Error("No authored ground movement regions");
   const warnings: string[] = [];
@@ -44,13 +45,26 @@ export function recoverGroundGameplay(
   const walkable = clipping.union(free[0]!, ...free.slice(1));
   const boundaries = areas.map((area) => closedPolygon(area.polygon.points));
   const envelope = clipping.union(boundaries[0]!, ...boundaries.slice(1));
+  const authoredExclusions = areas.flatMap((area) =>
+    area.obstacles.map((o) => closedPolygon(o.polygon.points)),
+  );
+  const excludedCoverage = authoredExclusions.length
+    ? clipping.difference(
+        clipping.union(authoredExclusions[0]!, ...authoredExclusions.slice(1)),
+        walkable,
+      )
+    : [];
   // Only recover the excluded portion of an asset footprint. Sight geometry
   // and movement contours are not interchangeable: replacing one with the
   // other would change clearances even at the unchanged placement.
   const blockers = owners.flatMap((owner) => {
     // Disconnected ground sectors must not claim unrelated assets elsewhere on the map.
     if (!clipping.intersection(closedPolygon(owner.footprint), envelope).length) return [];
-    const regions = clean(clipping.difference(closedPolygon(owner.footprint), walkable));
+    const regions = clean(
+      preserveBoundary
+        ? clipping.intersection(closedPolygon(owner.footprint), excludedCoverage)
+        : clipping.difference(closedPolygon(owner.footprint), walkable),
+    );
     return regions.length ? [{ asset: owner.asset, node: owner.node, regions }] : [];
   });
   const additions = blockers.flatMap((b) => b.regions);
@@ -71,10 +85,18 @@ export function recoverGroundGameplay(
         )
       : [];
     const remaining = excluded.length ? clipping.difference(holes, excluded) : holes;
+    const completeHoles = authoredHoles.length
+      ? clipping.union(authoredHoles[0]!, ...authoredHoles.slice(1))
+      : [];
+    const movementObstacles = clean(
+      excluded.length ? clipping.difference(completeHoles, excluded) : completeHoles,
+    );
     const terrain = clean(remaining.length ? clipping.difference(boundary, remaining) : [boundary]);
     const reconstructed = excluded.length ? clipping.difference(terrain, excluded) : terrain;
     return {
       navigationRegion: `ground-section-${index}`,
+      movementBoundary: area.polygon.points,
+      movementObstacles,
       terrain,
       differenceArea: polygonArea(clipping.xor(areaFree[index]!, reconstructed)),
     };

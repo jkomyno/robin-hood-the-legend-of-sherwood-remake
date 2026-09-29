@@ -31,6 +31,19 @@ test("recovery converts query precedence into independent asset definitions", ()
   assert.equal(definition.sightOrder![hut.parts[0]!.node], 7);
 });
 
+test("recovery retains independently authored movement envelopes", () => {
+  const { hut } = assetCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  packet.surfaces[0]!.navigationRegion = "ground";
+  packet.surfaces[0]!.preserveMovementPrecision = true;
+  packet.surfaces[0]!.preserveMovementBoundary = true;
+  const definition = recoveredGameplayDefinition(packet, hut);
+  assert.equal(definition.surfaces[0]!.preserveMovementBoundary, true);
+  assert.equal(definition.surfaces[0]!.preserveMovementPrecision, true);
+  packet.surfaces[0]!.vertices[0]![0] += 1;
+  assert.notEqual(definition.surfaces[0]!.polygon[0]![0], packet.surfaces[0]!.vertices[0]![0]);
+});
+
 test("unrestricted passage continuity survives authoring conversion", () => {
   const { hut } = assetCompilerFixture();
   hut.gameplay!.doors[0]!.polygon = [];

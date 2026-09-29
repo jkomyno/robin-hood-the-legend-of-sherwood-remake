@@ -15,10 +15,12 @@ the outer contour and crossing movement obstacles separately, avoiding rounding
 their implicit fractional intersections. A compiler-generated native fixture
 verifies containment and thin reachability through a narrow strip, plus blocked
 crossings of both boundaries. Receiving ownership and movement-state clipping
-subtract crossing obstacles explicitly. This mode currently requires one surface
-per navigation region; joined pieces and obstacles enclosing walkable islands
-fail explicitly. Recovery/publication does not yet enable it, and full-map ground
-geometry parity remains unverified.
+subtract crossing obstacles explicitly. Enclosed walkable islands are partitioned
+into ordinary obstacles with coverage checks. This mode currently requires one
+surface per navigation region; joined pieces still fail explicitly. The offline
+recovery flag `--preserve-ground-boundaries` enables draft boundary recovery;
+it is not the default and is not published. Full-map ground geometry parity
+remains unverified.
 
 | Original map information | Construction from the editor | Status |
 |---|---|---|
@@ -1802,3 +1804,38 @@ construct in Rust. Croisement01 now constructs 41 areas instead of 40; the other
 eight area counts are unchanged from the ground-precision batch. This verifies
 offline decomposition and native loading, not complete final navigation parity or
 publication of the recovered definitions.
+
+### Preserved ground-boundary recovery draft
+
+The opt-in `--preserve-ground-boundaries` authoring path retains one outer
+movement envelope per source area. It transfers only authored obstacle coverage
+to placed assets, including portions crossing the envelope, and stores remaining
+exclusions in the terrain asset. Export still reads only asset metadata.
+Compound exclusions are partitioned with a symmetric-difference check. Recovery
+can split nearly touching fractional holes before assembly; final obstacle
+partitioning does not add fractional movement vertices. A regression covers a
+hole that triangulation previously filled silently.
+
+The dedicated `sherwood-boundary-native` draft loads in Rust at the baseline and
+three independent treehouse/platform placements. Its baseline outer ground
+contour matches all 115 authored vertices exactly. All 701,438 receiving queries
+still match coverage, height and material. This draft is **not an improvement in
+overall ground coverage yet**: flat-ground symmetric difference is about 204.26
+square map units versus about 79.00 in the preceding precision draft, after
+accounting for the separately recovered raised bluff. Merging overlapping
+exclusions before integer rounding remains unresolved. This mode stays opt-in;
+the recovered definitions are not published or parity-certified.
+
+The `ground-boundary-recovery` batch produces valid asset definitions for all
+nine maps. Its `ground-boundary-native` export batch remains incomplete: Lincoln
+and Nottingham fail the obstacle-partition coverage guard (about 25,600 and 357
+square units respectively), and York reports a disconnected garden-wall lift
+assembly. The three crossing maps, Derby, Leicester and Sherwood compile.
+These failures are retained in the full diagnostic manifest; they are not
+converted into successful empty geometry or omitted from the batch result.
+The six successful exports also construct in Rust. The separately labelled
+`ground-boundary-successful-native` subset records that loader check without
+marking the nine-map batch complete. A source-contour diagnostic produces about
+100.92 square units of error from union-and-rounding alone, before asset ownership
+splits or physical collision cuts; obstacle-intersection preservation therefore
+needs its own treatment in addition to the outer-boundary work.

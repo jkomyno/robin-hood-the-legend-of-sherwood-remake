@@ -238,9 +238,12 @@
 - **Preserved movement boundaries.** A labelled ordinary asset surface can retain
   its outer contour separately from crossing movement obstacles. This preserves
   thin walkable strips whose intersections fall between integer coordinates;
-  compiler-export and native navigation tests cover the behavior. Joined pieces
-  and compound obstacles with enclosed islands remain unsupported in this mode.
-  Full-map recovery and publication remain incomplete.
+  compiler-export and native navigation tests cover the behavior. Enclosed islands
+  are partitioned with coverage checks; recovery can split nearly touching
+  fractional holes before final assembly. Joined pieces remain unsupported in
+  this mode. Offline recovery exposes `--preserve-ground-boundaries` for comparison
+  drafts, without changing default recovery. Full-map parity and publication
+  remain incomplete.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits
