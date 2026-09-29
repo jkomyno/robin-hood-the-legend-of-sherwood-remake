@@ -1744,3 +1744,32 @@ receiver/navigation recipes. Counts changed on several maps, including three ext
 York receiving records; those topology changes still require source comparisons.
 Native construction is a regression check, not a full parity certificate. The
 dedicated Sherwood navigation batch additionally passes all 48 directed lift callbacks.
+
+Ground decomposition now retains the fixed-point clipping grid instead of snapping
+terrain and asset-owned blockers separately. Recovered ground definitions explicitly
+set `preserveMovementPrecision`; the compiler combines their fractional boundaries
+before snapping the final movement regions. Existing asset definitions keep their
+previous rounding behavior unless they opt in. Near-collinear clipping noise is
+removed before storing ground rings, without rounding their remaining coordinates.
+Sherwood's offline ground decomposition error falls from 479.3164548 to about
+0.00004992 square game units. The dedicated `sherwood-ground-precision-native`
+baseline reduces separate flat-ground areas from eleven to four and reduces their
+polygon difference against the source ground minus its raised footprint from
+442.8548631 to 78.9977270 square game units. Combining the compiled flat ground and
+the bluff's two sloping pieces still leaves 73.6571309 square units of difference
+against the complete source ground area and four disconnected components. This does
+not yet connect the river bluff or permit its physical receiver link. The treehouse
+region remains geometrically exact and all 701,438 native receiving samples still
+match. These are unpublished recovery candidates, not a full-map parity result.
+
+Fresh all-map recovery in `work/map-compile/ground-precision-recovery` reduces the
+ground-decomposition difference below 0.0006 square units on eight maps. Croisement01
+improves from 1023.3774 to 66.4752 square units but retains a larger discrepancy.
+All candidates validate and all nine static descriptors in `ground-precision-native`
+construct in Rust: 40/20/19 areas for the crossings, 60 Derby, 68 Leicester,
+108 Lincoln, 103 Nottingham, 22 Sherwood and 190 York. These counts use the broad
+authoring configuration without the dedicated Sherwood receiver/navigation recipes.
+The dedicated Sherwood variants construct 16 areas at baseline/treehouse-only move
+and 17 for platform-only/combined moves; all four retain 129 sight obstacles,
+15 doors, one jump pair and passing directed lift callbacks. Recovery error and
+successful construction do not establish final navigation or full gameplay parity.

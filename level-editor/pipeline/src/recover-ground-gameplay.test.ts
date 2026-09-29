@@ -73,6 +73,54 @@ test("ground recovery transfers building cutouts to assets without losing terrai
   );
 });
 
+test("fractional ownership cuts reconstruct the ground without separately rounding terrain and blockers", () => {
+  const recovered = recoverGroundGameplay(
+    [
+      {
+        polygon: {
+          points: [
+            [0, 0],
+            [100, 0],
+            [100, 100],
+            [0, 100],
+          ],
+        },
+        obstacles: [
+          {
+            polygon: {
+              points: [
+                [10, 10],
+                [90, 70],
+                [90, 90],
+                [10, 90],
+              ],
+            },
+          },
+        ],
+      },
+    ],
+    [
+      {
+        asset: "wall",
+        node: "body",
+        footprint: [
+          [0, 0],
+          [45.3, 0],
+          [45.3, 100],
+          [0, 100],
+        ],
+      },
+    ],
+  );
+  assert.ok(recovered.differenceArea < 0.0001);
+  assert.equal(recovered.coordinateGrid, 1 / 1048576);
+  assert.ok(
+    recovered.blockers.some((b) =>
+      b.regions.some((p) => p.some((r) => r.some((v) => v.some((n) => !Number.isInteger(n))))),
+    ),
+  );
+});
+
 test("ground recovery rejects empty movement instead of inventing a floor", () => {
   assert.throws(() => recoverGroundGameplay([], []), /No authored ground/);
   const points: Point[] = [

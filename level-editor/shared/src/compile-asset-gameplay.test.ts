@@ -1504,6 +1504,65 @@ test("fractional clearance intersections preserve an integer sloping movement bo
   assert.deepEqual(compileAssetGameplay(document, assets, bounds).motion_data, expected);
 });
 
+test("continuous movement cutouts join before their shared fractional edge is rounded", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.collision = "none";
+  gameplay.doors = [];
+  gameplay.surfaces = [
+    {
+      id: "floor",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [0, 0],
+        [100, 0],
+        [100, 100],
+        [0, 100],
+      ],
+    },
+  ];
+  const common = { node: "building-999", height: 0, preserveMovementPrecision: true };
+  gameplay.movementBlockers = [
+    {
+      ...common,
+      id: "whole",
+      polygon: [
+        [0, 0],
+        [100, 90],
+        [100, 100],
+        [0, 100],
+      ],
+    },
+  ];
+  const expected = compileAssetGameplay(document, assets, bounds).motion_data;
+  gameplay.movementBlockers = [
+    {
+      ...common,
+      id: "left",
+      polygon: [
+        [0, 0],
+        [45.3, 40.77],
+        [45.3, 100],
+        [0, 100],
+      ],
+    },
+    {
+      ...common,
+      id: "right",
+      polygon: [
+        [45.3, 40.77],
+        [100, 90],
+        [100, 100],
+        [45.3, 100],
+      ],
+    },
+  ];
+  assert.deepEqual(compileAssetGameplay(document, assets, bounds).motion_data, expected);
+  Object.assign(gameplay.movementBlockers[0]!, { preserveMovementPrecision: "yes" });
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /movement precision/);
+});
+
 test("an enclosed clearance retains a walkable island inside derived collision", () => {
   const { document, assets, hut } = assetCompilerFixture();
   hut.gameplay!.movementClearances = [

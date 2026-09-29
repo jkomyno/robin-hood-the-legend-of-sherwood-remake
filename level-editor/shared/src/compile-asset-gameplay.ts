@@ -568,8 +568,9 @@ export function compileAssetGameplay(
       // Clearances are intermediate cutouts. Snapping their intersections before
       // clipping solids bends otherwise straight movement boundaries.
       const clearance = target === movementClearances;
-      const projectMovement = clearance ? ([x, y, z]: Vec3): Point => [x, y - z] : project;
-      const minimumArea = clearance ? 1e-8 : 0.5;
+      const continuous = clearance || surface.preserveMovementPrecision === true;
+      const projectMovement = continuous ? ([x, y, z]: Vec3): Point => [x, y - z] : project;
+      const minimumArea = continuous ? 1e-8 : 0.5;
       const placed = {
         owner: placement.id,
         navigationRegion:

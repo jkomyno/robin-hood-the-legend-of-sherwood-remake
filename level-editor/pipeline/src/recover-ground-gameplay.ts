@@ -1,10 +1,7 @@
 import type { MultiPolygon, Polygon } from "polygon-clipping";
-import {
-  recoveryClipping as clipping,
-  recoveryPolygonBoolean,
-} from "./recovery-polygon-boolean.ts";
+import { recoveryClipping as clipping } from "./recovery-polygon-boolean.ts";
 import type { Point } from "@rle/shared";
-import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
+import { simplifyMotionRing } from "../../shared/src/motion-quantization.ts";
 
 export const closedPolygon = (points: Point[]): Polygon => [[...points, points[0]!]];
 export function polygonArea(regions: MultiPolygon): number {
@@ -31,10 +28,12 @@ export function recoverGroundGameplay(
 ) {
   if (!areas.length) throw new Error("No authored ground movement regions");
   const warnings: string[] = [];
-  const normalize = (regions: MultiPolygon, label: string) =>
-    quantizeRecoveredMotion(regions, label, warnings, (rounded) =>
-      recoveryPolygonBoolean("union", rounded, [], 1),
-    );
+  const clean = (regions: MultiPolygon): MultiPolygon =>
+    regions.flatMap((region) => {
+      const rings = region.map((ring) => simplifyMotionRing(ring, 2 / 1048576));
+      if (rings[0]!.length < 3) return [];
+      return [rings.filter((ring) => ring.length >= 3).map((ring) => [...ring, ring[0]!])];
+    });
   const areaFree = areas.map((area) => {
     const boundary = closedPolygon(area.polygon.points);
     const holes = area.obstacles.map((o) => closedPolygon(o.polygon.points));
@@ -51,10 +50,7 @@ export function recoverGroundGameplay(
   const blockers = owners.flatMap((owner) => {
     // Disconnected ground sectors must not claim unrelated assets elsewhere on the map.
     if (!clipping.intersection(closedPolygon(owner.footprint), envelope).length) return [];
-    const regions = normalize(
-      clipping.difference(closedPolygon(owner.footprint), walkable),
-      `${owner.asset}/${owner.node} ground blocker`,
-    );
+    const regions = clean(clipping.difference(closedPolygon(owner.footprint), walkable));
     return regions.length ? [{ asset: owner.asset, node: owner.node, regions }] : [];
   });
   const additions = blockers.flatMap((b) => b.regions);
@@ -67,10 +63,7 @@ export function recoverGroundGameplay(
     const boundary = closedPolygon(area.polygon.points);
     const holes = clipping.difference(boundary, areaFree[index]!);
     const remaining = excluded.length ? clipping.difference(holes, excluded) : holes;
-    const terrain = normalize(
-      remaining.length ? clipping.difference(boundary, remaining) : [boundary],
-      `Recovered ground section ${index}`,
-    );
+    const terrain = clean(remaining.length ? clipping.difference(boundary, remaining) : [boundary]);
     const reconstructed = excluded.length ? clipping.difference(terrain, excluded) : terrain;
     return {
       navigationRegion: `ground-section-${index}`,
@@ -86,7 +79,7 @@ export function recoverGroundGameplay(
     sections,
     blockers,
     warnings,
-    coordinateGrid: 1,
+    coordinateGrid: 1 / 1048576,
     sourceArea: polygonArea(walkable),
     reconstructedArea: polygonArea(reconstructed),
     differenceArea: polygonArea(difference),

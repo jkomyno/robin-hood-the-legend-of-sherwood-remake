@@ -8,6 +8,8 @@ export interface AssetWalkableSurface {
   polygon: Point[];
   /** Constant height or one height per polygon vertex; the surface must be planar. */
   height: number | number[];
+  /** Retain fractional boundaries through movement assembly; only the final regions snap to the grid. */
+  preserveMovementPrecision?: boolean;
   /** Holes lie on the same plane, in the same local XY frame. */
   holes?: Point[][];
   /** Asset-local navigation region, optionally spanning height planes; distinct regions never merge. */
@@ -775,6 +777,11 @@ export function validateAssetGameplay(
       )
     )
       fail("invalid surface height");
+    if (
+      surface.preserveMovementPrecision !== undefined &&
+      typeof surface.preserveMovementPrecision !== "boolean"
+    )
+      fail("invalid movement precision setting");
     if (surface.holes !== undefined) {
       if (!Array.isArray(surface.holes)) fail("invalid surface holes");
       for (const hole of surface.holes) polygon(hole);

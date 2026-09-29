@@ -1844,3 +1844,8 @@ This lets independently placed bridges and platforms share navigation while keep
 their authored receiving planes and height discontinuities. Offline reviewed recovery
 can restore movement contours independently of receiving footprints and generates
 the corresponding asset-owned collision clearances.
+
+Asset movement surfaces and cutouts can retain fractional boundaries through boolean
+assembly with `preserveMovementPrecision`. The final movement regions still use the
+engine's integer grid. Ground recovery uses this to keep independently movable
+cutouts aligned with terrain instead of rounding each piece separately.

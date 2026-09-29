@@ -629,6 +629,7 @@ if (groundAreas.length) {
       for (const [index, region] of section.terrain.entries())
         terrain.surfaces.push({
           id: `${section.navigationRegion}-${index}`,
+          preserveMovementPrecision: true,
           navigationRegion: section.navigationRegion,
           node: "$root",
           kind: "walkable",
@@ -641,6 +642,7 @@ if (groundAreas.length) {
         const local = (ring: Point[]) =>
           ring.slice(0, -1).map(([x, y]) => localize(owner.part, [x, y, 0]));
         (packet(owner.asset).movementBlockers ??= []).push({
+          preserveMovementPrecision: true,
           id: `${owner.node}-ground-blocker-${index}-${regionIndex}`,
           node: owner.node,
           vertices: local(region[0]!),
