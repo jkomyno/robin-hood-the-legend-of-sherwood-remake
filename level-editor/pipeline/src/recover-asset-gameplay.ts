@@ -48,6 +48,7 @@ import {
   declaredSoundOwners,
 } from "./recover-sound-source.ts";
 import { recoverAuthoredSounds } from "./recover-authored-sounds.ts";
+import { declaredLightOwners } from "./recover-light-owner.ts";
 import { containsLightPolygon, recoverLightField } from "./recover-light-region.ts";
 import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry.ts";
 import { terrainOwnsJump } from "./terrain-jump-ownership.ts";
@@ -1662,6 +1663,16 @@ for (const [index, sound] of proto.sound_sources.entries()) {
   recoveredSounds++;
 }
 let recoveredLights = 0;
+const declaredLights = declaredLightOwners(
+  ownership?.light_sources ?? [],
+  proto.light_sectors,
+  (asset, node) =>
+    document.objects.filter(
+      (part) =>
+        descriptors.get(asset)?.parts.some((p) => p.node === node) &&
+        part.node === `asset:${asset}:${node}`,
+    ),
+);
 const lightRecovery: { source: number; asset: string; ids: string[] }[] = [];
 for (const [index, light] of proto.light_sectors.entries()) {
   try {
@@ -1685,7 +1696,8 @@ for (const [index, light] of proto.light_sectors.entries()) {
         ? [parts[0]!]
         : [];
     });
-    if (owners.length !== 1) {
+    const selected = declaredLights.get(index) ?? (owners.length === 1 ? owners[0] : undefined);
+    if (!selected) {
       unresolved.push({
         kind: "light-owner",
         source: index,
@@ -1694,7 +1706,7 @@ for (const [index, light] of proto.light_sectors.entries()) {
       });
       continue;
     }
-    const owner = owners[0]!,
+    const owner = selected,
       p = packet(owner.asset);
     (p.lights ??= []).push(
       ...regions.map((region) => ({
@@ -1711,7 +1723,8 @@ for (const [index, light] of proto.light_sectors.entries()) {
       asset: owner.asset,
       ids: regions.map((region) => region.id),
     });
-    p.issues.push("Review light-region ownership inferred from unique geometric containment");
+    if (!declaredLights.has(index))
+      p.issues.push("Review light-region ownership inferred from unique geometric containment");
     recoveredLights++;
   } catch (error) {
     unresolved.push({ kind: "light-geometry", source: index, error: String(error) });

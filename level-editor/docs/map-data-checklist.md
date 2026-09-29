@@ -50,7 +50,7 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
-| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering, stair shadows and interior links; multi-plane regions, receiving gaps and ownership remain unfinished |
+| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Partial: independent environmental regions and explicit ownership now recover Sherwood's night field; other maps still have receiving and ownership gaps |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | All 119 emitter records match across nine source-backed staged maps; publication, audible playback and Wychford authoring remain outstanding |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
@@ -2571,3 +2571,40 @@ Croisement01/02/03 2/6/6, Derby 12, Leicester 24, Lincoln 14, Nottingham 24,
 Sherwood 8 and York 23. All 119 records match exactly, including duplicate sample
 IDs. This closes staged sound-record coverage, not playback, publication or
 Wychford authoring. Other map compilation categories remain incomplete.
+
+### Independently authored environmental lighting fields
+
+`author-light-region-assets.ts` builds invisible light-region assets from a
+hash-pinned recipe. Contours and any receiving anchors are stored in asset-local
+coordinates with their ambience filter. Their runtime definitions contain no
+source-layer lookup. A `light_sources` ownership declaration pins the complete
+source record and resolves exactly one placed asset frame during one-time
+recovery; duplicate claims, changed records and missing/ambiguous frames fail.
+
+Sherwood's western night field spans multiple structures and terrain with no
+single containing visual asset. `sherwood-light-regions.json` authors it as an
+independent region, and `sherwood-light-ownership.json` retains the existing
+Sherwood ownership declarations while adding its explicit lighting owner.
+Generate the asset with:
+
+```sh
+node pipeline/src/author-light-region-assets.ts \
+  --source library/game-data/Data/Levels/Sherwood.rhp.json \
+  --recipe refinement/catalogs/sherwood-light-regions.json \
+  --map Sherwood --out work/map-compile/sherwood-light-stage
+```
+
+The staged scene extends the latest Sherwood sound library with the emitted
+`light-region-assets.json` fragment and reopens its pinned assets. Recovery uses
+the explicit light ownership catalog plus the existing ground receiver,
+navigation join and projection definitions, with the movement coverage gate.
+`work/map-compile/sherwood-light-recovery` now has zero pending shadow regions
+and sound sources. Its 166 pending masks remain unfinished.
+
+The baseline and a 50-pixel region move in `work/map-compile/sherwood-light-native`
+reproduce the complete contour and ambience exactly. All non-light geometry and
+metadata, including the eight sound emitters, are unchanged. Native light queries
+pass for both exports under ambience bits 1, 2 and 4. Unit tests cover independent
+movement/duplication, invisible geometry and rejected ownership declarations.
+This verifies an environmental field, not baked image lighting, rendered visual
+parity, publication or a complete ZIP round trip.

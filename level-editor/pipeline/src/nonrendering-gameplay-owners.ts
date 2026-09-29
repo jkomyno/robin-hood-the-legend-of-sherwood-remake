@@ -1,6 +1,7 @@
 import type { EndpointBindingDeclaration } from "./recovery-endpoint-binding.ts";
 import type { InteriorSourceDeclaration } from "./recovery-interior-sources.ts";
 import type { SoundOwnerDeclaration } from "./recover-sound-source.ts";
+import type { LightOwnerDeclaration } from "./recover-light-owner.ts";
 
 export interface GameplayOwnershipCatalog {
   groups: { id: string; parts: { obstacle?: number }[] }[];
@@ -19,6 +20,7 @@ export interface GameplayOwnershipCatalog {
   endpoint_bindings?: EndpointBindingDeclaration[];
   interior_sources?: InteriorSourceDeclaration[];
   sound_sources?: SoundOwnerDeclaration[];
+  light_sources?: LightOwnerDeclaration[];
 }
 
 /** Resolve explicit authoring ownership against the assets actually pinned in the scene. */

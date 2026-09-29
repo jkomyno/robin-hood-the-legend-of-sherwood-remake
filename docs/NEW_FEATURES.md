@@ -1,5 +1,11 @@
 # Post-port Features
 
+- **Independent environmental light-region assets.** Offline authoring can create
+  invisible, movable lighting fields with local contours, receiving anchors and
+  ambience filters. Explicit ownership declarations pin their source records;
+  map compilation consumes only the placed asset definitions. See the
+  [map data checklist](../level-editor/docs/map-data-checklist.md).
+
 - **Terrain authoring in the level editor.** The Draw tab creates continuous
   rectangular ground regions with grass, dirt or water and an elevation in one
   panel. Select ground in the scene, resize it with corner handles, or move it
