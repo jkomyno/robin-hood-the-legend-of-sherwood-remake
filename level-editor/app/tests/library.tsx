@@ -104,7 +104,7 @@ export async function checkSharedLibrary() {
         axis: "x",
         width: 30,
         repeatLength: 100,
-        cornerAsset: "prop-0",
+        cornerAsset: "nottingham-castle-east-round-tower",
       },
     ]),
   );
@@ -198,7 +198,7 @@ export async function checkSharedLibrary() {
     },
     { id: "tree", name: "Oak Tree", source_map: "Derby", asset_type: "Vegetation", tags: ["oak"] },
     ...Array.from({ length: 38 }, (_, index) => ({
-      id: `prop-${index}`,
+      id: index === 0 ? "nottingham-castle-east-round-tower" : `prop-${index}`,
       name: index === 0 ? "Round corner tower" : `Courtyard prop ${index}`,
       source_map: "York",
       asset_type: "Prop",
@@ -634,6 +634,8 @@ export async function checkSharedLibrary() {
     await drawPoint(0.5, 0.5);
     await drawPoint(0.75, 0.65);
     click("Finish path");
+    await until(() => [...document.querySelectorAll("button")].some((b) => b.textContent === "Done editing"));
+    click("Done editing");
     await until(() => document.querySelectorAll(".spline-list button").length === 1);
     click("Save *");
     await until(
@@ -648,7 +650,6 @@ export async function checkSharedLibrary() {
     await until(() => document.querySelectorAll(".spline-list button").length === 0);
     click("Redo");
     await until(() => document.querySelectorAll(".spline-list button").length === 1);
-    click("Choose another preset");
     await until(() => !!document.querySelector(".spline-preset-grid"));
     click("Battlement wall");
     await until(
@@ -674,12 +675,12 @@ export async function checkSharedLibrary() {
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await until(() => [...document.querySelectorAll("button")].some(button => button.textContent?.trim() === "Finish path" && !button.disabled));
     click("Finish path");
-    await until(() => document.querySelectorAll(".spline-list button").length === 2);
+    await until(() => [...document.querySelectorAll("button")].some((b) => b.textContent === "Done editing"));
     await until(() =>
       [...document.querySelectorAll("button")].some((b) => b.textContent === "Save as wall preset"),
     );
     click("Save as wall preset");
-    click("Choose another preset");
+    click("Done editing");
     await until(() => !!document.querySelector(".spline-preset-grid"));
     click("Footpath");
     await until(
@@ -690,6 +691,8 @@ export async function checkSharedLibrary() {
     await drawPoint(0.2, 0.25);
     await drawPoint(0.8, 0.8);
     click("Finish path");
+    await until(() => [...document.querySelectorAll("button")].some((b) => b.textContent === "Done editing"));
+    click("Done editing");
     await until(() => document.querySelectorAll(".spline-list button").length === 3);
     click("View");
     await until(() =>
@@ -722,7 +725,7 @@ export async function checkSharedLibrary() {
     assert(
       pathsSaved.splines.some(
         (p: { kind: string; cornerAsset?: string }) =>
-          p.kind === "wall" && p.cornerAsset === "prop-0",
+          p.kind === "wall" && p.cornerAsset === "nottingham-castle-east-round-tower",
       ),
       "Corner tower source was not saved",
     );
@@ -738,9 +741,9 @@ export async function checkSharedLibrary() {
     await until(() => !!document.querySelector(".spline-preset-grid"));
     click("Battlement wall");
     await until(() => !!document.querySelector('input[aria-label="Corner tower scale"]'));
-    await until(() => cornerSource() === "prop-0");
+    await until(() => cornerSource() === "nottingham-castle-east-round-tower");
     assert(
-      cornerSource() === "prop-0",
+      cornerSource() === "nottingham-castle-east-round-tower",
       "Preset did not restore its tower across levels",
     );
     click("Cancel");
@@ -820,8 +823,8 @@ export async function checkSharedLibrary() {
       "New map assets were not restored",
     );
     assert(
-      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).value ===
-        "10",
+      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).valueAsNumber ===
+        10,
       "Export frame was not restored",
     );
     const dropJson = (text: string, filename = "download_2026-09-26T16-30-12.rhlos-map.json") => {
@@ -838,8 +841,8 @@ export async function checkSharedLibrary() {
     dropJson(JSON.stringify(imported));
     await until(
       () =>
-        (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement)?.value ===
-        "77",
+        (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement)?.valueAsNumber ===
+        77,
     );
     assert(
       document.querySelector(".document-state")?.textContent?.includes("Unsaved changes"),
@@ -854,8 +857,8 @@ export async function checkSharedLibrary() {
     await until(() => errors.length > 0);
     errors.pop();
     assert(
-      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).value ===
-        "77",
+      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).valueAsNumber ===
+        77,
       "Invalid import replaced the open map",
     );
     dropJson(JSON.stringify({ ...imported, map: "York" }));
@@ -890,8 +893,8 @@ export async function checkSharedLibrary() {
         "York (Modified)",
     );
     assert(
-      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).value ===
-        "77",
+      (document.querySelector('input[aria-label="Export width"]') as HTMLInputElement).valueAsNumber ===
+        77,
       "Imported map failed to save and reload",
     );
     dropJson(JSON.stringify({ ...imported, map: "Dropped forest" }));
