@@ -26,8 +26,14 @@ The scene baker can now select explicit combinations of appearance patches,
 independently of viewport previews, for color/depth rendering. ZIP packaging and
 the Rust loader/renderer now support paired color/depth state images in disjoint
 regions. Overlapping changes share complete combination tables; reset uses the
-base map pixels. The editor still needs to derive these regions and their native
-patch bindings from asset definitions, so the full-scene export guard remains.
+base map pixels. The editor now derives regions from potentially visible model
+geometry and binds `movementTransitions[].appearances` to fresh per-placement
+patch IDs. Export renders and packages every overlapping combination, with an
+explicit 64-megapixel state-image budget. Dynamic shadows conservatively require
+full-frame combinations. Automatic framing includes applied variants too.
+Existing assets still need these local bindings restored. Unbound preview names,
+shared aliases without a joined gameplay transition, and unsupported endpoint
+groups remain export errors; purely visual transitions still need compilation support.
 The browser bake acceptance test now verifies an initial/applied/reset sequence
 on one reused scene: color and depth change across a render-tile boundary, reset
 restores every pixel, and successful/failed bakes restore borrowed materials and
@@ -36,7 +42,8 @@ and reset through editor PNG encoding, Rust decoding and CPU composition. Native
 GPU coverage checks background color and sprite occlusion during state changes.
 These synthetic checks do not certify existing-map visual parity. The current
 renderer replaces both full textures on a state change; regional GPU updates and
-automatic state-region generation remain unfinished.
+efficient cropped state rendering remain unfinished. The browser fixture also
+checks automatic region generation and cropped PNG values across a tile seam.
 
 Ground-boundary compilation now supports an explicit asset-local
 `preserveMovementBoundary` setting on a labelled ordinary surface. It retains

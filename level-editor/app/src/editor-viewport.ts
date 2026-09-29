@@ -8,6 +8,11 @@ import {
   maskOcclusionObjects,
 } from "./map-bake-render.ts";
 import { compileMap } from "./map-compile.ts";
+import {
+  bindBakeAppearances,
+  planAppearanceRegions,
+  bakeAppearanceRegions,
+} from "./map-appearance-bake.ts";
 import { SunLighting } from "./sun-lighting.ts";
 import { SplineLayer, type SplineEditMode } from "./spline-layer.ts";
 import type { ExternalAssetSource } from "@rle/shared";
@@ -83,19 +88,31 @@ export class EditorViewport {
       (document.size
         ? ([0, 0, ...document.size] as [number, number, number, number])
         : (() => {
-            const bounds = contentBakeBounds(root, document.camera);
+            const bounds = contentBakeBounds(root, document.camera, true);
             return [bounds[0], bounds[1], bounds[2] + 1, bounds[3] + 1] as typeof bounds;
           })());
     const compiled = compileMap(document, bounds, assets);
-    const pixels = renderMapBake(
+    const transitions = compiled.descriptor.asset_geometry?.movement_transitions ?? [];
+    bindBakeAppearances(root, document, assets ?? new Map(), transitions);
+    const plans = planAppearanceRegions(
       root,
       document.camera,
       compiled.bounds,
-      document.lighting,
-      this.ground,
-      maskOcclusionObjects(document, assets),
+      transitions,
+      !!document.lighting?.enabled,
     );
-    return { compiled, pixels };
+    const render = () =>
+      renderMapBake(
+        root,
+        document.camera,
+        compiled.bounds,
+        document.lighting,
+        this.ground,
+        maskOcclusionObjects(document, assets),
+      );
+    const pixels = render();
+    const appearance = bakeAppearanceRegions(root, plans, compiled.bounds[2], pixels, render);
+    return { compiled, pixels, appearance };
   }
   private readonly patchDisplay = new PatchDisplay();
   setPatchRevealed(patch: string, revealed: boolean) {

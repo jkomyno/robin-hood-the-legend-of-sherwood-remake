@@ -206,6 +206,8 @@ export interface AssetJumpPair {
 }
 export interface AssetMovementTransition {
   id: string;
+  /** Asset-local model appearance IDs controlled by this gameplay transition. */
+  appearances?: string[];
   node: string;
   waypoint: [number, number, number];
   /** Local receiving-area anchor when the reference point lies outside its linked surface. */
@@ -458,9 +460,19 @@ export function validateAssetGameplay(
     maskIds.add(mask.id);
   }
   const changingMasks = new Set<string>();
+  const changingAppearances = new Set<string>();
   const triggeringDoors = new Set<string>();
   for (const transition of data.movementTransitions ?? []) {
     feature(transition);
+    if (transition.appearances !== undefined) {
+      if (!Array.isArray(transition.appearances) || !transition.appearances.length)
+        fail("invalid transition appearance bindings");
+      for (const appearance of transition.appearances) {
+        if (typeof appearance !== "string" || !appearance || changingAppearances.has(appearance))
+          fail("invalid or multiply controlled transition appearance");
+        changingAppearances.add(appearance);
+      }
+    }
     if (
       !point(transition.waypoint, 3) ||
       (transition.waypointAnchor !== undefined && !point(transition.waypointAnchor, 3)) ||

@@ -5,6 +5,8 @@ import { unzipSync } from "fflate";
 import { bakeScene, renderMapBake } from "../src/map-bake-render.ts";
 import { compileMap, packageCompiledMap } from "../src/map-compile.ts";
 import { PatchDisplay } from "../src/patch-display.ts";
+import { planAppearanceRegions, bakeAppearanceRegions } from "../src/map-appearance-bake.ts";
+import { packageAppearanceRegions } from "../src/map-appearance.ts";
 
 function check(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
@@ -194,6 +196,33 @@ try {
       resetPixels.depth.every((value, index) => value === initialPixels.depth[index]),
     "state reset must restore every color and depth pixel",
   );
+  const plans = planAppearanceRegions(snapshot, camera, stateBounds, [{ id: "gate" }], false);
+  check(
+    plans.length === 1 && plans[0]!.patches.join() === "gate",
+    "automatic appearance region bindings",
+  );
+  const regions = bakeAppearanceRegions(snapshot, plans, 1100, initialPixels, () =>
+    renderMapBake(snapshot, camera, stateBounds),
+  );
+  const [regionX, regionY, regionWidth, regionHeight] = regions[0]!.bounds;
+  check(regionWidth * regionHeight < 1100 * 128, "state images should crop unaffected map pixels");
+  const stateFiles = packageAppearanceRegions("state", 1100, 128, initialPixels, regions, [
+    { id: "gate" },
+  ]);
+  const stateDepth = decode(stateFiles["state.appearance-0-1.depth.png"]!).data;
+  const stateColor = decode(stateFiles["state.appearance-0-1.png"]!).data;
+  for (const x of [1023, 1024]) {
+    const local = (40 - regionY) * regionWidth + x - regionX;
+    check(
+      stateDepth[local] === appliedPixels.depth[40 * 1100 + x],
+      "cropped state must retain full-frame depth normalization",
+    );
+    check(
+      stateColor.slice(local * 4, local * 4 + 3).join() === "255,0,0",
+      "cropped state color at tile seam",
+    );
+  }
+  verifyOwnership();
   // A depth-pass failure must leave the snapshot usable too.
   const failingNode = snapshot.children[0]!.children[1] as THREE.Mesh;
   const unsupported = new THREE.MeshPhongMaterial();
@@ -223,7 +252,7 @@ try {
   // Acceptance runner can retain this real GPU-produced mod for the Rust loader test.
   (window as unknown as { __bakeZip: number[] }).__bakeZip = [...archive];
   documentResult(
-    "PASS map bake: crop, tile seam, hidden geometry, sRGB color, ground depth, mask-owned depth, state apply/reset, resource restoration, ZIP/PNG roundtrip",
+    "PASS map bake: crop, tile seam, hidden geometry, sRGB color, ground depth, mask-owned depth, state apply/reset, automatic appearance regions, resource restoration, ZIP/PNG roundtrip",
   );
 } catch (error) {
   documentResult(`FAIL ${error instanceof Error ? error.stack : String(error)}`);

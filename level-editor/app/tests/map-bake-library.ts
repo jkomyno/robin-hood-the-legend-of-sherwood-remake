@@ -2,6 +2,7 @@ import { openHttpLibrary } from "../src/http-library.ts";
 import { prepareMapCandidate } from "../src/map-candidate.ts";
 import { EditorViewport } from "../src/editor-viewport.ts";
 import { packageCompiledMap } from "../src/map-compile.ts";
+import { readPinnedAssetDescriptors } from "../src/projection-library.ts";
 
 const result = document.querySelector("#result")!;
 let viewport: EditorViewport | undefined;
@@ -26,8 +27,13 @@ try {
     candidate.sources,
     candidate.document.assetSources,
   );
-  const { compiled, pixels } = viewport.bakeMap(candidate.document);
-  const archive = await packageCompiledMap(compiled, pixels);
+  const assets = await readPinnedAssetDescriptors(
+    library.handle,
+    candidate.document.assetSources ?? [],
+    candidate.document.sceneAssets,
+  );
+  const { compiled, pixels, appearance } = viewport.bakeMap(candidate.document, assets);
+  const archive = await packageCompiledMap(compiled, pixels, appearance);
   (window as unknown as { __bakeZip: number[] }).__bakeZip = Array.from(archive);
   result.textContent = `PASS ${name}: ${compiled.bounds[2]}x${compiled.bounds[3]}, ${compiled.descriptor.volumes.length} volumes, ${archive.length} ZIP bytes`;
 } catch (error) {

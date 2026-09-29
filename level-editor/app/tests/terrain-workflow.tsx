@@ -99,12 +99,12 @@ async function run() {
     "Saved terrain did not reopen",
   );
   const before = viewport.captureThumbnail().toDataURL();
-  const { compiled, pixels } = viewport.bakeMap(current, new Map());
+  const { compiled, pixels, appearance } = viewport.bakeMap(current, new Map());
   assert(
     compiled.descriptor.asset_geometry!.motion_data.layers.flat().length === 2,
     "River should split the land into two areas",
   );
-  const zip = await packageCompiledMap(compiled, pixels);
+  const zip = await packageCompiledMap(compiled, pixels, appearance);
   assert(zip.length > 1000, "Missing baked map ZIP");
   await click("Delete region");
   assert(current.terrain?.length === 1, "Delete did not commit");

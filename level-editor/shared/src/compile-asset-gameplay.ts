@@ -36,6 +36,7 @@ import { heightPlane, planeHeight, clipHeight, type HeightPlane } from "./gamepl
 import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-quantization.ts";
 import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
 import { normalizeGameplayStateViews } from "./gameplay-state-views.ts";
+import { compileAppearanceBindings } from "./compile-appearance-bindings.ts";
 import {
   maskBoundaryPolyline,
   rasterizeMaskGeometry,
@@ -179,10 +180,11 @@ export function compileAssetGameplay(
     throw new Error(
       "Map compilation does not support wall spline gameplay or embedded mission population; keep NPCs and items in a separate mission",
     );
-  if (document.groups.some((g) => g.states || g.patches) || document.objects.some((p) => p.patches))
+  if (document.groups.some((g) => g.states))
     throw new Error(
       "Asset state transitions need gameplay compilation support before this map can be exported",
     );
+  compileAppearanceBindings(document, descriptors);
   const project = (p: Vec3): Point => [quantize(p[0]), quantize(p[1] - p[2])];
   const warnings: string[] = [];
   const surfaces: {

@@ -1919,4 +1919,6 @@ cutouts aligned with terrain instead of rounding each piece separately.
 - Compiled map resources can carry paired color/depth PNG states in disjoint image
   regions, with complete tables for overlapping patch combinations. The renderer
   selects both fields from current native patch state, including reset and timeline
-  changes. Automatic generation of these regions from editor assets is still pending.
+  changes. Asset transitions can name local model appearances; editor export resolves
+  fresh placement bindings, groups overlapping geometry and bakes the paired images.
+  Existing asset recovery and purely visual/shared transitions remain incomplete.

@@ -912,9 +912,9 @@ export default function Editor3D(props: EditorProps) {
         document.assetSources ?? [],
         document.sceneAssets,
       );
-      const { compiled, pixels } = viewport.bakeMap(document, assets);
+      const { compiled, pixels, appearance } = viewport.bakeMap(document, assets);
       props.onStatus("Packaging mod ZIP…", true);
-      const bytes = await packageCompiledMap(compiled, pixels);
+      const bytes = await packageCompiledMap(compiled, pixels, appearance);
       if (disposed) return;
       const url = URL.createObjectURL(
         new Blob([new Uint8Array(bytes)], { type: "application/zip" }),

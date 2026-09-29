@@ -59,19 +59,32 @@ export function bakeScene(
   return scene;
 }
 
-export function contentBakeBounds(root: THREE.Object3D, camera: MapCamera): BakeBounds {
+export function contentBakeBounds(
+  root: THREE.Object3D,
+  camera: MapCamera,
+  includeAppearanceStates = false,
+): BakeBounds {
   root.updateMatrixWorld(true);
   const bounds = new THREE.Box2();
-  root.traverseVisible((node) => {
-    if (!(node instanceof THREE.Mesh)) return;
-    const positions = node.geometry.getAttribute("position");
-    for (let i = 0; i < positions.count; i++) {
-      const point = new THREE.Vector3()
-        .fromBufferAttribute(positions, i)
-        .applyMatrix4(node.matrixWorld);
-      bounds.expandByPoint(new THREE.Vector2(...sceneToMap(camera, point.toArray())));
+  function visit(node: THREE.Object3D) {
+    const controlled =
+      includeAppearanceStates &&
+      ["reveal_material_patch", "reveal_hide_when_applied", "reveal_show_when_applied"].some(
+        (key) => node.userData[key] !== undefined,
+      );
+    if (!node.visible && !controlled) return;
+    if (node instanceof THREE.Mesh) {
+      const positions = node.geometry.getAttribute("position");
+      for (let i = 0; i < positions.count; i++) {
+        const point = new THREE.Vector3()
+          .fromBufferAttribute(positions, i)
+          .applyMatrix4(node.matrixWorld);
+        bounds.expandByPoint(new THREE.Vector2(...sceneToMap(camera, point.toArray())));
+      }
     }
-  });
+    for (const child of node.children) visit(child);
+  }
+  visit(root);
   if (bounds.isEmpty()) throw new Error("Add visible geometry before exporting a map.");
   return validateBakeBounds([
     bounds.min.x,
