@@ -173,6 +173,8 @@ export interface AssetLightRegion {
   polygon: [number, number, number][];
   /** Optional local anchors selecting receiving layers independently of the contour plane. */
   receivers?: [number, number, number][];
+  /** Finite local segments selecting one receiving surface after placement, including slopes. */
+  receiverSegments?: [[number, number, number], [number, number, number]][];
   /** Mission ambience bit mask controlling this region, not a mission selection. */
   ambiences: number;
 }
@@ -612,6 +614,19 @@ export function validateAssetGameplay(
         !light.receivers.every((p) => point(p, 3)))
     )
       fail(`invalid light receivers ${light.id}`);
+    if (
+      light.receiverSegments !== undefined &&
+      (!Array.isArray(light.receiverSegments) ||
+        !light.receiverSegments.length ||
+        !light.receiverSegments.every(
+          (segment) =>
+            Array.isArray(segment) &&
+            segment.length === 2 &&
+            segment.every((p) => point(p, 3)) &&
+            segment[0].some((v, i) => v !== segment[1][i]),
+        ))
+    )
+      fail(`invalid light receiving segments ${light.id}`);
   }
   if (data.sounds !== undefined && !Array.isArray(data.sounds)) fail("invalid sound sources");
   for (const sound of data.sounds ?? []) {

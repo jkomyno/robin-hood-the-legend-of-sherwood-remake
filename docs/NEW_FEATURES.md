@@ -4,6 +4,9 @@
   navigation layers when an anchored light would spill onto an unrelated receiver.
   Flat and elevated recovered fields retain local receiver anchors, full contours
   and ambience filters; all dependent runtime references are rebuilt after placement.
+  Finite asset-local receiving segments can attach a light to a sloped surface
+  after placement, rejecting absent or ambiguous receivers instead of choosing a
+  floor by an unrestricted height search.
 
 - **Independent environmental light-region assets.** Offline authoring can create
   invisible, movable lighting fields with local contours, receiving anchors and

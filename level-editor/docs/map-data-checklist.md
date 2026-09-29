@@ -2868,9 +2868,32 @@ their character/projectile polylines and application flags. Rust constructs the
 combined export's 60 areas, 337 sight obstacles, 70 doors and two jump pairs and
 applies/resets its two transitions.
 
-Whole-hall relocation remains unverified: moving the hall by +1 X fails because
+The initial whole-hall relocation test failed (fixed below): moving the hall by +1 X failed because
 its `light-19` anchor moves over the neighbouring sloped gallery without acquiring
 the slope's changed height (authored 495.4359517424076 versus receiving
 495.60863123076155). This failure is separate from the mask pixel comparison and
 must be resolved before claiming movable-hall parity. The baseline evidence does
 not certify mask-layer semantics, visual rendering, publication or ZIP round trips.
+
+### Finite light receiving segments for sloped attachments
+
+Asset light definitions can now include local `receiverSegments`. After placement,
+each finite segment must intersect exactly one receiving navigation sector, inside
+the light contour. Segments transform with their owning part. Missing, ambiguous,
+degenerate or coplanar attachments fail explicitly; the compiler does not perform
+an unrestricted nearest-floor search. Layer-conflict allocation also considers
+these attachments before assigning fresh sector indices.
+
+Offline recovery emits segments for sloped receivers, bounded by the receiving
+plane's heights over the source motion area's footprint. Flat receivers retain
+exact point anchors. Only local endpoint coordinates enter the asset definition.
+
+The refreshed Derby draft in `work/map-compile/derby-segment-light-recovery` now
+allows the previously failing +1 X main-hall move. Both new masks preserve every
+covered pixel and shift their boundary rules exactly; the gallery light retains
+its complete shifted contour and ambience filter on the traversal layer. Baseline
+compiled geometry matches the preceding mask draft except light-record ordering.
+Rust constructs both baseline and moved exports and applies/resets both transitions
+in each. Synthetic tests reject ambiguous/missing receivers and verify slope
+intersection and finite search bounds. This is evidence for that placement change,
+not arbitrary relocation, full rendering parity, publication or ZIP round trips.

@@ -1289,6 +1289,66 @@ test("light regions resolve on sloped traversal areas and follow their asset", (
   );
 });
 
+test("light segments resolve after placement and refuse missing or ambiguous receivers", () => {
+  const { hut, document, assets } = lightAssetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.doors = [];
+  gameplay.interiors = [];
+  gameplay.lights = [
+    {
+      id: "segment",
+      node: "building-999",
+      ambiences: 1,
+      polygon: [
+        [10, 10, 0],
+        [40, 10, 0],
+        [40, 40, 0],
+        [10, 40, 0],
+      ],
+      receiverSegments: [
+        [
+          [20, 10, -10],
+          [20, 30, 10],
+        ],
+      ],
+    },
+  ];
+  const first = compileAssetGameplay(document, assets, bounds);
+  assert.equal(first.light_sectors!.length, 1);
+  document.groups[0]!.transform.dx += 1;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    moved.light_sectors![0]!.polygon.points,
+    first.light_sectors![0]!.polygon.points.map(([x, y]) => [x + 1, y]),
+  );
+  gameplay.surfaces.push({ ...gameplay.surfaces[0]!, id: "upper", height: 5 });
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /exactly one walkable surface/,
+  );
+  gameplay.surfaces.pop();
+  gameplay.lights[0]!.receiverSegments = [
+    [
+      [20, 40, 20],
+      [20, 50, 30],
+    ],
+  ];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /exactly one walkable surface/,
+  );
+  gameplay.lights[0]!.receiverSegments = [
+    [
+      [20, 40, 20],
+      [20, 40, 20],
+    ],
+  ];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /invalid light receiving segments/,
+  );
+});
+
 test("light receiving planes resolve after elevation and reject absent or nonplanar surfaces", () => {
   const { hut, document, assets } = slopedAssetCompilerFixture();
   hut.gameplay!.lights = [

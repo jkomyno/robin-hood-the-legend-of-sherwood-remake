@@ -55,6 +55,14 @@ export async function authorLightRegionAsset(
           node,
           polygon: region.polygon.map(localize),
           ...(region.receivers ? { receivers: region.receivers.map(localize) } : {}),
+          ...(region.receiverSegments
+            ? {
+                receiverSegments: region.receiverSegments.map(([a, b]): [Vec3, Vec3] => [
+                  localize(a),
+                  localize(b),
+                ]),
+              }
+            : {}),
         },
       ],
     },

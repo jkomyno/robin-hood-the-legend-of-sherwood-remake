@@ -202,7 +202,7 @@ export function recoverLightField(
     false,
     true,
   );
-  const receivingAreas = new Map<string, { size: number; point: Vec3 }>();
+  const receivingAreas = new Map<string, { size: number; point: Vec3; segment?: [Vec3, Vec3] }>();
   const close = (points: Point[]) => [[...points, points[0]!]];
   for (const [areaIndex, area] of motionAreas.entries()) {
     if (!fixedClipping.intersection(close(light.polygon.points), close(area.polygon.points)).length)
@@ -253,17 +253,41 @@ export function recoverLightField(
           const x = triangle.reduce((sum, p) => sum + p[0], 0) / 3;
           const y = triangle.reduce((sum, p) => sum + p[1], 0) / 3;
           const z = planeHeight(plane, [x, y]);
-          receivingAreas.set(key, { size, point: [x, y + z, z] });
+          const heights = area.polygon.points.map((point) => planeHeight(plane, point));
+          const low = Math.min(...heights),
+            high = Math.max(...heights);
+          receivingAreas.set(key, {
+            size,
+            point: [x, y + z, z],
+            ...(high - low > 1e-7
+              ? {
+                  segment: [
+                    [x, y + low, low],
+                    [x, y + high, high],
+                  ] as [Vec3, Vec3],
+                }
+              : {}),
+          });
         }
       }
     }
   }
-  const receivers = [...receivingAreas.values()].map((value) => value.point);
-  if (!receivers.length) throw new Error("Light region has no receiving anchors");
+  const receivers = [...receivingAreas.values()]
+    .filter((value) => !value.segment)
+    .map((value) => value.point);
+  const receiverSegments = [...receivingAreas.values()].flatMap((value) =>
+    value.segment ? [value.segment] : [],
+  );
+  if (!receivers.length && !receiverSegments.length)
+    throw new Error("Light region has no receiving anchors");
   // Clipping can produce tiny valid triangles that cannot stably define a new
   // plane. Preserve the receiving plane from which each piece was constructed.
   const plane = pieces[0]!.plane;
-  const region = { ...recoverLightRegion(light, id, "$root", plane, (p) => p), receivers };
+  const region = {
+    ...recoverLightRegion(light, id, "$root", plane, (p) => p),
+    ...(receivers.length ? { receivers } : {}),
+    ...(receiverSegments.length ? { receiverSegments } : {}),
+  };
   return {
     region,
     footprints: [

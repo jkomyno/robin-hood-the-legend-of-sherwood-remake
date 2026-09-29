@@ -1719,6 +1719,14 @@ for (const [index, light] of proto.light_sectors.entries()) {
         ...(region.receivers
           ? { receivers: region.receivers.map((point) => localize(owner.part, point)) }
           : {}),
+        ...(region.receiverSegments
+          ? {
+              receiverSegments: region.receiverSegments.map(([a, b]): [Vec3, Vec3] => [
+                localize(owner.part, a),
+                localize(owner.part, b),
+              ]),
+            }
+          : {}),
       })),
     );
     lightRecovery.push({

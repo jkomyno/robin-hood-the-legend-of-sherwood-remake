@@ -6,6 +6,7 @@ import { compileSoundSource } from "./compile-sound-source.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
 import { allocateLightReceivingLayers } from "./allocate-light-receiving-layers.ts";
+import { lightReceiverIntersection } from "./light-receiver-segment.ts";
 import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
 import {
   assembleNavigationJoins,
@@ -213,6 +214,7 @@ export function compileAssetGameplay(
     plane: HeightPlane;
     ambiences: number;
     receivers?: Vec3[];
+    receiverSegments?: [Vec3, Vec3][];
   }[] = [];
   const placedMasks: {
     id: string;
@@ -342,6 +344,14 @@ export function compileAssetGameplay(
         ambiences: light.ambiences,
         ...(light.receivers
           ? { receivers: light.receivers.map((p) => transform(light.node, p)) }
+          : {}),
+        ...(light.receiverSegments
+          ? {
+              receiverSegments: light.receiverSegments.map(([a, b]): [Vec3, Vec3] => [
+                transform(light.node, a),
+                transform(light.node, b),
+              ]),
+            }
           : {}),
       });
     }
@@ -1307,9 +1317,22 @@ export function compileAssetGameplay(
     ...(lights.length
       ? {
           light_sectors: lights.flatMap((light) => {
-            if (light.receivers) {
+            if (light.receivers || light.receiverSegments) {
+              const segmentReceivers = (light.receiverSegments ?? []).map((segment, index) => {
+                const matches = areas.flatMap((area) => {
+                  const point = lightReceiverIntersection(segment, area.plane);
+                  return point && inside([point[0], point[1] - point[2]], area.polygon)
+                    ? [{ area, point }]
+                    : [];
+                });
+                if (new Set(matches.map(({ area }) => area.sector)).size !== 1)
+                  throw new Error(
+                    `${light.id}: receiving segment ${index} must intersect exactly one walkable surface`,
+                  );
+                return matches[0]!.point;
+              });
               const layers = new Set(
-                light.receivers.map((point, index) => {
+                [...(light.receivers ?? []), ...segmentReceivers].map((point, index) => {
                   // These anchors select a layer and are not serialized as integer
                   // geometry. Rounding can move a valid interior anchor outside.
                   const projected: Point = [point[0], point[1] - point[2]];

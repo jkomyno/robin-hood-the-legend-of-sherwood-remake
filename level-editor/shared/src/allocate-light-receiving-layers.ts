@@ -3,11 +3,13 @@ import type { NavigationRegion } from "./assemble-navigation-regions.ts";
 import { planeHeight, type HeightPlane } from "./gameplay-plane.ts";
 import type { Point } from "./level.ts";
 import type { Vec3 } from "./scene.ts";
+import { lightReceiverIntersection } from "./light-receiver-segment.ts";
 
 interface Light {
   polygon: Point[];
   plane: HeightPlane;
   receivers?: Vec3[];
+  receiverSegments?: [Vec3, Vec3][];
 }
 
 /** Separate navigation regions when sharing a layer would extend an authored light. */
@@ -26,20 +28,29 @@ export function allocateLightReceivingLayers(
     const selected = new Set<number>();
     for (const [index, region] of regions.entries()) {
       if (region.lift) continue;
-      const receives = light.receivers
-        ? light.receivers.some((point) => {
-            const projected: Point = [point[0], point[1] - point[2]];
-            return region.pieces.some(
+      const receives =
+        light.receivers || light.receiverSegments
+          ? (light.receivers ?? []).some((point) => {
+              const projected: Point = [point[0], point[1] - point[2]];
+              return region.pieces.some(
+                (piece) =>
+                  Math.abs(planeHeight(piece.plane, projected) - point[2]) < 1e-4 &&
+                  inside(projected, piece.polygon),
+              );
+            }) ||
+            (light.receiverSegments ?? []).some((segment) =>
+              region.pieces.some((piece) => {
+                const point = lightReceiverIntersection(segment, piece.plane);
+                return (
+                  point !== undefined && inside([point[0], point[1] - point[2]], piece.polygon)
+                );
+              }),
+            )
+          : region.pieces.some(
               (piece) =>
-                Math.abs(planeHeight(piece.plane, projected) - point[2]) < 1e-4 &&
-                inside(projected, piece.polygon),
+                piece.plane.every((n, i) => Math.abs(n - light.plane[i]!) < 1e-7) &&
+                overlaps(piece.polygon, light.polygon),
             );
-          })
-        : region.pieces.some(
-            (piece) =>
-              piece.plane.every((n, i) => Math.abs(n - light.plane[i]!) < 1e-7) &&
-              overlaps(piece.polygon, light.polygon),
-          );
       if (receives) selected.add(index);
     }
     for (const [index, region] of regions.entries()) {
