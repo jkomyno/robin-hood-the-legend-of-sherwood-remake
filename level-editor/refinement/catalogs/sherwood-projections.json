@@ -1,0 +1,104 @@
+{
+  "source_sha256": "3cf71efe5d7f248f44d87d478fa2cf51631025c6c54e97ab5dfd6b10672ad414",
+  "review": "Each entry has one physical owner, retains the ordered binary32 vertices and flags, and resolves to one receiving area. Reuse the full physical receiving footprint instead of a clipped replacement surface. Ground bluff 111 remains excluded because it spans two compiled receiving areas; traversal volumes 97,98,101 are already explicitly linked.",
+  "entries": [
+    {
+      "asset": "sherwood-central-oak-platform",
+      "model_sha256": "72700b925935c4c0ce522fcd80bc266be78c30ea3b4f2d9cf31d0a95448293a8",
+      "surface": "building-088-walk-0",
+      "node": "building-088",
+      "source_obstacle": 88
+    },
+    {
+      "asset": "sherwood-central-oak-platform",
+      "model_sha256": "72700b925935c4c0ce522fcd80bc266be78c30ea3b4f2d9cf31d0a95448293a8",
+      "surface": "building-096-walk-0",
+      "node": "building-096",
+      "source_obstacle": 96
+    },
+    {
+      "asset": "sherwood-central-oak-platform",
+      "model_sha256": "72700b925935c4c0ce522fcd80bc266be78c30ea3b4f2d9cf31d0a95448293a8",
+      "surface": "building-099-walk-0",
+      "node": "building-099",
+      "source_obstacle": 99
+    },
+    {
+      "asset": "sherwood-central-oak-rock-outcrop",
+      "model_sha256": "92c64fe9bb38aed3320205559d0ce3ef03076772fc057ec2b2ed58ae7c07e9f3",
+      "surface": "building-059-walk-0",
+      "node": "building-059",
+      "source_obstacle": 59
+    },
+    {
+      "asset": "sherwood-central-suspension-bridge",
+      "model_sha256": "23fceeefef1e7604a4aee362bb963683fb78fb5b51d63d71362b7b5b76354e7f",
+      "surface": "building-093-walk-0",
+      "node": "building-093",
+      "source_obstacle": 93
+    },
+    {
+      "asset": "sherwood-central-west-treehouse-platform",
+      "model_sha256": "f7c8959261504cb458372b9a12a559524ddc4f3aeaf2d1222a1777651df21fcf",
+      "surface": "building-087-walk-0",
+      "node": "building-087",
+      "source_obstacle": 87
+    },
+    {
+      "asset": "sherwood-ladder-oak-platform",
+      "model_sha256": "e23a23d850e92481ce23d9cd19be379a57d70abd6cdb576b02f301913321bdc3",
+      "surface": "building-086-walk-0",
+      "node": "building-086",
+      "source_obstacle": 86
+    },
+    {
+      "asset": "sherwood-ladder-oak-platform",
+      "model_sha256": "e23a23d850e92481ce23d9cd19be379a57d70abd6cdb576b02f301913321bdc3",
+      "surface": "building-092-walk-0",
+      "node": "building-092",
+      "source_obstacle": 92
+    },
+    {
+      "asset": "sherwood-long-suspension-bridge",
+      "model_sha256": "91e00409fff66322759c3012c776ddb0d11a504a01051cac2dbc63571a54f143",
+      "surface": "building-094-walk-0",
+      "node": "building-094",
+      "source_obstacle": 94
+    },
+    {
+      "asset": "sherwood-west-border-treehouse",
+      "model_sha256": "c556f5baa6dd6d4c5aa11a18903778246a21baba2aa9d7ce9bdd9bdf85b58a2b",
+      "surface": "building-090-walk-0",
+      "node": "building-090",
+      "source_obstacle": 90
+    },
+    {
+      "asset": "sherwood-west-suspension-bridge",
+      "model_sha256": "71273d86a6d7cbf72b3aad8615b9944a784f8aa2475e3f50210f1c7838269e96",
+      "surface": "building-095-walk-0",
+      "node": "building-095",
+      "source_obstacle": 95
+    },
+    {
+      "asset": "sherwood-west-treehouse",
+      "model_sha256": "e648c97398bcd7e214de70040be1e5036d0d5c77e32c5515ecb5dcdb4c12d11a",
+      "surface": "building-089-walk-0",
+      "node": "building-089",
+      "source_obstacle": 89
+    },
+    {
+      "asset": "sherwood-west-treehouse",
+      "model_sha256": "e648c97398bcd7e214de70040be1e5036d0d5c77e32c5515ecb5dcdb4c12d11a",
+      "surface": "building-100-walk-0",
+      "node": "building-100",
+      "source_obstacle": 100
+    },
+    {
+      "asset": "sherwood-west-treehouse",
+      "model_sha256": "e648c97398bcd7e214de70040be1e5036d0d5c77e32c5515ecb5dcdb4c12d11a",
+      "surface": "building-106-walk-0",
+      "node": "building-106",
+      "source_obstacle": 106
+    }
+  ]
+}

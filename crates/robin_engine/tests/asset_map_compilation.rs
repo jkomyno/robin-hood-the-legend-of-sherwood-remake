@@ -350,6 +350,8 @@ fn authored_receiving_plane_survives_polygon_vertex_changes() {
 #[derive(serde::Serialize, serde::Deserialize)]
 struct ProjectionComparison {
     before: String,
+    #[serde(default)]
+    before_proto: Option<String>,
     after: String,
     cases: Vec<ProjectionComparisonCase>,
 }
@@ -359,6 +361,8 @@ struct ProjectionComparisonCase {
     before_sector: u16,
     after_sector: u16,
     layer: u16,
+    #[serde(default)]
+    after_layer: Option<u16>,
     bounds: [i32; 4],
 }
 
@@ -371,6 +375,18 @@ struct ProjectionQueryReport {
     coverage_differences: usize,
     maximum_height_difference: f32,
     first_differences: Vec<String>,
+    cases: Vec<ProjectionCaseReport>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ProjectionCaseReport {
+    before_sector: u16,
+    after_sector: u16,
+    queries: usize,
+    height_differences: usize,
+    material_differences: usize,
+    coverage_differences: usize,
+    first_difference: Option<String>,
 }
 
 #[test]
@@ -402,7 +418,36 @@ fn recovered_projection_partitions_preserve_sampled_runtime_queries() {
         )
     };
     let mut before_assets = LevelAssets::new();
-    let before = load(&manifest.before, &mut before_assets);
+    let before = if let Some(proto) = &manifest.before_proto {
+        let descriptor: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(directory.join(&manifest.after)).unwrap())
+                .unwrap();
+        let dimensions = &descriptor["walkable_polygon"][2];
+        let mut level = LoadedLevel::empty();
+        level.proto =
+            serde_json::from_slice(&std::fs::read(directory.join(proto)).unwrap()).unwrap();
+        // The receiving diagnostic needs geometry and materials, not sprite resources.
+        level.proto.animations.clear();
+        level.mission.building_tenants = level
+            .proto
+            .buildings
+            .iter()
+            .map(|_| robin_engine::level_data::RawBuildingTenants {
+                tenant_element_indices: Vec::new(),
+                arrow_reserve: false,
+            })
+            .collect();
+        construct_with_dimensions(
+            level,
+            &mut before_assets,
+            (
+                dimensions[0].as_f64().unwrap() as f32 + 1.,
+                dimensions[1].as_f64().unwrap() as f32 + 1.,
+            ),
+        )
+    } else {
+        load(&manifest.before, &mut before_assets)
+    };
     let mut after_assets = LevelAssets::new();
     let after = load(&manifest.after, &mut after_assets);
     let handle = |engine: &Engine, number: u16| {
@@ -434,8 +479,16 @@ fn recovered_projection_partitions_preserve_sampled_runtime_queries() {
         coverage_differences: 0,
         maximum_height_difference: 0.,
         first_differences: vec![],
+        cases: vec![],
     };
     for case in manifest.cases {
+        let start = (
+            report.queries,
+            report.height_differences,
+            report.material_differences,
+            report.coverage_differences,
+        );
+        let mut first_difference = None;
         let a = handle(&before, case.before_sector);
         let b = handle(&after, case.after_sector);
         let [min_x, min_y, max_x, max_y] = case.bounds;
@@ -447,12 +500,35 @@ fn recovered_projection_partitions_preserve_sampled_runtime_queries() {
             for x in min_x * 2..=max_x * 2 {
                 let point = MapPoint::new(x as f32 / 2., y as f32 / 2.);
                 let old = sample(&before, &before_assets, a, case.layer, point);
-                let new = sample(&after, &after_assets, b, case.layer, point);
-                if old != new && report.first_differences.len() < 8 {
-                    report.first_differences.push(format!(
-                        "{point:?}, layer {}: {old:?} -> {new:?}",
-                        case.layer
-                    ));
+                let new = sample(
+                    &after,
+                    &after_assets,
+                    b,
+                    case.after_layer.unwrap_or(case.layer),
+                    point,
+                );
+                if old != new {
+                    let old_index =
+                        before.get_projection_area_index(&before_assets, a, case.layer, point);
+                    let new_index = after.get_projection_area_index(
+                        &after_assets,
+                        b,
+                        case.after_layer.unwrap_or(case.layer),
+                        point,
+                    );
+                    let difference = format!(
+                        "{point:?}, sectors {} -> {}, layers {} -> {}, obstacles {old_index:?} -> {new_index:?}: {old:?} -> {new:?}",
+                        case.before_sector,
+                        case.after_sector,
+                        case.layer,
+                        case.after_layer.unwrap_or(case.layer)
+                    );
+                    if first_difference.is_none() {
+                        first_difference = Some(difference.clone());
+                    }
+                    if report.first_differences.len() < 8 {
+                        report.first_differences.push(difference);
+                    }
                 }
                 match (old, new) {
                     (Some((old_height, old_material)), Some((new_height, new_material))) => {
@@ -471,6 +547,15 @@ fn recovered_projection_partitions_preserve_sampled_runtime_queries() {
         }
         assert!(receiving > 0, "probe never reached a projection surface");
         report.receiving += receiving;
+        report.cases.push(ProjectionCaseReport {
+            before_sector: case.before_sector,
+            after_sector: case.after_sector,
+            queries: report.queries - start.0,
+            height_differences: report.height_differences - start.1,
+            material_differences: report.material_differences - start.2,
+            coverage_differences: report.coverage_differences - start.3,
+            first_difference,
+        });
     }
     let report_json = serde_json::to_string_pretty(&report).unwrap();
     std::fs::write(manifest_path.with_extension("report.json"), &report_json).unwrap();

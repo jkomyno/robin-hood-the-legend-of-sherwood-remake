@@ -1669,6 +1669,31 @@ comparison. This verifies obstacle indexing and candidate order for the sampled
 Sherwood rays, not navigation graph connectivity, mask queries, mouse selection,
 material ties, receiving-height queries, world-boundary exits or complete fast-find-grid parity.
 
+Sherwood's reviewed `refinement/catalogs/sherwood-projections.json` now restores
+14 physical receiving-volume links. The offline recovery validates unique ownership,
+ordered binary32 geometry, flags and model/source pins before replacing generated
+receivers with asset-local volume references. Traversal receivers 97, 98 and 101 were
+already linked. Ground bluff 111 remains excluded because its surface spans two
+compiled receiving areas. The compiler still consumes only the scene and assets.
+The candidates in `work/map-compile/sherwood-physical-receiver-recovery` compile to
+129 sight volumes instead of 143. Baseline, treehouse-only move, platform-only move
+and combined move all construct natively with 29 areas, 15 doors and one jump pair.
+
+The native projection diagnostic now accepts a source geometry fixture through
+`before_proto`, supports different compiled layer numbers, and reports differences
+per sector pair with the selected obstacle indices. Comparing the 14 restored
+receivers in `work/map-compile/sherwood-physical-receiver-native` samples 701,438
+integer/half-pixel positions: seven cases match exactly; the other seven have
+19,664 coverage differences and 27 height differences (maximum 1.9894714), with
+zero material differences. The parity assertion deliberately remains failing.
+All differences belong to source receiving area 31, which the compiler currently
+splits across bridge/platform areas. Samples cover each receiver's bounding rectangle,
+so differences can include neighboring receivers in the shared source area; these
+counts are not a count of missing physical polygons. The recovered boundaries have
+gaps and height offsets at bridge landings, preventing exact 3D edge joins without
+further navigation authoring. This is partial receiving recovery, not full map parity
+or publication of the asset definitions.
+
 The ignored native test accepts optional `grid_size`, `source_layers` and
 `compiled_layers` alongside its `source`/`compiled` obstacle arrays through
 `ROBIN_SIGHT_SCENE_CASE`. Grid sizes are in 64-unit cells, not pixels. It also
