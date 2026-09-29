@@ -304,7 +304,7 @@ async function button(label: string) {
     return;
   }
   const button = [...document.querySelectorAll("button")].find(
-    (b) => b.textContent?.trim() === label,
+    (b) => b.textContent?.trim() === label || b.getAttribute("aria-label") === label,
   );
   assert(button, `missing button ${label}`);
   button!.click();
