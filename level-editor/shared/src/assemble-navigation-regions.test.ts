@@ -2,6 +2,61 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
 
+test("preserved joined boundaries retain crossing contours without blocking another surface", () => {
+  const crossing: [number, number][] = [
+    [-3, 3],
+    [3, 4],
+    [3, 8],
+    [-3, 8],
+  ];
+  const pieces: NavigationPiece[] = [
+    {
+      navigationRegion: "joined",
+      plane: [0, 0, 0],
+      layer: 0,
+      preserveMovementBoundary: true,
+      polygon: [
+        [0, 0],
+        [10, 0],
+        [10, 10],
+        [0, 10],
+      ],
+      blockers: [
+        crossing,
+        [
+          [10, 2],
+          [14, 2],
+          [14, 7],
+          [10, 7],
+        ],
+      ],
+    },
+    {
+      navigationRegion: "joined",
+      plane: [1, 0, -10],
+      layer: 1,
+      preserveMovementBoundary: true,
+      polygon: [
+        [10, 0],
+        [20, 0],
+        [20, 10],
+        [10, 10],
+      ],
+      blockers: [],
+    },
+  ];
+  const [result] = assembleNavigationRegions(pieces, []);
+  assert.equal(result!.polygon.length, 4);
+  assert.equal(result!.blockers.length, 1);
+  assert.deepEqual(
+    new Set(result!.blockers[0]!.map((p) => JSON.stringify(p))),
+    new Set(crossing.map((p) => JSON.stringify(p))),
+  );
+  assert.equal(result!.pieces.length, 2);
+  pieces[1]!.preserveMovementBoundary = false;
+  assert.throws(() => assembleNavigationRegions(pieces, []), /must agree/);
+});
+
 test("joined planes preserve holes with native obstacle winding and disconnected components", () => {
   const pieces: NavigationPiece[] = [
     {

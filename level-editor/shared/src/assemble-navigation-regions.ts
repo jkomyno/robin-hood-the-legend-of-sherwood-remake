@@ -3,6 +3,7 @@ import type { Point } from "./level.ts";
 import type { HeightPlane } from "./gameplay-plane.ts";
 import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
 import { simplifyMotionRing } from "./motion-quantization.ts";
+import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
 
 export interface NavigationPiece {
   plane: HeightPlane;
@@ -53,8 +54,12 @@ export function assembleNavigationRegions(
   return [...groups.values()]
     .flatMap((members): NavigationRegion[] => {
       const first = members[0]!;
-      if (members.length > 1 && members.some((m) => m.preserveMovementBoundary))
-        throw new Error("Preserved movement boundaries cannot yet join separate navigation pieces");
+      if (
+        members.length > 1 &&
+        members.some((m) => m.preserveMovementBoundary) &&
+        members.some((m) => !m.preserveMovementBoundary)
+      )
+        throw new Error("Joined navigation pieces must agree on movement boundary preservation");
       const layer = Math.min(...members.map((p) => p.layer));
       if (members.length === 1)
         return [
@@ -66,6 +71,30 @@ export function assembleNavigationRegions(
             pieces: members,
           },
         ];
+      if (first.preserveMovementBoundary) {
+        const boundaries = clipping.union(members.map((m): Polygon => [m.polygon]));
+        const free = clipping.union(members.map(shape));
+        // Another surface may provide a route through a cutout that extends
+        // beyond its own partition. Preserve only the part no surface opens.
+        const cutouts = members.flatMap((m) =>
+          m.blockers.flatMap((blocker) => clipping.difference([blocker], free)),
+        );
+        return boundaries.map((boundary) => {
+          const preserved = preserveMovementBoundary(
+            boundary[0]!,
+            [...boundary.slice(1).map((hole): Polygon => [hole]), ...cutouts],
+            warnings,
+          );
+          return {
+            layer,
+            lift: first.lift,
+            ...preserved,
+            pieces: members.filter(
+              (member) => clipping.intersection([member.polygon], boundary).length > 0,
+            ),
+          };
+        });
+      }
       const merged = normalizeGeneratedMotion(
         clipping.union(shape(first), ...members.slice(1).map(shape)),
         "Joined navigation region",

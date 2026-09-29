@@ -26,8 +26,6 @@ export function compileTransitionObstacles(
   receivers?: NavigationPiece[],
   preserveBoundary = false,
 ) {
-  if (preserveBoundary && receivers)
-    throw new Error("Preserved state contours require one movement boundary");
   const pairs = new Map<string, number>();
   const obstacles: { state_id: number; polygon: { points: Point[] } }[] = [];
   const initial: Point[][] = [];
@@ -64,7 +62,15 @@ export function compileTransitionObstacles(
     } else clipped = polygonClipping.intersection(walkable, [blocker.polygon, ...blocker.holes]);
     // Keep the complete contour after testing overlap. Rounding its clipped
     // intersections would change narrow routes along the movement envelope.
-    if (preserveBoundary && clipped.length) clipped = [[blocker.polygon, ...blocker.holes]];
+    if (preserveBoundary && clipped.length) {
+      const otherPlanes = receivers?.filter((r) => !samePlane(r.plane)) ?? [];
+      clipped = otherPlanes.length
+        ? polygonClipping.difference(
+            [blocker.polygon, ...blocker.holes],
+            otherPlanes.map((r) => [r.polygon]),
+          )
+        : [[blocker.polygon, ...blocker.holes]];
+    }
     let group =
       blocker.movementContour === undefined
         ? undefined

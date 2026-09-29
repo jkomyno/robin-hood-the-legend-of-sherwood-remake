@@ -26,8 +26,8 @@ their implicit fractional intersections. A compiler-generated native fixture
 verifies containment and thin reachability through a narrow strip, plus blocked
 crossings of both boundaries. Receiving ownership and movement-state clipping
 subtract crossing obstacles explicitly. Enclosed walkable islands are partitioned
-into ordinary obstacles with coverage checks. This mode currently requires one
-surface per navigation region; joined pieces still fail explicitly. The offline
+into ordinary obstacles with coverage checks. This mode requires one surface per
+height plane within each region; joined pieces must all opt into preservation. The offline
 recovery flag `--preserve-ground-boundaries` enables draft boundary recovery;
 it is not the default and is not published. The Sherwood draft now exactly
 matches the reference ground walkable area after restoring its bluff as an
@@ -2253,3 +2253,22 @@ therefore remains unchanged.
 
 Recovery now rejects a join height tolerance without sockets before producing
 asset packets, rather than emitting a packet that later fails gameplay validation.
+
+### Preserved contours across joined navigation pieces
+
+Compilation can now join pieces that all declare `preserveMovementBoundary`.
+It assembles the outer boundaries separately from blocked contours. A cutout that
+extends into a neighboring surface does not block a route that surface opens.
+State contours retain their implicit outer-boundary intersections while excluding
+neighboring pieces on other height planes. Mixed preserved/non-preserved pieces
+remain an explicit error.
+
+Focused regressions cover crossing outer contours, another surface opening a
+cutout, and state changes restricted to their own height plane. The experimental
+Nottingham output under `work/map-compile/nottingham-state-navigation-native-preserved`
+constructs in Rust. Its courtyard envelope and both changing-state coverages match,
+but permanent free coverage differs by about 158.446 square units in both states.
+The ground transition's full free coverage also differs by one square unit, even
+though its changing obstacle coverage matches. These are broader comparisons than
+the changing-contour check alone. Neither difference is accepted as parity, and
+the committed authoring catalogs do not yet enable this experimental mode.

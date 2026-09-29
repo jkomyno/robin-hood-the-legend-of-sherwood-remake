@@ -125,6 +125,57 @@ test("preserved state contours retain implicit fractional boundary crossings", (
     0,
   );
 });
+test("preserved state contours on joined planes cannot block the neighboring plane", () => {
+  const receivers: NavigationPiece[] = [
+    {
+      plane: [0, 0, 0],
+      layer: 0,
+      polygon: [
+        [0, 0],
+        [50, 0],
+        [50, 100],
+        [0, 100],
+      ],
+      blockers: [],
+    },
+    {
+      plane: [1, 0, -50],
+      layer: 1,
+      polygon: [
+        [50, 0],
+        [100, 0],
+        [100, 100],
+        [50, 100],
+      ],
+      blockers: [],
+    },
+  ];
+  const gate: PlacedTransitionBlocker = {
+    ...blocker,
+    holes: [],
+    polygon: [
+      [40, -10],
+      [60, -10],
+      [60, 110],
+      [40, 110],
+    ],
+  };
+  const kept = compileTransitionObstacles(boundary, [], [0, 0, 0], [gate], [], receivers, true);
+  const blocked = kept.obstacles.map((o) => [o.polygon.points]);
+  assert.deepEqual(clipping.intersection(blocked, [receivers[1]!.polygon]), []);
+  assert.deepEqual(
+    clipping.xor(clipping.intersection(blocked, [boundary]), [
+      [
+        [40, 0],
+        [50, 0],
+        [50, 100],
+        [40, 100],
+      ],
+    ]),
+    [],
+  );
+  assert(kept.obstacles.some((o) => o.polygon.points.some(([, y]) => y < 0)));
+});
 test("one transition shares state bits across receiving planes and clips to each receiver", () => {
   const receivers: NavigationPiece[] = [
     {
