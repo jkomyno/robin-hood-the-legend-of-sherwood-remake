@@ -655,10 +655,11 @@ if (groundAreas.length) {
     }
     for (const [index, blocker] of ground.blockers.entries()) {
       const owner = owners.find((o) => o.asset === blocker.asset && o.node === blocker.node)!;
+      const ownedBlockers = (packet(owner.asset).movementBlockers ??= []);
       for (const [regionIndex, region] of blocker.regions.entries()) {
         const local = (ring: Point[]) =>
           ring.slice(0, -1).map(([x, y]) => localize(owner.part, [x, y, 0]));
-        (packet(owner.asset).movementBlockers ??= []).push({
+        ownedBlockers.push({
           preserveMovementPrecision: true,
           id: `${owner.node}-ground-blocker-${index}-${regionIndex}`,
           node: owner.node,
@@ -680,7 +681,8 @@ if (groundAreas.length) {
       recoveredArea: ground.reconstructedArea,
       differenceArea: ground.differenceArea,
       coordinateGrid: ground.coordinateGrid,
-      blockerOwners: ground.blockers.length,
+      blockerOwners: ground.blockers.filter((blocker) => blocker.regions.length).length,
+      authoredMovementOwners: ground.blockers.length,
       navigationRegions: ground.sections.map(({ navigationRegion, differenceArea }) => ({
         navigationRegion,
         differenceArea,

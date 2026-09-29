@@ -65,7 +65,11 @@ export function recoverGroundGameplay(
         ? clipping.intersection(closedPolygon(owner.footprint), excludedCoverage)
         : clipping.difference(closedPolygon(owner.footprint), walkable),
     );
-    return regions.length ? [{ asset: owner.asset, node: owner.node, regions }] : [];
+    // An empty authored result is meaningful: omitting it would enable derived
+    // part collision again, including on the asset's elevated surfaces.
+    return regions.length || preserveBoundary
+      ? [{ asset: owner.asset, node: owner.node, regions }]
+      : [];
   });
   const additions = blockers.flatMap((b) => b.regions);
   const excluded = additions.length ? clipping.union(additions[0]!, ...additions.slice(1)) : [];

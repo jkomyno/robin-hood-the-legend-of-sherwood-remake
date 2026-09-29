@@ -1851,3 +1851,26 @@ in `ground-boundary-partition-native` construct in Rust: Lincoln has 82 areas,
 667 sight obstacles, 172 doors and 38 jump pairs. This resolves those two export
 failures, without certifying their map fidelity. York's lift failure and the
 overlapping-obstacle rounding differences remain unresolved.
+
+### Explicit empty movement ownership
+
+Boundary recovery now retains an explicit empty `movementBlockers` list when
+an asset footprint overlaps the ground envelope but owns no authored exclusion.
+Omitting that field enables model-derived movement collision, which had clipped
+York's garden-wall stair into disconnected pieces. Empty authored ownership
+keeps sight geometry intact and prevents that unintended fallback.
+
+The fresh `york-boundary-empty-native` draft compiles and constructs 178 areas,
+1,198 sight obstacles, 254 doors and 72 jump pairs in Rust. All 170 directed lift
+passage callback checks pass; approach routing and animation remain separate
+checks. The dedicated `sherwood-boundary-empty-native` baseline and three moved
+treehouse/platform cases compile as well. Its outer ground contour remains exact;
+flat-ground difference is about 185.70 square units, down from 204.26 but still
+above the earlier precision draft. Boundary recovery remains opt-in and the
+definitions remain unpublished.
+
+The regenerated `ground-boundary-empty-recovery` batch has valid candidates for
+all nine maps. All nine `ground-boundary-empty-native` descriptors now compile
+and construct in Rust, including York. The complete static-loading manifest
+therefore supersedes the earlier three export failures; it does not certify
+navigation fidelity, missing visual/state coverage, or publication.

@@ -234,6 +234,19 @@ test("geometry-only assets retain derived movement collision unless explicitly r
   );
 });
 
+test("empty authored movement ownership disables derived collision without removing sight", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const before = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  const packet = packetFromFixture(hut.gameplay!);
+  packet.movementBlockers = [];
+  hut.gameplay = recoveredGameplayDefinition(packet, hut);
+  const after = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  assert.deepEqual(hut.gameplay.movementBlockers, []);
+  assert(before.motion_data.layers.flat().some((area) => area.obstacles.length));
+  assert(after.motion_data.layers.flat().every((area) => area.obstacles.length === 0));
+  assert.deepEqual(after.sight_obstacles, before.sight_obstacles);
+});
+
 test("selected permanent solids survive authoring conversion without sharing the draft list", () => {
   const { hut } = assetCompilerFixture();
   const packet = packetFromFixture(hut.gameplay!);

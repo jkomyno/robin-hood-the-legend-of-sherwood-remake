@@ -6,6 +6,43 @@ import type { Point } from "@rle/shared";
 import { preserveMovementBoundary } from "../../shared/src/preserve-movement-boundary.ts";
 import { partitionMovementObstacles } from "../../shared/src/partition-movement-obstacles.ts";
 
+test("boundary recovery retains explicit empty movement ownership", () => {
+  const points: Point[] = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  const result = recoverGroundGameplay(
+    [{ polygon: { points }, obstacles: [] }],
+    [
+      {
+        asset: "stairs",
+        node: "body",
+        footprint: [
+          [20, 20],
+          [40, 20],
+          [40, 40],
+          [20, 40],
+        ],
+      },
+      {
+        asset: "unrelated",
+        node: "body",
+        footprint: [
+          [200, 200],
+          [240, 200],
+          [240, 240],
+          [200, 240],
+        ],
+      },
+    ],
+    true,
+  );
+  assert.deepEqual(result.blockers, [{ asset: "stairs", node: "body", regions: [] }]);
+  assert.equal(result.differenceArea, 0);
+});
+
 test("boundary recovery reassembles crossing exclusions without inventing off-map asset collision", () => {
   const boundary: Point[] = [
     [0, 0],
