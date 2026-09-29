@@ -6,6 +6,7 @@ import { validateAssetGameplay } from "./asset-gameplay.ts";
 import { IDENTITY_TRANSFORM } from "./level3d.ts";
 import {
   assetCompilerFixture,
+  anchoredReceiverCompilerFixture,
   slopedAssetCompilerFixture,
   liftAssetCompilerFixture,
   liftLightCompilerFixture,
@@ -120,6 +121,57 @@ test("visual component bounds can opt out of physical collision while retaining 
 });
 
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("physical receiver anchors share ground navigation without cutting a separate walking area", () => {
+  const { document, assets, hut } = anchoredReceiverCompilerFixture();
+  const baseline = compileAssetGameplay(document, assets, bounds);
+  assert.equal(baseline.motion_data.layers.flat().length, 1);
+  assert.equal(baseline.motion_data.layers[0]![0]!.obstacles.length, 0);
+  assert.deepEqual(baseline.sight_obstacles[0]!.projection_area, [0, 0]);
+  document.objects[0]!.transform.dx += 50;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(moved.motion_data, baseline.motion_data);
+  assert.deepEqual(moved.sight_obstacles[0]!.projection_area, [0, 0]);
+  assert.equal(
+    moved.sight_obstacles[0]!.points[0]!.x,
+    baseline.sight_obstacles[0]!.points[0]!.x + 50,
+  );
+  const copy = structuredClone(document.objects[0]!);
+  copy.id = "hut-copy";
+  delete copy.group;
+  copy.transform.dx += 50;
+  document.objects.push(copy);
+  const duplicated = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(duplicated.motion_data, baseline.motion_data);
+  assert.equal(duplicated.sight_obstacles.length, 2);
+  assert(duplicated.sight_obstacles.every((s) => JSON.stringify(s.projection_area) === "[0,0]"));
+  document.objects.pop();
+  document.objects[0]!.transform.rot_deg = 90;
+  const rotated = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(rotated.motion_data, baseline.motion_data);
+  assert.deepEqual(rotated.sight_obstacles[0]!.projection_area, [0, 0]);
+  hut.gameplay!.projectionReceivers![0]!.anchor = [900, 900, 0];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /navigation anchor must resolve/,
+  );
+});
+
+test("physical receiver anchors reject dangling and conflicting ownership", () => {
+  const { document, assets, hut } = anchoredReceiverCompilerFixture();
+  const receiver = hut.gameplay!.projectionReceivers![0]!;
+  receiver.volume = "missing";
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /invalid projection receiver/,
+  );
+  receiver.volume = hut.parts[0]!.node;
+  hut.gameplay!.projectionReceivers!.push({ ...receiver, id: "duplicate" });
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /invalid projection receiver/,
+  );
+});
+
 test("receiving volumes retain thickness, materials and state links after placement", () => {
   const { document, assets } = projectionVolumeCompilerFixture();
   const compile = () => compileAssetGameplay(document, assets, bounds);

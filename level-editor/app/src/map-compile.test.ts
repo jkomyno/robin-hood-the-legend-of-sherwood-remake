@@ -13,6 +13,7 @@ import {
 } from "./map-bake-render.ts";
 import {
   assetCompilerFixture,
+  anchoredReceiverCompilerFixture,
   preservedBoundaryCompilerFixture,
   preservedContoursCompilerFixture,
   maskAssetCompilerFixture,
@@ -43,6 +44,20 @@ import {
   doorAnchorCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("anchored receiver export preserves native shared ground navigation", async () => {
+  const { document, assets } = anchoredReceiverCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-anchored-receiver.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("receiving island export preserves native area and material ownership", async () => {
   const { document, assets } = receivingIslandCompilerFixture();

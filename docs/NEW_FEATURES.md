@@ -1,5 +1,11 @@
 # Post-port Features
 
+- **Physical receivers sharing navigation.** Asset gameplay can bind a physical
+  receiver to an existing navigation area through an asset-local anchor. Sloped
+  elevation and physical geometry remain independent of the movement boundary;
+  placement resolves the binding afresh without source-map indices. Missing,
+  blocked or ambiguous anchors fail export.
+
 - **Asset-owned obstacle query order.** Gameplay definitions can assign query
   precedence to physical part and volume IDs. Compilation preserves this order
   after placement and volume assembly, rebuilding mask and sight-state indices.

@@ -31,6 +31,18 @@ test("recovery converts query precedence into independent asset definitions", ()
   assert.equal(definition.sightOrder![hut.parts[0]!.node], 7);
 });
 
+test("recovery retains asset-local physical receiver anchors without source indices", () => {
+  const { hut } = assetCompilerFixture();
+  const packet = descriptorGameplayPacket(hut);
+  packet.projectionReceivers = [
+    { id: "receiver", node: hut.parts[0]!.node, volume: hut.parts[0]!.node, anchor: [10, 10, 0] },
+  ];
+  const definition = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(definition.projectionReceivers, packet.projectionReceivers);
+  packet.projectionReceivers[0]!.anchor[0] = 99;
+  assert.equal(definition.projectionReceivers![0]!.anchor[0], 10);
+});
+
 test("recovery retains independently authored movement envelopes", () => {
   const { hut } = assetCompilerFixture();
   const packet = packetFromFixture(hut.gameplay!);

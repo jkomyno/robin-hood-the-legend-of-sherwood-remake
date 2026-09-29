@@ -1915,3 +1915,23 @@ fixes, as do all four dedicated Sherwood placement cases.
 The dedicated baseline also matches all 701,438 sampled Rust receiving queries
 across the fourteen reviewed physical receivers: no height, material or coverage
 differences. This comparison does not include the unresolved bluff receiver.
+
+### Receivers independent of movement boundaries
+
+Asset gameplay now supports `projectionReceivers`: each binding names a local
+physical part/volume and a local 3D navigation anchor. The anchor selects one
+unblocked ordinary navigation area after placement. Its elevation belongs to
+that area's walking plane, independently of the receiver's physical top plane.
+The binding generates no walking polygon or terrain cutout. Movement collision
+remains separately controlled by the asset's movement definitions.
+
+The compiler-generated `asset-anchored-receiver` fixture loads in Rust with one
+uninterrupted ground area, while the physical slope supplies elevation through
+native receiving queries. Editor tests move, rotate and duplicate the receiver
+without changing ground navigation, and reject dangling or conflicting links.
+Offline authoring packets preserve these bindings as independent asset metadata.
+
+This supplies the representation needed for the Sherwood bluff; its existing
+recovery recipe has not yet been migrated, so the approximately 100.92-square-unit
+draft discrepancy remains. Full-map recovery, related receiving anchors and
+publication still require validation before this can establish map parity.

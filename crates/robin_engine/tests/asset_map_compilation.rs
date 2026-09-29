@@ -283,6 +283,43 @@ fn merged_platform_keeps_its_opening_without_an_invented_receiver() {
 }
 
 #[test]
+fn anchored_sloped_receiver_shares_uninterrupted_ground_navigation() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::fast_find_grid::SectorIndex;
+    use robin_engine::position_interface::SectorHandle;
+    use robin_engine::sector::SectorNumber;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-anchored-receiver.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    assert_eq!(
+        assets.navigation.pathfinder_graph.static_data.move_layers[0].len(),
+        1
+    );
+    assert!(grid.is_reachable_thin(MapPoint::new(250., 325.), MapPoint::new(450., 325.), 0));
+    let index = grid.level.sector_number_map[&SectorNumber::new(0)];
+    let sector = SectorHandle::new(0)
+        .unwrap()
+        .with_arena_index(SectorIndex::new(index as u32).unwrap());
+    let point = MapPoint::new(350., 325.);
+    let receiver = engine
+        .get_projection_area_index(&assets, sector, 0, point)
+        .unwrap();
+    let obstacle = &assets.environment.static_sight_obstacles[usize::from(receiver)];
+    assert_eq!(
+        obstacle.compute_top_z_from_projection(point.x, point.y),
+        25.
+    );
+    assert!(
+        engine
+            .get_projection_area_index(&assets, sector, 0, MapPoint::new(250., 325.))
+            .is_none()
+    );
+}
+
+#[test]
 fn authored_receiving_plane_survives_polygon_vertex_changes() {
     let mut descriptor: serde_json::Value = serde_json::from_slice(include_bytes!(
         "fixtures/asset-projection-material.level.json"

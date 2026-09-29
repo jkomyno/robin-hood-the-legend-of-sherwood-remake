@@ -483,6 +483,50 @@ export function projectionVolumeCompilerFixture() {
   return fixture;
 }
 
+export function anchoredReceiverCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  gameplay.surfaces = [];
+  gameplay.doors = [];
+  gameplay.movementBlockers = [];
+  const part = fixture.hut.parts[0]!;
+  part.obstacle_local_game!.points = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ].map(([x, y]) => ({
+    x: x!,
+    y: y!,
+    z_bottom: -10,
+    z_top: x! / 2,
+  }));
+  gameplay.projectionReceivers = [
+    {
+      id: "slope-receiver",
+      node: part.node,
+      volume: part.node,
+      anchor: [50, 50, 0],
+    },
+  ];
+  fixture.assets.get("marker")!.gameplay!.surfaces = [
+    {
+      id: "ground",
+      node: "scenery-marker",
+      height: 0,
+      polygon: [
+        [-100, -100],
+        [250, -100],
+        [250, 250],
+        [-100, 250],
+      ],
+      navigationRegion: "ground",
+      preserveMovementBoundary: true,
+    },
+  ];
+  return fixture;
+}
+
 export function receivingIslandCompilerFixture() {
   const fixture = projectionVolumeCompilerFixture();
   const gameplay = fixture.hut.gameplay!;

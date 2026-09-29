@@ -60,6 +60,7 @@ export interface RecoveredGameplayPacket {
   sightOrder?: AssetGameplay["sightOrder"];
   surfaces: RecoveredSurface[];
   volumes?: AssetGameplay["volumes"];
+  projectionReceivers?: AssetGameplay["projectionReceivers"];
   /** Omitted means derive collision from parts; an empty list explicitly disables that derivation. */
   movementBlockers?: RecoveredSurface[];
   movementSolids?: AssetGameplay["movementSolids"];
@@ -177,6 +178,9 @@ export function recoveredGameplayDefinition(
       packet.collision ?? (descriptor.parts.some((p) => p.obstacle_local_game) ? "parts" : "none"),
     surfaces: packet.surfaces.map(surface),
     ...(packet.volumes ? { volumes: structuredClone(packet.volumes) } : {}),
+    ...(packet.projectionReceivers
+      ? { projectionReceivers: structuredClone(packet.projectionReceivers) }
+      : {}),
     ...(packet.sightOrder ? { sightOrder: structuredClone(packet.sightOrder) } : {}),
     ...(packet.environment ? { environment: { ...packet.environment } } : {}),
     ...(packet.sounds ? { sounds: structuredClone(packet.sounds) } : {}),

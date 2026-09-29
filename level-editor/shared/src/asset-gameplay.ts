@@ -120,6 +120,14 @@ export interface AssetGameplay {
   /** Plane-local openings in this asset's derived movement collision, never in other assets. */
   movementClearances?: AssetWalkableSurface[];
   surfaces: AssetWalkableSurface[];
+  /** Physical receivers sharing existing navigation without adding a walking boundary. */
+  projectionReceivers?: {
+    id: string;
+    node: string;
+    volume: string;
+    /** Local unblocked navigation anchor; its elevation belongs to the target walking plane. */
+    anchor: [number, number, number];
+  }[];
   doors: AssetDoor[];
   lifts?: AssetLift[];
   interiors?: AssetInterior[];
@@ -665,6 +673,30 @@ export function validateAssetGameplay(
       "material_indices" in shape
     )
       fail(`invalid gameplay volume ${volume.id}`);
+  }
+  if (data.projectionReceivers !== undefined && !Array.isArray(data.projectionReceivers))
+    fail("invalid projection receivers");
+  const receiverVolumes = new Set<string>();
+  for (const receiver of data.projectionReceivers ?? []) {
+    feature(receiver);
+    if (
+      !point(receiver.anchor, 3) ||
+      disabledParts.has(receiver.volume) ||
+      receiverVolumes.has(receiver.volume) ||
+      data.surfaces.some((surface) => surface.projectionVolume === receiver.volume) ||
+      !(
+        volumes.has(receiver.volume) ||
+        (data.collision === "parts" &&
+          descriptor.parts.some(
+            (part) =>
+              part.node === receiver.volume &&
+              part.obstacle_local_game &&
+              part.mission_profile === undefined,
+          ))
+      )
+    )
+      fail(`invalid projection receiver ${receiver.id}`);
+    receiverVolumes.add(receiver.volume);
   }
   if (data.materials !== undefined && !Array.isArray(data.materials)) fail("invalid materials");
   for (const region of data.materials ?? []) {

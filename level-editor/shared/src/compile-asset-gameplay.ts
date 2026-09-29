@@ -185,6 +185,7 @@ export function compileAssetGameplay(
     movementContour?: string;
   }[] = [];
   const movementBlockers: typeof surfaces = [];
+  const projectionReceivers: { id: string; anchor: Vec3; shape: SightObstacle }[] = [];
   const navigationJoins: PlacedNavigationJoin[] = [];
   const movementSolids: { owner: string; shape: SightObstacle }[] = [];
   const movementClearances: typeof surfaces = [];
@@ -338,6 +339,7 @@ export function compileAssetGameplay(
     const movementSolid = (id: string) =>
       gameplay.movementSolids?.includes(id) ?? gameplay.movementBlockers === undefined;
     const explicitSight = new Set([
+      ...(gameplay.projectionReceivers ?? []).map((receiver) => receiver.volume),
       ...gameplay.surfaces.flatMap((surface) =>
         surface.projectionVolume === undefined ? [] : [surface.projectionVolume],
       ),
@@ -413,6 +415,16 @@ export function compileAssetGameplay(
       const order = queryOrder.get(volume.id);
       if (order !== undefined) sightOrders.set(sight.length - 1, order);
       if (movementSolid(volume.id)) movementSolids.push({ owner: placement.id, shape });
+    }
+    for (const receiver of gameplay.projectionReceivers ?? []) {
+      const shape = partSight.get(receiver.volume);
+      if (!shape) throw new Error(`${receiver.id}: missing projection volume ${receiver.volume}`);
+      heightPlane(shape.points.slice(0, 3).map((p): Vec3 => [p.x, p.y - p.z_top, p.z_top]));
+      projectionReceivers.push({
+        id: `${placement.id}/${receiver.id}`,
+        anchor: transform(receiver.node, receiver.anchor),
+        shape,
+      });
     }
     for (const id of gameplay.movementSolids ?? [])
       if (!partSight.has(id))
@@ -1032,6 +1044,12 @@ export function compileAssetGameplay(
     }
     return matches[0]!;
   };
+  for (const receiver of projectionReceivers) {
+    const area = resolve(receiver.anchor, `${receiver.id} navigation anchor`);
+    if (receiver.shape.projection_area)
+      throw new Error(`${receiver.id}: projection volume already has a receiving area`);
+    receiver.shape.projection_area = [area.sector, area.layer];
+  }
   const masks: NonNullable<CompiledAssetGeometry["masks"]> = [];
   const maskIndices = new Map<string, number[]>();
   for (const mask of placedMasks) {
