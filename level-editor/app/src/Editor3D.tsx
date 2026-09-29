@@ -1503,6 +1503,8 @@ export default function Editor3D(props: EditorProps) {
               switching tools.
             </p>
             <TerrainPanel
+              viewport={viewport}
+              active={panel() === "Draw"}
               document={doc}
               commit={pushHistory}
               onError={props.onError}
@@ -1749,30 +1751,23 @@ export default function Editor3D(props: EditorProps) {
                   <div class="export-fields">
                     <For each={["Left", "Top", "Width", "Height"]}>
                       {(label, index) => (
-                        <label>
-                          {label}
-                          <input
-                            type="number"
-                            aria-label={`Export ${label.toLowerCase()}`}
-                            step="1"
-                            min={index() > 1 ? 1 : undefined}
-                            value={bounds()[index()]}
-                            onChange={(event) => {
-                              const value = Number(event.currentTarget.value);
-                              if (
-                                !event.currentTarget.value ||
-                                !Number.isInteger(value) ||
-                                (index() > 1 && value < 1)
-                              ) {
-                                event.currentTarget.value = String(bounds()[index()]);
-                                return;
-                              }
-                              const next = [...bounds()] as [number, number, number, number];
-                              next[index()] = value;
-                              pushHistory({ ...doc()!, exportBounds: next });
-                            }}
-                          />
-                        </label>
+                        <ScrubNumber
+                          label={`Export ${label.toLowerCase()}`}
+                          step={1}
+                          min={index() > 1 ? 1 : undefined}
+                          value={bounds()[index()]!}
+                          onPreview={(value) => {
+                            const next = [...bounds()] as [number, number, number, number];
+                            next[index()] = Math.round(value);
+                            viewport.syncViews({ ...doc()!, exportBounds: next }, false);
+                          }}
+                          onCommit={(value) => {
+                            const next = [...bounds()] as [number, number, number, number];
+                            next[index()] = Math.round(value);
+                            pushHistory({ ...doc()!, exportBounds: next });
+                          }}
+                          onCancel={() => viewport.syncViews(doc()!, false)}
+                        />
                       )}
                     </For>
                   </div>

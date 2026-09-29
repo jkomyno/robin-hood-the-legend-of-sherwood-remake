@@ -1,4 +1,6 @@
-import { For, Show, createSignal } from "solid-js";
+import ScrubNumber from "./ScrubNumber";
+import type { EditorViewport } from "./editor-viewport";
+import { For, Show, createSignal, createEffect, onCleanup, untrack } from "solid-js";
 import { parseLevel3D, type GroundRegion, type Level3D } from "@rle/shared";
 
 export default function TerrainPanel(props: {
@@ -6,9 +8,57 @@ export default function TerrainPanel(props: {
   commit(document: Level3D): void;
   onError(message: string): void;
   disabled?: boolean;
+  active?: boolean;
+  viewport: EditorViewport;
 }) {
   const [selected, setSelected] = createSignal("");
   const region = () => props.document()?.terrain?.find((r) => r.id === selected());
+  createEffect(
+    () => ({
+      region: region(),
+      camera: props.document()?.camera,
+      enabled: props.active !== false && !props.disabled,
+    }),
+    ({ region, camera, enabled }) => {
+      untrack(() =>
+        props.viewport.setTerrainEdit(
+          region && camera && enabled
+            ? {
+                region,
+                camera,
+                commit: (next) => change({ bounds: next.bounds, height: next.height }),
+                deselect: () => setSelected(""),
+              }
+            : null,
+        ),
+      );
+    },
+  );
+  createEffect(
+    () => props.active !== false && !props.disabled,
+    (enabled) => {
+      untrack(() => props.viewport.setTerrainSelectionHandler(enabled ? setSelected : null));
+    },
+  );
+  onCleanup(() => {
+    props.viewport.setTerrainSelectionHandler(null);
+    props.viewport.setTerrainEdit(null);
+  });
+  function preview(patch: Partial<GroundRegion>) {
+    const r = region();
+    if (r) props.viewport.previewTerrain({ ...r, ...patch });
+  }
+  const cancelPreview = () => props.viewport.previewTerrain(null);
+  function setBound(index: number, value: number, commit: boolean) {
+    const r = region();
+    if (!r) return;
+    const bounds = [...r.bounds] as GroundRegion["bounds"];
+    bounds[index] = value;
+    if (commit) {
+      cancelPreview();
+      change({ bounds });
+    } else preview({ bounds });
+  }
   function publish(terrain: GroundRegion[]) {
     const document = props.document();
     if (!document) return;
@@ -62,7 +112,7 @@ export default function TerrainPanel(props: {
             <For each={props.document()?.terrain ?? []}>
               {(r) => (
                 <option value={r.id}>
-                  {r.name} · {r.height}
+                  {r.name} · {Math.round(r.height * 100) / 100}
                 </option>
               )}
             </For>
@@ -92,35 +142,37 @@ export default function TerrainPanel(props: {
                   <option value="water">Water</option>
                 </select>
               </label>
-              <label>
-                Elevation
-                <input
-                  aria-label="Terrain elevation"
-                  type="number"
-                  value={current().height}
-                  onChange={(e) => change({ height: e.currentTarget.valueAsNumber })}
-                />
-              </label>
-              <div class="spline-coordinates">
+              <p class="hint">
+                Drag a gold corner to resize, or use the move gizmo to move the region and change
+                its elevation. Escape cancels a drag.
+              </p>
+              <ScrubNumber
+                label="Terrain elevation"
+                value={current().height}
+                step={1}
+                onPreview={(height) => preview({ height })}
+                onCommit={(height) => {
+                  cancelPreview();
+                  change({ height });
+                }}
+                onCancel={cancelPreview}
+              />
+              <details>
+                <summary>Position and size</summary>
                 <For each={["X", "Y", "Width", "Depth"]}>
                   {(label, i) => (
-                    <label>
-                      {label}
-                      <input
-                        aria-label={`Terrain ${label}`}
-                        type="number"
-                        min={i() > 1 ? 1 : undefined}
-                        value={current().bounds[i()]}
-                        onChange={(e) => {
-                          const bounds = [...current().bounds] as GroundRegion["bounds"];
-                          bounds[i()] = e.currentTarget.valueAsNumber;
-                          change({ bounds });
-                        }}
-                      />
-                    </label>
+                    <ScrubNumber
+                      label={`Terrain ${label}`}
+                      value={current().bounds[i()]!}
+                      step={1}
+                      min={i() > 1 ? 1 : undefined}
+                      onPreview={(v) => setBound(i(), v, false)}
+                      onCommit={(v) => setBound(i(), v, true)}
+                      onCancel={cancelPreview}
+                    />
                   )}
                 </For>
-              </div>
+              </details>
               <button
                 onClick={() => {
                   const r = current();

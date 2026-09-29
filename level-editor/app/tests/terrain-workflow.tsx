@@ -32,7 +32,9 @@ const viewport = new EditorViewport({
   commitTransform: () => {},
   onError: (e) => errors.push(e),
 });
+let commits = 0;
 function commit(next: Level3D) {
+  commits++;
   current = next;
   setDoc(next);
   viewport.syncViews(next);
@@ -41,9 +43,18 @@ const pause = () => new Promise((resolve) => setTimeout(resolve, 80));
 render(
   () => (
     <div style={{ display: "flex", height: "100vh", width: "100vw" }}>
-      <div id="view" style={{ flex: "1", position: "relative" }} />
+      <div
+        id="view"
+        class="editor-canvas"
+        style={{ flex: "1", "min-width": "0", position: "relative" }}
+      />
       <aside class="editor-panel" style={{ width: "340px", overflow: "auto" }}>
-        <TerrainPanel document={doc} commit={commit} onError={(e) => errors.push(e)} />
+        <TerrainPanel
+          viewport={viewport}
+          document={doc}
+          commit={commit}
+          onError={(e) => errors.push(e)}
+        />
       </aside>
     </div>
   ),
@@ -103,6 +114,64 @@ async function run() {
   });
   result.textContent = `PASS terrain controls, elevation, water carving, save/reload, two navigation areas and ${zip.length} byte ZIP`;
 }
-run().catch((error) => {
-  result.textContent = "FAIL " + (error.stack ?? error);
+Object.assign(window, {
+  terrainTest: {
+    state: () => ({ document: current, commits, errors }),
+    point: (corner: number) => {
+      const internals = viewport as unknown as {
+        terrainControls: { root: THREE.Group };
+        activeCamera(): THREE.Camera;
+        renderer: THREE.WebGLRenderer;
+        gizmo: unknown;
+      };
+      const handle = internals.terrainControls.root.children.find(
+        (n) => n.userData.terrainCorner === corner,
+      )!;
+      const p = handle.getWorldPosition(new THREE.Vector3()).project(internals.activeCamera());
+      const r = internals.renderer.domElement.getBoundingClientRect();
+      return { x: r.left + ((p.x + 1) * r.width) / 2, y: r.top + ((1 - p.y) * r.height) / 2 };
+    },
+    axis: () => {
+      const internals = viewport as unknown as {
+        gizmo: { getHelper(): THREE.Object3D };
+        activeCamera(): THREE.Camera;
+        renderer: THREE.WebGLRenderer;
+      };
+      const points: { x: number; y: number }[] = [];
+      internals.gizmo.getHelper().traverseVisible((n) => {
+        if (n instanceof THREE.Mesh && n.name === "Y" && n.geometry.type === "CylinderGeometry") {
+          n.geometry.computeBoundingBox();
+          const p = n.geometry
+            .boundingBox!.getCenter(new THREE.Vector3())
+            .applyMatrix4(n.matrixWorld)
+            .project(internals.activeCamera());
+          const r = internals.renderer.domElement.getBoundingClientRect();
+          points.push({
+            x: r.left + ((p.x + 1) * r.width) / 2,
+            y: r.top + ((1 - p.y) * r.height) / 2,
+          });
+        }
+      });
+      if (!points.length) throw new Error("No visible terrain gizmo elevation handle");
+      return points.sort((a, b) => a.y - b.y)[0];
+    },
+    gizmo: () => {
+      const g = (viewport as unknown as { gizmo: { object?: THREE.Object3D; showY: boolean } })
+        .gizmo;
+      return { attached: !!g.object, vertical: g.showY };
+    },
+    frame: () => viewport.frameContent(true),
+  },
 });
+async function prepareControls() {
+  await click("Add ground region");
+  await set("Terrain elevation", "70");
+  viewport.frameContent(true);
+  await pause();
+  result.textContent = "READY";
+}
+(new URLSearchParams(location.search).has("controls") ? prepareControls() : run()).catch(
+  (error) => {
+    result.textContent = "FAIL " + (error.stack ?? error);
+  },
+);

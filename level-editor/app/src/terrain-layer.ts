@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { gameToScene, terrainPatches, noise, type GroundRegion, type Level3D } from "@rle/shared";
-import { disposeObjectResources } from "./resources.ts";
 
 function groundTexture(material: GroundRegion["material"]) {
   const size = 256,
@@ -31,6 +30,25 @@ function groundTexture(material: GroundRegion["material"]) {
 }
 export class TerrainLayer {
   readonly root = new THREE.Group();
+  private readonly materials = new Map<GroundRegion["material"], THREE.MeshBasicMaterial>();
+  private readonly bankMaterial = new THREE.MeshBasicMaterial({
+    color: 0x776345,
+    side: THREE.DoubleSide,
+  });
+  private material(kind: GroundRegion["material"]) {
+    let material = this.materials.get(kind);
+    if (!material) {
+      material = new THREE.MeshBasicMaterial({ map: groundTexture(kind), side: THREE.DoubleSide });
+      this.materials.set(kind, material);
+    }
+    return material;
+  }
+  private clearGeometry(root = this.root) {
+    root.traverse((node) => {
+      if (node instanceof THREE.Mesh) node.geometry.dispose();
+    });
+    root.clear();
+  }
   private terrain: Level3D["terrain"];
   private splines: Level3D["splines"];
   private camera: Level3D["camera"] | undefined;
@@ -59,14 +77,10 @@ export class TerrainLayer {
           uv.setXY(i, x / 512, y / 512);
         }
         geometry.computeVertexNormals();
-        const mesh = new THREE.Mesh(
-          geometry,
-          new THREE.MeshBasicMaterial({
-            map: groundTexture(patch.material),
-            side: THREE.DoubleSide,
-          }),
-        );
+        const mesh = new THREE.Mesh(geometry, this.material(patch.material));
         mesh.userData.terrainSurface = true;
+        const regionId = patch.id.slice(0, patch.id.lastIndexOf("/"));
+        mesh.userData.terrainRegion = document.terrain?.find((r) => r.id === regionId)?.id;
         mesh.userData.water = patch.material === "water";
         mesh.userData.noSunShadow = true;
         next.add(mesh);
@@ -84,27 +98,29 @@ export class TerrainLayer {
             }
           const sides = new THREE.BufferGeometry();
           sides.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-          const bank = new THREE.Mesh(
-            sides,
-            new THREE.MeshBasicMaterial({ color: 0x776345, side: THREE.DoubleSide }),
-          );
+          const bank = new THREE.Mesh(sides, this.bankMaterial);
           bank.userData.noSunShadow = true;
           next.add(bank);
         }
       }
     } catch (error) {
-      disposeObjectResources([next]);
+      this.clearGeometry(next);
       throw error;
     }
-    this.clear();
+    this.clearGeometry();
     for (const child of next.children.slice()) this.root.add(child);
     this.terrain = document.terrain;
     this.splines = document.splines;
     this.camera = document.camera;
   }
   clear() {
-    disposeObjectResources([this.root]);
-    this.root.clear();
+    this.clearGeometry();
+    for (const material of this.materials.values()) {
+      material.map?.dispose();
+      material.dispose();
+    }
+    this.materials.clear();
+    this.bankMaterial.dispose();
     this.terrain = undefined;
     this.splines = undefined;
     this.camera = undefined;

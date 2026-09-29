@@ -906,3 +906,52 @@ test("asset placement hits raised authored ground and lower regions replace its 
   Object.assign(viewport, { renderer: null, orbit: null });
   viewport.dispose();
 });
+
+test("terrain selection attaches the shared gizmo and commits translated bounds and elevation", () => {
+  const { viewport, publish } = fixture();
+  const region = {
+    id: "ground",
+    name: "Ground",
+    bounds: [100, 100, 200, 200] as [number, number, number, number],
+    height: 40,
+    material: "grass" as const,
+  };
+  const document = { ...documentFixture(), objects: [], groups: [], terrain: [region] };
+  publish(document);
+  let attached: THREE.Object3D | null = null;
+  const gizmo = {
+    dragging: false,
+    showY: false,
+    attach: (node: THREE.Object3D) => {
+      attached = node;
+    },
+    detach: () => {
+      attached = null;
+    },
+  };
+  Object.assign(viewport, { gizmo });
+  let committed: typeof region | null = null;
+  viewport.setTerrainEdit({
+    region,
+    camera: document.camera,
+    commit: (next) => {
+      committed = next as typeof region;
+    },
+  });
+  assert.ok(attached);
+  assert.equal(gizmo.showY, true);
+  const center = gameToScene(document.camera, 200, 200, 40);
+  assert.ok(
+    (attached as THREE.Object3D).position.distanceTo(
+      new THREE.Vector3(center[0], center[2], -center[1]),
+    ) < 1e-5,
+  );
+  viewport.previewTerrain({ ...region, bounds: [150, 175, 200, 200], height: 90 });
+  (viewport as unknown as { commitGizmo(): void }).commitGizmo();
+  assert.deepEqual(committed, { ...region, bounds: [150, 175, 200, 200], height: 90 });
+  viewport.setTerrainEdit(null);
+  assert.equal(attached, null);
+  assert.equal(gizmo.showY, false);
+  Object.assign(viewport, { gizmo: null });
+  viewport.dispose();
+});

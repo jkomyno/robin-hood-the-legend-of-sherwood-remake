@@ -2,7 +2,12 @@
 
 - **Terrain authoring in the level editor.** The Draw tab creates continuous
   rectangular ground regions with grass, dirt or water and an elevation in one
-  panel. Later regions replace earlier ground, including lower river beds. Paths
+  panel. Select ground in the scene, resize it with corner handles, or move it
+  and change its elevation using the standard asset gizmo. Terrain, path, wall
+  and export numeric fields share draggable number controls; each gesture
+  commits one undoable edit and Escape cancels its preview. Exact terrain bounds
+  remain under Position and size. Later regions replace earlier ground, including
+  lower river beds. Paths
   and rivers can set a whole-path elevation; their curved footprints carve the
   ground consistently in the viewport and export. New placements use the terrain
   height and compensate for elevated local asset bases. Export derives navigation
