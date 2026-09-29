@@ -38,9 +38,12 @@ and incomplete states are reported as omissions; this is not traversal parity.
 Its complete 3600×2400 browser export now produces a 35,842,113-byte ZIP with 370
 warnings. The actual archive loads color, depth, minimap and gameplay into Rust
 without a base datadir. Its editor JSON preserves 46 preview actors and 14 items;
-none become runtime map population. The generated grid currently has 3,691,968
-blocks because many receiving planes retain separate layer slots; this needs
-compaction before calling the terrain export efficient.
+none become runtime map population. The initial generated grid had 3,691,968
+blocks because joined receiving planes left unused layer slots. Compaction now
+reduces that to 32,144 blocks (1,607 layers to 13), while retaining ground layer
+zero, light separation and the reserved lift layer. All ten maps construct in
+Rust after compaction, with exact geometry/reference equivalence after layer
+renumbering. This reduces allocation; it does not restore omitted gameplay.
 
 Editor export now requests best-effort compilation: missing definitions,
 unsupported walls, unavailable door/jump connections and unbound appearance

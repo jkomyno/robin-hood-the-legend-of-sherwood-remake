@@ -988,6 +988,7 @@ test("ordinary local navigation regions join height planes without lift behavior
   const { document, assets, hut } = multiPlaneRegionCompilerFixture();
   const compiled = compileAssetGameplay(document, assets, bounds);
   assert.equal(compiled.motion_data.layers.flat().length, 1);
+  assert.equal(compiled.motion_data.layers.length, 2);
   const projections = compiled.sight_obstacles.filter((s) => Array.isArray(s.projection_area));
   assert.equal(projections.length, 2);
   assert.deepEqual(projections[0]!.projection_area, projections[1]!.projection_area);

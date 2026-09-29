@@ -811,10 +811,11 @@ fn recovered_static_exports_construct_native_geometry() {
             }
         }
         println!(
-            "{file}: constructed {areas} areas, {} sight obstacles, {} doors, {} jump pairs",
+            "{file}: constructed {areas} areas, {} sight obstacles, {} doors, {} jump pairs, {} grid blocks",
             assets.environment.static_sight_obstacles.len(),
             engine.presentation_view().doors().len(),
-            jump_pairs.len()
+            jump_pairs.len(),
+            grid.level.blocks.len()
         );
         count += 1;
     }
@@ -868,6 +869,15 @@ fn ordinary_region_crosses_projection_planes_without_a_gate() {
         &mut assets,
     );
     let grid = engine.fast_grid();
+    assert_eq!(
+        grid.level.layers.len(),
+        3,
+        "ground, lift, and special layers"
+    );
+    assert_eq!(
+        grid.level.blocks.len(),
+        usize::from(grid.level.grid_width) * usize::from(grid.level.grid_height) * 3
+    );
     assert!(grid.level.door_projection_infos.is_empty());
     assert!(engine.presentation_view().doors().is_empty());
     assert!(grid.level.sectors.iter().all(|s| !s.sector_type.is_lift()));

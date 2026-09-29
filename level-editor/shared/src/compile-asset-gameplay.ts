@@ -6,6 +6,7 @@ import { compileSoundSource } from "./compile-sound-source.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
 import { allocateLightReceivingLayers } from "./allocate-light-receiving-layers.ts";
+import { compactNavigationLayers } from "./compact-navigation-layers.ts";
 import { lightReceiverIntersection } from "./light-receiver-segment.ts";
 import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
 import {
@@ -1084,12 +1085,10 @@ function compileAssetGameplayAttempt(
     }
   }
   const navigationRegions = assembleNavigationRegions(navigationPieces, warnings);
-  const liftLayer = allocateLightReceivingLayers(
-    navigationRegions,
-    lights,
-    layers.length - 1,
-    inside,
-  );
+  allocateLightReceivingLayers(navigationRegions, lights, layers.length - 1, inside);
+  const liftLayer = compactNavigationLayers(navigationRegions);
+  // Receiving planes can share a navigation region; their provisional layers are not runtime layers.
+  layers.length = 0;
   while (layers.length <= liftLayer) layers.push([]);
   for (const region of navigationRegions) {
     const { layer, lift, polygon: boundary, blockers, pieces } = region;
