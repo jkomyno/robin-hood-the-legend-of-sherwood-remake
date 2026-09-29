@@ -785,10 +785,21 @@ if (values["navigation-definitions"]) {
     packets,
   );
   navigationJoinRecovery = updates.map(
-    ({ asset, surface, region, edges, heightTolerance, vertices, holes }) => {
+    ({
+      asset,
+      surface,
+      region,
+      edges,
+      heightTolerance,
+      vertices,
+      holes,
+      preserveMovementBoundary,
+    }) => {
       surface.navigationRegion = region;
       surface.navigationJoins = edges.length ? edges : undefined;
       surface.navigationJoinHeightTolerance = heightTolerance;
+      if (preserveMovementBoundary !== undefined)
+        surface.preserveMovementBoundary = preserveMovementBoundary;
       if (vertices) {
         surface.vertices = vertices;
         surface.holes = holes ?? [];
@@ -803,13 +814,13 @@ if (values["navigation-definitions"]) {
             return [x, y - z, z] as Vec3;
           });
         const outer = placed(vertices);
+        const boundary = close(outer.map(([x, y]) => [x, y]));
+        // Exclusions may cross the outer boundary; they are not necessarily holes.
+        const exclusions = (holes ?? []).map((h) => close(placed(h).map(([x, y]) => [x, y])));
         clearanceSources.push({
-          regions: [
-            [
-              close(outer.map(([x, y]) => [x, y]))[0]!,
-              ...(holes ?? []).map((h) => close(placed(h).map(([x, y]) => [x, y]))[0]!),
-            ],
-          ],
+          regions: exclusions.length
+            ? polygonClipping.difference(boundary, ...exclusions)
+            : [boundary],
           plane: fitHeightPlane(outer),
         });
       }

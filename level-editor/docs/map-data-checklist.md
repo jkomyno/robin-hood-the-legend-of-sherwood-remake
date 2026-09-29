@@ -2272,3 +2272,15 @@ The ground transition's full free coverage also differs by one square unit, even
 though its changing obstacle coverage matches. These are broader comparisons than
 the changing-contour check alone. Neither difference is accepted as parity, and
 the committed authoring catalogs do not yet enable this experimental mode.
+
+Reviewed navigation recovery now accepts an explicit `preserveMovementBoundary`
+setting alongside authored vertices. Clearance recovery subtracts exclusion
+contours geometrically instead of assuming they are interior holes, and removes
+floating contact slivers below its geometric tolerance while retaining subpixel
+openings. The full-contour Nottingham draft now produces valid asset definitions
+under `work/map-compile/nottingham-state-contours-recovery`.
+
+That draft still fails compilation: unioning nearly coincident cutout edges near
+projected coordinates (696.9921, 1191.7559) fails to close a polygon ring. The
+compiler reports the error; no rounded replacement or incomplete export is emitted.
+The draft remains unpublished and does not increase any parity count.

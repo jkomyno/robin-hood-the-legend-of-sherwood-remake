@@ -27,6 +27,7 @@ export interface ReviewedNavigationJoins {
       /** Reviewed asset-local movement boundary, independent of its receiving footprint. */
       vertices?: Vec3[];
       holes?: Vec3[][];
+      preserveMovementBoundary?: boolean;
     }[];
   }[];
 }
@@ -50,6 +51,7 @@ export function recoverReviewedNavigationJoins(
     asset: string;
     surface: RecoveredSurface;
     region: string;
+    preserveMovementBoundary?: boolean;
     edges: NavigationJoin[];
     heightTolerance?: number;
     vertices?: Vec3[];
@@ -88,6 +90,11 @@ export function recoverReviewedNavigationJoins(
       )
         throw new Error(`Reviewed navigation needs one ordinary surface and placement: ${key}`);
       seenSurfaces.add(key);
+      if (
+        entry.preserveMovementBoundary !== undefined &&
+        (typeof entry.preserveMovementBoundary !== "boolean" || !entry.vertices)
+      )
+        throw new Error(`Boundary preservation requires explicit navigation vertices: ${key}`);
       if (
         (surface.navigationRegion !== undefined && surface.navigationRegion !== region.id) ||
         surface.navigationJoins !== undefined
@@ -168,6 +175,7 @@ export function recoverReviewedNavigationJoins(
         asset: entry.asset,
         surface,
         region: region.id,
+        preserveMovementBoundary: entry.preserveMovementBoundary,
         edges: structuredClone(entry.edges),
         heightTolerance: entry.heightTolerance,
         vertices: entry.vertices === undefined ? undefined : structuredClone(entry.vertices),

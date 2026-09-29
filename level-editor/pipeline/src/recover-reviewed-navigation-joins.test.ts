@@ -144,11 +144,14 @@ test("standalone navigation recovery requires an explicit planar boundary withou
   f.definitions.regions[0]!.entries = [entry];
   entry.edges = [];
   assert.throws(f.recover, /explicit boundary/);
+  entry.preserveMovementBoundary = true;
+  assert.throws(f.recover, /explicit navigation vertices/);
   entry.vertices = structuredClone(f.packets.get(entry.asset)!.surfaces[0]!.vertices);
   const before = JSON.stringify([...f.packets]);
   const update = f.recover()[0]!;
   assert.deepEqual(update.vertices, entry.vertices);
   assert.deepEqual(update.edges, []);
+  assert.equal(update.preserveMovementBoundary, true);
   assert.equal(JSON.stringify([...f.packets]), before);
   entry.heightTolerance = 0;
   assert.throws(f.recover, /height tolerance/);
