@@ -1084,25 +1084,31 @@ export function compileAssetGameplay(
   for (const support of projectionSupports)
     if (support.obstacleIndex !== undefined && !sight[support.obstacleIndex]!.projection_area)
       throw new Error("Projection volume has no compiled receiving area");
-  const resolve = (point: Vec3, label: string, lift?: string | null, allowBlocked = false) => {
+  const resolve = (
+    point: Vec3,
+    label: string,
+    lift?: string | null,
+    allowBlocked = false,
+    projected: Point = project(point),
+  ) => {
     const matches = areas.filter(
       (a) =>
         (lift === null || a.lift === lift) &&
         Math.abs(planeHeight(a.plane, [point[0], point[1] - point[2]]) - point[2]) < 1e-4 &&
-        inside(project(point), a.polygon) &&
-        (allowBlocked || !a.blockers.some((b) => inside(project(point), b))),
+        inside(projected, a.polygon) &&
+        (allowBlocked || !a.blockers.some((b) => inside(projected, b))),
     );
     if (new Set(matches.map((a) => a.sector)).size !== 1) {
-      const containing = areas.filter((a) => inside(project(point), a.polygon));
+      const containing = areas.filter((a) => inside(projected, a.polygon));
       const details = containing.slice(0, 8).map((a) => ({
         sector: a.sector,
         layer: a.layer,
         lift: a.lift,
         height: planeHeight(a.plane, [point[0], point[1] - point[2]]),
-        blocked: a.blockers.some((b) => inside(project(point), b)),
+        blocked: a.blockers.some((b) => inside(projected, b)),
       }));
       throw new Error(
-        `${label} must resolve to exactly one ${allowBlocked ? "" : "unblocked "}walkable surface (found ${matches.length}); world point ${JSON.stringify(point)}, projected ${JSON.stringify(project(point))}; containing areas (${containing.length}, showing up to 8) ${JSON.stringify(details)}`,
+        `${label} must resolve to exactly one ${allowBlocked ? "" : "unblocked "}walkable surface (found ${matches.length}); world point ${JSON.stringify(point)}, projected ${JSON.stringify(projected)}; containing areas (${containing.length}, showing up to 8) ${JSON.stringify(details)}`,
       );
     }
     return matches[0]!;
@@ -1295,11 +1301,15 @@ export function compileAssetGameplay(
             if (light.receivers) {
               const layers = new Set(
                 light.receivers.map((point, index) => {
-                  if (!inside(project(point), light.polygon))
+                  // These anchors select a layer and are not serialized as integer
+                  // geometry. Rounding can move a valid interior anchor outside.
+                  const projected: Point = [point[0], point[1] - point[2]];
+                  if (!inside(projected, light.polygon))
                     throw new Error(
                       `${light.id}: receiver ${index} lies outside the light contour`,
                     );
-                  return resolve(point, `${light.id} receiver ${index}`, null, true).layer;
+                  return resolve(point, `${light.id} receiver ${index}`, null, true, projected)
+                    .layer;
                 }),
               );
               return [...layers].map((layer) => ({

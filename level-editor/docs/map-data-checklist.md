@@ -50,7 +50,7 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
-| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Partial: independent environmental regions and explicit ownership now recover Sherwood's night field; other maps still have receiving and ownership gaps |
+| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Derby's 26 contours and Sherwood's night field compile; full source-query equivalence, other maps' ownership and publication remain unfinished |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | All 119 emitter records match across nine source-backed staged maps; publication, audible playback and Wychford authoring remain outstanding |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
@@ -2656,3 +2656,32 @@ seven light contours and unchanged non-light data. The added contour and ambienc
 match exactly, with source layer 2 resolved to rebuilt layer 10. Native light
 queries pass under ambience bits 1, 2 and 4. Publication and full map/ZIP parity
 remain outstanding.
+
+### Complete Derby light-region definitions
+
+The combined Derby stage now retains eight building-owned regions and eighteen
+independent environmental fields. `derby-light-regions.json` contains the eighteen
+field recipes; `derby-light-ownership.json` retains Derby's existing ownership
+definitions and pins their explicit field owners. The reopened scene in
+`work/map-compile/derby-light-stage` extends the complete sound stage. Recovery in
+`work/map-compile/derby-light-recovery` has zero pending shadow regions or sound
+sources; 227 masks and visual patch definitions remain unfinished.
+
+Combining all regions exposed two anchor issues. Recovery now excludes permanent
+movement obstacles when choosing field anchors. Compilation also retains fractional
+positions for light layer-selection anchors: rounding a valid interior anchor can
+move it outside a narrow contour or receiving surface. The exported contour vertices
+remain quantized. Regression tests cover both cases, and geometry recovery still
+preserves all 148 contours in the five-map audit.
+
+The export in `work/map-compile/derby-complete-light-native` contains all 26 source
+outlines and ambience filters with no extra outline. These produce 30 runtime
+regions: source region 16 spans five rebuilt receiving layers. The per-source
+layer mapping is recorded in `source-light-mapping.json`. All non-light geometry
+and metadata match the prior sound-complete draft. Native construction and light
+queries pass for all 30 runtime contours under ambience bits 1, 2 and 4.
+
+This establishes complete staged contour coverage and successful native queries
+on the emitted layers. It does not yet establish source-versus-compiled lighting
+equivalence for every actor position, rendered appearance, publication or ZIP
+round-trip parity.

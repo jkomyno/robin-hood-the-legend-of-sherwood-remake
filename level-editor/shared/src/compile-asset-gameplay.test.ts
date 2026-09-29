@@ -1178,6 +1178,45 @@ test("light receiver anchors preserve one contour across elevations and move wit
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid light receivers/);
 });
 
+test("light layer anchors retain fractional positions inside narrow contours and surfaces", () => {
+  const { hut, document, assets } = lightAssetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.doors = [];
+  gameplay.interiors = [];
+  gameplay.surfaces = [
+    {
+      ...gameplay.surfaces[0]!,
+      polygon: [
+        [10, 10],
+        [20, 12],
+        [20, 13],
+      ],
+    },
+  ];
+  gameplay.lights = [
+    {
+      id: "narrow",
+      node: "building-999",
+      ambiences: 1,
+      polygon: [
+        [10, 10, 0],
+        [20, 12, 0],
+        [20, 13, 0],
+      ],
+      receivers: [[15.51, 11.11, 0]],
+    },
+  ];
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.light_sectors!.length, 1);
+  assert.deepEqual(compiled.light_sectors![0]!.polygon.points, [
+    [310, 310],
+    [320, 312],
+    [320, 313],
+  ]);
+  gameplay.lights[0]!.receivers = [[16, 11, 0]];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /outside the light contour/);
+});
+
 test("light regions resolve on sloped traversal areas and follow their asset", () => {
   const { document, assets } = liftLightCompilerFixture();
   const geometry = compileAssetGameplay(document, assets, bounds);

@@ -207,7 +207,12 @@ export function recoverLightField(
     for (const [areaIndex, area] of motionAreas.entries()) {
       const intersections = fixedClipping.intersection(
         close(projected),
-        close(area.polygon.points),
+        fixedClipping.difference(
+          close(area.polygon.points),
+          ...area.obstacles
+            .filter((obstacle) => obstacle.state_id === 0)
+            .map((obstacle) => close(obstacle.polygon.points)),
+        ),
       );
       for (const polygon of intersections) {
         const { vertices, holes, dimensions } = flatten(polygon);

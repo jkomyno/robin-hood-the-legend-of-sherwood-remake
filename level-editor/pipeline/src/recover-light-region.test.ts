@@ -273,6 +273,25 @@ for (const layer of [0, 1])
         field.footprints[0],
         field.region.polygon.map(([x, y]) => [x, y]),
       );
+      const blockedArea: MotionArea = {
+        ...area,
+        obstacles: [
+          {
+            state_id: 0,
+            polygon: {
+              points: [
+                [0, 0],
+                [17, 0],
+                [17, 100],
+                [0, 100],
+              ],
+            },
+          },
+        ],
+      };
+      const unblockedField = recoverLightField(upper, "blocked-field", [support], [blockedArea]);
+      assert.ok(unblockedField.region.receivers!.every(([x]) => x > 17 && x <= 20));
+      assert.deepEqual(unblockedField.region.polygon, field.region.polygon);
       assert.throws(() => recoverLightField(upper, "field", [], [area]), /no receiving anchors/);
       const unsupportedArea = {
         ...area,
