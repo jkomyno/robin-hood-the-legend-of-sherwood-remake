@@ -68,7 +68,7 @@ export function compileTransitionObstacles(
         pairs.set(blocker.transition, pair);
       }
       const state_id = (1 << (2 * pair + (blocker.applied ? 1 : 0))) >>> 0;
-      const rings = rounded.map(simplifyMotionRing);
+      const rings = rounded.map((ring) => simplifyMotionRing(ring));
       let pieces: Point[][];
       if (rings.length === 1) pieces = [rings[0]!];
       else {

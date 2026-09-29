@@ -1,6 +1,38 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { quantizeGeneratedMotionPolygon } from "./motion-quantization.ts";
+import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-quantization.ts";
+import type { Point } from "./level.ts";
+
+test("generated near-zero-width backtracking does not round into a boundary kink", () => {
+  const ring: Point[] = [
+    [0, 0],
+    [30, 0],
+    [30, 7],
+    [10, 7 / 3],
+    [5, 0],
+    [10 + 1 / 1048576, 7 / 3],
+    [0, 0],
+  ];
+  assert.deepEqual(quantizeGeneratedMotionPolygon([ring], Math.round, "fragment seam", []), [
+    [
+      [0, 0],
+      [30, 0],
+      [30, 7],
+      [0, 0],
+    ],
+  ]);
+  assert(simplifyMotionRing(ring).some(([x, y]) => x === 5 && y === 0));
+  const wider: Point[] = [
+    [0, 0],
+    [30, 0],
+    [30, 7],
+    [10, 7 / 3],
+    [5, 0],
+    [10 + 20 / 1048576, 7 / 3],
+    [0, 0],
+  ];
+  assert(simplifyMotionRing(wider, 2 / 1048576).some(([x, y]) => x === 5 && y === 0));
+});
 
 test("rounding a clipped straight edge does not introduce a false navigation seam", () => {
   const warnings: string[] = [];

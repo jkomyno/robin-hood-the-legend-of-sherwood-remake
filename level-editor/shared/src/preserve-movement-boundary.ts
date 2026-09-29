@@ -4,6 +4,7 @@ import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
 import { simplifyMotionRing, quantizeGeneratedMotionPolygon } from "./motion-quantization.ts";
 import { partitionMovementObstacles } from "./partition-movement-obstacles.ts";
+import { assembleMovementContour } from "./assemble-movement-contour.ts";
 
 /** Motion obstacles may cross the outer boundary. Keep both contours so their
  * fractional intersection remains implicit in the runtime's containment queries. */
@@ -31,8 +32,8 @@ export function preserveMovementBoundary(
     groups.set(key, group);
   }
   const blockers: Point[][] = [];
-  for (const group of groups.values()) {
-    const blocked = clipping.union(group);
+  for (const [label, group] of groups) {
+    const blocked = label === undefined ? clipping.union(group) : assembleMovementContour(group);
     for (const region of normalizeGeneratedMotion(
       blocked,
       "Preserved movement obstacle",

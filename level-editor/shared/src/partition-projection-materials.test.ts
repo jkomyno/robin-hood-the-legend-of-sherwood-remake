@@ -59,6 +59,28 @@ test("a material island leaves a disjoint surrounding receiver with the same hei
   );
 });
 
+test("small receiving material islands remain disjoint from the surrounding default", () => {
+  const boundary = square(0, 100);
+  const island: Point[] = [
+    [30, 30],
+    [31, 30],
+    [30, 31],
+  ];
+  const warnings: string[] = [];
+  const pieces = partitionProjectionMaterials(
+    boundary,
+    [
+      { polygon: boundary, defaultMaterial: 0, materialIndices: [], explicit: false },
+      { polygon: island, defaultMaterial: 4, materialIndices: [], explicit: true },
+    ],
+    warnings,
+  );
+  assert.deepEqual(warnings, []);
+  const defaults = pieces.filter((p) => !p.explicit).map((p) => [p.polygon]);
+  assert.deepEqual(clipping.intersection(clipping.union(defaults), [island]), []);
+  assert.deepEqual(clipping.xor(clipping.union(pieces.map((p) => [p.polygon])), [boundary]), []);
+});
+
 test("explicit receivers leave unsupported parts of a merged boundary uncovered", () => {
   const boundary = square(0, 100);
   const support = {

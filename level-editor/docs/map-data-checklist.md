@@ -1890,15 +1890,28 @@ The compiler-generated native overlap fixture verifies both a reachable strip
 and an obstruction that disappear when overlapping contours are merged and
 rounded together. Recovery retains each exclusion's separate ownership cuts in
 the opt-in boundary mode. In the dedicated `sherwood-contour-native` draft,
-flat-ground difference decreases from about 185.70 to 115.42 square units.
-Comparison against independently quantized complete contours isolates 14.5
-square units in three remaining fragment-assembly kinks; the other roughly
-100.92 comes from the separately represented sloped bluff. Those differences
-still require fixes before boundary recovery can replace the default or claim
-full-map fidelity. Publication remains unfinished.
+flat-ground difference initially decreased from about 185.70 to 115.42 square
+units. Fragment assembly now matches nearby endpoints within clipping-grid noise
+before unioning same-labelled pieces, and removes microscopic backtracking spikes
+before integer rounding. This removes the remaining 14.5 square units of assembly
+kinks: comparison against independently rounded complete contours now has zero
+difference. The roughly 100.92 square units from the separately represented sloped
+bluff remain. Boundary recovery cannot yet replace the default or claim full-map
+fidelity. Publication remains unfinished.
 
 All nine fresh `ground-contours-recovery` candidate sets validate, and all nine
 `ground-contours-native` descriptors compile and construct in Rust. Their area,
 sight, door and jump counts match the preceding empty-ownership batch. The
 dedicated Sherwood treehouse/platform placement cases also compile. These checks
 establish export/loading and the targeted overlap behavior, not full-map parity.
+
+Regression tests also retain small holes in state-dependent movement blockers
+and material receivers. Two simplification callbacks previously received the
+ring's array index as a distance tolerance, unintentionally erasing those holes;
+they now use the strict default tolerance. Assembly tests cover reordered input,
+rotation, separate labels and detached pieces, without modifying source geometry.
+The nine-map compilation and native construction checks pass again after these
+fixes, as do all four dedicated Sherwood placement cases.
+The dedicated baseline also matches all 701,438 sampled Rust receiving queries
+across the fourteen reviewed physical receivers: no height, material or coverage
+differences. This comparison does not include the unresolved bluff receiver.

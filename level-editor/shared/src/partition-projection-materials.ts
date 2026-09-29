@@ -117,7 +117,7 @@ export function partitionProjectionMaterials(
     });
   return members.flatMap(({ support, geometry }) =>
     geometry.flatMap((polygon) => {
-      const rings = polygon.map(simplifyMotionRing);
+      const rings = polygon.map((ring) => simplifyMotionRing(ring));
       if (rings[0]!.length < 3) {
         warnings.push("Receiving material partition collapsed to zero area and was omitted.");
         return [];

@@ -94,6 +94,40 @@ test("state blocker holes survive as nonoverlapping triangles", () => {
   assert.equal(area, 4800);
   assert.ok(result.obstacles.every((o) => o.state_id === 1));
 });
+
+test("small state blocker holes do not use their array index as a simplification tolerance", () => {
+  const result = compileTransitionObstacles(
+    boundary,
+    [],
+    [0, 0, 0],
+    [
+      {
+        ...blocker,
+        holes: [
+          [
+            [30, 30],
+            [31, 30],
+            [30, 31],
+          ],
+        ],
+      },
+    ],
+    [],
+  );
+  const area = result.obstacles.reduce(
+    (sum, obstacle) =>
+      sum +
+      Math.abs(
+        obstacle.polygon.points.reduce((a, p, i) => {
+          const q = obstacle.polygon.points[(i + 1) % obstacle.polygon.points.length]!;
+          return a + p[0] * q[1] - q[0] * p[1];
+        }, 0),
+      ) /
+        2,
+    0,
+  );
+  assert.equal(area, 6399.5);
+});
 test("crossing permanent obstacles do not create state coverage outside the movement envelope", () => {
   const crossing: [number, number][] = [
     [50, -20],

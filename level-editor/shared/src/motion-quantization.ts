@@ -17,9 +17,17 @@ export function simplifyMotionRing(points: Point[], distanceTolerance = 0): Poin
       const a = result[(i + result.length - 1) % result.length]!,
         b = result[i]!,
         c = result[(i + 1) % result.length]!;
+      // Backtracking spikes have almost coincident endpoints. Measure their
+      // width against the longest edge, rather than the tiny endpoint gap.
       if (
         Math.abs((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])) <
-        1e-8 + distanceTolerance * Math.hypot(c[0] - a[0], c[1] - a[1])
+        1e-8 +
+          distanceTolerance *
+            Math.max(
+              Math.hypot(c[0] - a[0], c[1] - a[1]),
+              Math.hypot(b[0] - a[0], b[1] - a[1]),
+              Math.hypot(c[0] - b[0], c[1] - b[1]),
+            )
       ) {
         result.splice(i, 1);
         changed = true;
