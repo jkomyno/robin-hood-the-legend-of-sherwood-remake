@@ -2,18 +2,103 @@
   "source_sha256": "14698dffeeb1316563b4f91b883961298c58323ac799ab2c8a099d99487b8a46",
   "entries": [
     {
+      "source": 1,
+      "id": "derby-ambient-281-687",
+      "name": "Derby ambient region at 281, 687",
+      "origin": [
+        281,
+        687,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 3,
+      "id": "derby-ambient-1323-627",
+      "name": "Derby ambient region at 1323, 627",
+      "origin": [
+        1323,
+        627,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
       "source": 4,
       "id": "derby-west-ambient-zone",
       "name": "Derby west ambient zone",
-      "origin": [-14, 508, 0],
+      "origin": [
+        -14,
+        508,
+        0
+      ],
       "review": "A three-point acoustic line follows the west map edge from north to south. It is an independently placeable environmental region, not a building emitter."
     },
     {
       "source": 5,
       "id": "derby-north-ambient-zone",
       "name": "Derby north ambient zone",
-      "origin": [150, 410, 0],
+      "origin": [
+        150,
+        410,
+        0
+      ],
       "review": "A two-point acoustic line spans the north map edge. It is an independently placeable environmental region, not a building emitter."
+    },
+    {
+      "source": 6,
+      "id": "derby-ambient-305-839",
+      "name": "Derby ambient region at 305, 839",
+      "origin": [
+        305,
+        839,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 7,
+      "id": "derby-ambient-298-716",
+      "name": "Derby ambient region at 298, 716",
+      "origin": [
+        298,
+        716,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 8,
+      "id": "derby-ambient-1671-943",
+      "name": "Derby ambient region at 1671, 943",
+      "origin": [
+        1671,
+        943,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 10,
+      "id": "derby-ambient-1653-2351",
+      "name": "Derby ambient region at 1653, 2351",
+      "origin": [
+        1653,
+        2351,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 11,
+      "id": "derby-ambient-459-2026",
+      "name": "Derby ambient region at 459, 2026",
+      "origin": [
+        459,
+        2026,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
     }
   ]
 }

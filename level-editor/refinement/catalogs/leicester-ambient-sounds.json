@@ -2,6 +2,50 @@
   "source_sha256": "b908102046d94d6029ec7144156499a89f225834f9d27953f4202dee05bdeb53",
   "entries": [
     {
+      "source": 0,
+      "id": "leicester-ambient-2553-1013",
+      "name": "Leicester ambient region at 2553, 1013",
+      "origin": [
+        2553,
+        1013,
+        0
+      ],
+      "review": "Independent polyline acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 2,
+      "id": "leicester-ambient-2321-1017",
+      "name": "Leicester ambient region at 2321, 1017",
+      "origin": [
+        2321,
+        1017,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 3,
+      "id": "leicester-ambient-1960-1672",
+      "name": "Leicester ambient region at 1960, 1672",
+      "origin": [
+        1960,
+        1672,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 4,
+      "id": "leicester-ambient-2994-2009",
+      "name": "Leicester ambient region at 2994, 2009",
+      "origin": [
+        2994,
+        2009,
+        0
+      ],
+      "review": "Independent polyline acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
       "source": 5,
       "id": "leicester-northwest-ambient-zone",
       "name": "Leicester northwest ambient zone",
@@ -11,6 +55,105 @@
         0
       ],
       "review": "A three-point air-altitude acoustic line follows the west and north boundary, ending along y=39; independent daytime environmental region."
+    },
+    {
+      "source": 6,
+      "id": "leicester-ambient--113-1402",
+      "name": "Leicester ambient region at -113, 1402",
+      "origin": [
+        -113,
+        1402,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 7,
+      "id": "leicester-ambient-2804-916",
+      "name": "Leicester ambient region at 2804, 916",
+      "origin": [
+        2804,
+        916,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 8,
+      "id": "leicester-ambient-3089-1470",
+      "name": "Leicester ambient region at 3089, 1470",
+      "origin": [
+        3089,
+        1470,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 9,
+      "id": "leicester-ambient-952-424",
+      "name": "Leicester ambient region at 952, 424",
+      "origin": [
+        952,
+        424,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 10,
+      "id": "leicester-ambient-318-516",
+      "name": "Leicester ambient region at 318, 516",
+      "origin": [
+        318,
+        516,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 11,
+      "id": "leicester-ambient-2068-234",
+      "name": "Leicester ambient region at 2068, 234",
+      "origin": [
+        2068,
+        234,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 18,
+      "id": "leicester-ambient-2992-212",
+      "name": "Leicester ambient region at 2992, 212",
+      "origin": [
+        2992,
+        212,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 20,
+      "id": "leicester-ambient-3090-1582",
+      "name": "Leicester ambient region at 3090, 1582",
+      "origin": [
+        3090,
+        1582,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
+    },
+    {
+      "source": 21,
+      "id": "leicester-ambient-86--16",
+      "name": "Leicester ambient region at 86, -16",
+      "origin": [
+        86,
+        -16,
+        0
+      ],
+      "review": "Independent point acoustic region with no containing visual asset. Preserve its complete geometry and ambience filter in a movable local frame."
     }
   ]
 }

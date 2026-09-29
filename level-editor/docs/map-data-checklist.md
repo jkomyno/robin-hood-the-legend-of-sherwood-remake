@@ -51,7 +51,7 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
 | Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Partial: compiler/runtime tests cover day/night filtering, stair shadows and interior links; multi-plane regions, receiving gaps and ownership remain unfinished |
-| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: Croisement02/03 staged definitions cover all six emitters each; other maps still have pending ownership and publication remains outstanding |
+| Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | Partial: staged definitions cover all emitters in Croisement02/03, Derby, Leicester and Sherwood; other maps still have pending ownership and publication remains outstanding |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
 | Map settings | Scene identity/export bounds; terrain assets supply forest behaviour and default material. Ambience is selected by the mission. | Working in compiler/runtime tests; recovered terrain metadata unpublished |
@@ -2449,3 +2449,33 @@ and resets all nine compiled transitions. These diagnostics are in
 `work/map-compile/crossing-sound-native`; they do not verify audible playback,
 complete visual state fidelity or a published ZIP round trip. Neither map is
 certified or published at full parity.
+
+### Derby, Leicester and Sherwood environmental regions
+
+The expanded Derby and Leicester ambient catalogs and new
+`sherwood-ambient-sounds.json` define respectively nine, fourteen and five
+independently placed sound regions. These emitters have no containing visual
+asset; existing uniquely owned and global emitters retain their previous owners.
+The regions preserve full polylines, including points beyond the map boundary,
+and retain sample, delay, falloff, volume, altitude and ambience settings.
+
+Combined candidates in `work/map-compile/town-forest-sound-recovery` recover all
+12/24/8 emitters with zero pending sound ownership. Their libraries extend the
+Derby canopy-pole stage, Leicester projection/material stage and Sherwood central
+treehouse stage, retaining ground receiver definitions and Sherwood navigation
+joins/projections. The recovered scenes pass the movement coverage gate. Pending
+masks remain 227/449/166 and shadow regions 24/23/1, respectively.
+
+The native construction diagnostic accepts an optional `ambience` value on each
+manifest result, applied only to its test mission. This permits checking sound
+filtering under each ambience bit without adding mission settings to map exports.
+
+All 44 baseline emitter records match exactly. Moving each of the 28 new regions
+by 50 pixels moves only that emitter; non-sound geometry stays identical both
+across these variants and against the preceding map drafts. The 31 exported
+descriptors in `work/map-compile/town-forest-sound-native` pass 52 Rust construction
+cases: baseline maps under all eight ambience bits, plus the moved-region exports.
+These check required sample selection, emitter handles, shape and delay settings.
+All compiled transitions also apply/reset successfully (Derby two, Leicester
+six, Sherwood zero). Audible playback, publication and full ZIP round-trip
+parity remain unverified.

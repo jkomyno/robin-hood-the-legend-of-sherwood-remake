@@ -636,7 +636,10 @@ fn recovered_static_exports_construct_native_geometry() {
         let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         let geometry = &descriptor["asset_geometry"];
         let dims = &descriptor["walkable_polygon"][2];
-        let level = LoadedLevel::hackable_from_json(&bytes).unwrap();
+        let mut level = LoadedLevel::hackable_from_json(&bytes).unwrap();
+        if let Some(ambience) = result["ambience"].as_u64() {
+            level.mission.header.ambiance = u32::try_from(ambience).unwrap();
+        }
         let jump_pairs = level.proto.jump_line_pairs.clone();
         let jump_zones = level.proto.jump_zones.clone();
         let expected_masks = level.proto.masks.clone();
