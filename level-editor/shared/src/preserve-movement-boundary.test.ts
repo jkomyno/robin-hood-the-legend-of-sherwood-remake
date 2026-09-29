@@ -5,6 +5,26 @@ import type { Point } from "./level.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import clipping, { type MultiPolygon } from "polygon-clipping";
 
+test("outside contacts do not round into movement obstacles across a sloped boundary", () => {
+  const outer: Point[] = [
+    [0, 0],
+    [100, 0],
+    [0, 71],
+  ];
+  const contact = (intrusion: number): MultiPolygon => [
+    [
+      [
+        [0, 71],
+        [40.3, 42.387 - intrusion],
+        [50, 90],
+      ],
+    ],
+  ];
+  assert.deepEqual(preserveMovementBoundary(outer, contact(0), []).blockers, []);
+  assert.deepEqual(preserveMovementBoundary(outer, contact(1 / 1048576), []).blockers, []);
+  assert.equal(preserveMovementBoundary(outer, contact(0.01), []).blockers.length, 1);
+});
+
 test("distinct integer contours retain fractional overlap intersections without rounding", () => {
   const cutouts: MultiPolygon = [
     [

@@ -1982,12 +1982,28 @@ the shared navigation binding. After this correction, the
 | Lincoln | 8/8 | 0 |
 | Nottingham | 9/9 | 0 |
 | Sherwood | 1/1 | 0 |
-| York | 3/7 | Approximately 56.11, 4.40, 0.60 and 0.45 square units |
+| York | 7/7 | 0 |
 
 This compares polygon coverage, allowing removal of collinear vertices. It covers
-36 of 40 static ground areas exactly; Croisement01/02 have no areas meeting this
+all 40 static ground areas exactly; Croisement01/02 have no areas meeting this
 static-ground filter. Stateful navigation and other layers require separate
 verification. Only Lincoln and York have been regenerated with the clearance
 correction in this batch; the other maps retain their earlier receiver drafts.
-Broader receiving-query comparisons, remaining York contours, map publication
-and full gameplay parity remain unfinished.
+Map publication, stateful navigation and full gameplay parity remain unfinished.
+
+The remaining York slivers came from rounding generated collision contacts lying
+outside a ground envelope. Preserved-boundary compilation now tests overlap
+before rounding, removing clipping-grid noise from fractional contacts with the
+same tolerance used by generated motion cleanup. Complete integer contours keep
+their implicit fractional intersections. Regression tests distinguish outside
+contacts, one-grid-unit noise and genuine inward overlap. The resulting nine-map
+batch constructs in Rust and passes all 368 directed lift passage callbacks;
+this checks sector/layer changes, not actor approach routing or animations.
+
+The earlier `ground-receivers-native` Lincoln draft also completed all 19,052,393
+receiving queries with zero height, material or coverage differences. That query
+result belongs to the saved draft before the clearance/contact fixes; current
+ground coverage is verified separately by the comparison above.
+On the updated clearance/contact batch, York's five migrated receivers pass
+2,358,053 queries, Croisement03's three pass 54,507, and Sherwood's bluff passes
+322,543, all with zero height, material or coverage differences.

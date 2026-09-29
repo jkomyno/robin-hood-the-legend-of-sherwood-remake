@@ -34,8 +34,21 @@ export function preserveMovementBoundary(
   const blockers: Point[][] = [];
   for (const [label, group] of groups) {
     const blocked = label === undefined ? clipping.union(group) : assembleMovementContour(group);
+    // Rounding an outside contact must not manufacture an inward-facing corner.
+    // Clean clipping-grid noise only for generated, fractional contours; complete
+    // integer contours retain their implicit fractional intersections.
+    const overlapping = blocked.filter((region) => {
+      const tolerance = region.every((ring) =>
+        ring.every(([x, y]) => Number.isInteger(x) && Number.isInteger(y)),
+      )
+        ? 0
+        : 2 / 1048576;
+      return clipping
+        .intersection([boundary], region)
+        .some((overlap) => simplifyMotionRing(overlap[0]!, tolerance).length >= 3);
+    });
     for (const region of normalizeGeneratedMotion(
-      blocked,
+      overlapping,
       "Preserved movement obstacle",
       warnings,
     )) {
