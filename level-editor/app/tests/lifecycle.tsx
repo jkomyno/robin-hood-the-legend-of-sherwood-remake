@@ -282,6 +282,8 @@ async function fixtures(names = ["a", "b"]) {
   } as unknown as FileSystemDirectoryHandle;
   return {
     handle: directory,
+    hasThumbnail: (name: string) =>
+      ["avif", "webp", "png"].some((extension) => files.has(`${name}.${extension}`)),
     delayRead: (name: string) => {
       const pending = gate();
       readGate = { name, gate: pending };
@@ -384,7 +386,8 @@ async function main() {
       await button("Duplicate");
       await until(() => rows() === 3);
       saving.release();
-      await until(() => status === "Saved b in this browser");
+      await until(() => library.hasThumbnail("b"));
+      assert(errors.length === 0, errors.join("\n"));
       assert(
         [...document.querySelectorAll("button")].some(
           (b) => b.textContent?.trim() === "Save *" && !b.disabled,
