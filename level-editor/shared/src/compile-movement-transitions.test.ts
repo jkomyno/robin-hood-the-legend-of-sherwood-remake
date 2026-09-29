@@ -94,6 +94,27 @@ test("state blocker holes survive as nonoverlapping triangles", () => {
   assert.equal(area, 4800);
   assert.ok(result.obstacles.every((o) => o.state_id === 1));
 });
+test("crossing permanent obstacles do not create state coverage outside the movement envelope", () => {
+  const crossing: [number, number][] = [
+    [50, -20],
+    [120, -20],
+    [120, 80],
+    [50, 80],
+  ];
+  const outside: PlacedTransitionBlocker = {
+    ...blocker,
+    holes: [],
+    polygon: [
+      [105, 10],
+      [115, 10],
+      [115, 20],
+      [105, 20],
+    ],
+  };
+  const result = compileTransitionObstacles(boundary, [crossing], [0, 0, 0], [outside], []);
+  assert.equal(result.pairs.size, 0);
+  assert.deepEqual(result.obstacles, []);
+});
 test("state bit pairs remain unsigned and unrelated planes receive no binding", () => {
   const blockers = Array.from({ length: 16 }, (_, i) => ({
     ...blocker,

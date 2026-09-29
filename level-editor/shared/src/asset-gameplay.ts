@@ -10,6 +10,8 @@ export interface AssetWalkableSurface {
   height: number | number[];
   /** Retain fractional boundaries through movement assembly; only the final regions snap to the grid. */
   preserveMovementPrecision?: boolean;
+  /** Keep this ordinary area's outer contour separate from crossing movement obstacles. */
+  preserveMovementBoundary?: boolean;
   /** Holes lie on the same plane, in the same local XY frame. */
   holes?: Point[][];
   /** Asset-local navigation region, optionally spanning height planes; distinct regions never merge. */
@@ -782,6 +784,15 @@ export function validateAssetGameplay(
       typeof surface.preserveMovementPrecision !== "boolean"
     )
       fail("invalid movement precision setting");
+    if (
+      surface.preserveMovementBoundary !== undefined &&
+      (typeof surface.preserveMovementBoundary !== "boolean" ||
+        (surface.preserveMovementBoundary &&
+          (!surface.navigationRegion ||
+            !data.surfaces.includes(surface) ||
+            data.lifts?.some((l) => l.surface === surface.id))))
+    )
+      fail("preserved movement boundaries require labelled ordinary walkable surfaces");
     if (surface.holes !== undefined) {
       if (!Array.isArray(surface.holes)) fail("invalid surface holes");
       for (const hole of surface.holes) polygon(hole);

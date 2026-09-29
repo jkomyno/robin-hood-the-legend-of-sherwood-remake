@@ -4,6 +4,7 @@ import { orderSightVolumes } from "./order-sight-volumes.ts";
 import { compileSoundSource } from "./compile-sound-source.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
+import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
 import {
   assembleNavigationJoins,
   orientNavigationJoin,
@@ -179,6 +180,7 @@ export function compileAssetGameplay(
     plane: HeightPlane;
     lift?: string;
     navigationRegion?: string;
+    preserveMovementBoundary?: boolean;
   }[] = [];
   const movementBlockers: typeof surfaces = [];
   const navigationJoins: PlacedNavigationJoin[] = [];
@@ -573,6 +575,7 @@ export function compileAssetGameplay(
       const minimumArea = continuous ? 1e-8 : 0.5;
       const placed = {
         owner: placement.id,
+        preserveMovementBoundary: surface.preserveMovementBoundary,
         navigationRegion:
           surface.navigationRegion === undefined
             ? undefined
@@ -796,15 +799,25 @@ export function compileAssetGameplay(
   let sector = 0;
   const navigationPieces: NavigationPiece[] = [];
   for (const { layer, plane, lift, navigationRegion, surfaces: group } of groups) {
+    const preserve = group.some((s) => s.preserveMovementBoundary);
+    if (preserve && (group.length !== 1 || lift))
+      throw new Error(
+        "Preserved movement boundary needs one ordinary surface per navigation region",
+      );
+    const cutouts: Polygon[] = preserve ? group[0]!.holes.map((h) => polygon(h)) : [];
     const input = group.map((s): Polygon => [
       polygon(s.polygon)[0]!,
       ...s.holes.map((h) => polygon(h)[0]!),
     ]);
-    let merged = polygonClipping.union(input[0]!, ...input.slice(1));
+    let merged = preserve ? [] : polygonClipping.union(input[0]!, ...input.slice(1));
     // Authored movement exclusions belong to a plane and follow their asset placement.
     // Subtract whole polygons so holes in blockers remain walkable islands.
     for (const blocker of movementBlockers) {
       if (!plane.every((n, i) => Math.abs(n - blocker.plane[i]!) < 1e-7)) continue;
+      if (preserve) {
+        cutouts.push([polygon(blocker.polygon)[0]!, ...blocker.holes.map((h) => polygon(h)[0]!)]);
+        continue;
+      }
       merged = polygonClipping.difference(merged, [
         polygon(blocker.polygon)[0]!,
         ...blocker.holes.map((h) => polygon(h)[0]!),
@@ -858,8 +871,19 @@ export function compileAssetGameplay(
             [polygon(clearance.polygon)[0]!, ...clearance.holes.map((h) => polygon(h)[0]!)],
           ]);
         }
-        if (regions.length) merged = polygonClipping.difference(merged, regions);
+        if (preserve) cutouts.push(...regions);
+        else if (regions.length) merged = polygonClipping.difference(merged, regions);
       }
+    }
+    if (preserve) {
+      navigationPieces.push({
+        layer,
+        plane,
+        navigationRegion,
+        preserveMovementBoundary: true,
+        ...preserveMovementBoundary(group[0]!.polygon, cutouts, warnings),
+      });
+      continue;
     }
     for (const poly of merged.flatMap((region) =>
       normalizeGeneratedMotion([region], `Movement layer ${layer}`, warnings),
@@ -915,6 +939,14 @@ export function compileAssetGameplay(
     // Projection surfaces provide layer-aware elevation and picking.
     for (const piece of pieces) {
       areas.push({ ...piece, sector, layer, blockers: [...piece.blockers, ...changing.initial] });
+      const walkableCoverage =
+        piece.preserveMovementBoundary && piece.blockers.length
+          ? fixedPolygonBoolean(
+              "difference",
+              [piece.polygon],
+              piece.blockers.map((b) => [b]),
+            )
+          : [[polygon(piece.polygon)[0]!, ...piece.blockers.map((h) => polygon(h)[0]!)]];
       const supports = projectionSupports.filter(
         (support) =>
           support.lift === piece.lift &&
@@ -925,7 +957,7 @@ export function compileAssetGameplay(
           fixedPolygonBoolean(
             "intersection",
             [polygon(support.polygon)[0]!, ...support.holes.map((h) => polygon(h)[0]!)],
-            [[polygon(piece.polygon)[0]!, ...piece.blockers.map((h) => polygon(h)[0]!)]],
+            walkableCoverage,
           ).length > 0,
       );
       for (const support of supports) {

@@ -9,6 +9,17 @@ with it. Global indices and connections are rebuilt after placement.
 with Derby/York. “Partial” identifies a remaining gap. “Planned” describes the
 intended construction, not functionality available today.
 
+Ground-boundary compilation now supports an explicit asset-local
+`preserveMovementBoundary` setting on a labelled ordinary surface. It retains
+the outer contour and crossing movement obstacles separately, avoiding rounding
+their implicit fractional intersections. A compiler-generated native fixture
+verifies containment and thin reachability through a narrow strip, plus blocked
+crossings of both boundaries. Receiving ownership and movement-state clipping
+subtract crossing obstacles explicitly. This mode currently requires one surface
+per navigation region; joined pieces and obstacles enclosing walkable islands
+fail explicitly. Recovery/publication does not yet enable it, and full-map ground
+geometry parity remains unverified.
+
 | Original map information | Construction from the editor | Status |
 |---|---|---|
 | Background image and minimap | Render placed models/textures; downsample the minimap. | Working |

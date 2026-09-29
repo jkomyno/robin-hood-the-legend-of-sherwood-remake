@@ -870,6 +870,50 @@ fn compound_lift_keeps_one_native_sector_and_each_projection_plane() {
 }
 
 #[test]
+fn crossing_obstacles_preserve_fractional_walkable_boundary_intersections() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::fast_find_grid::SectorHit;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-preserved-boundary.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    assert_eq!(
+        assets.navigation.pathfinder_graph.static_data.move_layers[0].len(),
+        1
+    );
+    let obstacles: Vec<_> = grid
+        .level
+        .sectors
+        .iter()
+        .filter(|sector| sector.sector_type.is_motion() && !sector.sector_type.is_area())
+        .collect();
+    assert_eq!(obstacles.len(), 1);
+    // The obstacle crosses the outer edge at x = 300 + 10/7. Keeping both
+    // integer contours preserves walkable points before that intersection.
+    let start = MapPoint::new(301.1, 300.05);
+    let end = MapPoint::new(350., 334.5);
+    for point in [start, end] {
+        assert!(matches!(
+            grid.get_sector(point, point, 0),
+            SectorHit::Found { .. }
+        ));
+        assert!(!obstacles[0].contains_point(point));
+    }
+    let blocked = MapPoint::new(350., 333.5);
+    assert!(obstacles[0].contains_point(blocked));
+    let outside = MapPoint::new(350., 335.5);
+    assert!(matches!(
+        grid.get_sector(outside, outside, 0),
+        SectorHit::None
+    ));
+    assert!(grid.is_reachable_thin(start, end, 0));
+    assert!(!grid.is_reachable_thin(end, blocked, 0));
+    assert!(!grid.is_reachable_thin(end, outside, 0));
+}
+
+#[test]
 fn touching_navigation_regions_keep_native_boundaries_and_gate_links() {
     let mut assets = LevelAssets::new();
     let engine = construct(

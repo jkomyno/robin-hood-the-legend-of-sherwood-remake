@@ -9,6 +9,7 @@ export interface NavigationPiece {
   layer: number;
   lift?: string;
   navigationRegion?: string;
+  preserveMovementBoundary?: boolean;
   polygon: Point[];
   blockers: Point[][];
 }
@@ -52,6 +53,8 @@ export function assembleNavigationRegions(
   return [...groups.values()]
     .flatMap((members): NavigationRegion[] => {
       const first = members[0]!;
+      if (members.length > 1 && members.some((m) => m.preserveMovementBoundary))
+        throw new Error("Preserved movement boundaries cannot yet join separate navigation pieces");
       const layer = Math.min(...members.map((p) => p.layer));
       if (members.length === 1)
         return [

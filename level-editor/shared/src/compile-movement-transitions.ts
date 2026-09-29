@@ -25,6 +25,15 @@ export function compileTransitionObstacles(
   const pairs = new Map<string, number>();
   const obstacles: { state_id: number; polygon: { points: Point[] } }[] = [];
   const initial: Point[][] = [];
+  // Movement obstacles can cross the area's outer contour.
+  const coverage = (polygon: Point[], blockers: Point[][]): MultiPolygon =>
+    blockers.length
+      ? polygonClipping.difference(
+          [polygon],
+          blockers.map((b) => [b]),
+        )
+      : [[polygon]];
+  const walkable = blockers.length ? coverage(boundary, holes) : [];
   for (const blocker of blockers) {
     const samePlane = (plane: HeightPlane) =>
       plane.every((n, i) => Math.abs(n - blocker.plane[i]!) < 1e-7);
@@ -34,18 +43,13 @@ export function compileTransitionObstacles(
       const fragments = receivers
         .filter((r) => samePlane(r.plane))
         .flatMap((r) =>
-          polygonClipping.intersection(
-            [r.polygon, ...r.blockers],
-            [boundary, ...holes],
-            [blocker.polygon, ...blocker.holes],
-          ),
+          polygonClipping.intersection(coverage(r.polygon, r.blockers), walkable, [
+            blocker.polygon,
+            ...blocker.holes,
+          ]),
         );
       clipped = fragments.length ? polygonClipping.union(fragments[0]!, ...fragments.slice(1)) : [];
-    } else
-      clipped = polygonClipping.intersection(
-        [boundary, ...holes],
-        [blocker.polygon, ...blocker.holes],
-      );
+    } else clipped = polygonClipping.intersection(walkable, [blocker.polygon, ...blocker.holes]);
     for (const region of clipped) {
       const rounded = quantizeGeneratedMotionPolygon(
         region,

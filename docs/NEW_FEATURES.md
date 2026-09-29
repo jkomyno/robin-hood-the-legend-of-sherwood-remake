@@ -235,6 +235,13 @@
   local sound geometry and pinned editor placements. Derby's north and west zones
   retain exact sound definitions and move independently without changing navigation.
 
+- **Preserved movement boundaries.** A labelled ordinary asset surface can retain
+  its outer contour separately from crossing movement obstacles. This preserves
+  thin walkable strips whose intersections fall between integer coordinates;
+  compiler-export and native navigation tests cover the behavior. Joined pieces
+  and compound obstacles with enclosed islands remain unsupported in this mode.
+  Full-map recovery and publication remain incomplete.
+
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits
   to each instance. Blocker holes, trigger polygons and local sight-obstacle

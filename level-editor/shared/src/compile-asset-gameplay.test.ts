@@ -25,9 +25,36 @@ import {
   projectionMaterialCompilerFixture,
   projectionVolumeCompilerFixture,
   receivingIslandCompilerFixture,
+  preservedBoundaryCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
+
+test("preserved boundaries retain crossing obstacle contours without rounding their intersections", () => {
+  const { document, assets, hut } = preservedBoundaryCompilerFixture();
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  assert.equal(geometry.motion_data.layers[0]!.length, 1);
+  const area = geometry.motion_data.layers[0]![0]!;
+  assert.deepEqual(area.polygon.points, [
+    [300, 300],
+    [400, 300],
+    [400, 370],
+  ]);
+  assert.equal(area.obstacles.length, 1);
+  assert.equal(area.obstacles[0]!.polygon.points.length, 4);
+  assert.ok(area.obstacles[0]!.polygon.points.some(([x, y]) => x === 410 && y === 376));
+  // Ordinary free-space clipping rounds the crossing at x=301.428... to 301.
+  // Keep a control so this fixture continues to exercise a real difference.
+  hut.gameplay!.surfaces[0]!.preserveMovementBoundary = false;
+  const clipped = compileAssetGameplay(document, assets, bounds);
+  assert.notDeepEqual(clipped.motion_data.layers[0], geometry.motion_data.layers[0]);
+  hut.gameplay!.surfaces[0]!.preserveMovementBoundary = true;
+  delete hut.gameplay!.surfaces[0]!.navigationRegion;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /preserved movement boundaries/,
+  );
+});
 
 test("visual component bounds can opt out of physical collision while retaining their frame", () => {
   const { document, assets, hut } = assetCompilerFixture();

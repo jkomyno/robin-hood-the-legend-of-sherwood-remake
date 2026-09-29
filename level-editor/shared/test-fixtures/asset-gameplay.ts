@@ -2,6 +2,41 @@ import type { GameplayAssetDescriptor } from "../src/asset-gameplay.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "../src/level3d.ts";
 import type { MaskTriangle } from "../src/compile-mask-geometry.ts";
 
+export function preservedBoundaryCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const g = fixture.hut.gameplay!;
+  g.collision = "none";
+  g.doors = [];
+  g.surfaces = [
+    {
+      id: "ground",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [0, 0],
+        [100, 0],
+        [100, 70],
+      ],
+      navigationRegion: "ground",
+      preserveMovementBoundary: true,
+    },
+  ];
+  g.movementBlockers = [
+    {
+      id: "crossing-wall",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [0, -10],
+        [110, -10],
+        [110, 76],
+        [0, -1],
+      ],
+    },
+  ];
+  return fixture;
+}
+
 export function maskAssetCompilerFixture() {
   const fixture = assetCompilerFixture();
   const g = fixture.hut.gameplay!;
