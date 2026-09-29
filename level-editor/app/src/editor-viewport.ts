@@ -1,3 +1,5 @@
+import { TerrainControls, type TerrainEditMode } from "./terrain-controls.ts";
+import { TerrainLayer } from "./terrain-layer.ts";
 import { stableOpaqueSort } from "./render-order.ts";
 import {
   bakeScene,
@@ -74,12 +76,16 @@ export class EditorViewport {
       this.objectsRoot,
       ...(this.ground ? [this.ground] : []),
       ...this.splines.bakeObjects(),
+      this.terrain.root,
     ]);
     const bounds =
       document.exportBounds ??
       (document.size
         ? ([0, 0, ...document.size] as [number, number, number, number])
-        : contentBakeBounds(root, document.camera));
+        : (() => {
+            const bounds = contentBakeBounds(root, document.camera);
+            return [bounds[0], bounds[1], bounds[2] + 1, bounds[3] + 1] as typeof bounds;
+          })());
     const compiled = compileMap(document, bounds, assets);
     const pixels = renderMapBake(
       root,
@@ -310,6 +316,42 @@ export class EditorViewport {
   private readonly mapRoot = new THREE.Group();
   private readonly objectsRoot = new THREE.Group();
   private readonly overlayRoot = new THREE.Group();
+  private readonly terrain = new TerrainLayer();
+  private readonly terrainControls = new TerrainControls((region) => this.previewTerrain(region));
+  private terrainMode: TerrainEditMode | null = null;
+  private terrainSelectionHandler: ((id: string) => void) | null = null;
+  setTerrainSelectionHandler(handler: ((id: string) => void) | null) {
+    this.terrainSelectionHandler = handler;
+  }
+  private terrainPreview: import("@rle/shared").GroundRegion | null = null;
+  private gizmoVertical = false;
+  setTerrainEdit(mode: TerrainEditMode | null) {
+    if (!mode && !this.terrainMode) {
+      this.terrainControls.setMode(null);
+      return;
+    }
+    if (mode && this.splineMode) this.setSplineEdit(null);
+    if (this.terrainPreview) this.previewTerrain(null);
+    this.terrainControls.setMode(mode);
+    if (mode && !this.terrainMode) this.select(null);
+    this.terrainMode = mode;
+    this.terrainPreview = null;
+    if (this.gizmo) this.gizmo.showY = mode ? true : this.gizmoVertical;
+    this.syncSelection(mode ? null : this.bindings.selection());
+  }
+  previewTerrain(region: import("@rle/shared").GroundRegion | null) {
+    if (this.disposed) return;
+    const document = this.bindings.document();
+    if (!document) return;
+    this.terrainPreview = region;
+    this.terrainControls.show(region ?? this.terrainMode?.region ?? null);
+    this.syncGizmoFrame();
+    this.terrain.sync(
+      region
+        ? { ...document, terrain: document.terrain?.map((r) => (r.id === region.id ? region : r)) }
+        : document,
+    );
+  }
   private readonly splines = new SplineLayer();
   private readonly sunlight = new SunLighting();
   private splineMode: SplineEditMode | null = null;
@@ -344,7 +386,14 @@ export class EditorViewport {
     this.exportFrame.visible = false;
     this.exportFrame.renderOrder = 1000;
     this.mapRoot.add(this.exportFrame);
-    this.mapRoot.add(this.objectsRoot, this.overlayRoot, this.splines.root, this.sunlight.root);
+    this.mapRoot.add(
+      this.terrain.root,
+      this.terrainControls.root,
+      this.objectsRoot,
+      this.overlayRoot,
+      this.splines.root,
+      this.sunlight.root,
+    );
     this.selectionBox.visible = false;
     this.scene.add(this.selectionBox);
   }
@@ -368,9 +417,22 @@ export class EditorViewport {
   private syncGizmoFrame(view = this.selectedView()) {
     // Direct object drags move the wrapper, so its gizmo must follow each frame.
     // Only freeze synchronization while TransformControls itself owns the drag.
-    if (view && !this.gizmo?.dragging) view.wrapper.getWorldPosition(this.gizmoFrame.position);
+    if (this.terrainMode && !this.gizmo?.dragging) {
+      const region = this.terrainPreview ?? this.terrainMode.region;
+      const [x, y, w, h] = region.bounds;
+      this.mapRoot.updateMatrixWorld(true);
+      this.gizmoFrame.position.copy(
+        this.mapRoot.localToWorld(
+          new THREE.Vector3(
+            ...gameToScene(this.terrainMode.camera, x + w / 2, y + h / 2, region.height),
+          ),
+        ),
+      );
+    } else if (view && !this.gizmo?.dragging)
+      view.wrapper.getWorldPosition(this.gizmoFrame.position);
   }
   setGizmoVertical(vertical: boolean) {
+    this.gizmoVertical = vertical;
     if (this.gizmo) this.gizmo.showY = vertical;
   }
 
@@ -465,6 +527,7 @@ export class EditorViewport {
       this.selectionBox,
       this.overlayRoot,
       this.splines.controls,
+      this.terrainControls.root,
       this.exportFrame,
       this.workspaceGrid,
       this.gizmo?.getHelper(),
@@ -534,6 +597,8 @@ export class EditorViewport {
     this.sunlight.setGround(null);
     this.sunlight.root.visible = false;
     this.splines.clear();
+    this.setTerrainEdit(null);
+    this.terrain.clear();
     this.cancelPointerGesture?.();
     this.replaceEntities(null);
     this.flight = null;
@@ -570,6 +635,7 @@ export class EditorViewport {
     this.controls = [];
     disposeObjectResources([this.selectionBox, this.workspaceGrid, this.exportFrame]);
     this.sunlight.dispose();
+    this.terrainControls.dispose();
     this.renderer?.dispose();
     this.renderer?.forceContextLoss();
     this.renderer?.domElement.remove();
@@ -607,6 +673,30 @@ export class EditorViewport {
       MIDDLE: THREE.MOUSE.DOLLY,
       RIGHT: null,
     };
+    this.terrainControls.setup(
+      this.renderer.domElement,
+      (x, y) => {
+        const rect = this.renderer!.domElement.getBoundingClientRect();
+        this.scene.updateMatrixWorld(true);
+        setViewportRay(
+          this.raycaster,
+          new THREE.Vector2(
+            ((x - rect.left) / rect.width) * 2 - 1,
+            (-(y - rect.top) / rect.height) * 2 + 1,
+          ),
+          this.activeCamera(),
+        );
+        return this.raycaster;
+      },
+      () => {
+        const enabled = this.orbit!.enabled;
+        this.orbit!.enabled = false;
+        return () => {
+          if (this.orbit) this.orbit.enabled = enabled;
+        };
+      },
+      this.listeners.signal,
+    );
     this.setupCursorOrbit(this.renderer.domElement);
     this.setupSplineInteraction(this.renderer.domElement);
     this.gizmo = this.ownControl(new TransformControls(this.camera, this.renderer.domElement));
@@ -622,6 +712,14 @@ export class EditorViewport {
       if (!this.dragging) this.commitGizmo();
     });
     this.gizmo.addEventListener("objectChange", () => {
+      if (this.terrainMode) {
+        const p = this.gizmoFrame.position;
+        const [cx, cy, height] = sceneToGame(this.terrainMode.camera, [p.x, -p.z, p.y]);
+        const region = this.terrainMode.region,
+          [, , w, h] = region.bounds;
+        this.previewTerrain({ ...region, bounds: [cx - w / 2, cy - h / 2, w, h], height });
+        return;
+      }
       const view = this.selectedView();
       if (view?.wrapper.parent) {
         view.wrapper.position.copy(
@@ -631,6 +729,30 @@ export class EditorViewport {
       this.refreshSelectionBox();
       if (this.renderer) this.renderer.shadowMap.needsUpdate = true;
     });
+    const cancelTerrainGizmo = () => {
+      if (!this.terrainMode || !this.gizmo?.dragging) return false;
+      this.gizmo.reset();
+      this.terrainPreview = null;
+      this.previewTerrain(null);
+      this.gizmo.dragging = false;
+      this.syncGizmoFrame();
+      return true;
+    };
+    window.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key === "Escape" && cancelTerrainGizmo()) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      },
+      { capture: true, signal: this.listeners.signal },
+    );
+    this.renderer.domElement.addEventListener("pointercancel", cancelTerrainGizmo, {
+      capture: true,
+      signal: this.listeners.signal,
+    });
+    window.addEventListener("blur", cancelTerrainGizmo, { signal: this.listeners.signal });
     const resize = () => {
       const w = el.clientWidth;
       const h = el.clientHeight;
@@ -928,6 +1050,7 @@ export class EditorViewport {
     if (this.groundNode) box.expandByObject(this.groundNode);
     box.expandByObject(this.objectsRoot);
     box.expandByObject(this.splines.root);
+    box.expandByObject(this.terrain.root);
     // Initial camera framing is a viewport preference, never an authored boundary.
     if (box.isEmpty() && this.bindings.document()?.size === null)
       box.set(new THREE.Vector3(-500, 0, -500), new THREE.Vector3(500, 0, 500));
@@ -1017,12 +1140,13 @@ export class EditorViewport {
     return [
       x,
       y,
-      Math.max(1, Math.ceil(projected.max.x) - x),
-      Math.max(1, Math.ceil(projected.max.y) - y),
+      Math.max(1, Math.ceil(projected.max.x) - x + 1),
+      Math.max(1, Math.ceil(projected.max.y) - y + 1),
     ];
   }
 
   syncViews(d: Level3D, rebuildFraming = true) {
+    this.terrain.sync(d);
     this.exportFrame.visible = !!d.exportBounds;
     if (d.exportBounds) {
       const [x, y, w, h] = d.exportBounds;
@@ -1108,7 +1232,12 @@ export class EditorViewport {
     this.framingKey = "";
     // Perspective extrema lie at triangle vertices. Empty bounding-box corners
     // must not influence lens compensation as the viewing angle changes.
-    for (const root of [this.objectsRoot, ...(this.groundNode ? [this.groundNode] : [])]) {
+    for (const root of [
+      this.objectsRoot,
+      this.terrain.root,
+      this.splines.root,
+      ...(this.groundNode ? [this.groundNode] : []),
+    ]) {
       root.updateWorldMatrix(true, true);
       root.traverseVisible((node) => {
         if (!(node instanceof THREE.Mesh)) return;
@@ -1131,6 +1260,18 @@ export class EditorViewport {
   }
 
   private commitGizmo() {
+    if (this.terrainMode) {
+      const mode = this.terrainMode,
+        next = this.terrainPreview;
+      this.previewTerrain(null);
+      if (
+        next &&
+        (next.height !== mode.region.height ||
+          next.bounds.some((v, i) => Math.abs(v - mode.region.bounds[i]!) > 0.001))
+      )
+        mode.commit(next);
+      return;
+    }
     const d = this.bindings.document();
     const v = this.selectedView();
     const t = this.selectedGroup()?.transform ?? this.selectedPart()?.transform;
@@ -1175,7 +1316,18 @@ export class EditorViewport {
     }
   }
 
+  previewSpline(path: import("@rle/shared").LevelSpline | null) {
+    this.updateSplinePreview(() => {
+      if (path) this.splines.showPreview(path);
+      else this.splines.setMode(this.splineMode);
+    });
+  }
+
   setSplineEdit(mode: SplineEditMode | null) {
+    if (mode && this.terrainMode) {
+      this.terrainMode.deselect?.();
+      this.setTerrainEdit(null);
+    }
     if (mode && !this.splineMode) this.select(null);
     this.splineMode = mode;
     this.updateSplinePreview(() => {
@@ -1207,6 +1359,7 @@ export class EditorViewport {
         if (!point) return;
         const index = this.splines.hitHandle(this.raycaster);
         if (!mode.drawing && index === null) return;
+        if (index !== null) point[2] = mode.path.points[index]![2];
         gesture = {
           mode,
           index,
@@ -1235,6 +1388,7 @@ export class EditorViewport {
         consume(event);
         const point = this.assetDropPosition(event.clientX, event.clientY);
         if (!point) return;
+        if (gesture.index !== null) point[2] = gesture.mode.path.points[gesture.index]![2];
         gesture.point = point;
         if (gesture.index !== null) {
           const points = gesture.mode.path.points.map((p, i) => (i === gesture!.index ? point : p));
@@ -1284,9 +1438,14 @@ export class EditorViewport {
     );
     this.scene.updateMatrixWorld(true);
     setViewportRay(this.raycaster, ndc, this.activeCamera());
-    const hit = this.groundNode
-      ? this.raycaster.intersectObject(this.groundNode, true).find(visibleSurface)
-      : undefined;
+    const terrainHit = this.raycaster
+      .intersectObject(this.terrain.root, true)
+      .find((hit) => hit.object.userData.terrainSurface && visibleSurface(hit));
+    const hit =
+      terrainHit ??
+      (this.groundNode
+        ? this.raycaster.intersectObject(this.groundNode, true).find(visibleSurface)
+        : undefined);
     let point = hit?.point ?? null;
     if (!point) {
       const ray = this.raycaster.ray;
@@ -1317,6 +1476,14 @@ export class EditorViewport {
       else this.select({ kind: "part", id: part.id });
       return;
     }
+    const groundHit = this.raycaster
+      .intersectObject(this.terrain.root, true)
+      .find((hit) => hit.object.userData.terrainRegion && visibleSurface(hit));
+    if (groundHit && this.terrainSelectionHandler) {
+      this.select(null);
+      this.terrainSelectionHandler(groundHit.object.userData.terrainRegion);
+      return;
+    }
     this.select(null);
   }
 
@@ -1327,6 +1494,14 @@ export class EditorViewport {
 
   /** Project the published selection into all three visual representations together. */
   syncSelection(s: Selection) {
+    if (s && this.terrainMode) {
+      const mode = this.terrainMode;
+      this.terrainMode = null;
+      this.terrainControls.setMode(null);
+      this.terrainPreview = null;
+      if (this.gizmo) this.gizmo.showY = this.gizmoVertical;
+      mode.deselect?.();
+    }
     for (const [m, mat] of this.tinted) {
       for (const owned of Array.isArray(m.material) ? m.material : [m.material]) owned.dispose();
       m.material = mat;
@@ -1335,7 +1510,7 @@ export class EditorViewport {
     const d = this.bindings.document();
     const v = s ? (s.kind === "group" ? this.groupViews : this.partViews).get(s.id) : null;
     if (this.gizmo) {
-      if (v) {
+      if (v || this.terrainMode) {
         this.syncGizmoFrame(v);
         this.gizmo.attach(this.gizmoFrame);
       } else this.gizmo.detach();

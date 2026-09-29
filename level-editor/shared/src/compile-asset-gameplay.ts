@@ -1,3 +1,4 @@
+import { terrainGameplay } from "./authored-terrain.ts";
 import polygonClipping, { type Polygon } from "polygon-clipping";
 import { assembleSightVolumes } from "./assemble-sight-volumes.ts";
 import { orderSightVolumes } from "./order-sight-volumes.ts";
@@ -152,6 +153,15 @@ export function compileAssetGameplay(
     }),
   };
   const placements = instances(document, descriptors);
+  const terrain = terrainGameplay(document);
+  if (terrain)
+    placements.push({
+      id: "authored-terrain",
+      descriptor: terrain,
+      parts: new Map(),
+      frames: new Map(),
+      background: true,
+    });
   const missing = [
     ...new Set(placements.filter((p) => !p.descriptor.gameplay).map((p) => p.descriptor.id)),
   ];
@@ -160,12 +170,12 @@ export function compileAssetGameplay(
       `Missing asset gameplay definitions (${missing.length}): ${missing.join(", ")}. Add local surfaces and door definitions to these assets; no source-level fallback is available.`,
     );
   if (
-    document.splines?.length ||
+    document.splines?.some((path) => path.kind === "wall") ||
     document.population?.actors.length ||
     document.population?.items.length
   )
     throw new Error(
-      "Map compilation does not support spline gameplay or embedded mission population; keep NPCs and items in a separate mission",
+      "Map compilation does not support wall spline gameplay or embedded mission population; keep NPCs and items in a separate mission",
     );
   if (document.groups.some((g) => g.states || g.patches) || document.objects.some((p) => p.patches))
     throw new Error(
@@ -731,6 +741,58 @@ export function compileAssetGameplay(
         }),
       });
       for (const door of interior.doors) placeDoor(door, undefined, id);
+    }
+  }
+  // Placed floors own their coverage. Cut it out of authored ground at the
+  // same height so door endpoints never resolve to two overlapping areas.
+  if (terrain) {
+    const placed = surfaces.filter((s) => s.owner !== "authored-terrain");
+    const ground = surfaces.filter((s) => s.owner === "authored-terrain");
+    const replacement: typeof surfaces = [];
+    for (const surface of ground) {
+      const cuts = placed
+        .filter((other) => other.plane.every((n, i) => Math.abs(n - surface.plane[i]!) < 1e-7))
+        .map((other) => [other.polygon, ...other.holes] as Polygon);
+      const shape: Polygon = [surface.polygon, ...surface.holes];
+      const remaining = cuts.length ? polygonClipping.difference(shape, ...cuts) : [shape];
+      for (const polygon of remaining)
+        replacement.push({
+          ...surface,
+          polygon: ring(polygon[0]!),
+          holes: polygon.slice(1).map((h) => ring(h)),
+        });
+    }
+    surfaces.splice(0, surfaces.length, ...placed, ...replacement);
+    // Explicit exterior sockets can attach directly to the ground beside them.
+    // Ordinary door boundaries remain separate; no locked doorway is bypassed.
+    for (const join of assembleNavigationJoins(navigationJoins).unmatched) {
+      const [a, b] = join.edge,
+        dx = b[0] - a[0],
+        dy = b[1] - b[2] - (a[1] - a[2]);
+      const length = Math.hypot(dx, dy);
+      const probe: Point = [
+        (a[0] + b[0]) / 2 + (dy / length) * 0.5,
+        (a[1] - a[2] + b[1] - b[2]) / 2 - (dx / length) * 0.5,
+      ];
+      const height = (a[2] + b[2]) / 2;
+      const groundSurface = replacement.find(
+        (s) =>
+          Math.abs(planeHeight(s.plane, probe) - height) < 1e-4 &&
+          inside(probe, s.polygon) &&
+          !s.holes.some((h) => inside(probe, h)) &&
+          !movementBlockers.some(
+            (blocker) =>
+              blocker.owner === "authored-terrain" &&
+              Math.abs(planeHeight(blocker.plane, probe) - height) < 1e-4 &&
+              inside(probe, blocker.polygon),
+          ),
+      );
+      if (groundSurface?.navigationRegion)
+        navigationJoins.push({
+          owner: "authored-terrain",
+          region: groundSurface.navigationRegion,
+          edge: [b, a],
+        });
     }
   }
   const interiorIdentities = assembleInteriors(placedInteriors);

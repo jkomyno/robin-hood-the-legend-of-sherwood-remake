@@ -1,3 +1,4 @@
+import ScrubNumber from "./ScrubNumber";
 import { For, Show, createEffect, createSignal, onCleanup, untrack } from "solid-js";
 import {
   parseLevel3D,
@@ -123,6 +124,33 @@ export default function SplinePanel(props: {
     const current = path();
     if (current) change({ ...current, ...values });
   }
+  function NumberField(field: {
+    label: string;
+    value: number;
+    step?: number;
+    min?: number;
+    max?: number;
+    patch(value: number): Partial<LevelSpline>;
+  }) {
+    return (
+      <ScrubNumber
+        label={field.label}
+        value={field.value}
+        step={field.step ?? 1}
+        min={field.min}
+        max={field.max}
+        onPreview={(value) => {
+          const current = path();
+          if (current) props.viewport.previewSpline({ ...current, ...field.patch(value) });
+        }}
+        onCommit={(value) => {
+          props.viewport.previewSpline(null);
+          patch(field.patch(value));
+        }}
+        onCancel={() => props.viewport.previewSpline(null)}
+      />
+    );
+  }
   function move(index: number, position: Vec3) {
     const current = path();
     if (current) patch({ points: current.points.map((p, i) => (i === index ? position : p)) });
@@ -173,12 +201,16 @@ export default function SplinePanel(props: {
       };
       if (draft()) {
         pendingSources = pendingSources.filter((s) => s.id !== id).concat(reference);
-        setDraft((latest) => latest?.id === current.id ? {
-          ...latest,
-          cornerAsset: id,
-          cornerMinAngle: latest.cornerMinAngle ?? 35,
-          cornerScale: latest.cornerScale ?? 1,
-        } : latest);
+        setDraft((latest) =>
+          latest?.id === current.id
+            ? {
+                ...latest,
+                cornerAsset: id,
+                cornerMinAngle: latest.cornerMinAngle ?? 35,
+                cornerScale: latest.cornerScale ?? 1,
+              }
+            : latest,
+        );
       } else
         publish({
           ...document,
@@ -242,7 +274,7 @@ export default function SplinePanel(props: {
         cornerDisabled: latest.cornerDisabled,
       });
       if (draft())
-        setDraft((latest) => latest?.id === current.id ? replaceSource(latest) : latest);
+        setDraft((latest) => (latest?.id === current.id ? replaceSource(latest) : latest));
       else
         publish({
           ...document,
@@ -394,7 +426,11 @@ export default function SplinePanel(props: {
                       return latest;
                     }
                     setPoint(latest.points.length);
-                    return { ...latest, points: [...latest.points, position] };
+                    const height = latest.points[0]?.[2] ?? position[2];
+                    return {
+                      ...latest,
+                      points: [...latest.points, [position[0], position[1], height]],
+                    };
                   });
                 },
                 move,
@@ -514,12 +550,15 @@ export default function SplinePanel(props: {
           entries={
             picker() === "wall"
               ? sources()
-              : props
-                  .entries()
-                  .filter((entry) => cornerAssetIds.has(entry.id))
+              : props.entries().filter((entry) => cornerAssetIds.has(entry.id))
           }
-          selected={picker() === "wall" ? path()?.asset :
-            cornerAssetIds.has(path()?.cornerAsset ?? "") ? path()?.cornerAsset : undefined}
+          selected={
+            picker() === "wall"
+              ? path()?.asset
+              : cornerAssetIds.has(path()?.cornerAsset ?? "")
+                ? path()?.cornerAsset
+                : undefined
+          }
           emptyLabel={picker() === "corner" ? "Continuous join — no corner model" : undefined}
           onClose={() => setPicker(null)}
           onSelect={(id) => {
@@ -563,28 +602,18 @@ export default function SplinePanel(props: {
               />
             </label>
             <div class="spline-fields">
-              <label>
-                Width
-                <input
-                  type="number"
-                  aria-label="Path width"
-                  min="1"
-                  step="5"
-                  value={current().width}
-                  onChange={(event) => patch({ width: Number(event.currentTarget.value) })}
-                />
-              </label>
-              <label>
-                Repeat length
-                <input
-                  type="number"
-                  aria-label="Path repeat length"
-                  min="1"
-                  step="5"
-                  value={current().repeatLength}
-                  onChange={(event) => patch({ repeatLength: Number(event.currentTarget.value) })}
-                />
-              </label>
+              <NumberField
+                label="Path width"
+                value={current().width}
+                min={1}
+                patch={(value) => ({ width: value })}
+              />
+              <NumberField
+                label="Path repeat length"
+                value={current().repeatLength}
+                min={1}
+                patch={(value) => ({ repeatLength: value })}
+              />
             </div>
             <label class="check">
               <input
@@ -605,49 +634,34 @@ export default function SplinePanel(props: {
                 </button>
               </div>
               <Show when={cornerAssetIds.has(current().cornerAsset ?? "")}>
-                <label>
-                  Minimum corner angle
-                  <input
-                    aria-label="Corner minimum angle"
-                    type="number"
-                    min="1"
-                    max="179"
-                    value={current().cornerMinAngle ?? 35}
-                    onChange={(e) => patch({ cornerMinAngle: Number(e.currentTarget.value) })}
-                  />
-                </label>
-                <label>
-                  Tower scale
-                  <input
-                    aria-label="Corner tower scale"
-                    type="number"
-                    min="0.1"
-                    max="10"
-                    step="0.1"
-                    value={current().cornerScale ?? 1}
-                    onChange={(e) => patch({ cornerScale: Number(e.currentTarget.value) })}
-                  />
-                </label>
-                <label>
-                  Tower width multiplier
-                  <input
-                    aria-label="Corner tower width"
-                    type="number"
-                    min="0.1"
-                    max="10"
-                    step="0.1"
-                    value={current().cornerWidthScale ?? 1}
-                    onChange={(e) => patch({ cornerWidthScale: Number(e.currentTarget.value) })}
-                  />
-                </label>
-                <label>
-                  Tower rotation offset
-                  <input
-                    type="number"
-                    value={current().cornerRotation ?? 0}
-                    onChange={(e) => patch({ cornerRotation: Number(e.currentTarget.value) })}
-                  />
-                </label>
+                <NumberField
+                  label="Corner minimum angle"
+                  value={current().cornerMinAngle ?? 35}
+                  min={1}
+                  max={179}
+                  patch={(value) => ({ cornerMinAngle: value })}
+                />
+                <NumberField
+                  label="Corner tower scale"
+                  value={current().cornerScale ?? 1}
+                  min={0.1}
+                  max={10}
+                  step={0.1}
+                  patch={(value) => ({ cornerScale: value })}
+                />
+                <NumberField
+                  label="Corner tower width"
+                  value={current().cornerWidthScale ?? 1}
+                  min={0.1}
+                  max={10}
+                  step={0.1}
+                  patch={(value) => ({ cornerWidthScale: value })}
+                />
+                <NumberField
+                  label="Tower rotation offset"
+                  value={current().cornerRotation ?? 0}
+                  patch={(value) => ({ cornerRotation: value })}
+                />
                 <label class="check">
                   <input
                     type="checkbox"
@@ -703,42 +717,33 @@ export default function SplinePanel(props: {
                   <option value="y">Along Y</option>
                 </select>
               </label>
-              <label>
-                Source alignment angle
-                <input
-                  type="number"
-                  step="1"
-                  value={current().sourceAngle ?? 0}
-                  onChange={(event) => patch({ sourceAngle: Number(event.currentTarget.value) })}
-                />
-              </label>
+              <NumberField
+                label="Source alignment angle"
+                value={current().sourceAngle ?? 0}
+                patch={(value) => ({ sourceAngle: value })}
+              />
               <div class="spline-fields">
-                <label>
-                  Trim start %
-                  <input
-                    type="number"
-                    min="0"
-                    max="95"
-                    value={(current().sourceStart ?? 0) * 100}
-                    onChange={(event) =>
-                      patch({ sourceStart: Number(event.currentTarget.value) / 100 })
-                    }
-                  />
-                </label>
-                <label>
-                  Trim end %
-                  <input
-                    type="number"
-                    min="5"
-                    max="100"
-                    value={(current().sourceEnd ?? 1) * 100}
-                    onChange={(event) =>
-                      patch({ sourceEnd: Number(event.currentTarget.value) / 100 })
-                    }
-                  />
-                </label>
+                <NumberField
+                  label="Trim start %"
+                  value={(current().sourceStart ?? 0) * 100}
+                  min={0}
+                  max={(current().sourceEnd ?? 1) * 100 - 5}
+                  patch={(value) => ({ sourceStart: value / 100 })}
+                />
+                <NumberField
+                  label="Trim end %"
+                  value={(current().sourceEnd ?? 1) * 100}
+                  min={(current().sourceStart ?? 0) * 100 + 5}
+                  max={100}
+                  patch={(value) => ({ sourceEnd: value / 100 })}
+                />
               </div>
             </Show>
+            <NumberField
+              label="Path elevation"
+              value={current().points[0]?.[2] ?? 0}
+              patch={(value) => ({ points: current().points.map((p) => [p[0], p[1], value]) })}
+            />
             <Show when={current().kind !== "wall"}>
               <label>
                 Surface texture tile
@@ -785,20 +790,17 @@ export default function SplinePanel(props: {
                 <div class="spline-coordinates">
                   <For each={["X", "Y", "Z"]}>
                     {(label, axis) => (
-                      <label>
-                        {label}
-                        <input
-                          type="number"
-                          step="1"
-                          aria-label={"Control point " + label}
-                          value={Math.round(position()[axis()]! * 10) / 10}
-                          onChange={(event) => {
-                            const value: Vec3 = [...position()];
-                            value[axis()] = Number(event.currentTarget.value);
-                            move(point(), value);
-                          }}
-                        />
-                      </label>
+                      <NumberField
+                        label={"Control point " + label}
+                        value={Math.round(position()[axis()]! * 10) / 10}
+                        patch={(number) => {
+                          const value: Vec3 = [...position()];
+                          value[axis()] = number;
+                          return {
+                            points: current().points.map((p, i) => (i === point() ? value : p)),
+                          };
+                        }}
+                      />
                     )}
                   </For>
                 </div>

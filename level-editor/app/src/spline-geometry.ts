@@ -1,17 +1,9 @@
+import { terrainTexture } from "./terrain-texture.ts";
 import * as THREE from "three";
 import { excludedCornerAssetIds } from "./spline-corners.ts";
-import { gameToScene, type LevelSpline, type MapCamera } from "@rle/shared";
+import { terrainSplineCurve, gameToScene, type LevelSpline, type MapCamera } from "@rle/shared";
 
-export function splineCurve(path: LevelSpline, camera: MapCamera) {
-  const curve = new THREE.CatmullRomCurve3(
-    path.points.map((point) => new THREE.Vector3(...gameToScene(camera, ...point))),
-    path.closed,
-    "centripetal",
-  );
-  curve.arcLengthDivisions = Math.max(256, path.points.length * 40);
-  curve.updateArcLengths();
-  return curve;
-}
+export const splineCurve = terrainSplineCurve;
 
 export function riverGeometry(path: LevelSpline, camera: MapCamera) {
   const curve = splineCurve(path, camera),
@@ -44,40 +36,16 @@ export function riverGeometry(path: LevelSpline, camera: MapCamera) {
   return geometry;
 }
 
-/** A small seamless river tile; custom semi-tileable art can replace it. */
+/** Synthesized surface art with feathered ribbon edges. */
 export function defaultRiverTexture(road = false) {
-  const width = 128,
-    height = 256,
-    data = new Uint8Array(width * height * 4);
-  for (let y = 0; y < height; y++)
-    for (let x = 0; x < width; x++) {
-      const u = x / (width - 1),
-        v = y / height;
-      const bank = Math.pow(Math.abs(u * 2 - 1), 10);
-      const wave =
-        Math.sin(v * Math.PI * 14 + Math.sin(u * 17) * 2) * Math.sin(v * Math.PI * 6 + u * 24);
-      const foam = Math.pow(Math.max(0, Math.sin(v * Math.PI * 22 + u * 15)), 20) * (1 - bank);
-      const i = (y * width + x) * 4;
-      data[i] = 63 + bank * 58 + wave * 5 + foam * 12;
-      data[i + 1] = 94 + bank * 19 + wave * 7 + foam * 15;
-      data[i + 2] = 91 - bank * 21 + wave * 7 + foam * 15;
-      if (road) {
-        const grain = Math.sin(x * 73.1 + y * 91.7) * 7;
-        data[i] = 139 + grain;
-        data[i + 1] = 121 + grain;
-        data[i + 2] = 84 + grain;
-      }
-      data[i + 3] = Math.min(255, Math.min(u, 1 - u) * (road ? 2200 : 12800));
-    }
-  const texture = new THREE.DataTexture(data, width, height);
-  texture.needsUpdate = true;
-  return texture;
+  return terrainTexture(road ? "dirt" : "water", true);
 }
 
 export function riverMesh(path: LevelSpline, camera: MapCamera) {
   const texture = path.texture
     ? new THREE.TextureLoader().load(path.texture)
     : defaultRiverTexture(path.kind === "road");
+  if (!path.texture) texture.repeat.y = path.repeatLength / 1024;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.colorSpace = THREE.SRGBColorSpace;

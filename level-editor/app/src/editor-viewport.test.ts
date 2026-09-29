@@ -856,3 +856,102 @@ test("incremental edits rebuild changed wall assets and undo restores their geom
   assert.ok(Math.abs(height() - originalHeight) < 1e-5, "Undo restores the prior wall");
   viewport.dispose();
 });
+
+test("asset placement hits raised authored ground and lower regions replace its surface", () => {
+  const { viewport, publish } = fixture();
+  const document = {
+    ...documentFixture(),
+    objects: [],
+    groups: [],
+    size: null,
+    terrain: [
+      {
+        id: "land",
+        name: "Land",
+        bounds: [0, 0, 400, 400] as [number, number, number, number],
+        height: 80,
+        material: "grass" as const,
+      },
+      {
+        id: "low",
+        name: "Low",
+        bounds: [100, 100, 200, 200] as [number, number, number, number],
+        height: 20,
+        material: "dirt" as const,
+      },
+    ],
+  };
+  publish(document);
+  const local = gameToScene(document.camera, 200, 200, 20);
+  const target = new THREE.Vector3(local[0], local[2], -local[1]);
+  const camera = new THREE.OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
+  camera.position.copy(target).add(new THREE.Vector3(0, 500, 0));
+  camera.up.set(0, 0, -1);
+  camera.lookAt(target);
+  camera.updateMatrixWorld();
+  Object.assign(viewport, {
+    camera,
+    frustum: 100,
+    container: { clientWidth: 400, clientHeight: 400 },
+    orbit: { target, update() {} },
+    renderer: {
+      domElement: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 400 }) },
+    },
+  });
+  const position = viewport.assetDropPosition(200, 200)!;
+  assert.ok(Math.abs(position[2] - 20) < 1e-4, `expected lower region, got ${position}`);
+  assert.ok(Math.abs(position[0] - 200) < 1e-4);
+  const bounds = viewport.fitExportBounds();
+  assert.ok(bounds[2] >= 401);
+  Object.assign(viewport, { renderer: null, orbit: null });
+  viewport.dispose();
+});
+
+test("terrain selection attaches the shared gizmo and commits translated bounds and elevation", () => {
+  const { viewport, publish } = fixture();
+  const region = {
+    id: "ground",
+    name: "Ground",
+    bounds: [100, 100, 200, 200] as [number, number, number, number],
+    height: 40,
+    material: "grass" as const,
+  };
+  const document = { ...documentFixture(), objects: [], groups: [], terrain: [region] };
+  publish(document);
+  let attached: THREE.Object3D | null = null;
+  const gizmo = {
+    dragging: false,
+    showY: false,
+    attach: (node: THREE.Object3D) => {
+      attached = node;
+    },
+    detach: () => {
+      attached = null;
+    },
+  };
+  Object.assign(viewport, { gizmo });
+  let committed: typeof region | null = null;
+  viewport.setTerrainEdit({
+    region,
+    camera: document.camera,
+    commit: (next) => {
+      committed = next as typeof region;
+    },
+  });
+  assert.ok(attached);
+  assert.equal(gizmo.showY, true);
+  const center = gameToScene(document.camera, 200, 200, 40);
+  assert.ok(
+    (attached as THREE.Object3D).position.distanceTo(
+      new THREE.Vector3(center[0], center[2], -center[1]),
+    ) < 1e-5,
+  );
+  viewport.previewTerrain({ ...region, bounds: [150, 175, 200, 200], height: 90 });
+  (viewport as unknown as { commitGizmo(): void }).commitGizmo();
+  assert.deepEqual(committed, { ...region, bounds: [150, 175, 200, 200], height: 90 });
+  viewport.setTerrainEdit(null);
+  assert.equal(attached, null);
+  assert.equal(gizmo.showY, false);
+  Object.assign(viewport, { gizmo: null });
+  viewport.dispose();
+});

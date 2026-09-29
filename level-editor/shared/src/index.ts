@@ -20,3 +20,6 @@ export * from "./population.ts";
 export * from "./component-parts.ts";
 
 export * from "./glb-scene.ts";
+
+export * from "./authored-terrain.ts";
+export type { GameplayAssetDescriptor } from "./asset-gameplay.ts";

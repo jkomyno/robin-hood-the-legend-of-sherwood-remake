@@ -1,5 +1,23 @@
 # Post-port Features
 
+- **Terrain authoring in the level editor.** The Draw tab creates continuous
+  rectangular ground regions with grass, dirt or water and an elevation in one
+  panel. Select ground in the scene, resize it with corner handles, or move it
+  and change its elevation using the standard asset gizmo. Terrain, path, wall
+  and export numeric fields share draggable number controls; each gesture
+  commits one undoable edit and Escape cancels its preview. Exact terrain bounds
+  remain under Position and size. Later regions replace earlier ground, including
+  lower river beds. Paths
+  and rivers can set a whole-path elevation; their curved footprints carve the
+  ground consistently in the viewport and export. New placements use the terrain
+  height and compensate for elevated local asset bases. Export derives navigation
+  layers and connected areas, excludes water, retains asset floor/door ownership
+  and joins explicit exterior navigation sockets to surrounding terrain. Terrain
+  is saved with the map, rendered into mod ZIPs and included in camera framing.
+  In-editor instructions explain how to test an exported ZIP in Custom Missions.
+  Terrain regions are flat; road/river export currently requires a uniform
+  elevation. Walls and scripted mission authoring retain their existing limits.
+
 - **Physical receivers sharing navigation.** Asset gameplay can bind a physical
   receiver to an existing navigation area through an asset-local anchor. Sloped
   elevation and physical geometry remain independent of the movement boundary;
@@ -1879,3 +1897,5 @@ Asset movement surfaces and cutouts can retain fractional boundaries through boo
 assembly with `preserveMovementPrecision`. The final movement regions still use the
 engine's integer grid. Ground recovery uses this to keep independently movable
 cutouts aligned with terrain instead of rounding each piece separately.
+
+- Editor terrain now uses bundled seamless grass, dirt, water and paving art synthesized from game map samples. Roads and rivers share the dirt/water art. Paved ground is selectable in the terrain panel and exports with stone surface material. A regeneration script records the donor crops and texture-synthesis CLI settings.
