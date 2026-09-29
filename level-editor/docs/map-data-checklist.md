@@ -13,8 +13,8 @@ Current combined drafts recover 23 of the 27 map-source movement transitions.
 The four missing groups span assets in Croisement01, Croisement02, Nottingham
 and York. Croisement03 has all nine after combining its staged state assets
 with the ground-receiver recovery; older ground-only batches omit two of them.
-Twenty recovered transitions have matching initial/applied coverage on matching
-movement envelopes; three still require comparison across compiled partitions.
+Twenty-one recovered transitions have matching initial/applied coverage on matching
+movement envelopes; two still require comparison across compiled partitions.
 No map is yet published or certified at full gameplay parity.
 
 Ground-boundary compilation now supports an explicit asset-local
@@ -2119,6 +2119,7 @@ node pipeline/src/recover-asset-gameplay.ts \
   --projection-definitions refinement/catalogs/croisement03-elevated-projections.json \
   --ground-receivers refinement/catalogs/croisement03-ground-receivers.json \
   --mask-definitions refinement/catalogs/croisement03-masks.json \
+  --navigation-definitions refinement/catalogs/croisement03-navigation-joins.json \
   --preserve-ground-boundaries --require-movement-coverage
 ```
 
@@ -2141,3 +2142,28 @@ movement area but remain separate compiled areas. No height or material differen
 occur where both sides return coverage. Eleven receiver cases (including all
 three ground receivers) have zero differences; the terrace needs explicit
 navigation assembly before its receiving behavior can be certified.
+
+### Croisement03 terrace navigation assembly
+
+`croisement03-navigation-joins.json` partitions the complete terrace movement
+boundary between the terrace and its two access slopes. The placed polygons
+reconstruct that boundary exactly. Asset-local edge sockets join only when their
+projected endpoints coincide; the reviewed endpoint height steps stay below two
+units at the west seam and four at the east seam. Receiving volumes and their
+height/material definitions remain independent of the walking partition.
+
+Transition fragments can now use `movementContour` labels to rejoin before final
+integer rounding. Recovery supplies these labels and retains fractional movement
+coordinates. Labels remain scoped to the placed transition and initial/applied
+state, and distinct contours retain independent intersections. This removes the
+8.5-square-unit terrace blocker discrepancy caused by separately rounded pieces.
+
+The draft under `work/map-compile/croisement03-terrace-native` has matching initial
+and applied coverage for eight of its nine transitions, including the terrace,
+and retains exact static ground coverage. The fourteen-receiver native scan now
+passes all 792,816 queries with zero coverage, height or material differences,
+removing the 32,104 differences reported above. All nine transitions apply/reset
+in the baseline, southwest-assembly move, and independent 20-unit eastward moves
+of either access slope. Each detached slope keeps its physical receiver and
+becomes a separate navigation area. Actor approach/traversal, the other elevated
+transition's area coverage, visual states and publication remain unverified.

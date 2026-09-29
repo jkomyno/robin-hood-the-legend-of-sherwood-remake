@@ -76,6 +76,8 @@ export function recoverMovementTransition(options: {
       );
       return {
         id: `${id}-${state}-${index}-${piece}`,
+        movementContour: `${state}-contour-${index}`,
+        preserveMovementPrecision: true,
         node,
         polygon: vertices.map(([x, y]) => [x, y]),
         height: vertices.map((point) => point[2]),

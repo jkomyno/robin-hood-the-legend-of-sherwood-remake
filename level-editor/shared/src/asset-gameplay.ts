@@ -16,7 +16,8 @@ export interface AssetWalkableSurface {
   holes?: Point[][];
   /** Shared assembly labels for preserved hole contours, aligned with holes. */
   holeContours?: string[];
-  /** Shared assembly label for fragments of one movement exclusion across assets. */
+  /** Shared assembly label for fragments of one movement exclusion.
+   * Transition labels are scoped to their placement, transition and initial/applied state. */
   movementContour?: string;
   /** Asset-local navigation region, optionally spanning height planes; distinct regions never merge. */
   navigationRegion?: string;
@@ -837,9 +838,12 @@ export function validateAssetGameplay(
       surface.movementContour !== undefined &&
       (typeof surface.movementContour !== "string" ||
         !surface.movementContour.trim() ||
-        !data.movementBlockers?.includes(surface))
+        (!data.movementBlockers?.includes(surface) &&
+          !data.movementTransitions?.some(
+            (t) => t.initial.includes(surface) || t.applied.includes(surface),
+          )))
     )
-      fail("movement contour labels require explicit movement blockers");
+      fail("movement contour labels require explicit movement blockers or transition contours");
     if (
       surface.holeContours !== undefined &&
       (!surface.preserveMovementBoundary ||

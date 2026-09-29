@@ -5,6 +5,7 @@ import type { Point } from "./level.ts";
 import type { HeightPlane } from "./gameplay-plane.ts";
 import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-quantization.ts";
 import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
+import { assembleMovementContour } from "./assemble-movement-contour.ts";
 
 export interface PlacedTransitionBlocker {
   transition: string;
@@ -12,6 +13,7 @@ export interface PlacedTransitionBlocker {
   polygon: Point[];
   holes: Point[][];
   plane: HeightPlane;
+  movementContour?: string;
 }
 
 /** Allocate independent bit pairs per assembled area; no source-map state IDs survive. */
@@ -38,6 +40,12 @@ export function compileTransitionObstacles(
         )
       : [[polygon]];
   const walkable = blockers.length ? coverage(boundary, holes) : [];
+  const groups: {
+    transition: string;
+    applied: boolean;
+    movementContour?: string;
+    regions: MultiPolygon;
+  }[] = [];
   for (const blocker of blockers) {
     const samePlane = (plane: HeightPlane) =>
       plane.every((n, i) => Math.abs(n - blocker.plane[i]!) < 1e-7);
@@ -56,12 +64,37 @@ export function compileTransitionObstacles(
     } else clipped = polygonClipping.intersection(walkable, [blocker.polygon, ...blocker.holes]);
     // Keep the complete contour after testing overlap. Rounding its clipped
     // intersections would change narrow routes along the movement envelope.
-    if (preserveBoundary && clipped.length)
-      clipped = preserveMovementBoundary(
-        boundary,
-        [[blocker.polygon, ...blocker.holes]],
-        warnings,
-      ).blockers.map((points) => [points]);
+    if (preserveBoundary && clipped.length) clipped = [[blocker.polygon, ...blocker.holes]];
+    let group =
+      blocker.movementContour === undefined
+        ? undefined
+        : groups.find(
+            (g) =>
+              g.transition === blocker.transition &&
+              g.applied === blocker.applied &&
+              g.movementContour === blocker.movementContour,
+          );
+    if (!group) {
+      group = {
+        transition: blocker.transition,
+        applied: blocker.applied,
+        movementContour: blocker.movementContour,
+        regions: [],
+      };
+      groups.push(group);
+    }
+    group.regions.push(...clipped);
+  }
+  for (const blocker of groups) {
+    if (!blocker.regions.length) continue;
+    let clipped =
+      blocker.movementContour === undefined
+        ? blocker.regions
+        : assembleMovementContour(blocker.regions);
+    if (preserveBoundary)
+      clipped = preserveMovementBoundary(boundary, clipped, warnings).blockers.map((points) => [
+        points,
+      ]);
     for (const region of clipped) {
       const rounded = quantizeGeneratedMotionPolygon(
         region,

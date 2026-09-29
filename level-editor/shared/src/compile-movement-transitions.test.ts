@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import clipping from "polygon-clipping";
 import type { NavigationPiece } from "./assemble-navigation-regions.ts";
 import {
   compileTransitionObstacles,
@@ -31,6 +32,71 @@ const blocker: PlacedTransitionBlocker = {
     ],
   ],
 };
+test("labelled transition fragments rejoin before rounding and remain scoped to each state", () => {
+  const left: PlacedTransitionBlocker = {
+    transition: "gate",
+    applied: false,
+    plane: [0, 0, 0],
+    holes: [],
+    movementContour: "edge",
+    polygon: [
+      [10, 10],
+      [40.3, 10],
+      [40.3, 38.21],
+      [10, 17],
+    ],
+  };
+  const right: PlacedTransitionBlocker = {
+    ...left,
+    polygon: [
+      [40.3, 10],
+      [90, 10],
+      [90, 73],
+      [40.3, 38.21],
+    ],
+  };
+  const result = compileTransitionObstacles(
+    boundary,
+    [],
+    [0, 0, 0],
+    [
+      left,
+      right,
+      { ...left, applied: true },
+      { ...right, applied: true },
+      { ...left, transition: "other" },
+      { ...right, transition: "other" },
+    ],
+    [],
+  );
+  assert.deepEqual(
+    result.obstacles.map((o) => o.state_id),
+    [1, 2, 4],
+  );
+  for (const obstacle of result.obstacles)
+    assert.deepEqual(
+      clipping.xor(
+        [obstacle.polygon.points],
+        [
+          [
+            [10, 10],
+            [90, 10],
+            [90, 73],
+            [10, 17],
+          ],
+        ],
+      ),
+      [],
+    );
+  const separate = compileTransitionObstacles(
+    boundary,
+    [],
+    [0, 0, 0],
+    [left, { ...right, movementContour: "separate" }],
+    [],
+  );
+  assert.equal(separate.obstacles.length, 2);
+});
 test("preserved state contours retain implicit fractional boundary crossings", () => {
   const triangle: [number, number][] = [
     [0, 0],
