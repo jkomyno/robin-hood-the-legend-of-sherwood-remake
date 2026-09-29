@@ -688,6 +688,46 @@ test("asset drops convert the cursor's world ground hit to game coordinates", ()
   viewport.dispose();
 });
 
+test("endpoint family registration reuses existing models and validates every pin before adoption", () => {
+  const { viewport } = fixture();
+  viewport.replaceMap(new THREE.Group(), null, new Map());
+  const primary = {
+    id: "house",
+    descriptor: "3d-assets/house/asset.json",
+    model: "3d-assets/house/model.glb",
+    descriptor_sha256: "a".repeat(64),
+    model_sha256: "b".repeat(64),
+  };
+  const applied = { ...primary, id: "house--state-applied", state_variant: "applied" as const };
+  const first = new THREE.Group(),
+    second = new THREE.Group();
+  const initialNode = new THREE.Group(),
+    appliedNode = new THREE.Group();
+  first.add(initialNode);
+  second.add(appliedNode);
+  const initialKey = "asset:house:building-000",
+    appliedKey = "asset:house--state-applied:building-001";
+  assert.equal(viewport.adoptAsset(primary, first, new Map([[initialKey, initialNode]])), true);
+  const sources = new Map([
+    [initialKey, new THREE.Group()],
+    [appliedKey, appliedNode],
+  ]);
+  assert.throws(
+    () =>
+      viewport.adoptAsset({ ...primary, model_sha256: "c".repeat(64) }, second, sources, [applied]),
+    /changed during/,
+  );
+  assert.equal(second.parent, null);
+  assert.throws(
+    () => viewport.adoptAsset(primary, second, new Map([[initialKey, initialNode]]), [applied]),
+    /no new model nodes/,
+  );
+  assert.equal(second.parent, null);
+  assert.equal(viewport.adoptAsset(primary, second, sources, [applied]), true);
+  assert.equal(viewport.adoptAsset(primary, new THREE.Group(), sources, [applied]), false);
+  viewport.dispose();
+});
+
 test("orthographic ground picking includes visible points behind the ray origin", () => {
   const { viewport, publish } = fixture();
   const document = documentFixture();

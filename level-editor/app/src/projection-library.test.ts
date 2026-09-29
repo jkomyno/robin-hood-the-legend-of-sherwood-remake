@@ -7,6 +7,7 @@ import {
   listProjectionAppearances,
   listProjectionAssets,
   prepareProjectionAsset,
+  prepareProjectionPlacement,
 } from "./projection-library.ts";
 import { disposeObjectResources } from "./resources.ts";
 import { insertProjectionAsset } from "./asset-commands.ts";
@@ -14,6 +15,7 @@ import { prepareMapCandidate } from "./map-candidate.ts";
 import { expandStoredMap, parseStoredMap, serializeStoredMap, type Level3D } from "@rle/shared";
 import { authorLightRegionAsset } from "../../pipeline/src/author-light-region-asset.ts";
 import { authorAmbientSoundAsset } from "../../pipeline/src/author-ambient-sound-asset.ts";
+import { compileMap } from "./map-compile.ts";
 
 function fixture() {
   const obstacle = {
@@ -514,6 +516,121 @@ test("static model variants load one endpoint, retain endpoint obstacles, and co
   await assert.rejects(
     prepareProjectionAsset(f.directory, lowered.reference, "Leicester", lowered.reference),
     /model changed/,
+  );
+});
+
+test("gameplay endpoint insertion loads both models, saves both pins and compiles independent copies", async (t) => {
+  const f = fixture(),
+    applied = fixture();
+  const part = { ...f.descriptor.parts[0]!, node: "building-001", source_obstacle: 1 };
+  const descriptor = {
+    ...f.descriptor,
+    state_variants: {
+      initial: { name: "Raised", model: "model.glb" },
+      applied: { name: "Lowered", model: "lowered.glb", parts: [part] },
+    },
+    gameplay: {
+      version: 1,
+      collision: "none",
+      doors: [],
+      surfaces: [
+        {
+          id: "ground",
+          node: "building-000",
+          polygon: [
+            [0, 0],
+            [10, 0],
+            [0, 10],
+          ],
+          height: 0,
+        },
+      ],
+      movementTransitions: [
+        {
+          id: "bridge",
+          node: "building-000",
+          waypoint: [1, 1, 0],
+          active: true,
+          definitive: false,
+          initial: [],
+          applied: [],
+          applyPolygon: [],
+          noApplyPolygon: [],
+          appearances: ["state"],
+        },
+      ],
+    },
+  };
+  f.json(f.entry.descriptor, descriptor);
+  f.files.set("3d-assets/house/lowered.glb", new File([new Uint8Array([8, 9])], "lowered.glb"));
+  applied.mesh.name = part.node;
+  applied.mesh.userData.source_obstacle = 1;
+  let calls = 0;
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({
+    scene: calls++ === 0 ? f.asset : applied.asset,
+  }));
+  const entry = (await listProjectionAssets(f.directory, "Leicester"))[0]!;
+  assert.deepEqual(
+    (await listProjectionAppearances(f.directory, entry)).map((e) => e.id),
+    ["house"],
+  );
+  const prepared = await prepareProjectionPlacement(f.directory, entry, "New map");
+  assert.equal(prepared.additionalAssets.length, 1);
+  assert.equal(prepared.sources.size, 2);
+  const empty: Level3D = {
+    version: 1,
+    map: "New map",
+    camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+    size: [2000, 2000],
+    objects: [],
+    groups: [],
+    sceneAssets: [],
+  };
+  const place = (document: Level3D, x: number) =>
+    insertProjectionAsset(
+      document,
+      prepared.descriptor,
+      prepared.reference,
+      [x, 100, 0],
+      prepared.additionalAssets,
+    ).document;
+  assert.throws(
+    () => insertProjectionAsset(empty, prepared.descriptor, prepared.reference, [100, 100, 0]),
+    /pinned applied model/,
+  );
+  const once = place(empty, 100),
+    twice = place(once, 200);
+  assert.equal(twice.assetSources!.length, 2);
+  assert.equal(twice.objects.length, 4);
+  assert.ok(twice.groups.every((g) => g.states === undefined && g.patches?.house?.state));
+  const descriptors = new Map([
+    [prepared.reference.id, prepared.descriptor],
+    ...prepared.additionalAssets.map((m) => [m.reference.id, m.descriptor] as const),
+  ]);
+  assert.deepEqual(parseStoredMap(serializeStoredMap(twice, descriptors), descriptors), twice);
+  assert.equal(
+    compileMap(twice, [0, 0, 2000, 2000], descriptors).descriptor.asset_geometry!
+      .movement_transitions!.length,
+    2,
+  );
+  const bad = structuredClone(prepared.additionalAssets);
+  bad[0]!.reference.model_sha256 = "c".repeat(64);
+  assert.throws(
+    () => insertProjectionAsset(once, prepared.descriptor, prepared.reference, [300, 100, 0], bad),
+    /different revision/,
+  );
+  disposeObjectResources([prepared.asset]);
+  assert.equal(f.disposed(), 1);
+  assert.equal(applied.disposed(), 1);
+  const failed = fixture();
+  failed.json(failed.entry.descriptor, descriptor);
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: failed.asset }));
+  const failedEntry = (await listProjectionAssets(failed.directory, "Leicester"))[0]!;
+  await assert.rejects(prepareProjectionPlacement(failed.directory, failedEntry, "New map"));
+  assert.equal(
+    failed.disposed(),
+    1,
+    "a missing applied model must retire the prepared initial model",
   );
 });
 

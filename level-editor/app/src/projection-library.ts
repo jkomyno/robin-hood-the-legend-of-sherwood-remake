@@ -19,6 +19,7 @@ import { isNotFound, readJson, subdir } from "./fs.ts";
 import { SceneAssetLoader } from "./scene-assets.ts";
 import { readLossyModel, lossyApplies } from "./lossy-models.ts";
 import { disposeObjectResources } from "./resources.ts";
+import { hasGameplayEndpoints, type PlacementAsset } from "./asset-commands.ts";
 
 async function libraryFile(root: FileSystemDirectoryHandle, path: string): Promise<File> {
   if (!safeLibraryPath(path)) throw new Error(`Unsafe library path: ${path}`);
@@ -102,6 +103,7 @@ export async function listProjectionAppearances(
   if (entry.model_scene !== descriptor.model_scene)
     throw new Error(`Asset catalog scene mismatch: ${entry.id}`);
   const variants = descriptor.state_variants ?? descriptor.standalone_variants;
+  if (hasGameplayEndpoints(descriptor)) return [indexed];
   if (!variants) return [indexed];
   const parent = entry.descriptor.split("/").slice(0, -1).join("/");
   return [
@@ -344,6 +346,63 @@ export async function prepareProjectionAsset(
     return { descriptor, reference, asset, sources };
   } catch (error) {
     if (asset) disposeObjectResources([asset]);
+    throw error;
+  }
+}
+
+/** Load all render states before publishing a new gameplay-enabled placement. */
+export async function prepareProjectionPlacement(
+  root: FileSystemDirectoryHandle,
+  entry: ProjectionAssetEntry,
+  map: string,
+): Promise<PreparedProjectionAsset & { additionalAssets: PlacementAsset[] }> {
+  if (
+    entry.state_variant &&
+    hasGameplayEndpoints(parseProjectionAssetDescriptor((await indexedAsset(root, entry)).editor))
+  )
+    throw new Error("Insert the complete gameplay asset instead of a single endpoint");
+  const primary = await prepareProjectionAsset(root, entry, map);
+  const additionalAssets: PlacementAsset[] = [];
+  if (!hasGameplayEndpoints(primary.descriptor)) return { ...primary, additionalAssets };
+  try {
+    const variant = primary.descriptor.state_variants?.applied;
+    const initial = primary.descriptor.state_variants?.initial;
+    if (
+      initial &&
+      (initial.model !== primary.descriptor.model ||
+        initial.model_scene !== primary.descriptor.model_scene ||
+        JSON.stringify(initial.parts ?? primary.descriptor.parts) !==
+          JSON.stringify(primary.descriptor.parts))
+    )
+      throw new Error("Gameplay asset primary model must be its initial endpoint");
+    if (!variant || entry.state_variant)
+      throw new Error("Gameplay asset needs an applied model variant");
+    const parent = entry.descriptor.split("/").slice(0, -1).join("/");
+    const applied = await prepareProjectionAsset(
+      root,
+      {
+        ...entry,
+        id: assetVariantId(primary.descriptor.id, "applied"),
+        state_variant: "applied",
+        model: parent ? `${parent}/${variant.model}` : variant.model,
+        model_scene: variant.model_scene,
+        lossy_model: variant.model === primary.descriptor.model ? entry.lossy_model : undefined,
+        model_sha256: variant.model === primary.descriptor.model ? entry.model_sha256 : undefined,
+      },
+      map,
+    );
+    primary.asset.add(applied.asset);
+    for (const [key, node] of applied.sources) {
+      if (primary.sources.has(key)) throw new Error(`Duplicate endpoint model node ${key}`);
+      primary.sources.set(key, node);
+    }
+    additionalAssets.push({
+      descriptor: { ...applied.descriptor, state_variants: primary.descriptor.state_variants },
+      reference: applied.reference,
+    });
+    return { ...primary, additionalAssets };
+  } catch (error) {
+    disposeObjectResources([primary.asset]);
     throw error;
   }
 }

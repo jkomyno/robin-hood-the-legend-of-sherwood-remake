@@ -35,7 +35,7 @@ import { ASSET_DRAG_TYPE } from "./asset-library";
 import { insertProjectionAsset } from "./asset-commands";
 import {
   listProjectionAssets,
-  prepareProjectionAsset,
+  prepareProjectionPlacement,
   readPinnedAssetDescriptors,
 } from "./projection-library";
 import { prepareMapCandidate } from "./map-candidate";
@@ -239,7 +239,7 @@ export default function Editor3D(props: EditorProps) {
     return { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
   }
 
-  type PreparedAsset = Awaited<ReturnType<typeof prepareProjectionAsset>>;
+  type PreparedAsset = Awaited<ReturnType<typeof prepareProjectionPlacement>>;
   type WarmAsset = {
     id: string;
     library: LibraryRef;
@@ -275,7 +275,7 @@ export default function Editor3D(props: EditorProps) {
       map: document.map,
       retired: false,
       value: null,
-      promise: prepareProjectionAsset(library.handle, entry, document.map).then((value) => {
+      promise: prepareProjectionPlacement(library.handle, entry, document.map).then((value) => {
         if (next.retired) {
           disposeObjectResources([value.asset]);
           throw new Error("Asset preload cancelled");
@@ -303,6 +303,7 @@ export default function Editor3D(props: EditorProps) {
     inside: boolean;
     dropped: boolean;
     position: [number, number, number] | null;
+    elevationOffset: number;
     result: ReturnType<typeof insertProjectionAsset> | null;
   };
   let assetDrag: AssetDrag | null = null;
@@ -329,6 +330,7 @@ export default function Editor3D(props: EditorProps) {
       (group) => group.id === drag.result!.selection.id,
     )!;
     [group.transform.dx, group.transform.dy, group.transform.dz] = drag.position;
+    group.transform.dz += drag.elevationOffset;
     viewport.syncViews(drag.result.document, false);
     if (drag.dropped) {
       assetDrag = null;
@@ -348,6 +350,7 @@ export default function Editor3D(props: EditorProps) {
       inside: false,
       dropped: false,
       position: null,
+      elevationOffset: 0,
       result: null,
     };
     assetDrag = drag;
@@ -361,9 +364,20 @@ export default function Editor3D(props: EditorProps) {
         prepared.descriptor,
         prepared.reference,
         [0, 0, 0],
+        prepared.additionalAssets,
       );
+      drag.elevationOffset = drag.result.document.groups.find(
+        (group) => group.id === drag.result!.selection.id,
+      )!.transform.dz;
       parseLevel3D(drag.result.document, { level: level() ?? undefined });
-      if (!viewport.adoptAsset(prepared.reference, prepared.asset, prepared.sources))
+      if (
+        !viewport.adoptAsset(
+          prepared.reference,
+          prepared.asset,
+          prepared.sources,
+          prepared.additionalAssets.map((member) => member.reference),
+        )
+      )
         disposeObjectResources([prepared.asset]);
       prepared = null;
       updateAssetDrag();
@@ -383,7 +397,7 @@ export default function Editor3D(props: EditorProps) {
     const attempt = openAttempt;
     if (!document || !library || addingAsset()) return;
     setAddingAsset(true);
-    let prepared: Awaited<ReturnType<typeof prepareProjectionAsset>> | null = null;
+    let prepared: PreparedAsset | null = null;
     try {
       prepared = await takeAsset(entry);
       if (disposed || attempt !== openAttempt || props.library() !== library || doc() !== document)
@@ -396,9 +410,15 @@ export default function Editor3D(props: EditorProps) {
         prepared.descriptor,
         prepared.reference,
         position,
+        prepared.additionalAssets,
       );
       parseLevel3D(result.document, { level: level() ?? undefined });
-      const adopted = viewport.adoptAsset(prepared.reference, prepared.asset, prepared.sources);
+      const adopted = viewport.adoptAsset(
+        prepared.reference,
+        prepared.asset,
+        prepared.sources,
+        prepared.additionalAssets.map((member) => member.reference),
+      );
       if (!adopted) disposeObjectResources([prepared.asset]);
       prepared = null;
       pushHistory(result.document);

@@ -71,8 +71,18 @@ requires an explicit join. Model-metadata checks on all three Leicester drawbrid
 confirm their initial/applied parts bind to their existing door switches and reset
 exactly (3/2/2 visibility changes). A synthetic GPU bake exercises the complete
 endpoint binding path, color/depth changes across a tile boundary and exact reset.
-This does not certify the actual drawbridge pixels or animations, nor synthesize
-missing visual variants for an incomplete scene insertion.
+New gameplay-enabled endpoint placements now load both authored models before
+insertion, register their resources together and save both pins in one placement.
+Shared parts remain single instances; endpoint-only parts get the local state
+visibility rule. Failed loads dispose both models and conflicting revisions fail
+before publication. Drag placement preserves the authored base-height offset.
+The actual-model Chromium insertion check passes for all three Leicester
+drawbridges: two copies produce 6/4/4 placed parts, reopen without structural
+changes, switch independently and reset exactly. The staged Leicester palette
+also no longer lists its three applied views as separate base assets; all nine
+staged palette indexes validate. These checks do not certify actual drawbridge
+pixels, animations, traversal or a complete map ZIP round trip. Existing incomplete
+placements are not automatically repaired.
 All four full-scene export gates still fail on remaining missing bindings; these
 are metadata recovery results, not successful full-map bakes or parity evidence.
 The placement regression suite also replaces a walkway or roof-jump neighbor

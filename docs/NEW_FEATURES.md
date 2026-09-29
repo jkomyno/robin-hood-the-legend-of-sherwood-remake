@@ -9,6 +9,8 @@
   Mission names and unresolved cross-asset ownership remain explicit errors.
   The baker resolves initial/applied model views to their pinned primary switch;
   duplicated placements retain independent switches even with identical preview names.
+  Inserting a gameplay-enabled endpoint asset loads and saves both model variants
+  as one placement, including their resource pins and independent state controller.
 
 - **Independent light receivers on shared height planes.** Map compilation separates
   navigation layers when an anchored light would spill onto an unrelated receiver.

@@ -490,22 +490,41 @@ export class EditorViewport {
     reference: ExternalAssetSource,
     asset: THREE.Object3D,
     sources: ReadonlyMap<string, THREE.Object3D>,
+    additionalReferences: readonly ExternalAssetSource[] = [],
   ): boolean {
     if (this.disposed || !this.sourceAsset) throw new Error("No active map for asset insertion");
-    const hash = reference.descriptor_sha256 + reference.model_sha256;
-    const existing = this.externalAssetHashes.get(reference.id);
-    if (existing !== undefined) {
-      if (existing !== hash)
+    const references = [reference, ...additionalReferences];
+    if (new Set(references.map((ref) => ref.id)).size !== references.length)
+      throw new Error("Duplicate asset registration");
+    const added = new Set<string>();
+    for (const ref of references) {
+      const hash = ref.descriptor_sha256 + ref.model_sha256;
+      const existing = this.externalAssetHashes.get(ref.id);
+      if (existing !== undefined && existing !== hash)
         throw new Error(
           "This asset changed during the editing session; reload the map before importing its new revision",
         );
-      return false;
+      if (existing === undefined) added.add(ref.id);
     }
-    for (const key of sources.keys())
+    if (!added.size) return false;
+    for (const key of sources.keys()) {
+      const owner = references.find((ref) => key.startsWith(`asset:${ref.id}:`));
+      if (!owner) throw new Error(`Unregistered asset node: ${key}`);
+      if (!added.has(owner.id) && !this.sourceNodes.has(key))
+        throw new Error(`Missing reused asset node: ${key}`);
+    }
+    const fresh = [...sources].filter(([key]) =>
+      [...added].some((id) => key.startsWith(`asset:${id}:`)),
+    );
+    for (const id of added)
+      if (!fresh.some(([key]) => key.startsWith(`asset:${id}:`)))
+        throw new Error(`Asset registration has no new model nodes: ${id}`);
+    for (const [key] of fresh)
       if (this.sourceNodes.has(key)) throw new Error(`Asset node collision: ${key}`);
     this.sourceAsset.add(asset);
-    for (const [key, node] of sources) this.sourceNodes.set(key, node);
-    this.externalAssetHashes.set(reference.id, hash);
+    for (const [key, node] of fresh) this.sourceNodes.set(key, node);
+    for (const ref of references)
+      this.externalAssetHashes.set(ref.id, ref.descriptor_sha256 + ref.model_sha256);
     this.refreshTextureDisplay(asset);
     return true;
   }
