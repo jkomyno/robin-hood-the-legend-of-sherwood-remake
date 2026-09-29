@@ -31,6 +31,34 @@ const blocker: PlacedTransitionBlocker = {
     ],
   ],
 };
+test("preserved state contours retain implicit fractional boundary crossings", () => {
+  const triangle: [number, number][] = [
+    [0, 0],
+    [100, 0],
+    [0, 71],
+  ];
+  const gate: PlacedTransitionBlocker = {
+    ...blocker,
+    holes: [],
+    polygon: [
+      [40, -10],
+      [60, -10],
+      [60, 100],
+      [40, 100],
+    ],
+  };
+  const kept = compileTransitionObstacles(triangle, [], [0, 0, 0], [gate], [], undefined, true);
+  assert.deepEqual(kept.obstacles[0]!.polygon.points, gate.polygon);
+  assert.equal(kept.obstacles[0]!.state_id, 1);
+  assert.deepEqual(kept.initial, [gate.polygon]);
+  const clipped = compileTransitionObstacles(triangle, [], [0, 0, 0], [gate], []);
+  assert.notDeepEqual(clipped.obstacles[0]!.polygon.points, gate.polygon);
+  const absent = { ...gate, polygon: gate.polygon.map(([x, y]): [number, number] => [x + 200, y]) };
+  assert.equal(
+    compileTransitionObstacles(triangle, [], [0, 0, 0], [absent], [], undefined, true).pairs.size,
+    0,
+  );
+});
 test("one transition shares state bits across receiving planes and clips to each receiver", () => {
   const receivers: NavigationPiece[] = [
     {

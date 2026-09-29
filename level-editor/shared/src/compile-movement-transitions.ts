@@ -4,6 +4,7 @@ import type { NavigationPiece } from "./assemble-navigation-regions.ts";
 import type { Point } from "./level.ts";
 import type { HeightPlane } from "./gameplay-plane.ts";
 import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-quantization.ts";
+import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
 
 export interface PlacedTransitionBlocker {
   transition: string;
@@ -21,7 +22,10 @@ export function compileTransitionObstacles(
   blockers: PlacedTransitionBlocker[],
   warnings: string[],
   receivers?: NavigationPiece[],
+  preserveBoundary = false,
 ) {
+  if (preserveBoundary && receivers)
+    throw new Error("Preserved state contours require one movement boundary");
   const pairs = new Map<string, number>();
   const obstacles: { state_id: number; polygon: { points: Point[] } }[] = [];
   const initial: Point[][] = [];
@@ -50,6 +54,14 @@ export function compileTransitionObstacles(
         );
       clipped = fragments.length ? polygonClipping.union(fragments[0]!, ...fragments.slice(1)) : [];
     } else clipped = polygonClipping.intersection(walkable, [blocker.polygon, ...blocker.holes]);
+    // Keep the complete contour after testing overlap. Rounding its clipped
+    // intersections would change narrow routes along the movement envelope.
+    if (preserveBoundary && clipped.length)
+      clipped = preserveMovementBoundary(
+        boundary,
+        [[blocker.polygon, ...blocker.holes]],
+        warnings,
+      ).blockers.map((points) => [points]);
     for (const region of clipped) {
       const rounded = quantizeGeneratedMotionPolygon(
         region,

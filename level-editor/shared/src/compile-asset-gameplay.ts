@@ -934,6 +934,7 @@ export function compileAssetGameplay(
       transitionBlockers,
       warnings,
       pieces.length > 1 ? pieces : undefined,
+      pieces[0]!.preserveMovementBoundary === true,
     );
     if (lift && changing.pairs.size)
       throw new Error(

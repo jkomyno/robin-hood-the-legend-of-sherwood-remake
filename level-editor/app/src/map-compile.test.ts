@@ -15,6 +15,7 @@ import {
   assetCompilerFixture,
   anchoredReceiverCompilerFixture,
   preservedBoundaryCompilerFixture,
+  preservedStateBoundaryCompilerFixture,
   preservedContoursCompilerFixture,
   maskAssetCompilerFixture,
   slopedAssetCompilerFixture,
@@ -44,6 +45,20 @@ import {
   doorAnchorCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("preserved state boundary export matches native apply/reset geometry", async () => {
+  const { document, assets } = preservedStateBoundaryCompilerFixture();
+  const fixture = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-preserved-state-boundary.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, fixture);
+});
 
 test("anchored receiver export preserves native shared ground navigation", async () => {
   const { document, assets } = anchoredReceiverCompilerFixture();

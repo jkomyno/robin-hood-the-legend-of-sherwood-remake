@@ -317,6 +317,26 @@ export function sightTransitionCompilerFixture() {
   return fixture;
 }
 
+export function preservedStateBoundaryCompilerFixture() {
+  const fixture = preservedBoundaryCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  gameplay.movementTransitions = [
+    {
+      id: "crossing-state",
+      node: "building-999",
+      waypoint: [99, 69, 0],
+      active: true,
+      definitive: false,
+      initial: gameplay.movementBlockers!,
+      applied: [],
+      applyPolygon: [],
+      noApplyPolygon: [],
+    },
+  ];
+  gameplay.movementBlockers = [];
+  return fixture;
+}
+
 export function movementTransitionCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.movementBlockers = [];

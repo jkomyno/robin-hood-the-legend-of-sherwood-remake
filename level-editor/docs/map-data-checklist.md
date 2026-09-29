@@ -2007,3 +2007,27 @@ ground coverage is verified separately by the comparison above.
 On the updated clearance/contact batch, York's five migrated receivers pass
 2,358,053 queries, Croisement03's three pass 54,507, and Sherwood's bluff passes
 322,543, all with zero height, material or coverage differences.
+
+### State-dependent movement contours
+
+Preserved movement areas now retain complete initial/applied obstacle contours,
+including parts crossing the outer boundary or permanent exclusions. They still
+require genuine overlap with walkable coverage before allocating a state pair.
+Other receiving-plane partitions retain their existing clipping behavior.
+The compiler-generated `asset-preserved-state-boundary` fixture verifies a narrow
+fractional route in Rust through the initial, applied and reset states.
+
+This removes three measured contour discrepancies: Croisement02 patch 6's
+applied blocker (about 0.494 square units), Croisement03 patch 0's initial blocker
+(about 9.489), and Croisement03 patch 5's applied blocker (about 0.102).
+The independent state-coverage comparison currently finds matching initial and
+applied blocker coverage for 12 of 21 recovered movement-transition records on
+matching source-area envelopes. Four records still differ, and five need a
+comparison across separately compiled area partitions. Six additional source
+movement transitions remain unrecovered: five span assets, and one lacks an
+explicit owner. These are not covered by the 40-area static-ground result.
+
+All nine current draft exports apply and reset their 50 compiled transitions in
+the Rust diagnostic, including door-only transitions. That verifies exported
+bindings and runtime state changes; it does not prove coverage of missing source
+transitions or equivalence of the remaining movement geometry.

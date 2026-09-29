@@ -719,6 +719,31 @@ mod tests {
     }
 
     #[test]
+    fn preserved_state_contours_keep_fractional_routes_through_apply_and_reset() {
+        let (mut engine, assets) = load_compiled_transition(
+            include_bytes!("../../tests/fixtures/asset-preserved-state-boundary.level.json"),
+            (2000., 2000.),
+        );
+        let patch = crate::patch::PatchIndex::new(0).unwrap();
+        let sim = crate::sim_rng::test_context();
+        for (step, applied) in [false, true, false].into_iter().enumerate() {
+            if step == 1 {
+                engine.apply_patch(TickCtx::new(&sim, &assets), patch);
+            } else if step == 2 {
+                engine.reset_patch(TickCtx::new(&sim, &assets), patch);
+            }
+            let grid = &engine.world.fast_grid;
+            let end = MapPoint::new(350., 334.5);
+            assert!(grid.is_reachable_thin(MapPoint::new(301.1, 300.05), end, 0));
+            assert_eq!(
+                grid.is_reachable_thin(end, MapPoint::new(350., 333.5), 0),
+                applied
+            );
+            assert!(!grid.is_reachable_thin(end, MapPoint::new(350., 335.5), 0));
+        }
+    }
+
+    #[test]
     fn editor_compiled_movement_transition_changes_live_routes_without_mission_content() {
         check_compiled_transition(
             include_bytes!("../../tests/fixtures/asset-movement-transition.level.json"),
