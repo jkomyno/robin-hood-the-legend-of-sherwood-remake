@@ -45,6 +45,7 @@ export function riverMesh(path: LevelSpline, camera: MapCamera) {
   const texture = path.texture
     ? new THREE.TextureLoader().load(path.texture)
     : defaultRiverTexture(path.kind === "road");
+  if (!path.texture) texture.repeat.y = path.repeatLength / 1024;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.colorSpace = THREE.SRGBColorSpace;

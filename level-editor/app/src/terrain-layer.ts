@@ -50,7 +50,7 @@ export class TerrainLayer {
           const x = positions.getX(i),
             y = positions.getY(i);
           positions.setXYZ(i, ...gameToScene(document.camera, x, y, patch.height));
-          uv.setXY(i, x / 256, y / 256);
+          uv.setXY(i, x / 1024, y / 1024);
         }
         geometry.computeVertexNormals();
         const mesh = new THREE.Mesh(geometry, this.material(patch.material));
@@ -72,9 +72,9 @@ export class TerrainLayer {
               const lowA = gameToScene(document.camera, ...a, floor),
                 lowB = gameToScene(document.camera, ...b, floor);
               vertices.push(...topA, ...lowA, ...topB, ...topB, ...lowA, ...lowB);
-              const span = Math.hypot(b[0] - a[0], b[1] - a[1]) / 256;
-              const top = patch.height / 256,
-                bottom = floor / 256;
+              const span = Math.hypot(b[0] - a[0], b[1] - a[1]) / 1024;
+              const top = patch.height / 1024,
+                bottom = floor / 1024;
               bankUvs.push(0, top, 0, bottom, span, top, span, top, 0, bottom, span, bottom);
             }
           const sides = new THREE.BufferGeometry();
