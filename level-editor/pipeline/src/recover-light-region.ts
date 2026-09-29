@@ -177,9 +177,7 @@ export function recoverLightField(
 ): { region: AssetLightRegion; footprints: Point[][] } {
   let uncovered = false;
   try {
-    const plane = recoverLightPlane(light, obstacles, motionAreas);
-    const region = recoverLightRegion(light, id, "$root", plane, (p) => p);
-    return { region, footprints: [region.polygon.map(([x, y]): Point => [x, y])] };
+    recoverLightPlane(light, obstacles, motionAreas);
   } catch (error) {
     if (
       !(error instanceof MultipleLightPlanesError) &&
@@ -188,8 +186,9 @@ export function recoverLightField(
       throw error;
     uncovered = error instanceof UncoveredLightGeometryError;
   }
-  // Layer-wide contours can extend beyond physical coverage. Only their anchors
-  // need receiving geometry; the complete contour remains intact on the layer.
+  // Even a flat field needs receiver identities: unrelated coplanar regions may
+  // need separate runtime layers. Only anchors need receiving geometry; the
+  // complete contour remains intact, including beyond physical coverage.
   const pieces = recoverLightPieces(
     light,
     id,

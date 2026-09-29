@@ -1217,6 +1217,60 @@ test("light layer anchors retain fractional positions inside narrow contours and
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /outside the light contour/);
 });
 
+test("anchored lights cannot spill onto a separate coplanar navigation region", () => {
+  const { hut, document, assets } = lightAssetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.doors = [];
+  gameplay.interiors = [];
+  gameplay.surfaces = [10, 40].map((x) => ({
+    id: `receiver-${x}`,
+    node: "building-999",
+    height: 0,
+    polygon: [
+      [x, 10],
+      [x + 20, 10],
+      [x + 20, 30],
+      [x, 30],
+    ],
+  }));
+  const polygon: [number, number, number][] = [
+    [0, 0, 0],
+    [70, 0, 0],
+    [70, 40, 0],
+    [0, 40, 0],
+  ];
+  gameplay.lights = [
+    { id: "left-only", node: "building-999", ambiences: 1, polygon, receivers: [[20, 20, 0]] },
+    { id: "both", node: "building-999", ambiences: 2, polygon },
+  ];
+  for (const dx of [0, 100]) {
+    document.groups[0]!.transform.dx += dx;
+    const compiled = compileAssetGameplay(document, assets, bounds);
+    const ordinary = compiled.motion_data.layers.slice(0, -1);
+    assert.deepEqual(
+      ordinary.map((layer) => layer.length),
+      [1, 1],
+    );
+    const left = ordinary.findIndex((layer) =>
+      layer[0]!.polygon.points.some(([x]) => x === 310 + dx),
+    );
+    assert.ok(left >= 0);
+    const isolated = compiled.light_sectors!.filter((light) => light.ambience === 1);
+    assert.deepEqual(
+      isolated.map((light) => light.layer),
+      [left],
+    );
+    assert.deepEqual(
+      compiled.light_sectors!.filter((light) => light.ambience === 2).map((light) => light.layer),
+      [0, 1],
+    );
+    assert.deepEqual(
+      isolated[0]!.polygon.points,
+      polygon.map(([x, y, z]) => [x + 300 + dx, y - z + 300]),
+    );
+  }
+});
+
 test("light regions resolve on sloped traversal areas and follow their asset", () => {
   const { document, assets } = liftLightCompilerFixture();
   const geometry = compileAssetGameplay(document, assets, bounds);

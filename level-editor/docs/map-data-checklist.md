@@ -50,7 +50,7 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
 | Jump zones and paired jump edges | Transform asset-local 3D edges and receiving contours; resolve landing anchors, regenerate crossed destination links and preserve long-jump/helper rules. Explicit local sockets pair edges owned by different assets after placement. | All 173 recovered pairs match reference geometry and flags; native registration verified; publication and traversal fidelity remain unfinished |
 | Surface materials | Transform asset-local material polygons; rebuild ground, obstacle and receiving-surface links independently. Preserve receiving defaults, footprints and overlap priority. | Compiler/native tests pass; all nine recovery drafts include receiving materials; publication and geometry coverage remain unfinished |
-| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. | Derby's 26 contours, Nottingham's 24, York's 37 and Sherwood's night field compile; Leicester's 30 compile but shared-layer shadow leakage fails runtime comparison; remaining ownership, unrestricted query equivalence and publication remain unfinished |
+| Light/shadow regions | Transform asset-local planar contours, resolve ordinary or traversal receiving layers and preserve ambience filters. Conflicting anchored receivers receive separate runtime layers. | Derby's 26 contours, Nottingham's 24, York's 37, Leicester's 30 and Sherwood's night field compile; Leicester's detected shared-layer leakage is fixed; remaining ownership, unrestricted query equivalence and publication remain unfinished |
 | Environmental sound sources | Transform asset-local emitter polylines; retain sample IDs, timing, volume falloff, acoustic altitude, noise-covering distance and ambience filters. Global emitters need no position. | All 119 emitter records match across nine source-backed staged maps; publication, audible playback and Wychford authoring remain outstanding |
 | Animated scenery / effects | Export asset animations, sprite resources, placement and display rules. | Planned |
 | Interactive patches / state changes | Asset-local transitions compile initial/applied movement contours, sight-obstacle references and door links, trigger zones and fresh state bindings across affected navigation areas. | Partial: movement, sight and door bindings implemented; changing visuals, masks and asset recovery remain unfinished |
@@ -2773,7 +2773,7 @@ multiple rebuilt layers. Non-light data matches the preceding sound-complete
 draft. Rust constructs 55 areas, 444 sight obstacles, 105 doors and 23 jump pairs,
 and applies/resets all six compiled transitions.
 
-**Lighting query parity fails.** The source-query comparison checks 39 nonempty
+**Initial lighting query parity failed (fixed below).** The source-query comparison checks 39 nonempty
 windows on known layer pairs under ambience bits 1, 2 and 4. Of 4,283,946
 integer/half-pixel evaluations, 1,436 differ. For example, at `(279, 920)` under
 ambience 4, source layer 4 is unshadowed but compiled layer 7 is shadowed. The
@@ -2787,3 +2787,35 @@ reproduction; empty shared-coverage windows are recorded separately.
 Leicester also retains 449 pending masks and incomplete visual patch definitions.
 These staged definitions are not published or certified, and complete ZIP round
 trips remain outstanding.
+
+### Separate light receivers on otherwise shared planes
+
+Flat light recovery now retains asset-local receiving anchors, just as multi-plane
+recovery does. A height plane alone cannot distinguish unrelated receiving regions.
+All 148 source light contours across Derby, Leicester, Lincoln, Nottingham and York
+still recover exactly with these anchors. Earlier staged packets need regeneration
+to acquire anchors for their flat fields.
+
+After assembling navigation regions, compilation separates regions that would
+otherwise receive another region's anchored light on a shared layer. Compatible
+regions keep sharing layers. Full light contours remain intact, traversal keeps
+the final reserved layer, and sector, door, projection and transition references
+are assigned after the new ordering. Unanchored planar fields can cover multiple
+resulting layers. Compiler tests cover independent coplanar receivers, a field
+covering both, and moving the asset.
+
+The refreshed Leicester draft in `work/map-compile/leicester-separated-light-native`
+retains all 30 contours and filters as 34 runtime regions. Its 37 nonempty comparison
+windows pass all 4,277,196 Rust lighting query evaluations under ambience bits 1,
+2 and 4. Restoring the leaking contour to the wrong layer in a separate negative
+control causes 704 differences, including the original `(279, 920)` failure.
+These totals count window evaluations, not unique positions; changing the layer
+partition changes overlapping windows. Coverage remains limited to mapped common
+walkable domains, not unrestricted gameplay or rendered appearance.
+
+Motion contours and obstacles are unchanged. Non-light records compare equal
+after resolving sector/layer references to their receiving geometry and sorting
+generated projection records; mask payloads compare without their rebuilt layer
+numbers. Rust still constructs 55 areas, 444 sight obstacles, 105 doors and 23 jump
+pairs and applies/resets all six transitions. This does not establish mask-layer
+or visual parity, publication, or complete ZIP round trips.

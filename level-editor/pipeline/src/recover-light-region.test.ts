@@ -12,6 +12,46 @@ import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.
 import type { LightSector, MotionArea, SightObstacle } from "../../shared/src/level.ts";
 import { heightPlane } from "../../shared/src/gameplay-plane.ts";
 
+test("flat light fields retain receiving anchors and reject absent navigation", () => {
+  const light: LightSector = {
+    layer: 0,
+    ambience: 4,
+    polygon: {
+      points: [
+        [0, 0],
+        [100, 0],
+        [100, 50],
+        [0, 50],
+      ],
+    },
+  };
+  const area: MotionArea = {
+    is_lift: false,
+    state_id: 0,
+    flags: 0,
+    skeleton_segments: [],
+    obstacles: [],
+    polygon: {
+      points: [
+        [10, 10],
+        [30, 10],
+        [30, 30],
+        [10, 30],
+      ],
+    },
+  };
+  const { region } = recoverLightField(light, "flat", [], [area]);
+  assert.deepEqual(
+    region.polygon,
+    light.polygon.points.map(([x, y]) => [x, y, 0]),
+  );
+  assert.equal(region.receivers!.length, 1);
+  const [x, y, z] = region.receivers![0]!;
+  assert.ok(x > 10 && x < 30 && y > 10 && y < 30);
+  assert.equal(z, 0);
+  assert.throws(() => recoverLightField(light, "flat", [], []), /no receiving anchors/);
+});
+
 test("light fields retain the supporting plane for tiny clipped receiving triangles", () => {
   const { hut } = assetCompilerFixture();
   const support: SightObstacle = {

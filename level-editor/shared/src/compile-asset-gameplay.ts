@@ -5,6 +5,7 @@ import { orderSightVolumes } from "./order-sight-volumes.ts";
 import { compileSoundSource } from "./compile-sound-source.ts";
 import { fixedPolygonBoolean } from "./fixed-polygon-boolean.ts";
 import { assembleNavigationRegions, type NavigationPiece } from "./assemble-navigation-regions.ts";
+import { allocateLightReceivingLayers } from "./allocate-light-receiving-layers.ts";
 import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
 import {
   assembleNavigationJoins,
@@ -986,7 +987,15 @@ export function compileAssetGameplay(
       navigationPieces.push({ layer, plane, lift, navigationRegion, polygon: boundary, blockers });
     }
   }
-  for (const region of assembleNavigationRegions(navigationPieces, warnings)) {
+  const navigationRegions = assembleNavigationRegions(navigationPieces, warnings);
+  const liftLayer = allocateLightReceivingLayers(
+    navigationRegions,
+    lights,
+    layers.length - 1,
+    inside,
+  );
+  while (layers.length <= liftLayer) layers.push([]);
+  for (const region of navigationRegions) {
     const { layer, lift, polygon: boundary, blockers, pieces } = region;
     const plane = pieces[0]!.plane;
     const changing = compileTransitionObstacles(
@@ -1327,15 +1336,15 @@ export function compileAssetGameplay(
                 )
                 .map((area) => area.layer),
             );
-            if (matchingLayers.size !== 1)
+            if (matchingLayers.size === 0)
               throw new Error(
-                `${light.id}: light region must overlap exactly one receiving layer (found ${matchingLayers.size})`,
+                `${light.id}: light region must overlap at least one receiving layer (found ${matchingLayers.size})`,
               );
-            return {
-              layer: [...matchingLayers][0]!,
+            return [...matchingLayers].map((layer) => ({
+              layer,
               polygon: { points: light.polygon },
               ambience: light.ambiences,
-            };
+            }));
           }),
         }
       : {}),

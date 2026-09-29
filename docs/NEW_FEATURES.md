@@ -1,5 +1,10 @@
 # Post-port Features
 
+- **Independent light receivers on shared height planes.** Map compilation separates
+  navigation layers when an anchored light would spill onto an unrelated receiver.
+  Flat and elevated recovered fields retain local receiver anchors, full contours
+  and ambience filters; all dependent runtime references are rebuilt after placement.
+
 - **Independent environmental light-region assets.** Offline authoring can create
   invisible, movable lighting fields with local contours, receiving anchors and
   ambience filters. Explicit ownership declarations pin their source records;

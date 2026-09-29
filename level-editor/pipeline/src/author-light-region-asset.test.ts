@@ -27,7 +27,21 @@ const options = {
 };
 
 test("authored light regions preserve contours and ambience and move independently", async () => {
-  const { descriptor, model, placement } = await authorLightRegionAsset(light, [], [], options);
+  const { descriptor, model, placement } = await authorLightRegionAsset(
+    light,
+    [],
+    [
+      {
+        polygon: light.polygon,
+        is_lift: false,
+        state_id: 0,
+        flags: 0,
+        skeleton_segments: [],
+        obstacles: [],
+      },
+    ],
+    options,
+  );
   assert.equal((await new NodeIO().readBinary(model)).getRoot().listMeshes().length, 0);
   assert.equal(descriptor.parts[0]!.gameplay_only, true);
   const { document, assets } = assetCompilerFixture();
