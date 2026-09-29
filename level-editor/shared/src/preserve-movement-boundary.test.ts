@@ -48,8 +48,9 @@ test("distinct integer contours retain fractional overlap intersections without 
   const free = (blockers: MultiPolygon) => clipping.difference([boundary], blockers);
   const expected = free(cutouts);
   assert.deepEqual(clipping.xor(expected, free(preserved.blockers.map((b) => [b]))), []);
-  const merged = preserveMovementBoundary(boundary, cutouts, []);
-  assert.notDeepEqual(clipping.xor(expected, free(merged.blockers.map((b) => [b]))), []);
+  const independent = preserveMovementBoundary(boundary, cutouts, []);
+  assert.equal(independent.blockers.length, 2);
+  assert.deepEqual(clipping.xor(expected, free(independent.blockers.map((b) => [b]))), []);
 });
 
 test("matching contour fragments assemble before snapping and follow independent placement", () => {

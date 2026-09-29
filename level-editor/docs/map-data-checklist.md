@@ -14,9 +14,9 @@ The three missing groups span assets in Croisement01, Croisement02 and York.
 Nottingham has both after assembling its four changing northern facade parts.
 Croisement03 has all nine after combining its staged state assets
 with the ground-receiver recovery; older ground-only batches omit two of them.
-Twenty-three recovered transitions have matching initial/applied coverage on matching
-movement envelopes; Nottingham's remaining recovered transition still requires
-comparison across compiled partitions.
+All twenty-four recovered transitions have matching initial/applied changing-obstacle
+coverage on matching movement envelopes. This does not prove complete walkability:
+Nottingham still has permanent-coverage differences in both stateful regions.
 No map is yet published or certified at full gameplay parity.
 
 Ground-boundary compilation now supports an explicit asset-local
@@ -2280,7 +2280,31 @@ floating contact slivers below its geometric tolerance while retaining subpixel
 openings. The full-contour Nottingham draft now produces valid asset definitions
 under `work/map-compile/nottingham-state-contours-recovery`.
 
-That draft still fails compilation: unioning nearly coincident cutout edges near
+That draft initially failed compilation: unioning nearly coincident cutout edges near
 projected coordinates (696.9921, 1191.7559) fails to close a polygon ring. The
 compiler reports the error; no rounded replacement or incomplete export is emitted.
-The draft remains unpublished and does not increase any parity count.
+The independent-contour change below resolves this compilation failure.
+
+### Independent exclusion contours
+
+Unlabelled exclusions now remain independent through normalization. Testing
+containment against any of them already represents their union; merging them
+first introduced unnecessary fractional vertices and could fail on nearly
+coincident edges. Explicitly labelled fragments still reassemble as one contour.
+Joined regions also preserve each cutout against free coverage from other pieces
+without subtracting its own free coverage again.
+
+The experimental recipe `nottingham-state-contours.json` retains complete permanent
+contours and enables boundary preservation. It replaces the navigation recipe in
+the courtyard recovery command; the other ownership, mask, ground-receiver and
+physical-projection recipes remain the same. Both baseline and moved facade
+exports compile and apply/reset all nine transitions in Rust. Both source movement
+changes now have matching envelopes and changing-obstacle coverage in both states.
+Permanent free coverage still differs by about 12.898 square units in the courtyard
+and one square unit on the ground. Neither difference is accepted as full parity.
+The six-receiver scan still passes all 2,170,166 Rust queries with zero height,
+material or receiving-coverage differences; all twenty compiled masks are unchanged.
+
+The default nine-map compilation regression also passes, and all forty previously
+verified static ground areas retain zero coverage difference. These checks do not
+cover the three missing transitions, complete traversal, visual data or publication.

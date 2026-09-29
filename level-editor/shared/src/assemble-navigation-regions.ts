@@ -73,12 +73,21 @@ export function assembleNavigationRegions(
         ];
       if (first.preserveMovementBoundary) {
         const boundaries = clipping.union(members.map((m): Polygon => [m.polygon]));
-        const free = clipping.union(members.map(shape));
         // Another surface may provide a route through a cutout that extends
         // beyond its own partition. Preserve only the part no surface opens.
-        const cutouts = members.flatMap((m) =>
-          m.blockers.flatMap((blocker) => clipping.difference([blocker], free)),
-        );
+        const cutouts = members.flatMap((m) => {
+          const otherFree = members
+            .filter((other) => other !== m)
+            .flatMap((other) =>
+              other.blockers.length
+                ? clipping.difference(
+                    [other.polygon],
+                    other.blockers.map((b) => [b]),
+                  )
+                : [[other.polygon]],
+            );
+          return m.blockers.flatMap((blocker) => clipping.difference([blocker], otherFree));
+        });
         return boundaries.map((boundary) => {
           const preserved = preserveMovementBoundary(
             boundary[0]!,

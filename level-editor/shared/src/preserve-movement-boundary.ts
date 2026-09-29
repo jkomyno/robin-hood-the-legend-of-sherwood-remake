@@ -33,7 +33,10 @@ export function preserveMovementBoundary(
   }
   const blockers: Point[][] = [];
   for (const [label, group] of groups) {
-    const blocked = label === undefined ? clipping.union(group) : assembleMovementContour(group);
+    // Independent exclusions need no union: containment against any contour is
+    // already their union, without creating fractional intersection vertices.
+    // Only explicitly labelled fragments describe one contour to reassemble.
+    const blocked = label === undefined ? group : assembleMovementContour(group);
     // Rounding an outside contact must not manufacture an inward-facing corner.
     // Clean clipping-grid noise only for generated, fractional contours; complete
     // integer contours retain their implicit fractional intersections.
@@ -47,10 +50,8 @@ export function preserveMovementBoundary(
         .intersection([boundary], region)
         .some((overlap) => simplifyMotionRing(overlap[0]!, tolerance).length >= 3);
     });
-    for (const region of normalizeGeneratedMotion(
-      overlapping,
-      "Preserved movement obstacle",
-      warnings,
+    for (const region of overlapping.flatMap((contour) =>
+      normalizeGeneratedMotion([contour], "Preserved movement obstacle", warnings),
     )) {
       if (!fixedPolygonBoolean("intersection", [outer], [region]).length) continue;
       blockers.push(...partitionMovementObstacles(region));
