@@ -1,4 +1,4 @@
-import { Document, NodeIO } from "@gltf-transform/core";
+import { gameplayFrameModel } from "./gameplay-frame-model.ts";
 import type { LightSector, MotionArea, SightObstacle } from "../../shared/src/level.ts";
 import type { Vec3 } from "../../shared/src/scene.ts";
 import type { Level3DObject } from "../../shared/src/level3d.ts";
@@ -68,9 +68,6 @@ export async function authorLightRegionAsset(
     },
   };
   validateAssetGameplay(descriptor.gameplay, descriptor);
-  const model = new Document();
-  const scene = model.createScene("default").addChild(model.createNode(node));
-  model.getRoot().setDefaultScene(scene);
   const placement: Level3DObject = {
     id: options.id,
     name: options.name,
@@ -79,5 +76,5 @@ export async function authorLightRegionAsset(
     source: { map: options.map },
     transform: { dx: options.origin[0], dy: options.origin[1], dz: options.origin[2], rot_deg: 0 },
   };
-  return { descriptor, model: await new NodeIO().writeBinary(model), placement };
+  return { descriptor, model: await gameplayFrameModel(options.id, node), placement };
 }

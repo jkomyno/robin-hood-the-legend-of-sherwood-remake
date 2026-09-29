@@ -18,6 +18,8 @@ All twenty-seven recovered transitions have matching initial/applied changing-ob
 coverage on matching movement envelopes. Nottingham's two stateful regions now
 also match full walkable coverage in both states. Actor traversal remains unverified.
 No map is yet published or certified at full gameplay parity.
+Older generated light/sound field models also need regeneration and scene repinning:
+the authoring tools now emit the standalone hierarchy required by the editor loader.
 
 Ground-boundary compilation now supports an explicit asset-local
 `preserveMovementBoundary` setting on a labelled ordinary surface. It retains
@@ -2897,3 +2899,21 @@ Rust constructs both baseline and moved exports and applies/resets both transiti
 in each. Synthetic tests reject ambiguous/missing receivers and verify slope
 intersection and finite search bounds. This is evidence for that placement change,
 not arbitrary relocation, full rendering parity, publication or ZIP round trips.
+
+### Editor loading of generated environmental assets
+
+The earlier light/sound authoring tools emitted a bare empty node. That worked in
+compiler diagnostics, which read metadata directly, but failed the editor's
+standalone asset validation. Both generators now use a common model writer that
+emits the Z-up `map` wrapper, one identity asset group with its asset ID, and the
+declared scenery/gameplay-only frame. The asset remains invisible and contains no
+placeholder mesh.
+
+An integration test loads actual generated light and sound GLBs through
+`prepareProjectionAsset` without mocking GLB parsing, inserts them, serializes and
+reopens their editor placements, and reloads their pinned descriptors. It checks
+that their complete gameplay definitions survive, including a sloped light's
+finite receiving segment. The authoring/compiler tests continue to verify sound
+records and light contours after placement. This closes an editor insertion/reload
+gap, not map publication or in-game ZIP round-trip parity. Previously staged field
+GLBs and their saved model hashes must be regenerated together before publication.

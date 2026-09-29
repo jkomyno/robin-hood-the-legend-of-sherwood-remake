@@ -36,7 +36,13 @@ test("standalone ambient assets compile exactly, remain invisible, and move inde
   const gltf = await new NodeIO().readBinary(model);
   assert.equal(gltf.getRoot().listMeshes().length, 0);
   assert.equal(
-    gltf.getRoot().getDefaultScene()!.listChildren()[0]!.getName(),
+    gltf
+      .getRoot()
+      .getDefaultScene()!
+      .listChildren()[0]!
+      .listChildren()[0]!
+      .listChildren()[0]!
+      .getName(),
     descriptor.parts[0]!.node,
   );
   assert.equal(descriptor.parts[0]!.gameplay_only, true);

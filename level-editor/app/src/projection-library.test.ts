@@ -12,6 +12,8 @@ import { disposeObjectResources } from "./resources.ts";
 import { insertProjectionAsset } from "./asset-commands.ts";
 import { prepareMapCandidate } from "./map-candidate.ts";
 import { expandStoredMap, parseStoredMap, serializeStoredMap, type Level3D } from "@rle/shared";
+import { authorLightRegionAsset } from "../../pipeline/src/author-light-region-asset.ts";
+import { authorAmbientSoundAsset } from "../../pipeline/src/author-ambient-sound-asset.ts";
 
 function fixture() {
   const obstacle = {
@@ -152,6 +154,95 @@ test("standalone index filters the current map and actual model parts receive na
   assert.equal(f.disposed(), 0);
   disposeObjectResources([prepared.asset]);
   assert.equal(f.disposed(), 1);
+});
+
+test("authored light and sound GLBs load through the editor and retain gameplay on reopen", async () => {
+  const options = {
+    id: "house",
+    name: "Environmental field",
+    map: "Leicester",
+    origin: [0, 0, 0] as [number, number, number],
+  };
+  const polygon = {
+    points: [
+      [0, 0],
+      [20, 0],
+      [20, 20],
+      [0, 20],
+    ] as [number, number][],
+  };
+  const support = {
+    ...fixture().descriptor.parts[0]!.obstacle_local_game,
+    projection_area: [0, 1] as [number, number],
+    points: polygon.points.map(([x, y]) => ({ x, y: y + x / 2, z_bottom: 0, z_top: x / 2 })),
+  };
+  const light = await authorLightRegionAsset(
+    { layer: 1, ambience: 4, polygon },
+    [support],
+    [{ polygon, is_lift: false, state_id: 0, flags: 0, skeleton_segments: [], obstacles: [] }],
+    options,
+  );
+  assert.ok(light.descriptor.gameplay!.lights![0]!.receiverSegments?.length);
+  const sound = await authorAmbientSoundAsset(
+    {
+      id: 1,
+      active: true,
+      source_kind: 2,
+      delayed_params: [150, 500, 5],
+      global: false,
+      inner_distance: 10,
+      outer_distance: 100,
+      polyline: [[10, 10]],
+      inner_volume: 100,
+      outer_volume: 0,
+      noise_covering_distance: 0,
+      altitude: 0,
+      ambience_filter: 255,
+    },
+    options,
+  );
+  for (const authored of [light, sound]) {
+    const f = fixture();
+    f.json(f.entry.descriptor, authored.descriptor);
+    f.files.set(f.entry.model, new File([new Uint8Array(authored.model)], "model.glb"));
+    const entry = { ...f.entry, model_scene: "default" };
+    const prepared = await prepareProjectionAsset(f.directory, entry, "Leicester");
+    const frame = prepared.sources.get(`asset:house:${authored.descriptor.parts[0]!.node}`)!;
+    assert.ok(frame);
+    assert.equal(frame.userData.gameplay_only, true);
+    let meshes = 0;
+    prepared.asset.traverse((node) => {
+      if ((node as THREE.Mesh).isMesh) meshes++;
+    });
+    assert.equal(meshes, 0);
+    const blank: Level3D = {
+      version: 1,
+      map: "Example",
+      size: [1000, 1000],
+      camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+      sceneAssets: [],
+      groups: [],
+      objects: [],
+    };
+    const placed = insertProjectionAsset(
+      blank,
+      prepared.descriptor,
+      prepared.reference,
+      [100, 200, 0],
+    ).document;
+    const descriptors = new Map([[prepared.descriptor.id, prepared.descriptor]]);
+    const reopened = parseStoredMap(serializeStoredMap(placed, descriptors), descriptors);
+    assert.equal(reopened.objects[0]!.kind, "scenery");
+    assert.deepEqual(reopened.groups[0]!.transform, placed.groups[0]!.transform);
+    const reloaded = await prepareProjectionAsset(
+      f.directory,
+      entry,
+      "Leicester",
+      prepared.reference,
+    );
+    assert.deepEqual(reloaded.descriptor, authored.descriptor);
+    disposeObjectResources([prepared.asset, reloaded.asset]);
+  }
 });
 
 test("explicit gameplay-only frames load and reopen without rendering a placeholder mesh", async (t) => {
