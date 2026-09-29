@@ -61,7 +61,15 @@ export function recoverGroundGameplay(
   // This avoids rejoining coincident fractional boundaries before clipping them.
   const sections = areas.map((area, index) => {
     const boundary = closedPolygon(area.polygon.points);
-    const holes = clipping.difference(boundary, areaFree[index]!);
+    // Keep the authored exclusions. Reconstructing their complement from an
+    // already clipped free-space polygon can erase narrow corridors at shared edges.
+    const authoredHoles = area.obstacles.map((obstacle) => closedPolygon(obstacle.polygon.points));
+    const holes = authoredHoles.length
+      ? clipping.intersection(
+          boundary,
+          clipping.union(authoredHoles[0]!, ...authoredHoles.slice(1)),
+        )
+      : [];
     const remaining = excluded.length ? clipping.difference(holes, excluded) : holes;
     const terrain = clean(remaining.length ? clipping.difference(boundary, remaining) : [boundary]);
     const reconstructed = excluded.length ? clipping.difference(terrain, excluded) : terrain;

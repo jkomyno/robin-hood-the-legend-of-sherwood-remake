@@ -136,6 +136,38 @@ test("ground recovery rejects empty movement instead of inventing a floor", () =
   );
 });
 
+test("overlapping ground exclusions preserve the narrow corridor between clipped boundaries", () => {
+  const area = {
+    polygon: {
+      points: [
+        [2, 957],
+        [610, 1],
+        [1280, 564],
+      ] as Point[],
+    },
+    obstacles: [
+      [
+        [1208, 549],
+        [1200, 544],
+        [1207, 539],
+      ],
+      [
+        [1204.5413, 544.4413000000001],
+        [1179.5272, 436.56305998],
+        [1276.5056, 498.79459700000007],
+      ],
+      [
+        [1320.358, 595.3621],
+        [1204.5215, 545.18443],
+        [1276.7925, 499.871797],
+      ],
+    ].map((points) => ({ polygon: { points: points as Point[] } })),
+  };
+  const recovered = recoverGroundGameplay([area], []);
+  assert.ok(recovered.differenceArea < 0.001, `lost corridor area: ${recovered.differenceArea}`);
+  assert.ok(Math.abs(recovered.reconstructedArea - recovered.sourceArea) < 0.001);
+});
+
 test("a raised projection's ground exclusion moves with its owner rather than remaining in terrain", () => {
   const boundary: Point[] = [
     [0, 0],

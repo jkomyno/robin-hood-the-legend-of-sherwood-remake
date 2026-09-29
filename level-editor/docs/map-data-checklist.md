@@ -1773,3 +1773,21 @@ The dedicated Sherwood variants construct 16 areas at baseline/treehouse-only mo
 and 17 for platform-only/combined moves; all four retain 129 sight obstacles,
 15 doors, one jump pair and passing directed lift callbacks. Recovery error and
 successful construction do not establish final navigation or full gameplay parity.
+
+Croisement01's remaining 66.4752-square-unit ground-recovery discrepancy came from
+reconstructing exclusions as the complement of already clipped free space. A second
+boolean operation erased a narrow corridor between overlapping exclusions. Recovery
+now clips the authored exclusion contours directly to the ground boundary before
+transferring asset-owned cutouts. Its decomposition difference is now 0.0001773
+square units. A reduced regression with three overlapping triangular exclusions
+checks this case; the previous complement reconstruction lost about 23.15 square
+units in that fixture. The fix changes offline asset authoring, not the compiler's
+source-data isolation or the separation between maps and missions.
+
+The fresh `work/map-compile/ground-exclusions-recovery` batch has valid asset
+candidates and ground-decomposition differences below 0.0006 square units for all
+nine maps. All nine static descriptors in `ground-exclusions-native` compile and
+construct in Rust. Croisement01 now constructs 41 areas instead of 40; the other
+eight area counts are unchanged from the ground-precision batch. This verifies
+offline decomposition and native loading, not complete final navigation parity or
+publication of the recovered definitions.
