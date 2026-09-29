@@ -96,6 +96,7 @@ const { values } = parseArgs({
     "transition-planes": { type: "string" },
     "preserve-ground-boundaries": { type: "boolean", default: false },
     "precise-ground-ownership": { type: "boolean", default: false },
+    "require-movement-coverage": { type: "boolean", default: false },
   },
 });
 if (!values.map || !values.source || !values.out)
@@ -1986,6 +1987,10 @@ const pending = {
   shadowRegions: proto.light_sectors.length - recoveredLights,
   soundSources: proto.sound_sources.length - recoveredSounds,
 };
+if (values["require-movement-coverage"] && pending.movementTransitions)
+  throw new Error(
+    `Incomplete movement recovery: ${pending.movementTransitions} source transitions lack asset definitions; check scene ownership and authoring recipes`,
+  );
 for (const [order, owners] of locals)
   for (const owner of owners) {
     const p = packet(owner.asset);
@@ -2024,6 +2029,7 @@ const diagnostics = diagnoseGameplayCandidates(document, candidates, {
 });
 const report = {
   status: "incomplete-authoring-recovery",
+  requiredMovementCoverage: values["require-movement-coverage"],
   assets: packets.size,
   files: [...packets.keys()].sort().map((asset) => `${asset}.gameplay-authoring.json`),
   surfaces: [...packets.values()].reduce((sum, p) => sum + p.surfaces.length, 0),

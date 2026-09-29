@@ -9,6 +9,14 @@ with it. Global indices and connections are rebuilt after placement.
 with Derby/York. “Partial” identifies a remaining gap. “Planned” describes the
 intended construction, not functionality available today.
 
+Current combined drafts recover 23 of the 27 map-source movement transitions.
+The four missing groups span assets in Croisement01, Croisement02, Nottingham
+and York. Croisement03 has all nine after combining its staged state assets
+with the ground-receiver recovery; older ground-only batches omit two of them.
+Twenty recovered transitions have matching initial/applied coverage on matching
+movement envelopes; three still require comparison across compiled partitions.
+No map is yet published or certified at full gameplay parity.
+
 Ground-boundary compilation now supports an explicit asset-local
 `preserveMovementBoundary` setting on a labelled ordinary surface. It retains
 the outer contour and crossing movement obstacles separately, avoiding rounding
@@ -2086,3 +2094,50 @@ visual states, all traversal behavior, or asset publication.
 Re-running the default recovery path for all nine source-backed maps produces
 valid candidates and native geometry; its 40 previously verified static ground
 areas remain geometrically exact.
+
+### Combined Croisement03 state and ground recovery
+
+The newer state-assembly scene must be retained when recovering ground metadata.
+The older `projection-material-library` scene lacks the terrace navigation asset
+and southwest state assembly, so reusing it loses two already recovered movement
+groups. The current combined recovery uses the staged scene documented above,
+the committed `croisement03-navigation-ownership.json` catalog, and separate
+ground/elevated receiver catalogs. `croisement03-elevated-projections.json`
+contains the eleven elevated entries; the three ground receivers must not also
+be assigned replacement walking surfaces by the older fourteen-entry recipe.
+
+From `level-editor`, recover the combined candidate with:
+
+```sh
+node pipeline/src/recover-asset-gameplay.ts \
+  --library work/map-compile/croisement03-state-assembly-stage \
+  --map work/map-compile/croisement03-state-assembly-stage/scenes/croisement03.rhlos-map.json \
+  --source library/game-data/Data/Levels/Croisement03.rhp.json \
+  --out work/map-compile/croisement03-combined-recovery \
+  --ownership refinement/catalogs/croisement03-navigation-ownership.json \
+  --transition-planes refinement/catalogs/croisement03-transition-planes.json \
+  --projection-definitions refinement/catalogs/croisement03-elevated-projections.json \
+  --ground-receivers refinement/catalogs/croisement03-ground-receivers.json \
+  --mask-definitions refinement/catalogs/croisement03-masks.json \
+  --preserve-ground-boundaries --require-movement-coverage
+```
+
+`--require-movement-coverage` checks that every source movement group produced
+an asset definition before creating output. The older scene fails this check
+with two missing transitions. The report records whether this gate was requested;
+passing it does not certify masks, visuals or complete transition behavior.
+
+The combined baseline and an independent one-pixel assembly move both construct
+in Rust and apply/reset all nine transitions. The moved assembly preserves its
+four ordered physical shapes and flags and moves its waypoint. Seven ground
+transition records have exact initial/applied coverage on matching source
+envelopes; the two elevated transitions still require comparison across their
+separate compiled areas. The static ground envelope remains exact. The candidate
+still has 130 pending masks, six pending sound sources and unverified visual and
+actor-traversal behavior, and remains unpublished.
+The combined fourteen-receiver scan runs 792,816 native queries and finds 32,104
+coverage differences around terrace receivers 52–54, which share one source
+movement area but remain separate compiled areas. No height or material differences
+occur where both sides return coverage. Eleven receiver cases (including all
+three ground receivers) have zero differences; the terrace needs explicit
+navigation assembly before its receiving behavior can be certified.
