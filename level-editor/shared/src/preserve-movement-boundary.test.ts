@@ -96,6 +96,42 @@ const boundary: Point[] = [
   [0, 100],
 ];
 
+test("rounding a redundant collision fragment cannot expand its integer exclusion", () => {
+  const exclusion: Point[] = [
+    [0, 0],
+    [100, 0],
+    [0, 71],
+  ];
+  const fragment: Point[] = [
+    [40.6, 0],
+    [60, 0],
+    [40.6, 42.174],
+  ];
+  for (const contours of [
+    [[exclusion], [fragment]],
+    [[fragment], [exclusion]],
+  ]) {
+    const result = preserveMovementBoundary(boundary, contours, []);
+    assert.equal(result.blockers.length, 1);
+    assert.deepEqual(
+      clipping.xor(
+        result.blockers.map((b) => [b]),
+        [exclusion],
+      ),
+      [],
+    );
+  }
+  const extending: Point[] = [
+    [40.6, 0],
+    [60, 0],
+    [40.6, 43],
+  ];
+  assert.equal(
+    preserveMovementBoundary(boundary, [[exclusion], [extending]], []).blockers.length,
+    2,
+  );
+});
+
 test("preserved movement boundaries discard unrelated blockers but retain crossing contours", () => {
   const result = preserveMovementBoundary(
     boundary,

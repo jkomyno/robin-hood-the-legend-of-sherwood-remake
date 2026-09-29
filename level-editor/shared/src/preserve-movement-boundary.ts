@@ -36,7 +36,21 @@ export function preserveMovementBoundary(
     // Independent exclusions need no union: containment against any contour is
     // already their union, without creating fractional intersection vertices.
     // Only explicitly labelled fragments describe one contour to reassemble.
-    const blocked = label === undefined ? group : assembleMovementContour(group);
+    const integerContour = (region: MultiPolygon[number]) =>
+      region.every((ring) => ring.every(([x, y]) => Number.isInteger(x) && Number.isInteger(y)));
+    // A redundant fractional cutout can round outside the complete integer
+    // exclusion that covers it. Discard it before introducing those new corners.
+    const blocked =
+      label === undefined
+        ? group.filter(
+            (region) =>
+              integerContour(region) ||
+              !group.some(
+                (reference) =>
+                  integerContour(reference) && clipping.difference(region, reference).length === 0,
+              ),
+          )
+        : assembleMovementContour(group);
     // Rounding an outside contact must not manufacture an inward-facing corner.
     // Clean clipping-grid noise only for generated, fractional contours; complete
     // integer contours retain their implicit fractional intersections.

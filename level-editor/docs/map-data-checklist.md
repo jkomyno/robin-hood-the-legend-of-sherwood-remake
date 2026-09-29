@@ -16,7 +16,7 @@ Croisement03 has all nine after combining its staged state assets
 with the ground-receiver recovery; older ground-only batches omit two of them.
 All twenty-four recovered transitions have matching initial/applied changing-obstacle
 coverage on matching movement envelopes. This does not prove complete walkability:
-Nottingham still has permanent-coverage differences in both stateful regions.
+Nottingham still has a permanent-coverage difference in its courtyard region.
 No map is yet published or certified at full gameplay parity.
 
 Ground-boundary compilation now supports an explicit asset-local
@@ -2308,3 +2308,25 @@ material or receiving-coverage differences; all twenty compiled masks are unchan
 The default nine-map compilation regression also passes, and all forty previously
 verified static ground areas retain zero coverage difference. These checks do not
 cover the three missing transitions, complete traversal, visual data or publication.
+
+### Exact Nottingham ground coverage and redundant fragments
+
+The combined Nottingham recovery now uses `--precise-ground-ownership` with
+`--preserve-ground-boundaries`, `--require-movement-coverage`, and the
+`nottingham-state-contours.json` navigation recipe. This removes the one-square-unit
+ground gap: both initial and applied full walkable coverage match exactly.
+Candidates and diagnostics are under `work/map-compile/nottingham-precise-contours-recovery`
+and `work/map-compile/nottingham-precise-contours-native`.
+
+The compiler also discards a fractional cutout already entirely covered by a
+complete integer exclusion in the same contour group, before rounding can expand
+it beyond that exclusion. A regression covers both input orders and verifies that
+a fragment extending outside the exclusion is retained. This removes a spurious
+corner near the courtyard's southern obstacle. Its remaining permanent-coverage
+difference is about 11.614 square units in each state, concentrated at stair seams.
+Both movement envelopes and changing-state contours still match exactly; neither
+this improvement nor the exact ground region certifies full map parity.
+The baseline and moved facade still apply/reset all nine compiled transitions.
+The six-receiver Rust scan passes 2,170,166 queries with zero differences, all
+twenty mask records are unchanged, and the nine-map regression retains exact
+coverage for its forty checked static ground regions.
