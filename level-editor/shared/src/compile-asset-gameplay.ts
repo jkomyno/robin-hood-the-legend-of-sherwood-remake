@@ -37,6 +37,7 @@ import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-qua
 import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
 import { normalizeGameplayStateViews } from "./gameplay-state-views.ts";
 import { compileAppearanceBindings } from "./compile-appearance-bindings.ts";
+import { assembleTransitions, type PlacedTransitionJoin } from "./assemble-transitions.ts";
 import {
   maskBoundaryPolyline,
   rasterizeMaskGeometry,
@@ -184,7 +185,7 @@ export function compileAssetGameplay(
     throw new Error(
       "Asset state transitions need gameplay compilation support before this map can be exported",
     );
-  compileAppearanceBindings(document, descriptors);
+  const transitionJoins = new Map<string, PlacedTransitionJoin>();
   const project = (p: Vec3): Point => [quantize(p[0]), quantize(p[1] - p[2])];
   const warnings: string[] = [];
   const surfaces: {
@@ -532,6 +533,11 @@ export function compileAssetGameplay(
       })),
     ]);
     for (const t of gameplay.movementTransitions ?? []) {
+      if (t.join)
+        transitionJoins.set(`${placement.id}/${t.id}`, {
+          key: t.join.key,
+          point: transform(t.node, t.join.point),
+        });
       const sightRefs = (refs: string[] = []) =>
         refs.map((id) => {
           const shape = partSight.get(id);
@@ -1465,5 +1471,11 @@ export function compileAssetGameplay(
   };
   const assembled = assembleSightVolumes(compiled, sightJoins, sightCaps);
   orderSightVolumes(compiled, sightOrders, assembled);
+  if (compiled.movement_transitions)
+    compiled.movement_transitions = assembleTransitions(
+      compiled.movement_transitions,
+      transitionJoins,
+    );
+  compileAppearanceBindings(document, descriptors, compiled.movement_transitions);
   return compiled;
 }

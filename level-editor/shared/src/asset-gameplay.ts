@@ -208,6 +208,8 @@ export interface AssetMovementTransition {
   id: string;
   /** Asset-local model appearance IDs controlled by this gameplay transition. */
   appearances?: string[];
+  /** Parts share a switch only when matching asset-local anchors meet after placement. */
+  join?: { key: string; point: [number, number, number] };
   node: string;
   waypoint: [number, number, number];
   /** Local receiving-area anchor when the reference point lies outside its linked surface. */
@@ -294,6 +296,8 @@ export interface CompiledAssetGeometry {
   }[];
   movement_transitions?: {
     id: string;
+    /** Placed member IDs sharing this switch, excluding its canonical ID. */
+    aliases?: string[];
     has_appearance?: boolean;
     waypoint: Point;
     sector: number;
@@ -465,6 +469,14 @@ export function validateAssetGameplay(
   const triggeringDoors = new Set<string>();
   for (const transition of data.movementTransitions ?? []) {
     feature(transition);
+    if (
+      transition.join !== undefined &&
+      (!transition.join ||
+        typeof transition.join.key !== "string" ||
+        !transition.join.key.trim() ||
+        !point(transition.join.point, 3))
+    )
+      fail("invalid transition join anchor");
     if (transition.appearances !== undefined) {
       if (!Array.isArray(transition.appearances) || !transition.appearances.length)
         fail("invalid transition appearance bindings");

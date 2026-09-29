@@ -5,9 +5,17 @@ import type { Level3D } from "./level3d.ts";
 export function compileAppearanceBindings(
   document: Level3D,
   assets: ReadonlyMap<string, GameplayAssetDescriptor>,
+  transitions: readonly { id: string; aliases?: string[] }[] = [],
 ): Map<string, Record<string, string>> {
   const result = new Map<string, Record<string, string>>();
-  const aliases = new Map<string, string>();
+  const aliases = new Map<string, { id: string; join?: string }>();
+  const canonical = new Map<string, string>();
+  for (const transition of transitions) {
+    for (const id of [transition.id, ...(transition.aliases ?? [])]) {
+      if (canonical.has(id)) throw new Error(`Duplicate compiled transition identity: ${id}`);
+      canonical.set(id, transition.id);
+    }
+  }
   const groups = new Map(document.groups.map((group) => [group.id, group]));
   for (const part of document.objects) {
     const group = part.group ? groups.get(part.group) : undefined;
@@ -15,12 +23,15 @@ export function compileAppearanceBindings(
     const asset = /^asset:([^:]+):/.exec(part.node)?.[1];
     if (!asset) continue;
     const local = new Map<string, string>();
+    const joins = new Map<string, string>();
     for (const transition of assets.get(asset)?.gameplay?.movementTransitions ?? []) {
-      const id = `${part.group ?? part.id}/${asset}/${transition.id}`;
+      const placed = `${part.group ?? part.id}/${asset}/${transition.id}`;
+      const id = canonical.get(placed) ?? placed;
       for (const appearance of transition.appearances ?? []) {
         if (local.has(appearance))
           throw new Error(`Multiply controlled asset appearance ${appearance}`);
         local.set(appearance, id);
+        if (transition.join) joins.set(appearance, transition.join.key);
       }
     }
     const preview = part.group ? group?.patches?.[asset] : part.patches?.[asset];
@@ -31,9 +42,10 @@ export function compileAppearanceBindings(
           `Missing asset gameplay binding for appearance ${appearance} on ${part.id}`,
         );
       const previous = aliases.get(alias);
-      if (previous !== undefined && previous !== id)
+      const join = joins.get(appearance);
+      if (previous !== undefined && previous.id !== id && (!join || previous.join !== join))
         throw new Error(`Shared appearance ${alias} needs an explicit joined gameplay transition`);
-      aliases.set(alias, id);
+      aliases.set(alias, { id, join });
     }
     const mapping = new Map<string, string>();
     for (const [appearance, id] of local) {

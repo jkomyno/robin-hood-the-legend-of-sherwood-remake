@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { gameToScene } from "@rle/shared";
-import { movementTransitionCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
+import {
+  movementTransitionCompilerFixture,
+  joinedTransitionCompilerFixture,
+} from "../../shared/test-fixtures/asset-gameplay.ts";
 import { validateAssetGameplay } from "../../shared/src/asset-gameplay.ts";
 import {
   bindBakeAppearances,
@@ -156,4 +159,56 @@ test("asset-local appearance bindings follow duplicated placements and reject mi
     () => validateAssetGameplay(hut.gameplay, hut),
     /multiply controlled transition appearance/,
   );
+});
+
+test("asset contact joins bind both appearances and detach when a member moves", () => {
+  const { document, assets, wing, wingPart } = joinedTransitionCompilerFixture();
+  const compile = () =>
+    compileMap(document, [0, 0, 2000, 2000], assets).descriptor.asset_geometry!
+      .movement_transitions!;
+  const joined = compile();
+  assert.equal(joined.length, 1);
+  assert.deepEqual(joined[0]!.aliases, ["wing/wing/barriers"]);
+  assert.equal(joined[0]!.initial_sight!.length, 2);
+  assert.equal(joined[0]!.applied_sight!.length, 2);
+  const bind = (transitions: ReturnType<typeof compile>) => {
+    const root = new THREE.Group();
+    for (const id of ["hut-a-body", "wing-body"]) {
+      const wrapper = new THREE.Group();
+      wrapper.userData.map_bake_object_id = id;
+      wrapper.add(mesh(0, 0, "preview-roof"));
+      root.add(wrapper);
+    }
+    bindBakeAppearances(root, document, assets, transitions);
+    return root.children.map((wrapper) => wrapper.children[0]!.userData.reveal_show_when_applied);
+  };
+  assert.deepEqual(bind(joined), [[joined[0]!.id], [joined[0]!.id]]);
+  wingPart.transform.dx += 1;
+  const separate = compile();
+  assert.equal(separate.length, 2);
+  assert.deepEqual(bind(separate), [["hut-a/hut/barriers"], ["wing/wing/barriers"]]);
+  wingPart.transform.dx -= 1;
+  const copies = document.objects
+    .filter((p) => p.group)
+    .map((p) => {
+      const copy = structuredClone(p);
+      copy.id += "-copy";
+      copy.group += "-copy";
+      copy.transform.dy += 500;
+      return copy;
+    });
+  document.objects.push(...copies);
+  document.groups.push(
+    ...document.groups.map((g) => ({ ...structuredClone(g), id: `${g.id}-copy` })),
+  );
+  const duplicated = compile();
+  assert.equal(duplicated.length, 2);
+  assert.deepEqual(
+    new Set(duplicated.flatMap((t) => t.aliases!)),
+    new Set(["wing/wing/barriers", "wing-copy/wing/barriers"]),
+  );
+  wing.gameplay!.movementTransitions![0]!.definitive = true;
+  assert.throws(compile, /identical world triggers/);
+  wing.gameplay!.movementTransitions![0]!.join!.point[0] = NaN;
+  assert.throws(compile, /invalid transition join anchor/);
 });

@@ -346,6 +346,34 @@ export function appearanceOnlyCompilerFixture() {
   return fixture;
 }
 
+export function joinedTransitionCompilerFixture() {
+  const fixture = sightTransitionCompilerFixture();
+  const { hut, document, assets } = fixture;
+  const transition = hut.gameplay!.movementTransitions![0]!;
+  transition.appearances = ["roof"];
+  transition.join = { key: "hall-roof", point: [...transition.waypoint] };
+  const wing = structuredClone(hut);
+  wing.id = "wing";
+  const wingTransition = wing.gameplay!.movementTransitions![0]!;
+  wingTransition.waypoint[0] -= 500;
+  wingTransition.join!.point[0] -= 500;
+  assets.set(wing.id, wing);
+  document.assetSources!.push({ ...document.assetSources![0]!, id: wing.id });
+  const part = structuredClone(document.objects[0]!);
+  part.id = "wing-body";
+  part.group = "wing";
+  part.node = "asset:wing:building-999";
+  part.transform.dx += 500;
+  document.objects.push(part);
+  document.groups[0]!.patches = { hut: { roof: "preview-roof" } };
+  document.groups.push({
+    id: "wing",
+    transform: { ...IDENTITY_TRANSFORM },
+    patches: { wing: { roof: "preview-roof" } },
+  });
+  return { ...fixture, wing, wingPart: part };
+}
+
 export function movementTransitionCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.movementBlockers = [];

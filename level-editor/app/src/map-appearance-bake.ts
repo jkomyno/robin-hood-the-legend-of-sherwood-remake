@@ -27,14 +27,14 @@ function patchIds(node: THREE.Object3D): string[] {
   return result;
 }
 
-/** Resolve model-local IDs per placement, so duplicating an asset never shares its switches. */
+/** Resolve model-local IDs through the compiled placement and contact bindings. */
 export function bindBakeAppearances(
   root: THREE.Object3D,
   document: Level3D,
   assets: ReadonlyMap<string, GameplayAssetDescriptor>,
-  transitions: readonly { id: string }[],
+  transitions: readonly { id: string; aliases?: string[] }[],
 ) {
-  const bindings = compileAppearanceBindings(document, assets);
+  const bindings = compileAppearanceBindings(document, assets, transitions);
   const compiled = new Set(transitions.map((transition) => transition.id));
   root.traverse((wrapper) => {
     const part = wrapper.userData.map_bake_object_id;

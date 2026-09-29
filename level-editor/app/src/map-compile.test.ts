@@ -32,6 +32,7 @@ import {
   soundAssetCompilerFixture,
   movementTransitionCompilerFixture,
   appearanceOnlyCompilerFixture,
+  joinedTransitionCompilerFixture,
   sightTransitionCompilerFixture,
   lightAssetCompilerFixture,
   jumpAssetCompilerFixture,
@@ -46,6 +47,20 @@ import {
   doorAnchorCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { readFile } from "node:fs/promises";
+
+test("joined asset switches match the native multi-part apply/reset fixture", async () => {
+  const { document, assets } = joinedTransitionCompilerFixture();
+  const expected = JSON.parse(
+    await readFile(
+      new URL(
+        "../../../crates/robin_engine/tests/fixtures/asset-joined-transition.level.json",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  );
+  assert.deepEqual(compileMap(document, [0, 0, 2000, 2000], assets).descriptor, expected);
+});
 
 test("preserved state boundary export matches native apply/reset geometry", async () => {
   const { document, assets } = preservedStateBoundaryCompilerFixture();

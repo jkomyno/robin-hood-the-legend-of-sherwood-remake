@@ -760,6 +760,68 @@ mod tests {
     }
 
     #[test]
+    fn editor_joined_asset_switch_updates_both_members_and_resets() {
+        let bytes = include_bytes!("../../tests/fixtures/asset-joined-transition.level.json");
+        let (mut engine, assets) = load_compiled_transition(bytes, (2000., 2000.));
+        let descriptor: serde_json::Value = serde_json::from_slice(bytes).unwrap();
+        let transition: crate::level_data::CompiledMovementTransition =
+            serde_json::from_value(descriptor["asset_geometry"]["movement_transitions"][0].clone())
+                .unwrap();
+        assert_eq!(engine.script_domains.interactables.patches.len(), 1);
+        assert_eq!(transition.aliases, ["wing/wing/barriers"]);
+        assert_eq!(transition.initial_sight.len(), 2);
+        assert_eq!(transition.applied_sight.len(), 2);
+        assert_eq!(transition.motion_changes.len(), 4);
+        let states = engine.world.pathfinder.states.clone();
+        let sight = engine.world.static_sight_obstacle_active.clone();
+        let grid = engine.world.fast_grid.sector_active.clone();
+        let mut expected = states.clone();
+        for change in &transition.motion_changes {
+            let area = engine
+                .world
+                .pathfinder
+                .try_convert_sector(assets.navigation.pathfinder_graph.as_ref(), change.sector)
+                .unwrap();
+            let state = &mut expected[change.layer as usize][area as usize];
+            let initial = 1u32 << (2 * change.changing_obstacle);
+            assert_ne!(*state & initial, 0);
+            *state = (*state & !(initial * 3)) | (initial * 2);
+        }
+        let sim = crate::sim_rng::test_context();
+        let index = crate::patch::PatchIndex::new(0).unwrap();
+        for _ in 0..2 {
+            engine.apply_patch(TickCtx::new(&sim, &assets), index);
+            assert_eq!(engine.world.pathfinder.states, expected);
+            for &obstacle in &transition.initial_sight {
+                assert!(!engine.world.static_sight_obstacle_active[obstacle as usize]);
+            }
+            for &obstacle in &transition.applied_sight {
+                assert!(engine.world.static_sight_obstacle_active[obstacle as usize]);
+            }
+            assert_ne!(engine.world.fast_grid.sector_active, grid);
+            engine.reset_patch(TickCtx::new(&sim, &assets), index);
+            assert_eq!(engine.world.pathfinder.states, states);
+            assert_eq!(engine.world.static_sight_obstacle_active, sight);
+            assert_eq!(engine.world.fast_grid.sector_active, grid);
+        }
+        for aliases in [
+            vec![""],
+            vec!["hut-a/hut/barriers"],
+            vec!["duplicate", "duplicate"],
+        ] {
+            let mut invalid = descriptor.clone();
+            invalid["asset_geometry"]["movement_transitions"][0]["aliases"] =
+                serde_json::json!(aliases);
+            assert!(
+                crate::level_data::LoadedLevel::hackable_from_json(
+                    &serde_json::to_vec(&invalid).unwrap(),
+                )
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
     fn editor_projection_volume_preserves_physical_state_and_receiving_geometry() {
         use crate::coordinates::WorldPoint3D;
         use crate::sight_obstacle::{

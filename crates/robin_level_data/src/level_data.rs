@@ -2172,6 +2172,9 @@ pub struct CompiledAssetGeometry {
 #[serde(deny_unknown_fields)]
 pub struct CompiledMovementTransition {
     pub id: String,
+    /// Placed asset members represented by this single switch.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub aliases: Vec<String>,
     /// The map's paired image resources may be this transition's only effect.
     #[serde(default)]
     pub has_appearance: bool,
@@ -2743,6 +2746,10 @@ impl LoadedLevel {
             for transition in &geometry.movement_transitions {
                 if transition.id.is_empty()
                     || !transition_ids.insert(&transition.id)
+                    || transition
+                        .aliases
+                        .iter()
+                        .any(|alias| alias.is_empty() || !transition_ids.insert(alias))
                     || !motion_states.contains_key(&(transition.sector, transition.layer))
                     || (transition.motion_changes.is_empty()
                         && transition.initial_sight.is_empty()

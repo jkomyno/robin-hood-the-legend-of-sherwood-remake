@@ -41,6 +41,17 @@ including unresolved model bindings or geometry outside the export frame.
 The shared editor/native fixture verifies apply, toggle and reset while grid flags
 and door data stay unchanged. Animated mechanisms still need authored animation
 resources; mission-only placeholder profiles remain excluded.
+Asset-local transition `join` metadata now carries a semantic key and a point in
+the transition node's frame. Equal keys with world anchors within 0.01 game units
+compile to one switch when their world trigger geometry and flags agree. Motion,
+sight, mask and compatible door bindings are combined; conflicting triggers,
+door modes or state bindings fail explicitly. Joined placement aliases map all
+member appearances to the same native patch. Moving a contact apart detaches its
+switch; duplicating a complete assembly elsewhere creates an independent switch.
+Compiler and native fixtures cover two joined assets, moved/duplicated placement,
+combined navigation and sight apply/reset, and invalid aliases. Existing maps
+still need reviewed join definitions recovered into their assets; this feature
+does not resolve their outstanding shared ownership or certify map parity.
 The browser bake acceptance test now verifies an initial/applied/reset sequence
 on one reused scene: color and depth change across a render-tile boundary, reset
 restores every pixel, and successful/failed bakes restore borrowed materials and

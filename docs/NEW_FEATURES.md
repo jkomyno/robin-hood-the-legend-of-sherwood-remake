@@ -1,5 +1,10 @@
 # Post-port Features
 
+- **Asset contact switches.** Explicit asset-local transition anchors join matching
+  placed parts into one map switch, combining their gameplay and appearance changes.
+  Moving the contacts apart creates independent switches; duplicated assemblies
+  remain independent. Compilation rejects incompatible trigger and door rules.
+
 - **Independent light receivers on shared height planes.** Map compilation separates
   navigation layers when an anchored light would spill onto an unrelated receiver.
   Flat and elevated recovered fields retain local receiver anchors, full contours
