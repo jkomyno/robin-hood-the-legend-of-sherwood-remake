@@ -792,8 +792,10 @@ A list of which additional features we have added, which ones we might still wan
   position the hero will actually occupy. Shield and Big Shield retain their
   exact protectee-then-danger-point interaction. When the separate tactical-unit
   control extension is enabled, directly controlled units can queue formation
-  movement and combat, with group-portrait queue feedback. Touch-capable builds
-  expose a sticky plan/cancel HUD button. The per-profile
+  movement and combat, with group-portrait queue feedback. Touch sessions
+  expose a sticky plan/cancel HUD button: always on Android and iOS, and in
+  browsers when the primary pointer is coarse or after the first touch, so
+  mouse-driven browser play keeps the original HUD. The per-profile
   Gameplay setting disables all live planning UI/input and defaults on;
   Original-parity replay forces it off.
 

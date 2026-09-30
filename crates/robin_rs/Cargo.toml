@@ -207,6 +207,7 @@ web-sys = { version = "0.3", features = [
     "HtmlElement",
     "HtmlCanvasElement",
     "Location",
+    "MediaQueryList",
     "Navigator",
     "Performance",
     "ReadableStream",

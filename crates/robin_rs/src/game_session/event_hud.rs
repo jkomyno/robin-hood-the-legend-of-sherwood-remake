@@ -314,7 +314,7 @@ pub(super) fn collect_event_and_hud_input(context: EventHudContext<'_>) -> Event
     }
 
     let input_suppressed = runtime.replay().playback().is_some() || rewind_active;
-    let admit_touch = !input_suppressed && crate::touch_plan_hud::platform_has_touch_planning_hud();
+    let admit_touch = !input_suppressed && crate::touch_plan_hud::touch_planning_hud_active();
     let screen_width = presentation.renderer.screen_width();
     events.retain(|event| {
         use crate::frontend_input::TouchPlanRoute;

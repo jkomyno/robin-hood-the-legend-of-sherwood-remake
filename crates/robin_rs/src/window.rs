@@ -1312,6 +1312,7 @@ impl ApplicationHandler for AppHandler {
                 .expect("no #canvas element");
             let canvas: web_sys::HtmlCanvasElement =
                 canvas.dyn_into().expect("#canvas is not a <canvas>");
+            crate::touch_plan_hud::detect_browser_touch_session();
             attrs.with_canvas(Some(canvas))
         };
 
@@ -1392,6 +1393,7 @@ impl ApplicationHandler for AppHandler {
                 self.handle_mouse_input(state, button);
             }
             WindowEvent::Touch(touch) => {
+                crate::touch_plan_hud::note_touch_input();
                 let x = touch.location.x;
                 let y = touch.location.y;
                 let now_ms = process_uptime_ms();
