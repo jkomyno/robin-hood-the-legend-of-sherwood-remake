@@ -20,6 +20,11 @@
 //!    │                  │                   SELECTED ──drag back──► PUSHED
 //!    └──────release outside (LEFT_CLICK)─────┘
 //! ```
+//!
+//! When the input carries a left-press origin, a press that began on the
+//! button also works from DEFAULT without a prior hover frame: LEFT_DOWN
+//! goes straight to PUSHED, and a press and release polled in one batch
+//! activate directly. A press that began elsewhere never activates.
 
 #[cfg(test)]
 use robin_engine::coordinates::ScreenBBox;
@@ -288,10 +293,17 @@ impl WidgetButton {
         let inside = self.base.is_inside(input.mouse_position);
         let buttons = input.mouse_button;
         let capture = input.capture;
+        let press_began_inside = input
+            .left_press_origin
+            .map(|origin| self.base.is_inside(origin));
 
         match self.base.state {
-            UiState::Default => self.process_input_menu_default(inside, buttons),
-            UiState::Focused => self.process_input_menu_focused(inside, buttons, capture),
+            UiState::Default => {
+                self.process_input_menu_default(inside, buttons, press_began_inside, capture)
+            }
+            UiState::Focused => {
+                self.process_input_menu_focused(inside, buttons, press_began_inside, capture)
+            }
             UiState::Pushed => self.process_input_menu_pushed(inside, buttons, capture),
             UiState::Selected => self.process_input_menu_selected(inside, buttons, capture),
             _ => Vec::new(),
@@ -299,7 +311,33 @@ impl WidgetButton {
     }
 
     /// Menu-button DEFAULT-state input handler.
-    fn process_input_menu_default(&mut self, inside: bool, buttons: MouseButtons) -> Vec<UiEvent> {
+    ///
+    /// `press_began_inside` is `None` when the input source does not
+    /// report where the left press began.
+    fn process_input_menu_default(
+        &mut self,
+        inside: bool,
+        buttons: MouseButtons,
+        press_began_inside: Option<bool>,
+        capture: Option<&super::CaptureSlot>,
+    ) -> Vec<UiEvent> {
+        if inside && press_began_inside == Some(true) {
+            if buttons.contains(MouseButtons::LEFT_CLICK) {
+                // Hover, press and release all arrived in one polled
+                // batch, and the press began on this button.
+                self.base.state = UiState::Focused;
+                return vec![self.base.make_event(UiMsg::WidgetActivated)];
+            }
+            if buttons.contains(MouseButtons::LEFT_DOWN) {
+                // The press began on this button before any hover frame
+                // was seen: capture it as if FOCUSED had been reached.
+                self.base.state = UiState::Pushed;
+                if let Some(slot) = capture {
+                    slot.set(self.base.id);
+                }
+                return Vec::new();
+            }
+        }
         // Inside + LEFT_DOWN-not-set → silently transition to FOCUSED.
         if inside && !buttons.contains(MouseButtons::LEFT_DOWN) {
             self.base.state = UiState::Focused;
@@ -312,17 +350,21 @@ impl WidgetButton {
         &mut self,
         inside: bool,
         buttons: MouseButtons,
+        press_began_inside: Option<bool>,
         capture: Option<&super::CaptureSlot>,
     ) -> Vec<UiEvent> {
+        // A press known to have begun elsewhere (pointer left, pressed and
+        // came back within one batch) must not push or activate this button.
+        let press_is_ours = press_began_inside != Some(false);
         if inside {
-            if buttons.contains(MouseButtons::LEFT_DOWN) {
+            if buttons.contains(MouseButtons::LEFT_DOWN) && press_is_ours {
                 // Focused → Pushed, set capture, no event.
                 self.base.state = UiState::Pushed;
                 if let Some(slot) = capture {
                     slot.set(self.base.id);
                 }
                 Vec::new()
-            } else if buttons.contains(MouseButtons::LEFT_CLICK) {
+            } else if buttons.contains(MouseButtons::LEFT_CLICK) && press_is_ours {
                 // Press and release both arrived since the last frame (a
                 // frame longer than the click), so PUSHED was never seen.
                 // The pointer has not left since it was hovering unpressed:

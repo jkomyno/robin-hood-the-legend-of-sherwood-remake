@@ -356,6 +356,7 @@ mod tests {
             keyboard,
             text_input: "",
             capture: None,
+            left_press_origin: None,
         }
     }
 

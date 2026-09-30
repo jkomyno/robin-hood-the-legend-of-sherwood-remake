@@ -1353,6 +1353,7 @@ pub(crate) fn feed_save_name(
         keyboard: empty_keyboard,
         text_input: input.text_input,
         capture: None,
+        left_press_origin: None,
     };
     let events = field.process_input(&field_input);
     if field.base.state != UiState::SelectedEditable {

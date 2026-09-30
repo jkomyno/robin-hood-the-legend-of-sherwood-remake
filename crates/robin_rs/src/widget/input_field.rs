@@ -531,6 +531,7 @@ mod tests {
             keyboard: kb,
             text_input: text,
             capture: None,
+            left_press_origin: None,
         }
     }
 

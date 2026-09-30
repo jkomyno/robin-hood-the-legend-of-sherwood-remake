@@ -594,6 +594,7 @@ fn production_sound_sliders_hit_test_and_track_a_drag() {
         keyboard: &keyboard,
         text_input: "",
         capture: None,
+        left_press_origin: None,
     };
     for index in 0..SOUND_SLIDERS.len() {
         let rect = sound_slider_rect(index);
