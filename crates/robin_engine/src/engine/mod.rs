@@ -98,7 +98,7 @@ mod wasp_nest;
 
 pub(crate) use commands::command_action_distance_animation;
 pub use commands::{coin_pickup_target, object_pickup_command};
-pub use console_dispatch::ConsoleResponse;
+pub use console_dispatch::{ConsoleResponse, HONOLULU_USAGE, HonoluluResolution, resolve_honolulu};
 pub use frame::{
     ExternalAction, ExternalActionResult, ExternalFacts, FrameAdvanceError, FrameConsoleResponse,
     RecordedDropAleRoute, SimCommand, SimulationCommandPhase, SimulationFrameInput,

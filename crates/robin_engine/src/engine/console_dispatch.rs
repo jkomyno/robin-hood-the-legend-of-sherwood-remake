@@ -934,75 +934,44 @@ impl EngineInner {
         ConsoleResponse::Ok("NPCs knocked out !".to_string())
     }
 
+    /// `HONOLULU` (original 0x0045d920) against the target the host resolved
+    /// with [`resolve_honolulu`]: an active NPC goes on holiday (inactive,
+    /// AI frozen, view cleared); an inactive NPC comes back. Coordinates
+    /// never change. No target or a non-NPC target is silent, like the
+    /// original's outer guard.
     fn console_honolulu(
         &mut self,
         mut dev: Option<&mut DevState>,
         selected_view_element: &mut Option<EntityId>,
     ) -> ConsoleResponse {
-        // Body only runs when there is a selected view element
-        // and it is an NPC; otherwise it falls through silently.
-        // The success path always prints "Honolulu" first, then
-        // one of three branches keyed on the host-resolved target:
-        //  1. selection is active → deactivate + lock AI +
-        //     stash in tracker + clear selection + "Bye…"
-        //  2. target is inactive → reactivate it + unlock AI +
-        //     "I'm back!"
-        //  3. otherwise → three-line usage help
-        //
-        // Live hosts resolve an empty current selection from their
-        // `last_actor_in_honolulu` latch before frame admission.
         let Some(id) = *selected_view_element else {
-            // No selection / not an NPC falls through with zero
-            // output.
             return ConsoleResponse::Ok(String::new());
         };
-        let Some(entity) = self.get_entity(id) else {
+        let Some(entity) = self.get_entity_mut(id) else {
             return ConsoleResponse::Ok(format!("Error: selected entity {id:?} no longer exists"));
         };
         if !entity.is_npc() {
             return ConsoleResponse::Ok(String::new());
         }
-        let active_now = self
-            .get_entity(id)
-            .map(|e| e.element_data().active)
-            .unwrap_or(false);
-
-        if active_now {
-            // Send this NPC on vacation.
-            if let Some(entity) = self.get_entity_mut(id) {
-                entity.element_data_mut().active = false;
-                if let Some(npc) = entity.npc_data_mut()
-                    && let Some(base) = npc.ai_brain.base_mut()
-                {
-                    base.non_script_lock(AiLockFlags::FREEZE);
-                }
-            }
-            if let Some(host) = dev.as_deref_mut() {
-                host.last_actor_in_honolulu = Some(id);
-            }
-            *selected_view_element = None;
-            return ConsoleResponse::Ok("Honolulu\nBye, I'm on holiday.".to_string());
-        }
-
-        // Reactivate the host-resolved vacation NPC.
-        if let Some(entity) = self.get_entity_mut(id) {
-            entity.element_data_mut().active = true;
-            if let Some(npc) = entity.npc_data_mut()
-                && let Some(base) = npc.ai_brain.base_mut()
-            {
+        let send_away = entity.element_data().active;
+        entity.element_data_mut().active = !send_away;
+        if let Some(npc) = entity.npc_data_mut()
+            && let Some(base) = npc.ai_brain.base_mut()
+        {
+            if send_away {
+                base.non_script_lock(AiLockFlags::FREEZE);
+            } else {
                 base.non_script_unlock(AiLockFlags::FREEZE);
             }
+        }
+        if !send_away {
             return ConsoleResponse::Ok("Honolulu\nI'm back!".to_string());
         }
-
-        // Fallback: three-line usage help.
-        ConsoleResponse::Ok(
-            "Honolulu\n\
-             Cheat couldn't be performed. There are two possibilities to do this cheat:\n\
-             (1) Enable a view cone, then use this cheat to send this guy to Honolulu\n\
-             (2) If (1) already done: Disable view cone, use this cheat to get last guy back from Honolulu."
-                .to_string(),
-        )
+        if let Some(host) = dev.as_deref_mut() {
+            host.last_actor_in_honolulu = Some(id);
+        }
+        *selected_view_element = None;
+        ConsoleResponse::Ok("Honolulu\nBye, I'm on holiday.".to_string())
     }
 
     fn console_morpheus(
@@ -1066,10 +1035,11 @@ impl EngineInner {
         &mut self,
         selected_view_element: &mut Option<EntityId>,
     ) -> ConsoleResponse {
-        // Prints "Last man standing" unconditionally, then
-        // either deactivates every NPC other than the selected
-        // and prints "Lonely hero...", or prints the
-        // no-selection error.
+        // Original 0x0045da50 prints "Last man standing" unconditionally,
+        // then either deactivates and AI-locks every NPC other than the
+        // viewed element and prints "Lonely hero...", or prints the
+        // no-view error. It checks only that a view exists (no NPC type
+        // check) and leaves the view and the Honolulu slot alone.
         let Some(keep) = *selected_view_element else {
             return ConsoleResponse::Ok(
                 "Last man standing\n\
@@ -1077,6 +1047,11 @@ impl EngineInner {
                     .to_string(),
             );
         };
+        if self.get_entity(keep).is_none() {
+            return ConsoleResponse::Ok(format!(
+                "Last man standing\nError: selected entity {keep:?} no longer exists"
+            ));
+        }
         let ids: Vec<EntityId> = self.world.entities.npc_ids().collect::<Vec<_>>();
         for id in ids {
             if id == keep {
@@ -1372,6 +1347,70 @@ impl EngineInner {
     /// project rule — failing loudly is better than silently no-opping.
     fn campaign_mut_or_panic(&mut self) -> &mut crate::campaign::Campaign {
         &mut self.mission_domain.campaign
+    }
+}
+
+/// Original HONOLULU usage lines (0x006ad298, 0x006ad228, 0x006ad1dc,
+/// 0x006ad17c), printed when the viewed NPC is already on holiday and no
+/// remembered NPC can come back.
+pub const HONOLULU_USAGE: [&str; 4] = [
+    "Honolulu",
+    "Cheat couldn't be performed. There are two possibilities to do this cheat:",
+    "(1) Enable a view cone, then use this cheat to send this guy to Honolulu",
+    "(2) If (1) already done: Disable view cone, use this cheat to get last guy back from Honolulu.",
+];
+
+/// How HONOLULU applies, decided by the host before frame admission so the
+/// journal records a concrete target.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HonoluluResolution {
+    /// Admit HONOLULU against `target`. `sends_away` marks an active NPC
+    /// that goes on holiday; the host remembers it for the way back.
+    Admit {
+        target: Option<EntityId>,
+        sends_away: bool,
+    },
+    /// Print [`HONOLULU_USAGE`]; the command would change nothing.
+    Usage,
+}
+
+/// Resolve HONOLULU's target from the viewed element and the host's
+/// remembered holiday NPC (the original's single `DAT_006c080c` slot).
+///
+/// Matches the original handler whenever an NPC is viewed: an active one is
+/// sent away; for an inactive one the *remembered* NPC comes back if it is
+/// still on holiday, otherwise the usage lines are printed. With nothing
+/// viewed the original returns silently, which makes its printed step (2),
+/// "Disable view cone, use this cheat to get last guy back", unreachable
+/// once the view is cleared. The remake instead brings the remembered NPC
+/// back in that case, the two-step flow the usage text describes.
+pub fn resolve_honolulu<'a>(
+    viewed: Option<EntityId>,
+    remembered: Option<EntityId>,
+    lookup: impl Fn(EntityId) -> Option<&'a Entity>,
+) -> HonoluluResolution {
+    let on_holiday = |id: EntityId| {
+        lookup(id).is_some_and(|entity| entity.is_npc() && !entity.element_data().active)
+    };
+    let returning = remembered.filter(|&id| on_holiday(id));
+    let Some(viewed_id) = viewed else {
+        return HonoluluResolution::Admit {
+            target: returning,
+            sends_away: false,
+        };
+    };
+    match lookup(viewed_id) {
+        Some(entity) if entity.is_npc() && !entity.element_data().active => match returning {
+            Some(id) => HonoluluResolution::Admit {
+                target: Some(id),
+                sends_away: false,
+            },
+            None => HonoluluResolution::Usage,
+        },
+        entity => HonoluluResolution::Admit {
+            target: viewed,
+            sends_away: entity.is_some_and(|entity| entity.is_npc()),
+        },
     }
 }
 
@@ -1804,14 +1843,28 @@ mod tests {
         let mut engine = EngineInner::new();
         let id_blipped = engine.add_test_entity(soldier(true));
         let id_plain = engine.add_test_entity(soldier(false));
+        let id_away = engine.add_test_entity(soldier(true));
+        let spot = crate::coordinates::MapPoint::new(12.0, 34.0);
+        {
+            let element = engine.get_entity_mut(id_away).unwrap().element_data_mut();
+            element.active = false;
+            element.set_position_map(spot);
+        }
 
-        let resp = engine.run_console_command(
-            TickCtx::new(sim, &assets()),
-            &mut dev,
-            &mut None,
-            "UBIQUITY",
-        );
-        assert!(matches!(resp, ConsoleResponse::Ok(_)));
+        for input in ["UBIQUITY", "UNBLIP"] {
+            let resp = engine.run_console_command(
+                TickCtx::new(sim, &assets()),
+                &mut dev,
+                &mut None,
+                input,
+            );
+            assert_eq!(resp, ConsoleResponse::Ok("Unblip !".to_owned()));
+        }
+        // Revealing neither activates nor moves an inactive NPC.
+        let away = engine.get_entity(id_away).unwrap().element_data();
+        assert!(!away.blipped);
+        assert!(!away.active);
+        assert_eq!(away.position_map(), spot);
 
         assert!(
             !engine
@@ -2324,6 +2377,133 @@ mod tests {
         );
         assert_eq!(selected, Some(id));
         assert!(engine.get_entity(id).unwrap().element_data().active);
+    }
+
+    #[test]
+    fn honolulu_resolution_follows_the_original_branches_plus_the_two_step_fallback() {
+        let mut engine = EngineInner::new();
+        let active = engine.add_test_entity(soldier(false));
+        let away = engine.add_test_entity(soldier(false));
+        let also_away = engine.add_test_entity(soldier(false));
+        let pc = engine.add_test_entity(royalist_pc());
+        for id in [away, also_away] {
+            engine.get_entity_mut(id).unwrap().element_data_mut().active = false;
+        }
+        let missing = EntityId::new(999, crate::entity_id::EntityIdKind::Soldier);
+        let resolve =
+            |viewed, remembered| resolve_honolulu(viewed, remembered, |id| engine.get_entity(id));
+        let admit = |target, sends_away| HonoluluResolution::Admit { target, sends_away };
+
+        // Original branches with a viewed element.
+        assert_eq!(resolve(Some(active), Some(away)), admit(Some(active), true));
+        assert_eq!(
+            resolve(Some(also_away), Some(away)),
+            admit(Some(away), false)
+        );
+        assert_eq!(resolve(Some(away), Some(away)), admit(Some(away), false));
+        assert_eq!(resolve(Some(also_away), None), HonoluluResolution::Usage);
+        assert_eq!(
+            resolve(Some(also_away), Some(active)),
+            HonoluluResolution::Usage
+        );
+        assert_eq!(resolve(Some(pc), Some(away)), admit(Some(pc), false));
+        assert_eq!(
+            resolve(Some(missing), Some(away)),
+            admit(Some(missing), false)
+        );
+        // No view: the original is silent; the remake brings the
+        // remembered NPC back while it is still away.
+        assert_eq!(resolve(None, Some(away)), admit(Some(away), false));
+        assert_eq!(resolve(None, Some(active)), admit(None, false));
+        assert_eq!(resolve(None, None), admit(None, false));
+    }
+
+    #[test]
+    fn honolulu_two_step_flow_sends_away_and_brings_back_in_place() {
+        let sim = crate::sim_rng::test_context();
+        let assets = assets();
+        let mut engine = EngineInner::new();
+        let npc = engine.add_test_entity(soldier(false));
+        let spot = crate::coordinates::MapPoint::new(40.0, 25.0);
+        engine
+            .get_entity_mut(npc)
+            .unwrap()
+            .element_data_mut()
+            .set_position_map(spot);
+        let mut remembered = None;
+        let mut view = Some(npc);
+        let mut expected = ["Honolulu\nBye, I'm on holiday.", "Honolulu\nI'm back!"].into_iter();
+        for active_after in [false, true] {
+            let HonoluluResolution::Admit { target, sends_away } =
+                resolve_honolulu(view, remembered, |id| engine.get_entity(id))
+            else {
+                panic!("usage")
+            };
+            let mut selected = target;
+            let response = engine.dispatch_sim_console_command(
+                TickCtx::new(&sim, &assets),
+                &mut selected,
+                &ConsoleCommand::Honolulu,
+            );
+            assert_eq!(
+                response,
+                ConsoleResponse::Ok(expected.next().unwrap().to_owned())
+            );
+            if sends_away {
+                remembered = target;
+                view = selected;
+                assert_eq!(view, None, "sending away clears the view cone");
+            }
+            let element = engine.get_entity(npc).unwrap().element_data();
+            assert_eq!(element.active, active_after);
+            assert_eq!(element.position_map(), spot);
+        }
+    }
+
+    #[test]
+    fn last_man_standing_keeps_only_the_viewed_actor_and_rejects_stale_views() {
+        let sim = crate::sim_rng::test_context();
+        let assets = assets();
+        let mut engine = EngineInner::new();
+        let hero = engine.add_test_entity(soldier(false));
+        let others = [
+            engine.add_test_entity(soldier(false)),
+            engine.add_test_entity(soldier(true)),
+        ];
+        let stale = EntityId::new(999, crate::entity_id::EntityIdKind::Soldier);
+        let mut selected = Some(stale);
+        assert_eq!(
+            engine.dispatch_sim_console_command(
+                TickCtx::new(&sim, &assets),
+                &mut selected,
+                &ConsoleCommand::LastManStanding,
+            ),
+            ConsoleResponse::Ok(format!(
+                "Last man standing\nError: selected entity {stale:?} no longer exists"
+            ))
+        );
+        assert!(
+            others
+                .iter()
+                .all(|&id| engine.get_entity(id).unwrap().element_data().active)
+        );
+
+        let mut selected = Some(hero);
+        assert_eq!(
+            engine.dispatch_sim_console_command(
+                TickCtx::new(&sim, &assets),
+                &mut selected,
+                &ConsoleCommand::LastManStanding,
+            ),
+            ConsoleResponse::Ok("Last man standing\nLonely hero...".to_owned())
+        );
+        assert_eq!(selected, Some(hero));
+        assert!(engine.get_entity(hero).unwrap().element_data().active);
+        assert!(
+            others
+                .iter()
+                .all(|&id| !engine.get_entity(id).unwrap().element_data().active)
+        );
     }
 
     #[test]

@@ -34,8 +34,8 @@ use crate::native_font::Font;
 use crate::renderer::Renderer;
 use robin_engine::console::{ConsoleCommand, parse_with_final};
 use robin_engine::engine::{
-    DevState, Engine, ExternalAction, ExternalActionResult, FrameConsoleResponse, LevelAssets,
-    SimulationFrameInput,
+    DevState, Engine, ExternalAction, ExternalActionResult, FrameConsoleResponse, HONOLULU_USAGE,
+    HonoluluResolution, LevelAssets, SimulationFrameInput, resolve_honolulu,
 };
 
 /// Maximum characters in the input line.
@@ -469,40 +469,59 @@ impl ConsoleOverlay {
             } else {
                 // HONOLULU's remembered actor is a host UI latch. Resolve it
                 // to the concrete authoritative target before admission.
-                let selected_view_element = if matches!(command, ConsoleCommand::Honolulu) {
-                    if let Some(selected) = host.frontend.selected_view_element() {
-                        dev.last_actor_in_honolulu = Some(selected);
+                let viewed = host.frontend.selected_view_element();
+                let honolulu = matches!(command, ConsoleCommand::Honolulu).then(|| {
+                    let view = engine.presentation_view();
+                    resolve_honolulu(viewed, dev.last_actor_in_honolulu, |id| view.get_entity(id))
+                });
+                match honolulu {
+                    Some(HonoluluResolution::Usage) => {
+                        FrameConsoleResponse::Ok(HONOLULU_USAGE.join("\n"))
                     }
-                    host.frontend
-                        .selected_view_element()
-                        .or(dev.last_actor_in_honolulu)
-                } else {
-                    host.frontend.selected_view_element()
-                };
-                let action = ExternalAction::ConsoleCommand {
-                    command,
-                    selected_view_element,
-                };
-                let output = engine
-                    .advance_frame(
-                        assets,
-                        SimulationFrameInput::no_hourglass()
-                            .with_external_actions(vec![action.clone()]),
-                    )
-                    .expect("console action frame admission");
-                let response = match output.external_action_results.into_iter().next() {
-                    Some(ExternalActionResult::ConsoleCommand {
-                        response,
-                        selected_view_element,
-                    }) => {
-                        host.frontend
-                            .set_selected_view_element(selected_view_element);
+                    resolution => {
+                        let selected_view_element = match resolution {
+                            Some(HonoluluResolution::Admit { target, .. }) => target,
+                            _ => viewed,
+                        };
+                        let action = ExternalAction::ConsoleCommand {
+                            command,
+                            selected_view_element,
+                        };
+                        let output = engine
+                            .advance_frame(
+                                assets,
+                                SimulationFrameInput::no_hourglass()
+                                    .with_external_actions(vec![action.clone()]),
+                            )
+                            .expect("console action frame admission");
+                        let response = match output.external_action_results.into_iter().next() {
+                            Some(ExternalActionResult::ConsoleCommand {
+                                response,
+                                selected_view_element,
+                            }) => {
+                                match resolution {
+                                    Some(HonoluluResolution::Admit {
+                                        target,
+                                        sends_away: true,
+                                    }) => {
+                                        dev.last_actor_in_honolulu = target;
+                                        host.frontend
+                                            .set_selected_view_element(selected_view_element);
+                                    }
+                                    // Bringing an NPC back never changes the view.
+                                    Some(HonoluluResolution::Admit { .. }) => {}
+                                    _ => host
+                                        .frontend
+                                        .set_selected_view_element(selected_view_element),
+                                }
+                                response
+                            }
+                            _ => panic!("console action admission returned no console result"),
+                        };
+                        admitted_actions.push(action);
                         response
                     }
-                    _ => panic!("console action admission returned no console result"),
-                };
-                admitted_actions.push(action);
-                response
+                }
             }
         } else {
             FrameConsoleResponse::Unknown
