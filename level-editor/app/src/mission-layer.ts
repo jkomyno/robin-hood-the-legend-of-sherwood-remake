@@ -1,50 +1,167 @@
 import * as THREE from "three";
 import { gameToScene, type Level3D } from "@rle/shared";
 import { disposeObjectResources } from "./resources.ts";
+import { MissionEntities } from "./mission.ts";
+import type { MissionCharacterProfile } from "./mission-character-catalog.ts";
 
-/** Editor markers have their own root so they never enter the baked map artwork. */
+interface Actor {
+  key: string;
+  ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>;
+  view?: MissionEntities;
+  pending: boolean;
+  warning?: string;
+}
+
+/** Character previews and selection outlines never enter the baked map artwork. */
 export class MissionLayer {
   readonly root = new THREE.Group();
-  private key = "";
+  readonly spritesRoot = new THREE.Group();
+  private library: FileSystemDirectoryHandle | null = null;
+  private profiles: readonly MissionCharacterProfile[] = [];
+  private status: (loading: boolean, warnings: string[]) => void = () => {};
+  private actors = new Map<string, Actor>();
+  private document: Level3D | null = null;
+  private selected = "";
+  private epoch = 0;
+
+  setLibrary(
+    root: FileSystemDirectoryHandle | null,
+    profiles: readonly MissionCharacterProfile[],
+    status: (loading: boolean, warnings: string[]) => void,
+  ) {
+    this.status = status;
+    if (this.library === root && this.profiles === profiles) return;
+    const document = this.document,
+      selected = this.selected;
+    this.clear();
+    this.library = root;
+    this.profiles = profiles;
+    if (document) this.sync(document, selected);
+  }
+
+  setVisible(visible: boolean) {
+    this.root.visible = visible;
+    this.spritesRoot.visible = visible;
+  }
+
+  private report() {
+    const actors = [...this.actors.values()];
+    this.status(
+      actors.some((actor) => actor.pending),
+      actors.flatMap((actor) => (actor.warning ? [actor.warning] : [])),
+    );
+  }
 
   clear() {
+    this.epoch++;
+    for (const actor of this.actors.values()) actor.view?.dispose();
+    this.actors.clear();
     disposeObjectResources([this.root]);
     this.root.clear();
-    this.key = "";
+    this.spritesRoot.clear();
+    this.document = null;
+    this.report();
   }
 
   sync(document: Level3D, selected = "") {
-    const key = JSON.stringify([document.mission, document.camera, selected]);
-    if (key === this.key) return;
-    this.clear();
-    this.key = key;
-    for (const [kind, entries] of [
-      ["PC", document.mission?.spawnPoints ?? []],
-      ["NPC", document.mission?.soldiers ?? []],
-    ] as const) {
-      for (const entry of entries) {
-        const marker = new THREE.Group();
-        marker.userData.missionId = entry.id;
-        marker.position.set(...gameToScene(document.camera, ...entry.position));
-        const material = new THREE.MeshBasicMaterial({
-          color: entry.id === selected ? 0xffdd55 : kind === "PC" ? 0x55bbff : 0xff6655,
-          depthTest: false,
-        });
-        const body = new THREE.Mesh(new THREE.ConeGeometry(9, 30, 8), material);
-        body.rotation.x = Math.PI / 2;
-        body.position.z = 20;
-        body.renderOrder = 1100;
-        const base = new THREE.Mesh(new THREE.RingGeometry(11, 15, 24), material);
-        base.position.z = 1;
-        base.renderOrder = 1100;
-        marker.add(body, base);
-        this.root.add(marker);
-      }
+    this.document = document;
+    this.selected = selected;
+    const entries = [
+      ...(document.mission?.spawnPoints ?? []).map((entry) => ({ ...entry, kind: "pc" as const })),
+      ...(document.mission?.soldiers ?? []).map((entry) => ({ ...entry, kind: "npc" as const })),
+    ];
+    const live = new Set(entries.map((entry) => entry.id));
+    for (const [id, actor] of this.actors) {
+      if (live.has(id)) continue;
+      actor.view?.dispose();
+      disposeObjectResources([actor.ring]);
+      actor.ring.removeFromParent();
+      this.actors.delete(id);
     }
+    for (const entry of entries) {
+      const key = JSON.stringify([entry.kind, entry.profile, document.camera]);
+      let actor = this.actors.get(entry.id);
+      if (actor && actor.key !== key) {
+        actor.view?.dispose();
+        disposeObjectResources([actor.ring]);
+        actor.ring.removeFromParent();
+        this.actors.delete(entry.id);
+        actor = undefined;
+      }
+      if (!actor) {
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(11, 14, 24),
+          new THREE.MeshBasicMaterial({ depthTest: false, side: THREE.DoubleSide }),
+        );
+        ring.userData.missionId = entry.id;
+        ring.renderOrder = 1100;
+        actor = { key, ring, pending: false };
+        this.actors.set(entry.id, actor);
+        this.root.add(ring);
+        const profile = this.profiles.find(
+          (profile) => profile.kind === entry.kind && profile.profile === entry.profile,
+        );
+        if (!this.library || !profile) {
+          actor.warning = `${entry.name}: character sprite unavailable (${!this.library ? "open a library with game-data" : `unknown ${entry.kind.toUpperCase()} profile ${entry.profile}`}).`;
+        } else {
+          actor.pending = true;
+          const own = actor,
+            epoch = this.epoch;
+          const current = () => epoch === this.epoch && this.actors.get(entry.id) === own;
+          void MissionEntities.loadCharacter(this.library, profile, document.camera, current).then(
+            (view) => {
+              if (!current()) {
+                view.dispose();
+                return;
+              }
+              own.view = view;
+              own.pending = false;
+              own.warning = view.warnings.length
+                ? `${entry.name}: ${view.warnings.join("; ")}`
+                : undefined;
+              view.root.userData.missionId = entry.id;
+              this.spritesRoot.add(view.root);
+              if (this.document) this.sync(this.document, this.selected);
+            },
+            (error) => {
+              if (!current()) return;
+              own.pending = false;
+              own.warning = `${entry.name}: character sprite unavailable: ${String(error)}`;
+              if (this.document) this.sync(this.document, this.selected);
+            },
+          );
+        }
+      }
+      const [x, y, z] = gameToScene(document.camera, ...entry.position);
+      actor.ring.position.set(x, y, z + 1);
+      actor.ring.material.color.setHex(
+        entry.id === selected
+          ? 0xffdd55
+          : actor.warning
+            ? 0xff45ce
+            : entry.kind === "pc"
+              ? 0x55bbff
+              : 0xff6655,
+      );
+      actor.view?.setCharacterPose(new THREE.Vector3(x, z, -y), entry.direction);
+    }
+    this.report();
+  }
+
+  update(camera: THREE.Camera, lockOrientations: boolean) {
+    if (!this.spritesRoot.visible) return;
+    for (const actor of this.actors.values()) actor.view?.update(camera, lockOrientations);
   }
 
   hit(raycaster: THREE.Raycaster): string | undefined {
-    const hit = raycaster.intersectObject(this.root, true)[0];
-    return hit?.object.parent?.userData.missionId;
+    const hits = raycaster.intersectObjects([this.root, this.spritesRoot], true);
+    for (const hit of hits) {
+      let object: THREE.Object3D | null = hit.object;
+      while (object) {
+        if (typeof object.userData.missionId === "string") return object.userData.missionId;
+        object = object.parent;
+      }
+    }
+    return undefined;
   }
 }

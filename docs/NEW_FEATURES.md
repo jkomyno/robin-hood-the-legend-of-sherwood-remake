@@ -1,7 +1,12 @@
 # Post-port Features
 
 - **Minimal editor missions.** The Mission tab adds player spawn points and NPC
-  soldiers with placement, facing and profile controls. Mission authoring stays
+  soldiers with placement, facing and profile controls. Its character palette
+  displays actual library sprites, uses canonical profile identities, and supports
+  choosing a character before placement or changing a selected character. Placed
+  characters show their directional sprites; numeric controls use the editor’s
+  drag sliders. The character library includes every PC and soldier’s idle pose.
+  Mission authoring stays
   separate from map assets and preview population. Export resolves its markers
   against the compiled navigation and receiving surfaces, writes PCs as spawn
   points and NPCs as soldiers, and preserves the editable mission in the embedded

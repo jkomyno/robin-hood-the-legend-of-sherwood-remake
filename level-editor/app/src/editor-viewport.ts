@@ -455,10 +455,17 @@ export class EditorViewport {
 
   setMissionEdit(mode: typeof this.missionEdit) {
     this.missionEdit = mode;
-    this.missionMarkers.root.visible = !!mode;
+    this.missionMarkers.setVisible(!!mode);
     if (mode) this.select(null);
     const document = this.bindings.document();
     if (document) this.missionMarkers.sync(document, mode?.selected);
+  }
+  setMissionSpriteLibrary(
+    root: FileSystemDirectoryHandle | null,
+    profiles: readonly import("./mission-character-catalog.ts").MissionCharacterProfile[],
+    onStatus: (loading: boolean, warnings: string[]) => void,
+  ) {
+    this.missionMarkers.setLibrary(root, profiles, onStatus);
   }
   private readonly sunlight = new SunLighting();
   private splineMode: SplineEditMode | null = null;
@@ -494,7 +501,8 @@ export class EditorViewport {
     this.exportFrame.renderOrder = 1000;
     this.mapRoot.add(this.exportFrame);
     this.mapRoot.add(this.missionMarkers.root);
-    this.missionMarkers.root.visible = false;
+    this.scene.add(this.missionMarkers.spritesRoot);
+    this.missionMarkers.setVisible(false);
     this.mapRoot.add(
       this.terrain.root,
       this.terrainControls.root,
@@ -948,6 +956,7 @@ export class EditorViewport {
         );
       }
       this.entities?.update(camera, this.spriteOrientationLock);
+      this.missionMarkers.update(camera, this.spriteOrientationLock);
       this.renderer.render(this.scene, camera);
     });
   }

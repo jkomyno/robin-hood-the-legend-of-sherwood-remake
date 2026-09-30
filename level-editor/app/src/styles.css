@@ -742,6 +742,9 @@ input.num {
 .asset-card { border: 1px solid #354050; border-radius: 8px; overflow: hidden; background: #222a35; min-width: 0; }
 .asset-card[draggable="true"] { cursor: grab; }
 .asset-card:hover { border-color: #80b4c8; }
+.mission-character-choices .asset-card { padding: 0; text-align: left; color: inherit; }
+.mission-character-choices .asset-card[aria-pressed="true"] { border-color: #ddc268; background: #3d3c2e; }
+.mission-character-choices .asset-card:disabled { opacity: 0.6; }
 .asset-preview { position: relative; aspect-ratio: 320 / 220; background: radial-gradient(ellipse at center, #3b485b, #202833); }
 .asset-preview canvas { display: block; width: 100%; height: 100%; }
 .preview-status { position: absolute; inset: 0; display: grid; place-content: center; padding: 8px; text-align: center; font-size: 11px; color: #bdc9d9; overflow: auto; overflow-wrap: anywhere; }

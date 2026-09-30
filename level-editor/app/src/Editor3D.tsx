@@ -1582,6 +1582,7 @@ export default function Editor3D(props: EditorProps) {
           </nav>
           <div class="inspector-content" hidden={panel() !== "Mission"}>
             <MissionPanel
+              library={() => props.library()?.handle ?? null}
               document={doc}
               commit={pushHistory}
               onError={props.onError}

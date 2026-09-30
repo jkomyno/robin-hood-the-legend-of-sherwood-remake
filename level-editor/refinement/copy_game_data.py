@@ -1,4 +1,4 @@
-"""Copy only the inputs used by the editor's initial mission previews."""
+"""Copy mission preview inputs and idle sprites for authorable mission characters."""
 import argparse
 from copy import deepcopy
 import json
@@ -53,6 +53,14 @@ def mission_sprites(mission, profiles):
             yield 'scenery', sprite['frame_profile_name'], sprite['profile_name'], 0
 
 
+def authorable_character_sprites(profiles):
+    """Include profiles absent from saved missions so every chooser entry can render."""
+    for category, order in (('characters', 'character_order'), ('soldiers', 'soldier_order')):
+        for key in profiles[order]:
+            profile = profiles[category][key]
+            yield 'character', profile['filename'], profile['profile_name'], 3
+
+
 def copy_game_data(source, destination):
     source, destination = Path(source).resolve(strict=True), Path(destination).resolve()
     if destination.is_relative_to(source) or source.is_relative_to(destination):
@@ -95,11 +103,14 @@ def copy_game_data(source, destination):
     profile_path = source / 'Data/Configuration/profile.cpf.json'
     profiles = json.loads(profile_path.read_text())
     generated[include(profile_path)] = profiles
-    banks, selected = {}, {}
+    banks, selected, output_banks = {}, {}, {}
+    requests = [('authorable characters', 'Day', authorable_character_sprites(profiles), True)]
     for mission_path in missions:
         mission = json.loads(mission_path.read_text())
         ambiance = AMBIANCES[mission['header']['ambiance']]
-        for kind, filename, profile_name, action in mission_sprites(mission, profiles):
+        requests.append((mission_path.name, ambiance, mission_sprites(mission, profiles), False))
+    for context, ambiance, sprites, require_directions in requests:
+        for kind, filename, profile_name, action in sprites:
             paths = ([['Data', 'Animations', *([a] if a else []), filename + '.rhs.d']
                       for a in dict.fromkeys((ambiance, 'Day', ''))] if kind == 'scenery'
                      else [['Data', 'Characters', filename + '.rhs.d']])
@@ -110,11 +121,19 @@ def copy_game_data(source, destination):
                     break
             if bank is None:
                 if kind == 'character':
-                    raise ValueError(f'{mission_path.name}: missing character sprite {filename}')
-                warnings.warn(f'{mission_path.name}: missing sprite {filename}; preview uses a marker')
+                    raise ValueError(f'{context}: missing character sprite {filename}')
+                warnings.warn(f'{context}: missing sprite {filename}; preview uses a marker')
                 continue
+            # Browser URLs are case-sensitive even when the input loader finds a bank
+            # through its case-insensitive directory fallback.
+            output_bank = (Path('Data/Characters') / (filename + '.rhs.d')
+                           if kind in ('character', 'pickup') else bank.relative_to(source))
+            output_banks.setdefault(bank, set()).add(output_bank)
             if bank not in banks:
-                banks[bank] = json.loads((bank / 'manifest.json').read_text())
+                manifest_path = (bank / 'manifest.json').resolve(strict=True)
+                if not manifest_path.is_relative_to(source):
+                    raise ValueError(f'Sprite manifest escapes source: {manifest_path}')
+                banks[bank] = json.loads(manifest_path.read_text())
             manifest = banks[bank]
             profile = next((p for p in manifest['profiles'] if p['name'] == profile_name), None)
             if profile is None:
@@ -128,6 +147,8 @@ def copy_game_data(source, destination):
                     break
             if not chosen:
                 raise ValueError(f'{bank}: no initial or idle pose for {profile_name}, action {action}')
+            if require_directions and {rows[i]['direction'] for i in chosen} != set(range(16)):
+                raise ValueError(f'{bank}: incomplete idle directions for {profile_name}')
             selected.setdefault(bank, {}).setdefault(profile_name, set()).update(chosen)
 
     for bank, chosen_profiles in selected.items():
@@ -163,15 +184,16 @@ def copy_game_data(source, destination):
             kept.append(profile)
         manifest['profiles'] = kept
         atlas_bytes, rectangles = pack_atlas([path for _, path in frame_sources])
-        atlas_relative = (bank.relative_to(source) / 'atlas.webp').as_posix()
-        files.add(atlas_relative)
-        atlases[atlas_relative] = atlas_bytes
         manifest['atlas'] = 'atlas.webp'
         for frame, path in frame_sources:
             frame['file'] = 'atlas.webp'
             frame['rect'] = rectangles[path]
-        relative = include(bank / 'manifest.json')
-        generated[relative] = manifest
+        for output_bank in output_banks[bank]:
+            atlas_relative = (output_bank / 'atlas.webp').as_posix()
+            relative = (output_bank / 'manifest.json').as_posix()
+            files.update((atlas_relative, relative))
+            atlases[atlas_relative] = atlas_bytes
+            generated[relative] = manifest
 
     # Only remove files owned by the previous generated index, never arbitrary user files.
     previous = set()
