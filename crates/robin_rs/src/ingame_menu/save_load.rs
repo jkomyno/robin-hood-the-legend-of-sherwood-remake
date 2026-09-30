@@ -1544,6 +1544,7 @@ mod tests {
                 let left = GameEvent::KeyDown {
                     keycode: Keycode::Left,
                     physical_key: None,
+                    logical_key: None,
                 };
                 assert!(!controller.handle_event(&mut model, &left, transform));
                 field.move_caret_left(); // Save-only adapter remains its owner.
@@ -1601,10 +1602,12 @@ mod tests {
         let down = GameEvent::KeyDown {
             keycode: Keycode::Down,
             physical_key: None,
+            logical_key: None,
         };
         let up = GameEvent::KeyDown {
             keycode: Keycode::Up,
             physical_key: None,
+            logical_key: None,
         };
         cooperative_input.input.virt_x = (LOAD_LIST_RECT.x + 10) as f32;
         cooperative_input.input.virt_y = (LOAD_LIST_RECT.y + 10) as f32;
@@ -2069,6 +2072,7 @@ mod tests {
         GameEvent::KeyDown {
             keycode,
             physical_key: None,
+            logical_key: None,
         }
     }
 

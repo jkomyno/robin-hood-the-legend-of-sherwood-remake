@@ -268,6 +268,7 @@ mod tests {
         GameEvent::KeyDown {
             keycode,
             physical_key: None,
+            logical_key: None,
         }
     }
     fn model() -> PickerModel {

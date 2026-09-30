@@ -74,6 +74,9 @@ impl SelectionMarkRenderer {
         );
     }
 
+    /// Queue the circle centred on `(screen_x, screen_y)` and return its
+    /// screen rectangle, or `None` when no frame was queued. The caller
+    /// applies scenery masks to the queued draw.
     pub fn draw(
         &self,
         renderer: &mut Renderer,
@@ -81,18 +84,15 @@ impl SelectionMarkRenderer {
         in_combat: bool,
         screen_x: i32,
         screen_y: i32,
-    ) {
-        let row = match if in_combat {
+    ) -> Option<Rect> {
+        let row = if in_combat {
             self.sword.as_ref()
         } else {
             self.idle.as_ref()
-        } {
-            Some(r) => r,
-            None => return,
-        };
+        }?;
 
         if row.frames.is_empty() || row.width == 0 || row.height == 0 {
-            return;
+            return None;
         }
         let frame_idx = (frame as usize).min(row.frames.len() - 1);
         let frame = &row.frames[frame_idx];
@@ -110,6 +110,7 @@ impl SelectionMarkRenderer {
             [1.0, 1.0, 1.0, 1.0],
             BlendMode::Blend,
         );
+        Some(dst_rect)
     }
 }
 

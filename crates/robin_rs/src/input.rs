@@ -378,6 +378,7 @@ mod tests {
         ti.feed_events(&[GameEvent::KeyDown {
             keycode: Keycode::Char(b'a'),
             physical_key: Some(KeyCode::KeyA),
+            logical_key: None,
         }]);
         assert!(ti.keyboard_state().is_pressed(KeyCode::KeyA));
 
@@ -442,6 +443,7 @@ mod tests {
                 GameEvent::KeyDown {
                     keycode,
                     physical_key,
+                    logical_key: None,
                 }
             } else {
                 GameEvent::KeyUp {
@@ -543,6 +545,7 @@ mod tests {
         ti.feed_events(&[GameEvent::KeyDown {
             keycode: Keycode::Char(b'a'),
             physical_key: Some(KeyCode::KeyA),
+            logical_key: None,
         }]);
         assert!(!ti.keyboard_state().is_pressed(KeyCode::KeyA));
     }

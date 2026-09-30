@@ -12,8 +12,9 @@ use crate::game_render::{
     render_debug_surfaces_fill, render_debug_surfaces_outline, render_debug_whatsup_overlay,
     render_door_overlays, render_entities_gpu, render_fog_of_war, render_ground_marks,
     render_item_effect_preview, render_listen_ping, render_minimap, render_mission_countdown,
-    render_noise_display, render_ransom_amulet_overlay, render_selection_outlines_gpu,
-    render_shadow_polygon_sphere_debug, render_trajectory_preview, render_view_cone_overlay,
+    render_noise_display, render_ransom_amulet_overlay, render_selection_mark_masks,
+    render_selection_outlines_gpu, render_shadow_polygon_sphere_debug, render_trajectory_preview,
+    render_view_cone_overlay,
 };
 use crate::host::PrintScreenRequest;
 use crate::host::{Host, HostDraw, HostPresentation};
@@ -1601,13 +1602,30 @@ fn render_world_pass(
         };
         // Swordfighting iff the PC has any opponents.
         let in_combat = entity.human_data().is_some_and(|h| !h.opponents.is_empty());
-        selection_mark_renderer.draw(
+        let draw_checkpoint = renderer.draw_queue_checkpoint();
+        let Some(mark_rect) = selection_mark_renderer.draw(
             renderer,
             host.frontend.presentation.selection_mark.animation_frame(),
             in_combat,
             screen_pt.x as i32,
             screen_pt.y as i32,
-        );
+        ) else {
+            continue;
+        };
+        // Walls in front of the PC hide its circle. A layerless PC is
+        // detached from the world; its sprite is unmasked too.
+        if let Some(layer) = elem.optional_layer() {
+            render_selection_mark_masks(
+                engine,
+                renderer,
+                layer.into(),
+                map_pt,
+                mark_rect,
+                draw_checkpoint,
+                host.viewport().view_position,
+                host.viewport().zoom_factor,
+            );
+        }
     }
 
     // Draw the destination markers (ground marks).  Drawn AFTER the

@@ -602,14 +602,16 @@ mod tests {
         assert_eq!(
             recovery_choice(&GameEvent::KeyDown {
                 keycode: Keycode::Escape,
-                physical_key: None
+                physical_key: None,
+                logical_key: None,
             }),
             Some(RecoveryChoice::Cancel)
         );
         assert_eq!(
             recovery_choice(&GameEvent::KeyDown {
                 keycode: Keycode::Return,
-                physical_key: None
+                physical_key: None,
+                logical_key: None,
             }),
             Some(RecoveryChoice::Retry)
         );

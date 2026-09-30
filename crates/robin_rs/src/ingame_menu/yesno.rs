@@ -571,6 +571,7 @@ mod tests {
             GameEvent::KeyDown {
                 keycode,
                 physical_key: Some(physical_key),
+                logical_key: None,
             }
         } else {
             GameEvent::KeyUp {

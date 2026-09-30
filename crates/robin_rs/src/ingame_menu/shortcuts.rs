@@ -10,10 +10,13 @@ use crate::gfx_types::Keycode;
 use crate::scroll_view::ScrollView;
 
 use crate::gfx_types::GameEvent;
-use crate::key_config::{KeyConfig, PLAN_QUICK_ACTIONS_INDEX, REAL_KEY_COUNT, TOGGLE_CLOAK_INDEX};
+use crate::key_config::{
+    KeyConfig, PLAN_QUICK_ACTIONS_INDEX, REAL_KEY_COUNT, TOGGLE_CLOAK_INDEX, is_layout_dependent,
+    layout_label,
+};
 use crate::renderer::Renderer;
 use crate::widget::FrameWnd;
-use winit::keyboard::KeyCode;
+use winit::keyboard::{Key, KeyCode};
 
 use super::layout::{
     FOCUS_OUTLINE, MenuRect, MenuTransform, align_bottom_right, draw_screen_background,
@@ -298,6 +301,7 @@ impl ShortcutsScreen {
             GameEvent::KeyDown {
                 keycode,
                 physical_key,
+                ref logical_key,
             } => {
                 if let Some(row) = self.rebinding_row {
                     if keycode == Keycode::Escape || physical_key.is_none_or(is_reserved_key) {
@@ -312,6 +316,7 @@ impl ShortcutsScreen {
                             &mut self.working,
                             row as u16,
                             physical_key,
+                            logical_key.as_ref(),
                         );
                         self.working_dirty = true;
                         self.rebinding_row = None;
@@ -423,7 +428,11 @@ impl ShortcutsScreen {
                 _ => resources.menu_text.get(MT_STR_SHORTCUT_00 + row_index),
             };
             let key_value = self.working.get_key_by_index(row_index as u16);
-            let key_label = key_display_name(&resources.menu_text, key_value);
+            let key_label = key_display_name(
+                &resources.menu_text,
+                key_value,
+                self.working.get_label_by_index(row_index as u16),
+            );
 
             let is_focused = self.focused_row == Some(row_index);
             let is_rebinding = self.rebinding_row == Some(row_index);
@@ -513,9 +522,18 @@ fn apply_user_defined(working: &mut KeyConfig, custom: &KeyConfig, dirty: &mut b
     );
 }
 
-fn assign_key_with_conflict_resolution(config: &mut KeyConfig, target: u16, key: Option<KeyCode>) {
+/// Bind the physical `key` and remember the character the layout produced
+/// for it, so the row shows e.g. `+` rather than the US-layout `]`.
+fn assign_key_with_conflict_resolution(
+    config: &mut KeyConfig,
+    target: u16,
+    key: Option<KeyCode>,
+    logical_key: Option<&Key>,
+) {
     if let Some(key) = key {
         crate::options_model::assign_shortcut(config, target, key);
+        let label = logical_key.and_then(|logical| layout_label(key, logical));
+        config.set_label_by_index(target, label);
     }
 }
 
@@ -544,9 +562,16 @@ fn play_rebind_noise(audio: &mut ScreenAudio<'_>) {
 /// without changing anything.
 use crate::options_model::is_reserved_shortcut_key as is_reserved_key;
 
-/// Convert a winit physical key to its localised display name.
-/// Named keys come from the `MT_STR_KEY_*` menu-text table.
-fn key_display_name(menu_text: &MenuText, key: Option<KeyCode>) -> String {
+/// Convert a binding to its display name. A label captured from the player's
+/// layout wins for layout-dependent keys; otherwise named keys come from the
+/// `MT_STR_KEY_*` menu-text table and printable keys use their US-layout
+/// character.
+fn key_display_name(menu_text: &MenuText, key: Option<KeyCode>, label: Option<&str>) -> String {
+    if let (Some(key), Some(label)) = (key, label)
+        && is_layout_dependent(key)
+    {
+        return label.to_owned();
+    }
     let mt = |id: usize| menu_text.get(id);
     match key {
         None => mt(MT_STR_KEY_NONE),
@@ -667,6 +692,47 @@ mod tests {
     use super::*;
 
     #[test]
+    fn captured_shortcuts_display_the_layout_character() {
+        use winit::keyboard::NamedKey;
+        let text = MenuText::default();
+        let mut config = KeyConfig::default_preset();
+        // Italian layout: the US `]` position produces `+`.
+        assign_key_with_conflict_resolution(
+            &mut config,
+            0,
+            Some(KeyCode::BracketRight),
+            Some(&Key::Character("+".into())),
+        );
+        assert_eq!(config.get_key_by_index(0), Some(KeyCode::BracketRight));
+        let shown = |config: &KeyConfig, row| {
+            key_display_name(
+                &text,
+                config.get_key_by_index(row),
+                config.get_label_by_index(row),
+            )
+        };
+        assert_eq!(shown(&config, 0), "+");
+        // Named keys keep their localised names.
+        assign_key_with_conflict_resolution(
+            &mut config,
+            1,
+            Some(KeyCode::ShiftRight),
+            Some(&Key::Named(NamedKey::Shift)),
+        );
+        assert_eq!(shown(&config, 1), text.get(MT_STR_KEY_SHIFT_RIGHT));
+        // Presets and configurations saved without labels keep the US name.
+        assert_eq!(
+            key_display_name(&text, Some(KeyCode::BracketRight), None),
+            "]"
+        );
+        // A stale label never renames a layout-independent key.
+        assert_eq!(
+            key_display_name(&text, Some(KeyCode::NumpadAdd), Some("+")),
+            text.get(MT_STR_KEY_NUM_CROSS)
+        );
+    }
+
+    #[test]
     fn screen_finish_keeps_cancelled_active_keys_and_existing_preset_promotion() {
         for accepted in [false, true] {
             let mut active = KeyConfig::default_preset();
@@ -782,7 +848,7 @@ mod tests {
         let zoom_in_key = cfg.get_key_by_index(zoom_in_idx);
         assert!(zoom_in_key.is_some(), "test fixture sanity");
 
-        assign_key_with_conflict_resolution(&mut cfg, action1_idx, zoom_in_key);
+        assign_key_with_conflict_resolution(&mut cfg, action1_idx, zoom_in_key, None);
 
         assert_eq!(
             cfg.get_key_by_index(action1_idx),
@@ -804,7 +870,7 @@ mod tests {
 
         // Re-binding the slot to the same key it already holds
         // must NOT clear it (the conflict-and-target are the same row).
-        assign_key_with_conflict_resolution(&mut cfg, action1_idx, key);
+        assign_key_with_conflict_resolution(&mut cfg, action1_idx, key, None);
 
         assert_eq!(cfg.get_key_by_index(action1_idx), key);
     }
@@ -831,6 +897,7 @@ mod tests {
             &mut cfg,
             PLAN_QUICK_ACTIONS_INDEX,
             Some(KeyCode::ShiftLeft),
+            None,
         );
         assert_eq!(
             cfg.get_key_by_index(SHOW_DOORS_INDEX),
@@ -842,6 +909,7 @@ mod tests {
             &mut cfg,
             PLAN_QUICK_ACTIONS_INDEX,
             Some(KeyCode::ShiftLeft),
+            None,
         );
         assert_eq!(cfg.get_key_by_index(CROUCH_INDEX), None);
         assert_eq!(
@@ -876,7 +944,7 @@ mod tests {
         strings[MT_STR_KEY_SPACE] = "Espacio".to_string();
         menu_text.replace_strings_for_test(strings);
         assert_eq!(
-            key_display_name(&menu_text, Some(KeyCode::Space)),
+            key_display_name(&menu_text, Some(KeyCode::Space), None),
             "Espacio"
         );
     }
@@ -885,9 +953,12 @@ mod tests {
     fn key_display_falls_back_to_english_without_menu_text() {
         let menu_text = MenuText::english_fallbacks_only();
         // Space key — should fall back to the English label.
-        assert_eq!(key_display_name(&menu_text, Some(KeyCode::Space)), "Space");
+        assert_eq!(
+            key_display_name(&menu_text, Some(KeyCode::Space), None),
+            "Space"
+        );
         // Letter key — printable character path, no menu text lookup.
-        assert_eq!(key_display_name(&menu_text, Some(KeyCode::KeyA)), "a");
+        assert_eq!(key_display_name(&menu_text, Some(KeyCode::KeyA), None), "a");
     }
 
     #[test]

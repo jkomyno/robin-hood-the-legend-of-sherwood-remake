@@ -415,6 +415,7 @@ mod tests {
                     &GameEvent::KeyDown {
                         keycode: Keycode::Return,
                         physical_key: None,
+                        logical_key: None,
                     },
                     MenuTransform::centered(640, 480)
                 ),
@@ -427,6 +428,7 @@ mod tests {
                     &GameEvent::KeyDown {
                         keycode: Keycode::Escape,
                         physical_key: None,
+                        logical_key: None,
                     },
                     MenuTransform::centered(640, 480)
                 ),
@@ -442,6 +444,7 @@ mod tests {
         let event = GameEvent::KeyDown {
             keycode: Keycode::Escape,
             physical_key: Some(winit::keyboard::KeyCode::Escape),
+            logical_key: None,
         };
         assert_eq!(
             menu.handle_event(&event, MenuTransform::centered(1024, 768)),
@@ -555,6 +558,7 @@ mod tests {
         let esc = GameEvent::KeyDown {
             keycode: Keycode::Escape,
             physical_key: Some(winit::keyboard::KeyCode::Escape),
+            logical_key: None,
         };
         assert_eq!(
             menu.handle_event(&esc, MenuTransform::centered(1024, 768)),
@@ -599,6 +603,7 @@ mod tests {
         let esc = GameEvent::KeyDown {
             keycode: Keycode::Escape,
             physical_key: Some(winit::keyboard::KeyCode::Escape),
+            logical_key: None,
         };
         assert_eq!(
             menu.handle_event(&esc, MenuTransform::centered(1024, 768)),

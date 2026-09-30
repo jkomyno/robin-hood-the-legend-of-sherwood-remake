@@ -15,6 +15,7 @@ fn native_and_browser_loads_share_migration_and_validation() {
                     action: "ZoomIn".into(),
                     primary_key: None,
                     secondary_key: None,
+                    primary_label: None,
                 }; 2
             ];
         }

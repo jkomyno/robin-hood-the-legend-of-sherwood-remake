@@ -12,11 +12,17 @@
 //! TODO(architecture): load preset definitions through the asset layer while
 //! keeping physical [`KeyCode`] values and per-profile selections host-owned.
 //!
+//! Bindings match physical [`KeyCode`]s so a held key keeps matching while
+//! Shift or Caps Lock change the character it produces. [`KeyCode`] variants
+//! are named after the US layout, though, so a captured binding also records
+//! the character the player's layout produced ([`KeyBinding::primary_label`])
+//! and the options screen shows that instead of the US name.
+//!
 //! This unpublished workspace API previously lived at
 //! `robin_assets::keyconfig`; consumers must now import
 //! `robin_rs::key_config`.
 
-use winit::keyboard::KeyCode;
+use winit::keyboard::{Key, KeyCode};
 
 /// A single action‐to‐key mapping.
 #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -24,6 +30,84 @@ pub struct KeyBinding {
     pub action: String,
     pub primary_key: Option<KeyCode>,
     pub secondary_key: Option<KeyCode>,
+    /// Display-only character the keyboard layout produced when
+    /// `primary_key` was captured (see [`layout_label`]). Absent for presets,
+    /// named keys and configurations saved before labels existed; those fall
+    /// back to the US-layout name of `primary_key`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary_label: Option<String>,
+}
+
+/// Whether the character printed by `key` depends on the keyboard layout.
+/// Named keys (arrows, F-keys, modifiers) and numpad keys keep their
+/// localised names instead.
+pub fn is_layout_dependent(key: KeyCode) -> bool {
+    use KeyCode::*;
+    matches!(
+        key,
+        Backquote
+            | Backslash
+            | BracketLeft
+            | BracketRight
+            | Comma
+            | Digit0
+            | Digit1
+            | Digit2
+            | Digit3
+            | Digit4
+            | Digit5
+            | Digit6
+            | Digit7
+            | Digit8
+            | Digit9
+            | Equal
+            | IntlBackslash
+            | IntlRo
+            | IntlYen
+            | KeyA
+            | KeyB
+            | KeyC
+            | KeyD
+            | KeyE
+            | KeyF
+            | KeyG
+            | KeyH
+            | KeyI
+            | KeyJ
+            | KeyK
+            | KeyL
+            | KeyM
+            | KeyN
+            | KeyO
+            | KeyP
+            | KeyQ
+            | KeyR
+            | KeyS
+            | KeyT
+            | KeyU
+            | KeyV
+            | KeyW
+            | KeyX
+            | KeyY
+            | KeyZ
+            | Minus
+            | Period
+            | Quote
+            | Semicolon
+            | Slash
+    )
+}
+
+/// Label to record for a captured `physical` key: the printable character
+/// the active layout produced for it (`logical`), lowercased like the
+/// built-in letter names. `None` when the key has a layout-independent name
+/// or produced no printable character (e.g. a dead key).
+pub fn layout_label(physical: KeyCode, logical: &Key) -> Option<String> {
+    let Key::Character(text) = logical else {
+        return None;
+    };
+    let printable = !text.is_empty() && !text.chars().any(|c| c.is_control() || c.is_whitespace());
+    (is_layout_dependent(physical) && printable).then(|| text.to_lowercase())
 }
 
 /// The full set of key bindings.
@@ -102,6 +186,9 @@ impl KeyConfig {
         secondary: Option<KeyCode>,
     ) {
         if let Some(b) = self.bindings.iter_mut().find(|b| b.action == action) {
+            if b.primary_key != primary {
+                b.primary_label = None;
+            }
             b.primary_key = primary;
             b.secondary_key = secondary;
         } else {
@@ -109,6 +196,7 @@ impl KeyConfig {
                 action: action.to_owned(),
                 primary_key: primary,
                 secondary_key: secondary,
+                primary_label: None,
             });
         }
     }
@@ -137,8 +225,27 @@ impl KeyConfig {
             .and_then(|b| b.primary_key)
     }
 
+    /// Display label captured with the primary key at the given action index.
+    pub fn get_label_by_index(&self, index: u16) -> Option<&str> {
+        KEY_NAMES
+            .get(index as usize)
+            .and_then(|name| self.get_binding(name))
+            .and_then(|b| b.primary_label.as_deref())
+    }
+
+    /// Record the display label for the primary key at the given action
+    /// index. Does nothing when the binding does not exist.
+    pub fn set_label_by_index(&mut self, index: u16, label: Option<String>) {
+        if let Some(&name) = KEY_NAMES.get(index as usize)
+            && let Some(binding) = self.bindings.iter_mut().find(|b| b.action == name)
+        {
+            binding.primary_label = label;
+        }
+    }
+
     /// Set the primary key for the binding at the given action index.
     /// Preserves the existing secondary key if a binding already exists.
+    /// A changed key drops the previous key's display label.
     pub fn set_key_by_index(&mut self, index: u16, key: Option<KeyCode>) {
         if let Some(&name) = KEY_NAMES.get(index as usize) {
             if let Some(binding) = self
@@ -146,6 +253,9 @@ impl KeyConfig {
                 .iter_mut()
                 .find(|binding| binding.action == name)
             {
+                if binding.primary_key != key {
+                    binding.primary_label = None;
+                }
                 binding.primary_key = key;
             } else {
                 self.set_binding(name, key, None);
@@ -173,6 +283,7 @@ impl KeyConfig {
                 action: name.to_owned(),
                 primary_key: key,
                 secondary_key: None,
+                primary_label: None,
             });
         }
     }
@@ -475,6 +586,70 @@ mod tests {
             ambiguous.get_binding("Crouch").unwrap().primary_key,
             Some(KeyCode::ShiftLeft)
         );
+    }
+
+    #[test]
+    fn captured_character_key_records_the_layout_character() {
+        // Italian layout: the key in the US `]` position produces `+`.
+        let plus = Key::Character("+".into());
+        assert_eq!(
+            layout_label(KeyCode::BracketRight, &plus).as_deref(),
+            Some("+")
+        );
+        // AZERTY: the US `q` position produces `a`; caps lock is ignored.
+        assert_eq!(
+            layout_label(KeyCode::KeyQ, &Key::Character("A".into())).as_deref(),
+            Some("a")
+        );
+        // Numpad keys keep their localised names even though they print.
+        assert_eq!(layout_label(KeyCode::NumpadAdd, &plus), None);
+        // Dead keys produce no printable character.
+        assert_eq!(
+            layout_label(KeyCode::BracketLeft, &Key::Dead(Some('^'))),
+            None
+        );
+    }
+
+    #[test]
+    fn captured_named_key_records_no_label() {
+        use winit::keyboard::NamedKey;
+        assert_eq!(
+            layout_label(KeyCode::ShiftLeft, &Key::Named(NamedKey::Shift)),
+            None
+        );
+        assert_eq!(
+            layout_label(KeyCode::Space, &Key::Named(NamedKey::Space)),
+            None
+        );
+    }
+
+    #[test]
+    fn rebinding_a_row_drops_the_previous_keys_label() {
+        let mut config = KeyConfig::default_preset();
+        config.set_key_by_index(0, Some(KeyCode::BracketRight));
+        config.set_label_by_index(0, Some("+".to_owned()));
+        assert_eq!(config.get_label_by_index(0), Some("+"));
+        // Re-assigning the same key keeps its label.
+        config.set_key_by_index(0, Some(KeyCode::BracketRight));
+        assert_eq!(config.get_label_by_index(0), Some("+"));
+        config.set_key_by_index(0, Some(KeyCode::F3));
+        assert_eq!(config.get_label_by_index(0), None);
+        config.set_label_by_index(0, Some("x".to_owned()));
+        config.set_binding("ZoomIn", None, None);
+        assert_eq!(config.get_label_by_index(0), None);
+    }
+
+    #[test]
+    fn labels_round_trip_and_unlabelled_configs_keep_their_shape() {
+        let mut config = KeyConfig::default();
+        config.set_binding("ZoomIn", Some(KeyCode::BracketRight), None);
+        config.set_label_by_index(0, Some("+".to_owned()));
+        let json = serde_json::to_string(&config).unwrap();
+        assert_eq!(
+            json,
+            r#"{"bindings":[{"action":"ZoomIn","primary_key":"BracketRight","secondary_key":null,"primary_label":"+"}],"key_type":0}"#
+        );
+        assert_eq!(serde_json::from_str::<KeyConfig>(&json).unwrap(), config);
     }
 
     #[test]

@@ -1024,6 +1024,7 @@ impl CampaignMapModalState {
                 Some(keycode) => GameEvent::KeyDown {
                     keycode,
                     physical_key: None,
+                    logical_key: None,
                 },
                 None => match event {
                     GameEvent::GamepadButton {
@@ -1033,6 +1034,7 @@ impl CampaignMapModalState {
                     } => GameEvent::KeyDown {
                         keycode: Keycode::Escape,
                         physical_key: None,
+                        logical_key: None,
                     },
                     event => event,
                 },
@@ -3895,6 +3897,7 @@ mod browser_tests {
         GameEvent::KeyDown {
             keycode,
             physical_key: None,
+            logical_key: None,
         }
     }
 

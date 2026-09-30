@@ -453,6 +453,10 @@ pub enum GameEvent {
     KeyDown {
         keycode: Keycode,
         physical_key: Option<winit::keyboard::KeyCode>,
+        /// Layout-aware key the press produced (`None` for synthesized
+        /// events). Gameplay matches `physical_key`; this is only used to
+        /// label captured shortcuts with the character the user sees.
+        logical_key: Option<winit::keyboard::Key>,
     },
     KeyUp {
         keycode: Keycode,

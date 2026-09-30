@@ -496,6 +496,7 @@ mod tests {
             GameEvent::KeyDown {
                 keycode: crate::gfx_types::Keycode::Space,
                 physical_key: Some(winit::keyboard::KeyCode::Space),
+                logical_key: None,
             },
             GameEvent::MouseUp(0, 0, 3),
             GameEvent::MouseUp(0, 0, 1),

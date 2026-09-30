@@ -1154,6 +1154,7 @@ impl AppHandler {
                         GameEvent::KeyDown {
                             keycode,
                             physical_key,
+                            logical_key: Some(logical_key),
                         },
                     )));
                 }
