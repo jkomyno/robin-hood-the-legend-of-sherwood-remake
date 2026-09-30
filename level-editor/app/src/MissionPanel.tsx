@@ -4,6 +4,7 @@ import type { EditorViewport } from "./editor-viewport.ts";
 import ScrubNumber from "./ScrubNumber";
 import MissionCharacterChoices from "./MissionCharacterChoices";
 import {
+  DEFAULT_CHARACTER_DIRECTION,
   loadMissionCharacterCatalog,
   type MissionCharacterProfile,
 } from "./mission-character-catalog.ts";
@@ -61,6 +62,8 @@ export default function MissionPanel(props: {
     props.viewport.setMissionSpriteLibrary(null, [], () => {});
   });
   const [selected, setSelected] = createSignal("");
+  const [visible, setVisible] = createSignal(true);
+  createEffect(visible, (value) => props.viewport.setMissionVisible(value));
   const [placing, setPlacing] = createSignal<"pc" | "npc" | "move" | null>(null);
   const [pcProfile, setPcProfile] = createSignal(0);
   const [npcProfile, setNpcProfile] = createSignal("guard_a01");
@@ -162,7 +165,12 @@ export default function MissionPanel(props: {
     if (kind === "move") change({ position });
     else {
       const id = `${kind}-${crypto.randomUUID()}`;
-      const base = { id, name: kind === "pc" ? "PC spawn" : "Soldier", position, direction: 0 };
+      const base = {
+        id,
+        name: kind === "pc" ? "PC spawn" : "Soldier",
+        position,
+        direction: DEFAULT_CHARACTER_DIRECTION,
+      };
       const value = mission();
       publish(
         kind === "pc"
@@ -178,7 +186,7 @@ export default function MissionPanel(props: {
   }
   createEffect(
     () => ({
-      active: props.active,
+      active: props.active && visible(),
       document: props.document(),
       selected: selected(),
       placing: placing(),
@@ -190,6 +198,9 @@ export default function MissionPanel(props: {
             ? {
                 selected,
                 select: setSelected,
+                preview: (position: Vec3) => preview({ position }),
+                move: (position: Vec3) => change({ position }),
+                cancel: cancelPreview,
                 ...(placing ? { place } : {}),
               }
             : null,
@@ -217,6 +228,14 @@ export default function MissionPanel(props: {
   return (
     <section class="view-settings mission-settings">
       <h2>Mission</h2>
+      <label>
+        <input
+          type="checkbox"
+          checked={visible()}
+          onChange={(event) => setVisible(event.currentTarget.checked)}
+        />
+        Show characters
+      </label>
       <p class="hint">
         Add PC spawn points and NPC soldiers for this mission. Blue outlines are PCs; red outlines
         are NPCs. These placements are saved separately from map assets and included in the exported
@@ -228,7 +247,7 @@ export default function MissionPanel(props: {
       <Show when={spriteStatus()}>
         <p role="status">{spriteStatus()}</p>
       </Show>
-      <fieldset disabled={!props.document()}>
+      <fieldset disabled={!props.document() || !visible()}>
         <div class="actions">
           <button onClick={() => setPlacing("pc")}>Add PC</button>
           <button onClick={() => setPlacing("npc")}>Add NPC</button>

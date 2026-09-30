@@ -117,6 +117,9 @@ async function chooseProfile(profile: string) {
 }
 async function run() {
   viewport.setup(document.querySelector("#view")!);
+  const canvas = document.querySelector("canvas")!;
+  // Synthetic pointer events do not enter the browser's native capture table.
+  canvas.setPointerCapture = () => {};
   viewport.replaceMap(new THREE.Group(), null, new Map());
   setDoc({ ...current });
   viewport.syncViews(current);
@@ -127,6 +130,7 @@ async function run() {
   check(!current.mission?.spawnPoints.length, "Choosing a PC created a placement before map click");
   await mapClick();
   check(current.mission?.spawnPoints.length === 1, "Map click did not create PC spawn");
+  check(current.mission!.spawnPoints[0]!.direction === 8, "Default PC facing is not down");
   check(current.mission?.soldiers.length === 0, "PC created a soldier");
   check(
     current.mission!.spawnPoints[0]!.profile === 1,
@@ -136,6 +140,7 @@ async function run() {
   await chooseProfile("soldier_a00");
   await mapClick(40);
   check(current.mission?.soldiers.length === 1, "Map click did not create NPC soldier");
+  check(current.mission!.soldiers[0]!.direction === 8, "Default NPC facing is not down");
   check(
     current.mission!.soldiers[0]!.profile === "soldier_a00",
     "NPC sprite choice did not change canonical profile",
@@ -168,6 +173,42 @@ async function run() {
       current.mission!.soldiers[0]!.id,
     "Clicking NPC sprite did not select its placement",
   );
+  const beforeDrag = [...current.mission!.soldiers[0]!.position];
+  const beforeCommits = commits.length;
+  const rect = canvas.getBoundingClientRect();
+  const pointer = {
+    clientX: rect.left + rect.width / 2 + 100,
+    clientY: rect.top + rect.height / 2 - 12,
+    button: 0,
+    buttons: 1,
+    bubbles: true,
+  };
+  canvas.dispatchEvent(new PointerEvent("pointerdown", pointer));
+  canvas.dispatchEvent(
+    new PointerEvent("pointermove", { ...pointer, clientX: pointer.clientX + 30 }),
+  );
+  check(commits.length === beforeCommits, "Drag preview created undo entries");
+  canvas.dispatchEvent(
+    new PointerEvent("pointerup", { ...pointer, clientX: pointer.clientX + 30, buttons: 0 }),
+  );
+  await pause();
+  check(commits.length === beforeCommits + 1, "Drag did not commit exactly once");
+  check(current.mission!.soldiers[0]!.position[0] !== beforeDrag[0], "Drag did not move soldier");
+  check(
+    current.mission!.soldiers[0]!.position[2] === beforeDrag[2],
+    "Drag changed character height",
+  );
+  const afterDrag = JSON.stringify(current.mission);
+  canvas.dispatchEvent(
+    new PointerEvent("pointerdown", { ...pointer, clientX: pointer.clientX + 30 }),
+  );
+  canvas.dispatchEvent(
+    new PointerEvent("pointermove", { ...pointer, clientX: pointer.clientX + 60 }),
+  );
+  window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+  await pause();
+  check(JSON.stringify(current.mission) === afterDrag, "Cancelled drag changed mission");
+  check(commits.length === beforeCommits + 1, "Cancelled drag created undo entry");
   await button("Add PC");
   window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
   await pause();
@@ -220,6 +261,32 @@ async function run() {
   const withMarkers = viewport.bakeMap(current).pixels;
   setActive(false);
   await pause();
+  const markers = viewport["missionMarkers"];
+  check(
+    markers.root.visible && markers.spritesRoot.visible,
+    "Changing tabs hid mission characters",
+  );
+  const visibility = document.querySelector<HTMLInputElement>(
+    '.mission-settings input[type="checkbox"]',
+  )!;
+  setActive(true);
+  await pause();
+  visibility.click();
+  await pause();
+  check(
+    !markers.root.visible && !markers.spritesRoot.visible,
+    "Visibility toggle did not hide characters",
+  );
+  setActive(false);
+  await pause();
+  check(!markers.spritesRoot.visible, "Changing tabs reset hidden characters");
+  setActive(true);
+  await pause();
+  visibility.click();
+  await pause();
+  setActive(false);
+  await pause();
+  check(markers.spritesRoot.visible, "Visible characters disappeared outside Mission tab");
   const withoutMarkers = viewport.bakeMap(current).pixels;
   check(
     withMarkers.color.every((value, index) => value === withoutMarkers.color[index]),
@@ -232,7 +299,7 @@ async function run() {
   check(errors.length === 0, errors.join("\n"));
   viewport.dispose();
   document.querySelector("#result")!.textContent =
-    "PASS mission sprite chooser, PC/NPC sprites, facing slider, placement, save/reopen, export and sprite-free map bake";
+    "PASS mission sprites, facing, drag/undo/cancel, cross-tab visibility, save/reopen, export and sprite-free map bake";
 }
 void run().catch((error) => {
   document.querySelector("#result")!.textContent = "FAIL " + (error.stack ?? error);

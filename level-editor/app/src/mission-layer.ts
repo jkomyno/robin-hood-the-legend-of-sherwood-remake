@@ -154,6 +154,7 @@ export class MissionLayer {
   }
 
   hit(raycaster: THREE.Raycaster): string | undefined {
+    if (!this.root.visible || !this.spritesRoot.visible) return undefined;
     const hits = raycaster.intersectObjects([this.root, this.spritesRoot], true);
     for (const hit of hits) {
       let object: THREE.Object3D | null = hit.object;

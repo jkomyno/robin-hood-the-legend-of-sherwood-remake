@@ -1,7 +1,10 @@
 import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
 import type { MapCamera } from "@rle/shared";
 import { MissionEntities } from "./mission.ts";
-import type { MissionCharacterProfile } from "./mission-character-catalog.ts";
+import {
+  DEFAULT_CHARACTER_DIRECTION,
+  type MissionCharacterProfile,
+} from "./mission-character-catalog.ts";
 
 function CharacterThumbnail(props: {
   root: FileSystemDirectoryHandle;
@@ -35,10 +38,10 @@ function CharacterThumbnail(props: {
                 profile,
                 camera,
                 () => token === generation,
-                [0],
+                [DEFAULT_CHARACTER_DIRECTION],
               );
               if (token !== generation) return;
-              const blob = await sprite.thumbnail();
+              const blob = await sprite.thumbnail(DEFAULT_CHARACTER_DIRECTION);
               if (token !== generation) return;
               if (objectUrl) URL.revokeObjectURL(objectUrl);
               objectUrl = URL.createObjectURL(blob);

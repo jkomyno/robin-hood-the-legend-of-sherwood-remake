@@ -6,6 +6,10 @@
   choosing a character before placement or changing a selected character. Placed
   characters show their directional sprites; numeric controls use the editor’s
   drag sliders. The character library includes every PC and soldier’s idle pose.
+  Palette previews and new placements face down by default, and soldier labels
+  use English names. Characters remain visible across inspector tabs, controlled
+  by the Mission tab’s visibility checkbox. Dragging a character moves it at its
+  current height with one undo entry; Escape cancels the move.
   Mission authoring stays
   separate from map assets and preview population. Export resolves its markers
   against the compiled navigation and receiving surfaces, writes PCs as spawn

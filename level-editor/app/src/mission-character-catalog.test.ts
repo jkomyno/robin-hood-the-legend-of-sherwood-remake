@@ -21,3 +21,45 @@ test("character identities follow runtime order and duplicate soldier disambigua
     /character_order/,
   );
 });
+
+test("soldier labels use English while preserving sprite and export identities", () => {
+  const names = [
+    ["Hallebardier Bleu", "Blue Halberdier"],
+    ["Epee Jaune", "Yellow Swordsman"],
+    ["Archer Rouge", "Red Archer"],
+    ["Officier Special Orange", "Orange Special Officer"],
+    ["Chevalier Noir", "Black Knight"],
+    ["Lancier Vert Mechant", "Green Spearman (Hostile)"],
+    ["Arbaletrier Vert", "Green Crossbowman"],
+    ["Cavalier Jaune", "Yellow Cavalryman"],
+    ["Mmen Arc", "Merry Man (Bow)"],
+    ["Mmen Baton", "Merry Man (Staff)"],
+    ["Ne pas utiliser4", "Unused 4"],
+    ["Sheriff of Nottingham", "Sheriff of Nottingham"],
+    ["Custom Guard", "Custom Guard"],
+  ];
+  const catalog = parseMissionCharacterCatalog({
+    characters: {},
+    character_order: [],
+    soldiers: Object.fromEntries(
+      names.map(([name], i) => [
+        String(i),
+        {
+          filename: `Guard${i}`,
+          profile_name: "Garde A",
+          display_name: name,
+        },
+      ]),
+    ),
+    soldier_order: names.map((_, i) => String(i)),
+  });
+  assert.deepEqual(
+    catalog.map((entry) => entry.name),
+    names.map(([, english]) => english),
+  );
+  catalog.forEach((entry, i) => {
+    assert.equal(entry.profile, `guard${i}`);
+    assert.equal(entry.filename, `Guard${i}`);
+    assert.equal(entry.profileName, "Garde A");
+  });
+});

@@ -447,18 +447,26 @@ export class EditorViewport {
   }
   private readonly splines = new SplineLayer();
   private readonly missionMarkers = new MissionLayer();
+  private cancelMissionDrag: (() => void) | null = null;
   private missionEdit: {
     selected: string;
     select(id: string): void;
+    preview(position: Vec3): void;
+    move(position: Vec3): void;
+    cancel(): void;
     place?: (position: Vec3) => void;
   } | null = null;
 
   setMissionEdit(mode: typeof this.missionEdit) {
+    if (!mode) this.cancelMissionDrag?.();
     this.missionEdit = mode;
-    this.missionMarkers.setVisible(!!mode);
     if (mode) this.select(null);
     const document = this.bindings.document();
     if (document) this.missionMarkers.sync(document, mode?.selected);
+  }
+  setMissionVisible(visible: boolean) {
+    if (!visible) this.cancelMissionDrag?.();
+    this.missionMarkers.setVisible(visible);
   }
   setMissionSpriteLibrary(
     root: FileSystemDirectoryHandle | null,
@@ -502,7 +510,7 @@ export class EditorViewport {
     this.mapRoot.add(this.exportFrame);
     this.mapRoot.add(this.missionMarkers.root);
     this.scene.add(this.missionMarkers.spritesRoot);
-    this.missionMarkers.setVisible(false);
+    this.missionMarkers.setVisible(true);
     this.mapRoot.add(
       this.terrain.root,
       this.terrainControls.root,
@@ -728,6 +736,7 @@ export class EditorViewport {
   }
 
   private retireMap() {
+    this.cancelMissionDrag?.();
     this.missionEdit = null;
     this.missionMarkers.clear();
     this.splineMode = null;
@@ -835,6 +844,7 @@ export class EditorViewport {
       },
       this.listeners.signal,
     );
+    this.setupMissionInteraction(this.renderer.domElement);
     this.setupCursorOrbit(this.renderer.domElement);
     this.setupSplineInteraction(this.renderer.domElement);
     this.gizmo = this.ownControl(new TransformControls(this.camera, this.renderer.domElement));
@@ -1025,6 +1035,106 @@ export class EditorViewport {
     return node
       ? (this.bindings.document()?.objects.find((o) => o.id === node.name) ?? null)
       : null;
+  }
+
+  private setupMissionInteraction(el: HTMLCanvasElement) {
+    let drag: {
+      pointer: number;
+      x: number;
+      y: number;
+      plane: THREE.Plane;
+      start: THREE.Vector3;
+      origin: THREE.Vector3;
+      position: Vec3 | null;
+      mode: NonNullable<EditorViewport["missionEdit"]>;
+    } | null = null;
+    const finish = (commit: boolean) => {
+      const current = drag;
+      if (!current) return;
+      drag = null;
+      this.dragging = false;
+      if (el.hasPointerCapture(current.pointer)) el.releasePointerCapture(current.pointer);
+      if (this.orbit) this.orbit.enabled = true;
+      if (commit && current.position) current.mode.move(current.position);
+      else if (current.position) current.mode.cancel();
+    };
+    this.cancelMissionDrag = () => finish(false);
+    el.addEventListener(
+      "pointerdown",
+      (event) => {
+        const mode = this.missionEdit;
+        const document = this.bindings.document();
+        if (event.button !== 0 || !mode || mode.place || !document || drag) return;
+        this.assetDropPosition(event.clientX, event.clientY);
+        const id = this.missionMarkers.hit(this.raycaster);
+        const entry = [
+          ...(document.mission?.spawnPoints ?? []),
+          ...(document.mission?.soldiers ?? []),
+        ].find((entry) => entry.id === id);
+        if (!entry) return;
+        const [x, y, z] = gameToScene(document.camera, ...entry.position);
+        const origin = new THREE.Vector3(x, z, -y);
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -z);
+        const start = this.raycaster.ray.intersectPlane(plane, new THREE.Vector3());
+        if (!start) return;
+        mode.select(entry.id);
+        drag = {
+          pointer: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          plane,
+          start,
+          origin,
+          position: null,
+          mode,
+        };
+        this.dragging = true;
+        if (this.orbit) this.orbit.enabled = false;
+        el.setPointerCapture(event.pointerId);
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      },
+      { capture: true, signal: this.listeners.signal },
+    );
+    el.addEventListener(
+      "pointermove",
+      (event) => {
+        if (!drag || event.pointerId !== drag.pointer) return;
+        event.stopImmediatePropagation();
+        if (!drag.position && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) <= 4)
+          return;
+        const document = this.bindings.document();
+        if (!document) return;
+        this.assetDropPosition(event.clientX, event.clientY);
+        const point = this.raycaster.ray.intersectPlane(drag.plane, new THREE.Vector3());
+        if (!point) return;
+        point.sub(drag.start).add(drag.origin);
+        drag.position = sceneToGame(document.camera, [point.x, -point.z, point.y]);
+        drag.mode.preview(drag.position);
+      },
+      { capture: true, signal: this.listeners.signal },
+    );
+    for (const name of ["pointerup", "pointercancel", "lostpointercapture"] as const)
+      el.addEventListener(
+        name,
+        (event) => {
+          if (!drag || event.pointerId !== drag.pointer) return;
+          event.stopImmediatePropagation();
+          finish(name === "pointerup");
+        },
+        { capture: true, signal: this.listeners.signal },
+      );
+    window.addEventListener(
+      "keydown",
+      (event) => {
+        if (drag && event.key === "Escape") {
+          event.preventDefault();
+          finish(false);
+        }
+      },
+      { signal: this.listeners.signal },
+    );
+    window.addEventListener("blur", () => finish(false), { signal: this.listeners.signal });
   }
 
   private setupCursorOrbit(el: HTMLCanvasElement) {
