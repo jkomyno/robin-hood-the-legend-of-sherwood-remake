@@ -21,6 +21,8 @@ export interface TerrainEditMode {
   selectedVertex?: string;
   selectVertex?(id: string): void;
   commit(grid: TerrainGrid): void;
+  subdivideCells?(ids: string[]): void;
+  deleteVertices?(ids: string[]): void;
   deselect?(): void;
 }
 const validatedGrids = new WeakSet<TerrainGrid>();
@@ -107,9 +109,10 @@ type Gesture = {
   height: number;
   unitsPerPixel: number;
   horizontal: boolean;
-  additive: boolean;
   grid: TerrainGrid;
   moved: boolean;
+  clickIds?: string[];
+  dragStarted?: boolean;
 };
 
 /** Transient multi-selection handles. A completed move creates exactly one edit. */
@@ -297,6 +300,27 @@ export class TerrainControls {
   ): Target | null {
     const mode = this.mode;
     if (!mode) return null;
+    // Handles have a fixed screen size. Pick them in that same space so their
+    // hit area does not shrink with perspective depth or camera zoom.
+    if (this.project) {
+      this.root.updateWorldMatrix(true, false);
+      let nearest: string | undefined;
+      let distanceSquared = 10 * 10;
+      for (const vertex of mode.grid.vertices) {
+        const point = this.project(
+          new THREE.Vector3(...gameToScene(mode.camera, ...vertex.position)).applyMatrix4(
+            this.root.matrixWorld,
+          ),
+        );
+        if (!point) continue;
+        const distance = (point.x - x) ** 2 + (point.y - y) ** 2;
+        if (distance <= distanceSquared) {
+          nearest = vertex.id;
+          distanceSquared = distance;
+        }
+      }
+      if (nearest !== undefined) return { ids: [nearest], kind: "vertex" };
+    }
     const pick = ray(x, y),
       handles = this.root.children.find((o) => o instanceof THREE.Points) as
         | THREE.Points
@@ -318,7 +342,8 @@ export class TerrainControls {
     const hits = pick.intersectObject(this.root, true);
     pick.params.Points.threshold = pointThreshold;
     pick.params.Line.threshold = lineThreshold;
-    const vertex = hits.find((h) => terrainVertexFromHit(h, mode.grid) !== undefined);
+    const vertex =
+      !this.project && hits.find((h) => terrainVertexFromHit(h, mode.grid) !== undefined);
     if (vertex) return { ids: [terrainVertexFromHit(vertex, mode.grid)!], kind: "vertex" };
     const edge = hits.find((h) => h.object.userData.terrainEdges && h.index !== undefined);
     if (edge) {
@@ -379,8 +404,10 @@ export class TerrainControls {
     this.finishOrbit = null;
   }
   cancel() {
-    if (!this.drag) return;
+    const drag = this.drag;
+    if (!drag) return;
     this.release();
+    if (drag.kind === "move") this.select(drag.before);
     this.hover = [];
     this.preview(null);
     this.draw(this.mode?.grid ?? null);
@@ -401,96 +428,70 @@ export class TerrainControls {
     canvas.addEventListener(
       "pointerdown",
       (event) => {
-        if (!this.mode || this.drag || (event.button !== 0 && event.button !== 2)) return;
+        if (!this.mode || this.drag || event.button !== 0) return;
         const mode = this.mode,
           screen = { x: event.clientX, y: event.clientY },
           before = [...this.selection];
-        if (event.button === 2) {
+        const target = this.pick(event.clientX, event.clientY, ray);
+        if (event.shiftKey) {
           consume(event);
+          // A click toggles its original target; only a deliberate drag starts a box.
           this.drag = {
             mode,
             pointer: event.pointerId,
-            kind: "box",
-            ids: [],
+            kind: "toggle",
+            ids: target?.ids ?? [],
             before,
             startScreen: screen,
             start: null,
             height: 0,
             unitsPerPixel: 0,
             horizontal: false,
-            additive: event.shiftKey,
             grid: mode.grid,
             moved: false,
           };
-          this.drawMarquee(screen, screen);
         } else {
-          const target = this.pick(event.clientX, event.clientY, ray);
           if (!target) {
-            if (!event.shiftKey) this.select([]);
+            this.select([]);
             this.setHover([]);
             return;
           }
           consume(event);
-          if (event.shiftKey) {
-            const selected = new Set(before),
-              all = target.ids.every((id) => selected.has(id));
-            for (const id of target.ids)
-              if (all) selected.delete(id);
-              else selected.add(id);
-            this.select([...selected]);
-            this.drag = {
-              mode,
-              pointer: event.pointerId,
-              kind: "toggle",
-              ids: [],
-              before,
-              startScreen: screen,
-              start: null,
-              height: 0,
-              unitsPerPixel: 0,
-              horizontal: false,
-              additive: false,
-              grid: mode.grid,
-              moved: false,
-            };
-          } else {
-            const ids = this.movingIds(target);
-            const positions = mode.grid.vertices.filter((v) => ids.includes(v.id));
-            const position = positions.reduce(
-              (p, v) => p.map((n, i) => n + v.position[i]! / positions.length) as Position,
-              [0, 0, 0] as Position,
+          const ids = this.movingIds(target);
+          const positions = mode.grid.vertices.filter((v) => ids.includes(v.id));
+          const position = positions.reduce(
+            (p, v) => p.map((n, i) => n + v.position[i]! / positions.length) as Position,
+            [0, 0, 0] as Position,
+          );
+          const local = this.localRay(ray(event.clientX, event.clientY)),
+            start = terrainHorizontalPoint(local, mode.camera, position[2]);
+          const horizontal = event.altKey;
+          if (horizontal && !start) return;
+          const point = new THREE.Vector3(...gameToScene(mode.camera, ...position)),
+            plane = new THREE.Plane().setFromNormalAndCoplanarPoint(local.direction, point);
+          const a = local.intersectPlane(plane, new THREE.Vector3()),
+            b = this.localRay(ray(event.clientX, event.clientY + 1)).intersectPlane(
+              plane,
+              new THREE.Vector3(),
             );
-            const local = this.localRay(ray(event.clientX, event.clientY)),
-              start = terrainHorizontalPoint(local, mode.camera, position[2]);
-            const horizontal = event.altKey;
-            if (horizontal && !start) return;
-            const point = new THREE.Vector3(...gameToScene(mode.camera, ...position)),
-              plane = new THREE.Plane().setFromNormalAndCoplanarPoint(local.direction, point);
-            const a = local.intersectPlane(plane, new THREE.Vector3()),
-              b = this.localRay(ray(event.clientX, event.clientY + 1)).intersectPlane(
-                plane,
-                new THREE.Vector3(),
-              );
-            if (!a || !b) return;
-            this.select(ids);
-            this.drag = {
-              mode,
-              pointer: event.pointerId,
-              kind: "move",
-              ids,
-              before,
-              startScreen: screen,
-              start,
-              height: position[2],
-              unitsPerPixel:
-                a.distanceTo(b) * Math.cos((mode.camera.elevation_deg * Math.PI) / 180),
-              horizontal,
-              additive: false,
-              grid: mode.grid,
-              moved: false,
-            };
-            this.setHover(ids);
-          }
+          if (!a || !b) return;
+          this.drag = {
+            mode,
+            pointer: event.pointerId,
+            kind: "move",
+            ids,
+            clickIds: target.ids,
+            dragStarted: false,
+            before,
+            startScreen: screen,
+            start,
+            height: position[2],
+            unitsPerPixel: a.distanceTo(b) * Math.cos((mode.camera.elevation_deg * Math.PI) / 180),
+            horizontal,
+            grid: mode.grid,
+            moved: false,
+          };
+          this.setHover(ids);
         }
         this.finishOrbit = pauseOrbit();
         canvas.setPointerCapture(event.pointerId);
@@ -510,15 +511,28 @@ export class TerrainControls {
         }
         if (drag.pointer !== event.pointerId) return;
         consume(event);
-        if (drag.kind === "toggle") return;
+        if (drag.kind === "toggle") {
+          if (
+            Math.hypot(event.clientX - drag.startScreen.x, event.clientY - drag.startScreen.y) <= 3
+          )
+            return;
+          drag.kind = "box";
+        }
         if (drag.kind === "box") {
           const end = { x: event.clientX, y: event.clientY },
             inside = this.boxIds(drag.startScreen, end);
-          drag.ids = drag.additive ? [...new Set([...drag.before, ...inside])] : inside;
-          drag.moved = Math.hypot(end.x - drag.startScreen.x, end.y - drag.startScreen.y) > 2;
+          drag.ids = [...new Set([...drag.before, ...inside])];
+          drag.moved = true;
           this.drawMarquee(drag.startScreen, end);
           this.setHover(drag.ids);
           return;
+        }
+        if (!drag.dragStarted) {
+          if (
+            Math.hypot(event.clientX - drag.startScreen.x, event.clientY - drag.startScreen.y) <= 3
+          )
+            return;
+          drag.dragStarted = true;
         }
         const delta: Position = [0, 0, 0];
         if (drag.horizontal) {
@@ -533,6 +547,7 @@ export class TerrainControls {
         } else delta[2] = (drag.startScreen.y - event.clientY) * drag.unitsPerPixel;
         const next = moveTerrainVertices(drag.mode.grid, drag.ids, delta);
         if (!next) return;
+        if (!drag.moved) this.select(drag.ids);
         drag.grid = next;
         drag.moved = delta.some((n) => Math.abs(n) > 0.01);
         this.preview(next);
@@ -547,10 +562,27 @@ export class TerrainControls {
         if (!drag || drag.pointer !== event.pointerId) return;
         consume(event);
         this.release();
-        if (drag.kind === "box") {
+        if (
+          drag.kind === "box" ||
+          (drag.kind === "toggle" &&
+            Math.hypot(event.clientX - drag.startScreen.x, event.clientY - drag.startScreen.y) > 3)
+        ) {
           const inside = this.boxIds(drag.startScreen, { x: event.clientX, y: event.clientY });
-          this.select(drag.additive ? [...new Set([...drag.before, ...inside])] : inside);
+          this.select([...new Set([...drag.before, ...inside])]);
+        } else if (drag.kind === "toggle" && drag.ids.length) {
+          const selected = new Set(drag.before),
+            all = drag.ids.every((id) => selected.has(id));
+          for (const id of drag.ids)
+            if (all) selected.delete(id);
+            else selected.add(id);
+          this.select([...selected]);
         }
+        if (
+          drag.kind === "move" &&
+          !drag.dragStarted &&
+          Math.hypot(event.clientX - drag.startScreen.x, event.clientY - drag.startScreen.y) <= 3
+        )
+          this.select(drag.clickIds ?? drag.ids);
         this.preview(null);
         this.hover = [];
         this.draw(this.mode?.grid ?? null);
@@ -573,17 +605,52 @@ export class TerrainControls {
       },
       { signal },
     );
-    for (const name of ["click", "dblclick", "contextmenu"])
+    canvas.addEventListener(
+      "dblclick",
+      (event) => {
+        const mode = this.mode;
+        if (!mode || event.button !== 0 || this.drag) return;
+        consume(event);
+        const target = this.pick(event.clientX, event.clientY, ray);
+        if (!target) return;
+        const cells = mode.grid.cells.filter((cell) => {
+          const ids = new Set(cell.vertices.map((index) => mode.grid.vertices[index]!.id));
+          return (
+            target.ids.every((id) => ids.has(id)) &&
+            (target.kind !== "cell" || ids.size === target.ids.length)
+          );
+        });
+        if (cells.length) mode.subdivideCells?.(cells.map((cell) => cell.id));
+      },
+      { capture: true, signal },
+    );
+    for (const name of ["click"])
       canvas.addEventListener(
         name,
         (event) => {
-          if (this.mode) consume(event);
+          if (this.mode && (event as MouseEvent).button !== 2) consume(event);
         },
         { capture: true, signal },
       );
     window.addEventListener(
       "keydown",
       (event) => {
+        const target = event.target as HTMLElement | null;
+        if (
+          ["INPUT", "SELECT", "TEXTAREA"].includes(target?.tagName ?? "") ||
+          target?.isContentEditable ||
+          canvas.ownerDocument?.querySelector("dialog[open]")
+        )
+          return;
+        if (
+          (event.key === "Delete" || event.key === "Backspace") &&
+          this.mode &&
+          this.selection.length
+        ) {
+          consume(event);
+          if (!this.drag && !event.repeat) this.mode.deleteVertices?.([...this.selection]);
+          return;
+        }
         if (event.key === "Escape" && this.drag) {
           consume(event);
           this.cancel();

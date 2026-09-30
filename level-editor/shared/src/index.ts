@@ -23,6 +23,7 @@ export * from "./component-parts.ts";
 export * from "./glb-scene.ts";
 
 export * from "./authored-terrain.ts";
+export * from "./terrain-delete.ts";
 export type { GameplayAssetDescriptor } from "./asset-gameplay.ts";
 
 export * from "./spline-sampling.ts";

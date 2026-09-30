@@ -179,10 +179,14 @@ carrying the affine matrix.
 Draw has separate **Terrain** and **Paths** subtabs. Finish or cancel a path before
 switching to Terrain. Terrain highlights the vertices a drag will move on hover:
 a vertex, both endpoints of an edge, or all corners of a cell. Shift-click toggles
-selection; right-drag selects vertices inside a screen rectangle (Shift adds them).
+selection; Shift-drag adds vertices inside a screen rectangle. Right-drag rotates
+the camera. Vertices have a 10-pixel pick radius at every zoom and perspective.
+Double-click a cell to subdivide it, or an edge/vertex to subdivide its incident cells. Delete removes selected vertices and reconnects the surrounding
+ground; it does not punch a hole. Invalid deletions leave the terrain unchanged.
 Dragging a selected target moves the entire selection, preserving relative heights.
 Ordinary dragging changes elevation; Alt-drag moves horizontally. Numeric X/Y/Z
-inputs edit one vertex or translate a selection by its center. Escape cancels a drag.
+inputs edit one vertex or translate a selection by its center. Flatten sets selected
+vertices to their average height without moving them horizontally. Escape cancels a drag.
 Select ground cells to subdivide them or override their walkability. Subdivision
 only refines selected cells and shared-edge neighbors needed to keep the grid
 connected; untouched cells retain their topology. Material selection is available at vertices, with

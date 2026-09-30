@@ -228,10 +228,19 @@ function interactionHarness(initial: string[] = []) {
     canvas.dispatchEvent(event);
     return event;
   }
-  function escape() {
+  function key(
+    key: string,
+    target?: { tagName?: string; isContentEditable?: boolean },
+    repeat = false,
+  ) {
     const event = new Event("keydown", { cancelable: true });
-    Object.assign(event, { key: "Escape" });
+    Object.assign(event, { key, repeat });
+    if (target) Object.defineProperty(event, "target", { value: target });
     windowEvents.dispatchEvent(event);
+    return event;
+  }
+  function escape() {
+    key("Escape");
   }
   return {
     controls,
@@ -240,6 +249,7 @@ function interactionHarness(initial: string[] = []) {
     previews,
     pointer,
     escape,
+    key,
     selected: () => selected,
     selectedCells: () => selectedCells,
     restored: () => restored,
@@ -267,22 +277,23 @@ test("Shift click toggles vertices without committing or moving them", () => {
   }
 });
 
-test("right marquee replaces, Shift adds, and Escape cancels selection", () => {
+test("Shift-left marquee adds to selection and Escape cancels", () => {
   const h = interactionHarness(["d"]);
   try {
-    h.pointer("pointerdown", -10, -10, { button: 2 });
-    h.pointer("pointermove", 110, 10, { button: 2 });
-    h.pointer("pointerup", 110, 10, { button: 2 });
-    assert.deepEqual(new Set(h.selected()), new Set(["a", "b"]));
-    h.pointer("pointerdown", 90, 160, { button: 2, shiftKey: true });
-    h.pointer("pointermove", 110, 190, { button: 2, shiftKey: true });
-    h.pointer("pointerup", 110, 190, { button: 2, shiftKey: true });
-    assert.deepEqual(new Set(h.selected()), new Set(["a", "b", "c"]));
-    h.pointer("pointerdown", -10, 160, { button: 2 });
-    h.pointer("pointermove", 10, 190, { button: 2 });
+    h.pointer("pointerdown", -10, -10, { shiftKey: true });
+    h.pointer("pointermove", 110, 10, { shiftKey: true });
+    assert.deepEqual(h.selected(), ["d"]);
+    h.pointer("pointerup", 110, 10, { shiftKey: true });
+    assert.deepEqual(new Set(h.selected()), new Set(["d", "a", "b"]));
+    h.pointer("pointerdown", 90, 160, { shiftKey: true });
+    h.pointer("pointermove", 110, 190, { shiftKey: true });
     h.escape();
-    h.pointer("pointerup", 10, 190, { button: 2 });
-    assert.deepEqual(new Set(h.selected()), new Set(["a", "b", "c"]));
+    h.pointer("pointerup", 110, 190, { shiftKey: true });
+    assert.deepEqual(new Set(h.selected()), new Set(["d", "a", "b"]));
+    h.pointer("pointerdown", 90, 160, { shiftKey: true });
+    h.pointer("pointermove", 110, 190, { shiftKey: true });
+    h.pointer("pointerup", 110, 190, { shiftKey: true });
+    assert.deepEqual(new Set(h.selected()), new Set(["d", "a", "b", "c"]));
     assert.equal(h.commits.length, 0);
   } finally {
     h.dispose();
@@ -375,35 +386,165 @@ test("Shift edge and cell toggles use the complete target vertex set", () => {
   }
 });
 
-test("marquee selects complete cells only when every corner is enclosed", () => {
+test("Shift marquee selects complete cells only when every corner is selected", () => {
   const h = interactionHarness();
   try {
-    h.pointer("pointerdown", -10, -10, { button: 2 });
-    h.pointer("pointermove", 110, 190, { button: 2 });
-    h.pointer("pointerup", 110, 190, { button: 2 });
+    h.pointer("pointerdown", -10, -10, { shiftKey: true });
+    h.pointer("pointermove", 110, 10, { shiftKey: true });
+    h.pointer("pointerup", 110, 10, { shiftKey: true });
+    assert.deepEqual(new Set(h.selected()), new Set(["a", "b"]));
+    assert.deepEqual(h.selectedCells(), []);
+    h.pointer("pointerdown", -10, 160, { shiftKey: true });
+    h.pointer("pointermove", 110, 190, { shiftKey: true });
+    h.pointer("pointerup", 110, 190, { shiftKey: true });
     assert.deepEqual(new Set(h.selected()), new Set(["a", "b", "c", "d"]));
     assert.deepEqual(h.selectedCells(), ["cell"]);
-    h.pointer("pointerdown", -10, -10, { button: 2 });
-    h.pointer("pointermove", 110, 10, { button: 2 });
-    h.pointer("pointerup", 110, 10, { button: 2 });
-    assert.deepEqual(h.selectedCells(), []);
   } finally {
     h.dispose();
   }
 });
-
-test("empty left drags remain available to camera pan while right drags select", () => {
+test("empty left pan and right rotation gestures pass through terrain controls", () => {
   const h = interactionHarness(["a"]);
   try {
     assert.equal(h.pointer("pointerdown", -100, -100).defaultPrevented, false);
     assert.deepEqual(h.selected(), []);
     assert.equal(h.pointer("pointermove", -120, -120).defaultPrevented, false);
     assert.equal(h.pointer("pointerup", -120, -120).defaultPrevented, false);
+    assert.equal(h.pointer("pointerdown", 0, 0, { button: 2 }).defaultPrevented, false);
+    assert.equal(h.pointer("pointermove", 50, 50, { button: 2 }).defaultPrevented, false);
+    assert.equal(h.pointer("pointerup", 50, 50, { button: 2 }).defaultPrevented, false);
+    assert.deepEqual(h.selected(), []);
     assert.equal(h.restored(), 0);
-    assert.equal(h.pointer("pointerdown", -100, -100, { button: 2 }).defaultPrevented, true);
-    assert.equal(h.pointer("pointermove", -120, -120, { button: 2 }).defaultPrevented, true);
-    assert.equal(h.pointer("pointerup", -120, -120, { button: 2 }).defaultPrevented, true);
-    assert.equal(h.restored(), 1);
+    assert.equal(h.commits.length, 0);
+  } finally {
+    h.dispose();
+  }
+});
+test("Shift click waits for release and small jitter toggles while dragging keeps existing targets", () => {
+  const h = interactionHarness(["b"]);
+  try {
+    h.pointer("pointerdown", 100, 0, { shiftKey: true });
+    assert.deepEqual(h.selected(), ["b"]);
+    h.pointer("pointermove", 102, 0, { shiftKey: true });
+    assert.deepEqual(h.selected(), ["b"]);
+    h.pointer("pointerup", 102, 0, { shiftKey: true });
+    assert.deepEqual(h.selected(), []);
+    h.pointer("pointerdown", 100, 0, { shiftKey: true });
+    h.pointer("pointerup", 100, 0, { shiftKey: true });
+    h.pointer("pointerdown", 100, 0, { shiftKey: true });
+    h.pointer("pointermove", -5, -5, { shiftKey: true });
+    h.pointer("pointerup", -5, -5, { shiftKey: true });
+    assert.deepEqual(new Set(h.selected()), new Set(["a", "b"]));
+    h.pointer("pointerdown", -100, -100, { shiftKey: true });
+    h.pointer("pointerup", -100, -100, { shiftKey: true });
+    assert.deepEqual(new Set(h.selected()), new Set(["a", "b"]));
+    assert.equal(h.commits.length, 0);
+  } finally {
+    h.dispose();
+  }
+});
+
+test("vertex screen hit area takes priority near an endpoint without swallowing edge centers", () => {
+  const h = interactionHarness();
+  try {
+    h.pointer("pointermove", 8, 3);
+    assert.deepEqual(h.controls.root.userData.terrainHoverVertices, ["a"]);
+    h.pointer("pointerdown", 8, 3);
+    h.pointer("pointerup", 8, 3);
+    assert.deepEqual(h.selected(), ["a"]);
+    assert.equal(h.commits.length, 0);
+    h.pointer("pointermove", 15, 0);
+    assert.deepEqual(new Set(h.controls.root.userData.terrainHoverVertices), new Set(["a", "b"]));
+  } finally {
+    h.dispose();
+  }
+});
+
+test("double click subdivides the pointed cell, edge or vertex and ignores empty space", () => {
+  const h = interactionHarness();
+  const calls: string[][] = [];
+  h.mode.subdivideCells = (ids) => calls.push(ids);
+  h.controls.setMode(h.mode);
+  try {
+    for (const [x, y] of [
+      [50, 80],
+      [50, 0],
+      [8, 3],
+    ]) {
+      h.pointer("pointerdown", x!, y!);
+      h.pointer("pointerup", x!, y!);
+      h.pointer("dblclick", x!, y!);
+    }
+    assert.deepEqual(calls, [["cell"], ["cell"], ["cell"]]);
+    h.pointer("dblclick", -100, -100);
+    assert.equal(calls.length, 3);
+    assert.equal(h.commits.length, 0);
+  } finally {
+    h.dispose();
+  }
+});
+
+test("Delete forwards the terrain selection once and leaves text editing alone", () => {
+  const h = interactionHarness(["a", "b"]);
+  const calls: string[][] = [];
+  h.mode.deleteVertices = (ids) => calls.push(ids);
+  h.controls.setMode(h.mode);
+  try {
+    assert.equal(h.key("Delete").defaultPrevented, true);
+    assert.deepEqual(calls, [["a", "b"]]);
+    h.key("Delete", undefined, true);
+    for (const target of [
+      { tagName: "INPUT" },
+      { tagName: "TEXTAREA" },
+      { tagName: "SELECT" },
+      { isContentEditable: true },
+    ]) {
+      assert.equal(h.key("Delete", target).defaultPrevented, false);
+    }
+    assert.equal(calls.length, 1);
+    h.controls.setMode(null);
+    assert.equal(h.key("Delete").defaultPrevented, false);
+    assert.equal(calls.length, 1);
+  } finally {
+    h.dispose();
+  }
+});
+
+test("plain vertex clicks collapse selected areas or edges without moving the grid", () => {
+  for (const selection of [
+    ["a", "b", "c", "d"],
+    ["a", "b"],
+  ]) {
+    const h = interactionHarness(selection);
+    try {
+      h.pointer("pointermove", 0, 0);
+      assert.deepEqual(new Set(h.controls.root.userData.terrainHoverVertices), new Set(selection));
+      h.pointer("pointerdown", 0, 0);
+      h.pointer("pointermove", 2, 1);
+      assert.deepEqual(h.selected(), selection);
+      assert.equal(h.previews.length, 0);
+      h.pointer("pointerup", 2, 1);
+      assert.deepEqual(h.selected(), ["a"]);
+      assert.equal(h.commits.length, 0);
+      assert.deepEqual(h.selectedCells(), []);
+    } finally {
+      h.dispose();
+    }
+  }
+});
+test("cancelled or wholly invalid terrain drags preserve the previous selection", () => {
+  const h = interactionHarness(["d"]);
+  try {
+    h.pointer("pointerdown", 0, 0);
+    h.pointer("pointermove", 0, -15);
+    h.escape();
+    h.pointer("pointerup", 0, -15);
+    assert.deepEqual(h.selected(), ["d"]);
+    assert.equal(h.commits.length, 0);
+    h.pointer("pointerdown", 0, 0, { altKey: true });
+    h.pointer("pointermove", 100, 0, { altKey: true });
+    h.pointer("pointerup", 100, 0, { altKey: true });
+    assert.deepEqual(h.selected(), ["d"]);
     assert.equal(h.commits.length, 0);
   } finally {
     h.dispose();

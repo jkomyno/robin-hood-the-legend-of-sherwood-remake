@@ -43,14 +43,14 @@ function command(method, params = {}) {
   });
 }
 const evalJS = (source) => evaluate(socket, ++id, source, { timeoutMs: 10000 });
-async function mouse(type, p, modifiers = 0, button = "left") {
+async function mouse(type, p, modifiers = 0, button = "left", clickCount = 1) {
   await command("Input.dispatchMouseEvent", {
     type,
     x: p.x,
     y: p.y,
     button,
     buttons: type === "mouseReleased" ? 0 : button === "right" ? 2 : 1,
-    clickCount: 1,
+    clickCount,
     modifiers,
   });
   await sleep();
@@ -92,6 +92,16 @@ try {
   assert.equal(ready, "READY");
   let before = await evalJS("terrainTest.state()"),
     vertex = await evalJS("terrainTest.point(9)");
+  const nearVertex = { x: vertex.x + 8, y: vertex.y + 3 };
+  await mouse("mouseMoved", nearVertex);
+  assert.deepEqual(await evalJS("terrainTest.state().hover"), [
+    before.document.terrain.vertices[9].id,
+  ]);
+  await mouse("mousePressed", nearVertex);
+  await mouse("mouseReleased", nearVertex);
+  assert.deepEqual((await evalJS("terrainTest.state()")).selected, [
+    before.document.terrain.vertices[9].id,
+  ]);
   await drag(vertex, { x: vertex.x, y: vertex.y - 25 });
   let after = await evalJS("terrainTest.state()");
   assert.equal(after.commits, before.commits + 1);
@@ -167,6 +177,26 @@ try {
   );
   assert.equal(after.commits, before.commits + 1);
   assert.deepEqual(after.document.terrain.vertices[11], before.document.terrain.vertices[11]);
+  // Flatten changes only the heights of the selected vertices in one edit.
+  before = after;
+  const averageHeight =
+    (before.document.terrain.vertices[9].position[2] +
+      before.document.terrain.vertices[10].position[2]) /
+    2;
+  await evalJS(
+    `Array.from(document.querySelectorAll('button')).find(b => b.textContent === 'Flatten').click()`,
+  );
+  await sleep();
+  after = await evalJS("terrainTest.state()");
+  assert.equal(after.commits, before.commits + 1);
+  for (const index of [9, 10]) {
+    assert.equal(after.document.terrain.vertices[index].position[2], averageHeight);
+    assert.deepEqual(
+      after.document.terrain.vertices[index].position.slice(0, 2),
+      before.document.terrain.vertices[index].position.slice(0, 2),
+    );
+  }
+  assert.deepEqual(after.document.terrain.vertices[11], before.document.terrain.vertices[11]);
   // Removing a member is a click, not a geometry edit.
   const removed = await evalJS("terrainTest.point(10)");
   await mouse("mousePressed", removed, 8);
@@ -230,8 +260,8 @@ try {
           areaDelta,
       ) < 1e-8,
     );
-  // Marquee uses projected CSS pixels, and right drag does not rotate the camera.
-  await evalJS("terrainTest.top()");
+  // Shift marquee uses projected CSS pixels without rotating the camera.
+  await evalJS("terrainTest.clearSelection(); terrainTest.top()");
   await new Promise((resolve) => setTimeout(resolve, 800));
   const screenPoints = await evalJS(
     "terrainTest.state().document.terrain.vertices.map((_,i)=>terrainTest.point(i))",
@@ -252,7 +282,7 @@ try {
   );
   assert.ok(expected.length >= 2);
   before = after;
-  await drag(start, end, false, 0, "right");
+  await drag(start, end, false, 8);
   after = await evalJS("terrainTest.state()");
   assert.deepEqual(
     [...after.selected].sort((a, b) => a.localeCompare(b)),
@@ -261,13 +291,7 @@ try {
   assert.equal(after.commits, before.commits);
   assert.deepEqual(await evalJS("terrainTest.point(9)"), screenPoints[9]);
   const extra = screenPoints[26];
-  await drag(
-    { x: extra.x - 4, y: extra.y - 4 },
-    { x: extra.x + 4, y: extra.y + 4 },
-    false,
-    8,
-    "right",
-  );
+  await drag({ x: extra.x - 4, y: extra.y - 4 }, { x: extra.x + 4, y: extra.y + 4 }, false, 8);
   after = await evalJS("terrainTest.state()");
   assert.deepEqual(
     [...after.selected].sort((a, b) => a.localeCompare(b)),
@@ -285,6 +309,62 @@ try {
   after = await evalJS("terrainTest.state()");
   assert.ok(after.document.terrain.cells.length > before.document.terrain.cells.length);
   assert.equal(after.commits, before.commits + 1);
+  before = after;
+  const doubleCorners = await evalJS(
+    `(${JSON.stringify(cell.vertices)}).map(i => terrainTest.point(i))`,
+  );
+  const doublePoint = {
+    x: doubleCorners.reduce((sum, p) => sum + p.x, 0) / doubleCorners.length,
+    y: doubleCorners.reduce((sum, p) => sum + p.y, 0) / doubleCorners.length,
+  };
+  await mouse("mousePressed", doublePoint);
+  await mouse("mouseReleased", doublePoint);
+  await mouse("mousePressed", doublePoint, 0, "left", 2);
+  await mouse("mouseReleased", doublePoint, 0, "left", 2);
+  after = await evalJS("terrainTest.state()");
+  assert.equal(after.commits, before.commits + 1, "Double click creates one subdivision edit");
+  assert.ok(!after.document.terrain.cells.some((c) => c.id === cell.id));
+  assert.deepEqual(
+    after.document.terrain.cells.at(-1),
+    before.document.terrain.cells.at(-1),
+    "Double click keeps distant cells unchanged",
+  );
+  before = after;
+  await evalJS("terrainTest.selectVertex(9)");
+  await sleep();
+  const deleted = before.document.terrain.vertices[9];
+  await command("Input.dispatchKeyEvent", {
+    type: "keyDown",
+    key: "Delete",
+    code: "Delete",
+    windowsVirtualKeyCode: 46,
+  });
+  await sleep();
+  after = await evalJS("terrainTest.state()");
+  assert.equal(after.commits, before.commits + 1, "Delete creates one terrain edit");
+  assert.equal(after.document.terrain.vertices.length, before.document.terrain.vertices.length - 1);
+  assert.ok(!after.document.terrain.vertices.some((vertex) => vertex.id === deleted.id));
+  assert.ok(
+    Number.isFinite(
+      await evalJS(`terrainTest.height(${deleted.position[0]}, ${deleted.position[1]})`),
+    ),
+    "Deleted interior vertex leaves connected ground",
+  );
+  for (const vertex of after.document.terrain.vertices)
+    assert.deepEqual(
+      vertex,
+      before.document.terrain.vertices.find((old) => old.id === vertex.id),
+    );
+  await evalJS("terrainTest.roundtrip()");
+  assert.deepEqual((await evalJS("terrainTest.state()")).document.terrain, after.document.terrain);
+  const beforeOrbit = await evalJS("terrainTest.point(9)");
+  await drag(doublePoint, { x: doublePoint.x + 50, y: doublePoint.y + 20 }, false, 0, "right");
+  assert.notDeepEqual(
+    await evalJS("terrainTest.point(9)"),
+    beforeOrbit,
+    "Right drag rotates terrain view",
+  );
+  assert.equal((await evalJS("terrainTest.state()")).commits, after.commits);
   assert.deepEqual(after.errors, []);
   if (process.env.TEST_ARTIFACT_DIR) {
     await mkdir(process.env.TEST_ARTIFACT_DIR, { recursive: true });
@@ -295,7 +375,7 @@ try {
     );
   }
   console.log(
-    "PASS real pointer vertex elevation, Alt horizontal movement, one commit per drag, Escape cancellation, number scrubbing, Shift selection, hover, edges/cells, right-drag marquee and local subdivision",
+    "PASS real pointer vertex elevation, Alt horizontal movement, one commit per drag, Escape cancellation, number scrubbing, Shift selection, hover, edges/cells, Shift-drag marquee, right orbit, flatten, double-click subdivision and Delete with connected ground",
   );
 } catch (error) {
   console.error(error);

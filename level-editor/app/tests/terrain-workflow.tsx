@@ -5,6 +5,7 @@ import {
   serializeStoredMap,
   createTerrainGrid,
   gameToScene,
+  terrainHeightAt,
   type Level3D,
 } from "@rle/shared";
 import * as THREE from "three";
@@ -180,6 +181,19 @@ Object.assign(window, {
     },
     selectVertex,
     selectCell,
+    height: (x: number, y: number) => terrainHeightAt(current, x, y),
+    roundtrip: () => {
+      current = parseStoredMap(
+        JSON.parse(JSON.stringify(serializeStoredMap(current, new Map()))),
+        new Map(),
+      );
+      setDoc(current);
+      viewport.syncViews(current);
+    },
+    clearSelection: () => {
+      internals.terrainControls.mode.selectVertices?.([]);
+      internals.terrainControls.mode.selectCells?.([]);
+    },
     frame: () => viewport.frameContent(true),
     top: () => {
       viewport.topView();

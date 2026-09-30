@@ -1992,7 +1992,7 @@ cutouts aligned with terrain instead of rounding each piece separately.
   its conversion preserves placements and provides a reproducible height audit.
 
 - **Terrain selection tools.** Draw separates Terrain and Paths modes. Terrain
-  supports Shift-click multi-selection, right-drag rectangle selection, edge and
+  supports Shift-click multi-selection, Shift-drag rectangle selection, edge and
   cell dragging, and hover previews of every affected vertex. Group moves preserve
   relative offsets; Alt-drag moves horizontally and ordinary dragging changes
   elevation. Local subdivision leaves unrelated cells unchanged.
@@ -2000,3 +2000,10 @@ cutouts aligned with terrain instead of rounding each piece separately.
 - Cardinal and 90° rotation camera buttons use the same smooth transition as the Game camera control,
   which now sits beside them in the viewport navigation bar. Camera clipping follows
   current terrain and assets after resizing, edits and previews without refitting the lens.
+
+- Terrain vertex picking uses a forgiving screen-space radius. Double-click refines
+  the clicked cell or cells sharing the clicked edge/vertex. Right-drag retains
+  camera rotation; Shift-drag adds a rectangle of vertices to the selection. Flatten
+  levels selected vertices to their average height without changing their footprint.
+  Delete removes selected vertices and reconnects the surrounding ground as one
+  undoable edit, rejecting deletions that cannot form a valid surface.

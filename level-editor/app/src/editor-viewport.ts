@@ -1331,8 +1331,7 @@ export class EditorViewport {
       (e) => {
         // the gizmo takes precedence when the cursor is on one of its handles
         if (
-          (this.missionEdit && e.button === 0) ||
-          this.terrainMode ||
+          ((this.missionEdit || this.terrainMode) && e.button === 0) ||
           !this.camera ||
           !this.orbit ||
           this.gizmo?.axis ||

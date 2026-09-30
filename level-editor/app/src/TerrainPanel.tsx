@@ -1,11 +1,13 @@
 import MaterialPicker from "./MaterialPicker";
 import ScrubNumber from "./ScrubNumber";
+import { flattenTerrainVertices } from "./terrain-selection";
 import type { EditorViewport } from "./editor-viewport";
 import { For, Show, createSignal, createEffect, onCleanup, untrack } from "solid-js";
 import {
   parseLevel3D,
   createTerrainGrid,
   subdivideTerrainCells,
+  deleteTerrainVertices,
   type CustomTerrainMaterial,
   type TerrainGrid,
   type Level3D,
@@ -77,6 +79,26 @@ export default function TerrainPanel(props: {
       props.onError(String(error));
     }
   }
+  function subdivide(ids: string[]) {
+    const g = grid();
+    if (!g || !ids.length) return;
+    try {
+      publish(subdivideTerrainCells(g, ids));
+      setCells([]);
+    } catch (error) {
+      props.onError(String(error));
+    }
+  }
+  function deleteVertices(ids: string[]) {
+    const g = grid();
+    if (!g || !ids.length) return;
+    try {
+      publish(deleteTerrainVertices(g, ids));
+      clearSelection();
+    } catch (error) {
+      props.onError(String(error));
+    }
+  }
   createEffect(
     () => ({
       grid: grid(),
@@ -97,6 +119,8 @@ export default function TerrainPanel(props: {
                 selectedCells: cells,
                 selectCells: setCells,
                 commit: publish,
+                subdivideCells: subdivide,
+                deleteVertices,
                 deselect: clearSelection,
               }
             : null,
@@ -152,7 +176,9 @@ export default function TerrainPanel(props: {
       <h2>Terrain grid</h2>
       <p class="hint">
         Click a vertex, edge or cell to select it. Drag to change elevation; hold Alt to move
-        horizontally. Shift adds to or removes from the selection. Right-drag to select a rectangle.
+        horizontally. Shift adds to or removes from the selection. Shift-drag to add a rectangle of
+        vertices; right-drag rotates the camera. Double-click a cell, edge or vertex to subdivide
+        there. Delete removes selected vertices and reconnects the ground.
       </p>
       <fieldset disabled={props.disabled || !props.document()}>
         <Show
@@ -184,6 +210,22 @@ export default function TerrainPanel(props: {
                 Coordinates show the selection center. Editing one translates every selected vertex
                 by the same amount.
               </p>
+              <button
+                title={`Set selected vertices to their average Z (${center()[2]}), keeping X and Y unchanged`}
+                onClick={() => {
+                  const terrain = grid();
+                  if (!terrain) return;
+                  cancelPreview();
+                  publish(
+                    flattenTerrainVertices(
+                      terrain,
+                      vertices().map((vertex) => vertex.id),
+                    ),
+                  );
+                }}
+              >
+                Flatten
+              </button>
             </Show>
             <MaterialPicker
               label="Vertex material"
@@ -263,24 +305,7 @@ export default function TerrainPanel(props: {
                 <option value="false">Blocked</option>
               </select>
             </label>
-            <button
-              onClick={() => {
-                const g = grid();
-                if (g) {
-                  try {
-                    publish(
-                      subdivideTerrainCells(
-                        g,
-                        selectedCells().map((cell) => cell.id),
-                      ),
-                    );
-                    setCells([]);
-                  } catch (error) {
-                    props.onError(String(error));
-                  }
-                }
-              }}
-            >
+            <button onClick={() => subdivide(selectedCells().map((cell) => cell.id))}>
               {selectedCells().length === 1
                 ? "Subdivide selected cell"
                 : "Subdivide selected cells"}
