@@ -91,14 +91,7 @@ fn projected_coordinate(value: f32) -> f64 {
 /// Edges are split at every intersection so partial contacts and overlapping
 /// planes cannot assign an unrelated receiver to the whole edge.
 pub(crate) fn derive(geometry: &CompiledAssetGeometry) -> Result<Vec<RawElevationLine>, String> {
-    let changing: BTreeSet<_> = geometry
-        .movement_transitions
-        .iter()
-        .flat_map(|t| t.initial_sight.iter().chain(&t.applied_sight))
-        .copied()
-        .collect();
     let mut groups = BTreeMap::<(u16, u16), Vec<Receiver>>::new();
-    let mut dynamic = BTreeSet::new();
     for (index, obstacle) in geometry.sight_obstacles.iter().enumerate() {
         let Some(topology) = obstacle.projection_area else {
             continue;
@@ -107,9 +100,6 @@ pub(crate) fn derive(geometry: &CompiledAssetGeometry) -> Result<Vec<RawElevatio
             .ok()
             .filter(|i| *i != u16::MAX)
             .ok_or("too many receiving surfaces for elevation boundaries")?;
-        if changing.contains(&index) {
-            dynamic.insert(topology);
-        }
         if obstacle.points.len() < 3
             || obstacle.points.iter().any(|p| {
                 !p.x.is_finite()
@@ -164,15 +154,9 @@ pub(crate) fn derive(geometry: &CompiledAssetGeometry) -> Result<Vec<RawElevatio
     let mut output = BTreeMap::new();
     let mut ambiguous = BTreeSet::new();
     for ((sector, layer), receivers) in groups {
-        if dynamic.contains(&(sector, layer)) {
-            // TODO: construct state-sensitive bonds when a switch changes receivers.
-            tracing::warn!(
-                sector,
-                layer,
-                "omitted automatic elevation boundaries for changing receiving surfaces"
-            );
-            continue;
-        }
+        // Sight activation controls collision and visibility, not receiving
+        // height lookup. Keep bonds for all registered planes in every state;
+        // doors and motion obstacles control access to switched surfaces.
         let area = area_polygons
             .get(&(sector, layer))
             .ok_or("elevation receiver has no motion area")?;
@@ -325,6 +309,30 @@ mod tests {
         for endpoints in [((50, 10), (50, 30)), ((50, 60), (50, 90))] {
             assert!(lines.iter().any(|l| (l.point_a, l.point_b) == endpoints
                 && (l.left_obstacle_index == u16::MAX || l.right_obstacle_index == u16::MAX)));
+        }
+    }
+
+    #[test]
+    fn sight_switches_do_not_remove_receiving_plane_boundaries() {
+        let mut geometry = fixture();
+        let expected = serde_json::to_value(derive(&geometry).unwrap()).unwrap();
+        // Independent switches may share a navigation area after assets are
+        // joined. Neither changes the set of registered receiving planes.
+        for index in 0..2 {
+            geometry.movement_transitions.push(
+                serde_json::from_value(serde_json::json!({
+                    "id": format!("walkway/{index}/switch"),
+                    "waypoint": [400, 300], "sector": 0, "layer": 0,
+                    "active": true, "definitive": false,
+                    "apply_polygon": {"points": []}, "no_apply_polygon": {"points": []},
+                    "motion_changes": [], "applied_sight": [index]
+                }))
+                .unwrap(),
+            );
+            assert_eq!(
+                serde_json::to_value(derive(&geometry).unwrap()).unwrap(),
+                expected
+            );
         }
     }
 }
