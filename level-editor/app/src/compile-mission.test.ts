@@ -78,6 +78,20 @@ test("explicit mission markers bind to the corresponding elevation and native se
   assert.deepEqual(result.warnings, []);
 });
 
+test("ground placements bind on nonzero navigation layers", () => {
+  const shifted = structuredClone(geometry);
+  shifted.motion_data.layers.unshift([]);
+  shifted.sight_obstacles[0]!.projection_area = [1, 2];
+  const doc = document();
+  doc.mission!.spawnPoints[0]!.position = [30, 50, 0];
+  const result = compileMission(doc, [0, 0, 100, 100], shifted);
+  assert.deepEqual(result.spawn_points, [
+    { position: [30, 50], direction: 4, profile: 0, sector: 0, layer: 1, projection_area: 65535 },
+  ]);
+  assert.equal(result.soldiers[0]!.layer, 1);
+  assert.deepEqual(result.warnings, []);
+});
+
 test("invalid placement warns and omits only the affected marker", () => {
   const doc = document();
   doc.mission!.spawnPoints[0]!.position[2] = 10;
