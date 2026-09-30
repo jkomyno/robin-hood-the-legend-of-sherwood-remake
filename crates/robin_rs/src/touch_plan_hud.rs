@@ -59,8 +59,15 @@ pub fn note_touch_input() {
     BROWSER_TOUCH_SESSION.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
+/// The original's top-right cluster starts at `width - 100`: Sight (or the
+/// Sherwood campaign-map button), the parchment ornament, and the zoom buttons
+/// at `width - 26`. The control sits just left of it so none of those widgets
+/// lose presses to it.
+const TOP_RIGHT_CLUSTER_INSET: i32 = 100;
+const CLUSTER_GAP: i32 = 8;
+
 pub fn rect(screen_width: u16) -> (i32, i32, i32, i32) {
-    let right = i32::from(screen_width).saturating_sub(10);
+    let right = i32::from(screen_width).saturating_sub(TOP_RIGHT_CLUSTER_INSET + CLUSTER_GAP);
     (right - WIDTH, 46, right, 46 + HEIGHT)
 }
 
@@ -108,6 +115,28 @@ mod tests {
         assert!(hit_test(1024, left, top));
         assert!(hit_test(1024, right, bottom));
         assert!(!hit_test(1024, left - 1, top));
+    }
+
+    #[test]
+    fn control_leaves_original_top_right_widgets_reachable() {
+        for screen_width in [640u16, 800, 1024, 1264, 1920] {
+            let (left, top, right, bottom) = rect(screen_width);
+            let sw = i32::from(screen_width);
+            assert!(left >= 0 && right < sw - TOP_RIGHT_CLUSTER_INSET);
+            let zoom = crate::zoom_hud::ZoomHudLayout::for_screen_width(
+                u32::from(screen_width),
+                &crate::zoom_hud::ZoomButtonSprites::default(),
+            );
+            for button in [zoom.zoom_up, zoom.zoom_down] {
+                for (x, y) in [
+                    (button.left(), button.top()),
+                    (button.left(), button.bottom() - 1),
+                ] {
+                    assert!(!hit_test(screen_width, x, y), "{screen_width}: ({x}, {y})");
+                }
+            }
+            assert!(bottom > top);
+        }
     }
 
     #[test]
