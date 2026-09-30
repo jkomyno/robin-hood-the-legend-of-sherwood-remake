@@ -11,6 +11,7 @@ import { safeLibraryPath } from "../../shared/src/projection-assets.ts";
 import { parseStoredMap } from "../../shared/src/stored-level.ts";
 import { readStoredMap, pinnedDescriptors } from "./stored-map.ts";
 import { mergeGameplayDraft } from "./publish-gameplay-drafts.ts";
+import { transformedObstacle, type Level3D } from "../../shared/src/level3d.ts";
 
 interface Placement {
   id: string;
@@ -33,6 +34,74 @@ interface StoredScene {
 export interface DraftAddition {
   map: string;
   assets: string[];
+  /** Explicitly reviewed regrouping; every replaced obstacle must survive in world space. */
+  replacePlacements?: string[];
+}
+
+export function verifyReplacementGeometry(
+  live: Level3D,
+  staged: Level3D,
+  removed: ReadonlySet<string>,
+  added: ReadonlySet<string>,
+) {
+  const previous = live.objects.filter((o) => removed.has(o.group ?? o.id));
+  const replacements = staged.objects.filter((o) => added.has(o.group ?? o.id));
+  if (!previous.length || previous.length !== replacements.length)
+    throw new Error("Replacement family has different part counts");
+  const used = new Set<string>();
+  for (const part of previous) {
+    if (!part.obstacle || part.source?.obstacle === undefined)
+      throw new Error(`Replacement requires reviewed obstacle identity: ${part.id}`);
+    const candidates = replacements.filter((p) => p.source?.obstacle === part.source?.obstacle);
+    const replacement = candidates[0];
+    if (candidates.length !== 1 || !replacement?.obstacle || used.has(replacement.id))
+      throw new Error(`Replacement obstacle is missing or ambiguous: ${part.id}`);
+    used.add(replacement.id);
+    const a = transformedObstacle(live, part),
+      b = transformedObstacle(staged, replacement);
+    const { points: aPoints, ...aFlags } = a,
+      { points: bPoints, ...bFlags } = b;
+    if (
+      !isDeepStrictEqual(aFlags, bFlags) ||
+      aPoints.length !== bPoints.length ||
+      aPoints.some((point, i) =>
+        (["x", "y", "z_bottom", "z_top"] as const).some(
+          (key) => Math.abs(point[key] - bPoints[i]![key]) > 1e-7,
+        ),
+      )
+    )
+      throw new Error(`Replacement changes world obstacle geometry or flags: ${part.id}`);
+  }
+  return previous.length;
+}
+
+export function replaceDraftPlacements(
+  live: StoredScene,
+  staged: StoredScene,
+  ids: ReadonlySet<string>,
+  removed: ReadonlySet<string>,
+) {
+  for (const id of removed) {
+    if (
+      live.placements.filter((p) => p.id === id).length !== 1 ||
+      staged.placements.some((p) => p.id === id)
+    )
+      throw new Error(`Missing or conflicting replacement placement: ${id}`);
+  }
+  const placements = live.placements.filter((p) => !removed.has(p.id));
+  const removedAssets = new Set(
+    live.placements.filter((p) => removed.has(p.id)).flatMap((p) => p.assets),
+  );
+  for (const p of placements) for (const id of p.assets) removedAssets.delete(id);
+  return appendDraftPlacements(
+    {
+      ...live,
+      placements,
+      assetSources: live.assetSources.filter((r) => !removedAssets.has(r.id)),
+    },
+    staged,
+    ids,
+  );
 }
 
 /** Append only new identities; existing placement values are never rewritten. */
@@ -107,6 +176,7 @@ export async function addGameplayDrafts(
   const changes = new Map<string, Change>();
   const scenes: string[] = [];
   const published: string[] = [];
+  const verifiedParts = new Map<string, number>();
   async function addFile(file: string, bytes: Buffer, allowIdentical = false) {
     if (!safeLibraryPath(file)) throw new Error(`Unsafe publication path: ${file}`);
     const before = await optionalRead(path.join(library, file));
@@ -139,8 +209,26 @@ export async function addGameplayDrafts(
       await fs.readFile(path.join(staged, sceneFile), "utf8"),
     ) as StoredScene;
     const current = await readStoredMap(path.join(library, sceneFile), library);
-    await readStoredMap(path.join(staged, sceneFile), staged);
-    const next = appendDraftPlacements(liveScene, draftScene, new Set(selection.assets));
+    const draftDocument = await readStoredMap(path.join(staged, sceneFile), staged);
+    const selected = new Set(selection.assets);
+    const removed = new Set(selection.replacePlacements ?? []);
+    const next = removed.size
+      ? replaceDraftPlacements(liveScene, draftScene, selected, removed)
+      : appendDraftPlacements(liveScene, draftScene, selected);
+    if (removed.size)
+      verifiedParts.set(
+        selection.map,
+        verifyReplacementGeometry(
+          current,
+          draftDocument,
+          removed,
+          new Set(
+            draftScene.placements
+              .filter((p) => p.assets.some((id) => selected.has(id)))
+              .map((p) => p.id),
+          ),
+        ),
+      );
     const descriptors = await pinnedDescriptors(
       library,
       current.assetSources ?? [],
@@ -227,7 +315,18 @@ export async function addGameplayDrafts(
     }
   }
   const report = {
-    scope: "additive-incomplete-gameplay-draft-publication",
+    scope: verifiedParts.size
+      ? "replacement-family-incomplete-gameplay-draft-publication"
+      : "additive-incomplete-gameplay-draft-publication",
+    verifiedObstacleParts: [...verifiedParts.values()].reduce((sum, count) => sum + count, 0),
+    replacements: selections
+      .filter((s) => s.replacePlacements?.length)
+      .map((s) => ({
+        map: s.map,
+        removed: s.replacePlacements,
+        assets: s.assets,
+        verifiedObstacleParts: verifiedParts.get(s.map)!,
+      })),
     published,
     scenes,
     applied: false,

@@ -395,20 +395,6 @@
       "id": "croisement01-group-082"
     },
     {
-      "model": "3d-assets/croisement01/croisement01-group-083/model.glb",
-      "model_sha256": "7a4aad3ba63053195c1dcefc14231b2182b2854fd0cc5c85e61caf1f97f670d6",
-      "descriptor": "3d-assets/croisement01/croisement01-group-083/asset.json",
-      "descriptor_sha256": "82e10d89f2f6a5a5c549bff8e5933cd08865d303a9cecd275ad2042530c3e104",
-      "id": "croisement01-group-083"
-    },
-    {
-      "model": "3d-assets/croisement01/croisement01-group-084/model.glb",
-      "model_sha256": "ffde7a47c805accbaf1070dc4f9e0461b914ea86e6b0295ced348716a66a2fb1",
-      "descriptor": "3d-assets/croisement01/croisement01-group-084/asset.json",
-      "descriptor_sha256": "fa77a4bd47f532da11010e1178821349568686604a6a27ca570e77a6c7f71830",
-      "id": "croisement01-group-084"
-    },
-    {
       "model": "3d-assets/croisement01/croisement01-terrace-000/model.glb",
       "model_sha256": "f39e998722e6bb53a1bbda53560878ecf873fd2784ef0abf1682f376356e45a9",
       "descriptor": "3d-assets/croisement01/croisement01-terrace-000/asset.json",
@@ -449,6 +435,13 @@
       "descriptor_sha256": "1143b310076656b3f2d75265cf6a00642c2892e86ab3e9c45aaeb8d2c6260b29",
       "model": "3d-assets/croisement01-navigation-boundary-004/model.glb",
       "model_sha256": "8171a1d38c3127524193619f0b4edf5fd254844c72db3357a23fc2cdf9cbeff6"
+    },
+    {
+      "id": "croisement01-north-state-assembly",
+      "descriptor": "3d-assets/croisement01-north-state-assembly/asset.json",
+      "descriptor_sha256": "ffcdd7b33142762da3a5e211df6ee0ff6466facb14461c581747480e3986bedf",
+      "model": "3d-assets/croisement01-north-state-assembly/model.glb",
+      "model_sha256": "4b8d2f7d172aa30325d05bf45245a649c2cb024e0046de05515e46a286ab8a53"
     }
   ],
   "sceneMetadata": {},
@@ -1091,30 +1084,6 @@
       ]
     },
     {
-      "id": "group-083",
-      "transform": {
-        "dx": 1036,
-        "dy": 219.1061986860996,
-        "dz": 0,
-        "rot_deg": 0
-      },
-      "assets": [
-        "croisement01-group-083"
-      ]
-    },
-    {
-      "id": "group-084",
-      "transform": {
-        "dx": 999,
-        "dy": 213.94401075894018,
-        "dz": 0,
-        "rot_deg": 0
-      },
-      "assets": [
-        "croisement01-group-084"
-      ]
-    },
-    {
       "id": "terrace-000",
       "transform": {
         "dx": 0,
@@ -1226,6 +1195,18 @@
           "id": "croisement01-navigation-boundary-004-frame"
         }
       }
+    },
+    {
+      "id": "croisement01-north-state-assembly",
+      "transform": {
+        "dx": 1036,
+        "dy": 219.1061986860996,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement01-north-state-assembly"
+      ]
     }
   ]
 }

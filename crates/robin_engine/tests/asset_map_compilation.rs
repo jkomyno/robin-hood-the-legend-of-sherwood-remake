@@ -891,6 +891,84 @@ fn ordinary_region_crosses_projection_planes_without_a_gate() {
 }
 
 #[test]
+fn native_pathfinder_crosses_compiled_navigation_seam_with_actor_clearance() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::pathfinder::PathFinder;
+
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-multi-plane-region.level.json"),
+        &mut assets,
+    );
+    let graph = &assets.navigation.pathfinder_graph;
+    let mut grid = engine.fast_grid().clone();
+    let mut finder = PathFinder::new();
+    finder.initialize_from_graph(graph, &mut grid);
+    assert!(!graph.static_data.half_diagonals.is_empty());
+    let source = MapPoint::new(396., 320.);
+    let destination = MapPoint::new(404., 290.);
+    for (start, goal) in [(source, destination), (destination, source)] {
+        let path = finder
+            .find_path(graph, &grid, 0, 0, 0, start, goal, false)
+            .expect("an actor can route across the joined surface boundary");
+        assert_eq!(path.last(), Some(&goal));
+    }
+    assert!(
+        finder
+            .find_path(
+                graph,
+                &grid,
+                0,
+                0,
+                0,
+                source,
+                MapPoint::new(420., 290.),
+                false
+            )
+            .is_none(),
+        "joining surfaces must not open a route beyond the walkway edge"
+    );
+}
+
+#[test]
+fn native_routes_follow_rotated_walkways_without_connecting_separate_copies() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::pathfinder::PathFinder;
+
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-navigation-copies.level.json"),
+        &mut assets,
+    );
+    let graph = &assets.navigation.pathfinder_graph;
+    let mut grid = engine.fast_grid().clone();
+    let mut finder = PathFinder::new();
+    finder.initialize_from_graph(graph, &mut grid);
+    let routes = [
+        (0, 0, MapPoint::new(396., 320.), MapPoint::new(404., 290.)),
+        (1, 1, MapPoint::new(510., 325.), MapPoint::new(510., 280.)),
+    ];
+    for (layer, sector, source, destination) in routes {
+        for (start, goal) in [(source, destination), (destination, source)] {
+            assert_eq!(
+                finder
+                    .find_path(graph, &grid, layer, sector, 0, start, goal, false)
+                    .expect("placed walkway must support routes across its seam")
+                    .last(),
+                Some(&goal)
+            );
+        }
+        let other_copy = if layer == 0 { routes[1].2 } else { routes[0].2 };
+        assert!(
+            finder
+                .find_path(graph, &grid, layer, sector, 0, source, other_copy, false)
+                .is_none(),
+            "a repeated asset identity must not connect spatially separate copies"
+        );
+    }
+}
+
+#[test]
 fn compound_lift_keeps_one_native_sector_and_each_projection_plane() {
     let mut assets = LevelAssets::new();
     let engine = construct(
@@ -1106,6 +1184,94 @@ fn detached_jump_assets_preserve_complete_pair_registrations() {
         let sector = &grid.level.sectors[home.get() as usize];
         assert_eq!(sector.jump_line_indices.len(), 1);
         assert!(!sector.gate_indices.is_empty());
+    }
+}
+
+#[test]
+fn compiled_roof_jump_routes_enforce_character_skills_and_destination_helpers() {
+    use robin_engine::element::{ElementKind, Posture};
+    use robin_engine::gate::{ActorAuthInfo, find_path_gates_with_sector_indices};
+
+    for bytes in [
+        include_bytes!("fixtures/asset-jump.level.json").as_slice(),
+        include_bytes!("fixtures/asset-jump-detached.level.json").as_slice(),
+    ] {
+        let mut assets = LevelAssets::new();
+        let engine = construct(bytes, &mut assets);
+        let view = engine.presentation_view();
+        let doors = view.doors();
+        let jump = doors.iter().find(|door| door.is_jump()).unwrap();
+        let actor = ActorAuthInfo {
+            kind: ElementKind::ActorPc,
+            pc_auth_bit: 1,
+            has_lockpick: false,
+            has_climb: false,
+            has_jump: true,
+            is_rider: false,
+            posture: Posture::Upright,
+        };
+        for direct in [false, true] {
+            let (start, goal, source_sector, goal_sector, source_index, goal_index, needs_helper) =
+                if direct {
+                    (
+                        jump.point_out,
+                        jump.point_in,
+                        jump.sector_out,
+                        jump.sector_in,
+                        jump.sector_out_index,
+                        jump.sector_in_index,
+                        jump.jump_line_in_helper_needed,
+                    )
+                } else {
+                    (
+                        jump.point_in,
+                        jump.point_out,
+                        jump.sector_in,
+                        jump.sector_out,
+                        jump.sector_in_index,
+                        jump.sector_out_index,
+                        jump.jump_line_out_helper_needed,
+                    )
+                };
+            let route = |actor: &ActorAuthInfo| {
+                find_path_gates_with_sector_indices(
+                    doors,
+                    (start.x, start.y),
+                    i16::from(source_sector) as u16,
+                    source_index,
+                    (goal.x, goal.y),
+                    i16::from(goal_sector) as u16,
+                    goal_index,
+                    Some(actor),
+                    false,
+                    &|_| true,
+                    &|_| None,
+                )
+            };
+            assert_eq!(route(&actor).is_some(), !needs_helper);
+            let supported = ActorAuthInfo {
+                posture: Posture::OnShoulders,
+                ..actor
+            };
+            let path =
+                route(&supported).expect("a supported jumper can cross the compiled roof pair");
+            assert_eq!(path.len(), 1);
+            assert_eq!(path[0].direct, direct);
+            assert!(
+                route(&ActorAuthInfo {
+                    has_jump: false,
+                    ..supported
+                })
+                .is_none()
+            );
+            assert!(
+                route(&ActorAuthInfo {
+                    kind: ElementKind::ActorSoldier,
+                    ..supported
+                })
+                .is_none()
+            );
+        }
     }
 }
 

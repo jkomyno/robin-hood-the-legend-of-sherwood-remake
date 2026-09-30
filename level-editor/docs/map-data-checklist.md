@@ -19,26 +19,55 @@ coverage on matching movement envelopes. Nottingham's two stateful regions now
 also match full walkable coverage in both states. Actor traversal remains unverified.
 No map is yet published or certified at full gameplay parity.
 
-Draft gameplay is now available in the main editor library: 1,101 structurally
+Draft gameplay is now available in the main editor library: 1,139 structurally
 validated definitions were installed, and descriptor pins in all ten saved scenes
-were updated without changing their placements. All ten scenes reopen successfully.
+were updated. All ten scenes reopen successfully.
 This includes 17 legacy Sherwood assets whose recovered definitions were rebased
 to their existing pivots. Definitions carry explicit draft issues; publication is
-not parity certification. Assets with changed physical frames or without a matching
-recovery were not overwritten. The publication tool retains before/after snapshots
-and a report under `work/map-compile/main-library-draft-publication`.
+not parity certification. The initial publication skipped assets with changed
+physical metadata or without a matching recovery. The publication tool retains
+before/after snapshots and a report under `work/map-compile/main-library-draft-publication`.
 A further 169 additive assets and their placements are installed in the nine
 recovered map scenes: 80 lighting fields, 72 sound fields and 17 navigation or
 physical assets. All existing placements, references and scene settings are
 preserved; Wychford is unchanged by this addition. Models are copied into the
 library with verified resource hashes, not linked to work directories. The
 transaction backup is `work/map-compile/additive-gameplay-publication`. Eighteen
-replacement-family assets remain deferred because they overlap existing parts.
+replacement-family assets are now installed across Croisement01/02/03, Nottingham
+and York, replacing 31 old placements without overlapping old and new geometry.
+All 125 replaced obstacle parts retain their world coordinates and physical flags;
+723 unrelated placements and all other scene settings remain unchanged. Models
+and resources are copied into the main library, and all 42 installed files pass
+hash verification. The transaction backup is
+`work/map-compile/family-gameplay-publication`. All ten maps compile after this
+migration; full traversal and visual parity remain unverified.
+Twenty previously skipped physical definitions are now explicitly reconciled in
+Lincoln, Nottingham, Sherwood and York. Only obstacle volumes, collision opt-outs,
+sight-join edges/caps and recovered gameplay changed; all artwork and resources
+remain intact. Live and recovered model bytes match for all twenty assets, with
+221 canonical part frames and their source identities verified independently.
+Saved scenes retain every placement and receive only descriptor pin updates.
+Default publication still rejects physical differences; this separate reviewed
+operation is backed up under `work/map-compile/reviewed-physical-publication`.
+These definitions remain incomplete drafts, not full parity certification.
 Light bindings whose receiving geometry is still missing produce best-effort
 warnings; available receivers remain active and strict mode still rejects gaps.
-After this addition, all ten maps compile and construct in Rust. Native apply/reset
-checks cover 47 switches, up from 32 before the added navigation assets. Sherwood's
-main-library browser bake also passes at 1920×1088 with 115 sight obstacles and an
+After family migration and physical reconciliation, all ten maps compile and
+construct in Rust. Native apply/reset checks cover 56 switches, up from 47 after
+the additive publication. Lighting contours pass all three ambience checks.
+Nottingham now constructs 95 movement areas, 659 sight obstacles, 172 doors and
+38 jump pairs; York constructs 161 areas, 1,180 sight obstacles, 254 doors and
+72 jump pairs. Lincoln has 62 areas and 541 sight obstacles; Sherwood has 11
+areas and 127 sight obstacles, with 15 doors and one jump pair. These counts confirm
+the added definitions load; they do not establish complete gameplay parity.
+Native pathfinding crosses a joined walkway seam in both directions and its
+independently rotated copy, with actor clearance enforced. Routes off the walkway
+and between spatially separate copies are rejected. Native roof-jump routes also
+check both directions, character jump skills and destination helper requirements
+on assembled and detached asset fixtures. Actor movement ticks and animation
+playback remain unverified.
+Before physical reconciliation, Sherwood's main-library browser bake passed at
+1920×1088 with 115 sight obstacles and an
 8,246,241-byte ZIP. That archive loads in Rust with seven door projections and
 5,040 grid blocks; this differs from the more complete staged-library bake below.
 Wychford's terrain adds 1,804 sloped receiving triangles derived from its authored
@@ -62,8 +91,9 @@ renumbering. This reduces allocation; it does not restore omitted gameplay.
 Editor export now requests best-effort compilation: missing definitions,
 unsupported walls, unavailable door/jump connections and unbound appearance
 controls produce omission warnings. An invalid lift connection omits that placed
-asset's gameplay; its artwork remains. Mission population is excluded from map
-gameplay but preserved in the embedded editor JSON. Strict compiler mode remains
+asset's gameplay; its artwork remains. Legacy preview population is excluded from
+runtime gameplay but preserved in the embedded editor JSON. Explicit Mission-tab
+placements export separately as PC spawn points and NPC soldiers. Strict compiler mode remains
 available for parity checks; best-effort export does not establish full parity.
 Export displays phase progress and cancellation. Compilation and image/ZIP
 encoding run in a worker; rendering yields between 512-pixel tiles. Browser tests
@@ -207,13 +237,17 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Resource banks and references | Package generated resources and resolve shared sprite/audio/profile dependencies. | Partial: baked images; shared resources use the base installation |
 
 The following information belongs to **missions referencing a map**, not map
-assets or map export. A separate mission-authoring/export workflow is planned.
-Map exports neither require nor generate player spawns or NPCs.
+assets. The minimal Mission tab stores explicit authoring in the scene's separate
+`mission` field. Export includes these optional mission placements alongside the
+compiled map; scenes without them remain unpopulated. Existing preview population
+is never converted into runtime actors. More complete mission authoring remains
+planned.
 
 | Mission information | Intended construction | Status |
 |---|---|---|
-| Player starting locations | Mission-owned placements, resolved against the referenced compiled map. Never embedded in map assets. | Planned |
-| Soldiers, civilians, targets and rescue characters | Actor assets plus editor placement, facing, profiles and initial behaviour. | Planned |
+| Player starting locations | Mission-owned placements and profiles; resolve projected coordinates, navigation sector/layer and receiving surface after map compilation. Export as native spawn points, never as map assets or rescue actors. | Minimal Mission tab and export implemented; unsupported or invalid placements warn and are omitted |
+| Soldiers | Mission-owned placement, facing, soldier profile and allegiance; resolve navigation and receiving surface after map compilation. | Minimal Mission tab and export implemented; preview population remains excluded |
+| Civilians, targets and rescue characters | Explicit mission placement, profiles and initial behaviour. | Planned |
 | Items, bonuses and scrolls | Item assets plus placement and gameplay properties. | Planned |
 | Building occupants | Actor-to-interior associations resolved after placement. | Planned |
 | Patrol paths | Editor-authored waypoints with waits/actions, resolved against compiled navigation. | Planned |

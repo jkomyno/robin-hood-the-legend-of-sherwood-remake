@@ -109,7 +109,7 @@
       "model": "3d-assets/sherwood/sherwood-central-oak-platform/model.glb",
       "model_sha256": "72700b925935c4c0ce522fcd80bc266be78c30ea3b4f2d9cf31d0a95448293a8",
       "descriptor": "3d-assets/sherwood/sherwood-central-oak-platform/asset.json",
-      "descriptor_sha256": "6c611cf2c276c05082e353565827f541d0da9ffbc8710ae0157d0848d64e85ef",
+      "descriptor_sha256": "1b61002d7fd4982f65b620c329f77dcaa91b403182a2d3e0b21914baddbea855",
       "resources": []
     },
     {
@@ -125,7 +125,7 @@
       "model": "3d-assets/sherwood/sherwood-central-oak-treehouse/model.glb",
       "model_sha256": "c7da468b1d8056c748a7e340fbc2369c0fbd9278df24f4d1b218a99a7d2364f3",
       "descriptor": "3d-assets/sherwood/sherwood-central-oak-treehouse/asset.json",
-      "descriptor_sha256": "0696e9ecf999ed05e70bac7a10af27391950e85cac3b9aec80f8deb5296a012c",
+      "descriptor_sha256": "1bec5e093f0f88c551c6bc6f93e3dc89bfea9cbe7f5488d2e4e99653cb490bb4",
       "resources": []
     },
     {
@@ -229,7 +229,7 @@
       "model": "3d-assets/sherwood/sherwood-ladder-oak/model.glb",
       "model_sha256": "b5a8ee22f32f02b82a528d16c14fee6ed1cf877c310293f7cd6f1ea4e29a40a5",
       "descriptor": "3d-assets/sherwood/sherwood-ladder-oak/asset.json",
-      "descriptor_sha256": "62d382b6233cded1c921525eb9e73b590ed626f460059c30641f8f55db0d0e3f",
+      "descriptor_sha256": "196e094a8bba2092ea5c8dbe9b92e2694da2bbe5b87d90d684795264304fa45c",
       "resources": []
     },
     {
@@ -237,7 +237,7 @@
       "model": "3d-assets/sherwood/sherwood-ladder-oak-platform/model.glb",
       "model_sha256": "e23a23d850e92481ce23d9cd19be379a57d70abd6cdb576b02f301913321bdc3",
       "descriptor": "3d-assets/sherwood/sherwood-ladder-oak-platform/asset.json",
-      "descriptor_sha256": "2477a1c6435092727c9936597683e940fa42da79135398c9a72dff312df97342",
+      "descriptor_sha256": "42638520a9b7a61b839cae386643dde4d0729e08a2a80af200e6ff2badebb6a6",
       "resources": []
     },
     {

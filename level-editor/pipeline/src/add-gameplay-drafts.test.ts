@@ -4,10 +4,65 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { appendDraftPlacements, addGameplayDrafts } from "./add-gameplay-drafts.ts";
+import {
+  appendDraftPlacements,
+  addGameplayDrafts,
+  replaceDraftPlacements,
+  verifyReplacementGeometry,
+} from "./add-gameplay-drafts.ts";
 import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { serializeStoredMap } from "../../shared/src/stored-level.ts";
 import { readStoredMap } from "./stored-map.ts";
+
+test("family replacement removes obsolete placements and preserves unrelated authored content", () => {
+  const kept = { id: "kept", assets: ["shared"], note: "retain" };
+  const live = {
+    camera: {},
+    size: [10, 10],
+    custom: true,
+    placements: [kept, { id: "old", assets: ["obsolete", "shared"] }],
+    assetSources: ["obsolete", "shared"].map((id) => ({
+      id,
+      descriptor: id,
+      descriptor_sha256: "pin",
+    })),
+  };
+  const staged = {
+    ...live,
+    placements: [kept, { id: "family", assets: ["new"] }],
+    assetSources: [{ id: "new", descriptor: "new", descriptor_sha256: "pin" }],
+  };
+  const next = replaceDraftPlacements(live, staged, new Set(["new"]), new Set(["old"]));
+  assert.deepEqual(next.placements, staged.placements);
+  assert.deepEqual(
+    next.assetSources.map((r) => r.id),
+    ["shared", "new"],
+  );
+  assert.equal("custom" in next && next.custom, true);
+  assert.equal(live.placements.length, 2);
+  assert.throws(
+    () => replaceDraftPlacements(live, staged, new Set(["new"]), new Set(["missing"])),
+    /replacement placement/,
+  );
+});
+
+test("family geometry proof rejects moved, missing and changed physical parts", () => {
+  const { document } = assetCompilerFixture();
+  const part = document.objects.find((o) => o.obstacle && o.source?.obstacle !== undefined)!;
+  assert.ok(part);
+  const live = structuredClone(document);
+  live.objects = [structuredClone(part)];
+  live.objects[0]!.group = undefined;
+  const staged = structuredClone(live);
+  staged.objects[0]!.id = "replacement";
+  const removed = new Set([part.id]),
+    added = new Set(["replacement"]);
+  assert.equal(verifyReplacementGeometry(live, staged, removed, added), 1);
+  staged.objects[0]!.obstacle!.points[0]!.x += 2;
+  assert.throws(() => verifyReplacementGeometry(live, staged, removed, added), /world obstacle/);
+  staged.objects = [];
+  assert.throws(() => verifyReplacementGeometry(live, staged, removed, added), /part counts/);
+});
 
 test("additive placements preserve authored content and reject changed or mixed assemblies", () => {
   const existing = { id: "kept", assets: ["existing"], transform: { dx: 5 }, note: "user edit" };

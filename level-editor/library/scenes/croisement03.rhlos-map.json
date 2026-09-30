@@ -612,53 +612,11 @@
       "id": "croisement03-group-096"
     },
     {
-      "model": "3d-assets/croisement03/croisement03-group-098/model.glb",
-      "model_sha256": "a89291f51005366924a463b8e80cf1a353ebffa7dee851c7b6147ccc2959f349",
-      "descriptor": "3d-assets/croisement03/croisement03-group-098/asset.json",
-      "descriptor_sha256": "929be8428009cf13f464b9fb915f2f15ec0ed427fbd415418d85f6d3db05dda3",
-      "id": "croisement03-group-098"
-    },
-    {
-      "model": "3d-assets/croisement03/croisement03-group-099/model.glb",
-      "model_sha256": "41cec689b946a1c5dc99f3819d8aad9d56d441d6863e84250d687123860387a7",
-      "descriptor": "3d-assets/croisement03/croisement03-group-099/asset.json",
-      "descriptor_sha256": "58feb1cb783c42ce0064ceea4e6c0e3487e90e2c7e792d7c8744b17de54378d5",
-      "id": "croisement03-group-099"
-    },
-    {
       "model": "3d-assets/croisement03/croisement03-group-101/model.glb",
       "model_sha256": "a87f94d7e0a906c42f217fcd4e033562d1b7deb5ae42fef306abf93e722175aa",
       "descriptor": "3d-assets/croisement03/croisement03-group-101/asset.json",
       "descriptor_sha256": "67a3f58f4a63a79d354649e72692d5bbcb60141343fbbef5fd909e8e14b4b7f2",
       "id": "croisement03-group-101"
-    },
-    {
-      "model": "3d-assets/croisement03/croisement03-group-102/model.glb",
-      "model_sha256": "7620847d756fd3a41b4db75033fe0bc9c4345b360c0d25bdc6f9ff5d637704af",
-      "descriptor": "3d-assets/croisement03/croisement03-group-102/asset.json",
-      "descriptor_sha256": "7226f52acc8add6fc271a9e58a854bbecbc4fdd2e7cf63fede7dd4851ea76406",
-      "id": "croisement03-group-102"
-    },
-    {
-      "model": "3d-assets/croisement03/croisement03-group-103/model.glb",
-      "model_sha256": "4005309e60214e404d5f873ba2d8e24227d700c185d7bd0483f28060203bed97",
-      "descriptor": "3d-assets/croisement03/croisement03-group-103/asset.json",
-      "descriptor_sha256": "d1a40e068f8b33ca4dc7d531bf7920356577e38b83f0aec9feade97313be5c9b",
-      "id": "croisement03-group-103"
-    },
-    {
-      "model": "3d-assets/croisement03/croisement03-group-104/model.glb",
-      "model_sha256": "809a2c823133f78a0383914485e8b6f2470e79a69eb7f71dcf6c005ce35a7a28",
-      "descriptor": "3d-assets/croisement03/croisement03-group-104/asset.json",
-      "descriptor_sha256": "f2fb722296a2128754c5d34be0d080565d49acb1e5369f1a7e2deb6718361921",
-      "id": "croisement03-group-104"
-    },
-    {
-      "model": "3d-assets/croisement03/croisement03-group-105/model.glb",
-      "model_sha256": "dddb7cf19c5d4f48713a7f7683da350003fc1d29411f14420c1060e866134144",
-      "descriptor": "3d-assets/croisement03/croisement03-group-105/asset.json",
-      "descriptor_sha256": "583daf05cd879b76dc63f8d6ece687f2a7f7e97f74659a8ed12144920079f4ac",
-      "id": "croisement03-group-105"
     },
     {
       "id": "croisement03-navigation-boundary-001",
@@ -736,6 +694,20 @@
       "model": "3d-assets/croisement03-east-ambient-zone/model.glb",
       "descriptor_sha256": "87185dc12e66f03d499052dad6a6c5b731ef539b44e93599ed9e0700746073e1",
       "model_sha256": "2f502dc27e7487b94199c3f4a3615cd9a502761cf80fc50d03559844b0a676a2"
+    },
+    {
+      "id": "croisement03-central-pitched-cover",
+      "descriptor": "3d-assets/croisement03-central-pitched-cover/asset.json",
+      "descriptor_sha256": "3c07543f98ce9fd9de9f3a2e8df540c9a6d5ec7757628b7a3faf17712f1c13f1",
+      "model": "3d-assets/croisement03-central-pitched-cover/model.glb",
+      "model_sha256": "b21c8f4464ac3fa157d8c35d79d923aae77c77b20bd40d765e5c014c8a6cdcc5"
+    },
+    {
+      "id": "croisement03-southwest-state-assembly",
+      "descriptor": "3d-assets/croisement03-southwest-state-assembly/asset.json",
+      "descriptor_sha256": "e5973d2ec611c11ebb10ecdc4fe0f385c1196ad9ca682c9e0fd8e3a2a92d2d2a",
+      "model": "3d-assets/croisement03-southwest-state-assembly/model.glb",
+      "model_sha256": "ff55ad60deec97e9e42d9c29564c36ea4181354a02e33205e7fde57cf97d8fce"
     }
   ],
   "sceneMetadata": {},
@@ -1750,30 +1722,6 @@
       ]
     },
     {
-      "id": "group-098",
-      "transform": {
-        "dx": 547,
-        "dy": 494.4228881346017,
-        "dz": 0,
-        "rot_deg": 0
-      },
-      "assets": [
-        "croisement03-group-098"
-      ]
-    },
-    {
-      "id": "group-099",
-      "transform": {
-        "dx": 530,
-        "dy": 480.08347722582556,
-        "dz": 0,
-        "rot_deg": 0
-      },
-      "assets": [
-        "croisement03-group-099"
-      ]
-    },
-    {
       "id": "group-101",
       "transform": {
         "dx": 1004,
@@ -1783,54 +1731,6 @@
       },
       "assets": [
         "croisement03-group-101"
-      ]
-    },
-    {
-      "id": "group-102",
-      "transform": {
-        "dx": 200,
-        "dy": 659.6129018037029,
-        "dz": 0,
-        "rot_deg": 0
-      },
-      "assets": [
-        "croisement03-group-102"
-      ]
-    },
-    {
-      "id": "group-103",
-      "transform": {
-        "dx": 249,
-        "dy": 648.714949513033,
-        "dz": 0,
-        "rot_deg": 0
-      },
-      "assets": [
-        "croisement03-group-103"
-      ]
-    },
-    {
-      "id": "group-104",
-      "transform": {
-        "dx": 275,
-        "dy": 642.9791851495227,
-        "dz": 0,
-        "rot_deg": 0
-      },
-      "assets": [
-        "croisement03-group-104"
-      ]
-    },
-    {
-      "id": "group-105",
-      "transform": {
-        "dx": 149,
-        "dy": 719.8384276205628,
-        "dz": 0,
-        "rot_deg": 0
-      },
-      "assets": [
-        "croisement03-group-105"
       ]
     },
     {
@@ -2066,6 +1966,30 @@
           }
         }
       }
+    },
+    {
+      "id": "croisement03-central-pitched-cover",
+      "transform": {
+        "dx": 547,
+        "dy": 494.4228881346017,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement03-central-pitched-cover"
+      ]
+    },
+    {
+      "id": "croisement03-southwest-state-assembly",
+      "transform": {
+        "dx": 200,
+        "dy": 659.6129018037029,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "croisement03-southwest-state-assembly"
+      ]
     }
   ]
 }

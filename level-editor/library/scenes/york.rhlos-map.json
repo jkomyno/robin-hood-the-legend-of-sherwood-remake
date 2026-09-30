@@ -280,13 +280,6 @@
       "id": "york-central-south-golden-timber-house"
     },
     {
-      "model": "3d-assets/york/york-central-south-green-timber-house/model.glb",
-      "model_sha256": "f52a0a7eff7959b564d8f58de55ebc7bf21bfb59940fd0b7eae38a570d75e914",
-      "descriptor": "3d-assets/york/york-central-south-green-timber-house/asset.json",
-      "descriptor_sha256": "10a9b7a84cdb9294e696dc332da9bd95577b00f81d2407ee75886dea004ee12d",
-      "id": "york-central-south-green-timber-house"
-    },
-    {
       "model": "3d-assets/york/york-central-south-jettied-corner-house/model.glb",
       "model_sha256": "f06d4d08dce0ca277dd9ad6e0f0e0b36c94cb28a30b3cdfde0b5214bff11a637",
       "descriptor": "3d-assets/york/york-central-south-jettied-corner-house/asset.json",
@@ -532,34 +525,6 @@
       "id": "york-market-cream-canopy-stall"
     },
     {
-      "model": "3d-assets/york/york-market-freestanding-canvas-screen/model.glb",
-      "model_sha256": "767cba16aea4ffb31deea408d46f3379f07b727deece329ff72eb603a61d3663",
-      "descriptor": "3d-assets/york/york-market-freestanding-canvas-screen/asset.json",
-      "descriptor_sha256": "f18fbd5bd78a247ec6ed54aa5ce49eefdbe29a8afe1723bbbdf6cea7754e4b6e",
-      "id": "york-market-freestanding-canvas-screen"
-    },
-    {
-      "model": "3d-assets/york/york-market-long-cream-canopy-stall/model.glb",
-      "model_sha256": "2ba59ace0605d7267526b623e25eacc05fef8e11323f3fd0a187d9e2dff85ce1",
-      "descriptor": "3d-assets/york/york-market-long-cream-canopy-stall/asset.json",
-      "descriptor_sha256": "8f5d2aaa47554e4d9f5422785b691c405622de7d58854d03cca15fa9ebeea61a",
-      "id": "york-market-long-cream-canopy-stall"
-    },
-    {
-      "model": "3d-assets/york/york-market-north-cream-canopy-stall/model.glb",
-      "model_sha256": "79a9dcbd2e7518b93043e91199126c2690b6f5b3109c035cecb56da124120856",
-      "descriptor": "3d-assets/york/york-market-north-cream-canopy-stall/asset.json",
-      "descriptor_sha256": "96d6682f24ba8e1ae4425e3ba708fd1342226f7fab0b8a3be6e610d754f470ca",
-      "id": "york-market-north-cream-canopy-stall"
-    },
-    {
-      "model": "3d-assets/york/york-market-north-display-tables/model.glb",
-      "model_sha256": "54640822af6b6a47809c824b84c8b103b394138384b06525550c26a3b0c3e264",
-      "descriptor": "3d-assets/york/york-market-north-display-tables/asset.json",
-      "descriptor_sha256": "31d3dbed5b3dfbadbf10e710d9a4fc591c2946e48e24d9926e448ea423e197ad",
-      "id": "york-market-north-display-tables"
-    },
-    {
       "model": "3d-assets/york/york-market-north-square-tower/model.glb",
       "model_sha256": "a131e36a69c06d7cc60eec2a2994f66f771411a27fc8ca808a576546a55d5ccd",
       "descriptor": "3d-assets/york/york-market-north-square-tower/asset.json",
@@ -574,32 +539,11 @@
       "id": "york-market-north-stone-house"
     },
     {
-      "model": "3d-assets/york/york-market-red-canopy-stall/model.glb",
-      "model_sha256": "356476586d1d52e48683bb00f7f7410f962865a7b29f84381340ea8b54a19a78",
-      "descriptor": "3d-assets/york/york-market-red-canopy-stall/asset.json",
-      "descriptor_sha256": "fd887d46b049eba6fa284fc26e5ebe0b1a8de0c1cfe270e7e499cada5c289c1e",
-      "id": "york-market-red-canopy-stall"
-    },
-    {
       "model": "3d-assets/york/york-market-roofed-stone-well/model.glb",
       "model_sha256": "69bdd1658e0b8789dba8a15971f249665be3f5f1df6414dcfe992d0e92c50707",
       "descriptor": "3d-assets/york/york-market-roofed-stone-well/asset.json",
       "descriptor_sha256": "42b37f5f056585c82b8ff5c4b2bf25c6e4ac1d1fbbf31707f0c4e4459f9e3216",
       "id": "york-market-roofed-stone-well"
-    },
-    {
-      "model": "3d-assets/york/york-market-southeast-canopy-stall/model.glb",
-      "model_sha256": "76113b9db889a2fb73ad9847b44af44b5a6c92e1aebde434609228f4a1b05a58",
-      "descriptor": "3d-assets/york/york-market-southeast-canopy-stall/asset.json",
-      "descriptor_sha256": "d2ab4d94b4a0afb69e852e940127d010429b08e5f37d4cd054f15e8fa57a4f8e",
-      "id": "york-market-southeast-canopy-stall"
-    },
-    {
-      "model": "3d-assets/york/york-market-southeast-green-canopy-stall/model.glb",
-      "model_sha256": "a8ca058bb43788666e27dca2865bd35697445a66c066b99e80ae5136829cb8eb",
-      "descriptor": "3d-assets/york/york-market-southeast-green-canopy-stall/asset.json",
-      "descriptor_sha256": "8563e8add8ad3a35de3fe0d7d66456df46c4575aebd1e4a765b1c442aa73198d",
-      "id": "york-market-southeast-green-canopy-stall"
     },
     {
       "model": "3d-assets/york/york-market-southeast-tall-narrow-house/model.glb",
@@ -686,39 +630,11 @@
       "id": "york-market-stepped-green-canopy-stall"
     },
     {
-      "model": "3d-assets/york/york-market-stone-house-striped-awning/model.glb",
-      "model_sha256": "b34b841fd2d27efe13a7c195205fe15ed23c9426347eb338895eb94fc92d29e7",
-      "descriptor": "3d-assets/york/york-market-stone-house-striped-awning/asset.json",
-      "descriptor_sha256": "be808cc0527ea7f78a959ae3eda292656815ce5a8336f674f06dea89836dca3e",
-      "id": "york-market-stone-house-striped-awning"
-    },
-    {
       "model": "3d-assets/york/york-market-street-barrel/model.glb",
       "model_sha256": "c443ab3f96fbcb6cab6d59e110aa2cecd18e3b5bff10402ee840a51bdc4c1a9d",
       "descriptor": "3d-assets/york/york-market-street-barrel/asset.json",
       "descriptor_sha256": "83ada2213fa355034ea9ebf1866185cc20a3c0d4c6dbaf85b920bf0b51fa076a",
       "id": "york-market-street-barrel"
-    },
-    {
-      "model": "3d-assets/york/york-market-striped-canopy-pottery-stall/model.glb",
-      "model_sha256": "89091d86ed6aac025a7c1617ab8825f0d6b1607c273f1fba09408fde061d3bf2",
-      "descriptor": "3d-assets/york/york-market-striped-canopy-pottery-stall/asset.json",
-      "descriptor_sha256": "e03895f7e7d88fb6437842a1e26e558056908b31c900bf05c44872cdaf824b50",
-      "id": "york-market-striped-canopy-pottery-stall"
-    },
-    {
-      "model": "3d-assets/york/york-market-tavern-outdoor-furniture/model.glb",
-      "model_sha256": "62df2cf262d00bb2e4deeb379d2ca089fa1a41ecb33712ea9a2584fbff59c0b8",
-      "descriptor": "3d-assets/york/york-market-tavern-outdoor-furniture/asset.json",
-      "descriptor_sha256": "48c431bee96c0f4168e0a3563b7d0201fa0654494fde1fe70fe3d68a49f432f4",
-      "id": "york-market-tavern-outdoor-furniture"
-    },
-    {
-      "model": "3d-assets/york/york-market-timber-house-striped-awning/model.glb",
-      "model_sha256": "f8bd5a67219440b33aa962eab2cf8c98936593bbe4f56adb0396ef238ad712ef",
-      "descriptor": "3d-assets/york/york-market-timber-house-striped-awning/asset.json",
-      "descriptor_sha256": "e163fe2e41d3a92672ca4140ce1f6d1ed45760675ead488aee15339e281dfb2b",
-      "id": "york-market-timber-house-striped-awning"
     },
     {
       "model": "3d-assets/york/york-market-wall-display-table/model.glb",
@@ -733,13 +649,6 @@
       "descriptor": "3d-assets/york/york-market-west-display-table/asset.json",
       "descriptor_sha256": "9f4b49ae332d5277a5f9548003cd4ca9aaa751d50cd2925f3f1467c607422844",
       "id": "york-market-west-display-table"
-    },
-    {
-      "model": "3d-assets/york/york-market-west-long-canopy-stall/model.glb",
-      "model_sha256": "fee08743d2517d7d6135597fc4d7164359815fd90225c332ccdfef951edd8a69",
-      "descriptor": "3d-assets/york/york-market-west-long-canopy-stall/asset.json",
-      "descriptor_sha256": "00075650b779162aa91a6d375e5973918b909c286f4ad97be2c99d7856bec943",
-      "id": "york-market-west-long-canopy-stall"
     },
     {
       "model": "3d-assets/york/york-north-garden-central-vegetable-enclosure/model.glb",
@@ -1046,7 +955,7 @@
       "model": "3d-assets/york/york-precinct-south-central-round-bastion/model.glb",
       "model_sha256": "9c9b3f96f880de0488e88955fe2b59ebf71607d73d823489416377bcab26564f",
       "descriptor": "3d-assets/york/york-precinct-south-central-round-bastion/asset.json",
-      "descriptor_sha256": "9a0d77d0fba0788508d20fb1853a030dafaaf6390c553db9da102eabe13f0e16",
+      "descriptor_sha256": "a48af512c133d32a6ad00abb022b933f1dc4b0cc3fd429f6f7f8dda5b9fff346",
       "id": "york-precinct-south-central-round-bastion"
     },
     {
@@ -1067,7 +976,7 @@
       "model": "3d-assets/york/york-precinct-southwest-curtain-wall/model.glb",
       "model_sha256": "6f54f253ea2a62b03e828e3ce5780ade2c81f96df4e3e0609e3b9206565afb7c",
       "descriptor": "3d-assets/york/york-precinct-southwest-curtain-wall/asset.json",
-      "descriptor_sha256": "cddf194cbdbfefcac10dbf89f43cbb8e56c423fcf840162817010f3b76bd34d0",
+      "descriptor_sha256": "a4907c586f35dfb123d79b998c4748ac4a7d409c722bad4cf96a6f0a64c102b4",
       "id": "york-precinct-southwest-curtain-wall"
     },
     {
@@ -1627,14 +1536,14 @@
       "model": "3d-assets/york/york-west-bridge-street-arcade-house/model.glb",
       "model_sha256": "90e089ad15476ea4e5289a891c75451dae50130f7b0df742af070cc0f63268c7",
       "descriptor": "3d-assets/york/york-west-bridge-street-arcade-house/asset.json",
-      "descriptor_sha256": "3a5640f17961d8a4929dba4bc47db1254b9c91c418ba171ce4464eb8feac2092",
+      "descriptor_sha256": "2984c80d599cf28c8dba61780580df2c2f422e5f17391e98992c20d281d14633",
       "id": "york-west-bridge-street-arcade-house"
     },
     {
       "model": "3d-assets/york/york-west-bridge-street-east-gallery-house/model.glb",
       "model_sha256": "e96e94e362b81259b0d6d734b638c14b5314510eedc43877fc7c880dca8acea4",
       "descriptor": "3d-assets/york/york-west-bridge-street-east-gallery-house/asset.json",
-      "descriptor_sha256": "23ff83f2ceba5713abf61ff1f7174e17b8f83c2ed408e5800116ecadc30dcaad",
+      "descriptor_sha256": "109cbc68d69ddc39072f6592726c50b589fe19b4cc91041147f2137f8d52c78d",
       "id": "york-west-bridge-street-east-gallery-house"
     },
     {
@@ -1937,6 +1846,69 @@
       "model": "3d-assets/york-light-region-36/model.glb",
       "descriptor_sha256": "98e3eafc81c9a6323eb8c6e6cdb6803819066f1e99f753fb75763acbb2d49d84",
       "model_sha256": "7735d91503e2283446d8bcb3a6cb3f4431096abf0e8693e99e0762d569dcb1aa"
+    },
+    {
+      "id": "york-market-state-assembly",
+      "descriptor": "3d-assets/york-market-state-assembly/asset.json",
+      "descriptor_sha256": "ad2c6e9b5b6d61858dcd551169aeff2a9781da415cfc0c11db323ea688656555",
+      "model": "3d-assets/york-market-state-assembly/model.glb",
+      "model_sha256": "9e6cc236a3ac3dec73cb8fdbeaf254a160c181e1c2cd501a812f11af6b811313"
+    },
+    {
+      "id": "york-central-south-green-timber-house-remainder",
+      "descriptor": "3d-assets/york-central-south-green-timber-house-remainder/asset.json",
+      "descriptor_sha256": "f2b8d85bb3d157f5eaf8d4a25a1f920991f4aa870eece345dccb0871fed8c03b",
+      "model": "3d-assets/york-central-south-green-timber-house-remainder/model.glb",
+      "model_sha256": "ea2d48d7da47bb85868a23f0256b0e172be50931fd0c447375e8064dcb0fb394"
+    },
+    {
+      "id": "york-market-long-cream-canopy-stall-remainder",
+      "descriptor": "3d-assets/york-market-long-cream-canopy-stall-remainder/asset.json",
+      "descriptor_sha256": "1424ba59633f35b0fbcdacbc4584d835320bb942b3da04823e18abe20db00ca0",
+      "model": "3d-assets/york-market-long-cream-canopy-stall-remainder/model.glb",
+      "model_sha256": "38407a808991430ed20e3a56ede8a2e2ee63b4b1d7844923608128a7623ca792"
+    },
+    {
+      "id": "york-market-north-cream-canopy-stall-remainder",
+      "descriptor": "3d-assets/york-market-north-cream-canopy-stall-remainder/asset.json",
+      "descriptor_sha256": "55aed97ba1e225d5c8d1852fb41250fa4640c0af6bf54944af751389f9285211",
+      "model": "3d-assets/york-market-north-cream-canopy-stall-remainder/model.glb",
+      "model_sha256": "a53a40eba0aa12047e3100c56d3e21f6fb2e0e746b039b1c19509c5f35a2ddb1"
+    },
+    {
+      "id": "york-market-north-display-tables-remainder",
+      "descriptor": "3d-assets/york-market-north-display-tables-remainder/asset.json",
+      "descriptor_sha256": "b1863e5f42c24921bce9883d4fc641a71d19be2f9720df77bd90bc65cfb2f355",
+      "model": "3d-assets/york-market-north-display-tables-remainder/model.glb",
+      "model_sha256": "6921bb7ad2c838716a7cc0b21cb83ea9c3ca7bc231b97841983089518552724f"
+    },
+    {
+      "id": "york-market-red-canopy-stall-remainder",
+      "descriptor": "3d-assets/york-market-red-canopy-stall-remainder/asset.json",
+      "descriptor_sha256": "683f30745a8c3c7a565ea769da52e48a60f62055b8a409205c6c7afcee806638",
+      "model": "3d-assets/york-market-red-canopy-stall-remainder/model.glb",
+      "model_sha256": "39ab60fd3bf35e281e34eb245b8348b342ccf6f7b8808ddceff51f7d6a5a2a83"
+    },
+    {
+      "id": "york-market-southeast-green-canopy-stall-remainder",
+      "descriptor": "3d-assets/york-market-southeast-green-canopy-stall-remainder/asset.json",
+      "descriptor_sha256": "34d77d0d4877386ba2792e4b19116517f23599290cb6665d469814f2e0e592ff",
+      "model": "3d-assets/york-market-southeast-green-canopy-stall-remainder/model.glb",
+      "model_sha256": "a643d49dd55d43f228c8b18c7fead7281888dc5eeab5bb893dd6734ff00026fa"
+    },
+    {
+      "id": "york-market-striped-canopy-pottery-stall-remainder",
+      "descriptor": "3d-assets/york-market-striped-canopy-pottery-stall-remainder/asset.json",
+      "descriptor_sha256": "f04c154350457294a515a0f0810c5edf2f790fdec91bbf0cc88055f1616d9b50",
+      "model": "3d-assets/york-market-striped-canopy-pottery-stall-remainder/model.glb",
+      "model_sha256": "74a1fb988becc0716699eb4dbe8fafb55ece4731dbebadeb57e893046eb2b0a7"
+    },
+    {
+      "id": "york-market-timber-house-striped-awning-remainder",
+      "descriptor": "3d-assets/york-market-timber-house-striped-awning-remainder/asset.json",
+      "descriptor_sha256": "56b657002f3e8e66756d019118ff2df52c5c7eb9e1301054d3ffc009238bba82",
+      "model": "3d-assets/york-market-timber-house-striped-awning-remainder/model.glb",
+      "model_sha256": "431b51aa7a123a1e2459d63ecceb6971334af811a040a011d4f9f80a6ca6e4de"
     }
   ],
   "sceneMetadata": {},
@@ -2428,19 +2400,6 @@
       ]
     },
     {
-      "id": "york-central-south-green-timber-house",
-      "name": "Central south green timber house",
-      "transform": {
-        "dx": 1033,
-        "dy": 1701.2277102172027,
-        "dz": 89.90226184169146,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-central-south-green-timber-house"
-      ]
-    },
-    {
       "id": "york-central-south-jettied-corner-house",
       "name": "Central south jettied corner house",
       "transform": {
@@ -2896,58 +2855,6 @@
       ]
     },
     {
-      "id": "york-market-freestanding-canvas-screen",
-      "name": "Market freestanding canvas screen",
-      "transform": {
-        "dx": 132,
-        "dy": 710.6612046389461,
-        "dz": 89.90208060230177,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-freestanding-canvas-screen"
-      ]
-    },
-    {
-      "id": "york-market-long-cream-canopy-stall",
-      "name": "Market long cream-canopy stall",
-      "transform": {
-        "dx": 449,
-        "dy": 1318.6522271710548,
-        "dz": 89.90219309571606,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-long-cream-canopy-stall"
-      ]
-    },
-    {
-      "id": "york-market-north-cream-canopy-stall",
-      "name": "Market north cream-canopy stall",
-      "transform": {
-        "dx": 6,
-        "dy": 848.8931257995481,
-        "dz": 90.00101231053156,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-north-cream-canopy-stall"
-      ]
-    },
-    {
-      "id": "york-market-north-display-tables",
-      "name": "Market north display tables",
-      "transform": {
-        "dx": 321,
-        "dy": 1063.4107129948393,
-        "dz": 0,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-north-display-tables"
-      ]
-    },
-    {
       "id": "york-market-north-square-tower",
       "name": "Market north square tower",
       "transform": {
@@ -2974,19 +2881,6 @@
       ]
     },
     {
-      "id": "york-market-red-canopy-stall",
-      "name": "Market red-canopy stall",
-      "transform": {
-        "dx": 217,
-        "dy": 1424.1902914596474,
-        "dz": 89.90221184461844,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-red-canopy-stall"
-      ]
-    },
-    {
       "id": "york-market-roofed-stone-well",
       "name": "Market roofed stone well",
       "transform": {
@@ -2997,32 +2891,6 @@
       },
       "assets": [
         "york-market-roofed-stone-well"
-      ]
-    },
-    {
-      "id": "york-market-southeast-canopy-stall",
-      "name": "Market southeast canopy stall",
-      "transform": {
-        "dx": 596,
-        "dy": 1349.0517782976603,
-        "dz": 89.90219934535018,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-southeast-canopy-stall"
-      ]
-    },
-    {
-      "id": "york-market-southeast-green-canopy-stall",
-      "name": "Market southeast green canopy stall",
-      "transform": {
-        "dx": 576,
-        "dy": 1432.7939380049131,
-        "dz": 89.90221809425256,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-southeast-green-canopy-stall"
       ]
     },
     {
@@ -3182,19 +3050,6 @@
       ]
     },
     {
-      "id": "york-market-stone-house-striped-awning",
-      "name": "Market stone-house striped awning",
-      "transform": {
-        "dx": 165,
-        "dy": 1152.3150606292515,
-        "dz": 89.90215559791129,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-stone-house-striped-awning"
-      ]
-    },
-    {
       "id": "york-market-street-barrel",
       "name": "Market street barrel",
       "transform": {
@@ -3205,45 +3060,6 @@
       },
       "assets": [
         "york-market-street-barrel"
-      ]
-    },
-    {
-      "id": "york-market-striped-canopy-pottery-stall",
-      "name": "Market striped-canopy pottery stall",
-      "transform": {
-        "dx": 394,
-        "dy": 1483.8422408401561,
-        "dz": 89.90221809425256,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-striped-canopy-pottery-stall"
-      ]
-    },
-    {
-      "id": "york-market-tavern-outdoor-furniture",
-      "name": "Market tavern outdoor furniture",
-      "transform": {
-        "dx": 277,
-        "dy": 1147.726449138443,
-        "dz": 89.90216184754541,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-tavern-outdoor-furniture"
-      ]
-    },
-    {
-      "id": "york-market-timber-house-striped-awning",
-      "name": "Market timber-house striped awning",
-      "transform": {
-        "dx": 266,
-        "dy": 1018.0981745231068,
-        "dz": 89.90213684900891,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-timber-house-striped-awning"
       ]
     },
     {
@@ -3270,19 +3086,6 @@
       },
       "assets": [
         "york-market-west-display-table"
-      ]
-    },
-    {
-      "id": "york-market-west-long-canopy-stall",
-      "name": "Market west long-canopy stall",
-      "transform": {
-        "dx": 229,
-        "dy": 827.6707976545595,
-        "dz": 89.90209935120416,
-        "rot_deg": 0
-      },
-      "assets": [
-        "york-market-west-long-canopy-stall"
       ]
     },
     {
@@ -5749,6 +5552,122 @@
           }
         }
       }
+    },
+    {
+      "id": "york-central-south-green-timber-house-remainder",
+      "name": "Central south green timber house",
+      "transform": {
+        "dx": 1033,
+        "dy": 1701.2277102172027,
+        "dz": 89.90226184169146,
+        "rot_deg": 0
+      },
+      "assets": [
+        "york-central-south-green-timber-house-remainder"
+      ]
+    },
+    {
+      "id": "york-market-state-assembly",
+      "transform": {
+        "dx": 1033,
+        "dy": 1701.2277102172027,
+        "dz": 89.90226184169146,
+        "rot_deg": 0
+      },
+      "assets": [
+        "york-market-state-assembly"
+      ]
+    },
+    {
+      "id": "york-market-long-cream-canopy-stall-remainder",
+      "name": "Market long cream-canopy stall",
+      "transform": {
+        "dx": 449,
+        "dy": 1318.6522271710548,
+        "dz": 89.90219309571606,
+        "rot_deg": 0
+      },
+      "assets": [
+        "york-market-long-cream-canopy-stall-remainder"
+      ]
+    },
+    {
+      "id": "york-market-north-cream-canopy-stall-remainder",
+      "name": "Market north cream-canopy stall",
+      "transform": {
+        "dx": 6,
+        "dy": 848.8931257995481,
+        "dz": 90.00101231053156,
+        "rot_deg": 0
+      },
+      "assets": [
+        "york-market-north-cream-canopy-stall-remainder"
+      ]
+    },
+    {
+      "id": "york-market-north-display-tables-remainder",
+      "name": "Market north display tables",
+      "transform": {
+        "dx": 321,
+        "dy": 1063.4107129948393,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "assets": [
+        "york-market-north-display-tables-remainder"
+      ]
+    },
+    {
+      "id": "york-market-red-canopy-stall-remainder",
+      "name": "Market red-canopy stall",
+      "transform": {
+        "dx": 217,
+        "dy": 1424.1902914596474,
+        "dz": 89.90221184461844,
+        "rot_deg": 0
+      },
+      "assets": [
+        "york-market-red-canopy-stall-remainder"
+      ]
+    },
+    {
+      "id": "york-market-southeast-green-canopy-stall-remainder",
+      "name": "Market southeast green canopy stall",
+      "transform": {
+        "dx": 576,
+        "dy": 1432.7939380049131,
+        "dz": 89.90221809425256,
+        "rot_deg": 0
+      },
+      "assets": [
+        "york-market-southeast-green-canopy-stall-remainder"
+      ]
+    },
+    {
+      "id": "york-market-striped-canopy-pottery-stall-remainder",
+      "name": "Market striped-canopy pottery stall",
+      "transform": {
+        "dx": 394,
+        "dy": 1483.8422408401561,
+        "dz": 89.90221809425256,
+        "rot_deg": 0
+      },
+      "assets": [
+        "york-market-striped-canopy-pottery-stall-remainder"
+      ]
+    },
+    {
+      "id": "york-market-timber-house-striped-awning-remainder",
+      "name": "Market timber-house striped awning",
+      "transform": {
+        "dx": 266,
+        "dy": 1018.0981745231068,
+        "dz": 89.90213684900891,
+        "rot_deg": 0
+      },
+      "assets": [
+        "york-market-timber-house-striped-awning-remainder"
+      ]
     }
   ]
 }

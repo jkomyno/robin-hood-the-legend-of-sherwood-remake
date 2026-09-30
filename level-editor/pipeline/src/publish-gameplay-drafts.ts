@@ -8,6 +8,12 @@ import {
   parseProjectionAssetIndex,
 } from "../../shared/src/validation.ts";
 import type { GameplayAssetDescriptor as ProjectionAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
+import {
+  reconcilePhysicalDraft,
+  REVIEWED_PHYSICAL_FIELDS,
+  verifyPhysicalModelFrames,
+  verifyPhysicalPartIdentity,
+} from "./reconcile-physical-drafts.ts";
 
 /** Merge definitions only when the current asset still has the recovered local frames. */
 export function mergeGameplayDraft(
@@ -51,6 +57,7 @@ export async function publishGameplayDrafts(
   drafts: string,
   output: string,
   apply: boolean,
+  reviewedPhysicalAssets?: ReadonlySet<string>,
 ) {
   library = path.resolve(library);
   output = path.resolve(output);
@@ -60,7 +67,16 @@ export async function publishGameplayDrafts(
   const indexFile = "3d-assets/index.json";
   const indexBefore = await fs.readFile(path.join(library, indexFile), "utf8");
   const index = parseProjectionAssetIndex(JSON.parse(indexBefore));
-  const recovered = new Map<string, { descriptor: ProjectionAssetDescriptor; issues: string[] }>();
+  const recovered = new Map<
+    string,
+    {
+      descriptor: ProjectionAssetDescriptor;
+      issues: string[];
+      model: string;
+      modelSha: string | undefined;
+      rawParts: Record<string, unknown>[];
+    }
+  >();
   for (const directory of await fs.readdir(drafts, { withFileTypes: true })) {
     if (!directory.isDirectory()) continue;
     const root = path.join(drafts, directory.name);
@@ -73,6 +89,7 @@ export async function publishGameplayDrafts(
       JSON.parse(await fs.readFile(path.join(root, indexFile), "utf8")),
     );
     for (const entry of catalog) {
+      if (reviewedPhysicalAssets && !reviewedPhysicalAssets.has(entry.id)) continue;
       const bytes = await fs.readFile(path.join(root, "3d-assets", entry.descriptor), "utf8");
       if (sha(bytes) !== entry.descriptor_sha256)
         throw new Error(`Stale recovered catalog: ${entry.id}`);
@@ -81,6 +98,9 @@ export async function publishGameplayDrafts(
         throw new Error(`Duplicate recovered asset ${descriptor.id}`);
       recovered.set(descriptor.id, {
         descriptor,
+        rawParts: JSON.parse(bytes).parts,
+        model: path.join(root, "3d-assets", entry.model),
+        modelSha: entry.model_sha256,
         issues: report.issues.find((item) => item.asset === descriptor.id)?.issues ?? [],
       });
     }
@@ -89,9 +109,18 @@ export async function publishGameplayDrafts(
   const published: string[] = [];
   const skipped: { asset: string; reason: string }[] = [];
   const pins = new Map<string, { before: string; after: string }>();
+  const physicalReviews: {
+    asset: string;
+    verifiedPartFrames: number;
+    modelSha256: string;
+    draftModelSha256: string;
+  }[] = [];
+  const reviewedModels = new Map<string, { model: string; sha: string; sceneVerified: boolean }>();
   for (const entry of index) {
+    if (reviewedPhysicalAssets && !reviewedPhysicalAssets.has(entry.id)) continue;
     const candidate = recovered.get(entry.id);
     if (!candidate) {
+      if (reviewedPhysicalAssets) throw new Error(`Missing reviewed physical draft: ${entry.id}`);
       skipped.push({ asset: entry.id, reason: "No recovered draft for this asset identity" });
       continue;
     }
@@ -101,27 +130,85 @@ export async function publishGameplayDrafts(
     const live = parseProjectionAssetDescriptor(JSON.parse(before));
     let merged: ProjectionAssetDescriptor;
     try {
-      merged = mergeGameplayDraft(live, candidate.descriptor, candidate.issues);
+      if (reviewedPhysicalAssets) {
+        verifyPhysicalPartIdentity(JSON.parse(before).parts, candidate.rawParts);
+        const liveModel = await fs.readFile(path.join(library, "3d-assets", entry.model));
+        const draftModel = await fs.readFile(candidate.model);
+        const liveSha = sha(liveModel);
+        if (
+          !candidate.modelSha ||
+          (entry.model_sha256 && liveSha !== entry.model_sha256) ||
+          sha(draftModel) !== candidate.modelSha
+        )
+          throw new Error(`Stale reviewed model: ${entry.id}`);
+        const verifiedPartFrames = verifyPhysicalModelFrames(
+          liveModel,
+          live,
+          draftModel,
+          candidate.descriptor,
+        );
+        merged = reconcilePhysicalDraft(live, candidate.descriptor, candidate.issues);
+        physicalReviews.push({
+          asset: entry.id,
+          verifiedPartFrames,
+          modelSha256: liveSha,
+          draftModelSha256: candidate.modelSha,
+        });
+        reviewedModels.set(file, {
+          model: "3d-assets/" + entry.model,
+          sha: liveSha,
+          sceneVerified: false,
+        });
+      } else merged = mergeGameplayDraft(live, candidate.descriptor, candidate.issues);
     } catch (error) {
+      if (reviewedPhysicalAssets) throw error;
       skipped.push({ asset: entry.id, reason: String(error) });
       continue;
     }
     // Preserve authoring fields outside the runtime descriptor schema.
-    const after = encode({ ...JSON.parse(before), gameplay: merged.gameplay });
+    const raw = JSON.parse(before);
+    const after = encode({
+      ...raw,
+      ...(reviewedPhysicalAssets
+        ? {
+            parts: (raw.parts as Record<string, unknown>[]).map((part, i) =>
+              Object.fromEntries([
+                ...Object.entries(part).filter(([key]) => !REVIEWED_PHYSICAL_FIELDS.has(key)),
+                ...Object.entries(merged.parts[i]!).filter(([key]) =>
+                  REVIEWED_PHYSICAL_FIELDS.has(key),
+                ),
+              ]),
+            ),
+          }
+        : {}),
+      gameplay: merged.gameplay,
+    });
     changes.push({ file, before, after });
     pins.set(file, { before: sha(before), after: sha(after) });
     entry.editor = merged;
     entry.descriptor_sha256 = sha(after);
     published.push(entry.id);
   }
+  if (reviewedPhysicalAssets && published.length !== reviewedPhysicalAssets.size)
+    throw new Error("Missing reviewed physical asset identities in current library");
   const scenes: string[] = [];
   for (const name of await fs.readdir(path.join(library, "scenes"))) {
     if (!name.endsWith(".rhlos-map.json")) continue;
     const file = "scenes/" + name;
     const before = await fs.readFile(path.join(library, file), "utf8");
     const document = JSON.parse(before) as {
-      assetSources?: { descriptor: string; descriptor_sha256: string }[];
-      sceneAssets?: { descriptor?: string; descriptor_sha256?: string }[];
+      assetSources?: {
+        descriptor: string;
+        descriptor_sha256: string;
+        model?: string;
+        model_sha256?: string;
+      }[];
+      sceneAssets?: {
+        descriptor?: string;
+        descriptor_sha256?: string;
+        model?: string;
+        model_sha256?: string;
+      }[];
     };
     let changed = false;
     for (const ref of [...(document.assetSources ?? []), ...(document.sceneAssets ?? [])]) {
@@ -129,6 +216,12 @@ export async function publishGameplayDrafts(
       if (!pin) continue;
       if (ref.descriptor_sha256 !== pin.before)
         throw new Error(`${file}: stale saved descriptor ${ref.descriptor}`);
+      const model = reviewedModels.get(ref.descriptor!);
+      if (model) {
+        if (ref.model !== model.model || ref.model_sha256 !== model.sha)
+          throw new Error(`${file}: stale saved model for physical review ${ref.descriptor}`);
+        model.sceneVerified = true;
+      }
       ref.descriptor_sha256 = pin.after;
       changed = true;
     }
@@ -137,6 +230,9 @@ export async function publishGameplayDrafts(
       scenes.push(name);
     }
   }
+  for (const [descriptor, model] of reviewedModels)
+    if (!model.sceneVerified)
+      throw new Error(`Missing pinned scene model for physical review: ${descriptor}`);
   parseProjectionAssetIndex({ version: 1, assets: index });
   changes.push({
     file: indexFile,
@@ -154,7 +250,10 @@ export async function publishGameplayDrafts(
     }
   }
   const report = {
-    scope: "incomplete-gameplay-draft-publication",
+    scope: reviewedPhysicalAssets
+      ? "reviewed-physical-incomplete-gameplay-draft-publication"
+      : "incomplete-gameplay-draft-publication",
+    physicalReviews,
     published,
     skipped,
     scenes,
@@ -162,6 +261,9 @@ export async function publishGameplayDrafts(
   };
   await fs.writeFile(path.join(output, "report.json"), encode(report));
   if (apply) {
+    for (const model of reviewedModels.values())
+      if (sha(await fs.readFile(path.join(library, model.model))) !== model.sha)
+        throw new Error(`Reviewed model changed during publication: ${model.model}`);
     // Preflight every byte before any mutation; the index is installed last.
     for (const change of changes)
       if ((await fs.readFile(path.join(library, change.file), "utf8")) !== change.before)

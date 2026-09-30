@@ -220,7 +220,7 @@
       "model": "3d-assets/lincoln/lincoln-south-angle-bastion/model.glb",
       "model_sha256": "cff344488ddcd5d135b5af52512e38c7d549ee704c38187ace3b7cc6c518d007",
       "descriptor": "3d-assets/lincoln/lincoln-south-angle-bastion/asset.json",
-      "descriptor_sha256": "6dde43833e329bdb659fb2142592462513442d308cf75a72f85e5b923a2ba34f",
+      "descriptor_sha256": "f3ebd99b2385c501eaa318062dea2dec84829229b616b388aa14da7c98583c2c",
       "id": "lincoln-south-angle-bastion"
     },
     {
@@ -381,14 +381,14 @@
       "model": "3d-assets/lincoln/lincoln-southeast-corner-turret/model.glb",
       "model_sha256": "9296da844f453c515f1117fec13180866907773fb57d99a5f895c5f71e30f7ec",
       "descriptor": "3d-assets/lincoln/lincoln-southeast-corner-turret/asset.json",
-      "descriptor_sha256": "5319bec90ac2709a26b912249d7b275e610e645b4c4725306823ea09de841b20",
+      "descriptor_sha256": "17dd1e321b8bf63bb1907e41dc4701779a4a58410f06f2e2a3460083f83a6e41",
       "id": "lincoln-southeast-corner-turret"
     },
     {
       "model": "3d-assets/lincoln/lincoln-southeast-curtain-wall/model.glb",
       "model_sha256": "669b0fb19eba1d2151da1cfc2aba1139a67ad4b5575dd013bf5236f5b265f75e",
       "descriptor": "3d-assets/lincoln/lincoln-southeast-curtain-wall/asset.json",
-      "descriptor_sha256": "a2132c7be0cbaa8cc7a6534fd4b1dc6e0c3f38e00fd5604ee734cc4786ee5ade",
+      "descriptor_sha256": "4e827402054350078192c311dc07819f0552885e3932dd8fc85cc503a6187bc4",
       "id": "lincoln-southeast-curtain-wall"
     },
     {
@@ -416,21 +416,21 @@
       "model": "3d-assets/lincoln/lincoln-south-curtain-wall-angle/model.glb",
       "model_sha256": "9a9a31e6a97c8f602e7a366dc5a959061d63279e03c232be27c7e24dbdcf93a5",
       "descriptor": "3d-assets/lincoln/lincoln-south-curtain-wall-angle/asset.json",
-      "descriptor_sha256": "dc83e22cb7f52ba1e222e4cb9ef4e8f99c1a5541219257415bc61f0da9b60a65",
+      "descriptor_sha256": "2016f7dd3e4c848aaa8cea55b7f129aa99e0cdb39fbbbd6b86af87b54d884ce6",
       "id": "lincoln-south-curtain-wall-angle"
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-curtain-wall-central/model.glb",
       "model_sha256": "43122b1a731fc0d58f8a9b41a8e61b6b07430c26264e1a9df3facafb8ca1c86b",
       "descriptor": "3d-assets/lincoln/lincoln-south-curtain-wall-central/asset.json",
-      "descriptor_sha256": "e4f6ffec587fa8c185044d7caa63cebee1959d9cc4280ac0b06c47b51c9a3900",
+      "descriptor_sha256": "2082c49c5b3eb2cd645f803a68da896c968ad94d5f47e055be7a84fe5f3e87da",
       "id": "lincoln-south-curtain-wall-central"
     },
     {
       "model": "3d-assets/lincoln/lincoln-south-wall-cone-turret/model.glb",
       "model_sha256": "0b4f4048509301c0176e2478f954c69defef63299344df4efd6348725edd739e",
       "descriptor": "3d-assets/lincoln/lincoln-south-wall-cone-turret/asset.json",
-      "descriptor_sha256": "4c6ca22d5c1d6783fe6f03265af8a5b16ebf6eede19f3688a93f2919c9f2b258",
+      "descriptor_sha256": "f5013b05988fcb8879ae3fdd40fccce890626c3e2a055d701716a7506e80886b",
       "id": "lincoln-south-wall-cone-turret"
     },
     {
