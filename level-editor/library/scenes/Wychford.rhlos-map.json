@@ -104,7 +104,7 @@
       "model": "3d-assets/leicester/leicester-southeast-cottage/model.glb",
       "model_sha256": "b68847e1ccf1b03c7924d023d6a9ab81005b1a361078b8374f5e976209795ba7",
       "descriptor": "3d-assets/leicester/leicester-southeast-cottage/asset.json",
-      "descriptor_sha256": "aa1a6f653f1002e411cf27b493f62ab4e04a4458d3cb477c51176169c2c35f53",
+      "descriptor_sha256": "5d8571f852c3a833e97de498602a8b397ac23c3b8f4cf05b84e177738d518629",
       "id": "leicester-southeast-cottage"
     },
     {
@@ -125,7 +125,7 @@
       "model": "3d-assets/leicester/leicester-watermill/model.glb",
       "model_sha256": "ba0b9fc1d5047e0bffc876e357408270651414e3d31c8190bee86466a133dc11",
       "descriptor": "3d-assets/leicester/leicester-watermill/asset.json",
-      "descriptor_sha256": "c0c73a78b7d566e0c4982e4441b5baf85bb21ddd9f4e73fe82d02e633dc09594",
+      "descriptor_sha256": "255f04d76de7bcded797effe90a49eebfcb26081a5599398fe1e9575a8962304",
       "id": "leicester-watermill"
     },
     {
