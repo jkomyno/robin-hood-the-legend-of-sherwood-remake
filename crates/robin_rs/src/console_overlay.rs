@@ -49,93 +49,22 @@ const PAGE_SCROLL_LINES: usize = 8;
 /// Lines moved per mouse-wheel notch.
 const WHEEL_SCROLL_LINES: usize = 3;
 
-/// Dev-mode console keyword table for tab completion.
-///
-/// First-token keywords from `console::parse_dev`.  The parser is
-/// case-insensitive, so we keep these uppercase.  Multi-token commands
-/// ("BIG BROTHER", "BUD SPENCER", …) are completed by the first token
-/// only; the user types the rest by hand.
-///
-/// Mirrors what the parser *actually* recognises as a leading token —
-/// stale entries like `ENERGYDISPLAY`, `GIVEAMMO`, `MISTERSANDMAN`,
-/// `SANPETRUS`, `WINCAMPAIGN`, `WINNER`, `REINFORCEMENT` were removed
-/// because the dev parser keys off `ALARM`, `BINGO`, `FULLHOUSE`,
-/// `MISTER SANDMAN`, `SAN PETRUS`, `I AM THE WINNER`, and `WIN`
-/// respectively.  Keeping the list in sync with `parse_dev` avoids
-/// offering completions that the parser would then reject.
-const COMPLETION_KEYWORDS_DEV: &[&str] = &[
-    "AI",
-    "ALARM",
-    "AMOR",
-    "AMULETS",
-    "ANIM",
-    "ASSERTFALSE",
-    "BABYLON",
-    "BIG",
-    "BUD",
-    "CALL",
-    "CAMPAIGN",
-    "CESTLAZONE",
-    "COMA",
-    "COMPANIES",
-    "DIES",
-    "EINSTEIN",
-    "ELEVATION",
-    "EULER",
-    "EZB",
-    "FORGET",
-    "FPS",
-    "FREEZE",
-    "FULLHOUSE",
-    "GOLDENEYE",
-    "HADES",
-    "HELP",
-    "BUGREPORT",
-    "HIGHLANDER",
-    "HIGHLANDER2",
-    "HONOLULU",
-    "I",
-    "IDS",
-    "KOLKOZ",
-    "LAST",
-    "LEVEL",
-    "LIGHT",
-    "LOOSE",
-    "LUKAS",
-    "MISTER",
-    "MORPHEUS",
-    "MOTION",
-    "NOISE",
-    "NUKE",
-    "OPTIMIZE",
-    "PAMELA",
-    "PCSIGHT",
-    "PROJECTION",
-    "RAILROAD",
-    "REPORT",
-    "ROTER",
-    "SAN",
-    "SARKOZY",
-    "SEEKANDDESTROY",
-    "SHADOW",
-    "SPHERE",
-    "STATUS",
-    "SURFACE",
-    "UBIQUITY",
-    "WAKEUP",
-    "WAPPEN",
-    "WASP",
-    "WIN",
-];
+/// Overlay-only command handled before the engine parser.
+const BUGREPORT_KEYWORD: &str = "BUGREPORT";
 
-/// Final-mode (shipping build) cheat keyword table.  Matches the 9
-/// commands `parse_final` recognises — and nothing more, so `use_final`
-/// builds don't leak the dev cheat list via Tab.  The original game
-/// suppressed completion entirely in shipping builds; we still offer
-/// completions for the commands the player *can* use.
-const COMPLETION_KEYWORDS_FINAL: &[&str] = &[
-    "BINGO", "CASH", "EINSTEIN", "GOODLUCK", "IMMUNITY", "MERRYMAN", "PAM", "UNBLIP", "WINNER",
-];
+/// First-word Tab completions for the active parser mode.
+///
+/// Derived from the engine's original registry table, so completion
+/// offers exactly what the parser accepts. `BUGREPORT` is an overlay
+/// command and is offered only in developer mode.
+fn completion_keywords(use_final: bool) -> Vec<&'static str> {
+    let mut keywords = robin_engine::console::completion_keywords(use_final);
+    if !use_final {
+        keywords.push(BUGREPORT_KEYWORD);
+        keywords.sort_unstable();
+    }
+    keywords
+}
 
 /// One line in the output history.  `Echo` is the user's input
 /// (rendered with a `> ` prefix); `Response` is the dispatcher reply.
@@ -492,11 +421,11 @@ impl ConsoleOverlay {
         if trimmed
             .split_whitespace()
             .next()
-            .is_some_and(|token| token.eq_ignore_ascii_case("BUGREPORT"))
+            .is_some_and(|token| token.eq_ignore_ascii_case(BUGREPORT_KEYWORD))
         {
             #[cfg(not(target_arch = "wasm32"))]
             let message = {
-                let description = trimmed["BUGREPORT".len()..].trim();
+                let description = trimmed[BUGREPORT_KEYWORD.len()..].trim();
                 if description.is_empty() {
                     "Usage: /BUGREPORT description of the problem".to_owned()
                 } else {
@@ -757,14 +686,8 @@ impl ConsoleOverlay {
         // Pick the keyword set that matches the current cheat table.
         // In `use_final` mode we only offer the 9 shipping cheats, so
         // Tab can't leak the dev keyword list.
-        let keywords: &[&str] = if dev.console.use_final {
-            COMPLETION_KEYWORDS_FINAL
-        } else {
-            COMPLETION_KEYWORDS_DEV
-        };
-        let matches: Vec<&'static str> = keywords
-            .iter()
-            .copied()
+        let matches: Vec<&'static str> = completion_keywords(dev.console.use_final)
+            .into_iter()
             .filter(|kw| kw.starts_with(&prefix_upper))
             .collect();
         let (pick, add_space, candidate_listing) = match matches.as_slice() {

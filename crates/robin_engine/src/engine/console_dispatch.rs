@@ -221,9 +221,15 @@ impl EngineInner {
             | Sarkozy | Fps => self.console_status_report(&mut dev, cmd),
 
             // ── Misc dev-mode ────────────────────────────────────
-            Help => ConsoleResponse::Ok(
-                cheat_help_text(host_dev(&mut dev).console.use_final).to_string(),
-            ),
+            Help => {
+                // Original 0x0045ccb0 calls FUN_0045bff0, which prints one
+                // console message per active registry entry.
+                let dev = host_dev(&mut dev);
+                for line in crate::console::help_lines(dev.console.use_final) {
+                    dev.console.push_output(line);
+                }
+                ConsoleResponse::Ok(String::new())
+            }
             AssertFalse => {
                 // This cheat only logs; it does not interrupt execution.
                 tracing::warn!("console: assert(false) cheat invoked");
@@ -1380,54 +1386,6 @@ fn pc_initial_to_profile_name(c: char) -> Option<&'static str> {
     }
 }
 
-/// Formatted cheat listing for the `HELP` command.
-///
-/// We keep the list in a hand-curated form grouped by category — a
-/// categorised listing is more useful than a flat list, and the set
-/// of commands is small enough that an annotation table per
-/// `ConsoleCommand` variant would be over-engineered.  The
-/// `use_final` gate picks between the 9-entry final (release) cheat
-/// set and the full dev set.
-fn cheat_help_text(use_final: bool) -> &'static str {
-    if use_final {
-        "Robin Hood Console Help File.\n\
-         Available commands in this release:\n\
-         \n\
-         CASH <amount>        Add gold to the campaign.\n\
-         GOODLUCK <amount>    Set the amulet count.\n\
-         EINSTEIN             Toggle 3D-obstacle display.\n\
-         IMMUNITY             Make friendly PCs invulnerable.\n\
-         MERRYMAN             Add a new peasant to the gang.\n\
-         PAM                  Toggle stupid-soldiers mode.\n\
-         UNBLIP               Reveal every blipped NPC.\n\
-         WINNER               Complete the current mission.\n\
-         BINGO                Refill every PC's ammunition.\n"
-    } else {
-        "Robin Hood Console Help File.\n\
-         Available commands in this release:\n\
-         \n\
-         Campaign / mission:  EZB <amount>, WAPPEN <amount>, AMULETS <amount>,\n\
-                              KOLKOZ, REPORT, WIN, LOOSE, I AM THE WINNER,\n\
-                              CAMPAIGN <file>\n\
-         AI toggles:          AI, BABYLON, FREEZE, GOLDENEYE,\n\
-                              PAMELA ANDERSON (aka STUPID SOLDIERS),\n\
-                              ROTER ALARM, DIES IRAE\n\
-         PC helpers:          HIGHLANDER, HIGHLANDER2, AMOR, FULLHOUSE,\n\
-                              WASP MASTER, MISTER SANDMAN, COMA, SAN PETRUS,\n\
-                              LUKAS <initials>\n\
-         NPC mutators:        NUKE, WAKEUP, BUD SPENCER, LAST MAN STANDING,\n\
-                              HONOLULU, MORPHEUS, HADES, ALARM (REINFORCEMENT)\n\
-         Stealth / vision:    UBIQUITY, PCSIGHT, BIG BROTHER\n\
-         Display toggles:     ANIM, COMPANIES, EINSTEIN, ELEVATION, EULER,\n\
-                              ENERGYDISPLAY, LIGHT, MOTION, NOISE, PROJECTION,\n\
-                              RAILROAD, SEEKANDDESTROY, SHADOW, SPHERE,\n\
-                              CESTLAZONE, LEVEL TEXT [DG|DB|PT|SB]\n\
-         Rendering / debug:   FPS, STATUS FRAMECACHE|HARDWARE|SHADOW|PC,\n\
-                              OPTIMIZE, CALL <initial> HIDEINTERFACE|DISPLAYINTERFACE,\n\
-                              FORGET, SARKOZY, ASSERTFALSE\n"
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1546,6 +1504,33 @@ mod tests {
         assert_eq!(victim.element_data().posture(), Posture::Dead);
         assert_eq!(selected, None);
         assert_eq!(engine.orders.sequence_manager.sequence_count(), 1);
+    }
+
+    #[test]
+    fn help_prints_one_console_line_per_active_registry_entry() {
+        let sim = crate::sim_rng::test_context();
+        let (mut engine, mut dev) = engine_with_campaign();
+        for use_final in [false, true] {
+            dev.console.use_final = use_final;
+            let response = engine.run_console_command(
+                TickCtx::new(&sim, &assets()),
+                &mut dev,
+                &mut None,
+                "HELP",
+            );
+            if use_final {
+                // The release vector has no HELP entry.
+                assert_eq!(response, ConsoleResponse::Unknown);
+                assert!(dev.console.drain_output().is_empty());
+            } else {
+                assert_eq!(response, ConsoleResponse::Ok(String::new()));
+                assert_eq!(
+                    dev.console.drain_output(),
+                    crate::console::help_lines(false)
+                );
+            }
+        }
+        assert_eq!(engine.mission_domain.cheat_used_flags, 0);
     }
 
     #[test]
