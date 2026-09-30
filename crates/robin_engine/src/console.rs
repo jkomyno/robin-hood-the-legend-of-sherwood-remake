@@ -907,6 +907,22 @@ pub fn parse_with_final(input: &str, use_final: bool) -> Option<ConsoleCommand> 
         return parse_final(&tokens);
     }
 
+    // CAMPAIGN (original 0x00460460) requires exactly one filename token.
+    // The original tokenizer has already uppercased it; the remake keeps
+    // the typed case so the path also resolves on case-sensitive
+    // filesystems.
+    if tokens[0] == "CAMPAIGN" {
+        let original: Vec<&str> = input.split_whitespace().collect();
+        return Some(match original.as_slice() {
+            [_, filename] => ConsoleCommand::LoadCampaign {
+                filename: (*filename).to_owned(),
+            },
+            _ => {
+                ConsoleCommand::UsageError("Verboten : Please enter a valid filename !".to_owned())
+            }
+        });
+    }
+
     // Dev cheats — the full set
     parse_dev(&tokens)
 }
@@ -944,12 +960,6 @@ fn parse_dev(tokens: &[&str]) -> Option<ConsoleCommand> {
         "COMA" => Some(ConsoleCommand::Coma),
         "COMPANIES" => Some(ConsoleCommand::Companies),
         "CESTLAZONE" => Some(ConsoleCommand::CestLaZone),
-        "CAMPAIGN" if tokens.len() >= 2 => Some(ConsoleCommand::LoadCampaign {
-            filename: tokens[1].to_string(),
-        }),
-        "CAMPAIGN" => Some(ConsoleCommand::UsageError(
-            "Verboten : Please enter a valid filename !".to_owned(),
-        )),
         "DIES" if tokens.get(1) == Some(&"IRAE") => Some(ConsoleCommand::DiesIrae),
         "DIPLOMACY" if tokens.len() == 4 => Some(parse_diplomacy_args(tokens)),
         "DIPLOMACY" => Some(ConsoleCommand::UsageError(
@@ -1652,6 +1662,23 @@ mod tests {
                 method: "HIDEINTERFACE".to_string(),
             })
         );
+    }
+
+    #[test]
+    fn campaign_takes_exactly_one_filename_and_keeps_its_case() {
+        assert_eq!(
+            parse("campaign Saves/Slot1.sav"),
+            Some(ConsoleCommand::LoadCampaign {
+                filename: "Saves/Slot1.sav".to_owned()
+            })
+        );
+        assert_eq!(
+            parse("CAMPAIGN A.SAV EXTRA"),
+            Some(ConsoleCommand::UsageError(
+                "Verboten : Please enter a valid filename !".to_owned()
+            ))
+        );
+        assert_eq!(parse_with_final("CAMPAIGN A.SAV", true), None);
     }
 
     #[test]

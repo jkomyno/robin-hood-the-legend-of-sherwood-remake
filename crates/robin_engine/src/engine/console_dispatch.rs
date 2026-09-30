@@ -284,15 +284,19 @@ impl EngineInner {
         ConsoleResponse::Ok("Mission lost !".to_string())
     }
 
+    /// `I AM THE WINNER` (original 0x0045d580): set the current mission
+    /// profile's byte `+0x60` (ARES state) to 9, then request the ordinary
+    /// mission win. The original assumes a current mission.
     fn console_win_campaign(&mut self) -> ConsoleResponse {
-        // Sets `ARESStateSucceeded = 9` on the shared mission
-        // profile.  Rust profiles are `Arc`-shared, so we stash
-        // the override on `Mission::ares_state_override` — read
-        // by `Campaign::set_mission_done` when the win lands.
+        // Rust profiles are `Arc`-shared, so we stash the override on
+        // `Mission::ares_state_override` — read by
+        // `Campaign::set_mission_done` when the win lands.
         let campaign = &mut self.mission_domain.campaign;
-        if let Some(idx) = campaign.current_mission_idx {
-            campaign.missions[idx].ares_state_override = Some(9);
-        }
+        let Some(idx) = campaign.current_mission_idx else {
+            tracing::warn!("I AM THE WINNER without a current campaign mission");
+            return ConsoleResponse::Ok("Error: no current campaign mission.".to_string());
+        };
+        campaign.missions[idx].ares_state_override = Some(9);
         self.win(true);
         self.mission_domain.state.quit_won = true;
         ConsoleResponse::Ok("Campaign won !".to_string())
@@ -816,6 +820,7 @@ impl EngineInner {
         ConsoleResponse::Ok(out)
     }
 
+    /// `WIN`/`WINNER` (original 0x0045cda0).
     fn console_win_mission(&mut self, assets: &LevelAssets) -> ConsoleResponse {
         // No-op in Sherwood; otherwise adds mission-stat money
         // (soldier + bonus − collected) + rescue PCs + pending
@@ -1810,6 +1815,149 @@ mod tests {
         assert_eq!(campaign_value(&engine, CampaignValue::Blazon), 5);
     }
 
+    fn bonus_blazon(quantity: u16, active: bool) -> Entity {
+        let mut element = ElementData::from_initial_posture(Posture::Upright);
+        element.kind = ElementKind::ObjectBonus;
+        element.active = active;
+        Entity::Bonus(crate::element::ElementBonus {
+            element,
+            object: crate::element::ObjectData {
+                object_type: ObjectType::BonusBlazon,
+                quantity,
+                ..Default::default()
+            },
+        })
+    }
+
+    /// One current mission with the given location and filename, plus a
+    /// Will Scarlet character profile for the S02 rescue entry.
+    fn engine_in_mission(
+        location: crate::profiles::MissionLocation,
+        filename: &str,
+    ) -> (EngineInner, DevState, LevelAssets) {
+        let (mut engine, dev) = engine_with_campaign();
+        let mut profiles = crate::profiles::ProfileManager::new();
+        profiles.missions.push(crate::profiles::MissionProfile {
+            location,
+            mission_filename: filename.into(),
+            ..Default::default()
+        });
+        profiles.characters.push(crate::profiles::CharacterProfile {
+            profile_name: "Will Ecarlate".into(),
+            vip: true,
+            ..Default::default()
+        });
+        let campaign = &mut engine.mission_domain.campaign;
+        campaign.missions.push(crate::mission::Mission {
+            profile_idx: Some(0),
+            ..Default::default()
+        });
+        campaign.current_mission_idx = Some(0);
+        let assets = LevelAssets {
+            profile_manager: std::sync::Arc::new(profiles),
+            ..LevelAssets::default()
+        };
+        (engine, dev, assets)
+    }
+
+    #[test]
+    fn win_pays_mission_money_rescues_and_collects_remaining_blazons() {
+        let sim = crate::sim_rng::test_context();
+        for input in ["WIN", "WINNER"] {
+            let (mut engine, mut dev, assets) =
+                engine_in_mission(crate::profiles::MissionLocation::default(), "S02_Lei_MP");
+            let stat = &mut engine.mission_domain.mission_stat;
+            stat.soldier_money = 300;
+            stat.bonus_money = 50;
+            stat.collected_money = 20;
+            engine.add_test_entity(bonus_blazon(2, true));
+            engine.add_test_entity(bonus_blazon(5, false));
+            let ransom = campaign_value(&engine, CampaignValue::Ransom);
+            let blazons = campaign_value(&engine, CampaignValue::Blazon);
+
+            let response =
+                engine.run_console_command(TickCtx::new(&sim, &assets), &mut dev, &mut None, input);
+            assert_eq!(response, ConsoleResponse::Ok("Mission won !".to_owned()));
+            assert_eq!(campaign_value(&engine, CampaignValue::Ransom), ransom + 330);
+            assert_eq!(campaign_value(&engine, CampaignValue::Blazon), blazons + 2);
+            assert!(
+                engine
+                    .mission_domain
+                    .campaign
+                    .is_in_gang(crate::profiles::CharacterProfileIdx(0)),
+                "S02_Lei_MP returns Will Ecarlate"
+            );
+            assert!(engine.mission_domain.state.quit_won);
+        }
+    }
+
+    #[test]
+    fn win_does_nothing_in_sherwood() {
+        let sim = crate::sim_rng::test_context();
+        let (mut engine, mut dev, assets) =
+            engine_in_mission(crate::profiles::MissionLocation::Sherwood, "S02_Lei_MP");
+        engine.mission_domain.mission_stat.soldier_money = 300;
+        let ransom = campaign_value(&engine, CampaignValue::Ransom);
+        let response =
+            engine.run_console_command(TickCtx::new(&sim, &assets), &mut dev, &mut None, "WIN");
+        assert_eq!(response, ConsoleResponse::Ok(String::new()));
+        assert_eq!(campaign_value(&engine, CampaignValue::Ransom), ransom);
+        assert!(!engine.mission_domain.state.quit_won);
+        assert_eq!(engine.mission_domain.campaign.gang_indices.len(), 0);
+    }
+
+    #[test]
+    fn i_am_the_winner_overrides_the_ares_state_of_the_current_mission() {
+        let sim = crate::sim_rng::test_context();
+        let (mut engine, mut dev, assets) =
+            engine_in_mission(crate::profiles::MissionLocation::default(), "S02_Lei_MP");
+        let response = engine.run_console_command(
+            TickCtx::new(&sim, &assets),
+            &mut dev,
+            &mut None,
+            "I AM THE WINNER",
+        );
+        assert_eq!(response, ConsoleResponse::Ok("Campaign won !".to_owned()));
+        assert_eq!(
+            engine.mission_domain.campaign.missions[0].ares_state_override,
+            Some(9)
+        );
+        assert!(engine.mission_domain.state.quit_won);
+
+        let (mut engine, mut dev) = engine_with_campaign();
+        let response = run(&mut engine, &mut dev, "I AM THE WINNER");
+        assert_eq!(
+            response,
+            ConsoleResponse::Ok("Error: no current campaign mission.".to_owned())
+        );
+        assert!(!engine.mission_domain.state.quit_won);
+    }
+
+    #[test]
+    fn report_logs_the_campaign_and_acknowledges_in_the_console() {
+        let (mut engine, mut dev) = engine_with_campaign();
+        assert_eq!(
+            run(&mut engine, &mut dev, "REPORT"),
+            ConsoleResponse::Ok("Reporting...".to_owned())
+        );
+        assert!(dev.console.drain_output().is_empty());
+    }
+
+    #[test]
+    fn campaign_requests_a_host_load_of_exactly_one_file() {
+        let (mut engine, mut dev) = engine_with_campaign();
+        assert_eq!(
+            run(&mut engine, &mut dev, "CAMPAIGN Slot1.sav"),
+            ConsoleResponse::LoadCampaignRequested("Slot1.sav".into())
+        );
+        for input in ["CAMPAIGN", "CAMPAIGN A B"] {
+            assert_eq!(
+                run(&mut engine, &mut dev, input),
+                ConsoleResponse::Ok("Verboten : Please enter a valid filename !".to_owned())
+            );
+        }
+    }
+
     #[test]
     fn lose_mission_sets_quit_lost() {
         let sim_context = crate::sim_rng::test_context();
@@ -1818,7 +1966,7 @@ mod tests {
         assert!(!engine.mission_domain.state.quit_lost);
         let resp =
             engine.run_console_command(TickCtx::new(sim, &assets()), &mut dev, &mut None, "LOOSE");
-        assert!(matches!(resp, ConsoleResponse::Ok(_)));
+        assert_eq!(resp, ConsoleResponse::Ok("Mission lost !".to_owned()));
         assert!(engine.mission_domain.state.quit_lost);
     }
 
