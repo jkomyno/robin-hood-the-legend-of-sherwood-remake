@@ -11,8 +11,15 @@ fn zero_vector_normalization_preserves_original_nan_result() {
     let normalized = MapVec::new(zero, zero).iso_normalize(std::hint::black_box(
         crate::position_interface::ASPECT_RATIO,
     ));
-    assert_eq!(normalized.x.to_bits(), 0xffc0_0000);
-    assert_eq!(normalized.y.to_bits(), 0xffc0_0000);
+    assert!(normalized.x.is_nan());
+    assert!(normalized.y.is_nan());
+    // ARM produces a positive NaN here; the original negative bit pattern
+    // belongs to x86 arithmetic, not the cross-platform zero-vector contract.
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    {
+        assert_eq!(normalized.x.to_bits(), 0xffc0_0000);
+        assert_eq!(normalized.y.to_bits(), 0xffc0_0000);
+    }
 }
 
 #[test]
