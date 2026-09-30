@@ -792,8 +792,10 @@ A list of which additional features we have added, which ones we might still wan
   position the hero will actually occupy. Shield and Big Shield retain their
   exact protectee-then-danger-point interaction. When the separate tactical-unit
   control extension is enabled, directly controlled units can queue formation
-  movement and combat, with group-portrait queue feedback. Touch-capable builds
-  expose a sticky plan/cancel HUD button. The per-profile
+  movement and combat, with group-portrait queue feedback. Touch sessions
+  expose a sticky plan/cancel HUD button: always on Android and iOS, and in
+  browsers when the primary pointer is coarse or after the first touch, so
+  mouse-driven browser play keeps the original HUD. The per-profile
   Gameplay setting disables all live planning UI/input and defaults on;
   Original-parity replay forces it off.
 
@@ -1583,10 +1585,12 @@ speech handling to recordings from `1699bc12ffb8`.
 
 Replay viewers can drag the world with the left mouse button, including while
 paused. Pausing replay playback pauses music and resuming continues it. Browser
-play starts with a free cursor and edge scrolling disabled; **Capture cursor**
-enables pointer capture and edge scrolling, and Escape releases it. Embedded
-leaderboard replays start in the free-cursor mode as well. These controls affect
-presentation only and never produce simulation input in a replay.
+play starts with a free cursor that edge-scrolls at the canvas edges; moving it
+onto the empty page beside the canvas holds it at that edge, while shell
+controls and leaving the page stop scrolling. **Capture cursor** confines the
+cursor with pointer lock, and Escape releases it. Embedded leaderboard replays
+start in the free-cursor mode as well. These controls affect presentation only
+and never produce simulation input in a replay.
 
 - Full-game leaderboard “Any ruleset” is a combined browsing view across configured Full boards, with shared ranking and pagination. The legacy `full-any` URL remains supported; it is no longer a production submission board.
 
