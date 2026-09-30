@@ -187,3 +187,55 @@ test("subdividing cell-only materials preserves non-grass fallback at every new 
   for (const triangle of terrainTriangles({ terrain: refined }))
     for (const mix of triangle.materialMixes!) assert.deepEqual(mix, { ground_rocky: 1 });
 });
+
+test("local subdivision retains distant and corner-only neighbors exactly", () => {
+  const grid = createTerrainGrid([0, 0, 400, 300], 100);
+  grid.cells[5]!.diagonal = 1;
+  grid.vertices.forEach((vertex, i) => {
+    vertex.position[2] = (i * 13) % 37;
+    vertex.uv = [vertex.position[0] / 400, vertex.position[1] / 300];
+  });
+  const before = structuredClone(grid);
+  const refined = subdivideTerrainCells(grid, [grid.cells[5]!.id]);
+  const affected = new Set([1, 4, 5, 6, 9]);
+  for (const [index, cell] of grid.cells.entries()) {
+    if (affected.has(index)) {
+      assert.ok(!refined.cells.some((next) => next.id === cell.id));
+      continue;
+    }
+    assert.strictEqual(
+      refined.cells.find((next) => next.id === cell.id),
+      cell,
+    );
+    assert.equal(cell.vertices.length, 4);
+  }
+  assert.equal(
+    refined.cells.filter((cell) => cell.id.startsWith(`${grid.cells[5]!.id}/`)).length,
+    8,
+  );
+  for (const [index, vertex] of grid.vertices.entries())
+    assert.strictEqual(refined.vertices[index], vertex);
+  for (const vertex of refined.vertices) {
+    assert.ok(Math.abs(vertex.uv![0] - vertex.position[0] / 400) < 1e-8);
+    assert.ok(Math.abs(vertex.uv![1] - vertex.position[1] / 300) < 1e-8);
+  }
+  for (let y = 7; y < 300; y += 19)
+    for (let x = 9; x < 400; x += 23)
+      assert.ok(
+        Math.abs(
+          terrainHeightAt({ terrain: grid }, x, y)! - terrainHeightAt({ terrain: refined }, x, y)!,
+        ) < 1e-8,
+      );
+  assert.deepEqual(grid, before);
+});
+
+test("empty subdivision is a no-op and unknown cell selections fail explicitly", () => {
+  const grid = createTerrainGrid([0, 0, 200, 200], 100);
+  assert.strictEqual(subdivideTerrainCells(grid, []), grid);
+  const before = structuredClone(grid);
+  assert.throws(
+    () => subdivideTerrainCells(grid, [grid.cells[0]!.id, "missing"]),
+    /unknown terrain cell missing/,
+  );
+  assert.deepEqual(grid, before);
+});

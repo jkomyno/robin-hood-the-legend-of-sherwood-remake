@@ -176,10 +176,16 @@ carrying the affine matrix.
 
 ## Terrain and workspace
 
-The Draw panel provides a connected terrain grid. Click a vertex and drag vertically
-for elevation; Shift-drag moves it horizontally. Numeric X/Y/Z inputs remain available.
-Select a ground cell to subdivide it or override its walkability. Shared edges remain
-connected as the grid is refined. Material selection is available at vertices, with
+Draw has separate **Terrain** and **Paths** subtabs. Finish or cancel a path before
+switching to Terrain. Terrain highlights the vertices a drag will move on hover:
+a vertex, both endpoints of an edge, or all corners of a cell. Shift-click toggles
+selection; right-drag selects vertices inside a screen rectangle (Shift adds them).
+Dragging a selected target moves the entire selection, preserving relative heights.
+Ordinary dragging changes elevation; Alt-drag moves horizontally. Numeric X/Y/Z
+inputs edit one vertex or translate a selection by its center. Escape cancels a drag.
+Select ground cells to subdivide them or override their walkability. Subdivision
+only refines selected cells and shared-edge neighbors needed to keep the grid
+connected; untouched cells retain their topology. Material selection is available at vertices, with
 smooth blends across triangles; applying a material to a cell updates its corners.
 The searchable material picker includes 52 presets and custom name/color materials.
 

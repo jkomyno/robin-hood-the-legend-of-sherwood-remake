@@ -85,17 +85,28 @@ async function set(label: string, value: string) {
   await pause();
 }
 type Internals = {
-  terrainControls: { root: THREE.Group; mode: { selectVertex?(id: string): void } };
-  terrainSelectionHandler?: (id: string) => void;
+  terrainControls: {
+    root: THREE.Group;
+    mode: {
+      selectedVertices?: string[];
+      selectedCells?: string[];
+      selectVertices?(ids: string[]): void;
+      selectCells?(ids: string[]): void;
+    };
+  };
   activeCamera(): THREE.Camera;
   renderer: THREE.WebGLRenderer;
 };
 const internals = viewport as unknown as Internals;
 function selectVertex(index: number) {
-  internals.terrainControls.mode.selectVertex?.(current.terrain!.vertices[index]!.id);
+  internals.terrainControls.mode.selectCells?.([]);
+  internals.terrainControls.mode.selectVertices?.([current.terrain!.vertices[index]!.id]);
 }
 function selectCell(index: number) {
-  internals.terrainSelectionHandler?.(current.terrain!.cells[index]!.id);
+  internals.terrainControls.mode.selectVertices?.(
+    current.terrain!.cells[index]!.vertices.map((i) => current.terrain!.vertices[i]!.id),
+  );
+  internals.terrainControls.mode.selectCells?.([current.terrain!.cells[index]!.id]);
 }
 async function activate() {
   await pause();
@@ -151,7 +162,14 @@ async function run() {
 }
 Object.assign(window, {
   terrainTest: {
-    state: () => ({ document: current, commits, errors }),
+    state: () => ({
+      document: current,
+      commits,
+      errors,
+      selected: internals.terrainControls.mode.selectedVertices,
+      cells: internals.terrainControls.mode.selectedCells,
+      hover: internals.terrainControls.root.userData.terrainHoverVertices,
+    }),
     point: (index: number) => {
       const position = current.terrain!.vertices[index]!.position;
       const p = new THREE.Vector3(...gameToScene(current.camera, ...position));
@@ -163,6 +181,10 @@ Object.assign(window, {
     selectVertex,
     selectCell,
     frame: () => viewport.frameContent(true),
+    top: () => {
+      viewport.topView();
+      viewport.setCardinalView("N");
+    },
   },
 });
 async function prepareControls() {

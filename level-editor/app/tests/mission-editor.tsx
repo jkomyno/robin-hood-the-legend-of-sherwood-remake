@@ -1,6 +1,12 @@
 import { render } from "@solidjs/web";
 import { createSignal } from "solid-js";
-import { parseStoredMap, serializeStoredMap, createTerrainGrid, type Level3D, type ProtoLevel } from "@rle/shared";
+import {
+  parseStoredMap,
+  serializeStoredMap,
+  createTerrainGrid,
+  type Level3D,
+  type ProtoLevel,
+} from "@rle/shared";
 import * as THREE from "three";
 import MissionPanel from "../src/MissionPanel.tsx";
 import { EditorViewport } from "../src/editor-viewport.ts";

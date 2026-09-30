@@ -1990,3 +1990,9 @@ cutouts aligned with terrain instead of rounding each piece separately.
   The shared catalog includes 52 terrain/path/water designs and custom name/color
   materials. Wychford now has editable terrain, road paths and material areas;
   its conversion preserves placements and provides a reproducible height audit.
+
+- **Terrain selection tools.** Draw separates Terrain and Paths modes. Terrain
+  supports Shift-click multi-selection, right-drag rectangle selection, edge and
+  cell dragging, and hover previews of every affected vertex. Group moves preserve
+  relative offsets; Alt-drag moves horizontally and ordinary dragging changes
+  elevation. Local subdivision leaves unrelated cells unchanged.

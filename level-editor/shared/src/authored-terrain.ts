@@ -319,7 +319,6 @@ export function terrainHeightAt(
   }
   return undefined;
 }
-/** Refine selected cells and split their neighbors at shared edges without moving the surface. */
 export function terrainVertexMaterialMix(
   grid: TerrainGrid,
   vertex: TerrainVertex,
@@ -337,9 +336,14 @@ export function mixTerrainMaterials(
   for (const [id, w] of Object.entries(b)) result[id] = (result[id] ?? 0) + w * fraction;
   return result;
 }
+/** Refine selected cells and shared edges while retaining unrelated cells unchanged. */
 export function subdivideTerrainCells(grid: TerrainGrid, selected: Iterable<string>): TerrainGrid {
-  const wanted = new Set(selected),
-    vertices = grid.vertices.map((v) => ({ ...v, position: [...v.position] as Vec3 })),
+  const wanted = new Set(selected);
+  if (!wanted.size) return grid;
+  const known = new Set(grid.cells.map((cell) => cell.id));
+  for (const id of wanted)
+    if (!known.has(id)) throw new Error(`Cannot subdivide unknown terrain cell ${id}`);
+  const vertices = [...grid.vertices],
     midpoints = new Map<string, number>();
   const key = (a: number, b: number) => (a < b ? `${a}/${b}` : `${b}/${a}`);
   const midpoint = (a: number, b: number) => {
@@ -368,31 +372,48 @@ export function subdivideTerrainCells(grid: TerrainGrid, selected: Iterable<stri
   for (const t of tris)
     if (wanted.has(t.cell.id))
       for (let i = 0; i < 3; i++) midpoint(t.indices[i]!, t.indices[(i + 1) % 3]!);
-  const cells: TerrainCell[] = [];
+  const affected = new Set(wanted);
+  const byCell = new Map<string, TerrainTriangle[]>();
   for (const t of tris) {
-    let pieces: number[][] = [t.indices];
-    for (let e = 0; e < 3; e++) {
-      const a = t.indices[e]!,
-        b = t.indices[(e + 1) % 3]!,
-        m = midpoints.get(key(a, b));
-      if (m === undefined) continue;
-      pieces = pieces.flatMap((p) => {
-        const j = p.findIndex(
-          (v, i) => (v === a && p[(i + 1) % 3] === b) || (v === b && p[(i + 1) % 3] === a),
-        );
-        if (j < 0) return [p];
-        const u = p[j]!,
-          v = p[(j + 1) % 3]!,
-          w = p[(j + 2) % 3]!;
-        return [
-          [u, m, w],
-          [m, v, w],
-        ];
-      });
+    const members = byCell.get(t.cell.id) ?? [];
+    members.push(t);
+    byCell.set(t.cell.id, members);
+    if (t.indices.some((a, i) => midpoints.has(key(a, t.indices[(i + 1) % 3]!))))
+      affected.add(t.cell.id);
+  }
+  const cells: TerrainCell[] = [];
+  for (const cell of grid.cells) {
+    if (!affected.has(cell.id)) {
+      cells.push(cell);
+      continue;
     }
-    pieces.forEach((p, i) =>
-      cells.push({ ...t.cell, id: `${t.id}/${i}`, vertices: p, diagonal: undefined }),
-    );
+    // Preserve the existing triangle planes only where new shared-edge vertices
+    // require refinement. Unrelated polygons keep their identity and topology.
+    for (const t of byCell.get(cell.id)!) {
+      let pieces: number[][] = [t.indices];
+      for (let e = 0; e < 3; e++) {
+        const a = t.indices[e]!,
+          b = t.indices[(e + 1) % 3]!,
+          m = midpoints.get(key(a, b));
+        if (m === undefined) continue;
+        pieces = pieces.flatMap((p) => {
+          const j = p.findIndex(
+            (v, i) => (v === a && p[(i + 1) % 3] === b) || (v === b && p[(i + 1) % 3] === a),
+          );
+          if (j < 0) return [p];
+          const u = p[j]!,
+            v = p[(j + 1) % 3]!,
+            w = p[(j + 2) % 3]!;
+          return [
+            [u, m, w],
+            [m, v, w],
+          ];
+        });
+      }
+      pieces.forEach((p, i) =>
+        cells.push({ ...t.cell, id: `${t.id}/${i}`, vertices: p, diagonal: undefined }),
+      );
+    }
   }
   const result = { ...grid, vertices, cells };
   validateTerrainGrid(result);

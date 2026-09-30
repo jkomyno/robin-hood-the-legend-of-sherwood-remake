@@ -1035,3 +1035,15 @@ select, input.search { background: #171c22; border-color: var(--border); min-hei
   min-width: 30px;
   padding: 5px 8px;
 }
+
+.draw-subtabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #3a4552;
+}
+.draw-subtabs button { flex: 1; }
+.draw-subtabs button[aria-selected="true"] {
+  background: #315b67;
+  border-color: #5d99a9;
+}

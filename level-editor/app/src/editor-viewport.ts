@@ -923,6 +923,21 @@ export class EditorViewport {
         };
       },
       this.listeners.signal,
+      (point) => {
+        const projected = point.clone().project(this.activeCamera());
+        if (
+          !Number.isFinite(projected.x) ||
+          !Number.isFinite(projected.y) ||
+          projected.z < -1 ||
+          projected.z > 1
+        )
+          return null;
+        const rect = this.renderer!.domElement.getBoundingClientRect();
+        return {
+          x: rect.left + ((projected.x + 1) * rect.width) / 2,
+          y: rect.top + ((1 - projected.y) * rect.height) / 2,
+        };
+      },
     );
     this.setupMissionInteraction(this.renderer.domElement);
     this.setupCursorOrbit(this.renderer.domElement);

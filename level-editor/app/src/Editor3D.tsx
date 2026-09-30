@@ -90,6 +90,7 @@ export default function Editor3D(props: EditorProps) {
   const [creatingMap, setCreatingMap] = createSignal(false);
   const [newMapError, setNewMapError] = createSignal("");
   const [panel, setPanel] = createSignal("Selection");
+  const [drawMode, setDrawMode] = createSignal<"Terrain" | "Paths">("Terrain");
   const [libraryOpen, setLibraryOpen] = createSignal(true);
   const [libraryWidth, setLibraryWidth] = createSignal(284);
   let libraryResize: { x: number; width: number } | undefined;
@@ -1685,28 +1686,59 @@ export default function Editor3D(props: EditorProps) {
             />
           </div>
           <div class="inspector-content" hidden={panel() !== "Draw"}>
-            <p class="panel-intro">
-              Shape the ground grid, then draw walls, rivers and paths. Finish or cancel a path
-              before switching tools.
-            </p>
-            <TerrainPanel
-              viewport={viewport}
-              active={panel() === "Draw"}
-              document={doc}
-              commit={commitTerrain}
-              onError={props.onError}
-              disabled={editingPath()}
-            />
-            <SplinePanel
-              document={doc}
-              library={() => props.library()?.handle ?? null}
-              entries={assetEntries}
-              viewport={viewport}
-              commit={commitTerrain}
-              onError={props.onError}
-              active={panel() === "Draw"}
-              onEditingChange={setEditingPath}
-            />
+            <nav class="draw-subtabs" role="tablist" aria-label="Draw mode">
+              <For each={["Terrain", "Paths"] as const}>
+                {(mode) => (
+                  <button
+                    role="tab"
+                    id={`draw-tab-${mode.toLowerCase()}`}
+                    aria-controls={`draw-panel-${mode.toLowerCase()}`}
+                    aria-selected={drawMode() === mode ? "true" : "false"}
+                    disabled={editingPath() && mode === "Terrain"}
+                    title={
+                      editingPath() && mode === "Terrain"
+                        ? "Finish or cancel the path first"
+                        : undefined
+                    }
+                    onClick={() => setDrawMode(mode)}
+                  >
+                    {mode}
+                  </button>
+                )}
+              </For>
+            </nav>
+            <div
+              role="tabpanel"
+              id="draw-panel-terrain"
+              aria-labelledby="draw-tab-terrain"
+              hidden={drawMode() !== "Terrain"}
+            >
+              <TerrainPanel
+                viewport={viewport}
+                active={panel() === "Draw" && drawMode() === "Terrain"}
+                document={doc}
+                commit={commitTerrain}
+                onError={props.onError}
+                disabled={editingPath()}
+              />
+            </div>
+            <div
+              role="tabpanel"
+              id="draw-panel-paths"
+              aria-labelledby="draw-tab-paths"
+              hidden={drawMode() !== "Paths"}
+            >
+              <SplinePanel
+                document={doc}
+                library={() => props.library()?.handle ?? null}
+                entries={assetEntries}
+                viewport={viewport}
+                commit={commitTerrain}
+                onError={props.onError}
+                active={panel() === "Draw" && drawMode() === "Paths"}
+                onEditingChange={setEditingPath}
+              />
+            </div>
           </div>
           <div class="inspector-content" hidden={panel() !== "View"}>
             <section class="view-settings">

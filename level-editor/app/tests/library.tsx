@@ -603,6 +603,24 @@ export async function checkSharedLibrary() {
       () => !(document.querySelector(".library-content") as HTMLElement).checkVisibility(),
     );
     click("Draw");
+    await until(() =>
+      (document.querySelector(".terrain-settings") as HTMLElement).checkVisibility(),
+    );
+    assert(
+      !(document.querySelector(".spline-panel") as HTMLElement).checkVisibility(),
+      "Paths visible in Terrain mode",
+    );
+    click("Paths");
+    await until(() => (document.querySelector(".spline-panel") as HTMLElement).checkVisibility());
+    assert(
+      !(document.querySelector(".terrain-settings") as HTMLElement).checkVisibility(),
+      "Terrain visible in Paths mode",
+    );
+    click("Terrain");
+    await until(() =>
+      (document.querySelector(".terrain-settings") as HTMLElement).checkVisibility(),
+    );
+    click("Paths");
     await until(() => (document.querySelector(".spline-panel") as HTMLElement).checkVisibility());
     click("River");
     await until(() => !!document.querySelector('input[aria-label="Path name"]'));

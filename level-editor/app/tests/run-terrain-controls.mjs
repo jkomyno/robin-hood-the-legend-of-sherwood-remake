@@ -43,22 +43,22 @@ function command(method, params = {}) {
   });
 }
 const evalJS = (source) => evaluate(socket, ++id, source, { timeoutMs: 10000 });
-async function mouse(type, p, modifiers = 0) {
+async function mouse(type, p, modifiers = 0, button = "left") {
   await command("Input.dispatchMouseEvent", {
     type,
     x: p.x,
     y: p.y,
-    button: "left",
-    buttons: type === "mouseReleased" ? 0 : 1,
+    button,
+    buttons: type === "mouseReleased" ? 0 : button === "right" ? 2 : 1,
     clickCount: 1,
     modifiers,
   });
   await sleep();
 }
-async function drag(from, to, cancel = false, modifiers = 0) {
-  await mouse("mouseMoved", from, modifiers);
-  await mouse("mousePressed", from, modifiers);
-  await mouse("mouseMoved", to, modifiers);
+async function drag(from, to, cancel = false, modifiers = 0, button = "left") {
+  await mouse("mouseMoved", from, modifiers, button);
+  await mouse("mousePressed", from, modifiers, button);
+  await mouse("mouseMoved", to, modifiers, button);
   if (cancel)
     await command("Input.dispatchKeyEvent", {
       type: "keyDown",
@@ -66,7 +66,7 @@ async function drag(from, to, cancel = false, modifiers = 0) {
       code: "Escape",
       windowsVirtualKeyCode: 27,
     });
-  await mouse("mouseReleased", to);
+  await mouse("mouseReleased", to, modifiers, button);
   await sleep();
 }
 try {
@@ -106,7 +106,7 @@ try {
   assert.equal(after.commits, before.commits);
   assert.deepEqual(after.document, before.document);
   vertex = await evalJS("terrainTest.point(9)");
-  await drag(vertex, { x: vertex.x + 15, y: vertex.y + 10 }, false, 8);
+  await drag(vertex, { x: vertex.x + 15, y: vertex.y + 10 }, false, 1);
   after = await evalJS("terrainTest.state()");
   assert.equal(after.commits, before.commits + 1);
   assert.notDeepEqual(
@@ -133,6 +133,149 @@ try {
   after = await evalJS("terrainTest.state()");
   assert.equal(after.commits, before.commits);
   assert.deepEqual(after.document, before.document);
+  // Shift-click changes only selection, then dragging either selected vertex moves both.
+  await evalJS("terrainTest.selectVertex(9)");
+  const added = await evalJS("terrainTest.point(10)");
+  await mouse("mousePressed", added, 8);
+  await mouse("mouseReleased", added, 8);
+  after = await evalJS("terrainTest.state()");
+  const ids = [9, 10].map((i) => after.document.terrain.vertices[i].id);
+  assert.deepEqual(
+    [...after.selected].sort((a, b) => a.localeCompare(b)),
+    [...ids].sort((a, b) => a.localeCompare(b)),
+  );
+  assert.equal(after.commits, before.commits);
+  vertex = await evalJS("terrainTest.point(9)");
+  await mouse("mouseMoved", vertex);
+  assert.deepEqual(
+    (await evalJS("terrainTest.state().hover")).sort((a, b) => a.localeCompare(b)),
+    [...ids].sort((a, b) => a.localeCompare(b)),
+  );
+  before = after;
+  await drag(vertex, { x: vertex.x, y: vertex.y - 18 });
+  after = await evalJS("terrainTest.state()");
+  const delta =
+    after.document.terrain.vertices[9].position[2] -
+    before.document.terrain.vertices[9].position[2];
+  assert.ok(delta > 0);
+  assert.ok(
+    Math.abs(
+      after.document.terrain.vertices[10].position[2] -
+        before.document.terrain.vertices[10].position[2] -
+        delta,
+    ) < 1e-8,
+  );
+  assert.equal(after.commits, before.commits + 1);
+  assert.deepEqual(after.document.terrain.vertices[11], before.document.terrain.vertices[11]);
+  // Removing a member is a click, not a geometry edit.
+  const removed = await evalJS("terrainTest.point(10)");
+  await mouse("mousePressed", removed, 8);
+  await mouse("mouseReleased", removed, 8);
+  assert.deepEqual((await evalJS("terrainTest.state()")).selected, [ids[0]]);
+  // Edge hit: two endpoints, with no cell interior involved.
+  const endpoints = await evalJS("[terrainTest.point(11), terrainTest.point(12)]");
+  const edge = {
+    x: (endpoints[0].x + endpoints[1].x) / 2,
+    y: (endpoints[0].y + endpoints[1].y) / 2,
+  };
+  const edgeIds = [11, 12].map((i) => after.document.terrain.vertices[i].id);
+  await mouse("mouseMoved", edge);
+  assert.deepEqual(
+    (await evalJS("terrainTest.state().hover")).sort((a, b) => a.localeCompare(b)),
+    [...edgeIds].sort((a, b) => a.localeCompare(b)),
+  );
+  before = await evalJS("terrainTest.state()");
+  await drag(edge, { x: edge.x, y: edge.y - 16 });
+  after = await evalJS("terrainTest.state()");
+  assert.deepEqual(
+    [...after.selected].sort((a, b) => a.localeCompare(b)),
+    [...edgeIds].sort((a, b) => a.localeCompare(b)),
+  );
+  for (const i of [11, 12])
+    assert.ok(
+      after.document.terrain.vertices[i].position[2] >
+        before.document.terrain.vertices[i].position[2],
+    );
+  assert.equal(after.commits, before.commits + 1);
+  // Cell center hit: the complete perimeter, not the rendering triangle beneath it.
+  const cell = after.document.terrain.cells[10];
+  const corners = await evalJS(`(${JSON.stringify(cell.vertices)}).map(i => terrainTest.point(i))`);
+  const area = {
+    x: corners.reduce((a, p) => a + p.x, 0) / corners.length,
+    y: corners.reduce((a, p) => a + p.y, 0) / corners.length,
+  };
+  const cornerIds = cell.vertices.map((i) => after.document.terrain.vertices[i].id);
+  await mouse("mouseMoved", area);
+  assert.deepEqual(
+    (await evalJS("terrainTest.state().hover")).sort((a, b) => a.localeCompare(b)),
+    [...cornerIds].sort((a, b) => a.localeCompare(b)),
+  );
+  before = after;
+  await drag(area, { x: area.x, y: area.y - 16 });
+  after = await evalJS("terrainTest.state()");
+  assert.deepEqual(
+    [...after.selected].sort((a, b) => a.localeCompare(b)),
+    [...cornerIds].sort((a, b) => a.localeCompare(b)),
+  );
+  assert.deepEqual(after.cells, [cell.id]);
+  assert.equal(after.commits, before.commits + 1);
+  const areaDelta =
+    after.document.terrain.vertices[cell.vertices[0]].position[2] -
+    before.document.terrain.vertices[cell.vertices[0]].position[2];
+  for (const i of cell.vertices)
+    assert.ok(
+      Math.abs(
+        after.document.terrain.vertices[i].position[2] -
+          before.document.terrain.vertices[i].position[2] -
+          areaDelta,
+      ) < 1e-8,
+    );
+  // Marquee uses projected CSS pixels, and right drag does not rotate the camera.
+  await evalJS("terrainTest.top()");
+  await sleep();
+  const screenPoints = await evalJS(
+    "terrainTest.state().document.terrain.vertices.map((_,i)=>terrainTest.point(i))",
+  );
+  const boxPoints = [screenPoints[9], screenPoints[10]];
+  const start = {
+    x: Math.min(...boxPoints.map((p) => p.x)) - 5,
+    y: Math.min(...boxPoints.map((p) => p.y)) - 5,
+  };
+  const end = {
+    x: Math.max(...boxPoints.map((p) => p.x)) + 5,
+    y: Math.max(...boxPoints.map((p) => p.y)) + 5,
+  };
+  const expected = screenPoints.flatMap((p, i) =>
+    p.x >= start.x && p.x <= end.x && p.y >= start.y && p.y <= end.y
+      ? [after.document.terrain.vertices[i].id]
+      : [],
+  );
+  assert.ok(expected.length >= 2);
+  before = after;
+  await drag(start, end, false, 0, "right");
+  after = await evalJS("terrainTest.state()");
+  assert.deepEqual(
+    [...after.selected].sort((a, b) => a.localeCompare(b)),
+    expected.sort((a, b) => a.localeCompare(b)),
+  );
+  assert.equal(after.commits, before.commits);
+  assert.deepEqual(await evalJS("terrainTest.point(9)"), screenPoints[9]);
+  const extra = screenPoints[26];
+  await drag(
+    { x: extra.x - 4, y: extra.y - 4 },
+    { x: extra.x + 4, y: extra.y + 4 },
+    false,
+    8,
+    "right",
+  );
+  after = await evalJS("terrainTest.state()");
+  assert.deepEqual(
+    [...after.selected].sort((a, b) => a.localeCompare(b)),
+    [...new Set([...expected, after.document.terrain.vertices[26].id])].sort((a, b) =>
+      a.localeCompare(b),
+    ),
+  );
+  before = after;
   await evalJS("terrainTest.selectCell(0)");
   await sleep();
   await evalJS(
@@ -152,7 +295,7 @@ try {
     );
   }
   console.log(
-    "PASS real pointer vertex elevation, Shift horizontal movement, one commit per drag, Escape cancellation, number scrubbing and cell subdivision",
+    "PASS real pointer vertex elevation, Alt horizontal movement, one commit per drag, Escape cancellation, number scrubbing, Shift selection, hover, edges/cells, right-drag marquee and local subdivision",
   );
 } catch (error) {
   console.error(error);
