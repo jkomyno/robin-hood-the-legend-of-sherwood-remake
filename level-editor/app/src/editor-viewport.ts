@@ -253,6 +253,8 @@ export class EditorViewport {
   private spriteOrientationLock = true;
   private readonly projectionBounds = new THREE.Sphere(new THREE.Vector3(), 10000);
   private readonly framingBounds = new THREE.Box3();
+  private readonly clippingBounds = new THREE.Box3();
+  private clippingBoundsDirty = true;
   private framingPoints: THREE.Vector3[] = [];
   private framingKey = "";
   private framingDistance = 0;
@@ -269,7 +271,11 @@ export class EditorViewport {
   }
   /** Face a compass direction while retaining the current working location and scale. */
   setCardinalView(direction: "N" | "E" | "S" | "W") {
-    this.orientCamera({ N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 }[direction]);
+    this.orientCamera(
+      { N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 }[direction],
+      false,
+      true,
+    );
   }
   rotateViewQuarterTurn(turns = 1) {
     this.orientCamera(this.cameraAzimuth() + (turns * Math.PI) / 2);
@@ -283,7 +289,7 @@ export class EditorViewport {
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion);
     return Math.atan2(-right.z, right.x);
   }
-  private orientCamera(azimuth: number, top = false) {
+  private orientCamera(azimuth: number, top = false, animate = false) {
     if (!this.camera || !this.orbit || !Number.isFinite(azimuth)) return;
     this.flight = null;
     const damping = this.orbit.enableDamping;
@@ -296,9 +302,17 @@ export class EditorViewport {
     const polar = top
       ? 1e-6
       : Math.max(1e-6, Math.acos(THREE.MathUtils.clamp(offset.y / radius, -1, 1)));
-    this.camera.position
-      .copy(this.orbit.target)
+    const position = this.orbit.target
+      .clone()
       .add(new THREE.Vector3().setFromSphericalCoords(radius, polar, azimuth));
+    if (animate) {
+      const destination = this.lookState(position, this.orbit.target, this.frustum);
+      destination.zoom = this.camera.zoom;
+      this.orbit.enableDamping = damping;
+      this.flyTo(destination);
+      return;
+    }
+    this.camera.position.copy(position);
     this.camera.up.set(0, 1, 0);
     this.camera.lookAt(this.orbit.target);
     this.orbit.enabled = true;
@@ -331,13 +345,20 @@ export class EditorViewport {
     if (this.entities) this.entities.root.visible = visible;
   }
   private updateDepthRange(camera: THREE.OrthographicCamera | THREE.PerspectiveCamera) {
+    if (this.clippingBoundsDirty) {
+      this.clippingBounds.copy(this.contentBox());
+      this.clippingBoundsDirty = false;
+    }
+    // Lens framing intentionally stays stable while editing. Clipping must follow
+    // the live geometry, including previews and content retained outside bounds.
+    const bounds = this.clippingBounds.isEmpty() ? this.framingBounds : this.clippingBounds;
     const forward = camera.getWorldDirection(new THREE.Vector3());
     let nearest = Infinity;
     let farthest = -Infinity;
-    if (!this.framingBounds.isEmpty()) {
-      for (const x of [this.framingBounds.min.x, this.framingBounds.max.x])
-        for (const y of [this.framingBounds.min.y, this.framingBounds.max.y])
-          for (const z of [this.framingBounds.min.z, this.framingBounds.max.z]) {
+    if (!bounds.isEmpty()) {
+      for (const x of [bounds.min.x, bounds.max.x])
+        for (const y of [bounds.min.y, bounds.max.y])
+          for (const z of [bounds.min.z, bounds.max.z]) {
             const depth = new THREE.Vector3(x, y, z).sub(camera.position).dot(forward);
             nearest = Math.min(nearest, depth);
             farthest = Math.max(farthest, depth);
@@ -838,6 +859,8 @@ export class EditorViewport {
     this.externalAssetHashes.clear();
     this.framingPoints = [];
     this.framingBounds.makeEmpty();
+    this.clippingBounds.makeEmpty();
+    this.clippingBoundsDirty = true;
     this.framingKey = "";
   }
   dispose() {
@@ -1452,6 +1475,9 @@ export class EditorViewport {
   }
 
   private contentBox(): THREE.Box3 {
+    // The map's Z-up asset frame is rotated into the viewport's Y-up frame.
+    // Box3 updates descendants, but needs the ancestor transform refreshed first.
+    this.mapRoot.updateWorldMatrix(true, true);
     const box = new THREE.Box3();
     if (this.groundNode) box.expandByObject(this.groundNode);
     box.expandByObject(this.objectsRoot);
@@ -1521,6 +1547,7 @@ export class EditorViewport {
   }
 
   private setAffine(v: View, m: number[]) {
+    this.clippingBoundsDirty = true;
     v.wrapper.position.set(m[12]!, m[13]!, m[14]);
     const rest = new THREE.Matrix4().fromArray(m);
     rest.setPosition(0, 0, 0);
@@ -1552,6 +1579,7 @@ export class EditorViewport {
   }
 
   syncViews(d: Level3D, rebuildFraming = true) {
+    this.clippingBoundsDirty = true;
     this.missionMarkers.sync(d, this.missionEdit?.selected);
     this.terrain.sync(d);
     this.workspaceFrame.visible = !!d.size;
@@ -1736,6 +1764,7 @@ export class EditorViewport {
   private updateSplinePreview(update: () => void) {
     try {
       update();
+      this.clippingBoundsDirty = true;
       this.splinePreviewError = null;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1991,6 +2020,7 @@ export class EditorViewport {
   }
 
   private refreshSelectionBox(v = this.selectedView()) {
+    this.clippingBoundsDirty = true;
     this.syncGizmoFrame(v);
     if (!v) {
       this.selectionBox.visible = false;

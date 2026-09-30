@@ -159,6 +159,7 @@ function bakePixels() {
   return renderMapBake(root, cameraModel, bounds);
 }
 async function run() {
+  await new Promise((resolve) => setTimeout(resolve, 800));
   const visible = await capture("visible");
   const baseline = bakePixels();
   const thumbnail = viewport.captureThumbnail().toDataURL();

@@ -1317,9 +1317,6 @@ export default function Editor3D(props: EditorProps) {
         </Show>
         <span class="spacer" />
         <Show when={doc()}>
-          <button disabled={!doc()} onClick={() => viewport.gameCamera()} title="g">
-            Reset view
-          </button>
           <button disabled={history().past.length === 0} onClick={undo} title="ctrl+z">
             Undo
           </button>
@@ -1553,6 +1550,9 @@ export default function Editor3D(props: EditorProps) {
         >
           <Show when={doc()}>
             <div class="viewport-navigation" aria-label="Quick camera controls">
+              <button onClick={() => viewport.gameCamera()} title="Game camera (g)">
+                Game camera
+              </button>
               <For each={["N", "E", "S", "W"] as const}>
                 {(direction) => (
                   <button
@@ -1744,6 +1744,9 @@ export default function Editor3D(props: EditorProps) {
             <section class="view-settings">
               <h2>Camera &amp; display</h2>
               <div class="camera-directions" aria-label="Camera direction">
+                <button onClick={() => viewport.gameCamera()} title="Game camera (g)">
+                  Game camera
+                </button>
                 <For each={["N", "E", "S", "W"] as const}>
                   {(direction) => (
                     <button onClick={() => viewport.setCardinalView(direction)}>{direction}</button>

@@ -1996,3 +1996,7 @@ cutouts aligned with terrain instead of rounding each piece separately.
   cell dragging, and hover previews of every affected vertex. Group moves preserve
   relative offsets; Alt-drag moves horizontally and ordinary dragging changes
   elevation. Local subdivision leaves unrelated cells unchanged.
+
+- Cardinal camera buttons use the same smooth transition as the Game camera control,
+  which now sits beside them in the viewport navigation bar. Camera clipping follows
+  current terrain and assets after resizing, edits and previews without refitting the lens.
