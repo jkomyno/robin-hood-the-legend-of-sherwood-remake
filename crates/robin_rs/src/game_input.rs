@@ -1743,7 +1743,10 @@ fn determine_use_command(
         }
     }
 
-    if is_dead {
+    // Dead or unconscious money-bearing NPC: Search before the
+    // wake/carry/tie fallbacks, matching the Use focus and SEARCH cursor.
+    // An empty body falls through to the carry arm instead.
+    if engine.pc_can_search_npc_body(assets, pc_id, entity) {
         return Some(Command::SearchCmd);
     }
     if !is_dead && !is_unconscious && posture == Posture::Lying {

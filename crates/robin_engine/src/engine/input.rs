@@ -496,6 +496,39 @@ impl EngineInner {
             .is_some_and(|cp| cp.can_carry())
     }
 
+    /// Whether a Use click by `pc_id` on `entity` loots a dead or
+    /// unconscious NPC's carried money: nonzero money, not stuck under a
+    /// net or carried, a Search-capable selector, and VIP bodies only for
+    /// Robin. Mirrors the out-of-order Search arm of `Focus::Use` and the
+    /// SEARCH cursor so both command selectors dispatch what they show.
+    pub fn pc_can_search_npc_body(
+        &self,
+        assets: &LevelAssets,
+        pc_id: EntityId,
+        entity: &Entity,
+    ) -> bool {
+        let Some(npc) = entity.npc_data() else {
+            return false;
+        };
+        let Some(human) = entity.human_data() else {
+            return false;
+        };
+        npc.money != 0
+            && (entity.is_dead() || human.unconscious)
+            && human.stuck_under_nets_counter == 0
+            && entity.element_data().posture() != crate::element::Posture::Carried
+            && self.selected_pc_has_contextual_action(
+                assets,
+                Some(pc_id),
+                crate::profiles::Action::Search,
+            )
+            && (!self.is_entity_vip(assets, entity)
+                || self
+                    .get_entity(pc_id)
+                    .and_then(Entity::pc_data)
+                    .is_some_and(|pc| pc.robin))
+    }
+
     /// Check whether an entity is focusable for the given focus type at
     /// the given map position.
     ///
