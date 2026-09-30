@@ -1012,7 +1012,15 @@ test("cardinal and top camera controls preserve target, zoom and lens through qu
   const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
   assert.ok(up.x > 0.999999, "east appears at the top in top view");
   assert.ok(camera.getWorldDirection(new THREE.Vector3()).y < -0.999999);
-  viewport.rotateViewQuarterTurn(4);
+  for (const turn of [1, -1]) {
+    const before = camera.quaternion.clone();
+    viewport.rotateViewQuarterTurn(turn);
+    assert.ok(camera.quaternion.angleTo(before) < 1e-7, "quarter-turn click does not snap");
+    assert.equal(flight.flight?.ms, 700);
+    flight.flight!.start = performance.now() - 701;
+    flight.stepFlight();
+    assert.ok(Math.abs(camera.quaternion.angleTo(before) - Math.PI / 2) < 1e-6);
+  }
   assert.ok(new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).distanceTo(up) < 1e-6);
   assert.deepEqual(orbit.target.toArray(), target.toArray());
   assert.equal(camera.zoom, 2.5);

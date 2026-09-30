@@ -163,7 +163,7 @@ drags likewise preview live and commit one undo step; Escape cancels the drag.
 | turn | `q` / `e` (15°), or type/drag the rotation input; Shift gives finer input dragging |
 | duplicate / delete | `d` / `Del` |
 | asset display | View → Visible / Outline / Hidden changes the viewport only; individual document hide checkboxes still exclude objects from export |
-| cardinal / top view | N/E/S/W smoothly transition while preserving the working target and scale; Top view and 90° turns are also available |
+| cardinal / top view | N/E/S/W and 90° turns smoothly transition while preserving the working target and scale; Top view is also available |
 | snap a floating part | parts tagged "float?" show the suggested Δ; the button shifts y and z by −Δ (same map pixels) |
 | undo / redo | `ctrl+z` / `ctrl+shift+z` |
 | save | `ctrl+s` |

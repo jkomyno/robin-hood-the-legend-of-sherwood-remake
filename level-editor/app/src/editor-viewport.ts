@@ -278,7 +278,7 @@ export class EditorViewport {
     );
   }
   rotateViewQuarterTurn(turns = 1) {
-    this.orientCamera(this.cameraAzimuth() + (turns * Math.PI) / 2);
+    this.orientCamera(this.cameraAzimuth() + (turns * Math.PI) / 2, false, true);
   }
   topView() {
     this.orientCamera(this.cameraAzimuth(), true);
