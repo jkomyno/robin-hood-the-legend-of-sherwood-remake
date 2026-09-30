@@ -3,6 +3,7 @@ import type { MapCamera } from "@rle/shared";
 import { MissionEntities } from "./mission.ts";
 import {
   DEFAULT_CHARACTER_DIRECTION,
+  CHARACTER_DRAG_TYPE,
   type MissionCharacterProfile,
 } from "./mission-character-catalog.ts";
 
@@ -91,18 +92,25 @@ function CharacterChoice(props: {
   root: FileSystemDirectoryHandle;
   camera: MapCamera;
   profile: MissionCharacterProfile;
-  selected: boolean;
-  choose(): void;
 }) {
   const [ready, setReady] = createSignal(false);
   return (
-    <button
-      type="button"
+    <article
       class="asset-card"
-      aria-pressed={props.selected ? "true" : "false"}
-      disabled={!ready()}
+      draggable={ready() ? "true" : "false"}
+      aria-disabled={ready() ? "false" : "true"}
       data-character-profile={props.profile.profile}
-      onClick={() => props.choose()}
+      onDragStart={(event) => {
+        if (!ready() || !event.dataTransfer) {
+          event.preventDefault();
+          return;
+        }
+        event.dataTransfer.setData(
+          CHARACTER_DRAG_TYPE,
+          `${props.profile.kind}:${props.profile.profile}`,
+        );
+        event.dataTransfer.effectAllowed = "copy";
+      }}
     >
       <CharacterThumbnail
         root={props.root}
@@ -114,7 +122,7 @@ function CharacterChoice(props: {
         <strong>{props.profile.name}</strong>
         <small>{props.profile.filename}</small>
       </div>
-    </button>
+    </article>
   );
 }
 
@@ -122,8 +130,6 @@ export default function MissionCharacterChoices(props: {
   root: FileSystemDirectoryHandle;
   camera: MapCamera;
   profiles: MissionCharacterProfile[];
-  selected: number | string;
-  choose(profile: MissionCharacterProfile): void;
 }) {
   const [search, setSearch] = createSignal("");
   const filtered = () =>
@@ -148,13 +154,7 @@ export default function MissionCharacterChoices(props: {
       >
         <For each={filtered()}>
           {(profile) => (
-            <CharacterChoice
-              root={props.root}
-              camera={props.camera}
-              profile={profile}
-              selected={props.selected === profile.profile}
-              choose={() => props.choose(profile)}
-            />
+            <CharacterChoice root={props.root} camera={props.camera} profile={profile} />
           )}
         </For>
       </div>

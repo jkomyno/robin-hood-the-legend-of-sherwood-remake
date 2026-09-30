@@ -2,8 +2,10 @@
 
 - **Minimal editor missions.** The Mission tab adds player spawn points and NPC
   soldiers with placement, facing and profile controls. Its character palette
-  displays actual library sprites, uses canonical profile identities, and supports
-  choosing a character before placement or changing a selected character. Placed
+  displays actual library sprites and uses canonical profile identities. A PC/NPC
+  category dropdown filters the palette; dragging a character onto the map adds
+  it. A mission-element list below the palette selects existing placements, whose
+  character profile can be changed in the inspector. Placed
   characters show their directional sprites; numeric controls use the editor’s
   drag sliders. The character library includes every PC and soldier’s idle pose.
   Palette previews and new placements face down by default, and soldier labels

@@ -1,6 +1,7 @@
 import { readJson, subdir } from "./fs.ts";
 
 export const DEFAULT_CHARACTER_DIRECTION = 8;
+export const CHARACTER_DRAG_TYPE = "application/x-rle-mission-character";
 
 function englishSoldierName(name: string): string {
   const roles: Record<string, string> = {

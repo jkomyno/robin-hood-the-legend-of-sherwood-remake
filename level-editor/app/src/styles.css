@@ -672,6 +672,17 @@ input.num {
 .object-list li:hover {
   background: #2a2d33;
 }
+.object-list.mission-element-list li { padding: 0; }
+.mission-element-list li button {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 6px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+}
 .object-list li.selected {
   background: #3b4a6b;
 }

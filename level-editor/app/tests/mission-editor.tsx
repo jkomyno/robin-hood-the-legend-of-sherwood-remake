@@ -97,13 +97,11 @@ async function chooseProfile(profile: string) {
     () => !!document.querySelector(`[data-character-profile="${profile}"]`),
     "character catalog",
   );
-  const button = document.querySelector<HTMLButtonElement>(
-    `[data-character-profile="${profile}"]`,
-  )!;
+  const button = document.querySelector<HTMLElement>(`[data-character-profile="${profile}"]`)!;
   button.scrollIntoView({ block: "nearest" });
   try {
     await waitFor(
-      () => !button.disabled && !!button.querySelector("img")?.complete,
+      () => button.draggable && !!button.querySelector("img")?.complete,
       "character sprite thumbnail",
     );
   } catch (error) {
@@ -112,7 +110,42 @@ async function chooseProfile(profile: string) {
       { cause: error },
     );
   }
-  button.click();
+  return button;
+}
+async function dropCharacter(profile: string, offset = 0, cancelled = false) {
+  const card = await chooseProfile(profile);
+  const transfer = new DataTransfer();
+  const before = commits.length;
+  card.dispatchEvent(
+    new DragEvent("dragstart", { dataTransfer: transfer, bubbles: true, cancelable: true }),
+  );
+  check(commits.length === before, "Starting palette drag created a mission element");
+  const canvas = document.querySelector("canvas")!;
+  const rect = canvas.getBoundingClientRect();
+  const options = {
+    dataTransfer: transfer,
+    bubbles: true,
+    cancelable: true,
+    clientX: rect.left + rect.width / 2 + offset,
+    clientY: rect.top + rect.height / 2,
+  };
+  if (!cancelled) {
+    const over = new DragEvent("dragover", options);
+    canvas.dispatchEvent(over);
+    check(over.defaultPrevented, "Viewport did not accept character drag");
+    canvas.dispatchEvent(new DragEvent("drop", options));
+  }
+  card.dispatchEvent(new DragEvent("dragend", options));
+  await pause();
+  check(
+    commits.length === before + (cancelled ? 0 : 1),
+    "Drop did not create exactly one undo entry",
+  );
+}
+async function category(kind: string) {
+  const select = document.querySelector<HTMLSelectElement>('[aria-label="Character category"]')!;
+  select.value = kind;
+  select.dispatchEvent(new Event("change", { bubbles: true }));
   await pause();
 }
 async function run() {
@@ -125,10 +158,7 @@ async function run() {
   viewport.syncViews(current);
   viewport.frameContent(true);
   await pause();
-  await button("Add PC");
-  await chooseProfile("1");
-  check(!current.mission?.spawnPoints.length, "Choosing a PC created a placement before map click");
-  await mapClick();
+  await dropCharacter("1");
   check(current.mission?.spawnPoints.length === 1, "Map click did not create PC spawn");
   check(current.mission!.spawnPoints[0]!.direction === 8, "Default PC facing is not down");
   check(current.mission?.soldiers.length === 0, "PC created a soldier");
@@ -136,9 +166,8 @@ async function run() {
     current.mission!.spawnPoints[0]!.profile === 1,
     "PC sprite choice did not change canonical profile",
   );
-  await button("Add NPC");
-  await chooseProfile("soldier_a00");
-  await mapClick(40);
+  await category("npc");
+  await dropCharacter("soldier_a00", 100);
   check(current.mission?.soldiers.length === 1, "Map click did not create NPC soldier");
   check(current.mission!.soldiers[0]!.direction === 8, "Default NPC facing is not down");
   check(
@@ -157,20 +186,18 @@ async function run() {
     ),
     "Raw numeric input remains in Mission controls",
   );
-  const old = current.mission!.soldiers[0]!.position[0];
-  await button("Move on map");
-  await mapClick(100);
-  check(current.mission!.soldiers[0]!.position[0] !== old, "Move did not reposition soldier");
   await mapClick(0, -12);
   check(
-    document.querySelector<HTMLSelectElement>(".mission-settings select")?.value ===
-      current.mission!.spawnPoints[0]!.id,
+    document
+      .querySelector(`[data-mission-element="${current.mission!.spawnPoints[0]!.id}"] button`)
+      ?.getAttribute("aria-pressed") === "true",
     "Clicking PC sprite did not select its placement",
   );
   await mapClick(100, -12);
   check(
-    document.querySelector<HTMLSelectElement>(".mission-settings select")?.value ===
-      current.mission!.soldiers[0]!.id,
+    document
+      .querySelector(`[data-mission-element="${current.mission!.soldiers[0]!.id}"] button`)
+      ?.getAttribute("aria-pressed") === "true",
     "Clicking NPC sprite did not select its placement",
   );
   const beforeDrag = [...current.mission!.soldiers[0]!.position];
@@ -209,11 +236,29 @@ async function run() {
   await pause();
   check(JSON.stringify(current.mission) === afterDrag, "Cancelled drag changed mission");
   check(commits.length === beforeCommits + 1, "Cancelled drag created undo entry");
-  await button("Add PC");
-  window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+  check(
+    document.querySelectorAll("[data-mission-element]").length === 2,
+    "Mission list is incomplete",
+  );
+  const pcRow = document.querySelector<HTMLButtonElement>(
+    `[data-mission-element="${current.mission!.spawnPoints[0]!.id}"] button`,
+  )!;
+  pcRow.click();
   await pause();
+  check(pcRow.getAttribute("aria-pressed") === "true", "Mission list did not select PC");
+  document
+    .querySelector<HTMLButtonElement>(
+      `[data-mission-element="${current.mission!.soldiers[0]!.id}"] button`,
+    )!
+    .click();
+  await pause();
+  await category("pc");
+  await dropCharacter("1", 0, true);
   await mapClick(-30);
-  check(current.mission!.spawnPoints.length === 1, "Escape did not cancel placement");
+  check(
+    current.mission!.spawnPoints.length === 1,
+    "Cancelled palette drag or map click added a PC",
+  );
   const saved = serializeStoredMap(current, new Map());
   const reopened = parseStoredMap(JSON.parse(JSON.stringify(saved)), new Map());
   check(
@@ -299,7 +344,7 @@ async function run() {
   check(errors.length === 0, errors.join("\n"));
   viewport.dispose();
   document.querySelector("#result")!.textContent =
-    "PASS mission sprites, facing, drag/undo/cancel, cross-tab visibility, save/reopen, export and sprite-free map bake";
+    "PASS mission palette drops, category filter, element list, drag/undo/cancel, visibility, save/reopen and export";
 }
 void run().catch((error) => {
   document.querySelector("#result")!.textContent = "FAIL " + (error.stack ?? error);

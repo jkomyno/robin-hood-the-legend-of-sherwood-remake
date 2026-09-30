@@ -1,5 +1,6 @@
 import { TerrainControls, type TerrainEditMode } from "./terrain-controls.ts";
 import { MissionLayer } from "./mission-layer.ts";
+import { CHARACTER_DRAG_TYPE } from "./mission-character-catalog.ts";
 import { TerrainLayer } from "./terrain-layer.ts";
 import { stableOpaqueSort } from "./render-order.ts";
 import {
@@ -454,7 +455,7 @@ export class EditorViewport {
     preview(position: Vec3): void;
     move(position: Vec3): void;
     cancel(): void;
-    place?: (position: Vec3) => void;
+    add(key: string, position: Vec3): void;
   } | null = null;
 
   setMissionEdit(mode: typeof this.missionEdit) {
@@ -928,21 +929,9 @@ export class EditorViewport {
         downAt = null;
         if (moved > 4 || this.dragging) return;
         if (this.missionEdit) {
-          const groundPosition = this.assetDropPosition(e.clientX, e.clientY);
-          const surface = this.raycaster
-            .intersectObject(this.objectsRoot, true)
-            .find(visibleSurface);
-          const document = this.bindings.document();
-          const position =
-            surface && document
-              ? sceneToGame(document.camera, [surface.point.x, -surface.point.z, surface.point.y])
-              : groundPosition;
-          if (this.missionEdit.place) {
-            if (position) this.missionEdit.place(position);
-          } else {
-            const id = this.missionMarkers.hit(this.raycaster);
-            if (id) this.missionEdit.select(id);
-          }
+          this.assetDropPosition(e.clientX, e.clientY);
+          const id = this.missionMarkers.hit(this.raycaster);
+          if (id) this.missionEdit.select(id);
           return;
         }
         if (!this.splineMode) this.pick(e, e.altKey);
@@ -1038,6 +1027,34 @@ export class EditorViewport {
   }
 
   private setupMissionInteraction(el: HTMLCanvasElement) {
+    el.addEventListener(
+      "dragover",
+      (event) => {
+        if (!this.missionEdit || !event.dataTransfer?.types.includes(CHARACTER_DRAG_TYPE)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = "copy";
+      },
+      { signal: this.listeners.signal },
+    );
+    el.addEventListener(
+      "drop",
+      (event) => {
+        if (!this.missionEdit || !event.dataTransfer?.types.includes(CHARACTER_DRAG_TYPE)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const ground = this.assetDropPosition(event.clientX, event.clientY);
+        const document = this.bindings.document();
+        const surface = this.raycaster.intersectObject(this.objectsRoot, true).find(visibleSurface);
+        const position =
+          surface && document
+            ? sceneToGame(document.camera, [surface.point.x, -surface.point.z, surface.point.y])
+            : ground;
+        if (position)
+          this.missionEdit.add(event.dataTransfer.getData(CHARACTER_DRAG_TYPE), position);
+      },
+      { signal: this.listeners.signal },
+    );
     let drag: {
       pointer: number;
       x: number;
@@ -1064,7 +1081,7 @@ export class EditorViewport {
       (event) => {
         const mode = this.missionEdit;
         const document = this.bindings.document();
-        if (event.button !== 0 || !mode || mode.place || !document || drag) return;
+        if (event.button !== 0 || !mode || !document || drag) return;
         this.assetDropPosition(event.clientX, event.clientY);
         const id = this.missionMarkers.hit(this.raycaster);
         const entry = [

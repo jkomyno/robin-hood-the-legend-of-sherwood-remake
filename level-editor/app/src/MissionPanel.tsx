@@ -64,9 +64,7 @@ export default function MissionPanel(props: {
   const [selected, setSelected] = createSignal("");
   const [visible, setVisible] = createSignal(true);
   createEffect(visible, (value) => props.viewport.setMissionVisible(value));
-  const [placing, setPlacing] = createSignal<"pc" | "npc" | "move" | null>(null);
-  const [pcProfile, setPcProfile] = createSignal(0);
-  const [npcProfile, setNpcProfile] = createSignal("guard_a01");
+  const [category, setCategory] = createSignal<"pc" | "npc">("pc");
   const entries = () => [
     ...(props.document()?.mission?.spawnPoints ?? []).map((entry) => ({
       ...entry,
@@ -78,22 +76,7 @@ export default function MissionPanel(props: {
     })),
   ];
   const current = () => entries().find((entry) => entry.id === selected());
-  const paletteKind = () =>
-    placing() === "pc" ? "pc" : placing() === "npc" ? "npc" : (current()?.kind ?? "pc");
-  const paletteProfile = () =>
-    placing() === "pc"
-      ? pcProfile()
-      : placing() === "npc"
-        ? npcProfile()
-        : (current()?.profile ?? pcProfile());
   function chooseCharacter(profile: MissionCharacterProfile) {
-    if (profile.kind === "pc" && typeof profile.profile === "number") setPcProfile(profile.profile);
-    if (profile.kind === "npc" && typeof profile.profile === "string")
-      setNpcProfile(profile.profile);
-    if (placing() === "pc" || placing() === "npc" || !current()) {
-      setPlacing(profile.kind);
-      return;
-    }
     const value = mission();
     if (profile.kind === "pc" && typeof profile.profile === "number") {
       const id = profile.profile;
@@ -159,39 +142,38 @@ export default function MissionPanel(props: {
       ),
     });
   }
-  function place(position: Vec3) {
-    const kind = placing();
-    if (!kind) return;
-    if (kind === "move") change({ position });
-    else {
-      const id = `${kind}-${crypto.randomUUID()}`;
-      const base = {
-        id,
-        name: kind === "pc" ? "PC spawn" : "Soldier",
-        position,
-        direction: DEFAULT_CHARACTER_DIRECTION,
-      };
-      const value = mission();
-      publish(
-        kind === "pc"
-          ? { ...value, spawnPoints: [...value.spawnPoints, { ...base, profile: pcProfile() }] }
-          : {
-              ...value,
-              soldiers: [...value.soldiers, { ...base, profile: npcProfile(), allegiance: 1 }],
-            },
-      );
-      setSelected(id);
-    }
-    setPlacing(null);
+  function addCharacter(key: string, position: Vec3) {
+    const profile = catalog()?.profiles.find(
+      (profile) => `${profile.kind}:${profile.profile}` === key,
+    );
+    if (!profile) return;
+    const id = `${profile.kind}-${crypto.randomUUID()}`;
+    const base = {
+      id,
+      name: profile.name,
+      position,
+      direction: DEFAULT_CHARACTER_DIRECTION,
+    };
+    const value = mission();
+    if (profile.kind === "pc" && typeof profile.profile === "number")
+      publish({
+        ...value,
+        spawnPoints: [...value.spawnPoints, { ...base, profile: profile.profile }],
+      });
+    else if (profile.kind === "npc" && typeof profile.profile === "string")
+      publish({
+        ...value,
+        soldiers: [...value.soldiers, { ...base, profile: profile.profile, allegiance: 1 }],
+      });
+    setSelected(id);
   }
   createEffect(
     () => ({
       active: props.active && visible(),
       document: props.document(),
       selected: selected(),
-      placing: placing(),
     }),
-    ({ active, document, selected, placing }) => {
+    ({ active, document, selected }) => {
       untrack(() =>
         props.viewport.setMissionEdit(
           active && document
@@ -201,20 +183,14 @@ export default function MissionPanel(props: {
                 preview: (position: Vec3) => preview({ position }),
                 move: (position: Vec3) => change({ position }),
                 cancel: cancelPreview,
-                ...(placing ? { place } : {}),
+                add: addCharacter,
               }
             : null,
         ),
       );
-      if (!active) setPlacing(null);
     },
   );
   onCleanup(() => props.viewport.setMissionEdit(null));
-  const cancelPlacement = (event: KeyboardEvent) => {
-    if (props.active && event.key === "Escape") setPlacing(null);
-  };
-  window.addEventListener("keydown", cancelPlacement);
-  onCleanup(() => window.removeEventListener("keydown", cancelPlacement));
   function remove() {
     const value = mission();
     publish({
@@ -223,7 +199,6 @@ export default function MissionPanel(props: {
       soldiers: value.soldiers.filter((entry) => entry.id !== selected()),
     });
     setSelected("");
-    setPlacing(null);
   }
   return (
     <section class="view-settings mission-settings">
@@ -237,9 +212,8 @@ export default function MissionPanel(props: {
         Show characters
       </label>
       <p class="hint">
-        Add PC spawn points and NPC soldiers for this mission. Blue outlines are PCs; red outlines
-        are NPCs. These placements are saved separately from map assets and included in the exported
-        mod.
+        Drag a character onto the map to add it. Click a placed character or its list entry to
+        select it, then drag it to move it. Blue outlines are PCs; red outlines are NPCs.
       </p>
       <Show when={catalogStatus()}>
         <p role="status">{catalogStatus()}</p>
@@ -248,50 +222,50 @@ export default function MissionPanel(props: {
         <p role="status">{spriteStatus()}</p>
       </Show>
       <fieldset disabled={!props.document() || !visible()}>
-        <div class="actions">
-          <button onClick={() => setPlacing("pc")}>Add PC</button>
-          <button onClick={() => setPlacing("npc")}>Add NPC</button>
-        </div>
-        <Show when={placing()}>
-          <p role="status">
-            Click the map to{" "}
-            {placing() === "move"
-              ? "move the selected marker"
-              : placing() === "pc"
-                ? "place a PC spawn"
-                : "place a soldier"}
-            . <button onClick={() => setPlacing(null)}>Cancel placement</button>
-          </p>
-        </Show>
         <label>
-          Mission placement
+          Character category
           <select
-            value={selected()}
-            onChange={(event) => {
-              setSelected(event.currentTarget.value);
-              setPlacing(null);
-            }}
+            aria-label="Character category"
+            value={category()}
+            onChange={(event) => setCategory(event.currentTarget.value === "npc" ? "npc" : "pc")}
           >
-            <option value="">Choose a placement</option>
-            <For each={entries()}>
-              {(entry) => (
-                <option value={entry.id}>
-                  {entry.kind === "pc" ? "PC" : "NPC"} · {entry.name}
-                </option>
-              )}
-            </For>
+            <option value="pc">PCs</option>
+            <option value="npc">NPCs</option>
           </select>
         </label>
         <Show when={catalog() && props.document()}>
           <MissionCharacterChoices
             root={catalog()!.root}
             camera={props.document()!.camera}
-            profiles={catalog()!.profiles.filter((profile) => profile.kind === paletteKind())}
-            selected={paletteProfile()}
-            choose={chooseCharacter}
+            profiles={catalog()!.profiles.filter((profile) => profile.kind === category())}
           />
         </Show>
-        <Show when={placing() !== "pc" && placing() !== "npc" && current()}>
+        <section class="object-list mission-element-list">
+          <h3>Mission elements ({entries().length})</h3>
+          <ul aria-label="Mission elements">
+            <For each={entries()}>
+              {(entry) => (
+                <li
+                  class={entry.id === selected() ? "selected" : ""}
+                  data-mission-element={entry.id}
+                >
+                  <button
+                    type="button"
+                    aria-pressed={entry.id === selected() ? "true" : "false"}
+                    onClick={() => setSelected(entry.id)}
+                  >
+                    <span class="kind">{entry.kind === "pc" ? "PC" : "NPC"}</span>
+                    {entry.name}
+                  </button>
+                </li>
+              )}
+            </For>
+          </ul>
+          <Show when={!entries().length}>
+            <p class="hint">No mission elements yet.</p>
+          </Show>
+        </section>
+        <Show when={current()}>
           {(entry) => (
             <>
               <label>
@@ -300,6 +274,28 @@ export default function MissionPanel(props: {
                   value={entry().name}
                   onChange={(event) => change({ name: event.currentTarget.value })}
                 />
+              </label>
+              <label>
+                Character
+                <select
+                  value={String(entry().profile)}
+                  onChange={(event) => {
+                    const profile = catalog()?.profiles.find(
+                      (profile) =>
+                        profile.kind === entry().kind &&
+                        String(profile.profile) === event.currentTarget.value,
+                    );
+                    if (profile) chooseCharacter(profile);
+                  }}
+                >
+                  <For
+                    each={
+                      catalog()?.profiles.filter((profile) => profile.kind === entry().kind) ?? []
+                    }
+                  >
+                    {(profile) => <option value={String(profile.profile)}>{profile.name}</option>}
+                  </For>
+                </select>
               </label>
               <Show when={entry().kind === "npc"}>
                 <ScrubNumber
@@ -360,7 +356,6 @@ export default function MissionPanel(props: {
                 }}
               />
               <div class="actions">
-                <button onClick={() => setPlacing("move")}>Move on map</button>
                 <button onClick={remove}>Delete placement</button>
               </div>
             </>
