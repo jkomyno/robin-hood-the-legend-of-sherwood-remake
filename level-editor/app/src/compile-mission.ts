@@ -116,9 +116,7 @@ export function compileMission(
           throw new Error(`Mission ${actor.id}: receiving surface exceeds the native index range`);
         return [{ sector, layer, projection_area: receiver.index }];
       }
-      return !heights.length && layer === 0 && Math.abs(z) <= 1
-        ? [{ sector, layer, projection_area: 65535 }]
-        : [];
+      return !heights.length && Math.abs(z) <= 1 ? [{ sector, layer, projection_area: 65535 }] : [];
     });
     if (matches.length !== 1)
       throw new Error(

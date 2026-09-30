@@ -1136,6 +1136,13 @@ export class EditorViewport {
       const ground = this.assetDropPosition(event.clientX, event.clientY);
       const document = this.bindings.document();
       const surface = this.raycaster.intersectObject(this.objectsRoot, true).find(visibleSurface);
+      if (ground && document && surface) {
+        const [x, y, z] = gameToScene(document.camera, ...ground);
+        const distance = new THREE.Vector3(x, z, -y)
+          .sub(this.raycaster.ray.origin)
+          .dot(this.raycaster.ray.direction);
+        if (distance < surface.distance) return ground;
+      }
       return surface && document
         ? sceneToGame(document.camera, [surface.point.x, -surface.point.z, surface.point.y])
         : ground;

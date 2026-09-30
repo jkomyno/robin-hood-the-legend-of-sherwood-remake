@@ -3,6 +3,7 @@ import { parseLevel3D, type Level3D, type Vec3 } from "@rle/shared";
 import type { EditorViewport } from "./editor-viewport.ts";
 import ScrubNumber from "./ScrubNumber";
 import MissionCharacterChoices from "./MissionCharacterChoices";
+import { followMissionTerrain } from "./terrain-follow.ts";
 import {
   DEFAULT_CHARACTER_DIRECTION,
   loadMissionCharacterCatalog,
@@ -130,6 +131,12 @@ export default function MissionPanel(props: {
   function preview(patch: { position?: Vec3; direction?: number }) {
     const document = props.document();
     if (!document) return;
+    const entry = current();
+    if (patch.position && entry)
+      patch = {
+        ...patch,
+        position: followMissionTerrain(document, entry.position, patch.position),
+      };
     const value = mission();
     props.viewport.syncViews({
       ...document,
@@ -145,6 +152,13 @@ export default function MissionPanel(props: {
     });
   }
   function change(patch: { name?: string; position?: Vec3; direction?: number }) {
+    const document = props.document();
+    const entry = current();
+    if (patch.position && entry && document)
+      patch = {
+        ...patch,
+        position: followMissionTerrain(document, entry.position, patch.position),
+      };
     const value = mission();
     publish({
       ...value,
