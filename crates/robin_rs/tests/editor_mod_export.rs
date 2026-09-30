@@ -30,7 +30,8 @@ fn full_editor_archive_constructs_native_map_without_base_datadir() {
         .read_shared(&format!("Data/Levels/{name}.level.json"))
         .unwrap();
     let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-    assert_eq!(descriptor["spawn_player"], false);
+    assert_eq!(descriptor["spawn_points"], serde_json::json!([]));
+    assert!(descriptor.get("spawn_player").is_none());
     let editor = files
         .read_shared(&format!("editor/{name}.rhlos-map.json"))
         .unwrap();

@@ -27,7 +27,7 @@ export function compileMission(
   const spawn_points: {
     position: Point;
     direction: number;
-    profile: number;
+    profile?: number;
     sector: number;
     layer: number;
     projection_area: number;
@@ -44,14 +44,14 @@ export function compileMission(
   const warnings: string[] = [];
   if (!document.mission) return { spawn_points, soldiers, warnings };
   validateMission(document.mission);
+  warnings.push(
+    ...(document.mission.importWarnings ?? []).map((warning) => `Imported mission: ${warning}`),
+  );
   const areas: {
     sector: number;
     layer: number;
     area: CompiledAssetGeometry["motion_data"]["layers"][number][number];
   }[] = [];
-  const inactiveReceivers = new Set(
-    geometry?.movement_transitions?.flatMap((transition) => transition.applied_sight ?? []) ?? [],
-  );
   let sector = 0;
   geometry?.motion_data.layers.forEach((layer, index) =>
     layer.forEach((area) => {
@@ -89,7 +89,6 @@ export function compileMission(
       )
         return [];
       const heights = geometry.sight_obstacles.flatMap((obstacle, index) => {
-        if (inactiveReceivers.has(index)) return [];
         const receiver = obstacle.projection_area;
         if (
           !Array.isArray(receiver) ||
@@ -150,7 +149,7 @@ export function compileMission(
         spawn_points.push({
           ...placement,
           direction: actor.point.direction,
-          profile: actor.point.profile,
+          ...(actor.point.profile === undefined ? {} : { profile: actor.point.profile }),
         });
       else
         soldiers.push({

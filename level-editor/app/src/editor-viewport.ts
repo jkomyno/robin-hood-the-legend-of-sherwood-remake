@@ -1,5 +1,6 @@
 import { TerrainControls, type TerrainEditMode } from "./terrain-controls.ts";
 import { MissionLayer } from "./mission-layer.ts";
+import { CHARACTER_DRAG_TYPE } from "./mission-character-catalog.ts";
 import { TerrainLayer } from "./terrain-layer.ts";
 import { followTerrainEdit, followTerrainTransform } from "./terrain-follow.ts";
 import { AssetOutlineRenderer } from "./asset-outline.ts";
@@ -493,18 +494,47 @@ export class EditorViewport {
   }
   private readonly splines = new SplineLayer();
   private readonly missionMarkers = new MissionLayer();
+  private cancelMissionDrag: (() => void) | null = null;
+  private missionPaletteDrag: { key: string; id: string } | null = null;
   private missionEdit: {
     selected: string;
     select(id: string): void;
-    place?: (position: Vec3) => void;
+    preview(position: Vec3): void;
+    move(position: Vec3): void;
+    cancel(): void;
+    add(key: string, position: Vec3, id: string): void;
+    previewAdd(key: string, position: Vec3, id: string): void;
   } | null = null;
 
   setMissionEdit(mode: typeof this.missionEdit) {
+    if (!mode) {
+      this.cancelMissionDrag?.();
+      this.endMissionPaletteDrag();
+    }
     this.missionEdit = mode;
-    this.missionMarkers.setVisible(!!mode);
     if (mode) this.select(null);
     const document = this.bindings.document();
     if (document) this.missionMarkers.sync(document, mode?.selected);
+  }
+  setMissionVisible(visible: boolean) {
+    if (!visible) {
+      this.cancelMissionDrag?.();
+      this.endMissionPaletteDrag();
+    }
+    this.missionMarkers.setVisible(visible);
+  }
+  startMissionPaletteDrag(key: string) {
+    this.endMissionPaletteDrag();
+    if (this.missionEdit) this.missionPaletteDrag = { key, id: `character-${crypto.randomUUID()}` };
+  }
+  private hideMissionPalettePreview() {
+    const document = this.bindings.document();
+    if (document) this.missionMarkers.sync(document, this.missionEdit?.selected);
+  }
+  endMissionPaletteDrag() {
+    if (!this.missionPaletteDrag) return;
+    this.missionPaletteDrag = null;
+    this.hideMissionPalettePreview();
   }
   setMissionSpriteLibrary(
     root: FileSystemDirectoryHandle | null,
@@ -555,7 +585,7 @@ export class EditorViewport {
     this.mapRoot.add(this.workspaceFrame);
     this.mapRoot.add(this.missionMarkers.root);
     this.scene.add(this.missionMarkers.spritesRoot);
-    this.missionMarkers.setVisible(false);
+    this.missionMarkers.setVisible(true);
     this.mapRoot.add(
       this.terrain.root,
       this.terrainControls.root,
@@ -772,6 +802,8 @@ export class EditorViewport {
   }
 
   private retireMap() {
+    this.endMissionPaletteDrag();
+    this.cancelMissionDrag?.();
     this.missionEdit = null;
     this.missionMarkers.clear();
     this.splineMode = null;
@@ -892,6 +924,7 @@ export class EditorViewport {
       },
       this.listeners.signal,
     );
+    this.setupMissionInteraction(this.renderer.domElement);
     this.setupCursorOrbit(this.renderer.domElement);
     this.setupSplineInteraction(this.renderer.domElement);
     this.gizmo = this.ownControl(new TransformControls(this.camera, this.renderer.domElement));
@@ -945,21 +978,9 @@ export class EditorViewport {
         downAt = null;
         if (moved > 4 || this.dragging) return;
         if (this.missionEdit) {
-          const groundPosition = this.assetDropPosition(e.clientX, e.clientY);
-          const surface = this.raycaster
-            .intersectObject(this.objectsRoot, true)
-            .find(visibleSurface);
-          const document = this.bindings.document();
-          const position =
-            surface && document
-              ? sceneToGame(document.camera, [surface.point.x, -surface.point.z, surface.point.y])
-              : groundPosition;
-          if (this.missionEdit.place) {
-            if (position) this.missionEdit.place(position);
-          } else {
-            const id = this.missionMarkers.hit(this.raycaster);
-            if (id) this.missionEdit.select(id);
-          }
+          this.assetDropPosition(e.clientX, e.clientY);
+          const id = this.missionMarkers.hit(this.raycaster);
+          if (id) this.missionEdit.select(id);
           return;
         }
         if (!this.splineMode) this.pick(e, e.altKey);
@@ -1072,6 +1093,159 @@ export class EditorViewport {
       : null;
   }
 
+  private setupMissionInteraction(el: HTMLCanvasElement) {
+    const dropPosition = (event: DragEvent) => {
+      const ground = this.assetDropPosition(event.clientX, event.clientY);
+      const document = this.bindings.document();
+      const surface = this.raycaster.intersectObject(this.objectsRoot, true).find(visibleSurface);
+      return surface && document
+        ? sceneToGame(document.camera, [surface.point.x, -surface.point.z, surface.point.y])
+        : ground;
+    };
+    el.addEventListener(
+      "dragleave",
+      () => {
+        if (this.missionPaletteDrag) this.hideMissionPalettePreview();
+      },
+      { signal: this.listeners.signal },
+    );
+    window.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key === "Escape") this.endMissionPaletteDrag();
+      },
+      { signal: this.listeners.signal },
+    );
+    window.addEventListener("blur", () => this.endMissionPaletteDrag(), {
+      signal: this.listeners.signal,
+    });
+    el.addEventListener(
+      "dragover",
+      (event) => {
+        if (!this.missionEdit || !event.dataTransfer?.types.includes(CHARACTER_DRAG_TYPE)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = "copy";
+        const drag = this.missionPaletteDrag;
+        const position = dropPosition(event);
+        if (drag && position) this.missionEdit.previewAdd(drag.key, position, drag.id);
+        else this.hideMissionPalettePreview();
+      },
+      { signal: this.listeners.signal },
+    );
+    el.addEventListener(
+      "drop",
+      (event) => {
+        if (!this.missionEdit || !event.dataTransfer?.types.includes(CHARACTER_DRAG_TYPE)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const position = dropPosition(event);
+        const drag = this.missionPaletteDrag;
+        if (position && drag && event.dataTransfer.getData(CHARACTER_DRAG_TYPE) === drag.key)
+          this.missionEdit.add(drag.key, position, drag.id);
+        this.endMissionPaletteDrag();
+      },
+      { signal: this.listeners.signal },
+    );
+    let drag: {
+      pointer: number;
+      x: number;
+      y: number;
+      plane: THREE.Plane;
+      start: THREE.Vector3;
+      origin: THREE.Vector3;
+      position: Vec3 | null;
+      mode: NonNullable<EditorViewport["missionEdit"]>;
+    } | null = null;
+    const finish = (commit: boolean) => {
+      const current = drag;
+      if (!current) return;
+      drag = null;
+      this.dragging = false;
+      if (el.hasPointerCapture(current.pointer)) el.releasePointerCapture(current.pointer);
+      if (this.orbit) this.orbit.enabled = true;
+      if (commit && current.position) current.mode.move(current.position);
+      else if (current.position) current.mode.cancel();
+    };
+    this.cancelMissionDrag = () => finish(false);
+    el.addEventListener(
+      "pointerdown",
+      (event) => {
+        const mode = this.missionEdit;
+        const document = this.bindings.document();
+        if (event.button !== 0 || !mode || !document || drag) return;
+        this.assetDropPosition(event.clientX, event.clientY);
+        const id = this.missionMarkers.hit(this.raycaster);
+        const entry = [
+          ...(document.mission?.spawnPoints ?? []),
+          ...(document.mission?.soldiers ?? []),
+        ].find((entry) => entry.id === id);
+        if (!entry) return;
+        const [x, y, z] = gameToScene(document.camera, ...entry.position);
+        const origin = new THREE.Vector3(x, z, -y);
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -z);
+        const start = this.raycaster.ray.intersectPlane(plane, new THREE.Vector3());
+        if (!start) return;
+        mode.select(entry.id);
+        drag = {
+          pointer: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          plane,
+          start,
+          origin,
+          position: null,
+          mode,
+        };
+        this.dragging = true;
+        if (this.orbit) this.orbit.enabled = false;
+        el.setPointerCapture(event.pointerId);
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      },
+      { capture: true, signal: this.listeners.signal },
+    );
+    el.addEventListener(
+      "pointermove",
+      (event) => {
+        if (!drag || event.pointerId !== drag.pointer) return;
+        event.stopImmediatePropagation();
+        if (!drag.position && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) <= 4)
+          return;
+        const document = this.bindings.document();
+        if (!document) return;
+        this.assetDropPosition(event.clientX, event.clientY);
+        const point = this.raycaster.ray.intersectPlane(drag.plane, new THREE.Vector3());
+        if (!point) return;
+        point.sub(drag.start).add(drag.origin);
+        drag.position = sceneToGame(document.camera, [point.x, -point.z, point.y]);
+        drag.mode.preview(drag.position);
+      },
+      { capture: true, signal: this.listeners.signal },
+    );
+    for (const name of ["pointerup", "pointercancel", "lostpointercapture"] as const)
+      el.addEventListener(
+        name,
+        (event) => {
+          if (!drag || event.pointerId !== drag.pointer) return;
+          event.stopImmediatePropagation();
+          finish(name === "pointerup");
+        },
+        { capture: true, signal: this.listeners.signal },
+      );
+    window.addEventListener(
+      "keydown",
+      (event) => {
+        if (drag && event.key === "Escape") {
+          event.preventDefault();
+          finish(false);
+        }
+      },
+      { signal: this.listeners.signal },
+    );
+    window.addEventListener("blur", () => finish(false), { signal: this.listeners.signal });
+  }
+
   private setupCursorOrbit(el: HTMLCanvasElement) {
     let active: {
       pivot: THREE.Vector3;
@@ -1119,7 +1293,7 @@ export class EditorViewport {
       (e) => {
         // the gizmo takes precedence when the cursor is on one of its handles
         if (
-          this.missionEdit ||
+          (this.missionEdit && e.button === 0) ||
           this.terrainMode ||
           !this.camera ||
           !this.orbit ||

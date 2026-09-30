@@ -69,9 +69,15 @@ walkway and its rotated copy in both directions, using a synthetic walking
 animation; receiver identity and final height match the destination plane.
 Native construction derives static elevation boundaries from placed receiving
 polygons, including partial contacts and transitions to uncovered ground. All ten
-maps load with 4,850 derived boundaries in total (4,066 in Wychford). Changing
-receiving surfaces and ambiguous boundaries smaller than one native pixel are
-omitted with runtime warnings; these still need state-sensitive authoring.
+maps load with 4,852 derived boundaries in total (4,066 in Wychford and 109 in Leicester).
+Receiving planes remain registered when their sight obstacle is inactive; switches
+control collision and navigation access rather than removing height lookup.
+Boundary construction now includes these planes instead of omitting their entire
+movement area. Walking actor tests verify the initial, applied and reset states,
+including overlapping receiving planes with different heights; the same highest
+receiver and destination height remain valid in each state. Ambiguous boundaries
+smaller than one native pixel are still
+omitted with runtime warnings.
 Full-map actor traversal and animation playback remain unverified.
 Before physical reconciliation, Sherwood's main-library browser bake passed at
 1920×1088 with 115 sight obstacles and an
@@ -230,7 +236,7 @@ sampled Rust queries. Equivalent evidence across all maps remains unfinished.
 | Openings in movement collision | Asset-local clearances remove only the owning asset's derived collision on the matching plane; sight geometry and other assets remain intact. | Working in compiler/runtime tests; recovery geometry failures remain explicit gaps |
 | Navigation graph and fast-find grid | Engine constructs routing and spatial lookup structures from compiled geometry. No copied grids or graph bytes. | Working on synthetic maps |
 | Sight/physical obstacles | Transform asset-local shapes, per-vertex heights and solid/opaque flags. Explicit transition references select initial/applied obstacles. | Static geometry working; sight transitions verified through native initialization, apply and reset; recovered state ownership still incomplete |
-| Projection surfaces / elevation | Generate height planes linked to movement areas; derive receiver-crossing boundaries from placed polygons during native construction. | Partial: static crossings verified with walking actor ticks; changing receivers and ambiguous subpixel boundaries remain unfinished |
+| Projection surfaces / elevation | Generate height planes linked to movement areas; derive receiver-crossing boundaries from all registered planes, independent of sight activation. | Partial: walking crossings verified for rotated copies and initial/applied/reset sight states; ambiguous subpixel boundaries and full-map traversal remain unfinished |
 | Doors, gates and lock rules | Transform local endpoints and optional click polygons; resolve neighbours geometrically and retain initial/alternate actor lock rules. Asset-local transition links either trigger state changes from doors or swap door permissions. | Compiler/native links implemented; recovered ownership and coverage incomplete |
 | Building interiors | Asset-local interior definitions and entrances; matching positioned sockets with opposing directions join independent assets into shared virtual rooms. | Compiler/native tests cover separate, rotated and duplicated assemblies; all recovered room memberships match, including York's shared rooms; definitions remain unpublished; occupants are mission-owned |
 | Lifts / special traversal | Asset-local traversal surfaces, type, direction and endpoints; explicit local join sockets combine placed segments into one sector with multiple height planes. | Working in synthetic compiler/runtime tests, including rotated/duplicated compound lifts; recovered metadata not yet published; changing lift surfaces unfinished |
@@ -247,13 +253,18 @@ The following information belongs to **missions referencing a map**, not map
 assets. The minimal Mission tab stores explicit authoring in the scene's separate
 `mission` field. Export includes these optional mission placements alongside the
 compiled map; scenes without them remain unpopulated. Existing preview population
-is never converted into runtime actors. More complete mission authoring remains
-planned.
+is never implicitly converted into runtime actors. Selecting a game-data mission
+explicitly imports PC spawn slots and soldiers into editable mission entries;
+other entities remain previews only. Import warnings survive saving and appear
+in the export report. Across the 39 available missions, import preserves 2,463
+soldiers and 218 spawn slots without dropped placement records; 204 slots retain
+campaign team selection instead of inventing fixed characters. This is placement
+coverage, not mission behavior parity. More complete mission authoring remains planned.
 
 | Mission information | Intended construction | Status |
 |---|---|---|
-| Player starting locations | Mission-owned placements and profiles; resolve projected coordinates, navigation sector/layer and receiving surface after map compilation. Export as native spawn points, never as map assets or rescue actors. | Mission sprite palette, directional viewport preview, numeric sliders and export implemented; unsupported or invalid placements warn and are omitted |
-| Soldiers | Mission-owned placement, facing, soldier profile and allegiance; resolve navigation and receiving surface after map compilation. | Mission sprite palette uses canonical soldier identities; all PC/soldier idle sprites are published, preview population remains excluded |
+| Player starting locations | Mission-owned placements with fixed profiles or campaign-selected slots; resolve projected coordinates, navigation sector/layer and receiving surface after map compilation. Export only as `spawn_points`, including `[]` for no PCs. | Game-data mission import, sprite palette, numeric sliders and export implemented; legacy spawn fields remain read-compatible; invalid placements warn and are omitted |
+| Soldiers | Mission-owned placement, facing, soldier profile and allegiance; resolve navigation and receiving surface after map compilation. | Game-data mission import remaps profiles and hostility into editable placements; all PC/soldier idle sprites are published; patrols, scripts, inventory and AI roles remain unsupported |
 | Civilians, targets and rescue characters | Explicit mission placement, profiles and initial behaviour. | Planned |
 | Items, bonuses and scrolls | Item assets plus placement and gameplay properties. | Planned |
 | Building occupants | Actor-to-interior associations resolved after placement. | Planned |
@@ -3187,3 +3198,37 @@ proofs and transaction backups are under
 `work/map-compile/keep-static-view-publication` and
 `work/map-compile/keep-static-view-state-proof.json`. The shared-reference repair
 backup is `work/map-compile/keep-static-view-scene-pin-repair`.
+
+### Published cottage, watermill and west-wing static masks
+
+Four more Leicester masks are authored and published from the current pinned
+models: southeast cottage 263 (823 pixels), watermill 173/174 (908/18,755 pixels),
+and west wing 239 (1,175 pixels). Together they add 21,661 exact pixels represented
+by 1,391 asset-local triangles. The cottage and watermill have no appearance
+controls; the west-wing mask has identical supporting triangles before and after
+its appearance switch. West-wing candidates 240/241 remain deferred because their
+supporting surfaces change when revealed.
+
+The three projectile/view masks retain their world-XY projectile thresholds;
+the west-wing mask is view-only. None adds character thresholds, obstacle links
+or mask-state controls. Each receiving anchor is checked against ground geometry.
+The first watermill anchor was too close to a receiving-layer edge and failed the
+independent move check. Selecting a nearby interior ground point fixes that
+binding without changing mask geometry. All four now retain exact raster coverage
+and rules after their owning asset moves one pixel east. Baseline navigation,
+sight geometry, doors, lighting, sound and export warnings remain unchanged.
+
+Only the four mask definitions are added. Five shared references are repinned:
+three in Leicester and two in Wychford. Other descriptor and scene content is
+unchanged, and all ten saved scenes reopen with valid pins. The separate user ZIP
+is untouched. This brings the unrecovered inventory to **2,948 masks**; complete
+map parity remains unverified. Baseline and all three independently moved exports
+pass native construction and mask verification. Fresh exports of all ten published
+maps also construct successfully, and all 56 switches apply and reset correctly.
+The fresh all-map descriptors are under
+`work/map-compile/published-receiver-mask-native`.
+
+The recipe is `refinement/catalogs/leicester-masks.json`. State support evidence
+is `work/map-compile/leicester-static-mask-state-proof.json`; transaction snapshots
+and four baseline/independently moved native fixtures are under
+`work/map-compile/leicester-static-mask-publication`.

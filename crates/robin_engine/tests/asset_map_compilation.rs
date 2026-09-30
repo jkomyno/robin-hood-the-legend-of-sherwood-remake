@@ -1850,8 +1850,9 @@ fn map_geometry_does_not_accept_embedded_player_spawns() {
         serde_json::from_slice(include_bytes!("fixtures/asset-compiled.level.json")).unwrap();
     value["spawn_player"] = true.into();
     value["spawn"] = serde_json::json!([320, 320]);
+    value.as_object_mut().unwrap().remove("spawn_points");
     let error = LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap()).unwrap_err();
-    assert!(error.contains("use a mission"), "{error}");
+    assert!(error.contains("use spawn_points"), "{error}");
 }
 
 #[test]

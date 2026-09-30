@@ -2,11 +2,7 @@
   "title": "Three-way Allegiance Arena",
   "map_filename": "OpenBattlefield",
   "reveal_all": true,
-  "spawn": [
-    1152,
-    1760
-  ],
-  "spawn_player": false,
+  "spawn_points": [],
   "diplomacy": {
     "player_coalition": [0],
     "relationships": [

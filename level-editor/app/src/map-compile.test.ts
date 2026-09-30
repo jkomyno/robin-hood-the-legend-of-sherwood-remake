@@ -534,7 +534,8 @@ test("compilation rebases transformed volumes, namespaces output and preserves t
 
 test("map export does not invent mission spawns, even for a tiny frame", () => {
   const result = compileMap(bakeFixture(), [0, 0, 8, 8]);
-  assert.equal(result.descriptor.spawn_player, false);
+  assert.equal("spawn_player" in result.descriptor, false);
+  assert.deepEqual(result.descriptor.spawn_points, []);
   assert.equal("spawn" in result.descriptor, false);
   assert.equal("reveal_all" in result.descriptor, false);
 });
@@ -785,7 +786,7 @@ test("best effort ZIP retains omitted mission and wall authoring and reports mis
     JSON.parse(strFromU8(files["compile-report.json"]!)).warnings,
     compiled.warnings,
   );
-  assert.equal(compiled.descriptor.spawn_player, false);
+  assert.equal("spawn_player" in compiled.descriptor, false);
 });
 
 test("sloped asset export matches the native elevation/navigation fixture", async () => {

@@ -133,7 +133,7 @@ const write = async (map: string, geometry: typeof baseline) => {
     JSON.stringify({
       title: `Static mask diagnostic: ${map}`,
       map_filename: `diagnostic-${path.basename(values.map!, ".rhlos-map.json")}`,
-      spawn_player: false,
+      spawn_points: [],
       walkable_polygon: [
         [0, 0],
         [bounds[2] - 1, 0],

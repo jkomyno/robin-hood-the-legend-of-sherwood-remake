@@ -5,7 +5,8 @@ export interface MissionSpawnPoint {
   name: string;
   position: Vec3;
   direction: number;
-  profile: number;
+  /** Omitted for a slot filled by the selected campaign team. */
+  profile?: number;
 }
 export interface MissionSoldier {
   id: string;
@@ -20,6 +21,8 @@ export interface EditorMission {
   version: 1;
   spawnPoints: MissionSpawnPoint[];
   soldiers: MissionSoldier[];
+  importedFrom?: string;
+  importWarnings?: string[];
 }
 
 export function validateMission(value: unknown): asserts value is EditorMission {
@@ -35,6 +38,13 @@ export function validateMission(value: unknown): asserts value is EditorMission 
   )
     fail();
   if (mission.spawnPoints.length > 65535) fail();
+  if (mission.importedFrom !== undefined && typeof mission.importedFrom !== "string") fail();
+  if (
+    mission.importWarnings !== undefined &&
+    (!Array.isArray(mission.importWarnings) ||
+      !mission.importWarnings.every((warning) => typeof warning === "string"))
+  )
+    fail();
   const ids = new Set<string>();
   for (const actor of [...mission.spawnPoints, ...mission.soldiers]) {
     if (
@@ -54,7 +64,11 @@ export function validateMission(value: unknown): asserts value is EditorMission 
     ids.add(actor.id);
   }
   for (const spawn of mission.spawnPoints)
-    if (!Number.isInteger(spawn.profile) || spawn.profile < 0 || spawn.profile > 0xffffffff) fail();
+    if (
+      spawn.profile !== undefined &&
+      (!Number.isInteger(spawn.profile) || spawn.profile < 0 || spawn.profile > 0xffffffff)
+    )
+      fail();
   for (const soldier of mission.soldiers)
     if (
       typeof soldier.profile !== "string" ||

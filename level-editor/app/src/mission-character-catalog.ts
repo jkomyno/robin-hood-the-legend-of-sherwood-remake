@@ -1,5 +1,38 @@
 import { readJson, subdir } from "./fs.ts";
 
+export const DEFAULT_CHARACTER_DIRECTION = 8;
+export const CHARACTER_DRAG_TYPE = "application/x-rle-mission-character";
+
+function englishSoldierName(name: string): string {
+  const roles: Record<string, string> = {
+    Hallebardier: "Halberdier",
+    Epee: "Swordsman",
+    Archer: "Archer",
+    Officier: "Officer",
+    Chevalier: "Knight",
+    Lancier: "Spearman",
+    Arbaletrier: "Crossbowman",
+    Cavalier: "Cavalryman",
+  };
+  const colors: Record<string, string> = {
+    Bleu: "Blue",
+    Jaune: "Yellow",
+    Orange: "Orange",
+    Rouge: "Red",
+    Noir: "Black",
+    Vert: "Green",
+  };
+  const match =
+    /^(Hallebardier|Epee|Archer|Officier|Chevalier|Lancier|Arbaletrier|Cavalier)( Special)? (Bleu|Jaune|Orange|Rouge|Noir|Vert)( Mechant)?$/.exec(
+      name,
+    );
+  if (match)
+    return `${colors[match[3]!]} ${match[2] ? "Special " : ""}${roles[match[1]!]}${match[4] ? " (Hostile)" : ""}`;
+  if (name === "Mmen Arc") return "Merry Man (Bow)";
+  if (name === "Mmen Baton") return "Merry Man (Staff)";
+  return name.replace(/^Ne pas utiliser(\d+)$/, "Unused $1");
+}
+
 export interface MissionCharacterProfile {
   kind: "pc" | "npc";
   profile: number | string;
@@ -43,13 +76,14 @@ export function parseMissionCharacterCatalog(value: unknown): MissionCharacterPr
         .replace(/[^a-z0-9]+/g, "_")
         .replace(/^_|_$/g, "");
       if (!identifier) throw new Error(`Invalid character filename ${key}`);
+      const name =
+        typeof profile.display_name === "string" && profile.display_name.trim()
+          ? profile.display_name.trim()
+          : profile.filename.replace(/([a-z])([A-Z])/g, "$1 $2");
       return {
         filename: profile.filename,
         profileName: profile.profile_name,
-        name:
-          typeof profile.display_name === "string" && profile.display_name.trim()
-            ? profile.display_name
-            : profile.filename.replace(/([a-z])([A-Z])/g, "$1 $2"),
+        name: kind === "npc" ? englishSoldierName(name) : name,
         identifier,
       };
     });

@@ -255,6 +255,55 @@
       ]
     },
     {
+      "asset": "leicester-southeast-cottage",
+      "model_sha256": "b68847e1ccf1b03c7924d023d6a9ab81005b1a361078b8374f5e976209795ba7",
+      "entries": [
+        {
+          "source": 263,
+          "id": "southeast-cottage-projectile-view-occlusion",
+          "node": "building-093",
+          "anchor": [2802, 1663, 0],
+          "projectileHeights": [0, 0, 0, 0, 0],
+          "review": "All 823 pixels have exact support on the cottage's visible static mesh. Ground receiving anchor is verified; projectile thresholds retain world XY. There are no character boundaries, obstacle links, patch references or appearance controls."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-watermill",
+      "model_sha256": "ba0b9fc1d5047e0bffc876e357408270651414e3d31c8190bee86466a133dc11",
+      "entries": [
+        {
+          "source": 173,
+          "id": "watermill-west-projectile-view-occlusion",
+          "node": "building-076",
+          "anchor": [2394, 858, 0],
+          "projectileHeights": [0, 0, 0],
+          "review": "All 908 pixels have exact support on the watermill's visible static mesh. Ground receiving anchor is verified; projectile thresholds retain world XY. There are no character boundaries, obstacle links, patch references or appearance controls."
+        },
+        {
+          "source": 174,
+          "id": "watermill-north-projectile-view-occlusion",
+          "node": "building-076",
+          "anchor": [2622, 870, 0],
+          "projectileHeights": [0, 0],
+          "review": "All 18,755 pixels have exact support on the watermill's visible static mesh. Ground receiving anchor is verified; projectile thresholds retain world XY. There are no character boundaries, obstacle links, patch references or appearance controls."
+        }
+      ]
+    },
+    {
+      "asset": "leicester-west-wing",
+      "model_sha256": "4a034a5d003f3eb3215e2623c5f8d8f9c6768390c765c7576b78345e2dc45dc1",
+      "entries": [
+        {
+          "source": 239,
+          "id": "west-wing-view-occlusion",
+          "node": "building-222",
+          "anchor": [582, 989, 0],
+          "review": "All 1,175 pixels have exact mesh support. The 140 recovered triangles are identical in both appearance states. This static view-only mask has a verified ground receiver and no character/projectile boundaries, obstacle links or patch references."
+        }
+      ]
+    },
+    {
       "asset": "leicester-south-stilt-shed",
       "model_sha256": "bf68168185cc1ec733ba389a6bc0cd3691a16bc481836ac691d0f2770edde626",
       "entries": [

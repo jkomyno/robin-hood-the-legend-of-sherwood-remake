@@ -1,7 +1,11 @@
 import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
 import type { MapCamera } from "@rle/shared";
 import { MissionEntities } from "./mission.ts";
-import type { MissionCharacterProfile } from "./mission-character-catalog.ts";
+import {
+  DEFAULT_CHARACTER_DIRECTION,
+  CHARACTER_DRAG_TYPE,
+  type MissionCharacterProfile,
+} from "./mission-character-catalog.ts";
 
 function CharacterThumbnail(props: {
   root: FileSystemDirectoryHandle;
@@ -35,10 +39,10 @@ function CharacterThumbnail(props: {
                 profile,
                 camera,
                 () => token === generation,
-                [0],
+                [DEFAULT_CHARACTER_DIRECTION],
               );
               if (token !== generation) return;
-              const blob = await sprite.thumbnail();
+              const blob = await sprite.thumbnail(DEFAULT_CHARACTER_DIRECTION);
               if (token !== generation) return;
               if (objectUrl) URL.revokeObjectURL(objectUrl);
               objectUrl = URL.createObjectURL(blob);
@@ -88,18 +92,32 @@ function CharacterChoice(props: {
   root: FileSystemDirectoryHandle;
   camera: MapCamera;
   profile: MissionCharacterProfile;
-  selected: boolean;
-  choose(): void;
+  onDragStart(key: string): void;
+  onDragEnd(): void;
 }) {
   const [ready, setReady] = createSignal(false);
   return (
-    <button
-      type="button"
+    <article
       class="asset-card"
-      aria-pressed={props.selected ? "true" : "false"}
-      disabled={!ready()}
+      draggable={ready() ? "true" : "false"}
+      aria-disabled={ready() ? "false" : "true"}
       data-character-profile={props.profile.profile}
-      onClick={() => props.choose()}
+      onDragStart={(event) => {
+        if (!ready() || !event.dataTransfer) {
+          event.preventDefault();
+          return;
+        }
+        event.dataTransfer.setData(
+          CHARACTER_DRAG_TYPE,
+          `${props.profile.kind}:${props.profile.profile}`,
+        );
+        event.dataTransfer.effectAllowed = "copy";
+        const image = document.createElement("canvas");
+        image.width = image.height = 1;
+        event.dataTransfer.setDragImage(image, 0, 0);
+        props.onDragStart(`${props.profile.kind}:${props.profile.profile}`);
+      }}
+      onDragEnd={() => props.onDragEnd()}
     >
       <CharacterThumbnail
         root={props.root}
@@ -111,7 +129,7 @@ function CharacterChoice(props: {
         <strong>{props.profile.name}</strong>
         <small>{props.profile.filename}</small>
       </div>
-    </button>
+    </article>
   );
 }
 
@@ -119,8 +137,8 @@ export default function MissionCharacterChoices(props: {
   root: FileSystemDirectoryHandle;
   camera: MapCamera;
   profiles: MissionCharacterProfile[];
-  selected: number | string;
-  choose(profile: MissionCharacterProfile): void;
+  onDragStart(key: string): void;
+  onDragEnd(): void;
 }) {
   const [search, setSearch] = createSignal("");
   const filtered = () =>
@@ -149,8 +167,8 @@ export default function MissionCharacterChoices(props: {
               root={props.root}
               camera={props.camera}
               profile={profile}
-              selected={props.selected === profile.profile}
-              choose={() => props.choose(profile)}
+              onDragStart={(key) => props.onDragStart(key)}
+              onDragEnd={() => props.onDragEnd()}
             />
           )}
         </For>
