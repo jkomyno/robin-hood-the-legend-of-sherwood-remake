@@ -175,7 +175,17 @@ export function installDiagnostics(queueStore?: DiagnosticQueue): { log: (line: 
             .catch(error => showStatus(`Could not queue report: ${String(error)}`))
             .finally(() => { send.disabled = false; });
     });
-    window.addEventListener('error', event => failure(event.error ?? event.message));
+    window.addEventListener('error', event => {
+        // ResizeObserver defers undelivered notifications to the next paint.
+        // This browser-generated event has no exception; keep it visible
+        // without reporting a running game as a fatal crash.
+        // TODO: Investigate the initial canvas resize notification separately.
+        if (event.error == null && event.message === 'ResizeObserver loop completed with undelivered notifications.') {
+            console.warn(event.message);
+            return;
+        }
+        failure(event.error ?? event.message);
+    });
     window.addEventListener('unhandledrejection', event => failure(event.reason));
     window.addEventListener('online', () => { void flush(); });
     void flush();

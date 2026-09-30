@@ -9,6 +9,10 @@ const DEFAULT_LOCAL_BINARIES_ROOT = fileURLToPath(
 const LOCAL_BINARIES_ROOT = resolve(
     process.env.ROBIN_LOCAL_BINARIES_ROOT ?? DEFAULT_LOCAL_BINARIES_ROOT,
 );
+const ISOLATION_HEADERS = {
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Embedder-Policy': 'require-corp',
+};
 
 function contentType(path: string): string {
     if (path.endsWith('.json')) {
@@ -23,10 +27,9 @@ function contentType(path: string): string {
     return 'application/octet-stream';
 }
 
-// The development server sends no COOP/COEP, so a threaded runtime served here
-// is not cross-origin isolated and decodes sprites serially. Production uses
-// Cloudflare Static Assets, whose deploy/public-headers.txt isolates the game
-// page; this development server mirrors its `/wasm` and `/datadirs` paths.
+// Match the production game document's isolation headers so local threaded
+// runtimes can use shared wasm memory and sprite-decode workers. Runtime and
+// datadir assets use the same origin through the routes below.
 export default defineConfig({
     base: '/',
     publicDir: 'public',
@@ -35,9 +38,21 @@ export default defineConfig({
         configureServer(server) {
             server.middlewares.use((req, res, next) => {
                 const pathname = req.url?.split('?', 1)[0] ?? '';
+                // The shell has no favicon. Answer the browser's implicit
+                // request explicitly instead of logging an asset-load error.
+                if (pathname === '/favicon.ico') {
+                    res.statusCode = 204;
+                    res.end();
+                    return;
+                }
                 if (!pathname.startsWith('/wasm/') && !pathname.startsWith('/datadirs/')) {
                     next();
                     return;
+                }
+                // These routes finish before Vite's own header middleware.
+                // Worker scripts need COEP as well as the game document.
+                for (const [name, value] of Object.entries(ISOLATION_HEADERS)) {
+                    res.setHeader(name, value);
                 }
 
                 const decodedPath = decodeURIComponent(pathname);
@@ -64,6 +79,7 @@ export default defineConfig({
     // resolving to HTML when the symlink is missing.
     appType: 'mpa',
     server: {
+        headers: ISOLATION_HEADERS,
         // Vite's dev-mode FS protection refuses to follow symlinks
         // out of the project root by default, which breaks
         // `public/data` (a symlink to the converted shipping

@@ -30,7 +30,7 @@ test('diagnostic submission checks receipt and refuses failed requests', async (
     await assert.rejects(submitDiagnostic(body, async () => Response.json({ schema_version: 1, report_id: 'wrong' }, { status: 202 })), /Invalid report receipt/);
 });
 
-test('browser form retains failed reports and retries on reconnect', async () => {
+test('browser diagnostics warn on resize notices, retain failures and retry on reconnect', async t => {
     const { JSDOM } = await import('jsdom');
     const { installDiagnostics } = await import('./diagnostics.ts');
     const dom = new JSDOM('<button id="report-bug"></button><dialog id="bug-report-dialog"><form id="bug-report-form"><textarea id="bug-report-description"></textarea><p id="bug-report-status"></p><button id="bug-report-send"></button><button id="bug-report-close"></button></form></dialog>', { url: 'https://game.test/' });
@@ -50,6 +50,12 @@ test('browser form retains failed reports and retries on reconnect', async () =>
     try {
         const queue = diagnosticQueue(new IDBFactory());
         const reporter = installDiagnostics(queue);
+        const warning = t.mock.method(console, 'warn', () => {});
+        const resizeMessage = 'ResizeObserver loop completed with undelivered notifications.';
+        dom.window.dispatchEvent(new dom.window.ErrorEvent('error', { message: resizeMessage }));
+        await new Promise(resolve => setTimeout(resolve, 20));
+        assert.equal((await queue.list()).length, 0);
+        assert.equal(warning.mock.calls[0]?.arguments[0], resizeMessage);
         reporter.setBuild('abc1234');
         reporter.log('game diagnostics');
         dom.window.document.querySelector('textarea')!.value = 'Character is stuck';
@@ -67,6 +73,15 @@ test('browser form retains failed reports and retries on reconnect', async () =>
         for (let retry = 0; retry < 100 && (await queue.list()).length > 0; retry++) await new Promise(resolve => setTimeout(resolve, 10));
         assert.equal((await queue.list()).length, 0);
         assert.match(dom.window.document.querySelector('#bug-report-status')!.textContent!, /Report submitted:/);
+        // An actual exception must still be reported, even with the same text.
+        online = false;
+        dom.window.dispatchEvent(new dom.window.ErrorEvent('error', {
+            message: resizeMessage, error: new Error(resizeMessage),
+        }));
+        for (let retry = 0; retry < 100 && (await queue.list()).length === 0; retry++) await new Promise(resolve => setTimeout(resolve, 10));
+        assert.equal((await queue.list()).length, 1);
+        assert.equal(JSON.parse((await queue.list())[0]!.body).kind, 'fatal_error');
+        for (let retry = 0; retry < 100 && !dom.window.document.querySelector('#bug-report-status')!.textContent!.includes('remains queued'); retry++) await new Promise(resolve => setTimeout(resolve, 10));
     } finally {
         globalThis.fetch = oldFetch;
         if (oldWindow) Object.defineProperty(globalThis, 'window', oldWindow); else Reflect.deleteProperty(globalThis, 'window');
