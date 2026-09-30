@@ -1652,6 +1652,14 @@ impl EngineInner {
                 antagonist,
                 entity_id,
             );
+            apply_pc_search_done_side_effect(
+                self,
+                tcx,
+                anim_type,
+                motion_state,
+                antagonist,
+                entity_id,
+            );
             apply_sword_parry_side_effect(
                 self,
                 entity_id,

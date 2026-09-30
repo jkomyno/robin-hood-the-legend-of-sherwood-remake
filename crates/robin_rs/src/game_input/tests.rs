@@ -1466,16 +1466,176 @@ fn use_command_on_target_resolves_its_action_filter_before_dead_fallback() {
     );
 }
 
-#[test]
-fn use_command_on_dead_soldier_is_search() {
-    let (mut engine, assets, _host) = fixture();
-    let pc = add_pc(&mut engine, 10.0, 10.0, Posture::Upright);
-    let corpse = add_soldier(&mut engine, 60.0, 60.0, 0);
+/// Selected PC at (10, 10) with `pc_profile`, and a lying soldier body at
+/// (200, 200) carrying `money`, either dead or knocked out with positive
+/// life. Both are in draw order and the campaign treasury holds 100.
+fn body_search_fixture(
+    pc_profile: engine_profiles::CharacterProfile,
+    dead: bool,
+    money: u32,
+) -> (Engine, LevelAssets, Host, EntityId, EntityId) {
+    body_search_fixture_with_vip(pc_profile, dead, money, false, false)
+}
 
+/// [`body_search_fixture`] with a VIP soldier profile and/or a Robin selector.
+fn body_search_fixture_with_vip(
+    pc_profile: engine_profiles::CharacterProfile,
+    dead: bool,
+    money: u32,
+    vip_body: bool,
+    pc_is_robin: bool,
+) -> (Engine, LevelAssets, Host, EntityId, EntityId) {
+    let mut campaign = engine_campaign::Campaign::default();
+    campaign.set_value(engine_campaign::CampaignValue::Ransom, 100);
+    let mut assets = LevelAssets::new();
+    let mut engine =
+        Engine::new_for_test(800.0, 600.0, campaign, &mut assets).expect("test engine");
+    let profiles = std::sync::Arc::make_mut(&mut assets.profile_manager);
+    profiles.characters.push(pc_profile);
+    profiles.soldiers.push(engine_profiles::SoldierProfile {
+        vip: vip_body,
+        ..Default::default()
+    });
+    let mut host = Host::scratch(800.0, 600.0);
+
+    let mut pc_element = ElementData::from_initial_posture(Posture::Upright);
+    pc_element.kind = ElementKind::ActorPc;
+    pc_element.active = true;
+    pc_element.set_position_map(MapPoint::new(10.0, 10.0));
+    pc_element.sprite.position_iface.settle_current_position();
+    let pc = engine.test_add_entity(engine_element::Entity::Pc(engine_element::ActorPc {
+        element: pc_element,
+        actor: ActorData::default(),
+        human: HumanData::default(),
+        pc: engine_element::PcData {
+            life_points: 100,
+            playable: true,
+            robin: pc_is_robin,
+            ..Default::default()
+        },
+    }));
+    let mut element = ElementData::from_initial_posture(Posture::Lying);
+    element.kind = ElementKind::ActorSoldier;
+    element.active = true;
+    element.set_position_map(MapPoint::new(200.0, 200.0));
+    element.sprite.position_iface.settle_current_position();
+    let body = engine.test_add_entity(engine_element::Entity::Soldier(ActorSoldier {
+        element,
+        actor: ActorData::default(),
+        human: HumanData {
+            unconscious: !dead,
+            ..Default::default()
+        },
+        npc: NpcData {
+            life_points: if dead { 0 } else { 50 },
+            ai: robin_engine::element::AiActorData {
+                money,
+                ..Default::default()
+            },
+        },
+        soldier: SoldierData {
+            cached_camp: robin_engine::element_kinds::Camp::Lacklandists,
+            ..Default::default()
+        },
+    }));
+    host.frontend.presentation.draw_order.ids.extend([pc, body]);
+    select(&mut engine, &assets, pc);
+    (engine, assets, host, pc, body)
+}
+
+fn searcher_profile(extra: &[Action]) -> engine_profiles::CharacterProfile {
+    let mut contextual_actions =
+        [Action::NoAction; engine_profiles::NUMBER_OF_PC_CONTEXTUAL_ACTIONS];
+    contextual_actions[0] = Action::Search;
+    contextual_actions[1..=extra.len()].copy_from_slice(extra);
+    engine_profiles::CharacterProfile {
+        contextual_actions,
+        ..Default::default()
+    }
+}
+
+fn click_body(host: &mut Host, engine: &Engine, assets: &LevelAssets) -> Vec<PlayerCommand> {
+    resolve_left_click_with_planning(host, engine, assets, MapPoint::new(200.0, 200.0), NO_MODS)
+}
+
+fn body_use_focus(host: &Host, engine: &Engine, assets: &LevelAssets) -> Option<EntityId> {
+    engine.find_focusable_entity(
+        assets,
+        &host.frontend.presentation.draw_order.ids,
+        MapPoint::new(200.0, 200.0),
+        Focus::Use,
+    )
+}
+
+#[test]
+fn click_on_rich_dead_or_unconscious_body_launches_search() {
+    for dead in [true, false] {
+        for money in [1, 49, 50, 125] {
+            // Tie and Carry give the wrong-priority arms a chance to win.
+            let (engine, assets, mut host, pc, body) = body_search_fixture(
+                searcher_profile(&[Action::Tie, Action::LittleJohnCarry]),
+                dead,
+                money,
+            );
+            assert_eq!(body_use_focus(&host, &engine, &assets), Some(body));
+            assert_eq!(
+                engine.choose_use_cursor(&assets, body, Some(pc)),
+                robin_engine::resource_ids::RHMOUSE_SEARCH,
+                "dead={dead} money={money}"
+            );
+            assert_cmds!(
+                click_body(&mut host, &engine, &assets),
+                vec![PlayerCommand::LaunchInteraction {
+                    actor: pc,
+                    target: body,
+                    command: Command::SearchCmd,
+                    running: false,
+                }]
+            );
+        }
+    }
+}
+
+#[test]
+fn use_command_on_empty_dead_body_carries_instead_of_searching() {
+    let (engine, assets, _host, pc, body) =
+        body_search_fixture(searcher_profile(&[Action::LittleJohnCarry]), true, 0);
     assert_eq!(
-        determine_use_command(&engine, &assets, pc, corpse),
-        Some(Command::SearchCmd)
+        determine_use_command(&engine, &assets, pc, body),
+        Some(Command::TakeCorpse)
     );
+}
+
+#[test]
+fn use_command_on_empty_unconscious_body_keeps_tie_fallback() {
+    let (engine, assets, _host, pc, body) =
+        body_search_fixture(searcher_profile(&[Action::Tie]), false, 0);
+    assert_eq!(
+        determine_use_command(&engine, &assets, pc, body),
+        Some(Command::TieCmd)
+    );
+}
+
+#[test]
+fn use_command_on_rich_body_without_search_ability_is_not_search() {
+    for dead in [true, false] {
+        let (engine, assets, _host, pc, body) =
+            body_search_fixture(engine_profiles::CharacterProfile::default(), dead, 125);
+        assert_eq!(determine_use_command(&engine, &assets, pc, body), None);
+    }
+}
+
+#[test]
+fn only_robin_searches_a_rich_vip_body() {
+    for robin in [false, true] {
+        let (engine, assets, _host, pc, body) =
+            body_search_fixture_with_vip(searcher_profile(&[]), false, 125, true, robin);
+        assert_eq!(
+            determine_use_command(&engine, &assets, pc, body),
+            robin.then_some(Command::SearchCmd),
+            "robin={robin}"
+        );
+    }
 }
 
 #[test]

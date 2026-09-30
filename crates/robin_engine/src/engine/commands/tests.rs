@@ -4593,6 +4593,71 @@ fn custom_pc_can_wake_only_same_allegiance_pc() {
 }
 
 #[test]
+fn engine_use_command_searches_rich_dead_or_unconscious_body_before_body_fallbacks() {
+    let (mut engine, mut assets, pc_id) = setup_pc_engine(&[]);
+    {
+        let profiles = std::sync::Arc::make_mut(&mut assets.profile_manager);
+        profiles.characters[0].contextual_actions[..3].copy_from_slice(&[
+            Action::Search,
+            Action::Tie,
+            Action::LittleJohnCarry,
+        ]);
+        profiles
+            .soldiers
+            .push(crate::profiles::SoldierProfile::default());
+    }
+    let mut add_body = |dead: bool, money: u32| {
+        engine.add_test_entity(Entity::Soldier(ActorSoldier {
+            element: {
+                let mut initial_element = ElementData::from_initial_posture(Posture::Lying);
+                initial_element.kind = ElementKind::ActorSoldier;
+                initial_element.active = true;
+                initial_element
+            },
+            actor: ActorData::default(),
+            human: HumanData {
+                unconscious: !dead,
+                ..HumanData::default()
+            },
+            npc: NpcData {
+                life_points: if dead { 0 } else { 50 },
+                ai: crate::element::AiActorData {
+                    money,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            soldier: SoldierData {
+                cached_camp: Camp::Lacklandists,
+                ..SoldierData::default()
+            },
+        }))
+    };
+    let rich_dead = add_body(true, 50);
+    let rich_unconscious = add_body(false, 1);
+    let empty_dead = add_body(true, 0);
+    let empty_unconscious = add_body(false, 0);
+
+    for body in [rich_dead, rich_unconscious] {
+        assert_eq!(
+            determine_use_command(&engine, &assets, pc_id, body),
+            Some(Command::SearchCmd)
+        );
+        assert_eq!(
+            engine.choose_use_cursor(&assets, body, Some(pc_id)),
+            crate::resource_ids::RHMOUSE_SEARCH
+        );
+    }
+    // Empty bodies keep the carry fallback instead of a fruitless search.
+    for body in [empty_dead, empty_unconscious] {
+        assert_eq!(
+            determine_use_command(&engine, &assets, pc_id, body),
+            Some(Command::TakeCorpse)
+        );
+    }
+}
+
+#[test]
 fn tied_npc_use_prioritizes_loot_then_untie_and_setting_restores_original_behavior() {
     let (mut engine, mut assets, pc_id) = setup_pc_engine(&[]);
     std::sync::Arc::make_mut(&mut assets.profile_manager).characters[0].contextual_actions[..2]
