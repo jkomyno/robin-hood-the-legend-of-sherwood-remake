@@ -13,5 +13,6 @@ pub(super) fn mouse_input(x: f32, y: f32, buttons: MouseButtons) -> WidgetInput<
         keyboard: &KEYBOARD,
         text_input: "",
         capture: None,
+        left_press_origin: None,
     }
 }

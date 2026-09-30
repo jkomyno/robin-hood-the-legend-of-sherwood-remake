@@ -1357,6 +1357,16 @@ impl EngineInner {
                     .map(|p| p.civilian_type == crate::profiles::CivilianType::Vip)
                     .unwrap_or(false)
             }
+            Entity::Pc(pc) => {
+                let profile_index = pc.pc.profile_index;
+                assets
+                    .profile_manager
+                    .get_character(profile_index)
+                    .unwrap_or_else(|| {
+                        panic!("PC references missing character profile {profile_index:?}")
+                    })
+                    .vip
+            }
             _ => false,
         }
     }
@@ -3388,6 +3398,44 @@ mod tests {
             (BowTarget::Valid, ShootMode::Normal),
             "when the belt is unavailable, Original falls back to the valid head shot",
         );
+    }
+
+    fn assets_with_character_vip_flags(vip_flags: &[bool]) -> LevelAssets {
+        let mut assets = LevelAssets::new();
+        let profiles = std::sync::Arc::make_mut(&mut assets.profile_manager);
+        profiles.characters.extend(vip_flags.iter().map(|&vip| {
+            crate::profiles::CharacterProfile {
+                vip,
+                ..Default::default()
+            }
+        }));
+        assets
+    }
+
+    #[test]
+    fn pc_vip_follows_its_character_profile() {
+        use crate::engine::test_support::actors::make_test_pc;
+        let assets = assets_with_character_vip_flags(&[false, true]);
+        let mut engine = EngineInner::new();
+        let pc = engine.add_test_entity(make_test_pc(crate::element::Posture::Upright));
+        for (profile_index, vip) in [(0, false), (1, true)] {
+            let Some(Entity::Pc(entity)) = engine.world.entities.get_mut(pc) else {
+                unreachable!("test PC must stay a PC");
+            };
+            entity.pc.profile_index = crate::profiles::CharacterProfileIdx(profile_index);
+            let entity = engine.get_entity(pc).expect("test PC");
+            assert_eq!(engine.is_entity_vip(&assets, entity), vip);
+        }
+    }
+
+    #[test]
+    #[should_panic(expected = "references missing character profile")]
+    fn pc_vip_requires_its_character_profile() {
+        use crate::engine::test_support::actors::make_test_pc;
+        let assets = assets_with_character_vip_flags(&[]);
+        let mut engine = EngineInner::new();
+        let pc = engine.add_test_entity(make_test_pc(crate::element::Posture::Upright));
+        engine.is_entity_vip(&assets, engine.get_entity(pc).expect("test PC"));
     }
 
     #[test]

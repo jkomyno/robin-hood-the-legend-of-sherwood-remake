@@ -1439,7 +1439,12 @@ fn use_command_on_missing_target_is_none() {
 
 #[test]
 fn use_command_on_target_resolves_its_action_filter_before_dead_fallback() {
-    let (mut engine, assets, _host) = fixture();
+    let (mut engine, mut assets, _host) = fixture();
+    // The target-use path classifies the selected PC's VIP flag, which
+    // requires its character profile.
+    std::sync::Arc::make_mut(&mut assets.profile_manager)
+        .characters
+        .push(engine_profiles::CharacterProfile::default());
     let pc = add_pc(&mut engine, 10.0, 10.0, Posture::Upright);
     let target = engine.test_add_entity(Entity::Target(ElementTarget {
         element: {
@@ -1552,4 +1557,129 @@ fn double_click_repeat_on_missing_target_is_noop() {
 
     let cmds = resolve_double_click_repeat(&engine, &assets, ghost, host.transport.local_seat());
     assert!(cmds.is_empty());
+}
+
+/// Selected PC at (10, 10) whose character profile has the given VIP flag,
+/// an idle beggar at (200, 200), both in draw order, and `ransom` in the
+/// campaign treasury.
+fn beggar_payment_fixture(
+    pc_is_vip: bool,
+    ransom: i32,
+) -> (Engine, LevelAssets, Host, EntityId, EntityId) {
+    let mut campaign = engine_campaign::Campaign::default();
+    campaign.set_value(engine_campaign::CampaignValue::Ransom, ransom);
+    let mut assets = LevelAssets::new();
+    let mut engine =
+        Engine::new_for_test(800.0, 600.0, campaign, &mut assets).expect("test engine");
+    std::sync::Arc::make_mut(&mut assets.profile_manager)
+        .characters
+        .push(engine_profiles::CharacterProfile {
+            vip: pc_is_vip,
+            ..Default::default()
+        });
+    let mut host = Host::scratch(800.0, 600.0);
+
+    let pc = add_pc(&mut engine, 10.0, 10.0, Posture::Upright);
+    let mut element = ElementData::from_initial_posture(Posture::Upright);
+    element.kind = ElementKind::ActorCivilian;
+    element.active = true;
+    element.set_position_map(MapPoint::new(200.0, 200.0));
+    element.sprite.position_iface.settle_current_position();
+    let beggar = engine.test_add_entity(engine_element::Entity::Civilian(
+        engine_element::ActorCivilian {
+            element,
+            actor: ActorData::default(),
+            human: HumanData::default(),
+            npc: NpcData {
+                life_points: 100,
+                ..Default::default()
+            },
+            civilian: engine_element::CivilianData {
+                // A non-hostile authored civilian loads as Royalist.
+                cached_camp: robin_engine::element_kinds::Camp::Royalists,
+                cached_civilian_type: engine_profiles::CivilianType::Beggar,
+                beggar_scroll_sets: Some(vec![Vec::new(); 10]),
+                ..Default::default()
+            },
+        },
+    ));
+    host.frontend
+        .presentation
+        .draw_order
+        .ids
+        .extend([pc, beggar]);
+    select(&mut engine, &assets, pc);
+    (engine, assets, host, pc, beggar)
+}
+
+fn click_beggar(host: &mut Host, engine: &Engine, assets: &LevelAssets) -> Vec<PlayerCommand> {
+    resolve_left_click_with_planning(host, engine, assets, MapPoint::new(200.0, 200.0), NO_MODS)
+}
+
+fn is_pay(cmd: &PlayerCommand) -> bool {
+    matches!(
+        cmd,
+        PlayerCommand::LaunchInteraction {
+            command: Command::Pay,
+            ..
+        }
+    )
+}
+
+#[test]
+fn vip_pc_click_on_beggar_launches_pay() {
+    let (engine, assets, mut host, pc, beggar) =
+        beggar_payment_fixture(true, 2 * engine_api::BEGGAR_SALARY);
+    let pc_entity = engine.get_entity(pc).expect("selected PC");
+    assert!(engine.is_entity_vip(&assets, pc_entity));
+    assert_eq!(
+        engine.find_focusable_entity(
+            &assets,
+            &host.frontend.presentation.draw_order.ids,
+            MapPoint::new(200.0, 200.0),
+            Focus::Use,
+        ),
+        Some(beggar)
+    );
+    assert_eq!(
+        engine.choose_use_cursor(&assets, beggar, Some(pc)),
+        robin_engine::resource_ids::RHMOUSE_PAY_YES
+    );
+
+    let cmds = click_beggar(&mut host, &engine, &assets);
+    assert_cmds!(
+        cmds,
+        vec![PlayerCommand::LaunchInteraction {
+            actor: pc,
+            target: beggar,
+            command: Command::Pay,
+            running: false,
+        }]
+    );
+}
+
+#[test]
+fn vip_pc_below_beggar_salary_gets_pay_no_and_no_payment() {
+    let (engine, assets, mut host, pc, beggar) =
+        beggar_payment_fixture(true, engine_api::BEGGAR_SALARY - 1);
+    assert_eq!(
+        engine.choose_use_cursor(&assets, beggar, Some(pc)),
+        robin_engine::resource_ids::RHMOUSE_PAY_NO
+    );
+    let cmds = click_beggar(&mut host, &engine, &assets);
+    assert!(!cmds.iter().any(is_pay), "unexpected payment: {cmds:?}");
+}
+
+#[test]
+fn non_vip_pc_cannot_pay_beggar() {
+    let (engine, assets, mut host, pc, beggar) =
+        beggar_payment_fixture(false, 2 * engine_api::BEGGAR_SALARY);
+    let pc_entity = engine.get_entity(pc).expect("selected PC");
+    assert!(!engine.is_entity_vip(&assets, pc_entity));
+    assert_ne!(
+        engine.choose_use_cursor(&assets, beggar, Some(pc)),
+        robin_engine::resource_ids::RHMOUSE_PAY_YES
+    );
+    let cmds = click_beggar(&mut host, &engine, &assets);
+    assert!(!cmds.iter().any(is_pay), "unexpected payment: {cmds:?}");
 }

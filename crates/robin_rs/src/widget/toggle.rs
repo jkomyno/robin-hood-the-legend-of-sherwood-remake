@@ -480,6 +480,7 @@ mod tests {
             keyboard: kb,
             text_input: "",
             capture: None,
+            left_press_origin: None,
         }
     }
 
@@ -496,6 +497,7 @@ mod tests {
             keyboard: kb,
             text_input: "",
             capture: Some(capture),
+            left_press_origin: None,
         }
     }
 

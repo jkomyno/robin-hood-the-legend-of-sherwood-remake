@@ -188,10 +188,10 @@ fn menu_default_left_down_stays_default() {
 
 #[test]
 fn menu_default_click_alone_focuses_no_event() {
-    // The DEFAULT-state handler's only condition is
-    // `inside && !LEFT_DOWN`. A `LEFT_CLICK` bit without `LEFT_DOWN`
-    // also satisfies it, so the click frame transitions DEFAULT →
-    // FOCUSED silently — the click itself is dropped (no event).
+    // Without a press origin the click cannot be attributed to this
+    // button, so the DEFAULT-state handler only applies
+    // `inside && !LEFT_DOWN`: the click frame transitions DEFAULT →
+    // FOCUSED silently and the click itself is dropped (no event).
     let mut btn = make_menu_button();
     let input = make_input(50.0, 15.0, MouseButtons::LEFT_CLICK);
     let events = btn.process_input(&input);

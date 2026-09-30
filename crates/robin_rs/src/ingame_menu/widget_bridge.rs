@@ -714,6 +714,11 @@ pub struct ModalInputState {
     /// frame-based counter.
     pending_double_click_left: bool,
     pending_double_click_right: bool,
+    /// Virtual point of the most recent left `MouseDown`, kept while the
+    /// button is held and through the frame that delivers its release.
+    /// A press and release polled in one batch otherwise only expose
+    /// the release position.
+    left_press_origin: Option<engine_coordinates::ScreenPoint>,
     gamepad_axis_direction: Option<crate::gfx_types::Keycode>,
 }
 
@@ -730,6 +735,7 @@ impl Default for ModalInputState {
             capture: CaptureSlot::default(),
             pending_double_click_left: false,
             pending_double_click_right: false,
+            left_press_origin: None,
             gamepad_axis_direction: None,
         }
     }
@@ -846,6 +852,10 @@ impl ModalInputState {
                 if *btn == 1 {
                     self.buttons |= MouseButtons::LEFT_DOWN;
                     self.pending_double_click_left = *clicks >= 2;
+                    self.left_press_origin = Some(engine_coordinates::ScreenPoint::new(
+                        self.virt_x,
+                        self.virt_y,
+                    ));
                 } else if *btn == 3 {
                     self.buttons |= MouseButtons::RIGHT_DOWN;
                     self.pending_double_click_right = *clicks >= 2;
@@ -882,6 +892,7 @@ impl ModalInputState {
                 self.buttons.remove(MouseButtons::LEFT_CLICK);
                 self.buttons.remove(MouseButtons::LEFT_DOUBLE_CLICK);
                 self.pending_double_click_left = false;
+                self.left_press_origin = None;
                 self.capture.clear();
             }
             GameEvent::TextInput { text } => {
@@ -947,6 +958,7 @@ impl ModalInputState {
             keyboard: &self.keyboard,
             text_input: &self.text_input,
             capture: Some(&self.capture),
+            left_press_origin: self.left_press_origin,
         }
     }
 
@@ -964,6 +976,9 @@ impl ModalInputState {
         self.buttons.remove(MouseButtons::RIGHT_CLICK);
         self.buttons.remove(MouseButtons::LEFT_DOUBLE_CLICK);
         self.buttons.remove(MouseButtons::RIGHT_DOUBLE_CLICK);
+        if !self.buttons.contains(MouseButtons::LEFT_DOWN) {
+            self.left_press_origin = None;
+        }
         self.text_input.clear();
     }
 
@@ -1863,6 +1878,196 @@ mod noisy_tracker_tests {
 
         assert!(!input.buttons.contains(MouseButtons::LEFT_CLICK));
         assert!(!input.buttons.contains(MouseButtons::LEFT_DOWN));
+    }
+
+    /// One button at virtual (100,100)-(200,140) under an identity
+    /// transform, driven through `ModalInputState` a batch at a time.
+    struct GestureFixture {
+        input: ModalInputState,
+        frame: FrameWnd,
+        transform: MenuTransform,
+    }
+
+    impl GestureFixture {
+        const BUTTON: WidgetId = 7;
+        const INSIDE: (i32, i32) = (150, 120);
+        const OUTSIDE: (i32, i32) = (300, 300);
+
+        fn new(enabled: bool) -> Self {
+            let mut frame = FrameWnd::interactive();
+            frame.add_widget_absolute(make_button_enabled(
+                Self::BUTTON,
+                "Toggle",
+                enabled,
+                100,
+                100,
+                100,
+                40,
+            ));
+            Self {
+                input: ModalInputState::new(),
+                frame,
+                transform: MenuTransform::centered(640, 480),
+            }
+        }
+
+        fn batch(&mut self, events: &[GameEvent]) -> usize {
+            for event in events {
+                self.input.update_from_event(event, self.transform);
+            }
+            let (events, _) = ScreenFrame::dispatch(&mut self.input, &mut self.frame);
+            events
+                .iter()
+                .filter(|event| {
+                    event.origin_widget_id == Self::BUTTON
+                        && event.msg_type == UiMsg::WidgetActivated
+                })
+                .count()
+        }
+
+        fn state(&self) -> UiState {
+            self.frame
+                .widget(Self::BUTTON)
+                .expect("gesture button")
+                .base()
+                .state
+        }
+    }
+
+    fn move_to((x, y): (i32, i32)) -> GameEvent {
+        GameEvent::MouseMove {
+            x,
+            y,
+            xrel: 0,
+            yrel: 0,
+        }
+    }
+
+    fn down((x, y): (i32, i32)) -> GameEvent {
+        GameEvent::MouseDown(x, y, 1, 1)
+    }
+
+    fn up((x, y): (i32, i32)) -> GameEvent {
+        GameEvent::MouseUp(x, y, 1)
+    }
+
+    #[test]
+    fn menu_button_click_after_hover_frame_activates_once() {
+        let mut fixture = GestureFixture::new(true);
+        let inside = GestureFixture::INSIDE;
+        assert_eq!(fixture.batch(&[move_to(inside)]), 0);
+        assert_eq!(fixture.batch(&[]), 0);
+        assert_eq!(fixture.batch(&[down(inside)]), 0);
+        assert_eq!(fixture.state(), UiState::Pushed);
+        assert_eq!(fixture.batch(&[up(inside)]), 1);
+        assert_eq!(fixture.batch(&[]), 0);
+    }
+
+    #[test]
+    fn menu_button_click_polled_in_one_batch_activates_without_hover() {
+        let mut fixture = GestureFixture::new(true);
+        let inside = GestureFixture::INSIDE;
+        assert_eq!(
+            fixture.batch(&[move_to(inside), down(inside), up(inside)]),
+            1
+        );
+        assert_eq!(fixture.state(), UiState::Focused);
+        assert_eq!(fixture.batch(&[]), 0);
+        assert_eq!(fixture.input.capture(), None);
+    }
+
+    #[test]
+    fn menu_button_first_press_without_hover_captures_then_activates() {
+        let mut fixture = GestureFixture::new(true);
+        let inside = GestureFixture::INSIDE;
+        assert_eq!(fixture.batch(&[down(inside)]), 0);
+        assert_eq!(fixture.state(), UiState::Pushed);
+        assert_eq!(fixture.input.capture(), Some(GestureFixture::BUTTON));
+        assert_eq!(fixture.batch(&[up(inside)]), 1);
+        assert_eq!(fixture.input.capture(), None);
+    }
+
+    #[test]
+    fn menu_button_press_outside_release_inside_does_not_activate() {
+        let outside = GestureFixture::OUTSIDE;
+        let inside = GestureFixture::INSIDE;
+        // One batch, from DEFAULT.
+        let mut fixture = GestureFixture::new(true);
+        assert_eq!(
+            fixture.batch(&[down(outside), move_to(inside), up(inside)]),
+            0
+        );
+        // Across frames, dragging in while held.
+        let mut fixture = GestureFixture::new(true);
+        assert_eq!(fixture.batch(&[down(outside)]), 0);
+        assert_eq!(fixture.batch(&[move_to(inside)]), 0);
+        assert_eq!(fixture.batch(&[up(inside)]), 0);
+        // One batch, from FOCUSED: leave, press, come back, release.
+        let mut fixture = GestureFixture::new(true);
+        assert_eq!(fixture.batch(&[move_to(inside)]), 0);
+        assert_eq!(fixture.state(), UiState::Focused);
+        assert_eq!(
+            fixture.batch(&[move_to(outside), down(outside), move_to(inside), up(inside)]),
+            0
+        );
+    }
+
+    #[test]
+    fn menu_button_press_inside_release_outside_cancels() {
+        let outside = GestureFixture::OUTSIDE;
+        let inside = GestureFixture::INSIDE;
+        // One batch.
+        let mut fixture = GestureFixture::new(true);
+        assert_eq!(
+            fixture.batch(&[down(inside), move_to(outside), up(outside)]),
+            0
+        );
+        // Across frames, without a prior hover.
+        let mut fixture = GestureFixture::new(true);
+        assert_eq!(fixture.batch(&[down(inside)]), 0);
+        assert_eq!(fixture.batch(&[move_to(outside)]), 0);
+        assert_eq!(fixture.state(), UiState::Selected);
+        assert_eq!(fixture.batch(&[up(outside)]), 0);
+        assert_eq!(fixture.state(), UiState::Default);
+        assert_eq!(fixture.input.capture(), None);
+    }
+
+    #[test]
+    fn menu_button_unmatched_release_does_not_activate() {
+        let mut fixture = GestureFixture::new(true);
+        let inside = GestureFixture::INSIDE;
+        assert_eq!(fixture.batch(&[move_to(inside), up(inside)]), 0);
+        assert_eq!(fixture.batch(&[up(inside)]), 0);
+    }
+
+    #[test]
+    fn disabled_menu_button_ignores_press_and_batched_click() {
+        let mut fixture = GestureFixture::new(false);
+        let inside = GestureFixture::INSIDE;
+        assert_eq!(
+            fixture.batch(&[move_to(inside), down(inside), up(inside)]),
+            0
+        );
+        assert_eq!(fixture.batch(&[down(inside)]), 0);
+        assert_eq!(fixture.input.capture(), None);
+        assert_eq!(fixture.batch(&[up(inside)]), 0);
+    }
+
+    #[test]
+    fn press_origin_survives_until_the_release_frame_is_consumed() {
+        let mut input = ModalInputState::new();
+        let transform = MenuTransform::centered(640, 480);
+        input.update_from_event(&GameEvent::MouseDown(20, 30, 1, 1), transform);
+        input.update_from_event(&move_to((40, 50)), transform);
+        assert_eq!(
+            input.as_widget_input().left_press_origin,
+            Some(engine_coordinates::ScreenPoint::new(20.0, 30.0))
+        );
+        input.end_frame();
+        input.update_from_event(&GameEvent::MouseUp(40, 50, 1), transform);
+        assert!(input.as_widget_input().left_press_origin.is_some());
+        input.end_frame();
+        assert_eq!(input.as_widget_input().left_press_origin, None);
     }
 
     #[test]

@@ -1172,6 +1172,7 @@ impl NamePromptState {
             keyboard: &self.empty_keyboard,
             text_input: widget_input.text_input,
             capture: None,
+            left_press_origin: None,
         };
         let _field_events = self.input_widget.process_input(&field_input);
         if self.input_widget.base.state != UiState::SelectedEditable {

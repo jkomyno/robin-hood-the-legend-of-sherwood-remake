@@ -93,6 +93,12 @@ impl CaptureSlot {
 /// `capture` is the optional slot widgets write into for mouse capture;
 /// see [`CaptureSlot`]. Callers that don't care about capture pass
 /// `None`.
+///
+/// `left_press_origin` is where the left press that is held, or was
+/// released this frame, began. It lets a widget accept a press or a
+/// complete click that arrived without a prior hover frame while
+/// rejecting one that started elsewhere. Callers that don't track it
+/// pass `None`, which keeps the hover-first behaviour.
 pub struct WidgetInput<'a> {
     pub mouse_position: ScreenPoint,
     pub mouse_z: i16,
@@ -100,6 +106,7 @@ pub struct WidgetInput<'a> {
     pub keyboard: &'a crate::ui::UiKeyboard,
     pub text_input: &'a str,
     pub capture: Option<&'a CaptureSlot>,
+    pub left_press_origin: Option<ScreenPoint>,
 }
 
 // ─── Widget base ────────────────────────────────────────────────────
