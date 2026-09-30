@@ -1053,36 +1053,97 @@ fn parse_diplomacy_args(tokens: &[&str]) -> ConsoleCommand {
     }
 }
 
-fn parse_money_args(args: &[&str]) -> ConsoleCommand {
-    let (amount, show_help) = if let Some(&arg) = args.first() {
-        let amount = match arg {
-            "HUNDRED" => 100,
-            "THOUSAND" => 1000,
-            "TENTHOUSAND" => 10_000,
-            "HUNDREDTHOUSAND" => 100_000,
-            _ => arg.parse::<u32>().unwrap_or(1000),
-        };
-        (amount, false)
-    } else {
-        // No-arg default + help-text-emitting branch.
-        (1000, true)
-    };
-    ConsoleCommand::GiveMoney { amount, show_help }
+/// Result of the original handlers' `sscanf(arg, "%u", &value)` call.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum UnsignedScan {
+    /// Leading decimal digits, after an optional `+`, fit a campaign value.
+    Value(u32),
+    /// No digits: `sscanf` matched nothing and left the destination unchanged.
+    NoDigits,
+    /// A negative number (which `%u` would wrap) or a value above
+    /// `i32::MAX` (campaign counters are signed 32-bit). Rejected instead
+    /// of reproducing CRT wrap-around.
+    OutOfRange,
 }
 
+/// Scan a console argument the way the original `%u` conversion does:
+/// an optional sign followed by decimal digits, ignoring any trailing
+/// characters (`12ABC` scans as 12).
+fn scan_unsigned(arg: &str) -> UnsignedScan {
+    let (negative, digits) = match arg.as_bytes().first() {
+        Some(b'+') => (false, &arg[1..]),
+        Some(b'-') => (true, &arg[1..]),
+        _ => (false, arg),
+    };
+    let end = digits
+        .find(|c: char| !c.is_ascii_digit())
+        .unwrap_or(digits.len());
+    if end == 0 {
+        return UnsignedScan::NoDigits;
+    }
+    match digits[..end].parse::<u32>() {
+        Ok(0) => UnsignedScan::Value(0),
+        Ok(value) if !negative && value <= i32::MAX as u32 => UnsignedScan::Value(value),
+        _ => UnsignedScan::OutOfRange,
+    }
+}
+
+const CASH_USAGE: &str =
+    "Money !\nUSAGE: CASH [HUNDRED|THOUSAND|TENTHOUSAND|HUNDREDTHOUSAND|<amount>]";
+
+/// `EZB`/`CASH` (original 0x0045f0c0). Only the first argument is read.
+fn parse_money_args(args: &[&str]) -> ConsoleCommand {
+    let Some(&arg) = args.first() else {
+        return ConsoleCommand::GiveMoney {
+            amount: 1000,
+            show_help: true,
+        };
+    };
+    let amount = match arg {
+        "HUNDRED" => 100,
+        "THOUSAND" => 1000,
+        "TENTHOUSAND" => 10_000,
+        "HUNDREDTHOUSAND" => 100_000,
+        _ => match scan_unsigned(arg) {
+            UnsignedScan::Value(amount) => amount,
+            // The handler initializes its amount to 0, so an unscannable
+            // argument such as the suggested `CASH CENT` adds nothing.
+            UnsignedScan::NoDigits => 0,
+            UnsignedScan::OutOfRange => return ConsoleCommand::UsageError(CASH_USAGE.to_owned()),
+        },
+    };
+    ConsoleCommand::GiveMoney {
+        amount,
+        show_help: false,
+    }
+}
+
+/// `AMULETS`/`GOODLUCK` (original 0x0045eaa0): default and scan-failure
+/// value 100.
 fn parse_amulets_args(args: &[&str]) -> ConsoleCommand {
-    let amount = args
-        .first()
-        .and_then(|s| s.parse::<u32>().ok())
-        .unwrap_or(100);
+    let amount = match args.first().map(|arg| scan_unsigned(arg)) {
+        None | Some(UnsignedScan::NoDigits) => 100,
+        Some(UnsignedScan::Value(amount)) => amount,
+        Some(UnsignedScan::OutOfRange) => {
+            return ConsoleCommand::UsageError(
+                "Amulets [amount]\nUSAGE: AMULETS [<amount>]".to_owned(),
+            );
+        }
+    };
     ConsoleCommand::GiveAmulets { amount }
 }
 
+/// `WAPPEN` (original 0x0045f2a0): default 1. The original leaves its
+/// amount uninitialized when the argument does not scan, so the remake
+/// rejects that input instead of inventing an amount.
 fn parse_blazon_args(args: &[&str]) -> ConsoleCommand {
-    let amount = args
-        .first()
-        .and_then(|s| s.parse::<u32>().ok())
-        .unwrap_or(1);
+    let amount = match args.first().map(|arg| scan_unsigned(arg)) {
+        None => 1,
+        Some(UnsignedScan::Value(amount)) => amount,
+        Some(UnsignedScan::NoDigits | UnsignedScan::OutOfRange) => {
+            return ConsoleCommand::UsageError("Blazons !\nUSAGE: WAPPEN [<amount>]".to_owned());
+        }
+    };
     ConsoleCommand::GiveBlazon { amount }
 }
 
@@ -1536,6 +1597,39 @@ mod tests {
             parse("WAPPEN"),
             Some(ConsoleCommand::GiveBlazon { amount: 1 })
         );
+    }
+
+    #[test]
+    fn resource_arguments_follow_percent_u_scanning() {
+        let money = |input| match parse(input) {
+            Some(ConsoleCommand::GiveMoney { amount, show_help }) => Some((amount, show_help)),
+            _ => None,
+        };
+        assert_eq!(money("CASH"), Some((1000, true)));
+        assert_eq!(money("CASH CENT"), Some((0, false)));
+        assert_eq!(money("CASH HUNDRED THOUSAND"), Some((100, false)));
+        assert_eq!(money("CASH 12ABC"), Some((12, false)));
+        assert_eq!(money("CASH +7"), Some((7, false)));
+        assert_eq!(money("CASH -0"), Some((0, false)));
+        assert_eq!(money("CASH -5"), None);
+        assert_eq!(money("CASH 2147483648"), None);
+        assert_eq!(money("CASH 2147483647"), Some((2_147_483_647, false)));
+        assert_eq!(
+            parse("AMULETS X"),
+            Some(ConsoleCommand::GiveAmulets { amount: 100 })
+        );
+        assert_eq!(
+            parse("AMULETS 3X"),
+            Some(ConsoleCommand::GiveAmulets { amount: 3 })
+        );
+        assert!(matches!(
+            parse("WAPPEN X"),
+            Some(ConsoleCommand::UsageError(_))
+        ));
+        assert!(matches!(
+            parse("WAPPEN -1"),
+            Some(ConsoleCommand::UsageError(_))
+        ));
     }
 
     #[test]

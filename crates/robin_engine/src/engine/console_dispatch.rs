@@ -142,7 +142,7 @@ impl EngineInner {
             GiveMoney { amount, show_help } => {
                 self.console_give_money(tcx.assets, *amount, *show_help)
             }
-            GiveBlazon { amount } => self.console_give_blazon(*amount),
+            GiveBlazon { amount } => self.console_give_blazon(tcx.assets, *amount),
             GiveAmulets { amount } => self.console_give_amulets(*amount),
             AddPeasant => self.console_add_peasant(tcx),
             CampaignReport => self.console_campaign_report(tcx.assets),
@@ -243,25 +243,34 @@ impl EngineInner {
 /// Per-arm handlers of `dispatch_console_command_resolved`. Family handlers
 /// receive the whole command and are only reachable from their dispatch arm.
 impl EngineInner {
-    fn console_give_blazon(&mut self, amount: u32) -> ConsoleResponse {
-        self.campaign_mut_or_panic()
-            .add_value(CampaignValue::Blazon, amount as i32);
-        ConsoleResponse::Ok(format!("{amount} blazons added."))
+    /// `WAPPEN` (original 0x0045f2a0): `FUN_00450b60(3, n)` adds blazons.
+    fn console_give_blazon(&mut self, assets: &LevelAssets, amount: u32) -> ConsoleResponse {
+        let amount = i32::try_from(amount).expect("parser bounds blazon amounts to i32");
+        self.add_campaign_value(assets, CampaignValue::Blazon, amount);
+        ConsoleResponse::Ok("Blazons !".to_string())
     }
 
+    /// `AMULETS`/`GOODLUCK` (original 0x0045eaa0): `FUN_004520e0(0, n)`
+    /// *sets* the amulet total, although the message says "added".
     fn console_give_amulets(&mut self, amount: u32) -> ConsoleResponse {
+        let total = i32::try_from(amount).expect("parser bounds amulet amounts to i32");
         self.campaign_mut_or_panic()
-            .set_value(CampaignValue::Amulets, amount as i32);
-        ConsoleResponse::Ok(format!("{amount} amulets set."))
+            .set_value(CampaignValue::Amulets, total);
+        ConsoleResponse::Ok(format!(
+            "Amulets [amount]\n{amount} amulets added to the campaign."
+        ))
     }
 
+    /// `KOLKOZ`/`MERRYMAN` (original 0x004600b0): arguments are ignored and
+    /// `FUN_004524b0(0xffff)` recruits a random peasant or returns a
+    /// reservist.
     fn console_add_peasant(&mut self, tcx: TickCtx<'_>) -> ConsoleResponse {
         self.campaign_mut_or_panic().add_new_peasant_to_gang(
             tcx.sim,
             None,
             &tcx.assets.profile_manager,
         );
-        ConsoleResponse::Ok("New member!".to_string())
+        ConsoleResponse::Ok("New member !".to_string())
     }
 
     fn console_campaign_report(&mut self, assets: &LevelAssets) -> ConsoleResponse {
@@ -775,15 +784,12 @@ impl EngineInner {
         amount: u32,
         show_help: bool,
     ) -> ConsoleResponse {
-        // Panic on missing campaign — matches `campaign_mut_or_panic`'s
-        // contract for cheats issued outside a mission.
-        self.add_campaign_value(assets, CampaignValue::Ransom, amount as i32);
-        // Always prints "Money !" first, then emits a four-line
-        // help listing (`Try also the following:`, the three
-        // CASH suggestions) when called without args, then
-        // applies the default.  We join everything into one
-        // newline-delimited response — the overlay splits on
-        // `\n` so each line renders separately.
+        // Original 0x0045f0c0 adds through `FUN_00450b60(1, amount)`.
+        let amount = i32::try_from(amount).expect("parser bounds money amounts to i32");
+        self.add_campaign_value(assets, CampaignValue::Ransom, amount);
+        // Always prints "Money !" first; the no-argument branch then
+        // lists the suggestions. `CASH CENT` is only a suggestion: CENT
+        // is not a keyword and scans as 0.
         let mut out = String::from("Money !");
         if show_help {
             out.push_str(
@@ -794,7 +800,6 @@ impl EngineInner {
                  CASH HUNDREDTHOUSAND",
             );
         }
-        out.push_str(&format!("\n{amount} gold added."));
         ConsoleResponse::Ok(out)
     }
 
@@ -1643,15 +1648,106 @@ mod tests {
             &mut None,
             "EZB 500",
         );
-        assert_eq!(
-            resp,
-            ConsoleResponse::Ok("Money !\n500 gold added.".to_string())
-        );
+        assert_eq!(resp, ConsoleResponse::Ok("Money !".to_string()));
         let after = engine
             .mission_domain
             .campaign
             .get_value(CampaignValue::Ransom);
         assert_eq!(after, before + 500);
+    }
+
+    fn run(engine: &mut EngineInner, dev: &mut DevState, input: &str) -> ConsoleResponse {
+        let sim = crate::sim_rng::test_context();
+        engine.run_console_command(TickCtx::new(&sim, &assets()), dev, &mut None, input)
+    }
+
+    fn campaign_value(engine: &EngineInner, value: CampaignValue) -> i32 {
+        engine.mission_domain.campaign.get_value(value)
+    }
+
+    #[test]
+    fn cash_uses_the_first_argument_only_and_scans_like_percent_u() {
+        let (mut engine, mut dev) = engine_with_campaign();
+        engine
+            .mission_domain
+            .campaign
+            .set_value(CampaignValue::Ransom, 7);
+        for (input, expected_total) in [
+            ("CASH HUNDRED", 107),
+            ("EZB CENT", 107),
+            ("CASH HUNDRED THOUSAND", 207),
+            ("CASH THOUSAND HUNDRED", 1207),
+            ("CASH TENTHOUSAND", 11_207),
+            ("CASH HUNDREDTHOUSAND", 111_207),
+            ("CASH 12ABC", 111_219),
+            ("CASH +1", 111_220),
+        ] {
+            assert_eq!(
+                run(&mut engine, &mut dev, input),
+                ConsoleResponse::Ok("Money !".to_owned()),
+                "{input}"
+            );
+            assert_eq!(
+                campaign_value(&engine, CampaignValue::Ransom),
+                expected_total,
+                "{input}"
+            );
+        }
+        for input in ["CASH -5", "CASH 2147483648"] {
+            assert!(
+                matches!(run(&mut engine, &mut dev, input), ConsoleResponse::Ok(text) if text.starts_with("Money !\nUSAGE: CASH")),
+                "{input}"
+            );
+        }
+        assert_eq!(campaign_value(&engine, CampaignValue::Ransom), 111_220);
+    }
+
+    #[test]
+    fn cash_without_argument_adds_thousand_and_prints_suggestions() {
+        let (mut engine, mut dev) = engine_with_campaign();
+        let before = campaign_value(&engine, CampaignValue::Ransom);
+        assert_eq!(
+            run(&mut engine, &mut dev, "CASH"),
+            ConsoleResponse::Ok(
+                "Money !\nTry also the following :\nCASH CENT\nCASH THOUSAND\n\
+                 CASH TENTHOUSAND\nCASH HUNDREDTHOUSAND"
+                    .to_owned()
+            )
+        );
+        assert_eq!(campaign_value(&engine, CampaignValue::Ransom), before + 1000);
+    }
+
+    #[test]
+    fn goodluck_sets_the_amulet_total_despite_saying_added() {
+        let (mut engine, mut dev) = engine_with_campaign();
+        for _ in 0..2 {
+            assert_eq!(
+                run(&mut engine, &mut dev, "GOODLUCK 5"),
+                ConsoleResponse::Ok(
+                    "Amulets [amount]\n5 amulets added to the campaign.".to_owned()
+                )
+            );
+            assert_eq!(campaign_value(&engine, CampaignValue::Amulets), 5);
+        }
+        run(&mut engine, &mut dev, "AMULETS MANY");
+        assert_eq!(campaign_value(&engine, CampaignValue::Amulets), 100);
+    }
+
+    #[test]
+    fn wappen_adds_blazons_and_rejects_unscannable_amounts() {
+        let (mut engine, mut dev) = engine_with_campaign();
+        assert_eq!(
+            run(&mut engine, &mut dev, "WAPPEN"),
+            ConsoleResponse::Ok("Blazons !".to_owned())
+        );
+        assert_eq!(campaign_value(&engine, CampaignValue::Blazon), 1);
+        run(&mut engine, &mut dev, "WAPPEN 4 9");
+        assert_eq!(campaign_value(&engine, CampaignValue::Blazon), 5);
+        assert_eq!(
+            run(&mut engine, &mut dev, "WAPPEN MANY"),
+            ConsoleResponse::Ok("Blazons !\nUSAGE: WAPPEN [<amount>]".to_owned())
+        );
+        assert_eq!(campaign_value(&engine, CampaignValue::Blazon), 5);
     }
 
     #[test]
