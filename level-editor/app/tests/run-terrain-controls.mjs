@@ -232,7 +232,7 @@ try {
     );
   // Marquee uses projected CSS pixels, and right drag does not rotate the camera.
   await evalJS("terrainTest.top()");
-  await sleep();
+  await new Promise((resolve) => setTimeout(resolve, 800));
   const screenPoints = await evalJS(
     "terrainTest.state().document.terrain.vertices.map((_,i)=>terrainTest.point(i))",
   );

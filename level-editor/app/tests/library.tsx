@@ -818,11 +818,11 @@ export async function checkSharedLibrary() {
       "New map did not use its named reference size",
     );
     const initialElevation = elevation();
-    click("Reset view");
+    click("Game camera");
     await new Promise((resolve) => setTimeout(resolve, 900));
     assert(
       Math.abs(elevation() - initialElevation) < 1e-8,
-      "Reset view changed the initial map elevation",
+      "Game camera changed the initial map elevation",
     );
     click("Add to scene");
     await until(() => document.querySelectorAll(".object-list li").length > 0);

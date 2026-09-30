@@ -986,7 +986,29 @@ test("cardinal and top camera controls preserve target, zoom and lens through qu
   orbit.target.copy(target);
   Object.assign(viewport, { camera, orbit, frustum: 125, perspective: 30 });
   viewport.topView();
+  const initialRotation = camera.quaternion.clone();
+  const flight = viewport as unknown as {
+    flight: { start: number; ms: number } | null;
+    stepFlight(): void;
+  };
   viewport.setCardinalView("E");
+  assert.ok(
+    camera.quaternion.angleTo(initialRotation) < 1e-7,
+    "cardinal click does not snap the camera",
+  );
+  assert.equal(orbit.enabled, false);
+  assert.equal(flight.flight?.ms, 700, "uses the game-camera transition duration");
+  flight.flight!.start = performance.now() - 350;
+  flight.stepFlight();
+  assert.ok(
+    camera.quaternion.angleTo(initialRotation) > 0.1,
+    "rotation advances during the transition",
+  );
+  assert.ok(flight.flight, "transition remains active halfway through");
+  flight.flight!.start = performance.now() - 701;
+  flight.stepFlight();
+  assert.equal(flight.flight, null);
+  assert.equal(orbit.enabled, true);
   const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
   assert.ok(up.x > 0.999999, "east appears at the top in top view");
   assert.ok(camera.getWorldDirection(new THREE.Vector3()).y < -0.999999);

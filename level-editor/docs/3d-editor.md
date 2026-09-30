@@ -156,14 +156,14 @@ drags likewise preview live and commit one undo step; Escape cancels the drag.
 | action | how |
 |---|---|
 | pan / orbit around the point under the cursor / zoom to cursor | left drag / right drag / wheel |
-| reset to the map's own view | `g` or **Reset view** |
+| reset to the map's own view | `g` or **Game camera** beside the cardinal buttons |
 | frame everything | `f` |
 | select building / single part | click / alt-click; repeated normal clicks keep the whole building selected; `Esc` clears |
 | move | drag the selected building/part along the ground, use the gizmo (tick "lift" for height), or type/drag the X, Y, Z inputs |
 | turn | `q` / `e` (15°), or type/drag the rotation input; Shift gives finer input dragging |
 | duplicate / delete | `d` / `Del` |
 | asset display | View → Visible / Outline / Hidden changes the viewport only; individual document hide checkboxes still exclude objects from export |
-| cardinal / top view | N/E/S/W, Top view, and 90° turn buttons in View preserve the working target and scale |
+| cardinal / top view | N/E/S/W smoothly transition while preserving the working target and scale; Top view and 90° turns are also available |
 | snap a floating part | parts tagged "float?" show the suggested Δ; the button shifts y and z by −Δ (same map pixels) |
 | undo / redo | `ctrl+z` / `ctrl+shift+z` |
 | save | `ctrl+s` |
