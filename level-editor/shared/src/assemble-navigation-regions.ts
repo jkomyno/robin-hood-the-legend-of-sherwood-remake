@@ -2,7 +2,7 @@ import clipping, { type Polygon } from "polygon-clipping";
 import type { Point } from "./level.ts";
 import type { HeightPlane } from "./gameplay-plane.ts";
 import { normalizeGeneratedMotion } from "./normalize-generated-motion.ts";
-import { simplifyMotionRing } from "./motion-quantization.ts";
+import { simplifyMotionRing, quantizeGeneratedMotionPolygon } from "./motion-quantization.ts";
 import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
 
 export interface NavigationPiece {
@@ -22,14 +22,14 @@ export interface NavigationRegion {
   pieces: NavigationPiece[];
 }
 const shape = (p: NavigationPiece): Polygon => [p.polygon, ...p.blockers];
-function movementRing(points: Point[]): Point[] {
+function movementRing(points: Point[], minimumArea = 0.5): Point[] {
   const ring = simplifyMotionRing(points);
   const area = ring.reduce((sum, p, i) => {
     const q = ring[(i + 1) % ring.length]!;
     return sum + p[0] * q[1] - q[0] * p[1];
   }, 0);
-  if (ring.length < 3 || Math.abs(area) < 1)
-    throw new Error("Joined navigation region has a degenerate contour");
+  if (ring.length < 3 || Math.abs(area) < minimumArea * 2)
+    throw new Error(`Joined navigation region has a degenerate contour: ${JSON.stringify(points)}`);
   // Movement obstacles use the same winding as outer movement boundaries.
   if (area < 0) ring.reverse();
   return ring;
@@ -117,13 +117,29 @@ export function assembleNavigationRegions(
         layer,
         lift: first.lift,
         polygon: movementRing(region[0]!),
-        blockers: region.slice(1).map(movementRing),
+        blockers: region.slice(1).map((hole) => movementRing(hole)),
         pieces: members.flatMap((member) =>
-          clipping.intersection(shape(member), region).map((part) => ({
-            ...member,
-            polygon: movementRing(part[0]!),
-            blockers: part.slice(1).map(movementRing),
-          })),
+          clipping.intersection(shape(member), region).flatMap((part) => {
+            // Intersections can leave fractional slivers at a rounded union edge.
+            // A receiver that collapses to a point or line on the movement grid
+            // cannot own a playable pixel; omit it without changing navigation.
+            if (
+              !quantizeGeneratedMotionPolygon(
+                part,
+                Math.round,
+                "Joined receiving fragment",
+                warnings,
+              )
+            )
+              return [];
+            return [
+              {
+                ...member,
+                polygon: movementRing(part[0]!, 1e-7),
+                blockers: part.slice(1).map((hole) => movementRing(hole, 1e-7)),
+              },
+            ];
+          }),
         ),
       }));
     })

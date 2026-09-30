@@ -1,6 +1,12 @@
 import { render } from "@solidjs/web";
 import { createSignal } from "solid-js";
-import { parseStoredMap, serializeStoredMap, type Level3D } from "@rle/shared";
+import {
+  parseStoredMap,
+  serializeStoredMap,
+  createTerrainGrid,
+  gameToScene,
+  type Level3D,
+} from "@rle/shared";
 import * as THREE from "three";
 import TerrainPanel from "../src/TerrainPanel";
 import { EditorViewport } from "../src/editor-viewport";
@@ -10,7 +16,8 @@ import "../src/styles.css";
 let current: Level3D = {
   version: 1,
   map: "Terrain test",
-  size: null,
+  size: [800, 640],
+  terrain: createTerrainGrid([0, 0, 800, 640], 128),
   camera: { kind: "oblique-orthographic", elevation_deg: 35 },
   objects: [],
   groups: [],
@@ -77,103 +84,93 @@ async function set(label: string, value: string) {
   input!.dispatchEvent(new Event("change", { bubbles: true }));
   await pause();
 }
-async function run() {
-  await click("Add ground region");
-  await set("Terrain elevation", "70");
-  assert(current.terrain?.[0]?.height === 70, "Elevation control did not commit");
-  await click("Add ground region");
-  await set("Terrain X", "600");
-  await set("Terrain Width", "150");
-  await set("Terrain material", "water");
-  assert(current.terrain?.[1]?.material === "water", "Material control did not commit");
-  viewport.frameContent(true);
+type Internals = {
+  terrainControls: { root: THREE.Group; mode: { selectVertex?(id: string): void } };
+  terrainSelectionHandler?: (id: string) => void;
+  activeCamera(): THREE.Camera;
+  renderer: THREE.WebGLRenderer;
+};
+const internals = viewport as unknown as Internals;
+function selectVertex(index: number) {
+  internals.terrainControls.mode.selectVertex?.(current.terrain!.vertices[index]!.id);
+}
+function selectCell(index: number) {
+  internals.terrainSelectionHandler?.(current.terrain!.cells[index]!.id);
+}
+async function activate() {
   await pause();
-  current = parseStoredMap(
-    JSON.parse(JSON.stringify(serializeStoredMap(current, new Map()))),
-    new Map(),
-  );
+  current = { ...current };
   setDoc(current);
   viewport.syncViews(current);
+  await pause();
+}
+async function run() {
+  await activate();
+  selectVertex(9);
+  await pause();
+  await set("Vertex Z", "24");
+  await set("Vertex X", "140");
+  assert(current.terrain!.vertices[9]!.position[2] === 24, "Vertex height did not commit");
   assert(
-    current.terrain?.length === 2 && current.terrain[0]!.height === 70,
-    "Saved terrain did not reopen",
+    current.terrain!.vertices[9]!.position[0] === 140,
+    "Vertex horizontal edit did not commit",
   );
+  selectCell(0);
+  await pause();
+  const count = current.terrain!.cells.length;
+  await click("Subdivide selected cell");
+  assert(current.terrain!.cells.length > count, "Subdivision did not add detail");
+  const saved = JSON.stringify(serializeStoredMap(current, new Map()));
+  current = parseStoredMap(JSON.parse(saved), new Map());
+  setDoc(current);
+  viewport.syncViews(current);
+  assert(current.terrain!.vertices[9]!.position[2] === 24, "Saved vertex height did not reopen");
+  viewport.frameContent(true);
   const before = viewport.captureThumbnail().toDataURL();
   const { compiled, pixels, appearance } = viewport.bakeMap(current, new Map());
   assert(
-    compiled.descriptor.asset_geometry!.motion_data.layers.flat().length === 2,
-    "River should split the land into two areas",
+    compiled.descriptor.asset_geometry!.motion_data.layers.flat().length > 0,
+    "No walking areas compiled",
   );
   const zip = await packageCompiledMap(compiled, pixels, appearance);
   assert(zip.length > 1000, "Missing baked map ZIP");
-  await click("Delete region");
-  assert(current.terrain?.length === 1, "Delete did not commit");
-  await set("Ground region", current.terrain![0]!.id);
-  await set("Terrain material", "paved");
-  const paved = viewport.bakeMap(current, new Map());
+  const target = (viewport as unknown as { orbit: { target: THREE.Vector3 } }).orbit.target.clone();
+  viewport.topView();
+  viewport.setCardinalView("E");
+  viewport.rotateViewQuarterTurn(-1);
   assert(
-    paved.compiled.descriptor.asset_geometry!.sight_obstacles.some((o) => o.default_material === 2),
-    "Paved terrain must bake as stone",
+    target.distanceTo((viewport as unknown as { orbit: { target: THREE.Vector3 } }).orbit.target) <
+      1e-5,
+    "Direction controls changed target",
   );
   assert(errors.length === 0, errors.join("\n"));
   Object.assign(window, {
     __migrationImages: { before, after: viewport.captureThumbnail().toDataURL() },
   });
-  result.textContent = `PASS terrain controls, elevation, water carving, save/reload, two navigation areas and ${zip.length} byte ZIP`;
+  result.textContent = `PASS grid XYZ editing, subdivision, save/reload, walking slopes, camera directions and ${zip.length} byte ZIP`;
 }
 Object.assign(window, {
   terrainTest: {
     state: () => ({ document: current, commits, errors }),
-    point: (corner: number) => {
-      const internals = viewport as unknown as {
-        terrainControls: { root: THREE.Group };
-        activeCamera(): THREE.Camera;
-        renderer: THREE.WebGLRenderer;
-        gizmo: unknown;
-      };
-      const handle = internals.terrainControls.root.children.find(
-        (n) => n.userData.terrainCorner === corner,
-      )!;
-      const p = handle.getWorldPosition(new THREE.Vector3()).project(internals.activeCamera());
+    point: (index: number) => {
+      const position = current.terrain!.vertices[index]!.position;
+      const p = new THREE.Vector3(...gameToScene(current.camera, ...position));
+      internals.terrainControls.root.localToWorld(p);
+      p.project(internals.activeCamera());
       const r = internals.renderer.domElement.getBoundingClientRect();
       return { x: r.left + ((p.x + 1) * r.width) / 2, y: r.top + ((1 - p.y) * r.height) / 2 };
     },
-    axis: () => {
-      const internals = viewport as unknown as {
-        gizmo: { getHelper(): THREE.Object3D };
-        activeCamera(): THREE.Camera;
-        renderer: THREE.WebGLRenderer;
-      };
-      const points: { x: number; y: number }[] = [];
-      internals.gizmo.getHelper().traverseVisible((n) => {
-        if (n instanceof THREE.Mesh && n.name === "Y" && n.geometry.type === "CylinderGeometry") {
-          n.geometry.computeBoundingBox();
-          const p = n.geometry
-            .boundingBox!.getCenter(new THREE.Vector3())
-            .applyMatrix4(n.matrixWorld)
-            .project(internals.activeCamera());
-          const r = internals.renderer.domElement.getBoundingClientRect();
-          points.push({
-            x: r.left + ((p.x + 1) * r.width) / 2,
-            y: r.top + ((1 - p.y) * r.height) / 2,
-          });
-        }
-      });
-      if (!points.length) throw new Error("No visible terrain gizmo elevation handle");
-      return points.sort((a, b) => a.y - b.y)[0];
-    },
-    gizmo: () => {
-      const g = (viewport as unknown as { gizmo: { object?: THREE.Object3D; showY: boolean } })
-        .gizmo;
-      return { attached: !!g.object, vertical: g.showY };
-    },
+    selectVertex,
+    selectCell,
     frame: () => viewport.frameContent(true),
   },
 });
 async function prepareControls() {
-  await click("Add ground region");
-  await set("Terrain elevation", "70");
+  await activate();
+  viewport.syncViews(current);
   viewport.frameContent(true);
+  await pause();
+  selectVertex(9);
   await pause();
   result.textContent = "READY";
 }

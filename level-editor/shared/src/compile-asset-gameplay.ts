@@ -154,8 +154,8 @@ export function compileAssetGameplay(
       return result;
     } catch (error) {
       if (
-        !options.bestEffort ||
         !(error instanceof UnavailableLiftPlacement) ||
+        (!options.bestEffort && !error.cropped) ||
         omitted.has(error.placement)
       )
         throw error;
@@ -169,9 +169,11 @@ export function compileAssetGameplay(
 
 class UnavailableLiftPlacement extends Error {
   readonly placement: string;
-  constructor(placement: string, message: string) {
+  readonly cropped: boolean;
+  constructor(placement: string, message: string, cropped = false) {
     super(message);
     this.placement = placement;
+    this.cropped = cropped;
   }
 }
 
@@ -913,7 +915,7 @@ function compileAssetGameplayAttempt(
   for (const support of projectionSupports)
     if (support.lift) support.lift = assembledLifts.identities.get(support.lift)!;
   for (const door of doors) if (door.lift) door.lift = assembledLifts.identities.get(door.lift)!;
-  if (!surfaces.length && !options.bestEffort)
+  if (!surfaces.length && !options.bestEffort && !omitted.size)
     throw new Error(
       "Assets define no walkable surfaces; a map rectangle is not a substitute for authored ground",
     );
@@ -921,21 +923,82 @@ function compileAssetGameplayAttempt(
     warnings.push(
       "No authored walkable surfaces are available. This export has no traversable ground.",
     );
-  if (
-    surfaces.some((s) =>
-      s.polygon.some((p) => p[0] < 0 || p[1] < 0 || p[0] >= bounds[2] || p[1] >= bounds[3]),
-    )
-  ) {
-    if (!options.bestEffort)
-      throw new Error("Export frame cuts authored walkable surfaces; enlarge it before compiling");
+  // Coordinates are projected pixels after subtracting the image origin.
+  // Cropping affects compiled navigation only; the editor keeps all authored data.
+  const frame = polygon([
+    [0, 0],
+    [bounds[2], 0],
+    [bounds[2], bounds[3]],
+    [0, bounds[3]],
+  ]);
+  const outsideFrame = ([x, y]: Point) => x < 0 || y < 0 || x > bounds[2] || y > bounds[3];
+  const outsideAnchor = ([x, y, z]: Vec3) =>
+    x < 0 || y - z < 0 || x >= bounds[2] || y - z >= bounds[3];
+  const cropped = surfaces.some((surface) => surface.polygon.some(outsideFrame));
+  if (cropped)
     warnings.push(
-      "Authored walkable surfaces extend outside the export image; navigation is retained beyond its visible frame.",
+      "Gameplay navigation is clipped to the export frame; out-of-bounds editor content is retained.",
     );
+  // Material records are referenced by receivers and by ground queries. Rebuild
+  // every reference after clipping, since one concave region can become islands.
+  const materialRemap = new Map<number, number[]>();
+  const clippedMaterials: typeof materials = [];
+  for (const [index, material] of materials.entries()) {
+    const regions = material.polygon.points.some(outsideFrame)
+      ? fixedPolygonBoolean("intersection", polygon(material.polygon.points), [frame])
+      : [[material.polygon.points]];
+    const indices: number[] = [];
+    for (const region of regions) {
+      const points = simplifyMotionRing(
+        region[0]!.map(([x, y]): Point => [quantize(x), quantize(y)]),
+      );
+      if (points.length < 3 || Math.abs(signedArea(points)) < 0.5) continue;
+      if (clippedMaterials.length > 65535) throw new Error("Too many clipped material regions");
+      indices.push(clippedMaterials.length);
+      clippedMaterials.push({ ...material, polygon: { points } });
+    }
+    materialRemap.set(index, indices);
   }
+  const remapMaterials = (indices: number[]) =>
+    indices.flatMap((index) => materialRemap.get(index)!);
+  for (const obstacle of sight)
+    obstacle.material_indices = remapMaterials(obstacle.material_indices);
+  for (const support of projectionSupports)
+    support.materialIndices = remapMaterials(support.materialIndices);
+  groundMaterials.splice(0, groundMaterials.length, ...remapMaterials(groundMaterials));
+  materials.splice(0, materials.length, ...clippedMaterials);
   const planes: HeightPlane[] = [];
+  const planeBuckets = new Map<string, HeightPlane[]>();
+  const canonicalPlanes = new Map<HeightPlane, HeightPlane>();
+  const planeSurfaces = new Map<HeightPlane, typeof surfaces>();
   for (const surface of surfaces.filter((s) => !s.lift)) {
-    if (!planes.some((p) => p.every((n, i) => Math.abs(n - surface.plane[i]!) < 1e-7)))
-      planes.push(surface.plane);
+    const bucket = surface.plane.map((n) => Math.floor(n / 1e-7));
+    let canonical: HeightPlane | undefined;
+    // Neighbor buckets retain the existing tolerance at bucket boundaries.
+    for (let x = -1; x <= 1 && !canonical; x++)
+      for (let y = -1; y <= 1 && !canonical; y++)
+        for (let z = -1; z <= 1 && !canonical; z++)
+          canonical = planeBuckets
+            .get(`${bucket[0]! + x},${bucket[1]! + y},${bucket[2]! + z}`)
+            ?.find((p) => p.every((n, i) => Math.abs(n - surface.plane[i]!) < 1e-7));
+    if (!canonical) {
+      canonical = surface.plane;
+      planes.push(canonical);
+      const key = bucket.join(",");
+      const members = planeBuckets.get(key) ?? [];
+      members.push(canonical);
+      planeBuckets.set(key, members);
+      planeSurfaces.set(canonical, []);
+    }
+    canonicalPlanes.set(surface.plane, canonical);
+    planeSurfaces.get(canonical)!.push(surface);
+  }
+  const planeSupports = new Map<HeightPlane, typeof projectionSupports>();
+  for (const support of projectionSupports) {
+    const canonical = canonicalPlanes.get(support.plane) ?? support.plane;
+    const members = planeSupports.get(canonical) ?? [];
+    members.push(support);
+    planeSupports.set(canonical, members);
   }
   planes.sort((a, b) => a[2] - b[2] || a[0] - b[0] || a[1] - b[1]);
   // Ordinary surfaces occupy conventional layers; all lifts use the reserved last layer.
@@ -944,9 +1007,7 @@ function compileAssetGameplayAttempt(
     () => [],
   );
   const groups = planes.flatMap((plane, layer) => {
-    const matching = surfaces.filter(
-      (s) => !s.lift && s.plane.every((n, i) => Math.abs(n - plane[i]!) < 1e-7),
-    );
+    const matching = planeSurfaces.get(plane)!;
     return [...new Set(matching.map((s) => s.navigationRegion))].map((region) => ({
       plane,
       layer,
@@ -974,8 +1035,40 @@ function compileAssetGameplayAttempt(
   }[] = [];
   let sector = 0;
   const navigationPieces: NavigationPiece[] = [];
+  const boundsOf = (points: Point[]): [number, number, number, number] => {
+    const bounds: [number, number, number, number] = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const [x, y] of points) {
+      bounds[0] = Math.min(bounds[0], x);
+      bounds[1] = Math.min(bounds[1], y);
+      bounds[2] = Math.max(bounds[2], x);
+      bounds[3] = Math.max(bounds[3], y);
+    }
+    return bounds;
+  };
+  const solidGeometry = movementSolids
+    .filter(({ shape }) => shape.solid)
+    .map(({ owner, shape }) => {
+      const footprint = shape.points.map((p): Point => [p.x, p.y]);
+      return {
+        owner,
+        footprint,
+        bounds: boundsOf(footprint),
+        top: heightPlane(
+          shape.points.map((p) => [p.x, p.y, p.z_top]),
+          false,
+        ),
+        bottom: heightPlane(
+          shape.points.map((p) => [p.x, p.y, p.z_bottom]),
+          false,
+        ),
+      };
+    });
   for (const { layer, plane, lift, navigationRegion, surfaces: group } of groups) {
-    const preserve = group.some((s) => s.preserveMovementBoundary);
+    // Cropped boundaries become generated polygons: preserved contours can extend
+    // beyond the frame and must not authorize movement into the invisible area.
+    const preserve =
+      group.some((s) => s.preserveMovementBoundary) &&
+      !group.some((s) => s.polygon.some(outsideFrame));
     if (preserve && (group.length !== 1 || lift))
       throw new Error(
         "Preserved movement boundary needs one ordinary surface per navigation region",
@@ -1011,24 +1104,26 @@ function compileAssetGameplayAttempt(
         return [x, y + z, z];
       }),
     );
-    for (const { owner, shape: obstacle } of movementSolids) {
-      if (!obstacle.solid) continue;
-      const footprint = obstacle.points.map((p): Point => [p.x, p.y]);
-      const top = heightPlane(
-        obstacle.points.map((p) => [p.x, p.y, p.z_top]),
-        false,
-      );
-      const bottom = heightPlane(
-        obstacle.points.map((p) => [p.x, p.y, p.z_bottom]),
-        false,
-      );
-      const xs = footprint.map((p) => p[0]),
-        ys = footprint.map((p) => p[1]);
+    const worldBounds = boundsOf(
+      group.flatMap((surface) =>
+        surface.polygon.map(([x, y]): Point => [x, y + planeHeight(plane, [x, y])]),
+      ),
+    );
+    for (const { owner, footprint, bounds: solidBounds, top, bottom } of solidGeometry) {
+      // Most grid triangles are far from most placed solids. Their disjoint
+      // world-space bounds exclude intersection before any polygon operations.
+      if (
+        solidBounds[2] < worldBounds[0] ||
+        solidBounds[0] > worldBounds[2] ||
+        solidBounds[3] < worldBounds[1] ||
+        solidBounds[1] > worldBounds[3]
+      )
+        continue;
       let slice: Point[] = [
-        [Math.min(...xs), Math.min(...ys)],
-        [Math.max(...xs), Math.min(...ys)],
-        [Math.max(...xs), Math.max(...ys)],
-        [Math.min(...xs), Math.max(...ys)],
+        [solidBounds[0], solidBounds[1]],
+        [solidBounds[2], solidBounds[1]],
+        [solidBounds[2], solidBounds[3]],
+        [solidBounds[0], solidBounds[3]],
       ];
       const above = top.map((n, i) => n - worldPlane[i]!) as HeightPlane;
       if (footprint.every((p) => planeHeight(above, p) <= 1e-7)) continue;
@@ -1067,6 +1162,8 @@ function compileAssetGameplayAttempt(
       });
       continue;
     }
+    if (group.some((s) => s.polygon.some(outsideFrame)))
+      merged = fixedPolygonBoolean("intersection", merged, [frame]);
     for (const poly of merged.flatMap((region) =>
       normalizeGeneratedMotion([region], `Movement layer ${layer}`, warnings),
     )) {
@@ -1136,7 +1233,7 @@ function compileAssetGameplayAttempt(
               piece.blockers.map((b) => [b]),
             )
           : [[polygon(piece.polygon)[0]!, ...piece.blockers.map((h) => polygon(h)[0]!)]];
-      const supports = projectionSupports.filter(
+      const supports = (planeSupports.get(piece.plane) ?? []).filter(
         (support) =>
           support.lift === piece.lift &&
           support.navigationRegion === piece.navigationRegion &&
@@ -1186,9 +1283,14 @@ function compileAssetGameplayAttempt(
     sector += 1 + blockers.length + changing.obstacles.length;
   }
   for (const support of projectionSupports)
-    if (support.obstacleIndex !== undefined && !sight[support.obstacleIndex]!.projection_area)
+    if (
+      support.obstacleIndex !== undefined &&
+      !sight[support.obstacleIndex]!.projection_area &&
+      fixedPolygonBoolean("intersection", polygon(support.polygon), [frame]).length
+    )
       throw new Error("Projection volume has no compiled receiving area");
   class UnresolvedSurface extends Error {}
+  class OutsideExportFrame extends UnresolvedSurface {}
   const resolve = (
     point: Vec3,
     label: string,
@@ -1196,6 +1298,11 @@ function compileAssetGameplayAttempt(
     allowBlocked = false,
     projected: Point = project(point),
   ) => {
+    if (
+      cropped &&
+      (outsideFrame(projected) || projected[0] === bounds[2] || projected[1] === bounds[3])
+    )
+      throw new OutsideExportFrame(`${label}: anchor lies outside the export frame`);
     const matches = areas.filter(
       (a) =>
         (lift === null || a.lift === lift) &&
@@ -1223,7 +1330,11 @@ function compileAssetGameplayAttempt(
     try {
       area = resolve(receiver.anchor, `${receiver.id} navigation anchor`);
     } catch (error) {
-      if (!options.bestEffort || !(error instanceof UnresolvedSurface)) throw error;
+      if (
+        !(error instanceof UnresolvedSurface) ||
+        (!options.bestEffort && !(error instanceof OutsideExportFrame))
+      )
+        throw error;
       warnings.push(`Receiver ${receiver.id}: navigation binding omitted; ${error.message}`);
       return [];
     }
@@ -1253,6 +1364,11 @@ function compileAssetGameplayAttempt(
   const masks: NonNullable<CompiledAssetGeometry["masks"]> = [];
   const maskIndices = new Map<string, number[]>();
   for (const mask of placedMasks) {
+    if (cropped && outsideAnchor(mask.anchor)) {
+      warnings.push(`Mask ${mask.id}: omitted because its anchor lies outside the export frame.`);
+      maskIndices.set(mask.id, []);
+      continue;
+    }
     // Masks select a receiving layer, not a movement destination. A placed
     // obstacle may cover their anchor without removing the authored receiver.
     const point = project(mask.anchor);
@@ -1316,13 +1432,17 @@ function compileAssetGameplayAttempt(
       return indices;
     });
   // Detached edges have no runtime connection. Retain zones used by any remaining pair.
-  if (options.bestEffort) {
+  if (options.bestEffort || cropped) {
     const unavailable = new Set<string>();
     for (const zone of jumpZones) {
       try {
         resolve(zone.anchor, `${zone.id} landing anchor`);
       } catch (error) {
-        if (!(error instanceof UnresolvedSurface)) throw error;
+        if (
+          !(error instanceof UnresolvedSurface) ||
+          (!options.bestEffort && !(error instanceof OutsideExportFrame))
+        )
+          throw error;
         unavailable.add(zone.id);
       }
     }
@@ -1364,7 +1484,7 @@ function compileAssetGameplayAttempt(
   // Runtime construction order is motion, materials, projection planes, then buildings.
   // Motion adds an out-of-map sector; each door also consumes a constructor slot.
   const omittedDoors = new Set<string>();
-  if (options.bestEffort) {
+  if (options.bestEffort || cropped) {
     for (const door of doors.filter((door) => door.lift)) {
       try {
         resolve(door.outsideAnchor, `${door.name} outside`);
@@ -1375,7 +1495,12 @@ function compileAssetGameplayAttempt(
           .filter((placement) => door.name.startsWith(`${placement.id}/`))
           .sort((a, b) => b.id.length - a.id.length)[0];
         if (!owner) throw error;
-        throw new UnavailableLiftPlacement(owner.id, error.message);
+        if (!options.bestEffort && !(error instanceof OutsideExportFrame)) throw error;
+        throw new UnavailableLiftPlacement(
+          owner.id,
+          error.message,
+          error instanceof OutsideExportFrame,
+        );
       }
     }
     for (let index = doors.length - 1; index >= 0; index--) {
@@ -1386,12 +1511,17 @@ function compileAssetGameplayAttempt(
       try {
         const outside = resolve(door.outsideAnchor, `${door.name} outside`, null);
         if (
+          options.bestEffort &&
           !door.interior &&
           outside.sector === resolve(door.insideAnchor, `${door.name} inside`, null).sector
         )
           reason = "both endpoints share a movement area";
       } catch (error) {
-        if (!(error instanceof UnresolvedSurface)) throw error;
+        if (
+          !(error instanceof UnresolvedSurface) ||
+          (!options.bestEffort && !(error instanceof OutsideExportFrame))
+        )
+          throw error;
         reason = error.message;
       }
       if (!reason) continue;
@@ -1509,7 +1639,11 @@ function compileAssetGameplayAttempt(
                       resolve(point, `${light.id} receiver ${index}`, null, true, projected).layer,
                     ];
                   } catch (error) {
-                    if (!options.bestEffort || !(error instanceof UnresolvedSurface)) throw error;
+                    if (
+                      !(error instanceof UnresolvedSurface) ||
+                      (!options.bestEffort && !(error instanceof OutsideExportFrame))
+                    )
+                      throw error;
                     warnings.push(`Light receiver omitted: ${error.message}`);
                     return [];
                   }
@@ -1531,7 +1665,10 @@ function compileAssetGameplayAttempt(
                 .map((area) => area.layer),
             );
             if (matchingLayers.size === 0) {
-              if (options.bestEffort) {
+              if (
+                options.bestEffort ||
+                !fixedPolygonBoolean("intersection", polygon(light.polygon), [frame]).length
+              ) {
                 warnings.push(
                   `Light region ${light.id}: omitted because no receiving layer overlaps its contour.`,
                 );
@@ -1577,7 +1714,11 @@ function compileAssetGameplayAttempt(
             try {
               area = resolve(t.waypointAnchor, `${t.id} waypoint`, undefined, true);
             } catch (error) {
-              if (!options.bestEffort || !(error instanceof UnresolvedSurface)) throw error;
+              if (
+                !(error instanceof UnresolvedSurface) ||
+                (!options.bestEffort && !(error instanceof OutsideExportFrame))
+              )
+                throw error;
               warnings.push(`Transition ${t.id}: omitted; ${error.message}`);
               return [];
             }

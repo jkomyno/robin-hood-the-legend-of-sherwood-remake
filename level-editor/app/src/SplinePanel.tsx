@@ -16,6 +16,9 @@ import { readWallPresets, wallPreset, type WallPreset } from "./wall-presets";
 import AssetPreview, { AssetPreviewRenderer } from "./AssetPreview";
 import AssetPickerDialog from "./AssetPickerDialog";
 import { availableWallPresets, builtInWallPresets, cornerAssetIds } from "./spline-presets";
+import MaterialPicker from "./MaterialPicker";
+import { splineMaterialWeightsAt } from "../../shared/src/spline-sampling.ts";
+import { terrainHeightAt } from "../../shared/src/authored-terrain.ts";
 
 export default function SplinePanel(props: {
   document: () => Level3D | null;
@@ -30,6 +33,7 @@ export default function SplinePanel(props: {
   const [active, setActive] = createSignal("");
   const [draft, setDraft] = createSignal<LevelSpline | null>(null);
   const [point, setPoint] = createSignal(0);
+  const [section, setSection] = createSignal(-1);
   const [picker, setPicker] = createSignal<"wall" | "corner" | null>(null);
   const [sourceMap, setSourceMap] = createSignal("");
   const previewRenderer = new AssetPreviewRenderer();
@@ -42,6 +46,14 @@ export default function SplinePanel(props: {
   let attempt = 0;
   const path = () =>
     draft() ?? props.document()?.splines?.find((path) => path.id === active()) ?? null;
+  const pointHeight = (path: LevelSpline, index: number) => {
+    const p = path.points[index],
+      document = props.document();
+    if (!p) return 0;
+    return path.kind === "road" && document
+      ? (terrainHeightAt(document, p[0], p[1]) ?? p[2]) + (path.pointHeightOffsets?.[index] ?? 0)
+      : p[2];
+  };
   const choices = () => [
     ...availableWallPresets(props.entries()),
     ...presets().filter((p) => props.entries().some((e) => e.id === p.asset)),
@@ -339,6 +351,7 @@ export default function SplinePanel(props: {
         name: kind === "river" ? "River" : kind === "road" ? "Footpath" : "Battlement wall",
         kind,
         points: [],
+        ...(kind === "wall" ? {} : { pointWidths: [], pointMaterials: [] }),
         closed: false,
         width: kind === "river" ? 110 : kind === "road" ? 26 : wallWidth,
         repeatLength: kind === "river" ? 150 : wallRepeat,
@@ -381,6 +394,10 @@ export default function SplinePanel(props: {
     const index = Math.min(point(), current.points.length - 1);
     patch({
       points: current.points.filter((_, i) => i !== index),
+      pointWidths: current.pointWidths?.filter((_, i) => i !== index),
+      pointHeightOffsets: current.pointHeightOffsets?.filter((_, i) => i !== index),
+      pointMaterials: current.pointMaterials?.filter((_, i) => i !== index),
+      pointMaterialMixes: current.pointMaterialMixes?.filter((_, i) => i !== index),
       cornerDisabled: current.cornerDisabled
         ?.filter((i) => i !== index)
         .map((i) => (i > index ? i - 1 : i)),
@@ -402,15 +419,17 @@ export default function SplinePanel(props: {
     () => ({
       current: props.active === false ? null : path(),
       selected: point(),
+      selectedSection: section(),
       drawing: !!draft(),
     }),
-    ({ current, selected, drawing }) => {
+    ({ current, selected, selectedSection, drawing }) => {
       untrack(() =>
         props.viewport.setSplineEdit(
           current
             ? {
                 path: current,
                 point: selected,
+                section: selectedSection,
                 drawing,
                 append(position) {
                   // A pointer gesture can retain this callback while reactive
@@ -430,11 +449,34 @@ export default function SplinePanel(props: {
                     return {
                       ...latest,
                       points: [...latest.points, [position[0], position[1], height]],
+                      pointWidths: latest.pointWidths
+                        ? [...latest.pointWidths, latest.pointWidths.at(-1) ?? latest.width]
+                        : undefined,
+                      pointHeightOffsets: latest.pointHeightOffsets
+                        ? [...latest.pointHeightOffsets, latest.pointHeightOffsets.at(-1) ?? 0]
+                        : undefined,
+                      pointMaterials: latest.pointMaterials
+                        ? [
+                            ...latest.pointMaterials,
+                            latest.pointMaterials.at(-1) ??
+                              (latest.kind === "river" ? "water_still" : "path_dirt"),
+                          ]
+                        : undefined,
+                      pointMaterialMixes: latest.pointMaterialMixes
+                        ? [...latest.pointMaterialMixes, latest.pointMaterialMixes.at(-1) ?? null]
+                        : undefined,
                     };
                   });
                 },
                 move,
-                selectPoint: setPoint,
+                selectPoint(index) {
+                  setPoint(index);
+                  setSection(-1);
+                },
+                selectSection(index) {
+                  setSection(index);
+                  setPoint(index);
+                },
               }
             : null,
         ),
@@ -663,7 +705,7 @@ export default function SplinePanel(props: {
                 label="Path width"
                 value={current().width}
                 min={1}
-                patch={(value) => ({ width: value })}
+                patch={(value) => ({ width: value, pointWidths: undefined })}
               />
               <Show when={current().kind === "wall"}>
                 <NumberField
@@ -677,8 +719,52 @@ export default function SplinePanel(props: {
             <Show when={current().points.length > 0}>
               <NumberField
                 label="Path elevation"
-                value={current().points[0]?.[2] ?? 0}
-                patch={(value) => ({ points: current().points.map((p) => [p[0], p[1], value]) })}
+                value={pointHeight(current(), 0)}
+                patch={(value) => ({
+                  points: current().points.map((p) => [p[0], p[1], value]),
+                  pointHeightOffsets:
+                    current().kind === "road"
+                      ? current().points.map(
+                          (p) => value - (terrainHeightAt(props.document()!, p[0], p[1]) ?? p[2]),
+                        )
+                      : current().pointHeightOffsets,
+                })}
+              />
+            </Show>
+            <Show when={current().kind === "river"}>
+              <label class="check">
+                <input
+                  type="checkbox"
+                  checked={current().channel?.enabled ?? true}
+                  onChange={(event) =>
+                    patch({
+                      channel: {
+                        bedDepth: 24,
+                        bankSlope: 1,
+                        ...current().channel,
+                        enabled: event.currentTarget.checked,
+                      },
+                    })
+                  }
+                />
+                Automatically shape riverbed
+              </label>
+              <NumberField
+                label="Riverbed depth (pixels)"
+                value={current().channel?.bedDepth ?? 24}
+                min={0}
+                patch={(value) => ({
+                  channel: { enabled: true, bankSlope: 1, ...current().channel, bedDepth: value },
+                })}
+              />
+              <NumberField
+                label="Bank slope (rise / run)"
+                value={current().channel?.bankSlope ?? 1}
+                min={0.01}
+                step={0.1}
+                patch={(value) => ({
+                  channel: { enabled: true, bedDepth: 24, ...current().channel, bankSlope: value },
+                })}
               />
             </Show>
             <label class="check">
@@ -859,6 +945,86 @@ export default function SplinePanel(props: {
             </Show>
             <Show when={current().points.length > 0}>
               <h3>Control points</h3>
+              <Show when={current().points.length > 1}>
+                <label>
+                  Section
+                  <select
+                    aria-label="Selected section"
+                    value={section()}
+                    onChange={(event) => {
+                      const index = Number(event.currentTarget.value);
+                      setSection(index);
+                      if (index >= 0) setPoint(index);
+                    }}
+                  >
+                    <option value={-1}>Choose a section</option>
+                    <For each={current().points.slice(0, current().closed ? undefined : -1)}>
+                      {(_, index) => (
+                        <option value={index()}>
+                          Point {index() + 1} → Point{" "}
+                          {((index() + 1) % current().points.length) + 1}
+                        </option>
+                      )}
+                    </For>
+                  </select>
+                </label>
+                <Show when={section() >= 0}>
+                  <div class="spline-actions">
+                    <button onClick={() => setPoint(section())}>Edit start point</button>
+                    <button onClick={() => setPoint((section() + 1) % current().points.length)}>
+                      Edit end point
+                    </button>
+                  </div>
+                </Show>
+              </Show>
+              <Show when={current().kind !== "wall"}>
+                <NumberField
+                  label="Point width"
+                  value={current().pointWidths?.[point()] ?? current().width}
+                  min={1}
+                  patch={(value) => ({
+                    pointWidths: current().points.map((_, i) =>
+                      i === point() ? value : (current().pointWidths?.[i] ?? current().width),
+                    ),
+                  })}
+                />
+                <MaterialPicker
+                  label="Point material"
+                  value={
+                    current().pointMaterials?.[point()] ??
+                    (current().kind === "river" ? "water_still" : "path_dirt")
+                  }
+                  customMaterials={props.document()?.customMaterials ?? []}
+                  onCustomMaterialsChange={(customMaterials) => {
+                    const document = props.document();
+                    if (document) publish({ ...document, customMaterials });
+                  }}
+                  onChange={(id) =>
+                    patch({
+                      texture: undefined,
+                      pointMaterialMixes: current().pointMaterialMixes?.map((mix, i) =>
+                        i === point() ? null : mix,
+                      ),
+                      pointMaterials: current().points.map((_, i) =>
+                        i === point()
+                          ? id
+                          : (current().pointMaterials?.[i] ??
+                            (current().kind === "river" ? "water_still" : "path_dirt")),
+                      ),
+                    })
+                  }
+                />
+                <Show when={current().pointMaterialMixes?.[point()]}>
+                  <p class="hint">
+                    This inserted point preserves a material blend. Choosing a material replaces
+                    that blend.
+                  </p>
+                </Show>
+                <p class="hint">
+                  Width and material blend between points. Equal materials at both ends give a
+                  uniform section.
+                </p>
+              </Show>
               <label>
                 Selected point
                 <select
@@ -881,16 +1047,31 @@ export default function SplinePanel(props: {
               <Show when={current().points[point()]}>
                 {(position) => (
                   <div class="spline-coordinates">
-                    <For each={current().kind === "wall" ? ["X", "Y", "Z"] : ["X", "Y"]}>
+                    <For each={["X", "Y", "Z"]}>
                       {(label, axis) => (
                         <NumberField
                           label={"Control point " + label}
-                          value={Math.round(position()[axis()]! * 10) / 10}
+                          value={
+                            Math.round(
+                              (axis() === 2
+                                ? pointHeight(current(), point())
+                                : position()[axis()]!) * 10,
+                            ) / 10
+                          }
                           patch={(number) => {
                             const value: Vec3 = [...position()];
                             value[axis()] = number;
                             return {
                               points: current().points.map((p, i) => (i === point() ? value : p)),
+                              pointHeightOffsets:
+                                axis() === 2 && current().kind === "road"
+                                  ? current().points.map((p, i) =>
+                                      i === point()
+                                        ? number -
+                                          (terrainHeightAt(props.document()!, p[0], p[1]) ?? p[2])
+                                        : (current().pointHeightOffsets?.[i] ?? 0),
+                                    )
+                                  : current().pointHeightOffsets,
                             };
                           }}
                         />
@@ -905,9 +1086,12 @@ export default function SplinePanel(props: {
                 disabled={current().points.length < 2 || current().points.length >= 256}
                 onClick={() => {
                   const points = current().points,
-                    index = Math.min(point(), points.length - 2);
+                    index = Math.min(
+                      point(),
+                      current().closed ? points.length - 1 : points.length - 2,
+                    );
                   const a = points[index]!,
-                    b = points[index + 1]!;
+                    b = points[(index + 1) % points.length]!;
                   patch({
                     points: [
                       ...points.slice(0, index + 1),
@@ -915,6 +1099,43 @@ export default function SplinePanel(props: {
                       ...points.slice(index + 1),
                     ],
                     cornerDisabled: current().cornerDisabled?.map((i) => (i > index ? i + 1 : i)),
+                    pointWidths: current().pointWidths
+                      ? [
+                          ...current().pointWidths!.slice(0, index + 1),
+                          (current().pointWidths![index]! +
+                            current().pointWidths![(index + 1) % points.length]!) /
+                            2,
+                          ...current().pointWidths!.slice(index + 1),
+                        ]
+                      : undefined,
+                    pointHeightOffsets: current().pointHeightOffsets
+                      ? [
+                          ...current().pointHeightOffsets!.slice(0, index + 1),
+                          (current().pointHeightOffsets![index]! +
+                            current().pointHeightOffsets![(index + 1) % points.length]!) /
+                            2,
+                          ...current().pointHeightOffsets!.slice(index + 1),
+                        ]
+                      : undefined,
+                    pointMaterials: current().pointMaterials
+                      ? [
+                          ...current().pointMaterials!.slice(0, index + 1),
+                          current().pointMaterials![index]!,
+                          ...current().pointMaterials!.slice(index + 1),
+                        ]
+                      : undefined,
+                    pointMaterialMixes: [
+                      ...current()
+                        .points.slice(0, index + 1)
+                        .map((_, i) => current().pointMaterialMixes?.[i] ?? null),
+                      splineMaterialWeightsAt(
+                        current(),
+                        (index + 0.5) / (current().closed ? points.length : points.length - 1),
+                      ),
+                      ...current()
+                        .points.slice(index + 1)
+                        .map((_, i) => current().pointMaterialMixes?.[index + 1 + i] ?? null),
+                    ],
                   });
                   setPoint(index + 1);
                 }}

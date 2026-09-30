@@ -131,6 +131,19 @@ export function compileMission(
     ...document.mission.spawnPoints.map((point) => ({ kind: "pc" as const, point })),
     ...document.mission.soldiers.map((point) => ({ kind: "soldier" as const, point })),
   ]) {
+    const [x, y, z] = actor.point.position;
+    const projected: Point = [Math.round(x - bounds[0]), Math.round(y - z - bounds[1])];
+    if (
+      projected[0] < 0 ||
+      projected[1] < 0 ||
+      projected[0] >= bounds[2] ||
+      projected[1] >= bounds[3]
+    ) {
+      warnings.push(
+        `Mission ${actor.point.id}: outside the export frame; omitted this mission marker and retained it in the editor document.`,
+      );
+      continue;
+    }
     try {
       const placement = bind(actor.point);
       if (actor.kind === "pc")

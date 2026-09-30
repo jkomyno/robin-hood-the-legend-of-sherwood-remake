@@ -777,9 +777,13 @@ export async function checkSharedLibrary() {
     click("New map");
     await until(() => (document.querySelector("dialog") as HTMLDialogElement).open);
     assert(
-      !document.querySelector('input[aria-label="Map width"]'),
-      "Creating a map must not require size",
+      document.querySelector('input[aria-label="Map width"]'),
+      "Creating a map must expose workspace dimensions",
     );
+    const preset = document.querySelector<HTMLSelectElement>('[aria-label="Map size preset"]')!;
+    preset.value = "York";
+    preset.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
     const name = document.querySelector('input[aria-label="Map name"]') as HTMLInputElement;
     name.value = "New forest";
     name.dispatchEvent(new Event("input", { bubbles: true }));
@@ -790,8 +794,10 @@ export async function checkSharedLibrary() {
     );
     assert(document.querySelectorAll(".object-list li").length === 0, "New map inherited objects");
     assert(
-      JSON.parse(await files.get("scenes/New forest.rhlos-map.json")!.text()).size === null,
-      "New map acquired fixed bounds",
+      JSON.stringify(
+        JSON.parse(await files.get("scenes/New forest.rhlos-map.json")!.text()).size,
+      ) === "[3136,2318]",
+      "New map did not use its named reference size",
     );
     const initialElevation = elevation();
     click("Reset view");
@@ -821,7 +827,10 @@ export async function checkSharedLibrary() {
     );
     const newSaved = JSON.parse(await files.get("scenes/New forest.rhlos-map.json")!.text());
     assert(
-      newSaved.size === null && newSaved.exportBounds[2] === 10,
+      newSaved.size[0] === 3136 &&
+        newSaved.size[1] === 2318 &&
+        newSaved.terrain.vertices.length > 0 &&
+        newSaved.exportBounds[2] === 10,
       "Advisory crop changed canvas size or expanded to fit assets",
     );
     await select("Map", "York");

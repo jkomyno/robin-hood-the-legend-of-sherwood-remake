@@ -1,7 +1,16 @@
+import MaterialPicker from "./MaterialPicker";
 import ScrubNumber from "./ScrubNumber";
 import type { EditorViewport } from "./editor-viewport";
 import { For, Show, createSignal, createEffect, onCleanup, untrack } from "solid-js";
-import { parseLevel3D, type GroundRegion, type Level3D } from "@rle/shared";
+import {
+  parseLevel3D,
+  createTerrainGrid,
+  subdivideTerrainCells,
+  type CustomTerrainMaterial,
+  type TerrainGrid,
+  type Level3D,
+  type Vec3,
+} from "@rle/shared";
 
 export default function TerrainPanel(props: {
   document: () => Level3D | null;
@@ -12,54 +21,22 @@ export default function TerrainPanel(props: {
   viewport: EditorViewport;
 }) {
   const [selected, setSelected] = createSignal("");
-  const region = () => props.document()?.terrain?.find((r) => r.id === selected());
-  createEffect(
-    () => ({
-      region: region(),
-      camera: props.document()?.camera,
-      enabled: props.active !== false && !props.disabled,
-    }),
-    ({ region, camera, enabled }) => {
-      untrack(() =>
-        props.viewport.setTerrainEdit(
-          region && camera && enabled
-            ? {
-                region,
-                camera,
-                commit: (next) => change({ bounds: next.bounds, height: next.height }),
-                deselect: () => setSelected(""),
-              }
-            : null,
-        ),
-      );
-    },
-  );
-  createEffect(
-    () => props.active !== false && !props.disabled,
-    (enabled) => {
-      untrack(() => props.viewport.setTerrainSelectionHandler(enabled ? setSelected : null));
-    },
-  );
-  onCleanup(() => {
-    props.viewport.setTerrainSelectionHandler(null);
-    props.viewport.setTerrainEdit(null);
-  });
-  function preview(patch: Partial<GroundRegion>) {
-    const r = region();
-    if (r) props.viewport.previewTerrain({ ...r, ...patch });
+  const [cell, setCell] = createSignal("");
+  const grid = () => props.document()?.terrain;
+  const vertex = () => grid()?.vertices.find((v) => v.id === selected());
+  const currentCell = () => grid()?.cells.find((c) => c.id === cell());
+  function customMaterials(materials: CustomTerrainMaterial[]) {
+    const document = props.document();
+    if (!document) return;
+    try {
+      const next = { ...document, customMaterials: materials };
+      parseLevel3D(next);
+      props.commit(next);
+    } catch (error) {
+      props.onError(String(error));
+    }
   }
-  const cancelPreview = () => props.viewport.previewTerrain(null);
-  function setBound(index: number, value: number, commit: boolean) {
-    const r = region();
-    if (!r) return;
-    const bounds = [...r.bounds] as GroundRegion["bounds"];
-    bounds[index] = value;
-    if (commit) {
-      cancelPreview();
-      change({ bounds });
-    } else preview({ bounds });
-  }
-  function publish(terrain: GroundRegion[]) {
+  function publish(terrain: TerrainGrid) {
     const document = props.document();
     if (!document) return;
     try {
@@ -70,132 +47,186 @@ export default function TerrainPanel(props: {
       props.onError(String(error));
     }
   }
-  function change(patch: Partial<GroundRegion>) {
-    publish(
-      (props.document()?.terrain ?? []).map((r) => (r.id === selected() ? { ...r, ...patch } : r)),
-    );
+  createEffect(
+    () => ({
+      grid: grid(),
+      camera: props.document()?.camera,
+      selected: selected(),
+      enabled: props.active !== false && !props.disabled,
+    }),
+    ({ grid, camera, selected, enabled }) =>
+      untrack(() =>
+        props.viewport.setTerrainEdit(
+          grid && camera && enabled
+            ? {
+                grid,
+                camera,
+                selectedVertex: selected,
+                selectVertex: setSelected,
+                commit: publish,
+                deselect: () => setSelected(""),
+              }
+            : null,
+        ),
+      ),
+  );
+  createEffect(
+    () => props.active !== false && !props.disabled,
+    (enabled) => untrack(() => props.viewport.setTerrainSelectionHandler(enabled ? setCell : null)),
+  );
+  onCleanup(() => {
+    props.viewport.setTerrainSelectionHandler(null);
+    props.viewport.setTerrainEdit(null);
+  });
+  const cancelPreview = () => props.viewport.previewTerrain(null);
+  function position(axis: number, value: number, commit: boolean) {
+    const g = grid(),
+      v = vertex();
+    if (!g || !v) return;
+    const p = [...v.position] as Vec3;
+    p[axis] = value;
+    const next = {
+      ...g,
+      vertices: g.vertices.map((item) => (item.id === v.id ? { ...item, position: p } : item)),
+    };
+    if (commit) {
+      cancelPreview();
+      publish(next);
+    } else {
+      try {
+        parseLevel3D({ ...props.document()!, terrain: next });
+        props.viewport.previewTerrain(next);
+      } catch {
+        cancelPreview();
+      }
+    }
   }
-  function add() {
-    const document = props.document();
-    if (!document) return;
-    const id = "ground-" + crypto.randomUUID();
-    const bounds = document.exportBounds ?? [0, 0, ...(document.size ?? [1200, 900])];
-    publish([
-      ...(document.terrain ?? []),
-      {
-        id,
-        name: "Ground",
-        bounds: [...bounds] as GroundRegion["bounds"],
-        height: 0,
-        material: "grass",
-      },
-    ]);
-    setSelected(id);
+  function changeCell(patch: Partial<NonNullable<Level3D["terrain"]>["cells"][number]>) {
+    const g = grid();
+    if (g)
+      publish({
+        ...g,
+        vertices: patch.material
+          ? g.vertices.map((v, i) =>
+              currentCell()?.vertices.includes(i)
+                ? { ...v, material: patch.material, materialMix: undefined }
+                : v,
+            )
+          : g.vertices,
+        cells: g.cells.map((c) => (c.id === cell() ? { ...c, ...patch } : c)),
+      });
   }
   return (
     <section class="view-settings terrain-settings">
-      <h2>Terrain</h2>
+      <h2>Terrain grid</h2>
       <p class="hint">
-        Create continuous ground, then choose its material and elevation. Later regions replace
-        earlier ones. Water is not walkable.
+        Select a vertex and drag to change elevation. Hold Shift while dragging to move it
+        horizontally. Every vertex also has editable X, Y and Z values.
       </p>
       <fieldset disabled={props.disabled || !props.document()}>
-        <button onClick={add}>Add ground region</button>
-        <label>
-          Ground region
-          <select
-            aria-label="Ground region"
-            value={selected()}
-            onChange={(e) => setSelected(e.currentTarget.value)}
-          >
-            <option value="">Choose a region</option>
-            <For each={props.document()?.terrain ?? []}>
-              {(r) => (
-                <option value={r.id}>
-                  {r.name} · {Math.round(r.height * 100) / 100}
-                </option>
-              )}
-            </For>
-          </select>
-        </label>
-        <Show when={region()}>
-          {(current) => (
-            <>
-              <label>
-                Name
-                <input
-                  value={current().name}
-                  onChange={(e) => change({ name: e.currentTarget.value })}
-                />
-              </label>
-              <label>
-                Material
-                <select
-                  aria-label="Terrain material"
-                  value={current().material}
-                  onChange={(e) =>
-                    change({ material: e.currentTarget.value as GroundRegion["material"] })
+        <Show
+          when={grid()}
+          fallback={
+            <button
+              onClick={() => {
+                const d = props.document();
+                if (d)
+                  publish(createTerrainGrid(d.exportBounds ?? [0, 0, ...(d.size ?? [1200, 900])]));
+              }}
+            >
+              Create terrain grid
+            </button>
+          }
+        >
+          <p class="hint">
+            {grid()?.vertices.length} vertices · {grid()?.cells.length} cells. Click the ground to
+            select a cell.
+          </p>
+          <Show when={vertex()}>
+            {(v) => (
+              <>
+                <strong>Selected vertex</strong>
+                <MaterialPicker
+                  label="Vertex material"
+                  value={
+                    v().material ??
+                    Object.entries(v().materialMix ?? {}).sort((a, b) => b[1] - a[1])[0]?.[0] ??
+                    "grass_short"
                   }
-                >
-                  <option value="grass">Grass</option>
-                  <option value="dirt">Dirt</option>
-                  <option value="paved">Paved</option>
-                  <option value="water">Water</option>
-                </select>
-              </label>
-              <p class="hint">
-                Drag a gold corner to resize, or use the move gizmo to move the region and change
-                its elevation. Escape cancels a drag.
-              </p>
-              <ScrubNumber
-                label="Terrain elevation"
-                value={current().height}
-                step={1}
-                onPreview={(height) => preview({ height })}
-                onCommit={(height) => {
-                  cancelPreview();
-                  change({ height });
-                }}
-                onCancel={cancelPreview}
-              />
-              <details>
-                <summary>Position and size</summary>
-                <For each={["X", "Y", "Width", "Depth"]}>
+                  customMaterials={props.document()?.customMaterials ?? []}
+                  onCustomMaterialsChange={customMaterials}
+                  onChange={(material) => {
+                    const g = grid();
+                    if (g)
+                      publish({
+                        ...g,
+                        vertices: g.vertices.map((item) =>
+                          item.id === v().id ? { ...item, material, materialMix: undefined } : item,
+                        ),
+                      });
+                  }}
+                />
+                <For each={["X", "Y", "Z"]}>
                   {(label, i) => (
                     <ScrubNumber
-                      label={`Terrain ${label}`}
-                      value={current().bounds[i()]!}
+                      label={`Vertex ${label}`}
+                      value={v().position[i()]!}
                       step={1}
-                      min={i() > 1 ? 1 : undefined}
-                      onPreview={(v) => setBound(i(), v, false)}
-                      onCommit={(v) => setBound(i(), v, true)}
+                      onPreview={(value) => position(i(), value, false)}
+                      onCommit={(value) => position(i(), value, true)}
                       onCancel={cancelPreview}
                     />
                   )}
                 </For>
-              </details>
-              <button
-                onClick={() => {
-                  const r = current();
-                  publish((props.document()?.terrain ?? []).filter((p) => p.id !== r.id).concat(r));
-                }}
-              >
-                Bring region to top
-              </button>
-              <button
-                onClick={() => {
-                  publish((props.document()?.terrain ?? []).filter((p) => p.id !== selected()));
-                  setSelected("");
-                }}
-              >
-                Delete region
-              </button>
-              <p class="hint">
-                New assets rest on this ground. Different elevations form separate walking areas;
-                add stairs or connecting assets where characters should cross.
-              </p>
-            </>
-          )}
+              </>
+            )}
+          </Show>
+          <Show when={currentCell()}>
+            {(c) => (
+              <>
+                <MaterialPicker
+                  label="Terrain material"
+                  value={c().material}
+                  customMaterials={props.document()?.customMaterials ?? []}
+                  onCustomMaterialsChange={customMaterials}
+                  onChange={(material) => changeCell({ material })}
+                />
+                <label>
+                  Walkability
+                  <select
+                    value={c().walkable === undefined ? "auto" : String(c().walkable)}
+                    onChange={(e) =>
+                      changeCell({
+                        walkable:
+                          e.currentTarget.value === "auto"
+                            ? undefined
+                            : e.currentTarget.value === "true",
+                      })
+                    }
+                  >
+                    <option value="auto">Use material</option>
+                    <option value="true">Walkable</option>
+                    <option value="false">Blocked</option>
+                  </select>
+                </label>
+                <button
+                  onClick={() => {
+                    const g = grid();
+                    if (g) {
+                      try {
+                        publish(subdivideTerrainCells(g, [cell()]));
+                        setCell("");
+                      } catch (error) {
+                        props.onError(String(error));
+                      }
+                    }
+                  }}
+                >
+                  Subdivide selected cell
+                </button>
+              </>
+            )}
+          </Show>
         </Show>
       </fieldset>
     </section>

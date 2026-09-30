@@ -2,7 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { gameToScene, parseLevel3D, type GameTransform, type Level3D } from "@rle/shared";
+import {
+  createTerrainGrid,
+  gameToScene,
+  parseLevel3D,
+  type GameTransform,
+  type Level3D,
+} from "@rle/shared";
 import type { Selection } from "./document-commands.ts";
 import { EditorViewport } from "./editor-viewport.ts";
 
@@ -897,29 +903,14 @@ test("incremental edits rebuild changed wall assets and undo restores their geom
   viewport.dispose();
 });
 
-test("asset placement hits raised authored ground and lower regions replace its surface", () => {
+test("asset placement samples the edited connected terrain mesh", () => {
   const { viewport, publish } = fixture();
   const document = {
     ...documentFixture(),
     objects: [],
     groups: [],
     size: null,
-    terrain: [
-      {
-        id: "land",
-        name: "Land",
-        bounds: [0, 0, 400, 400] as [number, number, number, number],
-        height: 80,
-        material: "grass" as const,
-      },
-      {
-        id: "low",
-        name: "Low",
-        bounds: [100, 100, 200, 200] as [number, number, number, number],
-        height: 20,
-        material: "dirt" as const,
-      },
-    ],
+    terrain: createTerrainGrid([0, 0, 400, 400], 100, 20),
   };
   publish(document);
   const local = gameToScene(document.camera, 200, 200, 20);
@@ -939,7 +930,7 @@ test("asset placement hits raised authored ground and lower regions replace its 
     },
   });
   const position = viewport.assetDropPosition(200, 200)!;
-  assert.ok(Math.abs(position[2] - 20) < 1e-4, `expected lower region, got ${position}`);
+  assert.ok(Math.abs(position[2] - 20) < 1e-4, `expected terrain height, got ${position}`);
   assert.ok(Math.abs(position[0] - 200) < 1e-4);
   const bounds = viewport.fitExportBounds();
   assert.ok(bounds[2] >= 401);
@@ -947,16 +938,10 @@ test("asset placement hits raised authored ground and lower regions replace its 
   viewport.dispose();
 });
 
-test("terrain selection attaches the shared gizmo and commits translated bounds and elevation", () => {
+test("grid editing uses its own handles and leaves the asset gizmo detached", () => {
   const { viewport, publish } = fixture();
-  const region = {
-    id: "ground",
-    name: "Ground",
-    bounds: [100, 100, 200, 200] as [number, number, number, number],
-    height: 40,
-    material: "grass" as const,
-  };
-  const document = { ...documentFixture(), objects: [], groups: [], terrain: [region] };
+  const grid = createTerrainGrid([100, 100, 200, 200], 100, 40);
+  const document = { ...documentFixture(), objects: [], groups: [], terrain: grid };
   publish(document);
   let attached: THREE.Object3D | null = null;
   const gizmo = {
@@ -970,28 +955,107 @@ test("terrain selection attaches the shared gizmo and commits translated bounds 
     },
   };
   Object.assign(viewport, { gizmo });
-  let committed: typeof region | null = null;
-  viewport.setTerrainEdit({
-    region,
-    camera: document.camera,
-    commit: (next) => {
-      committed = next as typeof region;
-    },
-  });
-  assert.ok(attached);
-  assert.equal(gizmo.showY, true);
-  const center = gameToScene(document.camera, 200, 200, 40);
-  assert.ok(
-    (attached as THREE.Object3D).position.distanceTo(
-      new THREE.Vector3(center[0], center[2], -center[1]),
-    ) < 1e-5,
-  );
-  viewport.previewTerrain({ ...region, bounds: [150, 175, 200, 200], height: 90 });
-  (viewport as unknown as { commitGizmo(): void }).commitGizmo();
-  assert.deepEqual(committed, { ...region, bounds: [150, 175, 200, 200], height: 90 });
-  viewport.setTerrainEdit(null);
+  viewport.setTerrainEdit({ grid, camera: document.camera, commit: () => {} });
   assert.equal(attached, null);
   assert.equal(gizmo.showY, false);
+  const edited = {
+    ...grid,
+    vertices: grid.vertices.map((vertex) => ({
+      ...vertex,
+      position: [vertex.position[0], vertex.position[1], 90] as [number, number, number],
+    })),
+  };
+  viewport.previewTerrain(edited);
+  const terrain = (viewport as unknown as { terrain: { root: THREE.Group } }).terrain.root;
+  const box = new THREE.Box3().setFromObject(terrain);
+  assert.ok(Math.abs(box.min.y - 90 / Math.cos((35 * Math.PI) / 180)) < 0.001);
+  viewport.previewTerrain(null);
+  viewport.setTerrainEdit(null);
   Object.assign(viewport, { gizmo: null });
+  viewport.dispose();
+});
+
+test("cardinal and top camera controls preserve target, zoom and lens through quarter turns", () => {
+  const { viewport } = fixture();
+  const camera = new THREE.OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
+  const target = new THREE.Vector3(400, 50, -200);
+  camera.position.copy(target).add(new THREE.Vector3(100, 200, 300));
+  camera.lookAt(target);
+  camera.zoom = 2.5;
+  const orbit = new OrbitControls(camera);
+  orbit.target.copy(target);
+  Object.assign(viewport, { camera, orbit, frustum: 125, perspective: 30 });
+  viewport.topView();
+  viewport.setCardinalView("E");
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+  assert.ok(up.x > 0.999999, "east appears at the top in top view");
+  assert.ok(camera.getWorldDirection(new THREE.Vector3()).y < -0.999999);
+  viewport.rotateViewQuarterTurn(4);
+  assert.ok(new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).distanceTo(up) < 1e-6);
+  assert.deepEqual(orbit.target.toArray(), target.toArray());
+  assert.equal(camera.zoom, 2.5);
+  assert.equal((viewport as unknown as { perspective: number }).perspective, 30);
+  assert.equal((viewport as unknown as { frustum: number }).frustum, 125);
+  Object.assign(viewport, { camera: null, orbit: null });
+  viewport.dispose();
+});
+
+test("asset drag previews follow the slope without mutating the saved height", () => {
+  const { viewport, publish } = fixture();
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  const source = new THREE.Group();
+  source.add(mesh);
+  viewport.replaceMap(source, null, new Map([["building-000", mesh]]));
+  const terrain = createTerrainGrid([0, 0, 400, 400], 100, 0);
+  terrain.vertices.forEach((vertex) => {
+    vertex.position[2] = vertex.position[0] / 2;
+  });
+  const document = { ...documentFixture(), terrain };
+  publish(document);
+  viewport.select({ kind: "group", id: "house" });
+  const internals = viewport as unknown as {
+    groupViews: Map<string, { wrapper: THREE.Object3D }>;
+    previewTerrainFollowing(view: unknown): void;
+  };
+  const view = internals.groupViews.get("house")!;
+  for (let repeat = 0; repeat < 2; repeat++) {
+    viewport.syncViews(document, false);
+    view.wrapper.position.x += 100;
+    internals.previewTerrainFollowing(view);
+    assert.ok(Math.abs(view.wrapper.position.z - 50 / Math.cos((35 * Math.PI) / 180)) < 1e-8);
+  }
+  assert.equal(document.groups[0]!.transform.dz, 0);
+  viewport.dispose();
+});
+
+test("channel previews move attached assets and cancellation restores the committed surface", () => {
+  const { viewport, publish } = fixture();
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  const source = new THREE.Group();
+  source.add(mesh);
+  viewport.replaceMap(source, null, new Map([["building-000", mesh]]));
+  const document = { ...documentFixture(), terrain: createTerrainGrid([0, 0, 400, 400], 100, 0) };
+  publish(document);
+  const river: import("@rle/shared").LevelSpline = {
+    id: "river",
+    name: "River",
+    kind: "river",
+    points: [
+      [0, 20 + 13 / 3, 0],
+      [100, 20 + 13 / 3, 0],
+    ],
+    width: 60,
+    closed: false,
+    repeatLength: 32,
+    channel: { enabled: true, bedDepth: 20, bankSlope: 1 },
+  };
+  const view = (
+    viewport as unknown as { groupViews: Map<string, { wrapper: THREE.Object3D }> }
+  ).groupViews.get("house")!;
+  viewport.previewSpline(river);
+  assert.ok(Math.abs(view.wrapper.position.z + 20 / Math.cos((35 * Math.PI) / 180)) < 1e-6);
+  assert.equal(document.groups[0]!.transform.dz, 0);
+  viewport.setSplineEdit(null);
+  assert.equal(view.wrapper.position.z, 0);
   viewport.dispose();
 });

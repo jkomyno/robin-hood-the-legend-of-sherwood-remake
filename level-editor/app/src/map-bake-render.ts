@@ -117,6 +117,10 @@ function depthMaterial(source: THREE.Material, camera: MapCamera, bounds: BakeBo
       `Cannot compile depth for material ${source.name || source.type}. Expected an unlit map material.`,
     );
   const material = source.clone();
+  if (source.userData.terrainMaterialBlend) {
+    material.onBeforeCompile = (shader, renderer) => source.onBeforeCompile(shader, renderer);
+    material.customProgramCacheKey = () => source.customProgramCacheKey();
+  }
   // Preserve physical alpha coverage, but never blend encoded depth bytes.
   material.transparent = false;
   material.blending = THREE.NoBlending;
@@ -192,6 +196,10 @@ function* mapBakeTiles(
         const cached = colorMaterials.get(source);
         if (cached) return cached;
         const material = source.clone();
+        if (source.userData.terrainMaterialBlend) {
+          material.onBeforeCompile = (shader, renderer) => source.onBeforeCompile(shader, renderer);
+          material.customProgramCacheKey = () => source.customProgramCacheKey();
+        }
         display.material(material);
         materials.add(material);
         colorMaterials.set(source, material);

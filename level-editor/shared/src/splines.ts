@@ -6,6 +6,16 @@ export interface LevelSpline {
   points: [number, number, number][];
   closed: boolean;
   width: number;
+  /** Optional widths at control points; interpolated continuously along each section. */
+  pointWidths?: number[];
+  /** Road height adjustments above the sampled ground, in game pixels. */
+  pointHeightOffsets?: number[];
+  /** Material at each control point; sections blend their two endpoint designs. */
+  pointMaterials?: string[];
+  /** Interpolated control-point appearance retained when inserting a point in a transition. */
+  pointMaterialMixes?: (Record<string, number> | null)[];
+  /** Non-destructive riverbed modifier. Depth is in game pixels; slope is rise/run. */
+  channel?: { enabled: boolean; bedDepth: number; bankSlope: number };
   repeatLength: number;
   /** Surface tile embedded in the document so save/reload needs no extra file grant. */
   texture?: string;

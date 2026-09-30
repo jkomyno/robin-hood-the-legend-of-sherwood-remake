@@ -43,7 +43,7 @@ function command(method, params = {}) {
   });
 }
 const evalJS = (source) => evaluate(socket, ++id, source, { timeoutMs: 10000 });
-async function mouse(type, p) {
+async function mouse(type, p, modifiers = 0) {
   await command("Input.dispatchMouseEvent", {
     type,
     x: p.x,
@@ -51,13 +51,14 @@ async function mouse(type, p) {
     button: "left",
     buttons: type === "mouseReleased" ? 0 : 1,
     clickCount: 1,
+    modifiers,
   });
   await sleep();
 }
-async function drag(from, to, cancel = false) {
-  await mouse("mouseMoved", from);
-  await mouse("mousePressed", from);
-  await mouse("mouseMoved", to);
+async function drag(from, to, cancel = false, modifiers = 0) {
+  await mouse("mouseMoved", from, modifiers);
+  await mouse("mousePressed", from, modifiers);
+  await mouse("mouseMoved", to, modifiers);
   if (cancel)
     await command("Input.dispatchKeyEvent", {
       type: "keyDown",
@@ -89,54 +90,58 @@ try {
     await sleep();
   }
   assert.equal(ready, "READY");
-  assert.deepEqual(await evalJS("terrainTest.gizmo()"), { attached: true, vertical: true });
   let before = await evalJS("terrainTest.state()"),
-    corner = await evalJS("terrainTest.point(0)");
-  await drag(corner, { x: corner.x + 60, y: corner.y + 35 });
+    vertex = await evalJS("terrainTest.point(9)");
+  await drag(vertex, { x: vertex.x, y: vertex.y - 25 });
   let after = await evalJS("terrainTest.state()");
   assert.equal(after.commits, before.commits + 1);
-  assert.notDeepEqual(after.document.terrain[0].bounds, before.document.terrain[0].bounds);
+  assert.notEqual(
+    after.document.terrain.vertices[9].position[2],
+    before.document.terrain.vertices[9].position[2],
+  );
   before = after;
-  corner = await evalJS("terrainTest.point(0)");
-  await drag(corner, { x: corner.x + 40, y: corner.y - 30 }, true);
+  vertex = await evalJS("terrainTest.point(9)");
+  await drag(vertex, { x: vertex.x, y: vertex.y - 20 }, true);
   after = await evalJS("terrainTest.state()");
   assert.equal(after.commits, before.commits);
   assert.deepEqual(after.document, before.document);
+  vertex = await evalJS("terrainTest.point(9)");
+  await drag(vertex, { x: vertex.x + 15, y: vertex.y + 10 }, false, 8);
+  after = await evalJS("terrainTest.state()");
+  assert.equal(after.commits, before.commits + 1);
+  assert.notDeepEqual(
+    after.document.terrain.vertices[9].position.slice(0, 2),
+    before.document.terrain.vertices[9].position.slice(0, 2),
+  );
+  assert.equal(
+    after.document.terrain.vertices[9].position[2],
+    before.document.terrain.vertices[9].position[2],
+  );
+  before = after;
   const number = await evalJS(
-    `(()=>{const r=document.querySelector('[aria-label="Terrain elevation"]').closest('.meta-row').querySelector('.meta-key').getBoundingClientRect();return {x:r.left+10,y:r.top+r.height/2};})()`,
+    `(()=>{const r=document.querySelector('[aria-label="Vertex Z"]').closest('.meta-row').querySelector('.meta-key').getBoundingClientRect();return {x:r.left+10,y:r.top+r.height/2};})()`,
   );
   await drag(number, { x: number.x + 25, y: number.y });
   after = await evalJS("terrainTest.state()");
   assert.equal(after.commits, before.commits + 1);
-  assert.equal(after.document.terrain[0].height, before.document.terrain[0].height + 25);
+  assert.equal(
+    after.document.terrain.vertices[9].position[2],
+    Math.round((before.document.terrain.vertices[9].position[2] + 25) * 100) / 100,
+  );
   before = after;
   await drag(number, { x: number.x + 25, y: number.y }, true);
   after = await evalJS("terrainTest.state()");
   assert.equal(after.commits, before.commits);
   assert.deepEqual(after.document, before.document);
-  before = after;
-  const axis = await evalJS("terrainTest.axis()");
-  await drag(axis, { x: axis.x, y: axis.y - 35 });
-  after = await evalJS("terrainTest.state()");
-  assert.equal(after.commits, before.commits + 1);
-  assert.notEqual(after.document.terrain[0].height, before.document.terrain[0].height);
-  before = after;
-  const cancelAxis = await evalJS("terrainTest.axis()");
-  await drag(cancelAxis, { x: cancelAxis.x, y: cancelAxis.y - 25 }, true);
-  after = await evalJS("terrainTest.state()");
-  assert.equal(after.commits, before.commits);
-  assert.deepEqual(after.document, before.document);
-  const a = await evalJS("terrainTest.point(0)"),
-    b = await evalJS("terrainTest.point(2)");
+  await evalJS("terrainTest.selectCell(0)");
+  await sleep();
   await evalJS(
-    `(()=>{const select=document.querySelector('[aria-label="Ground region"]');select.value="";select.dispatchEvent(new Event("change",{bubbles:true}));})()`,
+    `Array.from(document.querySelectorAll('button')).find(b=>b.textContent==='Subdivide selected cell').click()`,
   );
   await sleep();
-  assert.equal((await evalJS("terrainTest.gizmo()")).attached, false);
-  const surface = { x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25 };
-  await mouse("mousePressed", surface);
-  await mouse("mouseReleased", surface);
-  assert.equal((await evalJS("terrainTest.gizmo()")).attached, true);
+  after = await evalJS("terrainTest.state()");
+  assert.ok(after.document.terrain.cells.length > before.document.terrain.cells.length);
+  assert.equal(after.commits, before.commits + 1);
   assert.deepEqual(after.errors, []);
   if (process.env.TEST_ARTIFACT_DIR) {
     await mkdir(process.env.TEST_ARTIFACT_DIR, { recursive: true });
@@ -147,9 +152,10 @@ try {
     );
   }
   console.log(
-    "PASS real pointer corner resize, opposite-corner anchoring, one commit per drag, Escape cancellation, shared number scrubbing and elevation gizmo dragging",
+    "PASS real pointer vertex elevation, Shift horizontal movement, one commit per drag, Escape cancellation, number scrubbing and cell subdivision",
   );
 } catch (error) {
+  console.error(error);
   if (socket && process.env.TEST_ARTIFACT_DIR) {
     await mkdir(process.env.TEST_ARTIFACT_DIR, { recursive: true });
     const image = await command("Page.captureScreenshot");

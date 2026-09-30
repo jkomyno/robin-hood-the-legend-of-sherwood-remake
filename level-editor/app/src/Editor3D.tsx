@@ -1,4 +1,7 @@
 import TerrainPanel from "./TerrainPanel";
+import NewMapSettings from "./NewMapSettings";
+import WorkspacePanel from "./WorkspacePanel";
+import { followTerrainEdit, followTerrainTransform } from "./terrain-follow";
 import MissionPanel from "./MissionPanel";
 // Edit JSON maps assembled from pinned library assets, with game and orbit cameras.
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, untrack } from "solid-js";
@@ -25,7 +28,7 @@ import {
   patchGroup,
   type Selection,
 } from "./document-commands";
-import { createNewMap } from "./new-map";
+import { createNewMap, defaultNewMapOptions } from "./new-map";
 import MapCard from "./MapCard";
 import { encodeMapThumbnail, writeMapThumbnail } from "./map-thumbnail";
 import SplinePanel from "./SplinePanel";
@@ -79,6 +82,10 @@ export default function Editor3D(props: EditorProps) {
   let viewportElement!: HTMLDivElement;
   let newMapDialog!: HTMLDialogElement;
   const [newMapName, setNewMapName] = createSignal("Untitled map");
+  const [newMapOptions, setNewMapOptions] = createSignal(defaultNewMapOptions());
+  const [assetDisplayMode, setAssetDisplayMode] = createSignal<"visible" | "outline" | "hidden">(
+    "visible",
+  );
   const [creatingMap, setCreatingMap] = createSignal(false);
   const [newMapError, setNewMapError] = createSignal("");
   const [panel, setPanel] = createSignal("Selection");
@@ -455,7 +462,7 @@ export default function Editor3D(props: EditorProps) {
           throw new Error("Save the current map successfully before creating another map.");
       }
       if (disposed || props.library() !== library) return;
-      name = await createNewMap(library.handle, name);
+      name = await createNewMap(library.handle, name, newMapOptions());
       if (disposed || props.library() !== library) return;
       setMaps((current) => [...new Set([...current, name])].sort());
       newMapDialog.close();
@@ -471,6 +478,10 @@ export default function Editor3D(props: EditorProps) {
   // ── document ──
   function pushHistory(next: Level3D) {
     session.edit(next);
+  }
+  function commitTerrain(next: Level3D) {
+    const previous = doc();
+    pushHistory(previous ? followTerrainEdit(previous, next) : next);
   }
   function undo() {
     session.undo();
@@ -800,6 +811,10 @@ export default function Editor3D(props: EditorProps) {
     (value) => viewport.setSpriteOrientationLock(value),
   );
   createEffect(
+    () => assetDisplayMode(),
+    (value) => viewport.setAssetDisplayMode(value),
+  );
+  createEffect(
     () => showEntities(),
     (value) => viewport.setEntitiesVisible(value),
   );
@@ -856,14 +871,26 @@ export default function Editor3D(props: EditorProps) {
   function setTransformField(field: keyof GameTransform, value: number) {
     const t = selectedTransform();
     if (!t || !Number.isFinite(value)) return;
-    setTransform({ ...t, [field]: value });
+    const document = doc(),
+      selection = selected();
+    if (!document || !selection) return;
+    const next = { ...t, [field]: value };
+    setTransform(
+      field === "dx" || field === "dy" ? followTerrainTransform(document, selection, next) : next,
+    );
   }
   function previewTransformField(field: keyof GameTransform, value: number) {
     const document = doc(),
       transform = selectedTransform(),
       selection = selected();
     if (!document || !transform || !selection) return;
-    const changes = { transform: { ...transform, [field]: value } };
+    const proposed = { ...transform, [field]: value };
+    const changes = {
+      transform:
+        field === "dx" || field === "dy"
+          ? followTerrainTransform(document, selection, proposed)
+          : proposed,
+    };
     const next =
       selection.kind === "group"
         ? patchGroup(document, selection.id, changes)
@@ -1179,7 +1206,9 @@ export default function Editor3D(props: EditorProps) {
           }}
         >
           <h2 id="new-map-title">New map</h2>
-          <p>Start with an open canvas. Add assets, walls and paths in any direction.</p>
+          <p>
+            Choose a reference size and starting ground grid. Resize later without deleting content.
+          </p>
           <fieldset disabled={creatingMap()}>
             <label>
               Map name
@@ -1193,6 +1222,7 @@ export default function Editor3D(props: EditorProps) {
                 onInput={(event) => setNewMapName(event.currentTarget.value)}
               />
             </label>
+            <NewMapSettings value={newMapOptions()} onChange={setNewMapOptions} />
             <p class="hint">Saved in this browser. Use Download to export the map JSON.</p>
             <Show when={dirty()}>
               <p class="hint">Your current map will be saved before creating the new one.</p>
@@ -1483,6 +1513,33 @@ export default function Editor3D(props: EditorProps) {
             } else if (entry && placement) void addAsset(entry, placement);
           }}
         >
+          <Show when={doc()}>
+            <div class="viewport-navigation" aria-label="Quick camera controls">
+              <For each={["N", "E", "S", "W"] as const}>
+                {(direction) => (
+                  <button
+                    title={`Orient ${direction} up`}
+                    onClick={() => viewport.setCardinalView(direction)}
+                  >
+                    {direction}
+                  </button>
+                )}
+              </For>
+              <button onClick={() => viewport.topView()}>Top</button>
+              <button
+                aria-label="Turn camera left 90 degrees"
+                onClick={() => viewport.rotateViewQuarterTurn(-1)}
+              >
+                ↶
+              </button>
+              <button
+                aria-label="Turn camera right 90 degrees"
+                onClick={() => viewport.rotateViewQuarterTurn(1)}
+              >
+                ↷
+              </button>
+            </div>
+          </Show>
           <Show when={!doc()}>
             <section class="map-selection" aria-label="Select Map">
               <span class="eyebrow">MAP WORKSPACE</span>
@@ -1592,14 +1649,14 @@ export default function Editor3D(props: EditorProps) {
           </div>
           <div class="inspector-content" hidden={panel() !== "Draw"}>
             <p class="panel-intro">
-              Draw walls, rivers and paths directly in the scene. Finish or cancel a path before
-              switching tools.
+              Shape the ground grid, then draw walls, rivers and paths. Finish or cancel a path
+              before switching tools.
             </p>
             <TerrainPanel
               viewport={viewport}
               active={panel() === "Draw"}
               document={doc}
-              commit={pushHistory}
+              commit={commitTerrain}
               onError={props.onError}
               disabled={editingPath()}
             />
@@ -1608,7 +1665,7 @@ export default function Editor3D(props: EditorProps) {
               library={() => props.library()?.handle ?? null}
               entries={assetEntries}
               viewport={viewport}
-              commit={pushHistory}
+              commit={commitTerrain}
               onError={props.onError}
               active={panel() === "Draw"}
               onEditingChange={setEditingPath}
@@ -1617,6 +1674,42 @@ export default function Editor3D(props: EditorProps) {
           <div class="inspector-content" hidden={panel() !== "View"}>
             <section class="view-settings">
               <h2>Camera &amp; display</h2>
+              <div class="camera-directions" aria-label="Camera direction">
+                <For each={["N", "E", "S", "W"] as const}>
+                  {(direction) => (
+                    <button onClick={() => viewport.setCardinalView(direction)}>{direction}</button>
+                  )}
+                </For>
+                <button onClick={() => viewport.topView()}>Top view</button>
+                <button
+                  aria-label="Rotate view left 90 degrees"
+                  onClick={() => viewport.rotateViewQuarterTurn(-1)}
+                >
+                  ↶ 90°
+                </button>
+                <button
+                  aria-label="Rotate view right 90 degrees"
+                  onClick={() => viewport.rotateViewQuarterTurn(1)}
+                >
+                  ↷ 90°
+                </button>
+              </div>
+              <label>
+                Asset display
+                <select
+                  aria-label="Asset display"
+                  value={assetDisplayMode()}
+                  onChange={(event) =>
+                    setAssetDisplayMode(
+                      event.currentTarget.value as "visible" | "outline" | "hidden",
+                    )
+                  }
+                >
+                  <option value="visible">Visible</option>
+                  <option value="outline">Outline</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+              </label>
               <ScrubNumber
                 label="Gizmo rotation (°)"
                 step={1}
@@ -1800,6 +1893,7 @@ export default function Editor3D(props: EditorProps) {
                 </p>
               </Show>
             </section>
+            <WorkspacePanel document={doc} commit={commitTerrain} onError={props.onError} />
             <LightingPanel document={doc} commit={pushHistory} />
             <section class="view-settings export-settings">
               <h2>Test your map</h2>

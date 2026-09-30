@@ -132,3 +132,13 @@ test("initial transition blockers exclude mission placements", () => {
   assert.equal(result.spawn_points[0]!.sector, 2);
   assert.match(result.warnings[0]!, /guard/);
 });
+
+test("resizing omits out-of-frame mission markers even in strict export and retains editor data", () => {
+  const doc = document();
+  const before = structuredClone(doc);
+  const result = compileMission(doc, [0, 0, 100, 40], geometry);
+  assert.equal(result.spawn_points.length, 1);
+  assert.equal(result.soldiers.length, 0);
+  assert.match(result.warnings.join("\n"), /guard.*outside.*retained/);
+  assert.deepEqual(doc, before);
+});

@@ -67,6 +67,20 @@ try {
   socket = new WebSocket(page.webSocketDebuggerUrl);
   await socketOpen(socket, { signal: lifetime.signal, timeoutMs: 5000 });
   let id = 0;
+  const browserErrors = [];
+  socket.addEventListener("message", (event) => {
+    const message = JSON.parse(String(event.data));
+    if (message.method === "Runtime.exceptionThrown")
+      browserErrors.push(
+        message.params.exceptionDetails.exception?.description ??
+          message.params.exceptionDetails.text,
+      );
+    if (message.method === "Runtime.consoleAPICalled" && message.params.type === "error")
+      browserErrors.push(
+        message.params.args.map((arg) => arg.description ?? arg.value ?? arg.type).join(" "),
+      );
+  });
+  socket.send(JSON.stringify({ id: ++id, method: "Runtime.enable" }));
   let outcome;
   const deadline = performance.now() + Number(process.env.TEST_TIMEOUT ?? 60000);
   while (performance.now() < deadline) {
@@ -99,7 +113,9 @@ try {
   }
   if (!outcome?.startsWith("PASS"))
     throw new Error(
-      outcome?.startsWith("FAIL") ? outcome : "Lifecycle acceptance timed out without a result",
+      outcome?.startsWith("FAIL")
+        ? outcome
+        : "Lifecycle acceptance timed out without a result\n" + browserErrors.join("\n"),
     );
   if (process.env.TEST_BAKE_ZIP) {
     console.log(outcome);

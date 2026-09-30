@@ -985,3 +985,41 @@ select, input.search { background: #171c22; border-color: var(--border); min-hei
 .spline-settings[open] summary { margin-bottom: 12px; }
 .spline-settings label { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; font-size: 12px; }
 .spline-settings label.check { flex-direction: row; }
+
+.camera-directions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.new-map-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.new-map-settings > label:first-child,
+.new-map-settings > .hint {
+  grid-column: 1 / -1;
+}
+.workspace-settings fieldset {
+  display: grid;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+}
+
+.viewport-navigation {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 2;
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 6px;
+  background: #171d22dd;
+}
+.viewport-navigation button {
+  min-width: 30px;
+  padding: 5px 8px;
+}

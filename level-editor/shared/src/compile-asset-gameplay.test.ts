@@ -2305,3 +2305,91 @@ test("interior entrances share a fresh virtual sector independent of motion poly
     duplicated.buildings![1]!.Building.doors[0]!.sector_in,
   );
 });
+
+test("export frame clips sloped navigation and generated receivers without modifying the document", () => {
+  const { document, assets } = slopedAssetCompilerFixture();
+  const before = structuredClone(document);
+  const geometry = compileAssetGameplay(document, assets, [320, 200, 100, 140]);
+  assert.ok(geometry.motion_data.layers.flat().length);
+  for (const area of geometry.motion_data.layers.flat())
+    for (const [x, y] of area.polygon.points)
+      assert.ok(x >= 0 && x <= 100 && y >= 0 && y <= 140, `outside: ${x},${y}`);
+  const receivers = geometry.sight_obstacles.filter((s) => s.projection_area && !s.solid);
+  assert.ok(receivers.length);
+  for (const receiver of receivers)
+    for (const p of receiver.points) {
+      assert.ok(p.x >= 0 && p.x <= 100 && p.y - p.z_top >= 0 && p.y - p.z_top <= 140);
+      assert.ok(Math.abs(p.z_top - (p.x + 20) / 2) < 1e-6);
+    }
+  assert.deepEqual(document, before);
+  assert.match(geometry.warnings!.join("\n"), /clipped to the export frame/);
+});
+
+test("cropping a preserved movement contour cannot retain navigation beyond the image", () => {
+  const { document, assets } = preservedBoundaryCompilerFixture();
+  const geometry = compileAssetGameplay(document, assets, [300, 300, 50, 50]);
+  assert.ok(geometry.motion_data.layers.flat().length);
+  for (const area of geometry.motion_data.layers.flat())
+    for (const [x, y] of area.polygon.points) assert.ok(x >= 0 && x <= 50 && y >= 0 && y <= 50);
+});
+
+test("cropped material regions rebuild ground and physical receiver indices", () => {
+  const { document, assets, hut } = slopedAssetCompilerFixture();
+  hut.gameplay!.materials = [
+    {
+      id: "outside",
+      node: "building-999",
+      material: 5,
+      ground: true,
+      obstacles: ["building-999"],
+      polygon: [
+        [0, 0, 0],
+        [10, 0, 0],
+        [10, 10, 0],
+        [0, 10, 0],
+      ],
+    },
+    {
+      id: "partial",
+      node: "building-999",
+      material: 2,
+      ground: true,
+      obstacles: ["building-999"],
+      polygon: [
+        [10, 0, 0],
+        [100, 70, 0],
+        [100, 100, 0],
+        [10, 100, 0],
+      ],
+    },
+  ];
+  const geometry = compileAssetGameplay(document, assets, [320, 200, 100, 140]);
+  assert.equal(geometry.material_sectors!.length, 1);
+  assert.deepEqual(geometry.sight_material_indices, [0]);
+  assert.deepEqual(geometry.sight_obstacles[0]!.material_indices, [0]);
+  for (const [x, y] of geometry.material_sectors![0]!.polygon.points) {
+    assert.ok(x >= 0 && x <= 100 && y >= 0 && y <= 140);
+    assert.ok(
+      Number.isInteger(x) && Number.isInteger(y),
+      "native material polygons use integer pixels",
+    );
+  }
+});
+
+test("cropped strict exports omit unavailable feature anchors with explicit warnings", () => {
+  for (const fixture of [
+    assetCompilerFixture,
+    jumpAssetCompilerFixture,
+    lightAssetCompilerFixture,
+    liftAssetCompilerFixture,
+    sightTransitionCompilerFixture,
+  ]) {
+    const { document, assets } = fixture();
+    const before = structuredClone(document);
+    const geometry = compileAssetGameplay(document, assets, [0, 0, 320, 330]);
+    assert.match(geometry.warnings!.join("\n"), /omitted/);
+    assert.deepEqual(document, before);
+    for (const area of geometry.motion_data.layers.flat())
+      for (const [x, y] of area.polygon.points) assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 330);
+  }
+});

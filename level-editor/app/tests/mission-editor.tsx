@@ -1,6 +1,6 @@
 import { render } from "@solidjs/web";
 import { createSignal } from "solid-js";
-import { parseStoredMap, serializeStoredMap, type Level3D } from "@rle/shared";
+import { parseStoredMap, serializeStoredMap, createTerrainGrid, type Level3D } from "@rle/shared";
 import * as THREE from "three";
 import MissionPanel from "../src/MissionPanel.tsx";
 import { EditorViewport } from "../src/editor-viewport.ts";
@@ -19,9 +19,7 @@ let current: Level3D = {
   objects: [],
   groups: [],
   sceneAssets: [],
-  terrain: [
-    { id: "ground", name: "Ground", bounds: [0, 0, 1000, 1000], height: 0, material: "grass" },
-  ],
+  terrain: createTerrainGrid([0, 0, 1000, 1000], 250),
 };
 const [doc, setDoc] = createSignal(current);
 const [active, setActive] = createSignal(true);

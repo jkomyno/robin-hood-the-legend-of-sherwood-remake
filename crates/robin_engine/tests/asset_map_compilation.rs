@@ -2185,3 +2185,63 @@ fn materials_shift_interior_constructors_without_breaking_entrances() {
     assert_eq!(building.gate_indices.len(), 2);
     assert_eq!(grid.level.door_projection_infos.len(), 3);
 }
+
+#[test]
+fn editable_grid_hill_river_ford_and_export_crop_construct_native_gameplay() {
+    use robin_engine::coordinates::MapPoint;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/grid-terrain.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    let layer = grid.level.sectors[0].layer;
+    // The receiver planes retain the hill's interpolated elevation after cropping.
+    for (x, y, height) in [(40., 120., 20.), (60., 120., 30.)] {
+        let receiver = assets
+            .environment
+            .static_sight_obstacles
+            .iter()
+            .find(|surface| surface.contains_point_projection(MapPoint::new(x, y)))
+            .expect("terrain receiver covers hill sample");
+        assert!(
+            (receiver.compute_top_z_from_projection(x, y) - height).abs() < 0.01,
+            "sample {x},{y}: expected {height}, got {}",
+            receiver.compute_top_z_from_projection(x, y)
+        );
+    }
+    assert!(
+        grid.is_reachable_thin(MapPoint::new(20., 120.), MapPoint::new(120., 120.), layer),
+        "adjacent slope triangles share connected navigation"
+    );
+    assert!(
+        !grid.is_reachable_thin(MapPoint::new(130., 20.), MapPoint::new(190., 20.), layer),
+        "ordinary river section blocks direct traversal"
+    );
+    assert!(
+        grid.is_reachable_thin(MapPoint::new(130., 120.), MapPoint::new(190., 120.), layer),
+        "ford connects the two banks"
+    );
+    assert!(
+        !grid.is_reachable_thin(MapPoint::new(200., 120.), MapPoint::new(235., 120.), layer),
+        "terrain retained outside export bounds is not traversable"
+    );
+    let graph = &assets.navigation.pathfinder_graph;
+    let mut routing_grid = grid.clone();
+    let mut finder = robin_engine::pathfinder::PathFinder::new();
+    finder.initialize_from_graph(graph, &mut routing_grid);
+    let goal = MapPoint::new(200., 120.);
+    let route = finder
+        .find_path(
+            graph,
+            &routing_grid,
+            layer,
+            0,
+            0,
+            MapPoint::new(20., 120.),
+            goal,
+            false,
+        )
+        .expect("actor-clearance routing crosses the hill and ford");
+    assert_eq!(route.last(), Some(&goal));
+}

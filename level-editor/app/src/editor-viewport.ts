@@ -1,6 +1,8 @@
 import { TerrainControls, type TerrainEditMode } from "./terrain-controls.ts";
 import { MissionLayer } from "./mission-layer.ts";
 import { TerrainLayer } from "./terrain-layer.ts";
+import { followTerrainEdit, followTerrainTransform } from "./terrain-follow.ts";
+import { AssetOutlineRenderer } from "./asset-outline.ts";
 import { stableOpaqueSort } from "./render-order.ts";
 import {
   bakeScene,
@@ -264,6 +266,52 @@ export class EditorViewport {
     this.rotationSnap = enabled;
     if (this.camera) this.activeCamera();
   }
+  /** Face a compass direction while retaining the current working location and scale. */
+  setCardinalView(direction: "N" | "E" | "S" | "W") {
+    this.orientCamera({ N: 0, E: -Math.PI / 2, S: Math.PI, W: Math.PI / 2 }[direction]);
+  }
+  rotateViewQuarterTurn(turns = 1) {
+    this.orientCamera(this.cameraAzimuth() + (turns * Math.PI) / 2);
+  }
+  topView() {
+    this.orientCamera(this.cameraAzimuth(), true);
+  }
+  private cameraAzimuth() {
+    if (!this.camera) return 0;
+    // Screen-right remains well defined even when looking vertically down.
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion);
+    return Math.atan2(-right.z, right.x);
+  }
+  private orientCamera(azimuth: number, top = false) {
+    if (!this.camera || !this.orbit || !Number.isFinite(azimuth)) return;
+    this.flight = null;
+    const damping = this.orbit.enableDamping;
+    this.orbit.enableDamping = false;
+    this.orbit.update();
+    const offset = this.camera.position.clone().sub(this.orbit.target);
+    const radius = Math.max(1, offset.length());
+    // OrbitControls uses this same tiny pole margin; it prevents undefined yaw
+    // and leaves an imperceptible tilt in the top view.
+    const polar = top
+      ? 1e-6
+      : Math.max(1e-6, Math.acos(THREE.MathUtils.clamp(offset.y / radius, -1, 1)));
+    this.camera.position
+      .copy(this.orbit.target)
+      .add(new THREE.Vector3().setFromSphericalCoords(radius, polar, azimuth));
+    this.camera.up.set(0, 1, 0);
+    this.camera.lookAt(this.orbit.target);
+    this.orbit.enabled = true;
+    this.orbit.update();
+    this.orbit.enableDamping = damping;
+    this.camera.updateMatrixWorld();
+  }
+  private assetDisplayMode: "visible" | "outline" | "hidden" = "visible";
+  private readonly assetOutline = new AssetOutlineRenderer();
+  setAssetDisplayMode(mode: "visible" | "outline" | "hidden") {
+    this.assetDisplayMode = mode;
+    if (this.renderer) this.renderer.shadowMap.needsUpdate = true;
+    if (mode === "hidden") this.select(null);
+  }
   setSpriteOrientationLock(enabled: boolean) {
     this.spriteOrientationLock = enabled;
   }
@@ -416,7 +464,7 @@ export class EditorViewport {
   setTerrainSelectionHandler(handler: ((id: string) => void) | null) {
     this.terrainSelectionHandler = handler;
   }
-  private terrainPreview: import("@rle/shared").GroundRegion | null = null;
+  private terrainPreview: import("@rle/shared").TerrainGrid | null = null;
   private gizmoVertical = false;
   setTerrainEdit(mode: TerrainEditMode | null) {
     if (!mode && !this.terrainMode) {
@@ -429,20 +477,18 @@ export class EditorViewport {
     if (mode && !this.terrainMode) this.select(null);
     this.terrainMode = mode;
     this.terrainPreview = null;
-    if (this.gizmo) this.gizmo.showY = mode ? true : this.gizmoVertical;
+    if (this.gizmo) this.gizmo.showY = this.gizmoVertical;
     this.syncSelection(mode ? null : this.bindings.selection());
   }
-  previewTerrain(region: import("@rle/shared").GroundRegion | null) {
+  previewTerrain(grid: import("@rle/shared").TerrainGrid | null) {
     if (this.disposed) return;
     const document = this.bindings.document();
     if (!document) return;
-    this.terrainPreview = region;
-    this.terrainControls.show(region ?? this.terrainMode?.region ?? null);
-    this.syncGizmoFrame();
-    this.terrain.sync(
-      region
-        ? { ...document, terrain: document.terrain?.map((r) => (r.id === region.id ? region : r)) }
-        : document,
+    this.terrainPreview = grid;
+    this.terrainControls.show(grid ?? this.terrainMode?.grid ?? null);
+    this.syncViews(
+      grid ? followTerrainEdit(document, { ...document, terrain: grid }) : document,
+      false,
     );
   }
   private readonly splines = new SplineLayer();
@@ -488,6 +534,10 @@ export class EditorViewport {
     new THREE.BufferGeometry(),
     new THREE.LineDashedMaterial({ color: 0xe2cb8e, dashSize: 32, gapSize: 16, depthTest: false }),
   );
+  private readonly workspaceFrame = new THREE.LineLoop(
+    new THREE.BufferGeometry(),
+    new THREE.LineBasicMaterial({ color: 0x91cfa0, depthTest: false, depthWrite: false }),
+  );
   private readonly workspaceGrid = new THREE.GridHelper(10000, 100, 0x52655a, 0x34423b);
   private readonly bindings: ViewportBindings;
   constructor(bindings: ViewportBindings) {
@@ -500,6 +550,9 @@ export class EditorViewport {
     this.exportFrame.visible = false;
     this.exportFrame.renderOrder = 1000;
     this.mapRoot.add(this.exportFrame);
+    this.workspaceFrame.visible = false;
+    this.workspaceFrame.renderOrder = 999;
+    this.mapRoot.add(this.workspaceFrame);
     this.mapRoot.add(this.missionMarkers.root);
     this.scene.add(this.missionMarkers.spritesRoot);
     this.missionMarkers.setVisible(false);
@@ -534,19 +587,7 @@ export class EditorViewport {
   private syncGizmoFrame(view = this.selectedView()) {
     // Direct object drags move the wrapper, so its gizmo must follow each frame.
     // Only freeze synchronization while TransformControls itself owns the drag.
-    if (this.terrainMode && !this.gizmo?.dragging) {
-      const region = this.terrainPreview ?? this.terrainMode.region;
-      const [x, y, w, h] = region.bounds;
-      this.mapRoot.updateMatrixWorld(true);
-      this.gizmoFrame.position.copy(
-        this.mapRoot.localToWorld(
-          new THREE.Vector3(
-            ...gameToScene(this.terrainMode.camera, x + w / 2, y + h / 2, region.height),
-          ),
-        ),
-      );
-    } else if (view && !this.gizmo?.dragging)
-      view.wrapper.getWorldPosition(this.gizmoFrame.position);
+    if (view && !this.gizmo?.dragging) view.wrapper.getWorldPosition(this.gizmoFrame.position);
   }
   setGizmoVertical(vertical: boolean) {
     this.gizmoVertical = vertical;
@@ -665,6 +706,7 @@ export class EditorViewport {
       this.splines.controls,
       this.terrainControls.root,
       this.exportFrame,
+      this.workspaceFrame,
       this.workspaceGrid,
       this.gizmo?.getHelper(),
     ].filter((node) => node !== undefined);
@@ -702,6 +744,7 @@ export class EditorViewport {
     });
     try {
       for (const node of helpers) node.visible = false;
+      this.renderer.shadowMap.needsUpdate = true;
       this.renderer.setPixelRatio(1);
       this.renderer.setSize(canvas.width, canvas.height, false);
       this.renderer.render(this.scene, camera);
@@ -718,6 +761,7 @@ export class EditorViewport {
       );
       return canvas;
     } finally {
+      this.renderer.shadowMap.needsUpdate = true;
       this.renderer.setPixelRatio(pixelRatio);
       this.renderer.setSize(renderSize.x, renderSize.y, false);
       for (const { mesh, tinted } of materials) mesh.material = tinted;
@@ -731,7 +775,9 @@ export class EditorViewport {
     this.missionEdit = null;
     this.missionMarkers.clear();
     this.splineMode = null;
+    this.splineTerrainPreview = false;
     this.exportFrame.visible = false;
+    this.workspaceFrame.visible = false;
     this.sunlight.setGround(null);
     this.sunlight.root.visible = false;
     this.splines.clear();
@@ -771,9 +817,15 @@ export class EditorViewport {
     this.retireMap();
     for (const control of this.controls.reverse()) control.dispose();
     this.controls = [];
-    disposeObjectResources([this.selectionBox, this.workspaceGrid, this.exportFrame]);
+    disposeObjectResources([
+      this.selectionBox,
+      this.workspaceGrid,
+      this.exportFrame,
+      this.workspaceFrame,
+    ]);
     this.sunlight.dispose();
     this.terrainControls.dispose();
+    this.assetOutline.dispose();
     this.renderer?.dispose();
     this.renderer?.forceContextLoss();
     this.renderer?.domElement.remove();
@@ -816,15 +868,20 @@ export class EditorViewport {
       (x, y) => {
         const rect = this.renderer!.domElement.getBoundingClientRect();
         this.scene.updateMatrixWorld(true);
+        // Grid controls compare neighboring screen rays to size their handles.
+        // Each sample must remain independent while the next one is computed.
+        const ray = new THREE.Raycaster();
+        ray.layers.mask = this.raycaster.layers.mask;
+        ray.params = structuredClone(this.raycaster.params);
         setViewportRay(
-          this.raycaster,
+          ray,
           new THREE.Vector2(
             ((x - rect.left) / rect.width) * 2 - 1,
             (-(y - rect.top) / rect.height) * 2 + 1,
           ),
           this.activeCamera(),
         );
-        return this.raycaster;
+        return ray;
       },
       () => {
         const enabled = this.orbit!.enabled;
@@ -850,47 +907,17 @@ export class EditorViewport {
       if (!this.dragging) this.commitGizmo();
     });
     this.gizmo.addEventListener("objectChange", () => {
-      if (this.terrainMode) {
-        const p = this.gizmoFrame.position;
-        const [cx, cy, height] = sceneToGame(this.terrainMode.camera, [p.x, -p.z, p.y]);
-        const region = this.terrainMode.region,
-          [, , w, h] = region.bounds;
-        this.previewTerrain({ ...region, bounds: [cx - w / 2, cy - h / 2, w, h], height });
-        return;
-      }
       const view = this.selectedView();
       if (view?.wrapper.parent) {
         view.wrapper.position.copy(
           view.wrapper.parent.worldToLocal(this.gizmoFrame.position.clone()),
         );
+        this.previewTerrainFollowing(view);
       }
       this.refreshSelectionBox();
       if (this.renderer) this.renderer.shadowMap.needsUpdate = true;
     });
-    const cancelTerrainGizmo = () => {
-      if (!this.terrainMode || !this.gizmo?.dragging) return false;
-      this.gizmo.reset();
-      this.terrainPreview = null;
-      this.previewTerrain(null);
-      this.gizmo.dragging = false;
-      this.syncGizmoFrame();
-      return true;
-    };
-    window.addEventListener(
-      "keydown",
-      (event) => {
-        if (event.key === "Escape" && cancelTerrainGizmo()) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-        }
-      },
-      { capture: true, signal: this.listeners.signal },
-    );
-    this.renderer.domElement.addEventListener("pointercancel", cancelTerrainGizmo, {
-      capture: true,
-      signal: this.listeners.signal,
-    });
-    window.addEventListener("blur", cancelTerrainGizmo, { signal: this.listeners.signal });
+
     const resize = () => {
       const w = el.clientWidth;
       const h = el.clientHeight;
@@ -957,7 +984,25 @@ export class EditorViewport {
       }
       this.entities?.update(camera, this.spriteOrientationLock);
       this.missionMarkers.update(camera, this.spriteOrientationLock);
-      this.renderer.render(this.scene, camera);
+      if (this.assetDisplayMode === "outline") {
+        this.assetOutline.render(this.renderer, this.scene, camera, [
+          this.objectsRoot,
+          ...this.splines.assetObjects(),
+        ]);
+      } else if (this.assetDisplayMode === "hidden") {
+        const objects = [this.objectsRoot, ...this.splines.assetObjects()];
+        const visible = objects.map((object) => object.visible);
+        objects.forEach((object) => {
+          object.visible = false;
+        });
+        try {
+          this.renderer.render(this.scene, camera);
+        } finally {
+          objects.forEach((object, index) => {
+            object.visible = visible[index]!;
+          });
+        }
+      } else this.renderer.render(this.scene, camera);
     });
   }
 
@@ -1075,6 +1120,7 @@ export class EditorViewport {
         // the gizmo takes precedence when the cursor is on one of its handles
         if (
           this.missionEdit ||
+          this.terrainMode ||
           !this.camera ||
           !this.orbit ||
           this.gizmo?.axis ||
@@ -1083,7 +1129,14 @@ export class EditorViewport {
           return;
         setRay(e);
         const hits = this.raycaster
-          .intersectObjects([this.objectsRoot, ...(this.groundNode ? [this.groundNode] : [])], true)
+          .intersectObjects(
+            [
+              ...(this.assetDisplayMode === "hidden" ? [] : [this.objectsRoot]),
+              this.terrain.root,
+              ...(this.groundNode ? [this.groundNode] : []),
+            ],
+            true,
+          )
           .filter(visibleSurface);
         if (e.button === 0) {
           // a left drag that starts on the selection moves it along the ground plane
@@ -1143,6 +1196,7 @@ export class EditorViewport {
             .worldToLocal(point.clone())
             .sub(parent.worldToLocal(moving.start.clone()));
           moving.view.wrapper.position.copy(moving.startPos).add(delta);
+          this.previewTerrainFollowing(moving.view);
           this.refreshSelectionBox();
           return;
         }
@@ -1311,6 +1365,19 @@ export class EditorViewport {
   syncViews(d: Level3D, rebuildFraming = true) {
     this.missionMarkers.sync(d, this.missionEdit?.selected);
     this.terrain.sync(d);
+    this.workspaceFrame.visible = !!d.size;
+    if (d.size) {
+      const [width, height] = d.size;
+      this.workspaceFrame.geometry.dispose();
+      this.workspaceFrame.geometry = new THREE.BufferGeometry().setFromPoints(
+        [
+          [0, 0],
+          [width, 0],
+          [width, height],
+          [0, height],
+        ].map(([x, y]) => new THREE.Vector3(...groundToScene(d.camera, x!, y!))),
+      );
+    }
     this.exportFrame.visible = !!d.exportBounds;
     if (d.exportBounds) {
       const [x, y, w, h] = d.exportBounds;
@@ -1325,7 +1392,7 @@ export class EditorViewport {
       );
       this.exportFrame.computeLineDistances();
     }
-    const syncSplines = () => this.splines.sync(d.splines ?? [], d.camera, this.sourceNodes);
+    const syncSplines = () => this.splines.sync(d.splines ?? [], d.camera, this.sourceNodes, d);
     if (rebuildFraming) syncSplines();
     else this.updateSplinePreview(syncSplines);
     const aliveGroups = new Set<string>();
@@ -1423,23 +1490,11 @@ export class EditorViewport {
     return (s.kind === "group" ? this.groupViews : this.partViews).get(s.id) ?? null;
   }
 
-  private commitGizmo() {
-    if (this.terrainMode) {
-      const mode = this.terrainMode,
-        next = this.terrainPreview;
-      this.previewTerrain(null);
-      if (
-        next &&
-        (next.height !== mode.region.height ||
-          next.bounds.some((v, i) => Math.abs(v - mode.region.bounds[i]!) > 0.001))
-      )
-        mode.commit(next);
-      return;
-    }
+  private viewTransform(): GameTransform | null {
     const d = this.bindings.document();
     const v = this.selectedView();
     const t = this.selectedGroup()?.transform ?? this.selectedPart()?.transform;
-    if (!d || !v || !t) return;
+    if (!d || !v || !t) return null;
     const g = this.selectedGroup();
     const p = this.selectedPart();
     const pivot = g ? groupCentroid(groupParts(d, g.id)) : partPivot(p!);
@@ -1449,9 +1504,33 @@ export class EditorViewport {
       pos.x - base[12]!,
       pos.y - base[13]!,
       pos.z - base[14]!,
-    ]).map((v) => Math.round(v * 10) / 10) as Vec3;
-    if (dx === t.dx && dy === t.dy && dz === t.dz) return;
-    this.bindings.commitTransform({ ...t, dx, dy, dz });
+    ]);
+    return { ...t, dx, dy, dz };
+  }
+
+  private previewTerrainFollowing(view: View) {
+    const document = this.bindings.document();
+    const selection = this.bindings.selection();
+    const transform = this.viewTransform();
+    if (!document || !selection || !transform) return;
+    const next = followTerrainTransform(document, selection, transform);
+    if (next.dz === transform.dz) return;
+    const pivot =
+      selection.kind === "group"
+        ? groupCentroid(groupParts(document, selection.id))
+        : partPivot(this.selectedPart()!);
+    this.setAffine(view, gameTransformMatrix(document.camera, next, pivot));
+  }
+
+  private commitGizmo() {
+    const next = this.viewTransform();
+    const previous = this.selectedGroup()?.transform ?? this.selectedPart()?.transform;
+    if (!next || !previous) return;
+    next.dx = Math.round(next.dx * 10) / 10;
+    next.dy = Math.round(next.dy * 10) / 10;
+    next.dz = Math.round(next.dz * 10) / 10;
+    if (next.dx === previous.dx && next.dy === previous.dy && next.dz === previous.dz) return;
+    this.bindings.commitTransform(next);
   }
 
   private refreshSunLighting(bounds = this.contentBox()) {
@@ -1464,6 +1543,7 @@ export class EditorViewport {
   }
 
   private splinePreviewError: string | null = null;
+  private splineTerrainPreview = false;
   private updateSplinePreview(update: () => void) {
     try {
       update();
@@ -1482,12 +1562,25 @@ export class EditorViewport {
 
   previewSpline(path: import("@rle/shared").LevelSpline | null) {
     this.updateSplinePreview(() => {
+      const document = this.bindings.document();
+      if (document && (path?.kind === "river" || this.splineTerrainPreview)) {
+        const splines = path
+          ? [...(document.splines ?? []).filter((spline) => spline.id !== path.id), path]
+          : document.splines;
+        this.syncViews(
+          path ? followTerrainEdit(document, { ...document, splines }) : document,
+          false,
+        );
+        this.splineTerrainPreview = path !== null;
+      }
       if (path) this.splines.showPreview(path);
       else this.splines.setMode(this.splineMode);
+      this.refreshSunLighting();
     });
   }
 
   setSplineEdit(mode: SplineEditMode | null) {
+    if (this.splineTerrainPreview) this.previewSpline(null);
     if (mode && this.terrainMode) {
       this.terrainMode.deselect?.();
       this.setTerrainEdit(null);
@@ -1522,7 +1615,14 @@ export class EditorViewport {
         const point = this.assetDropPosition(event.clientX, event.clientY);
         if (!point) return;
         const index = this.splines.hitHandle(this.raycaster);
-        if (!mode.drawing && index === null) return;
+        if (!mode.drawing && index === null) {
+          const section = this.splines.hitSection(this.raycaster);
+          if (section !== null) {
+            consume(event);
+            mode.selectSection?.(section);
+          }
+          return;
+        }
         if (index !== null) point[2] = mode.path.points[index]![2];
         gesture = {
           mode,
@@ -1556,10 +1656,7 @@ export class EditorViewport {
         gesture.point = point;
         if (gesture.index !== null) {
           const points = gesture.mode.path.points.map((p, i) => (i === gesture!.index ? point : p));
-          this.updateSplinePreview(() => {
-            this.splines.showPreview({ ...gesture!.mode.path, points });
-            this.refreshSunLighting();
-          });
+          this.previewSpline({ ...gesture.mode.path, points });
         }
       },
       { capture: true, signal: this.listeners.signal },
@@ -1581,7 +1678,7 @@ export class EditorViewport {
             if (!active.moved && this.splineMode.drawing) active.mode.append(active.point);
           } else active.mode.move(active.index, active.point);
         }
-        this.splines.setMode(this.splineMode);
+        this.previewSpline(null);
       });
     };
     canvas.addEventListener("pointerup", finish, { capture: true, signal: this.listeners.signal });
@@ -1632,7 +1729,10 @@ export class EditorViewport {
     );
     this.scene.updateMatrixWorld(true);
     setViewportRay(this.raycaster, ndc, this.activeCamera());
-    const hits = this.raycaster.intersectObject(this.objectsRoot, true).filter(visibleSurface);
+    const hits =
+      this.assetDisplayMode === "hidden" || this.terrainMode
+        ? []
+        : this.raycaster.intersectObject(this.objectsRoot, true).filter(visibleSurface);
     for (const h of hits) {
       const part = this.partOfHit(h);
       if (!part) continue;
@@ -1642,10 +1742,13 @@ export class EditorViewport {
     }
     const groundHit = this.raycaster
       .intersectObject(this.terrain.root, true)
-      .find((hit) => hit.object.userData.terrainRegion && visibleSurface(hit));
+      .find((hit) => hit.object.userData.terrainSurface && visibleSurface(hit));
     if (groundHit && this.terrainSelectionHandler) {
       this.select(null);
-      this.terrainSelectionHandler(groundHit.object.userData.terrainRegion);
+      const cell =
+        groundHit.object.userData.terrainCells?.[groundHit.faceIndex ?? -1] ??
+        groundHit.object.userData.terrainCell;
+      if (typeof cell === "string") this.terrainSelectionHandler(cell);
       return;
     }
     this.select(null);
@@ -1674,7 +1777,7 @@ export class EditorViewport {
     const d = this.bindings.document();
     const v = s ? (s.kind === "group" ? this.groupViews : this.partViews).get(s.id) : null;
     if (this.gizmo) {
-      if (v || this.terrainMode) {
+      if (v) {
         this.syncGizmoFrame(v);
         this.gizmo.attach(this.gizmoFrame);
       } else this.gizmo.detach();

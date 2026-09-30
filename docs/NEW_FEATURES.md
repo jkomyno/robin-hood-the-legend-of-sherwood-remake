@@ -1956,3 +1956,16 @@ cutouts aligned with terrain instead of rounding each piece separately.
   fresh placement bindings, groups overlapping geometry and bakes the paired images.
   Purely visual transitions need no fabricated collision or door changes. Existing
   asset recovery, animated states and shared transitions remain incomplete.
+
+- **Grid terrain authoring and map workspaces.** New maps start with named map-size
+  presets, pixel dimensions, grid spacing and elevation. Workspace resizing retains
+  all out-of-bounds content; export clips walking areas and materials to its frame.
+  Terrain uses shared movable XYZ vertices, local subdivision, point materials,
+  smooth texture blends and per-cell walking overrides. Roads have point widths
+  and materials and conform to the edited mesh; rivers can derive channels without
+  changing the control grid. Asset moves and terrain changes preserve manual height
+  offsets. Camera controls provide cardinal headings, top view and quarter turns.
+  Visible, outline and hidden asset display modes leave saved/exported content intact.
+  The shared catalog includes 52 terrain/path/water designs and custom name/color
+  materials. Wychford now has editable terrain, road paths and material areas;
+  its conversion preserves placements and provides a reproducible height audit.
