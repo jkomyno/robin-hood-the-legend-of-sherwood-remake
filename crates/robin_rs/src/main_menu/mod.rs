@@ -1282,6 +1282,7 @@ mod tests {
         let key = |keycode| GameEvent::KeyDown {
             keycode,
             physical_key: None,
+            logical_key: None,
         };
         assert_eq!(
             state.process_events(vec![key(Keycode::Down)], transform),
