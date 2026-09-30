@@ -1,5 +1,13 @@
 # Post-port Features
 
+- **Minimal editor missions.** The Mission tab adds player spawn points and NPC
+  soldiers with placement, facing and profile controls. Mission authoring stays
+  separate from map assets and preview population. Export resolves its markers
+  against the compiled navigation and receiving surfaces, writes PCs as spawn
+  points and NPCs as soldiers, and preserves the editable mission in the embedded
+  editor document. Invalid placements are reported and omitted in best-effort
+  export; scenes without authored mission markers remain unpopulated.
+
 - **Best-effort editor map exports.** Published draft gameplay definitions retain
   explicit issues. Editor export includes available geometry and reports omitted
   unsupported features or disconnected connections in the ZIP's compile report;

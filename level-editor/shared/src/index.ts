@@ -16,6 +16,7 @@ export * from "./projection-assets.ts";
 export * from "./splines.ts";
 
 export * from "./population.ts";
+export * from "./mission.ts";
 
 export * from "./component-parts.ts";
 

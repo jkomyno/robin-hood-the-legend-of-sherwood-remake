@@ -1,4 +1,5 @@
 import TerrainPanel from "./TerrainPanel";
+import MissionPanel from "./MissionPanel";
 // Edit JSON maps assembled from pinned library assets, with game and orbit cameras.
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, untrack } from "solid-js";
 import type { JSX } from "@solidjs/web";
@@ -1561,7 +1562,7 @@ export default function Editor3D(props: EditorProps) {
         </div>
         <aside class="editor-panel" aria-label="Inspector">
           <nav class="inspector-tabs" aria-label="Inspector sections">
-            <For each={["Selection", "Draw", "View"]}>
+            <For each={["Selection", "Draw", "View", "Mission"]}>
               {(name) => (
                 <button
                   aria-pressed={panel() === name ? "true" : "false"}
@@ -1579,6 +1580,15 @@ export default function Editor3D(props: EditorProps) {
               )}
             </For>
           </nav>
+          <div class="inspector-content" hidden={panel() !== "Mission"}>
+            <MissionPanel
+              document={doc}
+              commit={pushHistory}
+              onError={props.onError}
+              active={panel() === "Mission"}
+              viewport={viewport}
+            />
+          </div>
           <div class="inspector-content" hidden={panel() !== "Draw"}>
             <p class="panel-intro">
               Draw walls, rivers and paths directly in the scene. Finish or cancel a path before

@@ -4,6 +4,7 @@ import { strToU8, zip } from "fflate";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import type { ProjectionAssetDescriptor } from "@rle/shared";
 import { packageAppearanceRegions, type BakedAppearanceRegion } from "./map-appearance.ts";
+import { compileMission } from "./compile-mission.ts";
 
 export type BakeBounds = [number, number, number, number];
 export interface CompiledVolume {
@@ -99,10 +100,11 @@ export function compileMap(
       ? compileAssetGameplay(document, assets ?? new Map(), bounds, options)
       : undefined;
   const volumes = assetGeometry ? [] : compileVolumes(document, bounds);
+  const mission = compileMission(document, bounds, assetGeometry, options.bestEffort, volumes);
   const warnings = assetGeometry
     ? [
         ...(assetGeometry.warnings ?? []),
-        "Compiled from asset-local surfaces, sight geometry and doors. Navigation grids and route graphs are constructed by the engine. Player spawns and NPCs belong to a separate mission.",
+        "Compiled from asset-local surfaces, sight geometry and doors. Navigation grids and route graphs are constructed by the engine. Only explicitly authored Mission spawns and soldiers are exported.",
         "Visual/depth state resources and mask recovery for existing assets remain incomplete. This export is not a full gameplay-parity certification.",
       ]
     : [
@@ -114,6 +116,7 @@ export function compileMap(
     title: document.map,
     map_filename: name,
     spawn_player: false,
+    ...(document.mission ? { spawn_points: mission.spawn_points, soldiers: mission.soldiers } : {}),
     walkable_polygon: [
       [0, 0],
       [bounds[2] - 1, 0],
@@ -134,6 +137,7 @@ export function compileMap(
     hackable_missions: [name],
   };
   const editorDocument = assets ? serializeStoredMap(document, assets) : structuredClone(document);
+  warnings.push(...mission.warnings);
   return { name, bounds, descriptor, details, warnings, editorDocument };
 }
 

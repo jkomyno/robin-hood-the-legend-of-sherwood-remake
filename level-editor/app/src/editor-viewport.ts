@@ -1,4 +1,5 @@
 import { TerrainControls, type TerrainEditMode } from "./terrain-controls.ts";
+import { MissionLayer } from "./mission-layer.ts";
 import { TerrainLayer } from "./terrain-layer.ts";
 import { stableOpaqueSort } from "./render-order.ts";
 import {
@@ -445,6 +446,20 @@ export class EditorViewport {
     );
   }
   private readonly splines = new SplineLayer();
+  private readonly missionMarkers = new MissionLayer();
+  private missionEdit: {
+    selected: string;
+    select(id: string): void;
+    place?: (position: Vec3) => void;
+  } | null = null;
+
+  setMissionEdit(mode: typeof this.missionEdit) {
+    this.missionEdit = mode;
+    this.missionMarkers.root.visible = !!mode;
+    if (mode) this.select(null);
+    const document = this.bindings.document();
+    if (document) this.missionMarkers.sync(document, mode?.selected);
+  }
   private readonly sunlight = new SunLighting();
   private splineMode: SplineEditMode | null = null;
   private readonly partViews = new Map<string, View>();
@@ -478,6 +493,8 @@ export class EditorViewport {
     this.exportFrame.visible = false;
     this.exportFrame.renderOrder = 1000;
     this.mapRoot.add(this.exportFrame);
+    this.mapRoot.add(this.missionMarkers.root);
+    this.missionMarkers.root.visible = false;
     this.mapRoot.add(
       this.terrain.root,
       this.terrainControls.root,
@@ -703,6 +720,8 @@ export class EditorViewport {
   }
 
   private retireMap() {
+    this.missionEdit = null;
+    this.missionMarkers.clear();
     this.splineMode = null;
     this.exportFrame.visible = false;
     this.sunlight.setGround(null);
@@ -890,6 +909,24 @@ export class EditorViewport {
         const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]);
         downAt = null;
         if (moved > 4 || this.dragging) return;
+        if (this.missionEdit) {
+          const groundPosition = this.assetDropPosition(e.clientX, e.clientY);
+          const surface = this.raycaster
+            .intersectObject(this.objectsRoot, true)
+            .find(visibleSurface);
+          const document = this.bindings.document();
+          const position =
+            surface && document
+              ? sceneToGame(document.camera, [surface.point.x, -surface.point.z, surface.point.y])
+              : groundPosition;
+          if (this.missionEdit.place) {
+            if (position) this.missionEdit.place(position);
+          } else {
+            const id = this.missionMarkers.hit(this.raycaster);
+            if (id) this.missionEdit.select(id);
+          }
+          return;
+        }
         if (!this.splineMode) this.pick(e, e.altKey);
       },
       { signal: this.listeners.signal },
@@ -1027,7 +1064,13 @@ export class EditorViewport {
       "pointerdown",
       (e) => {
         // the gizmo takes precedence when the cursor is on one of its handles
-        if (!this.camera || !this.orbit || this.gizmo?.axis || (e.button !== 0 && e.button !== 2))
+        if (
+          this.missionEdit ||
+          !this.camera ||
+          !this.orbit ||
+          this.gizmo?.axis ||
+          (e.button !== 0 && e.button !== 2)
+        )
           return;
         setRay(e);
         const hits = this.raycaster
@@ -1257,6 +1300,7 @@ export class EditorViewport {
   }
 
   syncViews(d: Level3D, rebuildFraming = true) {
+    this.missionMarkers.sync(d, this.missionEdit?.selected);
     this.terrain.sync(d);
     this.exportFrame.visible = !!d.exportBounds;
     if (d.exportBounds) {

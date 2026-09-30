@@ -2024,6 +2024,9 @@ pub struct LoadedMission {
     /// their AI handles use zero as the null sentinel.
     #[serde(default)]
     pub reserve_null_ai_handle: bool,
+    /// Instantiate every authored spawn slot using its explicit character profile.
+    #[serde(default)]
+    pub authored_spawn_roster: bool,
     pub header: MissionHeader,
     /// Exact source order for chunks which append to legacy grid arrays.
     #[serde(default)]
@@ -2123,6 +2126,9 @@ pub struct HackableLevelDescriptor {
     pub asset_geometry: Option<CompiledAssetGeometry>,
     #[serde(default)]
     pub soldiers: Vec<HackableSoldier>,
+    /// Authored mission slots for player characters.
+    #[serde(default)]
+    pub spawn_points: Vec<HackableSpawnPoint>,
     #[serde(default)]
     pub pcs: Vec<HackablePc>,
     /// Optional gameplay time limit for this mission.
@@ -2283,6 +2289,12 @@ pub struct HackableSoldier {
     #[serde(default)]
     pub direction: u32,
     #[serde(default)]
+    pub sector: u16,
+    #[serde(default)]
+    pub layer: u16,
+    #[serde(default)]
+    pub projection_area: Option<u16>,
+    #[serde(default)]
     pub command_interface: CommandInterface,
     #[serde(default)]
     pub mission_role: MissionRole,
@@ -2295,6 +2307,21 @@ pub struct HackableSoldier {
 pub enum HackableSoldierProfile {
     Identifier(String),
     LegacyIndex(u32),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
+#[serde(deny_unknown_fields)]
+pub struct HackableSpawnPoint {
+    pub position: (i16, i16),
+    pub profile: u32,
+    #[serde(default)]
+    pub direction: u32,
+    #[serde(default)]
+    pub sector: u16,
+    #[serde(default)]
+    pub layer: u16,
+    #[serde(default)]
+    pub projection_area: Option<u16>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
@@ -2447,6 +2474,31 @@ impl LoadedLevel {
         if descriptor.walkable_polygon.len() < 3 {
             return Err("walkable_polygon must contain at least three points".to_owned());
         }
+        if descriptor.spawn_player && !descriptor.spawn_points.is_empty() {
+            return Err("spawn_points requires spawn_player to be false".into());
+        }
+        if descriptor.asset_geometry.is_none() {
+            for (index, spawn) in descriptor.spawn_points.iter().enumerate() {
+                if spawn.sector != 0
+                    || spawn.layer != 0
+                    || spawn.projection_area.is_some_and(|area| area != u16::MAX)
+                {
+                    return Err(format!(
+                        "spawn_points[{index}] references an invalid motion area"
+                    ));
+                }
+            }
+            for (index, soldier) in descriptor.soldiers.iter().enumerate() {
+                if soldier.sector != 0
+                    || soldier.layer != 0
+                    || soldier.projection_area.is_some_and(|area| area != u16::MAX)
+                {
+                    return Err(format!(
+                        "soldiers[{index}] references an invalid motion area"
+                    ));
+                }
+            }
+        }
         for (index, pc) in descriptor.pcs.iter().enumerate() {
             if let (Some(policy), Some(legacy_autonomous)) = (pc.decision_policy, pc.autonomous)
                 && (policy == DecisionPolicy::EnemyAi) != legacy_autonomous
@@ -2592,6 +2644,38 @@ impl LoadedLevel {
                 robin_role: false,
             }];
         }
+        if !descriptor.spawn_points.is_empty() {
+            level.mission.authored_spawn_roster = true;
+            level
+                .mission
+                .element_group_order
+                .push(MissionElementGroup::BeamMe);
+            level.mission.beam_mes = descriptor
+                .spawn_points
+                .into_iter()
+                .enumerate()
+                .map(|(index, spawn)| {
+                    Ok(BeamMe {
+                        position: MapPoint::new(
+                            f32::from(spawn.position.0),
+                            f32::from(spawn.position.1),
+                        ),
+                        direction: spawn.direction,
+                        action: 0,
+                        projection_area: spawn.projection_area.unwrap_or(u16::MAX),
+                        sector: spawn.sector,
+                        layer: spawn.layer,
+                        material: 0,
+                        action_required: BeamMeActions::default(),
+                        index: u16::try_from(index).map_err(|_| "too many spawn_points")?,
+                        script: None,
+                        required_pc: 0,
+                        profile_override: Some(spawn.profile),
+                        robin_role: false,
+                    })
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+        }
         if !descriptor.soldiers.is_empty() {
             level
                 .mission
@@ -2616,9 +2700,9 @@ impl LoadedLevel {
                         .map_err(|_| "hackable soldier y must be non-negative")?,
                     direction: soldier.direction,
                     action: 0,
-                    obstacle_index: u16::MAX,
-                    sector: 0,
-                    layer: 0,
+                    obstacle_index: soldier.projection_area.unwrap_or(u16::MAX),
+                    sector: soldier.sector,
+                    layer: soldier.layer,
                     material: 0,
                     profile_number: match &soldier.profile {
                         HackableSoldierProfile::LegacyIndex(index) => *index,
@@ -2725,6 +2809,44 @@ impl LoadedLevel {
                 }
             }
             let mut transition_ids = std::collections::BTreeSet::new();
+            for (index, spawn) in level.mission.beam_mes.iter().enumerate() {
+                if !area_refs.contains(&(spawn.sector, spawn.layer)) {
+                    return Err(format!(
+                        "spawn_points[{index}] references an invalid motion area"
+                    ));
+                }
+                if spawn.projection_area != u16::MAX
+                    && !geometry
+                        .sight_obstacles
+                        .get(usize::from(spawn.projection_area))
+                        .is_some_and(|obstacle| {
+                            obstacle.projection_area == Some((spawn.sector, spawn.layer))
+                        })
+                {
+                    return Err(format!(
+                        "spawn_points[{index}] references an invalid projection area"
+                    ));
+                }
+            }
+            for (index, soldier) in level.mission.soldiers.iter().enumerate() {
+                if !area_refs.contains(&(soldier.sector, soldier.layer)) {
+                    return Err(format!(
+                        "soldiers[{index}] references an invalid motion area"
+                    ));
+                }
+                if soldier.obstacle_index != u16::MAX
+                    && !geometry
+                        .sight_obstacles
+                        .get(usize::from(soldier.obstacle_index))
+                        .is_some_and(|obstacle| {
+                            obstacle.projection_area == Some((soldier.sector, soldier.layer))
+                        })
+                {
+                    return Err(format!(
+                        "soldiers[{index}] references an invalid projection area"
+                    ));
+                }
+            }
             let mask_refs = crate::compiled_masks::validate_compiled_masks(
                 &geometry.masks,
                 &geometry.motion_data,
@@ -3179,6 +3301,7 @@ impl LoadedLevel {
             mission: LoadedMission {
                 format: LevelFormat::Fullgame,
                 reserve_null_ai_handle: false,
+                authored_spawn_roster: false,
                 header: MissionHeader {
                     control_crc: 0,
                     ambiance: 0, // Day
@@ -3958,6 +4081,7 @@ pub fn load_mission(
     Ok(LoadedMission {
         format,
         reserve_null_ai_handle: false,
+        authored_spawn_roster: false,
         header,
         grid_chunk_order,
         element_chunk_order,
@@ -5616,6 +5740,98 @@ fn read_archery_sectors(
 mod tests {
     use super::*;
     use std::fs;
+
+    #[test]
+    fn authored_mission_spawns_use_navigation_areas_and_beam_me_slots() {
+        let mut descriptor: serde_json::Value = serde_json::from_slice(include_bytes!(
+            "../../robin_engine/tests/fixtures/asset-multi-plane-region.level.json"
+        ))
+        .unwrap();
+        let ground = descriptor["asset_geometry"]["motion_data"]["layers"][0].clone();
+        descriptor["asset_geometry"]["motion_data"]["layers"] =
+            serde_json::json!([ground, ground, []]);
+        let motion: RawMotionData =
+            serde_json::from_value(descriptor["asset_geometry"]["motion_data"].clone()).unwrap();
+        let mut sector = 0u16;
+        let mut elevated = None;
+        for (layer, areas) in motion.layers.iter().enumerate() {
+            for area in areas {
+                if layer > 0 && !area.is_lift {
+                    elevated = Some((sector, layer as u16, area.polygon.points[0]));
+                }
+                sector += 1 + area.obstacles.len() as u16;
+            }
+        }
+        let (sector, layer, point) = elevated.expect("fixture has elevated receiving area");
+        let mut receiving = descriptor["asset_geometry"]["sight_obstacles"][0].clone();
+        receiving["projection_area"] = serde_json::json!([sector, layer]);
+        let receivers = descriptor["asset_geometry"]["sight_obstacles"]
+            .as_array_mut()
+            .unwrap();
+        let receiver = receivers.len();
+        receivers.push(receiving);
+        descriptor["spawn_points"] = serde_json::json!([
+            {"position":point,"profile":0,"direction":4,"sector":sector,"layer":layer,"projection_area":receiver},
+            {"position":point,"profile":3,"direction":8,"sector":sector,"layer":layer,"projection_area":receiver}
+        ]);
+        descriptor["soldiers"] = serde_json::json!([
+            {"position":point,"profile":2,"allegiance":1,"sector":sector,"layer":layer,"projection_area":receiver}
+        ]);
+        let level =
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap()).unwrap();
+        assert!(level.mission.authored_spawn_roster);
+        assert!(level.mission.pcs_to_rescue.is_empty());
+        assert_eq!(level.mission.beam_mes.len(), 2);
+        for (index, spawn) in level.mission.beam_mes.iter().enumerate() {
+            assert_eq!((spawn.sector, spawn.layer), (sector, layer));
+            assert_eq!(spawn.index, index as u16);
+            assert_eq!(spawn.required_pc, 0);
+        }
+        assert_eq!(level.mission.beam_mes[1].profile_override, Some(3));
+        assert_eq!(level.mission.beam_mes[1].direction, 8);
+        assert_eq!(level.mission.beam_mes[1].projection_area, receiver as u16);
+        assert_eq!(level.mission.soldiers[0].obstacle_index, receiver as u16);
+        assert_eq!(
+            (
+                level.mission.soldiers[0].sector,
+                level.mission.soldiers[0].layer
+            ),
+            (sector, layer)
+        );
+        descriptor["spawn_points"][0]["projection_area"] = serde_json::json!(0);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap())
+                .unwrap_err()
+                .contains("invalid projection area")
+        );
+        descriptor["spawn_points"][0]["projection_area"] = serde_json::json!(receiver);
+        descriptor["spawn_points"][0]["sector"] = serde_json::json!(65535);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap())
+                .unwrap_err()
+                .contains("spawn_points[0]")
+        );
+        descriptor["spawn_points"] = serde_json::json!([]);
+        descriptor["soldiers"][0]["layer"] = serde_json::json!(65535);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap())
+                .unwrap_err()
+                .contains("soldiers[0]")
+        );
+    }
+
+    #[test]
+    fn authored_spawn_points_cannot_duplicate_the_default_player() {
+        let error = LoadedLevel::hackable_from_json(
+            br#"{
+            "map_filename":"Mission", "spawn":[10,10],
+            "walkable_polygon":[[0,0],[100,0],[100,100],[0,100]],
+            "spawn_points":[{"position":[10,10],"profile":0}]
+        }"#,
+        )
+        .unwrap_err();
+        assert!(error.contains("spawn_player"));
+    }
 
     #[test]
     fn hackable_descriptor_expands_to_playable_level() {

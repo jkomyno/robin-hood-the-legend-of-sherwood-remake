@@ -5,6 +5,7 @@ import {
   obstaclePartIdentity,
 } from "./component-parts.ts";
 import { validatePopulation } from "./population.ts";
+import { validateMission } from "./mission.ts";
 import { maskReferenceResolver } from "./mask-references.ts";
 import {
   safeLibraryPath,
@@ -596,6 +597,7 @@ export function parseLevel3D(value: unknown, context: DocumentContext = {}): Lev
     );
   }
   if (d.population !== undefined) validatePopulation(d.population);
+  if (d.mission !== undefined) validateMission(d.mission);
   const splineIds = new Set<string>();
   if (d.terrain !== undefined) validateGroundRegions(d.terrain);
   if (d.splines !== undefined)
