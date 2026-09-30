@@ -1,0 +1,10 @@
+{
+  "source_sha256": "1658cd3c148ed45c78dbee42a2e06883fb02e5d7c709af1876a027b00be77c4a",
+  "review": "The navigation-only boundary on the upper terrace extends beyond receiving coverage at its northeast tip. Place that changing contour on the terrace receiver plane while preserving the receiving gap; this does not author additional walkable or receiving surfaces.",
+  "entries": [
+    {
+      "patch": 3,
+      "receiver": 52
+    }
+  ]
+}

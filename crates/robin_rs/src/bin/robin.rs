@@ -28,6 +28,7 @@ fn main() {
     install_crash_diagnostics();
     robin_rs::init_tracing();
     let args = robin_rs::main_entry::parse_cli();
+    robin_rs::diagnostic_context::initialize(&args);
     if args.upgrade_replay.is_none() && args.replay_hash_output.is_none() {
         robin_rs::bug_report::submit_pending();
     }
@@ -78,6 +79,9 @@ fn run_native(args: robin_rs::main_entry::CliArgs) -> i32 {
         };
     }
     let args = robin_rs::main_entry::LaunchConfig::from(args);
+    robin_rs::diagnostic_context::set_stage(
+        robin_rs::diagnostic_context::Stage::DataInitialization,
+    );
     let (campaign, profiles, shipping) = match robin_rs::main_entry::rust_init() {
         Ok(c) => {
             tracing::info!("Rust initialization complete.");
@@ -99,6 +103,9 @@ fn run_native(args: robin_rs::main_entry::CliArgs) -> i32 {
     };
 
     if args.cli.headless {
+        robin_rs::diagnostic_context::set_stage(
+            robin_rs::diagnostic_context::Stage::GameInitialization,
+        );
         // Match the windowed game thread's stack, including direct native
         // snapshot encoding in unoptimized builds.
         return std::thread::Builder::new()
@@ -125,11 +132,17 @@ fn run_native(args: robin_rs::main_entry::CliArgs) -> i32 {
             .unwrap_or_else(|panic| std::panic::resume_unwind(panic));
     }
 
+    robin_rs::diagnostic_context::set_stage(
+        robin_rs::diagnostic_context::Stage::WindowInitialization,
+    );
     match robin_rs::window::run_with_game(
         "Robin Hood — Legend of Sherwood",
         1024,
         768,
         move |mut window| async move {
+            robin_rs::diagnostic_context::set_stage(
+                robin_rs::diagnostic_context::Stage::GameInitialization,
+            );
             match robin_rs::main_entry::run_rust_game(
                 &mut window,
                 campaign,
@@ -571,6 +584,9 @@ mod crash_report_tests {
         assert_eq!(unsafe { libc::setrlimit(libc::RLIMIT_CORE, &limit) }, 0);
         super::install_crash_diagnostics();
         robin_rs::init_tracing();
+        robin_rs::diagnostic_context::set_stage(
+            robin_rs::diagnostic_context::Stage::DataInitialization,
+        );
         tracing::warn!("diagnostic child log");
         panic!("diagnostic subprocess panic");
     }
@@ -600,5 +616,14 @@ mod crash_report_tests {
         assert!(report.description.contains("diagnostic subprocess panic"));
         assert!(report.recent_log.contains("diagnostic child log"));
         assert!(report.backtrace.is_some_and(|trace| !trace.is_empty()));
+        let attachment = report
+            .attachments
+            .iter()
+            .find(|item| item.filename == "native-context.json")
+            .unwrap();
+        let context: serde_json::Value = serde_json::from_str(&attachment.content).unwrap();
+        assert_eq!(context["context"]["stage"], "data_initialization");
+        assert!(context["context"]["mission"].is_null());
+        assert!(context["unavailable_reason"].is_null());
     }
 }

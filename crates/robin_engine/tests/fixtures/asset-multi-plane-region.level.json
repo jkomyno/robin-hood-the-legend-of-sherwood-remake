@@ -1,7 +1,7 @@
 {
   "title": "Multi-plane navigation fixture",
   "map_filename": "editor-multi-plane-navigation-fixture",
-  "spawn_player": false,
+  "spawn_points": [],
   "walkable_polygon": [
     [
       0,
@@ -61,7 +61,6 @@
             "obstacles": []
           }
         ],
-        [],
         []
       ],
       "graph_bytes": []

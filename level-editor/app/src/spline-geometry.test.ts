@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "three";
-import { parseLevel3D, type LevelSpline, type Level3D } from "@rle/shared";
-import { riverGeometry, splineCurve, wallMesh } from "./spline-geometry.ts";
+import { parseLevel3D, createTerrainGrid, type LevelSpline, type Level3D } from "@rle/shared";
+import { riverGeometry, splineCurve, wallMesh, blendedSplineTexture } from "./spline-geometry.ts";
 import { SplineLayer } from "./spline-layer.ts";
 
 const camera = { kind: "oblique-orthographic" as const, elevation_deg: 35 };
@@ -19,6 +19,47 @@ const river: LevelSpline = {
   repeatLength: 100,
   closed: false,
 };
+test("roads drape both edges and interior across a sloped terrain grid", () => {
+  const terrain = createTerrainGrid([-200, -200, 1000, 1000], 500);
+  for (const vertex of terrain.vertices)
+    vertex.position[2] = vertex.position[0] / 10 + vertex.position[1] / 5;
+  const document = { terrain } as Level3D;
+  const geometry = riverGeometry(
+    { ...river, kind: "road", pointWidths: [20, 100, 40] },
+    camera,
+    document,
+  );
+  const positions = geometry.getAttribute("position"),
+    sine = Math.sin((camera.elevation_deg * Math.PI) / 180),
+    cosine = Math.cos((camera.elevation_deg * Math.PI) / 180);
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i),
+      y = -positions.getY(i) * sine;
+    assert.ok(Math.abs(positions.getZ(i) - 0.8 - (x / 10 + y / 5) / cosine) < 0.00002);
+  }
+  geometry.dispose();
+});
+test("point materials produce a synchronous texture spanning the complete path", () => {
+  const path = {
+    ...river,
+    points: [
+      [0, 0, 0],
+      [100, 0, 0],
+    ] as [number, number, number][],
+    pointMaterials: ["water_still", "water_white"],
+  };
+  const texture = blendedSplineTexture(path, camera);
+  assert.equal(texture.image.width, 256);
+  assert.equal(texture.image.height, 100);
+  assert.equal(texture.repeat.y, path.repeatLength / 100);
+  assert.notDeepEqual(
+    Array.from((texture.image.data as Uint8Array).slice(128 * 4, 128 * 4 + 4)),
+    Array.from(
+      (texture.image.data as Uint8Array).slice((99 * 256 + 128) * 4, (99 * 256 + 128) * 4 + 4),
+    ),
+  );
+  texture.dispose();
+});
 test("river ribbons keep world width and repeat texture by arc length through curves", () => {
   const geometry = riverGeometry(river, camera),
     positions = geometry.getAttribute("position"),

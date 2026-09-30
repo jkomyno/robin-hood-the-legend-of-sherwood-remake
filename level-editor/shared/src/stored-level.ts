@@ -137,7 +137,7 @@ function hydrateReference<
     model_scene?: string;
     resources?: unknown;
   },
->(source: T, descriptor: ProjectionAssetDescriptor | undefined): T {
+>(source: T, descriptor: ProjectionAssetDescriptor | undefined, requireResources = false): T {
   if (!source.descriptor) return source;
   if (!descriptor) throw new Error(`Missing pinned asset descriptor: ${source.id}`);
   if (descriptor.id !== source.id)
@@ -152,8 +152,8 @@ function hydrateReference<
   return {
     ...source,
     ...(descriptor.model_scene ? { model_scene: descriptor.model_scene } : {}),
-    ...(descriptor.resources !== undefined
-      ? { resources: structuredClone(descriptor.resources) }
+    ...(descriptor.resources !== undefined || requireResources
+      ? { resources: structuredClone(descriptor.resources ?? []) }
       : {}),
   };
 }
@@ -458,7 +458,7 @@ export function parseStoredMap(value: unknown, descriptors: Descriptors): Level3
       ? {
           sceneAssets: saved.sceneAssets.map((raw) => {
             const source = record(raw, "scene asset") as unknown as Level3D["sceneAssets"][number];
-            return hydrateReference(source, descriptors.get(source.id));
+            return hydrateReference(source, descriptors.get(source.id), true);
           }),
         }
       : {}),

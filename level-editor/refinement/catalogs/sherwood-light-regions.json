@@ -1,0 +1,16 @@
+{
+  "source_sha256": "3cf71efe5d7f248f44d87d478fa2cf51631025c6c54e97ab5dfd6b10672ad414",
+  "entries": [
+    {
+      "source": 0,
+      "id": "sherwood-west-night-light-region",
+      "name": "Sherwood western camp night lighting",
+      "origin": [
+        412,
+        231,
+        0
+      ],
+      "review": "Independent night lighting field spanning the western camp, multiple structures and terrain; it has no single containing visual asset."
+    }
+  ]
+}

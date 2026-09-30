@@ -8,9 +8,20 @@ import type { LevelSpline } from "@rle/shared";
 
 const camera = { kind: "oblique-orthographic" as const, elevation_deg: 35 };
 const path: LevelSpline = {
-  id: "wall", name: "Legacy wall", kind: "wall", asset: "wall-source",
-  axis: "x", sourceStraight: true, width: 10, repeatLength: 100, closed: false,
-  points: [[0, 0, 0], [100, 0, 0], [100, 100, 0]],
+  id: "wall",
+  name: "Legacy wall",
+  kind: "wall",
+  asset: "wall-source",
+  axis: "x",
+  sourceStraight: true,
+  width: 10,
+  repeatLength: 100,
+  closed: false,
+  points: [
+    [0, 0, 0],
+    [100, 0, 0],
+    [100, 100, 0],
+  ],
 };
 
 test("saved presets cannot reintroduce unreviewed or interior-bearing corners", () => {
@@ -39,7 +50,9 @@ test("legacy maps render continuous walls instead of retired corner buildings", 
       result.children.forEach((child, i) => {
         assert.deepEqual(
           Array.from((child as THREE.Mesh).geometry.getAttribute("position").array),
-          Array.from((continuous.children[i] as THREE.Mesh).geometry.getAttribute("position").array),
+          Array.from(
+            (continuous.children[i] as THREE.Mesh).geometry.getAttribute("position").array,
+          ),
         );
         (child as THREE.Mesh).geometry.dispose();
       });

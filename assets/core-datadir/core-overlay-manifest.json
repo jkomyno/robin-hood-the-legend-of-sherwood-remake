@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "shippingDatadirSchema": 18,
+  "shippingDatadirSchema": 19,
   "files": [
     {
       "path": "Data/AudioDurations.json",

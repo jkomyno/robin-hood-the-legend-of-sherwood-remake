@@ -224,6 +224,7 @@ fn decode_background_map(
             // family. Continuous PNG depth overlays are post-port mod input
             // and cannot be mounted after verifier confinement.
             occlusion_depth: None,
+            appearance_regions: Vec::new(),
         },
     ))
 }

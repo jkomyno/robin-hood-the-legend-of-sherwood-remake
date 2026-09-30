@@ -1,0 +1,118 @@
+{
+  "source_sha256": "1d39600d880f96dbd13bff1cda94778d867eabf4d6ed76b00fc92a70f646fc07",
+  "recipes": [
+    {
+      "asset": "lincoln-keep",
+      "model_sha256": "eca0f74d71cd3a0bff41e6345834b7478f23016ef5c44600826dc3f13bf4b189",
+      "entries": [
+        {
+          "source": 390,
+          "id": "keep-upper-roof-occlusion",
+          "node": "building-218",
+          "anchor": [
+            1566,
+            1076.00104,
+            800.00104
+          ],
+          "characterHeights": [
+            800.00104,
+            800.00104
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "Character threshold extends beyond navigation and is authored in the owning asset's flat 800.00104-unit receiving plane. The anchor is inside that plane and source layer. Complete mask coverage is supported by the mesh; obstacle links are asset-local and no patch controls this mask. Projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "lincoln-east-curtain-wall-lower",
+      "model_sha256": "11cc1d3f1b54a1095817a2147d354e2e440648cc1d8bdecb00c0afd80be791f2",
+      "entries": [
+        {
+          "source": 192,
+          "id": "raised-occlusion-192",
+          "node": "building-083--component-east-curtain-walk",
+          "anchor": [
+            2454,
+            1660.001,
+            350.001
+          ],
+          "characterHeights": [
+            350.001,
+            350.001,
+            350.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0
+          ],
+          "review": "The receiving anchor is inside this asset's recovered flat 350.001-unit surface and the source receiving layer. Character thresholds, when present, use that plane even where they extend beyond navigation. Complete coverage is supported by this mesh among the audited candidates. No obstacle links or patch controls are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "lincoln-south-curtain-wall-west",
+      "model_sha256": "5aa1f4699662005e6a16db1f8cd9b45aab3dc79971d882f809585af7e661c714",
+      "entries": [
+        {
+          "source": 203,
+          "id": "raised-occlusion-203",
+          "node": "building-375",
+          "anchor": [
+            799,
+            1794.001,
+            350.001
+          ],
+          "characterHeights": [
+            350.001,
+            350.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "The receiving anchor is inside this asset's recovered flat 350.001-unit surface and the source receiving layer. Character thresholds, when present, use that plane even where they extend beyond navigation. Complete coverage is supported by this mesh among the audited candidates. No obstacle links or patch controls are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    },
+    {
+      "asset": "lincoln-northeast-square-tower",
+      "model_sha256": "6f836e3044decc0affa1f187d2a077357b904423fa474cd4fd70189c8400551d",
+      "entries": [
+        {
+          "source": 207,
+          "id": "raised-occlusion-207",
+          "node": "building-161",
+          "anchor": [
+            2652,
+            938.001,
+            415.001
+          ],
+          "characterHeights": [
+            415.001,
+            415.001,
+            415.001
+          ],
+          "projectileHeights": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "review": "The receiving anchor is inside this asset's recovered flat 415.001-unit surface and the source receiving layer. Character thresholds, when present, use that plane even where they extend beyond navigation. Complete coverage is supported by this mesh among the audited candidates. No obstacle links or patch controls are present; projectile boundaries use the world XY datum."
+        }
+      ]
+    }
+  ]
+}

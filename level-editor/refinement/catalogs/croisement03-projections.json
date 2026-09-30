@@ -1,0 +1,104 @@
+{
+  "source_sha256": "1658cd3c148ed45c78dbee42a2e06883fb02e5d7c709af1876a027b00be77c4a",
+  "review": "Unique physical owners retain ordered float32 vertices and flags. The full static candidate constructs natively; this recipe does not certify visual or actor-traversal parity.",
+  "entries": [
+    {
+      "asset": "croisement03-group-052",
+      "model_sha256": "a48c5a8786ec0f1bfd20b09f663e1a06890a7ea1c0cf891e999e95a8c53b968e",
+      "surface": "building-052-walk-0",
+      "node": "building-052",
+      "source_obstacle": 52
+    },
+    {
+      "asset": "croisement03-group-053",
+      "model_sha256": "a8ba67773178ad174ba22a5c9fa26a21d5aa3ed49e1f940312b78836578c4323",
+      "surface": "building-053-walk-0",
+      "node": "building-053",
+      "source_obstacle": 53
+    },
+    {
+      "asset": "croisement03-group-054",
+      "model_sha256": "590874edce84f01c382a005727d4249befa42f3eda972cfe264063a6d8a3e68c",
+      "surface": "building-054-walk-0",
+      "node": "building-054",
+      "source_obstacle": 54
+    },
+    {
+      "asset": "croisement03-group-056",
+      "model_sha256": "eb4956c0e58da044175611b469ee182f2e14fd5ecf543f4f37e3bb7b9ea26f32",
+      "surface": "building-056-walk-0",
+      "node": "building-056",
+      "source_obstacle": 56
+    },
+    {
+      "asset": "croisement03-group-057",
+      "model_sha256": "2449e91b5ae810f076e5d44febae63e35a3dd14f7252cac38d50144f5ab9657f",
+      "surface": "building-057-walk-0",
+      "node": "building-057",
+      "source_obstacle": 57
+    },
+    {
+      "asset": "croisement03-group-062",
+      "model_sha256": "5518b203e4beaffcd6ad698656a055818de9b0c39776d00e36204958f81fd90e",
+      "surface": "building-086-walk-0",
+      "node": "building-086",
+      "source_obstacle": 86
+    },
+    {
+      "asset": "croisement03-group-063",
+      "model_sha256": "d5ab86e670fb209a79c413a6b4bcb17ba33aaebb1b0a68eed26e9b1a95eda52a",
+      "surface": "building-063-walk-0",
+      "node": "building-063",
+      "source_obstacle": 63
+    },
+    {
+      "asset": "croisement03-group-065",
+      "model_sha256": "a98857066068d196139275588c786a76e1084633f0b9ad544a57c1aa65e258f9",
+      "surface": "building-065-walk-0",
+      "node": "building-065",
+      "source_obstacle": 65
+    },
+    {
+      "asset": "croisement03-group-066",
+      "model_sha256": "9d0236039ade6da2767c440f8f05072f98ee75eb1a4641d5780a67ecd8d77002",
+      "surface": "building-066-walk-0",
+      "node": "building-066",
+      "source_obstacle": 66
+    },
+    {
+      "asset": "croisement03-group-068",
+      "model_sha256": "c49fc3f2ba8841ade0cab90e2787efc4a2e9872a06b3daab36169149a57fba5d",
+      "surface": "building-068-walk-0",
+      "node": "building-068",
+      "source_obstacle": 68
+    },
+    {
+      "asset": "croisement03-group-068",
+      "model_sha256": "c49fc3f2ba8841ade0cab90e2787efc4a2e9872a06b3daab36169149a57fba5d",
+      "surface": "building-069-walk-0",
+      "node": "building-069",
+      "source_obstacle": 69
+    },
+    {
+      "asset": "croisement03-group-094",
+      "model_sha256": "9d8f806b3f2821ca2789417fed5a0ee097ddc064d87913ada6c0854c90e4c9f4",
+      "surface": "building-094-walk-0",
+      "node": "building-094",
+      "source_obstacle": 94
+    },
+    {
+      "asset": "croisement03-group-095",
+      "model_sha256": "94216152069094d66ec172bae67f2c1fa4ae2003f8860735d08e90cd85ef404e",
+      "surface": "building-095-walk-0",
+      "node": "building-095",
+      "source_obstacle": 95
+    },
+    {
+      "asset": "croisement03-group-096",
+      "model_sha256": "d02fd2be6ba06e3fba23b4329dc1580d6aba532b81969372b875685dbf7acfd6",
+      "surface": "building-096-walk-0",
+      "node": "building-096",
+      "source_obstacle": 96
+    }
+  ]
+}

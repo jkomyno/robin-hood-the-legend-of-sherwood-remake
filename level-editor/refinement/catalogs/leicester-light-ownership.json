@@ -1,0 +1,609 @@
+{
+  "version": 1,
+  "map": "Leicester",
+  "groups": [],
+  "light_sources": [
+    {
+      "source": 0,
+      "owner": "leicester-light-region-0",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              1168,
+              1303
+            ],
+            [
+              1267,
+              1277
+            ],
+            [
+              1350,
+              1321
+            ],
+            [
+              1407,
+              1438
+            ],
+            [
+              1198,
+              1484
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 1,
+      "owner": "leicester-light-region-1",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              917,
+              1262
+            ],
+            [
+              967,
+              1313
+            ],
+            [
+              919,
+              1385
+            ],
+            [
+              797,
+              1399
+            ],
+            [
+              732,
+              1387
+            ],
+            [
+              795,
+              1252
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 2,
+      "owner": "leicester-light-region-2",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              2875,
+              1687
+            ],
+            [
+              2973,
+              1742
+            ],
+            [
+              2909,
+              1803
+            ],
+            [
+              2672,
+              1758
+            ],
+            [
+              2638,
+              1656
+            ],
+            [
+              2736,
+              1637
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 3,
+      "owner": "leicester-light-region-3",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              2983,
+              1721
+            ],
+            [
+              2912,
+              1680
+            ],
+            [
+              2940,
+              1658
+            ],
+            [
+              2933,
+              1591
+            ],
+            [
+              3056,
+              1596
+            ],
+            [
+              2977,
+              1676
+            ],
+            [
+              3007,
+              1689
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 4,
+      "owner": "leicester-light-region-4",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              837,
+              1067
+            ],
+            [
+              797,
+              1097
+            ],
+            [
+              517,
+              1039
+            ],
+            [
+              504,
+              1000
+            ],
+            [
+              609,
+              887
+            ],
+            [
+              802,
+              843
+            ],
+            [
+              878,
+              902
+            ],
+            [
+              885,
+              1016
+            ],
+            [
+              659,
+              960
+            ],
+            [
+              682,
+              1015
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 5,
+      "owner": "leicester-light-region-5",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              964,
+              851
+            ],
+            [
+              938,
+              784
+            ],
+            [
+              886,
+              766
+            ],
+            [
+              955,
+              667
+            ],
+            [
+              1093,
+              710
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 6,
+      "owner": "leicester-light-region-6",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 0,
+        "polygon": {
+          "points": [
+            [
+              2435,
+              880
+            ],
+            [
+              2336,
+              863
+            ],
+            [
+              2315,
+              814
+            ],
+            [
+              2382,
+              765
+            ],
+            [
+              2504,
+              789
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 8,
+      "owner": "leicester-light-region-8",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 1,
+        "polygon": {
+          "points": [
+            [
+              982,
+              722
+            ],
+            [
+              940,
+              709
+            ],
+            [
+              979,
+              630
+            ],
+            [
+              1003,
+              627
+            ],
+            [
+              1014,
+              647
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 9,
+      "owner": "leicester-light-region-9",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 1,
+        "polygon": {
+          "points": [
+            [
+              1057,
+              540
+            ],
+            [
+              1045,
+              567
+            ],
+            [
+              1021,
+              573
+            ],
+            [
+              1008,
+              555
+            ],
+            [
+              1017,
+              526
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 11,
+      "owner": "leicester-light-region-11",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 2,
+        "polygon": {
+          "points": [
+            [
+              316,
+              914
+            ],
+            [
+              322,
+              940
+            ],
+            [
+              281,
+              945
+            ],
+            [
+              263,
+              919
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 13,
+      "owner": "leicester-light-region-13",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 2,
+        "polygon": {
+          "points": [
+            [
+              793,
+              406
+            ],
+            [
+              737,
+              406
+            ],
+            [
+              757,
+              380
+            ],
+            [
+              716,
+              344
+            ],
+            [
+              747,
+              311
+            ],
+            [
+              846,
+              323
+            ],
+            [
+              850,
+              376
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 17,
+      "owner": "leicester-light-region-17",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 3,
+        "polygon": {
+          "points": [
+            [
+              803,
+              369
+            ],
+            [
+              769,
+              364
+            ],
+            [
+              796,
+              225
+            ],
+            [
+              826,
+              230
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 22,
+      "owner": "leicester-light-region-22",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 4,
+        "polygon": {
+          "points": [
+            [
+              861,
+              282
+            ],
+            [
+              821,
+              295
+            ],
+            [
+              763,
+              292
+            ],
+            [
+              726,
+              271
+            ],
+            [
+              727,
+              223
+            ],
+            [
+              790,
+              192
+            ],
+            [
+              791,
+              178
+            ],
+            [
+              828,
+              179
+            ],
+            [
+              826,
+              203
+            ],
+            [
+              868,
+              222
+            ],
+            [
+              879,
+              252
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 25,
+      "owner": "leicester-light-region-25",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 4,
+        "polygon": {
+          "points": [
+            [
+              1612,
+              689
+            ],
+            [
+              1555,
+              653
+            ],
+            [
+              1571,
+              613
+            ],
+            [
+              1615,
+              598
+            ],
+            [
+              1611,
+              583
+            ],
+            [
+              1662,
+              581
+            ],
+            [
+              1655,
+              601
+            ],
+            [
+              1698,
+              618
+            ],
+            [
+              1712,
+              642
+            ],
+            [
+              1682,
+              682
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    },
+    {
+      "source": 29,
+      "owner": "leicester-light-region-29",
+      "node": "scenery-light",
+      "reason": "Independent environmental lighting contour with no single containing visual asset; preserve its full outline, receiving anchors and ambience filter.",
+      "light": {
+        "layer": 6,
+        "polygon": {
+          "points": [
+            [
+              1995,
+              722
+            ],
+            [
+              1898,
+              705
+            ],
+            [
+              1849,
+              665
+            ],
+            [
+              1854,
+              616
+            ],
+            [
+              1910,
+              585
+            ],
+            [
+              2013,
+              594
+            ],
+            [
+              2071,
+              613
+            ],
+            [
+              2077,
+              656
+            ]
+          ]
+        },
+        "ambience": 4
+      }
+    }
+  ]
+}

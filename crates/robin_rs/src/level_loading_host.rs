@@ -26,6 +26,7 @@ use robin_engine::sbfile;
 use robin_engine::sprite_variant::SpriteVariant;
 use std::sync::Arc;
 
+mod appearance;
 mod early_terrain;
 pub use early_terrain::EarlyTerrainDecode;
 
@@ -373,11 +374,34 @@ fn finish_background_picture(
         break;
     }
 
+    let mut appearance_regions = Vec::new();
+    for directory in [
+        format!("{level_directory}/{ambiance_dir}"),
+        format!("{level_directory}/Day"),
+        level_directory.to_owned(),
+    ] {
+        let path = format!("{directory}/{map_name}.appearance.json");
+        if files
+            .try_exists(&path)
+            .map_err(|e| format!("appearance probe '{path}': {e}"))?
+        {
+            appearance_regions = appearance::decode(
+                files,
+                &path,
+                picture.width,
+                picture.height,
+                &bg_pixels,
+                occlusion_depth.as_deref(),
+            )?;
+            break;
+        }
+    }
     Ok(PreDecodedBackground {
         width: picture.width,
         height: picture.height,
         pixels: bg_pixels,
         occlusion_depth,
+        appearance_regions,
     })
 }
 
@@ -779,6 +803,9 @@ pub fn apply_background_map(
     decoded: impl std::borrow::Borrow<PreDecodedBackground>,
 ) {
     let decoded = decoded.borrow();
+    renderer
+        .install_map_appearance(decoded, engine.patches().len())
+        .expect("valid map appearance patch bindings");
     let mut timer = crate::game_session::PhaseTimer::new("background upload");
     if !renderer.upload_background_texture(
         decoded.width as u32,

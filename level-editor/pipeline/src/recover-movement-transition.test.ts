@@ -100,4 +100,22 @@ test("changing contours split across receiving planes and retain ground holes", 
     () => recoverMovementTransition({ ...options, groundLayer: false }),
     /uncovered elevated/,
   );
+  const before = structuredClone(receiver);
+  const authored = recoverMovementTransition({
+    ...options,
+    groundLayer: false,
+    uncoveredPlane: [0, 0, 20],
+  });
+  assert.equal(authored.initial.length, 2);
+  assert.ok(
+    authored.initial.every(
+      (surface) => Array.isArray(surface.height) && surface.height.every((z) => z === 15),
+    ),
+  );
+  assert.equal(authored.initial[1]!.holes!.length, 1);
+  assert.deepEqual(receiver, before);
+  assert.throws(
+    () => recoverMovementTransition({ ...options, uncoveredPlane: [0, 0, NaN] }),
+    /must be finite/,
+  );
 });

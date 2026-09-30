@@ -14,7 +14,14 @@ export interface RecoveredSurface {
   holes: Vec3[][];
   kind?: "walkable" | "lift";
   navigationRegion?: string;
+  navigationJoins?: AssetWalkableSurface["navigationJoins"];
+  navigationJoinHeightTolerance?: number;
+  preserveMovementPrecision?: boolean;
+  preserveMovementBoundary?: boolean;
+  movementContour?: string;
+  holeContours?: string[];
   projectionMaterials?: AssetWalkableSurface["projectionMaterials"];
+  projectionVolume?: string;
 }
 type Locks = { player: boolean; unlockable: boolean; villains: boolean; civilians: boolean };
 export interface RecoveredDoor {
@@ -28,6 +35,7 @@ export interface RecoveredDoor {
   insideAnchor?: Vec3;
   type: number;
   active: boolean;
+  allowContinuous?: boolean;
   locked?: boolean;
   unlockable?: boolean;
   lockedVillains?: boolean;
@@ -39,6 +47,7 @@ export interface RecoveredConnection {
   id: string;
   node: string;
   kind: "lift" | "building-interior" | "passage";
+  surface?: string;
   type?: number;
   direction?: Point;
   joins?: Vec3[];
@@ -47,8 +56,11 @@ export interface RecoveredConnection {
 }
 export interface RecoveredGameplayPacket {
   asset: string;
+  collision?: AssetGameplay["collision"];
+  sightOrder?: AssetGameplay["sightOrder"];
   surfaces: RecoveredSurface[];
   volumes?: AssetGameplay["volumes"];
+  projectionReceivers?: AssetGameplay["projectionReceivers"];
   /** Omitted means derive collision from parts; an empty list explicitly disables that derivation. */
   movementBlockers?: RecoveredSurface[];
   movementSolids?: AssetGameplay["movementSolids"];
@@ -58,13 +70,15 @@ export interface RecoveredGameplayPacket {
   environment?: AssetGameplay["environment"];
   sounds?: AssetGameplay["sounds"];
   lights?: AssetGameplay["lights"];
+  masks?: AssetGameplay["masks"];
+  maskOcclusionNodes?: AssetGameplay["maskOcclusionNodes"];
   jumpZones?: AssetGameplay["jumpZones"];
   jumpPairs?: AssetGameplay["jumpPairs"];
   jumpSegments?: AssetGameplay["jumpSegments"];
   connections: RecoveredConnection[];
 }
 
-/** Seed geometry that is already authored in the asset, before recovering additional gameplay. */
+/** Start recovery from validated asset frames; gameplay features are recovered separately. */
 export function descriptorGameplayPacket(
   descriptor: ProjectionAssetDescriptor,
 ): RecoveredGameplayPacket {
@@ -72,24 +86,15 @@ export function descriptorGameplayPacket(
     throw new Error(`${descriptor.id}: terrain needs authored movement boundaries`);
   if (!descriptor.parts.length)
     throw new Error(`${descriptor.id}: asset has no geometry definitions`);
-  const surfaces: RecoveredSurface[] = [];
   for (const part of descriptor.parts) {
     const node = part.node;
     if (part.scenery) continue;
     if (!part.obstacle_local_game)
       throw new Error(`${descriptor.id}/${node}: missing local collision shape`);
-    // Mission-authored surfaces have no extracted obstacle identity. Their
-    // local geometry is authoritative; map-wide projection indices are discarded.
-    if (part.mission_profile && part.obstacle_local_game.projection_area !== null)
-      surfaces.push({
-        id: `${part.node}-surface`,
-        node: part.node,
-        kind: "walkable",
-        vertices: part.obstacle_local_game.points.map((p) => [p.x, p.y, p.z_top]),
-        holes: [],
-      });
   }
-  return { asset: descriptor.id, surfaces, connections: [] };
+  // Part bounds and preview projection placeholders do not author navigation.
+  // Walkable surfaces must come from explicit gameplay definitions or recovery.
+  return { asset: descriptor.id, surfaces: [], connections: [] };
 }
 
 /** Convert authoring drafts to the compiler schema. This does not certify recovery completeness. */
@@ -109,9 +114,24 @@ export function recoveredGameplayDefinition(
       id: draft.id,
       node: draft.node,
       ...(draft.navigationRegion === undefined ? {} : { navigationRegion: draft.navigationRegion }),
+      ...(draft.navigationJoins === undefined
+        ? {}
+        : { navigationJoins: structuredClone(draft.navigationJoins) }),
+      ...(draft.navigationJoinHeightTolerance === undefined
+        ? {}
+        : { navigationJoinHeightTolerance: draft.navigationJoinHeightTolerance }),
+      ...(draft.preserveMovementPrecision === undefined
+        ? {}
+        : { preserveMovementPrecision: draft.preserveMovementPrecision }),
+      ...(draft.preserveMovementBoundary === undefined
+        ? {}
+        : { preserveMovementBoundary: draft.preserveMovementBoundary }),
+      ...(draft.movementContour === undefined ? {} : { movementContour: draft.movementContour }),
+      ...(draft.holeContours === undefined ? {} : { holeContours: [...draft.holeContours] }),
       ...(draft.projectionMaterials === undefined
         ? {}
         : { projectionMaterials: structuredClone(draft.projectionMaterials) }),
+      ...(draft.projectionVolume === undefined ? {} : { projectionVolume: draft.projectionVolume }),
       polygon: draft.vertices.map(([x, y]) => [x, y]),
       height: draft.vertices.map((p) => p[2]),
       holes: draft.holes.map((hole) => hole.map(([x, y]) => [x, y])),
@@ -135,6 +155,7 @@ export function recoveredGameplayDefinition(
       ...(d.insideAnchor ? { insideAnchor: d.insideAnchor } : {}),
       type: d.type,
       active: d.active,
+      ...(d.allowContinuous !== undefined ? { allowContinuous: d.allowContinuous } : {}),
       locked: d.locks?.player ?? d.locked!,
       unlockable: d.locks?.unlockable ?? d.unlockable!,
       lockedVillains: d.locks?.villains ?? d.lockedVillains,
@@ -153,12 +174,19 @@ export function recoveredGameplayDefinition(
   };
   const gameplay: AssetGameplay = {
     version: 1,
-    collision: descriptor.parts.some((p) => p.obstacle_local_game) ? "parts" : "none",
+    collision:
+      packet.collision ?? (descriptor.parts.some((p) => p.obstacle_local_game) ? "parts" : "none"),
     surfaces: packet.surfaces.map(surface),
     ...(packet.volumes ? { volumes: structuredClone(packet.volumes) } : {}),
+    ...(packet.projectionReceivers
+      ? { projectionReceivers: structuredClone(packet.projectionReceivers) }
+      : {}),
+    ...(packet.sightOrder ? { sightOrder: structuredClone(packet.sightOrder) } : {}),
     ...(packet.environment ? { environment: { ...packet.environment } } : {}),
     ...(packet.sounds ? { sounds: structuredClone(packet.sounds) } : {}),
     ...(packet.lights ? { lights: structuredClone(packet.lights) } : {}),
+    ...(packet.masks ? { masks: structuredClone(packet.masks) } : {}),
+    ...(packet.maskOcclusionNodes ? { maskOcclusionNodes: [...packet.maskOcclusionNodes] } : {}),
     ...(packet.jumpZones ? { jumpZones: structuredClone(packet.jumpZones) } : {}),
     ...(packet.jumpPairs ? { jumpPairs: structuredClone(packet.jumpPairs) } : {}),
     ...(packet.jumpSegments ? { jumpSegments: structuredClone(packet.jumpSegments) } : {}),
@@ -190,7 +218,10 @@ export function recoveredGameplayDefinition(
       });
     else {
       const candidates = packet.surfaces.filter(
-        (s) => s.node === connection.node && s.kind === "lift",
+        (s) =>
+          s.node === connection.node &&
+          s.kind === "lift" &&
+          (connection.surface === undefined || s.id === connection.surface),
       );
       if (candidates.length !== 1)
         throw new Error(

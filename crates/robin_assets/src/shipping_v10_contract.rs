@@ -1,6 +1,5 @@
-//! Frozen v9 layout: runtime preparation must never change serialized field order.
-//! v9 keeps the v8 mission layout; it changes only the VQ sprite blob coding
-//! (match-gated), which the magic and version below pin.
+//! Frozen v10 layout: runtime preparation must never change serialized field order.
+//! v10 adds optional receiving-plane anchors to sight obstacles in loaded levels.
 use super::*;
 
 #[test]
@@ -32,7 +31,7 @@ fn aggregate_budget_rejects_small_parts_forming_an_oversized_bank() {
     assert!(bank.validate_resident_budget().is_err());
 }
 #[derive(Default, Debug, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
-struct FrozenMissionV9 {
+struct FrozenMissionV10 {
     pub levels: BTreeMap<String, LoadedLevel>,
     pub scripts: BTreeMap<String, ScbFile>,
     pub rhs_files: BTreeMap<String, RhsData>,
@@ -47,7 +46,7 @@ struct FrozenMissionV9 {
 }
 
 #[test]
-fn v9_payload_matches_frozen_wire_and_preparation_is_consuming() {
+fn v10_payload_matches_frozen_wire_and_preparation_is_consuming() {
     let mut payload = ShippingMissionPayload::default();
     payload.scripts.insert(
         "fixture".into(),
@@ -76,12 +75,12 @@ fn v9_payload_matches_frozen_wire_and_preparation_is_consuming() {
         .audio_durations_ms
         .insert("sounds/example.wav".into(), 193);
     let mission = ShippingMission::from_payload(payload);
-    let frozen: FrozenMissionV9 =
+    let frozen: FrozenMissionV10 =
         serde_json::from_value(serde_json::to_value(&mission).unwrap()).unwrap();
     let encoded = encode_mission_native(&mission);
     assert_eq!(&encoded[..8], &SHIPPING_MISSION_MAGIC);
-    assert_eq!(&encoded[..8], b"RHMISN09");
-    assert_eq!(&encoded[8..12], &9u32.to_le_bytes());
+    assert_eq!(&encoded[..8], b"RHMISN10");
+    assert_eq!(&encoded[8..12], &10u32.to_le_bytes());
     assert_eq!(&encoded[12..], bitcode::encode(&frozen));
     let compressed = zstd_compress_with_window(&encoded, 30).unwrap();
     let decoded = decode_mission_compressed(&compressed).unwrap();

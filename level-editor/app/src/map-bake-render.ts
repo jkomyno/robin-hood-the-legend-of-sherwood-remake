@@ -5,33 +5,103 @@ import { TextureDisplay } from "./texture-display.ts";
 import { SunLighting } from "./sun-lighting.ts";
 import { PatchDisplay } from "./patch-display.ts";
 import { validateBakeBounds, type BakeBounds, type BakePixels } from "./map-compile.ts";
+import type { GameplayAssetDescriptor } from "../../shared/src/asset-gameplay.ts";
 
-/** Sources are in the editor's Z-up map frame. Only visible meshes are copied;
- * geometry/textures are borrowed until synchronous rendering finishes. */
-export function bakeScene(roots: THREE.Object3D[]): THREE.Group {
+export interface BakeProgress {
+  stage: string;
+  completed: number;
+  total: number;
+}
+
+/** Let progress paint and pending input run before borrowing the GPU again. */
+export const yieldBakeFrame = () =>
+  new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+
+export function maskOcclusionObjects(
+  document: import("@rle/shared").Level3D,
+  assets?: ReadonlyMap<string, GameplayAssetDescriptor>,
+): Set<string> {
+  return new Set(
+    document.objects
+      .filter((part) => {
+        const match = /^asset:([^:]+):(.+)$/.exec(part.node);
+        return match && assets?.get(match[1]!)?.gameplay?.maskOcclusionNodes?.includes(match[2]!);
+      })
+      .map((part) => part.id),
+  );
+}
+
+/** Omit only explicitly mask-owned parts; underlying meshes still write depth. */
+export function withDepthOcclusion<T>(
+  root: THREE.Object3D,
+  excluded: ReadonlySet<string>,
+  render: () => T,
+): T {
+  const restore = hideDepthOcclusion(root, excluded);
+  try {
+    return render();
+  } finally {
+    restore();
+  }
+}
+
+function hideDepthOcclusion(root: THREE.Object3D, excluded: ReadonlySet<string>) {
+  const hidden: THREE.Object3D[] = [];
+  root.traverse((node) => {
+    if (node.visible && excluded.has(node.userData.map_bake_object_id)) {
+      hidden.push(node);
+      node.visible = false;
+    }
+  });
+  return () => {
+    for (const node of hidden) node.visible = true;
+  };
+}
+
+/** Sources are in the editor's Z-up map frame. Copy the full hierarchy so applied
+ * states can reveal hidden meshes. Geometry/textures are borrowed during rendering. */
+export function bakeScene(
+  roots: THREE.Object3D[],
+  appliedPatches: ReadonlySet<string> = new Set(),
+): THREE.Group {
   const scene = new THREE.Group();
+  const display = new PatchDisplay();
+  for (const patch of appliedPatches) display.set(patch, true);
   for (const source of roots) {
     const clone = source.clone(true);
-    // Always compile the initial patch state, independently of preview switches.
-    new PatchDisplay().apply(clone);
+    // Export state is explicit and independent of viewport preview switches.
+    display.apply(clone);
     scene.add(clone);
   }
   return scene;
 }
 
-export function contentBakeBounds(root: THREE.Object3D, camera: MapCamera): BakeBounds {
+export function contentBakeBounds(
+  root: THREE.Object3D,
+  camera: MapCamera,
+  includeAppearanceStates = false,
+): BakeBounds {
   root.updateMatrixWorld(true);
   const bounds = new THREE.Box2();
-  root.traverseVisible((node) => {
-    if (!(node instanceof THREE.Mesh)) return;
-    const positions = node.geometry.getAttribute("position");
-    for (let i = 0; i < positions.count; i++) {
-      const point = new THREE.Vector3()
-        .fromBufferAttribute(positions, i)
-        .applyMatrix4(node.matrixWorld);
-      bounds.expandByPoint(new THREE.Vector2(...sceneToMap(camera, point.toArray())));
+  function visit(node: THREE.Object3D) {
+    const controlled =
+      includeAppearanceStates &&
+      ["reveal_material_patch", "reveal_hide_when_applied", "reveal_show_when_applied"].some(
+        (key) => node.userData[key] !== undefined,
+      );
+    if (!node.visible && !controlled) return;
+    if (node instanceof THREE.Mesh) {
+      const positions = node.geometry.getAttribute("position");
+      for (let i = 0; i < positions.count; i++) {
+        const point = new THREE.Vector3()
+          .fromBufferAttribute(positions, i)
+          .applyMatrix4(node.matrixWorld);
+        bounds.expandByPoint(new THREE.Vector2(...sceneToMap(camera, point.toArray())));
+      }
     }
-  });
+    for (const child of node.children) visit(child);
+  }
+  visit(root);
   if (bounds.isEmpty()) throw new Error("Add visible geometry before exporting a map.");
   return validateBakeBounds([
     bounds.min.x,
@@ -47,6 +117,10 @@ function depthMaterial(source: THREE.Material, camera: MapCamera, bounds: BakeBo
       `Cannot compile depth for material ${source.name || source.type}. Expected an unlit map material.`,
     );
   const material = source.clone();
+  if (source.userData.terrainMaterialBlend) {
+    material.onBeforeCompile = (shader, renderer) => source.onBeforeCompile(shader, renderer);
+    material.customProgramCacheKey = () => source.customProgramCacheKey();
+  }
   // Preserve physical alpha coverage, but never blend encoded depth bytes.
   material.transparent = false;
   material.blending = THREE.NoBlending;
@@ -83,15 +157,16 @@ function depthMaterial(source: THREE.Material, camera: MapCamera, bounds: BakeBo
   return material;
 }
 
-/** Render in bounded tiles so export resolution does not depend on screen size
- * or MAX_TEXTURE_SIZE. The caller must not yield while borrowed assets are used. */
-export function renderMapBake(
+/** Both drivers share the same tile pipeline and guaranteed GPU resource cleanup. */
+function* mapBakeTiles(
   root: THREE.Group,
   cameraModel: MapCamera,
   bounds: BakeBounds,
   lighting?: import("@rle/shared").Level3D["lighting"],
   ground?: THREE.Object3D | null,
-): BakePixels {
+  depthExcludedObjects: ReadonlySet<string> = new Set(),
+  tileLimit = 1024,
+): Generator<BakeProgress, BakePixels> {
   const [, , width, height] = validateBakeBounds(bounds);
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
   renderer.setPixelRatio(1);
@@ -104,6 +179,8 @@ export function renderMapBake(
   scene.background = new THREE.Color(0);
   const frame = new THREE.Group();
   frame.quaternion.set(-Math.SQRT1_2, 0, 0, Math.SQRT1_2);
+  const parent = root.parent;
+  const siblingIndex = parent?.children.indexOf(root);
   frame.add(root);
   scene.add(frame);
   const sunlight = new SunLighting();
@@ -119,13 +196,17 @@ export function renderMapBake(
         const cached = colorMaterials.get(source);
         if (cached) return cached;
         const material = source.clone();
+        if (source.userData.terrainMaterialBlend) {
+          material.onBeforeCompile = (shader, renderer) => source.onBeforeCompile(shader, renderer);
+          material.customProgramCacheKey = () => source.customProgramCacheKey();
+        }
         display.material(material);
         materials.add(material);
         colorMaterials.set(source, material);
         return material;
       };
-      node.material = Array.isArray(node.material) ? node.material.map(copy) : copy(node.material);
       original.set(node, node.material);
+      node.material = Array.isArray(node.material) ? node.material.map(copy) : copy(node.material);
     });
     scene.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(root);
@@ -134,6 +215,9 @@ export function renderMapBake(
     sunlight.sync(lighting, [root], box);
     renderer.shadowMap.enabled = !!lighting?.enabled;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // Every tile sees the same scene and full-map light camera; rebuild once per appearance.
+    renderer.shadowMap.autoUpdate = false;
+    renderer.shadowMap.needsUpdate = true;
     const angle = (cameraModel.elevation_deg * Math.PI) / 180;
     const center = new THREE.Vector3(
       bounds[0] + width / 2,
@@ -157,10 +241,12 @@ export function renderMapBake(
       .add(new THREE.Vector3(0, Math.sin(angle), Math.cos(angle)).multiplyScalar(distance));
     camera.lookAt(center);
     camera.updateMatrixWorld(true);
-    const tile = Math.min(1024, renderer.capabilities.maxTextureSize);
+    const tile = Math.min(tileLimit, renderer.capabilities.maxTextureSize);
     const color = new Uint8Array(width * height * 4),
       depth = new Uint16Array(width * height);
-    const renderPass = (isDepth: boolean) => {
+    const total = Math.ceil(width / tile) * Math.ceil(height / tile) * 2;
+    let completed = 0;
+    const renderPass = function* (isDepth: boolean): Generator<BakeProgress> {
       for (let y = 0; y < height; y += tile)
         for (let x = 0; x < width; x += tile) {
           const w = Math.min(tile, width - x),
@@ -191,13 +277,19 @@ export function renderMapBake(
           } finally {
             target.dispose();
           }
+          yield {
+            stage: isDepth ? "Rendering depth" : "Rendering color",
+            completed: ++completed,
+            total,
+          };
         }
     };
-    renderPass(false);
+    yield* renderPass(false);
     sunlight.root.visible = false;
     renderer.shadowMap.enabled = false;
     const depthMaterials = new Map<THREE.Material, THREE.Material>();
-    for (const [node, source] of original) {
+    for (const node of original.keys()) {
+      const source = node.material;
       const convert = (material: THREE.Material) => {
         const cached = depthMaterials.get(material);
         if (cached) return cached;
@@ -208,13 +300,66 @@ export function renderMapBake(
       };
       node.material = Array.isArray(source) ? source.map(convert) : convert(source);
     }
-    renderPass(true);
+    const restoreVisibility = hideDepthOcclusion(root, depthExcludedObjects);
+    try {
+      yield* renderPass(true);
+    } finally {
+      restoreVisibility();
+    }
     return { color, depth };
   } finally {
     sunlight.dispose();
+    for (const [node, material] of original) node.material = material;
     for (const material of materials) material.dispose();
     renderer.dispose();
     renderer.forceContextLoss();
     root.removeFromParent();
+    if (parent && siblingIndex !== undefined) {
+      parent.add(root);
+      parent.children.splice(parent.children.indexOf(root), 1);
+      parent.children.splice(siblingIndex, 0, root);
+    }
+  }
+}
+
+/** Synchronous driver for callers that already own the uninterrupted render lifetime. */
+export function renderMapBake(...args: Parameters<typeof mapBakeTiles>): BakePixels {
+  const tiles = mapBakeTiles(...args);
+  let result = tiles.next();
+  while (!result.done) result = tiles.next();
+  return result.value;
+}
+
+/** Render a bounded tile at a time so progress updates and cancellation can run. */
+export async function renderMapBakeAsync(
+  root: THREE.Group,
+  cameraModel: MapCamera,
+  bounds: BakeBounds,
+  lighting?: import("@rle/shared").Level3D["lighting"],
+  ground?: THREE.Object3D | null,
+  depthExcludedObjects: ReadonlySet<string> = new Set(),
+  progress: (progress: BakeProgress) => void = () => {},
+  checkCurrent: () => void = () => {},
+): Promise<BakePixels> {
+  const tiles = mapBakeTiles(
+    root,
+    cameraModel,
+    bounds,
+    lighting,
+    ground,
+    depthExcludedObjects,
+    512,
+  );
+  try {
+    while (true) {
+      checkCurrent();
+      const result = tiles.next();
+      if (result.done) return result.value;
+      progress(result.value);
+      await yieldBakeFrame();
+    }
+  } finally {
+    // Closing a suspended generator restores materials, visibility, parents, and GPU resources.
+    tiles.return(undefined as never);
   }
 }

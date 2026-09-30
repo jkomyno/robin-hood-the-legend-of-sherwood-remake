@@ -7,11 +7,15 @@ import {
   listProjectionAppearances,
   listProjectionAssets,
   prepareProjectionAsset,
+  prepareProjectionPlacement,
 } from "./projection-library.ts";
 import { disposeObjectResources } from "./resources.ts";
 import { insertProjectionAsset } from "./asset-commands.ts";
 import { prepareMapCandidate } from "./map-candidate.ts";
 import { expandStoredMap, parseStoredMap, serializeStoredMap, type Level3D } from "@rle/shared";
+import { authorLightRegionAsset } from "../../pipeline/src/author-light-region-asset.ts";
+import { authorAmbientSoundAsset } from "../../pipeline/src/author-ambient-sound-asset.ts";
+import { compileMap } from "./map-compile.ts";
 
 function fixture() {
   const obstacle = {
@@ -152,6 +156,95 @@ test("standalone index filters the current map and actual model parts receive na
   assert.equal(f.disposed(), 0);
   disposeObjectResources([prepared.asset]);
   assert.equal(f.disposed(), 1);
+});
+
+test("authored light and sound GLBs load through the editor and retain gameplay on reopen", async () => {
+  const options = {
+    id: "house",
+    name: "Environmental field",
+    map: "Leicester",
+    origin: [0, 0, 0] as [number, number, number],
+  };
+  const polygon = {
+    points: [
+      [0, 0],
+      [20, 0],
+      [20, 20],
+      [0, 20],
+    ] as [number, number][],
+  };
+  const support = {
+    ...fixture().descriptor.parts[0]!.obstacle_local_game,
+    projection_area: [0, 1] as [number, number],
+    points: polygon.points.map(([x, y]) => ({ x, y: y + x / 2, z_bottom: 0, z_top: x / 2 })),
+  };
+  const light = await authorLightRegionAsset(
+    { layer: 1, ambience: 4, polygon },
+    [support],
+    [{ polygon, is_lift: false, state_id: 0, flags: 0, skeleton_segments: [], obstacles: [] }],
+    options,
+  );
+  assert.ok(light.descriptor.gameplay!.lights![0]!.receiverSegments?.length);
+  const sound = await authorAmbientSoundAsset(
+    {
+      id: 1,
+      active: true,
+      source_kind: 2,
+      delayed_params: [150, 500, 5],
+      global: false,
+      inner_distance: 10,
+      outer_distance: 100,
+      polyline: [[10, 10]],
+      inner_volume: 100,
+      outer_volume: 0,
+      noise_covering_distance: 0,
+      altitude: 0,
+      ambience_filter: 255,
+    },
+    options,
+  );
+  for (const authored of [light, sound]) {
+    const f = fixture();
+    f.json(f.entry.descriptor, authored.descriptor);
+    f.files.set(f.entry.model, new File([new Uint8Array(authored.model)], "model.glb"));
+    const entry = { ...f.entry, model_scene: "default" };
+    const prepared = await prepareProjectionAsset(f.directory, entry, "Leicester");
+    const frame = prepared.sources.get(`asset:house:${authored.descriptor.parts[0]!.node}`)!;
+    assert.ok(frame);
+    assert.equal(frame.userData.gameplay_only, true);
+    let meshes = 0;
+    prepared.asset.traverse((node) => {
+      if ((node as THREE.Mesh).isMesh) meshes++;
+    });
+    assert.equal(meshes, 0);
+    const blank: Level3D = {
+      version: 1,
+      map: "Example",
+      size: [1000, 1000],
+      camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+      sceneAssets: [],
+      groups: [],
+      objects: [],
+    };
+    const placed = insertProjectionAsset(
+      blank,
+      prepared.descriptor,
+      prepared.reference,
+      [100, 200, 0],
+    ).document;
+    const descriptors = new Map([[prepared.descriptor.id, prepared.descriptor]]);
+    const reopened = parseStoredMap(serializeStoredMap(placed, descriptors), descriptors);
+    assert.equal(reopened.objects[0]!.kind, "scenery");
+    assert.deepEqual(reopened.groups[0]!.transform, placed.groups[0]!.transform);
+    const reloaded = await prepareProjectionAsset(
+      f.directory,
+      entry,
+      "Leicester",
+      prepared.reference,
+    );
+    assert.deepEqual(reloaded.descriptor, authored.descriptor);
+    disposeObjectResources([prepared.asset, reloaded.asset]);
+  }
 });
 
 test("explicit gameplay-only frames load and reopen without rendering a placeholder mesh", async (t) => {
@@ -423,6 +516,121 @@ test("static model variants load one endpoint, retain endpoint obstacles, and co
   await assert.rejects(
     prepareProjectionAsset(f.directory, lowered.reference, "Leicester", lowered.reference),
     /model changed/,
+  );
+});
+
+test("gameplay endpoint insertion loads both models, saves both pins and compiles independent copies", async (t) => {
+  const f = fixture(),
+    applied = fixture();
+  const part = { ...f.descriptor.parts[0]!, node: "building-001", source_obstacle: 1 };
+  const descriptor = {
+    ...f.descriptor,
+    state_variants: {
+      initial: { name: "Raised", model: "model.glb" },
+      applied: { name: "Lowered", model: "lowered.glb", parts: [part] },
+    },
+    gameplay: {
+      version: 1,
+      collision: "none",
+      doors: [],
+      surfaces: [
+        {
+          id: "ground",
+          node: "building-000",
+          polygon: [
+            [0, 0],
+            [10, 0],
+            [0, 10],
+          ],
+          height: 0,
+        },
+      ],
+      movementTransitions: [
+        {
+          id: "bridge",
+          node: "building-000",
+          waypoint: [1, 1, 0],
+          active: true,
+          definitive: false,
+          initial: [],
+          applied: [],
+          applyPolygon: [],
+          noApplyPolygon: [],
+          appearances: ["state"],
+        },
+      ],
+    },
+  };
+  f.json(f.entry.descriptor, descriptor);
+  f.files.set("3d-assets/house/lowered.glb", new File([new Uint8Array([8, 9])], "lowered.glb"));
+  applied.mesh.name = part.node;
+  applied.mesh.userData.source_obstacle = 1;
+  let calls = 0;
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({
+    scene: calls++ === 0 ? f.asset : applied.asset,
+  }));
+  const entry = (await listProjectionAssets(f.directory, "Leicester"))[0]!;
+  assert.deepEqual(
+    (await listProjectionAppearances(f.directory, entry)).map((e) => e.id),
+    ["house"],
+  );
+  const prepared = await prepareProjectionPlacement(f.directory, entry, "New map");
+  assert.equal(prepared.additionalAssets.length, 1);
+  assert.equal(prepared.sources.size, 2);
+  const empty: Level3D = {
+    version: 1,
+    map: "New map",
+    camera: { kind: "oblique-orthographic", elevation_deg: 35 },
+    size: [2000, 2000],
+    objects: [],
+    groups: [],
+    sceneAssets: [],
+  };
+  const place = (document: Level3D, x: number) =>
+    insertProjectionAsset(
+      document,
+      prepared.descriptor,
+      prepared.reference,
+      [x, 100, 0],
+      prepared.additionalAssets,
+    ).document;
+  assert.throws(
+    () => insertProjectionAsset(empty, prepared.descriptor, prepared.reference, [100, 100, 0]),
+    /pinned applied model/,
+  );
+  const once = place(empty, 100),
+    twice = place(once, 200);
+  assert.equal(twice.assetSources!.length, 2);
+  assert.equal(twice.objects.length, 4);
+  assert.ok(twice.groups.every((g) => g.states === undefined && g.patches?.house?.state));
+  const descriptors = new Map([
+    [prepared.reference.id, prepared.descriptor],
+    ...prepared.additionalAssets.map((m) => [m.reference.id, m.descriptor] as const),
+  ]);
+  assert.deepEqual(parseStoredMap(serializeStoredMap(twice, descriptors), descriptors), twice);
+  assert.equal(
+    compileMap(twice, [0, 0, 2000, 2000], descriptors).descriptor.asset_geometry!
+      .movement_transitions!.length,
+    2,
+  );
+  const bad = structuredClone(prepared.additionalAssets);
+  bad[0]!.reference.model_sha256 = "c".repeat(64);
+  assert.throws(
+    () => insertProjectionAsset(once, prepared.descriptor, prepared.reference, [300, 100, 0], bad),
+    /different revision/,
+  );
+  disposeObjectResources([prepared.asset]);
+  assert.equal(f.disposed(), 1);
+  assert.equal(applied.disposed(), 1);
+  const failed = fixture();
+  failed.json(failed.entry.descriptor, descriptor);
+  t.mock.method(GLTFLoader.prototype, "parseAsync", async () => ({ scene: failed.asset }));
+  const failedEntry = (await listProjectionAssets(failed.directory, "Leicester"))[0]!;
+  await assert.rejects(prepareProjectionPlacement(failed.directory, failedEntry, "New map"));
+  assert.equal(
+    failed.disposed(),
+    1,
+    "a missing applied model must retire the prepared initial model",
   );
 });
 

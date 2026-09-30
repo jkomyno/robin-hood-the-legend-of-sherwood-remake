@@ -1,0 +1,21 @@
+{
+  "source_sha256": "19dfa4dc18c5fd63f1581974862c7bdcc1573e0a1c9546b386ce6e26e55c6898",
+  "obstacle": 219,
+  "review": "The southwest parapet's north and south wall assets meet at the bend between boundary vertices 2 and 5. Retain the complete outer contour, including the southern inner bend at vertex 6 that component bounds currently omit. Both pieces have ground-level bottoms and the same flat top. Directed seams remove the internal face when the two assets meet. There are no linked masks, receiving areas, material regions or state patches on this volume.",
+  "parts": [
+    {
+      "asset": "nottingham-southwest-curtain-wall-north",
+      "node": "building-219--component-wall-219-north",
+      "model_sha256": "f4d10e9823592a104f46794762c8fb9e18aaa032ad3cf318a57d28c0e42742be",
+      "descriptor_sha256": "b57e5ab7ca884084e61871d5899d9af5874c3542881f955ea893a4a16cee1078",
+      "vertices": [2, 3, 4, 5]
+    },
+    {
+      "asset": "nottingham-southwest-curtain-wall-south",
+      "node": "building-219--component-wall-219-south",
+      "model_sha256": "e460baa3f7cc6a59babdd1165659dca4030ad4737f525a19eda8860452f42b01",
+      "descriptor_sha256": "4c0b9e63ebd414ddd73add8f9587456a143f9099deaf55b83f9785d3cf76687c",
+      "vertices": [0, 1, 2, 5, 6, 7]
+    }
+  ]
+}

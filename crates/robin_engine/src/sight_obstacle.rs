@@ -2960,6 +2960,262 @@ mod tests {
         obs
     }
 
+    #[test]
+    fn artificial_partition_seams_change_interior_ray_blocking() {
+        let whole = make_box_obstacle(0, 0.0, 20.0, 0.0, 10.0, 5.0);
+        let left = make_box_obstacle(1, 0.0, 10.0, 0.0, 10.0, 5.0);
+        let right = make_box_obstacle(2, 10.0, 20.0, 0.0, 10.0, 5.0);
+        let origin = [5.0, 5.0, 2.0];
+        let destination = [15.0, 5.0, 2.0];
+        // An interior segment crosses no external face of the assembled volume.
+        assert!(!whole.is_blocking_ray_3d(origin, destination));
+        assert!(left.is_blocking_ray_3d(origin, destination));
+        assert!(right.is_blocking_ray_3d(origin, destination));
+    }
+
+    #[test]
+    #[ignore = "requires ROBIN_SIGHT_ASSEMBLY_CASE from the editor geometry diagnostic"]
+    fn recovered_sight_assembly_preserves_native_ray_queries() {
+        let path = std::env::var("ROBIN_SIGHT_ASSEMBLY_CASE").expect("diagnostic case path");
+        let value: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        let make = |name: &str| {
+            let mut obstacle = SightObstacle::new_default(0);
+            obstacle.obstacle_points =
+                serde_json::from_value(value[name]["points"].clone()).unwrap();
+            let p = &obstacle.obstacle_points;
+            obstacle.top_plane_points = [1, 2, 0].map(|i| [p[i].x, p[i].y, p[i].z_top]);
+            obstacle.bottom_plane_points = [1, 2, 0].map(|i| [p[i].x, p[i].y, p[i].z_bottom]);
+            obstacle.rebuild_geometry();
+            obstacle
+        };
+        let expected = make("source");
+        let actual = make("compiled");
+        let mut state = 0x517a_b39du32;
+        let mut sample = || {
+            state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+            (state >> 8) as f32 / 16777216.0
+        };
+        let mut maximum_impact_error = 0.0f32;
+        for index in 0..100_000 {
+            let mut point = || {
+                [0, 1, 2].map(|axis| {
+                    let low = expected.box_3d_min[axis] - 100.0;
+                    let high = expected.box_3d_max[axis] + 100.0;
+                    low + sample() * (high - low)
+                })
+            };
+            let origin = point();
+            let destination = point();
+            assert_eq!(
+                expected.is_blocking_ray_3d(origin, destination),
+                actual.is_blocking_ray_3d(origin, destination),
+                "ray {index}: {origin:?} -> {destination:?}"
+            );
+            let a = expected.blocking_ray_3d_impact(origin, destination);
+            let b = actual.blocking_ray_3d_impact(origin, destination);
+            assert_eq!(a.is_some(), b.is_some(), "impact presence {index}");
+            if let (Some(a), Some(b)) = (a, b) {
+                let error = (a.point.x - b.point.x)
+                    .abs()
+                    .max((a.point.y - b.point.y).abs())
+                    .max((a.point.z - b.point.z).abs());
+                maximum_impact_error = maximum_impact_error.max(error);
+                assert_eq!(
+                    (a.point.x, a.point.y, a.point.z, a.t),
+                    (b.point.x, b.point.y, b.point.z, b.t),
+                    "impact {index}: {a:?} != {b:?}"
+                );
+            }
+        }
+        println!("100000 sight/impact rays matched; maximum impact error {maximum_impact_error}");
+    }
+
+    #[test]
+    #[ignore = "requires source/compiled obstacle arrays via ROBIN_SIGHT_SCENE_CASE"]
+    fn recovered_scene_preserves_native_sight_and_impact_queries() {
+        use crate::coordinates::WorldPoint3D;
+        let path = std::env::var("ROBIN_SIGHT_SCENE_CASE").expect("scene fixture path");
+        let value: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        let make = |name: &str| -> Vec<SightObstacle> {
+            value[name]
+                .as_array()
+                .unwrap()
+                .iter()
+                .enumerate()
+                .map(|(index, raw)| {
+                    let mut obstacle = SightObstacle::new_default(index as u32);
+                    obstacle.obstacle_type = 0;
+                    if raw["solid"].as_bool().unwrap() {
+                        obstacle.obstacle_type |= SIGHTOBSTACLE_SOLID;
+                    }
+                    if raw["opaque"].as_bool().unwrap() {
+                        obstacle.obstacle_type |= SIGHTOBSTACLE_OPAQUE;
+                    }
+                    obstacle.obstacle_points =
+                        serde_json::from_value(raw["points"].clone()).unwrap();
+                    let p = &obstacle.obstacle_points;
+                    obstacle.top_plane_points = [1, 2, 0].map(|i| [p[i].x, p[i].y, p[i].z_top]);
+                    obstacle.bottom_plane_points =
+                        [1, 2, 0].map(|i| [p[i].x, p[i].y, p[i].z_bottom]);
+                    obstacle.rebuild_geometry();
+                    obstacle
+                })
+                .collect()
+        };
+        let source = make("source");
+        let compiled = make("compiled");
+        assert!(!source.is_empty() && !compiled.is_empty());
+        let grids = value.get("grid_size").map(|size| {
+            let width = u16::try_from(size[0].as_u64().unwrap()).unwrap();
+            let height = u16::try_from(size[1].as_u64().unwrap()).unwrap();
+            let make_grid = |name: &str, obstacles: &[SightObstacle]| {
+                let mut grid = crate::fast_find_grid::FastFindGrid::new();
+                grid.size_map(width, height);
+                grid.allocate_layers(
+                    u16::try_from(value[format!("{name}_layers")].as_u64().unwrap()).unwrap(),
+                );
+                for (index, obstacle) in obstacles.iter().enumerate() {
+                    let layer = value[name][index]["projection_area"]
+                        .as_array()
+                        .map(|area| {
+                            crate::position_interface::Layer::new(
+                                u16::try_from(area[1].as_u64().unwrap()).unwrap(),
+                            )
+                            .unwrap()
+                        });
+                    grid.add_obstacle_index(
+                        SightObstacleIndex::new(u32::try_from(index).unwrap()).unwrap(),
+                        layer,
+                        &obstacle.box_ground,
+                    );
+                }
+                grid
+            };
+            (
+                make_grid("source", &source),
+                make_grid("compiled", &compiled),
+            )
+        });
+        let low: [f32; 3] = std::array::from_fn(|axis| {
+            source
+                .iter()
+                .map(|s| s.box_3d_min[axis])
+                .fold(f32::INFINITY, f32::min)
+                - 100.0
+        });
+        let high: [f32; 3] = std::array::from_fn(|axis| {
+            source
+                .iter()
+                .map(|s| s.box_3d_max[axis])
+                .fold(f32::NEG_INFINITY, f32::max)
+                + 100.0
+        });
+        let mut state = 0x517a_b39du32;
+        let mut point = || -> [f32; 3] {
+            std::array::from_fn(|axis| {
+                state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+                low[axis] + (state >> 8) as f32 / 16777216.0 * (high[axis] - low[axis])
+            })
+        };
+        let mut sight_differences = 0;
+        let mut impact_differences = 0;
+        let mut grid_candidate_differences = 0;
+        let mut grid_impact_differences = 0;
+        let mut grid_queries_with_candidates = 0;
+        for _ in 0..100_000 {
+            let a = point();
+            let b = point();
+            for mask in [SIGHTOBSTACLE_SOLID, SIGHTOBSTACLE_OPAQUE] {
+                let reachable = |obstacles: &[SightObstacle]| {
+                    is_reachable_3d(ObstacleList::from_slice_all_active(obstacles), a, b, mask)
+                };
+                if reachable(&source) != reachable(&compiled) {
+                    sight_differences += 1;
+                }
+                let impact = |obstacles: &[SightObstacle]| {
+                    is_reachable_impact_3d(
+                        WorldPoint3D {
+                            x: a[0],
+                            y: a[1],
+                            z: a[2],
+                        },
+                        WorldPoint3D {
+                            x: b[0],
+                            y: b[1],
+                            z: b[2],
+                        },
+                        mask,
+                        ObstacleList::from_slice_all_active(obstacles),
+                        None,
+                        None,
+                    )
+                    .map(|result| result.impact)
+                };
+                if impact(&source) != impact(&compiled) {
+                    impact_differences += 1;
+                }
+                if let Some((source_grid, compiled_grid)) = &grids {
+                    let candidates =
+                        |grid: &crate::fast_find_grid::FastFindGrid,
+                         obstacles: &[SightObstacle]| {
+                            grid.impact_obstacle_candidates(
+                                MapPoint::new(a[0], a[1]),
+                                MapPoint::new(b[0], b[1]),
+                                ObstacleList::from_slice_all_active(obstacles),
+                                mask,
+                            )
+                        };
+                    let expected = candidates(source_grid, &source);
+                    let actual = candidates(compiled_grid, &compiled);
+                    if !expected.is_empty() {
+                        grid_queries_with_candidates += 1;
+                    }
+                    if expected != actual {
+                        grid_candidate_differences += 1;
+                    }
+                    let grid_impact = |obstacles: &[SightObstacle], candidates: &[usize]| {
+                        is_reachable_impact_3d(
+                            WorldPoint3D {
+                                x: a[0],
+                                y: a[1],
+                                z: a[2],
+                            },
+                            WorldPoint3D {
+                                x: b[0],
+                                y: b[1],
+                                z: b[2],
+                            },
+                            mask,
+                            ObstacleList::from_slice_all_active(obstacles),
+                            None,
+                            Some(candidates),
+                        )
+                        .map(|result| result.impact)
+                    };
+                    if grid_impact(&source, &expected) != grid_impact(&compiled, &actual) {
+                        grid_impact_differences += 1;
+                    }
+                }
+            }
+        }
+        println!(
+            "200000 scene queries: {sight_differences} sight differences, {impact_differences} impact differences"
+        );
+        assert_eq!((sight_differences, impact_differences), (0, 0));
+        if grids.is_some() {
+            assert!(grid_queries_with_candidates > 0);
+            println!(
+                "200000 grid queries: {grid_queries_with_candidates} nonempty candidate lists, {grid_candidate_differences} candidate-order differences, {grid_impact_differences} impact differences"
+            );
+            assert_eq!(
+                (grid_candidate_differences, grid_impact_differences),
+                (0, 0)
+            );
+        }
+    }
+
     /// Impact reachability collects impacts per
     /// bbox-overlap group, walks the groups in ray-sorted order, and
     /// stops after the first group that produced any impact — even when

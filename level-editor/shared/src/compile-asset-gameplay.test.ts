@@ -1,12 +1,15 @@
 import test from "node:test";
+
 import assert from "node:assert/strict";
 import { compileAssetGameplay } from "./compile-asset-gameplay.ts";
 import { validateAssetGameplay } from "./asset-gameplay.ts";
 import { IDENTITY_TRANSFORM } from "./level3d.ts";
 import {
   assetCompilerFixture,
+  anchoredReceiverCompilerFixture,
   slopedAssetCompilerFixture,
   liftAssetCompilerFixture,
+  liftLightCompilerFixture,
   interiorAssetCompilerFixture,
   joinedInteriorCompilerFixture,
   soundAssetCompilerFixture,
@@ -16,15 +19,339 @@ import {
   jumpAssetCompilerFixture,
   compoundLiftCompilerFixture,
   multiPlaneRegionCompilerFixture,
+  joinedNavigationCompilerFixture,
   crossAssetJumpCompilerFixture,
   doorTransitionCompilerFixture,
   doorAnchorCompilerFixture,
   projectionMaterialCompilerFixture,
+  projectionVolumeCompilerFixture,
+  receivingIslandCompilerFixture,
+  preservedBoundaryCompilerFixture,
 } from "../test-fixtures/asset-gameplay.ts";
 
 import { heightPlane, planeHeight } from "./gameplay-plane.ts";
 
+test("preserved boundaries retain crossing obstacle contours without rounding their intersections", () => {
+  const { document, assets, hut } = preservedBoundaryCompilerFixture();
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  assert.equal(geometry.motion_data.layers[0]!.length, 1);
+  const area = geometry.motion_data.layers[0]![0]!;
+  assert.deepEqual(area.polygon.points, [
+    [300, 300],
+    [400, 300],
+    [400, 370],
+  ]);
+  assert.equal(area.obstacles.length, 1);
+  assert.equal(area.obstacles[0]!.polygon.points.length, 4);
+  assert.ok(area.obstacles[0]!.polygon.points.some(([x, y]) => x === 410 && y === 376));
+  // Ordinary free-space clipping rounds the crossing at x=301.428... to 301.
+  // Keep a control so this fixture continues to exercise a real difference.
+  hut.gameplay!.surfaces[0]!.preserveMovementBoundary = false;
+  const clipped = compileAssetGameplay(document, assets, bounds);
+  assert.notDeepEqual(clipped.motion_data.layers[0], geometry.motion_data.layers[0]);
+  hut.gameplay!.surfaces[0]!.preserveMovementBoundary = true;
+  delete hut.gameplay!.surfaces[0]!.navigationRegion;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /preserved movement boundaries/,
+  );
+});
+
+test("asset contour labels preserve separate overlapping exclusions through placement", () => {
+  const { document, assets, hut } = preservedBoundaryCompilerFixture();
+  const surface = hut.gameplay!.surfaces[0]!;
+  surface.polygon = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  surface.holes = [
+    [
+      [0, 0],
+      [100, 0],
+      [0, 71],
+    ],
+  ];
+  surface.holeContours = ["assembly/slope"];
+  const wall = hut.gameplay!.movementBlockers![0]!;
+  wall.polygon = [
+    [40, -10],
+    [60, -10],
+    [60, 100],
+    [40, 100],
+  ];
+  wall.movementContour = "assembly/wall";
+  const area = compileAssetGameplay(document, assets, bounds).motion_data.layers[0]![0]!;
+  assert.equal(area.obstacles.length, 2);
+  assert.deepEqual(area.obstacles[0]!.polygon.points, [
+    [300, 300],
+    [400, 300],
+    [300, 371],
+  ]);
+  assert.equal(area.obstacles[1]!.polygon.points.length, 4);
+  surface.holeContours = [];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /hole contour labels/);
+  surface.holeContours = ["assembly/slope"];
+  wall.movementContour = "";
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /movement contour labels/);
+});
+
+test("visual component bounds can opt out of physical collision while retaining their frame", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const part = hut.parts[0]!;
+  const before = structuredClone(part.obstacle_local_game);
+  part.collision = "none";
+  hut.gameplay!.doors = [];
+  const compiled = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  assert.equal(compiled.sight_obstacles.length, 0);
+  assert.deepEqual(part.obstacle_local_game, before);
+  assert(document.objects.some((o) => o.obstacle));
+  hut.gameplay!.movementSolids = [part.node];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, [0, 0, 2000, 2000]),
+    /permanent movement solid/,
+  );
+  delete hut.gameplay!.movementSolids;
+  hut.gameplay!.surfaces[0]!.projectionVolume = part.node;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, [0, 0, 2000, 2000]),
+    /projection volume/,
+  );
+});
+
 const bounds: [number, number, number, number] = [0, 0, 2000, 2000];
+test("physical receiver anchors share ground navigation without cutting a separate walking area", () => {
+  const { document, assets, hut } = anchoredReceiverCompilerFixture();
+  const baseline = compileAssetGameplay(document, assets, bounds);
+  assert.equal(baseline.motion_data.layers.flat().length, 1);
+  assert.equal(baseline.motion_data.layers[0]![0]!.obstacles.length, 0);
+  assert.deepEqual(baseline.sight_obstacles[0]!.projection_area, [0, 0]);
+  document.objects[0]!.transform.dx += 50;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(moved.motion_data, baseline.motion_data);
+  assert.deepEqual(moved.sight_obstacles[0]!.projection_area, [0, 0]);
+  assert.equal(
+    moved.sight_obstacles[0]!.points[0]!.x,
+    baseline.sight_obstacles[0]!.points[0]!.x + 50,
+  );
+  const copy = structuredClone(document.objects[0]!);
+  copy.id = "hut-copy";
+  delete copy.group;
+  copy.transform.dx += 50;
+  document.objects.push(copy);
+  const duplicated = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(duplicated.motion_data, baseline.motion_data);
+  assert.equal(duplicated.sight_obstacles.length, 2);
+  assert(duplicated.sight_obstacles.every((s) => JSON.stringify(s.projection_area) === "[0,0]"));
+  document.objects.pop();
+  document.objects[0]!.transform.rot_deg = 90;
+  const rotated = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(rotated.motion_data, baseline.motion_data);
+  assert.deepEqual(rotated.sight_obstacles[0]!.projection_area, [0, 0]);
+  hut.gameplay!.projectionReceivers![0]!.anchor = [900, 900, 0];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /navigation anchor must resolve/,
+  );
+});
+
+test("physical receiver anchors reject dangling and conflicting ownership", () => {
+  const { document, assets, hut } = anchoredReceiverCompilerFixture();
+  const receiver = hut.gameplay!.projectionReceivers![0]!;
+  receiver.volume = "missing";
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /invalid projection receiver/,
+  );
+  receiver.volume = hut.parts[0]!.node;
+  hut.gameplay!.projectionReceivers!.push({ ...receiver, id: "duplicate" });
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /invalid projection receiver/,
+  );
+});
+
+test("feature anchors use the physical receiver's elevation within shared ground navigation", () => {
+  const { document, assets, hut } = anchoredReceiverCompilerFixture();
+  hut.gameplay!.doors = [
+    {
+      id: "slope-passage",
+      node: hut.parts[0]!.node,
+      polygon: [],
+      outside: [10, 25, 5],
+      inside: [90, 50, 45],
+      middle: [50, 50, 25],
+      type: 0,
+      locked: false,
+      unlockable: false,
+      allowContinuous: true,
+    },
+  ];
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.motion_data.layers.flat().length, 1);
+  assert.equal(compiled.doors.length, 0);
+  hut.gameplay!.doors[0]!.outside = [150, 25, 75];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /outside must resolve/);
+});
+
+test("receiving volumes retain thickness, materials and state links after placement", () => {
+  const { document, assets } = projectionVolumeCompilerFixture();
+  const compile = () => compileAssetGameplay(document, assets, bounds);
+  const baseline = compile();
+  const receiver = baseline.sight_obstacles[0]!;
+  assert.deepEqual(receiver.projection_area, [1, 1]);
+  assert.equal(receiver.solid, true);
+  assert.equal(receiver.opaque, true);
+  assert.equal(receiver.show_shadow_polygon, true);
+  assert.equal(receiver.default_material, 2);
+  assert.deepEqual(receiver.material_indices, [0]);
+  assert.ok(
+    receiver.points.every((p) => Math.fround(p.z_bottom) === 15 && Math.fround(p.z_top) === 20),
+  );
+  assert.equal(baseline.sight_obstacles.length, 2);
+  assert.deepEqual(baseline.movement_transitions![0]!.applied_sight, [0]);
+  const part = document.objects.find((p) => p.node.endsWith(":building-999"))!;
+  part.transform.dx += 100;
+  const moved = compile();
+  const coordinates = (points: typeof receiver.points) =>
+    points.map((p) => [p.x, p.y, p.z_bottom, p.z_top].map(Math.fround));
+  assert.deepEqual(
+    coordinates(moved.sight_obstacles[0]!.points),
+    coordinates(receiver.points.map((p) => ({ ...p, x: p.x + 100 }))),
+  );
+  assert.deepEqual(moved.movement_transitions![0]!.applied_sight, [0]);
+  part.transform.rot_deg = 90;
+  const rotated = compile();
+  assert.ok(
+    rotated.sight_obstacles[0]!.points.every(
+      (p) => Math.fround(p.z_bottom) === 15 && Math.fround(p.z_top) === 20,
+    ),
+  );
+  assert.deepEqual(rotated.movement_transitions![0]!.applied_sight, [0]);
+  const copy = structuredClone(part);
+  copy.id = "projection-copy";
+  copy.group = "projection-copy";
+  copy.transform.dx += 600;
+  document.groups.push({ id: "projection-copy", transform: { ...IDENTITY_TRANSFORM } });
+  document.objects.push(copy);
+  const duplicated = compile();
+  const transitions = duplicated.movement_transitions!;
+  assert.deepEqual(
+    transitions.map((t) => t.applied_sight),
+    [[0], [1]],
+  );
+  const receivers = transitions.map((t) => duplicated.sight_obstacles[t.applied_sight![0]!]!);
+  assert.notDeepEqual(receivers[0]!.projection_area, receivers[1]!.projection_area);
+  assert.notDeepEqual(receivers[0]!.material_indices, receivers[1]!.material_indices);
+});
+
+test("receiving ownership excludes a separate island inside a navigation hole", () => {
+  const { document, assets } = receivingIslandCompilerFixture();
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  const physical = geometry.sight_obstacles[0]!;
+  const islandReceiver = geometry.sight_obstacles.find((o) => o.default_material === 4)!;
+  assert.notDeepEqual(physical.projection_area, islandReceiver.projection_area);
+  assert.equal(geometry.sight_obstacles.length, 2);
+  assert.deepEqual(geometry.movement_transitions![0]!.applied_sight, [0]);
+});
+
+test("physical receiving planes use the first three vertices without flattening later heights", () => {
+  const { document, assets, hut } = projectionVolumeCompilerFixture();
+  const points = hut.gameplay!.volumes![0]!.shape.points;
+  points[3]!.z_top = 22;
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    geometry.sight_obstacles[0]!.points.map((p) => Math.fround(p.z_top)),
+    [20, 20, 20, 22],
+  );
+  hut.gameplay!.surfaces[0]!.height = 22;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /top must lie on the surface/,
+  );
+  hut.gameplay!.surfaces[0]!.height = 20;
+  points[2] = { ...points[1]! };
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /no nondegenerate height plane/,
+  );
+});
+
+test("receiving part links reuse physical geometry and preserve state references", () => {
+  const { document, assets, hut } = projectionVolumeCompilerFixture();
+  const gameplay = hut.gameplay!;
+  const volume = gameplay.volumes![0]!;
+  const part = hut.parts.find((p) => p.node === volume.node)!;
+  part.obstacle_local_game = { ...volume.shape, projection_area: null, material_indices: [] };
+  gameplay.collision = "parts";
+  gameplay.surfaces[0]!.projectionVolume = part.node;
+  gameplay.materials![0]!.obstacles = [part.node];
+  gameplay.movementTransitions![0]!.appliedSight = [part.node];
+  delete gameplay.volumes;
+  // Navigation and receiving footprints are independent: an uncovered navigation
+  // margin must not invent additional receiving geometry.
+  gameplay.surfaces[0]!.polygon[0]![0] -= 1;
+  const result = compileAssetGameplay(document, assets, bounds);
+  assert.equal(result.sight_obstacles.length, 2);
+  assert.deepEqual(result.movement_transitions![0]!.applied_sight, [0]);
+  assert.deepEqual(result.sight_obstacles[0]!.projection_area, [1, 1]);
+  assert.equal(Math.min(...result.sight_obstacles[0]!.points.map((p) => p.x)), 300);
+  delete gameplay.movementTransitions;
+  const instance = document.objects.find((p) => p.node.endsWith(":building-999"))!;
+  const visible = structuredClone(instance);
+  visible.id = "receiver-frame";
+  visible.node = "asset:hut:visible-frame";
+  hut.parts.push({ node: "visible-frame", name: "Visible frame", scenery: true });
+  document.objects.push(visible);
+  instance.hidden = true;
+  assert.deepEqual(
+    compileAssetGameplay(document, assets, bounds).sight_obstacles[0]!.projection_area,
+    [1, 1],
+  );
+  gameplay.collision = "none";
+  gameplay.materials![0]!.obstacles = [];
+  gameplay.materials![0]!.ground = true;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /sight obstacle|projection volume/,
+  );
+});
+
+test("receiving volume links reject missing, conflicting and disjoint definitions", () => {
+  const { document, assets, hut } = projectionVolumeCompilerFixture();
+  const surface = hut.gameplay!.surfaces[0]!;
+  surface.projectionVolume = "missing";
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid projection volume/);
+  surface.projectionVolume = "platform-volume";
+  surface.projectionMaterials = { defaultMaterial: 2, regions: [] };
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid projection volume/);
+  delete surface.projectionMaterials;
+  surface.height = 21;
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /top must lie on the surface/,
+  );
+  surface.height = 20;
+  surface.polygon = surface.polygon.map(([x, y]) => [x + 200, y]);
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /does not overlap/);
+  surface.polygon = surface.polygon.map(([x, y]) => [x - 200, y]);
+  const adjacent = hut.gameplay!.surfaces[1]!;
+  const saved = structuredClone(adjacent.polygon);
+  adjacent.polygon = structuredClone(surface.polygon);
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /physical and generated receivers/,
+  );
+  adjacent.polygon = saved;
+  const other = structuredClone(surface);
+  other.id = "other-area";
+  surface.navigationRegion = "one";
+  other.navigationRegion = "two";
+  hut.gameplay!.surfaces.push(other);
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /multiple receiving areas/);
+});
+
 test("independent interiors join through a placed passage and separate when it moves", () => {
   const { document, assets, passage } = joinedInteriorCompilerFixture();
   const joined = compileAssetGameplay(document, assets, bounds);
@@ -159,6 +486,78 @@ test("receiving anchors validate coordinates and cannot replace a virtual interi
   const interior = interiorAssetCompilerFixture();
   interior.hut.gameplay!.interiors![0]!.doors[0]!.insideAnchor = [0, 0, 0];
   assert.throws(() => validateAssetGameplay(interior.hut.gameplay, interior.hut), /shared room/);
+});
+
+test("optional unrestricted passages disappear only after their walkable areas join", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const door = hut.gameplay!.doors[0]!;
+  door.polygon = [];
+  door.allowContinuous = true;
+  const separated = compileAssetGameplay(document, assets, bounds);
+  assert.equal(separated.doors.length, 1);
+  hut.gameplay!.surfaces.push({
+    id: "connector",
+    node: door.node,
+    height: 0,
+    polygon: [
+      [80, 0],
+      [120, 0],
+      [120, 100],
+      [80, 100],
+    ],
+  });
+  const joined = compileAssetGameplay(document, assets, bounds);
+  assert.equal(joined.doors.length, 0);
+  assert.ok(joined.warnings?.some((w) => w.includes("omitted unrestricted passage")));
+  door.allowContinuous = false;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /distinct motion areas/);
+  door.allowContinuous = true;
+  for (const key of ["locked", "unlockable", "lockedVillains", "lockedCivilians"] as const) {
+    door[key] = true;
+    assert.throws(() => compileAssetGameplay(document, assets, bounds), /cannot allow continuous/);
+    door[key] = false;
+  }
+  door.active = false;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /cannot allow continuous/);
+  door.active = true;
+  door.afterTransition = {
+    locked: true,
+    unlockable: false,
+    lockedVillains: false,
+    lockedCivilians: false,
+  };
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /cannot allow continuous/);
+  delete door.afterTransition;
+  door.polygon = [
+    [90, 40],
+    [110, 40],
+    [110, 60],
+    [90, 60],
+  ];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /cannot allow continuous/);
+});
+
+test("omitting a redundant passage preserves remaining native door bindings", () => {
+  const { document, assets, hut } = doorTransitionCompilerFixture();
+  const original = compileAssetGameplay(document, assets, bounds);
+  hut.gameplay!.doors.unshift({
+    id: "redundant",
+    node: "building-999",
+    type: 0,
+    polygon: [],
+    outside: [10, 10, 0],
+    inside: [20, 20, 0],
+    middle: [15, 15, 0],
+    locked: false,
+    unlockable: false,
+    allowContinuous: true,
+  });
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(compiled.doors, original.doors);
+  assert.deepEqual(compiled.buildings, original.buildings);
+  assert.deepEqual(compiled.movement_transitions, original.movement_transitions);
+  hut.gameplay!.movementTransitions![0]!.doorLinks!.ids = ["redundant"];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /distinct motion areas/);
 });
 
 test("door-only transitions resolve native interior-first indices independently for each placement", () => {
@@ -389,6 +788,44 @@ test("cross-asset jumps detach and reconnect with independently placed assets", 
     ),
   );
 });
+
+test("walkways and roof jumps reconnect to replacement assets without original neighbor identities", () => {
+  for (const kind of ["walkway", "jump"] as const) {
+    const fixture =
+      kind === "walkway" ? joinedNavigationCompilerFixture() : crossAssetJumpCompilerFixture();
+    const { document, assets, upper } = fixture;
+    const original = compileAssetGameplay(document, assets, bounds);
+    const part = document.objects.find((p) => p.node.startsWith(`asset:${upper.id}:`))!;
+    const group = document.groups.find((g) => g.id === part.group)!;
+    group.transform.dx += 30;
+    const detached = compileAssetGameplay(document, assets, bounds);
+    if (kind === "jump") assert.equal(detached.jump_line_pairs, undefined);
+    else assert.equal(detached.motion_data.layers.flat().length, 2);
+    const replacement = structuredClone(upper);
+    replacement.id = "newly-authored-replacement";
+    replacement.source_map = "unrelated-authoring-provenance";
+    assets.set(replacement.id, replacement);
+    document.assetSources!.push({
+      ...document.assetSources!.find((ref) => ref.id === upper.id)!,
+      id: replacement.id,
+    });
+    const replacementPart = structuredClone(part);
+    replacementPart.id = "new-neighbor-body";
+    replacementPart.group = "new-neighbor";
+    replacementPart.node = part.node.replace(`asset:${upper.id}:`, `asset:${replacement.id}:`);
+    document.objects.push(replacementPart);
+    document.groups.push({ id: "new-neighbor", transform: { ...IDENTITY_TRANSFORM } });
+    const rebuilt = compileAssetGameplay(document, assets, bounds);
+    if (kind === "jump") {
+      assert.deepEqual(rebuilt.jump_line_pairs, original.jump_line_pairs);
+      assert.equal(rebuilt.jump_zones!.length, 2);
+    } else {
+      // The detached old neighbor remains separate; the replacement joins the walkway.
+      assert.equal(rebuilt.motion_data.layers.flat().length, 2);
+      assert.equal(rebuilt.warnings!.filter((w) => w.includes("no matching boundary")).length, 1);
+    }
+  }
+});
 test("detached edges do not remove landing zones used by another complete jump", () => {
   const { document, assets, hut } = jumpAssetCompilerFixture();
   const expected = compileAssetGameplay(document, assets, bounds);
@@ -410,6 +847,30 @@ test("detached edges do not remove landing zones used by another complete jump",
     1,
   );
 });
+test("preview bounds are not collision, while separately authored gameplay remains usable", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const part = hut.parts[0]!;
+  const obstacle = part.obstacle_local_game!;
+  hut.parts = [
+    {
+      node: part.node,
+      name: part.name,
+      mission_profile: "preview-only",
+      obstacle_local_game: obstacle,
+    },
+  ];
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.sight_obstacles.filter((o) => o.projection_area === null).length, 0);
+  assert.equal(compiled.doors.length, 1, "authored passage remains available");
+  hut.gameplay!.movementSolids = [part.node];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /preview bounds require/);
+  delete hut.gameplay!.movementSolids;
+  const { projection_area: _projection, material_indices: _materials, ...shape } = obstacle;
+  hut.gameplay!.volumes = [{ id: "authored-wall", node: part.node, shape }];
+  const authored = compileAssetGameplay(document, assets, bounds);
+  assert.equal(authored.sight_obstacles.filter((o) => o.projection_area === null).length, 1);
+});
+
 test("non-rendering asset volumes preserve collision and sight without a mesh part", () => {
   const { hut, document, assets } = assetCompilerFixture();
   const expected = compileAssetGameplay(document, assets, bounds);
@@ -461,10 +922,73 @@ test("non-rendering asset volumes preserve collision and sight without a mesh pa
   Object.assign(hut.gameplay!.volumes[0]!.shape, { projection_area: [123, 1] });
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid gameplay volume/);
 });
+test("separate navigation assets reproduce one continuous region and detach after movement", () => {
+  const { document, assets, hut } = joinedNavigationCompilerFixture();
+  const local = multiPlaneRegionCompilerFixture();
+  const joined = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(joined, compileAssetGameplay(local.document, local.assets, bounds));
+  document.groups.find((g) => g.id === "upper")!.transform.dx = 20;
+  const detached = compileAssetGameplay(document, assets, bounds);
+  assert.equal(detached.motion_data.layers.flat().length, 2);
+  assert.equal(detached.warnings!.filter((w) => w.includes("no matching boundary")).length, 2);
+  document.groups.find((g) => g.id === "upper")!.transform.dx = 0;
+  hut.gameplay!.surfaces[0]!.navigationJoins![0]![0][2] += 1;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /outer surface edge/);
+  delete hut.gameplay!.surfaces[0]!.navigationRegion;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /navigation joins/);
+});
+
+test("explicit height steps join projected navigation boundaries and reject invalid tolerances", () => {
+  const { document, assets, hut, upper } = joinedNavigationCompilerFixture();
+  const surface = upper.gameplay!.surfaces[0]!;
+  surface.polygon = surface.polygon.map(([x, y]) => [x, y + 1]);
+  surface.height =
+    typeof surface.height === "number" ? surface.height + 1 : surface.height.map((z) => z + 1);
+  for (const edge of surface.navigationJoins!)
+    for (const point of edge) {
+      point[1] += 1;
+      point[2] += 1;
+    }
+  assert.equal(compileAssetGameplay(document, assets, bounds).motion_data.layers.flat().length, 2);
+  surface.navigationJoinHeightTolerance = 1.01;
+  hut.gameplay!.surfaces[0]!.navigationJoinHeightTolerance = 1.01;
+  assert.equal(compileAssetGameplay(document, assets, bounds).motion_data.layers.flat().length, 1);
+  document.groups.find((g) => g.id === "upper")!.transform.dx = 10;
+  assert.equal(compileAssetGameplay(document, assets, bounds).motion_data.layers.flat().length, 2);
+  for (const invalid of [-1, Infinity, NaN]) {
+    surface.navigationJoinHeightTolerance = invalid;
+    assert.throws(() => compileAssetGameplay(document, assets, bounds), /height tolerance/);
+  }
+});
+
+test("separate navigation assemblies rotate and duplicate without joining unrelated copies", () => {
+  const { document, assets } = joinedNavigationCompilerFixture();
+  const groups = [...document.groups],
+    parts = [...document.objects];
+  for (const group of groups)
+    document.groups.push({
+      id: `${group.id}-copy`,
+      transform: { ...IDENTITY_TRANSFORM, dx: 1000, dy: 100, rot_deg: 90 },
+    });
+  for (const part of parts.filter((p) => p.group))
+    document.objects.push({
+      ...structuredClone(part),
+      id: `${part.id}-copy`,
+      group: `${part.group}-copy`,
+    });
+  const result = compileAssetGameplay(document, assets, bounds);
+  assert.equal(result.motion_data.layers.flat().length, 2);
+  assert.equal(result.sight_obstacles.length, 4);
+  assert.equal((result.warnings ?? []).filter((w) => w.includes("no matching boundary")).length, 0);
+  const bindings = result.sight_obstacles.map((s) => JSON.stringify(s.projection_area));
+  assert.equal(new Set(bindings).size, 2);
+});
+
 test("ordinary local navigation regions join height planes without lift behavior", () => {
   const { document, assets, hut } = multiPlaneRegionCompilerFixture();
   const compiled = compileAssetGameplay(document, assets, bounds);
   assert.equal(compiled.motion_data.layers.flat().length, 1);
+  assert.equal(compiled.motion_data.layers.length, 2);
   const projections = compiled.sight_obstacles.filter((s) => Array.isArray(s.projection_area));
   assert.equal(projections.length, 2);
   assert.deepEqual(projections[0]!.projection_area, projections[1]!.projection_area);
@@ -650,6 +1174,218 @@ test("light regions follow placement and preserve ambience without shifting inte
   );
   hut.gameplay!.lights![0]!.ambiences = -1;
   assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid light region/);
+});
+
+test("light receiver anchors preserve one contour across elevations and move with the asset", () => {
+  const { hut, document, assets } = lightAssetCompilerFixture();
+  hut.gameplay!.surfaces.push({
+    id: "upper-light-receiver",
+    node: "building-999",
+    height: 40,
+    polygon: [
+      [0, 40],
+      [90, 40],
+      [90, 140],
+      [0, 140],
+    ],
+  });
+  const light = hut.gameplay!.lights![0]!;
+  light.receivers = [
+    [20, 20, 0],
+    [20, 60, 40],
+    [25, 65, 40],
+  ];
+  const first = compileAssetGameplay(document, assets, bounds).light_sectors!.filter(
+    (l) => l.ambience === 1,
+  );
+  assert.equal(first.length, 2);
+  assert.notEqual(first[0]!.layer, first[1]!.layer);
+  assert.deepEqual(first[0]!.polygon, first[1]!.polygon);
+  document.groups[0]!.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds).light_sectors!.filter(
+    (l) => l.ambience === 1,
+  );
+  assert.deepEqual(
+    moved.map((l) => l.polygon.points),
+    first.map((l) => l.polygon.points.map(([x, y]) => [x + 100, y])),
+  );
+  light.receivers = [[20, 70, 50]];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /walkable surface/);
+  light.receivers = [[1000, 1000, 0]];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /outside the light contour/);
+  light.receivers = [];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /invalid light receivers/);
+});
+
+test("light layer anchors retain fractional positions inside narrow contours and surfaces", () => {
+  const { hut, document, assets } = lightAssetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.doors = [];
+  gameplay.interiors = [];
+  gameplay.surfaces = [
+    {
+      ...gameplay.surfaces[0]!,
+      polygon: [
+        [10, 10],
+        [20, 12],
+        [20, 13],
+      ],
+    },
+  ];
+  gameplay.lights = [
+    {
+      id: "narrow",
+      node: "building-999",
+      ambiences: 1,
+      polygon: [
+        [10, 10, 0],
+        [20, 12, 0],
+        [20, 13, 0],
+      ],
+      receivers: [[15.51, 11.11, 0]],
+    },
+  ];
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  assert.equal(compiled.light_sectors!.length, 1);
+  assert.deepEqual(compiled.light_sectors![0]!.polygon.points, [
+    [310, 310],
+    [320, 312],
+    [320, 313],
+  ]);
+  gameplay.lights[0]!.receivers = [[16, 11, 0]];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /outside the light contour/);
+});
+
+test("anchored lights cannot spill onto a separate coplanar navigation region", () => {
+  const { hut, document, assets } = lightAssetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.doors = [];
+  gameplay.interiors = [];
+  gameplay.surfaces = [10, 40].map((x) => ({
+    id: `receiver-${x}`,
+    node: "building-999",
+    height: 0,
+    polygon: [
+      [x, 10],
+      [x + 20, 10],
+      [x + 20, 30],
+      [x, 30],
+    ],
+  }));
+  const polygon: [number, number, number][] = [
+    [0, 0, 0],
+    [70, 0, 0],
+    [70, 40, 0],
+    [0, 40, 0],
+  ];
+  gameplay.lights = [
+    { id: "left-only", node: "building-999", ambiences: 1, polygon, receivers: [[20, 20, 0]] },
+    { id: "both", node: "building-999", ambiences: 2, polygon },
+  ];
+  for (const dx of [0, 100]) {
+    document.groups[0]!.transform.dx += dx;
+    const compiled = compileAssetGameplay(document, assets, bounds);
+    const ordinary = compiled.motion_data.layers.slice(0, -1);
+    assert.deepEqual(
+      ordinary.map((layer) => layer.length),
+      [1, 1],
+    );
+    const left = ordinary.findIndex((layer) =>
+      layer[0]!.polygon.points.some(([x]) => x === 310 + dx),
+    );
+    assert.ok(left >= 0);
+    const isolated = compiled.light_sectors!.filter((light) => light.ambience === 1);
+    assert.deepEqual(
+      isolated.map((light) => light.layer),
+      [left],
+    );
+    assert.deepEqual(
+      compiled.light_sectors!.filter((light) => light.ambience === 2).map((light) => light.layer),
+      [0, 1],
+    );
+    assert.deepEqual(
+      isolated[0]!.polygon.points,
+      polygon.map(([x, y, z]) => [x + 300 + dx, y - z + 300]),
+    );
+  }
+});
+
+test("light regions resolve on sloped traversal areas and follow their asset", () => {
+  const { document, assets } = liftLightCompilerFixture();
+  const geometry = compileAssetGameplay(document, assets, bounds);
+  const light = geometry.light_sectors![0]!;
+  assert.equal(light.layer, geometry.motion_data.layers.length - 1);
+  assert.equal(light.ambience, 2);
+  for (const part of document.objects) part.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    moved.light_sectors![0]!.polygon.points,
+    light.polygon.points.map(([x, y]) => [x + 100, y]),
+  );
+  assert.deepEqual(
+    moved.lifts!.map((lift) => lift.motion_area_index),
+    geometry.lifts!.map((lift) => lift.motion_area_index),
+  );
+});
+
+test("light segments resolve after placement and refuse missing or ambiguous receivers", () => {
+  const { hut, document, assets } = lightAssetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.doors = [];
+  gameplay.interiors = [];
+  gameplay.lights = [
+    {
+      id: "segment",
+      node: "building-999",
+      ambiences: 1,
+      polygon: [
+        [10, 10, 0],
+        [40, 10, 0],
+        [40, 40, 0],
+        [10, 40, 0],
+      ],
+      receiverSegments: [
+        [
+          [20, 10, -10],
+          [20, 30, 10],
+        ],
+      ],
+    },
+  ];
+  const first = compileAssetGameplay(document, assets, bounds);
+  assert.equal(first.light_sectors!.length, 1);
+  document.groups[0]!.transform.dx += 1;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  assert.deepEqual(
+    moved.light_sectors![0]!.polygon.points,
+    first.light_sectors![0]!.polygon.points.map(([x, y]) => [x + 1, y]),
+  );
+  gameplay.surfaces.push({ ...gameplay.surfaces[0]!, id: "upper", height: 5 });
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /exactly one walkable surface/,
+  );
+  gameplay.surfaces.pop();
+  gameplay.lights[0]!.receiverSegments = [
+    [
+      [20, 40, 20],
+      [20, 50, 30],
+    ],
+  ];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /exactly one walkable surface/,
+  );
+  gameplay.lights[0]!.receiverSegments = [
+    [
+      [20, 40, 20],
+      [20, 40, 20],
+    ],
+  ];
+  assert.throws(
+    () => compileAssetGameplay(document, assets, bounds),
+    /invalid light receiving segments/,
+  );
 });
 
 test("light receiving planes resolve after elevation and reject absent or nonplanar surfaces", () => {
@@ -876,8 +1612,61 @@ test("receiving materials preserve a joined walking area and follow asset placem
   );
 });
 
+test("receiving plane anchors survive clipping and follow asset placement", () => {
+  const { document, assets, hut } = projectionMaterialCompilerFixture();
+  const surface = hut.gameplay!.surfaces[0]!;
+  surface.projectionMaterials!.planePoints = [
+    [100, 0, 20],
+    [100, 100, 20],
+    [0, 0, 20],
+  ];
+  const inset = hut.gameplay!.surfaces[1]!;
+  inset.polygon = [
+    [40, 40],
+    [60, 40],
+    [60, 60],
+    [40, 60],
+  ];
+  inset.projectionMaterials!.priority = 1;
+  const compiled = compileAssetGameplay(document, assets, bounds);
+  const receivers = compiled.sight_obstacles.filter((o) => o.projection_plane);
+  assert.ok(receivers.length > 1, "hole should subdivide the receiver");
+  const expected = [
+    [400, 300, 20],
+    [400, 400, 20],
+    [300, 300, 20],
+  ];
+  for (const receiver of receivers) {
+    assert.deepEqual(receiver.projection_plane, receivers[0]!.projection_plane);
+    assert.deepEqual(
+      receiver.projection_plane!.map((p) => p.map(Math.fround)),
+      expected,
+    );
+  }
+  for (const part of document.objects) part.transform.dx += 100;
+  const moved = compileAssetGameplay(document, assets, bounds);
+  for (const receiver of moved.sight_obstacles.filter((o) => o.projection_plane))
+    assert.deepEqual(
+      receiver.projection_plane!.map((p) => p.map(Math.fround)),
+      expected.map(([x, y, z]) => [x! + 100, y, z]),
+    );
+  surface.projectionMaterials!.planePoints[0][2] = 21;
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /anchors must lie/);
+  surface.projectionMaterials!.planePoints = [
+    [0, 0, 20],
+    [0, 0, 20],
+    [0, 0, 20],
+  ];
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /nondegenerate/);
+});
+
 test("rotated copies keep receiving material references local to each placement", () => {
-  const { document, assets } = projectionMaterialCompilerFixture();
+  const { document, assets, hut } = projectionMaterialCompilerFixture();
+  hut.gameplay!.surfaces[0]!.projectionMaterials!.planePoints = [
+    [100, 0, 20],
+    [100, 100, 20],
+    [0, 0, 20],
+  ];
   const group = document.groups[0]!;
   group.transform.rot_deg = 90;
   group.transform.dx = 800;
@@ -897,6 +1686,14 @@ test("rotated copies keep receiving material references local to each placement"
     [[0], [1]],
   );
   assert.notDeepEqual(linked[0]!.projection_area, linked[1]!.projection_area);
+  const anchors = linked.map((receiver) =>
+    receiver.projection_plane!.map((p) => p.map(Math.fround)),
+  );
+  assert.deepEqual(
+    anchors[1],
+    linked[0]!.projection_plane!.map(([x, y, z]) => [x + 600, y, z].map(Math.fround)),
+  );
+  assert.notEqual(anchors[0]![0]![0], anchors[0]![1]![0], "rotation must affect the anchors");
   const [first, second] = compiled.material_sectors!;
   assert.deepEqual(
     second!.polygon.points,
@@ -1005,6 +1802,99 @@ test("movement clearances follow their owner and cannot erase another asset's co
     compileAssetGameplay(document, assets, bounds).motion_data.layers[0]![0]!.obstacles.length,
     1,
   );
+});
+
+test("fractional clearance intersections preserve an integer sloping movement boundary", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.doors = [];
+  gameplay.surfaces = [
+    {
+      id: "slope-edge",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [0, 0],
+        [100, 90],
+        [100, 0],
+      ],
+    },
+  ];
+  gameplay.collision = "none";
+  const expected = compileAssetGameplay(document, assets, bounds).motion_data;
+  gameplay.collision = "parts";
+  gameplay.movementClearances = [
+    {
+      id: "clipped-opening",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [130 / 3, 39],
+        [51, 39],
+        [51, 45.9],
+      ],
+    },
+  ];
+  assert.deepEqual(compileAssetGameplay(document, assets, bounds).motion_data, expected);
+});
+
+test("continuous movement cutouts join before their shared fractional edge is rounded", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const gameplay = hut.gameplay!;
+  gameplay.collision = "none";
+  gameplay.doors = [];
+  gameplay.surfaces = [
+    {
+      id: "floor",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [0, 0],
+        [100, 0],
+        [100, 100],
+        [0, 100],
+      ],
+    },
+  ];
+  const common = { node: "building-999", height: 0, preserveMovementPrecision: true };
+  gameplay.movementBlockers = [
+    {
+      ...common,
+      id: "whole",
+      polygon: [
+        [0, 0],
+        [100, 90],
+        [100, 100],
+        [0, 100],
+      ],
+    },
+  ];
+  const expected = compileAssetGameplay(document, assets, bounds).motion_data;
+  gameplay.movementBlockers = [
+    {
+      ...common,
+      id: "left",
+      polygon: [
+        [0, 0],
+        [45.3, 40.77],
+        [45.3, 100],
+        [0, 100],
+      ],
+    },
+    {
+      ...common,
+      id: "right",
+      polygon: [
+        [45.3, 40.77],
+        [100, 90],
+        [100, 100],
+        [45.3, 100],
+      ],
+    },
+  ];
+  assert.deepEqual(compileAssetGameplay(document, assets, bounds).motion_data, expected);
+  Object.assign(gameplay.movementBlockers[0]!, { preserveMovementPrecision: "yes" });
+  assert.throws(() => compileAssetGameplay(document, assets, bounds), /movement precision/);
 });
 
 test("an enclosed clearance retains a walkable island inside derived collision", () => {
@@ -1414,4 +2304,92 @@ test("interior entrances share a fresh virtual sector independent of motion poly
     duplicated.buildings![0]!.Building.doors[0]!.sector_in,
     duplicated.buildings![1]!.Building.doors[0]!.sector_in,
   );
+});
+
+test("export frame clips sloped navigation and generated receivers without modifying the document", () => {
+  const { document, assets } = slopedAssetCompilerFixture();
+  const before = structuredClone(document);
+  const geometry = compileAssetGameplay(document, assets, [320, 200, 100, 140]);
+  assert.ok(geometry.motion_data.layers.flat().length);
+  for (const area of geometry.motion_data.layers.flat())
+    for (const [x, y] of area.polygon.points)
+      assert.ok(x >= 0 && x <= 100 && y >= 0 && y <= 140, `outside: ${x},${y}`);
+  const receivers = geometry.sight_obstacles.filter((s) => s.projection_area && !s.solid);
+  assert.ok(receivers.length);
+  for (const receiver of receivers)
+    for (const p of receiver.points) {
+      assert.ok(p.x >= 0 && p.x <= 100 && p.y - p.z_top >= 0 && p.y - p.z_top <= 140);
+      assert.ok(Math.abs(p.z_top - (p.x + 20) / 2) < 1e-6);
+    }
+  assert.deepEqual(document, before);
+  assert.match(geometry.warnings!.join("\n"), /clipped to the export frame/);
+});
+
+test("cropping a preserved movement contour cannot retain navigation beyond the image", () => {
+  const { document, assets } = preservedBoundaryCompilerFixture();
+  const geometry = compileAssetGameplay(document, assets, [300, 300, 50, 50]);
+  assert.ok(geometry.motion_data.layers.flat().length);
+  for (const area of geometry.motion_data.layers.flat())
+    for (const [x, y] of area.polygon.points) assert.ok(x >= 0 && x <= 50 && y >= 0 && y <= 50);
+});
+
+test("cropped material regions rebuild ground and physical receiver indices", () => {
+  const { document, assets, hut } = slopedAssetCompilerFixture();
+  hut.gameplay!.materials = [
+    {
+      id: "outside",
+      node: "building-999",
+      material: 5,
+      ground: true,
+      obstacles: ["building-999"],
+      polygon: [
+        [0, 0, 0],
+        [10, 0, 0],
+        [10, 10, 0],
+        [0, 10, 0],
+      ],
+    },
+    {
+      id: "partial",
+      node: "building-999",
+      material: 2,
+      ground: true,
+      obstacles: ["building-999"],
+      polygon: [
+        [10, 0, 0],
+        [100, 70, 0],
+        [100, 100, 0],
+        [10, 100, 0],
+      ],
+    },
+  ];
+  const geometry = compileAssetGameplay(document, assets, [320, 200, 100, 140]);
+  assert.equal(geometry.material_sectors!.length, 1);
+  assert.deepEqual(geometry.sight_material_indices, [0]);
+  assert.deepEqual(geometry.sight_obstacles[0]!.material_indices, [0]);
+  for (const [x, y] of geometry.material_sectors![0]!.polygon.points) {
+    assert.ok(x >= 0 && x <= 100 && y >= 0 && y <= 140);
+    assert.ok(
+      Number.isInteger(x) && Number.isInteger(y),
+      "native material polygons use integer pixels",
+    );
+  }
+});
+
+test("cropped strict exports omit unavailable feature anchors with explicit warnings", () => {
+  for (const fixture of [
+    assetCompilerFixture,
+    jumpAssetCompilerFixture,
+    lightAssetCompilerFixture,
+    liftAssetCompilerFixture,
+    sightTransitionCompilerFixture,
+  ]) {
+    const { document, assets } = fixture();
+    const before = structuredClone(document);
+    const geometry = compileAssetGameplay(document, assets, [0, 0, 320, 330]);
+    assert.match(geometry.warnings!.join("\n"), /omitted/);
+    assert.deepEqual(document, before);
+    for (const area of geometry.motion_data.layers.flat())
+      for (const [x, y] of area.polygon.points) assert.ok(x >= 0 && x <= 320 && y >= 0 && y <= 330);
+  }
 });

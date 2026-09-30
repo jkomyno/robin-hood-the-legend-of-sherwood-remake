@@ -1,19 +1,29 @@
-import { Node, NodeIO } from "@gltf-transform/core";
+import { Node, NodeIO, getBounds } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import { cloneDocument, unpartition } from "@gltf-transform/functions";
 import { assetNodeKey, isIdentity, type Level3D } from "@rle/shared";
 import { canonical, modelContentSignatures } from "./bundle-asset-states.ts";
 import { assertStaticDescriptor, type StaticAssetInput } from "./merge-static-assets.ts";
-import { normalizeStaticAssetModel, verifyStaticParts } from "./static-asset-model.ts";
+import {
+  normalizeStaticAssetModel,
+  verifyStaticParts,
+  writeStaticAssetModel,
+} from "./static-asset-model.ts";
+import {
+  readStaticAssetMetadata,
+  splitStaticAssetMetadata,
+  staticMetadataKeys,
+} from "./static-asset-metadata.ts";
 
-/** Split complete leaf parts, preserving their world geometry in normalized editor frames. */
+/** Split complete owned subtrees, preserving world geometry in normalized editor frames. */
 export async function splitStaticAsset(
   document: Level3D,
   input: StaticAssetInput,
   partitions: { id: string; obstacles: number[] }[],
 ) {
   const { descriptor, model } = input;
-  assertStaticDescriptor(descriptor);
+  assertStaticDescriptor(descriptor, staticMetadataKeys);
+  const metadata = readStaticAssetMetadata(descriptor);
   const ids = new Set(partitions.map((partition) => partition.id));
   if (
     partitions.length < 2 ||
@@ -66,19 +76,24 @@ export async function splitStaticAsset(
   const reachable: Node[] = [];
   scene.traverse((node) => reachable.push(node));
   const partNames = new Set(descriptor.parts.map((part) => part.node));
+  const owned = new Set<Node>();
+  for (const node of reachable)
+    if (partNames.has(node.getName())) node.traverse((child) => owned.add(child));
   if (
     partNames.size !== descriptor.parts.length ||
-    reachable.some((node) => (node.getMesh() && !partNames.has(node.getName())) || node.getCamera())
+    reachable.some((node) => (node.getMesh() && !owned.has(node)) || node.getCamera())
   )
     throw new Error("Split requires every rendered node to be an owned part");
   for (const part of descriptor.parts) {
     const matches = reachable.filter((node) => node.getName() === part.node);
     if (
       matches.length !== 1 ||
-      matches[0]!.listChildren().length ||
       placed.filter((entry) => entry.node === assetNodeKey(descriptor.id, part.node)).length !== 1
     )
-      throw new Error(`Split requires unique leaf parts: ${part.node}`);
+      throw new Error(`Split requires unique parts: ${part.node}`);
+    for (let parent = matches[0]!.getParentNode(); parent; parent = parent.getParentNode())
+      if (partNames.has(parent.getName()))
+        throw new Error(`Split cannot partition nested owned parts: ${part.node}`);
   }
   const proof = await modelContentSignatures(model);
   const result = structuredClone(document);
@@ -95,6 +110,7 @@ export async function splitStaticAsset(
     const keep = new Set<Node>();
     for (const node of copy.getRoot().listNodes())
       if (names.has(node.getName())) {
+        node.traverse((child) => keep.add(child));
         let ancestor: Node | null = node;
         while (ancestor) {
           keep.add(ancestor);
@@ -104,15 +120,20 @@ export async function splitStaticAsset(
     for (const node of copy.getRoot().listNodes()) if (!keep.has(node)) node.dispose();
     await normalizeStaticAssetModel(copy, partition.id, [...names]);
     await copy.transform(unpartition());
-    const bytes = await io.writeBinary(copy);
+    const bytes = await writeStaticAssetModel(io, copy);
     const roundtrip = await io.readBinary(bytes);
     await verifyStaticParts(
       roundtrip,
       [...names],
       [...names].map((name) => proof.nodeData(reachable.find((node) => node.getName() === name)!)),
     );
+    const bounds = getBounds(roundtrip.getRoot().listScenes()[0]!);
     const next = {
       ...structuredClone(descriptor),
+      ...splitStaticAssetMetadata(metadata, names, {
+        min: [bounds.min[0], -bounds.max[2], bounds.min[1]],
+        max: [bounds.max[0], -bounds.min[2], bounds.max[1]],
+      }),
       id: partition.id,
       name: partition.id,
       model: "model.glb",

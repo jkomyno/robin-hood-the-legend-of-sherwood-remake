@@ -3444,6 +3444,11 @@ fn recorded_sim_config_restores_every_authoritative_field() {
     assert!(config.ignore_default_loose);
     assert_eq!(config.amount_of_speaking, 2);
     assert!(config.synchronous_pathfinding);
+    assert_eq!(config.coop.players, 1);
+    assert_eq!(
+        config.coop.control,
+        robin_engine::coop::CharacterControl::Shared
+    );
     assert!(!config.diplomacy);
     assert!(config.npc_faction_wars);
     assert!(!config.more_combat_gestures);

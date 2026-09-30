@@ -1,7 +1,7 @@
 {
   "title": "Non-rendering volume fixture",
   "map_filename": "editor-non-rendering-volume-fixture",
-  "spawn_player": false,
+  "spawn_points": [],
   "walkable_polygon": [
     [
       0,

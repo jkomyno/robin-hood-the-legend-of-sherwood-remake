@@ -225,7 +225,14 @@ def build(recipe, entries):
     out.update(bufferViews=views,accessors=accessors,buffers=[{'byteLength':len(binary)}])
     json_bytes=json.dumps(out,separators=(',',':')).encode();json_bytes+=b' '*((-len(json_bytes))%4);binary+=b'\0'*((-len(binary))%4)
     glb=struct.pack('<4sII',b'glTF',2,12+8+len(json_bytes)+8+len(binary))+struct.pack('<II',len(json_bytes),0x4e4f534a)+json_bytes+struct.pack('<II',len(binary),0x004e4942)+binary
-    folder=STAGE/recipe['id'];folder.mkdir(parents=True,exist_ok=True);(folder/'model.glb').write_bytes(glb)
+    folder=STAGE/recipe['id'];folder.mkdir(parents=True,exist_ok=True)
+    model_path=folder/'model.glb'
+    if not model_path.exists() or model_path.read_bytes()!=glb:
+        # These staged derivatives bind the old model bytes. The publisher
+        # regenerates them after the new source has passed visual review.
+        for name in ('lossy.glb','lossy.glb.receipt.json','preview.glb','preview.glb.receipt.json'):
+            (folder/name).unlink(missing_ok=True)
+    model_path.write_bytes(glb)
     descriptor={'version':1,'kind':'projection-mapped-asset','id':recipe['id'],'name':recipe['name'],'source_map':entry['source_map'],
                 'asset_type':'Wall','tags':['spline-wall','derived-strip'],'model':'model.glb','model_scene':'default','resources':[],
                 'parts':[{'node':'scenery-wall-strip','name':recipe['name'],'scenery':True}],

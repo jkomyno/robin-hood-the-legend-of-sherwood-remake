@@ -1,4 +1,66 @@
 {
+  "sound_sources": [
+    {
+      "source": 1,
+      "owner": "lincoln-west-round-tower",
+      "node": "building-387",
+      "reason": "Attach this tower-footprint emitter to the tower assembly so moving the tower carries its sound independently of the hillside.",
+      "sound": {
+        "id": 30,
+        "active": true,
+        "source_kind": 2,
+        "delayed_params": [
+          250,
+          550,
+          5
+        ],
+        "global": false,
+        "inner_distance": 80,
+        "outer_distance": 250,
+        "polyline": [
+          [
+            379,
+            1559
+          ]
+        ],
+        "inner_volume": 25,
+        "outer_volume": 0,
+        "noise_covering_distance": 0,
+        "altitude": 0,
+        "ambience_filter": 255
+      }
+    },
+    {
+      "source": 13,
+      "owner": "lincoln-great-hall",
+      "node": "building-233",
+      "reason": "Attach this hall-footprint emitter to the hall assembly so its sound follows the building independently of the plateau.",
+      "sound": {
+        "id": 46,
+        "active": true,
+        "source_kind": 2,
+        "delayed_params": [
+          80,
+          110,
+          10
+        ],
+        "global": false,
+        "inner_distance": 80,
+        "outer_distance": 350,
+        "polyline": [
+          [
+            1560,
+            1423
+          ]
+        ],
+        "inner_volume": 50,
+        "outer_volume": 0,
+        "noise_covering_distance": 0,
+        "altitude": 0,
+        "ambience_filter": 4
+      }
+    }
+  ],
   "version": 1,
   "map": "Lincoln",
   "groups": [],

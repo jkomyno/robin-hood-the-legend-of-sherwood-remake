@@ -672,6 +672,17 @@ input.num {
 .object-list li:hover {
   background: #2a2d33;
 }
+.object-list.mission-element-list li { padding: 0; }
+.mission-element-list li button {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 6px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: inherit;
+}
 .object-list li.selected {
   background: #3b4a6b;
 }
@@ -742,6 +753,10 @@ input.num {
 .asset-card { border: 1px solid #354050; border-radius: 8px; overflow: hidden; background: #222a35; min-width: 0; }
 .asset-card[draggable="true"] { cursor: grab; }
 .asset-card:hover { border-color: #80b4c8; }
+.mission-character-choices .asset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mission-character-choices .asset-card { min-width: 0; padding: 0; text-align: left; color: inherit; }
+.mission-character-choices .asset-card[aria-pressed="true"] { border-color: #ddc268; background: #3d3c2e; }
+.mission-character-choices .asset-card:disabled { opacity: 0.6; }
 .asset-preview { position: relative; aspect-ratio: 320 / 220; background: radial-gradient(ellipse at center, #3b485b, #202833); }
 .asset-preview canvas { display: block; width: 100%; height: 100%; }
 .preview-status { position: absolute; inset: 0; display: grid; place-content: center; padding: 8px; text-align: center; font-size: 11px; color: #bdc9d9; overflow: auto; overflow-wrap: anywhere; }
@@ -958,3 +973,77 @@ select, input.search { background: #171c22; border-color: var(--border); min-hei
 .asset-picker-dialog .asset-grid { grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); padding: 0; }
 .asset-picker-dialog small { color: var(--muted); }
 .asset-picker-none { align-self: flex-start; }
+
+.terrain-settings fieldset { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.terrain-settings label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #c3cdd4; }
+.terrain-settings input, .terrain-settings select { width: 100%; box-sizing: border-box; }
+.terrain-settings .spline-coordinates { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+
+.spline-fields:has(> .scrub-number), .spline-coordinates:has(> .scrub-number), .export-fields:has(> .scrub-number) { grid-template-columns: minmax(0, 1fr); }
+.spline-panel .scrub-number .meta-key, .terrain-settings .scrub-number .meta-key { width: auto; flex: 1; }
+.spline-panel .scrub-number input, .terrain-settings .scrub-number input { max-width: 110px; }
+.terrain-settings details .scrub-number { margin-top: 10px; }
+
+/* Path browsing and focused editing share the compact sidebar controls. */
+.spline-panel h3 { margin: 18px 0 8px; font-size: 12px; color: #c3cdd4; }
+.spline-edit-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0; }
+.spline-edit-header span, .spline-list button span { font-size: 11px; color: #a9b7c2; }
+.spline-edit-actions { position: sticky; top: 0; z-index: 2; background: #202830; padding: 8px 0; }
+.spline-edit-actions .spline-primary { flex: 1; background: #315b67; border-color: #5d99a9; }
+.spline-edit-actions button:disabled { opacity: .45; }
+.spline-list button { display: flex; flex-direction: column; gap: 4px; padding: 10px; }
+.spline-settings { border-top: 1px solid #3a4552; margin: 12px 0; padding: 10px 0 0; }
+.spline-settings summary { cursor: pointer; font-size: 12px; color: #c3cdd4; }
+.spline-settings[open] summary { margin-bottom: 12px; }
+.spline-settings label { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; font-size: 12px; }
+.spline-settings label.check { flex-direction: row; }
+
+.camera-directions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.new-map-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.new-map-settings > label:first-child,
+.new-map-settings > .hint {
+  grid-column: 1 / -1;
+}
+.workspace-settings fieldset {
+  display: grid;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+}
+
+.viewport-navigation {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  z-index: 2;
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 6px;
+  background: #171d22dd;
+}
+.viewport-navigation button {
+  min-width: 30px;
+  padding: 5px 8px;
+}
+
+.draw-subtabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #3a4552;
+}
+.draw-subtabs button { flex: 1; }
+.draw-subtabs button[aria-selected="true"] {
+  background: #315b67;
+  border-color: #5d99a9;
+}

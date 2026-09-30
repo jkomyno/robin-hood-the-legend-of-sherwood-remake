@@ -942,6 +942,7 @@ fn corrupt_invalid_and_unreadable_indexes_do_not_reset_existing_saves() {
 }
 
 #[test]
+#[cfg(not(target_arch = "wasm32"))]
 fn incompatible_payload_versions_do_not_block_the_save_store() {
     use autosave_store::{AUTOSAVE_MANIFEST_FILE, AutosaveManifest};
 

@@ -26,6 +26,8 @@ pub mod gameplay_settings;
 pub(crate) use leaderboard::signing as leaderboard_signing;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod bug_report;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod diagnostic_context;
 pub mod localization;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod native_game_identity;
@@ -198,6 +200,7 @@ pub mod cursor;
 #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
 pub mod datadir_locator;
 pub mod distributed_mod;
+pub mod map_appearance;
 pub use distributed_mod::admission::workflow as distributed_mod_admission_common;
 pub use distributed_mod::{
     admission as distributed_mod_admission, cache as distributed_mod_cache,

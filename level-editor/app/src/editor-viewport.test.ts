@@ -2,7 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { gameToScene, parseLevel3D, type GameTransform, type Level3D } from "@rle/shared";
+import {
+  createTerrainGrid,
+  gameToScene,
+  parseLevel3D,
+  type GameTransform,
+  type Level3D,
+} from "@rle/shared";
 import type { Selection } from "./document-commands.ts";
 import { EditorViewport } from "./editor-viewport.ts";
 
@@ -688,6 +694,46 @@ test("asset drops convert the cursor's world ground hit to game coordinates", ()
   viewport.dispose();
 });
 
+test("endpoint family registration reuses existing models and validates every pin before adoption", () => {
+  const { viewport } = fixture();
+  viewport.replaceMap(new THREE.Group(), null, new Map());
+  const primary = {
+    id: "house",
+    descriptor: "3d-assets/house/asset.json",
+    model: "3d-assets/house/model.glb",
+    descriptor_sha256: "a".repeat(64),
+    model_sha256: "b".repeat(64),
+  };
+  const applied = { ...primary, id: "house--state-applied", state_variant: "applied" as const };
+  const first = new THREE.Group(),
+    second = new THREE.Group();
+  const initialNode = new THREE.Group(),
+    appliedNode = new THREE.Group();
+  first.add(initialNode);
+  second.add(appliedNode);
+  const initialKey = "asset:house:building-000",
+    appliedKey = "asset:house--state-applied:building-001";
+  assert.equal(viewport.adoptAsset(primary, first, new Map([[initialKey, initialNode]])), true);
+  const sources = new Map([
+    [initialKey, new THREE.Group()],
+    [appliedKey, appliedNode],
+  ]);
+  assert.throws(
+    () =>
+      viewport.adoptAsset({ ...primary, model_sha256: "c".repeat(64) }, second, sources, [applied]),
+    /changed during/,
+  );
+  assert.equal(second.parent, null);
+  assert.throws(
+    () => viewport.adoptAsset(primary, second, new Map([[initialKey, initialNode]]), [applied]),
+    /no new model nodes/,
+  );
+  assert.equal(second.parent, null);
+  assert.equal(viewport.adoptAsset(primary, second, sources, [applied]), true);
+  assert.equal(viewport.adoptAsset(primary, new THREE.Group(), sources, [applied]), false);
+  viewport.dispose();
+});
+
 test("orthographic ground picking includes visible points behind the ray origin", () => {
   const { viewport, publish } = fixture();
   const document = documentFixture();
@@ -854,5 +900,192 @@ test("incremental edits rebuild changed wall assets and undo restores their geom
   );
   viewport.syncViews(document, false);
   assert.ok(Math.abs(height() - originalHeight) < 1e-5, "Undo restores the prior wall");
+  viewport.dispose();
+});
+
+test("asset placement samples the edited connected terrain mesh", () => {
+  const { viewport, publish } = fixture();
+  const document = {
+    ...documentFixture(),
+    objects: [],
+    groups: [],
+    size: null,
+    terrain: createTerrainGrid([0, 0, 400, 400], 100, 20),
+  };
+  publish(document);
+  const local = gameToScene(document.camera, 200, 200, 20);
+  const target = new THREE.Vector3(local[0], local[2], -local[1]);
+  const camera = new THREE.OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
+  camera.position.copy(target).add(new THREE.Vector3(0, 500, 0));
+  camera.up.set(0, 0, -1);
+  camera.lookAt(target);
+  camera.updateMatrixWorld();
+  Object.assign(viewport, {
+    camera,
+    frustum: 100,
+    container: { clientWidth: 400, clientHeight: 400 },
+    orbit: { target, update() {} },
+    renderer: {
+      domElement: { getBoundingClientRect: () => ({ left: 0, top: 0, width: 400, height: 400 }) },
+    },
+  });
+  const position = viewport.assetDropPosition(200, 200)!;
+  assert.ok(Math.abs(position[2] - 20) < 1e-4, `expected terrain height, got ${position}`);
+  assert.ok(Math.abs(position[0] - 200) < 1e-4);
+  const bounds = viewport.fitExportBounds();
+  assert.ok(bounds[2] >= 401);
+  Object.assign(viewport, { renderer: null, orbit: null });
+  viewport.dispose();
+});
+
+test("grid editing uses its own handles and leaves the asset gizmo detached", () => {
+  const { viewport, publish } = fixture();
+  const grid = createTerrainGrid([100, 100, 200, 200], 100, 40);
+  const document = { ...documentFixture(), objects: [], groups: [], terrain: grid };
+  publish(document);
+  let attached: THREE.Object3D | null = null;
+  const gizmo = {
+    dragging: false,
+    showY: false,
+    attach: (node: THREE.Object3D) => {
+      attached = node;
+    },
+    detach: () => {
+      attached = null;
+    },
+  };
+  Object.assign(viewport, { gizmo });
+  viewport.setTerrainEdit({ grid, camera: document.camera, commit: () => {} });
+  assert.equal(attached, null);
+  assert.equal(gizmo.showY, false);
+  const edited = {
+    ...grid,
+    vertices: grid.vertices.map((vertex) => ({
+      ...vertex,
+      position: [vertex.position[0], vertex.position[1], 90] as [number, number, number],
+    })),
+  };
+  viewport.previewTerrain(edited);
+  const terrain = (viewport as unknown as { terrain: { root: THREE.Group } }).terrain.root;
+  const box = new THREE.Box3().setFromObject(terrain);
+  assert.ok(Math.abs(box.min.y - 90 / Math.cos((35 * Math.PI) / 180)) < 0.001);
+  viewport.previewTerrain(null);
+  viewport.setTerrainEdit(null);
+  Object.assign(viewport, { gizmo: null });
+  viewport.dispose();
+});
+
+test("cardinal and top camera controls preserve target, zoom and lens through quarter turns", () => {
+  const { viewport } = fixture();
+  const camera = new THREE.OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
+  const target = new THREE.Vector3(400, 50, -200);
+  camera.position.copy(target).add(new THREE.Vector3(100, 200, 300));
+  camera.lookAt(target);
+  camera.zoom = 2.5;
+  const orbit = new OrbitControls(camera);
+  orbit.target.copy(target);
+  Object.assign(viewport, { camera, orbit, frustum: 125, perspective: 30 });
+  viewport.topView();
+  const initialRotation = camera.quaternion.clone();
+  const flight = viewport as unknown as {
+    flight: { start: number; ms: number } | null;
+    stepFlight(): void;
+  };
+  viewport.setCardinalView("E");
+  assert.ok(
+    camera.quaternion.angleTo(initialRotation) < 1e-7,
+    "cardinal click does not snap the camera",
+  );
+  assert.equal(orbit.enabled, false);
+  assert.equal(flight.flight?.ms, 700, "uses the game-camera transition duration");
+  flight.flight!.start = performance.now() - 350;
+  flight.stepFlight();
+  assert.ok(
+    camera.quaternion.angleTo(initialRotation) > 0.1,
+    "rotation advances during the transition",
+  );
+  assert.ok(flight.flight, "transition remains active halfway through");
+  flight.flight!.start = performance.now() - 701;
+  flight.stepFlight();
+  assert.equal(flight.flight, null);
+  assert.equal(orbit.enabled, true);
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+  assert.ok(up.x > 0.999999, "east appears at the top in top view");
+  assert.ok(camera.getWorldDirection(new THREE.Vector3()).y < -0.999999);
+  for (const turn of [1, -1]) {
+    const before = camera.quaternion.clone();
+    viewport.rotateViewQuarterTurn(turn);
+    assert.ok(camera.quaternion.angleTo(before) < 1e-7, "quarter-turn click does not snap");
+    assert.equal(flight.flight?.ms, 700);
+    flight.flight!.start = performance.now() - 701;
+    flight.stepFlight();
+    assert.ok(Math.abs(camera.quaternion.angleTo(before) - Math.PI / 2) < 1e-6);
+  }
+  assert.ok(new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).distanceTo(up) < 1e-6);
+  assert.deepEqual(orbit.target.toArray(), target.toArray());
+  assert.equal(camera.zoom, 2.5);
+  assert.equal((viewport as unknown as { perspective: number }).perspective, 30);
+  assert.equal((viewport as unknown as { frustum: number }).frustum, 125);
+  Object.assign(viewport, { camera: null, orbit: null });
+  viewport.dispose();
+});
+
+test("asset drag previews follow the slope without mutating the saved height", () => {
+  const { viewport, publish } = fixture();
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  const source = new THREE.Group();
+  source.add(mesh);
+  viewport.replaceMap(source, null, new Map([["building-000", mesh]]));
+  const terrain = createTerrainGrid([0, 0, 400, 400], 100, 0);
+  terrain.vertices.forEach((vertex) => {
+    vertex.position[2] = vertex.position[0] / 2;
+  });
+  const document = { ...documentFixture(), terrain };
+  publish(document);
+  viewport.select({ kind: "group", id: "house" });
+  const internals = viewport as unknown as {
+    groupViews: Map<string, { wrapper: THREE.Object3D }>;
+    previewTerrainFollowing(view: unknown): void;
+  };
+  const view = internals.groupViews.get("house")!;
+  for (let repeat = 0; repeat < 2; repeat++) {
+    viewport.syncViews(document, false);
+    view.wrapper.position.x += 100;
+    internals.previewTerrainFollowing(view);
+    assert.ok(Math.abs(view.wrapper.position.z - 50 / Math.cos((35 * Math.PI) / 180)) < 1e-8);
+  }
+  assert.equal(document.groups[0]!.transform.dz, 0);
+  viewport.dispose();
+});
+
+test("channel previews move attached assets and cancellation restores the committed surface", () => {
+  const { viewport, publish } = fixture();
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+  const source = new THREE.Group();
+  source.add(mesh);
+  viewport.replaceMap(source, null, new Map([["building-000", mesh]]));
+  const document = { ...documentFixture(), terrain: createTerrainGrid([0, 0, 400, 400], 100, 0) };
+  publish(document);
+  const river: import("@rle/shared").LevelSpline = {
+    id: "river",
+    name: "River",
+    kind: "river",
+    points: [
+      [0, 20 + 13 / 3, 0],
+      [100, 20 + 13 / 3, 0],
+    ],
+    width: 60,
+    closed: false,
+    repeatLength: 32,
+    channel: { enabled: true, bedDepth: 20, bankSlope: 1 },
+  };
+  const view = (
+    viewport as unknown as { groupViews: Map<string, { wrapper: THREE.Object3D }> }
+  ).groupViews.get("house")!;
+  viewport.previewSpline(river);
+  assert.ok(Math.abs(view.wrapper.position.z + 20 / Math.cos((35 * Math.PI) / 180)) < 1e-6);
+  assert.equal(document.groups[0]!.transform.dz, 0);
+  viewport.setSplineEdit(null);
+  assert.equal(view.wrapper.position.z, 0);
   viewport.dispose();
 });

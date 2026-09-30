@@ -56,10 +56,13 @@ use super::*;
 // remain v9: their layout is unchanged (no ResourceManager values); their
 // RLE image atlases and raw maps carry AVIF bytes, which only a v18 datadir
 // references.
-pub(super) const SHIPPING_DATADIR_MAGIC: [u8; 8] = *b"RHDDNA18";
-pub(super) const SHIPPING_MISSION_MAGIC: [u8; 8] = *b"RHMISN09";
-pub const SHIPPING_DATADIR_VERSION: u32 = 18;
-pub const SHIPPING_MISSION_VERSION: u32 = 9;
+// Datadir v19 / mission v10: raw sight obstacles carry optional ordered
+// receiving-plane anchors. Loaded levels occur in both payloads, changing
+// their bitcode layouts even when the optional anchors are absent.
+pub(super) const SHIPPING_DATADIR_MAGIC: [u8; 8] = *b"RHDDNA19";
+pub(super) const SHIPPING_MISSION_MAGIC: [u8; 8] = *b"RHMISN10";
+pub const SHIPPING_DATADIR_VERSION: u32 = 19;
+pub const SHIPPING_MISSION_VERSION: u32 = 10;
 
 /// Encode the versioned native-bitcode payload stored inside `datadir.bin`.
 pub fn encode_native(datadir: &ShippingDatadir) -> Vec<u8> {

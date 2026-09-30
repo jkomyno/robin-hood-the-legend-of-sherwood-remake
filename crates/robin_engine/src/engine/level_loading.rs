@@ -1175,6 +1175,22 @@ pub struct PreDecodedBackground {
     /// Values are normalized u16 map-ground Y; zero means no reconstructed
     /// surface at that pixel.
     pub occlusion_depth: Option<Vec<u16>>,
+    /// Disjoint rendered regions controlled by the map's native patch indices.
+    pub appearance_regions: Vec<BackgroundAppearanceRegion>,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct BackgroundAppearanceRegion {
+    pub bounds: [u16; 4],
+    pub patches: Vec<u16>,
+    /// Complete combination table, with patch i represented by bit i.
+    pub states: Vec<BackgroundAppearancePixels>,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct BackgroundAppearancePixels {
+    pub color: Vec<u16>,
+    pub depth: Vec<u16>,
 }
 
 /// CPU-decoded minimap ready for GPU upload.  See [`PreDecodedBackground`].

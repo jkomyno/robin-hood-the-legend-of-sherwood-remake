@@ -1,10 +1,7 @@
-import type { MultiPolygon, Polygon } from "polygon-clipping";
-import {
-  recoveryClipping as clipping,
-  recoveryPolygonBoolean,
-} from "./recovery-polygon-boolean.ts";
+import preciseClipping, { type MultiPolygon, type Polygon } from "polygon-clipping";
+import { recoveryClipping } from "./recovery-polygon-boolean.ts";
 import type { Point } from "@rle/shared";
-import { quantizeRecoveredMotion } from "./quantize-recovered-motion.ts";
+import { simplifyMotionRing } from "../../shared/src/motion-quantization.ts";
 
 export const closedPolygon = (points: Point[]): Polygon => [[...points, points[0]!]];
 export function polygonArea(regions: MultiPolygon): number {
@@ -28,13 +25,22 @@ export function polygonArea(regions: MultiPolygon): number {
 export function recoverGroundGameplay(
   areas: { polygon: { points: Point[] }; obstacles: { polygon: { points: Point[] } }[] }[],
   owners: { asset: string; node: string; footprint: Point[] }[],
+  preserveBoundary = false,
+  preserveOwnershipIntersections = false,
 ) {
   if (!areas.length) throw new Error("No authored ground movement regions");
+  if (preserveOwnershipIntersections && !preserveBoundary)
+    throw new Error("Precise ownership intersections require preserved movement boundaries");
+  // Keep ownership seams on the same edges until their fragments are reassembled.
+  // Repeated grid rounding during extraction can move an intersection along an edge.
   const warnings: string[] = [];
-  const normalize = (regions: MultiPolygon, label: string) =>
-    quantizeRecoveredMotion(regions, label, warnings, (rounded) =>
-      recoveryPolygonBoolean("union", rounded, [], 1),
-    );
+  const clipping = preserveOwnershipIntersections ? preciseClipping : recoveryClipping;
+  const clean = (regions: MultiPolygon): MultiPolygon =>
+    regions.flatMap((region) => {
+      const rings = region.map((ring) => simplifyMotionRing(ring, 2 / 1048576));
+      if (rings[0]!.length < 3) return [];
+      return [rings.filter((ring) => ring.length >= 3).map((ring) => [...ring, ring[0]!])];
+    });
   const areaFree = areas.map((area) => {
     const boundary = closedPolygon(area.polygon.points);
     const holes = area.obstacles.map((o) => closedPolygon(o.polygon.points));
@@ -45,17 +51,59 @@ export function recoverGroundGameplay(
   const walkable = clipping.union(free[0]!, ...free.slice(1));
   const boundaries = areas.map((area) => closedPolygon(area.polygon.points));
   const envelope = clipping.union(boundaries[0]!, ...boundaries.slice(1));
+  const authoredExclusions = areas.flatMap((area) =>
+    area.obstacles.map((o) => closedPolygon(o.polygon.points)),
+  );
+  const excludedCoverage = authoredExclusions.length
+    ? clipping.difference(
+        clipping.union(authoredExclusions[0]!, ...authoredExclusions.slice(1)),
+        walkable,
+      )
+    : [];
+  const contours = preserveBoundary
+    ? areas.flatMap((area, areaIndex) =>
+        area.obstacles.map((obstacle, obstacleIndex) => ({
+          id: `ground-section-${areaIndex}/exclusion-${obstacleIndex}`,
+          areaIndex,
+          polygon: closedPolygon(obstacle.polygon.points),
+          excluded: clipping.difference(closedPolygon(obstacle.polygon.points), walkable),
+        })),
+      )
+    : [];
   // Only recover the excluded portion of an asset footprint. Sight geometry
   // and movement contours are not interchangeable: replacing one with the
   // other would change clearances even at the unchanged placement.
   const blockers = owners.flatMap((owner) => {
     // Disconnected ground sectors must not claim unrelated assets elsewhere on the map.
     if (!clipping.intersection(closedPolygon(owner.footprint), envelope).length) return [];
-    const regions = normalize(
-      clipping.difference(closedPolygon(owner.footprint), walkable),
-      `${owner.asset}/${owner.node} ground blocker`,
+    const regions = clean(
+      preserveBoundary
+        ? clipping.intersection(closedPolygon(owner.footprint), excludedCoverage)
+        : clipping.difference(closedPolygon(owner.footprint), walkable),
     );
-    return regions.length ? [{ asset: owner.asset, node: owner.node, regions }] : [];
+    // An empty authored result is meaningful: omitting it would enable derived
+    // part collision again, including on the asset's elevated surfaces.
+    return regions.length || preserveBoundary
+      ? [
+          {
+            asset: owner.asset,
+            node: owner.node,
+            regions,
+            ...(preserveBoundary
+              ? {
+                  contours: contours
+                    .map((contour) => ({
+                      id: contour.id,
+                      regions: clean(
+                        clipping.intersection(closedPolygon(owner.footprint), contour.excluded),
+                      ),
+                    }))
+                    .filter((contour) => contour.regions.length),
+                }
+              : {}),
+          },
+        ]
+      : [];
   });
   const additions = blockers.flatMap((b) => b.regions);
   const excluded = additions.length ? clipping.union(additions[0]!, ...additions.slice(1)) : [];
@@ -65,15 +113,45 @@ export function recoverGroundGameplay(
   // This avoids rejoining coincident fractional boundaries before clipping them.
   const sections = areas.map((area, index) => {
     const boundary = closedPolygon(area.polygon.points);
-    const holes = clipping.difference(boundary, areaFree[index]!);
+    // Keep the authored exclusions. Reconstructing their complement from an
+    // already clipped free-space polygon can erase narrow corridors at shared edges.
+    const authoredHoles = area.obstacles.map((obstacle) => closedPolygon(obstacle.polygon.points));
+    const holes = authoredHoles.length
+      ? clipping.intersection(
+          boundary,
+          clipping.union(authoredHoles[0]!, ...authoredHoles.slice(1)),
+        )
+      : [];
     const remaining = excluded.length ? clipping.difference(holes, excluded) : holes;
-    const terrain = normalize(
-      remaining.length ? clipping.difference(boundary, remaining) : [boundary],
-      `Recovered ground section ${index}`,
+    const completeHoles = authoredHoles.length
+      ? clipping.union(authoredHoles[0]!, ...authoredHoles.slice(1))
+      : [];
+    const movementObstacles = clean(
+      excluded.length ? clipping.difference(completeHoles, excluded) : completeHoles,
     );
+    const terrain = clean(remaining.length ? clipping.difference(boundary, remaining) : [boundary]);
     const reconstructed = excluded.length ? clipping.difference(terrain, excluded) : terrain;
+    const movementContours = contours
+      .filter((contour) => contour.areaIndex === index)
+      .map((contour) => {
+        const owned = blockers.flatMap(
+          (blocker) =>
+            blocker.contours?.filter((c) => c.id === contour.id).flatMap((c) => c.regions) ?? [],
+        );
+        return {
+          id: contour.id,
+          regions: clean(
+            owned.length
+              ? clipping.difference(contour.polygon, clipping.union(owned))
+              : [contour.polygon],
+          ),
+        };
+      });
     return {
       navigationRegion: `ground-section-${index}`,
+      movementBoundary: area.polygon.points,
+      movementObstacles,
+      movementContours,
       terrain,
       differenceArea: polygonArea(clipping.xor(areaFree[index]!, reconstructed)),
     };
@@ -86,7 +164,7 @@ export function recoverGroundGameplay(
     sections,
     blockers,
     warnings,
-    coordinateGrid: 1,
+    coordinateGrid: 1 / 1048576,
     sourceArea: polygonArea(walkable),
     reconstructedArea: polygonArea(reconstructed),
     differenceArea: polygonArea(difference),

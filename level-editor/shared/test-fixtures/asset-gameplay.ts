@@ -1,5 +1,125 @@
 import type { GameplayAssetDescriptor } from "../src/asset-gameplay.ts";
 import { IDENTITY_TRANSFORM, type Level3D, type Level3DObject } from "../src/level3d.ts";
+import type { MaskTriangle } from "../src/compile-mask-geometry.ts";
+
+export function preservedBoundaryCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const g = fixture.hut.gameplay!;
+  g.collision = "none";
+  g.doors = [];
+  g.surfaces = [
+    {
+      id: "ground",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [0, 0],
+        [100, 0],
+        [100, 70],
+      ],
+      navigationRegion: "ground",
+      preserveMovementBoundary: true,
+    },
+  ];
+  g.movementBlockers = [
+    {
+      id: "crossing-wall",
+      node: "building-999",
+      height: 0,
+      polygon: [
+        [0, -10],
+        [110, -10],
+        [110, 76],
+        [0, -1],
+      ],
+    },
+  ];
+  return fixture;
+}
+
+export function preservedContoursCompilerFixture() {
+  const fixture = preservedBoundaryCompilerFixture();
+  const surface = fixture.hut.gameplay!.surfaces[0]!;
+  surface.polygon = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ];
+  surface.holes = [
+    [
+      [0, 0],
+      [100, 0],
+      [0, 71],
+    ],
+  ];
+  surface.holeContours = ["assembly/slope"];
+  const wall = fixture.hut.gameplay!.movementBlockers![0]!;
+  wall.polygon = [
+    [40, -10],
+    [60, -10],
+    [60, 100],
+    [40, 100],
+  ];
+  wall.movementContour = "assembly/wall";
+  return fixture;
+}
+
+export function maskAssetCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const g = fixture.hut.gameplay!;
+  const vertices: [number, number, number][] = [
+    [40, 40, 0],
+    [50, 40, 0],
+    [50, 50, 0],
+    [40, 50, 0],
+    [40, 40, 30],
+    [50, 40, 30],
+    [50, 50, 30],
+    [40, 50, 30],
+  ];
+  const triangles = [
+    [0, 1, 2, 3],
+    [4, 5, 6, 7],
+    [0, 1, 5, 4],
+    [1, 2, 6, 5],
+    [2, 3, 7, 6],
+    [3, 0, 4, 7],
+  ].flatMap(([a, b, c, d]): MaskTriangle[] => [
+    [vertices[a!]!, vertices[b!]!, vertices[c!]!],
+    [vertices[a!]!, vertices[c!]!, vertices[d!]!],
+  ]);
+  const initial = {
+    id: "covered",
+    node: "building-999",
+    triangles,
+    anchor: [45, 45, 0] as [number, number, number],
+    view: true,
+    characterBoundary: vertices.slice(0, 4),
+    obstacles: ["building-999"],
+  };
+  g.masks = [
+    initial,
+    { ...structuredClone(initial), id: "revealed", triangles: triangles.slice(0, 2) },
+  ];
+  g.movementTransitions = [
+    {
+      id: "cover-state",
+      node: "building-999",
+      waypoint: [45, 45, 0],
+      active: true,
+      definitive: false,
+      initial: [],
+      applied: [],
+      initialMasks: ["covered"],
+      appliedMasks: ["revealed"],
+      applyPolygon: [],
+      noApplyPolygon: [],
+    },
+  ];
+  fixture.document.map = "Asset mask fixture";
+  return fixture;
+}
 
 export function navigationRegionCompilerFixture() {
   const fixture = assetCompilerFixture();
@@ -197,6 +317,96 @@ export function sightTransitionCompilerFixture() {
   return fixture;
 }
 
+export function preservedStateBoundaryCompilerFixture() {
+  const fixture = preservedBoundaryCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  gameplay.movementTransitions = [
+    {
+      id: "crossing-state",
+      node: "building-999",
+      waypoint: [99, 69, 0],
+      active: true,
+      definitive: false,
+      initial: gameplay.movementBlockers!,
+      applied: [],
+      applyPolygon: [],
+      noApplyPolygon: [],
+    },
+  ];
+  gameplay.movementBlockers = [];
+  return fixture;
+}
+
+export function appearanceOnlyCompilerFixture() {
+  const fixture = movementTransitionCompilerFixture();
+  const transition = fixture.hut.gameplay!.movementTransitions![0]!;
+  transition.initial = [];
+  transition.applied = [];
+  transition.appearances = ["roof"];
+  return fixture;
+}
+
+export function endpointAppearanceCompilerFixture() {
+  const fixture = appearanceOnlyCompilerFixture();
+  const { hut, document, assets } = fixture;
+  hut.gameplay!.movementTransitions![0]!.appearances = ["state"];
+  const applied: GameplayAssetDescriptor["parts"][number] = {
+    node: "scenery-open",
+    name: "Applied roof",
+    scenery: true,
+  };
+  hut.state_variants = {
+    initial: { name: "Initial", model: hut.model, parts: hut.parts },
+    applied: { name: "Applied", model: hut.model, parts: [applied] },
+  };
+  const alias = `${hut.id}--state-applied`;
+  assets.set(alias, { ...hut, id: alias, parts: [applied] });
+  document.assetSources!.push({
+    ...document.assetSources![0]!,
+    id: alias,
+    state_variant: "applied",
+  });
+  const body = document.objects[0]!;
+  document.objects.push({
+    id: "hut-a-open",
+    node: `asset:${alias}:scenery-open`,
+    group: body.group,
+    kind: "scenery",
+    source: { map: "ignored" },
+    transform: { ...body.transform },
+  });
+  document.groups[0]!.patches = { hut: { state: "preview-bridge" } };
+  return { ...fixture, alias };
+}
+
+export function joinedTransitionCompilerFixture() {
+  const fixture = sightTransitionCompilerFixture();
+  const { hut, document, assets } = fixture;
+  const transition = hut.gameplay!.movementTransitions![0]!;
+  transition.appearances = ["roof"];
+  transition.join = { key: "hall-roof", point: [...transition.waypoint] };
+  const wing = structuredClone(hut);
+  wing.id = "wing";
+  const wingTransition = wing.gameplay!.movementTransitions![0]!;
+  wingTransition.waypoint[0] -= 500;
+  wingTransition.join!.point[0] -= 500;
+  assets.set(wing.id, wing);
+  document.assetSources!.push({ ...document.assetSources![0]!, id: wing.id });
+  const part = structuredClone(document.objects[0]!);
+  part.id = "wing-body";
+  part.group = "wing";
+  part.node = "asset:wing:building-999";
+  part.transform.dx += 500;
+  document.objects.push(part);
+  document.groups[0]!.patches = { hut: { roof: "preview-roof" } };
+  document.groups.push({
+    id: "wing",
+    transform: { ...IDENTITY_TRANSFORM },
+    patches: { wing: { roof: "preview-roof" } },
+  });
+  return { ...fixture, wing, wingPart: part };
+}
+
 export function movementTransitionCompilerFixture() {
   const fixture = assetCompilerFixture();
   fixture.hut.gameplay!.movementBlockers = [];
@@ -320,6 +530,146 @@ export function projectionMaterialCompilerFixture() {
       [-50, 150],
     ],
   });
+  return fixture;
+}
+
+export function projectionVolumeCompilerFixture() {
+  const fixture = projectionMaterialCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  const surface = gameplay.surfaces[0]!;
+  delete surface.projectionMaterials;
+  surface.projectionVolume = "platform-volume";
+  gameplay.volumes = [
+    {
+      id: "platform-volume",
+      node: surface.node,
+      shape: {
+        points: surface.polygon.map(([x, y]) => ({ x, y, z_bottom: 15, z_top: 20 })),
+        solid: true,
+        opaque: true,
+        mouse: true,
+        show_shadow_polygon: true,
+        default_material: 2,
+      },
+    },
+  ];
+  gameplay.materials![0]!.obstacles = ["platform-volume"];
+  gameplay.movementSolids = [];
+  gameplay.movementTransitions = [
+    {
+      id: "platform-state",
+      node: surface.node,
+      waypoint: [50, 50, 20],
+      active: true,
+      definitive: false,
+      initial: [],
+      applied: [],
+      initialSight: [],
+      appliedSight: ["platform-volume"],
+      applyPolygon: [],
+      noApplyPolygon: [],
+    },
+  ];
+  return fixture;
+}
+
+export function anchoredReceiverCompilerFixture() {
+  const fixture = assetCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  gameplay.surfaces = [];
+  gameplay.doors = [];
+  gameplay.movementBlockers = [];
+  const part = fixture.hut.parts[0]!;
+  part.obstacle_local_game!.points = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ].map(([x, y]) => ({
+    x: x!,
+    y: y!,
+    z_bottom: -10,
+    z_top: x! / 2,
+  }));
+  gameplay.projectionReceivers = [
+    {
+      id: "slope-receiver",
+      node: part.node,
+      volume: part.node,
+      anchor: [50, 50, 0],
+    },
+  ];
+  fixture.assets.get("marker")!.gameplay!.surfaces = [
+    {
+      id: "ground",
+      node: "scenery-marker",
+      height: 0,
+      polygon: [
+        [-100, -100],
+        [250, -100],
+        [250, 250],
+        [-100, 250],
+      ],
+      navigationRegion: "ground",
+      preserveMovementBoundary: true,
+    },
+  ];
+  return fixture;
+}
+
+export function receivingIslandCompilerFixture() {
+  const fixture = projectionVolumeCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  gameplay.surfaces[0]!.holes = [
+    [
+      [20, 20],
+      [80, 20],
+      [80, 80],
+      [20, 80],
+    ],
+  ];
+  gameplay.surfaces[1]!.polygon = [
+    [30, 30],
+    [70, 30],
+    [70, 70],
+    [30, 70],
+  ];
+  gameplay.movementTransitions![0]!.waypoint = [10, 10, 20];
+  return fixture;
+}
+
+export function receivingGapCompilerFixture() {
+  const fixture = projectionMaterialCompilerFixture();
+  const gameplay = fixture.hut.gameplay!;
+  const ground = gameplay.surfaces[2]!;
+  gameplay.materials = [];
+  gameplay.surfaces = [
+    [0, 0, 100, 20],
+    [0, 80, 100, 100],
+    [0, 20, 20, 80],
+    [80, 20, 100, 80],
+  ].map(([x0, y0, x1, y1], index) => ({
+    id: `platform-edge-${index}`,
+    node: "building-999",
+    height: 20,
+    polygon: [
+      [x0!, y0!],
+      [x1!, y0!],
+      [x1!, y1!],
+      [x0!, y1!],
+    ],
+    projectionMaterials: {
+      defaultMaterial: 2,
+      regions: [],
+      planePoints: [
+        [100, 0, 20],
+        [100, 100, 20],
+        [0, 0, 20],
+      ],
+    },
+  }));
+  gameplay.surfaces.push(ground);
+  fixture.document.map = "Receiving gap fixture";
   return fixture;
 }
 
@@ -601,6 +951,47 @@ export function liftAssetCompilerFixture() {
     },
   ];
   fixture.document.map = "Lift asset fixture";
+  return fixture;
+}
+
+export function liftLightCompilerFixture() {
+  const fixture = liftAssetCompilerFixture();
+  const surface = fixture.hut.gameplay!.surfaces.find(
+    (surface) => surface.id === "stairs-surface",
+  )!;
+  fixture.hut.gameplay!.lights = [
+    {
+      id: "night-stair-shadow",
+      node: surface.node,
+      ambiences: 2,
+      polygon: surface.polygon.map(([x, y], index) => [
+        x,
+        y,
+        typeof surface.height === "number" ? surface.height : surface.height[index]!,
+      ]),
+    },
+  ];
+  return fixture;
+}
+
+export function joinedNavigationCompilerFixture() {
+  const fixture = compoundLiftCompilerFixture();
+  for (const asset of [fixture.hut, fixture.upper]) {
+    const gameplay = asset.gameplay!;
+    const surface = gameplay.surfaces.find((s) => s.id === gameplay.lifts![0]!.surface)!;
+    surface.navigationRegion = "roof";
+    surface.navigationJoins = [
+      [
+        [100, 0, 40],
+        [100, 100, 40],
+      ],
+    ];
+    gameplay.surfaces = [surface];
+    gameplay.collision = "none";
+    gameplay.lifts = [];
+    gameplay.doors = [];
+  }
+  fixture.document.map = "Multi-plane navigation fixture";
   return fixture;
 }
 

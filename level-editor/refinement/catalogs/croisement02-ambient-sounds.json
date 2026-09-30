@@ -1,0 +1,60 @@
+{
+  "source_sha256": "12ce603eaeaafd4ec5a27ab5ec330b3e55f5065251dfaba9f190675294e15aa7",
+  "entries": [
+    {
+      "source": 0,
+      "id": "croisement02-northeast-ambient-zone",
+      "name": "Croisement02 northeast ambient zone",
+      "origin": [
+        1791,
+        198,
+        0
+      ],
+      "review": "Independent environmental acoustic region; retain the complete emitter geometry and timing in its own movable local frame."
+    },
+    {
+      "source": 1,
+      "id": "croisement02-east-ambient-zone",
+      "name": "Croisement02 east ambient zone",
+      "origin": [
+        1856,
+        796,
+        0
+      ],
+      "review": "Independent environmental acoustic region; retain the complete emitter geometry and timing in its own movable local frame."
+    },
+    {
+      "source": 2,
+      "id": "croisement02-southeast-ambient-zone",
+      "name": "Croisement02 southeast ambient zone",
+      "origin": [
+        1810,
+        981,
+        0
+      ],
+      "review": "Independent environmental acoustic region; retain the complete emitter geometry and timing in its own movable local frame."
+    },
+    {
+      "source": 3,
+      "id": "croisement02-central-line-ambient-zone",
+      "name": "Croisement02 central line ambient zone",
+      "origin": [
+        1008,
+        599,
+        0
+      ],
+      "review": "Independent environmental acoustic region; retain the complete emitter geometry and timing in its own movable local frame."
+    },
+    {
+      "source": 5,
+      "id": "croisement02-southwest-line-ambient-zone",
+      "name": "Croisement02 southwest line ambient zone",
+      "origin": [
+        78,
+        894,
+        0
+      ],
+      "review": "Independent environmental acoustic region; retain the complete emitter geometry and timing in its own movable local frame."
+    }
+  ]
+}

@@ -1,39 +1,41 @@
+import { terrainTexture, terrainMaterialTexture } from "./terrain-texture.ts";
 import * as THREE from "three";
 import { excludedCornerAssetIds } from "./spline-corners.ts";
-import { gameToScene, type LevelSpline, type MapCamera } from "@rle/shared";
+import { terrainSplineCurve, gameToScene, type LevelSpline, type MapCamera } from "@rle/shared";
+import { sampleSpline, splineMaterialWeightsAt } from "../../shared/src/spline-sampling.ts";
+import { roadGeometry } from "./road-geometry.ts";
+import type { Level3D } from "@rle/shared";
 
-export function splineCurve(path: LevelSpline, camera: MapCamera) {
-  const curve = new THREE.CatmullRomCurve3(
-    path.points.map((point) => new THREE.Vector3(...gameToScene(camera, ...point))),
-    path.closed,
-    "centripetal",
-  );
-  curve.arcLengthDivisions = Math.max(256, path.points.length * 40);
-  curve.updateArcLengths();
-  return curve;
-}
+export const splineCurve = terrainSplineCurve;
 
-export function riverGeometry(path: LevelSpline, camera: MapCamera) {
-  const curve = splineCurve(path, camera),
-    length = curve.getLength();
-  const count = Math.min(4096, Math.max(8, Math.ceil(length / 12)));
+export function riverGeometry(path: LevelSpline, camera: MapCamera, document?: Level3D) {
+  if (document && path.kind === "road") return roadGeometry(path, camera, document);
+  const samples = sampleSpline(path, camera);
+  const count = samples.length - 1;
   const positions: number[] = [],
     uvs: number[] = [],
     indices: number[] = [];
+  const columns = 1;
   for (let i = 0; i <= count; i++) {
-    const t = i / count,
-      p = curve.getPointAt(t),
-      tangent = curve.getTangentAt(t);
+    const sample = samples[i]!,
+      p = sample.position,
+      tangent = sample.tangent;
     const normal = new THREE.Vector3(-tangent.y, tangent.x, 0)
       .normalize()
-      .multiplyScalar(path.width / 2);
-    for (const sign of [-1, 1]) {
-      positions.push(p.x + sign * normal.x, p.y + sign * normal.y, p.z + 0.8);
-      uvs.push((sign + 1) / 2, (t * length) / path.repeatLength);
+      .multiplyScalar(sample.width / 2);
+    for (let column = 0; column <= columns; column++) {
+      const sign = (column / columns) * 2 - 1;
+      const x = p.x + sign * normal.x,
+        y = p.y + sign * normal.y;
+      positions.push(x, y, p.z + 0.8);
+      uvs.push(column / columns, sample.distance / path.repeatLength);
     }
     if (i < count) {
-      const a = i * 2;
-      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      for (let column = 0; column < columns; column++) {
+        const a = i * (columns + 1) + column,
+          b = a + columns + 1;
+        indices.push(a, a + 1, b, a + 1, b + 1, b);
+      }
     }
   }
   const geometry = new THREE.BufferGeometry();
@@ -44,42 +46,21 @@ export function riverGeometry(path: LevelSpline, camera: MapCamera) {
   return geometry;
 }
 
-/** A small seamless river tile; custom semi-tileable art can replace it. */
+/** Synthesized surface art with feathered ribbon edges. */
 export function defaultRiverTexture(road = false) {
-  const width = 128,
-    height = 256,
-    data = new Uint8Array(width * height * 4);
-  for (let y = 0; y < height; y++)
-    for (let x = 0; x < width; x++) {
-      const u = x / (width - 1),
-        v = y / height;
-      const bank = Math.pow(Math.abs(u * 2 - 1), 10);
-      const wave =
-        Math.sin(v * Math.PI * 14 + Math.sin(u * 17) * 2) * Math.sin(v * Math.PI * 6 + u * 24);
-      const foam = Math.pow(Math.max(0, Math.sin(v * Math.PI * 22 + u * 15)), 20) * (1 - bank);
-      const i = (y * width + x) * 4;
-      data[i] = 63 + bank * 58 + wave * 5 + foam * 12;
-      data[i + 1] = 94 + bank * 19 + wave * 7 + foam * 15;
-      data[i + 2] = 91 - bank * 21 + wave * 7 + foam * 15;
-      if (road) {
-        const grain = Math.sin(x * 73.1 + y * 91.7) * 7;
-        data[i] = 139 + grain;
-        data[i + 1] = 121 + grain;
-        data[i + 2] = 84 + grain;
-      }
-      data[i + 3] = Math.min(255, Math.min(u, 1 - u) * (road ? 2200 : 12800));
-    }
-  const texture = new THREE.DataTexture(data, width, height);
-  texture.needsUpdate = true;
-  return texture;
+  return terrainTexture(road ? "dirt" : "water", true);
 }
 
-export function riverMesh(path: LevelSpline, camera: MapCamera) {
+export function riverMesh(path: LevelSpline, camera: MapCamera, document?: Level3D) {
   const texture = path.texture
     ? new THREE.TextureLoader().load(path.texture)
-    : defaultRiverTexture(path.kind === "road");
+    : path.pointMaterials
+      ? blendedSplineTexture(path, camera, document)
+      : defaultRiverTexture(path.kind === "road");
+  if (!path.texture && !path.pointMaterials) texture.repeat.y = path.repeatLength / 1024;
   texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
+  texture.wrapT =
+    path.pointMaterials && !path.texture ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.magFilter = THREE.LinearFilter;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -93,10 +74,90 @@ export function riverMesh(path: LevelSpline, camera: MapCamera) {
     polygonOffsetFactor: -2,
     polygonOffsetUnits: -2,
   });
-  const mesh = new THREE.Mesh(riverGeometry(path, camera), material);
+  const mesh = new THREE.Mesh(riverGeometry(path, camera, document), material);
   mesh.renderOrder = 1;
   mesh.userData.noSunShadow = true;
   return mesh;
+}
+
+/** Bake the longitudinal material blend into a regular texture, also usable by depth export. */
+export function blendedSplineTexture(path: LevelSpline, camera: MapCamera, document?: Level3D) {
+  const curve = splineCurve(path, camera),
+    length = curve.getLength();
+  const width = 256,
+    height = Math.max(2, Math.min(8192, Math.ceil(length)));
+  const data = new Uint8Array(width * height * 4);
+  const textures = new Map<string, THREE.DataTexture>();
+  const ids =
+    path.pointMaterials ??
+    path.points.map(() => (path.kind === "river" ? "water_still" : "path_dirt"));
+  for (const id of [
+    ...ids,
+    ...(path.pointMaterialMixes ?? []).flatMap((mix) => Object.keys(mix ?? {})),
+  ])
+    if (!textures.has(id))
+      textures.set(id, terrainMaterialTexture(id, document?.customMaterials, true));
+  const singleStoneCenters = new Map<string, number[]>();
+  const arcLengths = curve.getLengths();
+  const sections = path.closed ? path.points.length : path.points.length - 1;
+  for (const id of textures.keys())
+    if (id.endsWith("_single")) {
+      const runs: [number, number][] = [];
+      for (let i = 0; i < path.points.length; i++) {
+        const mix = path.pointMaterialMixes?.[i];
+        const present = mix ? (mix[id] ?? 0) > 0 : ids[i] === id;
+        if (!present) continue;
+        const previous = runs.at(-1);
+        if (previous && previous[1] === i - 1) previous[1] = i;
+        else runs.push([i, i]);
+      }
+      singleStoneCenters.set(
+        id,
+        runs.map(([start, end]) => {
+          const parameter = (Math.max(0, start - 1) + Math.min(sections, end + 1)) / (2 * sections);
+          return arcLengths[Math.round(parameter * (arcLengths.length - 1))]!;
+        }),
+      );
+    }
+  try {
+    for (let row = 0; row < height; row++) {
+      const distance = (row / (height - 1)) * length;
+      const weights = splineMaterialWeightsAt(path, curve.getUtoTmapping(row / (height - 1), 0));
+      for (let column = 0; column < width; column++) {
+        const target = (row * width + column) * 4;
+        const values = [0, 0, 0, 0];
+        for (const [id, weight] of Object.entries(weights)) {
+          if (!weight) continue;
+          const tile = textures.get(id)!.image,
+            pixels = tile.data as Uint8Array;
+          const centers = singleStoneCenters.get(id);
+          const center = centers?.length
+            ? centers.reduce((a, b) => (Math.abs(a - distance) < Math.abs(b - distance) ? a : b))
+            : undefined;
+          const rowInTile =
+            center === undefined
+              ? Math.floor(distance) % tile.height
+              : Math.max(
+                  0,
+                  Math.min(tile.height - 1, Math.floor(distance - center + tile.height / 2)),
+                );
+          const source = (rowInTile * tile.width + Math.floor((column / width) * tile.width)) * 4;
+          for (let channel = 0; channel < 4; channel++)
+            values[channel]! += pixels[source + channel]! * weight;
+        }
+        for (let channel = 0; channel < 4; channel++)
+          data[target + channel] = Math.round(values[channel]!);
+      }
+    }
+  } finally {
+    for (const texture of textures.values()) texture.dispose();
+  }
+  const texture = new THREE.DataTexture(data, width, height);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.repeat.y = path.repeatLength / Math.max(length, 1);
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
+  return texture;
 }
 
 type Vertex = Record<string, number[]>;

@@ -1,0 +1,82 @@
+{
+  "source_sha256": "12ce603eaeaafd4ec5a27ab5ec330b3e55f5065251dfaba9f190675294e15aa7",
+  "entries": [
+    {
+      "asset": "croisement02-terrace-000",
+      "node": "terrace-000",
+      "model_sha256": "e83ed5dc89b81b66b4fce0d0d41664ea9173cbebabfa5954c3d73f00d1f5a1c9",
+      "source_obstacle": 0,
+      "anchor": [
+        453,
+        167
+      ]
+    },
+    {
+      "asset": "croisement02-group-001",
+      "node": "building-001",
+      "model_sha256": "f086661527bd1ccbe86741eecc2d61682a3ca7e718fc39271af247de7e7c8388",
+      "source_obstacle": 1,
+      "anchor": [
+        901,
+        375
+      ]
+    },
+    {
+      "asset": "croisement02-group-002",
+      "node": "building-002",
+      "model_sha256": "68d4fe21b10509524c598b1329ed3f5724b45a32251c4722037a682584746553",
+      "source_obstacle": 2,
+      "anchor": [
+        205,
+        311
+      ]
+    },
+    {
+      "asset": "croisement02-group-003",
+      "node": "building-003",
+      "model_sha256": "4ade4545ec6677b722865474c35022a06b9d96872de99bc37401f9ff564d8024",
+      "source_obstacle": 3,
+      "anchor": [
+        1278,
+        66
+      ]
+    },
+    {
+      "asset": "croisement02-group-004",
+      "node": "building-004",
+      "model_sha256": "7da47aa7749955a3a8e8d01ccda88f5eb4794e1cd0485e50ba1eea09e26983cc",
+      "source_obstacle": 4,
+      "anchor": [
+        930,
+        354
+      ]
+    },
+    {
+      "asset": "croisement02-group-025",
+      "node": "building-025",
+      "model_sha256": "788d47f33ebb894474a4211ba7f1bbd568fa73d9f2e557e76544bf5d0543f184",
+      "source_obstacle": 25,
+      "anchor": [
+        1368,
+        190
+      ]
+    },
+    {
+      "asset": "croisement02-group-136",
+      "node": "building-136",
+      "model_sha256": "412e5aba881fc51affdaf25e7bebd7bc4bdfc3d8027f6f607d71d01eec7aae5a",
+      "source_obstacle": 136,
+      "anchor": [448, 873]
+    },
+    {
+      "asset": "croisement02-group-137",
+      "node": "building-137",
+      "model_sha256": "485f8d57d0318d97006c23b446f6d09cdf785e6346437bccb389b20784033441",
+      "source_obstacle": 137,
+      "anchor": [
+        458,
+        874
+      ]
+    }
+  ]
+}

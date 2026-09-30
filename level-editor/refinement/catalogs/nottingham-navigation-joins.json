@@ -1,0 +1,182 @@
+{
+  "source_sha256": "19dfa4dc18c5fd63f1581974862c7bdcc1573e0a1c9546b386ce6e26e55c6898",
+  "regions": [
+    {
+      "id": "nottingham-walk-join-1",
+      "review": "Exact shared boundary edges between recovered asset surfaces in one ordinary receiving region. The source identities are migration provenance; runtime definitions contain only local edges and region labels.",
+      "entries": [
+        {
+          "asset": "nottingham-south-gate-east-tower",
+          "model_sha256": "a48be4ba1afe633ffdf3f49509d92edd3f3ba8c46d631388d3e2b96d84c9b63b",
+          "surface": "building-201--component-wall-201-tower-walk-0",
+          "node": "building-201--component-wall-201-tower",
+          "source_obstacle": 201,
+          "edges": [
+            [
+              [
+                45.7152099609375,
+                -23.818639733800982,
+                160.00100743421902
+              ],
+              [
+                45.7152099609375,
+                31.181360266199142,
+                160.00100743421902
+              ]
+            ],
+            [
+              [
+                -90.2847900390625,
+                20.181360266199015,
+                160.00100743421902
+              ],
+              [
+                -90.2847900390625,
+                -11.818639733800959,
+                160.00100743421902
+              ]
+            ]
+          ]
+        },
+        {
+          "asset": "nottingham-south-curtain-wall-2",
+          "model_sha256": "32273e75daf17ae76f7da46e6d990a7a591310cfe3845d620333655c62d15759",
+          "surface": "building-201--component-wall-201-2-walk-0",
+          "node": "building-201--component-wall-201-2",
+          "source_obstacle": 201,
+          "edges": [
+            [
+              [
+                -96.440185546875,
+                -37.50017415381316,
+                160.0629775606055
+              ],
+              [
+                -96.440185546875,
+                17.49982584618696,
+                160.0629775606055
+              ]
+            ]
+          ]
+        },
+        {
+          "asset": "nottingham-south-gate-arch",
+          "model_sha256": "214b09cf3441aa626feb4602fe748a164a9a09c32c3a180b627cc91b84285df0",
+          "surface": "building-214-walk-0",
+          "node": "building-214",
+          "source_obstacle": 214,
+          "edges": [
+            [
+              [
+                44.1539306640625,
+                16.576762842343737,
+                160.00100164112976
+              ],
+              [
+                44.1539306640625,
+                -15.423237157656233,
+                160.00100164112976
+              ]
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nottingham-walk-join-2",
+      "review": "Exact shared boundary edges between recovered asset surfaces in one ordinary receiving region. The source identities are migration provenance; runtime definitions contain only local edges and region labels.",
+      "entries": [
+        {
+          "asset": "nottingham-south-curtain-wall-3",
+          "model_sha256": "39c5efbbb0c7bd47b648df82da228b8399247f2417a430d257adac8a128cb71e",
+          "surface": "building-202--component-wall-202-3-walk-0",
+          "node": "building-202--component-wall-202-3",
+          "source_obstacle": 202,
+          "edges": [
+            [
+              [
+                168,
+                -41.6084683572082,
+                169.56018516670827
+              ],
+              [
+                168,
+                -12.608468357208173,
+                169.56018516670827
+              ]
+            ]
+          ]
+        },
+        {
+          "asset": "nottingham-south-curtain-wall-4",
+          "model_sha256": "6922186b2f95cf77d7b0577673a79f0260b78e977eb97b31bed460f17b964161",
+          "surface": "building-202--component-wall-202-4-walk-0",
+          "node": "building-202--component-wall-202-4",
+          "source_obstacle": 202,
+          "edges": [
+            [
+              [
+                -128.23583984375,
+                23.91269713091323,
+                169.56021243995863
+              ],
+              [
+                -128.23583984375,
+                52.91269713091326,
+                169.56021243995863
+              ]
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nottingham-walk-join-3",
+      "review": "Exact shared boundary edges between recovered asset surfaces in one ordinary receiving region. The source identities are migration provenance; runtime definitions contain only local edges and region labels.",
+      "entries": [
+        {
+          "asset": "nottingham-southwest-curtain-wall-north",
+          "model_sha256": "f4d10e9823592a104f46794762c8fb9e18aaa032ad3cf318a57d28c0e42742be",
+          "surface": "building-220--component-wall-220-north-walk-0",
+          "node": "building-220--component-wall-220-north",
+          "source_obstacle": 220,
+          "edges": [
+            [
+              [
+                122.602294921875,
+                187.08173598691621,
+                160.00072609380652
+              ],
+              [
+                76.602294921875,
+                201.08173598691627,
+                160.00072609380652
+              ]
+            ]
+          ]
+        },
+        {
+          "asset": "nottingham-southwest-curtain-wall-south",
+          "model_sha256": "e460baa3f7cc6a59babdd1165659dca4030ad4737f525a19eda8860452f42b01",
+          "surface": "building-220--component-wall-220-south-walk-0",
+          "node": "building-220--component-wall-220-south",
+          "source_obstacle": 220,
+          "edges": [
+            [
+              [
+                -104.09625244140625,
+                -102.84994992376508,
+                160.00060175285068
+              ],
+              [
+                -150.09625244140625,
+                -88.84994992376502,
+                160.00060175285068
+              ]
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

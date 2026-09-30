@@ -20,6 +20,8 @@ export interface ObstaclePoint {
 
 export interface SightObstacle {
   points: ObstaclePoint[];
+  /** Ordered world-space anchors, independent of a thin receiver's clipped polygon. */
+  projection_plane?: [[number, number, number], [number, number, number], [number, number, number]];
   projection_area: unknown;
   opaque: boolean;
   solid: boolean;
@@ -80,6 +82,12 @@ export interface ElementFx {
   display_polyline: Point[];
 }
 
+export interface MaskReference {
+  layer: number;
+  /** Index within this layer's masks, not the global mask array. */
+  index: number;
+}
+
 export interface Patch {
   element_fx: ElementFx;
   active: boolean;
@@ -88,9 +96,9 @@ export interface Patch {
   layer: number;
   definitive: boolean;
   integrate_in_background: boolean;
-  old_masks: number[];
+  old_masks: MaskReference[];
   old_sight_obstacles: number[];
-  new_masks: number[];
+  new_masks: MaskReference[];
   new_sight_obstacles: number[];
   apply_sector: Polygon;
   no_apply_sector: Polygon;

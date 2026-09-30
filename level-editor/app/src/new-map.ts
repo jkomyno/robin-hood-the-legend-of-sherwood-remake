@@ -1,5 +1,7 @@
-import { parseLevel3D } from "@rle/shared";
+import { createTerrainGrid, parseLevel3D } from "@rle/shared";
 import { listFiles, writeText } from "./fs.ts";
+import { defaultNewMapOptions, validateNewMapOptions, type NewMapOptions } from "./workspace.ts";
+export { defaultNewMapOptions, type NewMapOptions } from "./workspace.ts";
 
 export function validateNewMap(name: string) {
   name = name.trim();
@@ -11,8 +13,13 @@ export function validateNewMap(name: string) {
 }
 
 /** A new map is one document; geometry is referenced only after assets are placed. */
-export async function createNewMap(library: FileSystemDirectoryHandle, rawName: string) {
+export async function createNewMap(
+  library: FileSystemDirectoryHandle,
+  rawName: string,
+  options: NewMapOptions = defaultNewMapOptions(),
+) {
   const name = validateNewMap(rawName);
+  validateNewMapOptions(options);
   const directory = await library.getDirectoryHandle("scenes", { create: true });
   const documentName = `${name}.rhlos-map.json`;
   const names = [documentName];
@@ -23,7 +30,13 @@ export async function createNewMap(library: FileSystemDirectoryHandle, rawName: 
   const document = parseLevel3D({
     version: 1,
     map: name,
-    size: null,
+    size: [...options.size],
+    terrain: createTerrainGrid(
+      [0, 0, ...options.size],
+      options.spacing,
+      options.height,
+      "grass_short",
+    ),
     camera: { kind: "oblique-orthographic", elevation_deg: 35 },
     sceneAssets: [],
     groups: [],

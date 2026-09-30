@@ -2,8 +2,7 @@
   "title": "The Longest Three Minutes",
   "map_filename": "OpenBattlefield",
   "reveal_all": true,
-  "spawn": [1152, 1760],
-  "spawn_player": true,
+  "spawn_points": [{"position": [1152, 1760]}],
   "walkable_polygon": [
     [80, 80],
     [2428, 80],

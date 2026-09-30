@@ -34,6 +34,7 @@ fn configured_data_dir(explicit: Option<&Path>, environment: Option<String>) -> 
 }
 
 fn install_primary_data_dir(files: &SbFileSystem, path: String) -> Result<(), InitError> {
+    crate::diagnostic_context::selected_datadir(&path);
     files
         .set_primary_path(&path)
         .map_err(|status| InitError::DataDirectoryInstall { path, status })

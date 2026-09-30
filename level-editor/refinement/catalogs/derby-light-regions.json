@@ -1,0 +1,203 @@
+{
+  "source_sha256": "14698dffeeb1316563b4f91b883961298c58323ac799ab2c8a099d99487b8a46",
+  "entries": [
+    {
+      "source": 0,
+      "id": "derby-light-region-0",
+      "name": "Derby lighting field at 918, 2377",
+      "origin": [
+        918,
+        2377,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 1,
+      "id": "derby-light-region-1",
+      "name": "Derby lighting field at 1070, 1746",
+      "origin": [
+        1070,
+        1746,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 2,
+      "id": "derby-light-region-2",
+      "name": "Derby lighting field at 719, 1561",
+      "origin": [
+        719,
+        1561,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 3,
+      "id": "derby-light-region-3",
+      "name": "Derby lighting field at 795, 1092",
+      "origin": [
+        795,
+        1092,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 4,
+      "id": "derby-west-steps-night-light-region",
+      "name": "Derby west steps night lighting",
+      "origin": [
+        754,
+        1077,
+        0
+      ],
+      "review": "Independent night lighting field around the west steps. Preserve the complete contour across the small difference between physical receiving coverage and navigation, with explicit receiving anchors."
+    },
+    {
+      "source": 5,
+      "id": "derby-light-region-5",
+      "name": "Derby lighting field at 1378, 1291",
+      "origin": [
+        1378,
+        1291,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 6,
+      "id": "derby-light-region-6",
+      "name": "Derby lighting field at 1288, 1219",
+      "origin": [
+        1288,
+        1219,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 8,
+      "id": "derby-light-region-8",
+      "name": "Derby lighting field at 855, 923",
+      "origin": [
+        855,
+        923,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 11,
+      "id": "derby-light-region-11",
+      "name": "Derby lighting field at 1572, 1168",
+      "origin": [
+        1572,
+        1168,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 13,
+      "id": "derby-light-region-13",
+      "name": "Derby lighting field at 864, 956",
+      "origin": [
+        864,
+        956,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 14,
+      "id": "derby-light-region-14",
+      "name": "Derby lighting field at 1781, 984",
+      "origin": [
+        1781,
+        984,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 15,
+      "id": "derby-light-region-15",
+      "name": "Derby lighting field at 1420, 1061",
+      "origin": [
+        1420,
+        1061,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 16,
+      "id": "derby-light-region-16",
+      "name": "Derby lighting field at 317, 624",
+      "origin": [
+        317,
+        624,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 18,
+      "id": "derby-light-region-18",
+      "name": "Derby lighting field at 424, 488",
+      "origin": [
+        424,
+        488,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 20,
+      "id": "derby-light-region-20",
+      "name": "Derby lighting field at 1278, 831",
+      "origin": [
+        1278,
+        831,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 22,
+      "id": "derby-light-region-22",
+      "name": "Derby lighting field at 356, 411",
+      "origin": [
+        356,
+        411,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 24,
+      "id": "derby-light-region-24",
+      "name": "Derby lighting field at 907, 478",
+      "origin": [
+        907,
+        478,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    },
+    {
+      "source": 25,
+      "id": "derby-light-region-25",
+      "name": "Derby lighting field at 1041, 318",
+      "origin": [
+        1041,
+        318,
+        0
+      ],
+      "review": "Independent environmental lighting contour with no single containing visual asset; retain its complete outline, receiving anchors and ambience filter."
+    }
+  ]
+}

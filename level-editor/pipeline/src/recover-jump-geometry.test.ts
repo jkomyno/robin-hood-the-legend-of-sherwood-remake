@@ -4,6 +4,57 @@ import { jumpAssetCompilerFixture } from "../../shared/test-fixtures/asset-gamep
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import { recoverJumpGeometry, recoverJumpSegment } from "./recover-jump-geometry.ts";
 
+test("split jump landing anchors stay inside their owner's footprint without clipping the click zone", () => {
+  const { document, assets } = jumpAssetCompilerFixture();
+  const geometry = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  const source = {
+    motion_data: geometry.motion_data,
+    jump_zones: geometry.jump_zones!,
+    jump_line_pairs: geometry.jump_line_pairs!,
+  };
+  const identity = (p: [number, number, number]) => p;
+  const heights = (zone: (typeof source.jump_zones)[number], point: [number, number]) => {
+    assert.ok(
+      point.every(Number.isInteger),
+      "elevation must use the compiler's movement-grid point",
+    );
+    return zone.layer ? 100 : 0;
+  };
+  const full = recoverJumpSegment(0, source, 0, "frame", identity, heights);
+  const owned = recoverJumpSegment(0, source, 0, "frame", identity, heights, (zone) => {
+    assert.equal(zone, source.jump_zones[0]);
+    return [
+      [
+        [360, 320],
+        [363, 320],
+        [363, 380],
+        [360, 380],
+      ],
+    ];
+  });
+  assert.ok(full.zone.anchor[0] > 363);
+  assert.ok(owned.zone.anchor[0] > 360 && owned.zone.anchor[0] < 363);
+  assert.deepEqual(owned.zone.polygon, full.zone.polygon);
+  assert.deepEqual(owned.segment, full.segment);
+  assert.equal(owned.zone.helperNeeded, full.zone.helperNeeded);
+  assert.throws(
+    () => recoverJumpSegment(0, source, 0, "frame", identity, heights, () => []),
+    /no owned receiving footprint/,
+  );
+  assert.throws(
+    () =>
+      recoverJumpSegment(0, source, 0, "frame", identity, heights, () => [
+        [
+          [0, 0],
+          [1, 0],
+          [1, 1],
+          [0, 1],
+        ],
+      ]),
+    /no unblocked landing anchor/,
+  );
+});
+
 test("split jump recovery retains each home zone and a shared socket in different asset frames", () => {
   const { document, assets } = jumpAssetCompilerFixture();
   const geometry = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);

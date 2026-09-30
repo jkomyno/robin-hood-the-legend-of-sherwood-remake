@@ -82,8 +82,10 @@ from the previous copy are removed on refresh. Its generated
 file index supports directory enumeration without a browser permission prompt.
 Serve this subdirectory alongside the rest of the library on standalone deployments.
 Pick a thumbnail on **Select Map**, or use **New map** on that screen to
-start an unbounded canvas without choosing dimensions. Insert assets from the
-library and save the map under its own name. The optional export frame records a
+choose a named reference-map size or custom pixel dimensions, grid spacing and initial
+elevation. The new map starts with editable ground. The workspace remains open outside
+the boundary; resizing never deletes content. Insert assets from the library and save
+the map under its own name. The optional export frame records a
 compile-time crop and does not restrict placement; it can intentionally clip assets.
 There is no automatic reconstruction fallback for missing map manifests.
 
@@ -154,13 +156,14 @@ drags likewise preview live and commit one undo step; Escape cancels the drag.
 | action | how |
 |---|---|
 | pan / orbit around the point under the cursor / zoom to cursor | left drag / right drag / wheel |
-| reset to the map's own view | `g` or **Reset view** |
+| reset to the map's own view | `g` or **Game camera** beside the cardinal buttons |
 | frame everything | `f` |
 | select building / single part | click / alt-click; repeated normal clicks keep the whole building selected; `Esc` clears |
 | move | drag the selected building/part along the ground, use the gizmo (tick "lift" for height), or type/drag the X, Y, Z inputs |
 | turn | `q` / `e` (15°), or type/drag the rotation input; Shift gives finer input dragging |
 | duplicate / delete | `d` / `Del` |
-| hide | checkbox (hidden buildings and parts are left out of the bake) |
+| asset display | View → Visible / Outline / Hidden changes the viewport only; individual document hide checkboxes still exclude objects from export |
+| cardinal / top view | N/E/S/W and 90° turns smoothly transition while preserving the working target and scale; Top view is also available |
 | snap a floating part | parts tagged "float?" show the suggested Δ; the button shifts y and z by −Δ (same map pixels) |
 | undo / redo | `ctrl+z` / `ctrl+shift+z` |
 | save | `ctrl+s` |
@@ -170,6 +173,47 @@ Turning happens in game coordinates, where footprints are rectangles; in
 the scene frame (Y stretched by 1/sin elevation) that is an affine map, so
 each object is a translation wrapper (the gizmo's target) around a node
 carrying the affine matrix.
+
+## Terrain and workspace
+
+Draw has separate **Terrain** and **Paths** subtabs. Finish or cancel a path before
+switching to Terrain. Terrain highlights the vertices a drag will move on hover:
+a vertex, both endpoints of an edge, or all corners of a cell. Shift-click toggles
+selection; Shift-drag adds vertices inside a screen rectangle. Right-drag rotates
+the camera. Vertices have a 10-pixel pick radius at every zoom and perspective.
+Double-click a cell to subdivide it, or an edge/vertex to subdivide its incident cells. Delete removes selected vertices and reconnects the surrounding
+ground; it does not punch a hole. Invalid deletions leave the terrain unchanged.
+Dragging a selected target moves the entire selection, preserving relative heights.
+Ordinary dragging changes elevation; Alt-drag moves horizontally. Numeric X/Y/Z
+inputs edit one vertex or translate a selection by its center. Flatten sets selected
+vertices to their average height without moving them horizontally. Escape cancels a drag.
+Select ground cells to subdivide them or override their walkability. Subdivision
+only refines selected cells and shared-edge neighbors needed to keep the grid
+connected; untouched cells retain their topology. Material selection is available at vertices, with
+smooth blends across triangles; applying a material to a cell updates its corners.
+The searchable material picker includes 52 presets and custom name/color materials.
+
+Road and river widths and designs belong to control points. Equal endpoint designs
+produce a uniform section; different designs blend between the points. Selecting a
+section exposes its endpoints. Roads conform across their full width to the terrain,
+with editable height offsets. Rivers retain an explicit water profile and offer
+non-destructive automatic channels with bed-depth and bank-slope controls. Disabling,
+moving or deleting a channel restores the underlying control grid's surface.
+Fords provide traversable water; other river surfaces block ordinary walking.
+
+Placed assets preserve their height above the terrain when moved horizontally or when
+the ground changes. Manual Z edits remain available for every asset, including floating
+parts. Terrain edits and affected asset movements share one undo operation.
+
+View → Workspace changes the working width and height in pixels. Shrinking keeps all
+terrain and assets outside the boundary; enlarging restores their workspace coverage
+and adds ground only where needed. The optional Export frame overrides the workspace
+for compilation. Cropped mission placements are omitted with a report, while the
+embedded editor document retains all authored content.
+
+Previous flat-region terrain saves are not supported. Wychford has been converted to
+an editable terrain mesh, material areas and road paths; see its map README for the
+reproducible conversion and measured height error.
 
 ## Bake
 

@@ -33,14 +33,32 @@ function fixture(fail?: string) {
   return { root, files };
 }
 
-test("new maps persist unbounded documents without a required export frame", async () => {
+test("new maps persist a sized workspace with continuous editable ground", async () => {
   const { root, files } = fixture();
   assert.equal(await createNewMap(root, "  New forest  "), "New forest");
   const doc = parseLevel3D(JSON.parse(String(files.get("New forest.rhlos-map.json"))));
-  assert.equal(doc.size, null);
+  assert.deepEqual(doc.size, [1920, 1088]);
+  assert.ok(doc.terrain?.vertices.length);
+  assert.ok(doc.terrain?.cells.every((cell) => cell.material === "grass_short"));
   assert.equal(doc.exportBounds, undefined);
   assert.deepEqual(doc.objects, []);
   assert.deepEqual([...files.keys()], ["New forest.rhlos-map.json"]);
+});
+
+test("new map settings define terrain extent, spacing and initial elevation", async () => {
+  const { root, files } = fixture();
+  await createNewMap(root, "Hill", { size: [512, 256], spacing: 128, height: 42 });
+  const doc = parseLevel3D(JSON.parse(String(files.get("Hill.rhlos-map.json"))));
+  assert.deepEqual(doc.size, [512, 256]);
+  assert.equal(doc.terrain?.spacing, 128);
+  assert.ok(doc.terrain?.vertices.every((vertex) => vertex.position[2] === 42));
+  assert.equal(doc.terrain?.cells.length, 8);
+  const invalid = fixture();
+  await assert.rejects(
+    createNewMap(invalid.root, "Invalid", { size: [0, 200], spacing: 128, height: 0 }),
+    /positive whole pixels/,
+  );
+  assert.equal(invalid.files.size, 0);
 });
 
 test("new map creation rejects collisions without overwriting and rolls back failed writes", async () => {

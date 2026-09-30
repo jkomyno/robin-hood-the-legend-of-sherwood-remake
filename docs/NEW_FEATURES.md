@@ -1,5 +1,138 @@
 # Post-port Features
 
+- **Minimal editor missions.** The Mission tab adds player spawn points and NPC
+  soldiers with placement, facing and profile controls. Its character palette
+  displays actual library sprites and uses canonical profile identities. A PC/NPC
+  category dropdown filters the palette; dragging a character onto the map adds
+  it, with a live surface-positioned preview during the drag. Dropping commits one
+  placement; leaving the map or cancelling removes the preview. Default names
+  follow the character type, while custom names survive profile changes.
+  A mission-element list below the palette selects existing placements, whose
+  character profile can be changed in the inspector. Placed
+  characters show their directional sprites; numeric controls use the editor’s
+  drag sliders. The character library includes every PC and soldier’s idle pose.
+  Palette previews and new placements face down by default, and soldier labels
+  use English names. Characters remain visible across inspector tabs, controlled
+  by the Mission tab’s visibility checkbox. Dragging a character moves it at its
+  current height with one undo entry; Escape cancels the move.
+  Right-drag camera rotation remains available in Mission mode.
+  Loading a game-data mission imports PC spawn slots and soldiers into these
+  editable lists. Source receiving planes resolve world height once; source
+  profile ordering is mapped to library character identities. Campaign-selected
+  slots retain no fixed profile and show a blue outline until assigned a character.
+  Import is undoable and marks the scene changed. Unsupported entities remain
+  previews only, and stored import warnings describe omitted behaviors.
+  Mission authoring stays
+  separate from map assets and preview population. Export resolves its markers
+  against the compiled navigation and receiving surfaces, writes PCs as spawn
+  points and NPCs as soldiers, and preserves the editable mission in the embedded
+  editor document. Invalid placements are reported and omitted in best-effort
+  export; scenes without authored mission markers remain unpopulated.
+
+- **Unified player placements.** New level exports use `spawn_points`, including
+  an explicit empty array for maps without PCs. Fixed-profile and campaign-selected
+  slots can coexist. Older `spawn`/`spawn_player` fields remain accepted when reading
+  older maps, but are no longer written; bundled map descriptors use the new format.
+
+- **Best-effort editor map exports.** Published draft gameplay definitions retain
+  explicit issues. Editor export includes available geometry and reports omitted
+  unsupported features or disconnected connections in the ZIP's compile report;
+  strict compilation remains available for validation. The editable scene remains
+  embedded, including mission previews excluded from runtime map gameplay.
+  Export progress separates worker-based compilation and packaging from tiled
+  image rendering, with cancellation between rendering steps.
+
+- **Asset contact switches.** Explicit asset-local transition anchors join matching
+  placed parts into one map switch, combining their gameplay and appearance changes.
+  Moving the contacts apart creates independent switches; duplicated assemblies
+  remain independent. Compilation rejects incompatible trigger and door rules.
+  One-time gameplay recovery also restores local appearance bindings from exported
+  preview provenance, requiring a unique recovered switch on the owning asset.
+  Mission names and unresolved cross-asset ownership remain explicit errors.
+  The baker resolves initial/applied model views to their pinned primary switch;
+  duplicated placements retain independent switches even with identical preview names.
+  Inserting a gameplay-enabled endpoint asset loads and saves both model variants
+  as one placement, including their resource pins and independent state controller.
+
+- **Independent light receivers on shared height planes.** Map compilation separates
+  navigation layers when an anchored light would spill onto an unrelated receiver.
+  Flat and elevated recovered fields retain local receiver anchors, full contours
+  and ambience filters; all dependent runtime references are rebuilt after placement.
+  Finite asset-local receiving segments can attach a light to a sloped surface
+  after placement, rejecting absent or ambiguous receivers instead of choosing a
+  floor by an unrestricted height search.
+
+- **Independent environmental light-region assets.** Offline authoring can create
+  invisible, movable lighting fields with local contours, receiving anchors and
+  ambience filters. Explicit ownership declarations pin their source records;
+  map compilation consumes only the placed asset definitions. See the
+  [map data checklist](../level-editor/docs/map-data-checklist.md).
+
+- **Terrain authoring in the level editor.** The Draw tab creates continuous
+  rectangular ground regions with grass, dirt or water and an elevation in one
+  panel. Select ground in the scene, resize it with corner handles, or move it
+  and change its elevation using the standard asset gizmo. Terrain, path, wall
+  and export numeric fields share draggable number controls; each gesture
+  commits one undoable edit and Escape cancels its preview. Exact terrain bounds
+  remain under Position and size. Later regions replace earlier ground, including
+  lower river beds. Paths
+  and rivers can set a whole-path elevation; their curved footprints carve the
+  ground consistently in the viewport and export. New placements use the terrain
+  height and compensate for elevated local asset bases. Export derives navigation
+  layers and connected areas, excludes water, retains asset floor/door ownership
+  and joins explicit exterior navigation sockets to surrounding terrain. Terrain
+  is saved with the map, rendered into mod ZIPs and included in camera framing.
+  In-editor instructions explain how to test an exported ZIP in Custom Missions.
+  Terrain regions are flat; road/river export currently requires a uniform
+  elevation. Walls and scripted mission authoring retain their existing limits.
+
+- **Physical receivers sharing navigation.** Asset gameplay can bind a physical
+  receiver to an existing navigation area through an asset-local anchor. Sloped
+  elevation and physical geometry remain independent of the movement boundary;
+  placement resolves the binding afresh without source-map indices. Missing,
+  blocked or ambiguous anchors fail export.
+
+- **Asset-owned obstacle query order.** Gameplay definitions can assign query
+  precedence to physical part and volume IDs. Compilation preserves this order
+  after placement and volume assembly, rebuilding mask and sight-state indices.
+  Equal priorities retain placement order; incompatible priorities on joined
+  volumes fail. Offline recovery extracts precedence into assets, so export
+  requires no source-level lookup.
+
+- **Explicit visual-component collision ownership.** Asset parts can retain their
+  visual bounds and provenance while disabling physical collision. Offline
+  `author-owned-volume.ts` assigns a reviewed unlinked volume to one asset frame,
+  verifies source/model/descriptor pins and accounts for every visual component.
+  Compilation rejects obstacle links to disabled parts and uses only the resulting
+  asset definitions. Models and independent traversal geometry remain intact.
+
+- **Reviewed physical-volume partitions.** Offline asset authoring can divide a
+  constant-height volume along explicit asset seams while checking coverage and
+  overlap. Source, model and descriptor hashes guard the extraction. Each piece
+  becomes local collision in its own asset; map compilation needs no source-level
+  lookup. Explicit local seam edges let matching flat pieces compile into one
+  sight volume, removing artificial internal faces. Moving the pieces apart
+  leaves independent volumes. Linked or sloped geometry requires separate authoring.
+  Stacked pieces can retain a complete ordered footprint with explicit height
+  ranges and top/bottom cap seams. Matching full faces assemble into one volume;
+  detached pieces retain their own heights. Gaps, overlapping height ranges,
+  ambiguous matches and incompatible physical flags are rejected.
+  Draft staging preserves model/resource paths in an isolated library overlay,
+  checks input hashes and scene overrides, and reopens the resulting editor scene.
+
+- **Independent physical asset drafts.** Offline authoring can restore a reviewed
+  missing object as a separate editor asset with local collision and a volume
+  preview mesh. Source hashes and ownership recipes are checked before extraction;
+  compilation then uses the asset alone. Drafts explicitly retain unfinished
+  appearance and mask status instead of assigning missing props to nearby buildings.
+
+- **Mask-controlled depth baking.** Asset gameplay can declare
+  `maskOcclusionNodes` for parts whose complete occlusion is authored by typed
+  masks. Export keeps their color geometry while baking the depth of surfaces
+  behind them, so static mesh depth cannot override mask deactivation. Other
+  parts retain depth occlusion. Existing assets require complete mask authoring
+  before opting in; visual-state color resources remain separate work.
+
 - **Asset-local interior connections.** Independently placed buildings can share
   a virtual room through matching passage sockets. Sockets carry local positions
   and opposing directions; moving a building or connector away separates the
@@ -37,8 +170,175 @@
 - **Asset-local gameplay lighting.** Map export transforms planar light/shadow
   contours, resolves their receiving layer and preserves ambience masks. The same
   compiled map supports different mission ambiences without shifting interior
-  links. Offline recovery reports ambiguous ownership and regions spanning
+  links. Offline recovery can attach a region spanning several parts of one
+  asset, requiring complete footprint coverage without unowned interior gaps.
+  Raised terrain on layer zero retains its elevation across non-walkable
+  receiving-footprint notches. Recovery reports ambiguous ownership and regions spanning
   multiple receiving planes; these remain authoring gaps.
+
+- **Compiled map mask interchange.** Native map descriptors accept typed mask
+  bitmaps, character/projectile polylines and sight-obstacle links. Mask-only
+  transitions rebuild per-layer references and switch initial/applied masks.
+  Invalid bitmap rows and conflicting state ownership fail before construction.
+  The editor has a binary-silhouette encoder verified against the native decoder.
+  Assets can author local coverage triangles, receiving anchors, masking
+  boundaries and obstacle/state links. Compilation rasterizes placed coverage in
+  bounded tiles, preserves holes and concave boundary steps, and rebuilds links
+  independently for rotated/duplicated assets. Map ZIPs include the resulting
+  masks. Recovery for existing assets, textured-mesh extraction and coordinated
+  visual/depth-state export remain unfinished.
+  A one-time recovery audit strictly decodes source masks and verifies exact
+  coverage after merging pixels into nonoverlapping rectangles. These remain
+  intermediate screen-space authoring data until mapped onto an owning asset's
+  surfaces; the runtime compiler does not read the source maps.
+  Surface lifting can intersect that coverage with explicitly supplied owner
+  triangles, resolve overlapping depths and produce local geometry while
+  rejecting uncovered pixels. Batch ownership and migration remain unfinished.
+  Published static opaque mesh parts can supply those triangles, including
+  nested transforms. Recovery verifies the clipped result through the compiler's
+  rasterizer; transparent materials require explicit texture coverage extraction.
+  Character and projectile boundaries can independently use open polylines,
+  preserving concavities and endpoint steps without adding a closing segment.
+  One-time rule recovery combines verified coverage, explicit boundary heights
+  and local obstacle ownership into a complete asset mask definition. Its output
+  recompiles independently of source maps; existing-map migration remains pending.
+  Patch mask references are validated as layer-local pairs and can be recovered
+  into local state IDs after ownership is established, with independent compiled
+  references for duplicated assets.
+  Ordinary navigation regions can join across separately placed assets through
+  explicit local 3D boundary edges. Coincident opposing edges share one movement
+  region while retaining their receiving planes and materials; detached edges
+  remain independent. Validation rejects ambiguous or overlapping connections.
+  Rotated/duplicated assemblies and native reachability across the resulting
+  multi-plane region are tested. Recovered-map join authoring and publication
+  remain unfinished.
+  Reviewed join recipes can now be applied by the one-time asset migration with
+  source/model pins, source-region ownership checks and complete seam validation.
+  Lincoln's north curtain pair reproduces its baseline exactly and retains native
+  construction after either asset is independently moved; its definitions remain
+  unpublished while the map's other parity gaps are resolved.
+  Nottingham has reviewed definitions for four seams across seven assets, including
+  a sloped wall pair. A repeatable placement verifier checks recovered definitions,
+  pins, baseline assembly and independent moves, preserving failures in its report.
+  Six Nottingham owners pass westward movement and native construction; one still
+  invalidates a neighboring stair connection. Full-map connectivity remains open.
+  York has three reviewed groups across six assets, preserving baseline geometry
+  and bindings after reference remapping. Five independent moves construct
+  natively; moving the causeway invalidates a neighboring slope connection.
+  Seven additional candidate groups still need topology and projection review.
+  A projection-coverage comparator distinguishes equivalent polygon subdivisions
+  from changed receiving geometry, exact height planes, flags or material rules,
+  independently of rebuilt motion/material indices. It identifies York's inner
+  curtain subdivision as coverage-equivalent while retaining the terrace's material
+  difference. Overlapping-plane priority and traversal require separate checks.
+  A native receiving-query probe additionally compares sampled coverage, float32
+  elevation and material selection. York's inner curtain candidate passes coverage
+  and material checks but changes elevation by one float32 step at 28,268 sampled
+  points; its baseline self-comparison passes. This candidate remains unreviewed
+  until receiving-plane arithmetic and traversal are verified.
+  Receiving materials now carry optional ordered local plane anchors through
+  recovery, placement and clipping into native height calculations. Regenerating
+  the York pair removes every sampled height difference, with no query tolerance.
+  A small difference in which authored plane owns coverage still needs review.
+  Shipping datadir 19 / mission 10 preserve these anchors; older binary shipping
+  bundles require regeneration. Existing hackable JSON remains compatible.
+  All nine recovered static maps construct natively with the new anchors. An
+  ordered float32 anchor audit finds 698 exact source matches and separately
+  reports 413 fallback receivers without explicit anchors. Those receivers still
+  need coverage/material ownership review; these checks do not certify full parity.
+  The compiler now preserves gaps between explicit receiving supports instead of
+  filling them with default material. Recompiling all nine maps removes 412 such
+  receivers while preserving anchored receivers and other geometry after interior
+  constructor reference remapping. Native
+  platform queries verify the opening remains empty. Derby's explicitly authored
+  second drawbridge's remaining receiver was subsequently traced to editor preview
+  bounds. Recovery no longer invents a walkable surface from that placeholder, and
+  compilation excludes preview bounds from automatic collision. Explicitly authored
+  surfaces and volumes still work; the bridge's actual state behavior remains open.
+  A patch-dependency audit now identifies shared sight/mask/door references and
+  receiving-surface state changes without importing mission actors or scripts.
+  The retained mission inventory exposes a shared Derby bridge obstacle and
+  Leicester's changing projection surfaces; ownership and projection-state
+  compilation remain unfinished.
+  Native interchange accepts projection obstacles in sight-state transitions.
+  Activation, swap and reset tests verify changing collision with stable receiving
+  height/material lookup, which includes inactive projection surfaces. Asset surfaces
+  can link to explicit local receiving volumes, preserving thickness, physical flags,
+  material references and sight-state bindings through placement and duplication.
+  The exported fixture verifies top/underside collision and opaque-ray blocking in
+  the native runtime. Receiving links can also reuse physical asset parts. One-time
+  recovery restores Leicester's three map-patch receivers with exact ordered
+  float32 geometry and flags; its five recovered transitions pass native apply/reset
+  checks. Publication, shared controllers, state visuals and traversal remain open.
+  Physical receivers use their first three ordered vertices for the receiving
+  plane while preserving later vertex heights. A broader static audit constructs
+  Croisement03 with 14 physical receiver links; other candidate maps still need
+  navigation-region and material-priority fixes before migration.
+  Receiver ownership now excludes navigation holes and blockers when assigning
+  areas, preventing a surrounding platform from supplying an island's materials.
+  The exported island fixture verifies native material/height queries and the
+  disconnected walking route. All nine static diagnostics construct after removal
+  of 96 receiver records incorrectly assigned across disconnected areas.
+  Reviewed physical-receiver recipes now migrate through `--projection-definitions`,
+  checking source/model pins and exact geometry before atomically creating local
+  links. Croisement03's 14-link recipe reproduces the audited baseline; the baseline
+  and 13 independently moved asset cases construct natively. Publication and full
+  gameplay verification remain incomplete.
+  Navigation-only state assets can use a reviewed plane to place changing contours
+  outside receiving coverage without inventing a receiver. A pinned Croisement03
+  recipe restores its upper-terrace boundary; eight recovered transitions pass
+  native apply/reset checks, leaving one multi-asset movement group unresolved.
+  Staging also retains inherited ownership catalogs without symlink write collisions.
+  A reviewed Croisement03 assembly groups the four southwest obstacle pieces that
+  change together. All nine map movement groups now recover; native apply/reset
+  checks pass before and after moving the assembly, with exact physical geometry
+  and flags retained. Its three state-controlled masks and visual resources remain
+  unrecovered, so this is not yet full patch parity.
+  Reviewed static-mask recipes now run in the asset migration with pinned source
+  and model hashes. One Croisement01, seven Derby, sixteen Leicester, four Lincoln,
+  sixteen Nottingham and twenty York
+  masks have exact baseline coverage and boundary round-trips with native
+  registration and independent placement checks. Jump landing anchors use their
+  owning asset's receiving footprints and evaluate height at the integer movement
+  point, preventing a moved neighbor from invalidating an unrelated landing zone.
+  Mask receiving layers remain resolvable when movement collision covers their
+  anchors, provided authored surface support identifies one surviving layer.
+  Door and jump destinations continue to require walkable receiving positions.
+  A repeatable mask-recovery verifier checks source/model pins, exact coverage and
+  rules, independent translations and native diagnostic descriptors. Failed runs
+  invalidate earlier success manifests. Fractional receiving anchors retain their
+  authored position for slope elevation checks.
+  Verification supports masks split into bitmap tiles, checking their exact
+  combined coverage and consistent bindings while rejecting unaccounted records.
+  Full-map recovery and publication remain incomplete.
+  A surface-support audit reports missing pixels, interior gaps and repair bounds
+  for reviewed mask sets, including whether both sides of a state change have
+  full pixel support. Migration rejects unsupported coverage before surface clipping.
+  Light-region migration supports splitting across receiving planes while preserving
+  holes and ambience filters. It rejects splits whose integer output changes any
+  receiving contour, and records source-to-local region IDs in the recovery report.
+  Asset-local light receiving anchors can instead preserve one exact contour across
+  several elevations. The compiler resolves their layers after placement and emits
+  the contour once per layer, retaining ambience filters without fractional cuts.
+  Unrestricted non-clickable passages can opt into continuous navigation: when
+  placement joins their two areas, compilation omits the redundant gate and
+  rebuilds remaining door bindings. Restricted and state-linked doors remain required.
+  Reviewed ambient regions can be authored as standalone non-rendering assets with
+  local sound geometry and pinned editor placements. Derby's north and west zones
+  retain exact sound definitions and move independently without changing navigation.
+
+- **Preserved movement boundaries.** A labelled ordinary asset surface can retain
+  its outer contour separately from crossing movement obstacles. This preserves
+  thin walkable strips whose intersections fall between integer coordinates;
+  compiler-export and native navigation tests cover the behavior. Enclosed islands
+  are partitioned with coverage checks; recovery can split nearly touching
+  fractional holes before final assembly. Joined pieces remain unsupported in
+  this mode. Offline recovery exposes `--preserve-ground-boundaries` for comparison
+  drafts, without changing default recovery. Full-map parity and publication
+  remain incomplete.
+  Shared contour labels let separately placed asset fragments reconstruct one
+  exclusion while retaining distinct overlapping contours. Exported native tests
+  verify the fractional intersections without rounding them into new vertices.
 
 - **Asset-local movement transitions.** Map compilation clips initial/applied
   blockers to their placed navigation areas and assigns independent state bits
@@ -79,6 +379,9 @@
   Environmental emitters retain asset-local geometry, delays, volume falloff,
   noise-covering ranges and ambience filters; shared audio sample references use
   the base installation. Recovery reports ambiguous emitter ownership explicitly.
+  Light/shadow contours resolve against ordinary surfaces and sloped traversal
+  areas, retaining mission ambience filters. Recovery allows exterior contour
+  extensions only when they do not cross uncovered potentially walkable geometry.
   Native patch bindings can update multiple navigation areas together, retaining
   movement-sector and line activation through apply/reset. Combined visual,
   sight and mask state compilation remains unfinished.
@@ -1528,6 +1831,17 @@ debug log (up to 32 MiB), and active replay JSON files (up to 224 MiB decoded). 
 oversized replay attachments are explicitly reported. Logs and replays can
 contain player names, local paths and gameplay.
 
+Native reports also attach versioned `native-context.json`: the last observed
+lifecycle stage, mission and timeline frame, headless/replay/multiplayer mode,
+selected datadir and core overlay path, successfully mounted mod overlay paths,
+GPU/backend/driver, process ID, uptime, and capture thread name. Context is
+recorded as the game progresses; capture never queries the live engine. A busy
+or poisoned context lock produces an explicit unavailable reason instead of
+blocking a panic hook. Strings and overlay counts are bounded, and the context
+shares the existing attachment budget. Mission/frame and replay tracking reset
+on a new mission or return to the main menu. Raw launch arguments, invitation
+credentials, and connection endpoints are not added to this attachment.
+
 The VPS stores diagnostics privately, separately from ranked evidence. Its
 existing operator bearer token protects list, detail and deletion endpoints:
 `GET /api/v1/operator/diagnostics`,
@@ -1643,3 +1957,57 @@ manifest and install referenced resources before replacing the map document.
 `pipeline/src/import-scene.ts` explicitly converts older published snapshots.
 No mesh quantization, texture recompression, or collision regrouping occurs during
 conversion.
+
+Map asset navigation sockets support an explicit maximum height step at matching
+projected edges. Both assets must permit the step; detached sockets remain separate.
+This lets independently placed bridges and platforms share navigation while keeping
+their authored receiving planes and height discontinuities. Offline reviewed recovery
+can restore movement contours independently of receiving footprints and generates
+the corresponding asset-owned collision clearances.
+
+Asset movement surfaces and cutouts can retain fractional boundaries through boolean
+assembly with `preserveMovementPrecision`. The final movement regions still use the
+engine's integer grid. Ground recovery uses this to keep independently movable
+cutouts aligned with terrain instead of rounding each piece separately.
+
+- Editor terrain now uses bundled seamless grass, dirt, water and paving art synthesized from game map samples. Roads and rivers share the dirt/water art. Paved ground is selectable in the terrain panel and exports with stone surface material. A regeneration script records the donor crops and texture-synthesis CLI settings.
+
+- Path authoring separates saved-path browsing from focused editing, keeps finish/cancel and width/elevation controls prominent, and groups texture, point coordinates, and wall tuning in collapsible sections. Footpaths and rivers can be drawn without an asset library.
+
+- Compiled map resources can carry paired color/depth PNG states in disjoint image
+  regions, with complete tables for overlapping patch combinations. The renderer
+  selects both fields from current native patch state, including reset and timeline
+  changes. Asset transitions can name local model appearances; editor export resolves
+  fresh placement bindings, groups overlapping geometry and bakes the paired images.
+  Purely visual transitions need no fabricated collision or door changes. Existing
+  asset recovery, animated states and shared transitions remain incomplete.
+
+- **Grid terrain authoring and map workspaces.** New maps start with named map-size
+  presets, pixel dimensions, grid spacing and elevation. Workspace resizing retains
+  all out-of-bounds content; export clips walking areas and materials to its frame.
+  Terrain uses shared movable XYZ vertices, local subdivision, point materials,
+  smooth texture blends and per-cell walking overrides. Roads have point widths
+  and materials and conform to the edited mesh; rivers can derive channels without
+  changing the control grid. Asset moves and terrain changes preserve manual height
+  offsets. Camera controls provide cardinal headings, top view and quarter turns.
+  Visible, outline and hidden asset display modes leave saved/exported content intact.
+  The shared catalog includes 52 terrain/path/water designs and custom name/color
+  materials. Wychford now has editable terrain, road paths and material areas;
+  its conversion preserves placements and provides a reproducible height audit.
+
+- **Terrain selection tools.** Draw separates Terrain and Paths modes. Terrain
+  supports Shift-click multi-selection, Shift-drag rectangle selection, edge and
+  cell dragging, and hover previews of every affected vertex. Group moves preserve
+  relative offsets; Alt-drag moves horizontally and ordinary dragging changes
+  elevation. Local subdivision leaves unrelated cells unchanged.
+
+- Cardinal and 90° rotation camera buttons use the same smooth transition as the Game camera control,
+  which now sits beside them in the viewport navigation bar. Camera clipping follows
+  current terrain and assets after resizing, edits and previews without refitting the lens.
+
+- Terrain vertex picking uses a forgiving screen-space radius. Double-click refines
+  the clicked cell or cells sharing the clicked edge/vertex. Right-drag retains
+  camera rotation; Shift-drag adds a rectangle of vertices to the selection. Flatten
+  levels selected vertices to their average height without changing their footprint.
+  Delete removes selected vertices and reconnects the surrounding ground as one
+  undoable edit, rejecting deletions that cannot form a valid surface.

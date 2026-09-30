@@ -1,12 +1,10 @@
-//! Frozen v18 descriptor with exported engine picture metadata. Do not update when rearranging runtime
+//! Frozen v19 descriptor with exported engine picture metadata. Do not update when rearranging runtime
 //! representations; a deliberate format change must introduce a new version.
-//! v18 keeps the v17 container fields; `EncodedPictureCodec` gains the AVIF
-//! (`AvifRgba565Keyed`) and raw (`Rgb565Raw`) interface picture codecs, which
-//! changes the bitcode of every encoded picture slot. The magic and version
-//! below pin that layout.
+//! v19 keeps the v18 container fields; loaded levels gain optional receiving-plane
+//! anchors on sight obstacles. The magic and version below pin that layout.
 use super::*;
 #[derive(Debug, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
-struct FrozenShippingV18 {
+struct FrozenShippingV19 {
     pub profiles: Option<ProfileManager>,
     pub res_files: std::collections::BTreeMap<String, ResourceManager>,
     pub pak_files: std::collections::BTreeMap<String, Vec<EncodedPicture>>,
@@ -58,7 +56,7 @@ struct FrozenShippingV18 {
 }
 
 #[test]
-fn v18_wire_and_json_match_frozen_descriptor_with_runtime_state() {
+fn v19_wire_and_json_match_frozen_descriptor_with_runtime_state() {
     let mut datadir = ShippingDatadir::from_payload(ShippingDatadirPayload {
         profiles: Some(ProfileManager::default()),
         ..Default::default()
@@ -83,12 +81,12 @@ fn v18_wire_and_json_match_frozen_descriptor_with_runtime_state() {
     datadir
         .locales
         .insert("en-US".into(), ShippingLocale::default());
-    let frozen: FrozenShippingV18 =
+    let frozen: FrozenShippingV19 =
         serde_json::from_value(serde_json::to_value(&datadir).unwrap()).unwrap();
     let expected = bitcode::encode(&frozen);
     let before = encode_native(&datadir);
-    assert_eq!(&before[..8], b"RHDDNA18");
-    assert_eq!(&before[8..12], &18u32.to_le_bytes());
+    assert_eq!(&before[..8], b"RHDDNA19");
+    assert_eq!(&before[8..12], &19u32.to_le_bytes());
     assert_eq!(&before[12..], expected);
     datadir.set_remote_base_url("https://invalid.example/assets".into());
     datadir.runtime.source_dir = Some(PathBuf::from("/example"));

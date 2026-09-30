@@ -2,7 +2,7 @@ import type { Polygon } from "polygon-clipping";
 import type { Point } from "./level.ts";
 
 /** Remove duplicate closure, straight-edge vertices and zero-width backtracking spikes. */
-export function simplifyMotionRing(points: Point[]): Point[] {
+export function simplifyMotionRing(points: Point[], distanceTolerance = 0): Point[] {
   const result = points.map((p): Point => [...p]);
   if (
     result.length > 1 &&
@@ -17,7 +17,18 @@ export function simplifyMotionRing(points: Point[]): Point[] {
       const a = result[(i + result.length - 1) % result.length]!,
         b = result[i]!,
         c = result[(i + 1) % result.length]!;
-      if (Math.abs((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])) < 1e-8) {
+      // Backtracking spikes have almost coincident endpoints. Measure their
+      // width against the longest edge, rather than the tiny endpoint gap.
+      if (
+        Math.abs((b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])) <
+        1e-8 +
+          distanceTolerance *
+            Math.max(
+              Math.hypot(c[0] - a[0], c[1] - a[1]),
+              Math.hypot(b[0] - a[0], b[1] - a[1]),
+              Math.hypot(c[0] - b[0], c[1] - b[1]),
+            )
+      ) {
         result.splice(i, 1);
         changed = true;
         break;
@@ -46,7 +57,12 @@ export function quantizeGeneratedMotionPolygon(
   for (const [index, original] of polygon.entries()) {
     // Clipping may insert a fractional vertex on a straight edge. Rounding
     // that redundant vertex first creates a kink and can open a false seam.
-    const points = simplifyMotionRing(original).map(([x, y]): Point => [quantize(x), quantize(y)]);
+    // Allow two units of the clipping grid for intersection noise, before
+    // snapping to whole movement coordinates. Authored rings retain strict cleanup.
+    const points = simplifyMotionRing(original, 2 / 1048576).map(([x, y]): Point => [
+      quantize(x),
+      quantize(y),
+    ]);
     if (
       points.length &&
       original.length > 1 &&

@@ -12,7 +12,7 @@ whole polygons by the plane offset at their first vertex and only same-facing no
   opposed by normal, yet both sides render (double-sided materials), so it z-fights.
 
 Detection is per triangle: two triangles of different polygons with parallel planes (either sign),
-outlines overlapping in that plane, and a plane gap of at most 1.5 px at every corner of the overlap
+outlines overlapping in that plane by a region at least 0.25 px wide, and a plane gap of at most 1.5 px at every corner of the overlap
 region. A region z-fights only where it can be seen, so each region is tested for exposure on both
 sides of its plane: rays from points of the region, lifted past both faces, into a hemisphere of
 directions on that side, against every mesh near the hall (the pair's own two polygons are
@@ -20,25 +20,28 @@ transparent to the test). A side is exposed when any ray leaves the neighbourhoo
 on both sides (stacked volumes, undersides standing on the rock) stay flush on purpose so no gaps
 open. Pairs overlapping by more than 0.5 px² with any exposed region are fixed.
 
-For each pair one polygon (the mover) is inset so its whole outline ends 2 px behind the fixed plane
-as seen from the exposed side (from the source camera's side when both are exposed):
+For each pair one polygon gives way: the part of it lying on the other polygon is cut out
+(split along the other polygon's triangle edges, pieces inside removed). The other surface already
+draws that area, so nothing else moves: round 8 inset faces by translating their vertices, which
+bent and skewed neighbouring faces and opened slivers; this round moves no vertex.
 
-- mover and fixed as agreed with lincoln-states: 237 behind 272; 270 behind 253 and 240; 256 behind
-  261, 262 (spire, never edited) and 233; otherwise the polygon with fewer source-projected texels
-  moves, ties move the smaller volume.
+- which side gives way, as agreed with lincoln-states: 237 behind 272; 270 behind 253 and 240; 256
+  behind 261, 262 (spire, never edited) and 233; otherwise the polygon with fewer source-projected
+  texels, ties the smaller volume.
 
-Moving a polygon translates its vertices (closed volumes stay closed for lincoln-states' manifold
-cuts), iterating until the detector finds nothing. Only great-hall meshes change. Writes
+Iterates until the detector finds nothing. Only great-hall meshes change. Writes
 inspection/overlaps-r9.json.
 """
 import hashlib
 import json
+import logging
 import math
 from collections import defaultdict
 from pathlib import Path
 import sys
 
-TOLERANCE, MIN_AREA, GAP = 1.5, 0.5, 2.0
+TOLERANCE, MIN_AREA, SLIVER = 1.5, 0.5, 0.25  # SLIVER: minimum mean width (px) of an overlap region
+logger = logging.getLogger('round9')
 PARALLEL = 1 - 1e-3
 NEIGHBOURHOOD = 900.0  # px around the hall meshes that can enclose a contact
 ASSET, SPIRE = 'lincoln-great-hall', 'lincoln-great-hall-slate-spire'
@@ -130,6 +133,9 @@ def overlapping_pairs(objects, surroundings):
         region = clip([(p.dot(axis), p.dot(other)) for p in A[3]], [(p.dot(axis), p.dot(other)) for p in B[3]])
         if len(region) < 3 or area(region) <= 1e-3:
             continue
+        perimeter = sum(math.dist(p, q) for p, q in zip(region, region[1:] + region[:1]))
+        if 2 * area(region) / perimeter < SLIVER:
+            continue  # a seam where two walls meet at a slight angle: narrower than a pixel, nothing to fight over
         base, plane_b, offset_b = normal.dot(A[3][0]), B[2], B[2].dot(B[3][0])
         points, gaps = [], []
         for u, v in region:
@@ -154,6 +160,66 @@ def overlapping_pairs(objects, surroundings):
             if tag not in record[2]:
                 record[2].append(tag)
     return {key: record for key, record in found.items() if record[0] > MIN_AREA and record[2]}
+
+
+def remove_covered(obj, polygons):
+    """Delete the parts of each listed polygon that lie on (within TOLERANCE of) the given world triangles.
+
+    The polygon is triangulated and split along every triangle edge (bisect keeps UVs and splits the shared edges of
+    neighbouring faces without moving them) and the pieces inside a triangle are removed: the other
+    surface already draws that area, so the pair no longer z-fights and nothing else moves.
+    Returns {polygon index: removed area}.
+    """
+    import bmesh
+    inverse = obj.matrix_world.inverted()
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bm.faces.ensure_lookup_table()
+    tag = bm.faces.layers.int.new('round9_piece')
+    for index in polygons:
+        bm.faces[index][tag] = index + 1
+    # round 8 bent some polygons; triangles are planar, so each cut piece lies in one plane
+    bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if f[tag]])
+    removed = {}
+    for index, triangles in polygons.items():
+        for world in triangles:
+            local = [inverse @ p for p in world]
+            normal = (local[1] - local[0]).cross(local[2] - local[0])
+            if normal.length < 1e-9:
+                continue
+            normal.normalize()
+            for a, b in ((local[0], local[1]), (local[1], local[2]), (local[2], local[0])):
+                pieces = [f for f in bm.faces if f[tag] == index + 1]
+                edges = {e for f in pieces for e in f.edges}
+                verts = {v for f in pieces for v in f.verts}
+                bmesh.ops.bisect_plane(bm, geom=list(pieces) + list(edges) + list(verts), dist=1e-4,
+                                       plane_co=a, plane_no=(b - a).cross(normal).normalized())
+        doomed = []
+        for face in [f for f in bm.faces if f[tag] == index + 1]:
+            centre = face.calc_center_median()
+            for world in triangles:
+                local = [inverse @ p for p in world]
+                normal = (local[1] - local[0]).cross(local[2] - local[0])
+                if normal.length < 1e-9:
+                    continue
+                normal.normalize()
+                if abs((centre - local[0]).dot(normal)) > TOLERANCE:
+                    continue
+                signs = [((q - p).cross(centre - p)).dot(normal) for p, q in ((local[0], local[1]), (local[1], local[2]), (local[2], local[0]))]
+                if all(s >= -1e-6 for s in signs):
+                    doomed.append(face)
+                    break
+        removed[index] = sum(f.calc_area() for f in doomed)
+        if not doomed:
+            logger.warning('nothing removed from %s#%d: pieces %s', obj.get('source_node'), index,
+                      [(tuple(round(c, 2) for c in obj.matrix_world @ f.calc_center_median()), round(f.calc_area(), 2))
+                       for f in bm.faces if f[tag] == index + 1][:12])
+        bmesh.ops.delete(bm, geom=doomed, context='FACES')
+    bm.faces.layers.int.remove(tag)
+    bm.to_mesh(obj.data)
+    bm.free()
+    obj.data.update()
+    return removed
 
 
 def polygon_normal(obj, index):
@@ -184,8 +250,7 @@ def main(workspace, approved_sha):
     from render_slots import acquire
     acquire()
     import bpy
-    from global_reproject import Scene, TOWARD
-    from mathutils import Vector
+    from global_reproject import Scene
     import refine_great_hall_overlaps as round8
     workspace = Path(workspace).resolve()
     model = workspace / 'model.blend'
@@ -197,10 +262,9 @@ def main(workspace, approved_sha):
     if any(o.get('round9_overlap_fix') for o in meshes):
         raise ValueError('Round-9 overlap fix already applied; start from the approved round-8 model')
     round8.known_texels.scene = Scene()
-    toward = Vector(TOWARD.tolist())
     volume = {o: o.dimensions.x * o.dimensions.y * o.dimensions.z for o in meshes}
     node = lambda side: f"{side[0].get('source_node')}#{side[1]}"
-    log, moved_faces, texels = [], defaultdict(int), {}
+    log, trimmed_faces, texels = [], defaultdict(float), {}
     for iteration in range(15):
         pairs = overlapping_pairs(meshes, hall_surroundings(bpy, meshes))
         editable = {k: v for k, v in pairs.items() if ASSET in (k[0][0].get('asset_group'), k[1][0].get('asset_group'))}
@@ -209,7 +273,7 @@ def main(workspace, approved_sha):
         print('ITERATION', iteration, len(editable), flush=True)
         if not editable:
             break
-        shifts = {}
+        cuts = defaultdict(lambda: defaultdict(list))  # mover object -> mover polygon -> fixed triangles (world)
         for (A, B), (overlap, kind, exposed) in sorted(editable.items(), key=lambda kv: (node(kv[0][0]), node(kv[0][1]))):
             na, nb = A[0].get('source_node'), B[0].get('source_node')
             if (na, nb) in round8.EXPLICIT:
@@ -226,35 +290,19 @@ def main(workspace, approved_sha):
                     reason = f'fewer source texels ({min(ka, kb)} vs {max(ka, kb)})'
                 else:
                     mover, fixed = (A, B) if volume[A[0]] <= volume[B[0]] else (B, A)
-                    reason = 'equal source texels; smaller volume moves'
+                    reason = 'equal source texels; smaller volume gives way'
             if mover[0].get('asset_group') != ASSET:
                 mover, fixed, reason = fixed, mover, 'the slate spire is never edited'
-            first = polygon_normal(*A)
-            sides = [first * tag for tag in exposed]
-            viewer = sides[0] if len(sides) == 1 else (first if first.dot(toward) > 0 else -first)
-            direction = -viewer
-            fixed_normal = polygon_normal(*fixed)
-            fixed_corners = [fixed[0].matrix_world @ fixed[0].data.vertices[i].co for i in fixed[0].data.polygons[fixed[1]].vertices]
-            corners = [mover[0].matrix_world @ mover[0].data.vertices[i].co for i in mover[0].data.polygons[mover[1]].vertices]
-            # every mover corner ends GAP behind every corner of the (possibly non-planar) fixed polygon
-            depth = max(0.0, GAP + max(q.dot(direction) for q in fixed_corners) - min(p.dot(direction) for p in corners))
-            key = (mover[0], mover[1])
-            if key not in shifts or shifts[key][1] < depth:
-                shifts[key] = (direction, depth)
-            log.append({'moving': node(mover), 'fixed': node(fixed), 'kind': kind, 'exposed_sides': len(sides),
-                        'overlap_px2': round(overlap, 1), 'inset': round(depth, 3), 'reason': reason,
-                        'direction': [round(c, 3) for c in direction], 'fixed_normal': [round(c, 3) for c in fixed_normal]})
-        displacement = defaultdict(dict)
-        for (obj, index), (direction, depth) in shifts.items():
-            step = obj.matrix_world.to_3x3().inverted() @ (direction * depth)
-            for vertex in obj.data.polygons[index].vertices:
-                current = displacement[obj].get(vertex)
-                displacement[obj][vertex] = step if current is None else current + step
-            moved_faces[(obj.get('source_node'), index)] += 1
-        for obj, vertices in displacement.items():
-            for index, step in vertices.items():
-                obj.data.vertices[index].co += step
-            obj.data.update()
+            mesh, matrix = fixed[0].data, fixed[0].matrix_world
+            mesh.calc_loop_triangles()
+            cuts[mover[0]][mover[1]].extend([matrix @ mesh.vertices[i].co for i in t.vertices]
+                                            for t in mesh.loop_triangles if t.polygon_index == fixed[1])
+            log.append({'removed_from': node(mover), 'behind': node(fixed), 'kind': kind, 'exposed_sides': len(exposed),
+                        'overlap_px2': round(overlap, 1), 'reason': reason})
+        for obj, polygons in cuts.items():
+            removed = remove_covered(obj, polygons)
+            for index, area in removed.items():
+                trimmed_faces[(obj.get('source_node'), index)] += area
         texels = {}
     remaining = {k: v for k, v in overlapping_pairs(meshes, hall_surroundings(bpy, meshes)).items()
                  if ASSET in (k[0][0].get('asset_group'), k[1][0].get('asset_group'))}
@@ -262,19 +310,22 @@ def main(workspace, approved_sha):
     if remaining:
         debug = [{'a': node(a), 'b': node(b), 'kind': kind, 'overlap_px2': round(o, 1)} for (a, b), (o, kind, _) in remaining.items()]
         (workspace / 'inspection' / 'overlaps-r9-failed.json').write_text(json.dumps({'log': log, 'remaining': debug}, indent=2))
+        bpy.ops.wm.save_as_mainfile(filepath=str(workspace / 'inspection' / 'model-r9-failed.blend'), copy=True)
         raise RuntimeError(f'{len(remaining)} visible near-coplanar pairs remain')
-    report = {'tolerance_px': TOLERANCE, 'min_overlap_px2': MIN_AREA, 'gap_px': GAP, 'approved_round8_model_sha256': approved_sha,
-              'log': log, 'moved_faces': [f'{n}#{p}' for (n, p) in sorted(moved_faces)], 'remaining_pairs': 0}
+    report = {'tolerance_px': TOLERANCE, 'min_overlap_px2': MIN_AREA, 'approved_round8_model_sha256': approved_sha, 'log': log,
+              'trimmed_faces': {f'{n}#{p}': round(a, 1) for (n, p), a in sorted(trimmed_faces.items())}, 'remaining_pairs': 0}
     for obj in meshes:
         if obj.get('asset_group') == ASSET:
-            obj['round9_overlap_fix'] = json.dumps({'faces_moved': sum(1 for (n, _) in moved_faces if n == obj.get('source_node'))})
+            obj['round9_overlap_fix'] = json.dumps({'faces_trimmed': sum(1 for (n, _) in trimmed_faces if n == obj.get('source_node'))})
     bpy.context.preferences.filepaths.save_version = 0
     bpy.ops.wm.save_as_mainfile(filepath=str(model))
     (workspace / 'inspection' / 'overlaps-r9.json').write_text(json.dumps(report, indent=2) + '\n')
-    print('ROUND9 OVERLAPS', json.dumps({'moved_faces': len(report['moved_faces']),
+    print('ROUND9 OVERLAPS', json.dumps({'trimmed_faces': len(report['trimmed_faces']),
+                                         'trimmed_px2': round(sum(trimmed_faces.values()), 1),
                                          'iterations': [r['pairs'] for r in log if 'iteration' in r]}), flush=True)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     args = sys.argv[sys.argv.index('--') + 1:]
     main(args[0], args[1])

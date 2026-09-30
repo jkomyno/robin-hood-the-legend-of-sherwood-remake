@@ -40,6 +40,106 @@ struct BeamMePcSpawn {
     list_index: u8,
 }
 
+#[cfg(test)]
+mod authored_roster_tests {
+    use super::*;
+
+    #[test]
+    fn mixed_spawn_points_reserve_fixed_profiles_then_fill_campaign_slots() {
+        let loaded = crate::level_data::LoadedLevel::hackable_from_json(br#"{
+            "map_filename":"Mission", "walkable_polygon":[[0,0],[100,0],[100,100],[0,100]],
+            "spawn_points":[{"position":[10,10]},{"position":[20,20],"profile":0},{"position":[30,30]}]
+        }"#).unwrap();
+        assert!(loaded.mission.authored_spawn_roster);
+        let mut profiles = crate::profiles::ProfileManager::default();
+        profiles.characters = vec![crate::profiles::CharacterProfile::default(); 2];
+        let mut campaign = crate::campaign::Campaign::default();
+        campaign.characters = (0..2)
+            .map(|profile| crate::campaign::PcDescription {
+                character_profile_idx: Some(crate::profiles::CharacterProfileIdx(profile)),
+                ..Default::default()
+            })
+            .collect();
+        campaign.mission_team_indices = vec![0, 1];
+        let difficulty = crate::player_profile::DifficultyLevel::Medium;
+        let plan =
+            EngineInner::authored_beam_me_spawn_plan(&mut campaign, &profiles, &loaded, difficulty)
+                .unwrap();
+        assert_eq!(
+            plan.iter()
+                .map(|entry| (entry.1.0, entry.2))
+                .collect::<Vec<_>>(),
+            vec![(1, 0), (0, 1)]
+        );
+        let restarted =
+            EngineInner::authored_beam_me_spawn_plan(&mut campaign, &profiles, &loaded, difficulty)
+                .unwrap();
+        assert_eq!(
+            restarted
+                .iter()
+                .map(|entry| (entry.1.0, entry.2))
+                .collect::<Vec<_>>(),
+            vec![(1, 0), (0, 1)]
+        );
+        campaign.mission_team_indices.clear();
+        let standalone =
+            EngineInner::authored_beam_me_spawn_plan(&mut campaign, &profiles, &loaded, difficulty)
+                .unwrap();
+        assert_eq!(standalone.len(), 1);
+        assert_eq!(standalone[0].2, 1);
+    }
+
+    #[test]
+    fn authored_spawn_roster_fills_every_slot_without_a_campaign_team() {
+        let loaded = crate::level_data::LoadedLevel::hackable_from_json(
+            br#"{
+            "map_filename":"Mission",
+            "walkable_polygon":[[0,0],[100,0],[100,100],[0,100]],
+            "spawn_points":[
+                {"position":[10,10],"profile":1},
+                {"position":[20,20],"profile":0},
+                {"position":[30,30],"profile":1}
+            ]
+        }"#,
+        )
+        .unwrap();
+        let mut campaign = crate::campaign::Campaign::default();
+        let mut profiles = crate::profiles::ProfileManager::default();
+        profiles.characters = vec![crate::profiles::CharacterProfile::default(); 2];
+        let difficulty = crate::player_profile::DifficultyLevel::Medium;
+        let plan =
+            EngineInner::authored_beam_me_spawn_plan(&mut campaign, &profiles, &loaded, difficulty)
+                .unwrap();
+        assert_eq!(
+            plan.iter()
+                .map(|entry| (entry.1.0, entry.2))
+                .collect::<Vec<_>>(),
+            vec![(1, 0), (0, 1), (1, 2)]
+        );
+        assert_eq!(campaign.characters.len(), 3);
+        assert_eq!(campaign.mission_team_indices, vec![0, 1, 2]);
+        assert!(
+            campaign
+                .characters
+                .iter()
+                .all(|character| character.instanced)
+        );
+        let restarted =
+            EngineInner::authored_beam_me_spawn_plan(&mut campaign, &profiles, &loaded, difficulty)
+                .unwrap();
+        assert_eq!(
+            restarted.iter().map(|entry| entry.0).collect::<Vec<_>>(),
+            vec![0, 1, 2]
+        );
+        assert_eq!(campaign.characters.len(), 3);
+        profiles.characters.clear();
+        assert!(
+            EngineInner::authored_beam_me_spawn_plan(&mut campaign, &profiles, &loaded, difficulty)
+                .is_err()
+        );
+    }
+}
+
 impl EngineInner {
     pub(super) fn spawn_beam_me_pcs_stage(
         &mut self,
@@ -57,7 +157,15 @@ impl EngineInner {
         // (char_idx, profile_idx, beam_me_idx, pre-shuffle Sherwood placement roll)
         let pc_spawn_plan: Vec<BeamMePcSpawnPlanEntry>;
         let is_sherwood;
-        {
+        if loaded.mission.authored_spawn_roster {
+            is_sherwood = false;
+            pc_spawn_plan = Self::authored_beam_me_spawn_plan(
+                &mut self.mission_domain.campaign,
+                &profiles,
+                loaded,
+                sim.config().difficulty,
+            )?;
+        } else {
             let campaign = &mut self.mission_domain.campaign;
 
             // Determine Sherwood-camp flag up front — the Sherwood
@@ -112,8 +220,13 @@ impl EngineInner {
             let plan_entry = pc_spawn_plan.iter().find(|&&(_, _, bi, _)| bi == bm_idx);
 
             if let Some(&(char_idx, profile_idx, _, sherwood_placement_roll)) = plan_entry {
-                let (profile_idx, profile) =
-                    self.resolve_beam_me_pc_profile(&profiles, beam_me, char_idx, profile_idx)?;
+                let (profile_idx, profile) = self.resolve_beam_me_pc_profile(
+                    &profiles,
+                    beam_me,
+                    char_idx,
+                    profile_idx,
+                    beam_me.profile_override.is_none() || !loaded.mission.authored_spawn_roster,
+                )?;
                 let spawn = self.build_beam_me_pc_sprite(
                     assets,
                     profile,
@@ -151,6 +264,86 @@ impl EngineInner {
         }
 
         Ok(())
+    }
+
+    /// An authored mission supplies its own roster, including repeated profiles.
+    /// Reuse matching campaign slots so restarting the mission does not grow it.
+    fn authored_beam_me_spawn_plan(
+        campaign: &mut crate::campaign::Campaign,
+        profiles: &crate::profiles::ProfileManager,
+        loaded: &crate::level_data::LoadedLevel,
+        difficulty: crate::player_profile::DifficultyLevel,
+    ) -> Result<Vec<BeamMePcSpawnPlanEntry>, EngineError> {
+        let mut plan = Vec::new();
+        let mut team = Vec::new();
+        for (slot, spawn) in loaded.mission.beam_mes.iter().enumerate() {
+            let Some(profile_idx) = spawn
+                .profile_override
+                .map(crate::profiles::CharacterProfileIdx)
+            else {
+                continue;
+            };
+            let profile = profiles.get_character(profile_idx).ok_or_else(|| {
+                EngineError::MissionLevelStage {
+                    stage: "authored beam-me roster",
+                    reason: format!("spawn point {slot} references missing profile {profile_idx}"),
+                }
+            })?;
+            let character = campaign
+                .characters
+                .iter()
+                .enumerate()
+                .position(|(index, description)| {
+                    description.character_profile_idx == Some(profile_idx) && !team.contains(&index)
+                })
+                .unwrap_or(campaign.characters.len());
+            let description = crate::campaign::PcDescription {
+                character_profile_idx: Some(profile_idx),
+                instanced: true,
+                status: crate::pc_status::PcStatus::from_profile(profile, true, difficulty),
+            };
+            if character == campaign.characters.len() {
+                campaign.characters.push(description);
+            } else {
+                campaign.characters[character] = description;
+            }
+            team.push(character);
+            plan.push((character, profile_idx, slot, None));
+        }
+        let remaining: Vec<_> = campaign
+            .mission_team_indices
+            .iter()
+            .copied()
+            .filter(|character| !team.contains(character))
+            .collect();
+        let mut remaining = remaining.into_iter();
+        for (slot, spawn) in loaded.mission.beam_mes.iter().enumerate() {
+            if spawn.profile_override.is_some() {
+                continue;
+            }
+            let Some(character) = remaining.next() else {
+                break;
+            };
+            let description = campaign.characters.get_mut(character).ok_or_else(|| {
+                EngineError::MissionLevelStage {
+                    stage: "authored beam-me roster",
+                    reason: format!(
+                        "mission team references missing campaign character {character}"
+                    ),
+                }
+            })?;
+            let profile = description.character_profile_idx.ok_or_else(|| {
+                EngineError::MissionLevelStage {
+                    stage: "authored beam-me roster",
+                    reason: format!("campaign character {character} has no character profile"),
+                }
+            })?;
+            description.instanced = true;
+            plan.push((character, profile, slot, None));
+        }
+        plan.sort_by_key(|entry| entry.2);
+        campaign.mission_team_indices = plan.iter().map(|entry| entry.0).collect();
+        Ok(plan)
     }
 
     /// Phase A setup: reset gang instanced flags, build the mission team,
@@ -570,6 +763,7 @@ impl EngineInner {
         beam_me: &crate::level_data::BeamMe,
         char_idx: usize,
         mut profile_idx: crate::profiles::CharacterProfileIdx,
+        adapt_robin_to_environment: bool,
     ) -> Result<
         (
             crate::profiles::CharacterProfileIdx,
@@ -584,7 +778,7 @@ impl EngineInner {
         // to "Robin des bois", and vice-versa in a town level.
         // Swap both `profile_idx` and the campaign character's
         // stored `character_profile_idx`.
-        {
+        if adapt_robin_to_environment {
             use crate::character_kind::CharacterKind;
             let want_town = !self.world.weather.is_forest_level;
             let current_kind = profiles

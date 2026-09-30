@@ -19,7 +19,7 @@
       "model": "3d-assets/derby/derby-terrain/model.glb",
       "model_sha256": "d0f986fc567b41019463fb5db9908b8b6cd148eca9135575276d0f39d9e2b5fd",
       "descriptor": "3d-assets/derby/derby-terrain/asset.json",
-      "descriptor_sha256": "bf6efab1937db9736431fe8f2e678e298c091330d9e4ab7ad9bda5fc36f91850"
+      "descriptor_sha256": "8816eb6d6271d1c762c17c765682038dc9d6fac3fc75988a606d3a1edb2d66cf"
     }
   ],
   "assetSources": [
@@ -27,281 +27,477 @@
       "model": "3d-assets/derby/derby-south-gatehouse/model.glb",
       "model_sha256": "0e1ef6a50aa2461936bea16c3603a35b8ac1716508f1b44c5890eb70ba539a56",
       "descriptor": "3d-assets/derby/derby-south-gatehouse/asset.json",
-      "descriptor_sha256": "d093e1efe60f7576b7e608c3c348e62fdf03efc0fd1719efcb7305963cd2f912",
+      "descriptor_sha256": "d65fe39a64598fa4a986d215cd6ee25310171b2adf282dd5d278ad0e741e95ea",
       "id": "derby-south-gatehouse"
     },
     {
       "model": "3d-assets/derby/derby-lower-east-curtain/model.glb",
       "model_sha256": "0d933f55eb3fe4611fbee2071b05d6385219e76931ad52bf49e9b936f116800e",
       "descriptor": "3d-assets/derby/derby-lower-east-curtain/asset.json",
-      "descriptor_sha256": "cc8d5add3cef4547421e11551ef01de6dc1857e08a5791542863f60ed97838c6",
+      "descriptor_sha256": "ced578ed8bd0188bcc24bd1c72f6c925488f32c73cd15aae4dbb03c63adcc7b0",
       "id": "derby-lower-east-curtain"
     },
     {
       "model": "3d-assets/derby/derby-southwest-postern/model.glb",
       "model_sha256": "3b03292e8411111b1db5992168fe57b749de7d180851e35118e3bdbc099bb61d",
       "descriptor": "3d-assets/derby/derby-southwest-postern/asset.json",
-      "descriptor_sha256": "b8d8f3e88b5b79214464fe33a5f44c4e1b33391813fbd2ccf56ac5b0b1e8202a",
+      "descriptor_sha256": "81feb4f4025f82a6cd536c4ccdfb0dff0932bbae93668df3fdf7db29c330851b",
       "id": "derby-southwest-postern"
     },
     {
       "model": "3d-assets/derby/derby-lower-southeast-cottage/model.glb",
       "model_sha256": "f6975b27e53d77c5f7c06ba91d8748607d874ee142432469984a3dab83124985",
       "descriptor": "3d-assets/derby/derby-lower-southeast-cottage/asset.json",
-      "descriptor_sha256": "b0b17ade98fb03924b8406d999dec03649a53309710417ff49f92e45a6557db8",
+      "descriptor_sha256": "297e4f1e49da08a5f723f49bb9a936ac6f52ec52adb51acd01496d882b19c4f1",
       "id": "derby-lower-southeast-cottage"
     },
     {
       "model": "3d-assets/derby/derby-lower-west-curtain/model.glb",
       "model_sha256": "709c2706aaff8a760eccd51dc508fc072b16657e9d4603c25ecb62f4de45e61c",
       "descriptor": "3d-assets/derby/derby-lower-west-curtain/asset.json",
-      "descriptor_sha256": "e62edaa5e28f9ecae18ce70a3dd79e4d06162d3034d0365c4b04ecbc326e3bf6",
+      "descriptor_sha256": "c82fa187c3e115f2e2569002c9ab691b7f7db289156713526a8b02a09d72f38a",
       "id": "derby-lower-west-curtain"
     },
     {
       "model": "3d-assets/derby/derby-lower-west-wall-turret/model.glb",
       "model_sha256": "8d6f9ae6d265dae7d0d727f862d0e852f600b38ee845ccb9c22a803c4c3ef813",
       "descriptor": "3d-assets/derby/derby-lower-west-wall-turret/asset.json",
-      "descriptor_sha256": "bb7919ee7e7e6f7cdcb1d035fe875a836fe09f47e379476e5b6893403fc40fdb",
+      "descriptor_sha256": "7a3136059f2273908f393e901762b5c3239eed6a28ee382af763edfb9b83e4b5",
       "id": "derby-lower-west-wall-turret"
     },
     {
       "model": "3d-assets/derby/derby-lower-west-access-stair/model.glb",
       "model_sha256": "79e126afbdcb282941b0dd4644278c1dcc560cdbe30a2b591565bbce122dcf0e",
       "descriptor": "3d-assets/derby/derby-lower-west-access-stair/asset.json",
-      "descriptor_sha256": "e709f3da96b4981515384dfa10c1d120d2d4d40e81ed1fc5bfbef36300331a91",
+      "descriptor_sha256": "5bf1190cb392bc9221e378e9795dfb57d2de3d75c62fbd33ee70469736df5f22",
       "id": "derby-lower-west-access-stair"
     },
     {
       "model": "3d-assets/derby/derby-lower-courtyard-prop/model.glb",
       "model_sha256": "7fcf3c6a575d419ea6214728836ede5b225738591154227d6e1b6c9bca97cdee",
       "descriptor": "3d-assets/derby/derby-lower-courtyard-prop/asset.json",
-      "descriptor_sha256": "c33fbd6e0a003c84a84e51a3209e01a732ede1c589c54ff8b5606aad7199bfe1",
+      "descriptor_sha256": "c28031a2a2dc9a7c39b1bd372d04d674055518918b0e1537ac3291d1c4c96a6b",
       "id": "derby-lower-courtyard-prop"
     },
     {
       "model": "3d-assets/derby/derby-south-approach-stone/model.glb",
       "model_sha256": "493bbee7ef3417d6af8aa54067e282c9db246c36c8a39640825c577d827dc520",
       "descriptor": "3d-assets/derby/derby-south-approach-stone/asset.json",
-      "descriptor_sha256": "567eca6d9dfae51e3fd8797bccb3034b62d2579026aa944a562c33ed1503a1c2",
+      "descriptor_sha256": "8bdfc7b469da97cfbd371d084f49b1030b6a58f6bb8a69c1870305c53e5b94a0",
       "id": "derby-south-approach-stone"
     },
     {
       "model": "3d-assets/derby/derby-lower-east-cottage/model.glb",
       "model_sha256": "997d331d7c763c2d8ffcc27a354c0749a36af884e53247fc8c5d2aaf6808c750",
       "descriptor": "3d-assets/derby/derby-lower-east-cottage/asset.json",
-      "descriptor_sha256": "8bbb300c87b8a57e9ded3f602ad2dbe4a81bab242fd38111fb7ba9cdbe4f7c27",
+      "descriptor_sha256": "383fedc1a1c9eaf1b268e80b3047659a2656e2671d1c3cc6c96db780799188e0",
       "id": "derby-lower-east-cottage"
     },
     {
       "model": "3d-assets/derby/derby-lower-east-cottage-barrel/model.glb",
       "model_sha256": "d68b768e2b69dd873c6c72874f6f0f4291319c0ce7bdea58b87f3f1d040d7d6d",
       "descriptor": "3d-assets/derby/derby-lower-east-cottage-barrel/asset.json",
-      "descriptor_sha256": "4d283391616c5d24ea5adee3001bb3aedd8fa27081568dcdf296dd1adaf2e9a0",
+      "descriptor_sha256": "cde54fa2ba9272c3800d762f324f0fb025793225d3dbd6ba1c1ae1ec679fe687",
       "id": "derby-lower-east-cottage-barrel"
     },
     {
       "model": "3d-assets/derby/derby-lower-west-cottage/model.glb",
       "model_sha256": "7d3615a851ace3c8aab726fb21375e3317fb5cb36cfce023d4dd015d9f978bc5",
       "descriptor": "3d-assets/derby/derby-lower-west-cottage/asset.json",
-      "descriptor_sha256": "0120225ad4ce7982746d2398b9a3b8326f0fb2f199d8f4e64d0871d4ccfa22c9",
+      "descriptor_sha256": "1e034e9998ab0e3b1680238c796decd11d85c57939ceb6a5afde1862f97ce3b3",
       "id": "derby-lower-west-cottage"
     },
     {
       "model": "3d-assets/derby/derby-lower-southwest-cottage/model.glb",
       "model_sha256": "32aa7237d1e8d946f8e3283e1f46079caa944b557cfb35fea29a0f70a0b85918",
       "descriptor": "3d-assets/derby/derby-lower-southwest-cottage/asset.json",
-      "descriptor_sha256": "3b86679a21fdad1dffcbb7250c1abf03b51e1bd765bcdbd99d4f6f3bca801f91",
+      "descriptor_sha256": "05e00927519dfe5545aff468a5cc8654caa908b7a40418acbb5b8b7ca94abd24",
       "id": "derby-lower-southwest-cottage"
     },
     {
       "model": "3d-assets/derby/derby-lower-northwest-cottage-barrel/model.glb",
       "model_sha256": "2b0aa6d4a267fe8e0a0796aef95ce2e6db86f1cd92705be85a945b038d0741c6",
       "descriptor": "3d-assets/derby/derby-lower-northwest-cottage-barrel/asset.json",
-      "descriptor_sha256": "a6fe15c00b6ac1e65caee2aaf553921f96cef50f212dde8470d1c4d9be2ef7eb",
+      "descriptor_sha256": "b979517b75d7b662dc244708bae612ea7456f7eb28987faef4eb7f3a93611083",
       "id": "derby-lower-northwest-cottage-barrel"
     },
     {
       "model": "3d-assets/derby/derby-lower-northwest-yard-fence/model.glb",
       "model_sha256": "cded84764442a0a6c1dbd00c96580cff379bc0aadacb5ef985d13929da02c253",
       "descriptor": "3d-assets/derby/derby-lower-northwest-yard-fence/asset.json",
-      "descriptor_sha256": "72d405e2b8e5b5b5435eef70c2390ce03f93109798efaa2635c6bf056602356b",
+      "descriptor_sha256": "812dea802e9cd9ac8d13418574454fc931a9a2046cd39840046d966437c1eb4e",
       "id": "derby-lower-northwest-yard-fence"
     },
     {
       "model": "3d-assets/derby/derby-lower-northwest-wash-tub/model.glb",
       "model_sha256": "f9f97e847c734fb4bcc3f69b2ca9d21ce2401f265c583b9211b28005d9ac6e58",
       "descriptor": "3d-assets/derby/derby-lower-northwest-wash-tub/asset.json",
-      "descriptor_sha256": "a515e0d960a76826e9bb81fc58a34ca455dccfbac376bc53e0c0a98e086fdf54",
+      "descriptor_sha256": "85a1ed1ad76ca4c76f90fcefd394f602cb558e19af7b3d68ae96c58ef941a11c",
       "id": "derby-lower-northwest-wash-tub"
     },
     {
       "model": "3d-assets/derby/derby-lower-northwest-cottage/model.glb",
       "model_sha256": "7dbc15a728ecf12ef3235163d185f15b685e23857b5e15543690cafe0973c967",
       "descriptor": "3d-assets/derby/derby-lower-northwest-cottage/asset.json",
-      "descriptor_sha256": "39a722e12fbdf137a2269b6298957610f25015e43fb9537e9ca061426f2b7acc",
+      "descriptor_sha256": "f24e621829d0fecf2a0df7b6a4e1c153b8da8d11ae58ed2fc95efbd9236affc8",
       "id": "derby-lower-northwest-cottage"
     },
     {
       "model": "3d-assets/derby/derby-east-courtyard-south-shelter/model.glb",
       "model_sha256": "93ba61a1d3005b609fcfaf6b042381211e836024b4c30381f4c9c40b50a50514",
       "descriptor": "3d-assets/derby/derby-east-courtyard-south-shelter/asset.json",
-      "descriptor_sha256": "0c7b3dd4fa56dbb9fa3032a0a2a72ebc857f9bf75e9080d6e82bd89c19ef3969",
+      "descriptor_sha256": "218048099533a5d90dcb1add8d9c59da718420ea75e866c4881a3f0552093a75",
       "id": "derby-east-courtyard-south-shelter"
     },
     {
       "model": "3d-assets/derby/derby-east-wall-landing/model.glb",
       "model_sha256": "8cee6c35f65eb0d60dcc1eb88028a40f1d4419c03e06ac405b72fc7e22698962",
       "descriptor": "3d-assets/derby/derby-east-wall-landing/asset.json",
-      "descriptor_sha256": "ec1a0d92309588b6211e5e6dae3e88fc1912639d5e6fa208b99c142a94c95e0b",
+      "descriptor_sha256": "0f3d70b916dc60f866c32758c983647213046a59b95ff7186701ae22ac3eeb8f",
       "id": "derby-east-wall-landing"
     },
     {
       "model": "3d-assets/derby/derby-east-courtyard-north-shelter/model.glb",
       "model_sha256": "ffc75e462d982c6b859c6e6e0d75d39e599795495d59ce18c501823e8c4df456",
       "descriptor": "3d-assets/derby/derby-east-courtyard-north-shelter/asset.json",
-      "descriptor_sha256": "690f7997a4393952692ba4de6a1630b40f391e6a0e23cb8b0fa89b2db4cf071b",
+      "descriptor_sha256": "06f52349e501034d8d7f87038f184d1d1936b0ac7c5f2f6580c4f6e2e2b6b3b3",
       "id": "derby-east-courtyard-north-shelter"
     },
     {
       "model": "3d-assets/derby/derby-upper-west-curtain/model.glb",
       "model_sha256": "8563829559f79d1052b54d76fb65e7fae935a18819fc1021191b6cac27e66b4a",
       "descriptor": "3d-assets/derby/derby-upper-west-curtain/asset.json",
-      "descriptor_sha256": "ddf8db2dc4cfc500edd6830251ff2e31598b7044d59facada92a308bd46c1c70",
+      "descriptor_sha256": "426d652d677e1b152f098da6208705d468ee189cb0ca9be12e16b673c553d36b",
       "id": "derby-upper-west-curtain"
     },
     {
       "model": "3d-assets/derby/derby-lower-east-supplies/model.glb",
       "model_sha256": "0c2dc3c15ac37e415f6ddf6d4a1ee815cf760fccadf4f52deacac7f050f70ceb",
       "descriptor": "3d-assets/derby/derby-lower-east-supplies/asset.json",
-      "descriptor_sha256": "0e4576ff94502054bca8542cbe31d812538a727a35857a202ab1f78e3c6e8423",
+      "descriptor_sha256": "d9fe85aabf6afa0c72a4db075597d48da2160e80e7e15faf58ab30fdd7aaaf2e",
       "id": "derby-lower-east-supplies"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-gate/model.glb",
       "model_sha256": "df8a4e9f2b10e2c1cafaeb7e8a0e67ab51d7bf1038b9d8177b567a45fe2c0cc3",
       "descriptor": "3d-assets/derby/derby-east-bailey-gate/asset.json",
-      "descriptor_sha256": "4744ea11771a4bfa17d0265fee95b329c6ae4c0b16aae65c1c11d6388413050e",
+      "descriptor_sha256": "8ee2065e14039428b90b96a973747bfafbafb15a14102ac0740bd4c2750b134b",
       "id": "derby-east-bailey-gate"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-east-curtain/model.glb",
       "model_sha256": "a61cdbe98e974d5f9a08915aede4c5fe1d79d4b2125639b4b1e113d9d4ca2851",
       "descriptor": "3d-assets/derby/derby-east-bailey-east-curtain/asset.json",
-      "descriptor_sha256": "c6c13300642a10e2ab62fd5a542690e8fca16fb1f7da01ca5596931123966552",
+      "descriptor_sha256": "dea46aec53ec5c2c795c97da45e0eb2d892f21bce07328f9ba86f8536274f848",
       "id": "derby-east-bailey-east-curtain"
     },
     {
       "model": "3d-assets/derby/derby-east-hall/model.glb",
       "model_sha256": "44f101f4933c8a3f0b445dda7b70ce647fc561fb3b87b0cb55eb583808245354",
       "descriptor": "3d-assets/derby/derby-east-hall/asset.json",
-      "descriptor_sha256": "d84d07cf62082dfc01f4d11f83894cb600d9ac81697eef7e7809f84022635912",
+      "descriptor_sha256": "a3f37f58dd50cd0dda46691dcb2a22575ed9016710b41e1a8dba92dca4a3586d",
       "id": "derby-east-hall"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-west-curtain/model.glb",
       "model_sha256": "5783c1bf7d2be8b4a8360c2f33ed82f474ee5e718ceade928fef402051cfdefc",
       "descriptor": "3d-assets/derby/derby-east-bailey-west-curtain/asset.json",
-      "descriptor_sha256": "d074fd511bc105cfecad88865d591306a3e705251d02318a0ce339b056416d77",
+      "descriptor_sha256": "d5f82b5653827756a988fa713c41a86562c83ea035001ceac7e5f5b8212fbc09",
       "id": "derby-east-bailey-west-curtain"
     },
     {
       "model": "3d-assets/derby/derby-east-hall-stair/model.glb",
       "model_sha256": "33fd04d3cf9039d52c285cd64863cdbe7dd0d95144825034cdd26f1dce7e9f55",
       "descriptor": "3d-assets/derby/derby-east-hall-stair/asset.json",
-      "descriptor_sha256": "e58f73847a37ed53e800ba7ec22f813d3ba4083fcd2c9de9207726748905b875",
+      "descriptor_sha256": "c82e93a9405fa171467593e436358bb09717c2d9c2a88294ffcb4a1e6ecc3f54",
       "id": "derby-east-hall-stair"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-stacked-timber/model.glb",
       "model_sha256": "c2000c521574d8173947e19c0da4f2b4467698cda7bbc932d8617b01fd22c992",
       "descriptor": "3d-assets/derby/derby-east-bailey-stacked-timber/asset.json",
-      "descriptor_sha256": "cb63543d3a07b1f92788d94289c8ee051d215929e9ebcc1428dcb0b382bd0a57",
+      "descriptor_sha256": "e69005bcdaeb3bfbff2c77a3a79af0d19cbd8841c69934fa55cd7f0cafe06a7b",
       "id": "derby-east-bailey-stacked-timber"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-well/model.glb",
       "model_sha256": "c30b4ba6bbfdd5fb801e576809accf56fc63aa572394a664ec82b0c63864bffb",
       "descriptor": "3d-assets/derby/derby-east-bailey-well/asset.json",
-      "descriptor_sha256": "768a6439d0db996c9c6fc6de546ec734387ca86dfb28d971faaeb0bfaf86cda9",
+      "descriptor_sha256": "d046cb3ce700b82ce649c735ac75bc96f3512a054fe60b9b37dd6a42a670c6df",
       "id": "derby-east-bailey-well"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-crate/model.glb",
       "model_sha256": "4bbd5e49d64e969be6a7d597b9b1f195fab1b7a50af0905eb0f57273927286ec",
       "descriptor": "3d-assets/derby/derby-east-bailey-crate/asset.json",
-      "descriptor_sha256": "56b0937ce8696d377caa40ed64b219e620b95398395d2181023ee95bf46ce123",
+      "descriptor_sha256": "fecf59a9df52b0bfda2332ffac1b04c4f77e3a63561a361470b538231ef91c92",
       "id": "derby-east-bailey-crate"
     },
     {
       "model": "3d-assets/derby/derby-east-bailey-yard-prop/model.glb",
       "model_sha256": "13f7e4ba691d114c311c41d04a2ea30f41454a8e355caa9187bc065256d3895b",
       "descriptor": "3d-assets/derby/derby-east-bailey-yard-prop/asset.json",
-      "descriptor_sha256": "84753c7cab8e90541b3c7806c7eddfde3122f36b7816dd5e2c9a54fb91816945",
+      "descriptor_sha256": "ad34d6c373e4b0adc0776765fd436cd3d32fdc0353c9b285fdc35a3436a9c9f5",
       "id": "derby-east-bailey-yard-prop"
     },
     {
       "model": "3d-assets/derby/derby-upper-gatehouse/model.glb",
       "model_sha256": "db30b2e76a1b710ea488ea9b582f3b0960c994d7326b2ab211603aad27cd1691",
       "descriptor": "3d-assets/derby/derby-upper-gatehouse/asset.json",
-      "descriptor_sha256": "6d6fb6e38e227eafdbb78532fe9dddc7c8659de87c02da1ed6b60719fcd7db40",
+      "descriptor_sha256": "f21ec707cf7943475ef5986479a062c1870168427539a5464dbfb2e19b77c84e",
       "id": "derby-upper-gatehouse"
     },
     {
       "model": "3d-assets/derby/derby-keep-hall-bridge/model.glb",
       "model_sha256": "c32f27a390b3020412d75d5f8f544581b4cf51f5aeff30fa5eb3942922bdd713",
       "descriptor": "3d-assets/derby/derby-keep-hall-bridge/asset.json",
-      "descriptor_sha256": "1c05f9fd3d4db9b10cfff5ea4dd4edeb9d5bffcee7cef6dfa41f0c22a29bfd9e",
+      "descriptor_sha256": "7652e9bd70ca43679b6a34fc77f83e5f964e28e32cb03ae954ac79004eeae4a2",
       "id": "derby-keep-hall-bridge"
     },
     {
       "model": "3d-assets/derby/derby-upper-east-curtain/model.glb",
       "model_sha256": "8057ac75034126f13b860df37cc21962d7c2a55ab2ce803abd21ac8968dba57a",
       "descriptor": "3d-assets/derby/derby-upper-east-curtain/asset.json",
-      "descriptor_sha256": "5ce276e464c9d1bb17a433f17b03276cdadcd5dd388b89d8852dcbd17b918449",
+      "descriptor_sha256": "5254ecef1b7dcb7e12b61a778e2a04c41b044df34175c6f64272c04161ed0377",
       "id": "derby-upper-east-curtain"
     },
     {
       "model": "3d-assets/derby/derby-keep-west-tower/model.glb",
       "model_sha256": "275066ae3238a4aafd527350f586138a3f8c550fc5ff23b0511289c11f543534",
       "descriptor": "3d-assets/derby/derby-keep-west-tower/asset.json",
-      "descriptor_sha256": "f234d4259ebe026aa9d34efbcc8a1b2938b96dbba9bdd576d487100b64bb5aa2",
+      "descriptor_sha256": "9ac5bf9166ddcbabcd594f829d8c02d7209b4d66ea27385e7f9b013a2696d019",
       "id": "derby-keep-west-tower"
     },
     {
       "model": "3d-assets/derby/derby-keep-main-hall/model.glb",
       "model_sha256": "721311bf83222e0aad0ce8d53c433fcc644a6a36b035c8f57cbfdcee75eae1f5",
       "descriptor": "3d-assets/derby/derby-keep-main-hall/asset.json",
-      "descriptor_sha256": "c416cc4f336eeeada355b3f7a8660206017e53f673213861154423f8c0d632cc",
+      "descriptor_sha256": "4f974dce02fc4402bbda087049a23cc33b0c4ba063884d4f89802a002168a6b0",
       "id": "derby-keep-main-hall"
     },
     {
       "model": "3d-assets/derby/derby-keep-central-gallery/model.glb",
       "model_sha256": "8e35b1be1767ae67c8ca925135a59c8f47c34eb7ee1de9d1439ec80618e4b08d",
       "descriptor": "3d-assets/derby/derby-keep-central-gallery/asset.json",
-      "descriptor_sha256": "4e88a804436d40c0c2838333a7ffc9fcab62810d248f1f55e5b946fd377d559c",
+      "descriptor_sha256": "ea7367bbed2a49b481261d0a6f01252cc04c0f61d9fd550dfe96aac9880e7cc5",
       "id": "derby-keep-central-gallery"
     },
     {
       "model": "3d-assets/derby/derby-keep-north-tower/model.glb",
       "model_sha256": "77d3d9917a3aa2119549d99a990eb028a93fe3fae2c792c41865ac0072540631",
       "descriptor": "3d-assets/derby/derby-keep-north-tower/asset.json",
-      "descriptor_sha256": "051e3716050d7c7c7d7a0e0f46d52fbffdef1064bc83859e5bf565e65a97f5e1",
+      "descriptor_sha256": "c5112ce0d48adccfc5215e5fe4b26ece00a08754665dad0fb68ab0f7f8afb8ba",
       "id": "derby-keep-north-tower"
     },
     {
       "model": "3d-assets/derby/derby-east-watchtower/model.glb",
       "model_sha256": "eee53338bcb1ea01b38da55e63747d46619fd6923ad8c683196d076bf024d64c",
       "descriptor": "3d-assets/derby/derby-east-watchtower/asset.json",
-      "descriptor_sha256": "375df92c57270ee9c18babc2755a67dc4bbd46710f3b7e54748ecc9d78cae7de",
+      "descriptor_sha256": "83b085af1e041116b4919592b38431fa62051b9fe08632b56363ef8e422e19e0",
       "id": "derby-east-watchtower"
     },
     {
       "model": "3d-assets/derby/derby-second-drawbridge/model.glb",
       "model_sha256": "a0700a05ba41b334e4f732e24fb35a749a0315beac78dcb29b939f4aa89f31ea",
       "descriptor": "3d-assets/derby/derby-second-drawbridge/asset.json",
-      "descriptor_sha256": "caaebaddbd15bb723b8ddbc148e4d85c362934e22588da2060d273e80fccf611",
+      "descriptor_sha256": "04263f6e71e71cbd78e8c0fe4b8c96c9c0749e84de81c007eeaa43d7c7f614f4",
       "id": "derby-second-drawbridge"
+    },
+    {
+      "id": "derby-lower-west-canvas-shelter",
+      "descriptor": "3d-assets/derby-lower-west-canvas-shelter/asset.json",
+      "descriptor_sha256": "cbecf6e410aaff6fa37c00cc5f66139fd27209cff8f674062c380088b872931d",
+      "model": "3d-assets/derby-lower-west-canvas-shelter/model.glb",
+      "model_sha256": "43db3d20ea55f05cc6b800bd1312e86c778bcd0e993b9355b161355d317ced69"
+    },
+    {
+      "id": "derby-ambient-281-687",
+      "descriptor": "3d-assets/derby-ambient-281-687/asset.json",
+      "model": "3d-assets/derby-ambient-281-687/model.glb",
+      "descriptor_sha256": "3582a8faf00d905c09b4dfb8793337b5c03fb3ec906ed3e185e9c4fac6be63c8",
+      "model_sha256": "0b3c564a404666bd1a8b8a8a7002ff527c10eadb6747d359b296ec56e87b44bd"
+    },
+    {
+      "id": "derby-ambient-1323-627",
+      "descriptor": "3d-assets/derby-ambient-1323-627/asset.json",
+      "model": "3d-assets/derby-ambient-1323-627/model.glb",
+      "descriptor_sha256": "a509b32622cef3ad7c66cac87e239f57443d13e09ba48323cf9044e94b02de8f",
+      "model_sha256": "171bf76fa72e29667561beec1414814e56118992a0ff459824371dc52c694366"
+    },
+    {
+      "id": "derby-west-ambient-zone",
+      "descriptor": "3d-assets/derby-west-ambient-zone/asset.json",
+      "model": "3d-assets/derby-west-ambient-zone/model.glb",
+      "descriptor_sha256": "fed8f8219fe660e4bc790b23c29e2d06caaf403b5e05a24fc55006fcb3989de2",
+      "model_sha256": "84292b326ab8bf36f3f24305d3fa2f265280c267caa0eaf4ef8dabd9653927ac"
+    },
+    {
+      "id": "derby-north-ambient-zone",
+      "descriptor": "3d-assets/derby-north-ambient-zone/asset.json",
+      "model": "3d-assets/derby-north-ambient-zone/model.glb",
+      "descriptor_sha256": "e7c327331df40359b00707571870ed0987e880e37269874b41be9b99d406359b",
+      "model_sha256": "7aae8ca61c81bba5ba6de941e16a3d8a48a42be8770d534eed09c6a62cce1cb3"
+    },
+    {
+      "id": "derby-ambient-305-839",
+      "descriptor": "3d-assets/derby-ambient-305-839/asset.json",
+      "model": "3d-assets/derby-ambient-305-839/model.glb",
+      "descriptor_sha256": "7a4931e6d23be85e9eb9c64045a022aa801ea9eada45a51f45fac0ec50317d11",
+      "model_sha256": "a239992ed883fb02da02950be7ad4c4f653ef118a4bd0cd1aa028c2be9dbf704"
+    },
+    {
+      "id": "derby-ambient-298-716",
+      "descriptor": "3d-assets/derby-ambient-298-716/asset.json",
+      "model": "3d-assets/derby-ambient-298-716/model.glb",
+      "descriptor_sha256": "f3f333d0208a34511df6f013958ec0ee79c74374e9ad872f786aa78a9db1e0fb",
+      "model_sha256": "07da7638670b1393d394c3b7107b78118afadd7588705d6ce0b9efa7318e50c3"
+    },
+    {
+      "id": "derby-ambient-1671-943",
+      "descriptor": "3d-assets/derby-ambient-1671-943/asset.json",
+      "model": "3d-assets/derby-ambient-1671-943/model.glb",
+      "descriptor_sha256": "06dc192c12b663bf2640aedebe489611f2de13943b5f6c6f9cc31b35a3b81d58",
+      "model_sha256": "d7b9902a40bbba6b8b644ca1bd3024c85aa25aa2f4df68ae2e3fffdf4ef731d8"
+    },
+    {
+      "id": "derby-ambient-1653-2351",
+      "descriptor": "3d-assets/derby-ambient-1653-2351/asset.json",
+      "model": "3d-assets/derby-ambient-1653-2351/model.glb",
+      "descriptor_sha256": "7b7a4dc978efdbfae5a4f427972eeca5007c3863634243999d72b096f175f015",
+      "model_sha256": "af75cfdb8cf82597ce1d6df4388166a071161efeded8e29d5c47e104dc21ef13"
+    },
+    {
+      "id": "derby-ambient-459-2026",
+      "descriptor": "3d-assets/derby-ambient-459-2026/asset.json",
+      "model": "3d-assets/derby-ambient-459-2026/model.glb",
+      "descriptor_sha256": "1ea1277c2ec3295fcf40295eb1ea5e84adcd5ca5f5ee8d6347813dce9a1ceffc",
+      "model_sha256": "3ccc6bb0fbf2ca505df42c9dcada1b5ec336a7009e5966fcf93da5e20d670d0b"
+    },
+    {
+      "id": "derby-light-region-0",
+      "descriptor": "3d-assets/derby-light-region-0/asset.json",
+      "model": "3d-assets/derby-light-region-0/model.glb",
+      "descriptor_sha256": "9474f105347c3fa495a4a815edcdecceebe882fa76e5b0bda702e64b33789e50",
+      "model_sha256": "e68f8a8a29400f036c11e83f8dc23681efb70f7fe5e85f5b29dad218def30a69"
+    },
+    {
+      "id": "derby-light-region-1",
+      "descriptor": "3d-assets/derby-light-region-1/asset.json",
+      "model": "3d-assets/derby-light-region-1/model.glb",
+      "descriptor_sha256": "6096d9ecf793658ab9791a0060083c2f66e116509529d917a4ffda331b1d97bc",
+      "model_sha256": "66a55cc5ee8b258e91f7c2d83fbe3a8dcc59f887575b6c47aaf1c448dc69cbf4"
+    },
+    {
+      "id": "derby-light-region-2",
+      "descriptor": "3d-assets/derby-light-region-2/asset.json",
+      "model": "3d-assets/derby-light-region-2/model.glb",
+      "descriptor_sha256": "c0f3fb5b29df74d21d15c89e160b3fc367aeb0c588c9b1e3563ef3106de71f61",
+      "model_sha256": "e7c980cbcb5197d2e69ce042612349b4d8149ff3cee7accb442ba4aabeafa440"
+    },
+    {
+      "id": "derby-light-region-3",
+      "descriptor": "3d-assets/derby-light-region-3/asset.json",
+      "model": "3d-assets/derby-light-region-3/model.glb",
+      "descriptor_sha256": "b9797adce3ec866df76141caa6d87229d12f8e265c5d8d823c14b36738aa3333",
+      "model_sha256": "caa95ea7cb1a78ed3d54ffbba7ad37d179de9fc6c0a129650af3d639c8bb31a0"
+    },
+    {
+      "id": "derby-west-steps-night-light-region",
+      "descriptor": "3d-assets/derby-west-steps-night-light-region/asset.json",
+      "model": "3d-assets/derby-west-steps-night-light-region/model.glb",
+      "descriptor_sha256": "cb92726247843063d7e272561a86ad654de7f7e28b5234153cbcc3d4fc7c261b",
+      "model_sha256": "7fb0fdd145f5c87d599c14aab7c026f4f16317eb623535e38a0eca3abda8551a"
+    },
+    {
+      "id": "derby-light-region-5",
+      "descriptor": "3d-assets/derby-light-region-5/asset.json",
+      "model": "3d-assets/derby-light-region-5/model.glb",
+      "descriptor_sha256": "2c0f86c038d9157336043676184ddc9e70842c18059a6a6cb17445db2d55af23",
+      "model_sha256": "3e1356f9b336804fde901aa3fd8948a05d02bb9ea5e590951e9701681da4a4bc"
+    },
+    {
+      "id": "derby-light-region-6",
+      "descriptor": "3d-assets/derby-light-region-6/asset.json",
+      "model": "3d-assets/derby-light-region-6/model.glb",
+      "descriptor_sha256": "24fd577d1b0eef55cc3e2806652999e13c237984e6c76fc525b86ba995d44109",
+      "model_sha256": "5d7871239442faa2880c88f04e3c69061e643f1d870447f1c502b926a597cb44"
+    },
+    {
+      "id": "derby-light-region-8",
+      "descriptor": "3d-assets/derby-light-region-8/asset.json",
+      "model": "3d-assets/derby-light-region-8/model.glb",
+      "descriptor_sha256": "39f6ef647595143c36d9dc9031922579450a00a7d5895a8b3b87302a2d42f2ae",
+      "model_sha256": "39dac695318543a6a78a1b5acd3538f37251f511ab9de25c3408620d392009c4"
+    },
+    {
+      "id": "derby-light-region-11",
+      "descriptor": "3d-assets/derby-light-region-11/asset.json",
+      "model": "3d-assets/derby-light-region-11/model.glb",
+      "descriptor_sha256": "3f471b61dc22fc68ff99dadd44091ea63133ecf02111a71163499dbaaf5cf068",
+      "model_sha256": "368c899ae020336d68c11775c9134e263f4a9909f28f820428435a681e72baff"
+    },
+    {
+      "id": "derby-light-region-13",
+      "descriptor": "3d-assets/derby-light-region-13/asset.json",
+      "model": "3d-assets/derby-light-region-13/model.glb",
+      "descriptor_sha256": "9ff86c7daca4eca91d2b7996c2fc5f17ef265033052ffea6e6c8de4be3fedd21",
+      "model_sha256": "ad81f599a4a55eeff3367567cf33dfb7bc42e7f5e9d1a3d0342e85a6c052da7a"
+    },
+    {
+      "id": "derby-light-region-14",
+      "descriptor": "3d-assets/derby-light-region-14/asset.json",
+      "model": "3d-assets/derby-light-region-14/model.glb",
+      "descriptor_sha256": "eb60c1e3225ba101e6cc4190515e1f95e3115e4b1eed0fb9be2311863bf6c130",
+      "model_sha256": "4f527db5c80263db1fda472ba20881e9ed3ba9da1458cebe7941c3498e8324b4"
+    },
+    {
+      "id": "derby-light-region-15",
+      "descriptor": "3d-assets/derby-light-region-15/asset.json",
+      "model": "3d-assets/derby-light-region-15/model.glb",
+      "descriptor_sha256": "fc2569ef4ae86c4d23fa73318351a2a048237e4055b9a2cbd095de0411879cc6",
+      "model_sha256": "2416899ba49b39b873be6ac8035a390e2f7d80fb968096aaf300b4cae9e9d542"
+    },
+    {
+      "id": "derby-light-region-16",
+      "descriptor": "3d-assets/derby-light-region-16/asset.json",
+      "model": "3d-assets/derby-light-region-16/model.glb",
+      "descriptor_sha256": "3e3aa6c4e61ef621cc744e535ba8d554508f8bb72f659f2adf74c4f5f5be2034",
+      "model_sha256": "7a19595ff64a554e567db0466495c579011b608d87d2fd898c470dbcf6ae753e"
+    },
+    {
+      "id": "derby-light-region-18",
+      "descriptor": "3d-assets/derby-light-region-18/asset.json",
+      "model": "3d-assets/derby-light-region-18/model.glb",
+      "descriptor_sha256": "2a59e0853bd0455dc80ac0a7ec80788b68cf91c9830fdf83a8e8d9e098573aa4",
+      "model_sha256": "486934f1676ca2183b5badad637b01226a8ae545136c351809d85f8a16e46c66"
+    },
+    {
+      "id": "derby-light-region-20",
+      "descriptor": "3d-assets/derby-light-region-20/asset.json",
+      "model": "3d-assets/derby-light-region-20/model.glb",
+      "descriptor_sha256": "786e1527c683779901bb68f529d7265f7d1b5b1ad6fbac1d077ac79de4b80d39",
+      "model_sha256": "f797a7c9028c46e3b73b5fa22644880e226bed5cb08cecb3c44f68c4fec5c105"
+    },
+    {
+      "id": "derby-light-region-22",
+      "descriptor": "3d-assets/derby-light-region-22/asset.json",
+      "model": "3d-assets/derby-light-region-22/model.glb",
+      "descriptor_sha256": "13c372b89e8cec52f74d287c5bc7de02be7f89284cbcec84c23cd391410de332",
+      "model_sha256": "3d203984c5fe2b13e07a40f30eb8a94e8ad3a47576ea462c9983866cf2a92300"
+    },
+    {
+      "id": "derby-light-region-24",
+      "descriptor": "3d-assets/derby-light-region-24/asset.json",
+      "model": "3d-assets/derby-light-region-24/model.glb",
+      "descriptor_sha256": "2e4257c43705fd3cca59b692a4778736c2c556e8ecbc87709eaa86739501ae21",
+      "model_sha256": "36387ed307bac690e5f80837c4ab73d9c24e48f9a84fce2c5079db525e304cdc"
+    },
+    {
+      "id": "derby-light-region-25",
+      "descriptor": "3d-assets/derby-light-region-25/asset.json",
+      "model": "3d-assets/derby-light-region-25/model.glb",
+      "descriptor_sha256": "d7e48349569e65f902bb4c2e504cb175cfaf584b53e249270d0590f0f3c06557",
+      "model_sha256": "994fcb8e7a28a34c87896b8157f0f7d9a7f9bc2097d2a615e3f49f0672f99e6a"
     }
   ],
   "sceneMetadata": {
@@ -425,7 +621,7 @@
       "transform": {
         "dx": 894.9620361328125,
         "dy": 1946.7280872738165,
-        "dz": -1.86994572622476e-05,
+        "dz": -0.0000186994572622476,
         "rot_deg": 0
       },
       "assets": [
@@ -503,7 +699,7 @@
       "transform": {
         "dx": 1619.1905517578125,
         "dy": 1500.5496150152155,
-        "dz": -3.992168839565324e-05,
+        "dz": -0.00003992168839565324,
         "rot_deg": 0
       },
       "assets": [
@@ -555,7 +751,7 @@
       "transform": {
         "dx": 1483.408447265625,
         "dy": 1642.144016007278,
-        "dz": -9.579669889190113e-05,
+        "dz": -0.00009579669889190113,
         "rot_deg": 0
       },
       "assets": [
@@ -568,7 +764,7 @@
       "transform": {
         "dx": 1319.9263916015625,
         "dy": 1356.3668383274712,
-        "dz": -7.174987363569209e-05,
+        "dz": -0.00007174987363569209,
         "rot_deg": 0
       },
       "assets": [
@@ -581,7 +777,7 @@
       "transform": {
         "dx": 1113.0533447265625,
         "dy": 1462.6820874846546,
-        "dz": -9.166457461890104e-05,
+        "dz": -0.00009166457461890104,
         "rot_deg": 0
       },
       "assets": [
@@ -620,7 +816,7 @@
       "transform": {
         "dx": 1492.68505859375,
         "dy": 1340.2568462514046,
-        "dz": -1.5172070153800141e-06,
+        "dz": -0.0000015172070153800141,
         "rot_deg": 0
       },
       "assets": [
@@ -690,7 +886,7 @@
       "transform": {
         "dx": 905.4322509765625,
         "dy": 1334.534525085621,
-        "dz": -9.932749518644538e-05,
+        "dz": -0.00009932749518644538,
         "rot_deg": 0
       },
       "assets": [
@@ -721,7 +917,7 @@
       "transform": {
         "dx": 1737.564697265625,
         "dy": 1384.5933525548346,
-        "dz": -4.692837640025994e-05,
+        "dz": -0.00004692837640025994,
         "rot_deg": 0
       },
       "assets": [
@@ -734,7 +930,7 @@
       "transform": {
         "dx": 922.5999755859375,
         "dy": 2016.2999963103575,
-        "dz": -2.439070008320215e-06,
+        "dz": -0.000002439070008320215,
         "rot_deg": 0
       },
       "assets": [
@@ -747,7 +943,7 @@
       "transform": {
         "dx": 499.20001220703125,
         "dy": 1857.240500904687,
-        "dz": -1.4541489928206153e-06,
+        "dz": -0.0000014541489928206153,
         "rot_deg": 0
       },
       "assets": [
@@ -773,7 +969,7 @@
       "transform": {
         "dx": 449.70001220703125,
         "dy": 1877.5450507381902,
-        "dz": -4.068494079347522e-06,
+        "dz": -0.000004068494079347522,
         "rot_deg": 0
       },
       "assets": [
@@ -848,7 +1044,7 @@
       "transform": {
         "dx": 755.0581665039062,
         "dy": 1018.1931871237083,
-        "dz": -3.462231125213114e-05,
+        "dz": -0.00003462231125213114,
         "rot_deg": 0
       },
       "assets": [
@@ -880,6 +1076,678 @@
       "assets": [
         "derby-second-drawbridge"
       ]
+    },
+    {
+      "id": "derby-lower-west-canvas-shelter",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-lower-west-canvas-shelter"
+      ],
+      "parts": {
+        "building-035": {
+          "id": "derby-lower-west-canvas-shelter",
+          "transform": {
+            "dx": 442,
+            "dy": 2117,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-281-687",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-281-687"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-281-687",
+          "transform": {
+            "dx": 281,
+            "dy": 687,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-1323-627",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-1323-627"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-1323-627",
+          "transform": {
+            "dx": 1323,
+            "dy": 627,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-west-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-west-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-west-ambient-zone",
+          "transform": {
+            "dx": -14,
+            "dy": 508,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-north-ambient-zone",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-north-ambient-zone"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-north-ambient-zone",
+          "transform": {
+            "dx": 150,
+            "dy": 410,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-305-839",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-305-839"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-305-839",
+          "transform": {
+            "dx": 305,
+            "dy": 839,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-298-716",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-298-716"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-298-716",
+          "transform": {
+            "dx": 298,
+            "dy": 716,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-1671-943",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-1671-943"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-1671-943",
+          "transform": {
+            "dx": 1671,
+            "dy": 943,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-1653-2351",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-1653-2351"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-1653-2351",
+          "transform": {
+            "dx": 1653,
+            "dy": 2351,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-ambient-459-2026",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-ambient-459-2026"
+      ],
+      "parts": {
+        "scenery-emitter": {
+          "id": "derby-ambient-459-2026",
+          "transform": {
+            "dx": 459,
+            "dy": 2026,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-0",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-0"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-0",
+          "transform": {
+            "dx": 918,
+            "dy": 2377,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-1",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-1"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-1",
+          "transform": {
+            "dx": 1070,
+            "dy": 1746,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-2",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-2"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-2",
+          "transform": {
+            "dx": 719,
+            "dy": 1561,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-3",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-3"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-3",
+          "transform": {
+            "dx": 795,
+            "dy": 1092,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-west-steps-night-light-region",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-west-steps-night-light-region"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-west-steps-night-light-region",
+          "transform": {
+            "dx": 754,
+            "dy": 1077,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-5",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-5"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-5",
+          "transform": {
+            "dx": 1378,
+            "dy": 1291,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-6",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-6"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-6",
+          "transform": {
+            "dx": 1288,
+            "dy": 1219,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-8",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-8"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-8",
+          "transform": {
+            "dx": 855,
+            "dy": 923,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-11",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-11"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-11",
+          "transform": {
+            "dx": 1572,
+            "dy": 1168,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-13",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-13"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-13",
+          "transform": {
+            "dx": 864,
+            "dy": 956,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-14",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-14"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-14",
+          "transform": {
+            "dx": 1781,
+            "dy": 984,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-15",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-15"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-15",
+          "transform": {
+            "dx": 1420,
+            "dy": 1061,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-16",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-16"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-16",
+          "transform": {
+            "dx": 317,
+            "dy": 624,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-18",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-18"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-18",
+          "transform": {
+            "dx": 424,
+            "dy": 488,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-20",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-20"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-20",
+          "transform": {
+            "dx": 1278,
+            "dy": 831,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-22",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-22"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-22",
+          "transform": {
+            "dx": 356,
+            "dy": 411,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-24",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-24"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-24",
+          "transform": {
+            "dx": 907,
+            "dy": 478,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "derby-light-region-25",
+      "transform": {
+        "dx": 0,
+        "dy": 0,
+        "dz": 0,
+        "rot_deg": 0
+      },
+      "ungrouped": true,
+      "assets": [
+        "derby-light-region-25"
+      ],
+      "parts": {
+        "scenery-light": {
+          "id": "derby-light-region-25",
+          "transform": {
+            "dx": 1041,
+            "dy": 318,
+            "dz": 0,
+            "rot_deg": 0
+          }
+        }
+      }
     }
   ]
 }

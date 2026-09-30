@@ -12,7 +12,7 @@ cp \
   "target/package-input/${pack_executable}"
 cp README.md target/package-input/
 mkdir -p target/package-input/docs
-cp docs/MODDING_TOOLS.md docs/JSON_PATCH_MODS.md target/package-input/docs/
+cp docs/slop/MODDING_TOOLS.md docs/slop/JSON_PATCH_MODS.md target/package-input/docs/
 suffix=""
 if [[ "${runtime}" == win-x64 ]]; then suffix=".exe"; fi
 for tool in cpf_to_json encode_mod_sprites disasm_scb dump_res; do

@@ -4,6 +4,8 @@ import type { NavigationPiece } from "./assemble-navigation-regions.ts";
 import type { Point } from "./level.ts";
 import type { HeightPlane } from "./gameplay-plane.ts";
 import { quantizeGeneratedMotionPolygon, simplifyMotionRing } from "./motion-quantization.ts";
+import { preserveMovementBoundary } from "./preserve-movement-boundary.ts";
+import { assembleMovementContour } from "./assemble-movement-contour.ts";
 
 export interface PlacedTransitionBlocker {
   transition: string;
@@ -11,6 +13,7 @@ export interface PlacedTransitionBlocker {
   polygon: Point[];
   holes: Point[][];
   plane: HeightPlane;
+  movementContour?: string;
 }
 
 /** Allocate independent bit pairs per assembled area; no source-map state IDs survive. */
@@ -21,10 +24,26 @@ export function compileTransitionObstacles(
   blockers: PlacedTransitionBlocker[],
   warnings: string[],
   receivers?: NavigationPiece[],
+  preserveBoundary = false,
 ) {
   const pairs = new Map<string, number>();
   const obstacles: { state_id: number; polygon: { points: Point[] } }[] = [];
   const initial: Point[][] = [];
+  // Movement obstacles can cross the area's outer contour.
+  const coverage = (polygon: Point[], blockers: Point[][]): MultiPolygon =>
+    blockers.length
+      ? polygonClipping.difference(
+          [polygon],
+          blockers.map((b) => [b]),
+        )
+      : [[polygon]];
+  const walkable = blockers.length ? coverage(boundary, holes) : [];
+  const groups: {
+    transition: string;
+    applied: boolean;
+    movementContour?: string;
+    regions: MultiPolygon;
+  }[] = [];
   for (const blocker of blockers) {
     const samePlane = (plane: HeightPlane) =>
       plane.every((n, i) => Math.abs(n - blocker.plane[i]!) < 1e-7);
@@ -34,18 +53,54 @@ export function compileTransitionObstacles(
       const fragments = receivers
         .filter((r) => samePlane(r.plane))
         .flatMap((r) =>
-          polygonClipping.intersection(
-            [r.polygon, ...r.blockers],
-            [boundary, ...holes],
-            [blocker.polygon, ...blocker.holes],
-          ),
+          polygonClipping.intersection(coverage(r.polygon, r.blockers), walkable, [
+            blocker.polygon,
+            ...blocker.holes,
+          ]),
         );
       clipped = fragments.length ? polygonClipping.union(fragments[0]!, ...fragments.slice(1)) : [];
-    } else
-      clipped = polygonClipping.intersection(
-        [boundary, ...holes],
-        [blocker.polygon, ...blocker.holes],
-      );
+    } else clipped = polygonClipping.intersection(walkable, [blocker.polygon, ...blocker.holes]);
+    // Keep the complete contour after testing overlap. Rounding its clipped
+    // intersections would change narrow routes along the movement envelope.
+    if (preserveBoundary && clipped.length) {
+      const otherPlanes = receivers?.filter((r) => !samePlane(r.plane)) ?? [];
+      clipped = otherPlanes.length
+        ? polygonClipping.difference(
+            [blocker.polygon, ...blocker.holes],
+            otherPlanes.map((r) => [r.polygon]),
+          )
+        : [[blocker.polygon, ...blocker.holes]];
+    }
+    let group =
+      blocker.movementContour === undefined
+        ? undefined
+        : groups.find(
+            (g) =>
+              g.transition === blocker.transition &&
+              g.applied === blocker.applied &&
+              g.movementContour === blocker.movementContour,
+          );
+    if (!group) {
+      group = {
+        transition: blocker.transition,
+        applied: blocker.applied,
+        movementContour: blocker.movementContour,
+        regions: [],
+      };
+      groups.push(group);
+    }
+    group.regions.push(...clipped);
+  }
+  for (const blocker of groups) {
+    if (!blocker.regions.length) continue;
+    let clipped =
+      blocker.movementContour === undefined
+        ? blocker.regions
+        : assembleMovementContour(blocker.regions);
+    if (preserveBoundary)
+      clipped = preserveMovementBoundary(boundary, clipped, warnings).blockers.map((points) => [
+        points,
+      ]);
     for (const region of clipped) {
       const rounded = quantizeGeneratedMotionPolygon(
         region,
@@ -64,7 +119,7 @@ export function compileTransitionObstacles(
         pairs.set(blocker.transition, pair);
       }
       const state_id = (1 << (2 * pair + (blocker.applied ? 1 : 0))) >>> 0;
-      const rings = rounded.map(simplifyMotionRing);
+      const rings = rounded.map((ring) => simplifyMotionRing(ring));
       let pieces: Point[][];
       if (rings.length === 1) pieces = [rings[0]!];
       else {

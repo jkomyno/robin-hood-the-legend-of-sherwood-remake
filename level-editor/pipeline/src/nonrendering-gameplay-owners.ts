@@ -1,14 +1,26 @@
 import type { EndpointBindingDeclaration } from "./recovery-endpoint-binding.ts";
 import type { InteriorSourceDeclaration } from "./recovery-interior-sources.ts";
+import type { SoundOwnerDeclaration } from "./recover-sound-source.ts";
+import type { LightOwnerDeclaration } from "./recover-light-owner.ts";
 
 export interface GameplayOwnershipCatalog {
   groups: { id: string; parts: { obstacle?: number }[] }[];
   nonrendering_sources?: { obstacle: number; owner: string }[];
+  /** Restore one physical volume spanning all physical parts of a dedicated asset. */
+  physical_volume_sources?: {
+    obstacle: number;
+    owner: string;
+    node: string;
+    source_sha256: string;
+    model_sha256: string;
+  }[];
   /** Offline ownership only; compiled assets retain no patch indices. */
   movement_transitions?: { patch: number; owner: string; node: string }[];
   door_sources?: { doors: number[]; owner: string; node: string; reason: string }[];
   endpoint_bindings?: EndpointBindingDeclaration[];
   interior_sources?: InteriorSourceDeclaration[];
+  sound_sources?: SoundOwnerDeclaration[];
+  light_sources?: LightOwnerDeclaration[];
 }
 
 /** Resolve explicit authoring ownership against the assets actually pinned in the scene. */

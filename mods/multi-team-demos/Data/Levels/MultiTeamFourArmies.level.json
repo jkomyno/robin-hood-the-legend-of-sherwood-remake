@@ -2,8 +2,7 @@
   "title": "Four Armies — 12 Soldiers Each",
   "map_filename": "OpenBattlefield",
   "reveal_all": true,
-  "spawn": [1480, 1780],
-  "spawn_player": false,
+  "spawn_points": [],
   "walkable_polygon": [[80, 80], [2428, 80], [2428, 2428], [80, 2428]],
   "volumes": [],
   "soldiers": [

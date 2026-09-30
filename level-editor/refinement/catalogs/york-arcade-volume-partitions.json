@@ -1,0 +1,31 @@
+{
+  "source_sha256": "6a3a1ee8105bf9614bc4daf1f32aa19a7afaacfadd9cbf5ec250239b502fee97",
+  "obstacle": 213,
+  "review": "The arcade and east-gallery houses share a flat rectangular physical volume. Their existing component seam runs from x=942.958557 on boundary edge 1 to x=955.967468 on edge 3. Project those reviewed seam positions onto the exact outer edges. Restore ground-level bottoms instead of the component bounds' roughly 89.9-unit gap. Preserve separate visuals and join only the coincident physical seam. No masks, receiving geometry, material regions or state patches link this record.",
+  "parts": [
+    {
+      "asset": "york-west-bridge-street-arcade-house",
+      "node": "building-213--component-arcade",
+      "model_sha256": "90e089ad15476ea4e5289a891c75451dae50130f7b0df742af070cc0f63268c7",
+      "descriptor_sha256": "3a5640f17961d8a4929dba4bc47db1254b9c91c418ba171ce4464eb8feac2092",
+      "vertices": [
+        { "edge": 1, "fraction": 0.5578377439540624 },
+        2,
+        3,
+        { "edge": 3, "fraction": 0.48990878064081156 }
+      ]
+    },
+    {
+      "asset": "york-west-bridge-street-east-gallery-house",
+      "node": "building-213--component-gallery",
+      "model_sha256": "e96e94e362b81259b0d6d734b638c14b5314510eedc43877fc7c880dca8acea4",
+      "descriptor_sha256": "23ff83f2ceba5713abf61ff1f7174e17b8f83c2ed408e5800116ecadc30dcaad",
+      "vertices": [
+        0,
+        1,
+        { "edge": 1, "fraction": 0.5578377439540624 },
+        { "edge": 3, "fraction": 0.48990878064081156 }
+      ]
+    }
+  ]
+}

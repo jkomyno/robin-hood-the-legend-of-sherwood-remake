@@ -4,6 +4,617 @@ use robin_engine::engine::{Engine, EngineArgs, LevelAssets, LevelLoadArgs, SimCo
 use robin_engine::level_data::LoadedLevel;
 
 #[test]
+fn editor_asset_masks_construct_baked_coverage_and_local_state_links() {
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-mask.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    assert_eq!(grid.level.masks.len(), 2);
+    assert_eq!(grid.level.masks[0].mask_type, 23);
+    assert_eq!(
+        (grid.level.masks[0].width, grid.level.masks[0].height),
+        (10, 40)
+    );
+    assert_eq!(
+        (grid.level.masks[1].width, grid.level.masks[1].height),
+        (10, 10)
+    );
+    assert!(
+        grid.level
+            .masks
+            .iter()
+            .all(|mask| mask.bitmap.iter().all(|&pixel| pixel == 1))
+    );
+    assert_eq!(grid.mask_active, [true, false]);
+    let mask = &grid.level.masks[0];
+    use robin_engine::coordinates::{MapPoint, WorldPoint3D};
+    assert!(mask.is_applied_to_point_character(MapPoint::new(345., 339.)));
+    assert!(!mask.is_applied_to_point_character(MapPoint::new(345., 351.)));
+    let obstacles = robin_engine::sight_obstacle::ObstacleList::from_slice_all_active(
+        &assets.environment.static_sight_obstacles,
+    );
+    assert!(mask.is_applied_to_point_3d(
+        WorldPoint3D {
+            x: 345.,
+            y: 345.,
+            z: 20.
+        },
+        false,
+        obstacles
+    ));
+    assert!(!mask.is_applied_to_point_3d(
+        WorldPoint3D {
+            x: 345.,
+            y: 345.,
+            z: 40.
+        },
+        false,
+        obstacles
+    ));
+}
+
+fn descriptor_with_compiled_masks() -> serde_json::Value {
+    let mut descriptor: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/asset-lift.level.json")).unwrap();
+    let mask = serde_json::json!({
+        "layer": 0, "mask_type": 1,
+        "character_polyline": [[300, 320], [309, 320]],
+        "projectile_polyline": null,
+        "box_top_left": [300, 300], "box_size": [9, 2],
+        "mask_data": [3, 2, 170, 128, 0], "obstacle_indices": []
+    });
+    let mut upper = mask.clone();
+    upper["layer"] = 1.into();
+    upper["mask_type"] = 4.into();
+    upper["character_polyline"] = serde_json::Value::Null;
+    let mut projectile = mask.clone();
+    projectile["mask_type"] = 18.into();
+    projectile["character_polyline"] = serde_json::Value::Null;
+    projectile["projectile_polyline"] = serde_json::json!([]);
+    projectile["obstacle_indices"] = serde_json::json!([0]);
+    descriptor["asset_geometry"]["masks"] = serde_json::json!([mask, upper, projectile]);
+    descriptor
+}
+
+#[test]
+fn editor_encoded_mask_bitmaps_decode_to_the_complete_baked_silhouette() {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    struct Case {
+        width: u16,
+        height: u16,
+        pixels: String,
+        encoded: Vec<u8>,
+    }
+    let cases: Vec<Case> =
+        serde_json::from_slice(include_bytes!("fixtures/compiled-mask-bitmaps.json")).unwrap();
+    for case in cases {
+        let expected = case
+            .pixels
+            .bytes()
+            .map(|pixel| pixel - b'0')
+            .collect::<Vec<_>>();
+        assert_eq!(
+            robin_engine::mask::decode_mask_bitmap(&case.encoded, case.width, case.height),
+            expected
+        );
+    }
+}
+
+#[test]
+fn compiled_masks_construct_typed_bitmaps_and_per_layer_indices() {
+    use robin_engine::coordinates::{MapPoint, WorldPoint3D};
+    let descriptor = descriptor_with_compiled_masks();
+    let mut assets = LevelAssets::new();
+    let engine = construct(&serde_json::to_vec(&descriptor).unwrap(), &mut assets);
+    let grid = engine.fast_grid();
+    assert_eq!(grid.level.masks.len(), 3);
+    assert_eq!(
+        grid.level.layers[0]
+            .mask_indices
+            .iter()
+            .map(|&i| usize::from(i))
+            .collect::<Vec<_>>(),
+        [0, 2]
+    );
+    assert_eq!(
+        grid.level.layers[1]
+            .mask_indices
+            .iter()
+            .map(|&i| usize::from(i))
+            .collect::<Vec<_>>(),
+        [1]
+    );
+    let character = &grid.level.masks[0];
+    assert_eq!(
+        character.bitmap,
+        [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    );
+    assert!(character.is_applied_to_point_character(MapPoint::new(304., 319.)));
+    assert!(!character.is_applied_to_point_character(MapPoint::new(304., 320.)));
+    assert_eq!(
+        grid.level.masks[1].mask_type,
+        robin_engine::level_data::MASK_VIEW
+    );
+    let obstacle = &assets.environment.static_sight_obstacles[0];
+    let x = obstacle.obstacle_points.iter().map(|p| p.x).sum::<f32>()
+        / obstacle.obstacle_points.len() as f32;
+    let y = obstacle.obstacle_points.iter().map(|p| p.y).sum::<f32>()
+        / obstacle.obstacle_points.len() as f32;
+    let obstacles = robin_engine::sight_obstacle::ObstacleList::from_slice_all_active(
+        &assets.environment.static_sight_obstacles,
+    );
+    let mask = &grid.level.masks[2];
+    assert!(mask.is_applied_to_point_3d(
+        WorldPoint3D {
+            x,
+            y,
+            z: obstacle.compute_top_z(x, y) - 1.
+        },
+        false,
+        obstacles
+    ));
+    assert!(!mask.is_applied_to_point_3d(
+        WorldPoint3D {
+            x,
+            y,
+            z: obstacle.compute_top_z(x, y) + 1.
+        },
+        false,
+        obstacles
+    ));
+}
+
+#[test]
+fn compiled_masks_reject_unresolved_links_invalid_types_and_malformed_bitmaps() {
+    let descriptor = descriptor_with_compiled_masks();
+    for (field, value) in [
+        ("layer", serde_json::json!(99)),
+        ("mask_type", serde_json::json!(0)),
+        ("mask_type", serde_json::json!(8)),
+        ("mask_type", serde_json::json!(16)),
+        ("character_polyline", serde_json::json!(null)),
+        (
+            "character_polyline",
+            serde_json::json!([[309, 320], [300, 320]]),
+        ),
+        ("box_size", serde_json::json!([0, 2])),
+        ("box_top_left", serde_json::json!([32760, 300])),
+        ("mask_data", serde_json::json!([3, 2, 170])),
+        ("mask_data", serde_json::json!([2, 131, 255, 0])),
+        ("obstacle_indices", serde_json::json!([999])),
+    ] {
+        let mut bad = descriptor.clone();
+        bad["asset_geometry"]["masks"][0][field] = value;
+        let error = LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap())
+            .err()
+            .unwrap();
+        assert!(error.contains("mask"), "{field}: {error}");
+    }
+    let mut missing_obstacle = descriptor.clone();
+    missing_obstacle["asset_geometry"]["masks"][2]["obstacle_indices"] = serde_json::json!([999]);
+    let error = LoadedLevel::hackable_from_json(&serde_json::to_vec(&missing_obstacle).unwrap())
+        .err()
+        .unwrap();
+    assert!(error.contains("obstacle links"), "{error}");
+}
+
+#[test]
+fn receiving_island_keeps_its_material_separate_from_the_surrounding_volume() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::element::GameMaterial;
+    use robin_engine::fast_find_grid::SectorIndex;
+    use robin_engine::position_interface::SectorHandle;
+    use robin_engine::sector::SectorNumber;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-receiving-island.level.json"),
+        &mut assets,
+    );
+    let receiver = |number, point| {
+        let index = engine.fast_grid().level.sector_number_map[&SectorNumber::new(number)];
+        let sector = SectorHandle::new(number.try_into().unwrap())
+            .unwrap()
+            .with_arena_index(SectorIndex::new(index as u32).unwrap());
+        engine
+            .get_projection_area_index(&assets, sector, 1, point)
+            .unwrap()
+    };
+    let outer_point = MapPoint::new(310., 330.);
+    let island_point = MapPoint::new(350., 330.);
+    let outer = receiver(1, outer_point);
+    let island = receiver(3, island_point);
+    assert_ne!(outer, island);
+    for (index, point, material) in [
+        (outer, outer_point, GameMaterial::Stone),
+        (island, island_point, GameMaterial::Leaves),
+    ] {
+        let obstacle = &assets.environment.static_sight_obstacles[usize::from(index)];
+        assert_eq!(
+            obstacle.compute_top_z_from_projection(point.x, point.y),
+            20.
+        );
+        assert_eq!(
+            assets
+                .environment
+                .material_sectors
+                .material_at_with_obstacle(Some(obstacle), point),
+            material
+        );
+    }
+    assert!(
+        !engine
+            .fast_grid()
+            .is_reachable_thin(outer_point, island_point, 1)
+    );
+}
+
+#[test]
+fn merged_platform_keeps_its_opening_without_an_invented_receiver() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::fast_find_grid::SectorIndex;
+    use robin_engine::position_interface::SectorHandle;
+    use robin_engine::sector::SectorNumber;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-receiving-gap.level.json"),
+        &mut assets,
+    );
+    let index = engine.fast_grid().level.sector_number_map[&SectorNumber::new(1)];
+    let sector = SectorHandle::new(1)
+        .unwrap()
+        .with_arena_index(SectorIndex::new(index as u32).unwrap());
+    assert!(
+        engine
+            .get_projection_area_index(&assets, sector, 1, MapPoint::new(350., 330.))
+            .is_none()
+    );
+    for point in [MapPoint::new(350., 290.), MapPoint::new(390., 330.)] {
+        let receiver = engine
+            .get_projection_area_index(&assets, sector, 1, point)
+            .unwrap();
+        let obstacle = &assets.environment.static_sight_obstacles[usize::from(receiver)];
+        assert_eq!(
+            obstacle.compute_top_z_from_projection(point.x, point.y),
+            20.
+        );
+    }
+}
+
+#[test]
+fn anchored_sloped_receiver_shares_uninterrupted_ground_navigation() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::fast_find_grid::SectorIndex;
+    use robin_engine::position_interface::SectorHandle;
+    use robin_engine::sector::SectorNumber;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-anchored-receiver.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    assert_eq!(
+        assets.navigation.pathfinder_graph.static_data.move_layers[0].len(),
+        1
+    );
+    assert!(grid.is_reachable_thin(MapPoint::new(250., 325.), MapPoint::new(450., 325.), 0));
+    let index = grid.level.sector_number_map[&SectorNumber::new(0)];
+    let sector = SectorHandle::new(0)
+        .unwrap()
+        .with_arena_index(SectorIndex::new(index as u32).unwrap());
+    let point = MapPoint::new(350., 325.);
+    let receiver = engine
+        .get_projection_area_index(&assets, sector, 0, point)
+        .unwrap();
+    let obstacle = &assets.environment.static_sight_obstacles[usize::from(receiver)];
+    assert_eq!(
+        obstacle.compute_top_z_from_projection(point.x, point.y),
+        25.
+    );
+    assert!(
+        engine
+            .get_projection_area_index(&assets, sector, 0, MapPoint::new(250., 325.))
+            .is_none()
+    );
+}
+
+#[test]
+fn authored_receiving_plane_survives_polygon_vertex_changes() {
+    let mut descriptor: serde_json::Value = serde_json::from_slice(include_bytes!(
+        "fixtures/asset-projection-material.level.json"
+    ))
+    .unwrap();
+    let obstacle = &mut descriptor["asset_geometry"]["sight_obstacles"][0];
+    for point in obstacle["points"].as_array_mut().unwrap() {
+        let previous = point["z_top"].as_f64().unwrap();
+        point["y"] = (point["y"].as_f64().unwrap() + 200.001 - previous).into();
+        point["z_top"] = 200.001.into();
+        point["z_bottom"] = 200.001.into();
+    }
+    let mut baseline_assets = LevelAssets::new();
+    construct(
+        &serde_json::to_vec(&descriptor).unwrap(),
+        &mut baseline_assets,
+    );
+    let baseline = &baseline_assets.environment.static_sight_obstacles[0];
+    let anchors = baseline.top_plane_points;
+    descriptor["asset_geometry"]["sight_obstacles"][0]["projection_plane"] =
+        serde_json::json!(anchors);
+    descriptor["asset_geometry"]["sight_obstacles"][0]["points"]
+        .as_array_mut()
+        .unwrap()
+        .rotate_left(1);
+    let mut assets = LevelAssets::new();
+    construct(&serde_json::to_vec(&descriptor).unwrap(), &mut assets);
+    let receiver = &assets.environment.static_sight_obstacles[0];
+    assert_eq!(receiver.top_plane_points, anchors);
+    assert_eq!(receiver.bottom_plane_points, anchors);
+    for x in 300..=400 {
+        for y in 280..=380 {
+            assert_eq!(
+                receiver.compute_top_z_from_projection(x as f32, y as f32),
+                baseline.compute_top_z_from_projection(x as f32, y as f32)
+            );
+        }
+    }
+    let mut invalid = descriptor.clone();
+    invalid["asset_geometry"]["sight_obstacles"][0]["projection_plane"] =
+        serde_json::json!([[0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]);
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&invalid).unwrap())
+            .err()
+            .unwrap()
+            .contains("receiving plane")
+    );
+    let mut invalid = descriptor.clone();
+    invalid["asset_geometry"]["sight_obstacles"][0]["projection_plane"][0][2] = 201.into();
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&invalid).unwrap())
+            .err()
+            .unwrap()
+            .contains("receiving plane")
+    );
+    descriptor["asset_geometry"]["sight_obstacles"][0]["projection_area"] = serde_json::Value::Null;
+    assert!(
+        LoadedLevel::hackable_from_json(&serde_json::to_vec(&descriptor).unwrap())
+            .err()
+            .unwrap()
+            .contains("receiving plane")
+    );
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ProjectionComparison {
+    before: String,
+    #[serde(default)]
+    before_proto: Option<String>,
+    after: String,
+    cases: Vec<ProjectionComparisonCase>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ProjectionComparisonCase {
+    before_sector: u16,
+    after_sector: u16,
+    layer: u16,
+    #[serde(default)]
+    after_layer: Option<u16>,
+    bounds: [i32; 4],
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ProjectionQueryReport {
+    queries: usize,
+    receiving: usize,
+    height_differences: usize,
+    material_differences: usize,
+    coverage_differences: usize,
+    maximum_height_difference: f32,
+    first_differences: Vec<String>,
+    cases: Vec<ProjectionCaseReport>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct ProjectionCaseReport {
+    before_sector: u16,
+    after_sector: u16,
+    queries: usize,
+    height_differences: usize,
+    material_differences: usize,
+    coverage_differences: usize,
+    first_difference: Option<String>,
+}
+
+#[test]
+#[ignore = "requires paired compiled descriptors via ROBIN_PROJECTION_COMPARISON"]
+fn recovered_projection_partitions_preserve_sampled_runtime_queries() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::fast_find_grid::SectorIndex;
+    use robin_engine::position_interface::SectorHandle;
+    use robin_engine::sector::SectorNumber;
+
+    let manifest_path = std::path::PathBuf::from(
+        std::env::var("ROBIN_PROJECTION_COMPARISON").expect("comparison manifest"),
+    );
+    let manifest: ProjectionComparison =
+        serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    assert!(!manifest.cases.is_empty(), "no projection comparisons");
+    let directory = manifest_path.parent().unwrap();
+    let load = |file: &str, assets: &mut LevelAssets| {
+        let bytes = std::fs::read(directory.join(file)).unwrap();
+        let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let dimensions = &descriptor["walkable_polygon"][2];
+        construct_with_dimensions(
+            LoadedLevel::hackable_from_json(&bytes).unwrap(),
+            assets,
+            (
+                dimensions[0].as_f64().unwrap() as f32 + 1.,
+                dimensions[1].as_f64().unwrap() as f32 + 1.,
+            ),
+        )
+    };
+    let mut before_assets = LevelAssets::new();
+    let before = if let Some(proto) = &manifest.before_proto {
+        let descriptor: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(directory.join(&manifest.after)).unwrap())
+                .unwrap();
+        let dimensions = &descriptor["walkable_polygon"][2];
+        let mut level = LoadedLevel::empty();
+        level.proto =
+            serde_json::from_slice(&std::fs::read(directory.join(proto)).unwrap()).unwrap();
+        // The receiving diagnostic needs geometry and materials, not sprite resources.
+        level.proto.animations.clear();
+        level.mission.building_tenants = level
+            .proto
+            .buildings
+            .iter()
+            .filter(|entry| {
+                matches!(
+                    entry,
+                    robin_engine::level_data::RawBuildingEntry::Building { .. }
+                )
+            })
+            .map(|_| robin_engine::level_data::RawBuildingTenants {
+                tenant_element_indices: Vec::new(),
+                arrow_reserve: false,
+            })
+            .collect();
+        construct_with_dimensions(
+            level,
+            &mut before_assets,
+            (
+                dimensions[0].as_f64().unwrap() as f32 + 1.,
+                dimensions[1].as_f64().unwrap() as f32 + 1.,
+            ),
+        )
+    } else {
+        load(&manifest.before, &mut before_assets)
+    };
+    let mut after_assets = LevelAssets::new();
+    let after = load(&manifest.after, &mut after_assets);
+    let handle = |engine: &Engine, number: u16| {
+        let index = engine.fast_grid().level.sector_number_map
+            [&SectorNumber::new(i16::try_from(number).unwrap())];
+        SectorHandle::new(number)
+            .unwrap()
+            .with_arena_index(SectorIndex::new(u32::try_from(index).unwrap()).unwrap())
+    };
+    let sample = |engine: &Engine, assets: &LevelAssets, sector, layer, point: MapPoint| {
+        engine
+            .get_projection_area_index(assets, sector, layer, point)
+            .map(|index| {
+                let obstacle = &assets.environment.static_sight_obstacles[usize::from(index)];
+                (
+                    obstacle.compute_top_z_from_projection(point.x, point.y),
+                    assets
+                        .environment
+                        .material_sectors
+                        .material_at_with_obstacle(Some(obstacle), point),
+                )
+            })
+    };
+    let mut report = ProjectionQueryReport {
+        queries: 0,
+        receiving: 0,
+        height_differences: 0,
+        material_differences: 0,
+        coverage_differences: 0,
+        maximum_height_difference: 0.,
+        first_differences: vec![],
+        cases: vec![],
+    };
+    for case in manifest.cases {
+        let start = (
+            report.queries,
+            report.height_differences,
+            report.material_differences,
+            report.coverage_differences,
+        );
+        let mut first_difference = None;
+        let a = handle(&before, case.before_sector);
+        let b = handle(&after, case.after_sector);
+        let [min_x, min_y, max_x, max_y] = case.bounds;
+        assert!(min_x < max_x && min_y < max_y, "empty probe bounds");
+        let mut receiving = 0;
+        // Include integer boundaries and half-pixel interiors. This is a sampled
+        // comparison, not proof about every continuous actor position.
+        for y in min_y * 2..=max_y * 2 {
+            for x in min_x * 2..=max_x * 2 {
+                let point = MapPoint::new(x as f32 / 2., y as f32 / 2.);
+                let old = sample(&before, &before_assets, a, case.layer, point);
+                let new = sample(
+                    &after,
+                    &after_assets,
+                    b,
+                    case.after_layer.unwrap_or(case.layer),
+                    point,
+                );
+                if old != new {
+                    let old_index =
+                        before.get_projection_area_index(&before_assets, a, case.layer, point);
+                    let new_index = after.get_projection_area_index(
+                        &after_assets,
+                        b,
+                        case.after_layer.unwrap_or(case.layer),
+                        point,
+                    );
+                    let difference = format!(
+                        "{point:?}, sectors {} -> {}, layers {} -> {}, obstacles {old_index:?} -> {new_index:?}: {old:?} -> {new:?}",
+                        case.before_sector,
+                        case.after_sector,
+                        case.layer,
+                        case.after_layer.unwrap_or(case.layer)
+                    );
+                    if first_difference.is_none() {
+                        first_difference = Some(difference.clone());
+                    }
+                    if report.first_differences.len() < 8 {
+                        report.first_differences.push(difference);
+                    }
+                }
+                match (old, new) {
+                    (Some((old_height, old_material)), Some((new_height, new_material))) => {
+                        report.height_differences += usize::from(old_height != new_height);
+                        report.material_differences += usize::from(old_material != new_material);
+                        report.maximum_height_difference = report
+                            .maximum_height_difference
+                            .max((old_height - new_height).abs());
+                    }
+                    (None, None) => {}
+                    _ => report.coverage_differences += 1,
+                }
+                report.queries += 1;
+                receiving += usize::from(old.is_some());
+            }
+        }
+        assert!(receiving > 0, "probe never reached a projection surface");
+        report.receiving += receiving;
+        report.cases.push(ProjectionCaseReport {
+            before_sector: case.before_sector,
+            after_sector: case.after_sector,
+            queries: report.queries - start.0,
+            height_differences: report.height_differences - start.1,
+            material_differences: report.material_differences - start.2,
+            coverage_differences: report.coverage_differences - start.3,
+            first_difference,
+        });
+    }
+    let report_json = serde_json::to_string_pretty(&report).unwrap();
+    std::fs::write(manifest_path.with_extension("report.json"), &report_json).unwrap();
+    println!("{report_json}");
+    assert_eq!(
+        report.coverage_differences, 0,
+        "projection coverage changed"
+    );
+    assert_eq!(
+        report.material_differences, 0,
+        "projection material changed"
+    );
+    assert_eq!(report.height_differences, 0, "projection elevation changed");
+}
+
+#[test]
 #[ignore = "requires static diagnostic exports via ROBIN_ASSET_MAP_DIAGNOSTICS"]
 fn recovered_static_exports_construct_native_geometry() {
     let directory = std::path::PathBuf::from(
@@ -25,9 +636,16 @@ fn recovered_static_exports_construct_native_geometry() {
         let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         let geometry = &descriptor["asset_geometry"];
         let dims = &descriptor["walkable_polygon"][2];
-        let level = LoadedLevel::hackable_from_json(&bytes).unwrap();
+        let mut level = LoadedLevel::hackable_from_json(&bytes).unwrap();
+        if let Some(ambience) = result["ambience"].as_u64() {
+            level.mission.header.ambiance = u32::try_from(ambience).unwrap();
+        }
         let jump_pairs = level.proto.jump_line_pairs.clone();
         let jump_zones = level.proto.jump_zones.clone();
+        let expected_elevation_count = level.proto.elevation_lines.len();
+        let expected_masks = level.proto.masks.clone();
+        let expected_sounds = level.proto.sound_sources.clone();
+        let expected_ambience = level.mission.header.ambiance;
         let mut assets = LevelAssets::new();
         let engine = construct_with_dimensions(
             level,
@@ -62,6 +680,92 @@ fn recovered_static_exports_construct_native_geometry() {
         );
         assert!(!engine.fast_grid().level.blocks.is_empty(), "{file}");
         let grid = engine.fast_grid();
+        assert_eq!(
+            assets.audio.sound_source_required_ids,
+            expected_sounds
+                .iter()
+                .filter(|s| s.ambience_filter & expected_ambience != 0)
+                .map(|s| u32::try_from(s.id).unwrap())
+                .collect(),
+            "{file}: required sound samples"
+        );
+        let snapshot = serde_json::to_value(engine.capture_persisted_state().unwrap()).unwrap();
+        let sounds = snapshot["feedback"]["sound_sim"]["sources"]["sources"]
+            .as_array()
+            .unwrap();
+        assert_eq!(
+            sounds.len(),
+            expected_sounds.len(),
+            "{file}: sound source handles"
+        );
+        for (index, expected) in expected_sounds.iter().enumerate() {
+            let actual = &sounds[index];
+            if expected.ambience_filter & expected_ambience == 0 {
+                assert!(actual.is_null(), "{file}: filtered sound {index}");
+                continue;
+            }
+            let shape: Vec<_> = expected
+                .polyline
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .map(|&(x, y)| robin_engine::coordinates::MapPoint::new(x as f32, y as f32))
+                .collect();
+            assert_eq!(
+                actual["shape"],
+                serde_json::to_value(shape).unwrap(),
+                "{file}: sound {index} geometry"
+            );
+            let (min, max, step) = expected.delayed_params.unwrap_or((0, 0, 0));
+            assert_eq!(
+                actual["min_delay"], min,
+                "{file}: sound {index} minimum delay"
+            );
+            assert_eq!(
+                actual["max_delay"], max,
+                "{file}: sound {index} maximum delay"
+            );
+            assert_eq!(
+                actual["delay_stepping"],
+                step + 1,
+                "{file}: sound {index} stepping"
+            );
+        }
+        assert_eq!(grid.level.masks.len(), expected_masks.len(), "{file}");
+        for (index, (actual, expected)) in grid.level.masks.iter().zip(&expected_masks).enumerate()
+        {
+            assert_eq!(actual.mask_type, expected.mask_type, "{file}: mask {index}");
+            assert_eq!(actual.layer, expected.layer, "{file}: mask {index}");
+            assert_eq!(
+                actual
+                    .obstacle_indices
+                    .iter()
+                    .map(|i| i.get())
+                    .collect::<Vec<_>>(),
+                expected
+                    .obstacle_indices
+                    .iter()
+                    .map(|&i| u32::from(i))
+                    .collect::<Vec<_>>(),
+                "{file}: mask {index} obstacle links"
+            );
+            assert_eq!(
+                actual.bitmap,
+                robin_engine::mask::decode_mask_bitmap(
+                    &expected.mask_data,
+                    expected.box_size.0 as u16,
+                    expected.box_size.1 as u16,
+                ),
+                "{file}: mask {index}"
+            );
+            assert!(
+                grid.level.layers[usize::from(actual.layer)]
+                    .mask_indices
+                    .iter()
+                    .any(|&i| usize::from(i) == index),
+                "{file}: unregistered mask {index}"
+            );
+        }
         assert_eq!(grid.level.jump_lines.len(), jump_pairs.len() * 2, "{file}");
         for (pair_index, pair) in jump_pairs.iter().enumerate() {
             for (side, (raw, opposite)) in [(&pair.line1, &pair.line2), (&pair.line2, &pair.line1)]
@@ -107,11 +811,22 @@ fn recovered_static_exports_construct_native_geometry() {
                 assert!(!home.gate_indices.is_empty(), "{file}");
             }
         }
+        let elevation_count = grid
+            .level
+            .lines
+            .iter()
+            .filter(|line| line.is_elevation)
+            .count();
+        assert_eq!(
+            elevation_count, expected_elevation_count,
+            "{file}: elevation registration"
+        );
         println!(
-            "{file}: constructed {areas} areas, {} sight obstacles, {} doors, {} jump pairs",
+            "{file}: constructed {areas} areas, {} sight obstacles, {} doors, {} jump pairs, {} grid blocks, {elevation_count} elevation boundaries",
             assets.environment.static_sight_obstacles.len(),
             engine.presentation_view().doors().len(),
-            jump_pairs.len()
+            jump_pairs.len(),
+            grid.level.blocks.len()
         );
         count += 1;
     }
@@ -165,6 +880,15 @@ fn ordinary_region_crosses_projection_planes_without_a_gate() {
         &mut assets,
     );
     let grid = engine.fast_grid();
+    assert_eq!(
+        grid.level.layers.len(),
+        3,
+        "ground, lift, and special layers"
+    );
+    assert_eq!(
+        grid.level.blocks.len(),
+        usize::from(grid.level.grid_width) * usize::from(grid.level.grid_height) * 3
+    );
     assert!(grid.level.door_projection_infos.is_empty());
     assert!(engine.presentation_view().doors().is_empty());
     assert!(grid.level.sectors.iter().all(|s| !s.sector_type.is_lift()));
@@ -175,6 +899,84 @@ fn ordinary_region_crosses_projection_planes_without_a_gate() {
     use robin_engine::coordinates::MapPoint;
     let layer = grid.level.sectors[0].layer;
     assert!(grid.is_reachable_thin(MapPoint::new(395., 330.), MapPoint::new(405., 280.), layer));
+}
+
+#[test]
+fn native_pathfinder_crosses_compiled_navigation_seam_with_actor_clearance() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::pathfinder::PathFinder;
+
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-multi-plane-region.level.json"),
+        &mut assets,
+    );
+    let graph = &assets.navigation.pathfinder_graph;
+    let mut grid = engine.fast_grid().clone();
+    let mut finder = PathFinder::new();
+    finder.initialize_from_graph(graph, &mut grid);
+    assert!(!graph.static_data.half_diagonals.is_empty());
+    let source = MapPoint::new(396., 320.);
+    let destination = MapPoint::new(404., 290.);
+    for (start, goal) in [(source, destination), (destination, source)] {
+        let path = finder
+            .find_path(graph, &grid, 0, 0, 0, start, goal, false)
+            .expect("an actor can route across the joined surface boundary");
+        assert_eq!(path.last(), Some(&goal));
+    }
+    assert!(
+        finder
+            .find_path(
+                graph,
+                &grid,
+                0,
+                0,
+                0,
+                source,
+                MapPoint::new(420., 290.),
+                false
+            )
+            .is_none(),
+        "joining surfaces must not open a route beyond the walkway edge"
+    );
+}
+
+#[test]
+fn native_routes_follow_rotated_walkways_without_connecting_separate_copies() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::pathfinder::PathFinder;
+
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-navigation-copies.level.json"),
+        &mut assets,
+    );
+    let graph = &assets.navigation.pathfinder_graph;
+    let mut grid = engine.fast_grid().clone();
+    let mut finder = PathFinder::new();
+    finder.initialize_from_graph(graph, &mut grid);
+    let routes = [
+        (0, 0, MapPoint::new(396., 320.), MapPoint::new(404., 290.)),
+        (1, 1, MapPoint::new(510., 325.), MapPoint::new(510., 280.)),
+    ];
+    for (layer, sector, source, destination) in routes {
+        for (start, goal) in [(source, destination), (destination, source)] {
+            assert_eq!(
+                finder
+                    .find_path(graph, &grid, layer, sector, 0, start, goal, false)
+                    .expect("placed walkway must support routes across its seam")
+                    .last(),
+                Some(&goal)
+            );
+        }
+        let other_copy = if layer == 0 { routes[1].2 } else { routes[0].2 };
+        assert!(
+            finder
+                .find_path(graph, &grid, layer, sector, 0, source, other_copy, false)
+                .is_none(),
+            "a repeated asset identity must not connect spatially separate copies"
+        );
+    }
 }
 
 #[test]
@@ -210,6 +1012,83 @@ fn compound_lift_keeps_one_native_sector_and_each_projection_plane() {
         .unwrap()
         .layer;
     assert!(grid.is_reachable_thin(MapPoint::new(395., 330.), MapPoint::new(405., 280.), layer));
+}
+
+#[test]
+fn crossing_obstacles_preserve_fractional_walkable_boundary_intersections() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::fast_find_grid::SectorHit;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-preserved-boundary.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    assert_eq!(
+        assets.navigation.pathfinder_graph.static_data.move_layers[0].len(),
+        1
+    );
+    let obstacles: Vec<_> = grid
+        .level
+        .sectors
+        .iter()
+        .filter(|sector| sector.sector_type.is_motion() && !sector.sector_type.is_area())
+        .collect();
+    assert_eq!(obstacles.len(), 1);
+    // The obstacle crosses the outer edge at x = 300 + 10/7. Keeping both
+    // integer contours preserves walkable points before that intersection.
+    let start = MapPoint::new(301.1, 300.05);
+    let end = MapPoint::new(350., 334.5);
+    for point in [start, end] {
+        assert!(matches!(
+            grid.get_sector(point, point, 0),
+            SectorHit::Found { .. }
+        ));
+        assert!(!obstacles[0].contains_point(point));
+    }
+    let blocked = MapPoint::new(350., 333.5);
+    assert!(obstacles[0].contains_point(blocked));
+    let outside = MapPoint::new(350., 335.5);
+    assert!(matches!(
+        grid.get_sector(outside, outside, 0),
+        SectorHit::None
+    ));
+    assert!(grid.is_reachable_thin(start, end, 0));
+    assert!(!grid.is_reachable_thin(end, blocked, 0));
+    assert!(!grid.is_reachable_thin(end, outside, 0));
+}
+
+#[test]
+fn overlapping_integer_contours_keep_native_fractional_intersections() {
+    use robin_engine::coordinates::MapPoint;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/asset-preserved-contours.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    let obstacles: Vec<_> = grid
+        .level
+        .sectors
+        .iter()
+        .filter(|sector| sector.sector_type.is_motion() && !sector.sector_type.is_area())
+        .collect();
+    assert_eq!(obstacles.len(), 2);
+    let free = MapPoint::new(339.5, 343.1);
+    assert!(
+        obstacles
+            .iter()
+            .all(|obstacle| !obstacle.contains_point(free))
+    );
+    assert!(grid.is_reachable_thin(free, MapPoint::new(339.5, 350.), 0));
+    let blocked = MapPoint::new(360.5, 327.9);
+    assert!(
+        obstacles
+            .iter()
+            .any(|obstacle| obstacle.contains_point(blocked))
+    );
+    assert!(!grid.is_reachable_thin(blocked, MapPoint::new(360.5, 340.), 0));
+    assert!(!grid.is_reachable_thin(MapPoint::new(339., 380.), MapPoint::new(350., 380.), 0));
 }
 
 #[test]
@@ -320,6 +1199,94 @@ fn detached_jump_assets_preserve_complete_pair_registrations() {
 }
 
 #[test]
+fn compiled_roof_jump_routes_enforce_character_skills_and_destination_helpers() {
+    use robin_engine::element::{ElementKind, Posture};
+    use robin_engine::gate::{ActorAuthInfo, find_path_gates_with_sector_indices};
+
+    for bytes in [
+        include_bytes!("fixtures/asset-jump.level.json").as_slice(),
+        include_bytes!("fixtures/asset-jump-detached.level.json").as_slice(),
+    ] {
+        let mut assets = LevelAssets::new();
+        let engine = construct(bytes, &mut assets);
+        let view = engine.presentation_view();
+        let doors = view.doors();
+        let jump = doors.iter().find(|door| door.is_jump()).unwrap();
+        let actor = ActorAuthInfo {
+            kind: ElementKind::ActorPc,
+            pc_auth_bit: 1,
+            has_lockpick: false,
+            has_climb: false,
+            has_jump: true,
+            is_rider: false,
+            posture: Posture::Upright,
+        };
+        for direct in [false, true] {
+            let (start, goal, source_sector, goal_sector, source_index, goal_index, needs_helper) =
+                if direct {
+                    (
+                        jump.point_out,
+                        jump.point_in,
+                        jump.sector_out,
+                        jump.sector_in,
+                        jump.sector_out_index,
+                        jump.sector_in_index,
+                        jump.jump_line_in_helper_needed,
+                    )
+                } else {
+                    (
+                        jump.point_in,
+                        jump.point_out,
+                        jump.sector_in,
+                        jump.sector_out,
+                        jump.sector_in_index,
+                        jump.sector_out_index,
+                        jump.jump_line_out_helper_needed,
+                    )
+                };
+            let route = |actor: &ActorAuthInfo| {
+                find_path_gates_with_sector_indices(
+                    doors,
+                    (start.x, start.y),
+                    i16::from(source_sector) as u16,
+                    source_index,
+                    (goal.x, goal.y),
+                    i16::from(goal_sector) as u16,
+                    goal_index,
+                    Some(actor),
+                    false,
+                    &|_| true,
+                    &|_| None,
+                )
+            };
+            assert_eq!(route(&actor).is_some(), !needs_helper);
+            let supported = ActorAuthInfo {
+                posture: Posture::OnShoulders,
+                ..actor
+            };
+            let path =
+                route(&supported).expect("a supported jumper can cross the compiled roof pair");
+            assert_eq!(path.len(), 1);
+            assert_eq!(path[0].direct, direct);
+            assert!(
+                route(&ActorAuthInfo {
+                    has_jump: false,
+                    ..supported
+                })
+                .is_none()
+            );
+            assert!(
+                route(&ActorAuthInfo {
+                    kind: ElementKind::ActorSoldier,
+                    ..supported
+                })
+                .is_none()
+            );
+        }
+    }
+}
+
+#[test]
 fn compiled_jump_metadata_rejects_orphan_zones_and_stale_links() {
     let value: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-jump.level.json")).unwrap();
@@ -369,6 +1336,228 @@ fn compiled_light_regions_follow_mission_ambience_without_changing_interior_link
 }
 
 #[test]
+#[ignore = "requires ROBIN_ASSET_MAP_DIAGNOSTICS"]
+fn recovered_light_exports_preserve_contours_layers_and_ambience() {
+    use robin_engine::coordinates::MapPoint;
+    use robin_engine::sector::SectorType;
+    let directory = std::path::PathBuf::from(std::env::var("ROBIN_ASSET_MAP_DIAGNOSTICS").unwrap());
+    let manifest: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(directory.join("diagnostics.json")).unwrap())
+            .unwrap();
+    assert_eq!(manifest["complete"], true);
+    for result in manifest["results"].as_array().unwrap() {
+        let file = result["file"].as_str().unwrap();
+        let bytes = std::fs::read(directory.join(file)).unwrap();
+        let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let dimensions = &descriptor["walkable_polygon"][2];
+        for ambience in [1, 2, 4] {
+            let mut level = LoadedLevel::hackable_from_json(&bytes).unwrap();
+            level.mission.header.ambiance = ambience;
+            let lights = level.proto.light_sectors.clone();
+            let mut assets = LevelAssets::new();
+            let engine = construct_with_dimensions(
+                level,
+                &mut assets,
+                (
+                    dimensions[0].as_f64().unwrap() as f32 + 1.,
+                    dimensions[1].as_f64().unwrap() as f32 + 1.,
+                ),
+            );
+            let grid = engine.fast_grid();
+            for light in &lights {
+                let points: Vec<_> = light
+                    .polygon
+                    .points
+                    .iter()
+                    .map(|&(x, y)| MapPoint::new(x as f32, y as f32))
+                    .collect();
+                let expected = lights.iter().any(|other| {
+                    other.layer == light.layer
+                        && other.polygon.points == light.polygon.points
+                        && other.ambience & ambience != 0
+                });
+                let active = grid
+                    .level
+                    .sectors
+                    .iter()
+                    .enumerate()
+                    .any(|(index, sector)| {
+                        sector.sector_type.contains(SectorType::SHADOW)
+                            && sector.layer == light.layer
+                            && sector.points == points
+                            && grid.is_sector_active(index as u32)
+                    });
+                assert_eq!(
+                    active, expected,
+                    "{file}: light layer {} ambience {ambience}",
+                    light.layer
+                );
+            }
+            eprintln!(
+                "{file}: checked {} light contours for ambience {ambience}",
+                lights.len()
+            );
+        }
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct LightQueryComparison {
+    source: String,
+    after: String,
+    cases: Vec<LightQueryCase>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct LightQueryCase {
+    source_layer: u16,
+    compiled_layer: u16,
+    bounds: [i32; 4],
+    coverage: Vec<Vec<Vec<(f32, f32)>>>,
+}
+
+#[test]
+#[ignore = "requires ROBIN_LIGHT_COMPARISON"]
+fn recovered_lights_match_source_queries_on_shared_walkable_coverage() {
+    use robin_engine::coordinates::{MapBBox, MapPoint};
+    use robin_engine::fast_find_grid::GridSector;
+    let manifest_path = std::path::PathBuf::from(std::env::var("ROBIN_LIGHT_COMPARISON").unwrap());
+    let directory = manifest_path.parent().unwrap();
+    let manifest: LightQueryComparison =
+        serde_json::from_slice(&std::fs::read(&manifest_path).unwrap()).unwrap();
+    assert!(!manifest.cases.is_empty());
+    let mut source = LoadedLevel::empty();
+    source.proto =
+        serde_json::from_slice(&std::fs::read(directory.join(&manifest.source)).unwrap()).unwrap();
+    let polygon = |points: &[(f32, f32)]| {
+        assert!(points.len() >= 3);
+        GridSector {
+            points: points.iter().map(|&(x, y)| MapPoint::new(x, y)).collect(),
+            bounding_box: MapBBox::from_coords(
+                points.iter().map(|p| p.0).fold(f32::INFINITY, f32::min),
+                points.iter().map(|p| p.1).fold(f32::INFINITY, f32::min),
+                points.iter().map(|p| p.0).fold(f32::NEG_INFINITY, f32::max),
+                points.iter().map(|p| p.1).fold(f32::NEG_INFINITY, f32::max),
+            ),
+            ..Default::default()
+        }
+    };
+    let source_lights: Vec<_> = source
+        .proto
+        .light_sectors
+        .iter()
+        .map(|light| {
+            (
+                light.layer,
+                light.ambience,
+                polygon(
+                    &light
+                        .polygon
+                        .points
+                        .iter()
+                        .map(|&(x, y)| (x as f32, y as f32))
+                        .collect::<Vec<_>>(),
+                ),
+            )
+        })
+        .collect();
+    let bytes = std::fs::read(directory.join(&manifest.after)).unwrap();
+    let descriptor: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let dims = &descriptor["walkable_polygon"][2];
+    let mut queries = 0usize;
+    let mut differences = 0usize;
+    let mut examples = Vec::new();
+    for ambience in [1, 2, 4] {
+        let mut level = LoadedLevel::hackable_from_json(&bytes).unwrap();
+        level.mission.header.ambiance = ambience;
+        let mut assets = LevelAssets::new();
+        let engine = construct_with_dimensions(
+            level,
+            &mut assets,
+            (
+                dims[0].as_f64().unwrap() as f32 + 1.,
+                dims[1].as_f64().unwrap() as f32 + 1.,
+            ),
+        );
+        for (index, case) in manifest.cases.iter().enumerate() {
+            let coverage: Vec<Vec<_>> = case
+                .coverage
+                .iter()
+                .map(|rings| rings.iter().map(|ring| polygon(ring)).collect())
+                .collect();
+            assert!(!coverage.is_empty());
+            let mut sampled = 0usize;
+            for y in case.bounds[1] * 2..=case.bounds[3] * 2 {
+                for x in case.bounds[0] * 2..=case.bounds[2] * 2 {
+                    let point = MapPoint::new(x as f32 / 2., y as f32 / 2.);
+                    if !coverage.iter().any(|rings| {
+                        rings[0].contains_point(point)
+                            && !rings[1..].iter().any(|hole| hole.contains_point(point))
+                    }) {
+                        continue;
+                    }
+                    sampled += 1;
+                    let expected = source_lights.iter().any(|(layer, mask, shape)| {
+                        *layer == case.source_layer
+                            && mask & ambience != 0
+                            && shape.contains_point(point)
+                    });
+                    let actual = engine
+                        .fast_grid()
+                        .is_in_shadow_sector(point, case.compiled_layer);
+                    if expected != actual {
+                        differences += 1;
+                        if examples.len() < 20 {
+                            examples.push(format!("case {index}, ambience {ambience}, ({},{}), layers {}->{}, expected {expected}, actual {actual}",point.x,point.y,case.source_layer,case.compiled_layer));
+                        }
+                    }
+                }
+            }
+            assert!(sampled > 0, "empty query case {index}");
+            queries += sampled;
+        }
+    }
+    std::fs::write(
+        manifest_path.with_extension("report.json"),
+        serde_json::to_vec_pretty(
+            &serde_json::json!({"queries":queries,"differences":differences,"examples":examples}),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    eprintln!("{queries} lighting queries; {differences} differences");
+    assert_eq!(differences, 0, "{examples:?}");
+}
+
+#[test]
+fn compiled_traversal_light_uses_the_lift_layer_and_mission_ambience() {
+    use robin_engine::coordinates::MapPoint;
+    for mask in [1, 2] {
+        let mut loaded =
+            LoadedLevel::hackable_from_json(include_bytes!("fixtures/asset-lift-light.level.json"))
+                .unwrap();
+        loaded.mission.header.ambiance = mask;
+        let mut assets = LevelAssets::new();
+        let engine = construct_loaded(loaded, &mut assets);
+        let grid = engine.fast_grid();
+        let layer = grid
+            .level
+            .sectors
+            .iter()
+            .find(|sector| sector.sector_type.is_lift())
+            .unwrap()
+            .layer;
+        assert_eq!(
+            grid.is_in_shadow_sector(MapPoint::new(400., 300.), layer),
+            mask == 2
+        );
+        assert!(!grid.is_in_shadow_sector(MapPoint::new(400., 300.), 0));
+        assert!(!grid.is_in_shadow_sector(MapPoint::new(450., 300.), layer));
+        assert_eq!(grid.level.door_projection_infos.len(), 2);
+    }
+}
+
+#[test]
 fn compiled_light_regions_reject_missing_layers_and_degenerate_contours() {
     let mut value: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-light.level.json")).unwrap();
@@ -389,7 +1578,7 @@ fn compiled_light_regions_reject_missing_layers_and_degenerate_contours() {
 }
 
 #[test]
-fn sight_transitions_reject_missing_duplicate_and_projection_obstacles() {
+fn sight_transitions_reject_missing_duplicate_and_invalid_receiving_references() {
     let source: serde_json::Value =
         serde_json::from_slice(include_bytes!("fixtures/asset-sight-transition.level.json"))
             .unwrap();
@@ -400,7 +1589,7 @@ fn sight_transitions_reject_missing_duplicate_and_projection_obstacles() {
         assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap()).is_err());
     }
     let mut bad = source;
-    bad["asset_geometry"]["sight_obstacles"][0]["projection_area"] = serde_json::json!([0, 0]);
+    bad["asset_geometry"]["sight_obstacles"][0]["projection_area"] = serde_json::json!([999, 0]);
     assert!(LoadedLevel::hackable_from_json(&serde_json::to_vec(&bad).unwrap()).is_err());
 }
 
@@ -661,8 +1850,9 @@ fn map_geometry_does_not_accept_embedded_player_spawns() {
         serde_json::from_slice(include_bytes!("fixtures/asset-compiled.level.json")).unwrap();
     value["spawn_player"] = true.into();
     value["spawn"] = serde_json::json!([320, 320]);
+    value.as_object_mut().unwrap().remove("spawn_points");
     let error = LoadedLevel::hackable_from_json(&serde_json::to_vec(&value).unwrap()).unwrap_err();
-    assert!(error.contains("use a mission"), "{error}");
+    assert!(error.contains("use spawn_points"), "{error}");
 }
 
 #[test]
@@ -995,4 +2185,64 @@ fn materials_shift_interior_constructors_without_breaking_entrances() {
     assert_eq!(i16::from(building.sector_number), 5);
     assert_eq!(building.gate_indices.len(), 2);
     assert_eq!(grid.level.door_projection_infos.len(), 3);
+}
+
+#[test]
+fn editable_grid_hill_river_ford_and_export_crop_construct_native_gameplay() {
+    use robin_engine::coordinates::MapPoint;
+    let mut assets = LevelAssets::new();
+    let engine = construct(
+        include_bytes!("fixtures/grid-terrain.level.json"),
+        &mut assets,
+    );
+    let grid = engine.fast_grid();
+    let layer = grid.level.sectors[0].layer;
+    // The receiver planes retain the hill's interpolated elevation after cropping.
+    for (x, y, height) in [(40., 120., 20.), (60., 120., 30.)] {
+        let receiver = assets
+            .environment
+            .static_sight_obstacles
+            .iter()
+            .find(|surface| surface.contains_point_projection(MapPoint::new(x, y)))
+            .expect("terrain receiver covers hill sample");
+        assert!(
+            (receiver.compute_top_z_from_projection(x, y) - height).abs() < 0.01,
+            "sample {x},{y}: expected {height}, got {}",
+            receiver.compute_top_z_from_projection(x, y)
+        );
+    }
+    assert!(
+        grid.is_reachable_thin(MapPoint::new(20., 120.), MapPoint::new(120., 120.), layer),
+        "adjacent slope triangles share connected navigation"
+    );
+    assert!(
+        !grid.is_reachable_thin(MapPoint::new(130., 20.), MapPoint::new(190., 20.), layer),
+        "ordinary river section blocks direct traversal"
+    );
+    assert!(
+        grid.is_reachable_thin(MapPoint::new(130., 120.), MapPoint::new(190., 120.), layer),
+        "ford connects the two banks"
+    );
+    assert!(
+        !grid.is_reachable_thin(MapPoint::new(200., 120.), MapPoint::new(235., 120.), layer),
+        "terrain retained outside export bounds is not traversable"
+    );
+    let graph = &assets.navigation.pathfinder_graph;
+    let mut routing_grid = grid.clone();
+    let mut finder = robin_engine::pathfinder::PathFinder::new();
+    finder.initialize_from_graph(graph, &mut routing_grid);
+    let goal = MapPoint::new(200., 120.);
+    let route = finder
+        .find_path(
+            graph,
+            &routing_grid,
+            layer,
+            0,
+            0,
+            MapPoint::new(20., 120.),
+            goal,
+            false,
+        )
+        .expect("actor-clearance routing crosses the hill and ford");
+    assert_eq!(route.last(), Some(&goal));
 }

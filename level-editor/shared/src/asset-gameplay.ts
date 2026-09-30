@@ -8,14 +8,33 @@ export interface AssetWalkableSurface {
   polygon: Point[];
   /** Constant height or one height per polygon vertex; the surface must be planar. */
   height: number | number[];
+  /** Retain fractional boundaries through movement assembly; only the final regions snap to the grid. */
+  preserveMovementPrecision?: boolean;
+  /** Keep this ordinary area's outer contour separate from crossing movement obstacles. */
+  preserveMovementBoundary?: boolean;
   /** Holes lie on the same plane, in the same local XY frame. */
   holes?: Point[][];
+  /** Shared assembly labels for preserved hole contours, aligned with holes. */
+  holeContours?: string[];
+  /** Shared assembly label for fragments of one movement exclusion.
+   * Transition labels are scoped to their placement, transition and initial/applied state. */
+  movementContour?: string;
   /** Asset-local navigation region, optionally spanning height planes; distinct regions never merge. */
   navigationRegion?: string;
+  /** Local 3D outer-edge sockets joining navigation regions of separately placed assets.
+   * Both endpoints must coincide, subject to explicit height tolerance; unmatched edges stay separate. */
+  navigationJoins?: import("./assemble-navigation-joins.ts").NavigationJoin[];
+  /** Explicit maximum height step at coincident projected sockets. Both assets must allow it. */
+  navigationJoinHeightTolerance?: number;
+  /** Local part or gameplay volume supplying receiving geometry, physical flags and materials.
+   * Replaces the generated thin receiver; activation uses the volume's sight-state links. */
+  projectionVolume?: string;
   /** Receiving-surface material and ordered asset-local material-region references. */
   projectionMaterials?: {
     defaultMaterial: number;
     regions: string[];
+    /** Ordered local plane anchors, retained through clipping for native height arithmetic. */
+    planePoints?: [[number, number, number], [number, number, number], [number, number, number]];
     /** Local bounding height for overlap priority; equal heights use surface order within the asset. */
     priorityHeight?: number;
     /** Higher values win equal-height overlaps across independent placements. */
@@ -39,6 +58,8 @@ export interface AssetDoor {
   locked: boolean;
   unlockable: boolean;
   active?: boolean;
+  /** An unrestricted, non-clickable passage may disappear when its areas join. */
+  allowContinuous?: boolean;
   lockedVillains?: boolean;
   lockedCivilians?: boolean;
   /** Alternate lock rules; activation still requires an authored state transition. */
@@ -83,8 +104,13 @@ export interface AssetMaterialRegion {
 }
 export interface AssetGameplay {
   version: 1;
+  /** Publish usable definitions while retaining known gaps in every compilation report.
+   * Absence does not certify parity; it only means no draft issues were recorded. */
+  draft?: { issues: string[] };
   /** Reuse part obstacles or disable them; explicit gameplay volumes remain independent. */
   collision: "parts" | "none";
+  /** Query precedence for local physical part/volume IDs; lower values run first. */
+  sightOrder?: Record<string, number>;
   /** Gameplay volumes attached to an existing frame; no rendered mesh is required. */
   volumes?: {
     id: string;
@@ -98,6 +124,14 @@ export interface AssetGameplay {
   /** Plane-local openings in this asset's derived movement collision, never in other assets. */
   movementClearances?: AssetWalkableSurface[];
   surfaces: AssetWalkableSurface[];
+  /** Physical receivers sharing existing navigation without adding a walking boundary. */
+  projectionReceivers?: {
+    id: string;
+    node: string;
+    volume: string;
+    /** Local unblocked navigation anchor; its elevation belongs to the target walking plane. */
+    anchor: [number, number, number];
+  }[];
   doors: AssetDoor[];
   lifts?: AssetLift[];
   interiors?: AssetInterior[];
@@ -106,17 +140,44 @@ export interface AssetGameplay {
   environment?: { forest: boolean; defaultMaterial: number };
   sounds?: AssetSoundSource[];
   lights?: AssetLightRegion[];
+  masks?: AssetOcclusionMask[];
+  /** Parts whose complete sprite occlusion is authored by typed masks, including states.
+   * Keep their color geometry but omit their contribution from the static depth bake. */
+  maskOcclusionNodes?: string[];
   jumpZones?: AssetJumpZone[];
   jumpPairs?: AssetJumpPair[];
   jumpSegments?: AssetJumpSegment[];
-  /** Nonvisual movement changes. Visual/sight/mask transitions require separate authoring. */
+  /** Independent navigation, sight, mask and door state links; visual resources are separate. */
   movementTransitions?: AssetMovementTransition[];
+}
+export interface AssetOcclusionMask {
+  id: string;
+  node: string;
+  /** Explicit local 3D coverage, including cutouts between triangles. */
+  triangles: import("./compile-mask-geometry.ts").MaskTriangle[];
+  /** Local point on the receiving navigation surface; may lie inside a blocker. */
+  anchor: [number, number, number];
+  view: boolean;
+  /** Local boundary; its projected front envelope controls character masking. */
+  characterBoundary?: [number, number, number][];
+  /** Defaults to true. False preserves an authored open polyline without a closing edge. */
+  characterBoundaryClosed?: boolean;
+  /** Local boundary; its world XY front envelope controls projectile masking. */
+  projectileBoundary?: [number, number, number][];
+  /** Defaults to true, independently of the character boundary. */
+  projectileBoundaryClosed?: boolean;
+  /** Local part/volume IDs used for the projectile/flying-human altitude test. */
+  obstacles: string[];
 }
 export interface AssetLightRegion {
   id: string;
   node: string;
-  /** Planar local 3D contour; the receiving surface determines its compiled layer. */
+  /** Planar local 3D contour; defaults to receivers on the same plane. */
   polygon: [number, number, number][];
+  /** Optional local anchors selecting receiving layers independently of the contour plane. */
+  receivers?: [number, number, number][];
+  /** Finite local segments selecting one receiving surface after placement, including slopes. */
+  receiverSegments?: [[number, number, number], [number, number, number]][];
   /** Mission ambience bit mask controlling this region, not a mission selection. */
   ambiences: number;
 }
@@ -148,6 +209,10 @@ export interface AssetJumpPair {
 }
 export interface AssetMovementTransition {
   id: string;
+  /** Asset-local model appearance IDs controlled by this gameplay transition. */
+  appearances?: string[];
+  /** Parts share a switch only when matching asset-local anchors meet after placement. */
+  join?: { key: string; point: [number, number, number] };
   node: string;
   waypoint: [number, number, number];
   /** Local receiving-area anchor when the reference point lies outside its linked surface. */
@@ -159,6 +224,8 @@ export interface AssetMovementTransition {
   /** Local part/volume IDs enabled before and after the transition, respectively. */
   initialSight?: string[];
   appliedSight?: string[];
+  initialMasks?: string[];
+  appliedMasks?: string[];
   /** Local ordinary/interior door IDs. Lift traversal doors cannot bind map patches. */
   doorLinks?: { mode: "trigger-transition" | "swap-rights"; ids: string[] };
   /** Trigger contours at the waypoint's local elevation; empty means externally activated. */
@@ -204,6 +271,8 @@ export interface CompiledAssetGeometry {
     graph_bytes: never[];
   };
   sight_obstacles: SightObstacle[];
+  /** Baked typed masks; obstacle references use this compilation's sight array. */
+  masks?: import("./level.ts").Mask[];
   material_sectors?: MaterialSector[];
   sight_material_indices?: number[];
   map_settings?: { forest_level: boolean; default_material: number };
@@ -230,6 +299,9 @@ export interface CompiledAssetGeometry {
   }[];
   movement_transitions?: {
     id: string;
+    /** Placed member IDs sharing this switch, excluding its canonical ID. */
+    aliases?: string[];
+    has_appearance?: boolean;
     waypoint: Point;
     sector: number;
     layer: number;
@@ -240,6 +312,9 @@ export interface CompiledAssetGeometry {
     motion_changes: { layer: number; sector: number; changing_obstacle: number }[];
     initial_sight?: number[];
     applied_sight?: number[];
+    /** Indices into this compilation's mask array, not native per-layer indices. */
+    initial_masks?: number[];
+    applied_masks?: number[];
     door_links?: { mode: "trigger-transition" | "swap-rights"; indices: number[] };
   }[];
   doors: {
@@ -280,8 +355,40 @@ export function validateAssetGameplay(
   };
   if (!value || typeof value !== "object") fail("missing gameplay definition");
   const data = value as AssetGameplay;
+  const disabledParts = new Set(
+    descriptor.parts.filter((part) => part.collision === "none").map((part) => part.node),
+  );
   if (data.version !== 1 || !["parts", "none"].includes(data.collision))
     fail("invalid gameplay version or collision mode");
+  if (
+    data.draft !== undefined &&
+    (!data.draft ||
+      typeof data.draft !== "object" ||
+      Array.isArray(data.draft) ||
+      !Array.isArray(data.draft.issues) ||
+      data.draft.issues.length === 0 ||
+      data.draft.issues.some((issue) => typeof issue !== "string" || !issue.trim()) ||
+      new Set(data.draft.issues).size !== data.draft.issues.length)
+  )
+    fail("invalid gameplay draft issues");
+  if (data.sightOrder !== undefined) {
+    if (!data.sightOrder || typeof data.sightOrder !== "object" || Array.isArray(data.sightOrder))
+      fail("invalid sight query order");
+    for (const [id, order] of Object.entries(data.sightOrder))
+      if (
+        !Number.isSafeInteger(order) ||
+        order < 0 ||
+        disabledParts.has(id) ||
+        !(
+          data.volumes?.some((v) => v.id === id) ||
+          (data.collision === "parts" &&
+            descriptor.parts.some(
+              (p) => p.node === id && p.obstacle_local_game && p.mission_profile === undefined,
+            ))
+        )
+      )
+        fail(`invalid sight query order for ${id}`);
+  }
   if (
     data.environment !== undefined &&
     (descriptor.editor_usage !== "map-background" ||
@@ -297,6 +404,14 @@ export function validateAssetGameplay(
     p.length === length &&
     p.every((v) => typeof v === "number" && Number.isFinite(v));
   const nodes = new Set(descriptor.parts.map((part) => part.node));
+  if (
+    data.maskOcclusionNodes !== undefined &&
+    (!Array.isArray(data.maskOcclusionNodes) ||
+      !data.masks?.length ||
+      new Set(data.maskOcclusionNodes).size !== data.maskOcclusionNodes.length ||
+      data.maskOcclusionNodes.some((node) => !nodes.has(node)))
+  )
+    fail("mask occlusion nodes require typed masks and unique existing part frames");
   const ids = new Set<string>();
   const feature = (f: { id: string; node: string }) => {
     if (!f || typeof f.id !== "string" || !f.id || ids.has(f.id))
@@ -317,9 +432,74 @@ export function validateAssetGameplay(
   if (data.movementTransitions !== undefined && !Array.isArray(data.movementTransitions))
     fail("invalid movement transitions");
   const changingSight = new Set<string>();
+  if (data.masks !== undefined && !Array.isArray(data.masks)) fail("invalid masks");
+  const maskIds = new Set<string>();
+  for (const mask of data.masks ?? []) {
+    feature(mask);
+    if (
+      !point(mask.anchor, 3) ||
+      typeof mask.view !== "boolean" ||
+      !Array.isArray(mask.triangles) ||
+      !mask.triangles.length ||
+      !mask.triangles.every(
+        (triangle) =>
+          Array.isArray(triangle) && triangle.length === 3 && triangle.every((p) => point(p, 3)),
+      ) ||
+      !Array.isArray(mask.obstacles) ||
+      new Set(mask.obstacles).size !== mask.obstacles.length
+    )
+      fail(`invalid mask ${mask.id}`);
+    for (const [boundary, closed] of [
+      [mask.characterBoundary, mask.characterBoundaryClosed],
+      [mask.projectileBoundary, mask.projectileBoundaryClosed],
+    ] as const) {
+      if (closed !== undefined && (typeof closed !== "boolean" || boundary === undefined))
+        fail(`invalid mask boundary closure ${mask.id}`);
+      if (
+        boundary !== undefined &&
+        (!Array.isArray(boundary) ||
+          boundary.length < (closed === false ? 2 : 3) ||
+          !boundary.every((p) => point(p, 3)))
+      )
+        fail(`invalid mask boundary ${mask.id}`);
+    }
+    for (const ref of mask.obstacles)
+      if (
+        typeof ref !== "string" ||
+        disabledParts.has(ref) ||
+        !(
+          data.volumes?.some((volume) => volume.id === ref) ||
+          (data.collision === "parts" &&
+            descriptor.parts.some((part) => part.node === ref && part.obstacle_local_game))
+        )
+      )
+        fail(`mask ${mask.id} references missing obstacle ${ref}`);
+    if (!mask.view && !mask.characterBoundary && !mask.projectileBoundary && !mask.obstacles.length)
+      fail(`mask ${mask.id} has no application rule`);
+    maskIds.add(mask.id);
+  }
+  const changingMasks = new Set<string>();
+  const changingAppearances = new Set<string>();
   const triggeringDoors = new Set<string>();
   for (const transition of data.movementTransitions ?? []) {
     feature(transition);
+    if (
+      transition.join !== undefined &&
+      (!transition.join ||
+        typeof transition.join.key !== "string" ||
+        !transition.join.key.trim() ||
+        !point(transition.join.point, 3))
+    )
+      fail("invalid transition join anchor");
+    if (transition.appearances !== undefined) {
+      if (!Array.isArray(transition.appearances) || !transition.appearances.length)
+        fail("invalid transition appearance bindings");
+      for (const appearance of transition.appearances) {
+        if (typeof appearance !== "string" || !appearance || changingAppearances.has(appearance))
+          fail("invalid or multiply controlled transition appearance");
+        changingAppearances.add(appearance);
+      }
+    }
     if (
       !point(transition.waypoint, 3) ||
       (transition.waypointAnchor !== undefined && !point(transition.waypointAnchor, 3)) ||
@@ -331,9 +511,21 @@ export function validateAssetGameplay(
         !transition.applied.length &&
         !transition.initialSight?.length &&
         !transition.appliedSight?.length &&
+        !transition.initialMasks?.length &&
+        !transition.appliedMasks?.length &&
+        !transition.appearances?.length &&
         !transition.doorLinks)
     )
       fail(`invalid movement transition ${transition.id}`);
+    for (const refs of [transition.initialMasks, transition.appliedMasks]) {
+      if (refs === undefined) continue;
+      if (!Array.isArray(refs)) fail("invalid mask transition references");
+      for (const ref of refs) {
+        if (!maskIds.has(ref) || changingMasks.has(ref))
+          fail(`invalid or multiply controlled mask ${ref}`);
+        changingMasks.add(ref);
+      }
+    }
     const links = transition.doorLinks;
     if (links !== undefined) {
       if (
@@ -361,6 +553,7 @@ export function validateAssetGameplay(
         if (
           typeof ref !== "string" ||
           changingSight.has(ref) ||
+          disabledParts.has(ref) ||
           !(
             data.volumes?.some((v) => v.id === ref) ||
             (data.collision === "parts" && nodes.has(ref))
@@ -382,6 +575,7 @@ export function validateAssetGameplay(
     for (const ref of data.movementSolids)
       if (
         typeof ref !== "string" ||
+        disabledParts.has(ref) ||
         !(
           data.volumes?.some((volume) => volume.id === ref && volume.shape.solid) ||
           (data.collision === "parts" &&
@@ -453,6 +647,26 @@ export function validateAssetGameplay(
       !light.polygon.every((p) => point(p, 3))
     )
       fail(`invalid light region ${light.id}`);
+    if (
+      light.receivers !== undefined &&
+      (!Array.isArray(light.receivers) ||
+        !light.receivers.length ||
+        !light.receivers.every((p) => point(p, 3)))
+    )
+      fail(`invalid light receivers ${light.id}`);
+    if (
+      light.receiverSegments !== undefined &&
+      (!Array.isArray(light.receiverSegments) ||
+        !light.receiverSegments.length ||
+        !light.receiverSegments.every(
+          (segment) =>
+            Array.isArray(segment) &&
+            segment.length === 2 &&
+            segment.every((p) => point(p, 3)) &&
+            segment[0].some((v, i) => v !== segment[1][i]),
+        ))
+    )
+      fail(`invalid light receiving segments ${light.id}`);
   }
   if (data.sounds !== undefined && !Array.isArray(data.sounds)) fail("invalid sound sources");
   for (const sound of data.sounds ?? []) {
@@ -516,6 +730,30 @@ export function validateAssetGameplay(
     )
       fail(`invalid gameplay volume ${volume.id}`);
   }
+  if (data.projectionReceivers !== undefined && !Array.isArray(data.projectionReceivers))
+    fail("invalid projection receivers");
+  const receiverVolumes = new Set<string>();
+  for (const receiver of data.projectionReceivers ?? []) {
+    feature(receiver);
+    if (
+      !point(receiver.anchor, 3) ||
+      disabledParts.has(receiver.volume) ||
+      receiverVolumes.has(receiver.volume) ||
+      data.surfaces.some((surface) => surface.projectionVolume === receiver.volume) ||
+      !(
+        volumes.has(receiver.volume) ||
+        (data.collision === "parts" &&
+          descriptor.parts.some(
+            (part) =>
+              part.node === receiver.volume &&
+              part.obstacle_local_game &&
+              part.mission_profile === undefined,
+          ))
+      )
+    )
+      fail(`invalid projection receiver ${receiver.id}`);
+    receiverVolumes.add(receiver.volume);
+  }
   if (data.materials !== undefined && !Array.isArray(data.materials)) fail("invalid materials");
   for (const region of data.materials ?? []) {
     feature(region);
@@ -539,7 +777,11 @@ export function validateAssetGameplay(
         ))
     )
       fail(`invalid material region ${region.id}`);
-    if (region.obstacles.some((node) => nodes.has(node)) && data.collision !== "parts")
+    if (
+      region.obstacles.some(
+        (node) => disabledParts.has(node) || (nodes.has(node) && data.collision !== "parts"),
+      )
+    )
       fail(`material region ${region.id} references disabled obstacles`);
   }
   if (data.movementBlockers !== undefined && !Array.isArray(data.movementBlockers))
@@ -554,6 +796,23 @@ export function validateAssetGameplay(
   ]) {
     feature(surface);
     polygon(surface.polygon);
+    if (
+      surface.projectionVolume !== undefined &&
+      (disabledParts.has(surface.projectionVolume) ||
+        !data.surfaces.includes(surface) ||
+        !(
+          volumes.has(surface.projectionVolume) ||
+          (data.collision === "parts" &&
+            descriptor.parts.some(
+              (part) =>
+                part.node === surface.projectionVolume &&
+                part.obstacle_local_game &&
+                part.mission_profile === undefined,
+            ))
+        ) ||
+        surface.projectionMaterials !== undefined)
+    )
+      fail(`invalid projection volume on ${surface.id}`);
     if (surface.projectionMaterials !== undefined) {
       const projection = surface.projectionMaterials;
       if (
@@ -564,6 +823,10 @@ export function validateAssetGameplay(
         projection.defaultMaterial > 9 ||
         (projection.priorityHeight !== undefined && !Number.isFinite(projection.priorityHeight)) ||
         (projection.priority !== undefined && !Number.isFinite(projection.priority)) ||
+        (projection.planePoints !== undefined &&
+          (!Array.isArray(projection.planePoints) ||
+            projection.planePoints.length !== 3 ||
+            !projection.planePoints.every((p) => point(p, 3)))) ||
         (projection.footprint !== undefined &&
           (!Array.isArray(projection.footprint) ||
             projection.footprint.length < 3 ||
@@ -583,6 +846,23 @@ export function validateAssetGameplay(
     )
       fail("navigation regions require nonempty labels on ordinary walkable surfaces");
     if (
+      surface.navigationJoins !== undefined &&
+      (!surface.navigationRegion ||
+        !Array.isArray(surface.navigationJoins) ||
+        !surface.navigationJoins.length ||
+        surface.navigationJoins.some(
+          (edge) => !Array.isArray(edge) || edge.length !== 2 || !edge.every((p) => point(p, 3)),
+        ))
+    )
+      fail("navigation joins require 3D edge sockets on labelled ordinary surfaces");
+    if (
+      surface.navigationJoinHeightTolerance !== undefined &&
+      (!surface.navigationJoins ||
+        !Number.isFinite(surface.navigationJoinHeightTolerance) ||
+        surface.navigationJoinHeightTolerance < 0)
+    )
+      fail("navigation join height tolerance requires sockets and a nonnegative finite height");
+    if (
       !(typeof surface.height === "number" && Number.isFinite(surface.height)) &&
       !(
         Array.isArray(surface.height) &&
@@ -591,10 +871,42 @@ export function validateAssetGameplay(
       )
     )
       fail("invalid surface height");
+    if (
+      surface.preserveMovementPrecision !== undefined &&
+      typeof surface.preserveMovementPrecision !== "boolean"
+    )
+      fail("invalid movement precision setting");
+    if (
+      surface.preserveMovementBoundary !== undefined &&
+      (typeof surface.preserveMovementBoundary !== "boolean" ||
+        (surface.preserveMovementBoundary &&
+          (!surface.navigationRegion ||
+            !data.surfaces.includes(surface) ||
+            data.lifts?.some((l) => l.surface === surface.id))))
+    )
+      fail("preserved movement boundaries require labelled ordinary walkable surfaces");
     if (surface.holes !== undefined) {
       if (!Array.isArray(surface.holes)) fail("invalid surface holes");
       for (const hole of surface.holes) polygon(hole);
     }
+    if (
+      surface.movementContour !== undefined &&
+      (typeof surface.movementContour !== "string" ||
+        !surface.movementContour.trim() ||
+        (!data.movementBlockers?.includes(surface) &&
+          !data.movementTransitions?.some(
+            (t) => t.initial.includes(surface) || t.applied.includes(surface),
+          )))
+    )
+      fail("movement contour labels require explicit movement blockers or transition contours");
+    if (
+      surface.holeContours !== undefined &&
+      (!surface.preserveMovementBoundary ||
+        !Array.isArray(surface.holeContours) ||
+        surface.holeContours.length !== surface.holes?.length ||
+        surface.holeContours.some((id) => typeof id !== "string" || !id.trim()))
+    )
+      fail("hole contour labels must match preserved boundary holes");
   }
   const validateDoor = (door: AssetDoor, kind: "ordinary" | "lift" | "interior") => {
     const lift = kind === "lift";
@@ -614,7 +926,7 @@ export function validateAssetGameplay(
       if (door[key] !== undefined && !point(door[key], 3)) fail(`invalid door ${door.id} ${key}`);
     if (kind === "interior" && door.insideAnchor !== undefined)
       fail(`interior door ${door.id} cannot override its shared room with an inside anchor`);
-    for (const key of ["active", "lockedVillains", "lockedCivilians"] as const)
+    for (const key of ["active", "lockedVillains", "lockedCivilians", "allowContinuous"] as const)
       if (door[key] !== undefined && typeof door[key] !== "boolean")
         fail(`invalid door ${door.id} ${key}`);
     if (door.afterTransition !== undefined) {
@@ -624,6 +936,19 @@ export function validateAssetGameplay(
         if (typeof door.afterTransition[key] !== "boolean")
           fail(`invalid door ${door.id} transition ${key}`);
     }
+    if (
+      door.allowContinuous &&
+      (kind !== "ordinary" ||
+        door.type !== 0 ||
+        door.polygon.length ||
+        door.active === false ||
+        door.locked ||
+        door.unlockable ||
+        door.lockedVillains ||
+        door.lockedCivilians ||
+        Object.values(door.afterTransition ?? {}).some(Boolean))
+    )
+      fail(`door ${door.id} cannot allow continuous navigation with interaction or restrictions`);
   };
   for (const door of data.doors) validateDoor(door, "ordinary");
   if (data.lifts !== undefined && !Array.isArray(data.lifts)) fail("invalid lifts");

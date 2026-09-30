@@ -8,6 +8,9 @@ import {
   doorTransitionCompilerFixture,
   doorAnchorCompilerFixture,
   projectionMaterialCompilerFixture,
+  projectionVolumeCompilerFixture,
+  maskAssetCompilerFixture,
+  joinedNavigationCompilerFixture,
 } from "../../shared/test-fixtures/asset-gameplay.ts";
 import { compileAssetGameplay } from "../../shared/src/compile-asset-gameplay.ts";
 import {
@@ -17,6 +20,72 @@ import {
 } from "./recovered-gameplay-definition.ts";
 import type { AssetGameplay, AssetDoor } from "../../shared/src/asset-gameplay.ts";
 import { assetCompilerFixture } from "../../shared/test-fixtures/asset-gameplay.ts";
+
+test("recovery converts query precedence into independent asset definitions", () => {
+  const { hut } = assetCompilerFixture();
+  const packet = descriptorGameplayPacket(hut);
+  packet.sightOrder = { [hut.parts[0]!.node]: 7 };
+  const definition = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(definition.sightOrder, packet.sightOrder);
+  packet.sightOrder[hut.parts[0]!.node] = 99;
+  assert.equal(definition.sightOrder![hut.parts[0]!.node], 7);
+});
+
+test("recovery retains asset-local physical receiver anchors without source indices", () => {
+  const { hut } = assetCompilerFixture();
+  const packet = descriptorGameplayPacket(hut);
+  packet.projectionReceivers = [
+    { id: "receiver", node: hut.parts[0]!.node, volume: hut.parts[0]!.node, anchor: [10, 10, 0] },
+  ];
+  const definition = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(definition.projectionReceivers, packet.projectionReceivers);
+  packet.projectionReceivers[0]!.anchor[0] = 99;
+  assert.equal(definition.projectionReceivers![0]!.anchor[0], 10);
+});
+
+test("recovery retains independently authored movement envelopes", () => {
+  const { hut } = assetCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  packet.surfaces[0]!.navigationRegion = "ground";
+  packet.surfaces[0]!.preserveMovementPrecision = true;
+  packet.surfaces[0]!.preserveMovementBoundary = true;
+  packet.surfaces[0]!.holes = [
+    [
+      [10, 10, 0],
+      [20, 10, 0],
+      [10, 20, 0],
+    ],
+  ];
+  packet.surfaces[0]!.holeContours = ["assembly/wall"];
+  const definition = recoveredGameplayDefinition(packet, hut);
+  assert.equal(definition.surfaces[0]!.preserveMovementBoundary, true);
+  assert.equal(definition.surfaces[0]!.preserveMovementPrecision, true);
+  assert.deepEqual(definition.surfaces[0]!.holeContours, ["assembly/wall"]);
+  packet.surfaces[0]!.holeContours[0] = "changed";
+  assert.deepEqual(definition.surfaces[0]!.holeContours, ["assembly/wall"]);
+  packet.surfaces[0]!.vertices[0]![0] += 1;
+  assert.notEqual(definition.surfaces[0]!.polygon[0]![0], packet.surfaces[0]!.vertices[0]![0]);
+});
+
+test("unrestricted passage continuity survives authoring conversion", () => {
+  const { hut } = assetCompilerFixture();
+  hut.gameplay!.doors[0]!.polygon = [];
+  hut.gameplay!.doors[0]!.allowContinuous = true;
+  const recovered = recoveredGameplayDefinition(packetFromFixture(hut.gameplay!), hut);
+  assert.equal(recovered.doors[0]!.allowContinuous, true);
+});
+
+test("navigation joins survive packet conversion as independent local geometry", () => {
+  const { hut } = joinedNavigationCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  const recovered = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(
+    recovered.surfaces[0]!.navigationJoins,
+    hut.gameplay!.surfaces[0]!.navigationJoins,
+  );
+  packet.surfaces[0]!.navigationJoins![0]![0][0] += 1;
+  assert.notDeepEqual(recovered.surfaces[0]!.navigationJoins, packet.surfaces[0]!.navigationJoins);
+});
 
 function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
   const door = (d: AssetDoor) => ({
@@ -38,7 +107,10 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
     surfaces: gameplay.surfaces.map((s) => ({
       id: s.id,
       node: s.node,
+      navigationRegion: s.navigationRegion,
+      navigationJoins: s.navigationJoins,
       projectionMaterials: s.projectionMaterials,
+      projectionVolume: s.projectionVolume,
       kind: gameplay.lifts?.some((l) => l.surface === s.id) ? "lift" : "walkable",
       vertices: s.polygon.map(([x, y], i) => [
         x,
@@ -76,11 +148,47 @@ function packetFromFixture(gameplay: AssetGameplay): RecoveredGameplayPacket {
   };
 }
 
+test("receiving volumes and state bindings survive authoring conversion", () => {
+  const { hut } = projectionVolumeCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  packet.volumes = hut.gameplay!.volumes;
+  packet.movementSolids = [];
+  packet.movementTransitions = hut.gameplay!.movementTransitions;
+  const restored = recoveredGameplayDefinition(packet, hut);
+  assert.equal(restored.surfaces[0]!.projectionVolume, "platform-volume");
+  assert.deepEqual(restored.volumes, packet.volumes);
+  assert.deepEqual(restored.movementTransitions, packet.movementTransitions);
+  packet.volumes![0]!.shape.points[0]!.z_bottom = 5;
+  assert.equal(restored.volumes![0]!.shape.points[0]!.z_bottom, 15);
+});
+
+test("asset mask coverage and state links survive recovery packet conversion independently", () => {
+  const { hut } = maskAssetCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  packet.masks = hut.gameplay!.masks;
+  packet.maskOcclusionNodes = ["building-999"];
+  packet.movementTransitions = hut.gameplay!.movementTransitions;
+  const result = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(result.masks, packet.masks);
+  assert.deepEqual(result.maskOcclusionNodes, packet.maskOcclusionNodes);
+  assert.notEqual(result.maskOcclusionNodes, packet.maskOcclusionNodes);
+  assert.deepEqual(result.movementTransitions, packet.movementTransitions);
+  result.masks![0]!.triangles[0]![0][0] += 10;
+  result.movementTransitions![0]!.initialMasks!.push("extra");
+  assert.notDeepEqual(result.masks, packet.masks);
+  assert.notDeepEqual(result.movementTransitions, packet.movementTransitions);
+});
+
 test("receiving material references survive recovery without sharing draft metadata", () => {
   const { hut } = projectionMaterialCompilerFixture();
   const packet = packetFromFixture(hut.gameplay!);
   packet.surfaces[0]!.projectionMaterials!.priorityHeight = 25;
   packet.surfaces[0]!.projectionMaterials!.priority = 3;
+  packet.surfaces[0]!.projectionMaterials!.planePoints = [
+    [100, 0, 20],
+    [100, 100, 20],
+    [0, 0, 20],
+  ];
   const restored = recoveredGameplayDefinition(packet, hut);
   assert.deepEqual(
     restored.surfaces[0]!.projectionMaterials,
@@ -88,6 +196,8 @@ test("receiving material references survive recovery without sharing draft metad
   );
   assert.deepEqual(restored.materials, packet.materials);
   packet.surfaces[0]!.projectionMaterials!.regions.length = 0;
+  packet.surfaces[0]!.projectionMaterials!.planePoints[0][0] = 999;
+  assert.equal(restored.surfaces[0]!.projectionMaterials!.planePoints![0][0], 100);
   assert.deepEqual(restored.surfaces[0]!.projectionMaterials!.regions, ["inlay"]);
 });
 
@@ -147,6 +257,19 @@ test("geometry-only assets retain derived movement collision unless explicitly r
   );
 });
 
+test("empty authored movement ownership disables derived collision without removing sight", () => {
+  const { document, assets, hut } = assetCompilerFixture();
+  const before = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  const packet = packetFromFixture(hut.gameplay!);
+  packet.movementBlockers = [];
+  hut.gameplay = recoveredGameplayDefinition(packet, hut);
+  const after = compileAssetGameplay(document, assets, [0, 0, 2000, 2000]);
+  assert.deepEqual(hut.gameplay.movementBlockers, []);
+  assert(before.motion_data.layers.flat().some((area) => area.obstacles.length));
+  assert(after.motion_data.layers.flat().every((area) => area.obstacles.length === 0));
+  assert.deepEqual(after.sight_obstacles, before.sight_obstacles);
+});
+
 test("selected permanent solids survive authoring conversion without sharing the draft list", () => {
   const { hut } = assetCompilerFixture();
   const packet = packetFromFixture(hut.gameplay!);
@@ -158,7 +281,7 @@ test("selected permanent solids survive authoring conversion without sharing the
   assert.deepEqual(gameplay.movementSolids, ["building-999"]);
 });
 
-test("mission surface recovery uses local geometry without retaining projection references", () => {
+test("preview bounds cannot create a walkable surface from a projection placeholder", () => {
   const { hut } = assetCompilerFixture();
   const shape = structuredClone(hut.parts[0]!.obstacle_local_game!);
   shape.projection_area = [123, 45];
@@ -171,13 +294,7 @@ test("mission surface recovery uses local geometry without retaining projection 
     },
   ];
   const gameplay = recoveredGameplayDefinition(descriptorGameplayPacket(hut), hut);
-  assert.deepEqual(gameplay.surfaces[0]!.height, [30, 30, 30, 30]);
-  assert.deepEqual(gameplay.surfaces[0]!.polygon, [
-    [40, 40],
-    [50, 40],
-    [50, 50],
-    [40, 50],
-  ]);
+  assert.deepEqual(gameplay.surfaces, []);
   assert.ok(!JSON.stringify(gameplay).includes("projection_area"));
   hut.editor_usage = "map-background";
   assert.throws(() => descriptorGameplayPacket(hut), /terrain needs authored movement boundaries/);
@@ -199,6 +316,29 @@ for (const fixture of [
     assert.deepEqual(compileAssetGameplay(document, assets, [0, 0, 2000, 2000]), expected);
     assert.ok(!JSON.stringify(hut.gameplay).includes("sourceMap"));
   });
+
+test("lift surfaces sharing a frame require explicit independent bindings", () => {
+  const { hut } = liftAssetCompilerFixture();
+  const packet = packetFromFixture(hut.gameplay!);
+  const first = packet.surfaces.find((s) => s.kind === "lift")!;
+  const second = { ...structuredClone(first), id: "second-ladder-surface" };
+  packet.surfaces.push(second);
+  const connection = packet.connections.find((c) => c.kind === "lift")!;
+  const another = structuredClone(connection);
+  another.id = "second-ladder";
+  for (const endpoint of another.endpoints) endpoint.id = `second-${endpoint.id}`;
+  packet.connections.push(another);
+  assert.throws(() => recoveredGameplayDefinition(packet, hut), /found 2/);
+  connection.surface = first.id;
+  another.surface = second.id;
+  const recovered = recoveredGameplayDefinition(packet, hut);
+  assert.deepEqual(
+    recovered.lifts!.map((lift) => lift.surface),
+    [first.id, second.id],
+  );
+  another.surface = "missing-surface";
+  assert.throws(() => recoveredGameplayDefinition(packet, hut), /found 0/);
+});
 
 test("interior passage sockets survive authoring conversion without sharing draft data", () => {
   const { document, assets, hut, annex, passage } = joinedInteriorCompilerFixture();

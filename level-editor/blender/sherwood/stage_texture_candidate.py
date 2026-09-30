@@ -1,6 +1,7 @@
 """Export baked Sherwood texture candidates without changing the live library."""
 import argparse
 import json
+import shutil
 from pathlib import Path
 import sys
 
@@ -18,7 +19,7 @@ from lossy_assets import read_glb, accessor_array, mesh_instances, refresh_deriv
 import render_slots
 
 
-def main(baseline, candidate, output):
+def main(baseline, candidate, output, selected=None):
     baseline, candidate, output = [Path(p).resolve() for p in (baseline, candidate, output)]
     installed = json.loads((baseline/'installation.json').read_text())
     fill = json.loads((candidate/'fill.json').read_text())
@@ -27,6 +28,17 @@ def main(baseline, candidate, output):
     worker = candidate/'candidate.blend'
     if sha(worker) != fill['worker_sha256']:
         raise ValueError('Candidate worker changed since its texture verification')
+    verification=json.loads((candidate/'saved-worker-verification.json').read_text())
+    if verification['status']!='PASS_SAVED_TEXTURE_CANDIDATE' or verification['worker_sha256']!=fill['worker_sha256']:
+        raise ValueError('Saved texture worker has not passed source preservation checks')
+    plan=json.loads((EDITOR/'work/sherwood-refinement/grouping-review/plan.json').read_text())
+    independent={g['id'] for g in plan['groups'] if not g['changed']}
+    available={r['asset'] for r in fill['assets']}
+    if {f'sherwood-terrain-{x}-{y}' for x in (1,2) for y in (1,2,3)} <= available:
+        available.add('sherwood-terrain');independent.add('sherwood-terrain')
+    selected=set(selected) if selected else available & independent
+    if not selected or not selected <= available & independent:
+        raise ValueError('Partial publication requires complete independently replaceable assets')
     output.mkdir(parents=True, exist_ok=False)
     render_slots.acquire()
     bpy.ops.wm.open_mainfile(filepath=str(worker))
@@ -35,11 +47,18 @@ def main(baseline, candidate, output):
     for obj in bpy.data.collections['Sherwood Working'].objects:
         if obj.type == 'MESH':
             groups.setdefault(obj['asset_group'], []).append(obj)
-    document = json.loads((baseline/'sherwood.rhlos-map.json').read_text())
+    live=EDITOR/'library'
+    document = json.loads((live/'scenes/sherwood.rhlos-map.json').read_text())
+    before={'scenes/sherwood.rhlos-map.json':sha(live/'scenes/sherwood.rhlos-map.json')}
+    protected={str(candidate/'candidate.blend'):sha(candidate/'candidate.blend'),str(candidate/'fill.json'):sha(candidate/'fill.json'),str(candidate/'saved-worker-verification.json'):sha(candidate/'saved-worker-verification.json')}
     reports = []
     root = output/'map-assets/3d-assets'
     for ref in document['assetSources'] + document['sceneAssets']:
-        descriptor = json.loads((baseline/'map-assets'/ref['descriptor']).read_text())
+        for key in ('model','descriptor'):before[ref[key]]=sha(live/ref[key])
+        descriptor = json.loads((live/ref['descriptor']).read_text())
+        if ref['id'] not in selected:
+            shutil.copytree((live/ref['descriptor']).parent,(output/'map-assets'/ref['descriptor']).parent)
+            continue
         directory = root/'sherwood'/ref['id']
         model = directory/'model.glb'
         export_editor('Sherwood', model, asset_id=ref['id'],
@@ -47,8 +66,10 @@ def main(baseline, candidate, output):
         finalize_glb(model, descriptor)
         for key in ('lossy_model', 'preview_model'):
             descriptor.pop(key, None)
+        descriptor.pop('legacy_refinement',None)
         descriptor['texture_candidate'] = {
-            'status': 'review-pending', 'worker_sha256': fill['worker_sha256'],
+            'status': 'published-at-user-request-review-pending',
+            'publication_authorization':'Install completed textures in the level editor', 'worker_sha256': fill['worker_sha256'],
             'source_worker_sha256': fill['source_worker_sha256'],
             'fill_report_sha256': sha(candidate/'fill.json'),
         }
@@ -79,12 +100,14 @@ def main(baseline, candidate, output):
     write_asset_index(root)
     write(output/'texture-handoff.json', {
         'status': 'PASS', 'texture_review': 'pending', 'assets': reports,
+        'before':before,'protected_files':protected,'publication_authorization':'Install completed textures in the level editor',
         'source_worker_sha256': fill['source_worker_sha256'],
         'candidate_worker_sha256': fill['worker_sha256'], 'live_library_changed': False,
     })
     render_slots.release()
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    write(output/'derivatives.json', refresh_derivatives(root, output/'derivatives', lossy=True))
+    from partial_texture_publication import verify
+    verify(output)
 
 
 if __name__ == '__main__':
@@ -92,5 +115,6 @@ if __name__ == '__main__':
     parser.add_argument('--baseline', required=True)
     parser.add_argument('--candidate', required=True)
     parser.add_argument('--output', required=True)
+    parser.add_argument('--asset',action='append')
     args = parser.parse_args(sys.argv[sys.argv.index('--')+1:])
-    main(args.baseline, args.candidate, args.output)
+    main(args.baseline, args.candidate, args.output,args.asset)

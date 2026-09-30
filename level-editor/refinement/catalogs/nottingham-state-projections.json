@@ -1,0 +1,41 @@
+{
+  "source_sha256": "19dfa4dc18c5fd63f1581974862c7bdcc1573e0a1c9546b386ce6e26e55c6898",
+  "entries": [
+    {
+      "asset": "nottingham-castle-courtyard-ground",
+      "node": "building-366",
+      "model_sha256": "e512fca1003420f5501feebde7dbf65bd169b2978374bfbf628c4748bde5843a",
+      "surface": "building-366-walk-0",
+      "source_obstacle": 366
+    },
+    {
+      "asset": "nottingham-castle-entry-steps",
+      "node": "building-373",
+      "model_sha256": "4d952dc22efacc733f1e1b8ccf76e27eaf9ed4148315976f6e29177d90d6f8f1",
+      "surface": "building-373-walk-0",
+      "source_obstacle": 373
+    },
+    {
+      "asset": "nottingham-castle-entry-steps",
+      "node": "building-374",
+      "model_sha256": "4d952dc22efacc733f1e1b8ccf76e27eaf9ed4148315976f6e29177d90d6f8f1",
+      "surface": "building-374-walk-0",
+      "source_obstacle": 374
+    },
+    {
+      "asset": "nottingham-castle-entry-steps",
+      "node": "building-375",
+      "model_sha256": "4d952dc22efacc733f1e1b8ccf76e27eaf9ed4148315976f6e29177d90d6f8f1",
+      "surface": "building-375-walk-0",
+      "source_obstacle": 375
+    },
+    {
+      "asset": "nottingham-castle-entry-steps",
+      "node": "building-376",
+      "model_sha256": "4d952dc22efacc733f1e1b8ccf76e27eaf9ed4148315976f6e29177d90d6f8f1",
+      "surface": "building-376-walk-0",
+      "source_obstacle": 376
+    }
+  ],
+  "review": "Draft courtyard navigation and physical receiving bindings. Native receiving queries match, but clipped movement boundaries still differ; do not treat this catalog as complete movement parity."
+}

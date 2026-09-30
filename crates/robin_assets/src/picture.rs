@@ -635,8 +635,8 @@ impl Picture {
         // mulDataSize. Some original exports consequently compressed 3 bytes
         // per pixel, with stale memory after the valid RGB565 prefix. The game
         // decoded into a 2-byte-per-pixel buffer and ignored the overflow status.
-        // Admit only that known size, not arbitrary trailing decompressed data;
-        // read through EOF/checksum while retaining a dimension-derived bound.
+        // Bound any stale suffix by the RGB24 export size and warn if it has an
+        // unexpected length. Read through EOF/checksum before discarding it.
         let decoded_limit = if original_format {
             expected
                 .checked_add(expected / 2)
@@ -664,7 +664,7 @@ impl Picture {
             }
             SixteenPacking::Bzip => decompress_sixteen_bzip(payload, decoded_limit)?,
         };
-        if original_format && data.len() != expected && data.len() != decoded_limit {
+        if original_format && data.len() > decoded_limit {
             bail!(
                 "Sixteen pixel payload: expected {expected} bytes or the known RGB24 export length {decoded_limit} bytes, got {}",
                 data.len()
@@ -672,9 +672,16 @@ impl Picture {
         }
         if original_format && data.len() > expected {
             let trailing = data.len() - expected;
-            tracing::debug!(
-                "Original Sixteen picture {width}x{height} retains expected RGB24 export length; discarding {trailing} trailing bytes"
-            );
+            if data.len() == decoded_limit {
+                tracing::debug!(
+                    "Original Sixteen picture {width}x{height} retains expected RGB24 export length; discarding {trailing} trailing bytes"
+                );
+            } else {
+                tracing::warn!(
+                    "Original Sixteen picture {width}x{height} has unexpected export length: {trailing} trailing bytes (expected {})",
+                    expected / 2
+                );
+            }
             data.truncate(expected);
         }
         if data.len() != expected {
@@ -1073,7 +1080,7 @@ mod tests {
     }
 
     #[test]
-    fn original_sixteen_accepts_only_the_stale_rgb24_export_length() {
+    fn original_sixteen_accepts_bounded_stale_export_suffixes() {
         use std::io::Write;
 
         let packings = [
@@ -1104,7 +1111,7 @@ mod tests {
                 bytes.extend_from_slice(&(compressed.len() as u32).to_le_bytes());
                 bytes.extend_from_slice(&compressed);
                 let original = Picture::load_original_sixteen_from_bytes(&bytes);
-                assert_eq!(original.is_ok(), matches!(length, 4 | 6), "length {length}");
+                assert_eq!(original.is_ok(), matches!(length, 4..=6), "length {length}");
                 assert_eq!(
                     Picture::load_sixteen_from_bytes(&bytes).is_ok(),
                     length == 4
@@ -1127,10 +1134,10 @@ mod tests {
                 let mut file = files.open("original-picture").unwrap();
                 assert_eq!(
                     Picture::load_sixteen_from_stream(&mut file).is_ok(),
-                    matches!(length, 4 | 6)
+                    matches!(length, 4..=6)
                 );
                 assert_eq!(read_u32(&mut file).unwrap(), 42);
-                if length == 6 && matches!(packing, SixteenPacking::Zip) {
+                if matches!(length, 4..=6) && matches!(packing, SixteenPacking::Zip) {
                     *bytes.last_mut().unwrap() ^= 1;
                     assert!(
                         Picture::load_original_sixteen_from_bytes(&bytes).is_err(),

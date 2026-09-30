@@ -1,0 +1,155 @@
+{
+  "source_sha256": "b911f02362668350b016ebb406846a56d65fdf06fb4782441d5913eeef2198e6",
+  "entries": [
+    {
+      "asset": "croisement01-terrace-000",
+      "node": "terrace-000",
+      "model_sha256": "f39e998722e6bb53a1bbda53560878ecf873fd2784ef0abf1682f376356e45a9",
+      "source_obstacle": 0,
+      "anchor": [
+        736,
+        83
+      ]
+    },
+    {
+      "asset": "croisement01-group-001",
+      "node": "building-001",
+      "model_sha256": "e25273f322db98e98c7561928188f9654a2a2754d400733b2ee28473c00e123e",
+      "source_obstacle": 1,
+      "anchor": [
+        454,
+        471
+      ]
+    },
+    {
+      "asset": "croisement01-group-002",
+      "node": "building-002",
+      "model_sha256": "c41cfc5e4d13c09dffb7c1d53a18648db65746e1efd05ba7474b7fb226d26dd5",
+      "source_obstacle": 2,
+      "anchor": [
+        91,
+        699
+      ]
+    },
+    {
+      "asset": "croisement01-group-003",
+      "node": "building-003",
+      "model_sha256": "833d6fc6bc3fa9f6d56e9072ef37098b4e38b94c9943e602d0026ab7291dc1ec",
+      "source_obstacle": 3,
+      "anchor": [
+        234,
+        588
+      ]
+    },
+    {
+      "asset": "croisement01-group-004",
+      "node": "building-004",
+      "model_sha256": "e428f805b44c759a572b20edc5bd338dbd653246ac78c0bc302123133c8d031f",
+      "source_obstacle": 4,
+      "anchor": [
+        88,
+        563
+      ]
+    },
+    {
+      "asset": "croisement01-group-005",
+      "node": "building-005",
+      "model_sha256": "9d4c84401ee63c04abce2e1d963f7ac100691034061a0c55231ea9349f83a953",
+      "source_obstacle": 5,
+      "anchor": [
+        12,
+        430
+      ]
+    },
+    {
+      "asset": "croisement01-group-001",
+      "node": "building-006",
+      "model_sha256": "e25273f322db98e98c7561928188f9654a2a2754d400733b2ee28473c00e123e",
+      "source_obstacle": 6,
+      "anchor": [
+        375,
+        197
+      ]
+    },
+    {
+      "asset": "croisement01-group-007",
+      "node": "building-007",
+      "model_sha256": "d6c4bbbf17f971fc21515a50333d6ce9176ebe8821db02282ded8661d96216e1",
+      "source_obstacle": 7,
+      "anchor": [
+        386,
+        188
+      ]
+    },
+    {
+      "asset": "croisement01-group-008",
+      "node": "building-008",
+      "model_sha256": "0adca6defc71a36f2edb6681f59ba9199763d0d86f774c78cc072a606ecf2f52",
+      "source_obstacle": 8,
+      "anchor": [
+        84,
+        253
+      ]
+    },
+    {
+      "asset": "croisement01-group-009",
+      "node": "building-009",
+      "model_sha256": "951ea07eefb9a476dabc38a50f6758458d66dcd810669630a601603a0bd0fd67",
+      "source_obstacle": 9,
+      "anchor": [
+        982,
+        79
+      ]
+    },
+    {
+      "asset": "croisement01-group-062",
+      "node": "building-076",
+      "model_sha256": "79fe11d6f477e6bd611761223810823fc7736d57ddfec253b42c5a93e81535c2",
+      "source_obstacle": 76,
+      "anchor": [
+        1310,
+        202
+      ]
+    },
+    {
+      "asset": "croisement01-group-061",
+      "node": "building-077",
+      "model_sha256": "449a393b5c655414ee39d132b7eb511033fb7807f8c388cbdfe1c2a7f3394dfb",
+      "source_obstacle": 77,
+      "anchor": [
+        1222,
+        255
+      ]
+    },
+    {
+      "asset": "croisement01-group-078",
+      "node": "building-078",
+      "model_sha256": "de5c644451dcf5975e2fc2d752e3b2ec9c5bfbbc980a0e6f3aa9f33acb59f7ca",
+      "source_obstacle": 78,
+      "anchor": [
+        1183,
+        406
+      ]
+    },
+    {
+      "asset": "croisement01-group-079",
+      "node": "building-079",
+      "model_sha256": "3649a0ae07290d9f3792470b12704cc354b5b55a39c8427767611a60622c5065",
+      "source_obstacle": 79,
+      "anchor": [
+        1188,
+        471
+      ]
+    },
+    {
+      "asset": "croisement01-group-080",
+      "node": "building-080",
+      "model_sha256": "b91bd50b1b98750381a5d6f6d164e4fe35cbaa264e4c66d91d68ed68c12a71f0",
+      "source_obstacle": 80,
+      "anchor": [
+        1230,
+        531
+      ]
+    }
+  ]
+}

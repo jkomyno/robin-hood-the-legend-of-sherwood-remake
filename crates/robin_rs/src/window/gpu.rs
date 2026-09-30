@@ -7,7 +7,7 @@ use std::sync::atomic::AtomicBool;
 
 use winit::window::Window;
 
-use super::{GameWindow, GpuContext, HostCmd, HostMsg, ReadyWindow, SharedSurface};
+use super::{GameWindow, GpuContext, HostCmd, HostMsg, PreparedWindow, ReadyWindow, SharedSurface};
 
 /// Backend selection per target.
 pub(super) fn instance_descriptor() -> wgpu::InstanceDescriptor {
@@ -44,6 +44,8 @@ pub(super) fn instance_descriptor() -> wgpu::InstanceDescriptor {
 
 fn log_adapter_info(adapter: &wgpu::Adapter) {
     let info = adapter.get_info();
+    #[cfg(not(target_arch = "wasm32"))]
+    crate::diagnostic_context::gpu(&info);
     tracing::info!(
         "wgpu adapter: {:?} backend={:?} type={:?} driver={:?}",
         info.name,
@@ -166,11 +168,11 @@ fn configure_initial_surface(
 }
 
 /// Async wgpu bring-up: runs on the game side after `resumed()` ships
-/// us the bare winit window.  `request_adapter` and `request_device`
+/// us the window and its surface. `request_adapter` and `request_device`
 /// genuinely yield on wasm, so they have to live on the async path
 /// (not behind `pollster::block_on`).
 pub(super) async fn build_game_window_async(
-    bundle: crate::window::ReadyWindow,
+    prepared: PreparedWindow,
     logical_w: u32,
     logical_h: u32,
     events_rx: async_channel::Receiver<HostMsg>,
@@ -185,7 +187,7 @@ pub(super) async fn build_game_window_async(
         window,
         instance,
         surface,
-    } = bundle;
+    } = prepared?;
 
     let adapter = instance
         .request_adapter(&wgpu::RequestAdapterOptions {

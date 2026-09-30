@@ -27,12 +27,11 @@ function rebaseTransform(
   };
 }
 
-/** Visual state views of one pinned asset share gameplay identity within each placement. */
-export function normalizeGameplayStateViews(
+/** Resolve state views only through their matching pinned primary descriptor. */
+export function gameplayStateAliases(
   document: Level3D,
   input: ReadonlyMap<string, ProjectionAssetDescriptor>,
 ) {
-  const descriptors = new Map(input);
   const aliases = new Map<string, string>();
   for (const reference of document.assetSources ?? []) {
     const descriptor = input.get(reference.id);
@@ -46,8 +45,18 @@ export function normalizeGameplayStateViews(
     if (!primary || assetVariantId(primary.id, reference.state_variant) !== reference.id)
       throw new Error(`State view ${reference.id} needs its pinned primary asset`);
     aliases.set(reference.id, primary.id);
-    descriptors.delete(reference.id);
   }
+  return aliases;
+}
+
+/** Visual state views of one pinned asset share gameplay identity within each placement. */
+export function normalizeGameplayStateViews(
+  document: Level3D,
+  input: ReadonlyMap<string, ProjectionAssetDescriptor>,
+) {
+  const descriptors = new Map(input);
+  const aliases = gameplayStateAliases(document, input);
+  for (const id of aliases.keys()) descriptors.delete(id);
   for (const [id, descriptor] of descriptors) {
     if (!descriptor.state_variants) continue;
     const parts = new Map(descriptor.parts.map((part) => [part.node, part]));
