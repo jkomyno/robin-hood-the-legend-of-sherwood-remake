@@ -399,9 +399,12 @@ impl EngineInner {
         }
     }
 
-    // `Highlander` makes every Royalist fighter invulnerable;
-    // `Highlander2` does the same for Lacklandists. Civilians
-    // are intentionally excluded.
+    /// `HIGHLANDER`/`IMMUNITY` (original 0x0045d840) and `HIGHLANDER2`
+    /// (0x0045d8b0) set the invulnerable byte (`human+0x496 = 1`) on every
+    /// entry of the engine's camp-indexed fighter vector: `E+0x4ccc` for
+    /// camp 0 and `E+0x4cec` for camp 1 (`0x4ccc + camp * 0x20`, the camp
+    /// coming from the actor's vtable `+0x130`). There is no toggle-off.
+    /// PCs and soldiers of the camp are fighters; civilians are not.
     fn console_make_camp_invulnerable(&mut self, camp: Camp, reply: &str) -> ConsoleResponse {
         let ids: Vec<_> = self.world.entities.fighter_ids_for_camp(camp).collect();
         for id in ids {
@@ -1714,7 +1717,10 @@ mod tests {
                     .to_owned()
             )
         );
-        assert_eq!(campaign_value(&engine, CampaignValue::Ransom), before + 1000);
+        assert_eq!(
+            campaign_value(&engine, CampaignValue::Ransom),
+            before + 1000
+        );
     }
 
     #[test]
@@ -1834,6 +1840,99 @@ mod tests {
                 .unwrap()
                 .invulnerable
         );
+    }
+
+    fn camp_soldier(camp: Camp) -> Entity {
+        let mut entity = soldier(false);
+        if let Entity::Soldier(soldier) = &mut entity {
+            soldier.soldier.cached_camp = camp;
+        }
+        entity
+    }
+
+    fn royalist_pc() -> Entity {
+        Entity::Pc(crate::element::ActorPc {
+            element: {
+                let mut element = ElementData::from_initial_posture(Posture::Upright);
+                element.kind = ElementKind::ActorPc;
+                element.active = true;
+                element
+            },
+            actor: ActorData::default(),
+            human: HumanData::default(),
+            pc: crate::element::PcData {
+                cached_camp: Camp::Royalists,
+                ..Default::default()
+            },
+        })
+    }
+
+    fn royalist_civilian() -> Entity {
+        Entity::Civilian(crate::element::ActorCivilian {
+            element: {
+                let mut element = ElementData::from_initial_posture(Posture::Upright);
+                element.kind = ElementKind::ActorCivilian;
+                element.active = true;
+                element
+            },
+            actor: ActorData::default(),
+            human: HumanData::default(),
+            npc: NpcData::default(),
+            civilian: crate::element::CivilianData {
+                cached_camp: Camp::Royalists,
+                ..Default::default()
+            },
+        })
+    }
+
+    #[test]
+    fn highlander_commands_protect_one_camps_fighters_idempotently() {
+        let (mut engine, mut dev) = engine_with_campaign();
+        let pc = engine.add_test_entity(royalist_pc());
+        let ally = engine.add_test_entity(camp_soldier(Camp::Royalists));
+        let foe = engine.add_test_entity(camp_soldier(Camp::Lacklandists));
+        let civilian = engine.add_test_entity(royalist_civilian());
+        let invulnerable = |engine: &EngineInner| {
+            [pc, ally, foe, civilian].map(|id| {
+                engine
+                    .expect_entity(id, "fixture")
+                    .human_data()
+                    .unwrap()
+                    .invulnerable
+            })
+        };
+
+        for _ in 0..2 {
+            assert_eq!(
+                run(&mut engine, &mut dev, "IMMUNITY"),
+                ConsoleResponse::Ok("Friends invulnerable".to_owned())
+            );
+            assert_eq!(invulnerable(&engine), [true, true, false, false]);
+        }
+        assert_eq!(
+            run(&mut engine, &mut dev, "HIGHLANDER"),
+            ConsoleResponse::Ok("Friends invulnerable".to_owned())
+        );
+        assert_eq!(
+            run(&mut engine, &mut dev, "HIGHLANDER2"),
+            ConsoleResponse::Ok("Foes invulnerable".to_owned())
+        );
+        assert_eq!(invulnerable(&engine), [true, true, true, false]);
+    }
+
+    #[test]
+    fn goldeneye_toggles_detection_invisibility() {
+        let (mut engine, mut dev) = engine_with_campaign();
+        assert_eq!(
+            run(&mut engine, &mut dev, "GOLDENEYE"),
+            ConsoleResponse::Ok("Invisibility On.".to_owned())
+        );
+        assert!(engine.ai.global.golden_eye_mode);
+        assert_eq!(
+            run(&mut engine, &mut dev, "GOLDENEYE"),
+            ConsoleResponse::Ok("Invisibility Off.".to_owned())
+        );
+        assert!(!engine.ai.global.golden_eye_mode);
     }
 
     #[test]
