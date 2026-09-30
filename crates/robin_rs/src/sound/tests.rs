@@ -506,15 +506,36 @@ fn music_mode_weights() {
 }
 
 #[test]
-fn calm_music_replaces_stale_combat_weights() {
+fn calm_music_waits_for_loop_boundary_then_retires_combat_weights() {
     let mut mgr = SoundManager::new();
     mgr.persisted.music_mode = MusicMode::Fight;
     mgr.persisted.fight_mode_weight = 256;
     mgr.set_music_mode(MusicMode::Quiet);
+    // No mid-loop cut: the fight loop keeps playing.
+    assert!(!mgr.persisted.load_music);
+    assert_eq!(mgr.fight_mode_weight(), 256);
+    assert_eq!(mgr.quiet_mode_weight(), MUSIC_MODE_WEIGHT);
+
+    // At the loop boundary the quieter mode takes over.
+    mgr.on_music_finished(AlertStatus::Green);
     assert!(mgr.persisted.load_music);
     assert_eq!(mgr.fight_mode_weight(), 0);
     assert_eq!(mgr.alert_mode_weight(), 0);
     assert_eq!(mgr.quiet_mode_weight(), MUSIC_MODE_WEIGHT);
+}
+
+#[test]
+fn music_escalation_switches_immediately() {
+    let mut mgr = SoundManager::new();
+    let mut backend = MockBackend::new();
+    mgr.persisted.music_mode = MusicMode::Quiet;
+    mgr.persisted.quiet_mode_weight = MUSIC_MODE_WEIGHT / 2;
+    mgr.set_music_mode(MusicMode::Fight);
+    assert!(mgr.persisted.load_music);
+
+    mgr.update_music_loop(&mut backend, &mut |_| 0);
+    assert_eq!(mgr.music_mode(), MusicMode::Fight);
+    assert!(!mgr.persisted.load_music);
 }
 
 #[test]
