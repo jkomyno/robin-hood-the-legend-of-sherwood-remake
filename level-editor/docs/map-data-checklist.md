@@ -253,13 +253,18 @@ The following information belongs to **missions referencing a map**, not map
 assets. The minimal Mission tab stores explicit authoring in the scene's separate
 `mission` field. Export includes these optional mission placements alongside the
 compiled map; scenes without them remain unpopulated. Existing preview population
-is never converted into runtime actors. More complete mission authoring remains
-planned.
+is never implicitly converted into runtime actors. Selecting a game-data mission
+explicitly imports PC spawn slots and soldiers into editable mission entries;
+other entities remain previews only. Import warnings survive saving and appear
+in the export report. Across the 39 available missions, import preserves 2,463
+soldiers and 218 spawn slots without dropped placement records; 204 slots retain
+campaign team selection instead of inventing fixed characters. This is placement
+coverage, not mission behavior parity. More complete mission authoring remains planned.
 
 | Mission information | Intended construction | Status |
 |---|---|---|
-| Player starting locations | Mission-owned placements and profiles; resolve projected coordinates, navigation sector/layer and receiving surface after map compilation. Export as native spawn points, never as map assets or rescue actors. | Mission sprite palette, directional viewport preview, numeric sliders and export implemented; unsupported or invalid placements warn and are omitted |
-| Soldiers | Mission-owned placement, facing, soldier profile and allegiance; resolve navigation and receiving surface after map compilation. | Mission sprite palette uses canonical soldier identities; all PC/soldier idle sprites are published, preview population remains excluded |
+| Player starting locations | Mission-owned placements with fixed profiles or campaign-selected slots; resolve projected coordinates, navigation sector/layer and receiving surface after map compilation. Export only as `spawn_points`, including `[]` for no PCs. | Game-data mission import, sprite palette, numeric sliders and export implemented; legacy spawn fields remain read-compatible; invalid placements warn and are omitted |
+| Soldiers | Mission-owned placement, facing, soldier profile and allegiance; resolve navigation and receiving surface after map compilation. | Game-data mission import remaps profiles and hostility into editable placements; all PC/soldier idle sprites are published; patrols, scripts, inventory and AI roles remain unsupported |
 | Civilians, targets and rescue characters | Explicit mission placement, profiles and initial behaviour. | Planned |
 | Items, bonuses and scrolls | Item assets plus placement and gameplay properties. | Planned |
 | Building occupants | Actor-to-interior associations resolved after placement. | Planned |

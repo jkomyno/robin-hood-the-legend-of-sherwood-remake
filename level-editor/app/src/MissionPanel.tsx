@@ -84,7 +84,12 @@ export default function MissionPanel(props: {
       (p) => p.kind === entry.kind && p.profile === entry.profile,
     );
     const name =
-      entry.name === previous?.name || entry.name === "Soldier" || entry.name === "PC spawn"
+      entry.name === previous?.name ||
+      entry.name === "Soldier" ||
+      entry.name === "PC spawn" ||
+      (entry.kind === "pc" &&
+        entry.profile === undefined &&
+        /^Campaign spawn(?: \d+)?$/.test(entry.name))
         ? profile.name
         : entry.name;
     if (profile.kind === "pc" && typeof profile.profile === "number") {
@@ -236,6 +241,20 @@ export default function MissionPanel(props: {
       <Show when={spriteStatus()}>
         <p role="status">{spriteStatus()}</p>
       </Show>
+      <Show when={mission().importedFrom}>
+        <p class="hint">
+          Imported from {mission().importedFrom}. Campaign spawn slots use blue outlines until
+          assigned a character.
+        </p>
+        <Show when={mission().importWarnings?.length}>
+          <details>
+            <summary>Mission import limitations ({mission().importWarnings?.length})</summary>
+            <ul>
+              <For each={mission().importWarnings}>{(warning) => <li>{warning}</li>}</For>
+            </ul>
+          </details>
+        </Show>
+      </Show>
       <fieldset disabled={!props.document() || !visible()}>
         <label>
           Character category
@@ -295,8 +314,26 @@ export default function MissionPanel(props: {
               <label>
                 Character
                 <select
-                  value={String(entry().profile)}
+                  value={entry().profile === undefined ? "" : String(entry().profile)}
                   onChange={(event) => {
+                    if (entry().kind === "pc" && event.currentTarget.value === "") {
+                      const next = mission();
+                      publish({
+                        ...next,
+                        spawnPoints: next.spawnPoints.map((spawn) => {
+                          if (spawn.id !== selected()) return spawn;
+                          const { profile: _profile, ...generic } = spawn;
+                          const previous = catalog()?.profiles.find(
+                            (profile) => profile.kind === "pc" && profile.profile === spawn.profile,
+                          );
+                          return {
+                            ...generic,
+                            name: spawn.name === previous?.name ? "Campaign spawn" : spawn.name,
+                          };
+                        }),
+                      });
+                      return;
+                    }
                     const profile = catalog()?.profiles.find(
                       (profile) =>
                         profile.kind === entry().kind &&
@@ -305,6 +342,9 @@ export default function MissionPanel(props: {
                     if (profile) chooseCharacter(profile);
                   }}
                 >
+                  <Show when={entry().kind === "pc"}>
+                    <option value="">Campaign character</option>
+                  </Show>
                   <For
                     each={
                       catalog()?.profiles.filter((profile) => profile.kind === entry().kind) ?? []

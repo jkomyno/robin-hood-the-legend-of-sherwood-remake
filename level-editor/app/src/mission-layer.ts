@@ -101,7 +101,9 @@ export class MissionLayer {
         const profile = this.profiles.find(
           (profile) => profile.kind === entry.kind && profile.profile === entry.profile,
         );
-        if (!this.library || !profile) {
+        if (entry.kind === "pc" && entry.profile === undefined) {
+          // Campaign slots intentionally have no fixed character sprite.
+        } else if (!this.library || !profile) {
           actor.warning = `${entry.name}: character sprite unavailable (${!this.library ? "open a library with game-data" : `unknown ${entry.kind.toUpperCase()} profile ${entry.profile}`}).`;
         } else {
           actor.pending = true;

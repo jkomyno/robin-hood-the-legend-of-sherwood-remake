@@ -119,7 +119,7 @@ const write = async (map: string, geometry: ReturnType<typeof compileAssetGamepl
     JSON.stringify({
       title: `Static navigation diagnostic: ${map}`,
       map_filename: `diagnostic-${path.basename(values.map!, ".rhlos-map.json")}`,
-      spawn_player: false,
+      spawn_points: [],
       walkable_polygon: [
         [0, 0],
         [bounds[2] - 1, 0],

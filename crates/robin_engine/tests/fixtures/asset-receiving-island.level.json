@@ -1,7 +1,7 @@
 {
   "title": "Authored fixture",
   "map_filename": "editor-authored-fixture",
-  "spawn_player": false,
+  "spawn_points": [],
   "walkable_polygon": [
     [
       0,

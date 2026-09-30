@@ -98,6 +98,41 @@ test("legacy preview population alone never produces mission entities", () => {
   });
 });
 
+test("campaign spawn slots omit profiles and retain import warnings", () => {
+  const doc = document();
+  delete doc.mission!.spawnPoints[0]!.profile;
+  doc.mission!.importWarnings = ["Patrol scripts are not editable yet."];
+  const result = compileMission(doc, [0, 0, 1000, 1000], geometry);
+  assert.equal("profile" in result.spawn_points[0]!, false);
+  assert.deepEqual(result.warnings, ["Imported mission: Patrol scripts are not editable yet."]);
+});
+
+test("switch-hidden receiving planes still bind mission marker elevation", () => {
+  const switched = structuredClone(geometry);
+  switched.movement_transitions = [
+    {
+      id: "drawbridge",
+      waypoint: [20, 20],
+      sector: 1,
+      layer: 1,
+      active: true,
+      definitive: false,
+      apply_polygon: { points: [] },
+      no_apply_polygon: { points: [] },
+      motion_changes: [],
+      applied_sight: [0],
+    },
+  ];
+  const result = compileMission(document(), [0, 0, 100, 100], switched);
+  assert.equal(result.spawn_points[0]!.projection_area, 0);
+  assert.equal(result.spawn_points[0]!.layer, 1);
+  assert.deepEqual(result.warnings, []);
+  assert.deepEqual(
+    result.spawn_points,
+    compileMission(document(), [0, 0, 100, 100], geometry).spawn_points,
+  );
+});
+
 test("mission validation rejects duplicate IDs and invalid native fields", () => {
   const mission = document().mission!;
   validateMission(mission);
@@ -114,7 +149,7 @@ test("map export preserves separate mission authoring in reopenable editor data"
   fixture.document.mission!.spawnPoints[0]!.position = [320, 320, 0];
   fixture.document.mission!.soldiers[0]!.position = [450, 320, 0];
   const compiled = compileMap(fixture.document, [200, 200, 500, 500], fixture.assets);
-  assert.equal(compiled.descriptor.spawn_player, false);
+  assert.equal("spawn_player" in compiled.descriptor, false);
   assert.deepEqual(compiled.descriptor.spawn_points?.[0]?.position, [120, 120]);
   assert.deepEqual(compiled.descriptor.soldiers?.[0]?.position, [250, 120]);
   assert.deepEqual(

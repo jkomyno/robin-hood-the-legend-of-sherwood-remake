@@ -2103,17 +2103,12 @@ pub fn hackable_level_exists(mission_filename: &str) -> bool {
 /// legacy RHP/RHM serialization. It is loaded through the normal datadir
 /// overlay and expanded into the same raw structs as an original level.
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
-#[serde(deny_unknown_fields)]
+#[serde(try_from = "HackableLevelDescriptorInput")]
 pub struct HackableLevelDescriptor {
     /// Display name shown in menus; falls back to the mission filename.
     #[serde(default)]
     pub title: Option<String>,
     pub map_filename: String,
-    #[serde(default)]
-    pub spawn: Option<(i16, i16)>,
-    /// Whether to create the ordinary player-controlled beam-me PC.
-    #[serde(default = "default_true")]
-    pub spawn_player: bool,
     /// Spawn authored NPCs fully revealed rather than as fog silhouettes.
     #[serde(default)]
     pub reveal_all: bool,
@@ -2140,6 +2135,88 @@ pub struct HackableLevelDescriptor {
     /// Optional symmetric relationship matrix and player coalition.
     #[serde(default)]
     pub diplomacy: Option<crate::diplomacy::DiplomacyDefinition>,
+}
+
+// Read compatibility is confined to this input shape; serialization uses spawn_points.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct HackableLevelDescriptorInput {
+    /// Display name shown in menus; falls back to the mission filename.
+    #[serde(default)]
+    title: Option<String>,
+    map_filename: String,
+    #[serde(default)]
+    spawn: Option<(i16, i16)>,
+    /// Whether to create the ordinary player-controlled beam-me PC.
+    #[serde(default)]
+    spawn_player: Option<bool>,
+    /// Spawn authored NPCs fully revealed rather than as fog silhouettes.
+    #[serde(default)]
+    reveal_all: bool,
+    walkable_polygon: Vec<(i16, i16)>,
+    #[serde(default)]
+    volumes: Vec<HackableLevelVolume>,
+    /// Geometry compiled from placed asset-local definitions. Replaces the
+    /// simple rectangle/volume navigation when present.
+    #[serde(default)]
+    asset_geometry: Option<CompiledAssetGeometry>,
+    #[serde(default)]
+    soldiers: Vec<HackableSoldier>,
+    /// Authored mission slots for player characters.
+    #[serde(default)]
+    spawn_points: Option<Vec<HackableSpawnPoint>>,
+    #[serde(default)]
+    pcs: Vec<HackablePc>,
+    /// Optional gameplay time limit for this mission.
+    #[serde(default)]
+    timed_mission: Option<TimedMissionDefinition>,
+    /// Ordered ambience changes measured in active gameplay seconds.
+    #[serde(default)]
+    ambience_schedule: Vec<AmbienceScheduleCue>,
+    /// Optional symmetric relationship matrix and player coalition.
+    #[serde(default)]
+    diplomacy: Option<crate::diplomacy::DiplomacyDefinition>,
+}
+
+impl TryFrom<HackableLevelDescriptorInput> for HackableLevelDescriptor {
+    type Error = String;
+
+    fn try_from(input: HackableLevelDescriptorInput) -> Result<Self, Self::Error> {
+        let spawn_points = if let Some(points) = input.spawn_points {
+            points
+        } else if input.spawn_player.unwrap_or(true) {
+            if input.asset_geometry.is_some() {
+                return Err("compiled maps do not define player spawns; use spawn_points".into());
+            }
+            let position = input
+                .spawn
+                .ok_or("player spawning requires a mission spawn position")?;
+            vec![HackableSpawnPoint {
+                position,
+                profile: None,
+                direction: 0,
+                sector: 0,
+                layer: 0,
+                projection_area: None,
+            }]
+        } else {
+            Vec::new()
+        };
+        Ok(Self {
+            title: input.title,
+            map_filename: input.map_filename,
+            reveal_all: input.reveal_all,
+            walkable_polygon: input.walkable_polygon,
+            volumes: input.volumes,
+            asset_geometry: input.asset_geometry,
+            soldiers: input.soldiers,
+            spawn_points,
+            pcs: input.pcs,
+            timed_mission: input.timed_mission,
+            ambience_schedule: input.ambience_schedule,
+            diplomacy: input.diplomacy,
+        })
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
@@ -2279,10 +2356,6 @@ pub struct AmbienceScheduleCue {
     pub transition_seconds: u32,
 }
 
-fn default_true() -> bool {
-    true
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, bitcode::Encode, bitcode::Decode)]
 #[serde(deny_unknown_fields)]
 pub struct HackableSoldier {
@@ -2316,7 +2389,9 @@ pub enum HackableSoldierProfile {
 #[serde(deny_unknown_fields)]
 pub struct HackableSpawnPoint {
     pub position: (i16, i16),
-    pub profile: u32,
+    /// Omit to let the campaign roster fill this slot.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile: Option<u32>,
     #[serde(default)]
     pub direction: u32,
     #[serde(default)]
@@ -2477,9 +2552,6 @@ impl LoadedLevel {
         if descriptor.walkable_polygon.len() < 3 {
             return Err("walkable_polygon must contain at least three points".to_owned());
         }
-        if descriptor.spawn_player && !descriptor.spawn_points.is_empty() {
-            return Err("spawn_points requires spawn_player to be false".into());
-        }
         if descriptor.asset_geometry.is_none() {
             for (index, spawn) in descriptor.spawn_points.iter().enumerate() {
                 if spawn.sector != 0
@@ -2620,35 +2692,11 @@ impl LoadedLevel {
         };
         level.mission.element_chunk_order = vec![MissionElementChunk::Element];
         level.mission.element_group_order = Vec::new();
-        if descriptor.spawn_player {
-            if descriptor.asset_geometry.is_some() {
-                return Err("compiled maps do not define player spawns; use a mission".into());
-            }
-            let spawn = descriptor
-                .spawn
-                .ok_or("player spawning requires a mission spawn position")?;
-            level
-                .mission
-                .element_group_order
-                .push(MissionElementGroup::BeamMe);
-            level.mission.beam_mes = vec![BeamMe {
-                position: MapPoint::new(f32::from(spawn.0), f32::from(spawn.1)),
-                direction: 0,
-                action: 0,
-                projection_area: u16::MAX,
-                sector: 0,
-                layer: 0,
-                material: 0,
-                action_required: BeamMeActions::default(),
-                index: 0,
-                script: None,
-                required_pc: 0,
-                profile_override: None,
-                robin_role: false,
-            }];
-        }
         if !descriptor.spawn_points.is_empty() {
-            level.mission.authored_spawn_roster = true;
+            level.mission.authored_spawn_roster = descriptor
+                .spawn_points
+                .iter()
+                .any(|point| point.profile.is_some());
             level
                 .mission
                 .element_group_order
@@ -2673,7 +2721,7 @@ impl LoadedLevel {
                         index: u16::try_from(index).map_err(|_| "too many spawn_points")?,
                         script: None,
                         required_pc: 0,
-                        profile_override: Some(spawn.profile),
+                        profile_override: spawn.profile,
                         robin_role: false,
                     })
                 })
@@ -5895,16 +5943,55 @@ mod tests {
     }
 
     #[test]
-    fn authored_spawn_points_cannot_duplicate_the_default_player() {
-        let error = LoadedLevel::hackable_from_json(
-            br#"{
+    fn canonical_spawn_points_override_legacy_inputs_and_serialize_without_them() {
+        let bytes = br#"{
             "map_filename":"Mission", "spawn":[10,10],
             "walkable_polygon":[[0,0],[100,0],[100,100],[0,100]],
             "spawn_points":[{"position":[10,10],"profile":0}]
-        }"#,
-        )
-        .unwrap_err();
-        assert!(error.contains("spawn_player"));
+        }"#;
+        let descriptor: HackableLevelDescriptor = serde_json::from_slice(bytes).unwrap();
+        let serialized = serde_json::to_value(descriptor).unwrap();
+        assert!(serialized.get("spawn").is_none());
+        assert!(serialized.get("spawn_player").is_none());
+        assert_eq!(serialized["spawn_points"][0]["profile"], 0);
+        let loaded = LoadedLevel::hackable_from_json(bytes).unwrap();
+        assert_eq!(loaded.mission.beam_mes.len(), 1);
+        assert_eq!(loaded.mission.beam_mes[0].profile_override, Some(0));
+        let mut empty = serialized;
+        empty["spawn_points"] = serde_json::json!([]);
+        empty["spawn_player"] = serde_json::json!(true);
+        empty["spawn"] = serde_json::json!([20, 20]);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&empty).unwrap())
+                .unwrap()
+                .mission
+                .beam_mes
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn legacy_spawn_reads_as_a_canonical_campaign_slot() {
+        let mut legacy = serde_json::json!({
+            "map_filename":"Mission", "spawn":[10,20],
+            "walkable_polygon":[[0,0],[100,0],[100,100],[0,100]]
+        });
+        let descriptor: HackableLevelDescriptor = serde_json::from_value(legacy.clone()).unwrap();
+        assert_eq!(descriptor.spawn_points.len(), 1);
+        assert_eq!(descriptor.spawn_points[0].profile, None);
+        let canonical = serde_json::to_vec(&descriptor).unwrap();
+        let loaded = LoadedLevel::hackable_from_json(&canonical).unwrap();
+        assert!(!loaded.mission.authored_spawn_roster);
+        assert_eq!(loaded.mission.beam_mes[0].position, MapPoint::new(10., 20.));
+        assert_eq!(loaded.mission.beam_mes[0].profile_override, None);
+        legacy["spawn_player"] = serde_json::json!(false);
+        assert!(
+            LoadedLevel::hackable_from_json(&serde_json::to_vec(&legacy).unwrap())
+                .unwrap()
+                .mission
+                .beam_mes
+                .is_empty()
+        );
     }
 
     #[test]

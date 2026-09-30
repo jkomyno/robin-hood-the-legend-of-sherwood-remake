@@ -44,6 +44,7 @@ import { EditorViewport } from "./editor-viewport";
 import { disposeObjectResources } from "./resources";
 import { listFiles, subdir, writeText } from "./fs";
 import { MissionEntities, readMission } from "./mission";
+import { loadEditableMission, remainingMissionPreview } from "./import-mission.ts";
 import { PopulationView, type SceneEntities } from "./population-view";
 import type { DatadirIndex } from "./datadir";
 import { missionsForMap } from "./mission-catalog.ts";
@@ -134,7 +135,16 @@ export default function Editor3D(props: EditorProps) {
     setRevision(snapshot);
     if (reason === "load") setTransformBaseline(snapshot.document);
     if (reason === "saved") setTransformBaseline(session.current!.saved);
-    if (reason === "revision") viewport.syncViews(snapshot.document, false);
+    if (reason === "revision") {
+      viewport.syncViews(snapshot.document, false);
+      setMissionName(snapshot.document.mission?.importedFrom ?? "");
+      const mission = snapshot.document.mission;
+      setMissionInfo(
+        mission
+          ? `${mission.spawnPoints.length} editable PC spawns, ${mission.soldiers.length} editable soldiers. Import limitations are listed in Mission.`
+          : "",
+      );
+    }
   });
   let saving = false;
   const [compiling, setCompiling] = createSignal(false);
@@ -591,6 +601,7 @@ export default function Editor3D(props: EditorProps) {
       !disposed && attempt === openAttempt && props.index() === idx && props.library() === lib;
     let preparedAsset: THREE.Object3D | null = null;
     let preparedEntities: SceneEntities | null = null;
+    let importedMission: Level3D["mission"];
     props.onStatus(null);
     setMapLoadProgress({ completed: 0, total: 1, phase: "Reading map" });
     try {
@@ -623,15 +634,22 @@ export default function Editor3D(props: EditorProps) {
         loadedIndex === idx &&
         loadedLibrary === lib
       ) {
-        if (mission && idx && currentLevel)
+        if (mission && idx && currentLevel) {
+          importedMission = await loadEditableMission(idx, mission, currentLevel, lib.handle);
           preparedEntities = await MissionEntities.load(
             idx,
-            mission,
+            remainingMissionPreview(mission),
             currentLevel,
             currentDocument.camera,
             current,
-          );
-        else if (currentDocument.population)
+          ).catch((error) => {
+            importedMission?.importWarnings?.push(
+              `Other mission previews unavailable: ${String(error)}`,
+            );
+            return null;
+          });
+        } else if (mission) throw new Error("Mission import requires its source level data");
+        else if (currentDocument.population && !currentDocument.mission)
           preparedEntities = await PopulationView.load(
             lib.handle,
             currentDocument.population,
@@ -647,15 +665,24 @@ export default function Editor3D(props: EditorProps) {
           preparedEntities?.dispose();
           return;
         }
+        if (doc() !== currentDocument)
+          throw new Error("Map changed during mission import; please load the mission again.");
+        if (importedMission) pushHistory({ ...currentDocument, mission: importedMission });
+        else if (!mission && currentDocument.mission) {
+          const { mission: _mission, ...mapOnly } = currentDocument;
+          pushHistory(mapOnly);
+        }
         viewport.replaceEntities(preparedEntities);
         viewport.setEntitiesVisible(showEntities());
         viewport.setPopulationPlaying(populationPlaying());
         viewport.setPopulationRoutesVisible(populationRoutes());
         setMissionName(mission?.name ?? "");
         setMissionInfo(
-          preparedEntities
-            ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}`
-            : "",
+          importedMission
+            ? `${importedMission.spawnPoints.length} editable PC spawns, ${importedMission.soldiers.length} editable soldiers. Import limitations are listed in Mission.`
+            : preparedEntities
+              ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}`
+              : "",
         );
         preparedEntities = null;
         props.onStatus(null);
@@ -681,14 +708,20 @@ export default function Editor3D(props: EditorProps) {
       preparedAsset = candidate.asset;
       if (mission && idx) {
         if (!candidate.level) throw new Error("Mission requires level data");
+        importedMission = await loadEditableMission(idx, mission, candidate.level, lib.handle);
         preparedEntities = await MissionEntities.load(
           idx,
-          mission,
+          remainingMissionPreview(mission),
           candidate.level,
           candidate.document.camera,
           current,
-        );
-      } else if (candidate.document.population) {
+        ).catch((error) => {
+          importedMission?.importWarnings?.push(
+            `Other mission previews unavailable: ${String(error)}`,
+          );
+          return null;
+        });
+      } else if (candidate.document.population && !candidate.document.mission) {
         preparedEntities = await PopulationView.load(
           lib.handle,
           candidate.document.population,
@@ -697,13 +730,14 @@ export default function Editor3D(props: EditorProps) {
         );
       }
       const {
-        document: d,
+        document: baseDocument,
         directory: dir,
         level: lvl,
         sources: nextSources,
         ground: nextGround,
         suspects: nextSuspects,
       } = candidate;
+      const d = importedMission ? { ...baseDocument, mission: importedMission } : baseDocument;
       if (
         disposed ||
         !session.isCurrent(generation) ||
@@ -731,11 +765,13 @@ export default function Editor3D(props: EditorProps) {
       viewport.setEntitiesVisible(showEntities());
       viewport.setPopulationPlaying(populationPlaying());
       viewport.setPopulationRoutesVisible(populationRoutes());
-      setMissionName(mission?.name ?? "");
+      setMissionName(mission?.name ?? d.mission?.importedFrom ?? "");
       setMissionInfo(
-        preparedEntities
-          ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}`
-          : "",
+        d.mission
+          ? `${d.mission.spawnPoints.length} editable PC spawns, ${d.mission.soldiers.length} editable soldiers. Import limitations are listed in Mission.`
+          : preparedEntities
+            ? `${preparedEntities.count} entities. ${preparedEntities.warnings.join("; ")}`
+            : "",
       );
       preparedEntities = null;
       if (transientMapName && transientMapName !== name) {
@@ -755,7 +791,8 @@ export default function Editor3D(props: EditorProps) {
             ),
           );
       }
-      session.publish(generation, name, d, dir, candidate.saved && !importedFile);
+      session.publish(generation, name, baseDocument, dir, candidate.saved && !importedFile);
+      if (importedMission) pushHistory(d);
       loadedIndex = idx;
       loadedLibrary = lib;
       setLevel(lvl);
@@ -1794,9 +1831,8 @@ export default function Editor3D(props: EditorProps) {
                   {missionName()} — {missionInfo()}
                 </p>
                 <p class="hint">
-                  Initial placements; mission scripts are not run. Green markers show spawn points.
-                  Magenta markers indicate missing sprite assets. Standing characters, prone bodies,
-                  pickups, and scenery use different depth profiles.
+                  PC spawns and soldiers are editable in Mission. Other entities are previews only;
+                  mission scripts are not run. See Mission for import limitations.
                 </p>
               </Show>
             </section>

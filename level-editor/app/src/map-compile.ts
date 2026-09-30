@@ -115,8 +115,8 @@ export function compileMap(
   const descriptor = {
     title: document.map,
     map_filename: name,
-    spawn_player: false,
-    ...(document.mission ? { spawn_points: mission.spawn_points, soldiers: mission.soldiers } : {}),
+    spawn_points: mission.spawn_points,
+    ...(document.mission ? { soldiers: mission.soldiers } : {}),
     walkable_polygon: [
       [0, 0],
       [bounds[2] - 1, 0],

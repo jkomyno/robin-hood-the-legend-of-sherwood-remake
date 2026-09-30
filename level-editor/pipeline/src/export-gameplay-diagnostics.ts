@@ -71,7 +71,7 @@ for (const map of (await fs.readdir(values.recovery, { withFileTypes: true }))
     const descriptor = {
       title: `Static diagnostic: ${map}`,
       map_filename: `diagnostic-${map}`,
-      spawn_player: false,
+      spawn_points: [],
       walkable_polygon: [
         [0, 0],
         [bounds[2] - 1, 0],

@@ -16,12 +16,23 @@
   by the Mission tab’s visibility checkbox. Dragging a character moves it at its
   current height with one undo entry; Escape cancels the move.
   Right-drag camera rotation remains available in Mission mode.
+  Loading a game-data mission imports PC spawn slots and soldiers into these
+  editable lists. Source receiving planes resolve world height once; source
+  profile ordering is mapped to library character identities. Campaign-selected
+  slots retain no fixed profile and show a blue outline until assigned a character.
+  Import is undoable and marks the scene changed. Unsupported entities remain
+  previews only, and stored import warnings describe omitted behaviors.
   Mission authoring stays
   separate from map assets and preview population. Export resolves its markers
   against the compiled navigation and receiving surfaces, writes PCs as spawn
   points and NPCs as soldiers, and preserves the editable mission in the embedded
   editor document. Invalid placements are reported and omitted in best-effort
   export; scenes without authored mission markers remain unpopulated.
+
+- **Unified player placements.** New level exports use `spawn_points`, including
+  an explicit empty array for maps without PCs. Fixed-profile and campaign-selected
+  slots can coexist. Older `spawn`/`spawn_player` fields remain accepted when reading
+  older maps, but are no longer written; bundled map descriptors use the new format.
 
 - **Best-effort editor map exports.** Published draft gameplay definitions retain
   explicit issues. Editor export includes available geometry and reports omitted

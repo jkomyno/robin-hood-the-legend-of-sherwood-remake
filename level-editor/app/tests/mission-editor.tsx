@@ -1,6 +1,6 @@
 import { render } from "@solidjs/web";
 import { createSignal } from "solid-js";
-import { parseStoredMap, serializeStoredMap, type Level3D } from "@rle/shared";
+import { parseStoredMap, serializeStoredMap, type Level3D, type ProtoLevel } from "@rle/shared";
 import * as THREE from "three";
 import MissionPanel from "../src/MissionPanel.tsx";
 import { EditorViewport } from "../src/editor-viewport.ts";
@@ -8,6 +8,9 @@ import { compileMap } from "../src/map-compile.ts";
 import { openHttpLibrary } from "../src/http-library.ts";
 import { loadMissionCharacterCatalog } from "../src/mission-character-catalog.ts";
 import { MissionLayer } from "../src/mission-layer.ts";
+import { readMission } from "../src/mission.ts";
+import { loadEditableMission } from "../src/import-mission.ts";
+import { readJson, subdir } from "../src/fs.ts";
 import "../src/styles.css";
 
 let current: Level3D = {
@@ -421,9 +424,36 @@ async function run() {
     JSON.stringify(current.mission) === missionBeforeOrbit,
     "Camera rotation changed mission characters",
   );
+  const sourceLevels = await subdir(catalog.root, ["Data", "Levels"]);
+  check(sourceLevels, "Library has no mission data");
+  const index = { root: catalog.root, levelsDir: sourceLevels!, maps: new Set(["Croisement01"]) };
+  const sourceMission = await readMission(index, "Emb01_FoA_EC");
+  const sourceLevel = await readJson<ProtoLevel>(sourceLevels!, `${sourceMission.map}.rhp.json`);
+  const imported = await loadEditableMission(index, sourceMission, sourceLevel, library.handle);
+  check(
+    imported.soldiers.length > 0 && imported.spawnPoints.length > 0,
+    "Game mission import lost characters",
+  );
+  commit({ ...current, mission: imported });
+  await pause();
+  check(
+    document.querySelectorAll("[data-mission-element]").length ===
+      imported.soldiers.length + imported.spawnPoints.length,
+    "Imported mission characters did not enter editable list",
+  );
+  check(
+    document.querySelector(".mission-settings")!.textContent.includes("Emb01_FoA_EC"),
+    "Import source missing from Mission panel",
+  );
+  const importedSaved = serializeStoredMap(current, new Map());
+  const importedReopened = parseStoredMap(JSON.parse(JSON.stringify(importedSaved)), new Map());
+  check(
+    JSON.stringify(importedReopened.mission) === JSON.stringify(imported),
+    "Imported mission did not survive save/reopen",
+  );
   viewport.dispose();
   document.querySelector("#result")!.textContent =
-    "PASS mission palette drops, category filter, element list, drag/undo/cancel, visibility, save/reopen and export";
+    "PASS mission palette, editing, visibility, camera rotation, export and editable game-data mission import";
 }
 void run().catch((error) => {
   document.querySelector("#result")!.textContent = "FAIL " + (error.stack ?? error);
