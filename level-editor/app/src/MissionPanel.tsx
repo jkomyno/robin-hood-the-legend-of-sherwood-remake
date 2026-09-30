@@ -238,9 +238,6 @@ export default function MissionPanel(props: {
       <Show when={catalogStatus()}>
         <p role="status">{catalogStatus()}</p>
       </Show>
-      <Show when={spriteStatus()}>
-        <p role="status">{spriteStatus()}</p>
-      </Show>
       <Show when={mission().importedFrom}>
         <p class="hint">
           Imported from {mission().importedFrom}. Campaign spawn slots use blue outlines until
@@ -267,7 +264,7 @@ export default function MissionPanel(props: {
             <option value="npc">NPCs</option>
           </select>
         </label>
-        <Show when={catalog() && props.document()}>
+        <Show when={!!catalog() && !!props.document()}>
           <MissionCharacterChoices
             root={catalog()!.root}
             camera={props.document()!.camera}
@@ -275,6 +272,9 @@ export default function MissionPanel(props: {
             onDragStart={(key) => props.viewport.startMissionPaletteDrag(key)}
             onDragEnd={() => props.viewport.endMissionPaletteDrag()}
           />
+        </Show>
+        <Show when={spriteStatus()}>
+          <p role="status">{spriteStatus()}</p>
         </Show>
         <section class="object-list mission-element-list">
           <h3>Mission elements ({entries().length})</h3>

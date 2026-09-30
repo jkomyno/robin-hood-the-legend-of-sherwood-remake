@@ -1,4 +1,4 @@
-import { For, Show, createEffect, createSignal, onCleanup } from "solid-js";
+import { For, Show, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import type { MapCamera } from "@rle/shared";
 import { MissionEntities } from "./mission.ts";
 import {
@@ -18,8 +18,11 @@ function CharacterThumbnail(props: {
   let element!: HTMLDivElement;
   let generation = 0;
   let objectUrl = "";
+  const camera = createMemo(() => props.camera, {
+    equals: (previous, next) => previous.elevation_deg === next.elevation_deg,
+  });
   createEffect(
-    () => ({ root: props.root, camera: props.camera, profile: props.profile }),
+    () => ({ root: props.root, camera: camera(), profile: props.profile }),
     ({ root, camera, profile }) => {
       const token = ++generation;
       setUrl("");

@@ -47,9 +47,9 @@ const viewport = new EditorViewport({
 });
 function commit(next: Level3D) {
   commits.push(current);
-  current = next;
-  setDoc(next);
-  viewport.syncViews(next);
+  current = structuredClone(next);
+  setDoc(current);
+  viewport.syncViews(current);
 }
 render(
   () => (
@@ -121,6 +121,8 @@ async function chooseProfile(profile: string) {
 }
 async function dropCharacter(profile: string, offset = 0, cancelled = false) {
   const card = await chooseProfile(profile);
+  const thumbnail = card.querySelector("img")!;
+  const thumbnailUrl = thumbnail.src;
   const transfer = new DataTransfer();
   const before = commits.length;
   card.dispatchEvent(
@@ -166,6 +168,10 @@ async function dropCharacter(profile: string, offset = 0, cancelled = false) {
   }
   card.dispatchEvent(new DragEvent("dragend", options));
   await pause();
+  check(
+    card.isConnected && card.querySelector("img") === thumbnail && thumbnail.src === thumbnailUrl,
+    "Dropping a character recreated its palette thumbnail",
+  );
   check(
     markers.root.children.length === existing + (cancelled ? 0 : 1),
     "Drag left an extra preview character",
