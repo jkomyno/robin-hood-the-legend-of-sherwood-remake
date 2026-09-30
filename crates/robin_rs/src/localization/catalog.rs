@@ -193,6 +193,7 @@ mod tests {
         ("SaveBlazons", &["en"]),
         ("SaveAmulets", &["en"]),
         ("SaveLegacyValueUnavailable", &["en"]),
+        ("SaveUnsavedDraft", &["en"]),
         ("SaveInvalidTimestamp", &["en"]),
         ("SaveRelativeTimeUnavailable", &["en"]),
         ("SaveLocalTimeUnavailable", &["en"]),

@@ -884,6 +884,8 @@ pub enum PortTextKey {
     SaveBlazons,
     SaveAmulets,
     SaveLegacyValueUnavailable,
+    /// A save slot whose first write never completed.
+    SaveUnsavedDraft,
     SaveInvalidTimestamp,
     SaveRelativeTimeUnavailable,
     SaveLocalTimeUnavailable,

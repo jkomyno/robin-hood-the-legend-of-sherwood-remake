@@ -1111,7 +1111,7 @@ impl InteractiveFrameSimulation {
             // authoritative modal takes over.
             if task_admission == Some(UiTaskModalAdmission::Cancel) {
                 if let Some(mut task) = ui.active_ui_task.take() {
-                    task.cleanup();
+                    task.cleanup(&mut presentation.renderer);
                 }
                 if ui.close_pause(host, input, presentation) {
                     callbacks.emit_app_effect(AppEffect::SetSoundMode(SoundMode::Mission));
@@ -1202,7 +1202,7 @@ impl InteractiveFrameSimulation {
             }
 
             if let Some(outcome) = task_outcome {
-                task.cleanup();
+                task.cleanup(&mut presentation.renderer);
                 ui_task_exit_requested = UiTaskOutcomeTarget {
                     cli: &services.args.config.cli,
                     window,
@@ -1666,7 +1666,7 @@ impl InteractiveFrameSimulation {
                     .take()
                     .expect("validated cooperative UI task disappeared before dismissal");
                 let outcome = task.auto_dismiss();
-                task.cleanup();
+                task.cleanup(&mut presentation.renderer);
                 debug_assert!(matches!(
                     outcome,
                     UiTaskOutcome::ReturnToPause | UiTaskOutcome::QuickLoadCancelled

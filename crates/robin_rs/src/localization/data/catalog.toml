@@ -37,6 +37,9 @@ en = "Amulets: {value}"
 [basic.SaveLegacyValueUnavailable]
 en = "unavailable (legacy save)"
 
+[basic.SaveUnsavedDraft]
+en = "Not saved yet - select to retry"
+
 [basic.SaveInvalidTimestamp]
 en = "invalid timestamp"
 

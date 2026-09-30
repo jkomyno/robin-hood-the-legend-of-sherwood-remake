@@ -709,6 +709,10 @@ impl<'a> SaveMetadataText<'a> {
         self.format(PortTextKey::SaveAmulets, &[("value", &value.to_string())])
     }
 
+    fn unsaved_draft(&self) -> String {
+        crate::localization::port_text(self.locale, PortTextKey::SaveUnsavedDraft).to_owned()
+    }
+
     fn legacy_value_unavailable(&self) -> String {
         crate::localization::port_text(self.locale, PortTextKey::SaveLegacyValueUnavailable)
             .to_owned()
@@ -976,7 +980,7 @@ impl SavePreview<'_> {
             );
         }
 
-        if !detailed_metadata {
+        if !detailed_metadata || is_uncaptured_draft(save_manager, slot) {
             return;
         }
 
@@ -1050,12 +1054,31 @@ fn row_detail_lines(
         ListRow::New => [text.new_save_hint(), String::new()],
         ListRow::Existing(v_idx) => {
             let slot = visible[v_idx];
+            if is_uncaptured_draft(save_manager, slot) {
+                return [text.unsaved_draft(), String::new()];
+            }
             let save = save_manager
                 .get(slot)
                 .expect("visible slot must resolve to a save");
             existing_save_row_detail_lines(save, now_unix, local_time_zone, text, detailed_metadata)
         }
     }
+}
+
+/// A draft whose first write failed carries no snapshot metadata. It is not a
+/// legacy save, so it must not be described with legacy or invalid values.
+fn is_uncaptured_draft(save_manager: &SaveGameManager, slot: usize) -> bool {
+    let save = save_manager
+        .get(slot)
+        .expect("visible slot must resolve to a save");
+    let name = save_manager
+        .slot_name(slot)
+        .expect("visible slot must have a validated identity");
+    save.timestamp.is_empty()
+        && save_manager
+            .slot_state(&name)
+            .expect("visible slot must have lifecycle state")
+            == crate::savegame::SlotState::Draft
 }
 
 fn existing_save_row_detail_lines(
@@ -1763,6 +1786,31 @@ mod tests {
         assert_eq!(save.operation_error(), Some("payload publication failed"));
         save.dismiss_error();
         assert_eq!(save.operation_error(), None);
+    }
+
+    #[test]
+    fn uncaptured_draft_rows_are_not_described_as_legacy_saves() {
+        let text = SaveMetadataText::default();
+        let mut manager = SaveGameManager::new("unused-picker-draft-store".into());
+        manager.insert_test_slot(
+            SaveGame::new("Savegame_000".into(), "Unpublished".into(), 7),
+            crate::savegame::SlotState::Draft,
+        );
+        for detailed in [true, false] {
+            let lines = row_detail_lines(
+                ListRow::Existing(0),
+                &manager,
+                &[0],
+                Some(100),
+                Some(&TimeZone::UTC),
+                &text,
+                detailed,
+            );
+            assert_eq!(
+                lines,
+                ["Not saved yet - select to retry".to_owned(), String::new()]
+            );
+        }
     }
 
     #[test]

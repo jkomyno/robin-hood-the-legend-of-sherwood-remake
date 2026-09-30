@@ -186,9 +186,9 @@ impl ActiveUiTask {
         }
     }
 
-    pub(super) fn cleanup(&mut self) {
+    pub(super) fn cleanup(&mut self, renderer: &mut Renderer) {
         if let Self::SaveLoad(state) = self {
-            state.cleanup();
+            state.cleanup(renderer);
         }
     }
 }
@@ -450,9 +450,9 @@ impl SaveLoadTaskState {
                     mission_id: Some(mission_id),
                     detailed_metadata,
                     multiplayer_connected,
-                    // Task cancellation paths have no renderer to release a
-                    // preview surface with.
-                    previews: false,
+                    // Like the original load menu, show the selected save's
+                    // thumbnail; every task exit path releases it in `cleanup`.
+                    previews: true,
                 },
             ),
         }
@@ -483,8 +483,9 @@ impl SaveLoadTaskState {
         })
     }
 
-    fn cleanup(&mut self) {
+    fn cleanup(&mut self, renderer: &mut Renderer) {
         self.picker.stop_text_input();
+        self.picker.close(renderer);
     }
 }
 
