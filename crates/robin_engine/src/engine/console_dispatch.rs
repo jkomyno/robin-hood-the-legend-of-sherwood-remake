@@ -469,18 +469,28 @@ impl EngineInner {
         }
     }
 
+    /// `LUKAS` (original 0x0045f330): print the banner, decode every
+    /// initial of the first argument through `FUN_0045f6f0` (printing a
+    /// warning per unknown initial), then call `FUN_00577500(actor, 100,
+    /// true)` on each resolved PC, i.e. an hp=100 / concussion=100 damage
+    /// sequence. Later arguments and the PC selection are ignored.
     fn console_lukas(&mut self, tcx: TickCtx<'_>, pcs: Option<&str>) -> ConsoleResponse {
-        // Resolve each single-letter initial (R/J/T/S/W/M/A/B/C)
-        // to a PC via the character profile index, then inflict
-        // pain — funnels to an hp=100 / concussion=100 damage
-        // sequence (same sequence used elsewhere).
-        if let Some(pcs) = pcs {
-            let ids = self.resolve_pcs_by_initials(tcx.assets, pcs);
-            for id in ids {
-                self.launch_damage(tcx, id, 100, 100);
+        let mut out = String::from("PCs knocked out !");
+        let mut targets = Vec::new();
+        for ch in pcs.unwrap_or_default().chars() {
+            match pc_initial_to_profile_name(ch) {
+                // Original text (0x006add44); it lists S twice and omits C,
+                // although C is accepted.
+                None => {
+                    out.push_str("\nUnknown character (use one or more of these : RJTSWMABS) !")
+                }
+                Some(name) => targets.extend(self.resolve_pc_by_profile_name(tcx.assets, name, ch)),
             }
         }
-        ConsoleResponse::Ok("PCs knocked out !".to_string())
+        for id in targets {
+            self.launch_damage(tcx, id, 100, 100);
+        }
+        ConsoleResponse::Ok(out)
     }
 
     /// `STATUS *`, `OPTIMIZE`, `FORGET`, `SARKOZY` and `FPS` diagnostics.
@@ -899,6 +909,9 @@ impl EngineInner {
     }
 
     fn console_knock_out_enemy_soldiers(&mut self, tcx: TickCtx<'_>) -> ConsoleResponse {
+        // Original 0x0045e2e0 keeps NPC-list soldiers whose vtable `+0x130`
+        // returns 1; that slot is the camp getter used to index the
+        // per-camp fighter vectors, so the filter is camp 1 (Lacklandists).
         // Knock out every Lacklandist soldier via
         // concussion(100) + posture LYING + a trivial Wait
         // sequence element.  Concussion application reads the
@@ -1102,18 +1115,23 @@ impl EngineInner {
         ConsoleResponse::Ok(String::new())
     }
 
+    /// `COMA` (original 0x0045e8d0): print "Coma !" before any check, then
+    /// require a selected PC and at least one campaign amulet, and launch
+    /// hp=10000 / concussion=0 damage on the first selected PC. The amulet
+    /// is spent later by the ordinary coma lifecycle, not here.
     fn console_coma(&mut self, tcx: TickCtx<'_>) -> ConsoleResponse {
-        // Needs a selected PC and at least one amulet, then
-        // launches hp=10000 / concussion=0 damage on the first
-        // selected PC.
         let selected = self.players.seats[0].selection.first().copied();
-        let amulets = Some(&self.mission_domain.campaign)
-            .map(|c| c.get_value(CampaignValue::Amulets))
-            .unwrap_or(0);
+        let amulets = self
+            .mission_domain
+            .campaign
+            .get_value(CampaignValue::Amulets);
         match (selected, amulets) {
-            (None, _) => ConsoleResponse::Ok("Please, select the PC to make sleep.".to_string()),
+            (None, _) => {
+                ConsoleResponse::Ok("Coma !\nPlease, select the PC to make sleep.".to_string())
+            }
             (Some(_), n) if n < 1 => ConsoleResponse::Ok(
-                "There not enough amulets left to put the selected PC in the coma.".to_string(),
+                "Coma !\nThere not enough amulets left to put the selected PC in the coma."
+                    .to_string(),
             ),
             (Some(id), _) => {
                 self.launch_damage(tcx, id, 10000, 0);
@@ -1308,9 +1326,6 @@ impl EngineInner {
     /// RJTSWMABC) !".
     fn resolve_pcs_by_initials(&self, assets: &LevelAssets, initials: &str) -> Vec<EntityId> {
         let mut out = Vec::new();
-        if false {
-            return out;
-        }
         for ch in initials.chars() {
             let Some(name) = pc_initial_to_profile_name(ch) else {
                 tracing::warn!(
@@ -1318,42 +1333,41 @@ impl EngineInner {
                 );
                 continue;
             };
-            // Walk *all* profiles named `name` to handle the 'R'
-            // fallback (Robin has two profile entries — town and
-            // forest).  For other initials there is only one match so
-            // the loop body runs once.  Profile-name lookup is
-            // case-sensitive.
-            let matching_profiles: Vec<crate::profiles::CharacterProfileIdx> = assets
-                .profile_manager
-                .characters
-                .iter()
-                .enumerate()
-                .filter(|(_, cp)| cp.profile_name == name)
-                .map(|(i, _)| crate::profiles::CharacterProfileIdx(i as u32))
-                .collect();
-            if matching_profiles.is_empty() {
-                tracing::warn!("console: no character profile named {name:?} (initial {ch:?})");
-                continue;
-            }
-            let before = out.len();
-            'matched: for profile_idx in matching_profiles {
-                for &pc_id in &self.world.pc_ids {
-                    if let Some(pc) = self.get_entity(pc_id).and_then(|e| e.pc_data())
-                        && pc.profile_index == profile_idx
-                    {
-                        out.push(pc_id);
-                        break 'matched;
-                    }
-                }
-            }
-            // Warn on a miss (rare in practice — the console cheat
-            // only reaches here with a live gang — but a silent no-op
-            // would mask bad cheat input).
-            if out.len() == before {
-                tracing::warn!("console: no PC found for profile {name:?} (initial {ch:?})");
-            }
+            out.extend(self.resolve_pc_by_profile_name(assets, name, ch));
         }
         out
+    }
+
+    /// Find the live PC using a profile named `name`.
+    ///
+    /// Walks *all* profiles named `name` to handle the 'R' fallback (Robin
+    /// has two profile entries — town and forest). Profile-name lookup is
+    /// case-sensitive. A miss is logged: the original can fall back to an
+    /// unrelated first profile or reach its fatal reporter instead.
+    fn resolve_pc_by_profile_name(
+        &self,
+        assets: &LevelAssets,
+        name: &str,
+        initial: char,
+    ) -> Option<EntityId> {
+        let found = assets
+            .profile_manager
+            .characters
+            .iter()
+            .enumerate()
+            .filter(|(_, cp)| cp.profile_name == name)
+            .map(|(i, _)| crate::profiles::CharacterProfileIdx(i as u32))
+            .find_map(|profile_idx| {
+                self.world.pc_ids.iter().copied().find(|&pc_id| {
+                    self.get_entity(pc_id)
+                        .and_then(|e| e.pc_data())
+                        .is_some_and(|pc| pc.profile_index == profile_idx)
+                })
+            });
+        if found.is_none() {
+            tracing::warn!("console: no PC found for profile {name:?} (initial {initial:?})");
+        }
+        found
     }
 
     /// Helper that panics if a console command tries to touch campaign
@@ -1385,10 +1399,14 @@ fn pc_initial_to_profile_name(c: char) -> Option<&'static str> {
         'T' => Some("Frere Tuck"),
         'S' => Some("Stutely"),
         'W' => Some("Will Ecarlate"),
+        // The original decoder looks up "Marianne" (0x006add80), which
+        // names no profile in the shipped profile.cpf; "Lady Marianne" is
+        // her actual profile.
         'M' => Some("Lady Marianne"),
         'A' => Some("Paysan A"),
         'B' => Some("Paysan B"),
         'C' => Some("Paysan C"),
+        // Remake extension for the Leicester demo; the original has no F.
         'F' => Some("Ferris"),
         _ => None,
     }
@@ -1918,6 +1936,118 @@ mod tests {
             ConsoleResponse::Ok("Foes invulnerable".to_owned())
         );
         assert_eq!(invulnerable(&engine), [true, true, true, false]);
+    }
+
+    fn damage_targets(engine: &EngineInner) -> Vec<EntityId> {
+        engine
+            .orders
+            .sequence_manager
+            .sequences_iter()
+            .map(|sequence| {
+                let element = &sequence.elements[0];
+                assert_eq!(element.command, Command::ReceiveDamage);
+                element.owner.expect("damage element has an owner")
+            })
+            .collect()
+    }
+
+    /// Assets naming character profiles 0.. in order, and one live PC per
+    /// profile.
+    fn engine_with_named_pcs(
+        names: &[&str],
+    ) -> (EngineInner, DevState, LevelAssets, Vec<EntityId>) {
+        let (mut engine, dev) = engine_with_campaign();
+        let mut profiles = crate::profiles::ProfileManager::new();
+        let mut pcs = Vec::new();
+        for (index, name) in names.iter().enumerate() {
+            profiles.characters.push(crate::profiles::CharacterProfile {
+                index: index as u32,
+                profile_name: (*name).into(),
+                ..Default::default()
+            });
+            let mut pc = royalist_pc();
+            if let Entity::Pc(actor) = &mut pc {
+                actor.pc.profile_index = crate::profiles::CharacterProfileIdx(index as u32);
+            }
+            pcs.push(engine.add_test_entity(pc));
+        }
+        let assets = LevelAssets {
+            profile_manager: std::sync::Arc::new(profiles),
+            ..LevelAssets::default()
+        };
+        (engine, dev, assets, pcs)
+    }
+
+    #[test]
+    fn lukas_reports_unknown_initials_and_damages_only_named_pcs() {
+        let sim = crate::sim_rng::test_context();
+        let (mut engine, mut dev, assets, pcs) =
+            engine_with_named_pcs(&["Robin des bois", "Paysan C", "Lady Marianne"]);
+        // The PC selection plays no part in LUKAS.
+        engine.players.seats[0].selection = vec![pcs[0]];
+        let response = engine.run_console_command(
+            TickCtx::new(&sim, &assets),
+            &mut dev,
+            &mut None,
+            "LUKAS CQM R",
+        );
+        assert_eq!(
+            response,
+            ConsoleResponse::Ok(
+                "PCs knocked out !\n\
+                 Unknown character (use one or more of these : RJTSWMABS) !"
+                    .to_owned()
+            )
+        );
+        assert_eq!(damage_targets(&engine), [pcs[1], pcs[2]]);
+
+        let response =
+            engine.run_console_command(TickCtx::new(&sim, &assets), &mut dev, &mut None, "LUKAS");
+        assert_eq!(
+            response,
+            ConsoleResponse::Ok("PCs knocked out !".to_owned())
+        );
+        assert_eq!(damage_targets(&engine).len(), 2);
+    }
+
+    #[test]
+    fn coma_prints_its_banner_before_each_failed_check() {
+        let sim = crate::sim_rng::test_context();
+        let (mut engine, mut dev, assets, pcs) = engine_with_named_pcs(&["Robin des bois"]);
+        let mut coma = |engine: &mut EngineInner| {
+            engine.run_console_command(TickCtx::new(&sim, &assets), &mut dev, &mut None, "COMA")
+        };
+        assert_eq!(
+            coma(&mut engine),
+            ConsoleResponse::Ok("Coma !\nPlease, select the PC to make sleep.".to_owned())
+        );
+        engine.players.seats[0].selection = vec![pcs[0]];
+        engine
+            .mission_domain
+            .campaign
+            .set_value(CampaignValue::Amulets, 0);
+        assert_eq!(
+            coma(&mut engine),
+            ConsoleResponse::Ok(
+                "Coma !\nThere not enough amulets left to put the selected PC in the coma."
+                    .to_owned()
+            )
+        );
+        assert!(damage_targets(&engine).is_empty());
+        engine
+            .mission_domain
+            .campaign
+            .set_value(CampaignValue::Amulets, 1);
+        assert_eq!(coma(&mut engine), ConsoleResponse::Ok("Coma !".to_owned()));
+        assert_eq!(damage_targets(&engine), [pcs[0]]);
+        assert_eq!(
+            engine
+                .mission_domain
+                .campaign
+                .get_value(CampaignValue::Amulets),
+            1,
+            "the handler itself spends no amulet"
+        );
     }
 
     #[test]
