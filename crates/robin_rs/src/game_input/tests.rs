@@ -1843,3 +1843,107 @@ fn non_vip_pc_cannot_pay_beggar() {
     let cmds = click_beggar(&mut host, &engine, &assets);
     assert!(!cmds.iter().any(is_pay), "unexpected payment: {cmds:?}");
 }
+
+/// Selected PC at (10, 10) with Hit armed and a living civilian at
+/// (200, 200) in the given camp (hostile profile attitude loads as
+/// Lacklandists, friendly as Royalists).
+fn punch_civilian_fixture(
+    camp: robin_engine::element_kinds::Camp,
+) -> (Engine, LevelAssets, Host, EntityId, EntityId) {
+    let (mut engine, assets, mut host) = fixture();
+    let pc = add_pc(&mut engine, 10.0, 10.0, Posture::Upright);
+    let mut element = ElementData::from_initial_posture(Posture::Upright);
+    element.kind = ElementKind::ActorCivilian;
+    element.active = true;
+    element.set_position_map(MapPoint::new(200.0, 200.0));
+    element.sprite.position_iface.settle_current_position();
+    let civilian = engine.test_add_entity(engine_element::Entity::Civilian(
+        engine_element::ActorCivilian {
+            element,
+            actor: ActorData::default(),
+            human: HumanData::default(),
+            npc: NpcData {
+                life_points: 100,
+                ..Default::default()
+            },
+            civilian: engine_element::CivilianData {
+                cached_camp: camp,
+                cached_civilian_type: engine_profiles::CivilianType::Man,
+                ..Default::default()
+            },
+        },
+    ));
+    host.frontend
+        .presentation
+        .draw_order
+        .ids
+        .extend([pc, civilian]);
+    select(&mut engine, &assets, pc);
+    arm_action(&mut engine, &assets, pc, Action::Hit);
+    (engine, assets, host, pc, civilian)
+}
+
+#[test]
+fn hit_click_on_hostile_noble_civilian_launches_punch() {
+    let (engine, assets, mut host, pc, noble) =
+        punch_civilian_fixture(robin_engine::element_kinds::Camp::Lacklandists);
+    assert_eq!(
+        engine.find_focusable_entity(
+            &assets,
+            &host.frontend.presentation.draw_order.ids,
+            MapPoint::new(200.0, 200.0),
+            Focus::Hit,
+        ),
+        Some(noble)
+    );
+
+    let cmds = resolve_left_click_with_planning(
+        &mut host,
+        &engine,
+        &assets,
+        MapPoint::new(200.0, 200.0),
+        NO_MODS,
+    );
+    assert_cmds!(
+        cmds,
+        vec![PlayerCommand::LaunchInteraction {
+            actor: pc,
+            target: noble,
+            command: Command::HitCmd,
+            running: false,
+        }]
+    );
+}
+
+#[test]
+fn hit_click_on_friendly_civilian_is_not_a_punch() {
+    let (engine, assets, mut host, _pc, _civilian) =
+        punch_civilian_fixture(robin_engine::element_kinds::Camp::Royalists);
+    assert_eq!(
+        engine.find_focusable_entity(
+            &assets,
+            &host.frontend.presentation.draw_order.ids,
+            MapPoint::new(200.0, 200.0),
+            Focus::Hit,
+        ),
+        None
+    );
+
+    let cmds = resolve_left_click_with_planning(
+        &mut host,
+        &engine,
+        &assets,
+        MapPoint::new(200.0, 200.0),
+        NO_MODS,
+    );
+    assert!(
+        !cmds.iter().any(|cmd| matches!(
+            cmd,
+            PlayerCommand::LaunchInteraction {
+                command: Command::HitCmd,
+                ..
+            }
+        )),
+        "friendly civilian must not be punched: {cmds:?}"
+    );
+}

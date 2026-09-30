@@ -369,7 +369,9 @@ impl EngineInner {
                 .is_some()
                 || victim_element.is_in_door_transit();
             let is_civilian = victim.is_civilian();
-            let is_vip = self.is_entity_vip(assets, victim);
+            // The civilian vtable's VIP/rider predicates are false
+            // stubs, so a civilian's VIP profile type never blocks a hit.
+            let is_vip = !is_civilian && self.is_entity_vip(assets, victim);
             let is_rider = victim.soldier_data().map(|s| s.rider).unwrap_or(false);
             let out_of_order = is_human_out_of_order(victim);
             let camp_ok = self.camps_are_hostile(victim.camp(), actor.camp());
@@ -2148,6 +2150,81 @@ mod tests {
             );
 
         assert!(!engine.check_sequence_element_validity(&assets, actor, &element, true));
+    }
+
+    fn add_civilian(
+        engine: &mut EngineInner,
+        camp: crate::element::Camp,
+        civilian_type: crate::profiles::CivilianType,
+    ) -> EntityId {
+        engine.add_test_entity(Entity::Civilian(crate::element::ActorCivilian {
+            element: actor_element(ElementKind::ActorCivilian),
+            actor: Default::default(),
+            human: Default::default(),
+            npc: crate::element::NpcData {
+                life_points: 100,
+                ..Default::default()
+            },
+            civilian: crate::element::CivilianData {
+                cached_camp: camp,
+                cached_civilian_type: civilian_type,
+                ..Default::default()
+            },
+        }))
+    }
+
+    #[test]
+    fn pc_hit_accepts_hostile_civilian_regardless_of_vip_type() {
+        let mut engine = EngineInner::new();
+        let mut assets = LevelAssets::new();
+        std::sync::Arc::make_mut(&mut assets.profile_manager)
+            .civilians
+            .push(crate::profiles::CivilianProfile {
+                civilian_type: crate::profiles::CivilianType::Vip,
+                attitude: crate::profiles::Attitude::Hostile,
+                ..Default::default()
+            });
+        let actor = add_pc(&mut engine);
+        engine
+            .get_entity_mut(actor)
+            .and_then(Entity::pc_data_mut)
+            .expect("test PC data")
+            .life_points = 100;
+        let noble = add_civilian(
+            &mut engine,
+            crate::element::Camp::Lacklandists,
+            crate::profiles::CivilianType::Vip,
+        );
+        assert!(
+            engine.is_entity_vip(&assets, engine.get_entity(noble).expect("test civilian")),
+            "fixture must exercise the civilian VIP profile type"
+        );
+        let hit = SequenceElement::new_interaction(1, Command::HitCmd, Some(actor), Some(noble));
+        assert!(engine.check_sequence_element_validity(&assets, actor, &hit, true));
+
+        // Strangle keeps its civilian exclusion.
+        let strangle =
+            SequenceElement::new_interaction(1, Command::StrangleCmd, Some(actor), Some(noble));
+        assert!(!engine.check_sequence_element_validity(&assets, actor, &strangle, true));
+    }
+
+    #[test]
+    fn pc_hit_rejects_friendly_civilian() {
+        let mut engine = EngineInner::new();
+        let assets = LevelAssets::new();
+        let actor = add_pc(&mut engine);
+        engine
+            .get_entity_mut(actor)
+            .and_then(Entity::pc_data_mut)
+            .expect("test PC data")
+            .life_points = 100;
+        let civilian = add_civilian(
+            &mut engine,
+            crate::element::Camp::Royalists,
+            crate::profiles::CivilianType::Man,
+        );
+        let hit = SequenceElement::new_interaction(1, Command::HitCmd, Some(actor), Some(civilian));
+        assert!(!engine.check_sequence_element_validity(&assets, actor, &hit, true));
     }
 
     #[test]

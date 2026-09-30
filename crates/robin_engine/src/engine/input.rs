@@ -931,13 +931,16 @@ impl EngineInner {
 
         match focus {
             Focus::Bow => !(blipped || is_out_of_order || (same_camp_as_selector && is_soldier)),
+            // The original PC hit gate is attitude-driven: the civilian
+            // "is enemy" virtual returns `profile.attitude == hostile`
+            // (loaded here as a hostile camp) and the civilian VIP/rider
+            // virtuals are false stubs, so hostile rich civilians and tax
+            // collectors are punchable while friendly civilians are not.
             Focus::Hit => {
                 !blipped
                     && !is_out_of_order
                     && hostile_to_selector
-                    && is_soldier
-                    && !is_vip
-                    && !is_rider
+                    && (is_civilian || (is_soldier && !is_vip && !is_rider))
             }
             // Apple has no VIP/rider exclusion.
             Focus::Apple => !blipped && !is_out_of_order && is_soldier && hostile_to_selector,
