@@ -149,7 +149,7 @@ rilua = { path = "vendor/rilua" }
 # raw_window_handle_rwh_06 dispatches to the main thread instead of returning
 # HandleError::Unavailable, so wgpu surface creation works from the game thread
 # on macOS. To revert to upstream, restore the git = ... line below.
-winit = { path = "../winit-fork" }
+winit = { git = "https://github.com/phiresky/winit.git", rev = "571b50f3c2fd9911d46564d8def16f0955b194a8" }
 
 [profile.release]
 opt-level = 3

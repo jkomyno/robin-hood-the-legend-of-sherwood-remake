@@ -9,47 +9,6 @@ use winit::window::Window;
 
 use super::{GameWindow, GpuContext, HostCmd, HostMsg, ReadyWindow, SharedSurface};
 
-/// Create a wgpu surface for `window` from the game thread.
-///
-/// On Windows, winit only hands out the window handle on the event-loop
-/// thread, so the plain `create_surface` fails there. Use winit's
-/// documented any-thread escape hatch and build the surface from the raw
-/// handles instead. Every other platform uses the safe owning path.
-pub(super) fn create_surface_any_thread(
-    instance: &wgpu::Instance,
-    window: Arc<Window>,
-) -> Result<wgpu::Surface<'static>, wgpu::CreateSurfaceError> {
-    #[cfg(not(target_os = "windows"))]
-    {
-        instance.create_surface(window)
-    }
-    #[cfg(target_os = "windows")]
-    {
-        use winit::platform::windows::WindowExtWindows;
-        // SAFETY: the handle is only passed to wgpu to create a swapchain
-        // surface; wgpu never sends window messages through it, which is the
-        // cross-thread hazard `window_handle_any_thread` guards against.
-        let window_handle = match unsafe { window.window_handle_any_thread() } {
-            Ok(handle) => handle.as_raw(),
-            Err(e) => {
-                // The zero-window sentinel never occurs for a live window,
-                // and a dead window means we're shutting down anyway.
-                panic!("window_handle_any_thread failed: {e}");
-            }
-        };
-        let target = wgpu::SurfaceTargetUnsafe::RawHandle {
-            raw_display_handle: Some(winit::raw_window_handle::RawDisplayHandle::Windows(
-                winit::raw_window_handle::WindowsDisplayHandle::new(),
-            )),
-            raw_window_handle: window_handle,
-        };
-        // SAFETY: the HWND stays valid for the surface's lifetime because the
-        // `Arc<Window>` is retained by the `AppHandler` and the process-wide
-        // `GAME_WINDOW` slot until the event loop exits.
-        unsafe { instance.create_surface_unsafe(target) }
-    }
-}
-
 /// Backend selection per target.
 pub(super) fn instance_descriptor() -> wgpu::InstanceDescriptor {
     let mut instance_descriptor = wgpu::InstanceDescriptor::new_without_display_handle();

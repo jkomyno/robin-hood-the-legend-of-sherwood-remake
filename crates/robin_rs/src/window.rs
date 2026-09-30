@@ -49,7 +49,7 @@ mod android;
 mod gpu;
 mod input_map;
 
-use gpu::{build_game_window_async, create_surface_any_thread, instance_descriptor};
+use gpu::{build_game_window_async, instance_descriptor};
 use input_map::{is_android_back_key, physical_key_to_key_code, physical_key_to_keycode};
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -375,6 +375,15 @@ enum HostMsg {
         height: u32,
     },
     SurfaceReady {
+        /// Native: the surface is created on the main/event-loop thread
+        /// (see [`AppHandler::send_recreated_surface`]) and shipped here;
+        /// `wgpu::Surface` is `Send + Sync` on native targets.
+        #[cfg(not(target_arch = "wasm32"))]
+        surface: wgpu::Surface<'static>,
+        /// wasm: wgpu web types are not `Send`, and there is no
+        /// main-thread restriction to route around — recreate from the
+        /// window on the game side.
+        #[cfg(target_arch = "wasm32")]
         window: Arc<Window>,
     },
     /// Native window focus loss is an autosave boundary. Browser page
@@ -675,8 +684,16 @@ impl GameWindow {
                         events.push(event);
                     }
                 }
+                #[cfg(not(target_arch = "wasm32"))]
+                HostMsg::SurfaceReady { surface } => {
+                    self.surface.replace(surface);
+                    self.surface
+                        .configure(&self.gpu.device, &self.surface_config);
+                    tracing::info!("wgpu surface recreated after resume");
+                }
+                #[cfg(target_arch = "wasm32")]
                 HostMsg::SurfaceReady { window } => {
-                    match create_surface_any_thread(&self.gpu.instance, window) {
+                    match self.gpu.instance.create_surface(window) {
                         Ok(surface) => {
                             self.surface.replace(surface);
                             self.surface
@@ -900,6 +917,10 @@ pub struct AppHandler {
     /// User callback that gets the bare winit `Window` once the OS
     /// window is up.  All wgpu init happens on the game side, async.
     on_window_ready: WindowReadyFn,
+    /// Process-wide wgpu instance, created on the main/event-loop
+    /// thread. Shared with the initial bring-up in the `on_window_ready`
+    /// callback and used to (re)create surfaces in `resumed()`.
+    instance: Arc<wgpu::Instance>,
     window: Option<Arc<Window>>,
     last_cursor: (i32, i32),
     touch: TouchClassifier,
@@ -927,6 +948,7 @@ impl AppHandler {
         events_tx: async_channel::Sender<HostMsg>,
         cmd_rx: async_channel::Receiver<HostCmd>,
         on_window_ready: WindowReadyFn,
+        instance: Arc<wgpu::Instance>,
     ) -> Self {
         Self {
             title: title.to_string(),
@@ -936,6 +958,7 @@ impl AppHandler {
             events_tx,
             cmd_rx,
             on_window_ready,
+            instance,
             window: None,
             last_cursor: (0, 0),
             touch: TouchClassifier::default(),
@@ -951,6 +974,29 @@ impl AppHandler {
             self.events_tx
                 .try_send(HostMsg::Event(GameEvent::MenuToggleRequested)),
         );
+    }
+
+    /// Surface (re)creation after the OS window came back (Android
+    /// resume, macOS workspace switch). Runs on the main/event-loop
+    /// thread.
+    fn send_recreated_surface(&self, window: &Arc<Window>) {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let surface = match self.instance.create_surface(window.clone()) {
+                Ok(surface) => surface,
+                Err(e) => {
+                    tracing::error!("wgpu surface recreation on main thread failed: {e}");
+                    return;
+                }
+            };
+            report_window_send(self.events_tx.try_send(HostMsg::SurfaceReady { surface }));
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            report_window_send(self.events_tx.try_send(HostMsg::SurfaceReady {
+                window: window.clone(),
+            }));
+        }
     }
 
     fn send_pause_request(&self) {
@@ -1226,9 +1272,13 @@ impl ApplicationHandler for AppHandler {
                 // window on the same channel used for first creation.
                 (self.on_window_ready)(window.clone());
             }
-            report_window_send(self.events_tx.try_send(HostMsg::SurfaceReady {
-                window: window.clone(),
-            }));
+            // Recreate the surface HERE (main/event-loop thread) instead of
+            // handing the window to the game thread: on macOS, winit refuses
+            // to expose the AppKit window handle off-main, and wgpu surface
+            // creation mutates the view's CAMetalLayer. Shipping the
+            // `Surface` itself (Send + Sync on native) removes the last
+            // reason for a winit fork.
+            self.send_recreated_surface(window);
             let PhysicalSize { width, height } = window.inner_size();
             report_window_send(self.events_tx.try_send(HostMsg::Resized { width, height }));
             report_window_send(
@@ -1539,9 +1589,14 @@ where
     let (window_tx, window_rx) = async_channel::unbounded::<ReadyWindow>();
     let event_loop_proxy = event_loop.create_proxy();
 
+    // Single process-wide instance, created on the main/event-loop thread.
+    // Both the initial surface (here) and any recreated surface
+    // (`AppHandler::send_recreated_surface`) come from it.
+    let instance = Arc::new(wgpu::Instance::new(instance_descriptor()));
+    let instance_for_handler = instance.clone();
+
     let on_ready: WindowReadyFn = Box::new(move |w: Arc<Window>| {
-        // Main thread: wgpu instance + surface bring-up. See `ReadyWindow`.
-        let instance = Arc::new(wgpu::Instance::new(instance_descriptor()));
+        // Main thread: surface bring-up. See `ReadyWindow`.
         let surface = match instance.create_surface(w.clone()) {
             Ok(surface) => surface,
             Err(e) => {
@@ -1551,7 +1606,8 @@ where
         };
         report_window_send(window_tx.try_send(ReadyWindow {
             window: w,
-            instance,
+            // Fn closure: clone per invocation (Android re-invokes on resume).
+            instance: instance.clone(),
             surface,
         }));
     });
@@ -1564,7 +1620,8 @@ where
     let lifecycle_for_game = lifecycle_autosave_requested.clone();
 
     #[cfg_attr(target_arch = "wasm32", allow(unused_mut))]
-    let mut handler = AppHandler::new(title, width, height, visible, events_tx, cmd_rx, on_ready);
+    let mut handler =
+        AppHandler::new(title, width, height, visible, events_tx, cmd_rx, on_ready, instance_for_handler);
 
     // Spawn the game.
     //
