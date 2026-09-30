@@ -1221,6 +1221,100 @@ pub(crate) fn browser_cursor_captured() -> bool {
         .is_some()
 }
 
+/// Whether the free (not pointer-locked) browser cursor is over the game
+/// canvas or the empty page background around it. See
+/// [`install_browser_edge_pointer`].
+#[cfg(target_arch = "wasm32")]
+static BROWSER_FREE_CURSOR_EDGE_SCROLL: AtomicBool = AtomicBool::new(false);
+
+/// Edge scrolling follows the cursor: a captured cursor always may, a free
+/// one only while it is over the game or the page background beside it.
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn browser_edge_scrolling_enabled() -> bool {
+    browser_cursor_captured() || BROWSER_FREE_CURSOR_EDGE_SCROLL.load(Ordering::Relaxed)
+}
+
+/// The original scrolls while the cursor rests against a screen edge. In a
+/// page the free cursor can continue past the canvas, so moves over the page
+/// background are pinned to the nearest canvas edge, as a screen edge would
+/// stop the cursor. Shell controls (toolbar, replay timeline) and leaving
+/// the page stop scrolling, so reaching for them never pans the camera.
+#[cfg(target_arch = "wasm32")]
+fn install_browser_edge_pointer(window: &Window, events_tx: async_channel::Sender<HostMsg>) {
+    use wasm_bindgen::JsCast;
+    use wasm_bindgen::closure::Closure;
+    use winit::platform::web::WindowExtWebSys;
+
+    let canvas = window.canvas().expect("game canvas");
+    let document = canvas.owner_document().expect("canvas document");
+    let background: Vec<wasm_bindgen::JsValue> = [
+        document.body().map(Into::into),
+        document.document_element().map(Into::into),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    let canvas_target: wasm_bindgen::JsValue = canvas.clone().into();
+    let on_move =
+        Closure::<dyn FnMut(web_sys::PointerEvent)>::new(move |event: web_sys::PointerEvent| {
+            if event.pointer_type() == "touch" || browser_cursor_captured() {
+                return;
+            }
+            let target: Option<wasm_bindgen::JsValue> = event.target().map(Into::into);
+            let over_canvas = target.as_ref() == Some(&canvas_target);
+            let over_background = target.as_ref().is_some_and(|t| background.contains(t));
+            BROWSER_FREE_CURSOR_EDGE_SCROLL
+                .store(over_canvas || over_background, Ordering::Relaxed);
+            if !over_background {
+                return;
+            }
+            let rect = canvas.get_bounding_client_rect();
+            let (x, y) = pin_to_canvas(
+                (f64::from(event.client_x()), f64::from(event.client_y())),
+                (rect.left(), rect.top(), rect.width(), rect.height()),
+                (canvas.width(), canvas.height()),
+            );
+            report_window_send(events_tx.try_send(HostMsg::Event(GameEvent::MouseMove {
+                x,
+                y,
+                xrel: 0,
+                yrel: 0,
+            })));
+        });
+    document
+        .add_event_listener_with_callback("pointermove", on_move.as_ref().unchecked_ref())
+        .expect("register page pointermove listener");
+    on_move.forget();
+    let on_out =
+        Closure::<dyn FnMut(web_sys::PointerEvent)>::new(|event: web_sys::PointerEvent| {
+            if event.related_target().is_none() {
+                BROWSER_FREE_CURSOR_EDGE_SCROLL.store(false, Ordering::Relaxed);
+            }
+        });
+    document
+        .add_event_listener_with_callback("pointerout", on_out.as_ref().unchecked_ref())
+        .expect("register page pointerout listener");
+    on_out.forget();
+}
+
+/// Map a page point to canvas pixels, clamped to the nearest canvas edge.
+/// `rect` is the canvas's CSS box `(left, top, width, height)` and `pixels`
+/// its drawing-buffer size, the space winit cursor positions use.
+#[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+fn pin_to_canvas(client: (f64, f64), rect: (f64, f64, f64, f64), pixels: (u32, u32)) -> (i32, i32) {
+    let axis = |client: f64, start: f64, extent: f64, pixels: u32| {
+        if extent <= 0.0 {
+            return 0;
+        }
+        let max = f64::from(pixels.saturating_sub(1));
+        ((client - start) / extent * f64::from(pixels)).clamp(0.0, max) as i32
+    };
+    (
+        axis(client.0, rect.0, rect.2, pixels.0),
+        axis(client.1, rect.1, rect.3, pixels.1),
+    )
+}
+
 impl ApplicationHandler for AppHandler {
     #[cfg(target_arch = "wasm32")]
     fn device_event(
@@ -1329,6 +1423,8 @@ impl ApplicationHandler for AppHandler {
         window.set_cursor_visible(false);
         let window = Arc::new(window);
         self.touch.set_scale_factor(window.scale_factor());
+        #[cfg(target_arch = "wasm32")]
+        install_browser_edge_pointer(&window, self.events_tx.clone());
         self.window = Some(window.clone());
         GAME_WINDOW.set(window.clone());
 

@@ -212,3 +212,20 @@ fn only_release_classified_pointer_sequences_defer_their_up() {
         TouchOutput::PointerUp { x: 30.0, y: 40.0 },
     ]));
 }
+
+#[test]
+fn page_points_pin_to_the_nearest_canvas_edge() {
+    use super::pin_to_canvas;
+    // 632x400 CSS canvas at (8, 8) with a 2x drawing buffer.
+    let rect = (8.0, 8.0, 632.0, 400.0);
+    let pixels = (1264, 800);
+    assert_eq!(pin_to_canvas((3.0, 208.0), rect, pixels), (0, 400));
+    assert_eq!(pin_to_canvas((700.0, 208.0), rect, pixels), (1263, 400));
+    assert_eq!(pin_to_canvas((324.0, 0.0), rect, pixels), (632, 0));
+    assert_eq!(pin_to_canvas((324.0, 500.0), rect, pixels), (632, 799));
+    assert_eq!(pin_to_canvas((0.0, 0.0), rect, pixels), (0, 0));
+    assert_eq!(
+        pin_to_canvas((324.0, 208.0), (0.0, 0.0, 0.0, 0.0), pixels),
+        (0, 0)
+    );
+}

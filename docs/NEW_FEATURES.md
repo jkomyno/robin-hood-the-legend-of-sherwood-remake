@@ -1585,10 +1585,12 @@ speech handling to recordings from `1699bc12ffb8`.
 
 Replay viewers can drag the world with the left mouse button, including while
 paused. Pausing replay playback pauses music and resuming continues it. Browser
-play starts with a free cursor and edge scrolling disabled; **Capture cursor**
-enables pointer capture and edge scrolling, and Escape releases it. Embedded
-leaderboard replays start in the free-cursor mode as well. These controls affect
-presentation only and never produce simulation input in a replay.
+play starts with a free cursor that edge-scrolls at the canvas edges; moving it
+onto the empty page beside the canvas holds it at that edge, while shell
+controls and leaving the page stop scrolling. **Capture cursor** confines the
+cursor with pointer lock, and Escape releases it. Embedded leaderboard replays
+start in the free-cursor mode as well. These controls affect presentation only
+and never produce simulation input in a replay.
 
 - Full-game leaderboard “Any ruleset” is a combined browsing view across configured Full boards, with shared ranking and pagination. The legacy `full-any` URL remains supported; it is no longer a production submission board.
 

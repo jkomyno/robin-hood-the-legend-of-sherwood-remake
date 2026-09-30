@@ -494,7 +494,7 @@ pub(super) fn collect_event_and_hud_input(context: EventHudContext<'_>) -> Event
     #[cfg(target_arch = "wasm32")]
     input
         .translator
-        .set_edge_scrolling(crate::window::browser_cursor_captured());
+        .set_edge_scrolling(crate::window::browser_edge_scrolling_enabled());
     let mouse_actions = if input.threaded.has_position() {
         input.translator.translate_mouse(
             input.threaded.position().x,

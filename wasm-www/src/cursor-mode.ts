@@ -6,7 +6,8 @@ export function installCursorMode(canvas: HTMLCanvasElement, button: HTMLButtonE
         button.textContent = 'Capture cursor';
         button.hidden = captured;
         button.setAttribute('aria-pressed', String(captured));
-        status.textContent = captured ? 'Edge scrolling on · Esc releases cursor' : 'Edge scrolling off';
+        // Edge scrolling works either way; capture only confines the cursor.
+        status.textContent = captured ? 'Edge scrolling on · Esc releases cursor' : 'Edge scrolling on';
     };
     const failed = () => {
         refresh();
