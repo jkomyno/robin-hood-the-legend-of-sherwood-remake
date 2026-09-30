@@ -47,6 +47,15 @@ UNLIT = {'pbrMetallicRoughness': {'baseColorTexture': {'index': 0}}, 'extensions
 
 
 class LossyAssetsTest(unittest.TestCase):
+    def test_packed_uvs_cannot_destroy_source_textured_triangles(self):
+        source = np.array([[[0., 0.], [1., 0.], [0., 1.]]])
+        lossy_assets.check_atlas_uvs(source, source * .5 + .1)
+        for damaged in [np.full_like(source, .5), source + 1, source * np.nan]:
+            with self.assertRaises(lossy_assets.UnsafeAtlasError):
+                lossy_assets.check_atlas_uvs(source, damaged)
+        # Degenerate source UVs do not become a new optimizer failure.
+        lossy_assets.check_atlas_uvs(np.zeros_like(source), np.zeros_like(source))
+
     def test_ownership_alpha_is_not_physical_transparency(self):
         for mode, expected in [('OPAQUE', 'NONE'), ('MASK', 'STRAIGHT'), ('BLEND', 'STRAIGHT')]:
             with self.subTest(mode=mode):

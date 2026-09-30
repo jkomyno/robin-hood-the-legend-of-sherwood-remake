@@ -34,9 +34,10 @@ them). Vertices are quantized with KHR_mesh_quantization (`--no-quantize` keeps 
 2. The atlas is square, a multiple of `--multiple` texels, sized so `--density-coverage` (95%)
    of the surface meets its weakest-direction target: `--density` texels per map pixel
    (the source artwork scale), capped by the source's strongest direction to retain its detail.
-   It is clamped to [`--min-size`, `--max-size`]; clamping is reported. An asset whose single
-   image is already filled by its published UVs (map background planes) keeps that layout and
-   resolution and is only re-encoded.
+   If the required atlas exceeds `--max-size`, or packing collapses triangles or leaves the
+   texture tile, the published layout and resolution are retained and only re-encoded.
+   Physical-opacity assets (foliage), tiled textures, and an already-filled single-image atlas
+   also retain their original layouts. `--min-size` applies to successfully repacked atlases.
 3. Cycles EMIT bakes the original textures through their original UVs into the atlas (one joined
    temporary object, so dilation cannot overwrite another mesh's texels). Alpha is baked only
    when a source material is MASK/BLEND; opaque assets ship RGB (the published ownership alpha is
@@ -480,6 +481,38 @@ def build_objects(doc, binary, images, collection, label):
 
 # --- unwrap, bake, encode ----------------------------------------------------------------------
 
+class UnsafeAtlasError(ValueError):
+    """Packing returned coordinates that cannot be baked into one atlas."""
+
+
+def check_atlas_uvs(source, packed):
+    """Reject lost UV triangles even when Blender reports a successful pack."""
+    source = np.asarray(source, dtype=np.float64).reshape(-1, 3, 2)
+    packed = np.asarray(packed, dtype=np.float64).reshape(-1, 3, 2)
+    if not np.isfinite(packed).all():
+        raise UnsafeAtlasError('Packed atlas contains non-finite UVs')
+
+    def twice_area(triangles):
+        edges = triangles[:, 1:] - triangles[:, :1]
+        return np.abs(edges[:, 0, 0] * edges[:, 1, 1] - edges[:, 0, 1] * edges[:, 1, 0])
+
+    collapsed = (twice_area(source) > 0) & (twice_area(packed) == 0)
+    if collapsed.any():
+        raise UnsafeAtlasError(f'Packed atlas collapsed {int(collapsed.sum())} previously textured triangles')
+    if packed.min() < -1e-6 or packed.max() > 1 + 1e-6:
+        raise UnsafeAtlasError('Packed atlas lies outside the single texture tile')
+
+
+def check_packed_objects(objects):
+    for obj in objects:
+        arrays = []
+        for name in (SOURCE_UV, NEW_UV):
+            uv = np.empty(len(obj.data.loops) * 2, dtype=np.float32)
+            obj.data.uv_layers[name].uv.foreach_get('vector', uv)
+            arrays.append(uv)
+        check_atlas_uvs(*arrays)
+
+
 def choose_size(args, targets, weakest, area):
     """Size meeting target density over the requested fraction of surface area."""
     require(0 < args.density_coverage <= 1, 'density coverage must be in (0, 1]')
@@ -512,6 +545,7 @@ def unwrap(objects, args, targets):
         bpy.ops.uv.pack_islands(udim_source='CLOSEST_UDIM', rotate=True, rotate_method='ANY', scale=True,
                                 margin_method='FRACTION', margin=margin, shape_method=args.pack_shape)
         bpy.ops.object.mode_set(mode='OBJECT')
+        check_packed_objects(objects)
         area = np.concatenate([face_geometry(o, NEW_UV)[0] for o in objects])
         weakest = np.concatenate([face_axes(o, NEW_UV, 1, 1)[:, 0] for o in objects])
         size, required = choose_size(args, targets, weakest, area)
@@ -997,12 +1031,18 @@ def derive(asset_id, model_path, lossy_path, args, work):
     # Preserve its authored UVs and physical coverage rather than rebaking cards.
     reencode = (need_alpha or (len(images) == 1 and uv_area.sum() >= args.reencode_utilization)
                 or max(reuse.values(), default=0) > args.reuse_ratio or out_of_range)
+    packing_failure = None
     if not reencode:
-        size, required, history = unwrap(objects, args, targets)
-        new_axes = np.concatenate([face_axes(o, NEW_UV, size, size) for o in objects])
-        # A capped atlas cannot meet the requested surface density. Keep the source
-        # layout instead of silently publishing undersampled or collapsed charts.
-        reencode = required > args.max_size
+        try:
+            size, required, history = unwrap(objects, args, targets)
+            new_axes = np.concatenate([face_axes(o, NEW_UV, size, size) for o in objects])
+            # A capped atlas cannot meet the requested surface density. Keep the source
+            # layout instead of silently publishing undersampled or collapsed charts.
+            reencode = required > args.max_size
+        except UnsafeAtlasError as error:
+            packing_failure = str(error)
+            print(f'RETAIN SOURCE UVS {asset_id}: {error}', flush=True)
+            reencode = True
     if reencode:
         from PIL import Image
         reencoded, avif_command, size = {}, None, []
@@ -1071,6 +1111,7 @@ def derive(asset_id, model_path, lossy_path, args, work):
                      'gpu_rgba8_bytes': {'source': sum(i['pixels'] for i in source_images) * 4,
                                          'lossy': lossy_pixels * 4}},
         'atlas_size': {'mode': 're-encode published layout' if reencode else 'smart-uv + normalized island scale',
+                       'packing_failure': packing_failure,
                        'texel_reuse': reuse, 'uv_out_of_range': out_of_range,
                        'size': size, 'required': required, 'multiple': args.multiple, 'min': args.min_size,
                        'max': args.max_size, 'clamped': None if required is None else 'max' if required > args.max_size

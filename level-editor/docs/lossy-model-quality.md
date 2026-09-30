@@ -120,3 +120,63 @@ Local run records are in `work/lossy-quality-full-rebuild-20260927/`:
 `inventory-before.json` records the initial source hashes and sizes, `audit.json`
 contains the final per-asset checks and measurements, and each `shard-N/backup/`
 retains the previous derivative files and receipts. Source files were not edited.
+
+## Sherwood fixed-padding collapse (2026-09-28)
+
+The central oak exposed a different failure from Derby's earlier relaxation bug.
+The original published UVs were valid, but algorithm 2 exported zero-area UVs for
+488,078 of its 488,094 triangles. The 4096-square baked texture compressed to
+1,777 bytes. This destroyed original-art surfaces as well as synthesized ones;
+it was independent of the viewing camera and occurred before quantization.
+
+A controlled Blender 5.2.2 trace measured each operation, restoring the same
+pre-pack coordinates before each packing experiment:
+
+| Operation | Zero-area UV triangles |
+| --- | ---: |
+| Smart UV Project | 0 |
+| Average island scale | 1 |
+| Pack Islands, FRACTION margin 0.003 | 487,411 |
+| Pack Islands, FRACTION margin 0 | 1 |
+| Pack Islands, SCALED margin 0.003 | 1 |
+
+The fixed fractional gutter was the mass-collapse trigger. It does not shrink
+with island size. Enough islands make the padding itself impossible to fit;
+shrinking their textured interiors cannot solve that constraint. Blender still
+returns `FINISHED`, with collapsed and out-of-tile UVs. The exact count differs
+slightly when switching out of edit mode to inspect intermediate stages, but
+the controlled padding comparison isolates the failing operation.
+
+Our optimizer accepted that result because its stopping check only verified
+`margin * atlas_size >= pack_margin_px`. At 4096 pixels, the initial 0.003 margin
+already satisfies that check. It capped the enormous calculated atlas size,
+baked the broken layout, and only checked exported mesh structure and counts.
+Neither that check nor quantization's precision check detects UVs already
+collapsed by the packer.
+
+Algorithm 3 retains foliage's published layout and falls back to the original
+layout when the requested density needs an atlas above the size cap. The
+additional pre-bake guard explicitly rejects newly collapsed triangles,
+non-finite coordinates, and coordinates outside the single atlas tile; these
+also trigger source-layout re-encoding and a recorded `packing_failure` reason.
+Original models and physical opacity remain intact. Reduced padding is not used
+as a production workaround: it would violate the verified gutter requirement.
+
+`refinement/blender/test_uv_packing.py` provides a small real-Blender regression:
+400 separate cards with a 0.05 fractional margin need four tiles for padding
+alone. Blender returns success, but our guard rejects the result. The identical
+cards with a 0.005 margin pass. Run with:
+
+```sh
+blender --background --threads 2 --python-exit-code 1 \
+  --python refinement/blender/test_uv_packing.py
+```
+
+The numerical guard was also checked against the actual failed oak GLB: it
+rejects 349,702 collapsed triangles in the first foliage primitive alone.
+The full local trace is in `work/sherwood-refinement/uv-collapse-diagnostic/`.
+
+A separate opaque-image bug discarded synthesized RGB by interpreting ownership
+alpha as physical transparency during Blender sampling. Opaque source textures
+now use Blender's `NONE` alpha mode; MASK/BLEND images retain physical alpha.
+This was real, but did not explain the source-camera tree damage above.
