@@ -92,7 +92,8 @@ ROBIN_LOCAL_BINARIES_ROOT="$ROBIN_LOCAL_ROOT/serve" \
   pnpm --dir wasm-www dev --host 127.0.0.1 --port 5173 --strictPort
 ```
 
-Open **http://127.0.0.1:5173/?edition=full&wasm-log=debug**. Vite sends COOP
+Open **http://127.0.0.1:5173/?edition=full**; append `&wasm-log=debug` only
+when diagnosing, since it also draws loading-phase text. Vite sends COOP
 `same-origin` and COEP `require-corp`, enabling shared-memory wasm workers. The
 runtime, bootstrap data and all mission/audio companions use the same local
 origin. The default URL without `edition=full` expects the separate Demo corpus.
