@@ -2082,3 +2082,283 @@ fn evaluate_opponents_maps_legacy_climb_like_original_release() {
         "every non-walking-sword action maps to running upright"
     );
 }
+
+/// A sprite with a three-frame row for each PC search order; Done fires on
+/// the middle frame.
+fn pc_search_sprite() -> crate::sprite::Sprite {
+    use crate::order::OrderType;
+    let mut scripts = Vec::new();
+    let mut conversion = crate::engine::test_support::unmapped_conversion();
+    for action in [OrderType::Searching, OrderType::SearchingCrouched] {
+        conversion[action as usize] = scripts.len() as u16;
+        let script = crate::sprite_script::SpriteScript {
+            action_id: action as u16,
+            action_done: 1,
+            average_speed: 0.0,
+            hotspot: crate::coordinates::SpriteLocalPoint::ZERO,
+            sum_distance: 0,
+            frame_ids: vec![1, 2, 3],
+            delays: vec![0, 0, 0],
+            distances: vec![0, 0, 0],
+            offsets: vec![crate::coordinates::SpriteFrameOffset::ZERO; 3],
+            sound_ids: vec![0, 0, 0],
+        };
+        scripts.extend(std::iter::repeat_n(script, 16));
+    }
+    crate::sprite::Sprite::new(
+        std::sync::Arc::new(scripts),
+        std::sync::Arc::new(conversion),
+    )
+}
+
+struct BodySearch {
+    engine: EngineInner,
+    assets: LevelAssets,
+    pc: EntityId,
+    body: EntityId,
+    cash_won_jingles: usize,
+}
+
+/// A Search-capable PC (upright or crouched) beside a lying soldier body
+/// (dead, or knocked out with positive life) carrying `money`, with
+/// campaign ransom 100.
+fn body_search_fixture(crouched: bool, dead: bool, money: u32) -> BodySearch {
+    use crate::element::Posture;
+    let mut engine = EngineInner::new();
+    let mut pc_entity = make_test_pc(if crouched {
+        Posture::Crouched
+    } else {
+        Posture::Upright
+    });
+    pc_entity.element_data_mut().sprite = pc_search_sprite();
+    place_active(&mut pc_entity, 100.0, 100.0);
+    {
+        let pc = pc_entity.pc_data_mut().unwrap();
+        pc.life_points = 100;
+        pc.playable = true;
+    }
+    let pc = engine.add_test_entity(pc_entity);
+    let mut body_entity = make_test_soldier(Posture::Lying);
+    place_active(&mut body_entity, 120.0, 100.0);
+    {
+        let Entity::Soldier(soldier) = &mut body_entity else {
+            unreachable!()
+        };
+        soldier.npc.life_points = if dead { 0 } else { 50 };
+        soldier.human.unconscious = !dead;
+        soldier.npc.money = money;
+    }
+    let body = engine.add_test_entity(body_entity);
+    engine.control.frame_counter = 1;
+    engine
+        .mission_domain
+        .campaign
+        .set_value(crate::campaign::CampaignValue::Ransom, 100);
+    let assets = engine.test_runtime_assets();
+    BodySearch {
+        engine,
+        assets,
+        pc,
+        body,
+        cash_won_jingles: 0,
+    }
+}
+
+impl BodySearch {
+    fn launch(&mut self) {
+        let element = crate::sequence::SequenceElement::new_interaction(
+            1,
+            crate::element::Command::SearchCmd,
+            Some(self.pc),
+            Some(self.body),
+        );
+        self.engine.t_launch_element(&self.assets, element);
+    }
+
+    fn ransom(&self) -> i32 {
+        self.engine
+            .mission_domain
+            .campaign
+            .get_value(crate::campaign::CampaignValue::Ransom)
+    }
+
+    fn body_money(&self) -> u32 {
+        self.engine.ent(self.body).npc_data().unwrap().money
+    }
+
+    fn counters(&self) -> Vec<u16> {
+        self.engine
+            .feedback
+            .titbit_manager
+            .titbits()
+            .iter()
+            .filter(|t| t.kind == crate::titbit::TitbitKind::Counter)
+            .map(|t| t.phase)
+            .collect()
+    }
+
+    /// Run one full production frame.
+    fn frame(&mut self) {
+        let effects = self.engine.perform_hourglass(
+            &mut HostDisplayState::default(),
+            &mut InputState::default(),
+            &self.assets,
+            &mut DevState::default(),
+        );
+        self.cash_won_jingles += effects
+            .sounds
+            .iter()
+            .filter(|sound| {
+                matches!(
+                    sound,
+                    crate::engine::SoundCommand::Jingle(crate::sound::Jingle::CashWon)
+                )
+            })
+            .count();
+    }
+
+    fn search_in_progress(&self) -> bool {
+        self.engine
+            .world
+            .entities
+            .current_element_for_actor(self.pc)
+            .and_then(|(sequence, index)| {
+                self.engine
+                    .orders
+                    .sequence_manager
+                    .get_element(sequence, index)
+            })
+            .is_some_and(|element| element.command == crate::element::Command::SearchCmd)
+    }
+
+    /// Launch a Search on the body and run production frames until the
+    /// search element has finished. `before_done` runs after each frame
+    /// that has not yet credited anything.
+    fn search(&mut self, mut before_done: impl FnMut(&mut Self)) {
+        let ransom = self.ransom();
+        self.launch();
+        let mut started = false;
+        for _ in 0..16 {
+            self.frame();
+            let in_progress = self.search_in_progress();
+            started |= in_progress;
+            if started && !in_progress {
+                return;
+            }
+            if self.ransom() == ransom {
+                before_done(self);
+            }
+        }
+        panic!("PC search never finished");
+    }
+}
+
+#[test]
+fn pc_search_done_moves_body_money_into_ransom_once() {
+    use crate::element::{ActionState, Posture};
+    for crouched in [false, true] {
+        for dead in [true, false] {
+            for money in [1, 49, 50, 125] {
+                let label = format!("crouched={crouched} dead={dead} money={money}");
+                let mut fixture = body_search_fixture(crouched, dead, money);
+                let entities_before = fixture.engine.world.entities.occupied().count();
+                fixture.search(|fixture| {
+                    assert_eq!(fixture.body_money(), money, "{label}: paid before Done");
+                    assert!(fixture.counters().is_empty(), "{label}");
+                });
+                assert_eq!(
+                    fixture.engine.ent(fixture.pc).sprite().last_action,
+                    if crouched {
+                        crate::order::OrderType::SearchingCrouched
+                    } else {
+                        crate::order::OrderType::Searching
+                    },
+                    "{label}"
+                );
+                assert_eq!(fixture.ransom(), 100 + money as i32, "{label}");
+                assert_eq!(
+                    fixture.engine.mission_domain.mission_stat.collected_money, money,
+                    "{label}"
+                );
+                assert_eq!(fixture.body_money(), 0, "{label}");
+                assert_eq!(fixture.counters(), vec![money as u16], "{label}");
+                assert_eq!(fixture.cash_won_jingles, 1, "{label}");
+                assert_eq!(
+                    fixture.engine.world.entities.occupied().count(),
+                    entities_before,
+                    "{label}: no purse or coin spawned"
+                );
+                let pc = fixture.engine.ent(fixture.pc);
+                assert_eq!(
+                    pc.posture(),
+                    if crouched {
+                        Posture::Crouched
+                    } else {
+                        Posture::Upright
+                    },
+                    "{label}"
+                );
+                assert_eq!(
+                    pc.actor_data().unwrap().action_state,
+                    ActionState::Waiting,
+                    "{label}"
+                );
+
+                // A repeat search finds the purse empty.
+                fixture.search(|_| {});
+                assert_eq!(fixture.ransom(), 100 + money as i32, "{label}");
+                assert_eq!(fixture.counters(), vec![money as u16], "{label}");
+                assert_eq!(fixture.cash_won_jingles, 1, "{label}");
+            }
+        }
+    }
+}
+
+#[test]
+fn pc_search_of_empty_body_grants_nothing() {
+    let mut fixture = body_search_fixture(false, true, 0);
+    fixture.search(|_| {});
+    assert_eq!(fixture.ransom(), 100);
+    assert_eq!(
+        fixture.engine.mission_domain.mission_stat.collected_money,
+        0
+    );
+    assert!(fixture.counters().is_empty());
+    assert_eq!(fixture.cash_won_jingles, 0);
+}
+
+#[test]
+fn pc_search_collects_from_an_empty_treasury() {
+    let mut fixture = body_search_fixture(false, true, 1);
+    fixture
+        .engine
+        .mission_domain
+        .campaign
+        .set_value(crate::campaign::CampaignValue::Ransom, 0);
+    fixture.search(|_| {});
+    assert_eq!(fixture.ransom(), 1);
+    assert_eq!(fixture.body_money(), 0);
+}
+
+#[test]
+fn pc_search_invalidated_before_done_keeps_body_money() {
+    let mut fixture = body_search_fixture(false, false, 125);
+    let mut moved = false;
+    fixture.search(|fixture| {
+        // Once the search animation plays, drag the body out of the PC
+        // Search range (squared distance 3600).
+        if !moved
+            && fixture.engine.ent(fixture.pc).sprite().last_action
+                == crate::order::OrderType::Searching
+        {
+            fixture
+                .engine
+                .place_map(fixture.body, MapPoint { x: 200.0, y: 100.0 });
+            moved = true;
+        }
+    });
+    assert!(moved, "search animation never started");
+    assert_eq!(fixture.ransom(), 100);
+    assert_eq!(fixture.body_money(), 125);
+    assert!(fixture.counters().is_empty());
+}

@@ -902,10 +902,56 @@ pub(super) fn apply_pc_target_interaction_side_effect(
         OrderType::HittingTarget => Command::ActivateSword,
         OrderType::HandlingTarget | OrderType::TakingTarget => Command::ActivateHandle,
         OrderType::UsingLever => Command::ActivateLever,
-        OrderType::Searching => Command::ActivateSearch,
         _ => return,
     };
     engine.execute_pc_target_activations(tcx, (entity_id, target, activation));
+}
+
+/// PC SEARCHING / SEARCHING_CROUCHED DONE. The original PC override
+/// restores the order's waiting posture, then an FX-target antagonist
+/// receives ActivateSearch while an NPC body hands its carried money to
+/// the campaign treasury (`execute_pc_body_search_done`).
+pub(super) fn apply_pc_search_done_side_effect(
+    engine: &mut EngineInner,
+    tcx: TickCtx<'_>,
+    anim_type: OrderType,
+    motion: MotionState,
+    antagonist: Option<EntityId>,
+    entity_id: EntityId,
+) {
+    let posture = match anim_type {
+        OrderType::Searching => Posture::Upright,
+        OrderType::SearchingCrouched => Posture::Crouched,
+        _ => return,
+    };
+    if motion != MotionState::Done
+        || !engine
+            .world
+            .entities
+            .get(entity_id)
+            .expect("animation owner disappeared")
+            .is_pc()
+    {
+        return;
+    }
+    set_actor_states(engine, entity_id, posture, ActionState::Waiting);
+    let Some(target) = antagonist else {
+        return;
+    };
+    if engine
+        .expect_entity(target, "PC search antagonist")
+        .kind()
+        .is_fx_target()
+    {
+        // TODO: the original sends ActivateSearch from the crouched arm
+        // too; the remake has only ever activated targets from upright
+        // SEARCHING. Confirm before widening.
+        if anim_type == OrderType::Searching {
+            engine.execute_pc_target_activations(tcx, (entity_id, target, Command::ActivateSearch));
+        }
+        return;
+    }
+    engine.execute_pc_body_search_done(tcx, entity_id, target);
 }
 
 /// Stage the exact post-sprite `TakingNet` tail. The original does not remove

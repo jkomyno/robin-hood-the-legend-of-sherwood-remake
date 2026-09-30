@@ -618,6 +618,87 @@ impl EngineInner {
         self.launch_element(tcx, activation);
     }
 
+    /// PC SEARCHING / SEARCHING_CROUCHED DONE on a human body. The original
+    /// PC override rechecks the Search element with position, then for an
+    /// NPC with carried money credits all of it to campaign ransom, floats a
+    /// Counter titbit (low 16 bits) over the body, clears the money and
+    /// requests the find-money remark, in that order. An invalid search or
+    /// an empty purse leaves the body untouched.
+    pub(in crate::engine) fn execute_pc_body_search_done(
+        &mut self,
+        tcx: TickCtx<'_>,
+        pc: EntityId,
+        body: EntityId,
+    ) {
+        let (seq_id, elem_idx) = self
+            .world
+            .entities
+            .current_element_for_actor(pc)
+            .unwrap_or_else(|| panic!("PC search owner {pc:?} lost its live element"));
+        let valid = {
+            let element = self
+                .orders
+                .sequence_manager
+                .get_element(seq_id, elem_idx)
+                .expect("PC search live element disappeared");
+            self.check_sequence_element_validity(tcx.assets, pc, element, true)
+        };
+        if !valid {
+            tracing::debug!(
+                ?pc,
+                ?body,
+                "PC search DONE no longer valid; nothing collected"
+            );
+            return;
+        }
+
+        let body_entity = self.world.entities.expect_entity(
+            body,
+            format_args!("PC search DONE from {pc:?} required body"),
+        );
+        // Only NPCs carry money; searching another human body finds nothing.
+        let Some(amount) = body_entity.npc_data().map(|npc| npc.money) else {
+            return;
+        };
+        if amount == 0 {
+            return;
+        }
+        // TODO: the original adds the raw 32-bit value to a signed campaign
+        // field. No authored amount comes close; refuse rather than wrap.
+        let Ok(credit) = i32::try_from(amount) else {
+            tracing::warn!(
+                ?pc,
+                ?body,
+                amount,
+                "body money exceeds campaign range; not collected"
+            );
+            return;
+        };
+        let elem = body_entity.element_data();
+        let position = elem.position_map();
+        let layer = elem.layer();
+
+        self.add_campaign_value(tcx.assets, crate::campaign::CampaignValue::Ransom, credit);
+        // The counter shows the original's 16-bit phase; the treasury keeps
+        // the full amount.
+        self.spawn_take_counter(
+            crate::coordinates::WorldPoint3D {
+                x: position.x,
+                y: position.y,
+                z: 2.0,
+            },
+            layer,
+            amount as u16,
+        );
+        self.world
+            .entities
+            .get_mut(body)
+            .and_then(Entity::npc_data_mut)
+            .expect("validated PC search body disappeared")
+            .money = 0;
+        self.hero_speaking(tcx.assets, pc, crate::engine::melee::HERO_FIND_MONEY);
+    }
+
     pub(in crate::engine) fn execute_waking_up_done(
         &mut self,
         tcx: TickCtx<'_>,
