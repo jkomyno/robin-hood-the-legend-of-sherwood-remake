@@ -4657,6 +4657,184 @@ fn engine_use_command_searches_rich_dead_or_unconscious_body_before_body_fallbac
     }
 }
 
+/// A lying soldier body: live and unconscious (life 50) or dead (life 0).
+fn add_lying_soldier_body(
+    engine: &mut EngineInner,
+    camp: Camp,
+    unconscious: bool,
+    life_points: i16,
+    money: u32,
+) -> EntityId {
+    engine.add_test_entity(Entity::Soldier(ActorSoldier {
+        element: {
+            let mut initial_element = ElementData::from_initial_posture(Posture::Lying);
+            initial_element.kind = ElementKind::ActorSoldier;
+            initial_element.active = true;
+            initial_element
+        },
+        actor: ActorData::default(),
+        human: HumanData {
+            unconscious,
+            ..HumanData::default()
+        },
+        npc: NpcData {
+            life_points,
+            ai: crate::element::AiActorData {
+                money,
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        soldier: SoldierData {
+            cached_camp: camp,
+            ..SoldierData::default()
+        },
+    }))
+}
+
+fn set_contextual_actions(assets: &mut LevelAssets, actions: &[Action]) {
+    let profiles = std::sync::Arc::make_mut(&mut assets.profile_manager);
+    let contextual = &mut profiles.characters[0].contextual_actions;
+    contextual.fill(Action::NoAction);
+    contextual[..actions.len()].copy_from_slice(actions);
+    if profiles.soldiers.is_empty() {
+        profiles
+            .soldiers
+            .push(crate::profiles::SoldierProfile::default());
+    }
+}
+
+#[test]
+fn engine_use_command_finishes_downed_enemy_for_execute_pc() {
+    let (mut engine, mut assets, pc_id) = setup_pc_engine(&[]);
+    // Will Scarlet's authored contextual set: no Search.
+    set_contextual_actions(&mut assets, &[Action::Climb, Action::Jump, Action::Execute]);
+    for money in [0, 125] {
+        let body = add_lying_soldier_body(&mut engine, Camp::Lacklandists, true, 50, money);
+        assert_eq!(
+            determine_use_command(&engine, &assets, pc_id, body),
+            Some(Command::SwordstrikeDown),
+            "money={money}"
+        );
+        assert_eq!(
+            engine.choose_use_cursor(&assets, body, Some(pc_id)),
+            crate::resource_ids::RHMOUSE_FINISH_HIM,
+            "money={money}"
+        );
+    }
+}
+
+#[test]
+fn engine_use_command_searches_before_finishing_for_search_and_execute_pc() {
+    let (mut engine, mut assets, pc_id) = setup_pc_engine(&[]);
+    set_contextual_actions(&mut assets, &[Action::Search, Action::Execute]);
+    let body = add_lying_soldier_body(&mut engine, Camp::Lacklandists, true, 50, 125);
+    assert_eq!(
+        determine_use_command(&engine, &assets, pc_id, body),
+        Some(Command::SearchCmd)
+    );
+    assert_eq!(
+        engine.choose_use_cursor(&assets, body, Some(pc_id)),
+        crate::resource_ids::RHMOUSE_SEARCH
+    );
+    // Once looted, the same click finishes the still-unconscious enemy.
+    engine.ent_mut(body).npc_data_mut().unwrap().money = 0;
+    assert_eq!(
+        determine_use_command(&engine, &assets, pc_id, body),
+        Some(Command::SwordstrikeDown)
+    );
+    assert_eq!(
+        engine.choose_use_cursor(&assets, body, Some(pc_id)),
+        crate::resource_ids::RHMOUSE_FINISH_HIM
+    );
+}
+
+#[test]
+fn engine_use_command_never_finishes_for_pc_without_execute() {
+    let (mut engine, mut assets, pc_id) = setup_pc_engine(&[]);
+    set_contextual_actions(&mut assets, &[Action::Search, Action::Tie]);
+    let body = add_lying_soldier_body(&mut engine, Camp::Lacklandists, true, 50, 0);
+    assert_eq!(
+        determine_use_command(&engine, &assets, pc_id, body),
+        Some(Command::TieCmd)
+    );
+    assert_eq!(
+        engine.choose_use_cursor(&assets, body, Some(pc_id)),
+        crate::resource_ids::RHMOUSE_TIE
+    );
+}
+
+#[test]
+fn engine_use_command_finish_requires_full_target_eligibility() {
+    let (mut engine, mut assets, pc_id) = setup_pc_engine(&[]);
+    // Carry admits every body below, so only finish eligibility decides.
+    set_contextual_actions(&mut assets, &[Action::Execute, Action::LittleJohnCarry]);
+    std::sync::Arc::make_mut(&mut assets.profile_manager)
+        .soldiers
+        .push(crate::profiles::SoldierProfile {
+            vip: true,
+            ..Default::default()
+        });
+    let selector_camp = engine.ent(pc_id).camp();
+
+    let dead = add_lying_soldier_body(&mut engine, Camp::Lacklandists, false, 0, 0);
+    // Zero life while the unconscious flag is still set (dying animation).
+    let dying = add_lying_soldier_body(&mut engine, Camp::Lacklandists, true, 0, 0);
+    let allied = add_lying_soldier_body(&mut engine, selector_camp, true, 50, 0);
+    let vip = add_lying_soldier_body(&mut engine, Camp::Lacklandists, true, 50, 0);
+    let Some(Entity::Soldier(soldier)) = engine.get_entity_mut(vip) else {
+        unreachable!()
+    };
+    soldier.soldier.soldier_profile_index = crate::profiles::SoldierProfileIdx(1);
+    let carried = add_lying_soldier_body(&mut engine, Camp::Lacklandists, true, 50, 0);
+    engine.ent_mut(carried).set_posture(Posture::Carried);
+    let civilian = engine.add_test_entity(Entity::Civilian(ActorCivilian {
+        element: {
+            let mut initial_element = ElementData::from_initial_posture(Posture::Lying);
+            initial_element.kind = ElementKind::ActorCivilian;
+            initial_element.active = true;
+            initial_element
+        },
+        actor: ActorData::default(),
+        human: HumanData {
+            unconscious: true,
+            ..HumanData::default()
+        },
+        npc: NpcData {
+            life_points: 50,
+            ..Default::default()
+        },
+        civilian: crate::element::CivilianData {
+            cached_camp: Camp::Lacklandists,
+            ..Default::default()
+        },
+    }));
+
+    for (label, body) in [
+        ("dead", dead),
+        ("dying", dying),
+        ("allied", allied),
+        ("vip", vip),
+        ("carried", carried),
+        ("civilian", civilian),
+    ] {
+        assert!(
+            !engine.pc_can_finish_npc_body(&assets, pc_id, engine.ent(body)),
+            "{label}"
+        );
+        assert_ne!(
+            determine_use_command(&engine, &assets, pc_id, body),
+            Some(Command::SwordstrikeDown),
+            "{label}"
+        );
+        assert_ne!(
+            engine.choose_use_cursor(&assets, body, Some(pc_id)),
+            crate::resource_ids::RHMOUSE_FINISH_HIM,
+            "{label}"
+        );
+    }
+}
+
 #[test]
 fn tied_npc_use_prioritizes_loot_then_untie_and_setting_restores_original_behavior() {
     let (mut engine, mut assets, pc_id) = setup_pc_engine(&[]);

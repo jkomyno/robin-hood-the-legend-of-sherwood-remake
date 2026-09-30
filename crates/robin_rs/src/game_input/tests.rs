@@ -1638,6 +1638,118 @@ fn only_robin_searches_a_rich_vip_body() {
     }
 }
 
+fn contextual_profile(actions: &[Action]) -> engine_profiles::CharacterProfile {
+    let mut contextual_actions =
+        [Action::NoAction; engine_profiles::NUMBER_OF_PC_CONTEXTUAL_ACTIONS];
+    contextual_actions[..actions.len()].copy_from_slice(actions);
+    engine_profiles::CharacterProfile {
+        contextual_actions,
+        ..Default::default()
+    }
+}
+
+#[test]
+fn will_click_on_downed_enemy_launches_finish() {
+    for money in [0, 125] {
+        // Will Scarlet's authored contextual set.
+        let (engine, assets, mut host, pc, body) = body_search_fixture(
+            contextual_profile(&[Action::Climb, Action::Jump, Action::Execute]),
+            false,
+            money,
+        );
+        assert_eq!(body_use_focus(&host, &engine, &assets), Some(body));
+        assert_eq!(
+            engine.choose_use_cursor(&assets, body, Some(pc)),
+            robin_engine::resource_ids::RHMOUSE_FINISH_HIM,
+            "money={money}"
+        );
+        assert_cmds!(
+            click_body(&mut host, &engine, &assets),
+            vec![PlayerCommand::LaunchInteraction {
+                actor: pc,
+                target: body,
+                command: Command::SwordstrikeDown,
+                running: false,
+            }]
+        );
+    }
+}
+
+#[test]
+fn click_on_downed_enemy_without_execute_never_finishes() {
+    let (engine, assets, mut host, pc, body) =
+        body_search_fixture(searcher_profile(&[Action::Tie]), false, 0);
+    assert_eq!(body_use_focus(&host, &engine, &assets), Some(body));
+    assert_eq!(
+        engine.choose_use_cursor(&assets, body, Some(pc)),
+        robin_engine::resource_ids::RHMOUSE_TIE
+    );
+    assert_cmds!(
+        click_body(&mut host, &engine, &assets),
+        vec![PlayerCommand::LaunchInteraction {
+            actor: pc,
+            target: body,
+            command: Command::TieCmd,
+            running: false,
+        }]
+    );
+}
+
+#[test]
+fn search_and_execute_pc_loots_before_finishing() {
+    // Remaining money keeps the original Search priority; an empty body
+    // (e.g. after the loot was collected) is finished instead.
+    for (money, cursor, command) in [
+        (
+            125,
+            robin_engine::resource_ids::RHMOUSE_SEARCH,
+            Command::SearchCmd,
+        ),
+        (
+            0,
+            robin_engine::resource_ids::RHMOUSE_FINISH_HIM,
+            Command::SwordstrikeDown,
+        ),
+    ] {
+        let (engine, assets, mut host, pc, body) =
+            body_search_fixture(searcher_profile(&[Action::Execute]), false, money);
+        assert_eq!(body_use_focus(&host, &engine, &assets), Some(body));
+        assert_eq!(
+            engine.choose_use_cursor(&assets, body, Some(pc)),
+            cursor,
+            "money={money}"
+        );
+        assert_cmds!(
+            click_body(&mut host, &engine, &assets),
+            vec![PlayerCommand::LaunchInteraction {
+                actor: pc,
+                target: body,
+                command,
+                running: false,
+            }]
+        );
+    }
+}
+
+#[test]
+fn execute_pc_cannot_finish_a_downed_vip() {
+    let (engine, assets, _host, pc, body) = body_search_fixture_with_vip(
+        contextual_profile(&[Action::Execute, Action::LittleJohnCarry]),
+        false,
+        0,
+        true,
+        false,
+    );
+    assert_ne!(
+        engine.choose_use_cursor(&assets, body, Some(pc)),
+        robin_engine::resource_ids::RHMOUSE_FINISH_HIM
+    );
+    assert_eq!(
+        determine_use_command(&engine, &assets, pc, body),
+        Some(Command::TakeCorpse)
+    );
+}
+
 #[test]
 fn use_command_on_bonus_is_take() {
     let (mut engine, assets, _host) = fixture();

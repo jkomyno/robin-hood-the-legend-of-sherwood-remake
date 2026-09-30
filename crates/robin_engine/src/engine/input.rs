@@ -529,6 +529,44 @@ impl EngineInner {
                     .is_some_and(|pc| pc.robin))
     }
 
+    /// Whether a Use click by `pc_id` on `entity` starts the finish
+    /// (SwordstrikeDown) interaction: an active, live, unconscious soldier
+    /// lying on the ground, hostile to the selector and not a VIP, and a
+    /// selector with the Execute contextual action. Shared by the Use focus
+    /// arm, the FINISH_HIM cursor, and both command selectors so they agree.
+    ///
+    /// This is the new-click rule only; retained interactions keep the
+    /// broader runtime validity of the StrikingDownSword action.
+    pub fn pc_can_finish_npc_body(
+        &self,
+        assets: &LevelAssets,
+        pc_id: EntityId,
+        entity: &Entity,
+    ) -> bool {
+        let Some(human) = entity.human_data() else {
+            return false;
+        };
+        if !(entity.is_active()
+            && entity.is_soldier()
+            && !entity.is_dead()
+            && human.unconscious
+            && entity.element_data().posture() == crate::element::Posture::Lying)
+        {
+            return false;
+        }
+        let selector_camp = self
+            .get_entity(pc_id)
+            .unwrap_or_else(|| panic!("selected PC {pc_id:?} disappeared during finish lookup"))
+            .camp();
+        self.camps_are_hostile(entity.camp(), selector_camp)
+            && !self.is_entity_vip(assets, entity)
+            && self.selected_pc_has_contextual_action(
+                assets,
+                Some(pc_id),
+                crate::profiles::Action::Execute,
+            )
+    }
+
     /// Check whether an entity is focusable for the given focus type at
     /// the given map position.
     ///
@@ -1020,17 +1058,8 @@ impl EngineInner {
                 }
                 // Murder (execute unconscious enemy soldier).
                 // Requires the EXECUTE contextual action.
-                if !is_dead
-                    && is_unconscious
-                    && posture == Posture::Lying
-                    && is_soldier
-                    && hostile_to_selector
-                    && !is_vip
-                    && self.selected_pc_has_contextual_action(
-                        assets,
-                        selected_pc_id,
-                        crate::profiles::Action::Execute,
-                    )
+                if selected_pc_id
+                    .is_some_and(|pc_id| self.pc_can_finish_npc_body(assets, pc_id, entity))
                 {
                     return true;
                 }
@@ -1531,13 +1560,17 @@ impl EngineInner {
                 .and_then(|id| self.get_entity(id))
                 .and_then(Entity::pc_data)
                 .is_some_and(|pc| pc.robin);
-        if (dead
-            || unconscious
-            || (self.control.sim_config.enable_unbinding && posture == Posture::Tied))
+        // The dead/unconscious arm shares the dispatch predicate so a body
+        // admitted by another Use arm (e.g. netted, for a Search+Execute
+        // selector) never shows SEARCH for a click that cannot loot it.
+        let body_search =
+            selected_pc_id.is_some_and(|pc_id| self.pc_can_search_npc_body(assets, pc_id, entity));
+        let tied_search = self.control.sim_config.enable_unbinding
+            && posture == Posture::Tied
             && npc_money != 0
             && tied_search_allowed_for_selector
-            && self.selected_pc_has_contextual_action(assets, selected_pc_id, PA::Search)
-        {
+            && self.selected_pc_has_contextual_action(assets, selected_pc_id, PA::Search);
+        if body_search || tied_search {
             return RHMOUSE_SEARCH;
         }
 
@@ -1553,11 +1586,10 @@ impl EngineInner {
             return RHMOUSE_TIE;
         }
 
-        // 3. Unconscious + EXECUTE + lying → murder cursor
-        if unconscious
-            && self.selected_pc_has_contextual_action(assets, selected_pc_id, PA::Execute)
-            && posture == Posture::Lying
-        {
+        // 3. Finish-eligible body → murder cursor. Uses the full focus /
+        // dispatch predicate so another Use arm admitting an allied,
+        // civilian, or VIP body cannot surface FINISH_HIM.
+        if selected_pc_id.is_some_and(|pc_id| self.pc_can_finish_npc_body(assets, pc_id, entity)) {
             return RHMOUSE_FINISH_HIM;
         }
 

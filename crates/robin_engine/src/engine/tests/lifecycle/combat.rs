@@ -1502,3 +1502,237 @@ fn lethal_sword_damage_pins_forced_attentive_view_and_hands_corpse_to_wait() {
     );
     assert_eq!(engine.actor_command(victim), Command::Wait);
 }
+
+/// A PC sprite that walks 20 map units per frame and plays a three-frame
+/// StrikingDownSword whose action Done fires on the middle frame.
+fn finish_pc_sprite() -> crate::sprite::Sprite {
+    use crate::order::OrderType;
+    let mut conversion = crate::engine::test_support::unmapped_conversion();
+    let mut scripts = Vec::new();
+    for (action, action_done, distance) in [
+        (OrderType::WalkingUpright, 0, 20),
+        (OrderType::StrikingDownSword, 1, 0),
+    ] {
+        conversion[action as usize] = scripts.len() as u16;
+        let frames = if distance == 0 { 3 } else { 1 };
+        let script = crate::sprite_script::SpriteScript {
+            action_id: action as u16,
+            action_done,
+            average_speed: distance as f32,
+            hotspot: crate::coordinates::SpriteLocalPoint::ZERO,
+            sum_distance: distance,
+            frame_ids: (1..=frames).collect(),
+            delays: vec![0; frames as usize],
+            distances: vec![distance; frames as usize],
+            offsets: vec![crate::coordinates::SpriteFrameOffset::ZERO; frames as usize],
+            sound_ids: vec![0; frames as usize],
+        };
+        scripts.extend(std::iter::repeat_n(script, 16));
+    }
+    crate::sprite::Sprite::new(
+        std::sync::Arc::new(scripts),
+        std::sync::Arc::new(conversion),
+    )
+}
+
+struct FinishScene {
+    engine: EngineInner,
+    assets: LevelAssets,
+    pc: EntityId,
+    victim: EntityId,
+}
+
+/// A PC 200 map units from a live, unconscious, money-bearing hostile
+/// soldier lying on the ground, both in one walkable sector.
+fn finish_scene() -> FinishScene {
+    use crate::ai::{AiState, Substate};
+    use crate::element::{Camp, Posture};
+    let mut engine = EngineInner::new();
+    let (sector, _) = crate::engine::test_support::extra_engine_combat::square_sector_map(
+        &mut engine,
+        (128, 128),
+        (3000.0, 3000.0),
+    );
+    let move_box = crate::coordinates::MoveBox::from_coords(-6.0, -4.0, 6.0, 4.0);
+    let mut pc_entity = make_test_pc(Posture::Upright);
+    place_active(&mut pc_entity, 100.0, 300.0);
+    {
+        let element = pc_entity.element_data_mut();
+        let position = element.position_map();
+        element.sprite = finish_pc_sprite();
+        element.set_position_map(position);
+        element.set_sector(Some(sector));
+        element.sprite.position_iface.set_move_box(move_box);
+        let pc = pc_entity.pc_data_mut().unwrap();
+        pc.life_points = 100;
+        pc.playable = true;
+    }
+    let pc = engine.add_test_entity(pc_entity);
+    let mut victim_entity = make_test_soldier(Posture::Lying);
+    place_active(&mut victim_entity, 300.0, 300.0);
+    {
+        victim_entity.element_data_mut().set_sector(Some(sector));
+        victim_entity.position_iface_mut().set_move_box(move_box);
+        let Entity::Soldier(soldier) = &mut victim_entity else {
+            unreachable!()
+        };
+        soldier.npc.life_points = 30;
+        soldier.soldier.cached_max_life_points = 30;
+        soldier.soldier.cached_camp = Camp::Lacklandists;
+        soldier.human.unconscious = true;
+        soldier.npc.money = 40;
+        soldier.npc.ai_brain = crate::element::AiBrain::Enemy(Box::default());
+        let ai = soldier.npc.ai_brain.base_mut().unwrap();
+        ai.current_state = AiState::Sleeping;
+        ai.current_substate = Substate::SleepingUnconscious;
+    }
+    let victim = engine.add_test_entity(victim_entity);
+    engine.control.frame_counter = 1;
+    let assets = engine.test_runtime_assets();
+    FinishScene {
+        engine,
+        assets,
+        pc,
+        victim,
+    }
+}
+
+impl FinishScene {
+    fn launch(&mut self) {
+        self.engine.apply_command(
+            &crate::sim_rng::test_context(),
+            &mut HostDisplayState::default(),
+            &mut InputState::default(),
+            &self.assets,
+            &crate::player_command::PlayerCommand::LaunchInteraction {
+                actor: self.pc,
+                target: self.victim,
+                command: crate::element::Command::SwordstrikeDown,
+                running: false,
+            },
+        );
+    }
+
+    fn frame(&mut self) {
+        self.engine.perform_hourglass(
+            &mut HostDisplayState::default(),
+            &mut InputState::default(),
+            &self.assets,
+            &mut DevState::default(),
+        );
+    }
+
+    fn pc_command(&self) -> Option<crate::element::Command> {
+        self.engine
+            .world
+            .entities
+            .current_element_for_actor(self.pc)
+            .and_then(|(sequence, index)| {
+                self.engine
+                    .orders
+                    .sequence_manager
+                    .get_element(sequence, index)
+            })
+            .map(|element| element.command)
+    }
+
+    fn pc_distance_to_victim(&self) -> f32 {
+        let pc = self.engine.ent(self.pc).element_data().position_map();
+        let victim = self.engine.ent(self.victim).element_data().position_map();
+        ((pc.x - victim.x).powi(2) + (pc.y - victim.y).powi(2)).sqrt()
+    }
+}
+
+#[test]
+fn contextual_finish_walks_to_the_body_and_kills_it_after_the_strike() {
+    use crate::ai::{AiState, Substate};
+    use crate::element::{Command, Posture};
+    use crate::order::OrderType;
+    use crate::sequence::SequenceElementData;
+
+    let mut scene = finish_scene();
+    scene.launch();
+    let seek = scene
+        .engine
+        .orders
+        .sequence_manager
+        .sequences_iter()
+        .next()
+        .and_then(|sequence| sequence.get(0))
+        .expect("the finish click launches a sequence");
+    assert_eq!(seek.command, Command::Seek);
+    let SequenceElementData::Movement {
+        post_seek_sequence: Some(post_seek),
+        ..
+    } = &seek.data
+    else {
+        panic!("the out-of-range finish must retain a post-seek interaction");
+    };
+    let finish = post_seek.get(0).expect("post-seek finish element");
+    assert_eq!(finish.command, Command::SwordstrikeDown);
+    assert!(matches!(
+        finish.data,
+        SequenceElementData::Interaction { antagonist: Some(id) } if id == scene.victim
+    ));
+
+    let mut finish_started = false;
+    let mut struck = false;
+    for _ in 0..64 {
+        scene.frame();
+        if scene.pc_command() == Some(Command::SwordstrikeDown) && !finish_started {
+            finish_started = true;
+            assert!(
+                scene.pc_distance_to_victim() <= 45.0,
+                "the finish interaction runs only after the approach"
+            );
+        }
+        struck |= scene.engine.ent(scene.pc).sprite().last_action == OrderType::StrikingDownSword;
+        if scene.engine.ent(scene.victim).is_dead() {
+            break;
+        }
+        assert!(
+            scene
+                .engine
+                .ent(scene.victim)
+                .human_data()
+                .unwrap()
+                .unconscious,
+            "victim survives until the strike's action Done"
+        );
+    }
+    assert!(finish_started, "the retained finish interaction started");
+    assert!(struck, "the PC played the downward strike");
+
+    let victim = scene.engine.ent(scene.victim);
+    assert!(victim.is_dead());
+    assert_eq!(victim.element_data().posture(), Posture::DeadBack);
+    assert!(!victim.human_data().unwrap().unconscious);
+    let ai = victim.ai_controller().unwrap();
+    assert_eq!(ai.current_state, AiState::Sleeping);
+    assert_eq!(ai.current_substate, Substate::SleepingForever);
+    assert!(victim.npc_data().unwrap().inform_my_friends);
+    assert_eq!(
+        victim.npc_data().unwrap().money,
+        40,
+        "finishing does not loot the body"
+    );
+}
+
+#[test]
+fn contextual_finish_is_dropped_when_the_target_wakes_during_the_approach() {
+    use crate::campaign::CampaignValue;
+    let mut scene = finish_scene();
+    scene.launch();
+    scene.frame();
+    assert!(!scene.engine.ent(scene.victim).is_dead());
+    scene.engine.human_mut(scene.victim).unconscious = false;
+    let score_before = scene.engine.mission_domain.campaign.values[CampaignValue::Score];
+    for _ in 0..64 {
+        scene.frame();
+    }
+    assert!(!scene.engine.ent(scene.victim).is_dead());
+    assert_eq!(
+        scene.engine.mission_domain.campaign.values[CampaignValue::Score],
+        score_before
+    );
+}

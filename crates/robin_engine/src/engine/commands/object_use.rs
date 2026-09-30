@@ -831,6 +831,13 @@ pub(super) fn determine_use_command(
         return Some(Command::SearchCmd);
     }
 
+    // Finish (execute) a downed hostile soldier. Below Search so remaining
+    // loot keeps the original priority; the same predicate gates the Use
+    // focus and FINISH_HIM cursor.
+    if engine.pc_can_finish_npc_body(assets, pc_id, entity) {
+        return Some(Command::SwordstrikeDown);
+    }
+
     // Wake-Up arm: target and selected PC must share an allegiance,
     // and the selector must have Resuscitate.
     if is_unconscious

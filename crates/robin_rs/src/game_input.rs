@@ -1753,6 +1753,13 @@ fn determine_use_command(
         return Some(Command::SearchCmd);
     }
 
+    // Finish (execute) a downed hostile soldier. Below Search so remaining
+    // loot keeps the original priority; the same predicate gates the Use
+    // focus and FINISH_HIM cursor.
+    if engine.pc_can_finish_npc_body(assets, pc_id, entity) {
+        return Some(Command::SwordstrikeDown);
+    }
+
     // Wake-Up arm.
     if is_unconscious
         && engine.selected_pc_has_contextual_action(
