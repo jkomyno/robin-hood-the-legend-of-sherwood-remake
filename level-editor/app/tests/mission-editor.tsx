@@ -129,14 +129,40 @@ async function dropCharacter(profile: string, offset = 0, cancelled = false) {
     clientX: rect.left + rect.width / 2 + offset,
     clientY: rect.top + rect.height / 2,
   };
-  if (!cancelled) {
+  const markers = viewport["missionMarkers"];
+  const existing = markers.root.children.length;
+  const saved = JSON.stringify(current);
+  {
     const over = new DragEvent("dragover", options);
     canvas.dispatchEvent(over);
     check(over.defaultPrevented, "Viewport did not accept character drag");
+    check(markers.root.children.length === existing + 1, "Drag has no live placement preview");
+    await waitFor(
+      () => markers.spritesRoot.children.length === existing + 1,
+      "live drag character sprite",
+    );
+    const ghost = markers.root.children.at(-1)!;
+    const originalPosition = ghost.position.clone();
+    canvas.dispatchEvent(new DragEvent("dragover", { ...options, clientX: options.clientX + 25 }));
+    check(!ghost.position.equals(originalPosition), "Preview did not follow drag position");
+    check(
+      JSON.stringify(current) === saved && commits.length === before,
+      "Live preview changed saved mission",
+    );
+    canvas.dispatchEvent(new DragEvent("dragleave", options));
+    check(markers.root.children.length === existing, "Leaving viewport retained preview");
+    canvas.dispatchEvent(new DragEvent("dragover", options));
+    check(markers.root.children.length === existing + 1, "Reentering viewport lost preview");
+  }
+  if (!cancelled) {
     canvas.dispatchEvent(new DragEvent("drop", options));
   }
   card.dispatchEvent(new DragEvent("dragend", options));
   await pause();
+  check(
+    markers.root.children.length === existing + (cancelled ? 0 : 1),
+    "Drag left an extra preview character",
+  );
   check(
     commits.length === before + (cancelled ? 0 : 1),
     "Drop did not create exactly one undo entry",
@@ -169,6 +195,30 @@ async function run() {
   await category("npc");
   await dropCharacter("soldier_a00", 100);
   check(current.mission?.soldiers.length === 1, "Map click did not create NPC soldier");
+  check(
+    current.mission!.soldiers[0]!.name === "Blue Swordsman",
+    "Soldier name was not derived from type",
+  );
+  const profileSelect = document.querySelector<HTMLSelectElement>(
+    ".mission-settings select:not([aria-label])",
+  )!;
+  profileSelect.value = "soldier_a01";
+  profileSelect.dispatchEvent(new Event("change", { bubbles: true }));
+  await pause();
+  check(
+    current.mission!.soldiers[0]!.name === "Yellow Swordsman",
+    "Default name did not follow changed type",
+  );
+  const nameInput = document.querySelector<HTMLInputElement>(
+    ".mission-settings input:not([type])",
+  )!;
+  nameInput.value = "Gate guard";
+  nameInput.dispatchEvent(new Event("change", { bubbles: true }));
+  await pause();
+  profileSelect.value = "soldier_a00";
+  profileSelect.dispatchEvent(new Event("change", { bubbles: true }));
+  await pause();
+  check(current.mission!.soldiers[0]!.name === "Gate guard", "Changing type overwrote custom name");
   check(current.mission!.soldiers[0]!.direction === 8, "Default NPC facing is not down");
   check(
     current.mission!.soldiers[0]!.profile === "soldier_a00",
@@ -342,6 +392,35 @@ async function run() {
     "Mission markers leaked into baked depth",
   );
   check(errors.length === 0, errors.join("\n"));
+  setActive(true);
+  await pause();
+  const cameraBefore = viewport["camera"]!.quaternion.clone();
+  const missionBeforeOrbit = JSON.stringify(current.mission);
+  canvas.dispatchEvent(new PointerEvent("pointerdown", { ...pointer, button: 2, buttons: 2 }));
+  canvas.dispatchEvent(
+    new PointerEvent("pointermove", {
+      ...pointer,
+      button: 2,
+      buttons: 2,
+      clientX: pointer.clientX + 60,
+    }),
+  );
+  canvas.dispatchEvent(
+    new PointerEvent("pointerup", {
+      ...pointer,
+      button: 2,
+      buttons: 0,
+      clientX: pointer.clientX + 60,
+    }),
+  );
+  check(
+    !viewport["camera"]!.quaternion.equals(cameraBefore),
+    "Right drag did not rotate in Mission mode",
+  );
+  check(
+    JSON.stringify(current.mission) === missionBeforeOrbit,
+    "Camera rotation changed mission characters",
+  );
   viewport.dispose();
   document.querySelector("#result")!.textContent =
     "PASS mission palette drops, category filter, element list, drag/undo/cancel, visibility, save/reopen and export";

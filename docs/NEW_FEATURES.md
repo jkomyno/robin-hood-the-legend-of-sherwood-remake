@@ -4,7 +4,10 @@
   soldiers with placement, facing and profile controls. Its character palette
   displays actual library sprites and uses canonical profile identities. A PC/NPC
   category dropdown filters the palette; dragging a character onto the map adds
-  it. A mission-element list below the palette selects existing placements, whose
+  it, with a live surface-positioned preview during the drag. Dropping commits one
+  placement; leaving the map or cancelling removes the preview. Default names
+  follow the character type, while custom names survive profile changes.
+  A mission-element list below the palette selects existing placements, whose
   character profile can be changed in the inspector. Placed
   characters show their directional sprites; numeric controls use the editor’s
   drag sliders. The character library includes every PC and soldier’s idle pose.
@@ -12,6 +15,7 @@
   use English names. Characters remain visible across inspector tabs, controlled
   by the Mission tab’s visibility checkbox. Dragging a character moves it at its
   current height with one undo entry; Escape cancels the move.
+  Right-drag camera rotation remains available in Mission mode.
   Mission authoring stays
   separate from map assets and preview population. Export resolves its markers
   against the compiled navigation and receiving surfaces, writes PCs as spawn

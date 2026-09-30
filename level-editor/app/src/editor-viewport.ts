@@ -449,25 +449,46 @@ export class EditorViewport {
   private readonly splines = new SplineLayer();
   private readonly missionMarkers = new MissionLayer();
   private cancelMissionDrag: (() => void) | null = null;
+  private missionPaletteDrag: { key: string; id: string } | null = null;
   private missionEdit: {
     selected: string;
     select(id: string): void;
     preview(position: Vec3): void;
     move(position: Vec3): void;
     cancel(): void;
-    add(key: string, position: Vec3): void;
+    add(key: string, position: Vec3, id: string): void;
+    previewAdd(key: string, position: Vec3, id: string): void;
   } | null = null;
 
   setMissionEdit(mode: typeof this.missionEdit) {
-    if (!mode) this.cancelMissionDrag?.();
+    if (!mode) {
+      this.cancelMissionDrag?.();
+      this.endMissionPaletteDrag();
+    }
     this.missionEdit = mode;
     if (mode) this.select(null);
     const document = this.bindings.document();
     if (document) this.missionMarkers.sync(document, mode?.selected);
   }
   setMissionVisible(visible: boolean) {
-    if (!visible) this.cancelMissionDrag?.();
+    if (!visible) {
+      this.cancelMissionDrag?.();
+      this.endMissionPaletteDrag();
+    }
     this.missionMarkers.setVisible(visible);
+  }
+  startMissionPaletteDrag(key: string) {
+    this.endMissionPaletteDrag();
+    if (this.missionEdit) this.missionPaletteDrag = { key, id: `character-${crypto.randomUUID()}` };
+  }
+  private hideMissionPalettePreview() {
+    const document = this.bindings.document();
+    if (document) this.missionMarkers.sync(document, this.missionEdit?.selected);
+  }
+  endMissionPaletteDrag() {
+    if (!this.missionPaletteDrag) return;
+    this.missionPaletteDrag = null;
+    this.hideMissionPalettePreview();
   }
   setMissionSpriteLibrary(
     root: FileSystemDirectoryHandle | null,
@@ -737,6 +758,7 @@ export class EditorViewport {
   }
 
   private retireMap() {
+    this.endMissionPaletteDrag();
     this.cancelMissionDrag?.();
     this.missionEdit = null;
     this.missionMarkers.clear();
@@ -1027,6 +1049,31 @@ export class EditorViewport {
   }
 
   private setupMissionInteraction(el: HTMLCanvasElement) {
+    const dropPosition = (event: DragEvent) => {
+      const ground = this.assetDropPosition(event.clientX, event.clientY);
+      const document = this.bindings.document();
+      const surface = this.raycaster.intersectObject(this.objectsRoot, true).find(visibleSurface);
+      return surface && document
+        ? sceneToGame(document.camera, [surface.point.x, -surface.point.z, surface.point.y])
+        : ground;
+    };
+    el.addEventListener(
+      "dragleave",
+      () => {
+        if (this.missionPaletteDrag) this.hideMissionPalettePreview();
+      },
+      { signal: this.listeners.signal },
+    );
+    window.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key === "Escape") this.endMissionPaletteDrag();
+      },
+      { signal: this.listeners.signal },
+    );
+    window.addEventListener("blur", () => this.endMissionPaletteDrag(), {
+      signal: this.listeners.signal,
+    });
     el.addEventListener(
       "dragover",
       (event) => {
@@ -1034,6 +1081,10 @@ export class EditorViewport {
         event.preventDefault();
         event.stopPropagation();
         event.dataTransfer.dropEffect = "copy";
+        const drag = this.missionPaletteDrag;
+        const position = dropPosition(event);
+        if (drag && position) this.missionEdit.previewAdd(drag.key, position, drag.id);
+        else this.hideMissionPalettePreview();
       },
       { signal: this.listeners.signal },
     );
@@ -1043,15 +1094,11 @@ export class EditorViewport {
         if (!this.missionEdit || !event.dataTransfer?.types.includes(CHARACTER_DRAG_TYPE)) return;
         event.preventDefault();
         event.stopPropagation();
-        const ground = this.assetDropPosition(event.clientX, event.clientY);
-        const document = this.bindings.document();
-        const surface = this.raycaster.intersectObject(this.objectsRoot, true).find(visibleSurface);
-        const position =
-          surface && document
-            ? sceneToGame(document.camera, [surface.point.x, -surface.point.z, surface.point.y])
-            : ground;
-        if (position)
-          this.missionEdit.add(event.dataTransfer.getData(CHARACTER_DRAG_TYPE), position);
+        const position = dropPosition(event);
+        const drag = this.missionPaletteDrag;
+        if (position && drag && event.dataTransfer.getData(CHARACTER_DRAG_TYPE) === drag.key)
+          this.missionEdit.add(drag.key, position, drag.id);
+        this.endMissionPaletteDrag();
       },
       { signal: this.listeners.signal },
     );
@@ -1201,7 +1248,7 @@ export class EditorViewport {
       (e) => {
         // the gizmo takes precedence when the cursor is on one of its handles
         if (
-          this.missionEdit ||
+          (this.missionEdit && e.button === 0) ||
           !this.camera ||
           !this.orbit ||
           this.gizmo?.axis ||

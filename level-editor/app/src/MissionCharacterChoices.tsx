@@ -92,6 +92,8 @@ function CharacterChoice(props: {
   root: FileSystemDirectoryHandle;
   camera: MapCamera;
   profile: MissionCharacterProfile;
+  onDragStart(key: string): void;
+  onDragEnd(): void;
 }) {
   const [ready, setReady] = createSignal(false);
   return (
@@ -110,7 +112,12 @@ function CharacterChoice(props: {
           `${props.profile.kind}:${props.profile.profile}`,
         );
         event.dataTransfer.effectAllowed = "copy";
+        const image = document.createElement("canvas");
+        image.width = image.height = 1;
+        event.dataTransfer.setDragImage(image, 0, 0);
+        props.onDragStart(`${props.profile.kind}:${props.profile.profile}`);
       }}
+      onDragEnd={() => props.onDragEnd()}
     >
       <CharacterThumbnail
         root={props.root}
@@ -130,6 +137,8 @@ export default function MissionCharacterChoices(props: {
   root: FileSystemDirectoryHandle;
   camera: MapCamera;
   profiles: MissionCharacterProfile[];
+  onDragStart(key: string): void;
+  onDragEnd(): void;
 }) {
   const [search, setSearch] = createSignal("");
   const filtered = () =>
@@ -154,7 +163,13 @@ export default function MissionCharacterChoices(props: {
       >
         <For each={filtered()}>
           {(profile) => (
-            <CharacterChoice root={props.root} camera={props.camera} profile={profile} />
+            <CharacterChoice
+              root={props.root}
+              camera={props.camera}
+              profile={profile}
+              onDragStart={(key) => props.onDragStart(key)}
+              onDragEnd={() => props.onDragEnd()}
+            />
           )}
         </For>
       </div>

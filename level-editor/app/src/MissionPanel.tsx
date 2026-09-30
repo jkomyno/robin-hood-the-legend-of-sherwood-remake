@@ -78,12 +78,21 @@ export default function MissionPanel(props: {
   const current = () => entries().find((entry) => entry.id === selected());
   function chooseCharacter(profile: MissionCharacterProfile) {
     const value = mission();
+    const entry = current();
+    if (!entry) return;
+    const previous = catalog()?.profiles.find(
+      (p) => p.kind === entry.kind && p.profile === entry.profile,
+    );
+    const name =
+      entry.name === previous?.name || entry.name === "Soldier" || entry.name === "PC spawn"
+        ? profile.name
+        : entry.name;
     if (profile.kind === "pc" && typeof profile.profile === "number") {
       const id = profile.profile;
       publish({
         ...value,
         spawnPoints: value.spawnPoints.map((spawn) =>
-          spawn.id === selected() ? { ...spawn, profile: id } : spawn,
+          spawn.id === selected() ? { ...spawn, profile: id, name } : spawn,
         ),
       });
     } else if (profile.kind === "npc" && typeof profile.profile === "string") {
@@ -91,7 +100,7 @@ export default function MissionPanel(props: {
       publish({
         ...value,
         soldiers: value.soldiers.map((soldier) =>
-          soldier.id === selected() ? { ...soldier, profile: id } : soldier,
+          soldier.id === selected() ? { ...soldier, profile: id, name } : soldier,
         ),
       });
     }
@@ -142,12 +151,11 @@ export default function MissionPanel(props: {
       ),
     });
   }
-  function addCharacter(key: string, position: Vec3) {
+  function addCharacter(key: string, position: Vec3, id: string, preview = false) {
     const profile = catalog()?.profiles.find(
       (profile) => `${profile.kind}:${profile.profile}` === key,
     );
     if (!profile) return;
-    const id = `${profile.kind}-${crypto.randomUUID()}`;
     const base = {
       id,
       name: profile.name,
@@ -155,17 +163,22 @@ export default function MissionPanel(props: {
       direction: DEFAULT_CHARACTER_DIRECTION,
     };
     const value = mission();
+    const update = (next: NonNullable<Level3D["mission"]>) => {
+      const document = props.document();
+      if (preview && document) props.viewport.syncViews({ ...document, mission: next });
+      else publish(next);
+    };
     if (profile.kind === "pc" && typeof profile.profile === "number")
-      publish({
+      update({
         ...value,
         spawnPoints: [...value.spawnPoints, { ...base, profile: profile.profile }],
       });
     else if (profile.kind === "npc" && typeof profile.profile === "string")
-      publish({
+      update({
         ...value,
         soldiers: [...value.soldiers, { ...base, profile: profile.profile, allegiance: 1 }],
       });
-    setSelected(id);
+    if (!preview) setSelected(id);
   }
   createEffect(
     () => ({
@@ -184,6 +197,8 @@ export default function MissionPanel(props: {
                 move: (position: Vec3) => change({ position }),
                 cancel: cancelPreview,
                 add: addCharacter,
+                previewAdd: (key: string, position: Vec3, id: string) =>
+                  addCharacter(key, position, id, true),
               }
             : null,
         ),
@@ -238,6 +253,8 @@ export default function MissionPanel(props: {
             root={catalog()!.root}
             camera={props.document()!.camera}
             profiles={catalog()!.profiles.filter((profile) => profile.kind === category())}
+            onDragStart={(key) => props.viewport.startMissionPaletteDrag(key)}
+            onDragEnd={() => props.viewport.endMissionPaletteDrag()}
           />
         </Show>
         <section class="object-list mission-element-list">
