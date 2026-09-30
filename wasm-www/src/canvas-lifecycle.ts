@@ -37,9 +37,10 @@ export function installCanvasBackingStore(
         const availableWidth = Math.max(1, innerWidth - (fullscreen ? 0 : 16));
         const availableHeight = Math.max(1, innerHeight - (fullscreen ? 0 : 16));
         const availableAspect = availableWidth / availableHeight;
-        const targetAspect = fullscreen
-            ? availableAspect
-            : Math.min(16 / 9, Math.max(4 / 3, availableAspect));
+        // The original renders a fixed 800x600 (4:3) frame and pillarboxes
+        // everything else; a wider canvas makes the engine tile menu backdrops
+        // to cover the extra width.
+        const targetAspect = 4 / 3;
         const cssWidth = availableAspect >= targetAspect
             ? availableHeight * targetAspect
             : availableWidth;
