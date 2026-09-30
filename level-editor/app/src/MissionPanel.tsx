@@ -355,28 +355,35 @@ export default function MissionPanel(props: {
                 </select>
               </label>
               <Show when={entry().kind === "npc"}>
-                <ScrubNumber
-                  label="Allegiance"
-                  value={
-                    mission().soldiers.find((soldier) => soldier.id === selected())?.allegiance ?? 1
-                  }
-                  step={1}
-                  min={0}
-                  max={65535}
-                  onPreview={() => {}}
-                  onCancel={() => {}}
-                  onCommit={(value) => {
-                    const next = mission();
-                    publish({
-                      ...next,
-                      soldiers: next.soldiers.map((soldier) =>
-                        soldier.id === selected()
-                          ? { ...soldier, allegiance: Math.round(value) }
-                          : soldier,
-                      ),
-                    });
-                  }}
-                />
+                <label>
+                  Allegiance
+                  <select
+                    value={
+                      mission().soldiers.find((soldier) => soldier.id === selected())?.allegiance ??
+                      1
+                    }
+                    onChange={(event) => {
+                      const value = Number(event.currentTarget.value);
+                      const next = mission();
+                      publish({
+                        ...next,
+                        soldiers: next.soldiers.map((soldier) =>
+                          soldier.id === selected() ? { ...soldier, allegiance: value } : soldier,
+                        ),
+                      });
+                    }}
+                  >
+                    <option value={0}>Royalists</option>
+                    <option value={1}>Lacklandists</option>
+                    <For
+                      each={[...new Set(mission().soldiers.map((soldier) => soldier.allegiance))]
+                        .filter((allegiance) => allegiance > 1)
+                        .sort((a, b) => a - b)}
+                    >
+                      {(allegiance) => <option value={allegiance}>Faction {allegiance}</option>}
+                    </For>
+                  </select>
+                </label>
               </Show>
               <For each={["X", "Y", "Height"]}>
                 {(label, index) => (
