@@ -2,7 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createTerrainGrid, terrainHeightAt, type Level3D, type LevelSpline } from "@rle/shared";
 import { MapSession } from "./session.ts";
-import { followTerrainEdit, followTerrainTransform, terrainAnchor } from "./terrain-follow.ts";
+import {
+  followTerrainEdit,
+  followTerrainTransform,
+  followMissionTerrain,
+  terrainAnchor,
+} from "./terrain-follow.ts";
 
 function fixture(): Level3D {
   const terrain = createTerrainGrid([0, 0, 400, 400], 100, 0);
@@ -47,6 +52,33 @@ test("horizontal asset moves retain offsets, while manual height edits remain li
     followTerrainTransform(document, selected, { ...transform, dx: 200, dz: 250 }).dz,
     300,
   );
+});
+
+test("mission characters follow terrain movement and reshaping while preserving height offsets", () => {
+  const before = fixture();
+  before.mission = {
+    version: 1,
+    spawnPoints: [{ id: "pc", name: "Robin", profile: 0, direction: 8, position: [100, 100, 50] }],
+    soldiers: [
+      {
+        id: "npc",
+        name: "Guard",
+        profile: "Guard",
+        allegiance: 1,
+        direction: 8,
+        position: [100, 100, 70],
+      },
+    ],
+  };
+  assert.deepEqual(followMissionTerrain(before, [100, 100, 50], [200, 100, 50]), [200, 100, 100]);
+  assert.deepEqual(followMissionTerrain(before, [100, 100, 70], [200, 100, 70]), [200, 100, 120]);
+  assert.deepEqual(followMissionTerrain(before, [100, 100, 50], [100, 100, 80]), [100, 100, 80]);
+  const next = structuredClone(before);
+  for (const vertex of next.terrain!.vertices) vertex.position[2] += 30;
+  const after = followTerrainEdit(before, next);
+  assert.equal(after.mission!.spawnPoints[0]!.position[2], 80);
+  assert.equal(after.mission!.soldiers[0]!.position[2], 100);
+  assert.equal(before.mission.spawnPoints[0]!.position[2], 50);
 });
 
 test("terrain reshaping moves groups once and preserves elevated parts and loose objects", () => {

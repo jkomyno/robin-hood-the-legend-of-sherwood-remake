@@ -9,6 +9,7 @@ import {
   terrainHeightAt,
   type GameTransform,
   type Level3D,
+  type Vec3,
 } from "@rle/shared";
 import type { Selection } from "./document-commands.ts";
 
@@ -72,6 +73,16 @@ export function followTerrainTransform(
   return { ...transform, dz: transform.dz + newHeight - oldHeight };
 }
 
+/** Horizontal character movement preserves its authored offset above terrain. */
+export function followMissionTerrain(document: Level3D, before: Vec3, after: Vec3): Vec3 {
+  if (before[0] === after[0] && before[1] === after[1]) return after;
+  const oldHeight = terrainHeightAt(document, before[0], before[1]);
+  const newHeight = terrainHeightAt(document, after[0], after[1]);
+  return oldHeight === undefined || newHeight === undefined
+    ? after
+    : [after[0], after[1], after[2] + newHeight - oldHeight];
+}
+
 /** A terrain gesture and its attached placements form one document/undo operation. */
 export function followTerrainEdit(previous: Level3D, next: Level3D): Level3D {
   if (
@@ -90,8 +101,25 @@ export function followTerrainEdit(previous: Level3D, next: Level3D): Level3D {
       ? transform
       : { ...transform, dz: transform.dz + after - before };
   };
+  const moveActor = <T extends { position: Vec3 }>(actor: T): T => {
+    const [x, y, z] = actor.position;
+    const before = terrainHeightAt(previous, x, y);
+    const after = terrainHeightAt(next, x, y);
+    return before === undefined || after === undefined || before === after
+      ? actor
+      : { ...actor, position: [x, y, z + after - before] };
+  };
   return {
     ...next,
+    ...(next.mission
+      ? {
+          mission: {
+            ...next.mission,
+            spawnPoints: next.mission.spawnPoints.map(moveActor),
+            soldiers: next.mission.soldiers.map(moveActor),
+          },
+        }
+      : {}),
     groups: next.groups.map((group) => ({
       ...group,
       transform: moved({ kind: "group", id: group.id }, group.transform),
