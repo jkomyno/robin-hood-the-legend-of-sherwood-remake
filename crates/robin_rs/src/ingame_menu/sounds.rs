@@ -185,25 +185,14 @@ impl SoundsScreen {
         // ── Slider widgets ────────────────────────────────────────────
         // Same virtual rects the pre-widget version drew at; now they drive
         // hit-testing + drag state through `WidgetSlider`.
-        let slider_rects: [MenuRect; SOUND_SLIDERS.len()] = std::array::from_fn(|index| MenuRect {
-            x: 30,
-            y: 290 + index as i32 * 40,
-            w: 200,
-            h: 16,
-        });
+        let slider_rects: [MenuRect; SOUND_SLIDERS.len()] = std::array::from_fn(sound_slider_rect);
         let slider_labels = SOUND_SLIDERS.map(|(_, label)| resources.menu_text.get(label));
         for (i, rect) in slider_rects.iter().enumerate() {
-            let mut slider = WidgetSlider::new(ID_SLIDER_BASE + i as u32);
-            slider.base.bbox = ScreenBBox::from_coords(
-                rect.x as f32,
-                rect.y as f32,
-                (rect.x + rect.w) as f32,
-                (rect.y + rect.h) as f32,
-            );
-            slider.set_range(0.0, SLIDER_MAX as f32);
-            slider.set_step_count(SLIDER_STEPS);
-            slider.set_value(slider_value(&edit.working, i) as f32);
-            frame.add_widget_absolute(Widget::Slider(slider));
+            frame.add_widget_absolute(Widget::Slider(make_sound_slider(
+                i,
+                *rect,
+                slider_value(&edit.working, i),
+            )));
         }
 
         let title = resources.menu_text.get(MT_TTL_SOUNDS);
@@ -411,6 +400,31 @@ impl SoundsScreen {
     }
 }
 
+/// Virtual rect of the sound slider at `index`.
+fn sound_slider_rect(index: usize) -> MenuRect {
+    MenuRect {
+        x: 30,
+        y: 290 + index as i32 * 40,
+        w: 200,
+        h: 16,
+    }
+}
+
+/// Build the sound slider at `index` over `rect`, snapped to `value`.
+fn make_sound_slider(index: usize, rect: MenuRect, value: u16) -> WidgetSlider {
+    let mut slider = WidgetSlider::new(ID_SLIDER_BASE + index as u32);
+    slider.base.bbox = ScreenBBox::from_coords(
+        rect.x as f32,
+        rect.y as f32,
+        (rect.x + rect.w) as f32,
+        (rect.y + rect.h) as f32,
+    );
+    slider.set_range(0.0, SLIDER_MAX as f32);
+    slider.set_step_count(SLIDER_STEPS);
+    slider.set_value(value as f32);
+    slider
+}
+
 fn partition_widget_events(
     events: Vec<UiEvent>,
     sliders: &mut Vec<UiEvent>,
@@ -563,4 +577,60 @@ fn event_partition_reuses_buffers_and_moves_payloads_in_order() {
     assert!(sliders.is_empty() && buttons.is_empty());
     assert_eq!(sliders.as_ptr(), slider_pointer);
     assert_eq!(buttons.as_ptr(), button_pointer);
+}
+
+#[test]
+fn production_sound_sliders_hit_test_and_track_a_drag() {
+    use crate::ui::{MouseButtons, UiEventData, UiKeyboard};
+    use crate::widget::WidgetInput;
+    use robin_engine::coordinates::ScreenPoint;
+
+    let config = SoundConfig::default();
+    let keyboard = UiKeyboard::default();
+    let input = |x: f32, y: f32, mouse_button| WidgetInput {
+        mouse_position: ScreenPoint::new(x, y),
+        mouse_z: 0,
+        mouse_button,
+        keyboard: &keyboard,
+        text_input: "",
+        capture: None,
+    };
+    for index in 0..SOUND_SLIDERS.len() {
+        let rect = sound_slider_rect(index);
+        let mut slider = make_sound_slider(index, rect, 0);
+        let (left, mid_y) = (rect.x as f32, rect.y as f32 + rect.h as f32 / 2.0);
+        assert!(
+            slider.base.is_inside(ScreenPoint::new(left + 1.0, mid_y)),
+            "sound slider {index} must be hittable inside its rect"
+        );
+        assert!(
+            !slider.base.is_inside(ScreenPoint::new(left - 1.0, mid_y)),
+            "sound slider {index} must not claim points left of its rect"
+        );
+
+        // Hover, press, drag across ticks, release.
+        let cell = rect.w as f32 / SLIDER_STEPS as f32;
+        slider.process_input(&input(left + 1.0, mid_y, MouseButtons::empty()));
+        slider.process_input(&input(left + 1.0, mid_y, MouseButtons::LEFT_DOWN));
+        let to_x = left + cell * 5.5;
+        let events = slider.process_input(&input(to_x, mid_y, MouseButtons::LEFT_DOWN));
+        assert!(
+            events
+                .iter()
+                .any(|event| event.msg_type == UiMsg::WidgetSliderTrack
+                    && matches!(event.data, Some(UiEventData::SliderPosition(5.0)))),
+            "sound slider {index} drag must emit a track event"
+        );
+        let events = slider.process_input(&input(to_x, mid_y, MouseButtons::LEFT_CLICK));
+        assert!(
+            events
+                .iter()
+                .any(|event| event.msg_type == UiMsg::WidgetActivated)
+        );
+        assert!(!slider.dragging);
+
+        let mut edited = config;
+        store_slider_value(&mut edited, index, slider.tick_index() as u16);
+        assert_eq!(slider_value(&edited, index), 5);
+    }
 }

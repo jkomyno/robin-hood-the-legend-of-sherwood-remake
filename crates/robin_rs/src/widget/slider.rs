@@ -69,10 +69,17 @@ impl Default for WidgetSlider {
 }
 
 impl WidgetSlider {
+    /// Build a slider whose whole bbox is its interactive track.
+    ///
+    /// Sliders have no sprite of their own, so they get a resource-less
+    /// [`WidgetAppearance`](crate::ui::WidgetAppearance): without one,
+    /// [`WidgetBase::is_inside`] never reports a hit and the slider
+    /// cannot focus or start a drag.
     pub fn new(id: super::WidgetId) -> Self {
         Self {
             base: WidgetBase {
                 id,
+                appearance: Some(crate::ui::WidgetAppearance::default()),
                 ..Default::default()
             },
             ..Default::default()
@@ -336,7 +343,6 @@ mod tests {
         let mut slider = WidgetSlider::new(7);
         let bbox = ScreenBBox::from_coords(0.0, 0.0, 100.0, 10.0);
         slider.base.bbox = bbox;
-        slider.base.appearance = Some(crate::ui::WidgetAppearance::default());
         slider.set_range(0.0, 9.0);
         slider.set_step_count(step_count);
         slider
@@ -351,6 +357,14 @@ mod tests {
             text_input: "",
             capture: None,
         }
+    }
+
+    #[test]
+    fn constructor_alone_makes_the_bbox_hittable() {
+        let mut slider = WidgetSlider::new(7);
+        slider.base.bbox = ScreenBBox::from_coords(0.0, 0.0, 100.0, 10.0);
+        assert!(slider.base.is_inside(ScreenPoint::new(50.0, 5.0)));
+        assert!(!slider.base.is_inside(ScreenPoint::new(150.0, 5.0)));
     }
 
     #[test]
